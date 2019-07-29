@@ -136,14 +136,14 @@ bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
     return vtxDevice->vTable->getPowerIndex(vtxDevice, pIndex);
 }
 
-bool vtxCommonGetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff)
-{
-    return vtxDevice->vTable->getPitMode(vtxDevice, pOnOff);
-}
-
 bool vtxCommonGetFrequency(const vtxDevice_t *vtxDevice, uint16_t *pFrequency)
 {
     return vtxDevice->vTable->getFrequency(vtxDevice, pFrequency);
+}
+
+bool vtxCommonGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
+{
+    return vtxDevice->vTable->getStatus(vtxDevice, status);
 }
 
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)

@@ -38,32 +38,12 @@
 
 #include "pg/adc.h"
 
-// Copied from stm32f7xx_ll_adc.h
-
-#define VREFINT_CAL_VREF                   ( 3300U)                    /* Analog voltage reference (Vref+) value with which temperature sensor has been calibrated in production (tolerance: +-10 mV) (unit: mV). */
-#define TEMPSENSOR_CAL1_TEMP               (( int32_t)   30)           /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL1_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL2_TEMP               (( int32_t)  110)           /* Internal temperature sensor, temperature at which temperature sensor has been calibrated in production for data into TEMPSENSOR_CAL2_ADDR (tolerance: +-5 DegC) (unit: DegC). */
-#define TEMPSENSOR_CAL_VREFANALOG          ( 3300U)                    /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
-
-// These addresses are incorrectly defined in stm32f7xx_ll_adc.h
-#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
-// F745xx_F746xx and  F765xx_F767xx_F769xx
-#define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF0F44A))
-#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF0F44C))
-#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF0F44E))
-#elif defined(STM32F722xx)
-// F72x_F73x
-#define VREFINT_CAL_ADDR                   ((uint16_t*) (0x1FF07A2A))
-#define TEMPSENSOR_CAL1_ADDR               ((uint16_t*) (0x1FF07A2C))
-#define TEMPSENSOR_CAL2_ADDR               ((uint16_t*) (0x1FF07A2E))
-#endif
-
 const adcDevice_t adcHardware[] = {
     {
         .ADCx = ADC1,
         .rccADC = RCC_APB2(ADC1),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Streamx = ADC1_DMA_STREAM,
+        .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
         .channel = DMA_CHANNEL_0
 #endif
     },
@@ -71,7 +51,7 @@ const adcDevice_t adcHardware[] = {
         .ADCx = ADC2,
         .rccADC = RCC_APB2(ADC2),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Streamx = ADC2_DMA_STREAM,
+        .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
         .channel = DMA_CHANNEL_1
 #endif
     },
@@ -79,7 +59,7 @@ const adcDevice_t adcHardware[] = {
         .ADCx = ADC3,
         .rccADC = RCC_APB2(ADC3),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Streamx = ADC3_DMA_STREAM,
+        .dmaResource = (dmaResource_t *)ADC3_DMA_STREAM,
         .channel = DMA_CHANNEL_2
 #endif
     }
@@ -314,11 +294,11 @@ void adcInit(const adcConfig_t *config)
 
     dmaInit(dmaGetIdentifier(dmaspec->ref), OWNER_ADC, 0);
     adc.DmaHandle.Init.Channel = dmaspec->channel;
-    adc.DmaHandle.Instance = dmaspec->ref;
+    adc.DmaHandle.Instance = (DMA_ARCH_TYPE *)dmaspec->ref;
 #else
-    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
+    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
     adc.DmaHandle.Init.Channel = adc.channel;
-    adc.DmaHandle.Instance = adc.DMAy_Streamx;
+    adc.DmaHandle.Instance = (DMA_ARCH_TYPE *)adc.dmaResource;
 #endif
 
     adc.DmaHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;

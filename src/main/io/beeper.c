@@ -27,6 +27,7 @@
 
 #include "config/feature.h"
 
+#include "drivers/dshot_command.h"
 #include "drivers/io.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
@@ -410,7 +411,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
             if ((currentTimeUs - getLastDisarmTimeUs() > DSHOT_BEACON_GUARD_DELAY_US) && !isTryingToArm()) {
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
-                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
+                dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, false);
             }
         }
 #endif

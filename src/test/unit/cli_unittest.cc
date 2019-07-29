@@ -274,7 +274,8 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 void parseRcChannels(const char *, rxConfig_t *){}
 void mixerLoadMix(int, motorMixer_t *) {}
 bool setModeColor(ledModeIndex_e, int, int) { return false; }
-float convertExternalToMotor(uint16_t ){ return 1.0; }
+float motorConvertFromExternal(uint16_t) { return 1.0; }
+void motorShutdown(void) { }
 uint8_t getCurrentPidProfileIndex(void){ return 1; }
 uint8_t getCurrentControlRateProfileIndex(void){ return 1; }
 void changeControlRateProfile(uint8_t) {}
@@ -328,7 +329,6 @@ void schedulerSetCalulateTaskStatistics(bool) {}
 void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
-void stopPwmAllMotors(void) {}
 void systemResetToBootloader(void) {}
 void resetConfigs(void) {}
 void systemReset(void) {}

@@ -82,6 +82,12 @@ typedef enum {
 #define VTX_TRAMP_POWER_400       4
 #define VTX_TRAMP_POWER_600       5
 
+// VTX status flags
+enum {
+    VTX_STATUS_PIT_MODE = 1 << 0,
+    VTX_STATUS_LOCKED = 1 << 1,
+};
+
 struct vtxVTable_s;
 typedef struct vtxDevice_s {
     const struct vtxVTable_s *const vTable;
@@ -104,8 +110,8 @@ typedef struct vtxVTable_s {
 
     bool (*getBandAndChannel)(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel);
     bool (*getPowerIndex)(const vtxDevice_t *vtxDevice, uint8_t *pIndex);
-    bool (*getPitMode)(const vtxDevice_t *vtxDevice, uint8_t *pOnOff);
     bool (*getFrequency)(const vtxDevice_t *vtxDevice, uint16_t *pFreq);
+    bool (*getStatus)(const vtxDevice_t *vtxDevice, unsigned *status);
 } vtxVTable_t;
 
 // 3.1.0
@@ -127,8 +133,8 @@ void vtxCommonSetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff);
 void vtxCommonSetFrequency(vtxDevice_t *vtxDevice, uint16_t freq);
 bool vtxCommonGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, uint8_t *pChannel);
 bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex);
-bool vtxCommonGetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff);
 bool vtxCommonGetFrequency(const vtxDevice_t *vtxDevice, uint16_t *pFreq);
+bool vtxCommonGetStatus(const vtxDevice_t *vtxDevice, unsigned *status);
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band);
 char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band);
 char vtxCommonGetBandLetter(const vtxDevice_t *vtxDevice, int band);

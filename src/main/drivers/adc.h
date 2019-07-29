@@ -77,8 +77,10 @@ typedef struct adcOperatingConfig_s {
     ioTag_t tag;
 #ifdef STM32H7
     ADCDevice adcDevice;        // ADCDEV_x for this input
-#endif
+    uint32_t adcChannel;        // ADCy_INxx channel ID for this input
+#else
     uint8_t adcChannel;         // ADCy_INxx channel number for this input
+#endif
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;
@@ -89,15 +91,12 @@ void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetChannel(uint8_t channel);
 
 #ifdef USE_ADC_INTERNAL
-extern uint16_t adcVREFINTCAL;
-extern uint16_t adcTSCAL1;
-extern uint16_t adcTSCAL2;
-extern int16_t  adcTSSlopeK;
-
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);
 uint16_t adcInternalReadVrefint(void);
 uint16_t adcInternalReadTempsensor(void);
+uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue);
+int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue);
 #endif
 
 #if !defined(SIMULATOR_BUILD)

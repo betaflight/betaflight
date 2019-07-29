@@ -457,9 +457,8 @@ typedef struct afatfs_t {
     } initState;
 #endif
 
-
 #ifdef STM32H7
-    uint8_t cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS] __attribute__((aligned(32)));
+    uint8_t *cache;
 #else
     uint8_t cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS];
 #endif
@@ -511,6 +510,10 @@ typedef struct afatfs_t {
     uint32_t rootDirectoryCluster; // Present on FAT32 and set to zero for FAT16
     uint32_t rootDirectorySectors; // Zero on FAT32, for FAT16 the number of sectors that the root directory occupies
 } afatfs_t;
+
+#ifdef STM32H7
+static DMA_RW_AXI uint8_t afatfs_cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS] __attribute__((aligned(32)));
+#endif
 
 static afatfs_t afatfs;
 
@@ -2633,11 +2636,13 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
                 #ifdef USE_RTC_TIME
                 // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
                 // when time is not known.
-                dateTime_t dt;
+                dateTime_t dt, local_dt;
                 rtcGetDateTime(&dt);
                 if (dt.year != 0) {
-                    fileDate = FAT_MAKE_DATE(dt.year, dt.month, dt.day);
-                    fileTime = FAT_MAKE_TIME(dt.hours, dt.minutes, dt.seconds);
+                    // By tradition, FAT filesystem timestamps use local time.
+                    dateTimeUTCToLocal(&dt, &local_dt);
+                    fileDate = FAT_MAKE_DATE(local_dt.year, local_dt.month, local_dt.day);
+                    fileTime = FAT_MAKE_TIME(local_dt.hours, local_dt.minutes, local_dt.seconds);
                 }
                 #endif
 
@@ -3607,6 +3612,9 @@ afatfsError_e afatfs_getLastError(void)
 
 void afatfs_init(void)
 {
+#ifdef STM32H7
+    afatfs.cache = afatfs_cache;
+#endif
     afatfs.filesystemState = AFATFS_FILESYSTEM_STATE_INITIALIZATION;
     afatfs.initPhase = AFATFS_INITIALIZATION_READ_MBR;
     afatfs.lastClusterAllocated = FAT_SMALLEST_LEGAL_CLUSTER_NUMBER;

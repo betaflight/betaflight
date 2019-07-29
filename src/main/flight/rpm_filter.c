@@ -31,6 +31,8 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
+#include "drivers/dshot.h"
+
 #include "flight/mixer.h"
 #include "flight/pid.h"
 

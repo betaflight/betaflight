@@ -70,20 +70,20 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
 
 #define RETURN_TCIF_FLAG(s, d, n) if (s == DMA ## d ## _Channel ## n) return DMA ## d ## _FLAG_TC ## n
 
-uint32_t dmaFlag_IT_TCIF(const DMA_Channel_TypeDef *channel)
+uint32_t dmaFlag_IT_TCIF(const dmaResource_t *channel)
 {
-    RETURN_TCIF_FLAG(channel, 1, 1);
-    RETURN_TCIF_FLAG(channel, 1, 2);
-    RETURN_TCIF_FLAG(channel, 1, 3);
-    RETURN_TCIF_FLAG(channel, 1, 4);
-    RETURN_TCIF_FLAG(channel, 1, 5);
-    RETURN_TCIF_FLAG(channel, 1, 6);
-    RETURN_TCIF_FLAG(channel, 1, 7);
-    RETURN_TCIF_FLAG(channel, 2, 1);
-    RETURN_TCIF_FLAG(channel, 2, 2);
-    RETURN_TCIF_FLAG(channel, 2, 3);
-    RETURN_TCIF_FLAG(channel, 2, 4);
-    RETURN_TCIF_FLAG(channel, 2, 5);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 1);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 2);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 3);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 4);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 5);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 6);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 1, 7);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 2, 1);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 2, 2);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 2, 3);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 2, 4);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)channel, 2, 5);
     return 0;
 }
 
@@ -125,7 +125,7 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
 }
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
+dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
         if (dmaDescriptors[i].ref == channel) {
@@ -135,7 +135,7 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
     return 0;
 }
 
-DMA_Channel_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+dmaResource_t *dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
 {
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
 }

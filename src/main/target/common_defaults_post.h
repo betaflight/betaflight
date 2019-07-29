@@ -320,6 +320,8 @@
 #endif
 #endif
 
+// gyro hardware
+
 #if !defined(GYRO_1_SPI_INSTANCE)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
@@ -332,15 +334,10 @@
 #define GYRO_1_EXTI_PIN         NONE
 #endif
 
-#if !defined(GYRO_1_ALIGN)
-#define GYRO_1_ALIGN            ALIGN_DEFAULT
-#endif
-
 // F4 and F7 single gyro boards
 #if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
 #define GYRO_2_SPI_INSTANCE     NULL
 #define GYRO_2_CS_PIN           NONE
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
 #endif
 
@@ -356,6 +353,24 @@
 #else
 #define MAX_GYRODEV_COUNT 1
 #define MAX_ACCDEV_COUNT 1
+#endif
+
+// gyro alignments
+
+#if !defined(GYRO_1_ALIGN)
+#define GYRO_1_ALIGN            CW0_DEG
+#endif
+
+#if !defined(GYRO_2_ALIGN)
+#define GYRO_2_ALIGN            CW0_DEG
+#endif
+
+#if !defined(GYRO_1_CUSTOM_ALIGN)
+#define GYRO_1_CUSTOM_ALIGN            CUSTOM_ALIGN_CW0_DEG
+#endif
+
+#if !defined(GYRO_2_CUSTOM_ALIGN)
+#define GYRO_2_CUSTOM_ALIGN            CUSTOM_ALIGN_CW0_DEG
 #endif
 
 #ifdef USE_VCP

@@ -46,13 +46,6 @@ volatile FAST_RAM_ZERO_INIT uint16_t adcValues[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 #endif
 
-#ifdef USE_ADC_INTERNAL
-uint16_t adcTSCAL1;
-uint16_t adcTSCAL2;
-int16_t  adcTSSlopeK;
-uint16_t adcVREFINTCAL;
-#endif
-
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
     for (uint8_t i = 0; i < ARRAYLEN(adcTagMap); i++) {
@@ -131,6 +124,29 @@ bool adcVerifyPin(ioTag_t tag, ADCDevice device)
 
     return false;
 }
+
+#ifdef USE_ADC_INTERNAL
+
+int32_t adcVREFINTCAL;      // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
+int32_t adcTSCAL1;
+int32_t adcTSCAL2;
+int32_t adcTSSlopeK;
+
+uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue)
+{
+    // This is essentially a tuned version of
+    // __HAL_ADC_CALC_VREFANALOG_VOLTAGE(vrefAdcValue, ADC_RESOLUTION_12B);
+    return (uint16_t)((uint32_t)(adcVREFINTCAL * VREFINT_CAL_VREF) / vrefAdcValue);
+}
+
+int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
+{
+    // This is essentially a tuned version of
+    // __HAL_ADC_CALC_TEMPERATURE(vrefValue, tempAdcValue, ADC_RESOLUTION_12B);
+
+    return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
+}
+#endif // USE_ADC_INTERNAL
 
 #else
 uint16_t adcGetChannel(uint8_t channel)

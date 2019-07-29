@@ -65,8 +65,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_1,
         .reg = USART1,
-        .rxDMAChannel = UART1_RX_DMA_CHANNEL,
-        .txDMAChannel = UART1_TX_DMA_CHANNEL,
+        .rxDMAResource = (dmaResource_t *)UART1_RX_DMA_CHANNEL,
+        .txDMAResource = (dmaResource_t *)UART1_TX_DMA_CHANNEL,
         .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) } },
         .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) } },
         //.af = GPIO_AF_USART1,
@@ -80,8 +80,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_2,
         .reg = USART2,
-        .rxDMAChannel = UART2_RX_DMA_CHANNEL,
-        .txDMAChannel = UART2_TX_DMA_CHANNEL,
+        .rxDMAResource = (dmaResource_t *)UART2_RX_DMA_CHANNEL,
+        .txDMAResource = (dmaResource_t *)UART2_TX_DMA_CHANNEL,
         .rxPins = { { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PD6) } },
         .txPins = { { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PD5) } },
         //.af = GPIO_AF_USART2,
@@ -95,8 +95,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_3,
         .reg = USART3,
-        .rxDMAChannel = UART3_RX_DMA_CHANNEL,
-        .txDMAChannel = UART3_TX_DMA_CHANNEL,
+        .rxDMAResource = (dmaResource_t *)UART3_RX_DMA_CHANNEL,
+        .txDMAResource = (dmaResource_t *)UART3_TX_DMA_CHANNEL,
         .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PD9) }, { DEFIO_TAG_E(PC11) } },
         .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PD8) }, { DEFIO_TAG_E(PC10) } },
         //.af = GPIO_AF_USART3,
@@ -112,7 +112,7 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->ref, DISABLE); // XXX F1 needs this!!!
+    xDMA_Cmd(descriptor->ref, DISABLE); // XXX F1 needs this!!!
 
     uartTryStartTxDMA(s);
 }
@@ -143,17 +143,17 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
-    if (hardware->rxDMAChannel) {
-        dmaInit(dmaGetIdentifier(hardware->rxDMAChannel), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-        s->rxDMAChannel = hardware->rxDMAChannel;
+    if (hardware->rxDMAResource) {
+        dmaInit(dmaGetIdentifier(hardware->rxDMAResource), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
+        s->rxDMAResource = hardware->rxDMAResource;
         s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
 
-    if (hardware->txDMAChannel) {
-        const dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAChannel);
+    if (hardware->txDMAResource) {
+        const dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAResource);
         dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         dmaSetHandler(identifier, uart_tx_dma_IRQHandler, hardware->txPriority, (uint32_t)s);
-        s->txDMAChannel = hardware->txDMAChannel;
+        s->txDMAResource = hardware->txDMAResource;
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
 
@@ -176,7 +176,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
     }
 
     // RX/TX Interrupt
-    if (!hardware->rxDMAChannel || !hardware->txDMAChannel) {
+    if (!hardware->rxDMAResource || !hardware->txDMAResource) {
         NVIC_InitTypeDef NVIC_InitStructure;
 
         NVIC_InitStructure.NVIC_IRQChannel = hardware->irqn;
@@ -193,7 +193,7 @@ void uartIrqHandler(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;
 
-    if (SR & USART_FLAG_RXNE && !s->rxDMAChannel) {
+    if (SR & USART_FLAG_RXNE && !s->rxDMAResource) {
         // If we registered a callback, pass crap there
         if (s->port.rxCallback) {
             s->port.rxCallback(s->USARTx->DR, s->port.rxCallbackData);
@@ -213,6 +213,14 @@ void uartIrqHandler(uartPort_t *s)
         } else {
             USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
         }
+    }
+    if (SR & USART_FLAG_IDLE) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        const uint32_t read_to_clear = s->USARTx->DR;
+        (void) read_to_clear;
     }
 }
 #endif // USE_UART

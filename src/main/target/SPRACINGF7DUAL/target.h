@@ -145,7 +145,6 @@
 
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
-#define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
 #define RTC6705_SPI_MOSI_PIN                PB0  // Shared with PWM8
 #define RTC6705_CS_PIN                      PB6  // Shared with PWM5

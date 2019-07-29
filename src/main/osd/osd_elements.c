@@ -66,7 +66,7 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456_symbols.h"
-#include "drivers/pwm_output.h"
+#include "drivers/dshot.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
@@ -1108,11 +1108,30 @@ static void osdElementVtxChannel(osdElementParms_t *element)
     const vtxDevice_t *vtxDevice = vtxCommonDevice();
     const char vtxBandLetter = vtxCommonLookupBandLetter(vtxDevice, vtxSettingsConfig()->band);
     const char *vtxChannelName = vtxCommonLookupChannelName(vtxDevice, vtxSettingsConfig()->channel);
+    unsigned vtxStatus = 0;
     uint8_t vtxPower = vtxSettingsConfig()->power;
-    if (vtxDevice && vtxSettingsConfig()->lowPowerDisarm) {
-        vtxCommonGetPowerIndex(vtxDevice, &vtxPower);
+    if (vtxDevice) {
+        vtxCommonGetStatus(vtxDevice, &vtxStatus);
+
+        if (vtxSettingsConfig()->lowPowerDisarm) {
+            vtxCommonGetPowerIndex(vtxDevice, &vtxPower);
+        }
     }
-    tfp_sprintf(element->buff, "%c:%s:%1d", vtxBandLetter, vtxChannelName, vtxPower);
+
+    char vtxStatusIndicator = '\0';
+    if (IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
+        vtxStatusIndicator = 'D';
+    } else if (vtxStatus & VTX_STATUS_PIT_MODE) {
+        vtxStatusIndicator = 'P';
+    }
+
+    if (vtxStatus & VTX_STATUS_LOCKED) {
+        tfp_sprintf(element->buff, "-:-:-:L");
+    } else if (vtxStatusIndicator) {
+        tfp_sprintf(element->buff, "%c:%s:%1d:%c", vtxBandLetter, vtxChannelName, vtxPower, vtxStatusIndicator);
+    } else {
+        tfp_sprintf(element->buff, "%c:%s:%1d", vtxBandLetter, vtxChannelName, vtxPower);
+    }
 }
 #endif // USE_VTX_COMMON
 

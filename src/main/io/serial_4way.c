@@ -137,7 +137,9 @@ inline void setEscOutput(uint8_t selEsc)
 uint8_t esc4wayInit(void)
 {
     // StopPwmAllMotors();
-    pwmDisableMotors();
+    // XXX Review effect of motor refactor
+    //pwmDisableMotors();
+    motorDisable();
     escCount = 0;
     memset(&escHardware, 0, sizeof(escHardware));
     pwmOutputPort_t *pwmMotors = pwmGetMotors();
@@ -161,7 +163,7 @@ void esc4wayRelease(void)
         IOConfigGPIO(escHardware[escCount].io, IOCFG_AF_PP);
         setEscLo(escCount);
     }
-    pwmEnableMotors();
+    motorEnable();
 }
 
 

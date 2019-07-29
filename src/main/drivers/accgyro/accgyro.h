@@ -23,6 +23,8 @@
 #include "platform.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
+#include "common/sensor_alignment.h"
 #include "drivers/exti.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
@@ -103,6 +105,7 @@ typedef struct gyroDev_s {
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
     gyroHardware_e gyroHardware;
+    fp_rotationMatrix_t rotationMatrix;
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -121,6 +124,7 @@ typedef struct accDev_s {
     bool acc_high_fsr;
     char revisionCode;                                      // a revision code for the sensor, if known
     uint8_t filler[2];
+    fp_rotationMatrix_t rotationMatrix;
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

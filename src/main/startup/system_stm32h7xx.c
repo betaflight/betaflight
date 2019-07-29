@@ -64,6 +64,8 @@
 #include "stm32h7xx.h"
 #include "drivers/system.h"
 #include "platform.h"
+#include "string.h"
+#include "common/utils.h"
 
 #include "build/debug.h"
 
@@ -508,96 +510,15 @@ void CRS_IRQHandler(void)
 }
 #endif
 
-void MPU_Config()
-{
-    MPU_Region_InitTypeDef MPU_InitStruct;
+#include "build/debug.h"
 
-    HAL_MPU_Disable();
+void systemCheckResetReason(void);
 
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-
-    // XXX FIXME Entire D2 SRAM1 region is setup as non-bufferable (write-through) and non-cachable.
-    // Ideally, DMA buffer region should be prepared based on read and write activities,
-    // and DMA buffers should be assigned to different region based on read/write activity on
-    // the buffer.
-    // XXX FIXME Further more, sizes of DMA buffer regions should tracked and size set as appropriate
-    // using _<REGION>_start__ and _<REGION>_end__.
-
-    MPU_InitStruct.BaseAddress = 0x30000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
-
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-
-    // As described in p.10 of AN4838.
-
-    // Write through & no-cache config
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-
-    MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-#ifdef USE_SDCARD_SDIO
-    // The Base Address 0x24000000 is the SRAM1 accessible by the SDIO internal DMA.
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.BaseAddress = 0x24000000;
-#if defined(USE_EXST)
-    MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
-#else
-    MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
-#endif
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
-#endif
-
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-}
-
-/**
-  * @brief  Setup the microcontroller system
-  *         Initialize the FPU setting, vector table location and External memory
-  *         configuration.
-  * @param  None
-  * @retval None
-  */
-void resetMPU(void)
-{
-    MPU_Region_InitTypeDef MPU_InitStruct;
-
-    /* Disable the MPU */
-    HAL_MPU_Disable();
-
-#if !defined(USE_EXST)
-    uint8_t highestRegion = MPU_REGION_NUMBER15;
-#else
-    uint8_t highestRegion = MPU_REGION_NUMBER7;// currently 8-15 reserved by bootloader.  Bootloader may write-protect the firmware region, this firmware can examine and undo this at it's peril.
-#endif
-
-
-    // disable all existing regions
-    for (uint8_t region = MPU_REGION_NUMBER0; region <= highestRegion; region++) {
-        MPU_InitStruct.Enable = MPU_REGION_DISABLE;
-        MPU_InitStruct.Number = region;
-        HAL_MPU_ConfigRegion(&MPU_InitStruct);
-    }
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-}
+#include "drivers/memprot.h"
 
 void SystemInit (void)
 {
-    resetMPU();
+    memProtReset();
 
     initialiseMemorySections();
 
@@ -692,7 +613,7 @@ void SystemInit (void)
 
     // Configure MPU
 
-    MPU_Config();
+    memProtConfigure(mpuRegions, mpuRegionCount);
 
     // Enable CPU L1-Cache
     SCB_EnableICache();

@@ -141,7 +141,7 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
     DMA_InitTypeDef DMA_InitStructure;
     if (mode & MODE_RX) {
 #ifdef STM32F4
-        if (s->rxDMAStream) {
+        if (s->rxDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
             DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
@@ -154,7 +154,7 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
             DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
             DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 #else
-        if (s->rxDMAChannel) {
+        if (s->rxDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
             DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
@@ -171,31 +171,32 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
             DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
             DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)s->port.rxBuffer;
-            DMA_DeInit(s->rxDMAStream);
-            DMA_Init(s->rxDMAStream, &DMA_InitStructure);
-            DMA_Cmd(s->rxDMAStream, ENABLE);
+            xDMA_DeInit(s->rxDMAResource);
+            xDMA_Init(s->rxDMAResource, &DMA_InitStructure);
+            xDMA_Cmd(s->rxDMAResource, ENABLE);
             USART_DMACmd(s->USARTx, USART_DMAReq_Rx, ENABLE);
-            s->rxDMAPos = DMA_GetCurrDataCounter(s->rxDMAStream);
+            s->rxDMAPos = xDMA_GetCurrDataCounter(s->rxDMAResource);
 #else
             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
             DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
             DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)s->port.rxBuffer;
-            DMA_DeInit(s->rxDMAChannel);
-            DMA_Init(s->rxDMAChannel, &DMA_InitStructure);
-            DMA_Cmd(s->rxDMAChannel, ENABLE);
+            xDMA_DeInit(s->rxDMAResource);
+            xDMA_Init(s->rxDMAResource, &DMA_InitStructure);
+            xDMA_Cmd(s->rxDMAResource, ENABLE);
             USART_DMACmd(s->USARTx, USART_DMAReq_Rx, ENABLE);
-            s->rxDMAPos = DMA_GetCurrDataCounter(s->rxDMAChannel);
+            s->rxDMAPos = xDMA_GetCurrDataCounter(s->rxDMAResource);
 #endif
         } else {
             USART_ClearITPendingBit(s->USARTx, USART_IT_RXNE);
             USART_ITConfig(s->USARTx, USART_IT_RXNE, ENABLE);
+            USART_ITConfig(s->USARTx, USART_IT_IDLE, ENABLE);
         }
     }
 
     // Transmit DMA or IRQ
     if (mode & MODE_TX) {
 #ifdef STM32F4
-        if (s->txDMAStream) {
+        if (s->txDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->txDMAPeripheralBaseAddr;
             DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
@@ -208,7 +209,7 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
             DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
             DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 #else
-        if (s->txDMAChannel) {
+        if (s->txDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
             DMA_InitStructure.DMA_PeripheralBaseAddr = s->txDMAPeripheralBaseAddr;
             DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
@@ -224,18 +225,17 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
             DMA_InitStructure.DMA_Channel = s->txDMAChannel;
             DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
             DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-            DMA_DeInit(s->txDMAStream);
-            DMA_Init(s->txDMAStream, &DMA_InitStructure);
-            DMA_ITConfig(s->txDMAStream, DMA_IT_TC | DMA_IT_FE | DMA_IT_TE | DMA_IT_DME, ENABLE);
-            DMA_SetCurrDataCounter(s->txDMAStream, 0);
+            xDMA_DeInit(s->txDMAResource);
+            xDMA_Init(s->txDMAResource, &DMA_InitStructure);
+            xDMA_ITConfig(s->txDMAResource, DMA_IT_TC | DMA_IT_FE | DMA_IT_TE | DMA_IT_DME, ENABLE);
+            xDMA_SetCurrDataCounter(s->txDMAResource, 0);
 #else
             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
             DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-            DMA_DeInit(s->txDMAChannel);
-            DMA_Init(s->txDMAChannel, &DMA_InitStructure);
-            DMA_ITConfig(s->txDMAChannel, DMA_IT_TC, ENABLE);
-            DMA_SetCurrDataCounter(s->txDMAChannel, 0);
-            s->txDMAChannel->CNDTR = 0;
+            xDMA_DeInit(s->txDMAResource);
+            xDMA_Init(s->txDMAResource, &DMA_InitStructure);
+            xDMA_ITConfig(s->txDMAResource, DMA_IT_TC, ENABLE);
+            xDMA_SetCurrDataCounter(s->txDMAResource, 0);
 #endif
             USART_DMACmd(s->USARTx, USART_DMAReq_Tx, ENABLE);
         } else {

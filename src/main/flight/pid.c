@@ -34,6 +34,7 @@
 
 #include "config/config_reset.h"
 
+#include "drivers/dshot_command.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
@@ -225,7 +226,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
     dT = targetPidLooptime * 1e-6f;
     pidFrequency = 1.0f / dT;
 #ifdef USE_DSHOT
-    setDshotPidLoopTime(targetPidLooptime);
+    dshotSetPidLoopTime(targetPidLooptime);
 #endif
 }
 

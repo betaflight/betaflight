@@ -66,55 +66,16 @@ void uartTryStartTxDMA(uartPort_t *s)
     // uartWrite and handleUsartTxDma (an ISR).
 
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
-#ifdef STM32F4
-        if (s->txDMAStream->CR & 1) {
+        if (IS_DMA_ENABLED(s->txDMAResource)) {
             // DMA is already in progress
             return;
         }
 
         // For F4 (and F1), there are cases that NDTR (CNDTR for F1) is non-zero upon TC interrupt.
         // We couldn't find out the root cause, so mask the case here.
-
-        if (s->txDMAStream->NDTR) {
-            // Possible premature TC case.
-            goto reenable;
-        }
-
-        // DMA_Cmd(s->txDMAStream, DISABLE); // XXX It's already disabled.
-
-        if (s->port.txBufferHead == s->port.txBufferTail) {
-            // No more data to transmit.
-            s->txDMAEmpty = true;
-            return;
-        }
-
-        // Start a new transaction.
-
-        DMA_MemoryTargetConfig(s->txDMAStream, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
-        //s->txDMAStream->M0AR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
-        if (s->port.txBufferHead > s->port.txBufferTail) {
-            s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
-            s->port.txBufferTail = s->port.txBufferHead;
-        }
-        else {
-            s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
-            s->port.txBufferTail = 0;
-        }
-        s->txDMAEmpty = false;
-
-    reenable:
-        DMA_Cmd(s->txDMAStream, ENABLE);
-#else
-        if (s->txDMAChannel->CCR & 1) {
-            // DMA is already in progress
-            return;
-        }
-
-        // For F1 (and F4), there are cases that CNDTR (NDTR for F4) is non-zero upon TC interrupt.
-        // We couldn't find out the root cause, so mask the case here.
         // F3 is not confirmed to be vulnerable, but not excluded as a safety.
 
-        if (s->txDMAChannel->CNDTR) {
+        if (xDMA_GetCurrDataCounter(s->txDMAResource)) {
             // Possible premature TC case.
             goto reenable;
         }
@@ -127,32 +88,32 @@ void uartTryStartTxDMA(uartPort_t *s)
 
         // Start a new transaction.
 
-        s->txDMAChannel->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
+#ifdef STM32F4
+        xDMA_MemoryTargetConfig(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
+#else
+        DMAx_SetMemoryAddress(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail]);
+#endif
+
         if (s->port.txBufferHead > s->port.txBufferTail) {
-            s->txDMAChannel->CNDTR = s->port.txBufferHead - s->port.txBufferTail;
+            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferHead - s->port.txBufferTail);
             s->port.txBufferTail = s->port.txBufferHead;
         } else {
-            s->txDMAChannel->CNDTR = s->port.txBufferSize - s->port.txBufferTail;
+            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferSize - s->port.txBufferTail);
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
 
     reenable:
-        DMA_Cmd(s->txDMAChannel, ENABLE);
-#endif
+        xDMA_Cmd(s->txDMAResource, ENABLE);
     }
 }
 
 static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t*)instance;
-#ifdef STM32F4
-    if (s->rxDMAStream) {
-        uint32_t rxDMAHead = s->rxDMAStream->NDTR;
-#else
-    if (s->rxDMAChannel) {
-        uint32_t rxDMAHead = s->rxDMAChannel->CNDTR;
-#endif
+
+    if (s->rxDMAResource) {
+        uint32_t rxDMAHead = xDMA_GetCurrDataCounter(s->rxDMAResource);
         if (rxDMAHead >= s->rxDMAPos) {
             return rxDMAHead - s->rxDMAPos;
         } else {
@@ -179,21 +140,13 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
         bytesUsed = s->port.txBufferSize + s->port.txBufferHead - s->port.txBufferTail;
     }
 
-#ifdef STM32F4
-    if (s->txDMAStream) {
+    if (s->txDMAResource) {
         /*
          * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
          * the remaining size of that in-progress transfer here instead:
          */
-        bytesUsed += s->txDMAStream->NDTR;
-#else
-    if (s->txDMAChannel) {
-        /*
-         * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
-         * the remaining size of that in-progress transfer here instead:
-         */
-        bytesUsed += s->txDMAChannel->CNDTR;
-#endif
+        bytesUsed += xDMA_GetCurrDataCounter(s->txDMAResource);
+
         /*
          * If the Tx buffer is being written to very quickly, we might have advanced the head into the buffer
          * space occupied by the current DMA transfer. In that case the "bytesUsed" total will actually end up larger
@@ -213,14 +166,11 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 static bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t *)instance;
-#ifdef STM32F4
-    if (s->txDMAStream)
-#else
-    if (s->txDMAChannel)
-#endif
+    if (s->txDMAResource) {
         return s->txDMAEmpty;
-    else
+    } else {
         return s->port.txBufferTail == s->port.txBufferHead;
+    }
 }
 
 static uint8_t uartRead(serialPort_t *instance)
@@ -228,11 +178,7 @@ static uint8_t uartRead(serialPort_t *instance)
     uint8_t ch;
     uartPort_t *s = (uartPort_t *)instance;
 
-#ifdef STM32F4
-    if (s->rxDMAStream) {
-#else
-    if (s->rxDMAChannel) {
-#endif
+    if (s->rxDMAResource) {
         ch = s->port.rxBuffer[s->port.rxBufferSize - s->rxDMAPos];
         if (--s->rxDMAPos == 0)
             s->rxDMAPos = s->port.rxBufferSize;
@@ -258,12 +204,7 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
         s->port.txBufferHead++;
     }
 
-#ifdef STM32F4
-    if (s->txDMAStream)
-#else
-    if (s->txDMAChannel)
-#endif
-    {
+    if (s->txDMAResource) {
         uartTryStartTxDMA(s);
     } else {
         USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);

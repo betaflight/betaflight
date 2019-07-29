@@ -617,7 +617,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
 {
     static uint16_t frequency = 0;
     static uint8_t power = 255;
-    static uint8_t pit = 255;
+    static unsigned vtxStatus = UINT32_MAX;
     static uint8_t showSettings = false;
     static uint16_t lastCheck = 0;
     static bool blink = false;
@@ -634,12 +634,12 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         // keep counter running, so it stays in sync with vtx
         vtxCommonGetBandAndChannel(vtxDevice, &band, &channel);
         vtxCommonGetPowerIndex(vtxDevice, &power);
-        vtxCommonGetPitMode(vtxDevice, &pit);
+        vtxCommonGetStatus(vtxDevice, &vtxStatus);
 
         frequency = vtxCommonLookupFrequency(vtxDevice, band, channel);
 
         // check if last vtx values have changed.
-        check = pit + (power << 1) + (band << 4) + (channel << 8);
+        check = ((vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0) + (power << 1) + (band << 4) + (channel << 8);
         if (!showSettings && check != lastCheck) {
             // display settings for 3 seconds.
             showSettings = 15;
@@ -664,7 +664,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
                     color.s = HSV(GREEN).s;
                     color.v = blink ? 15 : 0; // blink received settings
                 }
-                else if (vtxLedCount > 0 && power >= vtxLedCount && !pit) { // show power
+                else if (vtxLedCount > 0 && power >= vtxLedCount && !(vtxStatus & VTX_STATUS_PIT_MODE)) { // show power
                     color.h = HSV(ORANGE).h;
                     color.s = HSV(ORANGE).s;
                     color.v = blink ? 15 : 0; // blink received settings
@@ -700,7 +700,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
             colorIndex = COLOR_DEEP_PINK;
         }
         hsvColor_t color = ledStripStatusModeConfig()->colors[colorIndex];
-        color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode
+        color.v = (vtxStatus & VTX_STATUS_PIT_MODE) ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
 }

@@ -64,7 +64,7 @@
 #include "telemetry/srxl.h"
 
 #include "drivers/vtx_common.h"
-#include "drivers/pwm_output.h"
+#include "drivers/dshot.h"
 
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
@@ -180,7 +180,7 @@ uint16_t getMotorAveragePeriod(void)
     }
 #endif
 
-#if defined( USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT_TELEMETRY)
     if (useDshotTelemetry) {
         uint16_t motors = getMotorCount();
 
@@ -535,14 +535,17 @@ static void collectVtxTmData(spektrumVtx_t * vtx)
     vtxDeviceType = vtxCommonGetDeviceType(vtxDevice);
 
     // Collect all data from VTX, if VTX is ready
+    unsigned vtxStatus;
     if (vtxDevice == NULL || !(vtxCommonGetBandAndChannel(vtxDevice, &vtx->band, &vtx->channel) &&
-           vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
+           vtxCommonGetStatus(vtxDevice, &vtxStatus) &&
            vtxCommonGetPowerIndex(vtxDevice, &vtx->power)) )
         {
             vtx->band    = 0;
             vtx->channel = 0;
             vtx->power   = 0;
             vtx->pitMode = 0;
+        } else {
+            vtx->pitMode = (vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0;
         }
 
     vtx->powerValue = 0;

@@ -176,6 +176,7 @@ static void bmp388GetUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp388Calculate(int32_t *pressure, int32_t *temperature);
 
+#ifdef USE_EXTI
 void bmp388_extiHandler(extiCallbackRec_t* cb)
 {
 #ifdef DEBUG
@@ -189,6 +190,7 @@ void bmp388_extiHandler(extiCallbackRec_t* cb)
     uint8_t intStatus = 0;
     busReadRegisterBuffer(&baro->busdev, BMP388_INT_STATUS_REG, &intStatus, 1);
 }
+#endif
 
 void bmp388BusInit(busDevice_t *busdev)
 {
@@ -226,7 +228,7 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 {
     delay(20);
 
-#if defined(USE_EXTI)
+#ifdef USE_EXTI
     IO_t baroIntIO = IOGetByTag(config->eocTag);
     if (baroIntIO) {
         IOInit(baroIntIO, OWNER_BARO_EOC, 0);
@@ -259,10 +261,12 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
         return false;
     }
 
+#ifdef USE_EXTI
     if (baroIntIO) {
         uint8_t intCtrlValue = (1 << BMP388_INT_DRDY_EN_BIT) | (0 << BMP388_INT_FFULL_EN_BIT) | (0 << BMP388_INT_FWTM_EN_BIT) | (0 << BMP388_INT_LATCH_BIT) | (1 << BMP388_INT_LEVEL_BIT) | (0 << BMP388_INT_OD_BIT);
         busWriteRegister(busdev, BMP388_INT_CTRL_REG, intCtrlValue);
     }
+#endif
 
     // read calibration
     busReadRegisterBuffer(busdev, BMP388_TRIMMING_NVM_PAR_T1_LSB_REG, (uint8_t *)&bmp388_cal, sizeof(bmp388_calib_param_t));

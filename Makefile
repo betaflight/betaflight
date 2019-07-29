@@ -27,6 +27,9 @@ OPBL      ?= no
 # compile for External Storage Bootloader support
 EXST      ?= no
 
+# compile for target loaded into RAM
+RAM_BASED ?= no
+
 # Debugger optons:
 #   empty           - ordinary build with all optimizations enabled
 #   RELWITHDEBINFO  - ordinary build with debug symbols and all optimizations enabled
