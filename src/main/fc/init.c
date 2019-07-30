@@ -443,7 +443,9 @@ void init(void)
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
+#ifdef USE_PERSISTENT_OBJECTS
                     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+#endif
                     systemReset();
                 }
                 delay(1000);
