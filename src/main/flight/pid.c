@@ -75,8 +75,8 @@ static FAST_RAM_ZERO_INIT bool pidStabilisationEnabled;
 
 static FAST_RAM_ZERO_INIT bool inCrashRecoveryMode = false;
 
-FAST_RAM_ZERO_INIT float dT;
-FAST_RAM_ZERO_INIT float pidFrequency;
+static FAST_RAM_ZERO_INIT float dT;
+static FAST_RAM_ZERO_INIT float pidFrequency;
 
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
 static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
@@ -129,7 +129,7 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -1544,4 +1544,14 @@ void pidSetItermReset(bool enabled)
 float pidGetPreviousSetpoint(int axis)
 {
     return previousPidSetpoint[axis];
+}
+
+float pidGetDT()
+{
+    return dT;
+}
+
+float pidGetPidFrequency()
+{
+    return pidFrequency;
 }

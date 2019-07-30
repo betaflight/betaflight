@@ -470,6 +470,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
+    static float motorRangeMinIncrease = 0;
     float currentThrottleInputRange = 0;
 
     if (featureIsEnabled(FEATURE_3D)) {
@@ -574,16 +575,15 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             pidResetIterm();
         }
     } else {
-        static float motorRangeMinIncrease = 0;
 #ifdef USE_DYN_IDLE
         if (currentPidProfile->idle_hz) {
             static float oldMinRpm;
             const float maxIncrease = isAirmodeActivated() ? currentPidProfile->idle_max_increase * 0.001f : 0.04f;
-            const float minRpm = rpmMinMotorSpeed();
+            const float minRpm = rpmMinMotorFrequency();
             const float targetRpmChangeRate = (currentPidProfile->idle_hz - minRpm) * currentPidProfile->idle_adjustment_speed;
-            const float error = targetRpmChangeRate - (minRpm - oldMinRpm) * pidFrequency;
+            const float error = targetRpmChangeRate - (minRpm - oldMinRpm) * pidGetPidFrequency();
             const float pidSum = constrainf(currentPidProfile->idle_p * 0.0001f * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
-            motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * dT, 0.0f, maxIncrease);
+            motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * pidGetDT(), 0.0f, maxIncrease);
             oldMinRpm = minRpm;
 
             DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);

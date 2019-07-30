@@ -254,8 +254,6 @@ float calcHorizonLevelStrength(void);
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
-
-
-extern float dT;
-extern float pidFrequency;
+float pidGetDT();
+float pidGetPidFrequency();
 
