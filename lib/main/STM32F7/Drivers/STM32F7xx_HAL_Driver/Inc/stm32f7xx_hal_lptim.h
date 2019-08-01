@@ -2,35 +2,17 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_lptim.h
   * @author  MCD Application Team
-  * @version V1.2.2
-  * @date    14-April-2017
   * @brief   Header file of LPTIM HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */ 
@@ -155,19 +137,53 @@ typedef enum __HAL_LPTIM_StateTypeDef
 /** 
   * @brief  LPTIM handle Structure definition  
   */ 
-typedef struct
+typedef struct __LPTIM_HandleTypeDef
 {
-      LPTIM_TypeDef              *Instance;         /*!< Register base address     */
-      
-      LPTIM_InitTypeDef           Init;             /*!< LPTIM required parameters */
-  
-      HAL_StatusTypeDef           Status;           /*!< LPTIM peripheral status   */  
-  
-      HAL_LockTypeDef             Lock;             /*!< LPTIM locking object      */
-  
-   __IO  HAL_LPTIM_StateTypeDef   State;            /*!< LPTIM peripheral state    */
-  
+  LPTIM_TypeDef                 *Instance;      /*!< Register base address     */
+  LPTIM_InitTypeDef              Init;          /*!< LPTIM required parameters */
+  HAL_StatusTypeDef              Status;        /*!< LPTIM peripheral status   */
+  HAL_LockTypeDef                Lock;          /*!< LPTIM locking object      */
+  __IO  HAL_LPTIM_StateTypeDef   State;         /*!< LPTIM peripheral state    */
+
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+  void  (* MspInitCallback)         (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Msp Init Callback          */
+  void  (* MspDeInitCallback)       (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Msp DeInit Callback        */
+
+  void  (* CompareMatchCallback)    (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Compare Match Callback     */
+  void  (* AutoReloadMatchCallback) (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Auto Reload Match Callback */
+  void  (* TriggerCallback)         (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Trigger Callback           */
+  void  (* CompareWriteCallback)    (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Compare Write Callback     */
+  void  (* AutoReloadWriteCallback) (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Auto Reload Write Callback */
+  void  (* DirectionUpCallback)     (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Direction Up Callback      */
+  void  (* DirectionDownCallback)   (struct __LPTIM_HandleTypeDef *hlptim); /*!< LPTIM Direction Down Callback    */
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
+
 }LPTIM_HandleTypeDef;
+
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL LPTIM Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_LPTIM_MSPINIT_CB_ID           = 0x00U,    /*!< LPTIM MspInit Callback ID           */
+  HAL_LPTIM_MSPDEINIT_CB_ID         = 0x01U,    /*!< LPTIM MspDeInit Callback ID         */
+
+  HAL_LPTIM_COMPARE_MATCH_CB_ID     = 0x02U,    /*!< LPTIM Compare Match Callback ID     */
+  HAL_LPTIM_AUTO_RELOAD_MATCH_CB_ID = 0x03U,    /*!< LPTIM Auto Reload Match Callback ID */
+  HAL_LPTIM_TRIGGER_CB_ID           = 0x04U,    /*!< LPTIM Trigger Callback ID           */
+  HAL_LPTIM_COMPARE_WRITE_CB_ID     = 0x05U,    /*!< LPTIM Compare Write Callback ID     */
+  HAL_LPTIM_AUTO_RELOAD_WRITE_CB_ID = 0x06U,    /*!< LPTIM Auto Reload Write Callback ID */
+  HAL_LPTIM_DIRECTION_UP_CB_ID      = 0x07U,    /*!< LPTIM Direction Up Callback ID      */
+  HAL_LPTIM_DIRECTION_DOWN_CB_ID    = 0x08U,    /*!< LPTIM Direction Down Callback ID    */
+}HAL_LPTIM_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL LPTIM Callback pointer definition
+  */
+typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef * hlptim); /*!< pointer to the LPTIM callback function */
+
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -329,14 +345,14 @@ typedef struct
   */
 
 /** @brief Reset LPTIM handle state
-  * @param  __HANDLE__: LPTIM handle
+  * @param  __HANDLE__ LPTIM handle
   * @retval None
   */
 #define __HAL_LPTIM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_LPTIM_STATE_RESET)
 
 /**
   * @brief  Enable/Disable the LPTIM peripheral.
-  * @param  __HANDLE__: LPTIM handle
+  * @param  __HANDLE__ LPTIM handle
   * @retval None
   */
 #define __HAL_LPTIM_ENABLE(__HANDLE__)   ((__HANDLE__)->Instance->CR |=  (LPTIM_CR_ENABLE))
@@ -344,7 +360,7 @@ typedef struct
 
 /**
   * @brief  Starts the LPTIM peripheral in Continuous or in single mode.
-  * @param  __HANDLE__: DMA handle
+  * @param  __HANDLE__ DMA handle
   * @retval None
   */
 #define __HAL_LPTIM_START_CONTINUOUS(__HANDLE__)  ((__HANDLE__)->Instance->CR |=  LPTIM_CR_CNTSTRT)
@@ -353,24 +369,24 @@ typedef struct
     
 /**
   * @brief  Writes the passed parameter in the Autoreload register.
-  * @param  __HANDLE__: LPTIM handle
-  * @param  __VALUE__ : Autoreload value
+  * @param  __HANDLE__ LPTIM handle
+  * @param  __VALUE__  Autoreload value
   * @retval None
   */
 #define __HAL_LPTIM_AUTORELOAD_SET(__HANDLE__ , __VALUE__)  ((__HANDLE__)->Instance->ARR =  (__VALUE__))
 
 /**
   * @brief  Writes the passed parameter in the Compare register.
-  * @param  __HANDLE__: LPTIM handle
-  * @param  __VALUE__ : Compare value
+  * @param  __HANDLE__ LPTIM handle
+  * @param  __VALUE__  Compare value
   * @retval None
   */
 #define __HAL_LPTIM_COMPARE_SET(__HANDLE__ , __VALUE__)     ((__HANDLE__)->Instance->CMP =  (__VALUE__))
 
 /**
   * @brief  Checks whether the specified LPTIM flag is set or not.
-  * @param  __HANDLE__: LPTIM handle
-  * @param  __FLAG__  : LPTIM flag to check
+  * @param  __HANDLE__ LPTIM handle
+  * @param  __FLAG__   LPTIM flag to check
   *            This parameter can be a value of:
   *            @arg LPTIM_FLAG_DOWN    : Counter direction change up Flag.
   *            @arg LPTIM_FLAG_UP      : Counter direction change down to up Flag.
@@ -385,8 +401,8 @@ typedef struct
 
 /**
   * @brief  Clears the specified LPTIM flag.
-  * @param  __HANDLE__: LPTIM handle.
-  * @param  __FLAG__  : LPTIM flag to clear.
+  * @param  __HANDLE__ LPTIM handle.
+  * @param  __FLAG__   LPTIM flag to clear.
   *            This parameter can be a value of:
   *            @arg LPTIM_FLAG_DOWN    : Counter direction change up Flag.
   *            @arg LPTIM_FLAG_UP      : Counter direction change down to up Flag.
@@ -401,8 +417,8 @@ typedef struct
 
 /**
   * @brief  Enable the specified LPTIM interrupt.
-  * @param  __HANDLE__    : LPTIM handle.
-  * @param  __INTERRUPT__ : LPTIM interrupt to set.
+  * @param  __HANDLE__     LPTIM handle.
+  * @param  __INTERRUPT__  LPTIM interrupt to set.
   *            This parameter can be a value of:
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
@@ -417,8 +433,8 @@ typedef struct
 
  /**
   * @brief  Disable the specified LPTIM interrupt.
-  * @param  __HANDLE__    : LPTIM handle.
-  * @param  __INTERRUPT__ : LPTIM interrupt to set.
+  * @param  __HANDLE__     LPTIM handle.
+  * @param  __INTERRUPT__  LPTIM interrupt to set.
   *            This parameter can be a value of:
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
@@ -433,8 +449,8 @@ typedef struct
 
     /**
   * @brief  Checks whether the specified LPTIM interrupt is set or not.
-  * @param  __HANDLE__    : LPTIM handle.
-  * @param  __INTERRUPT__ : LPTIM interrupt to check.
+  * @param  __HANDLE__     LPTIM handle.
+  * @param  __INTERRUPT__  LPTIM interrupt to check.
   *            This parameter can be a value of:
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
@@ -613,6 +629,12 @@ void HAL_LPTIM_CompareWriteCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_AutoReloadWriteCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_DirectionUpCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_DirectionDownCallback(LPTIM_HandleTypeDef *hlptim);
+
+/* Callbacks Register/UnRegister functions  ***********************************/
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+HAL_StatusTypeDef HAL_LPTIM_RegisterCallback(LPTIM_HandleTypeDef *hlptim, HAL_LPTIM_CallbackIDTypeDef CallbackID, pLPTIM_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_LPTIM_UnRegisterCallback(LPTIM_HandleTypeDef *hlptim, HAL_LPTIM_CallbackIDTypeDef CallbackID);
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 
 /* Peripheral State functions  ************************************************/
 HAL_LPTIM_StateTypeDef HAL_LPTIM_GetState(LPTIM_HandleTypeDef *hlptim);
