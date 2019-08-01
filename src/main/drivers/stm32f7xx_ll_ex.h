@@ -67,12 +67,12 @@ __STATIC_INLINE void LL_EX_DMA_SetChannelSelection(DMA_Stream_TypeDef *DMAx_Stre
 	MODIFY_REG(DMAx_Streamy->CR, DMA_SxCR_CHSEL, Channel);
 }
 
-__STATIC_INLINE void LL_EX_DMA_EnableStream(DMA_Stream_TypeDef *DMAx_Streamy)
+__STATIC_INLINE void LL_EX_DMA_EnableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
 	SET_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
 }
 
-__STATIC_INLINE void LL_EX_DMA_DisableStream(DMA_Stream_TypeDef *DMAx_Streamy)
+__STATIC_INLINE void LL_EX_DMA_DisableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
 	CLEAR_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
 }

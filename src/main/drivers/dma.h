@@ -226,8 +226,8 @@ dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e ident
 
 #define xLL_EX_DMA_DeInit(dmaResource) LL_EX_DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_Init(dmaResource, initstruct) LL_EX_DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initstruct)
-#define xLL_EX_DMA_DisableStream(dmaResource) LL_EX_DMA_DisableStream((DMA_ARCH_TYPE *)(dmaResource))
-#define xLL_EX_DMA_EnableStream(dmaResource) LL_EX_DMA_EnableStream((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_DisableResource(dmaResource) LL_EX_DMA_DisableResource((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_EnableResource(dmaResource) LL_EX_DMA_EnableResource((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))

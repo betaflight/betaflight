@@ -59,12 +59,12 @@ static void processInputIrq(motorDmaOutput_t * const motor)
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        xLL_EX_DMA_DisableStream(motor->timerHardware->dmaTimUPRef);
+        xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
         LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
     } else
 #endif
     {
-        xLL_EX_DMA_DisableStream(motor->dmaRef);
+        xLL_EX_DMA_DisableResource(motor->dmaRef);
         LL_EX_TIM_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
     }
     readDoneCount++;
@@ -139,7 +139,7 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
             xLL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
-            xLL_EX_DMA_EnableStream(dmaMotorTimers[i].dmaBurstRef);
+            xLL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
             /* configure the DMA Burst Mode */
             LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, LL_TIM_DMABURST_LENGTH_4TRANSFERS);
@@ -170,12 +170,12 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
         {
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
-                xLL_EX_DMA_DisableStream(motor->timerHardware->dmaTimUPRef);
+                xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
                 LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
             } else
 #endif
             {
-                xLL_EX_DMA_DisableStream(motor->dmaRef);
+                xLL_EX_DMA_DisableResource(motor->dmaRef);
                 LL_EX_TIM_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
             }
 
@@ -183,7 +183,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
             if (useDshotTelemetry) {
                 pwmDshotSetDirectionOutput(motor, false);
                 xLL_EX_DMA_SetDataLength(motor->dmaRef, motor->dmaInputLen);
-                xLL_EX_DMA_EnableStream(motor->dmaRef);
+                xLL_EX_DMA_EnableResource(motor->dmaRef);
                 LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
                 setDirectionMicros = micros() - irqStart;
             }
@@ -311,7 +311,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         motor->timer->timerDmaSources &= ~motor->timerDmaSource;
     }
 
-    xLL_EX_DMA_DisableStream(dmaRef);
+    xLL_EX_DMA_DisableResource(dmaRef);
     xLL_EX_DMA_DeInit(dmaRef);
     LL_DMA_StructInit(&DMAINIT);
 

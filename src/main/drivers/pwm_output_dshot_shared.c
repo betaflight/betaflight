@@ -137,9 +137,9 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
     {
         bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
         motor->timer->timerDmaSources |= motor->timerDmaSource;
-#ifdef STM32F7
+#ifdef USE_FULL_LL_DRIVER
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
-        xLL_EX_DMA_EnableStream(motor->dmaRef);
+        xLL_EX_DMA_EnableResource(motor->dmaRef);
 #else
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
         xDMA_Cmd(motor->dmaRef, ENABLE);
@@ -212,7 +212,7 @@ uint16_t getDshotTelemetry(uint8_t index)
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor, bool output
 #ifndef USE_DSHOT_TELEMETRY
-#ifdef STM32F7
+#ifdef USE_FULL_LL_DRIVER
     , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit
 #else
     , TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
@@ -251,7 +251,7 @@ bool pwmStartDshotMotorUpdate(void)
 #endif
     for (int i = 0; i < dshotPwmDevice.count; i++) {
         if (dmaMotors[i].hasTelemetry) {
-#ifdef STM32F7
+#ifdef USE_FULL_LL_DRIVER
             uint32_t edges = xLL_EX_DMA_GetDataLength(dmaMotors[i].dmaRef);
 #else
             uint32_t edges = xDMA_GetCurrDataCounter(dmaMotors[i].dmaRef);
@@ -291,7 +291,7 @@ bool pwmStartDshotMotorUpdate(void)
             if (usSinceInput >= 0 && usSinceInput < dmaMotors[i].dshotTelemetryDeadtimeUs) {
                 return false;
             }
-#ifdef STM32F7
+#ifdef USE_FULL_LL_DRIVER
             LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #else
             TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
