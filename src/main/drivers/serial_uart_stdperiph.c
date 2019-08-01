@@ -37,9 +37,11 @@
 #ifdef USE_UART
 
 #include "build/build_config.h"
+#include "build/atomic.h"
 
 #include "common/utils.h"
 #include "drivers/inverter.h"
+#include "drivers/nvic.h"
 #include "drivers/rcc.h"
 
 #include "drivers/serial.h"
@@ -114,137 +116,140 @@ void uartReconfigure(uartPort_t *uartPort)
         USART_HalfDuplexCmd(uartPort->USARTx, DISABLE);
 
     USART_Cmd(uartPort->USARTx, ENABLE);
-}
-
-serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
-{
-    uartPort_t *s = serialUART(device, baudRate, mode, options);
-
-    if (!s)
-        return (serialPort_t *)s;
-
-    s->txDMAEmpty = true;
-
-    // common serial initialisation code should move to serialPort::init()
-    s->port.rxBufferHead = s->port.rxBufferTail = 0;
-    s->port.txBufferHead = s->port.txBufferTail = 0;
-    // callback works for IRQ-based RX ONLY
-    s->port.rxCallback = rxCallback;
-    s->port.rxCallbackData = rxCallbackData;
-    s->port.mode = mode;
-    s->port.baudRate = baudRate;
-    s->port.options = options;
-
-    uartReconfigure(s);
 
     // Receive DMA or IRQ
     DMA_InitTypeDef DMA_InitStructure;
-    if (mode & MODE_RX) {
-#ifdef STM32F4
-        if (s->rxDMAResource) {
+    if (uartPort->port.mode & MODE_RX) {
+        if (uartPort->rxDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
-            DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
+            DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+            DMA_InitStructure.DMA_PeripheralBaseAddr = uartPort->rxDMAPeripheralBaseAddr;
             DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
             DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
             DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
             DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
             DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+            DMA_InitStructure.DMA_BufferSize = uartPort->port.rxBufferSize;
+#ifdef STM32F4
             DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
             DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
             DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
             DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-#else
-        if (s->rxDMAResource) {
-            DMA_StructInit(&DMA_InitStructure);
-            DMA_InitStructure.DMA_PeripheralBaseAddr = s->rxDMAPeripheralBaseAddr;
-            DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
-            DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-            DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-            DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-            DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-            DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-#endif
-            DMA_InitStructure.DMA_BufferSize = s->port.rxBufferSize;
 
-#ifdef STM32F4
-            DMA_InitStructure.DMA_Channel = s->rxDMAChannel;
+            DMA_InitStructure.DMA_Channel = uartPort->rxDMAChannel;
             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
-            DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-            DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)s->port.rxBuffer;
-            xDMA_DeInit(s->rxDMAResource);
-            xDMA_Init(s->rxDMAResource, &DMA_InitStructure);
-            xDMA_Cmd(s->rxDMAResource, ENABLE);
-            USART_DMACmd(s->USARTx, USART_DMAReq_Rx, ENABLE);
-            s->rxDMAPos = xDMA_GetCurrDataCounter(s->rxDMAResource);
+            DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)uartPort->port.rxBuffer;
 #else
+            DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-            DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-            DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)s->port.rxBuffer;
-            xDMA_DeInit(s->rxDMAResource);
-            xDMA_Init(s->rxDMAResource, &DMA_InitStructure);
-            xDMA_Cmd(s->rxDMAResource, ENABLE);
-            USART_DMACmd(s->USARTx, USART_DMAReq_Rx, ENABLE);
-            s->rxDMAPos = xDMA_GetCurrDataCounter(s->rxDMAResource);
+            DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)uartPort->port.rxBuffer;
 #endif
+
+            xDMA_DeInit(uartPort->rxDMAResource);
+            xDMA_Init(uartPort->rxDMAResource, &DMA_InitStructure);
+            xDMA_Cmd(uartPort->rxDMAResource, ENABLE);
+            USART_DMACmd(uartPort->USARTx, USART_DMAReq_Rx, ENABLE);
+            uartPort->rxDMAPos = xDMA_GetCurrDataCounter(uartPort->rxDMAResource);
         } else {
-            USART_ClearITPendingBit(s->USARTx, USART_IT_RXNE);
-            USART_ITConfig(s->USARTx, USART_IT_RXNE, ENABLE);
-            USART_ITConfig(s->USARTx, USART_IT_IDLE, ENABLE);
+            USART_ClearITPendingBit(uartPort->USARTx, USART_IT_RXNE);
+            USART_ITConfig(uartPort->USARTx, USART_IT_RXNE, ENABLE);
+            USART_ITConfig(uartPort->USARTx, USART_IT_IDLE, ENABLE);
         }
     }
 
     // Transmit DMA or IRQ
-    if (mode & MODE_TX) {
-#ifdef STM32F4
-        if (s->txDMAResource) {
+    if (uartPort->port.mode & MODE_TX) {
+        if (uartPort->txDMAResource) {
             DMA_StructInit(&DMA_InitStructure);
-            DMA_InitStructure.DMA_PeripheralBaseAddr = s->txDMAPeripheralBaseAddr;
+            DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+            DMA_InitStructure.DMA_PeripheralBaseAddr = uartPort->txDMAPeripheralBaseAddr;
             DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
             DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
             DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
             DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
             DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+            DMA_InitStructure.DMA_BufferSize = uartPort->port.txBufferSize;
+
+#ifdef STM32F4
             DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable ;
             DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
             DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single ;
             DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+
+            DMA_InitStructure.DMA_Channel = uartPort->txDMAChannel;
+            DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #else
-        if (s->txDMAResource) {
-            DMA_StructInit(&DMA_InitStructure);
-            DMA_InitStructure.DMA_PeripheralBaseAddr = s->txDMAPeripheralBaseAddr;
-            DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
             DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-            DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-            DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-            DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-            DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+            DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
 #endif
-            DMA_InitStructure.DMA_BufferSize = s->port.txBufferSize;
+
+            xDMA_DeInit(uartPort->txDMAResource);
+            xDMA_Init(uartPort->txDMAResource, &DMA_InitStructure);
 
 #ifdef STM32F4
-            DMA_InitStructure.DMA_Channel = s->txDMAChannel;
-            DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-            DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-            xDMA_DeInit(s->txDMAResource);
-            xDMA_Init(s->txDMAResource, &DMA_InitStructure);
-            xDMA_ITConfig(s->txDMAResource, DMA_IT_TC | DMA_IT_FE | DMA_IT_TE | DMA_IT_DME, ENABLE);
-            xDMA_SetCurrDataCounter(s->txDMAResource, 0);
+            xDMA_ITConfig(uartPort->txDMAResource, DMA_IT_TC | DMA_IT_FE | DMA_IT_TE | DMA_IT_DME, ENABLE);
 #else
-            DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-            DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-            xDMA_DeInit(s->txDMAResource);
-            xDMA_Init(s->txDMAResource, &DMA_InitStructure);
-            xDMA_ITConfig(s->txDMAResource, DMA_IT_TC, ENABLE);
-            xDMA_SetCurrDataCounter(s->txDMAResource, 0);
+            xDMA_ITConfig(uartPort->txDMAResource, DMA_IT_TC, ENABLE);
 #endif
-            USART_DMACmd(s->USARTx, USART_DMAReq_Tx, ENABLE);
+
+            xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
+            USART_DMACmd(uartPort->USARTx, USART_DMAReq_Tx, ENABLE);
         } else {
-            USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
+            USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
         }
     }
 
-    USART_Cmd(s->USARTx, ENABLE);
+    USART_Cmd(uartPort->USARTx, ENABLE);
+}
 
-    return (serialPort_t *)s;
+#ifdef USE_DMA
+void uartTryStartTxDMA(uartPort_t *s)
+{
+    // uartTryStartTxDMA must be protected, since it is called from
+    // uartWrite and handleUsartTxDma (an ISR).
+
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+        if (IS_DMA_ENABLED(s->txDMAResource)) {
+            // DMA is already in progress
+            return;
+        }
+
+        // For F4 (and F1), there are cases that NDTR (CNDTR for F1) is non-zero upon TC interrupt.
+        // We couldn't find out the root cause, so mask the case here.
+        // F3 is not confirmed to be vulnerable, but not excluded as a safety.
+
+        if (xDMA_GetCurrDataCounter(s->txDMAResource)) {
+            // Possible premature TC case.
+            goto reenable;
+        }
+
+        if (s->port.txBufferHead == s->port.txBufferTail) {
+            // No more data to transmit.
+            s->txDMAEmpty = true;
+            return;
+        }
+
+        // Start a new transaction.
+
+#ifdef STM32F4
+        xDMA_MemoryTargetConfig(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
+#else
+        DMAx_SetMemoryAddress(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail]);
+#endif
+
+        if (s->port.txBufferHead > s->port.txBufferTail) {
+            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferHead - s->port.txBufferTail);
+            s->port.txBufferTail = s->port.txBufferHead;
+        } else {
+            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferSize - s->port.txBufferTail);
+            s->port.txBufferTail = 0;
+        }
+        s->txDMAEmpty = false;
+
+    reenable:
+        xDMA_Cmd(s->txDMAResource, ENABLE);
+    }
 }
 #endif
+
+#endif // USE_UART

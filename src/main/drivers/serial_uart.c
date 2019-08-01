@@ -33,18 +33,41 @@
 #ifdef USE_UART
 
 #include "build/build_config.h"
-#include "build/atomic.h"
 
 #include "common/utils.h"
 
 #include "drivers/dma.h"
-#include "drivers/inverter.h"
-#include "drivers/nvic.h"
 #include "drivers/rcc.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
+
+serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+{   
+    uartPort_t *s = serialUART(device, baudRate, mode, options);
+    
+    if (!s)
+        return (serialPort_t *)s;
+    
+#ifdef USE_DMA
+    s->txDMAEmpty = true;
+#endif
+    
+    // common serial initialisation code should move to serialPort::init()
+    s->port.rxBufferHead = s->port.rxBufferTail = 0;
+    s->port.txBufferHead = s->port.txBufferTail = 0;
+    // callback works for IRQ-based RX ONLY
+    s->port.rxCallback = rxCallback;
+    s->port.rxCallbackData = rxCallbackData;
+    s->port.mode = mode;
+    s->port.baudRate = baudRate;
+    s->port.options = options;
+    
+    uartReconfigure(s);
+    
+    return (serialPort_t *)s;
+}
 
 static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
@@ -60,66 +83,26 @@ static void uartSetMode(serialPort_t *instance, portMode_e mode)
     uartReconfigure(uartPort);
 }
 
-void uartTryStartTxDMA(uartPort_t *s)
-{
-    // uartTryStartTxDMA must be protected, since it is called from
-    // uartWrite and handleUsartTxDma (an ISR).
-
-    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
-        if (IS_DMA_ENABLED(s->txDMAResource)) {
-            // DMA is already in progress
-            return;
-        }
-
-        // For F4 (and F1), there are cases that NDTR (CNDTR for F1) is non-zero upon TC interrupt.
-        // We couldn't find out the root cause, so mask the case here.
-        // F3 is not confirmed to be vulnerable, but not excluded as a safety.
-
-        if (xDMA_GetCurrDataCounter(s->txDMAResource)) {
-            // Possible premature TC case.
-            goto reenable;
-        }
-
-        if (s->port.txBufferHead == s->port.txBufferTail) {
-            // No more data to transmit.
-            s->txDMAEmpty = true;
-            return;
-        }
-
-        // Start a new transaction.
-
-#ifdef STM32F4
-        xDMA_MemoryTargetConfig(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
-#else
-        DMAx_SetMemoryAddress(s->txDMAResource, (uint32_t)&s->port.txBuffer[s->port.txBufferTail]);
-#endif
-
-        if (s->port.txBufferHead > s->port.txBufferTail) {
-            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferHead - s->port.txBufferTail);
-            s->port.txBufferTail = s->port.txBufferHead;
-        } else {
-            xDMA_SetCurrDataCounter(s->txDMAResource, s->port.txBufferSize - s->port.txBufferTail);
-            s->port.txBufferTail = 0;
-        }
-        s->txDMAEmpty = false;
-
-    reenable:
-        xDMA_Cmd(s->txDMAResource, ENABLE);
-    }
-}
-
 static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t*)instance;
 
+#ifdef USE_DMA
     if (s->rxDMAResource) {
+        // XXX Could be consolidated
+#ifdef USE_HAL_DRIVER
+        uint32_t rxDMAHead = __HAL_DMA_GET_COUNTER(s->Handle.hdmarx);
+#else
         uint32_t rxDMAHead = xDMA_GetCurrDataCounter(s->rxDMAResource);
+#endif
+
         if (rxDMAHead >= s->rxDMAPos) {
             return rxDMAHead - s->rxDMAPos;
         } else {
             return s->port.rxBufferSize + rxDMAHead - s->rxDMAPos;
         }
     }
+#endif
 
     if (s->port.rxBufferHead >= s->port.rxBufferTail) {
         return s->port.rxBufferHead - s->port.rxBufferTail;
@@ -140,12 +123,17 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
         bytesUsed = s->port.txBufferSize + s->port.txBufferHead - s->port.txBufferTail;
     }
 
+#ifdef USE_DMA
     if (s->txDMAResource) {
         /*
          * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
          * the remaining size of that in-progress transfer here instead:
          */
+#ifdef USE_HAL_DRIVER
+        bytesUsed += __HAL_DMA_GET_COUNTER(s->Handle.hdmatx);
+#else
         bytesUsed += xDMA_GetCurrDataCounter(s->txDMAResource);
+#endif
 
         /*
          * If the Tx buffer is being written to very quickly, we might have advanced the head into the buffer
@@ -159,6 +147,7 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
             return 0;
         }
     }
+#endif
 
     return (s->port.txBufferSize - 1) - bytesUsed;
 }
@@ -166,9 +155,12 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 static bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
     const uartPort_t *s = (const uartPort_t *)instance;
+#ifdef USE_DMA
     if (s->txDMAResource) {
         return s->txDMAEmpty;
-    } else {
+    } else
+#endif
+    {
         return s->port.txBufferTail == s->port.txBufferHead;
     }
 }
@@ -178,11 +170,14 @@ static uint8_t uartRead(serialPort_t *instance)
     uint8_t ch;
     uartPort_t *s = (uartPort_t *)instance;
 
+#ifdef USE_DMA
     if (s->rxDMAResource) {
         ch = s->port.rxBuffer[s->port.rxBufferSize - s->rxDMAPos];
         if (--s->rxDMAPos == 0)
             s->rxDMAPos = s->port.rxBufferSize;
-    } else {
+    } else
+#endif
+    {
         ch = s->port.rxBuffer[s->port.rxBufferTail];
         if (s->port.rxBufferTail + 1 >= s->port.rxBufferSize) {
             s->port.rxBufferTail = 0;
@@ -197,17 +192,26 @@ static uint8_t uartRead(serialPort_t *instance)
 static void uartWrite(serialPort_t *instance, uint8_t ch)
 {
     uartPort_t *s = (uartPort_t *)instance;
+
     s->port.txBuffer[s->port.txBufferHead] = ch;
+
     if (s->port.txBufferHead + 1 >= s->port.txBufferSize) {
         s->port.txBufferHead = 0;
     } else {
         s->port.txBufferHead++;
     }
 
+#ifdef USE_DMA
     if (s->txDMAResource) {
         uartTryStartTxDMA(s);
-    } else {
+    } else
+#endif
+    {
+#ifdef USE_HAL_DRIVER
+        __HAL_UART_ENABLE_IT(&s->Handle, UART_IT_TXE);
+#else
         USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
+#endif
     }
 }
 
@@ -228,75 +232,43 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+#define UART_IRQHandler(type, dev)                            \
+    void type ## dev ## _IRQHandler(void)                     \
+    {                                                         \
+        uartPort_t *s = &(uartDevmap[UARTDEV_ ## dev]->port); \
+        uartIrqHandler(s);                                    \
+    }
+
 #ifdef USE_UART1
-// USART1 Rx/Tx IRQ Handler
-void USART1_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_1]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(USART, 1) // USART1 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART2
-// USART2 Rx/Tx IRQ Handler
-void USART2_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_2]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(USART, 2) // USART2 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART3
-// USART3 Rx/Tx IRQ Handler
-void USART3_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_3]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(USART, 3) // USART3 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART4
-// UART4 Rx/Tx IRQ Handler
-void UART4_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_4]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(UART, 4)  // UART4 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART5
-// UART5 Rx/Tx IRQ Handler
-void UART5_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_5]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(UART, 5)  // UART5 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART6
-// USART6 Rx/Tx IRQ Handler
-void USART6_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_6]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(USART, 6) // USART6 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART7
-// UART7 Rx/Tx IRQ Handler
-void UART7_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_7]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(UART, 7)  // UART7 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART8
-// UART8 Rx/Tx IRQ Handler
-void UART8_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_8]->port);
-    uartIrqHandler(s);
-}
+UART_IRQHandler(UART, 8)  // UART8 Rx/Tx IRQ Handler
 #endif
-#endif
+
+#endif // USE_UART
