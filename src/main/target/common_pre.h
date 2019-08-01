@@ -65,6 +65,7 @@
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_PERSISTENT_OBJECTS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_SPI_TRANSACTION
 
@@ -93,6 +94,7 @@
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_PERSISTENT_OBJECTS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_SPI_TRANSACTION
 #endif // STM32F7
@@ -106,6 +108,7 @@
 #define USE_USB_CDC_HID
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_PERSISTENT_OBJECTS
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
