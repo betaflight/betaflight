@@ -51,13 +51,16 @@ PG_REGISTER_WITH_RESET_FN(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTING
 
 void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
 {
-    vtxSettingsConfig->band = VTX_TABLE_DEFAULT_BAND;
-    vtxSettingsConfig->channel = VTX_TABLE_DEFAULT_CHANNEL;
-    vtxSettingsConfig->power = VTX_TABLE_DEFAULT_POWER;
 #ifdef USE_VTX_TABLE
+    vtxSettingsConfig->band = 0;
+    vtxSettingsConfig->channel = 0;
+    vtxSettingsConfig->power = 0;
     vtxSettingsConfig->freq = 0;
 #else
     vtxSettingsConfig->freq = VTX_TABLE_DEFAULT_FREQ;
+    vtxSettingsConfig->band = VTX_TABLE_DEFAULT_BAND;
+    vtxSettingsConfig->channel = VTX_TABLE_DEFAULT_CHANNEL;
+    vtxSettingsConfig->power = VTX_TABLE_DEFAULT_POWER;
 #endif
     vtxSettingsConfig->pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ;
     vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
