@@ -365,13 +365,10 @@
 #define GYRO_2_ALIGN            CW0_DEG
 #endif
 
-#if !defined(GYRO_1_CUSTOM_ALIGN)
-#define GYRO_1_CUSTOM_ALIGN            CUSTOM_ALIGN_CW0_DEG
-#endif
-
-#if !defined(GYRO_2_CUSTOM_ALIGN)
-#define GYRO_2_CUSTOM_ALIGN            CUSTOM_ALIGN_CW0_DEG
-#endif
+// Previously there was logic here to default GYRO_1_CUSTOM_ALIGN and GYRO_2_CUSTOM_ALIGN
+// to CUSTOM_ALIGN_CW0_DEG if they weren't defined in the target. The defaulting logic
+// has been moved to pg/gyrodev.c to set the custom alignment based on the sensor alignment
+// if a custom alignment is not applied in the target.
 
 #ifdef USE_VCP
 #ifndef USB_DETECT_PIN
