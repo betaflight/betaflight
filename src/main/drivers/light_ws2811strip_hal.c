@@ -37,8 +37,6 @@
 
 #include "light_ws2811strip.h"
 
-typedef DMA_Stream_TypeDef dmaStream_t;
-
 static IO_t ws2811IO = IO_NONE;
 
 static TIM_HandleTypeDef TimHandle;
