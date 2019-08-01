@@ -177,6 +177,19 @@
 
 #endif // I2C_FULL_RECONFIGURABILITY
 
+#ifndef I2C1_OVERCLOCK
+#define I2C1_OVERCLOCK false
+#endif
+#ifndef I2C2_OVERCLOCK
+#define I2C2_OVERCLOCK false
+#endif
+#ifndef I2C3_OVERCLOCK
+#define I2C3_OVERCLOCK false
+#endif
+#ifndef I2C4_OVERCLOCK
+#define I2C4_OVERCLOCK false
+#endif
+
 // Default values for internal pullup
 
 #if defined(USE_I2C_PULLUP)
