@@ -6012,7 +6012,7 @@ const clicmd_t cmdTable[] = {
 
 #endif
 #ifdef USE_DSHOT_TELEMETRY
-    CLI_COMMAND_DEF("dshot_telemetry_info", "disply dshot telemetry info and stats", NULL, cliDshotTelemetryInfo),
+    CLI_COMMAND_DEF("dshot_telemetry_info", "display dshot telemetry info and stats", NULL, cliDshotTelemetryInfo),
 #endif
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
