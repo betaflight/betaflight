@@ -62,7 +62,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #if defined(STM32H7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
 #elif defined(STM32F7)
-#define DSHOT_DMA_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT
+#define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_RW
 #else
 #define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif

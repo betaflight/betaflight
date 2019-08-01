@@ -125,7 +125,7 @@ endif
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
-DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
+DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER -DMAX_MPU_REGIONS=16 -DUSE_DMA_RAM
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XI_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F765xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f765.ld
@@ -171,6 +171,8 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
+            drivers/memprot_hal.c \
+            drivers/memprot_stm32f7xx.c \
             drivers/transponder_ir_io_hal.c \
             drivers/bus_spi_ll.c \
             drivers/persistent.c \

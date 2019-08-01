@@ -166,6 +166,42 @@ SECTIONS
     __fastram_bss_end__ = _efastram_bss;
   } >FASTRAM
 
+  .DMA_RAM_RW (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmaram_rw_start = .);
+    _sdmaram_rw = .;
+    _dmaram_rw_start__ = _sdmaram_rw;
+    KEEP(*(.DMA_RAM_RW))
+    PROVIDE(dmaram_rw_end = .);
+    _edmaram_rw = .;
+    _dmaram_rw_end__ = _edmaram_rw;
+  } >RAM
+
+  .DMA_RAM_W (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmaram_w_start = .);
+    _sdmaram_w = .;
+    _dmaram_w_start__ = _sdmaram_w;
+    KEEP(*(.DMA_RAM_W))
+    PROVIDE(dmaram_w_end = .);
+    _edmaram_w = .;
+    _dmaram_w_end__ = _edmaram_w;
+  } >RAM
+
+  .DMA_RAM_R (NOLOAD) :
+  {
+    . = ALIGN(32);
+    PROVIDE(dmaram_r_start = .);
+    _sdmaram_r = .;
+    _dmaram_r_start__ = _sdmaram_r;
+    KEEP(*(.DMA_RAM_R))
+    PROVIDE(dmaram_r_end = .);
+    _edmaram_r = .;
+    _dmaram_r_end__ = _edmaram_r;
+  } >RAM
+
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */
   _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;

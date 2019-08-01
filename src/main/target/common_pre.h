@@ -149,12 +149,24 @@
 #define SRAM2
 #endif
 
+#if defined(STM32H7)
 #ifdef USE_DMA_RAM
 #define DMA_RAM __attribute__((section(".DMA_RAM")))
 #define DMA_RW_AXI __attribute__((section(".DMA_AXI_RW")))
 #else
 #define DMA_RAM
 #define DMA_RW_AXI
+#endif
+#elif defined(STM32F7)
+#ifdef USE_DMA_RAM
+#define DMA_RAM_RW __attribute__((section(".DMA_RAM_RW")))
+#define DMA_RAM_W __attribute__((section(".DMA_RAM_W")))
+#define DMA_RAM_R __attribute__((section(".DMA_RAM_R")))
+#else
+#define DMA_RAM_RW
+#define DMA_RAM_W
+#define DMA_RAM_R
+#endif
 #endif
 
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot

@@ -64,6 +64,7 @@
   */
 
 #include "stm32f7xx.h"
+#include "drivers/memprot.h"
 #include "drivers/system.h"
 #include "system_stm32f7xx.h"
 #include "platform.h"
@@ -309,6 +310,8 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
   */
 void SystemInit(void)
 {
+    memProtReset();
+
     initialiseMemorySections();
 
     SystemInitOC();
@@ -351,6 +354,8 @@ void SystemInit(void)
 #ifdef USE_HAL_DRIVER
     HAL_Init();
 #endif
+
+    memProtConfigure(mpuRegions, mpuRegionCount);
 
     /* Enable I-Cache */
     if (INSTRUCTION_CACHE_ENABLE) {

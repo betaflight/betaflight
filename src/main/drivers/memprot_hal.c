@@ -61,6 +61,10 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
             uint32_t start = region->start & ~0x1F;
             uint32_t length = region->end - start;
 
+            if (length == 0) {
+                continue;
+            }
+
             if (length < 32) {
                 // This will also prevent flsl from returning negative (case length == 0)
                 length = 32;
