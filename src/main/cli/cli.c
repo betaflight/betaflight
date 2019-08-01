@@ -4179,7 +4179,7 @@ static void cliSave(char *cmdline)
 #if defined(USE_CUSTOM_DEFAULTS)
 static bool isDefaults(char *ptr)
 {
-    return strncmp(ptr, "# Betaflight", 12) == 0;
+    return strncmp(ptr, "# " FC_FIRMWARE_NAME, 12) == 0;
 }
 #endif
 
