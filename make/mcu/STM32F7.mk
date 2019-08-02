@@ -179,13 +179,12 @@ MCU_COMMON_SRC = \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \
-            drivers/serial_uart_stm32f7xx.c \
-            drivers/serial_uart_hal.c
+            drivers/serial_uart_hal.c \
+            drivers/serial_uart_stm32f7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
-            drivers/timer.c \
-            drivers/serial_uart.c
+            drivers/timer.c
 
 MSC_SRC = \
             drivers/usb_msc_f7xx.c \
