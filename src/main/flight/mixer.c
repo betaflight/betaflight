@@ -37,6 +37,7 @@
 #include "pg/motor.h"
 #include "pg/rx.h"
 
+#include "drivers/dshot.h"
 #include "drivers/motor.h"
 #include "drivers/time.h"
 #include "drivers/io.h"
@@ -288,6 +289,13 @@ FAST_RAM_ZERO_INIT float motorOutputHigh, motorOutputLow;
 
 static FAST_RAM_ZERO_INIT float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
 static FAST_RAM_ZERO_INIT float rcCommandThrottleRange;
+#ifdef USE_DYN_IDLE
+static FAST_RAM_ZERO_INIT float idleMaxIncrease;
+static FAST_RAM_ZERO_INIT float idleThrottleOffset;
+static FAST_RAM_ZERO_INIT float idleMinMotorRps;
+static FAST_RAM_ZERO_INIT float idleP;
+#endif
+
 
 uint8_t getMotorCount(void)
 {
@@ -347,6 +355,12 @@ void mixerInit(mixerMode_e mixerMode)
     if (mixerIsTricopter()) {
         mixerTricopterInit();
     }
+#endif
+#ifdef USE_DYN_IDLE
+    idleMinMotorRps = currentPidProfile->idle_min_rpm * 0.01f * 60.0f;
+    idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
+    idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
+    idleP = currentPidProfile->idle_p * 0.0001f;
 #endif
 }
 
@@ -471,6 +485,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
     static float motorRangeMinIncrease = 0;
+    static float oldMinRps;
     float currentThrottleInputRange = 0;
 
     if (featureIsEnabled(FEATURE_3D)) {
@@ -575,26 +590,26 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             pidResetIterm();
         }
     } else {
+        throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
 #ifdef USE_DYN_IDLE
-        if (currentPidProfile->idle_hz) {
-            static float oldMinRpm;
-            const float maxIncrease = isAirmodeActivated() ? currentPidProfile->idle_max_increase * 0.001f : 0.04f;
-            const float minRpm = rpmMinMotorFrequency();
-            const float targetRpmChangeRate = (currentPidProfile->idle_hz - minRpm) * currentPidProfile->idle_adjustment_speed;
-            const float error = targetRpmChangeRate - (minRpm - oldMinRpm) * pidGetPidFrequency();
-            const float pidSum = constrainf(currentPidProfile->idle_p * 0.0001f * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
+        if (idleMinMotorRps > 0.0f) {
+            motorOutputLow = DSHOT_MIN_THROTTLE;
+            const float maxIncrease = isAirmodeActivated() ? idleMaxIncrease : 0.04f;
+            const float minRps = rpmMinMotorFrequency();
+            const float targetRpsChangeRate = (idleMinMotorRps - minRps) * currentPidProfile->idle_adjustment_speed;
+            const float error = targetRpsChangeRate - (minRps - oldMinRps) * pidGetPidFrequency();
+            const float pidSum = constrainf(idleP * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
             motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * pidGetDT(), 0.0f, maxIncrease);
-            oldMinRpm = minRpm;
+            oldMinRps = minRps;
+            throttle += idleThrottleOffset;
 
             DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);
-            DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpmChangeRate);
+            DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);
             DEBUG_SET(DEBUG_DYN_IDLE, 2, error);
-            DEBUG_SET(DEBUG_DYN_IDLE, 3, minRpm);
+            DEBUG_SET(DEBUG_DYN_IDLE, 3, minRps);
             
         }
 #endif
-        
-        throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = rcCommandThrottleRange;
         motorRangeMin = motorOutputLow + motorRangeMinIncrease * (motorOutputHigh - motorOutputLow);
         motorRangeMax = motorOutputHigh;
@@ -852,12 +867,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #ifdef USE_THRUST_LINEARIZATION
     // reestablish old throttle stick feel by counter compensating thrust linearization
     throttle = pidCompensateThrustLinearization(throttle);
-#endif
-
-#ifdef USE_DYN_IDLE
-    if (currentPidProfile->idle_hz) {
-        throttle += currentPidProfile->idle_throttle * 0.001f;
-    }
 #endif
 
 #if defined(USE_THROTTLE_BOOST)
