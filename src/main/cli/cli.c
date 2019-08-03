@@ -2598,7 +2598,7 @@ static char *formatVtxTablePowerValues(const uint16_t *levels, int count)
 
 static const char *printVtxTablePowerValues(dumpFlags_t dumpMask, const vtxTableConfig_t *currentConfig, const vtxTableConfig_t *defaultConfig, const char *headingStr)
 {
-    char *fmt = "vtxtable powervalues %s";
+    char *fmt = "vtxtable powervalues%s";
     bool equalsDefault = false;
     if (defaultConfig) {
         equalsDefault = true;
