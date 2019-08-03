@@ -17,9 +17,9 @@ For Betaflight 4.0 we announced the advent of Unified Targets, and with them the
 
 But we were still not happy with the way that users had to use Unified Targets: The target specific hardware configuration had to be applied after the firmware was flashed, and re-applied every time the configuration was reset to defaults - we wanted to make the Unified Targets as easy to use as the existing 'legacy' targets are.
 
-We have figured out a way to make this work, and are currently working on implementing the required changes in the firmware and in Betaflight configurator, but it's taking longer than we'd anticipated to complete. To allow us to get the integration of Unified Targets completed, **we have shifted the release date for Betaflight 4.1 to 01 October 2019**. Until then we will keep doing monthly releases of Betaflight 4.0 with bugfixes and new / updated targets.
+We have figured out a way to make this work, and are currently working on implementing the required changes in the firmware and in Betaflight configurator, but it is taking longer to complete than we had anticipated. To allow us to get the integration of Unified Targets completed, **we have shifted the release date for Betaflight 4.1 to 01 October 2019**. Until then we will keep doing monthly releases of Betaflight 4.0 with bugfixes and new / updated targets.
 
-To get the latest update from us, you can now also visit our webpage at [https://betaflight.com/].
+To get the latest update from us, you can now also visit our webpage at https://betaflight.com/.
 
 
 ### New requirements for the submission of new and updated targets
@@ -110,7 +110,7 @@ The best place to start is the Betaflight Slack (registration [here](https://sla
 https://github.com/betaflight/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
 
-Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
+Before creating new issues please check to see if there is an existing one, search first otherwise you waste people's time when they could be coding instead!
 
 If you want to contribute to our efforts financially, please consider making a donation to us through [PayPal](https://paypal.me/betaflight).
 
