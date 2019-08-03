@@ -39,23 +39,6 @@
 
 #include "pg/bus_i2c.h"
 
-// Backward compatibility for overclocking and internal pullup.
-// These will eventually be configurable through PG-based configurator
-// (and/or probably through some cli extension).
-
-#ifndef I2C1_OVERCLOCK
-#define I2C1_OVERCLOCK false
-#endif
-#ifndef I2C2_OVERCLOCK
-#define I2C2_OVERCLOCK false
-#endif
-#ifndef I2C3_OVERCLOCK
-#define I2C3_OVERCLOCK false
-#endif
-#ifndef I2C4_OVERCLOCK
-#define I2C4_OVERCLOCK false
-#endif
-
 void i2cHardwareConfigure(const i2cConfig_t *i2cConfig)
 {
     for (int index = 0 ; index < I2CDEV_COUNT ; index++) {

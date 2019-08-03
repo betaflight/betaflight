@@ -141,7 +141,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .reg = I2C4,
         .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PF14, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF6_I2C4), I2CPINDEF(PB8, GPIO_AF6_I2C4) },
         .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PF15, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF6_I2C4), I2CPINDEF(PB9, GPIO_AF6_I2C4) },
-        .rcc = RCC_APB1L(I2C4),
+        .rcc = RCC_APB4(I2C4),
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,
     },
