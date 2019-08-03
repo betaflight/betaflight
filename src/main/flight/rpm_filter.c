@@ -65,6 +65,7 @@ typedef struct rpmNotchFilter_s
 
 FAST_RAM_ZERO_INIT static float   erpmToHz;
 FAST_RAM_ZERO_INIT static float   filteredMotorErpm[MAX_SUPPORTED_MOTORS];
+FAST_RAM_ZERO_INIT static float   minMotorFrequency;
 FAST_RAM_ZERO_INIT static uint8_t numberFilters;
 FAST_RAM_ZERO_INIT static uint8_t numberRpmNotchFilters;
 FAST_RAM_ZERO_INIT static uint8_t filterUpdatesPerIteration;
@@ -212,6 +213,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate()
                     motor = 0;
                 }
                 motorFrequency[motor] = erpmToHz * filteredMotorErpm[motor];
+                minMotorFrequency = 0.0f;
             }
             currentFilter = &filters[filter];
         }
@@ -223,5 +225,19 @@ bool isRpmFilterEnabled(void)
 {
     return (motorConfig()->dev.useDshotTelemetry && (rpmFilterConfig()->gyro_rpm_notch_harmonics || rpmFilterConfig()->dterm_rpm_notch_harmonics));
 }
+
+float rpmMinMotorFrequency()
+{
+    if (minMotorFrequency == 0.0f) {
+        minMotorFrequency = 10000.0f;
+        for (int i = getMotorCount(); i--;) {
+            if (motorFrequency[i] < minMotorFrequency) {
+                minMotorFrequency = motorFrequency[i];
+            }
+        }
+    }
+    return minMotorFrequency;
+}
+
 
 #endif

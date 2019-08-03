@@ -364,3 +364,7 @@ extern uint8_t __config_end;
 #if defined(USE_EXST)
 #define USE_FLASH_BOOT_LOADER
 #endif
+
+#if !defined(USE_RPM_FILTER)
+#undef USE_DYN_IDLE
+#endif

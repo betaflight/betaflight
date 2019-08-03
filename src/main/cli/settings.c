@@ -1056,6 +1056,14 @@ const clivalue_t valueTable[] = {
     { "transient_throttle_limit",   VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, transient_throttle_limit) },
 #endif
 
+#ifdef USE_DYN_IDLE
+    { "idle_min_rpm",               VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, idle_min_rpm) },
+    { "idle_adjustment_speed",      VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 25, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, idle_adjustment_speed) },
+    { "idle_p",                     VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, idle_p) },
+    { "idle_pid_limit",             VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, idle_pid_limit) },
+    { "idle_max_increase",          VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, idle_max_increase) },
+#endif
+    
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },

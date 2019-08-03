@@ -129,7 +129,7 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -206,6 +206,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
         .profileName = { 0 },
+        .idle_min_rpm = 0,
+        .idle_adjustment_speed = 50,
+        .idle_p = 50,
+        .idle_pid_limit = 200,
+        .idle_max_increase = 150,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -1538,4 +1543,14 @@ void pidSetItermReset(bool enabled)
 float pidGetPreviousSetpoint(int axis)
 {
     return previousPidSetpoint[axis];
+}
+
+float pidGetDT()
+{
+    return dT;
+}
+
+float pidGetPidFrequency()
+{
+    return pidFrequency;
 }
