@@ -251,7 +251,7 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 }
 #endif // USE_DSHOT_TELEMETRY_STATS
 
-NOINLINE bool pwmStartDshotMotorUpdate(void)
+FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 {
     if (!useDshotTelemetry) {
         return true;
