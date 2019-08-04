@@ -12,6 +12,5 @@ TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_lis3mdl.c \
             drivers/max7456.c \
+            drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
-
-

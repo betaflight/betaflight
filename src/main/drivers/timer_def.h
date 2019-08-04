@@ -24,7 +24,7 @@
 #include "common/utils.h"
 
 // allow conditional definition of DMA related members
-#if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
+#if defined(USE_TIMER_DMA)
 # define DEF_TIM_DMA_COND(...) __VA_ARGS__
 #else
 # define DEF_TIM_DMA_COND(...)
@@ -50,6 +50,8 @@
 #define BTCH_TIM20_CH2N BTCH_TIM20_CH2
 #define BTCH_TIM20_CH3N BTCH_TIM20_CH3
 
+#define BTCH_TIM13_CH1N BTCH_TIM13_CH1
+#define BTCH_TIM14_CH1N BTCH_TIM14_CH1
 #define BTCH_TIM15_CH1N BTCH_TIM15_CH1
 #define BTCH_TIM16_CH1N BTCH_TIM16_CH1
 #define BTCH_TIM17_CH1N BTCH_TIM17_CH1
@@ -201,7 +203,7 @@
 #define DEF_TIM_AF__D(af_n) GPIO_AF_ ## af_n
 
 #define DEF_TIM_DMA_CHANNEL(timch) CONCAT(DEF_TIM_DMA_CHANNEL__, DEF_TIM_DMA_GET(0, timch))
-#define DEF_TIM_DMA_CHANNEL__D(dma_n, chan_n) DMA ## dma_n ## _Channel ## chan_n
+#define DEF_TIM_DMA_CHANNEL__D(dma_n, chan_n) (dmaResource_t *)DMA ## dma_n ## _Channel ## chan_n
 #define DEF_TIM_DMA_CHANNEL__NONE NULL
 
 #define DEF_TIM_DMA_HANDLER(timch) CONCAT(DEF_TIM_DMA_HANDLER__, DEF_TIM_DMA_GET(0, timch))
@@ -425,7 +427,7 @@
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  DMA ## dma_n ## _Stream ## stream_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## stream_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 #define DEF_TIM_DMA_HANDLER(variant, timch) \
@@ -530,7 +532,7 @@
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  DMA ## dma_n ## _Stream ## stream_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n, chan_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## stream_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 #define DEF_TIM_DMA_HANDLER(variant, timch) \
@@ -716,15 +718,14 @@
 #elif defined(STM32H7)
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt, upopt) {            \
     tim,                                                                \
-    IO_TAG(pin),                                                        \
+    TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     flags,                                                              \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
     DEF_TIM_AF(TCH_## tim ## _ ## chan, pin)                            \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(dmaopt, TCH_## tim ## _ ## chan),            \
-        DEF_TIM_DMA_REQUEST(TCH_## tim ## _ ## chan),                   \
-        DEF_TIM_DMA_HANDLER(dmaopt, TCH_## tim ## _ ## chan)            \
+        DEF_TIM_DMA_REQUEST(TCH_## tim ## _ ## chan)                    \
     )                                                                   \
     DEF_TIM_DMA_COND(/* add comma */ ,                                  \
         DEF_TIM_DMA_STREAM(upopt, TCH_## tim ## _UP),                   \
@@ -742,7 +743,7 @@
 
 #define DEF_TIM_DMA_STREAM(variant, timch)                              \
     CONCAT(DEF_TIM_DMA_STREAM__, DEF_TIM_DMA_GET(variant, timch))
-#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n)  DMA ## dma_n ## _Stream ## stream_n
+#define DEF_TIM_DMA_STREAM__D(dma_n, stream_n)  (dmaResource_t *)DMA ## dma_n ## _Stream ## stream_n
 #define DEF_TIM_DMA_STREAM__NONE                        NULL
 
 // XXX This is awful. There must be some smart way of doing this ...
@@ -982,8 +983,8 @@
 #define DEF_TIM_AF__PF8__TCH_TIM16_CH1N   D(1, 16)
 #define DEF_TIM_AF__PF9__TCH_TIM17_CH1N   D(1, 17)
 
-#define DEF_TIM_AF__PF8__TCH_TIM13_CH1N   D(1, 13)
-#define DEF_TIM_AF__PF9__TCH_TIM14_CH1N   D(1, 14)
+#define DEF_TIM_AF__PF8__TCH_TIM13_CH1N   D(9, 13)
+#define DEF_TIM_AF__PF9__TCH_TIM14_CH1N   D(9, 14)
 
 //PORTH
 #define DEF_TIM_AF__PH6__TCH_TIM12_CH1    D(2, 12)

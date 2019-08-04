@@ -35,7 +35,6 @@
 #include "sdmmc_sdio.h"
 #include "stm32f7xx.h"
 
-#include "pg/pg.h"
 #include "pg/sdio.h"
 
 #include "drivers/io.h"
@@ -47,22 +46,6 @@
 #include "drivers/light_led.h"
 
 #include "build/debug.h"
-
-
-/* Define(s) --------------------------------------------------------------------------------------------------------*/
-
-//#define DMA_CHANNEL_4                   ((uint32_t)0x08000000)
-#define DMA_MEMORY_TO_PERIPH            ((uint32_t)DMA_SxCR_DIR_0)
-//#define DMA_PERIPH_TO_MEMORY            ((uint32_t)0x00)
-#define DMA_MINC_ENABLE                 ((uint32_t)DMA_SxCR_MINC)
-#define DMA_MDATAALIGN_WORD             ((uint32_t)DMA_SxCR_MSIZE_1)
-#define DMA_PDATAALIGN_WORD             ((uint32_t)DMA_SxCR_PSIZE_1)
-#define DMA_PRIORITY_LOW                ((uint32_t)0x00000000U)
-#define DMA_PRIORITY_MEDIUM             ((uint32_t)DMA_SxCR_PL_0)
-#define DMA_PRIORITY_HIGH               ((uint32_t)DMA_SxCR_PL_1)
-#define DMA_PRIORITY_VERY_HIGH          ((uint32_t)DMA_SxCR_PL)
-#define DMA_MBURST_INC4                 ((uint32_t)DMA_SxCR_MBURST_0)
-#define DMA_PBURST_INC4                 ((uint32_t)DMA_SxCR_PBURST_0)
 
 #define BLOCK_SIZE                      ((uint32_t)(512))
 
@@ -1625,8 +1608,8 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
                               DMA_MBURST_INC4      | DMA_PBURST_INC4        |
                               DMA_MEMORY_TO_PERIPH);
         DMA2_Stream3->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier(DMA2_Stream3), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier(DMA2_Stream3), SDMMC_DMA_ST3_IRQHandler, 1, 0);
+        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), OWNER_SDCARD, 0);
+        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), SDMMC_DMA_ST3_IRQHandler, 1, 0);
     } else {
         // Initialize DMA2 channel 6
         DMA2_Stream6->CR   = 0;                                                 // Reset DMA Stream control register
@@ -1638,8 +1621,8 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
                               DMA_MBURST_INC4      | DMA_PBURST_INC4        |
                               DMA_MEMORY_TO_PERIPH);
         DMA2_Stream6->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier(DMA2_Stream6), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier(DMA2_Stream6), SDMMC_DMA_ST6_IRQHandler, 1, 0);
+        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), OWNER_SDCARD, 0);
+        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), SDMMC_DMA_ST6_IRQHandler, 1, 0);
     }
 }
 

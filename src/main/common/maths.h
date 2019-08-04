@@ -93,6 +93,10 @@ typedef union {
     fp_angles_def angles;
 } fp_angles_t;
 
+typedef struct fp_rotationMatrix_s {
+    float m[3][3];              // matrix
+} fp_rotationMatrix_t;
+
 int gcd(int num, int denom);
 float powerf(float base, int exp);
 int32_t applyDeadband(int32_t value, int32_t deadband);
@@ -110,7 +114,8 @@ float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float des
 void normalizeV(struct fp_vector *src, struct fp_vector *dest);
 
 void rotateV(struct fp_vector *v, fp_angles_t *delta);
-void buildRotationMatrix(fp_angles_t *delta, float matrix[3][3]);
+void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation);
+void applyRotation(float *v, fp_rotationMatrix_t *rotationMatrix);
 
 int32_t quickMedianFilter3(int32_t * v);
 int32_t quickMedianFilter5(int32_t * v);

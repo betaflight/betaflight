@@ -177,6 +177,19 @@
 
 #endif // I2C_FULL_RECONFIGURABILITY
 
+#ifndef I2C1_OVERCLOCK
+#define I2C1_OVERCLOCK false
+#endif
+#ifndef I2C2_OVERCLOCK
+#define I2C2_OVERCLOCK false
+#endif
+#ifndef I2C3_OVERCLOCK
+#define I2C3_OVERCLOCK false
+#endif
+#ifndef I2C4_OVERCLOCK
+#define I2C4_OVERCLOCK false
+#endif
+
 // Default values for internal pullup
 
 #if defined(USE_I2C_PULLUP)
@@ -301,6 +314,10 @@
 #define RX_SPI_EXTI_PIN NONE
 #endif
 
+#if !defined(RX_SPI_BIND_PIN)
+#define RX_SPI_BIND_PIN NONE
+#endif
+
 #if defined(USE_RX_CC2500)
 #if !defined(RX_CC2500_SPI_TX_EN_PIN)
 #define RX_CC2500_SPI_TX_EN_PIN NONE
@@ -316,6 +333,8 @@
 #endif
 #endif
 
+// gyro hardware
+
 #if !defined(GYRO_1_SPI_INSTANCE)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
@@ -328,15 +347,10 @@
 #define GYRO_1_EXTI_PIN         NONE
 #endif
 
-#if !defined(GYRO_1_ALIGN)
-#define GYRO_1_ALIGN            ALIGN_DEFAULT
-#endif
-
 // F4 and F7 single gyro boards
 #if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
-#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE     NULL
 #define GYRO_2_CS_PIN           NONE
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
 #endif
 
@@ -353,6 +367,21 @@
 #define MAX_GYRODEV_COUNT 1
 #define MAX_ACCDEV_COUNT 1
 #endif
+
+// gyro alignments
+
+#if !defined(GYRO_1_ALIGN)
+#define GYRO_1_ALIGN            CW0_DEG
+#endif
+
+#if !defined(GYRO_2_ALIGN)
+#define GYRO_2_ALIGN            CW0_DEG
+#endif
+
+// Previously there was logic here to default GYRO_1_CUSTOM_ALIGN and GYRO_2_CUSTOM_ALIGN
+// to CUSTOM_ALIGN_CW0_DEG if they weren't defined in the target. The defaulting logic
+// has been moved to pg/gyrodev.c to set the custom alignment based on the sensor alignment
+// if a custom alignment is not applied in the target.
 
 #ifdef USE_VCP
 #ifndef USB_DETECT_PIN
@@ -446,6 +475,9 @@
 #endif
 #ifndef BARO_I2C_INSTANCE
 #define BARO_I2C_INSTANCE       I2C_DEVICE
+#endif
+#ifndef BARO_XCLR_PIN
+#define BARO_XCLR_PIN           NONE
 #endif
 #endif
 
@@ -594,4 +626,14 @@
 
 #ifndef RTC6705_SPI_INSTANCE
 #define RTC6705_SPI_INSTANCE NULL
+#endif
+
+#if defined(USE_QUAD_MIXER_ONLY)
+#define MAX_SUPPORTED_MOTORS 4
+#define MAX_SUPPORTED_SERVOS 1
+#else
+#ifndef MAX_SUPPORTED_MOTORS
+#define MAX_SUPPORTED_MOTORS 8
+#endif
+#define MAX_SUPPORTED_SERVOS 8
 #endif

@@ -57,7 +57,9 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
+ifeq ($(LD_SCRIPT),)
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
+endif
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS    = -DSTM32F303xC -DSTM32F303
@@ -84,7 +86,7 @@ MCU_COMMON_SRC = \
             drivers/transponder_ir_io_stdperiph.c \
             drivers/pwm_output_dshot.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/serial_uart_init.c \
+            drivers/serial_uart_stdperiph.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c

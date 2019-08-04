@@ -10,6 +10,9 @@ COMMON_SRC = \
             cli/cli.c \
             cli/settings.c \
             drivers/adc.c \
+            drivers/dshot.c \
+            drivers/dshot_dpwm.c \
+            drivers/dshot_command.c \
             drivers/buf_writer.c \
             drivers/bus.c \
             drivers/bus_i2c_config.c \
@@ -26,6 +29,7 @@ COMMON_SRC = \
             drivers/io.c \
             drivers/light_led.c \
             drivers/mco.c \
+            drivers/motor.c \
             drivers/pinio.c \
             drivers/resource.c \
             drivers/rcc.c \
@@ -170,7 +174,6 @@ COMMON_SRC = \
             telemetry/ibus.c \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
-            io/vtx_string.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
@@ -182,6 +185,14 @@ COMMON_DEVICE_SRC = \
             $(DEVICE_STDPERIPH_SRC)
 
 COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC)
+
+ifeq ($(EXST),yes)
+TARGET_FLAGS := -DUSE_EXST $(TARGET_FLAGS)
+endif
+
+ifeq ($(RAM_BASED),yes)
+TARGET_FLAGS := -DUSE_EXST -DEEPROM_IN_RAM $(TARGET_FLAGS)
+endif
 
 ifeq ($(SIMULATOR_BUILD),yes)
 TARGET_FLAGS := -DSIMULATOR_BUILD $(TARGET_FLAGS)
@@ -315,7 +326,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
-            io/vtx_string.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \

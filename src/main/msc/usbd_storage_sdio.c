@@ -32,6 +32,8 @@
 
 #include "platform.h"
 
+#ifdef USE_SDCARD
+
 #include "common/utils.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
@@ -169,7 +171,7 @@ static int8_t STORAGE_Init (uint8_t lun)
         	return 1;
         }
 
-	SD_Initialize_LL(dmaChannelSpec->ref);
+	SD_Initialize_LL((DMA_ARCH_TYPE *)dmaChannelSpec->ref);
 #else
 	SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);
 #endif
@@ -308,3 +310,4 @@ static int8_t STORAGE_GetMaxLun (void)
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
+#endif // USE_SDCARD

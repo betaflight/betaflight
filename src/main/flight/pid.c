@@ -34,6 +34,7 @@
 
 #include "config/config_reset.h"
 
+#include "drivers/dshot_command.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
@@ -128,7 +129,7 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -136,7 +137,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pid = {
             [PID_ROLL] =  { 42, 60, 35, 70 },
             [PID_PITCH] = { 46, 70, 38, 75 },
-            [PID_YAW] =   { 35, 100, 0, 0 },
+            [PID_YAW] =   { 30, 80, 0, 70 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -205,6 +206,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 15,
         .profileName = { 0 },
+        .idle_min_rpm = 0,
+        .idle_adjustment_speed = 50,
+        .idle_p = 50,
+        .idle_pid_limit = 200,
+        .idle_max_increase = 150,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -225,7 +231,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
     dT = targetPidLooptime * 1e-6f;
     pidFrequency = 1.0f / dT;
 #ifdef USE_DSHOT
-    setDshotPidLoopTime(targetPidLooptime);
+    dshotSetPidLoopTime(targetPidLooptime);
 #endif
 }
 
@@ -638,6 +644,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     acLimit = (float)pidProfile->abs_control_limit;
     acErrorLimit = (float)pidProfile->abs_control_error_limit;
     acCutoff = (float)pidProfile->abs_control_cutoff;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        float iCorrection = -acGain * PTERM_SCALE / ITERM_SCALE * pidCoefficient[axis].Kp;
+        pidCoefficient[axis].Ki = MAX(0.0f, pidCoefficient[axis].Ki + iCorrection);
+    }
 #endif
 
 #ifdef USE_DYN_LPF
@@ -1533,4 +1543,14 @@ void pidSetItermReset(bool enabled)
 float pidGetPreviousSetpoint(int axis)
 {
     return previousPidSetpoint[axis];
+}
+
+float pidGetDT()
+{
+    return dT;
+}
+
+float pidGetPidFrequency()
+{
+    return pidFrequency;
 }

@@ -40,6 +40,8 @@ typedef struct gpsRescue_s {
     uint16_t targetLandingAltitudeM; //meters
     uint16_t targetLandingDistanceM; //meters
     uint8_t altitudeMode;
+    uint16_t ascendRate;
+    uint16_t descendRate;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);

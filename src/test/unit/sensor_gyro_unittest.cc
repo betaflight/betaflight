@@ -144,9 +144,9 @@ TEST(SensorGyro, Update)
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Z]);
     fakeGyroSet(gyroDevPtr, 15, 26, 97);
     gyroUpdate(currentTimeUs);
-    EXPECT_FLOAT_EQ(10 * gyroDevPtr->scale, gyro.gyroADCf[X]); // gyroADCf values are scaled
-    EXPECT_FLOAT_EQ(20 * gyroDevPtr->scale, gyro.gyroADCf[Y]);
-    EXPECT_FLOAT_EQ(90 * gyroDevPtr->scale, gyro.gyroADCf[Z]);
+    EXPECT_NEAR(10 * gyroDevPtr->scale, gyro.gyroADCf[X], 1e-3); // gyroADCf values are scaled
+    EXPECT_NEAR(20 * gyroDevPtr->scale, gyro.gyroADCf[Y], 1e-3);
+    EXPECT_NEAR(90 * gyroDevPtr->scale, gyro.gyroADCf[Z], 1e-3);
 }
 
 // STUBS

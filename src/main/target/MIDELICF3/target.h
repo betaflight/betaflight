@@ -117,8 +117,7 @@
 
 #define RX_CC2500_SPI_ANT_SEL_PIN PB2
 
-
-#define BINDPLUG_PIN             PC13
+#define RX_SPI_BIND_PIN          PC13
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN   PB9 // Motor 6, can't use escserial for hexa

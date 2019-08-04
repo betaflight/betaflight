@@ -31,9 +31,6 @@
 
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
@@ -46,6 +43,8 @@
 #include "flight/mixer.h"
 
 #include "io/serial.h"
+
+#include "pg/motor.h"
 
 
 typedef enum {
@@ -948,7 +947,9 @@ bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig
     LED0_OFF;
     LED1_OFF;
     //StopPwmAllMotors();
-    pwmDisableMotors();
+    // XXX Review effect of motor refactor 
+    //pwmDisableMotors();
+    motorDisable();
     passPort = escPassthroughPort;
 
     uint32_t escBaudrate;

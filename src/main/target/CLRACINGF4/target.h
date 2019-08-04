@@ -24,9 +24,7 @@
 
 #define USBD_PRODUCT_STRING "CLRACINGF4"
 
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
-#endif
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                  PB5
 #define USE_BEEPER
@@ -64,8 +62,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
@@ -131,12 +127,16 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_TRANSPONDER
+#define USE_PINIO
+#define PINIO1_PIN             PA14 // VTX power switcher
+#define USE_PINIOBOX
+
 
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )
 #define CURRENT_METER_SCALE_DEFAULT 250
 
-#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
+#define TARGET_IO_PORTA (0xffff )
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)

@@ -107,8 +107,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 /* BLACKBOX dataflash available as of V2.1 -- did not exist on V1 and V2 */
 #define USE_FLASHFS

@@ -50,6 +50,7 @@
 #include "io/gps.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -63,7 +64,7 @@
 #include "telemetry/srxl.h"
 
 #include "drivers/vtx_common.h"
-#include "drivers/pwm_output.h"
+#include "drivers/dshot.h"
 
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
@@ -179,7 +180,7 @@ uint16_t getMotorAveragePeriod(void)
     }
 #endif
 
-#if defined( USE_DSHOT_TELEMETRY)
+#if defined(USE_DSHOT_TELEMETRY)
     if (useDshotTelemetry) {
         uint16_t motors = getMotorCount();
 
@@ -534,14 +535,17 @@ static void collectVtxTmData(spektrumVtx_t * vtx)
     vtxDeviceType = vtxCommonGetDeviceType(vtxDevice);
 
     // Collect all data from VTX, if VTX is ready
+    unsigned vtxStatus;
     if (vtxDevice == NULL || !(vtxCommonGetBandAndChannel(vtxDevice, &vtx->band, &vtx->channel) &&
-           vtxCommonGetPitMode(vtxDevice, &vtx->pitMode) &&
+           vtxCommonGetStatus(vtxDevice, &vtxStatus) &&
            vtxCommonGetPowerIndex(vtxDevice, &vtx->power)) )
         {
             vtx->band    = 0;
             vtx->channel = 0;
             vtx->power   = 0;
             vtx->pitMode = 0;
+        } else {
+            vtx->pitMode = (vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0;
         }
 
     vtx->powerValue = 0;
@@ -557,25 +561,22 @@ static void convertVtxPower(spektrumVtx_t * vtx)
     {
         uint8_t const * powerIndexTable = NULL;
 
+        vtxCommonLookupPowerValue(vtxCommonDevice(), vtx->power, &vtx->powerValue);
         switch (vtxDeviceType) {
 
 #if defined(USE_VTX_TRAMP)
         case VTXDEV_TRAMP:
             powerIndexTable = vtxTrampPi;
-            vtx->powerValue = vtxCommonLookupPowerValue(vtxCommonDevice(), vtx->power - 1);  // Lookup the device power value, 0-based table vs 1-based index. Doh.
             break;
 #endif
 #if defined(USE_VTX_SMARTAUDIO)
         case VTXDEV_SMARTAUDIO:
             powerIndexTable = vtxSaPi;
-            vtx->powerValue = vtxCommonLookupPowerValue(vtxCommonDevice(), vtx->power - 1);  // Lookup the device power value, 0-based table vs 1-based index. Doh.
             break;
 #endif
 #if defined(USE_VTX_RTC6705)
         case VTXDEV_RTC6705:
             powerIndexTable = vtxRTC6705Pi;
-            // No power value table available.Hard code some "knowledge" here. Doh.
-            vtx->powerValue = vtx->power == VTX_6705_POWER_200 ? 200 : 25;
             break;
 #endif
 

@@ -30,7 +30,8 @@ typedef enum {
     BARO_MS5611 = 3,
     BARO_BMP280 = 4,
     BARO_LPS = 5,
-    BARO_QMP6988 = 6
+    BARO_QMP6988 = 6,
+    BARO_BMP388 = 7
 } baroSensor_e;
 
 #define BARO_SAMPLE_COUNT_MAX   48
@@ -45,6 +46,8 @@ typedef struct barometerConfig_s {
     uint8_t baro_sample_count;              // size of baro filter array
     uint16_t baro_noise_lpf;                // additional LPF to reduce baro noise
     uint16_t baro_cf_vel;                   // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
+    ioTag_t baro_eoc_tag;
+    ioTag_t baro_xclr_tag;
 } barometerConfig_t;
 
 PG_DECLARE(barometerConfig_t, barometerConfig);

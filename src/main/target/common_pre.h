@@ -55,6 +55,7 @@
 #define USE_DSHOT_TELEMETRY
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
+#define USE_DYN_IDLE
 #define I2C3_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC
@@ -65,6 +66,7 @@
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_PERSISTENT_OBJECTS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_SPI_TRANSACTION
 
@@ -82,6 +84,7 @@
 #define USE_DSHOT_TELEMETRY
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
+#define USE_DYN_IDLE
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define USE_GYRO_DATA_ANALYSE
@@ -93,6 +96,7 @@
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_PERSISTENT_OBJECTS
 // Re-enable this after 4.0 has been released, and remove the define from STM32F4DISCOVERY
 //#define USE_SPI_TRANSACTION
 #endif // STM32F7
@@ -104,6 +108,9 @@
 #define USE_GYRO_DATA_ANALYSE
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
+#define USE_DMA_SPEC
+#define USE_TIMER_MGMT
+#define USE_PERSISTENT_OBJECTS
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
@@ -149,12 +156,15 @@
 
 #ifdef USE_DMA_RAM
 #define DMA_RAM __attribute__((section(".DMA_RAM")))
+#define DMA_RW_AXI __attribute__((section(".DMA_AXI_RW")))
 #else
 #define DMA_RAM
+#define DMA_RW_AXI
 #endif
 
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 
+#define USE_MOTOR
 #define USE_PWM_OUTPUT
 #define USE_DMA
 #define USE_TIMER
@@ -319,7 +329,6 @@
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_CMS_FAILSAFE_MENU
 #define USE_CMS_GPS_RESCUE_MENU
-#define USE_SMART_FEEDFORWARD
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
 #define USE_VTX_TABLE
 #define USE_PERSISTENT_STATS

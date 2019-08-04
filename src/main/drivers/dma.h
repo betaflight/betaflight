@@ -22,16 +22,31 @@
 
 #include "resource.h"
 
+// dmaResource_t is a opaque data type which represents a single DMA engine,
+// called and implemented differently in different families of STM32s.
+// The opaque data type provides uniform handling of the engine in source code.
+// The engines are referenced by dmaResource_t through out the Betaflight code,
+// and then converted back to DMA_ARCH_TYPE which is a native type for
+// the particular MCU type when calling library functions.
+
+typedef struct dmaResource_s dmaResource_t;
+
+#if defined(STM32F4) || defined(STM32F7)
+#define DMA_ARCH_TYPE DMA_Stream_TypeDef
+#elif defined(STM32H7)
+#define DMA_ARCH_TYPE void
+#else
+#define DMA_ARCH_TYPE DMA_Channel_TypeDef
+#endif
+
 struct dmaChannelDescriptor_s;
 typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
 
 typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
+    dmaResource_t               *ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    DMA_Stream_TypeDef*         ref;
     uint8_t                     stream;
-#else
-    DMA_Channel_TypeDef*        ref;
 #endif
     dmaCallbackHandlerFuncPtr   irqHandlerCallback;
     uint8_t                     flagsShift;
@@ -81,7 +96,7 @@ typedef enum {
 
 #define DEFINE_DMA_CHANNEL(d, s, f) { \
     .dma = d, \
-    .ref = d ## _Stream ## s, \
+    .ref = (dmaResource_t *)d ## _Stream ## s, \
     .stream = s, \
     .irqHandlerCallback = NULL, \
     .flagsShift = f, \
@@ -107,9 +122,9 @@ typedef enum {
 #define DMA_IT_DMEIF        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream);
-dmaChannelDescriptor_t* dmaGetDmaDescriptor(const DMA_Stream_TypeDef* stream);
-DMA_Stream_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
+dmaIdentifier_e dmaGetIdentifier(const dmaResource_t *stream);
+dmaChannelDescriptor_t* dmaGetDmaDescriptor(const dmaResource_t *stream);
+dmaResource_t *dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 uint32_t dmaGetChannel(const uint8_t channel);
 
 #else
@@ -143,7 +158,7 @@ typedef enum {
 
 #define DEFINE_DMA_CHANNEL(d, c, f) { \
     .dma = d, \
-    .ref = d ## _Channel ## c, \
+    .ref = (dmaResource_t *)d ## _Channel ## c, \
     .irqHandlerCallback = NULL, \
     .flagsShift = f, \
     .irqN = d ## _Channel ## c ## _IRQn, \
@@ -165,9 +180,33 @@ typedef enum {
 #define DMA_IT_HTIF         ((uint32_t)0x00000004)
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel);
-DMA_Channel_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
+dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel);
+dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 
+#endif
+
+// Macros to avoid direct register and register bit access
+
+#if defined(STM32F4) || defined(STM32F7)
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CR & DMA_SxCR_EN)
+#define REG_NDTR NDTR
+#elif defined(STM32H7)
+// For H7, we have to differenciate DMA1/2 and BDMA for access to the control register.
+// HAL library has a macro for this, but it is extremely inefficient in that it compares
+// the address against all possible values.
+// Here, we just compare the address against regions of memory.
+// If it's not in D3 peripheral area, then it's DMA1/2 and it's stream based.
+// If not, it's BDMA and it's channel based.
+#define IS_DMA_ENABLED(reg) \
+    ((uint32_t)(reg) < D3_AHB1PERIPH_BASE) ? \
+        (((DMA_Stream_TypeDef *)(reg))->CR & DMA_SxCR_EN) : \
+        (((BDMA_Channel_TypeDef *)(reg))->CCR & BDMA_CCR_EN)
+#else
+#if defined(STM32F1)
+#define DMA_CCR_EN 1 // Not defined anywhere ...
+#endif
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
+#define DMAx_SetMemoryAddress(reg, address) ((DMA_ARCH_TYPE *)(reg))->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail]
 #endif
 
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
@@ -176,3 +215,33 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier);
 uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier);
 dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier);
+
+//
+// Wrapper macros to cast dmaResource_t back into DMA_ARCH_TYPE
+//
+
+#ifdef USE_HAL_DRIVER
+
+// We actually need these LL case only
+
+#define xLL_EX_DMA_DeInit(dmaResource) LL_EX_DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_Init(dmaResource, initstruct) LL_EX_DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initstruct)
+#define xLL_EX_DMA_DisableResource(dmaResource) LL_EX_DMA_DisableResource((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_EnableResource(dmaResource) LL_EX_DMA_EnableResource((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
+#define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+
+#else
+
+#define xDMA_Init(dmaResource, initStruct) DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initStruct)
+#define xDMA_DeInit(dmaResource) DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
+#define xDMA_Cmd(dmaResource, newState) DMA_Cmd((DMA_ARCH_TYPE *)(dmaResource), newState)
+#define xDMA_ITConfig(dmaResource, flags, newState) DMA_ITConfig((DMA_ARCH_TYPE *)(dmaResource), flags, newState)
+#define xDMA_GetCurrDataCounter(dmaResource) DMA_GetCurrDataCounter((DMA_ARCH_TYPE *)(dmaResource))
+#define xDMA_SetCurrDataCounter(dmaResource, count) DMA_SetCurrDataCounter((DMA_ARCH_TYPE *)(dmaResource), count)
+#define xDMA_GetFlagStatus(dmaResource, flags) DMA_GetFlagStatus((DMA_ARCH_TYPE *)(dmaResource), flags)
+#define xDMA_ClearFlag(dmaResource, flags) DMA_ClearFlag((DMA_ARCH_TYPE *)(dmaResource), flags)
+#define xDMA_MemoryTargetConfig(dmaResource, address, target) DMA_MemoryTargetConfig((DMA_ARCH_TYPE *)(dmaResource), address, target)
+
+#endif

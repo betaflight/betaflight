@@ -25,7 +25,6 @@
 
 #include "platform.h"
 
-//#define USE_SMARTAUDIO_DPRINTF
 #ifdef USE_SMARTAUDIO_DPRINTF
 #include "io/serial.h"
 #include "common/printf.h"
@@ -33,15 +32,10 @@
 #endif
 
 #define VTX_SMARTAUDIO_MIN_BAND 1
-#define VTX_SMARTAUDIO_MAX_BAND 5
 #define VTX_SMARTAUDIO_MIN_CHANNEL 1
-#define VTX_SMARTAUDIO_MAX_CHANNEL 8
 
-#define VTX_SMARTAUDIO_BAND_COUNT (VTX_SMARTAUDIO_MAX_BAND - VTX_SMARTAUDIO_MIN_BAND + 1)
-#define VTX_SMARTAUDIO_CHANNEL_COUNT (VTX_SMARTAUDIO_MAX_CHANNEL - VTX_SMARTAUDIO_MIN_CHANNEL + 1)
 
 #define VTX_SMARTAUDIO_POWER_COUNT 4
-#define VTX_SMARTAUDIO_DEFAULT_POWER 1
 
 #define VTX_SMARTAUDIO_MIN_FREQUENCY_MHZ 5000        //min freq in MHz
 #define VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ 5999        //max freq in MHz
@@ -95,7 +89,6 @@ extern smartAudioStat_t saStat;
 extern uint16_t sa_smartbaud;
 extern bool saDeferred;
 
-void saSetBandAndChannel(uint8_t band, uint8_t channel);
 void saSetMode(int mode);
 void saSetFreq(uint16_t freq);
 void saSetPitFreq(uint16_t freq);

@@ -51,6 +51,7 @@
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
+#include "drivers/motor.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sdcard.h"
 #include "drivers/serial.h"
@@ -92,7 +93,6 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
-#include "io/vtx_string.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
@@ -104,8 +104,7 @@
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/gyrodev.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+#include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
 #include "pg/usb.h"
@@ -140,9 +139,10 @@ static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; //
 
 enum {
     MSP_REBOOT_FIRMWARE = 0,
-    MSP_REBOOT_BOOTLOADER,
+    MSP_REBOOT_BOOTLOADER_ROM,
     MSP_REBOOT_MSC,
     MSP_REBOOT_MSC_UTC,
+    MSP_REBOOT_BOOTLOADER_FLASH,
     MSP_REBOOT_COUNT,
 };
 
@@ -256,15 +256,15 @@ static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
-    stopPwmAllMotors();
+    motorShutdown();
 
     switch (rebootMode) {
     case MSP_REBOOT_FIRMWARE:
         systemReset();
 
         break;
-    case MSP_REBOOT_BOOTLOADER:
-        systemResetToBootloader();
+    case MSP_REBOOT_BOOTLOADER_ROM:
+        systemResetToBootloader(BOOTLOADER_REQUEST_ROM);
 
         break;
 #if defined(USE_USB_MSC)
@@ -277,6 +277,12 @@ static void mspRebootFn(serialPort_t *serialPort)
         systemResetToMsc(0);
 #endif
         }
+        break;
+#endif
+#if defined(USE_FLASH_BOOT_LOADER)
+    case MSP_REBOOT_BOOTLOADER_FLASH:
+        systemResetToBootloader(BOOTLOADER_REQUEST_FLASH);
+
         break;
 #endif
     default:
@@ -499,8 +505,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #else
         sbufWriteU16(dst, 0); // No other build targets currently have hardware revision detection.
 #endif
-#if defined(USE_OSD) && defined(USE_MAX7456)
-        sbufWriteU8(dst, 2);  // 2 == FC with OSD
+#if defined(USE_MAX7456)
+        sbufWriteU8(dst, 2);  // 2 == FC with MAX7456
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
 #endif
@@ -958,7 +964,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 continue;
             }
 
-            sbufWriteU16(dst, convertMotorToExternal(motor[i]));
+            sbufWriteU16(dst, motorConvertToExternal(motor[i]));
 #else
             sbufWriteU16(dst, 0);
 #endif
@@ -1082,7 +1088,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             const adjustmentRange_t *adjRange = adjustmentRanges(i);
-            sbufWriteU8(dst, adjRange->adjustmentIndex);
+            sbufWriteU8(dst, 0); // was adjRange->adjustmentIndex
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
             sbufWriteU8(dst, adjRange->range.endStep);
@@ -1363,41 +1369,41 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
 
+
     case MSP_SENSOR_ALIGNMENT: {
         uint8_t gyroAlignment;
 #ifdef USE_MULTI_GYRO
         switch (gyroConfig()->gyro_to_use) {
         case GYRO_CONFIG_USE_GYRO_2:
-            gyroAlignment = gyroDeviceConfig(1)->align;
+            gyroAlignment = gyroDeviceConfig(1)->alignment;
             break;
         case GYRO_CONFIG_USE_GYRO_BOTH:
             // for dual-gyro in "BOTH" mode we only read/write gyro 0
         default:
-            gyroAlignment = gyroDeviceConfig(0)->align;
+            gyroAlignment = gyroDeviceConfig(0)->alignment;
             break;
         }
 #else
-        gyroAlignment = gyroDeviceConfig(0)->align;
+        gyroAlignment = gyroDeviceConfig(0)->alignment;
 #endif
         sbufWriteU8(dst, gyroAlignment);
         sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same
-        sbufWriteU8(dst, compassConfig()->mag_align);
+        sbufWriteU8(dst, compassConfig()->mag_alignment);
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
 #ifdef USE_MULTI_GYRO
         sbufWriteU8(dst, gyroConfig()->gyro_to_use);
-        sbufWriteU8(dst, gyroDeviceConfig(0)->align);
-        sbufWriteU8(dst, gyroDeviceConfig(1)->align);
+        sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
+        sbufWriteU8(dst, gyroDeviceConfig(1)->alignment);
 #else
         sbufWriteU8(dst, GYRO_CONFIG_USE_GYRO_1);
-        sbufWriteU8(dst, gyroDeviceConfig(0)->align);
+        sbufWriteU8(dst, gyroDeviceConfig(0)->alignment);
         sbufWriteU8(dst, ALIGN_DEFAULT);
 #endif
 
         break;
     }
-
     case MSP_ADVANCED_CONFIG:
         sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
         sbufWriteU8(dst, pidConfig()->pid_process_denom);
@@ -1539,11 +1545,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_VTX_CONFIG:
         {
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            uint8_t pitmode = 0;
+            unsigned vtxStatus;
             vtxDevType_e vtxType = VTXDEV_UNKNOWN;
             uint8_t deviceIsReady = 0;
             if (vtxDevice) {
-                vtxCommonGetPitMode(vtxDevice, &pitmode);
+                vtxCommonGetStatus(vtxDevice, &vtxStatus);
                 vtxType = vtxCommonGetDeviceType(vtxDevice);
                 deviceIsReady = vtxCommonDeviceIsReady(vtxDevice) ? 1 : 0;
             }
@@ -1551,7 +1557,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, vtxSettingsConfig()->band);
             sbufWriteU8(dst, vtxSettingsConfig()->channel);
             sbufWriteU8(dst, vtxSettingsConfig()->power);
-            sbufWriteU8(dst, pitmode);
+            sbufWriteU8(dst, (vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0);
             sbufWriteU16(dst, vtxSettingsConfig()->freq);
             sbufWriteU8(dst, deviceIsReady);
             sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
@@ -1826,17 +1832,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
-            i = sbufReadU8(src);
-            if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
-                adjRange->adjustmentIndex = i;
-                adjRange->auxChannelIndex = sbufReadU8(src);
-                adjRange->range.startStep = sbufReadU8(src);
-                adjRange->range.endStep = sbufReadU8(src);
-                adjRange->adjustmentConfig = sbufReadU8(src);
-                adjRange->auxSwitchChannelIndex = sbufReadU8(src);
-            } else {
-                return MSP_RESULT_ERROR;
-            }
+            sbufReadU8(src); // was adjRange->adjustmentIndex
+            adjRange->auxChannelIndex = sbufReadU8(src);
+            adjRange->range.startStep = sbufReadU8(src);
+            adjRange->range.endStep = sbufReadU8(src);
+            adjRange->adjustmentConfig = sbufReadU8(src);
+            adjRange->auxSwitchChannelIndex = sbufReadU8(src);
+
             activeAdjustmentRangeReset();
         } else {
             return MSP_RESULT_ERROR;
@@ -1949,7 +1951,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_MOTOR:
         for (int i = 0; i < getMotorCount(); i++) {
-            motor_disarmed[i] = convertExternalToMotor(sbufReadU16(src));
+            motor_disarmed[i] = motorConvertFromExternal(sbufReadU16(src));
         }
         break;
 
@@ -2006,21 +2008,22 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RESET_CURR_PID:
         resetPidProfile(currentPidProfile);
         break;
+        
     case MSP_SET_SENSOR_ALIGNMENT: {
         // maintain backwards compatibility for API < 1.41
         const uint8_t gyroAlignment = sbufReadU8(src);
         sbufReadU8(src);  // discard deprecated acc_align
-        compassConfigMutable()->mag_align = sbufReadU8(src);
+        compassConfigMutable()->mag_alignment = sbufReadU8(src);
 
         if (sbufBytesRemaining(src) >= 3) {
             // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
 #ifdef USE_MULTI_GYRO
             gyroConfigMutable()->gyro_to_use = sbufReadU8(src);
-            gyroDeviceConfigMutable(0)->align = sbufReadU8(src);
-            gyroDeviceConfigMutable(1)->align = sbufReadU8(src);
+            gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
+            gyroDeviceConfigMutable(1)->alignment = sbufReadU8(src);
 #else
             sbufReadU8(src);  // unused gyro_to_use
-            gyroDeviceConfigMutable(0)->align = sbufReadU8(src);
+            gyroDeviceConfigMutable(0)->alignment = sbufReadU8(src);
             sbufReadU8(src);  // unused gyro_2_sensor_align
 #endif
         } else {
@@ -2028,16 +2031,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_MULTI_GYRO
             switch (gyroConfig()->gyro_to_use) {
             case GYRO_CONFIG_USE_GYRO_2:
-                gyroDeviceConfigMutable(1)->align = gyroAlignment;
+                gyroDeviceConfigMutable(1)->alignment = gyroAlignment;
                 break;
             case GYRO_CONFIG_USE_GYRO_BOTH:
                 // For dual-gyro in "BOTH" mode we'll only update gyro 0
             default:
-                gyroDeviceConfigMutable(0)->align = gyroAlignment;
+                gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
                 break;
             }
 #else
-            gyroDeviceConfigMutable(0)->align = gyroAlignment;
+            gyroDeviceConfigMutable(0)->alignment = gyroAlignment;
 #endif
 
         }
@@ -2300,9 +2303,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
                     const uint8_t newPitmode = sbufReadU8(src);
-                    uint8_t currentPitmode = 0;
-                    vtxCommonGetPitMode(vtxDevice, &currentPitmode);
-                    if (currentPitmode != newPitmode) {
+                    unsigned vtxCurrentStatus;
+                    vtxCommonGetStatus(vtxDevice, &vtxCurrentStatus);
+                    if ((bool)(vtxCurrentStatus & VTX_STATUS_PIT_MODE) != (bool)newPitmode) {
                         vtxCommonSetPitMode(vtxDevice, newPitmode);
                     }
 

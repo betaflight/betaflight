@@ -39,7 +39,8 @@ typedef enum {
 } escProtocol_e;
 
 // serialPort API
-bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode);
+struct motorDevConfig_s;
+bool escEnablePassthrough(serialPort_t *escPassthroughPort, const struct motorDevConfig_s *motorConfig, uint16_t escIndex, uint8_t mode);
 
 typedef struct escSerialConfig_s {
     ioTag_t ioTag;

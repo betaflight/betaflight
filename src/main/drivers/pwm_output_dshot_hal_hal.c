@@ -27,12 +27,17 @@
 
 #ifdef USE_DSHOT
 
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "timer.h"
 #include "pwm_output.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_dpwm.h"
+#include "drivers/dshot_command.h"
 #include "drivers/nvic.h"
 #include "dma.h"
 #include "rcc.h"
+#include "pg/timerup.h"
 
 static HAL_StatusTypeDef result;
 
@@ -136,7 +141,7 @@ void pwmBurstDMAStart(TIM_HandleTypeDef *htim, uint32_t BurstBaseAddress, uint32
     __HAL_TIM_ENABLE_DMA(htim, BurstRequestSrc);
 }
 
-void pwmWriteDshotInt(uint8_t index, uint16_t value)
+FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
 
@@ -145,20 +150,26 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
     }
 
     /*If there is a command ready to go overwrite the value and send that instead*/
-    if (pwmDshotCommandIsProcessing()) {
+    if (dshotCommandIsProcessing()) {
         value = pwmGetDshotCommand(index);
         if (value) {
-            motor->requestTelemetry = true;
+            motor->protocolControl.requestTelemetry = true;
         }
     }
 
-    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
+    if (!motor->timerHardware
+#ifndef USE_DMA_SPEC
+        // When USE_DMA_SPEC is in effect, motor->timerHardware remains NULL if valid DMA is not assigned.
+        || !motor->timerHardware->dmaRef
+#endif
+    )
+    {
         return;
     }
 
-    motor->value = value;
+    motor->protocolControl.value = value;
 
-    uint16_t packet = prepareDshotPacket(motor);
+    uint16_t packet = prepareDshotPacket(&motor->protocolControl);
     uint8_t bufferSize;
 
 #ifdef USE_DSHOT_DMAR
@@ -174,16 +185,12 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
     }
 }
 
-void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
+void pwmCompleteDshotMotorUpdate(void)
 {
-    UNUSED(motorCount);
-
     // If there is a dshot command loaded up, time it correctly with motor update
 
-    if (pwmDshotCommandIsQueued()) {
-        if (!pwmDshotCommandOutputIsEnabled(motorCount)) {
-            return;
-        }
+    if (!dshotCommandQueueEmpty() && !dshotCommandOutputIsEnabled(dshotPwmDevice.count)) {
+        return;
     }
 
 #ifdef USE_DSHOT_DMAR
@@ -228,16 +235,35 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
-    DMA_Stream_TypeDef *dmaRef;
+    dmaResource_t *dmaRef = NULL;
+    uint32_t dmaChannel;
+
+#ifdef USE_DMA_SPEC
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+
+    if (dmaSpec) {
+        dmaRef = dmaSpec->ref;
+        dmaChannel = dmaSpec->channel;
+    }
+#else
+    dmaRef = timerHardware->dmaRef;
+    dmaChannel = timerHardware->dmaChannel;
+#endif
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
+#ifdef USE_DMA_SPEC
+        uint8_t timnum = timerGetTIMNumber(timerHardware->tim);
+        dmaoptValue_t dmaopt = timerUpConfig(timnum - 1)->dmaopt;
+        const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_TIMUP, timnum - 1, dmaopt);
+        dmaRef = dmaChannelSpec->ref;
+        dmaChannel = dmaChannelSpec->channel;
+#else
         dmaRef = timerHardware->dmaTimUPRef;
-    } else
+        dmaChannel = timerHardware->dmaTimUPChannel;
 #endif
-    {
-        dmaRef = timerHardware->dmaRef;
     }
+#endif
 
     if (dmaRef == NULL) {
         return;
@@ -351,8 +377,8 @@ P    -    High -     High -
         memset(motor->timer->dmaBurstBuffer, 0, DSHOT_DMA_BUFFER_SIZE * 4 * sizeof(uint32_t));
 
         /* Set hdma_tim instance */
-        motor->timer->hdma_tim.Instance = timerHardware->dmaTimUPRef;
-        motor->timer->hdma_tim.Init.Request = timerHardware->dmaTimUPRequest;
+        motor->timer->hdma_tim.Instance = dmaRef;
+        motor->timer->hdma_tim.Init.Request = dmaChannel;
 
         /* Link hdma_tim to hdma[TIM_DMA_ID_UPDATE] (update) */
         __HAL_LINKDMA(&motor->timer->timHandle, hdma[TIM_DMA_ID_UPDATE], motor->timer->hdma_tim);
@@ -379,8 +405,8 @@ P    -    High -     High -
         motor->dmaBuffer[DSHOT_DMA_BUFFER_SIZE-2] = 0; // XXX Is this necessary? -> probably.
         motor->dmaBuffer[DSHOT_DMA_BUFFER_SIZE-1] = 0; // XXX Is this necessary?
 
-        motor->hdma_tim.Instance = timerHardware->dmaRef;
-        motor->hdma_tim.Init.Request = timerHardware->dmaRequest;
+        motor->hdma_tim.Instance = dmaRef;
+        motor->hdma_tim.Init.Request = dmaChannel;
 
         /* Link hdma_tim to hdma[x] (channelx) */
         __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaIndex], motor->hdma_tim);
@@ -395,15 +421,16 @@ P    -    High -     High -
         return;
     }
 
+    dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
-        dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
-        dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), timerIndex);
+        dmaInit(identifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
+        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, timerIndex);
     } else
 #endif
     {
-        dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-        dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motorIndex);
     }
 
     // Start the timer channel now.

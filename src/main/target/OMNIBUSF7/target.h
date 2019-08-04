@@ -62,7 +62,6 @@
 #define GYRO_2_SPI_INSTANCE     SPI1
 #define GYRO_2_CS_PIN           PA4
 #define GYRO_1_ALIGN            CW90_DEG
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_1_EXTI_PIN         PD0           // MPU6000
 #define GYRO_2_EXTI_PIN         PE8           // ICM20608
 
@@ -81,8 +80,6 @@
 #define GYRO_1_CS_PIN           PA15
 #define GYRO_2_SPI_INSTANCE     SPI1
 #define GYRO_2_CS_PIN           PA4
-#define GYRO_1_ALIGN            ALIGN_DEFAULT
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_1_EXTI_PIN         PE8           // ICM20608
 #define GYRO_2_EXTI_PIN         PD0           // MPU6000
 #endif
@@ -162,8 +159,6 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #ifdef FPVM_BETAFLIGHTF7
 //FLASH--------------------------------------

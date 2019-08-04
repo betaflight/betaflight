@@ -28,14 +28,20 @@
 
 #include "build/debug.h"
 
+#include "common/time.h"
+
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/motor.h"
 
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/pwm_output.h"
+#include "drivers/timer.h"
+#include "drivers/motor.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_dpwm.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
@@ -290,11 +296,13 @@ static void selectNextMotor(void)
     }
 }
 
+// XXX Review ESC sensor under refactored motor handling
+
 void escSensorProcess(timeUs_t currentTimeUs)
 {
     const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
-    if (!escSensorPort || !pwmAreMotorsEnabled()) {
+    if (!escSensorPort || !motorIsEnabled()) {
         return;
     }
 
@@ -311,7 +319,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
             startEscDataRead(telemetryBuffer, TELEMETRY_FRAME_SIZE);
             motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
-            motor->requestTelemetry = true;
+            motor->protocolControl.requestTelemetry = true;
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
 
             DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);

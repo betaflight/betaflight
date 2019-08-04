@@ -39,6 +39,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+#include "stm32f7xx_ll_usart.h"
+
 static void handleUsartTxDma(uartPort_t *s);
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
@@ -48,10 +50,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART1,
         .DMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART1_RX_DMA
-        .rxDMAStream = DMA2_Stream5,
+        .rxDMAResource = (dmaResource_t *)DMA2_Stream5,
 #endif
 #ifdef USE_UART1_TX_DMA
-        .txDMAStream = DMA2_Stream7,
+        .txDMAResource = (dmaResource_t *)DMA2_Stream7,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA10), GPIO_AF7_USART1 },
@@ -83,10 +85,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART2,
         .DMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART2_RX_DMA
-        .rxDMAStream = DMA1_Stream5,
+        .rxDMAResource = (dmaResource_t *)DMA1_Stream5,
 #endif
 #ifdef USE_UART2_TX_DMA
-        .txDMAStream = DMA1_Stream6,
+        .txDMAResource = (dmaResource_t *)DMA1_Stream6,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA3), GPIO_AF7_USART2 },
@@ -112,10 +114,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART3,
         .DMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART3_RX_DMA
-        .rxDMAStream = DMA1_Stream1,
+        .rxDMAResource = (dmaResource_t *)DMA1_Stream1,
 #endif
 #ifdef USE_UART3_TX_DMA
-        .txDMAStream = DMA1_Stream3,
+        .txDMAResource = (dmaResource_t *)DMA1_Stream3,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PB11), GPIO_AF7_USART3 },
@@ -143,22 +145,22 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART4,
         .DMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART4_RX_DMA
-        .rxDMAStream = DMA1_Stream2,
+        .rxDMAResource = (dmaResource_t *)DMA1_Stream2,
 #endif
 #ifdef USE_UART4_TX_DMA
-        .txDMAStream = DMA1_Stream4,
+        .txDMAResource = (dmaResource_t *)DMA1_Stream4,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA1), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
 #ifdef STM32F765xx
             { DEFIO_TAG_E(PA11), GPIO_AF6_UART4 },
-            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }         
+            { DEFIO_TAG_E(PD0), GPIO_AF8_UART4 }
 #endif
         },
         .txPins = {
             { DEFIO_TAG_E(PA0), GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
 #ifdef STM32F765xx
             { DEFIO_TAG_E(PA12), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PD1), GPIO_AF8_UART4 }
@@ -180,10 +182,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART5,
         .DMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART5_RX_DMA
-        .rxDMAStream = DMA1_Stream0,
+        .rxDMAResource = (dmaResource_t *)DMA1_Stream0,
 #endif
 #ifdef USE_UART5_TX_DMA
-        .txDMAStream = DMA1_Stream7,
+        .txDMAResource = (dmaResource_t *)DMA1_Stream7,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PD2), GPIO_AF8_UART5 },
@@ -217,10 +219,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = USART6,
         .DMAChannel = DMA_CHANNEL_5,
 #ifdef USE_UART6_RX_DMA
-        .rxDMAStream = DMA2_Stream1,
+        .rxDMAResource = (dmaResource_t *)DMA2_Stream1,
 #endif
 #ifdef USE_UART6_TX_DMA
-        .txDMAStream = DMA2_Stream6,
+        .txDMAResource = (dmaResource_t *)DMA2_Stream6,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PC7), GPIO_AF8_USART6  },
@@ -246,10 +248,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART7,
         .DMAChannel = DMA_CHANNEL_5,
 #ifdef USE_UART7_RX_DMA
-        .rxDMAStream = DMA1_Stream3,
+        .rxDMAResource = (dmaResource_t *)DMA1_Stream3,
 #endif
 #ifdef USE_UART7_TX_DMA
-        .txDMAStream = DMA1_Stream1,
+        .txDMAResource = (dmaResource_t *)DMA1_Stream1,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PE7), GPIO_AF8_UART7 },
@@ -283,10 +285,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .reg = UART8,
         .DMAChannel = DMA_CHANNEL_5,
 #ifdef USE_UART8_RX_DMA
-        .rxDMAStream = DMA1_Stream6,
+        .rxDMAResource = (dmaResource_t *)DMA1_Stream6,
 #endif
 #ifdef USE_UART8_TX_DMA
-        .txDMAStream = DMA1_Stream0,
+        .txDMAResource = (dmaResource_t *)DMA1_Stream0,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PE0), GPIO_AF8_UART8 }
@@ -347,7 +349,7 @@ void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART in mode Transmitter ------------------------------------------------*/
-    if (!s->txDMAStream && (__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET)) {
+    if (!s->txDMAResource && (__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET)) {
         /* Check that a Tx process is ongoing */
         if (huart->gState != HAL_UART_STATE_BUSY_TX) {
             if (s->port.txBufferTail == s->port.txBufferHead) {
@@ -368,9 +370,17 @@ void uartIrqHandler(uartPort_t *s)
     /* UART in mode Transmitter (transmission end) -----------------------------*/
     if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
         HAL_UART_IRQHandler(huart);
-        if (s->txDMAStream) {
+        if (s->txDMAResource) {
             handleUsartTxDma(s);
         }
+    }
+
+    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        __HAL_UART_CLEAR_IDLEFLAG(huart);
     }
 }
 
@@ -409,17 +419,17 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->USARTx = hardware->reg;
 
-    if (hardware->rxDMAStream) {
+    if (hardware->rxDMAResource) {
         s->rxDMAChannel = hardware->DMAChannel;
-        s->rxDMAStream = hardware->rxDMAStream;
+        s->rxDMAResource = hardware->rxDMAResource;
     }
 
-    if (hardware->txDMAStream) {
+    if (hardware->txDMAResource) {
         s->txDMAChannel = hardware->DMAChannel;
-        s->txDMAStream = hardware->txDMAStream;
+        s->txDMAResource = hardware->txDMAResource;
 
         // DMA TX Interrupt
-        dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAStream);
+        dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAResource);
         dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         dmaSetHandler(identifier, dmaIRQHandler, hardware->txPriority, (uint32_t)uartdev);
     }

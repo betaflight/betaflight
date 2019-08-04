@@ -23,33 +23,13 @@
 
 #include "platform.h"
 
-#include "common/axis.h"
-
-#include "drivers/sensor.h"
-#include "drivers/compass/compass.h"
 #include "drivers/serial.h"
 
-#include "fc/rc_controls.h"
-
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-
 #include "pg/rx.h"
-
 #include "rx/rx.h"
 
 #include "io/serial.h"
-
 #include "telemetry/telemetry.h"
-
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
-#include "sensors/barometer.h"
-
-#include "config/feature.h"
-
-#include "fc/config.h"
 
 #ifdef USE_TARGET_CONFIG
 
@@ -68,8 +48,6 @@ static targetSerialPortFunction_t targetSerialPortFunction[] = {
 
 void targetConfiguration(void)
 {
-    barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
-    compassConfigMutable()->mag_hardware = MAG_DEFAULT;
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     telemetryConfigMutable()->halfDuplex = true;
 }

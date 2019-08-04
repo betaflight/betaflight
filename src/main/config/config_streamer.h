@@ -26,7 +26,10 @@
 // Streams data out to the EEPROM, padding to the write size as
 // needed, and updating the checksum as it goes.
 
-#ifdef STM32H7
+#ifdef EEPROM_IN_EXTERNAL_FLASH
+#define CONFIG_STREAMER_BUFFER_SIZE 8 // Must not be greater than the smallest flash page size of all compiled-in flash devices.
+typedef uint32_t config_streamer_buffer_align_type_t;
+#elif defined(STM32H7)
 #define CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits
 typedef uint64_t config_streamer_buffer_align_type_t;
 #else

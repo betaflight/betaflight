@@ -84,16 +84,16 @@ void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resource
 
 #define RETURN_TCIF_FLAG(s, n) if (s == DMA1_Stream ## n || s == DMA2_Stream ## n) return DMA_IT_TCIF ## n
 
-uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream)
+uint32_t dmaFlag_IT_TCIF(const dmaResource_t *stream)
 {
-    RETURN_TCIF_FLAG(stream, 0);
-    RETURN_TCIF_FLAG(stream, 1);
-    RETURN_TCIF_FLAG(stream, 2);
-    RETURN_TCIF_FLAG(stream, 3);
-    RETURN_TCIF_FLAG(stream, 4);
-    RETURN_TCIF_FLAG(stream, 5);
-    RETURN_TCIF_FLAG(stream, 6);
-    RETURN_TCIF_FLAG(stream, 7);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 0);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 1);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 2);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 3);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 4);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 5);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 6);
+    RETURN_TCIF_FLAG((DMA_ARCH_TYPE *)stream, 7);
     return 0;
 }
 
@@ -125,27 +125,27 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
 }
 
-dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
+dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* instance)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
-        if (dmaDescriptors[i].ref == stream) {
+        if (dmaDescriptors[i].ref == instance) {
             return i + 1;
         }
     }
     return 0;
 }
 
-dmaChannelDescriptor_t* dmaGetDescriptor(const DMA_Stream_TypeDef* stream)
+dmaChannelDescriptor_t* dmaGetDescriptor(const dmaResource_t* instance)
 {
     for (int i = 0; i < DMA_LAST_HANDLER; i++) {
-        if (dmaDescriptors[i].ref == stream) {
+        if (dmaDescriptors[i].ref == instance) {
             return &dmaDescriptors[i];
         }
     }
     return NULL;
 }
 
-DMA_Stream_TypeDef* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
+dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
 {
     return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
 }

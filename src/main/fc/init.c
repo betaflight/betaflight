@@ -88,6 +88,7 @@
 #include "fc/init.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/stats.h"
 #include "fc/tasks.h"
 
 #include "flight/failsafe.h"
@@ -137,6 +138,7 @@
 #include "pg/bus_quadspi.h"
 #include "pg/flash.h"
 #include "pg/mco.h"
+#include "pg/motor.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
 #include "pg/pg.h"
@@ -179,6 +181,8 @@ serialPort_t *loopbackPort;
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
+void SDIO_GPIO_Init(void);
+
 void processLoopback(void)
 {
 #ifdef SOFTSERIAL_LOOPBACK
@@ -206,29 +210,55 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
+static void configureSPIAndQuadSPI(void)
+{
+#ifdef USE_SPI
+    spiPinConfigure(spiPinConfig(0));
+#endif
+
+    sensorsPreInit();
+
+#ifdef USE_SPI
+    spiPreinit();
+
+#ifdef USE_SPI_DEVICE_1
+    spiInit(SPIDEV_1);
+#endif
+#ifdef USE_SPI_DEVICE_2
+    spiInit(SPIDEV_2);
+#endif
+#ifdef USE_SPI_DEVICE_3
+    spiInit(SPIDEV_3);
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
+#endif
+#ifdef USE_SPI_DEVICE_5
+    spiInit(SPIDEV_5);
+#endif
+#ifdef USE_SPI_DEVICE_6
+    spiInit(SPIDEV_6);
+#endif
+#endif // USE_SPI
+
+#ifdef USE_QUADSPI
+    quadSpiPinConfigure(quadSpiConfig(0));
+
+#ifdef USE_QUADSPI_DEVICE_1
+    quadSpiInit(QUADSPIDEV_1);
+#endif
+#endif // USE_QUAD_SPI
+}
+
+void sdCardAndFSInit()
+{
+    sdcard_init(sdcardConfig());
+    afatfs_init();
+}
+
 
 void init(void)
 {
-#ifdef USE_HAL_DRIVER
-    HAL_Init();
-#endif
-
-#if defined(STM32F7)   
-    /* Enable I-Cache */
-    if (INSTRUCTION_CACHE_ENABLE) {
-        SCB_EnableICache();
-    }
-
-    /* Enable D-Cache */
-    if (DATA_CACHE_ENABLE) {
-        SCB_EnableDCache();
-    }
-
-    if (PREFETCH_ENABLE) {
-        LL_FLASH_EnablePrefetch();
-    }
-#endif
-
 #ifdef SERIAL_PORT_COUNT
     printfSerialInit();
 #endif
@@ -251,6 +281,104 @@ void init(void)
         detectBrushedESC(motorIoTag);
     }
 #endif
+
+    enum {
+        FLASH_INIT_ATTEMPTED            = (1 << 0),
+        SD_INIT_ATTEMPTED               = (1 << 1),
+        SPI_AND_QSPI_INIT_ATTEMPTED      = (1 << 2),
+    };
+    uint8_t initFlags = 0;
+
+
+#ifdef EEPROM_IN_SDCARD
+
+    //
+    // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
+    // sdcard are in the config which is on the sdcard which we can't read yet!
+    //
+    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
+    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
+    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change sdio/spi configs needed for
+    // the system to boot and/or to save the config.
+    //
+    // note that target specific SDCARD/SDIO/SPI/QUADSPI configs are
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_SDCARD.
+    //
+
+    //
+    // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    //
+
+#ifdef TARGET_BUS_INIT
+#error "EEPROM_IN_SDCARD and TARGET_BUS_INIT are mutually exclusive"
+#endif
+
+    pgResetAll();
+
+#if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    SDIO_GPIO_Init();
+#endif
+#ifdef USE_SDCARD_SPI
+    configureSPIAndQuadSPI();
+    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+#endif
+
+    sdCardAndFSInit();
+    initFlags |= SD_INIT_ATTEMPTED;
+
+    while (afatfs_getFilesystemState() != AFATFS_FILESYSTEM_STATE_READY) {
+        afatfs_poll();
+
+        if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_FATAL) {
+            failureMode(FAILURE_SDCARD_INITIALISATION_FAILED);
+        }
+    }
+
+#endif // EEPROM_IN_SDCARD
+
+#ifdef EEPROM_IN_EXTERNAL_FLASH
+    //
+    // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
+    // external flash are in the config which is on a chip which we can't read yet!
+    //
+    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
+    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
+    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change flash/pin configs needed for
+    // the system to boot and/or to save the config.
+    //
+    // note that target specific FLASH/SPI/QUADSPI configs are
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_EXTERNAL_FLASH.
+    //
+
+    //
+    // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    //
+    pgResetAll();
+
+#ifdef TARGET_BUS_INIT
+#error "EEPROM_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
+#endif
+
+    configureSPIAndQuadSPI();
+    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+
+
+#ifndef USE_FLASH_CHIP
+#error "EEPROM_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
+#endif
+
+    bool haveFlash = flashInit(flashConfig());
+
+    if (!haveFlash) {
+        failureMode(FAILURE_EXTERNAL_FLASH_INIT_FAILED);
+    }
+    initFlags |= FLASH_INIT_ATTEMPTED;
+
+#endif // EEPROM_IN_EXTERNAL_FLASH
 
     initEEPROM();
 
@@ -276,8 +404,6 @@ void init(void)
         detectBrushedESC(configuredMotorIoTag);
     }
 #endif
-
-    //i2cSetOverclock(masterConfig.i2c_overclock);
 
     debugMode = systemConfig()->debug_mode;
 
@@ -317,6 +443,9 @@ void init(void)
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
+#ifdef USE_PERSISTENT_OBJECTS
+                    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+#endif
                     systemReset();
                 }
                 delay(1000);
@@ -400,7 +529,7 @@ void init(void)
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         idlePulse = 0; // brushed motors
     }
-#ifdef USE_PWM_OUTPUT
+#ifdef USE_MOTOR
     /* Motors needs to be initialized soon as posible because hardware initialization
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
@@ -430,48 +559,17 @@ void init(void)
     initInverters(serialPinConfig());
 #endif
 
+
 #ifdef TARGET_BUS_INIT
     targetBusInit();
 
 #else
 
-#ifdef USE_SPI
-    spiPinConfigure(spiPinConfig(0));
-#endif
-
-    sensorsPreInit();
-
-#ifdef USE_SPI
-    spiPreinit();
-
-#ifdef USE_SPI_DEVICE_1
-    spiInit(SPIDEV_1);
-#endif
-#ifdef USE_SPI_DEVICE_2
-    spiInit(SPIDEV_2);
-#endif
-#ifdef USE_SPI_DEVICE_3
-    spiInit(SPIDEV_3);
-#endif
-#ifdef USE_SPI_DEVICE_4
-    spiInit(SPIDEV_4);
-#endif
-#ifdef USE_SPI_DEVICE_5
-    spiInit(SPIDEV_5);
-#endif
-#ifdef USE_SPI_DEVICE_6
-    spiInit(SPIDEV_6);
-#endif
-#endif // USE_SPI
-
-#ifdef USE_QUADSPI
-    quadSpiPinConfigure(quadSpiConfig(0));
-
-#ifdef USE_QUADSPI_DEVICE_1
-    quadSpiInit(QUADSPIDEV_1);
-#endif
-#endif // USE_QUAD_SPI
-
+    // Depending on compilation options SPI/QSPI initialisation may already be done.
+    if (!(initFlags & SPI_AND_QSPI_INIT_ATTEMPTED)) {
+        configureSPIAndQuadSPI();
+        initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+    }
 
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
@@ -519,9 +617,11 @@ void init(void)
 #endif
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
-    void SDIO_GPIO_Init(void);
-    SDIO_GPIO_Init();
+    if (!(initFlags & SD_INIT_ATTEMPTED)) {
+        SDIO_GPIO_Init();
+    }
 #endif
+
 
 #ifdef USE_VTX_RTC6705
     bool useRTC6705 = rtc6705IOInit(vtxIOConfig());
@@ -716,19 +816,23 @@ void init(void)
 #endif
 
 #ifdef USE_FLASH_CHIP
-    flashInit(flashConfig());
+    if (!(initFlags & FLASH_INIT_ATTEMPTED)) {
+        flashInit(flashConfig());
+        initFlags |= FLASH_INIT_ATTEMPTED;
+    }
+#endif
 #ifdef USE_FLASHFS
     flashfsInit();
-#endif
 #endif
 
 #ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->mode) {
-            sdcardInsertionDetectInit();
-            sdcard_init(sdcardConfig());
-            afatfs_init();
+            if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                initFlags |= SD_INIT_ATTEMPTED;
+                sdCardAndFSInit();
+            }
         } else {
             blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
         }
@@ -747,7 +851,7 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
-#ifdef USE_VTX_TABLE
+#if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
 #endif
 
@@ -808,8 +912,12 @@ void init(void)
     rcdeviceInit();
 #endif // USE_RCDEVICE
 
-#ifdef USE_PWM_OUTPUT
-    pwmEnableMotors();
+#ifdef USE_MOTOR
+    motorEnable();
+#endif
+
+#ifdef USE_PERSISTENT_STATS
+    statsInit();
 #endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
@@ -817,5 +925,4 @@ void init(void)
     fcTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
-
 }

@@ -35,6 +35,10 @@
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+
+#define DEFAULT_STACK_POINTER ((uint32_t *) 0x1FF00000)
+#define SYSTEM_MEMORY_RESET_VECTOR ((uint32_t *) 0x1FF00004)
+
 void SystemClock_Config(void);
 
 void systemReset(void)
@@ -43,9 +47,16 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-void systemResetToBootloader(void)
+void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST);
+    switch (requestType) {
+    case BOOTLOADER_REQUEST_ROM:
+    default:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
+
+        break;
+    }
+
     __disable_irq();
     NVIC_SystemReset();
 }
@@ -152,6 +163,25 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+static void checkForBootLoaderRequest(void)
+{
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+
+    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST_ROM) {
+        return;
+    }
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+
+    __SYSCFG_CLK_ENABLE();
+    SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
+
+    __set_MSP(*DEFAULT_STACK_POINTER);
+
+    ((void (*)(void))*SYSTEM_MEMORY_RESET_VECTOR)();
+
+    while (1);
+}
+
 void systemInit(void)
 {
     checkForBootLoaderRequest();
@@ -185,30 +215,4 @@ void systemInit(void)
     HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-}
-
-void(*bootJump)(void);
-
-void checkForBootLoaderRequest(void)
-{
-    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
-
-    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST) {
-        return;
-    }
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-
-    void (*SysMemBootJump)(void);
-
-    __SYSCFG_CLK_ENABLE();
-    SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
-
-    uint32_t p =  (*((uint32_t *) 0x1ff00000));
-
-    __set_MSP(p); //Set the main stack pointer to its default values
-
-    SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
-    SysMemBootJump();
-
-    while (1);
 }

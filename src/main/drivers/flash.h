@@ -51,7 +51,7 @@ void flashPreInit(const flashConfig_t *flashConfig);
 bool flashInit(const flashConfig_t *flashConfig);
 
 bool flashIsReady(void);
-bool flashWaitForReady(uint32_t timeoutMillis);
+bool flashWaitForReady(void);
 void flashEraseSector(uint32_t address);
 void flashEraseCompletely(void);
 void flashPageProgramBegin(uint32_t address);

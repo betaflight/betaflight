@@ -2,35 +2,17 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_nor.h
   * @author  MCD Application Team
-  * @version V1.2.2
-  * @date    14-April-2017
   * @brief   Header file of NOR HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */ 
@@ -120,8 +102,13 @@ typedef struct
 
 /** 
   * @brief  NOR handle Structure definition
-  */ 
+  */
+#if (USE_HAL_NOR_REGISTER_CALLBACKS == 1)
+typedef struct __NOR_HandleTypeDef
+#else
 typedef struct
+#endif /* USE_HAL_NOR_REGISTER_CALLBACKS  */
+
 {
   FMC_NORSRAM_TypeDef           *Instance;    /*!< Register base address                        */
 
@@ -133,7 +120,27 @@ typedef struct
 
   __IO HAL_NOR_StateTypeDef     State;        /*!< NOR device access state                      */
 
-}NOR_HandleTypeDef;
+#if (USE_HAL_NOR_REGISTER_CALLBACKS == 1)
+  void  (* MspInitCallback)        ( struct __NOR_HandleTypeDef * hnor);    /*!< NOR Msp Init callback              */
+  void  (* MspDeInitCallback)      ( struct __NOR_HandleTypeDef * hnor);    /*!< NOR Msp DeInit callback            */
+#endif
+} NOR_HandleTypeDef;
+
+#if (USE_HAL_NOR_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL NOR Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_NOR_MSP_INIT_CB_ID       = 0x00U,  /*!< NOR MspInit Callback ID          */
+  HAL_NOR_MSP_DEINIT_CB_ID     = 0x01U   /*!< NOR MspDeInit Callback ID        */
+}HAL_NOR_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL NOR Callback pointer definition
+  */
+typedef void (*pNOR_CallbackTypeDef)(NOR_HandleTypeDef *hnor);
+#endif
 /**
   * @}
   */
@@ -144,10 +151,18 @@ typedef struct
   * @{
   */
 /** @brief Reset NOR handle state
-  * @param  __HANDLE__: specifies the NOR handle.
+  * @param  __HANDLE__ specifies the NOR handle.
   * @retval None
   */
+#if (USE_HAL_NOR_REGISTER_CALLBACKS == 1)
+#define __HAL_NOR_RESET_HANDLE_STATE(__HANDLE__)          do {                                             \
+                                                               (__HANDLE__)->State = HAL_NOR_STATE_RESET;  \
+                                                               (__HANDLE__)->MspInitCallback = NULL;       \
+                                                               (__HANDLE__)->MspDeInitCallback = NULL;     \
+                                                             } while(0)
+#else
 #define __HAL_NOR_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_NOR_STATE_RESET)
+#endif
 /**
   * @}
   */
@@ -187,6 +202,12 @@ HAL_StatusTypeDef HAL_NOR_ProgramBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddr
 HAL_StatusTypeDef HAL_NOR_Erase_Block(NOR_HandleTypeDef *hnor, uint32_t BlockAddress, uint32_t Address);
 HAL_StatusTypeDef HAL_NOR_Erase_Chip(NOR_HandleTypeDef *hnor, uint32_t Address);
 HAL_StatusTypeDef HAL_NOR_Read_CFI(NOR_HandleTypeDef *hnor, NOR_CFITypeDef *pNOR_CFI);
+
+#if (USE_HAL_NOR_REGISTER_CALLBACKS == 1)
+/* NOR callback registering/unregistering */
+HAL_StatusTypeDef HAL_NOR_RegisterCallback(NOR_HandleTypeDef *hnor, HAL_NOR_CallbackIDTypeDef CallbackId, pNOR_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_NOR_UnRegisterCallback(NOR_HandleTypeDef *hnor, HAL_NOR_CallbackIDTypeDef CallbackId);
+#endif
 /**
   * @}
   */
@@ -257,9 +278,9 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
   */
 /**
   * @brief  NOR memory address shifting.
-  * @param  __NOR_ADDRESS: NOR base address 
-  * @param  __NOR_MEMORY_WIDTH_: NOR memory width
-  * @param  __ADDRESS__: NOR memory address 
+  * @param  __NOR_ADDRESS NOR base address 
+  * @param  __NOR_MEMORY_WIDTH_ NOR memory width
+  * @param  __ADDRESS__ NOR memory address 
   * @retval NOR shifted address value
   */
 #define NOR_ADDR_SHIFT(__NOR_ADDRESS, __NOR_MEMORY_WIDTH_, __ADDRESS__)       \
@@ -269,8 +290,8 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
  
 /**
   * @brief  NOR memory write data to specified address.
-  * @param  __ADDRESS__: NOR memory address 
-  * @param  __DATA__: Data to write
+  * @param  __ADDRESS__ NOR memory address 
+  * @param  __DATA__ Data to write
   * @retval None
   */
 #define NOR_WRITE(__ADDRESS__, __DATA__)   do{                                                             \

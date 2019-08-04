@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
+#include <drivers/vtx_table.h>
 
 #include "platform.h"
 
@@ -37,7 +38,6 @@
 
 #include "fc/config.h"
 
-#include "io/vtx_string.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx.h"
 
@@ -49,17 +49,22 @@ void trampCmsUpdateStatusString(void)
 {
     vtxDevice_t *vtxDevice = vtxCommonDevice();
 
-#if defined(USE_VTX_TABLE)
-    if (vtxDevice->capability.bandCount == 0 || vtxDevice->capability.powerCount == 0) {
+    if (vtxTableBandCount == 0 || vtxTablePowerLevels == 0) {
         strncpy(trampCmsStatusString, "PLEASE CONFIGURE VTXTABLE", sizeof(trampCmsStatusString));
         return;
     }
-#endif
 
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
-    trampCmsStatusString[2] = vtxCommonLookupBandLetter(vtxDevice, trampBand);
-    trampCmsStatusString[3] = vtxCommonLookupChannelName(vtxDevice, trampChannel)[0];
+    uint8_t band;
+    uint8_t chan;
+    if (!vtxCommonGetBandAndChannel(vtxDevice, &band, &chan) || (band == 0 && chan == 0)) {
+        trampCmsStatusString[2] = 'U';//user freq
+        trampCmsStatusString[3] = 'F';
+    } else {
+        trampCmsStatusString[2] = vtxCommonLookupBandLetter(vtxDevice, band);
+        trampCmsStatusString[3] = vtxCommonLookupChannelName(vtxDevice, chan)[0];
+    }
     trampCmsStatusString[4] = ' ';
 
     if (trampCurFreq)
@@ -69,9 +74,9 @@ void trampCmsUpdateStatusString(void)
 
     if (trampPower) {
         tfp_sprintf(&trampCmsStatusString[9], " %c%3d", (trampPower == trampConfiguredPower) ? ' ' : '*', trampPower);
-    }
-    else
+    } else {
         tfp_sprintf(&trampCmsStatusString[9], " ----");
+    }
 }
 
 uint8_t trampCmsPitMode = 0;
@@ -189,8 +194,7 @@ static bool trampCmsInitSettings(void)
         return false;
     }
 
-    if (trampBand > 0) trampCmsBand = trampBand;
-    if (trampChannel > 0) trampCmsChan = trampChannel;
+    vtxCommonGetBandAndChannel(device, &trampCmsBand, &trampCmsChan);
 
     trampCmsUpdateFreqRef();
     trampCmsPitMode = trampPitMode + 1;
@@ -202,16 +206,16 @@ static bool trampCmsInitSettings(void)
     }
 
     trampCmsEntBand.val = &trampCmsBand;
-    trampCmsEntBand.max = device->capability.bandCount;
-    trampCmsEntBand.names = device->bandNames;
+    trampCmsEntBand.max = vtxTableBandCount;
+    trampCmsEntBand.names = vtxTableBandNames;
 
     trampCmsEntChan.val = &trampCmsChan;
-    trampCmsEntChan.max = device->capability.channelCount;
-    trampCmsEntChan.names = device->channelNames;
+    trampCmsEntChan.max = vtxTableChannelCount;
+    trampCmsEntChan.names = vtxTableChannelNames;
 
     trampCmsEntPower.val = &trampCmsPower;
-    trampCmsEntPower.max = device->capability.powerCount;
-    trampCmsEntPower.names = device->powerNames;
+    trampCmsEntPower.max = vtxTablePowerLevels;
+    trampCmsEntPower.names = vtxTablePowerLabels;
 
     return true;
 }

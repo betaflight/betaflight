@@ -266,6 +266,7 @@ bool rtcSetDateTime(dateTime_t *dt)
     return rtcSet(&t);
 }
 
+#if defined(USE_PERSISTENT_OBJECTS)
 void rtcPersistWrite(int16_t offsetMinutes)
 {
     rtcTime_t workTime;
@@ -292,5 +293,5 @@ bool rtcPersistRead(rtcTime_t *t)
         return false;
     }
 }
-
 #endif
+#endif // USE_RTC_TIME

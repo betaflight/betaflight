@@ -47,8 +47,6 @@
 #include "common/typeconversion.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 #include "pg/dashboard.h"
 #include "pg/rx.h"
 

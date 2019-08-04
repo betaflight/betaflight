@@ -41,9 +41,10 @@
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
-#include "flight/mixer.h"
 #include "flight/pid.h"
 #include "drivers/pwm_output.h"
+#include "pg/motor.h"
+
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
     { SERIAL_PORT_USART1, FUNCTION_RX_SERIAL },
     { SERIAL_PORT_USART3,  FUNCTION_VTX_SMARTAUDIO },

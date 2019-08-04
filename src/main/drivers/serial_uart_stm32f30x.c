@@ -88,8 +88,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_1,
         .reg = USART1,
-        .rxDMAChannel = UART1_RX_DMA,
-        .txDMAChannel = UART1_TX_DMA,
+        .rxDMAResource = (dmaResource_t *)UART1_RX_DMA,
+        .txDMAResource = (dmaResource_t *)UART1_TX_DMA,
         .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) }, { DEFIO_TAG_E(PC5) }, { DEFIO_TAG_E(PE1) } },
         .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) }, { DEFIO_TAG_E(PC4) }, { DEFIO_TAG_E(PE0) } },
         .rcc = RCC_APB2(USART1),
@@ -104,8 +104,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_2,
         .reg = USART2,
-        .rxDMAChannel = UART2_RX_DMA,
-        .txDMAChannel = UART2_TX_DMA,
+        .rxDMAResource = (dmaResource_t *)UART2_RX_DMA,
+        .txDMAResource = (dmaResource_t *)UART2_TX_DMA,
         .rxPins = { { DEFIO_TAG_E(PA15) }, { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PB4) }, { DEFIO_TAG_E(PD6) } },
         .txPins = { { DEFIO_TAG_E(PA14) }, { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PB3) }, { DEFIO_TAG_E(PD5) } },
         .rcc = RCC_APB1(USART2),
@@ -120,8 +120,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_3,
         .reg = USART3,
-        .rxDMAChannel = UART3_RX_DMA,
-        .txDMAChannel = UART3_TX_DMA,
+        .rxDMAResource = (dmaResource_t *)UART3_RX_DMA,
+        .txDMAResource = (dmaResource_t *)UART3_TX_DMA,
         .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PC11) }, { DEFIO_TAG_E(PD9) } },
         .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PC10) }, { DEFIO_TAG_E(PD8) } },
         .rcc = RCC_APB1(USART3),
@@ -137,8 +137,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_4,
         .reg = UART4,
-        .rxDMAChannel = 0, // XXX UART4_RX_DMA !?
-        .txDMAChannel = 0, // XXX UART4_TX_DMA !?
+        .rxDMAResource = (dmaResource_t *)0, // XXX UART4_RX_DMA !?
+        .txDMAResource = (dmaResource_t *)0, // XXX UART4_TX_DMA !?
         .rxPins = { { DEFIO_TAG_E(PC11) } },
         .txPins = { { DEFIO_TAG_E(PC10) } },
         .rcc = RCC_APB1(UART4),
@@ -154,8 +154,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .device = UARTDEV_5,
         .reg = UART5,
-        .rxDMAChannel = 0,
-        .txDMAChannel = 0,
+        .rxDMAResource = (dmaResource_t *)0,
+        .txDMAResource = (dmaResource_t *)0,
         .rxPins = { { DEFIO_TAG_E(PD2) } },
         .txPins = { { DEFIO_TAG_E(PC12) } },
         .rcc = RCC_APB1(UART5),
@@ -171,7 +171,7 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->ref, DISABLE);
+    xDMA_Cmd(descriptor->ref, DISABLE);
 
     uartTryStartTxDMA(s);
 }
@@ -228,23 +228,23 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
-    if (hardware->rxDMAChannel) {
-        dmaInit(dmaGetIdentifier(hardware->rxDMAChannel), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-        s->rxDMAChannel = hardware->rxDMAChannel;
+    if (hardware->rxDMAResource) {
+        dmaInit(dmaGetIdentifier(hardware->rxDMAResource), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
+        s->rxDMAResource = hardware->rxDMAResource;
         s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
     }
 
-    if (hardware->txDMAChannel) {
-        const dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAChannel);
+    if (hardware->txDMAResource) {
+        const dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAResource);
         dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         dmaSetHandler(identifier, handleUsartTxDma, hardware->txPriority, (uint32_t)s);
-        s->txDMAChannel = hardware->txDMAChannel;
+        s->txDMAResource = hardware->txDMAResource;
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
     }
 
     serialUARTInitIO(IOGetByTag(uartDev->tx.pin), IOGetByTag(uartDev->rx.pin), mode, options, hardware->af, device);
 
-    if (!s->rxDMAChannel || !s->txDMAChannel) {
+    if (!s->rxDMAResource || !s->txDMAResource) {
         NVIC_InitTypeDef NVIC_InitStructure;
 
         NVIC_InitStructure.NVIC_IRQChannel = hardware->irqn;
@@ -261,7 +261,7 @@ void uartIrqHandler(uartPort_t *s)
 {
     uint32_t ISR = s->USARTx->ISR;
 
-    if (!s->rxDMAChannel && (ISR & USART_FLAG_RXNE)) {
+    if (!s->rxDMAResource && (ISR & USART_FLAG_RXNE)) {
         if (s->port.rxCallback) {
             s->port.rxCallback(s->USARTx->RDR, s->port.rxCallbackData);
         } else {
@@ -272,7 +272,7 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (!s->txDMAChannel && (ISR & USART_FLAG_TXE)) {
+    if (!s->txDMAResource && (ISR & USART_FLAG_TXE)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail++]);
             if (s->port.txBufferTail >= s->port.txBufferSize) {
@@ -285,7 +285,15 @@ void uartIrqHandler(uartPort_t *s)
 
     if (ISR & USART_FLAG_ORE)
     {
-        USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
+        USART_ClearITPendingBit(s->USARTx, USART_IT_ORE);
+    }
+
+    if (ISR & USART_FLAG_IDLE) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        USART_ClearITPendingBit(s->USARTx, USART_IT_IDLE);
     }
 }
 #endif // USE_UART

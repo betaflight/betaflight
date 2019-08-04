@@ -31,6 +31,7 @@
 
 #include "drivers/io.h"
 #include "drivers/dma.h"
+#include "drivers/motor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_tcp.h"
 #include "drivers/system.h"
@@ -49,6 +50,7 @@ const timerHardware_t timerHardware[1]; // unused
 #include "scheduler/scheduler.h"
 
 #include "pg/rx.h"
+#include "pg/motor.h"
 
 #include "rx/rx.h"
 
@@ -212,7 +214,6 @@ void systemInit(void) {
     printf("[system]Init...\n");
 
     SystemCoreClock = 500 * 1e6; // fake 500MHz
-    FLASH_Unlock();
 
     if (pthread_mutex_init(&updateLock, NULL) != 0) {
         printf("Create updateLock error!\n");
@@ -253,7 +254,9 @@ void systemReset(void){
     pthread_join(udpWorker, NULL);
     exit(0);
 }
-void systemResetToBootloader(void) {
+void systemResetToBootloader(bootloaderRequestType_e requestType) {
+    UNUSED(requestType);
+
     printf("[system]ResetToBootloader!\n");
     workerRunning = false;
     pthread_join(tcpWorker, NULL);
@@ -378,26 +381,13 @@ int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
 
 
 // PWM part
-static bool pwmMotorsEnabled = false;
-static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
 // real value to send
 static int16_t motorsPwm[MAX_SUPPORTED_MOTORS];
 static int16_t servosPwm[MAX_SUPPORTED_SERVOS];
 static int16_t idlePulse;
-
-void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount) {
-    UNUSED(motorConfig);
-    UNUSED(motorCount);
-
-    idlePulse = _idlePulse;
-
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        motors[motorIndex].enabled = true;
-    }
-    pwmMotorsEnabled = true;
-}
 
 void servoDevInit(const servoDevConfig_t *servoConfig) {
     UNUSED(servoConfig);
@@ -406,34 +396,51 @@ void servoDevInit(const servoDevConfig_t *servoConfig) {
     }
 }
 
+static motorDevice_t motorPwmDevice; // Forward
+
 pwmOutputPort_t *pwmGetMotors(void) {
     return motors;
 }
 
-void pwmEnableMotors(void) {
-    pwmMotorsEnabled = true;
-}
-
-bool pwmAreMotorsEnabled(void) {
-    return pwmMotorsEnabled;
-}
-
-bool isMotorProtocolDshot(void)
+static float pwmConvertFromExternal(uint16_t externalValue)
 {
-    return false;
+    return (float)externalValue;
 }
 
-void pwmWriteMotor(uint8_t index, float value) {
+static uint16_t pwmConvertToExternal(float motorValue)
+{
+    return (uint16_t)motorValue;
+}
+
+static void pwmDisableMotors(void)
+{
+    motorPwmDevice.enabled = false;
+}
+
+static bool pwmEnableMotors(void)
+{
+    motorPwmDevice.enabled = true;
+
+    return true;
+}
+
+static void pwmWriteMotor(uint8_t index, float value)
+{
     motorsPwm[index] = value - idlePulse;
 }
 
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount) {
-    UNUSED(motorCount);
-    pwmMotorsEnabled = false;
+static void pwmWriteMotorInt(uint8_t index, uint16_t value)
+{
+    pwmWriteMotor(index, (float)value);
 }
 
-void pwmCompleteMotorUpdate(uint8_t motorCount) {
-    UNUSED(motorCount);
+static void pwmShutdownPulsesForAllMotors(void)
+{
+    motorPwmDevice.enabled = false;
+}
+
+static void pwmCompleteMotorUpdate(void)
+{
     // send to simulator
     // for gazebo8 ArduCopterPlugin remap, normal range = [0.0, 1.0], 3D rang = [-1.0, 1.0]
 
@@ -457,6 +464,41 @@ void pwmWriteServo(uint8_t index, float value) {
     servosPwm[index] = value;
 }
 
+static motorDevice_t motorPwmDevice = {
+    .vTable = {
+        .convertExternalToMotor = pwmConvertFromExternal,
+        .convertMotorToExternal = pwmConvertToExternal,
+        .enable = pwmEnableMotors,
+        .disable = pwmDisableMotors,
+        .updateStart = motorUpdateStartNull,
+        .write = pwmWriteMotor,
+        .writeInt = pwmWriteMotorInt,
+        .updateComplete = pwmCompleteMotorUpdate,
+        .shutdown = pwmShutdownPulsesForAllMotors,
+    }
+};
+
+motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint8_t motorCount, bool useUnsyncedPwm)
+{
+    UNUSED(motorConfig);
+    UNUSED(useUnsyncedPwm);
+
+    if (motorCount > 4) {
+        return NULL;
+    }
+
+    idlePulse = _idlePulse;
+
+    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
+        motors[motorIndex].enabled = true;
+    }
+    motorPwmDevice.count = motorCount; // Never used, but seemingly a right thing to set it anyways.
+    motorPwmDevice.initialized = true;
+    motorPwmDevice.enabled = false;
+
+    return &motorPwmDevice;
+}
+
 // ADC part
 uint16_t adcGetChannel(uint8_t channel) {
     UNUSED(channel);
@@ -469,7 +511,6 @@ char _Min_Stack_Size;
 
 // fake EEPROM
 static FILE *eepromFd = NULL;
-uint8_t eepromData[EEPROM_SIZE];
 
 void FLASH_Unlock(void) {
     if (eepromFd != NULL) {

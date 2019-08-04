@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#if defined(USE_VTX_RTC6705) && defined(USE_VTX_RTC6705_SOFTSPI)
+#if defined(USE_VTX_RTC6705_SOFTSPI)
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
@@ -41,52 +41,30 @@
 
 #define PA_CONTROL_DEFAULT          0x4FBD
 
-#define RTC6705_SPICLK_ON     IOHi(rtc6705ClkPin)
-#define RTC6705_SPICLK_OFF    IOLo(rtc6705ClkPin)
+#define RTC6705_SPICLK_ON()   IOHi(rtc6705ClkPin)
+#define RTC6705_SPICLK_OFF()  IOLo(rtc6705ClkPin)
 
-#define RTC6705_SPIDATA_ON    IOHi(rtc6705DataPin)
-#define RTC6705_SPIDATA_OFF   IOLo(rtc6705DataPin)
+#define RTC6705_SPIDATA_ON()  IOHi(rtc6705DataPin)
+#define RTC6705_SPIDATA_OFF() IOLo(rtc6705DataPin)
 
-#define DISABLE_RTC6705       IOHi(rtc6705CsnPin)
-#define ENABLE_RTC6705        IOLo(rtc6705CsnPin)
-
-#ifdef RTC6705_POWER_PIN
-static IO_t vtxPowerPin     = IO_NONE;
-#endif
-
-#define ENABLE_VTX_POWER()          IOLo(vtxPowerPin)
-#define DISABLE_VTX_POWER()         IOHi(vtxPowerPin)
+#define DISABLE_RTC6705()     IOHi(rtc6705CsnPin)
+#define ENABLE_RTC6705()      IOLo(rtc6705CsnPin)
 
 static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
 
-bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
+bool rtc6705SoftSpiIOInit(const vtxIOConfig_t *vtxIOConfig, const IO_t csnPin)
 {
+    rtc6705CsnPin  = csnPin;
+
     rtc6705DataPin = IOGetByTag(vtxIOConfig->dataTag);
-    rtc6705CsnPin  = IOGetByTag(vtxIOConfig->csTag);
     rtc6705ClkPin  = IOGetByTag(vtxIOConfig->clockTag);
 
-    bool rtc6705HaveRequiredResources = rtc6705DataPin && rtc6705CsnPin && rtc6705ClkPin;
-
-#ifdef RTC6705_POWER_PIN
-    vtxPowerPin = IOGetByTag(vtxIOConfig->powerTag);
-
-    rtc6705HaveRequiredResources &= (vtxPowerPin != IO_NONE);
-#endif
-
-    if (!rtc6705HaveRequiredResources) {
+    if (!(rtc6705DataPin && rtc6705ClkPin)) {
         return false;
     }
-
-#ifdef RTC6705_POWER_PIN
-    IOInit(vtxPowerPin, OWNER_VTX_POWER, 0);
-
-    DISABLE_VTX_POWER();
-    IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
-#endif
-
 
     IOInit(rtc6705DataPin, OWNER_VTX_DATA, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
@@ -96,7 +74,7 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 
     // Important: The order of GPIO configuration calls are critical to ensure that incorrect signals are not briefly sent to the VTX.
     // GPIO bit is enabled so here so the CS/LE pin output is not pulled low when the GPIO is set in output mode.
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
     IOInit(rtc6705CsnPin, OWNER_VTX_CS, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705CsnPin, IOCFG_OUT_PP);
 
@@ -105,42 +83,42 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 
 static void rtc6705_write_register(uint8_t addr, uint32_t data)
 {
-    ENABLE_RTC6705;
+    ENABLE_RTC6705();
     delay(1);
     // send address
     for (int i = 0; i < 4; i++) {
         if ((addr >> i) & 1) {
-            RTC6705_SPIDATA_ON;
+            RTC6705_SPIDATA_ON();
         } else {
-            RTC6705_SPIDATA_OFF;
+            RTC6705_SPIDATA_OFF();
         }
 
-        RTC6705_SPICLK_ON;
+        RTC6705_SPICLK_ON();
         delay(1);
-        RTC6705_SPICLK_OFF;
+        RTC6705_SPICLK_OFF();
         delay(1);
     }
     // Write bit
-    RTC6705_SPIDATA_ON;
-    RTC6705_SPICLK_ON;
+    RTC6705_SPIDATA_ON();
+    RTC6705_SPICLK_ON();
     delay(1);
-    RTC6705_SPICLK_OFF;
+    RTC6705_SPICLK_OFF();
     delay(1);
     for (int i = 0; i < 20; i++) {
         if ((data >> i) & 1) {
-            RTC6705_SPIDATA_ON;
+            RTC6705_SPIDATA_ON();
         } else {
-            RTC6705_SPIDATA_OFF;
+            RTC6705_SPIDATA_OFF();
         }
-        RTC6705_SPICLK_ON;
+        RTC6705_SPICLK_ON();
         delay(1);
-        RTC6705_SPICLK_OFF;
+        RTC6705_SPICLK_OFF();
         delay(1);
     }
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
 }
 
-void rtc6705SetFrequency(uint16_t channel_freq)
+void rtc6705SoftSpiSetFrequency(uint16_t channel_freq)
 {
     uint32_t freq = (uint32_t)channel_freq * 1000;
     freq /= 40;
@@ -150,24 +128,8 @@ void rtc6705SetFrequency(uint16_t channel_freq)
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705SetRFPower(uint8_t rf_power)
+void rtc6705SoftSpiSetRFPower(uint8_t rf_power)
 {
     rtc6705_write_register(7, (rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
 }
-
-void rtc6705Disable(void)
-{
-#ifdef RTC6705_POWER_PIN
-    DISABLE_VTX_POWER();
-#endif
-}
-
-void rtc6705Enable(void)
-{
-#ifdef RTC6705_POWER_PIN
-    ENABLE_VTX_POWER();
-#endif
-}
-
-
 #endif

@@ -107,3 +107,15 @@ Later, you can get the changes from the betaflight repo into your `master` branc
 5. `git push origin master` is an optional step that will update your fork on github
  
 You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
+
+### IDEs and .gitignore
+
+The projects [.gitignore](/.gitignore) already ignores certain artifacts from some IDEs, but if you'd like to use something else, you can set up git to ignore the necessary files at a global level (all git projects on the computer)
+
+It is always good to check that you haven't done this already: `git config --global --get core.excludesfile`
+
+For Linux/BSD/OSX: `git config --global core.excludesfile '~/.gitignore'`
+
+For Windows: `git config --global core.excludesfile '%USERPROFILE%\.gitignore'`
+
+When you `git config --global --get core.excludesfile` a second time, you should get a file location back.

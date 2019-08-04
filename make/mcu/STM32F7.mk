@@ -157,7 +157,7 @@ TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf.c \
+            vcp_hal/usbd_conf_stm32f7xx.c \
             vcp_hal/usbd_cdc_hid.c \
             vcp_hal/usbd_cdc_interface.c \
             drivers/serial_usb_vcp.c \
@@ -179,13 +179,12 @@ MCU_COMMON_SRC = \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \
-            drivers/serial_uart_stm32f7xx.c \
-            drivers/serial_uart_hal.c
+            drivers/serial_uart_hal.c \
+            drivers/serial_uart_stm32f7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
-            drivers/timer.c \
-            drivers/serial_uart.c
+            drivers/timer.c
 
 MSC_SRC = \
             drivers/usb_msc_f7xx.c \

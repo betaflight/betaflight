@@ -22,17 +22,16 @@
 
 #include "platform.h"
 
+#include "drivers/dma.h"
 #include "drivers/timer.h"
 
 typedef uint16_t dmaCode_t;
 
 typedef struct dmaChannelSpec_s {
     dmaCode_t             code;
+    dmaResource_t         *ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-    DMA_Stream_TypeDef    *ref;
     uint32_t              channel;
-#else
-    DMA_Channel_TypeDef   *ref;
 #endif
 } dmaChannelSpec_t;
 
@@ -49,17 +48,24 @@ typedef enum {
     DMA_PERIPH_SDIO,
     DMA_PERIPH_UART_TX,
     DMA_PERIPH_UART_RX,
+    DMA_PERIPH_TIMUP,
 } dmaPeripheral_e;
 
 typedef int8_t dmaoptValue_t;
 
 #define DMA_OPT_UNUSED (-1)
 
+#if defined(STM32H7)
+#define MAX_PERIPHERAL_DMA_OPTIONS 16
+#define MAX_TIMER_DMA_OPTIONS 16
+#else
 #define MAX_PERIPHERAL_DMA_OPTIONS 2
 #define MAX_TIMER_DMA_OPTIONS 3
+#endif
 
 dmaoptValue_t dmaoptByTag(ioTag_t ioTag);
 const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, uint8_t index, int8_t opt);
 const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt);
 const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer);
 dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer);
+dmaoptValue_t dmaGetUpOptionByTimer(const timerHardware_t *timer);

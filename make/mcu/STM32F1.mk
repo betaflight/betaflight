@@ -38,7 +38,10 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
 
 endif
 
+ifeq ($(LD_SCRIPT),)
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
+endif
+
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
 
 ifeq ($(DEVICE_FLAGS),)
@@ -64,7 +67,7 @@ MCU_COMMON_SRC = \
             drivers/dma.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
-            drivers/serial_uart_init.c \
+            drivers/serial_uart_stdperiph.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
