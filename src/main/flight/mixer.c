@@ -357,7 +357,7 @@ void mixerInit(mixerMode_e mixerMode)
     }
 #endif
 #ifdef USE_DYN_IDLE
-    idleMinMotorRps = currentPidProfile->idle_min_rpm * 0.01f * 60.0f;
+    idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
     idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
     idleP = currentPidProfile->idle_p * 0.0001f;
