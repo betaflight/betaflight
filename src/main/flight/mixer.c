@@ -603,7 +603,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             const float pidSum = constrainf(idleP * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
             motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * pidGetDT(), 0.0f, maxIncrease);
             oldMinRps = minRps;
-            throttle += idleThrottleOffset;
+            throttle += idleThrottleOffset * rcCommandThrottleRange;
 
             DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);
             DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);
