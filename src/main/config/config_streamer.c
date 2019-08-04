@@ -27,8 +27,8 @@
 
 #include "config/config_streamer.h"
 
-#if !defined(EEPROM_IN_FLASH)
-#if defined(EEPROM_IN_RAM) && defined(PERSISTENT)
+#if !defined(CONFIG_IN_FLASH)
+#if defined(CONFIG_IN_RAM) && defined(PERSISTENT)
 PERSISTENT uint8_t eepromData[EEPROM_SIZE];
 #else
 uint8_t eepromData[EEPROM_SIZE];
@@ -36,7 +36,7 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 
 
-#if defined(STM32H750xx) && !(defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD))
+#if defined(STM32H750xx) && !(defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD))
 #error "STM32750xx only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
 #endif
 // @todo this is not strictly correct for F4/F7, where sector sizes are variable
@@ -91,9 +91,9 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->address = base;
     c->size = size;
     if (!c->unlocked) {
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
         // NOP
-#elif defined(EEPROM_IN_FLASH) || defined(EEPROM_IN_FILE)
+#elif defined(CONFIG_IN_FLASH) || defined(CONFIG_IN_FILE)
 #if defined(STM32F7) || defined(STM32H7)
         HAL_FLASH_Unlock();
 #else
@@ -103,9 +103,9 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
         c->unlocked = true;
     }
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE) || defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH)
     // NOP
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 #if defined(STM32F10X)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #elif defined(STM32F303)
@@ -125,9 +125,9 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
 // No flash sector method required.
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
@@ -360,7 +360,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (c->err != 0) {
         return c->err;
     }
-#if defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH)
 
     uint32_t dataOffset = (uint32_t)(c->address - (uintptr_t)&eepromData[0]);
 
@@ -395,7 +395,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     flashPageProgramContinue((uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE);
 
-#elif defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD)
+#elif defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD)
     if (c->address == (uintptr_t)&eepromData[0]) {
         memset(eepromData, 0, sizeof(eepromData));
     }
@@ -409,7 +409,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
       *dest_addr++ = *src_addr++;
     } while (--row_index != 0);
 
-#elif defined(EEPROM_IN_FILE)
+#elif defined(CONFIG_IN_FILE)
 
     if (c->address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_ErasePage(c->address);
@@ -422,7 +422,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
         return -2;
     }
 
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 
 #if defined(STM32H7)
     if (c->address % FLASH_PAGE_SIZE == 0) {
@@ -518,17 +518,17 @@ int config_streamer_flush(config_streamer_t *c)
 int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
-#if defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_SDCARD)
         bool saveEEPROMToSDCard(void); // XXX forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToSDCard();
         // TODO overwrite the data in the file on the SD card.
-#elif defined(EEPROM_IN_EXTERNAL_FLASH)
+#elif defined(CONFIG_IN_EXTERNAL_FLASH)
         flashFlush();
-#elif defined(EEPROM_IN_RAM)
+#elif defined(CONFIG_IN_RAM)
         // NOP
-#elif defined(EEPROM_IN_FILE)
+#elif defined(CONFIG_IN_FILE)
         FLASH_Lock();
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 #if defined(STM32F7) || defined(STM32H7)
         HAL_FLASH_Lock();
 #else
