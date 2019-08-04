@@ -53,23 +53,6 @@
 
 #ifdef USE_DSHOT_TELEMETRY
 
-static void processInputIrq(motorDmaOutput_t * const motor)
-{
-    motor->hasTelemetry = true;
-
-#ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
-        LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
-    } else
-#endif
-    {
-        xLL_EX_DMA_DisableResource(motor->dmaRef);
-        LL_EX_TIM_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
-    }
-    readDoneCount++;
-}
-
 void dshotEnableChannels(uint8_t motorCount)
 {
     for (int i = 0; i < motorCount; i++) {
@@ -82,7 +65,6 @@ void dshotEnableChannels(uint8_t motorCount)
 }
 
 #endif
-
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
 
@@ -106,7 +88,11 @@ void pwmDshotSetDirectionOutput(
 #ifdef USE_DSHOT_TELEMETRY
     if (!output) {
         motor->isInput = true;
-        motor->timer->inputDirectionStampUs = micros();
+        if (!inputStampUs) {
+            inputStampUs = micros();
+        }
+        LL_TIM_EnableARRPreload(timer); // Only update the period once all channels are done
+        timer->ARR = 0xffffffff;
         LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
         motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
     } else
@@ -124,7 +110,9 @@ void pwmDshotSetDirectionOutput(
         motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
     }
     xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
-    xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
+    if (output) {
+        xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
+    }
 }
 
 
@@ -148,6 +136,9 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
         } else
 #endif
         {
+            LL_TIM_DisableARRPreload(dmaMotorTimers[i].timer);
+            dmaMotorTimers[i].timer->ARR = dmaMotorTimers[i].outputPeriod;
+
             /* Reset timer counter */
             LL_TIM_SetCounter(dmaMotorTimers[i].timer, 0);
             /* Enable channel DMA requests */
@@ -161,13 +152,10 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+        if (!motor->isInput) {
 #ifdef USE_DSHOT_TELEMETRY
-        uint32_t irqStart = micros();
-        if (motor->isInput) {
-            processInputIrq(motor);
-        } else
+            uint32_t irqStartUs = micros();
 #endif
-        {
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
                 xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
@@ -182,10 +170,10 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 #ifdef USE_DSHOT_TELEMETRY
             if (useDshotTelemetry) {
                 pwmDshotSetDirectionOutput(motor, false);
-                xLL_EX_DMA_SetDataLength(motor->dmaRef, motor->dmaInputLen);
+                xLL_EX_DMA_SetDataLength(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
                 xLL_EX_DMA_EnableResource(motor->dmaRef);
                 LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
-                setDirectionMicros = micros() - irqStart;
+                setDirectionMicros = micros() - irqStartUs;
             }
 #endif
         }
@@ -231,26 +219,27 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
-#ifdef USE_DSHOT_TELEMETRY
-    motor->useProshot = (pwmProtocolType == PWM_TYPE_PROSHOT1000);
-#endif
-    motor->timerHardware = timerHardware;
     motor->dmaRef = dmaRef;
 
     TIM_TypeDef *timer = timerHardware->tim;
-    const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
+    motor->timer = &dmaMotorTimers[timerIndex];
+    motor->index = motorIndex;
+
+    const IO_t motorIO = IOGetByTag(timerHardware->tag);
     uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         output ^= TIMER_OUTPUT_INVERTED;
     }
 #endif
+    motor->timerHardware = timerHardware;
 
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode), timerHardware->alternateFunction);
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode);
+    IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     if (configureTimer) {
         LL_TIM_InitTypeDef init;
@@ -284,7 +273,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     LL_TIM_IC_StructInit(&motor->icInitStruct);
     motor->icInitStruct.ICPolarity = LL_TIM_IC_POLARITY_BOTHEDGE;
     motor->icInitStruct.ICPrescaler = LL_TIM_ICPSC_DIV1;
-    motor->icInitStruct.ICFilter = 0; //2;
+    motor->icInitStruct.ICFilter = 2;
 #endif
 
     uint32_t channel = 0;
@@ -295,8 +284,6 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     case TIM_CHANNEL_4: channel = LL_TIM_CHANNEL_CH4; break;
     }
     motor->llChannel = channel;
-    motor->timer = &dmaMotorTimers[timerIndex];
-    motor->index = motorIndex;
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
@@ -355,10 +342,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->dmaRef = dmaRef;
 
 #ifdef USE_DSHOT_TELEMETRY
-    motor->dmaInputLen = motor->useProshot ? PROSHOT_TELEMETRY_INPUT_LEN : DSHOT_TELEMETRY_INPUT_LEN;
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
-        ( 2 + (motor->useProshot ? 4 * MOTOR_NIBBLE_LENGTH_PROSHOT : 16 * MOTOR_BITLENGTH))
-        / getDshotHz(pwmProtocolType);
+        ( 16 * MOTOR_BITLENGTH) / getDshotHz(pwmProtocolType);
+    motor->timer->outputPeriod = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
     pwmDshotSetDirectionOutput(motor, true);
 #else
     pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);

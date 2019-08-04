@@ -112,6 +112,12 @@ static void dshotPwmDisableMotors(void)
 
 static bool dshotPwmEnableMotors(void)
 {
+    for (int i = 0; i < dshotPwmDevice.count; i++) {
+        motorDmaOutput_t *motor = getMotorDmaOutput(i);
+        const IO_t motorIO = IOGetByTag(motor->timerHardware->tag);
+        IOConfigGPIOAF(motorIO, motor->iocfg, motor->timerHardware->alternateFunction);
+    }
+
     // No special processing required
     return true;
 }

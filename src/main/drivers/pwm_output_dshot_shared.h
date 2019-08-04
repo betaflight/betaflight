@@ -45,8 +45,9 @@ extern uint32_t readDoneCount;
 
 // TODO remove once debugging no longer needed
 FAST_RAM_ZERO_INIT extern uint32_t dshotInvalidPacketCount;
-FAST_RAM_ZERO_INIT extern uint32_t inputBuffer[DSHOT_TELEMETRY_INPUT_LEN];
+FAST_RAM_ZERO_INIT extern uint32_t inputBuffer[GCR_TELEMETRY_INPUT_LEN];
 FAST_RAM_ZERO_INIT extern uint32_t setDirectionMicros;
+FAST_RAM_ZERO_INIT extern uint32_t inputStampUs;
 #endif
 
 uint8_t getTimerIndex(TIM_TypeDef *timer);
