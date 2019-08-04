@@ -361,7 +361,7 @@ extern uint8_t __config_start;   // configured via linker script when building b
 extern uint8_t __config_end;
 #endif
 
-#if defined(USE_EXST)
+#if defined(USE_EXST) && !defined(RAMBASED)
 #define USE_FLASH_BOOT_LOADER
 #endif
 
