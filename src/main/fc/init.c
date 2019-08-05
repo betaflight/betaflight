@@ -290,7 +290,7 @@ void init(void)
     uint8_t initFlags = 0;
 
 
-#ifdef EEPROM_IN_SDCARD
+#ifdef CONFIG_IN_SDCARD
 
     //
     // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
@@ -302,7 +302,7 @@ void init(void)
     // the system to boot and/or to save the config.
     //
     // note that target specific SDCARD/SDIO/SPI/QUADSPI configs are
-    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_SDCARD.
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_SDCARD.
     //
 
     //
@@ -312,7 +312,7 @@ void init(void)
     //
 
 #ifdef TARGET_BUS_INIT
-#error "EEPROM_IN_SDCARD and TARGET_BUS_INIT are mutually exclusive"
+#error "CONFIG_IN_SDCARD and TARGET_BUS_INIT are mutually exclusive"
 #endif
 
     pgResetAll();
@@ -336,9 +336,9 @@ void init(void)
         }
     }
 
-#endif // EEPROM_IN_SDCARD
+#endif // CONFIG_IN_SDCARD
 
-#ifdef EEPROM_IN_EXTERNAL_FLASH
+#ifdef CONFIG_IN_EXTERNAL_FLASH
     //
     // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
     // external flash are in the config which is on a chip which we can't read yet!
@@ -349,7 +349,7 @@ void init(void)
     // the system to boot and/or to save the config.
     //
     // note that target specific FLASH/SPI/QUADSPI configs are
-    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_EXTERNAL_FLASH.
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH.
     //
 
     //
@@ -360,7 +360,7 @@ void init(void)
     pgResetAll();
 
 #ifdef TARGET_BUS_INIT
-#error "EEPROM_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
+#error "CONFIG_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
 #endif
 
     configureSPIAndQuadSPI();
@@ -368,7 +368,7 @@ void init(void)
 
 
 #ifndef USE_FLASH_CHIP
-#error "EEPROM_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
+#error "CONFIG_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
 #endif
 
     bool haveFlash = flashInit(flashConfig());
@@ -378,7 +378,7 @@ void init(void)
     }
     initFlags |= FLASH_INIT_ATTEMPTED;
 
-#endif // EEPROM_IN_EXTERNAL_FLASH
+#endif // CONFIG_IN_EXTERNAL_FLASH
 
     initEEPROM();
 
