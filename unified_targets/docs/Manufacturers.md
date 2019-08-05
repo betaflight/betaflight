@@ -16,6 +16,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |FLWO|Flywoo|https://flywoo.net/|
 |FOXE|Foxeer|http://www.foxeer.com/|
 |HAMO|Happymodel|http://www.happymodel.cn/|
+|HARC|HAKRC|https://github.com/loopur|
 |HBRO|Holybro|http://www.holybro.com/index.html|
 |IFRC|iFlight Innovation Technology Ltd.|https://www.iflight-rc.com/|
 |JHEF|JHE\_FPV|https://github.com/atgfpeyv|
