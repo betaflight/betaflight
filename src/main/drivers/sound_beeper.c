@@ -61,7 +61,7 @@ static void pwmToggleBeeper(void)
 
 static void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
-    const timerHardware_t *timer = timerGetByTag(tag);
+    const timerHardware_t *timer = timerAllocate(tag, OWNER_BEEPER);
     IO_t beeperIO = IOGetByTag(tag);
 
     if (beeperIO && timer) {

@@ -67,7 +67,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TIM_OCInitTypeDef  TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    const timerHardware_t *timerHardware = timerGetByTag(ioTag);
+    const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER);
     timer = timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
 

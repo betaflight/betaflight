@@ -4892,7 +4892,7 @@ static bool strToPin(char *pch, ioTag_t *tag)
 }
 
 #ifdef USE_DMA
-static void printDma(void)
+static void showDma(void)
 {
     cliPrintLinefeed();
 
@@ -5304,7 +5304,7 @@ static void cliDma(char* cmdline)
 {
     int len = strlen(cmdline);
     if (len && strncasecmp(cmdline, "show", len) == 0) {
-        printDma();
+        showDma();
 
         return;
     }
@@ -5316,103 +5316,6 @@ static void cliDma(char* cmdline)
 #endif
 }
 #endif
-
-static void cliResource(char *cmdline)
-{
-    char *pch = NULL;
-    char *saveptr;
-
-    pch = strtok_r(cmdline, " ", &saveptr);
-    if (!pch) {
-        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
-
-        return;
-    } else if (strcasecmp(pch, "show") == 0) {
-#ifdef MINIMAL_CLI
-        cliPrintLine("IO");
-#else
-        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
-        cliRepeat('-', 20);
-#endif
-        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
-            const char* owner;
-            owner = ownerNames[ioRecs[i].owner];
-
-            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
-            if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
-            }
-            cliPrintLinefeed();
-        }
-
-#if defined(USE_DMA)
-        pch = strtok_r(NULL, " ", &saveptr);
-        if (strcasecmp(pch, "all") == 0) {
-            cliDma("show");
-        }
-#endif
-
-        return;
-    }
-
-    uint8_t resourceIndex = 0;
-    int index = 0;
-    for (resourceIndex = 0; ; resourceIndex++) {
-        if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintErrorLinef("INVALID RESOURCE NAME: '%s'", pch);
-            return;
-        }
-
-	const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
-        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
-            break;
-        }
-    }
-
-    pch = strtok_r(NULL, " ", &saveptr);
-    index = atoi(pch);
-
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
-            return;
-        }
-        index -= 1;
-
-        pch = strtok_r(NULL, " ", &saveptr);
-    }
-
-    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
-
-    if (strlen(pch) > 0) {
-        if (strToPin(pch, tag)) {
-            if (*tag == IO_TAG_NONE) {
-#ifdef MINIMAL_CLI
-                cliPrintLine("Freed");
-#else
-                cliPrintLine("Resource is freed");
-#endif
-                return;
-            } else {
-                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
-                if (rec) {
-                    resourceCheck(resourceIndex, index, *tag);
-#ifdef MINIMAL_CLI
-                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
-#else
-                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
-#endif
-                } else {
-                    cliShowParseError();
-                }
-                return;
-            }
-        }
-    }
-
-    cliShowParseError();
-}
-
 #endif // USE_RESOURCE_MGMT
 
 #ifdef USE_TIMER_MGMT
@@ -5517,6 +5420,40 @@ static void alternateFunctionToString(const ioTag_t ioTag, const int index, char
     }
 }
 
+static void showTimers(void)
+{
+    cliPrintLinefeed();
+
+#ifdef MINIMAL_CLI
+    cliPrintLine("Timers:");
+#else
+    cliPrintLine("Currently active Timers:");
+    cliRepeat('-', 23);
+#endif
+
+    int8_t timerNumber;
+    for (int i = 0; (timerNumber = timerGetNumberByIndex(i)); i++) {
+        cliPrintf("TIM%d:", timerNumber);
+        bool timerUsed = false;
+        for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
+            const resourceOwner_e owner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            if (owner) {
+                if (!timerUsed) {
+                    timerUsed = true;
+
+                    cliPrintLinefeed();
+                }
+
+                cliPrintLinef("    CH%d: %s", timerIndex + 1, ownerNames[owner]);
+            }
+        }
+
+        if (!timerUsed) {
+            cliPrintLine(" FREE");
+        }
+    }
+}
+
 static void cliTimer(char *cmdline)
 {
     int len = strlen(cmdline);
@@ -5530,7 +5467,7 @@ static void cliTimer(char *cmdline)
 
         return;
     } else if (strncasecmp(cmdline, "show", len) == 0) {
-        cliPrintErrorLinef("NOT IMPLEMENTED YET");
+        showTimers();
 
         return;
     }
@@ -5643,6 +5580,107 @@ static void cliTimer(char *cmdline)
 
         return;
     }
+}
+#endif
+
+#if defined(USE_RESOURCE_MGMT)
+static void cliResource(char *cmdline)
+{
+    char *pch = NULL;
+    char *saveptr;
+
+    pch = strtok_r(cmdline, " ", &saveptr);
+    if (!pch) {
+        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
+
+        return;
+    } else if (strcasecmp(pch, "show") == 0) {
+#ifdef MINIMAL_CLI
+        cliPrintLine("IO");
+#else
+        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
+        cliRepeat('-', 20);
+#endif
+        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+            const char* owner;
+            owner = ownerNames[ioRecs[i].owner];
+
+            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
+            if (ioRecs[i].index > 0) {
+                cliPrintf(" %d", ioRecs[i].index);
+            }
+            cliPrintLinefeed();
+        }
+
+        pch = strtok_r(NULL, " ", &saveptr);
+        if (strcasecmp(pch, "all") == 0) {
+#if defined(USE_TIMER_MGMT)
+            cliTimer("show");
+#endif
+#if defined(USE_DMA)
+            cliDma("show");
+#endif
+        }
+
+        return;
+    }
+
+    uint8_t resourceIndex = 0;
+    int index = 0;
+    for (resourceIndex = 0; ; resourceIndex++) {
+        if (resourceIndex >= ARRAYLEN(resourceTable)) {
+            cliPrintErrorLinef("INVALID RESOURCE NAME: '%s'", pch);
+            return;
+        }
+
+	const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
+        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
+            break;
+        }
+    }
+
+    pch = strtok_r(NULL, " ", &saveptr);
+    index = atoi(pch);
+
+    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
+        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
+            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
+            return;
+        }
+        index -= 1;
+
+        pch = strtok_r(NULL, " ", &saveptr);
+    }
+
+    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
+
+    if (strlen(pch) > 0) {
+        if (strToPin(pch, tag)) {
+            if (*tag == IO_TAG_NONE) {
+#ifdef MINIMAL_CLI
+                cliPrintLine("Freed");
+#else
+                cliPrintLine("Resource is freed");
+#endif
+                return;
+            } else {
+                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
+                if (rec) {
+                    resourceCheck(resourceIndex, index, *tag);
+#ifdef MINIMAL_CLI
+                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
+#else
+                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
+#endif
+                } else {
+                    cliShowParseError();
+                }
+                return;
+            }
+        }
+    }
+
+    cliShowParseError();
 }
 #endif
 

@@ -27,9 +27,9 @@
 
 #ifdef USE_TIMER_MGMT
 #include "pg/timerio.h"
-#endif
 
-#ifdef USE_TIMER_MGMT
+static resourceOwner_e timerOwners[MAX_TIMER_PINMAP_COUNT];
+
 timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
 {
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
@@ -37,7 +37,7 @@ timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
             return timerIOConfigMutable(i);
         }
     }
-    UNUSED(ioTag);
+
     return NULL;
 }
 
@@ -78,6 +78,40 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
     return timerGetByTagAndIndex(ioTag, timerIndex);
 }
 
+resourceOwner_e timerGetOwner(int8_t timerNumber, uint16_t timerChannel)
+{
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        const timerHardware_t *timer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
+        if (timer && timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel) {
+            return timerOwners[i];
+        }
+    }
+
+    return OWNER_FREE;
+}
+
+const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner)
+{
+    if (!ioTag) {
+        return NULL;
+    }
+
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        if (timerIOConfig(i)->ioTag == ioTag) {
+            const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIOConfig(i)->index);
+
+            if (timerGetOwner(timerGetTIMNumber(timer->tim), timer->channel)) {
+                return NULL;
+            }
+
+            timerOwners[i] = owner;
+
+            return timer;
+        }
+    }
+
+    return NULL;
+}
 #else
 
 const timerHardware_t *timerGetByTag(ioTag_t ioTag)
@@ -92,6 +126,13 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
     UNUSED(ioTag);
 #endif
     return NULL;
+}
+
+const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner)
+{
+    UNUSED(owner);
+
+    return timerGetByTag(ioTag);
 }
 #endif
 

@@ -270,8 +270,10 @@ uint8_t timerInputIrq(TIM_TypeDef *tim);
 
 #if defined(USE_TIMER_MGMT)
 timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag);
+resourceOwner_e timerGetOwner(int8_t timerNumber, uint16_t timerChannel);
 #endif
 const timerHardware_t *timerGetByTag(ioTag_t ioTag);
+const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner);
 const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex);
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index);
 
@@ -292,5 +294,6 @@ uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz);
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz);
 
+int8_t timerGetNumberByIndex(uint8_t index);
 int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
