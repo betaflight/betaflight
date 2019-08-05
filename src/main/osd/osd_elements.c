@@ -1117,6 +1117,7 @@ static void osdElementVtxChannel(osdElementParms_t *element)
             vtxCommonGetPowerIndex(vtxDevice, &vtxPower);
         }
     }
+    const char *vtxPowerLabel = vtxCommonLookupPowerName(vtxDevice, vtxPower);
 
     char vtxStatusIndicator = '\0';
     if (IS_RC_MODE_ACTIVE(BOXVTXCONTROLDISABLE)) {
@@ -1128,9 +1129,9 @@ static void osdElementVtxChannel(osdElementParms_t *element)
     if (vtxStatus & VTX_STATUS_LOCKED) {
         tfp_sprintf(element->buff, "-:-:-:L");
     } else if (vtxStatusIndicator) {
-        tfp_sprintf(element->buff, "%c:%s:%1d:%c", vtxBandLetter, vtxChannelName, vtxPower, vtxStatusIndicator);
+        tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
     } else {
-        tfp_sprintf(element->buff, "%c:%s:%1d", vtxBandLetter, vtxChannelName, vtxPower);
+        tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
     }
 }
 #endif // USE_VTX_COMMON
