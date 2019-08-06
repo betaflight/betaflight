@@ -61,6 +61,7 @@ uint8_t cliMode = 0;
 #include "drivers/adc.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_spi.h"
+#include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
@@ -76,6 +77,7 @@ uint8_t cliMode = 0;
 #include "drivers/dshot_dpwm.h"
 #include "drivers/dshot_command.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
+#include "drivers/resource.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
@@ -4903,15 +4905,13 @@ static void showDma(void)
     cliRepeat('-', 20);
 #endif
     for (int i = 1; i <= DMA_LAST_HANDLER; i++) {
-        const char* owner;
-        owner = ownerNames[dmaGetOwner(i)];
+        const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
-        uint8_t resourceIndex = dmaGetResourceIndex(i);
-        if (resourceIndex > 0) {
-            cliPrintLinef(" %s %d", owner, resourceIndex);
+        if (owner->resourceIndex > 0) {
+            cliPrintLinef(" %s %d", ownerNames[owner->owner], owner->resourceIndex);
         } else {
-            cliPrintLinef(" %s", owner);
+            cliPrintLinef(" %s", ownerNames[owner->owner]);
         }
     }
 }
@@ -5436,15 +5436,19 @@ static void showTimers(void)
         cliPrintf("TIM%d:", timerNumber);
         bool timerUsed = false;
         for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
-            const resourceOwner_e owner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
-            if (owner) {
+            const resourceOwner_t *timerOwner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            if (timerOwner->owner) {
                 if (!timerUsed) {
                     timerUsed = true;
 
                     cliPrintLinefeed();
                 }
 
-                cliPrintLinef("    CH%d: %s", timerIndex + 1, ownerNames[owner]);
+                if (timerOwner->resourceIndex > 0) {
+                    cliPrintLinef("    CH%d: %s %d", timerIndex + 1, ownerNames[timerOwner->owner], timerOwner->resourceIndex);
+                } else {
+                    cliPrintLinef("    CH%d: %s", timerIndex + 1, ownerNames[timerOwner->owner]);
+                }
             }
         }
 
