@@ -61,6 +61,9 @@ typedef struct rxConfig_s {
     uint8_t rc_smoothing_derivative_type;   // Derivative filter type (0 = OFF, 1 = PT1, 2 = BIQUAD)
     uint8_t rc_smoothing_auto_factor;       // Used to adjust the "smoothness" determined by the auto cutoff calculations
     uint8_t rssi_src_frame_lpf_period;      // Period of the cutoff frequency for the source frame RSSI filter (in 0.1 s)
+
+    uint8_t srxl2_unit_id;
+    uint8_t srxl2_baud_fast;
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

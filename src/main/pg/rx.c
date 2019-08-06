@@ -69,6 +69,8 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rc_smoothing_input_type = RC_SMOOTHING_INPUT_BIQUAD,
         .rc_smoothing_derivative_type = RC_SMOOTHING_DERIVATIVE_BIQUAD,
         .rc_smoothing_auto_factor = 10,
+        .srxl2_unit_id = 1,
+        .srxl2_baud_fast = 1,
     );
 
 #ifdef RX_CHANNELS_TAER

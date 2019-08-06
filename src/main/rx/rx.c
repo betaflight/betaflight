@@ -58,6 +58,7 @@
 #include "rx/fport.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
+#include "rx/srxl2.h"
 #include "rx/sumd.h"
 #include "rx/sumh.h"
 #include "rx/msp.h"
@@ -183,6 +184,11 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 {
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
+#ifdef USE_SERIALRX_SRXL2
+    case SERIALRX_SRXL2:
+        enabled = srxl2RxInit(rxConfig, rxRuntimeConfig);
+        break;
+#endif
 #ifdef USE_SERIALRX_SPEKTRUM
     case SERIALRX_SRXL:
     case SERIALRX_SPEKTRUM1024:
