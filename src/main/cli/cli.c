@@ -5792,7 +5792,7 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
 #ifdef USE_VTX_TABLE
-    CLI_COMMAND_DEF("vtxtable", "vtx frequency able", "<band> <bandname> <bandletter> <freq> ... <freq>\r\n", cliVtxTable),
+    CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> <freq> ... <freq>\r\n", cliVtxTable),
 #endif
 };
 
