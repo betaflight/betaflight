@@ -17,6 +17,7 @@ endif
 HSE_VALUE    = 8000000 # For NUCLEO-H743ZI with STLINK, HSE is 8MHz from STLINK
 
 TARGET_SRC = \
+            drivers/accgyro/accgyro_fake.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \
