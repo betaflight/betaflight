@@ -273,6 +273,8 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             float dataMax = 0;
             uint8_t binStart = 0;
             uint8_t binMax = 0;
+            stdev_t binStats;
+            devClear(&binStats);
             //for bins after initial decline, identify start bin and max bin 
             for (int i = fftStartBin; i < FFT_BIN_COUNT; i++) {
                 if (fftIncreased || (state->fftData[i] > state->fftData[i - 1])) {
@@ -285,44 +287,49 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                         binMax = i;  // tallest bin
                     }
                 }
+                devPush(&binStats,state->fftData[i]);
             }
-            // accumulate fftSum and fftWeightedSum from peak bin, and shoulder bins either side of peak
-            float cubedData = state->fftData[binMax] * state->fftData[binMax] * state->fftData[binMax];
-            float fftSum = cubedData;
-            float fftWeightedSum = cubedData * (binMax + 1);
-            // accumulate upper shoulder
-            for (int i = binMax; i < FFT_BIN_COUNT - 1; i++) {
-                if (state->fftData[i] > state->fftData[i + 1]) {
-                    cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
-                    fftSum += cubedData;
-                    fftWeightedSum += cubedData * (i + 1);
-                } else {
-                break;
-                }
-            }
-            // accumulate lower shoulder
-            for (int i = binMax; i > binStart + 1; i--) {
-                if (state->fftData[i] > state->fftData[i - 1]) {
-                    cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
-                    fftSum += cubedData;
-                    fftWeightedSum += cubedData * (i + 1);
-                } else {
-                break;
-                }
-            }
-            // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
-            float centerFreq = dynNotchMaxCtrHz;
             float fftMeanIndex = 0;
-             // idx was shifted by 1 to start at 1, not 0
-            if (fftSum > 0) {
-                fftMeanIndex = (fftWeightedSum / fftSum) - 1;
-                // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
-                centerFreq = fftMeanIndex * fftResolution;
-            } else {
-                centerFreq = state->prevCenterFreq[state->updateAxis];
-            }
-            centerFreq = fmax(centerFreq, dynNotchMinHz);
-            centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
+            float centerFreq = gyroConfig()->dyn_notch_park_freq;
+            // When threshold set, then find notch center as normal if binMax bigger than mean + threshold(/10) stddevs
+            if ( !gyroConfig()->dyn_notch_park_threshold || binMax > devMean(&binStats) + (devStandardDeviation(&binStats) * ((float)gyroConfig()->dyn_notch_park_threshold / 10)) ) {
+                // accumulate fftSum and fftWeightedSum from peak bin, and shoulder bins either side of peak
+                float cubedData = state->fftData[binMax] * state->fftData[binMax] * state->fftData[binMax];
+                float fftSum = cubedData;
+                float fftWeightedSum = cubedData * (binMax + 1);
+                // accumulate upper shoulder
+                for (int i = binMax; i < FFT_BIN_COUNT - 1; i++) {
+                    if (state->fftData[i] > state->fftData[i + 1]) {
+                        cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
+                        fftSum += cubedData;
+                        fftWeightedSum += cubedData * (i + 1);
+                    } else {
+                    break;
+                    }
+                }
+                // accumulate lower shoulder
+                for (int i = binMax; i > binStart + 1; i--) {
+                    if (state->fftData[i] > state->fftData[i - 1]) {
+                        cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
+                        fftSum += cubedData;
+                        fftWeightedSum += cubedData * (i + 1);
+                    } else {
+                    break;
+                    }
+                }
+                // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
+                centerFreq = dynNotchMaxCtrHz;
+                // idx was shifted by 1 to start at 1, not 0
+                if (fftSum > 0) {
+                    fftMeanIndex = (fftWeightedSum / fftSum) - 1;
+                    // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
+                    centerFreq = fftMeanIndex * fftResolution;
+                } else {
+                    centerFreq = state->prevCenterFreq[state->updateAxis];
+                }
+                centerFreq = fmax(centerFreq, dynNotchMinHz);
+                centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
+            }     
             state->prevCenterFreq[state->updateAxis] = state->centerFreq[state->updateAxis];
             state->centerFreq[state->updateAxis] = centerFreq;
 

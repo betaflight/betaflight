@@ -226,6 +226,8 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
+    gyroConfig->dyn_notch_park_threshold = 0;
+    gyroConfig->dyn_notch_park_freq = 1000;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
 }
 

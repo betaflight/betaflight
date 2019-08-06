@@ -624,6 +624,8 @@ const clivalue_t valueTable[] = {
     { "dyn_notch_width_percent",   VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_width_percent) },
     { "dyn_notch_q",               VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_q) },
     { "dyn_notch_min_hz",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 60, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_min_hz) },
+    { "dyn_notch_park_threshold",  VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_park_threshold) },
+    { "dyn_notch_park_freq",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 60, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_notch_park_freq) },
 #endif
 #ifdef USE_DYN_LPF
     { "dyn_lpf_gyro_min_hz",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_gyro_min_hz) },

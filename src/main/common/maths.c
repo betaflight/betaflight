@@ -159,6 +159,11 @@ void devPush(stdev_t *dev, float x)
     }
 }
 
+float devMean(stdev_t *dev)
+{
+    return ((dev->m_n) ? dev->m_newM : 0.0f);
+}
+
 float devVariance(stdev_t *dev)
 {
     return ((dev->m_n > 1) ? dev->m_newS / (dev->m_n - 1) : 0.0f);

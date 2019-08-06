@@ -104,6 +104,7 @@ float fapplyDeadband(float value, float deadband);
 
 void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
+float devMean(stdev_t *dev);
 float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
