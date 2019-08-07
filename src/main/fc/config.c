@@ -30,6 +30,8 @@
 
 #include "build/debug.h"
 
+#include "cli/cli.h"
+
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
@@ -722,7 +724,15 @@ void ensureEEPROMStructureIsValid(void)
     if (isEEPROMStructureValid()) {
         return;
     }
+#if defined(USE_CUSTOM_DEFAULTS)
+    // Probably should be placed elsewhere.
+    resetConfigs();
+    cliProcessCustomDefaults();
+    ValidateAndWriteConfigToEEPROM(true);
+    activateConfig();
+#else
     resetEEPROM();
+#endif
 }
 
 void saveConfigAndNotify(void)
