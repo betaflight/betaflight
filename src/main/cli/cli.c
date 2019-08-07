@@ -151,6 +151,7 @@ uint8_t cliMode = 0;
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/rx_spi_common.h"
+#include "rx/srxl2.h"
 
 #include "scheduler/scheduler.h"
 
@@ -3251,38 +3252,56 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
-#ifdef USE_RX_SPI
-void cliRxSpiBind(char *cmdline){
+#if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
+void cliRxBind(char *cmdline){
     UNUSED(cmdline);
-    switch (rxSpiConfig()->rx_spi_protocol) {
-    default:
-        cliPrint("Not supported.");
-        break;
+    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
+        switch (rxConfig()->serialrx_provider) {
+        default:
+            cliPrint("Not supported.");
+            break;
+#if defined(USE_SERIALRX_SRXL2)
+        case SERIALRX_SRXL2:
+            srxl2Bind();
+            cliPrint("Binding SRXL2 receiver...");
+            break;
+#endif
+        }
+    } 
+#if defined(USE_RX_SPI)
+    else if (featureIsEnabled(FEATURE_RX_SPI)) {
+        switch (rxSpiConfig()->rx_spi_protocol) {
+        default:
+            cliPrint("Not supported.");
+            break;
 #if defined(USE_RX_FRSKY_SPI)
 #if defined(USE_RX_FRSKY_SPI_D)
-    case RX_SPI_FRSKY_D:
+        case RX_SPI_FRSKY_D:
 #endif
 #if defined(USE_RX_FRSKY_SPI_X)
-    case RX_SPI_FRSKY_X:
-    case RX_SPI_FRSKY_X_LBT:
+        case RX_SPI_FRSKY_X:
+        case RX_SPI_FRSKY_X_LBT:
 #endif
 #endif // USE_RX_FRSKY_SPI
 #ifdef USE_RX_SFHSS_SPI
-    case RX_SPI_SFHSS:
+        case RX_SPI_SFHSS:
 #endif
 #ifdef USE_RX_FLYSKY
-    case RX_SPI_A7105_FLYSKY:
-    case RX_SPI_A7105_FLYSKY_2A:
+        case RX_SPI_A7105_FLYSKY:
+        case RX_SPI_A7105_FLYSKY_2A:
 #endif
 #ifdef USE_RX_SPEKTRUM
-    case RX_SPI_CYRF6936_DSM:
+        case RX_SPI_CYRF6936_DSM:
 #endif
 #if defined(USE_RX_FRSKY_SPI) || defined(USE_RX_SFHSS_SPI) || defined(USE_RX_FLYSKY) || defined(USE_RX_SPEKTRUM)
-        rxSpiBind();
-        cliPrint("Binding...");
-        break;
+            rxSpiBind();
+            cliPrint("Binding...");
+            break;
 #endif
+        }
+    
     }
+#endif
 }
 #endif
 
@@ -5982,8 +6001,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "enable/disable beeper for a condition", "list\r\n"
         "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
-#ifdef USE_RX_SPI
-        CLI_COMMAND_DEF("bind_rx_spi", "initiate binding for RX SPI", NULL, cliRxSpiBind),
+#if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
+    CLI_COMMAND_DEF("bind_rx", "initiate binding for RX SPI or SRXL2", NULL, cliRxBind),
 #endif
 #if defined(USE_FLASH_BOOT_LOADER)
     CLI_COMMAND_DEF("bl", "reboot into bootloader", "[flash|rom]", cliBootloader),
