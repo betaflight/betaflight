@@ -352,7 +352,7 @@ $(TARGET_HEX): $(TARGET_BIN)
 	$(if $(EXST_ADJUST_VMA),,$(error "EXST_ADJUST_VMA not specified"))
 
 	@echo "Creating EXST HEX from patched EXST ELF $(TARGET_HEX), VMA Adjust $(EXST_ADJUST_VMA)" "$(STDOUT)"
-	$(V1) $(OBJCOPY) -O ihex --adjust-vma $(EXST_ADJUST_VMA) $(TARGET_EXST_ELF) $@
+	$(V1) $(OBJCOPY) -O ihex --adjust-vma=$(EXST_ADJUST_VMA) --gap-fill=0x00 --pad-to=$(shell echo "$(FIRMWARE_SIZE)" | awk '{printf("0x%08x", (1024*$$1) + $(EXST_ADJUST_VMA));}') $(TARGET_EXST_ELF) $@
 
 endif
 
