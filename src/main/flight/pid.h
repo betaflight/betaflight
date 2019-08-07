@@ -92,12 +92,14 @@ typedef enum {
     ITERM_RELAX_RP,
     ITERM_RELAX_RPY,
     ITERM_RELAX_RP_INC,
-    ITERM_RELAX_RPY_INC
+    ITERM_RELAX_RPY_INC,
+    ITERM_RELAX_COUNT,
 } itermRelax_e;
 
 typedef enum {
     ITERM_RELAX_GYRO,
-    ITERM_RELAX_SETPOINT
+    ITERM_RELAX_SETPOINT,
+    ITERM_RELAX_TYPE_COUNT,
 } itermRelaxType_e;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
