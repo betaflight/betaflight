@@ -58,9 +58,9 @@ MEMORY
 {
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
-    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size
-    EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
+    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 128K
+    CODE_RAM (rx)     : ORIGIN = 0x24020000, LENGTH = 384K - _exst_hash_size
+    EXST_HASH (rx)    : ORIGIN = 0x24020000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
 
