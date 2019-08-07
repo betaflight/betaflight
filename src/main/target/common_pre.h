@@ -162,6 +162,12 @@
 #define DMA_RW_AXI
 #endif
 
+#ifdef USE_EXST
+#define EXST_REMAP_TO_ITCM FAST_RAM
+#else
+#define EXST_REMAP_TO_ITCM
+#endif
+
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
 
 #define USE_MOTOR
