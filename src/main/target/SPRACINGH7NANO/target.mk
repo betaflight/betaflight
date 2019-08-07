@@ -3,6 +3,8 @@ H750xB_TARGETS += $(TARGET)
 HSE_VALUE    = 8000000
 
 EXST = yes
+# flash address 0x97CE0000 - code_ram address (0x24010000) = 0x73CD0000 
+EXST_ADJUST_VMA = 0x73CD0000
 
 FEATURES       += VCP ONBOARDFLASH
 

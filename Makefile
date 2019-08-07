@@ -349,8 +349,10 @@ $(TARGET_BIN): $(TARGET_UNPATCHED_BIN)
 	$(OBJCOPY) $(TARGET_ELF) $(TARGET_EXST_ELF) --update-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE)
 
 $(TARGET_HEX): $(TARGET_BIN)
-	@echo "Creating EXST HEX from patched EXST ELF $(TARGET_HEX)" "$(STDOUT)"
-	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $(TARGET_EXST_ELF) $@
+	$(if $(EXST_ADJUST_VMA),,$(error "EXST_ADJUST_VMA not specified"))
+
+	@echo "Creating EXST HEX from patched EXST ELF $(TARGET_HEX), VMA Adjust $(EXST_ADJUST_VMA)" "$(STDOUT)"
+	$(V1) $(OBJCOPY) -O ihex --adjust-vma $(EXST_ADJUST_VMA) $(TARGET_EXST_ELF) $@
 
 endif
 
