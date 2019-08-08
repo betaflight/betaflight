@@ -1420,6 +1420,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gyroConfig()->gyroCalibrationDuration);
         sbufWriteU16(dst, gyroConfig()->gyro_offset_yaw);
         sbufWriteU8(dst, gyroConfig()->checkOverflow);
+        //Added in MSP API 1.42
+        sbufWriteU8(dst, systemConfig()->debug_mode);
+        sbufWriteU8(dst, DEBUG_COUNT);
 
         break;
     case MSP_FILTER_CONFIG :
@@ -2074,6 +2077,10 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfigMutable()->gyroCalibrationDuration = sbufReadU16(src);
             gyroConfigMutable()->gyro_offset_yaw = sbufReadU16(src);
             gyroConfigMutable()->checkOverflow = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            //Added in MSP API 1.42
+            systemConfigMutable()->debug_mode = sbufReadU8(src);
         }
 
         validateAndFixGyroConfig();
