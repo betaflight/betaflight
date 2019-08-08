@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "resource.h"
+#include "drivers/resource.h"
 
 // dmaResource_t is a opaque data type which represents a single DMA engine,
 // called and implemented differently in different families of STM32s.
@@ -52,7 +52,7 @@ typedef struct dmaChannelDescriptor_s {
     uint8_t                     flagsShift;
     IRQn_Type                   irqN;
     uint32_t                    userParam;
-    resourceOwner_e             owner;
+    resourceOwner_t             owner;
     uint8_t                     resourceIndex;
     uint32_t                    completeFlag;
 } dmaChannelDescriptor_t;
@@ -102,8 +102,8 @@ typedef enum {
     .flagsShift = f, \
     .irqN = d ## _Stream ## s ## _IRQn, \
     .userParam = 0, \
-    .owner = 0, \
-    .resourceIndex = 0 \
+    .owner.owner = 0, \
+    .owner.resourceIndex = 0 \
     } 
 
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
@@ -163,8 +163,8 @@ typedef enum {
     .flagsShift = f, \
     .irqN = d ## _Channel ## c ## _IRQn, \
     .userParam = 0, \
-    .owner = 0, \
-    .resourceIndex = 0 \
+    .owner.owner = 0, \
+    .owner.resourceIndex = 0 \
     }
 
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
@@ -212,8 +212,7 @@ dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 
-resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier);
-uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier);
+const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier);
 dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier);
 
 //

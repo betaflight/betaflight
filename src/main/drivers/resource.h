@@ -100,6 +100,11 @@ typedef enum {
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
+typedef struct resourceOwner_s {
+    resourceOwner_e owner;
+    uint8_t resourceIndex;
+} resourceOwner_t;
+
 extern const char * const ownerNames[OWNER_TOTAL_COUNT];
 
 #define RESOURCE_INDEX(x) (x + 1)

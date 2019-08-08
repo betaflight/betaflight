@@ -91,8 +91,8 @@ void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resource
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
 
     enableDmaClock(index);
-    dmaDescriptors[index].owner = owner;
-    dmaDescriptors[index].resourceIndex = resourceIndex;
+    dmaDescriptors[index].owner.owner = owner;
+    dmaDescriptors[index].owner.resourceIndex = resourceIndex;
 }
 
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
@@ -107,14 +107,9 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     HAL_NVIC_EnableIRQ(dmaDescriptors[index].irqN);
 }
 
-resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
+const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
 {
-    return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
-}
-
-uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
-{
-    return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
+    return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* stream)

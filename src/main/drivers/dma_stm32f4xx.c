@@ -78,8 +78,8 @@ void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resource
 {
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
     RCC_AHB1PeriphClockCmd(DMA_RCC(dmaDescriptors[index].dma), ENABLE);
-    dmaDescriptors[index].owner = owner;
-    dmaDescriptors[index].resourceIndex = resourceIndex;
+    dmaDescriptors[index].owner.owner = owner;
+    dmaDescriptors[index].owner.resourceIndex = resourceIndex;
 }
 
 #define RETURN_TCIF_FLAG(s, n) if (s == DMA1_Stream ## n || s == DMA2_Stream ## n) return DMA_IT_TCIF ## n
@@ -115,14 +115,9 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     NVIC_Init(&NVIC_InitStructure);
 }
 
-resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
+const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
 {
-    return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
-}
-
-uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
-{
-    return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].resourceIndex;
+    return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* instance)

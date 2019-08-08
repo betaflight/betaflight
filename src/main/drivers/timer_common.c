@@ -27,9 +27,9 @@
 
 #ifdef USE_TIMER_MGMT
 #include "pg/timerio.h"
-#endif
 
-#ifdef USE_TIMER_MGMT
+static resourceOwner_t timerOwners[MAX_TIMER_PINMAP_COUNT];
+
 timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
 {
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
@@ -37,7 +37,7 @@ timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
             return timerIOConfigMutable(i);
         }
     }
-    UNUSED(ioTag);
+
     return NULL;
 }
 
@@ -78,6 +78,43 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
     return timerGetByTagAndIndex(ioTag, timerIndex);
 }
 
+const resourceOwner_t *timerGetOwner(int8_t timerNumber, uint16_t timerChannel)
+{
+    static resourceOwner_t freeOwner = { .owner = OWNER_FREE, .resourceIndex = 0 };
+
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        const timerHardware_t *timer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
+        if (timer && timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel) {
+            return &timerOwners[i];
+        }
+    }
+
+    return &freeOwner;
+}
+
+const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)
+{
+    if (!ioTag) {
+        return NULL;
+    }
+
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        if (timerIOConfig(i)->ioTag == ioTag) {
+            const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIOConfig(i)->index);
+
+            if (timerGetOwner(timerGetTIMNumber(timer->tim), timer->channel)->owner) {
+                return NULL;
+            }
+
+            timerOwners[i].owner = owner;
+            timerOwners[i].resourceIndex = resourceIndex;
+
+            return timer;
+        }
+    }
+
+    return NULL;
+}
 #else
 
 const timerHardware_t *timerGetByTag(ioTag_t ioTag)
@@ -92,6 +129,14 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
     UNUSED(ioTag);
 #endif
     return NULL;
+}
+
+const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)
+{
+    UNUSED(owner);
+    UNUSED(resourceIndex);
+
+    return timerGetByTag(ioTag);
 }
 #endif
 
@@ -114,3 +159,4 @@ ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
     return IO_TAG_NONE;
 }
 #endif
+
