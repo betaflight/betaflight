@@ -238,7 +238,7 @@ SECTIONS
     _edmarw = .;
     _dmarw_end__ = _edmarw;
   } >D2_RAM
-￼
+
   .DMA_RW_AXI (NOLOAD) :
   {
     . = ALIGN(32);
