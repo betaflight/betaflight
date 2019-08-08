@@ -152,13 +152,16 @@ static void initialise() {
     }
 }
 
-void initialiseData(uint8_t adr)
+void initialiseData(bool inBindState)
 {
     cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)rxCc2500SpiConfig()->bindOffset);
     cc2500WriteReg(CC2500_18_MCSM0, 0x8);
-    cc2500WriteReg(CC2500_09_ADDR, adr ? 0x03 : rxCc2500SpiConfig()->bindTxId[0]);
+    cc2500WriteReg(CC2500_09_ADDR, inBindState ? 0x03 : rxCc2500SpiConfig()->bindTxId[0]);
     cc2500WriteReg(CC2500_07_PKTCTRL1, 0x0D);
     cc2500WriteReg(CC2500_19_FOCCFG, 0x16);
+    if (!inBindState) {
+        cc2500WriteReg(CC2500_03_FIFOTHR,  0x14);
+    }
     delay(10);
 }
 
@@ -334,7 +337,7 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
     case STATE_BIND_TUNING:
        if (tuneRx(packet)) {
             initGetBind();
-            initialiseData(1);
+            initialiseData(true);
 
             protocolState = STATE_BIND_BINDING1;
         }

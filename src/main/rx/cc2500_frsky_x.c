@@ -346,7 +346,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
     switch (*protocolState) {
     case STATE_STARTING:
         listLength = 47;
-        initialiseData(0);
+        initialiseData(false);
         *protocolState = STATE_UPDATE;
         nextChannel(1);
         cc2500Strobe(CC2500_SRX);
@@ -369,10 +369,12 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         // here FS code could be
     case STATE_DATA:
         if (cc2500getGdo() && (frameReceived == false)){
+            bool packetOk = false;
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             if (ccLen >= packetLength) {
                 cc2500ReadFifo(packet, packetLength);
                 if (isValidPacket(packet)) {
+                    packetOk = true;
                     missingPackets = 0;
                     timeoutUs = 1;
                     receiveDelayUs = 0;
@@ -446,6 +448,9 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                     packetErrors++;
                     DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
                 }
+            }
+            if (!packetOk) {
+                cc2500Strobe(CC2500_SRX);
             }
         }
         if (telemetryReceived) {
