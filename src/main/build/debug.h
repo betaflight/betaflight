@@ -109,6 +109,8 @@ typedef enum {
     DEBUG_BARO,
     DEBUG_GPS_RESCUE_THROTTLE_PID,
     DEBUG_DYN_IDLE,
+    DEBUG_FF_LIMIT,
+    DEBUG_FF_INTERPOLATED,
     DEBUG_COUNT
 } debugType_e;
 
