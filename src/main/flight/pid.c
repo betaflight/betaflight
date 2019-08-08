@@ -188,7 +188,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
                                     // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                     // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
         .dterm_lowpass2_hz = 150,   // second Dterm LPF ON by default
-        .dterm_filter_type = FILTER_BIQUAD,
+        .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
         .dyn_lpf_dterm_min_hz = 70,
         .dyn_lpf_dterm_max_hz = 170,
