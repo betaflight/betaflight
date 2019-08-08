@@ -20,8 +20,8 @@ ENTRY(Reset_Handler)
 
 /*
 0x00000000 to 0x0000FFFF   64K ITCM
-0x20000000 to 0x2001FFFF  128K DTCM
-0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain, main RAM
+0x20000000 to 0x2001FFFF  128K DTCM, main RAM
+0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain
 0x30000000 to 0x3001FFFF  128K SRAM1, D2 domain, unused
 0x30020000 to 0x3003FFFF  128K SRAM2, D2 domain, unused
 0x30040000 to 0x30047FFF   32K SRAM3, D2 domain, unused
@@ -178,7 +178,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >CODE_RAM
+  } >DTCM_RAM AT >CODE_RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
