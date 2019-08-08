@@ -18,10 +18,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <math.h>
 #include "platform.h"
 
 #ifdef USE_INTERPOLATED_SP
-#include <math.h>
 
 #include "build/debug.h"
 #include "common/maths.h"
@@ -113,7 +113,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, float pidFrequency, bool 
     return pidSetpointDelta;
 }
 
-FAST_CODE_NOINLINE float applyFFLimit(int axis, float value, float Kp, float currentPidSetpoint) {
+FAST_CODE_NOINLINE float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint) {
     if (axis == FD_ROLL) {
         DEBUG_SET(DEBUG_FF_LIMIT, 0, value);
     }
@@ -142,7 +142,7 @@ FAST_CODE_NOINLINE float applyFFLimit(int axis, float value, float Kp, float cur
     return value;
 }
 
-bool shouldApplyFFLimits(int axis)
+bool shouldApplyFfLimits(int axis)
 {
     return ffLookaheadLimit != 0.0f || ffMaxRateLimit[axis] != 0.0f;
 }

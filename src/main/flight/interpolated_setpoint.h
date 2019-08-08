@@ -27,5 +27,5 @@
 
 void interpolatedSpInit(const pidProfile_t *pidProfile);
 float interpolatedSpApply(int axis, float pidFrequency, bool newRcFrame);
-float applyFFLimit(int axis, float value, float Kp, float currentPidSetpoint);
-bool shouldApplyFFLimits(int axis);
+float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint);
+bool shouldApplyFfLimits(int axis);

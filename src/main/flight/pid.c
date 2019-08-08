@@ -1478,8 +1478,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             float feedForward = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
 
 #ifdef USE_INTERPOLATED_SP
-            pidData[axis].F = shouldApplyFFLimits(axis) ?
-                applyFFLimit(axis, feedForward, pidCoefficient[axis].Kp, currentPidSetpoint) : feedForward;
+            pidData[axis].F = shouldApplyFfLimits(axis) ?
+                applyFfLimit(axis, feedForward, pidCoefficient[axis].Kp, currentPidSetpoint) : feedForward;
 #else
             pidData[axis].F = feedForward;
 #endif
