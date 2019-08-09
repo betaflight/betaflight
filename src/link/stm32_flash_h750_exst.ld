@@ -35,7 +35,8 @@ ENTRY(Reset_Handler)
 
 For H7 EXST (External Storage) targets a binary is built that is placed on an external device.
 The bootloader will then copy this entire binary to RAM, at the CODE_RAM address.  The bootloader
-then executes code at the CODE_RAM address.
+then executes code at the CODE_RAM address. The address of CODE_RAM is fixed to 0x24010000
+and must not be changed.
 
 Currently, this is inefficient as there are two copies of some sections in RAM.  e.g. .tcm_code.
 
@@ -59,7 +60,7 @@ MEMORY
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
-    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size
+    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
     EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
