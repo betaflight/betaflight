@@ -422,6 +422,30 @@
 #ifndef SDCARD_SDIO_DMA_OPT
 #define SDCARD_SDIO_DMA_OPT (-1)
 #endif
+#ifndef SDIO_DEVICE
+#define SDIO_DEVICE SDIOINVALID
+#endif
+#ifndef SDIO_USE_4BIT
+#define SDIO_USE_4BIT false
+#endif
+#ifndef SDIO_CK_PIN
+#define SDIO_CK_PIN NONE
+#endif
+#ifndef SDIO_CMD_PIN
+#define SDIO_CMD_PIN NONE
+#endif
+#ifndef SDIO_D0_PIN
+#define SDIO_D0_PIN NONE
+#endif
+#ifndef SDIO_D1_PIN
+#define SDIO_D1_PIN NONE
+#endif
+#ifndef SDIO_D2_PIN
+#define SDIO_D2_PIN NONE
+#endif
+#ifndef SDIO_D3_PIN
+#define SDIO_D3_PIN NONE
+#endif
 #endif // USE_SDCARD_SDIO
 #endif // USE_SDCARD
 

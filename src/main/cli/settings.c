@@ -39,6 +39,7 @@
 #include "drivers/camera_control.h"
 #include "drivers/light_led.h"
 #include "drivers/pinio.h"
+#include "drivers/sdio.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
@@ -1153,6 +1154,9 @@ const clivalue_t valueTable[] = {
     { "sdio_clk_bypass",            VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, clockBypass) },
     { "sdio_use_cache",             VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, useCache) },
     { "sdio_use_4bit_width",        VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, use4BitWidth) },
+#ifdef STM32H7
+    { "sdio_device",                VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, SDIODEV_COUNT }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, device) },
+#endif
 #endif
 
 // PG_OSD_CONFIG

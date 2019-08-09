@@ -18,28 +18,18 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#define SDIO_CFG_TO_DEV(x) ((x) - 1)
+#define SDIO_DEV_TO_CFG(x) ((x) + 1)
 
-#include "drivers/io_types.h"
-#include "pg/pg.h"
+typedef enum {
+    SDIOINVALID = -1,
+    SDIODEV_1 = 0,
+    SDIODEV_2,
+} SDIODevice;
 
-typedef struct sdioConfig_s {
-    uint8_t clockBypass;
-    uint8_t useCache;
-    uint8_t use4BitWidth;
-    int8_t dmaopt;
-    uint8_t device;
-} sdioConfig_t;
+#define SDIODEV_COUNT 2
 
-PG_DECLARE(sdioConfig_t, sdioConfig);
-
-typedef struct sdioPinConfig_s {
-    ioTag_t CKPin;
-    ioTag_t CMDPin;
-    ioTag_t D0Pin;
-    ioTag_t D1Pin;
-    ioTag_t D2Pin;
-    ioTag_t D3Pin;
-} sdioPinConfig_t;
-
-PG_DECLARE(sdioPinConfig_t, sdioPinConfig);
+#if defined(STM32H7)
+void sdioPinConfigure();
+void SDIO_GPIO_Init(void);
+#endif
