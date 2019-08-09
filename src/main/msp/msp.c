@@ -515,6 +515,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define TARGET_HAS_VCP_BIT 0
 #define TARGET_HAS_SOFTSERIAL_BIT 1
 #define TARGET_IS_UNIFIED_BIT 2
+#define TARGET_HAS_FLASH_BOOTLOADER_BIT 3
 
         uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
@@ -526,7 +527,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_UNIFIED_TARGET)
         targetCapabilities |= 1 << TARGET_IS_UNIFIED_BIT;
 #endif
-
+#if defined(USE_FLASH_BOOT_LOADER)
+        targetCapabilities |= 1 << TARGET_HAS_FLASH_BOOTLOADER_BIT;
+#endif
         sbufWriteU8(dst, targetCapabilities);
 
         // Target name with explicit length
