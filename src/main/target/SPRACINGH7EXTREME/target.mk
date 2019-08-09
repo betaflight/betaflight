@@ -5,6 +5,9 @@ HSE_VALUE    = 8000000
 FEATURES       += VCP ONBOARDFLASH SDCARD_SDIO
 
 EXST = yes
+# flash address 0x97CE0000 - code_ram address (0x24010000) = 0x73CD0000 
+EXST_ADJUST_VMA = 0x73CD0000
+
 
 TARGET_SRC += \
             drivers/bus_quadspi_hal.c \
