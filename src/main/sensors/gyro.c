@@ -226,8 +226,11 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
-    gyroConfig->dyn_notch_park_threshold = 0;
-    gyroConfig->dyn_notch_park_freq = 1000;
+    gyroConfig->dyn_notch_park_high_thresh = 0;
+    gyroConfig->dyn_notch_park_low_thresh = 0;
+    gyroConfig->dyn_notch_park_high_t_hz = 60;
+    gyroConfig->dyn_notch_park_low_t_hz = 60;
+    gyroConfig->dyn_notch_park_hz = 0;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
 }
 
@@ -513,6 +516,8 @@ bool gyroInit(void)
     switch (debugMode) {
     case DEBUG_FFT:
     case DEBUG_FFT_FREQ:
+    case DEBUG_FFT_PARK:
+    case DEBUG_FFT_THRESH:
     case DEBUG_GYRO_RAW:
     case DEBUG_GYRO_SCALED:
     case DEBUG_GYRO_FILTERED:

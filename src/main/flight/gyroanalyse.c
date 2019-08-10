@@ -287,64 +287,119 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                         binMax = i;  // tallest bin
                     }
                 }
+                //collect data for bin mean/stdev calcs
                 devPush(&binStats,state->fftData[i]);
             }
-            float fftMeanIndex = 0;
-            float centerFreq = gyroConfig()->dyn_notch_park_freq;
-            // When threshold set, then find notch center as normal if binMax bigger than mean + threshold(/10) stddevs
-            if ( !gyroConfig()->dyn_notch_park_threshold || binMax > devMean(&binStats) + (devStandardDeviation(&binStats) * ((float)gyroConfig()->dyn_notch_park_threshold / 10)) ) {
-                // accumulate fftSum and fftWeightedSum from peak bin, and shoulder bins either side of peak
-                float cubedData = state->fftData[binMax] * state->fftData[binMax] * state->fftData[binMax];
-                float fftSum = cubedData;
-                float fftWeightedSum = cubedData * (binMax + 1);
-                // accumulate upper shoulder
-                for (int i = binMax; i < FFT_BIN_COUNT - 1; i++) {
-                    if (state->fftData[i] > state->fftData[i + 1]) {
-                        cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
-                        fftSum += cubedData;
-                        fftWeightedSum += cubedData * (i + 1);
-                    } else {
-                    break;
-                    }
-                }
-                // accumulate lower shoulder
-                for (int i = binMax; i > binStart + 1; i--) {
-                    if (state->fftData[i] > state->fftData[i - 1]) {
-                        cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
-                        fftSum += cubedData;
-                        fftWeightedSum += cubedData * (i + 1);
-                    } else {
-                    break;
-                    }
-                }
-                // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
-                centerFreq = dynNotchMaxCtrHz;
-                // idx was shifted by 1 to start at 1, not 0
-                if (fftSum > 0) {
-                    fftMeanIndex = (fftWeightedSum / fftSum) - 1;
-                    // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
-                    centerFreq = fftMeanIndex * fftResolution;
+            // accumulate fftSum and fftWeightedSum from peak bin, and shoulder bins either side of peak
+            float cubedData = state->fftData[binMax] * state->fftData[binMax] * state->fftData[binMax];
+            float fftSum = cubedData;
+            float fftWeightedSum = cubedData * (binMax + 1);
+            // accumulate upper shoulder
+            for (int i = binMax; i < FFT_BIN_COUNT - 1; i++) {
+                if (state->fftData[i] > state->fftData[i + 1]) {
+                    cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
+                    fftSum += cubedData;
+                    fftWeightedSum += cubedData * (i + 1);
                 } else {
-                    centerFreq = state->prevCenterFreq[state->updateAxis];
+                break;
                 }
-                centerFreq = fmax(centerFreq, dynNotchMinHz);
-                centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
-            }     
+            }
+            // accumulate lower shoulder
+            for (int i = binMax; i > binStart + 1; i--) {
+                if (state->fftData[i] > state->fftData[i - 1]) {
+                    cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
+                    fftSum += cubedData;
+                    fftWeightedSum += cubedData * (i + 1);
+                } else {
+                break;
+                }
+            }
+            // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
+            float centerFreq = dynNotchMaxCtrHz;
+            float fftMeanIndex = 0;
+            // idx was shifted by 1 to start at 1, not 0
+            if (fftSum > 0) {
+                fftMeanIndex = (fftWeightedSum / fftSum) - 1;
+                // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
+                centerFreq = fftMeanIndex * fftResolution;
+            } else {
+                centerFreq = state->prevCenterFreq[state->updateAxis];
+            }
+            centerFreq = fmax(centerFreq, dynNotchMinHz);
+            centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
+            // Moved earlier and use centerFreq version of variable because of addition of park logic
+            if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
+                dynNotchMaxFFT = MAX(dynNotchMaxFFT, centerFreq);
+            }
+            if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
+                DEBUG_SET(DEBUG_FFT_PARK, 0, centerFreq);
+            }
+            float fftStdDev = devStandardDeviation(&binStats);
+            float binMean = devMean(&binStats);
+            if (gyroConfig()->dyn_notch_park_low_thresh || gyroConfig()->dyn_notch_park_high_thresh) {                 
+                bool threshTripped = false;
+                float threshStdDev = fftStdDev / 10;
+                // Check low threshold trip
+                if ( centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && binMax >= binMean + (threshStdDev * gyroConfig()->dyn_notch_park_low_thresh) ) {
+                    threshTripped = true;
+                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
+                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_low_thresh);
+                    }
+                // Check high threshold trip
+                } else if (centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz && binMax >= binMean + (threshStdDev * gyroConfig()->dyn_notch_park_high_thresh)) {
+                    threshTripped = true;
+                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
+                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_high_thresh);
+                    }
+                // If gap between low and high threshold freqs, interpolate the threshold and check for trip
+                } else if ( (centerFreq > gyroConfig()->dyn_notch_park_low_t_hz) && (centerFreq < gyroConfig()->dyn_notch_park_high_t_hz) ) {
+                    float interpThresh = scaleRangef(centerFreq, gyroConfig()->dyn_notch_park_low_t_hz, gyroConfig()->dyn_notch_park_high_t_hz, gyroConfig()->dyn_notch_park_low_thresh, gyroConfig()->dyn_notch_park_high_thresh);
+                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
+                            DEBUG_SET(DEBUG_FFT_PARK, 4, interpThresh);
+                    }
+                    if ( binMax >= binMean + (threshStdDev * interpThresh) ) {
+                        threshTripped = true;
+                    }
+                // Is either in high and/or low thresh freq zones, didn't trip but may still need to check debugs
+                } else if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
+                    // Weird case where low thresh freq is higher than high thresh freq (only lower thresh matters)
+                    if (centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz ) {
+                        DEBUG_SET(DEBUG_FFT_PARK, 4, MIN(gyroConfig()->dyn_notch_park_low_thresh, gyroConfig()->dyn_notch_park_low_thresh));
+                    } else if (centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz) { // low thresh zone
+                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_low_thresh);
+                    } else { // If we get here, must be in the high thresh zone
+                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_high_thresh);
+                    }
+                }
+                // If a threshold wasn't tripped, then park the notch
+                if ( !threshTripped ) {
+                    if (gyroConfig()->dyn_notch_park_hz) {
+                        centerFreq = MIN(gyroConfig()->dyn_notch_park_hz, dynNotchMaxCtrHz); // ensure <= Nyquist
+                        centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
+                    } else {
+                        centerFreq = dynNotchMaxCtrHz; // default to Nyquist if no park set
+                    }
+                }
+            }
             state->prevCenterFreq[state->updateAxis] = state->centerFreq[state->updateAxis];
             state->centerFreq[state->updateAxis] = centerFreq;
-
-            if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
-                dynNotchMaxFFT = MAX(dynNotchMaxFFT, state->centerFreq[state->updateAxis]);
+            if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
+                DEBUG_SET(DEBUG_FFT_PARK, 1, state->centerFreq[state->updateAxis]);
+                DEBUG_SET(DEBUG_FFT_PARK, 3, (binMax - binMean)*10/fftStdDev);
             }
-
             if (state->updateAxis == 0) {
                 DEBUG_SET(DEBUG_FFT, 3, lrintf(fftMeanIndex * 100));
                 DEBUG_SET(DEBUG_FFT_FREQ, 0, state->centerFreq[state->updateAxis]);
+                DEBUG_SET(DEBUG_FFT_THRESH, 0, state->centerFreq[state->updateAxis]);
+                DEBUG_SET(DEBUG_FFT_THRESH, 1, (binMax - binMean)*10/fftStdDev);
                 DEBUG_SET(DEBUG_DYN_LPF, 1, state->centerFreq[state->updateAxis]);
             }
             if (state->updateAxis == 1) {
                 DEBUG_SET(DEBUG_FFT_FREQ, 1, state->centerFreq[state->updateAxis]);
+                DEBUG_SET(DEBUG_FFT_THRESH, 2, state->centerFreq[state->updateAxis]);
+                DEBUG_SET(DEBUG_FFT_THRESH, 3, (binMax - binMean)*10/fftStdDev);
             }
+
             // Debug FFT_Freq carries raw gyro, gyro after first filter set, FFT centre for roll and for pitch
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
             break;

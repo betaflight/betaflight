@@ -51,6 +51,8 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FFT",
     "FFT_TIME",
     "FFT_FREQ",
+    "FFT_PARK",
+    "FFT_THRESH",
     "RX_FRSKY_SPI",
     "RX_SFHSS_SPI",
     "GYRO_RAW",

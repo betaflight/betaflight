@@ -113,8 +113,11 @@ typedef struct gyroConfig_s {
     uint8_t  dyn_notch_width_percent;
     uint16_t dyn_notch_q;
     uint16_t dyn_notch_min_hz;
-    uint8_t  dyn_notch_park_threshold;
-    uint16_t dyn_notch_park_freq;
+    uint8_t  dyn_notch_park_high_thresh; //dyn notch threshold at freq > dyn_notch_park_high_t_hz
+    uint8_t  dyn_notch_park_low_thresh;  //dyn notch threshold at freq < dyn_notch_park_low_t_hz
+    uint16_t dyn_notch_park_high_t_hz;   //above this freq use dyn_notch_park_high_thresh
+    uint16_t dyn_notch_park_low_t_hz;    //below this freq use dyn_notch_park_low_thresh
+    uint16_t dyn_notch_park_hz;          //park the dyn notch at this freq when threshold passed
     uint8_t  gyro_filter_debug_axis;
 } gyroConfig_t;
 
