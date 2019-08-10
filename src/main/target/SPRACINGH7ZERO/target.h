@@ -25,8 +25,6 @@
 
 #define USE_TARGET_CONFIG
 
-#define DEBUG_MODE DEBUG_ADC_INTERNAL
-
 #define LED0_PIN                PE3
 
 #define USE_BEEPER
