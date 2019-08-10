@@ -343,19 +343,19 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 if ( centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && binMax >= binMean + (threshStdDev * gyroConfig()->dyn_notch_park_low_thresh) ) {
                     threshTripped = true;
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
-                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_low_thresh);
+                        DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_low_thresh);
                     }
                 // Check high threshold trip
                 } else if (centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz && binMax >= binMean + (threshStdDev * gyroConfig()->dyn_notch_park_high_thresh)) {
                     threshTripped = true;
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
-                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_high_thresh);
+                        DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_high_thresh);
                     }
                 // If gap between low and high threshold freqs, interpolate the threshold and check for trip
                 } else if ( (centerFreq > gyroConfig()->dyn_notch_park_low_t_hz) && (centerFreq < gyroConfig()->dyn_notch_park_high_t_hz) ) {
                     float interpThresh = scaleRangef(centerFreq, gyroConfig()->dyn_notch_park_low_t_hz, gyroConfig()->dyn_notch_park_high_t_hz, gyroConfig()->dyn_notch_park_low_thresh, gyroConfig()->dyn_notch_park_high_thresh);
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
-                            DEBUG_SET(DEBUG_FFT_PARK, 4, interpThresh);
+                            DEBUG_SET(DEBUG_FFT_PARK, 3, interpThresh);
                     }
                     if ( binMax >= binMean + (threshStdDev * interpThresh) ) {
                         threshTripped = true;
@@ -364,11 +364,11 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 } else if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
                     // Weird case where low thresh freq is higher than high thresh freq (only lower thresh matters)
                     if (centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz ) {
-                        DEBUG_SET(DEBUG_FFT_PARK, 4, MIN(gyroConfig()->dyn_notch_park_low_thresh, gyroConfig()->dyn_notch_park_low_thresh));
+                        DEBUG_SET(DEBUG_FFT_PARK, 3, MIN(gyroConfig()->dyn_notch_park_low_thresh, gyroConfig()->dyn_notch_park_low_thresh));
                     } else if (centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz) { // low thresh zone
-                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_low_thresh);
+                        DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_low_thresh);
                     } else { // If we get here, must be in the high thresh zone
-                        DEBUG_SET(DEBUG_FFT_PARK, 4, gyroConfig()->dyn_notch_park_high_thresh);
+                        DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_high_thresh);
                     }
                 }
                 // If a threshold wasn't tripped, then park the notch
@@ -385,7 +385,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             state->centerFreq[state->updateAxis] = centerFreq;
             if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
                 DEBUG_SET(DEBUG_FFT_PARK, 1, state->centerFreq[state->updateAxis]);
-                DEBUG_SET(DEBUG_FFT_PARK, 3, (binMax - binMean)*10/fftStdDev);
+                DEBUG_SET(DEBUG_FFT_PARK, 2, (binMax - binMean)*10/fftStdDev);
             }
             if (state->updateAxis == 0) {
                 DEBUG_SET(DEBUG_FFT, 3, lrintf(fftMeanIndex * 100));
