@@ -318,3 +318,7 @@
 #ifdef STM32F7
 #undef USE_ESCSERIAL
 #endif
+
+#ifndef USE_ITERM_RELAX
+#undef USE_ABSOLUTE_CONTROL
+#endif
