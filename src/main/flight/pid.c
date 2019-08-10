@@ -1371,7 +1371,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
+#ifdef USE_ABSOLUTE_CONTROL
         float uncorrectedSetpoint = currentPidSetpoint;
+#endif
 
 #if defined(USE_ITERM_RELAX)
         if (!launchControlActive && !inCrashRecoveryMode) {
