@@ -368,3 +368,7 @@ extern uint8_t __config_end;
 #if !defined(USE_RPM_FILTER)
 #undef USE_DYN_IDLE
 #endif
+
+#ifndef USE_ITERM_RELAX
+#undef USE_ABSOLUTE_CONTROL
+#endif
