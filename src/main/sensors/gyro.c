@@ -230,7 +230,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_park_low_thresh = 0;
     gyroConfig->dyn_notch_park_high_t_hz = 60;
     gyroConfig->dyn_notch_park_low_t_hz = 60;
-    gyroConfig->dyn_notch_park_hz = 0;
+    gyroConfig->dyn_notch_park_hz = 2000;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
 }
 

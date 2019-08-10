@@ -374,10 +374,9 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 // If a threshold wasn't tripped, then park the notch
                 if ( !threshTripped ) {
                     if (gyroConfig()->dyn_notch_park_hz) {
-                        centerFreq = MIN(gyroConfig()->dyn_notch_park_hz, dynNotchMaxCtrHz); // ensure <= Nyquist
                         centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
                     } else {
-                        centerFreq = dynNotchMaxCtrHz; // default to Nyquist if no park set
+                        centerFreq = 2000; // default to Nyquist if no park set
                     }
                 }
             }
