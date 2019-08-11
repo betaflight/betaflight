@@ -177,7 +177,7 @@ static uint32_t getFeatureMask(void)
     if (featureMaskIsCopied) {
         return featureMaskCopy;
     } else {
-        return featureMask();
+        return featureConfig()->enabledFeatures;
     }
 }
 

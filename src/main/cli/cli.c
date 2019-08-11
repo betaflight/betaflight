@@ -3116,19 +3116,17 @@ static void cliMcuId(char *cmdline)
     cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
 
-static uint32_t getFeatureMask(const uint32_t featureMask)
+static uint32_t *getFeatureMask(void)
 {
     if (featureMaskIsCopied) {
-        return featureMaskCopy;
+        return &featureMaskCopy;
     } else {
-        return featureMask;
+        return &featureConfigMutable()->enabledFeatures;
     }
 }
 
-static void printFeature(dumpFlags_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault, const char *headingStr)
+static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
-    const uint32_t mask = getFeatureMask(featureConfig->enabledFeatures);
-    const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
     for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
         if (strcmp(featureNames[i], emptyString) != 0) { //Skip unused
@@ -3157,7 +3155,7 @@ static void printFeature(dumpFlags_t dumpMask, const featureConfig_t *featureCon
 static void cliFeature(char *cmdline)
 {
     uint32_t len = strlen(cmdline);
-    const uint32_t mask = getFeatureMask(featureMask());
+    const uint32_t mask = *getFeatureMask();
     if (len == 0) {
         cliPrint("Enabled: ");
         for (uint32_t i = 0; ; i++) {
@@ -3180,8 +3178,8 @@ static void cliFeature(char *cmdline)
         cliPrintLinefeed();
         return;
     } else {
-        if (!featureMaskIsCopied) {
-            featureMaskCopy = featureMask();
+        if (!featureMaskIsCopied && !configIsInCopy) {
+            featureMaskCopy = featureConfig()->enabledFeatures;
             featureMaskIsCopied = true;
         }
         uint32_t feature;
@@ -3215,10 +3213,10 @@ static void cliFeature(char *cmdline)
                 }
 #endif
                 if (remove) {
-                    featureClear(feature, &featureMaskCopy);
+                    featureClear(feature, getFeatureMask());
                     cliPrint("Disabled");
                 } else {
-                    featureSet(feature, &featureMaskCopy);
+                    featureSet(feature, getFeatureMask());
                     cliPrint("Enabled");
                 }
                 cliPrintLinef(" %s", featureNames[i]);
@@ -5971,7 +5969,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 #endif
 
-            printFeature(dumpMask, &featureConfig_Copy, featureConfig(), "feature");
+            printFeature(dumpMask, featureConfig_Copy.enabledFeatures, *getFeatureMask(), "feature");
 
 #if defined(USE_BEEPER)
             printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper", BEEPER_ALLOWED_MODES, "beeper");
