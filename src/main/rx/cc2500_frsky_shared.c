@@ -62,9 +62,11 @@ static uint8_t bindIdx;
 static int8_t bindOffset;
 
 typedef uint8_t handlePacketFn(uint8_t * const packet, uint8_t * const protocolState);
+typedef rx_spi_received_e processFrameFn(uint8_t * const packet);
 typedef void setRcDataFn(uint16_t *rcData, const uint8_t *payload);
 
 static handlePacketFn *handlePacket;
+static processFrameFn *processFrame;
 static setRcDataFn *setRcData;
 
 static void initialise() {
@@ -381,6 +383,15 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
     return ret;
 }
 
+rx_spi_received_e frSkySpiProcessFrame(uint8_t *packet)
+{
+    if (processFrame) {
+        return processFrame(packet);
+    }
+
+    return RX_SPI_RECEIVED_NONE;
+}
+
 void frSkySpiSetRcData(uint16_t *rcData, const uint8_t *payload)
 {
     setRcData(rcData, payload);
@@ -430,6 +441,9 @@ bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntime
         rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_X;
 
         handlePacket = frSkyXHandlePacket;
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_SMARTPORT)
+        processFrame = frSkyXProcessFrame;
+#endif
         setRcData = frSkyXSetRcData;
         frSkyXInit(spiProtocol);
 

@@ -57,10 +57,12 @@ STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packe
 
 typedef bool (*protocolInitFnPtr)(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
+typedef rx_spi_received_e (*protocolProcessFrameFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
 
 static protocolInitFnPtr protocolInit;
 static protocolDataReceivedFnPtr protocolDataReceived;
+static protocolProcessFrameFnPtr protocolProcessFrame;
 static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
@@ -137,6 +139,7 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolInit = frSkySpiInit;
         protocolDataReceived = frSkySpiDataReceived;
         protocolSetRcDataFromPayload = frSkySpiSetRcData;
+        protocolProcessFrame = frSkySpiProcessFrame;
 
         break;
 #endif // USE_RX_FRSKY_SPI
@@ -175,11 +178,39 @@ static uint8_t rxSpiFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxRuntimeConfig);
 
-    if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
+    uint8_t status = RX_FRAME_PENDING;
+
+    rx_spi_received_e result = protocolDataReceived(rxSpiPayload);
+
+    if (result & RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
-        return RX_FRAME_COMPLETE;
+        status = RX_FRAME_COMPLETE;
     }
-    return RX_FRAME_PENDING;
+
+    if (result & RX_SPI_ROCESSING_REQUIRED) {
+        status |= RX_FRAME_PROCESSING_REQUIRED;
+    }
+
+    return status;
+}
+
+static bool rxSpiProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxRuntimeConfig);
+
+    if (protocolProcessFrame) {
+        rx_spi_received_e result = protocolProcessFrame(rxSpiPayload);
+
+        if (result & RX_SPI_RECEIVED_DATA) {
+            rxSpiNewPacketAvailable = true;
+        }
+
+        if (result & RX_SPI_ROCESSING_REQUIRED) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /*
@@ -201,6 +232,7 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeCon
 
     rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
+    rxRuntimeConfig->rcProcessFrameFn = rxSpiProcessFrame;
 
     return ret;
 }
