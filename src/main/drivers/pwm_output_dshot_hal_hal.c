@@ -274,12 +274,19 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     TIM_TypeDef *timer = timerHardware->tim; // "timer" is confusing; "tim"?
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
+    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        output ^= TIMER_OUTPUT_INVERTED;
+    }
+#endif
 
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode);
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
+    IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     // Configure time base
 
