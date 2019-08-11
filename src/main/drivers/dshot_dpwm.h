@@ -161,7 +161,7 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 bool isMotorProtocolDshot(void);
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
-void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 #ifdef USE_DSHOT_TELEMETRY
 bool pwmStartDshotMotorUpdate(void);
 #endif

@@ -181,7 +181,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
 #ifdef USE_DSHOT_TELEMETRY
 #define OCINIT motor->ocInitStruct
@@ -215,7 +215,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
 
     if (dmaRef == NULL) {
-        return;
+        return false;
     }
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
@@ -381,5 +381,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 #endif
     motor->configured = true;
+
+    return true;
 }
 #endif
