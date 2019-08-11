@@ -373,8 +373,11 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 }
                 // If a threshold wasn't tripped, then park the notch
                 if ( !threshTripped ) {
-                    centerFreq = MIN(1000,gyroConfig()->dyn_notch_park_hz);
-                    centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
+                    if (isRpmFilterEnabled() && gyroConfig()->dyn_notch_park_harmonic && rpmFilterConfig()->harmonics < RPM_FILTER_MAXHARMONICS) {
+                            centerFreq = MIN(1000, rpmAvgMotorFrequency() * (rpmFilterConfig()->harmonics + 1)); // park notch on highest unfiltered motor harmonic
+                    } else {
+                        centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
+                    }
                 }
             }
             state->prevCenterFreq[state->updateAxis] = state->centerFreq[state->updateAxis];

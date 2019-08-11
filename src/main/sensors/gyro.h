@@ -70,6 +70,11 @@ enum {
     FILTER_LOWPASS2
 };
 
+enum {
+    OFF = 0,
+    ON
+};
+
 typedef enum gyroDetectionFlags_e {
     NO_GYROS_DETECTED = 0,
     DETECTED_GYRO_1 = (1 << 0),
@@ -118,6 +123,7 @@ typedef struct gyroConfig_s {
     uint16_t dyn_notch_park_high_t_hz;   //above this freq use dyn_notch_park_high_thresh
     uint16_t dyn_notch_park_low_t_hz;    //below this freq use dyn_notch_park_low_thresh
     uint16_t dyn_notch_park_hz;          //park the dyn notch at this freq when threshold passed
+    uint8_t  dyn_notch_park_harmonic;    //of enabled, park the notch on the highest non rpm-filtered harmonic
     uint8_t  gyro_filter_debug_axis;
 } gyroConfig_t;
 

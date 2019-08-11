@@ -44,3 +44,4 @@ float rpmFilterDterm(int axis, float values);
 void  rpmFilterUpdate();
 bool isRpmFilterEnabled(void);
 float rpmMinMotorFrequency();
+float rpmAvgMotorFrequency();
