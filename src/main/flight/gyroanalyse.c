@@ -340,22 +340,22 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 bool threshTripped = false;
                 float threshStdDev = fftStdDev / 10;
                 // Check low threshold trip
-                if ( centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && binMax >= binMean + (threshStdDev * gyroConfig()->dyn_notch_park_low_thresh) ) {
+                if ( centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && binMax >= binMean + (threshStdDev * (gyroConfig()->dyn_notch_park_low_thresh - 100) )) {
                     threshTripped = true;
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
                         DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_low_thresh);
                     }
                 // Check high threshold trip
-                } else if (centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz && binMax >= binMean + (threshStdDev * gyroConfig()->dyn_notch_park_high_thresh)) {
+                } else if (centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz && binMax >= binMean + (threshStdDev * (gyroConfig()->dyn_notch_park_high_thresh - 100) )) {
                     threshTripped = true;
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
                         DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_high_thresh);
                     }
                 // If gap between low and high threshold freqs, interpolate the threshold and check for trip
                 } else if ( (centerFreq > gyroConfig()->dyn_notch_park_low_t_hz) && (centerFreq < gyroConfig()->dyn_notch_park_high_t_hz) ) {
-                    float interpThresh = scaleRangef(centerFreq, gyroConfig()->dyn_notch_park_low_t_hz, gyroConfig()->dyn_notch_park_high_t_hz, gyroConfig()->dyn_notch_park_low_thresh, gyroConfig()->dyn_notch_park_high_thresh);
+                    float interpThresh = scaleRangef(centerFreq, gyroConfig()->dyn_notch_park_low_t_hz, gyroConfig()->dyn_notch_park_high_t_hz, gyroConfig()->dyn_notch_park_low_thresh - 100, gyroConfig()->dyn_notch_park_high_thresh - 100);
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
-                            DEBUG_SET(DEBUG_FFT_PARK, 3, interpThresh);
+                            DEBUG_SET(DEBUG_FFT_PARK, 3, interpThresh + 100);
                     }
                     if ( binMax >= binMean + (threshStdDev * interpThresh) ) {
                         threshTripped = true;
@@ -373,30 +373,27 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 }
                 // If a threshold wasn't tripped, then park the notch
                 if ( !threshTripped ) {
-                    if (gyroConfig()->dyn_notch_park_hz) {
-                        centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
-                    } else {
-                        centerFreq = 2000; // default to Nyquist if no park set
-                    }
+                    centerFreq = MIN(1000,gyroConfig()->dyn_notch_park_hz);
+                    centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
                 }
             }
             state->prevCenterFreq[state->updateAxis] = state->centerFreq[state->updateAxis];
             state->centerFreq[state->updateAxis] = centerFreq;
             if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
                 DEBUG_SET(DEBUG_FFT_PARK, 1, state->centerFreq[state->updateAxis]);
-                DEBUG_SET(DEBUG_FFT_PARK, 2, (binMax - binMean)*10/fftStdDev);
+                DEBUG_SET(DEBUG_FFT_PARK, 2, ((binMax - binMean)*10/fftStdDev) + 100);
             }
             if (state->updateAxis == 0) {
                 DEBUG_SET(DEBUG_FFT, 3, lrintf(fftMeanIndex * 100));
                 DEBUG_SET(DEBUG_FFT_FREQ, 0, state->centerFreq[state->updateAxis]);
                 DEBUG_SET(DEBUG_FFT_THRESH, 0, state->centerFreq[state->updateAxis]);
-                DEBUG_SET(DEBUG_FFT_THRESH, 1, (binMax - binMean)*10/fftStdDev);
+                DEBUG_SET(DEBUG_FFT_THRESH, 1, ((binMax - binMean)*10/fftStdDev) + 100);
                 DEBUG_SET(DEBUG_DYN_LPF, 1, state->centerFreq[state->updateAxis]);
             }
             if (state->updateAxis == 1) {
                 DEBUG_SET(DEBUG_FFT_FREQ, 1, state->centerFreq[state->updateAxis]);
                 DEBUG_SET(DEBUG_FFT_THRESH, 2, state->centerFreq[state->updateAxis]);
-                DEBUG_SET(DEBUG_FFT_THRESH, 3, (binMax - binMean)*10/fftStdDev);
+                DEBUG_SET(DEBUG_FFT_THRESH, 3, ((binMax - binMean)*10/fftStdDev) + 100);
             }
 
             // Debug FFT_Freq carries raw gyro, gyro after first filter set, FFT centre for roll and for pitch
