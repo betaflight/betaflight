@@ -350,10 +350,17 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 
 #ifdef USE_DSHOT
         if (isDshot) {
-            pwmDshotMotorHardwareConfig(timerHardware,
+            if (!pwmDshotMotorHardwareConfig(timerHardware,
                 motorIndex,
                 motorConfig->motorPwmProtocol,
-                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
+                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output)) {
+                /* not enough motors initialised for the mixer or a break in the motors */
+                pwmWrite = &pwmWriteUnused;
+                pwmCompleteWrite = &pwmCompleteWriteUnused;
+                /* TODO: block arming and add reason system cannot arm */
+                return;
+            }
+
             motors[motorIndex].enabled = true;
             continue;
         }
