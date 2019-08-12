@@ -16,6 +16,8 @@ A clear and concise description of what you expected to happen.
 **Flight controller configuration**
 Create a `diff` and post it here in a code block. Put ``` (three backticks) at the start and end of the `diff` block (instructions  on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/)
 
+Use `resource show all` to create a resource allocation list and post it here in a code block. Put ``` (three backticks) at the start and end of the output block.
+
 **Setup / Versions**
  - Flight controller [what type is it, where was it bought from];
  - Other components [RX, VTX, brand / model for all of them, firmware version where applicable];

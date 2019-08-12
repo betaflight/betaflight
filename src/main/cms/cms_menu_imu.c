@@ -57,6 +57,7 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
+#include "cli/settings.h"
 
 //
 // PID
@@ -365,6 +366,12 @@ static uint8_t  cmsx_d_min_gain;
 static uint8_t  cmsx_d_min_advance;
 #endif
 
+#ifdef USE_ITERM_RELAX
+static uint8_t cmsx_iterm_relax;
+static uint8_t cmsx_iterm_relax_type;
+static uint8_t cmsx_iterm_relax_cutoff;
+#endif
+
 static long cmsx_profileOtherOnEnter(void)
 {
     setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
@@ -390,6 +397,12 @@ static long cmsx_profileOtherOnEnter(void)
     }
     cmsx_d_min_gain = pidProfile->d_min_gain;
     cmsx_d_min_advance = pidProfile->d_min_advance;
+#endif
+
+#ifdef USE_ITERM_RELAX
+    cmsx_iterm_relax = pidProfile->iterm_relax;
+    cmsx_iterm_relax_type = pidProfile->iterm_relax_type;
+    cmsx_iterm_relax_cutoff = pidProfile->iterm_relax_cutoff;
 #endif
 
     return 0;
@@ -422,6 +435,12 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->d_min_advance = cmsx_d_min_advance;
 #endif
 
+#ifdef USE_ITERM_RELAX
+    pidProfile->iterm_relax = cmsx_iterm_relax;
+    pidProfile->iterm_relax_type = cmsx_iterm_relax_type;
+    pidProfile->iterm_relax_cutoff = cmsx_iterm_relax_cutoff;
+#endif
+
     initEscEndpoints();
     return 0;
 }
@@ -437,6 +456,11 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "AG THR",      OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_itermThrottleThreshold, 20,   1000,  1  }   , 0 },
 #ifdef USE_THROTTLE_BOOST
     { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }   , 0 },
+#endif
+#ifdef USE_ITERM_RELAX
+    { "I_RELAX",         OME_TAB,    NULL, &(OSD_TAB_t)     { &cmsx_iterm_relax,        ITERM_RELAX_COUNT - 1,      lookupTableItermRelax       }, 0 },
+    { "I_RELAX TYPE",    OME_TAB,    NULL, &(OSD_TAB_t)     { &cmsx_iterm_relax_type,   ITERM_RELAX_TYPE_COUNT - 1, lookupTableItermRelaxType   }, 0 },
+    { "I_RELAX CUTOFF",  OME_UINT8,  NULL, &(OSD_UINT8_t)   { &cmsx_iterm_relax_cutoff, 1, 100, 1 }, 0 },
 #endif
 #ifdef USE_LAUNCH_CONTROL
     {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl, 0 },

@@ -346,7 +346,7 @@
 #undef USE_ESCSERIAL
 #endif
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
 #ifndef EEPROM_SIZE
 #define EEPROM_SIZE     4096
 #endif
@@ -354,17 +354,21 @@ extern uint8_t eepromData[EEPROM_SIZE];
 #define __config_start (*eepromData)
 #define __config_end (*ARRAYEND(eepromData))
 #else
-#ifndef EEPROM_IN_FLASH
-#define EEPROM_IN_FLASH
+#ifndef CONFIG_IN_FLASH
+#define CONFIG_IN_FLASH
 #endif
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 #endif
 
-#if defined(USE_EXST)
+#if defined(USE_EXST) && !defined(RAMBASED)
 #define USE_FLASH_BOOT_LOADER
 #endif
 
 #if !defined(USE_RPM_FILTER)
 #undef USE_DYN_IDLE
+#endif
+
+#ifndef USE_ITERM_RELAX
+#undef USE_ABSOLUTE_CONTROL
 #endif

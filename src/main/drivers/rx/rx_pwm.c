@@ -371,7 +371,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
         pwmInputPort_t *port = &pwmInputPorts[channel];
 
-        const timerHardware_t *timer = timerGetByTag(pwmConfig->ioTags[channel]);
+        const timerHardware_t *timer = timerAllocate(pwmConfig->ioTags[channel], OWNER_PWMINPUT, RESOURCE_INDEX(channel));
 
         if (!timer) {
             /* TODO: maybe fail here if not enough channels? */
@@ -428,7 +428,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
 
     pwmInputPort_t *port = &pwmInputPorts[FIRST_PWM_PORT];
 
-    const timerHardware_t *timer = timerGetByTag(ppmConfig->ioTag);
+    const timerHardware_t *timer = timerAllocate(ppmConfig->ioTag, OWNER_PPMINPUT, 0);
     if (!timer) {
         /* TODO: fail here? */
         return;

@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "drivers/motor.h"
+
 #define MOTOR_DSHOT1200_HZ    MHZ_TO_HZ(24)
 #define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
 #define MOTOR_DSHOT300_HZ     MHZ_TO_HZ(6)

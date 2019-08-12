@@ -333,4 +333,6 @@
 #define USE_VTX_TABLE
 #define USE_PERSISTENT_STATS
 #define USE_PROFILE_NAMES
+#define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
+#define USE_INTERPOLATED_SP
 #endif

@@ -59,10 +59,10 @@
 #define QUADSPI1_CS_FLAGS (QUADSPI_BK1_CS_HARDWARE | QUADSPI_BK2_CS_NONE | QUADSPI_CS_MODE_LINKED)
 
 #define USE_FLASH_CHIP
-#define EEPROM_IN_EXTERNAL_FLASH
-//#define EEPROM_IN_SDCARD
-//#define EEPROM_IN_RAM
-#if !defined(EEPROM_IN_RAM) && !defined(EEPROM_IN_SDCARD) && !defined(EEPROM_IN_EXTERNAL_FLASH)
+#define CONFIG_IN_EXTERNAL_FLASH
+//#define CONFIG_IN_SDCARD
+//#define CONFIG_IN_RAM
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
 #error "EEPROM storage location not defined"
 #endif
 

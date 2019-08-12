@@ -20,8 +20,8 @@ ENTRY(Reset_Handler)
 
 /*
 0x00000000 to 0x0000FFFF   64K ITCM
-0x20000000 to 0x2001FFFF  128K DTCM
-0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain, main RAM
+0x20000000 to 0x2001FFFF  128K DTCM, main RAM
+0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain
 0x30000000 to 0x3001FFFF  128K SRAM1, D2 domain, unused
 0x30020000 to 0x3003FFFF  128K SRAM2, D2 domain, unused
 0x30040000 to 0x30047FFF   32K SRAM3, D2 domain, unused
@@ -35,7 +35,8 @@ ENTRY(Reset_Handler)
 
 For H7 EXST (External Storage) targets a binary is built that is placed on an external device.
 The bootloader will then copy this entire binary to RAM, at the CODE_RAM address.  The bootloader
-then executes code at the CODE_RAM address.
+then executes code at the CODE_RAM address. The address of CODE_RAM is fixed to 0x24010000
+and must not be changed.
 
 Currently, this is inefficient as there are two copies of some sections in RAM.  e.g. .tcm_code.
 
@@ -59,7 +60,7 @@ MEMORY
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
-    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size
+    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
     EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
@@ -178,7 +179,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >CODE_RAM
+  } >DTCM_RAM AT >CODE_RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);

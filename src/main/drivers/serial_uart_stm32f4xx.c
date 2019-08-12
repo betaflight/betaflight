@@ -51,8 +51,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1_TX_DMA
         .txDMAResource = (dmaResource_t *)DMA2_Stream7,
 #endif
-        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) } },
-        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) } },
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) }, 
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PB3) },
+#endif
+            },
+        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) },
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PA15) },
+#endif
+            },
         .af = GPIO_AF_USART1,
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
@@ -156,8 +164,20 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6_TX_DMA
         .txDMAResource = (dmaResource_t *)DMA2_Stream6,
 #endif
-        .rxPins = { { DEFIO_TAG_E(PC7) }, { DEFIO_TAG_E(PG9) } },
-        .txPins = { { DEFIO_TAG_E(PC6) }, { DEFIO_TAG_E(PG14) } },
+        .rxPins = { { DEFIO_TAG_E(PC7) },
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PA12) },
+#else
+            { DEFIO_TAG_E(PG9) },
+#endif
+            },
+        .txPins = { { DEFIO_TAG_E(PC6) },
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PA11) },
+#else
+            { DEFIO_TAG_E(PG14) },
+#endif
+            },
         .af = GPIO_AF_USART6,
         .rcc = RCC_APB2(USART6),
         .irqn = USART6_IRQn,

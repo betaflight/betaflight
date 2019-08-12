@@ -131,7 +131,7 @@ void cameraControlInit(void)
 
     if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
-        const timerHardware_t *timerHardware = timerGetByTag(cameraControlConfig()->ioTag);
+        const timerHardware_t *timerHardware = timerAllocate(cameraControlConfig()->ioTag, OWNER_CAMERA_CONTROL, 0);
 
         if (!timerHardware) {
             return;

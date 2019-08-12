@@ -668,7 +668,7 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
     }
     if (mode != PROTOCOL_KISSALL) {
         const ioTag_t tag = motorConfig->ioTags[output];
-        const timerHardware_t *timerHardware = timerGetByTag(tag);
+        const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, 0);
 
         if (timerHardware == NULL) {
             return NULL;
@@ -686,7 +686,7 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
     }
 
     escSerial->mode = mode;
-    escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag);
+    escSerial->txTimerHardware = timerAllocate(escSerialConfig()->ioTag, OWNER_MOTOR, 0);
     if (escSerial->txTimerHardware == NULL) {
         return NULL;
     }
@@ -745,7 +745,7 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
             if (pwmMotors[i].enabled && pwmMotors[i].io != IO_NONE) {
                 const ioTag_t tag = motorConfig->ioTags[i];
                 if (tag != IO_TAG_NONE) {
-                    const timerHardware_t *timerHardware = timerGetByTag(tag);
+                    const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, 0);
                     if (timerHardware) {
                         escSerialOutputPortConfig(timerHardware);
                         escOutputs[escSerial->outputCount].io = pwmMotors[i].io;

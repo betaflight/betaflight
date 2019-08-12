@@ -54,6 +54,7 @@
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/srxl2.h"
 #include "io/spektrum_vtx_control.h"
 
 #include "sensors/battery.h"
@@ -83,24 +84,37 @@
 #define SRXL_FRAMETYPE_GPS_STAT     0x17
 
 static bool srxlTelemetryEnabled;
+static bool srxl2 = false;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
-    dst->ptr = srxlFrame;
-    dst->end = ARRAYEND(srxlFrame);
+    if (srxl2) {
+#if defined(USE_SERIALRX_SRXL2)
+      srxl2InitializeFrame(dst);
+#endif
+    } else {
+        dst->ptr = srxlFrame;
+        dst->end = ARRAYEND(srxlFrame);
 
-    sbufWriteU8(dst, SRXL_ADDRESS_FIRST);
-    sbufWriteU8(dst, SRXL_ADDRESS_SECOND);
-    sbufWriteU8(dst, SRXL_PACKET_LENGTH);
+        sbufWriteU8(dst, SRXL_ADDRESS_FIRST);
+        sbufWriteU8(dst, SRXL_ADDRESS_SECOND);
+        sbufWriteU8(dst, SRXL_PACKET_LENGTH);
+    }
 }
 
 static void srxlFinalize(sbuf_t *dst)
 {
-    crc16_ccitt_sbuf_append(dst, &srxlFrame[3]); // start at byte 3, since CRC does not include device address and packet length
-    sbufSwitchToReader(dst, srxlFrame);
-    // write the telemetry frame to the receiver.
-    srxlRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
+    if (srxl2) {
+#if defined(USE_SERIALRX_SRXL2)
+      srxl2FinalizeFrame(dst);
+#endif
+    } else {
+        crc16_ccitt_sbuf_append(dst, &srxlFrame[3]); // start at byte 3, since CRC does not include device address and packet length
+        sbufSwitchToReader(dst, srxlFrame);
+        // write the telemetry frame to the receiver.
+        srxlRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
+    }
 }
 
 /*
@@ -760,7 +774,18 @@ void initSrxlTelemetry(void)
 {
     // check if there is a serial port open for SRXL telemetry (ie opened by the SRXL RX)
     // and feature is enabled, if so, set SRXL telemetry enabled
-    srxlTelemetryEnabled = srxlRxIsActive();
+  if (srxlRxIsActive()) {
+    srxlTelemetryEnabled = true;
+    srxl2 = false; 
+#if defined(USE_SERIALRX_SRXL2)
+  } else if (srxl2RxIsActive()) {
+    srxlTelemetryEnabled = true;
+    srxl2 = true;
+#endif
+  } else {
+    srxlTelemetryEnabled = false;
+    srxl2 = false;
+  }
  }
 
 bool checkSrxlTelemetryState(void)
@@ -773,8 +798,16 @@ bool checkSrxlTelemetryState(void)
  */
 void handleSrxlTelemetry(timeUs_t currentTimeUs)
 {
-  if (srxlTelemetryBufferEmpty()) {
-      processSrxl(currentTimeUs);
+  if (srxl2) {
+#if defined(USE_SERIALRX_SRXL2)
+      if (srxl2TelemetryRequested()) {
+          processSrxl(currentTimeUs);
+      }
+#endif
+  } else {
+      if (srxlTelemetryBufferEmpty()) {
+          processSrxl(currentTimeUs);
+      }
   }
 }
 #endif

@@ -61,7 +61,11 @@ uint8_t cliMode = 0;
 #include "drivers/adc.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_spi.h"
+#include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_command.h"
+#include "drivers/dshot_dpwm.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
@@ -72,10 +76,8 @@ uint8_t cliMode = 0;
 #include "drivers/io_impl.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
-#include "drivers/dshot.h"
-#include "drivers/dshot_dpwm.h"
-#include "drivers/dshot_command.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
+#include "drivers/resource.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
@@ -151,6 +153,7 @@ uint8_t cliMode = 0;
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/rx_spi_common.h"
+#include "rx/srxl2.h"
 
 #include "scheduler/scheduler.h"
 
@@ -3251,38 +3254,56 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
-#ifdef USE_RX_SPI
-void cliRxSpiBind(char *cmdline){
+#if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
+void cliRxBind(char *cmdline){
     UNUSED(cmdline);
-    switch (rxSpiConfig()->rx_spi_protocol) {
-    default:
-        cliPrint("Not supported.");
-        break;
+    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
+        switch (rxConfig()->serialrx_provider) {
+        default:
+            cliPrint("Not supported.");
+            break;
+#if defined(USE_SERIALRX_SRXL2)
+        case SERIALRX_SRXL2:
+            srxl2Bind();
+            cliPrint("Binding SRXL2 receiver...");
+            break;
+#endif
+        }
+    } 
+#if defined(USE_RX_SPI)
+    else if (featureIsEnabled(FEATURE_RX_SPI)) {
+        switch (rxSpiConfig()->rx_spi_protocol) {
+        default:
+            cliPrint("Not supported.");
+            break;
 #if defined(USE_RX_FRSKY_SPI)
 #if defined(USE_RX_FRSKY_SPI_D)
-    case RX_SPI_FRSKY_D:
+        case RX_SPI_FRSKY_D:
 #endif
 #if defined(USE_RX_FRSKY_SPI_X)
-    case RX_SPI_FRSKY_X:
-    case RX_SPI_FRSKY_X_LBT:
+        case RX_SPI_FRSKY_X:
+        case RX_SPI_FRSKY_X_LBT:
 #endif
 #endif // USE_RX_FRSKY_SPI
 #ifdef USE_RX_SFHSS_SPI
-    case RX_SPI_SFHSS:
+        case RX_SPI_SFHSS:
 #endif
 #ifdef USE_RX_FLYSKY
-    case RX_SPI_A7105_FLYSKY:
-    case RX_SPI_A7105_FLYSKY_2A:
+        case RX_SPI_A7105_FLYSKY:
+        case RX_SPI_A7105_FLYSKY_2A:
 #endif
 #ifdef USE_RX_SPEKTRUM
-    case RX_SPI_CYRF6936_DSM:
+        case RX_SPI_CYRF6936_DSM:
 #endif
 #if defined(USE_RX_FRSKY_SPI) || defined(USE_RX_SFHSS_SPI) || defined(USE_RX_FLYSKY) || defined(USE_RX_SPEKTRUM)
-        rxSpiBind();
-        cliPrint("Binding...");
-        break;
+            rxSpiBind();
+            cliPrint("Binding...");
+            break;
 #endif
+        }
+    
     }
+#endif
 }
 #endif
 
@@ -4892,7 +4913,7 @@ static bool strToPin(char *pch, ioTag_t *tag)
 }
 
 #ifdef USE_DMA
-static void printDma(void)
+static void showDma(void)
 {
     cliPrintLinefeed();
 
@@ -4903,15 +4924,13 @@ static void printDma(void)
     cliRepeat('-', 20);
 #endif
     for (int i = 1; i <= DMA_LAST_HANDLER; i++) {
-        const char* owner;
-        owner = ownerNames[dmaGetOwner(i)];
+        const resourceOwner_t *owner = dmaGetOwner(i);
 
         cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
-        uint8_t resourceIndex = dmaGetResourceIndex(i);
-        if (resourceIndex > 0) {
-            cliPrintLinef(" %s %d", owner, resourceIndex);
+        if (owner->resourceIndex > 0) {
+            cliPrintLinef(" %s %d", ownerNames[owner->owner], owner->resourceIndex);
         } else {
-            cliPrintLinef(" %s", owner);
+            cliPrintLinef(" %s", ownerNames[owner->owner]);
         }
     }
 }
@@ -5304,7 +5323,7 @@ static void cliDma(char* cmdline)
 {
     int len = strlen(cmdline);
     if (len && strncasecmp(cmdline, "show", len) == 0) {
-        printDma();
+        showDma();
 
         return;
     }
@@ -5316,103 +5335,6 @@ static void cliDma(char* cmdline)
 #endif
 }
 #endif
-
-static void cliResource(char *cmdline)
-{
-    char *pch = NULL;
-    char *saveptr;
-
-    pch = strtok_r(cmdline, " ", &saveptr);
-    if (!pch) {
-        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
-
-        return;
-    } else if (strcasecmp(pch, "show") == 0) {
-#ifdef MINIMAL_CLI
-        cliPrintLine("IO");
-#else
-        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
-        cliRepeat('-', 20);
-#endif
-        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
-            const char* owner;
-            owner = ownerNames[ioRecs[i].owner];
-
-            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
-            if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
-            }
-            cliPrintLinefeed();
-        }
-
-#if defined(USE_DMA)
-        pch = strtok_r(NULL, " ", &saveptr);
-        if (strcasecmp(pch, "all") == 0) {
-            cliDma("show");
-        }
-#endif
-
-        return;
-    }
-
-    uint8_t resourceIndex = 0;
-    int index = 0;
-    for (resourceIndex = 0; ; resourceIndex++) {
-        if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintErrorLinef("INVALID RESOURCE NAME: '%s'", pch);
-            return;
-        }
-
-	const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
-        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
-            break;
-        }
-    }
-
-    pch = strtok_r(NULL, " ", &saveptr);
-    index = atoi(pch);
-
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
-            return;
-        }
-        index -= 1;
-
-        pch = strtok_r(NULL, " ", &saveptr);
-    }
-
-    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
-
-    if (strlen(pch) > 0) {
-        if (strToPin(pch, tag)) {
-            if (*tag == IO_TAG_NONE) {
-#ifdef MINIMAL_CLI
-                cliPrintLine("Freed");
-#else
-                cliPrintLine("Resource is freed");
-#endif
-                return;
-            } else {
-                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
-                if (rec) {
-                    resourceCheck(resourceIndex, index, *tag);
-#ifdef MINIMAL_CLI
-                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
-#else
-                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
-#endif
-                } else {
-                    cliShowParseError();
-                }
-                return;
-            }
-        }
-    }
-
-    cliShowParseError();
-}
-
 #endif // USE_RESOURCE_MGMT
 
 #ifdef USE_TIMER_MGMT
@@ -5517,6 +5439,44 @@ static void alternateFunctionToString(const ioTag_t ioTag, const int index, char
     }
 }
 
+static void showTimers(void)
+{
+    cliPrintLinefeed();
+
+#ifdef MINIMAL_CLI
+    cliPrintLine("Timers:");
+#else
+    cliPrintLine("Currently active Timers:");
+    cliRepeat('-', 23);
+#endif
+
+    int8_t timerNumber;
+    for (int i = 0; (timerNumber = timerGetNumberByIndex(i)); i++) {
+        cliPrintf("TIM%d:", timerNumber);
+        bool timerUsed = false;
+        for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
+            const resourceOwner_t *timerOwner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            if (timerOwner->owner) {
+                if (!timerUsed) {
+                    timerUsed = true;
+
+                    cliPrintLinefeed();
+                }
+
+                if (timerOwner->resourceIndex > 0) {
+                    cliPrintLinef("    CH%d: %s %d", timerIndex + 1, ownerNames[timerOwner->owner], timerOwner->resourceIndex);
+                } else {
+                    cliPrintLinef("    CH%d: %s", timerIndex + 1, ownerNames[timerOwner->owner]);
+                }
+            }
+        }
+
+        if (!timerUsed) {
+            cliPrintLine(" FREE");
+        }
+    }
+}
+
 static void cliTimer(char *cmdline)
 {
     int len = strlen(cmdline);
@@ -5530,7 +5490,7 @@ static void cliTimer(char *cmdline)
 
         return;
     } else if (strncasecmp(cmdline, "show", len) == 0) {
-        cliPrintErrorLinef("NOT IMPLEMENTED YET");
+        showTimers();
 
         return;
     }
@@ -5643,6 +5603,107 @@ static void cliTimer(char *cmdline)
 
         return;
     }
+}
+#endif
+
+#if defined(USE_RESOURCE_MGMT)
+static void cliResource(char *cmdline)
+{
+    char *pch = NULL;
+    char *saveptr;
+
+    pch = strtok_r(cmdline, " ", &saveptr);
+    if (!pch) {
+        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
+
+        return;
+    } else if (strcasecmp(pch, "show") == 0) {
+#ifdef MINIMAL_CLI
+        cliPrintLine("IO");
+#else
+        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
+        cliRepeat('-', 20);
+#endif
+        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+            const char* owner;
+            owner = ownerNames[ioRecs[i].owner];
+
+            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
+            if (ioRecs[i].index > 0) {
+                cliPrintf(" %d", ioRecs[i].index);
+            }
+            cliPrintLinefeed();
+        }
+
+        pch = strtok_r(NULL, " ", &saveptr);
+        if (strcasecmp(pch, "all") == 0) {
+#if defined(USE_TIMER_MGMT)
+            cliTimer("show");
+#endif
+#if defined(USE_DMA)
+            cliDma("show");
+#endif
+        }
+
+        return;
+    }
+
+    uint8_t resourceIndex = 0;
+    int index = 0;
+    for (resourceIndex = 0; ; resourceIndex++) {
+        if (resourceIndex >= ARRAYLEN(resourceTable)) {
+            cliPrintErrorLinef("INVALID RESOURCE NAME: '%s'", pch);
+            return;
+        }
+
+	const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
+        if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
+            break;
+        }
+    }
+
+    pch = strtok_r(NULL, " ", &saveptr);
+    index = atoi(pch);
+
+    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
+        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
+            cliShowArgumentRangeError("INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
+            return;
+        }
+        index -= 1;
+
+        pch = strtok_r(NULL, " ", &saveptr);
+    }
+
+    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
+
+    if (strlen(pch) > 0) {
+        if (strToPin(pch, tag)) {
+            if (*tag == IO_TAG_NONE) {
+#ifdef MINIMAL_CLI
+                cliPrintLine("Freed");
+#else
+                cliPrintLine("Resource is freed");
+#endif
+                return;
+            } else {
+                ioRec_t *rec = IO_Rec(IOGetByTag(*tag));
+                if (rec) {
+                    resourceCheck(resourceIndex, index, *tag);
+#ifdef MINIMAL_CLI
+                    cliPrintLinef(" %c%02d set", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
+#else
+                    cliPrintLinef("\r\nResource is set to %c%02d", IO_GPIOPortIdx(rec) + 'A', IO_GPIOPinIdx(rec));
+#endif
+                } else {
+                    cliShowParseError();
+                }
+                return;
+            }
+        }
+    }
+
+    cliShowParseError();
 }
 #endif
 
@@ -5982,8 +6043,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "enable/disable beeper for a condition", "list\r\n"
         "\t<->[name]", cliBeeper),
 #endif // USE_BEEPER
-#ifdef USE_RX_SPI
-        CLI_COMMAND_DEF("bind_rx_spi", "initiate binding for RX SPI", NULL, cliRxSpiBind),
+#if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
+    CLI_COMMAND_DEF("bind_rx", "initiate binding for RX SPI or SRXL2", NULL, cliRxBind),
 #endif
 #if defined(USE_FLASH_BOOT_LOADER)
     CLI_COMMAND_DEF("bl", "reboot into bootloader", "[flash|rom]", cliBootloader),
@@ -6119,7 +6180,7 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
 #ifdef USE_VTX_TABLE
-    CLI_COMMAND_DEF("vtxtable", "vtx frequency able", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
+    CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
 #endif
 };
 

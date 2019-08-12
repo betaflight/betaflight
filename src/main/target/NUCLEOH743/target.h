@@ -160,6 +160,8 @@
 #define USE_MULTI_GYRO
 #define USE_ACC
 
+#define USE_FAKE_GYRO
+#define USE_FAKE_ACC
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6500

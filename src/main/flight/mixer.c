@@ -357,7 +357,7 @@ void mixerInit(mixerMode_e mixerMode)
     }
 #endif
 #ifdef USE_DYN_IDLE
-    idleMinMotorRps = currentPidProfile->idle_min_rpm * 0.01f * 60.0f;
+    idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
     idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
     idleP = currentPidProfile->idle_p * 0.0001f;
@@ -603,7 +603,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             const float pidSum = constrainf(idleP * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
             motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * pidGetDT(), 0.0f, maxIncrease);
             oldMinRps = minRps;
-            throttle += idleThrottleOffset;
+            throttle += idleThrottleOffset * rcCommandThrottleRange;
 
             DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);
             DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);

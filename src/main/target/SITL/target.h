@@ -42,7 +42,7 @@
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
-#define EEPROM_IN_FILE
+#define CONFIG_IN_FILE
 #define EEPROM_SIZE     32768
 
 #define U_ID_0 0
