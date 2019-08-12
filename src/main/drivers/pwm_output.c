@@ -172,6 +172,7 @@ static uint16_t pwmConvertToExternal(float motorValue)
 }
 
 static motorVTable_t motorPwmVTable = {
+    .postInit = motorPostInitNull,
     .enable = pwmEnableMotors,
     .disable = pwmDisableMotors,
     .isMotorEnabled = pwmIsMotorEnabled,

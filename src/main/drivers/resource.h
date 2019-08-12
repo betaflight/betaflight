@@ -105,6 +105,7 @@ typedef enum {
     OWNER_BARO_XCLR,
     OWNER_PULLUP,
     OWNER_PULLDOWN,
+    OWNER_DSHOT_BITBANG,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
