@@ -24,4 +24,5 @@
 
 bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 rx_spi_received_e frSkySpiDataReceived(uint8_t *packet);
+rx_spi_received_e frSkySpiProcessFrame(uint8_t *packet);
 void frSkySpiSetRcData(uint16_t *rcData, const uint8_t *payload);
