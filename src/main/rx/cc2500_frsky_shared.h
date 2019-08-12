@@ -51,6 +51,6 @@ extern uint8_t listLength;
 extern uint32_t missingPackets;
 extern timeDelta_t timeoutUs;
 
-void initialiseData(uint8_t adr);
+void initialiseData(bool inBindState);
 
 void nextChannel(uint8_t skip);

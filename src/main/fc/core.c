@@ -1113,7 +1113,6 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
     }
 
     processRcCommand();
-
 }
 
 // Function for loop trigger

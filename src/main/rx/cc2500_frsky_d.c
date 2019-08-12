@@ -194,7 +194,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
     switch (*protocolState) {
     case STATE_STARTING:
         listLength = 47;
-        initialiseData(0);
+        initialiseData(false);
         *protocolState = STATE_UPDATE;
         nextChannel(1);
         cc2500Strobe(CC2500_SRX);
@@ -218,9 +218,11 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
     case STATE_DATA:
         if (cc2500getGdo()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
+            bool packetOk = false;
             if (ccLen >= 20) {
                 cc2500ReadFifo(packet, 20);
                 if (packet[19] & 0x80) {
+                    packetOk = true;
                     missingPackets = 0;
                     timeoutUs = 1;
                     if (packet[0] == 0x11) {
@@ -245,6 +247,9 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                         }
                     }
                 }
+            }
+            if (!packetOk) {
+                cc2500Strobe(CC2500_SRX);
             }
         }
 
