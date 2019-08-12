@@ -44,7 +44,6 @@
 
 #include "rpm_filter.h"
 
-#define RPM_FILTER_MAXHARMONICS 3
 #define SECONDS_PER_MINUTE      60.0f
 #define ERPM_PER_LSB            100.0f
 #define MIN_UPDATE_T            0.001f
@@ -215,6 +214,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate()
                 }
                 motorFrequency[motor] = erpmToHz * filteredMotorErpm[motor];
                 minMotorFrequency = 0.0f;
+                avgMotorFrequency = 0.0f;
             }
             currentFilter = &filters[filter];
         }

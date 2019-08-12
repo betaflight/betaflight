@@ -43,6 +43,7 @@
 #include "fc/core.h"
 
 #include "gyroanalyse.h"
+#include "flight/rpm_filter.h"
 
 // The FFT splits the frequency domain into an number of bins
 // A sampling frequency of 1000 and max frequency of 500 at a window size of 32 gives 16 frequency bins each 31.25Hz wide
@@ -340,19 +341,19 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 bool threshTripped = false;
                 float threshStdDev = fftStdDev / 10;
                 // Check low threshold trip
-                if ( centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && binMax >= binMean + (threshStdDev * (gyroConfig()->dyn_notch_park_low_thresh - 100) )) {
+                if ( gyroConfig()->dyn_notch_park_low_t_hz && centerFreq <= gyroConfig()->dyn_notch_park_low_t_hz && binMax >= binMean + (threshStdDev * (gyroConfig()->dyn_notch_park_low_thresh - 100) )) {
                     threshTripped = true;
-                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
+                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
                         DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_low_thresh);
                     }
                 // Check high threshold trip
-                } else if (centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz && binMax >= binMean + (threshStdDev * (gyroConfig()->dyn_notch_park_high_thresh - 100) )) {
+                } else if (gyroConfig()->dyn_notch_park_high_t_hz && centerFreq >= gyroConfig()->dyn_notch_park_high_t_hz && binMax >= binMean + (threshStdDev * (gyroConfig()->dyn_notch_park_high_thresh - 100) )) {
                     threshTripped = true;
-                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
+                    if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis) {
                         DEBUG_SET(DEBUG_FFT_PARK, 3, gyroConfig()->dyn_notch_park_high_thresh);
                     }
                 // If gap between low and high threshold freqs, interpolate the threshold and check for trip
-                } else if ( (centerFreq > gyroConfig()->dyn_notch_park_low_t_hz) && (centerFreq < gyroConfig()->dyn_notch_park_high_t_hz) ) {
+                } else if ( gyroConfig()->dyn_notch_park_low_t_hz && gyroConfig()->dyn_notch_park_high_t_hz && centerFreq > gyroConfig()->dyn_notch_park_low_t_hz && centerFreq < gyroConfig()->dyn_notch_park_high_t_hz ) {
                     float interpThresh = scaleRangef(centerFreq, gyroConfig()->dyn_notch_park_low_t_hz, gyroConfig()->dyn_notch_park_high_t_hz, gyroConfig()->dyn_notch_park_low_thresh - 100, gyroConfig()->dyn_notch_park_high_thresh - 100);
                     if (state->updateAxis == gyroConfig()->gyro_filter_debug_axis){
                             DEBUG_SET(DEBUG_FFT_PARK, 3, interpThresh + 100);
@@ -373,8 +374,8 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 }
                 // If a threshold wasn't tripped, then park the notch
                 if ( !threshTripped ) {
-                    if (isRpmFilterEnabled() && gyroConfig()->dyn_notch_park_harmonic && rpmFilterConfig()->harmonics < RPM_FILTER_MAXHARMONICS) {
-                            centerFreq = MIN(1000, rpmAvgMotorFrequency() * (rpmFilterConfig()->harmonics + 1)); // park notch on highest unfiltered motor harmonic
+                    if (isRpmFilterEnabled() && gyroConfig()->dyn_notch_park_harmonic && rpmFilterConfig()->gyro_rpm_notch_harmonics < RPM_FILTER_MAXHARMONICS) {
+                            centerFreq = MIN(1000, rpmAvgMotorFrequency() * (rpmFilterConfig()->gyro_rpm_notch_harmonics + 1)); // park notch on highest unfiltered motor harmonic
                     } else {
                         centerFreq = MAX(60, gyroConfig()->dyn_notch_park_hz); // ensure >= 60Hz
                     }

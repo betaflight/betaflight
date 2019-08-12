@@ -23,6 +23,8 @@
 #include "common/axis.h"
 #include "pg/pg.h"
 
+#define RPM_FILTER_MAXHARMONICS 3
+
 typedef struct rpmFilterConfig_s
 {
     uint8_t  gyro_rpm_notch_harmonics;   // how many harmonics should be covered with notches? 0 means filter off
