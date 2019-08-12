@@ -56,6 +56,7 @@ extern "C" {
     void cliSet(char *cmdline);
     void cliGet(char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
+    void *cliGetValuePointer(const clivalue_t *value);
     
     const clivalue_t valueTable[] = {
         { "array_unit_test",   VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config.array.length = 3,      PG_RESERVED_FOR_TESTING_1, 0 },
@@ -356,4 +357,6 @@ bool persistBoardInformation(void) { return true; };
 void activeAdjustmentRangeReset(void) {}
 void analyzeModeActivationConditions(void) {}
 bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }
+
+void delay(uint32_t) {}
 }

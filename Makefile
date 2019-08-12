@@ -30,6 +30,9 @@ EXST      ?= no
 # compile for target loaded into RAM
 RAM_BASED ?= no
 
+# reserve space for custom defaults
+CUSTOM_DEFAULTS_EXTENDED ?= no
+
 # Debugger optons:
 #   empty           - ordinary build with all optimizations enabled
 #   RELWITHDEBINFO  - ordinary build with debug symbols and all optimizations enabled
@@ -123,7 +126,8 @@ FATFS_SRC       = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-LD_FLAGS         :=
+LD_FLAGS        :=
+EXTRA_LD_FLAGS  :=
 
 #
 # Default Tool options - can be overridden in {mcu}.mk files.
@@ -183,6 +187,11 @@ TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
 .DEFAULT_GOAL := binary
 else
 .DEFAULT_GOAL := hex
+endif
+
+ifeq ($(CUSTOM_DEFAULTS_EXTENDED),yes)
+TARGET_FLAGS += -DUSE_CUSTOM_DEFAULTS=
+EXTRA_LD_FLAGS += -Wl,--defsym=USE_CUSTOM_DEFAULTS_EXTENDED=1
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -266,7 +275,8 @@ LD_FLAGS     = -lm \
               -Wl,--cref \
               -Wl,--no-wchar-size-warning \
               -Wl,--print-memory-usage \
-              -T$(LD_SCRIPT)
+              -T$(LD_SCRIPT) \
+               $(EXTRA_LD_FLAGS)
 endif
 
 ###############################################################################

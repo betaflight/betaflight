@@ -372,3 +372,7 @@ extern uint8_t __config_end;
 #ifndef USE_ITERM_RELAX
 #undef USE_ABSOLUTE_CONTROL
 #endif
+
+#if defined(USE_CUSTOM_DEFAULTS)
+#define USE_CUSTOM_DEFAULTS_ADDRESS
+#endif
