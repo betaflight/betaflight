@@ -25,6 +25,6 @@
 extern bool cliMode;
 
 void cliProcess(void);
-void cliProcessCustomDefaults(void);
+bool cliProcessCustomDefaults(void);
 struct serialPort_s;
 void cliEnter(struct serialPort_s *serialPort);

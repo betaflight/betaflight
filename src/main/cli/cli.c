@@ -306,75 +306,6 @@ typedef struct serialPassthroughPort_e {
     serialPort_t *port;
 } serialPassthroughPort_t;
 
-static void backupPgConfig(const pgRegistry_t *pg)
-{
-    memcpy(pg->copy, pg->address, pg->size);
-}
-
-static void restorePgConfig(const pgRegistry_t *pg)
-{
-    memcpy(pg->address, pg->copy, pg->size);
-}
-
-static void backupConfigs(void)
-{
-    if (configIsInCopy) {
-        return;
-    }
-
-    // make copies of configs to do differencing
-    PG_FOREACH(pg) {
-        backupPgConfig(pg);
-    }
-
-    configIsInCopy = true;
-}
-
-static void restoreConfigs(void)
-{
-    if (!configIsInCopy) {
-        return;
-    }
-
-    PG_FOREACH(pg) {
-        restorePgConfig(pg);
-    }
-
-    configIsInCopy = false;
-}
-
-#if defined(USE_RESOURCE_MGMT) || defined(USE_TIMER_MGMT)
-static bool isReadingConfigFromCopy()
-{
-    return configIsInCopy;
-}
-#endif
-
-static bool isWritingConfigToCopy()
-{
-    return configIsInCopy
-#if defined(USE_CUSTOM_DEFAULTS)
-        && !processingCustomDefaults
-#endif
-        ;
-}
-
-static void backupAndResetConfigs(const bool useCustomDefaults)
-{
-    backupConfigs();
-
-    // reset all configs to defaults to do differencing
-    resetConfigs();
-
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (useCustomDefaults) {
-        cliProcessCustomDefaults();
-    }
-#else
-    UNUSED(useCustomDefaults);
-#endif
-}
-
 static void cliWriterFlush()
 {
     if (cliWriter) {
@@ -685,6 +616,77 @@ static const char *cliPrintSectionHeading(dumpFlags_t dumpMask, bool outputFlag,
     } else {
         return headingStr;
     }
+}
+
+static void backupPgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->copy, pg->address, pg->size);
+}
+
+static void restorePgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->address, pg->copy, pg->size);
+}
+
+static void backupConfigs(void)
+{
+    if (configIsInCopy) {
+        return;
+    }
+
+    // make copies of configs to do differencing
+    PG_FOREACH(pg) {
+        backupPgConfig(pg);
+    }
+
+    configIsInCopy = true;
+}
+
+static void restoreConfigs(void)
+{
+    if (!configIsInCopy) {
+        return;
+    }
+
+    PG_FOREACH(pg) {
+        restorePgConfig(pg);
+    }
+
+    configIsInCopy = false;
+}
+
+#if defined(USE_RESOURCE_MGMT) || defined(USE_TIMER_MGMT)
+static bool isReadingConfigFromCopy()
+{
+    return configIsInCopy;
+}
+#endif
+
+static bool isWritingConfigToCopy()
+{
+    return configIsInCopy
+#if defined(USE_CUSTOM_DEFAULTS)
+        && !processingCustomDefaults
+#endif
+        ;
+}
+
+static void backupAndResetConfigs(const bool useCustomDefaults)
+{
+    backupConfigs();
+
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+
+#if defined(USE_CUSTOM_DEFAULTS)
+    if (useCustomDefaults) {
+        if (!cliProcessCustomDefaults()) {
+            cliPrintLine("###WARNING: NO CUSTOM DEFAULTS FOUND###");
+        }
+    }
+#else
+    UNUSED(useCustomDefaults);
+#endif
 }
 
 static uint8_t getPidProfileIndexToUse()
@@ -4211,7 +4213,7 @@ static void cliDefaults(char *cmdline)
                 }
             }
         } else {
-            cliPrintError("NO DEFAULTS FOUND");
+            cliPrintError("NO CUSTOM DEFAULTS FOUND");
         }
 
         return;
@@ -6450,36 +6452,34 @@ void cliProcess(void)
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-void cliProcessCustomDefaults(void)
+bool cliProcessCustomDefaults(void)
 {
-    if (processingCustomDefaults) {
-        return;
-    }
-
     char *customDefaultsPtr = customDefaultsStart;
-    if (isDefaults(customDefaultsPtr)) {
-#if !defined(DEBUG_CUSTOM_DEFAULTS)
-        bufWriter_t *cliWriterTemp = cliWriter;
-        cliWriter = NULL;
-#endif
-        memcpy(cliBufferTemp, cliBuffer, sizeof(cliBuffer));
-        uint32_t bufferIndexTemp = bufferIndex;
-        bufferIndex = 0;
-        processingCustomDefaults = true;
-
-        while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
-            processCharacter(*customDefaultsPtr++);
-        }
-
-        processingCustomDefaults = false;
-#if !defined(DEBUG_CUSTOM_DEFAULTS)
-        cliWriter = cliWriterTemp;
-#endif
-        memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
-        bufferIndex = bufferIndexTemp;
-    } else {
-        cliPrintError("NO DEFAULTS FOUND");
+    if (processingCustomDefaults || !isDefaults(customDefaultsPtr)) {
+        return false;
     }
+
+#if !defined(DEBUG_CUSTOM_DEFAULTS)
+    bufWriter_t *cliWriterTemp = cliWriter;
+    cliWriter = NULL;
+#endif
+    memcpy(cliBufferTemp, cliBuffer, sizeof(cliBuffer));
+    uint32_t bufferIndexTemp = bufferIndex;
+    bufferIndex = 0;
+    processingCustomDefaults = true;
+
+    while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
+        processCharacter(*customDefaultsPtr++);
+    }
+
+    processingCustomDefaults = false;
+#if !defined(DEBUG_CUSTOM_DEFAULTS)
+    cliWriter = cliWriterTemp;
+#endif
+    memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
+    bufferIndex = bufferIndexTemp;
+
+    return true;
 }
 #endif
 
