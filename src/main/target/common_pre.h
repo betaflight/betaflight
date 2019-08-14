@@ -264,6 +264,7 @@
 #define USE_HUFFMAN
 #define USE_PINIO
 #define USE_PINIOBOX
+#define USE_PIN_UP_DOWN
 #endif
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 3))

@@ -80,6 +80,7 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_table.h"
+#include "drivers/pin_up_down.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -147,6 +148,7 @@
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 #include "pg/vtx_io.h"
+#include "pg/pin_up_down.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -692,6 +694,11 @@ void init(void)
 
 #ifdef USE_PINIO
     pinioInit(pinioConfig());
+#endif
+
+#ifdef USE_PIN_UP_DOWN
+    pinPullupInit(pinPullupConfig());
+    pinPulldownInit(pinPulldownConfig());
 #endif
 
 #ifdef USE_PINIOBOX

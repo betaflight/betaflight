@@ -103,6 +103,8 @@ typedef enum {
     OWNER_QUADSPI_BK2IO3,
     OWNER_QUADSPI_BK2CS,
     OWNER_BARO_XCLR,
+    OWNER_PULLUP,
+    OWNER_PULLDOWN,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
