@@ -151,7 +151,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
     /*If there is a command ready to go overwrite the value and send that instead*/
     if (dshotCommandIsProcessing()) {
-        value = pwmGetDshotCommand(index);
+        value = dshotCommandGetCurrent(index);
         if (value) {
             motor->protocolControl.requestTelemetry = true;
         }

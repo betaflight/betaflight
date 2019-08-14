@@ -229,7 +229,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool 
     }
 }
 
-uint8_t pwmGetDshotCommand(uint8_t index)
+uint8_t dshotCommandGetCurrent(uint8_t index)
 {
     return commandQueue[commandQueueTail].command[index];
 }
