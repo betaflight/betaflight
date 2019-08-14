@@ -45,6 +45,7 @@ typedef struct motorVTable_s {
     uint16_t (*convertMotorToExternal)(float motorValue);
     bool (*enable)(void);
     void (*disable)(void);
+    bool (*isMotorEnabled)(uint8_t index);
     bool (*updateStart)(void);
     void (*write)(uint8_t index, float value);
     void (*writeInt)(uint8_t index, uint16_t value);
@@ -80,4 +81,5 @@ bool isMotorProtocolDshot(void);
 void motorDisable(void);
 void motorEnable(void);
 bool motorIsEnabled(void);
+bool motorIsMotorEnabled(uint8_t index);
 void motorShutdown(void); // Replaces stopPwmAllMotors

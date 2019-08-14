@@ -144,6 +144,11 @@ bool pwmEnableMotors(void)
     return (motorPwmVTable.write != &pwmWriteUnused);
 }
 
+bool pwmIsMotorEnabled(uint8_t index)
+{
+    return motors[index].enabled;
+}
+
 static void pwmCompleteOneshotMotorUpdate(void)
 {
     for (int index = 0; index < motorPwmDevice.count; index++) {
@@ -169,6 +174,7 @@ static uint16_t pwmConvertToExternal(float motorValue)
 static motorVTable_t motorPwmVTable = {
     .enable = pwmEnableMotors,
     .disable = pwmDisableMotors,
+    .isMotorEnabled = pwmIsMotorEnabled,
     .shutdown = pwmShutdownPulsesForAllMotors,
     .convertExternalToMotor = pwmConvertFromExternal,
     .convertMotorToExternal = pwmConvertToExternal,

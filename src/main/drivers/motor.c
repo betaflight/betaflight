@@ -246,6 +246,11 @@ bool motorIsEnabled(void)
     return motorDevice->enabled;
 }
 
+bool motorIsMotorEnabled(uint8_t index)
+{
+    return motorDevice->vTable.isMotorEnabled(index);
+}
+
 bool isMotorProtocolDshot(void)
 {
     return isDshot;
