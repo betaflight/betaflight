@@ -352,6 +352,10 @@ void fcTasksInit(void)
 #ifdef USE_RCDEVICE
     setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
 #endif
+
+#ifdef USE_MAVLINK_ATTRATE
+    setTaskEnabled(TASK_MAVLINK_ATTRATE, featureIsEnabled(FEATURE_MAVLINK_ATTRATE));
+#endif
 }
 
 #if defined(USE_TASK_STATISTICS)
@@ -397,6 +401,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH), // If event-based scheduling doesn't work, fallback to periodic scheduling
     [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH),
 
+#ifdef USE_MAVLINK_ATTRATE
+    [TASK_MAVLINK_ATTRATE] = DEFINE_TASK("MAVLINK_ATTRATE", NULL, NULL, mavlinkAttrateUpdate, TASK_PERIOD_HZ(500), TASK_PRIORITY_HIGH),
+#endif
+    
 #ifdef USE_BEEPER
     [TASK_BEEPER] = DEFINE_TASK("BEEPER", NULL, NULL, beeperUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
@@ -468,4 +476,5 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef USE_RANGEFINDER
     [TASK_RANGEFINDER] = DEFINE_TASK("RANGEFINDER", NULL, NULL, rangefinderUpdate, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE),
 #endif
+
 };

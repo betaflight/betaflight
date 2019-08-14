@@ -337,4 +337,5 @@
 #define USE_PROFILE_NAMES
 #define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
 #define USE_INTERPOLATED_SP
+#define USE_MAVLINK_ATTRATE
 #endif

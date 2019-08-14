@@ -136,6 +136,10 @@ typedef enum {
     TASK_PINIOBOX,
 #endif
 
+#ifdef USE_MAVLINK_ATTRATE
+    TASK_MAVLINK_ATTRATE,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 

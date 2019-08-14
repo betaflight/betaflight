@@ -375,6 +375,12 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+#if defined(USE_MAVLINK_ATTRATE)
+    if (!findSerialPortConfig(FUNCTION_MAVLINK_ATTRATE)) {
+        featureDisable(FEATURE_MAVLINK_ATTRATE);
+    }
+#endif
+    
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
 

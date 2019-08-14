@@ -557,6 +557,10 @@ static FAST_RAM_ZERO_INIT int acroTrainerAxisState[2];  // only need roll and pi
 static FAST_RAM_ZERO_INIT float acroTrainerGain;
 #endif // USE_ACRO_TRAINER
 
+#ifdef USE_MAVLINK_ATTRATE
+static FAST_RAM_ZERO_INIT bool mavlinkAttrateActive;
+#endif // USE_MAVLINK_ATTRATE
+
 #ifdef USE_THRUST_LINEARIZATION
 FAST_RAM_ZERO_INIT float thrustLinearization;
 FAST_RAM_ZERO_INIT float thrustLinearizationReciprocal;
@@ -1360,6 +1364,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
+#ifdef USE_MAVLINK_ATTRATE
+        if (mavlinkAttrateActive) {
+            currentPidSetpoint = getMavlinkAttrateSetpoint(axis);
+        }
+#endif // USE_MAVLINK_ATTRATE
+
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
@@ -1561,6 +1571,15 @@ void pidSetAcroTrainerState(bool newState)
             pidAcroTrainerInit();
         }
         acroTrainerActive = newState;
+    }
+}
+#endif // USE_ACRO_TRAINER
+
+#ifdef USE_MAVLINK_ATTRATE
+void pidSetMavlinkAttrateState(bool newState)
+{
+    if (mavlinkAttrateActive != newState) {
+        mavlinkAttrateActive = newState;
     }
 }
 #endif // USE_ACRO_TRAINER
