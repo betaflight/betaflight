@@ -67,6 +67,7 @@
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/sdcard.h"
+#include "drivers/sdio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -178,8 +179,6 @@ serialPort_t *loopbackPort;
 #endif
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
-
-void SDIO_GPIO_Init(void);
 
 void processLoopback(void)
 {
@@ -316,6 +315,7 @@ void init(void)
     pgResetAll();
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
 #ifdef USE_SDCARD_SPI
@@ -616,6 +616,7 @@ void init(void)
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
     if (!(initFlags & SD_INIT_ATTEMPTED)) {
+        sdioPinConfigure();
         SDIO_GPIO_Init();
     }
 #endif
