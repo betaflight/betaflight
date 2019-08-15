@@ -22,11 +22,10 @@
 
 #include <stdbool.h>
 
-#ifndef PIN_UP_DOWN_COUNT
-#define PIN_UP_DOWN_COUNT 2
+#ifndef PIN_PULL_UP_DOWN_COUNT
+#define PIN_PULL_UP_DOWN_COUNT 4
 #endif
 
-struct pinUpDownConfig_s;
+struct pinPullUpDownConfig_s;
 
-void pinPullupInit(const struct pinUpDownConfig_s *pinUpDownConfig);
-void pinPulldownInit(const struct pinUpDownConfig_s *pinUpDownConfig);
+void pinPullupPulldownInit();

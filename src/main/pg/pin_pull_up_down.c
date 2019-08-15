@@ -18,45 +18,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-
 #include "platform.h"
 
-#ifdef USE_PIN_UP_DOWN
-
-#include "build/debug.h"
-
-#include "pg/pin_up_down.h"
+#ifdef USE_PIN_PULL_UP_DOWN
 
 #include "drivers/io.h"
+#include "pg/pg_ids.h"
+#include "pin_pull_up_down.h"
 
-static void initPins(const pinUpDownConfig_t * config, resourceOwner_e owner)
+PG_REGISTER_ARRAY_WITH_RESET_FN(pinPullUpDownConfig_t, PIN_PULL_UP_DOWN_COUNT, pinPullupConfig, PG_PULLUP_CONFIG, 0);
+
+void pgResetFn_pinPullupConfig(pinPullUpDownConfig_t *config)
 {
-    for (int i = 0; i < PIN_UP_DOWN_COUNT; i++) {
-        IO_t io = IOGetByTag(config->ioTag[i]);
-
-        if (!io) {
-            continue;
-        }
-
-        IOInit(io, OWNER_PINIO, RESOURCE_INDEX(i));
-
-        if (owner == OWNER_PULLUP) {
-            IOConfigGPIO(io, IOCFG_IPU);
-        } else if (owner == OWNER_PULLDOWN) {
-            IOConfigGPIO(io, IOCFG_IPD);
-        }
-    }
+    config->ioTag = IO_TAG(NONE);
 }
 
-void pinPullupInit(const pinUpDownConfig_t * pullupConfig)
-{
-    initPins(pullupConfig, OWNER_PULLUP);
-}
+PG_REGISTER_ARRAY_WITH_RESET_FN(pinPullUpDownConfig_t, PIN_PULL_UP_DOWN_COUNT, pinPulldownConfig, PG_PULLDOWN_CONFIG, 0);
 
-void pinPulldownInit(const pinUpDownConfig_t * pulldownConfig)
+void pgResetFn_pinPulldownConfig(pinPullUpDownConfig_t *config)
 {
-    initPins(pulldownConfig, OWNER_PULLDOWN);
+    config->ioTag = IO_TAG(NONE);
 }
-
 #endif

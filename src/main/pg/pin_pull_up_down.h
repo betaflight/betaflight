@@ -20,14 +20,13 @@
 
 #pragma once
 
-#include "../drivers/pin_up_down.h"
-
-#include "pg/pg.h"
 #include "drivers/io_types.h"
+#include "drivers/pin_pull_up_down.h"
+#include "pg/pg.h"
 
-typedef struct pinUpDownConfig_s {
-    ioTag_t ioTag[PIN_UP_DOWN_COUNT];
-} pinUpDownConfig_t;
+typedef struct pinPullUpDownConfig_s {
+    ioTag_t ioTag;
+} pinPullUpDownConfig_t;
 
-PG_DECLARE(pinUpDownConfig_t, pinPullupConfig);
-PG_DECLARE(pinUpDownConfig_t, pinPulldownConfig);
+PG_DECLARE_ARRAY(pinPullUpDownConfig_t, PIN_PULL_UP_DOWN_COUNT, pinPullupConfig);
+PG_DECLARE_ARRAY(pinPullUpDownConfig_t, PIN_PULL_UP_DOWN_COUNT, pinPulldownConfig);

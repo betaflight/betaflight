@@ -59,6 +59,7 @@
 #include "drivers/mco.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
+#include "drivers/pin_pull_up_down.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
@@ -80,7 +81,6 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_table.h"
-#include "drivers/pin_up_down.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -141,6 +141,7 @@
 #include "pg/motor.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
+#include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -148,7 +149,6 @@
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 #include "pg/vtx_io.h"
-#include "pg/pin_up_down.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -696,9 +696,8 @@ void init(void)
     pinioInit(pinioConfig());
 #endif
 
-#ifdef USE_PIN_UP_DOWN
-    pinPullupInit(pinPullupConfig());
-    pinPulldownInit(pinPulldownConfig());
+#ifdef USE_PIN_PULL_UP_DOWN
+    pinPullupPulldownInit();
 #endif
 
 #ifdef USE_PINIOBOX

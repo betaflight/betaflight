@@ -264,7 +264,6 @@
 #define USE_HUFFMAN
 #define USE_PINIO
 #define USE_PINIOBOX
-#define USE_PIN_UP_DOWN
 #endif
 
 #if ((FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 3))
@@ -277,6 +276,7 @@
 #define USE_SPEKTRUM_VTX_CONTROL
 #define USE_SPEKTRUM_VTX_TELEMETRY
 #define USE_SPEKTRUM_CMS_TELEMETRY
+#define USE_PIN_PULL_UP_DOWN
 #endif
 #endif
 
