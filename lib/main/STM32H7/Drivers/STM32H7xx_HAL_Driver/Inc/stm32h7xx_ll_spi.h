@@ -17,6 +17,9 @@
   ******************************************************************************
   */
 
+// Avoid strict aliasing warnings from deferencing type-punned pointers
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef STM32H7xx_LL_SPI_H
 #define STM32H7xx_LL_SPI_H
