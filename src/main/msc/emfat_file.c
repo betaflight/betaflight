@@ -27,6 +27,7 @@
 #include "emfat_file.h"
 
 #include "common/printf.h"
+#include "common/strtol.h"
 #include "common/time.h"
 #include "common/utils.h"
 
@@ -35,6 +36,7 @@
 #include "msc/usbd_storage.h"
 
 #define FILESYSTEM_SIZE_MB 256
+#define HDR_BUF_SIZE 32
 
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
@@ -270,13 +272,15 @@ static const emfat_entry_t entriesPredefined[] =
 #define EMFAT_MAX_ENTRY (PREDEFINED_ENTRY_COUNT + EMFAT_MAX_LOG_ENTRY + APPENDED_ENTRY_COUNT)
 
 static emfat_entry_t entries[EMFAT_MAX_ENTRY];
-static char logNames[EMFAT_MAX_LOG_ENTRY][8+3];
+static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3];
 
 emfat_t emfat;
 static uint32_t cmaTime = CMA_TIME;
 
 static void emfat_set_entry_cma(emfat_entry_t *entry)
 {
+    // Set file creation/modification/access times to be the same, either the default date or that from the RTC
+    // In practise this will be when the filesystem is mounted as the date is passed from the host over USB
     entry->cma_time[0] = cmaTime;
     entry->cma_time[1] = cmaTime;
     entry->cma_time[2] = cmaTime;
@@ -291,7 +295,9 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uin
     entry->curr_size = size;
     entry->max_size = entry->curr_size;
     entry->readcb = bblog_read_proc;
-    emfat_set_entry_cma(entry);
+    // Set file modification/access times to be the same as the creation time
+    entry->cma_time[1] = entry->cma_time[0];
+    entry->cma_time[2] = entry->cma_time[0];
 }
 
 static int emfat_find_log(emfat_entry_t *entry, int maxCount)
@@ -299,36 +305,96 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount)
     int limit = flashfsIdentifyStartOfFreeSpace();
     int lastOffset = 0;
     int currOffset = 0;
+    int buffOffset;
+    int hdrOffset;
     int fileNumber = 0;
-    uint8_t buffer[18];
+    uint8_t buffer[HDR_BUF_SIZE];
     int logCount = 0;
+    char *logHeader = "H Product:Blackbox";
+    int lenLogHeader = strlen(logHeader);
+    char *timeHeader = "H Log start datetime:";
+    int lenTimeHeader = strlen(timeHeader);
+    int timeHeaderMatched = 0;
 
     for ( ; currOffset < limit ; currOffset += 2048) { // XXX 2048 = FREE_BLOCK_SIZE in io/flashfs.c
 
-        flashfsReadAbs(currOffset, buffer, 18);
+        flashfsReadAbs(currOffset, buffer, HDR_BUF_SIZE);
 
-        if (strncmp((char *)buffer, "H Product:Blackbox", 18)) {
+        if (strncmp((char *)buffer, logHeader, lenLogHeader)) {
             continue;
         }
 
+        // The length of the previous record is now known
         if (lastOffset != currOffset) {
-            emfat_add_log(entry, fileNumber, lastOffset, currOffset - lastOffset);
+            // Record the previous entry
+            emfat_add_log(entry++, fileNumber++, lastOffset, currOffset - lastOffset);
 
-            ++fileNumber;
-            ++logCount;
-            if (fileNumber == maxCount) {
-                break;
+            logCount++;
+        }
+
+        // Find the "Log start datetime" entry, example encoding "H Log start datetime:2019-08-15T13:18:22.199+00:00"
+
+        buffOffset = lenLogHeader;
+        hdrOffset = currOffset;
+
+        // Set the default timestamp for this log entry in case the timestamp is not found
+        entry->cma_time[0] = cmaTime;
+
+        // Search for the timestamp record
+        while (true) {
+            if (buffer[buffOffset++] == timeHeader[timeHeaderMatched]) {
+                // This matches the header we're looking for so far
+                if (++timeHeaderMatched == lenTimeHeader) {
+                    // Complete match so read date/time into buffer
+                    flashfsReadAbs(hdrOffset + buffOffset, buffer, HDR_BUF_SIZE);
+
+                    // Extract the time values to create the CMA time
+                    char *nextToken = (char *)buffer;
+                    int year = strtoul(nextToken, &nextToken, 10);
+                    int month = strtoul(++nextToken, &nextToken, 10);
+                    int day = strtoul(++nextToken, &nextToken, 10);
+                    int hour = strtoul(++nextToken, &nextToken, 10);
+                    int min = strtoul(++nextToken, &nextToken, 10);
+                    int sec = strtoul(++nextToken, NULL, 10);
+
+                    // Set the file creation time
+                    if (year) {
+                        entry->cma_time[0] = EMFAT_ENCODE_CMA_TIME(day, month, year, hour, min, sec);
+                    }
+
+                    break;
+                }
+            } else {
+                timeHeaderMatched = 0;
             }
-            ++entry;
+
+            if (buffOffset == HDR_BUF_SIZE) {
+                // Read the next portion of the header
+                hdrOffset += HDR_BUF_SIZE;
+
+                // Check for flash overflow
+                if (hdrOffset > limit) {
+                    break;
+                }
+
+                flashfsReadAbs(hdrOffset, buffer, HDR_BUF_SIZE);
+                buffOffset = 0;
+            }
+        }
+
+        if (fileNumber == maxCount) {
+            break;
         }
 
         lastOffset = currOffset;
     }
 
+    // Now add the final entry
     if (fileNumber != maxCount && lastOffset != currOffset) {
         emfat_add_log(entry, fileNumber, lastOffset, currOffset - lastOffset);
         ++logCount;
     }
+
     return logCount;
 }
 
@@ -347,6 +413,7 @@ void emfat_init_files(void)
 
     for (size_t i = 0 ; i < PREDEFINED_ENTRY_COUNT ; i++) {
         entries[i] = entriesPredefined[i];
+        // These entries have timestamps corresponding to when the filesystem is mounted
         emfat_set_entry_cma(&entries[i]);
     }
 
@@ -362,6 +429,7 @@ void emfat_init_files(void)
         entry = &entries[entryIndex];
         entry->curr_size = flashfsIdentifyStartOfFreeSpace();
         entry->max_size = entry->curr_size;
+        // This entry has timestamps corresponding to when the filesystem is mounted
         emfat_set_entry_cma(entry);
         ++entryIndex;
     }
@@ -372,6 +440,7 @@ void emfat_init_files(void)
     // used space is doubled because of the individual files plus the single complete file
     entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsIdentifyStartOfFreeSpace() * 2);
     entry->max_size = entry->curr_size;
+    // This entry has timestamps corresponding to when the filesystem is mounted
     emfat_set_entry_cma(entry);
 
     emfat_init(&emfat, "BETAFLT", entries);
