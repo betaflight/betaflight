@@ -1187,15 +1187,15 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
 // Buf must be at least FORMATTED_DATE_TIME_BUFSIZE
 STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 {
-    #ifdef USE_RTC_TIME
+#ifdef USE_RTC_TIME
     dateTime_t dt;
     // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
     // when time is not known.
     rtcGetDateTime(&dt);
     dateTimeFormatLocal(buf, &dt);
-    #else
+#else
     buf = "0000-01-01T00:00:00.000";
-    #endif
+#endif
 
     return buf;
 }
