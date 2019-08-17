@@ -962,8 +962,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_MOTOR:
         for (unsigned i = 0; i < 8; i++) {
-#ifdef USE_PWM_OUTPUT
-            if (i >= MAX_SUPPORTED_MOTORS || !pwmGetMotors()[i].enabled) {
+#ifdef USE_MOTOR
+            if (i >= MAX_SUPPORTED_MOTORS || !motorIsMotorEnabled(i)) {
                 sbufWriteU16(dst, 0);
                 continue;
             }

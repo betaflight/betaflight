@@ -122,6 +122,11 @@ static bool dshotPwmEnableMotors(void)
     return true;
 }
 
+static bool dshotPwmIsMotorEnabled(uint8_t index)
+{
+    return motors[index].enabled;
+}
+
 static FAST_CODE void dshotWriteInt(uint8_t index, uint16_t value)
 {
     pwmWriteDshotInt(index, value);
@@ -135,6 +140,7 @@ static FAST_CODE void dshotWrite(uint8_t index, float value)
 static motorVTable_t dshotPwmVTable = {
     .enable = dshotPwmEnableMotors,
     .disable = dshotPwmDisableMotors,
+    .isMotorEnabled = dshotPwmIsMotorEnabled,
     .updateStart = motorUpdateStartNull, // May be updated after copying
     .write = dshotWrite,
     .writeInt = dshotWriteInt,
