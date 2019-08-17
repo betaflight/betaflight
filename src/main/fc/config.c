@@ -56,16 +56,18 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/vtx.h"
 
 #include "osd/osd.h"
 
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
+#include "pg/gyrodev.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
-#include "pg/gyrodev.h"
+#include "pg/vtx_table.h"
 
 #include "rx/rx.h"
 
@@ -73,8 +75,8 @@
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
-#include "sensors/gyro.h"
 #include "sensors/compass.h"
+#include "sensors/gyro.h"
 
 #include "common/sensor_alignment.h"
 
@@ -523,6 +525,23 @@ static void validateAndFixConfig(void)
              osdConfigMutable()->timers[i] = osdTimerDefault[i];
          }
      }
+#endif
+
+#if defined(USE_VTX_COMMON) && defined(USE_VTX_TABLE)
+    // reset vtx band, channel, power if outside range specified by vtxtable
+    if (vtxSettingsConfig()->channel > vtxTableConfig()->channels) {
+        vtxSettingsConfigMutable()->channel = 0;
+        if (vtxSettingsConfig()->band > 0) {
+            vtxSettingsConfigMutable()->freq = 0; // band/channel determined frequency can't be valid anymore
+        }
+    }
+    if (vtxSettingsConfig()->band > vtxTableConfig()->bands) {
+        vtxSettingsConfigMutable()->band = 0;
+        vtxSettingsConfigMutable()->freq = 0; // band/channel determined frequency can't be valid anymore
+    }
+    if (vtxSettingsConfig()->power > vtxTableConfig()->powerLevels) {
+        vtxSettingsConfigMutable()->power = 0;
+    }
 #endif
 
 #if defined(TARGET_VALIDATECONFIG)
