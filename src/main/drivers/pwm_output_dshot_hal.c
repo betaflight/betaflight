@@ -308,7 +308,11 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
 
+#if defined(STM32H7)
+        DMAINIT.PeriphRequest = dmaChannel;
+#else
         DMAINIT.Channel = dmaChannel;
+#endif
         DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->timer->dmaBurstBuffer;
         DMAINIT.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
         DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)&timerHardware->tim->DMAR;
@@ -319,7 +323,11 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
 
+#if defined(STM32H7)
+        DMAINIT.PeriphRequest = dmaChannel;
+#else
         DMAINIT.Channel = dmaChannel;
+#endif
         DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->dmaBuffer;
         DMAINIT.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_1_4;
         DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)timerChCCR(timerHardware);

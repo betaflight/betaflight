@@ -25,14 +25,14 @@
 #include <string.h>
 #endif
 
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 typedef DMA_Stream_TypeDef dmaStream_t;
 #else
 typedef DMA_Channel_TypeDef dmaStream_t;
 #endif
 
 extern FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount;
-#ifdef STM32F7
+#if defined(STM32F7) || defined(STM32H7)
 extern FAST_RAM_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 extern FAST_RAM_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 #else
@@ -59,8 +59,8 @@ void dshotEnableChannels(uint8_t motorCount);
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor, bool output
 #ifndef USE_DSHOT_TELEMETRY
-#ifdef STM32F7
-    , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit)
+#if defined(STM32F7) || defined(STM32H7)
+    , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit
 #else
     , TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
 #endif
