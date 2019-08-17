@@ -283,6 +283,7 @@
 #define MSP_GPS_RESCUE_PIDS      136    //out message         GPS Rescues's throttleP and velocity PIDS + yaw P
 #define MSP_VTXTABLE_BAND        137    //out message         vtxTable band/channel data
 #define MSP_VTXTABLE_POWERLEVEL  138    //out message         vtxTable powerLevel data
+#define MSP_MOTOR_TELEMETRY      139    //out message         Per-motor telemetry data (RPM, packet stats, ESC temp, etc.)
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
