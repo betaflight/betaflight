@@ -24,6 +24,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <ctype.h>
 
 #include "platform.h"
 
@@ -60,6 +61,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_msc.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -109,6 +111,7 @@
 #include "pg/rx_spi.h"
 #include "pg/usb.h"
 #include "pg/vcd.h"
+#include "pg/vtx_table.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -168,6 +171,10 @@ typedef enum {
 #define RATEPROFILE_MASK (1 << 7)
 
 #define RTC_NOT_SUPPORTED 0xff
+
+#ifdef USE_VTX_TABLE
+static bool vtxTableNeedsInit = false;
+#endif
 
 static bool featureMaskIsCopied = false;
 static uint32_t featureMaskCopy;
@@ -1585,7 +1592,21 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU16(dst, vtxSettingsConfig()->freq);
             sbufWriteU8(dst, deviceIsReady);
             sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
-            // future extensions here...
+
+            // API version 1.42
+            sbufWriteU16(dst, vtxSettingsConfig()->pitModeFreq);
+#ifdef USE_VTX_TABLE
+            sbufWriteU8(dst, 1);   // vtxtable is available
+            sbufWriteU8(dst, vtxTableConfig()->bands);
+            sbufWriteU8(dst, vtxTableConfig()->channels);
+            sbufWriteU8(dst, vtxTableConfig()->powerLevels);
+#else
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+#endif
+
         }
         break;
 #endif
@@ -1711,6 +1732,46 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
             dst->ptr = packetOut.buf.ptr;
         }
         break;
+
+#ifdef USE_VTX_TABLE
+    case MSP_VTXTABLE_BAND:
+        {
+            const uint8_t band = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+            if (band > 0 && band <= VTX_TABLE_MAX_BANDS) {
+                sbufWriteU8(dst, band);  // band number (same as request)
+                sbufWriteU8(dst, VTX_TABLE_BAND_NAME_LENGTH); // band name length
+                for (int i = 0; i < VTX_TABLE_BAND_NAME_LENGTH; i++) { // band name bytes
+                    sbufWriteU8(dst, vtxTableConfig()->bandNames[band - 1][i]);
+                }
+                sbufWriteU8(dst, vtxTableConfig()->bandLetters[band - 1]); // band letter
+                sbufWriteU8(dst, vtxTableConfig()->isFactoryBand[band - 1]); // CUSTOM = 0; FACTORY = 1
+                sbufWriteU8(dst, vtxTableConfig()->channels); // number of channel frequencies to follow
+                for (int i = 0; i < vtxTableConfig()->channels; i++) { // the frequency for each channel
+                    sbufWriteU16(dst, vtxTableConfig()->frequency[band - 1][i]);
+                }
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+        }
+        break;
+
+    case MSP_VTXTABLE_POWERLEVEL:
+        {
+            const uint8_t powerLevel = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+            if (powerLevel > 0 && powerLevel <= VTX_TABLE_MAX_POWER_LEVELS) {
+                sbufWriteU8(dst, powerLevel);  // powerLevel number (same as request)
+                sbufWriteU16(dst, vtxTableConfig()->powerValues[powerLevel - 1]);
+                sbufWriteU8(dst, VTX_TABLE_POWER_LABEL_LENGTH); // powerLevel label length
+                for (int i = 0; i < VTX_TABLE_POWER_LABEL_LENGTH; i++) { // powerlevel label bytes
+                    sbufWriteU8(dst, vtxTableConfig()->powerLabels[powerLevel - 1][i]);
+                }
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+        }
+        break;
+#endif // USE_VTX_TABLE
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -2308,6 +2369,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             writeEEPROM();
         }
         readEEPROM();
+
+#ifdef USE_VTX_TABLE
+        if (vtxTableNeedsInit) {
+            vtxTableNeedsInit = false;
+            vtxTableInit();  // Reinitialize and refresh the in-memory copies
+        }
+#endif
+
         break;
 
 #ifdef USE_BLACKBOX
@@ -2350,19 +2419,145 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (sbufBytesRemaining(src) >= 2) {
                 vtxSettingsConfigMutable()->power = sbufReadU8(src);
+                const uint8_t newPitmode = sbufReadU8(src);
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
-                    const uint8_t newPitmode = sbufReadU8(src);
                     unsigned vtxCurrentStatus;
                     vtxCommonGetStatus(vtxDevice, &vtxCurrentStatus);
                     if ((bool)(vtxCurrentStatus & VTX_STATUS_PIT_MODE) != (bool)newPitmode) {
                         vtxCommonSetPitMode(vtxDevice, newPitmode);
                     }
-
-                    if (sbufBytesRemaining(src)) {
-                        vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadU8(src);
-                    }
                 }
+            }
+
+            if (sbufBytesRemaining(src)) {
+                    vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadU8(src);
+            }
+
+            // API version 1.42 - this parameter kept separate since clients may already be supplying
+            if (sbufBytesRemaining(src) >= 2) {
+                vtxSettingsConfigMutable()->pitModeFreq = sbufReadU16(src);
+            }
+
+            // API version 1.42 - extensions for non-encoded versions of the band, channel or frequency
+            if (sbufBytesRemaining(src) >= 4) {
+                // Added standalone values for band, channel and frequency to move
+                // away from the flawed encoded combined method originally implemented.
+                uint8_t newBand = sbufReadU8(src);
+                const uint8_t newChannel = sbufReadU8(src);
+                uint16_t newFreq = sbufReadU16(src);
+                if (newBand) {
+                    newFreq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
+                }
+                vtxSettingsConfigMutable()->band = newBand;
+                vtxSettingsConfigMutable()->channel = newChannel;
+                vtxSettingsConfigMutable()->freq = newFreq;
+            }
+
+            // API version 1.42 - extensions for vtxtable support
+            if (sbufBytesRemaining(src) >= 4) {
+#ifdef USE_VTX_TABLE
+                const uint8_t newBandCount = sbufReadU8(src);
+                const uint8_t newChannelCount = sbufReadU8(src);
+                const uint8_t newPowerCount = sbufReadU8(src);
+
+                if ((newBandCount > VTX_TABLE_MAX_BANDS) ||
+                    (newChannelCount > VTX_TABLE_MAX_CHANNELS) ||
+                    (newPowerCount > VTX_TABLE_MAX_POWER_LEVELS)) {
+                    return MSP_RESULT_ERROR;
+                }
+                vtxTableConfigMutable()->bands = newBandCount;
+                vtxTableConfigMutable()->channels = newChannelCount;
+                vtxTableConfigMutable()->powerLevels = newPowerCount;
+
+                // boolean to determine whether the vtxtable should be cleared in
+                // expectation that the detailed band/channel and power level messages
+                // will follow to repopulate the tables
+                if (sbufReadU8(src)) {
+                    for (int i = 0; i < VTX_TABLE_MAX_BANDS; i++) {
+                        vtxTableConfigClearBand(vtxTableConfigMutable(), i);
+                        vtxTableConfigClearChannels(vtxTableConfigMutable(), i, 0);
+                    }
+                    vtxTableConfigClearPowerLabels(vtxTableConfigMutable(), 0);
+                    vtxTableConfigClearPowerValues(vtxTableConfigMutable(), 0);
+                }
+#else
+                sbufReadU8(src);
+                sbufReadU8(src);
+                sbufReadU8(src);
+                sbufReadU8(src);
+#endif
+            }
+        }
+        break;
+#endif
+
+#ifdef USE_VTX_TABLE
+    case MSP_SET_VTXTABLE_BAND:
+        {
+            char bandName[VTX_TABLE_BAND_NAME_LENGTH + 1];
+            memset(bandName, 0, VTX_TABLE_BAND_NAME_LENGTH + 1);
+            uint16_t frequencies[VTX_TABLE_MAX_CHANNELS];
+            const uint8_t band = sbufReadU8(src);
+            const uint8_t bandNameLength = sbufReadU8(src);
+            for (int i = 0; i < bandNameLength; i++) {
+                const char nameChar = sbufReadU8(src);
+                if (i < VTX_TABLE_BAND_NAME_LENGTH) {
+                    bandName[i] = toupper(nameChar);
+                }
+            }
+            const char bandLetter = toupper(sbufReadU8(src));
+            const bool isFactoryBand = (bool)sbufReadU8(src);
+            const uint8_t channelCount = sbufReadU8(src);
+            for (int i = 0; i < channelCount; i++) {
+                const uint16_t frequency = sbufReadU16(src);
+                if (i < vtxTableConfig()->channels) {
+                    frequencies[i] = frequency;
+                }
+            }
+
+            if (band > 0 && band <= vtxTableConfig()->bands) {
+                vtxTableStrncpyWithPad(vtxTableConfigMutable()->bandNames[band - 1], bandName, VTX_TABLE_BAND_NAME_LENGTH);
+                vtxTableConfigMutable()->bandLetters[band - 1] = bandLetter;
+                vtxTableConfigMutable()->isFactoryBand[band - 1] = isFactoryBand;
+                for (int i = 0; i < vtxTableConfig()->channels; i++) {
+                    vtxTableConfigMutable()->frequency[band - 1][i] = frequencies[i];
+                }
+                // If this is the currently selected band then reset the frequency
+                if (band == vtxSettingsConfig()->band) {
+                    uint16_t newFreq = 0;
+                    if (vtxSettingsConfig()->channel > 0 && vtxSettingsConfig()->channel <= vtxTableConfig()->channels) {
+                        newFreq = frequencies[vtxSettingsConfig()->channel - 1];
+                    }
+                    vtxSettingsConfigMutable()->freq = newFreq;
+                }
+                vtxTableNeedsInit = true;  // reinintialize vtxtable after eeprom write
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+        }
+        break;
+
+    case MSP_SET_VTXTABLE_POWERLEVEL:
+        {
+            char powerLevelLabel[VTX_TABLE_POWER_LABEL_LENGTH + 1];
+            memset(powerLevelLabel, 0, VTX_TABLE_POWER_LABEL_LENGTH + 1);
+            const uint8_t powerLevel = sbufReadU8(src);
+            const uint16_t powerValue = sbufReadU16(src);
+            const uint8_t powerLevelLabelLength = sbufReadU8(src);
+            for (int i = 0; i < powerLevelLabelLength; i++) {
+                const char labelChar = sbufReadU8(src);
+                if (i < VTX_TABLE_POWER_LABEL_LENGTH) {
+                    powerLevelLabel[i] = toupper(labelChar);
+                }
+            }
+
+            if (powerLevel > 0 && powerLevel <= vtxTableConfig()->powerLevels) {
+                vtxTableConfigMutable()->powerValues[powerLevel - 1] = powerValue;
+                vtxTableStrncpyWithPad(vtxTableConfigMutable()->powerLabels[powerLevel - 1], powerLevelLabel, VTX_TABLE_POWER_LABEL_LENGTH);
+                vtxTableNeedsInit = true;  // reinintialize vtxtable after eeprom write
+            } else {
+                return MSP_RESULT_ERROR;
             }
         }
         break;
