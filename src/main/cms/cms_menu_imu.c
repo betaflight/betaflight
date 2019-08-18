@@ -352,6 +352,7 @@ static CMS_Menu cmsx_menuLaunchControl = {
 #endif
 
 static uint8_t  cmsx_feedForwardTransition;
+static uint8_t  cmsx_ff_boost;
 static uint8_t  cmsx_angleStrength;
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonTransition;
@@ -379,6 +380,7 @@ static long cmsx_profileOtherOnEnter(void)
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
     cmsx_feedForwardTransition  = pidProfile->feedForwardTransition;
+    cmsx_ff_boost = pidProfile->ff_boost;
 
     cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
     cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
@@ -415,6 +417,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidProfile->feedForwardTransition = cmsx_feedForwardTransition;
     pidInitConfig(currentPidProfile);
+    pidProfile->ff_boost = cmsx_ff_boost;
 
     pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
     pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
@@ -449,6 +452,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "FF TRANS",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
+    { "FF BOOST",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_boost,               0,     50,   1  }   , 0 },
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }   , 0 },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }   , 0 },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }   , 0 },
