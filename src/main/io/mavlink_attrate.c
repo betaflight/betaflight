@@ -19,6 +19,7 @@
  */
 
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "io/mavlink_attrate.h"
 #include "io/serial.h"
@@ -73,9 +74,9 @@ FAST_CODE void mavlinkAttrateUpdate()
                                &status_comm) &&
             (MAVLINK_MSG_ID_SET_ATTITUDE_TARGET == mavMessage.msgid)) {
             mavlink_msg_set_attitude_target_decode(&mavMessage, &attTargetMsg);
-            controls[FD_ROLL] = attTargetMsg.body_roll_rate;
-            controls[FD_PITCH] = attTargetMsg.body_pitch_rate;
-            controls[FD_YAW] = attTargetMsg.body_yaw_rate;
+            controls[FD_ROLL] = attTargetMsg.body_roll_rate / RAD;
+            controls[FD_PITCH] = attTargetMsg.body_pitch_rate / RAD;
+            controls[FD_YAW] = attTargetMsg.body_yaw_rate / RAD;
             throttle = attTargetMsg.thrust;
         }
         
