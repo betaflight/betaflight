@@ -200,7 +200,8 @@ bool dateTimeFormatUTC(char *buf, dateTime_t *dt)
 
 bool dateTimeFormatLocal(char *buf, dateTime_t *dt)
 {
-    return dateTimeFormat(buf, dt, timeConfig()->tz_offsetMinutes, false);
+    const int16_t timezoneOffset = rtcIsDateTimeValid(dt) ? timeConfig()->tz_offsetMinutes : 0;
+    return dateTimeFormat(buf, dt, timezoneOffset, false);
 }
 
 bool dateTimeFormatLocalShort(char *buf, dateTime_t *dt)
