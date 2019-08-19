@@ -98,12 +98,14 @@ CMS_Menu cmsx_menuRcPreview = {
 
 static uint16_t motorConfig_minthrottle;
 static uint8_t motorConfig_digitalIdleOffsetValue;
+static uint8_t rxConfig_fpvCamAngleDegrees;
 static debugType_e systemConfig_debug_mode;
 
 static long cmsx_menuMiscOnEnter(void)
 {
     motorConfig_minthrottle = motorConfig()->minthrottle;
     motorConfig_digitalIdleOffsetValue = motorConfig()->digitalIdleOffsetValue / 10;
+    rxConfig_fpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
     systemConfig_debug_mode = systemConfig()->debug_mode;
 
     return 0;
@@ -115,6 +117,7 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
 
     motorConfigMutable()->minthrottle = motorConfig_minthrottle;
     motorConfigMutable()->digitalIdleOffsetValue = 10 * motorConfig_digitalIdleOffsetValue;
+    rxConfigMutable()->fpvCamAngleDegrees = rxConfig_fpvCamAngleDegrees;
     systemConfigMutable()->debug_mode = systemConfig_debug_mode;
 
     return 0;
@@ -124,10 +127,11 @@ static const OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
-    { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      REBOOT_REQUIRED },
-    { "DIGITAL IDLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,      0,  200, 1 },      REBOOT_REQUIRED },
-    { "DEBUG MODE",   OME_TAB,     NULL,          &(OSD_TAB_t) { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames },      0 },
-    { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
+    { "MIN THR",       OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,            1000, 2000, 1 }, REBOOT_REQUIRED },
+    { "DIGITAL IDLE",  OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,    0,  200, 1 }, REBOOT_REQUIRED },
+    { "DEBUG MODE",    OME_TAB,     NULL,          &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames }, 0 },
+    { "FPV CAM ANGLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &rxConfig_fpvCamAngleDegrees,           0,   90, 1 }, 0 },
+    { "RC PREV",       OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
     { "BACK", OME_Back, NULL, NULL, 0},
     { NULL, OME_END, NULL, NULL, 0}
