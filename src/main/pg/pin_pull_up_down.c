@@ -26,17 +26,24 @@
 #include "pg/pg_ids.h"
 #include "pin_pull_up_down.h"
 
+static void resetPullUpDownConfig(pinPullUpDownConfig_t* config)
+{
+    for (uint8_t i = 0; i < PIN_PULL_UP_DOWN_COUNT; i++) {
+        config[i].ioTag = IO_TAG(NONE);
+    }
+}
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(pinPullUpDownConfig_t, PIN_PULL_UP_DOWN_COUNT, pinPullupConfig, PG_PULLUP_CONFIG, 0);
 
 void pgResetFn_pinPullupConfig(pinPullUpDownConfig_t *config)
 {
-    config->ioTag = IO_TAG(NONE);
+    resetPullUpDownConfig(config);
 }
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pinPullUpDownConfig_t, PIN_PULL_UP_DOWN_COUNT, pinPulldownConfig, PG_PULLDOWN_CONFIG, 0);
 
 void pgResetFn_pinPulldownConfig(pinPullUpDownConfig_t *config)
 {
-    config->ioTag = IO_TAG(NONE);
+    resetPullUpDownConfig(config);
 }
 #endif
