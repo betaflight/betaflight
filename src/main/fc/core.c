@@ -981,7 +981,8 @@ bool processRx(timeUs_t currentTimeUs)
 
 #ifdef USE_MAVLINK_ATTRATE
     pidSetMavlinkAttrateState(IS_RC_MODE_ACTIVE(BOXMAVLINKATTRATE));
-#endif // USE_ACRO_TRAINER
+    mixerSetMavlinkAttrateState(IS_RC_MODE_ACTIVE(BOXMAVLINKATTRATE));
+#endif // USE_MAVLINK_ATTRATE
 
 #ifdef USE_RC_SMOOTHING_FILTER
     if (ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {

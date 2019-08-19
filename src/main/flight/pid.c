@@ -52,6 +52,7 @@
 #include "flight/interpolated_setpoint.h"
 
 #include "io/gps.h"
+#include "io/mavlink_attrate.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -1582,7 +1583,7 @@ void pidSetMavlinkAttrateState(bool newState)
         mavlinkAttrateActive = newState;
     }
 }
-#endif // USE_ACRO_TRAINER
+#endif // USE_MAVLINK_ATTRATE
 
 void pidSetAntiGravityState(bool newState)
 {
