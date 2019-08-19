@@ -18,9 +18,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define MAVLINK_ATTRATE_DEADBAND_LOW -0.001
 #define MAVLINK_ATTRATE_DEADBAND_HIGH  0.001
 
+#define MAVLINK_ATTRATE_BAUDRATE 921600
+
+#define MAVLINK_BUFFER_SIZE 512
+
+#include <stdbool.h>
+
 float getMavlinkThrottle();
-float getMavlinkAttrateSetpoint();
+#ifdef USE_MAVLINK_ATTRATE
+float getMavlinkAttrateSetpoint(int axis);
 void mavlinkAttrateUpdate();
+bool mavlinkAttrateInit();
+#endif // USE_MAVLINK_ATTRATE

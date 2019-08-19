@@ -106,6 +106,7 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/mavlink_attrate.h"
 #include "io/motors.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
@@ -777,6 +778,12 @@ void init(void)
     }
 #endif
 
+#ifdef USE_MAVLINK_ATTRATE
+    if (featureIsEnabled(FEATURE_MAVLINK_ATTRATE)) {
+        mavlinkAttrateInit();
+    }
+#endif
+    
 #ifdef USE_LED_STRIP
     ledStripInit();
 
