@@ -379,6 +379,8 @@ static void validateAndFixConfig(void)
     if (!findSerialPortConfig(FUNCTION_MAVLINK_ATTRATE)) {
         featureDisable(FEATURE_MAVLINK_ATTRATE);
     }
+#else
+    featureDisable(FEATURE_MAVLINK_ATTRATE);    
 #endif
     
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {

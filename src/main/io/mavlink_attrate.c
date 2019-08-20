@@ -66,7 +66,8 @@ FAST_CODE float getMavlinkAttrateSetpoint(int axis)
 FAST_CODE void mavlinkAttrateUpdate()
 {
     mavlink_status_t status_comm;
-    
+
+    // when mavlinkBufferTail == mavlinkBufferHead, all data has been parsed
     while (mavlinkBufferTail < mavlinkBufferHead) {
         if (mavlink_parse_char(MAVLINK_COMM_1,
                                mavlinkBuffer[mavlinkBufferTail++],
@@ -95,6 +96,14 @@ FAST_CODE static void mavlinkDataReceive(uint16_t c, void *data)
     mavlinkBuffer[mavlinkBufferHead++] = (uint8_t)c;
     if (mavlinkBufferHead >= MAVLINK_BUFFER_SIZE) {
         mavlinkBufferHead = 0;
+    }
+    
+    // if head just overwrote tail, increment tail
+    if (mavlinkBufferHead == mavlinkBufferTail) {
+        mavlinkBufferTail++;
+    }
+    if (mavlinkBufferTail >= MAVLINK_BUFFER_SIZE) {
+        mavlinkBufferTail = 0;
     }
 }
 
