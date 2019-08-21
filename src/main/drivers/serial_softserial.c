@@ -242,8 +242,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
     ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
 
-    const timerHardware_t *timerRx = timerAllocate(tagRx, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
     const timerHardware_t *timerTx = timerAllocate(tagTx, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
 
     IO_t rxIO = IOGetByTag(tagRx);
     IO_t txIO = IOGetByTag(tagTx);
@@ -269,7 +269,9 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            if (!((mode & MODE_TX) && rxIO == txIO)) {
+                IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            }
         }
 
         if (mode & MODE_TX) {
