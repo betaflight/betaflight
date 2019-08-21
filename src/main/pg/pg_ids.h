@@ -147,7 +147,9 @@
 #define PG_QUADSPI_CONFIG 548
 #define PG_TIMER_UP_CONFIG 549 // used to store dmaopt for TIMx_UP channel
 #define PG_SDIO_PIN_CONFIG 550
-#define PG_BETAFLIGHT_END 550
+#define PG_PULLUP_CONFIG 551
+#define PG_PULLDOWN_CONFIG 552
+#define PG_BETAFLIGHT_END 552
 
 
 // OSD configuration (subject to change)

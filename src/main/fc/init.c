@@ -59,6 +59,7 @@
 #include "drivers/mco.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
+#include "drivers/pin_pull_up_down.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
@@ -140,6 +141,7 @@
 #include "pg/motor.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
+#include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -692,6 +694,10 @@ void init(void)
 
 #ifdef USE_PINIO
     pinioInit(pinioConfig());
+#endif
+
+#ifdef USE_PIN_PULL_UP_DOWN
+    pinPullupPulldownInit();
 #endif
 
 #ifdef USE_PINIOBOX

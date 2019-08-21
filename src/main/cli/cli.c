@@ -137,6 +137,7 @@ bool cliMode = false;
 #include "pg/mco.h"
 #include "pg/motor.h"
 #include "pg/pinio.h"
+#include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
@@ -4912,6 +4913,10 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_VTX_CS,        PG_VTX_IO_CONFIG, vtxIOConfig_t, csTag ),
     DEFS( OWNER_VTX_DATA,      PG_VTX_IO_CONFIG, vtxIOConfig_t, dataTag ),
     DEFS( OWNER_VTX_CLK,       PG_VTX_IO_CONFIG, vtxIOConfig_t, clockTag ),
+#endif
+#ifdef USE_PIN_PULL_UP_DOWN
+    DEFA( OWNER_PULLUP,        PG_PULLUP_CONFIG,   pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),
+    DEFA( OWNER_PULLDOWN,      PG_PULLDOWN_CONFIG, pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),
 #endif
 };
 
