@@ -51,7 +51,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_1_ALIGN        CW0_DEG
 
 // *************** BLACKBOX **************************
 #define USE_SPI_DEVICE_1
@@ -149,7 +148,7 @@
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(4)|TIM_N(5)|TIM_N(8)|TIM_N(9)|TIM_N(12))
+#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USED_TIMERS             (TIM_N(1)|TIM_N(3)|TIM_N(4)|TIM_N(5)|TIM_N(8)|TIM_N(11))
