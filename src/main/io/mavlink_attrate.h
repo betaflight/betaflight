@@ -29,9 +29,11 @@
 
 #include <stdbool.h>
 
+#include "common/time.h"
+
 float getMavlinkThrottle();
 #ifdef USE_MAVLINK_ATTRATE
 float getMavlinkAttrateSetpoint(int axis);
-void mavlinkAttrateUpdate();
+void mavlinkAttrateUpdate(timeUs_t currentTimeUs);
 bool mavlinkAttrateInit();
 #endif // USE_MAVLINK_ATTRATE

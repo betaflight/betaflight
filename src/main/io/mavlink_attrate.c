@@ -63,8 +63,9 @@ FAST_CODE float getMavlinkAttrateSetpoint(int axis)
     return controls[axis];
 }
 
-FAST_CODE void mavlinkAttrateUpdate()
+FAST_CODE void mavlinkAttrateUpdate(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
     mavlink_status_t status_comm;
 
     // when mavlinkBufferTail == mavlinkBufferHead, all data has been parsed

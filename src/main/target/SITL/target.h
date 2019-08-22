@@ -98,6 +98,9 @@
 #undef USE_OSD
 #undef USE_PPM
 #undef USE_PWM
+#undef USE_PWM_OUTPUT
+#undef USE_PINIO
+#undef USE_PINIOBOX
 #undef USE_SERIAL_RX
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_IBUS
