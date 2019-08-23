@@ -82,7 +82,7 @@ int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t nav_takeoff_bearing;
 
-#define GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
+#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
 
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
@@ -231,7 +231,8 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
     .gps_ublox_use_galileo = false,
-    .gps_set_home_point_once = false
+    .gps_set_home_point_once = false,
+    .gps_use_3d_speed = false
 );
 
 static void shiftPacketLog(void)
@@ -1104,7 +1105,7 @@ static bool UBLOX_parse_gps(void)
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
-        // speed_3d                        = _buffer.velned.speed_3d;  // cm/s
+        gpsSol.speed3d = _buffer.velned.speed_3d;       // cm/s
         gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
@@ -1274,11 +1275,15 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
         GPS_verticalSpeedInCmS = 0;
     } else {
         if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
+            uint16_t speed = gpsConfig()->gps_use_3d_speed ? gpsSol.speed3d : gpsSol.groundSpeed;
             // Only add up movement when speed is faster than minimum threshold
-            if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
+            if (speed > GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S) {
                 uint32_t dist;
                 int32_t dir;
                 GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+                if (gpsConfig()->gps_use_3d_speed) {
+                    dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
+                }
                 GPS_distanceFlownInCm += dist;
             }
         }
