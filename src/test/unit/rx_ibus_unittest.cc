@@ -212,7 +212,7 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
     // EXPECT_EQ(NULL, rxRuntimeConfig.rcReadRawFn);
     // EXPECT_EQ(NULL, rxRuntimeConfig.rcFrameStatusFn);
 
-    EXPECT_EQ(14, rxRuntimeConfig.channelCount);
+    EXPECT_EQ(18, rxRuntimeConfig.channelCount);
     EXPECT_EQ(20000, rxRuntimeConfig.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeConfig.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeConfig.rcFrameStatusFn);
@@ -227,7 +227,7 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
 
     EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeConfig));
 
-    EXPECT_EQ(14, rxRuntimeConfig.channelCount);
+    EXPECT_EQ(18, rxRuntimeConfig.channelCount);
     EXPECT_EQ(20000, rxRuntimeConfig.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeConfig.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeConfig.rcFrameStatusFn);
@@ -283,10 +283,10 @@ TEST_F(IbusRxProtocollUnitTest, Test_InitialFrameState)
 TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
 {
     uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
-                        0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
-                        0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
-                        0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
-                        0x84, 0xff}; //checksum
+                        0x00, 0xE0, 0x01, 0x00, 0x02, 0x00, 0x03, 0xF0, 0x04, 0x00, //channel 1..5  + 15 + 16
+                        0x05, 0x00, 0x06, 0x00, 0x07, 0x10, 0x08, 0x00, 0x09, 0x10, //channel 6..10 + 17 + 18(lsb)
+                        0x0a, 0x10, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14 + 18
+                        0x84, 0xfd}; //checksum
 
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
@@ -298,7 +298,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
 
     //check that channel values have been updated
-    for (int i=0; i<14; i++) {
+    for (int i=0; i<18; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
