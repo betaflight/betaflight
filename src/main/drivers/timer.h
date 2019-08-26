@@ -171,7 +171,11 @@ extern const timerHardware_t timerHardware[];
 
 
 #if defined(USE_TIMER_MGMT)
-#if defined(STM32F4)
+#if defined(STM32F3)
+
+#define FULL_TIMER_CHANNEL_COUNT 88
+
+#elif defined(STM32F4)
 
 #define FULL_TIMER_CHANNEL_COUNT 78
 
@@ -196,7 +200,7 @@ extern const timerHardware_t fullTimerHardware[];
 
 #elif defined(STM32F3)
 
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 
 #elif defined(STM32F1)
 
