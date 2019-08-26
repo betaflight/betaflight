@@ -1247,7 +1247,12 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
-
+        // Added in MSP API 1.42
+#if defined(USE_RC_SMOOTHING_FILTER)
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_auto_factor);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
     case MSP_FAILSAFE_CONFIG:
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
@@ -2713,6 +2718,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // Kept separate from the section above to work around missing Configurator support in version < 10.4.2
 #if defined(USE_USB_CDC_HID)
             usbDevConfigMutable()->type = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            // Added in MSP API 1.42
+#if defined(USE_RC_SMOOTHING_FILTER)
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor, sbufReadU8(src));
 #else
             sbufReadU8(src);
 #endif
