@@ -69,7 +69,7 @@ void dshotEnableChannels(uint8_t motorCount)
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
 
 void pwmDshotSetDirectionOutput(
-    motorDmaOutput_t * const motor, bool output
+    motorDmaOutput_t * const motor
 #ifndef USE_DSHOT_TELEMETRY
     , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit
 #endif
@@ -86,34 +86,41 @@ void pwmDshotSetDirectionOutput(
     xLL_EX_DMA_DeInit(motor->dmaRef);
 
 #ifdef USE_DSHOT_TELEMETRY
-    if (!output) {
-        motor->isInput = true;
-        if (!inputStampUs) {
-            inputStampUs = micros();
-        }
-        LL_TIM_EnableARRPreload(timer); // Only update the period once all channels are done
-        timer->ARR = 0xffffffff;
-        LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
-        motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
-    } else
-#else
-    UNUSED(output);
+    motor->isInput = false;
 #endif
-    {
-#ifdef USE_DSHOT_TELEMETRY
-        motor->isInput = false;
-#endif
-        LL_TIM_OC_DisablePreload(timer, motor->llChannel);
-        LL_TIM_OC_Init(timer, motor->llChannel, pOcInit);
-        LL_TIM_OC_EnablePreload(timer, motor->llChannel);
+    LL_TIM_OC_DisablePreload(timer, motor->llChannel);
+    LL_TIM_OC_Init(timer, motor->llChannel, pOcInit);
+    LL_TIM_OC_EnablePreload(timer, motor->llChannel);
 
-        motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    }
+    motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+
     xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
-    if (output) {
-        xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
-    }
+    xLL_EX_DMA_EnableIT_TC(motor->dmaRef);
 }
+
+#ifdef USE_DSHOT_TELEMETRY
+void pwmDshotSetDirectionInput(
+    motorDmaOutput_t * const motor
+)
+{
+    LL_DMA_InitTypeDef* pDmaInit = &motor->dmaInitStruct;
+
+    const timerHardware_t * const timerHardware = motor->timerHardware;
+    TIM_TypeDef *timer = timerHardware->tim;
+
+    xLL_EX_DMA_DeInit(motor->dmaRef);
+
+    motor->isInput = true;
+    if (!inputStampUs) {
+        inputStampUs = micros();
+    }
+    LL_TIM_EnableARRPreload(timer); // Only update the period once all channels are done
+    timer->ARR = 0xffffffff;
+    LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
+    motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+    xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
+}
+#endif
 
 
 FAST_CODE void pwmCompleteDshotMotorUpdate(void)
@@ -169,7 +176,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 
 #ifdef USE_DSHOT_TELEMETRY
             if (useDshotTelemetry) {
-                pwmDshotSetDirectionOutput(motor, false);
+                pwmDshotSetDirectionInput(motor);
                 xLL_EX_DMA_SetDataLength(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
                 xLL_EX_DMA_EnableResource(motor->dmaRef);
                 LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
@@ -353,9 +360,9 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
         ( 16 * MOTOR_BITLENGTH) / getDshotHz(pwmProtocolType);
     motor->timer->outputPeriod = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
-    pwmDshotSetDirectionOutput(motor, true);
+    pwmDshotSetDirectionOutput(motor);
 #else
-    pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
+    pwmDshotSetDirectionOutput(motor, &OCINIT, &DMAINIT);
 #endif
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
