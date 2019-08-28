@@ -49,6 +49,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#include "drivers/dshot.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
@@ -983,6 +984,55 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
         break;
 
+    // Added in API version 1.42
+    case MSP_MOTOR_TELEMETRY:
+        sbufWriteU8(dst, getMotorCount());
+        for (unsigned i = 0; i < getMotorCount(); i++) {
+            int rpm = 0;
+            uint16_t invalidPct = 0;
+            uint8_t escTemperature = 0;  // degrees celcius
+            uint16_t escVoltage = 0;     // 0.01V per unit
+            uint16_t escCurrent = 0;     // 0.01A per unit
+            uint16_t escConsumption = 0; // mAh
+
+            bool rpmDataAvailable = false;
+
+#ifdef USE_DSHOT_TELEMETRY
+            if (useDshotTelemetry) {
+                rpm = (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount;
+                rpmDataAvailable = true;
+                invalidPct = 10000; // 100.00%
+#ifdef USE_DSHOT_TELEMETRY_STATS
+                if (isDshotMotorTelemetryActive(i)) {
+                    invalidPct = getDshotTelemetryMotorInvalidPercent(i);
+                }
+#endif
+            }
+#endif
+
+#ifdef USE_ESC_SENSOR
+            if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+                escSensorData_t *escData = getEscSensorData(i);
+                if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
+                    rpm = calcEscRpm(escData->rpm);
+                    rpmDataAvailable = true;
+                }
+                escTemperature = escData->temperature;
+                escVoltage = escData->voltage;
+                escCurrent = escData->current;
+                escConsumption = escData->consumption;
+            }
+#endif
+
+            sbufWriteU32(dst, (rpmDataAvailable ? rpm : 0));
+            sbufWriteU16(dst, invalidPct);
+            sbufWriteU8(dst, escTemperature);
+            sbufWriteU16(dst, escVoltage);
+            sbufWriteU16(dst, escCurrent);
+            sbufWriteU16(dst, escConsumption);
+        }
+        break;
+
     case MSP_RC:
         for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
             sbufWriteU16(dst, rcData[i]);
@@ -1112,6 +1162,21 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, motorConfig()->minthrottle);
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
+
+        // API 1.42
+        sbufWriteU8(dst, getMotorCount());
+        sbufWriteU8(dst, motorConfig()->motorPoleCount);
+#ifdef USE_DSHOT_TELEMETRY
+        sbufWriteU8(dst, useDshotTelemetry);  // DSHOT telemetry is enabled
+#else
+        sbufWriteU8(dst, 0);
+#endif
+
+#ifdef USE_ESC_SENSOR
+        sbufWriteU8(dst, featureIsEnabled(FEATURE_ESC_SENSOR)); // ESC sensor available
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
 #ifdef USE_MAG
@@ -1121,6 +1186,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
 
 #if defined(USE_ESC_SENSOR)
+    // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
     case MSP_ESC_SENSOR_DATA:
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
             sbufWriteU8(dst, getMotorCount());
@@ -1998,6 +2064,11 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->minthrottle = sbufReadU16(src);
         motorConfigMutable()->maxthrottle = sbufReadU16(src);
         motorConfigMutable()->mincommand = sbufReadU16(src);
+
+        // version 1.42
+        if (sbufBytesRemaining(src)) {
+            motorConfigMutable()->motorPoleCount = sbufReadU8(src);
+        }
         break;
 
 #ifdef USE_GPS
