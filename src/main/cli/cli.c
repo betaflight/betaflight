@@ -667,6 +667,10 @@ static bool isWritingConfigToCopy()
         ;
 }
 
+#if defined(USE_CUSTOM_DEFAULTS)
+bool cliProcessCustomDefaults(void);
+#endif
+
 static void backupAndResetConfigs(const bool useCustomDefaults)
 {
     backupConfigs();
@@ -4132,25 +4136,19 @@ static void cliBatch(char *cmdline)
 }
 #endif
 
-static void cliSave(char *cmdline)
+static bool doSave(void)
 {
-    UNUSED(cmdline);
-
 #if defined(USE_CUSTOM_DEFAULTS)
     if (processingCustomDefaults) {
-        return;
+        return false;
     }
 #endif
 
 #ifdef USE_CLI_BATCH
     if (commandBatchActive && commandBatchError) {
-        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
-        resetCommandBatch();
-        return;
+        return false;
     }
 #endif
-
-    cliPrintHashLine("saving");
 
 #if defined(USE_BOARD_INFO)
     if (boardInformationUpdated) {
@@ -4169,13 +4167,53 @@ static void cliSave(char *cmdline)
         writeEEPROM();
     }
 
+    return true;
+}
+
+static void cliSave(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (!doSave()) {
+        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
+        resetCommandBatch();
+
+        return;
+    } else {
+        cliPrintHashLine("saving");
+    }
+
     cliReboot();
 }
 
+bool cliResetConfig(bool useCustomDefaults)
+{
+    resetConfigs();
+
+#ifdef USE_CLI_BATCH
+    commandBatchError = false;
+#endif
+
 #if defined(USE_CUSTOM_DEFAULTS)
-static bool isDefaults(char *ptr)
+    if (useCustomDefaults) {
+        cliProcessCustomDefaults();
+    }
+#else
+    UNUSED(useCustomDefaults);
+#endif
+
+    return doSave();
+}
+
+#if defined(USE_CUSTOM_DEFAULTS)
+static bool isCustomDefaults(char *ptr)
 {
     return strncmp(ptr, "# " FC_FIRMWARE_NAME, 12) == 0;
+}
+
+bool hasCustomDefaults(void)
+{
+    return isCustomDefaults(customDefaultsStart);
 }
 #endif
 
@@ -4199,7 +4237,7 @@ static void cliDefaults(char *cmdline)
         useCustomDefaults = false;
     } else if (strncasecmp(cmdline, "show", 4) == 0) {
         char *customDefaultsPtr = customDefaultsStart;
-        if (isDefaults(customDefaultsPtr)) {
+        if (isCustomDefaults(customDefaultsPtr)) {
             while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
                 if (*customDefaultsPtr != '\n') {
                     cliPrintf("%c", *customDefaultsPtr++);
@@ -6468,7 +6506,7 @@ void cliProcess(void)
 bool cliProcessCustomDefaults(void)
 {
     char *customDefaultsPtr = customDefaultsStart;
-    if (processingCustomDefaults || !isDefaults(customDefaultsPtr)) {
+    if (processingCustomDefaults || !isCustomDefaults(customDefaultsPtr)) {
         return false;
     }
 

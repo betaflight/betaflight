@@ -265,7 +265,7 @@ void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
 bool parseColor(int, const char *) {return false; }
-void resetEEPROM(void) {}
+void resetEEPROM(bool) {}
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 void gpsEnablePassthrough(struct serialPort_s *) {}
