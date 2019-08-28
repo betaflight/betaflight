@@ -253,6 +253,14 @@ void initialiseMemorySections(void)
     memcpy(&tcm_code_start, &tcm_code, (size_t) (&tcm_code_end - &tcm_code_start));
 #endif
 
+#ifdef USE_CCM_CODE
+    /* Load functions into RAM */
+    extern uint8_t ccm_code_start;
+    extern uint8_t ccm_code_end;
+    extern uint8_t ccm_code;
+    memcpy(&ccm_code_start, &ccm_code, (size_t) (&ccm_code_end - &ccm_code_start));
+#endif
+
 #ifdef USE_FAST_RAM
     /* Load FAST_RAM variable intializers into DTCM RAM */
     extern uint8_t _sfastram_data;
