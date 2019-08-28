@@ -182,7 +182,7 @@ void adcInit(const adcConfig_t *config)
 
     dmaInit(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device));
 
-    DMA_DeInit(dmaSpec->ref);
+    DMA_DeInit((DMA_ARCH_TYPE *)dmaSpec->ref);
 #else
     dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
 
