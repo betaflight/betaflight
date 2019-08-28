@@ -80,8 +80,10 @@ uint32_t readDoneCount;
 // TODO remove once debugging no longer needed
 FAST_RAM_ZERO_INIT uint32_t dshotInvalidPacketCount;
 FAST_RAM_ZERO_INIT uint32_t inputBuffer[GCR_TELEMETRY_INPUT_LEN];
-FAST_RAM_ZERO_INIT uint32_t setDirectionMicros;
+FAST_RAM_ZERO_INIT uint32_t decodePacketDurationUs;
 FAST_RAM_ZERO_INIT uint32_t inputStampUs;
+
+FAST_RAM_ZERO_INIT dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
 #endif
 
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
@@ -194,13 +196,13 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
     csum = csum ^ (csum >> 4); // xor nibbles
 
     if ((csum & 0xf) != 0xf) {
-        setDirectionMicros = micros() - start;
+        decodePacketDurationUs = micros() - start;
         return 0xffff;
     }
     decodedValue >>= 4;
 
     if (decodedValue == 0x0fff) {
-        setDirectionMicros = micros() - start;
+        decodePacketDurationUs = micros() - start;
         return 0;
     }
     decodedValue = (decodedValue & 0x000001ff) << ((decodedValue & 0xfffffe00) >> 9);
@@ -208,7 +210,7 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
         return 0xffff;
     }
     uint32_t ret = (1000000 * 60 / 100 + decodedValue / 2) / decodedValue;
-    setDirectionMicros = micros() - start;
+    decodePacketDurationUs = micros() - start;
     return ret;
 }
 

@@ -41,6 +41,7 @@
 #include "drivers/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "drivers/system.h"
 
 #include "pwm_output.h"
 
@@ -65,8 +66,6 @@ void dshotEnableChannels(uint8_t motorCount)
 }
 
 #endif
-
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
 
 void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
@@ -99,7 +98,7 @@ void pwmDshotSetDirectionOutput(
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-void pwmDshotSetDirectionInput(
+static void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
 )
 {
@@ -161,7 +160,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
         if (!motor->isInput) {
 #ifdef USE_DSHOT_TELEMETRY
-            uint32_t irqStartUs = micros();
+            dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
 #endif
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
@@ -180,7 +179,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
                 xLL_EX_DMA_SetDataLength(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
                 xLL_EX_DMA_EnableResource(motor->dmaRef);
                 LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
-                setDirectionMicros = micros() - irqStartUs;
+                dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
             }
 #endif
         }

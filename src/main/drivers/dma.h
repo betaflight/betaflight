@@ -108,8 +108,9 @@ typedef enum {
 
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
                                                                 const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
-                                                                if (dmaDescriptors[index].irqHandlerCallback)\
-                                                                    dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);\
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
                                                             }
 
 #define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
@@ -169,8 +170,9 @@ typedef enum {
 
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
                                                                         const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
-                                                                        if (dmaDescriptors[index].irqHandlerCallback)\
-                                                                            dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);\
+                                                                        dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                        if (handler) \
+                                                                            handler(&dmaDescriptors[index]); \
                                                                     }
 
 #define DMA_CLEAR_FLAG(d, flag) d->dma->IFCR = (flag << d->flagsShift)

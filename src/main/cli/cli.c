@@ -66,6 +66,7 @@ bool cliMode = false;
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
 #include "drivers/dshot_dpwm.h"
+#include "drivers/pwm_output_dshot_shared.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
@@ -273,12 +274,6 @@ static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
 };
 #endif // USE_SENSOR_NAMES
-
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-extern uint32_t readDoneCount;
-extern uint32_t inputBuffer[GCR_TELEMETRY_INPUT_LEN];
-extern uint32_t setDirectionMicros;
-#endif
 
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
@@ -5840,8 +5835,10 @@ static void cliDshotTelemetryInfo(char *cmdline)
     if (useDshotTelemetry) {
         cliPrintLinef("Dshot reads: %u", readDoneCount);
         cliPrintLinef("Dshot invalid pkts: %u", dshotInvalidPacketCount);
-        extern uint32_t setDirectionMicros;
-        cliPrintLinef("Dshot irq micros: %u", setDirectionMicros);
+        uint32_t directionChangeCycles = dshotDMAHandlerCycleCounters.changeDirectionCompletedAt - dshotDMAHandlerCycleCounters.irqAt;
+        uint32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
+        cliPrintLinef("Dshot directionChange cycles: %u, micros: %u", directionChangeCycles, directionChangeDurationUs);
+        cliPrintLinef("Dshot packet decode micros: %u", decodePacketDurationUs);
         cliPrintLinefeed();
 
 #ifdef USE_DSHOT_TELEMETRY_STATS

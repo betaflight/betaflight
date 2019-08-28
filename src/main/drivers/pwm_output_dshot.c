@@ -35,6 +35,7 @@
 #include "drivers/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "drivers/system.h"
 #if defined(STM32F4)
 #include "stm32f4xx.h"
 #elif defined(STM32F3)
@@ -62,8 +63,6 @@ void dshotEnableChannels(uint8_t motorCount)
 }
 
 #endif
-
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
 
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
@@ -121,7 +120,7 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 
 
 #ifdef USE_DSHOT_TELEMETRY
-FAST_CODE void pwmDshotSetDirectionInput(
+FAST_CODE static void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
 )
 {
@@ -189,7 +188,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
 #ifdef USE_DSHOT_TELEMETRY
-        uint32_t irqStart = micros();
+        dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
 #endif
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
@@ -208,7 +207,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             xDMA_SetCurrDataCounter(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
             xDMA_Cmd(motor->dmaRef, ENABLE);
             TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, ENABLE);
-            setDirectionMicros = micros() - irqStart;
+            dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
         }
 #endif
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
