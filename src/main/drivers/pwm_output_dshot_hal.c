@@ -154,7 +154,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
         if (!motor->isInput) {
 #ifdef USE_DSHOT_TELEMETRY
-            uint32_t irqStartUs = micros();
+            uint32_t irqStartUs = microsISR();
 #endif
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
@@ -173,7 +173,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
                 xLL_EX_DMA_SetDataLength(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
                 xLL_EX_DMA_EnableResource(motor->dmaRef);
                 LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
-                setDirectionMicros = micros() - irqStartUs;
+                setDirectionMicros = microsISR() - irqStartUs;
             }
 #endif
         }
