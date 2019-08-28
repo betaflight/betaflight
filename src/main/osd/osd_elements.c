@@ -847,7 +847,11 @@ static void osdElementGpsLongitude(osdElementParms_t *element)
 
 static void osdElementGpsSats(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
+    if (osdConfig()->gps_sats_show_hdop) {
+        tfp_sprintf(element->buff, "%c%c%2d %d.%d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat, gpsSol.hdop / 100, (gpsSol.hdop / 10) % 10);
+    } else {
+        tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
+    }
 }
 
 static void osdElementGpsSpeed(osdElementParms_t *element)
