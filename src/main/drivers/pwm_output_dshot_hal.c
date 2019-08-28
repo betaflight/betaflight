@@ -98,7 +98,7 @@ void pwmDshotSetDirectionOutput(
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-static void pwmDshotSetDirectionInput(
+FAST_CODE static void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
 )
 {
