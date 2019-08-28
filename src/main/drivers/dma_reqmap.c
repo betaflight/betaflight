@@ -292,36 +292,41 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     // The embedded ADC24_DMA_REMAP conditional should be removed
     // when (and if) F3 is going generic.
 #define DMA(d, c) { DMA_CODE(d, 0, c), (dmaResource_t *)DMA ## d ## _Channel ## c }
-static const dmaPeripheralMapping_t dmaPeripheralMapping[17] = {
+static const dmaPeripheralMapping_t dmaPeripheralMapping[18] = {
 #ifdef USE_SPI
-    { DMA_PERIPH_SPI_TX,  1, { DMA(1, 3) } },
-    { DMA_PERIPH_SPI_RX,  1, { DMA(1, 2) } },
-    { DMA_PERIPH_SPI_TX,  2, { DMA(1, 5) } },
-    { DMA_PERIPH_SPI_RX,  2, { DMA(1, 4) } },
-    { DMA_PERIPH_SPI_TX,  3, { DMA(2, 2) } },
-    { DMA_PERIPH_SPI_RX,  3, { DMA(2, 1) } },
+    { DMA_PERIPH_SPI_TX,  SPIDEV_1, { DMA(1, 3) } },
+    { DMA_PERIPH_SPI_RX,  SPIDEV_1, { DMA(1, 2) } },
+    { DMA_PERIPH_SPI_TX,  SPIDEV_2, { DMA(1, 5) } },
+    { DMA_PERIPH_SPI_RX,  SPIDEV_2, { DMA(1, 4) } },
+    { DMA_PERIPH_SPI_TX,  SPIDEV_3, { DMA(2, 2) } },
+    { DMA_PERIPH_SPI_RX,  SPIDEV_3, { DMA(2, 1) } },
 #endif
 
 #ifdef USE_ADC
-    { DMA_PERIPH_ADC,     1, { DMA(1, 1) } },
+    { DMA_PERIPH_ADC,     ADCDEV_1, { DMA(1, 1) } },
 #ifdef ADC24_DMA_REMAP
-    { DMA_PERIPH_ADC,     2, { DMA(2, 3) } },
+    { DMA_PERIPH_ADC,     ADCDEV_2, { DMA(2, 3) } },
 #else
-    { DMA_PERIPH_ADC,     2, { DMA(2, 1) } },
+    { DMA_PERIPH_ADC,     ADCDEV_2, { DMA(2, 1) } },
 #endif
-    { DMA_PERIPH_ADC,     3, { DMA(2, 5) } },
+    { DMA_PERIPH_ADC,     ADCDEV_3, { DMA(2, 5) } },
+#ifdef ADC24_DMA_REMAP
+    { DMA_PERIPH_ADC,     ADCDEV_4, { DMA(2, 4) } },
+#else
+    { DMA_PERIPH_ADC,     ADCDEV_4, { DMA(2, 2) } },
+#endif
 #endif
 
 #ifdef USE_UART
-    { DMA_PERIPH_UART_TX, 1, { DMA(1, 4) } },
-    { DMA_PERIPH_UART_RX, 1, { DMA(1, 5) } },
+    { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(1, 4) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_1, { DMA(1, 5) } },
 
-    { DMA_PERIPH_UART_TX, 2, { DMA(1, 7) } },
-    { DMA_PERIPH_UART_RX, 2, { DMA(1, 6) } },
-    { DMA_PERIPH_UART_TX, 3, { DMA(1, 2) } },
-    { DMA_PERIPH_UART_RX, 3, { DMA(1, 3) } },
-    { DMA_PERIPH_UART_TX, 4, { DMA(2, 5) } },
-    { DMA_PERIPH_UART_RX, 4, { DMA(2, 3) } },
+    { DMA_PERIPH_UART_TX, UARTDEV_2, { DMA(1, 7) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_2, { DMA(1, 6) } },
+    { DMA_PERIPH_UART_TX, UARTDEV_3, { DMA(1, 2) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_3, { DMA(1, 3) } },
+    { DMA_PERIPH_UART_TX, UARTDEV_4, { DMA(2, 5) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_4, { DMA(2, 3) } },
 };
 #endif
 

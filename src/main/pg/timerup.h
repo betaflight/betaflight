@@ -23,6 +23,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/timer.h" // For HARDWARE_TIMER_DEFINITION_COUNT
 

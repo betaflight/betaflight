@@ -25,6 +25,7 @@
 
 #include "pg/pg.h"
 #include "drivers/io_types.h"
+#include "drivers/dma_reqmap.h"
 
 #define UARTDEV_CONFIG_MAX 8 // Alternative to UARTDEV_COUNT_MAX, which requires serial_uart_imp.h
 

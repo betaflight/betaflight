@@ -39,11 +39,16 @@ PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
 
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
+    STATIC_ASSERT(MAX_ADC_SUPPORTED <= ADC_DEV_TO_CFG(ADCDEV_COUNT) || MAX_ADC_SUPPORTED != 4, adc_count_mismatch);
+
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
     adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
 #ifndef STM32F1
     adcConfig->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;
     adcConfig->dmaopt[ADCDEV_3] = ADC3_DMA_OPT;
+#endif
+#ifdef STM32F3
+    adcConfig->dmaopt[ADCDEV_4] = ADC4_DMA_OPT;
 #endif
 
 #ifdef VBAT_ADC_PIN
