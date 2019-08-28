@@ -183,7 +183,7 @@ void pwmCompleteDshotMotorUpdate(void)
     }
 }
 
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
+FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
