@@ -647,7 +647,7 @@ FAST_CODE void processRcCommand(void)
     }
 }
 
-FAST_CODE FAST_CODE_NOINLINE void updateRcCommands(void)
+FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;
