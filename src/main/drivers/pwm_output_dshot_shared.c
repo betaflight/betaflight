@@ -219,17 +219,6 @@ uint16_t getDshotTelemetry(uint8_t index)
 
 #endif
 
-FAST_CODE void pwmDshotSetDirectionOutput(
-    motorDmaOutput_t * const motor, bool output
-#ifndef USE_DSHOT_TELEMETRY
-#ifdef USE_FULL_LL_DRIVER
-    , LL_TIM_OC_InitTypeDef* pOcInit, LL_DMA_InitTypeDef* pDmaInit
-#else
-    , TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
-#endif
-#endif
-);
-
 #ifdef USE_DSHOT_TELEMETRY
 #ifdef USE_DSHOT_TELEMETRY_STATS
 void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool packetValid, timeMs_t currentTimeMs)
@@ -307,7 +296,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
             }
 #endif
         }
-        pwmDshotSetDirectionOutput(&dmaMotors[i], true);
+        pwmDshotSetDirectionOutput(&dmaMotors[i]);
     }
     inputStampUs = 0;
     dshotEnableChannels(dshotPwmDevice.count);
