@@ -348,6 +348,9 @@ FAST_CODE void scheduler(void)
     if (selectedTask) {
         // Found a task that should be run
         selectedTask->taskLatestDeltaTime = currentTimeUs - selectedTask->lastExecutedAt;
+#if defined(USE_TASK_STATISTICS)
+        float period = currentTimeUs - selectedTask->lastExecutedAt;
+#endif
         selectedTask->lastExecutedAt = currentTimeUs;
         selectedTask->lastDesiredAt += (cmpTimeUs(currentTimeUs, selectedTask->lastDesiredAt) / selectedTask->desiredPeriod) * selectedTask->desiredPeriod;
         selectedTask->dynamicPriority = 0;
@@ -355,7 +358,6 @@ FAST_CODE void scheduler(void)
         // Execute task
 #if defined(USE_TASK_STATISTICS)
         if (calculateTaskStatistics) {
-            float period = currentTimeUs - selectedTask->lastExecutedAt;
             const timeUs_t currentTimeBeforeTaskCall = micros();
             selectedTask->taskFunc(currentTimeBeforeTaskCall);
             const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
