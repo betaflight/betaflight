@@ -239,6 +239,9 @@ MCU_COMMON_SRC = \
             drivers/bus_quadspi_hal.c \
             drivers/bus_spi_hal.c \
             drivers/dma_stm32h7xx.c \
+            drivers/dshot_bitbang.c \
+            drivers/dshot_bitbang_decode.c \
+            drivers/dshot_bitbang_ll.c \
             drivers/light_ws2811strip_hal.c \
             drivers/adc_stm32h7xx.c \
             drivers/bus_i2c_hal.c \

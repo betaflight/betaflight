@@ -74,7 +74,7 @@
 
 #ifdef USE_DMA_REGISTER_CACHE
 typedef struct dmaRegCache_s {
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
     uint32_t CR;
     uint32_t FCR;
     uint32_t NDTR;

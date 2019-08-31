@@ -34,7 +34,8 @@ typedef struct dmaResource_s dmaResource_t;
 #if defined(STM32F4) || defined(STM32F7)
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #elif defined(STM32H7)
-#define DMA_ARCH_TYPE void
+// H7 has stream based DMA and channel based BDMA, but we ignore BDMA (for now).
+#define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #else
 #define DMA_ARCH_TYPE DMA_Channel_TypeDef
 #endif
