@@ -136,9 +136,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 42, 85, 35, 70 },
-            [PID_PITCH] = { 46, 90, 38, 75 },
-            [PID_YAW] =   { 30, 90, 0, 70 },
+            [PID_ROLL] =  { 42, 85, 35, 90 },
+            [PID_PITCH] = { 46, 90, 38, 95 },
+            [PID_YAW] =   { 30, 90, 0, 90 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
