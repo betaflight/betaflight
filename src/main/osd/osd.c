@@ -390,7 +390,11 @@ static void osdUpdateStats(void)
     int16_t value = 0;
 
 #ifdef USE_GPS
-    value = gpsSol.groundSpeed;
+    if (gpsConfig()->gps_use_3d_speed) {
+        value = gpsSol.speed3d;
+    } else {
+        value = gpsSol.groundSpeed;
+    }
     if (stats.max_speed < value) {
         stats.max_speed = value;
     }

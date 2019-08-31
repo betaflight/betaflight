@@ -75,6 +75,7 @@ typedef struct gpsConfig_s {
     gpsAutoBaud_e autoBaud;
     uint8_t gps_ublox_use_galileo;
     uint8_t gps_set_home_point_once;
+    uint8_t gps_use_3d_speed;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
@@ -93,6 +94,7 @@ typedef struct gpsLocation_s {
 
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
+    uint16_t speed3d;              // speed in 0.1m/s
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
     uint16_t hdop;                  // generic HDOP value (*100)
