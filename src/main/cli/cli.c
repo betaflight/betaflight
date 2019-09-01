@@ -676,7 +676,7 @@ static void backupAndResetConfigs(const bool useCustomDefaults)
     backupConfigs();
 
     // reset all configs to defaults to do differencing
-    resetConfigs();
+    resetConfig();
 
 #if defined(USE_CUSTOM_DEFAULTS)
     if (useCustomDefaults) {
@@ -4136,7 +4136,7 @@ static void cliBatch(char *cmdline)
 }
 #endif
 
-static bool doSave(void)
+static bool prepareSave(void)
 {
 #if defined(USE_CUSTOM_DEFAULTS)
     if (processingCustomDefaults) {
@@ -4162,10 +4162,26 @@ static bool doSave(void)
 #endif // USE_BOARD_INFO
 
     if (featureMaskIsCopied) {
-        writeEEPROMWithFeatures(featureMaskCopy);
-    } else {
-        writeEEPROM();
+        featureDisableAll();
+        featureEnable(featureMaskCopy);
     }
+
+    return true;
+}
+
+bool tryPrepareSave(void)
+{
+    bool success = prepareSave();
+#if defined(USE_CLI_BATCH)
+    if (!success) {
+        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
+        resetCommandBatch();
+
+        return false;
+    }
+#else
+    UNUSED(success);
+#endif
 
     return true;
 }
@@ -4174,41 +4190,28 @@ static void cliSave(char *cmdline)
 {
     UNUSED(cmdline);
 
-#if defined(USE_CLI_BATCH)
-    if (!doSave()) {
-        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
-        resetCommandBatch();
-
-        return;
-    } else
-#endif
-    {
+    if (tryPrepareSave()) {
+        writeEEPROM();
         cliPrintHashLine("saving");
-    }
 
-    cliReboot();
+        cliReboot();
+    }
 }
 
-bool cliResetConfig(bool useCustomDefaults)
+#if defined(USE_CUSTOM_DEFAULTS)
+bool resetConfigToCustomDefaults(void)
 {
-    resetConfigs();
+    resetConfig();
 
 #ifdef USE_CLI_BATCH
     commandBatchError = false;
 #endif
 
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (useCustomDefaults) {
-        cliProcessCustomDefaults();
-    }
-#else
-    UNUSED(useCustomDefaults);
-#endif
+    cliProcessCustomDefaults();
 
-    return doSave();
+    return prepareSave();
 }
 
-#if defined(USE_CUSTOM_DEFAULTS)
 static bool isCustomDefaults(char *ptr)
 {
     return strncmp(ptr, "# " FC_FIRMWARE_NAME, 12) == 0;
@@ -4263,7 +4266,7 @@ static void cliDefaults(char *cmdline)
 
     cliPrintHashLine("resetting to defaults");
 
-    resetConfigs();
+    resetConfig();
 
 #ifdef USE_CLI_BATCH
     // Reset only the error state and allow the batch active state to remain.
@@ -4279,8 +4282,10 @@ static void cliDefaults(char *cmdline)
     }
 #endif
 
-    if (saveConfigs) {
-        cliSave(NULL);
+    if (saveConfigs && tryPrepareSave()) {
+        writeUnmodifiedConfigToEEPROM();
+
+        cliReboot();
     }
 }
 
@@ -6532,6 +6537,8 @@ bool cliProcessCustomDefaults(void)
 #endif
     memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
     bufferIndex = bufferIndexTemp;
+
+    systemConfigMutable()->configurationState = CONFIGURATION_STATE_DEFAULTS_CUSTOM;
 
     return true;
 }

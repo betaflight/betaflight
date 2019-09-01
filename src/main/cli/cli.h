@@ -28,4 +28,4 @@ void cliProcess(void);
 bool hasCustomDefaults(void);
 struct serialPort_s;
 void cliEnter(struct serialPort_s *serialPort);
-bool cliResetConfig(bool useCustomDefaults);
+bool resetConfigToCustomDefaults(void);
