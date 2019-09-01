@@ -228,8 +228,8 @@ static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
 #endif
 
 #if defined(USE_CUSTOM_DEFAULTS_ADDRESS)
-static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
-static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
+static char __attribute__ ((section(".custom_defaults_start_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
+static char __attribute__ ((section(".custom_defaults_end_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -4140,7 +4140,7 @@ static bool doSave(void)
 {
 #if defined(USE_CUSTOM_DEFAULTS)
     if (processingCustomDefaults) {
-        return false;
+        return true;
     }
 #endif
 
@@ -4174,12 +4174,15 @@ static void cliSave(char *cmdline)
 {
     UNUSED(cmdline);
 
+#if defined(USE_CLI_BATCH)
     if (!doSave()) {
         cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
         resetCommandBatch();
 
         return;
-    } else {
+    } else
+#endif
+    {
         cliPrintHashLine("saving");
     }
 
