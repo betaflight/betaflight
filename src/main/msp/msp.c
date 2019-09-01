@@ -34,6 +34,8 @@
 #include "build/debug.h"
 #include "build/version.h"
 
+#include "cli/cli.h"
+
 #include "common/axis.h"
 #include "common/bitarray.h"
 #include "common/color.h"
@@ -172,6 +174,11 @@ typedef enum {
 #define RATEPROFILE_MASK (1 << 7)
 
 #define RTC_NOT_SUPPORTED 0xff
+
+typedef enum {
+    DEFAULTS_TYPE_BASE = 0,
+    DEFAULTS_TYPE_CUSTOM,
+} defaultsType_e;
 
 #ifdef USE_VTX_TABLE
 static bool vtxTableNeedsInit = false;
@@ -524,6 +531,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define TARGET_HAS_SOFTSERIAL_BIT 1
 #define TARGET_IS_UNIFIED_BIT 2
 #define TARGET_HAS_FLASH_BOOTLOADER_BIT 3
+#define TARGET_SUPPORTS_CUSTOM_DEFAULTS 4
+#define TARGET_HAS_CUSTOM_DEFAULTS 5
 
         uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
@@ -538,6 +547,13 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_FLASH_BOOT_LOADER)
         targetCapabilities |= 1 << TARGET_HAS_FLASH_BOOTLOADER_BIT;
 #endif
+#if defined(USE_CUSTOM_DEFAULTS)
+        targetCapabilities |= 1 << TARGET_SUPPORTS_CUSTOM_DEFAULTS;
+        if (hasCustomDefaults()) {
+            targetCapabilities |= 1 << TARGET_HAS_CUSTOM_DEFAULTS;
+        }
+#endif
+
         sbufWriteU8(dst, targetCapabilities);
 
         // Target name with explicit length
@@ -1843,6 +1859,39 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
         break;
 #endif // USE_VTX_TABLE
 
+    case MSP_RESET_CONF:
+        {
+#if defined(USE_CUSTOM_DEFAULTS)
+            defaultsType_e defaultsType = DEFAULTS_TYPE_CUSTOM;
+#endif
+            if (sbufBytesRemaining(src) >= 1) {
+                // Added in MSP API 1.42
+#if defined(USE_CUSTOM_DEFAULTS)
+                defaultsType = sbufReadU8(src);
+#else
+                sbufReadU8(src);
+#endif
+            }
+
+            bool success = false;
+            if (!ARMING_FLAG(ARMED)) {
+#if defined(USE_CUSTOM_DEFAULTS)
+                success = resetEEPROM(defaultsType == DEFAULTS_TYPE_CUSTOM);
+#else
+                success = resetEEPROM(false);
+#endif
+
+                if (success && mspPostProcessFn) {
+                    rebootMode = MSP_REBOOT_FIRMWARE;
+                    *mspPostProcessFn = mspRebootFn;
+                }
+            }
+
+            // Added in API version 1.42
+            sbufWriteU8(dst, success);
+        }
+
+        break;
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -2413,13 +2462,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
-        break;
-
-    case MSP_RESET_CONF:
-        if (!ARMING_FLAG(ARMED)) {
-            resetEEPROM();
-            readEEPROM();
-        }
         break;
 
 #ifdef USE_ACC

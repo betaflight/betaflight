@@ -30,6 +30,8 @@
 
 #include "build/debug.h"
 
+#include "cli/cli.h"
+
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
@@ -719,13 +721,15 @@ void writeEEPROMWithFeatures(uint32_t features)
     ValidateAndWriteConfigToEEPROM(true);
 }
 
-void resetEEPROM(void)
+bool resetEEPROM(bool useCustomDefaults)
 {
-    resetConfigs();
+    if (cliResetConfig(useCustomDefaults)) {
+        activateConfig();
 
-    ValidateAndWriteConfigToEEPROM(false);
-
-    activateConfig();
+        return true;
+    }
+    
+    return false;
 }
 
 void ensureEEPROMStructureIsValid(void)
@@ -733,7 +737,7 @@ void ensureEEPROMStructureIsValid(void)
     if (isEEPROMStructureValid()) {
         return;
     }
-    resetEEPROM();
+    resetEEPROM(false);
 }
 
 void saveConfigAndNotify(void)
