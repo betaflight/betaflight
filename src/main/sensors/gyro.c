@@ -191,7 +191,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->yaw_spin_threshold = 1950;
     gyroConfig->dyn_lpf_gyro_min_hz = 200;
     gyroConfig->dyn_lpf_gyro_max_hz = 500;
-    gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_AUTO;
+    gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_MEDIUM;
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
