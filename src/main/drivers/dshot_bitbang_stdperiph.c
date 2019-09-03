@@ -44,10 +44,13 @@
 
 #include "pg/motor.h"
 
-//TODO: Change these to be only used if USE_DEBUG_PIN is not defined once the debug_pin functionality has been merged
+#if defined(USE_DEBUG_PIN)
+#include "build/debug_pin.h"
+#else
 #define dbgPinInit()
 #define dbgPinHi(x)
 #define dbgPinLo(x)
+#endif
 
 void bbGpioSetup(bbMotor_t *bbMotor)
 {
