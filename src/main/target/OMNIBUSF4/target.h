@@ -56,8 +56,6 @@
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
 
-#define USE_CUSTOM_DEFAULTS
-
 #define LED0_PIN                PB5
 #define USE_BEEPER
 #define BEEPER_PIN              PB4
