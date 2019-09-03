@@ -1017,6 +1017,26 @@ static void osdElementPower(osdElementParms_t *element)
     tfp_sprintf(element->buff, "%4dW", getAmperage() * getBatteryVoltage() / 10000);
 }
 
+static void osdElementRcChannels(osdElementParms_t *element)
+{
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
+
+    for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
+        if (osdConfig()->rcChannels[i] >= 0) {
+            // Translate (1000, 2000) to (-1000, 1000)
+            int data = scaleRange(rcData[osdConfig()->rcChannels[i]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
+            // Opt for the simplest formatting for now.
+            // Decimal notation can be added when tfp_sprintf supports float among fancy options.
+            char fmtbuf[6];
+            tfp_sprintf(fmtbuf, "%5d", data);
+            displayWrite(element->osdDisplayPort, xpos, ypos + i, fmtbuf);
+        }
+    }
+
+    element->drawElement = false;  // element already drawn
+}
+
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
@@ -1457,7 +1477,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_OSD_PROFILES
     OSD_PROFILE_NAME,
 #endif
-
+    OSD_RC_CHANNELS,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1563,6 +1583,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_RX_RSSI_DBM
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
+    [OSD_RC_CHANNELS]             = osdElementRcChannels,
 };
 
 static void osdAddActiveElement(osd_items_e element)
