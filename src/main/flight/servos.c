@@ -336,18 +336,11 @@ void writeServos(void)
     switch (currentMixerMode) {
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
-        if (servosTricopterIsEnabledServoUnarmed()) {
-            // if unarmed flag set, we always move servo
-            writeServoWithTracking(servoIndex++, SERVO_RUDDER);
-        } else {
-            // otherwise, only move servo when copter is armed
-            if (ARMING_FLAG(ARMED)) {
-                writeServoWithTracking(servoIndex++, SERVO_RUDDER);
-            } else {
-                pwmWriteServo(servoIndex++, 0); // kill servo signal completely.
-                servoWritten |= (1 << SERVO_RUDDER);
-            }
+        // We move servo if unarmed flag set or armed
+        if (!(servosTricopterIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
+            servo[SERVO_RUDDER] = 0; // kill servo signal completely.
         }
+        writeServoWithTracking(servoIndex++, SERVO_RUDDER);
         break;
 
     case MIXER_FLYING_WING:
