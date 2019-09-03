@@ -331,8 +331,9 @@ void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
 void systemResetToBootloader(void) {}
-void resetConfigs(void) {}
+void resetConfig(void) {}
 void systemReset(void) {}
+void writeUnmodifiedConfigToEEPROM(void) {}
 
 void changePidProfile(uint8_t) {}
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }

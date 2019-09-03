@@ -226,10 +226,6 @@
 #define USE_RX_XN297
 #endif
 
-#ifdef USE_UNIFIED_TARGET
-#define USE_CONFIGURATION_STATE
-#endif
-
 // Setup crystal frequency on F4 for backward compatibility
 // Should be set to zero for generic targets to ensure USB is working
 // when unconfigured for targets with non-standard crystal.

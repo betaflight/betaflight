@@ -29,6 +29,12 @@
 
 #define MAX_PROFILE_NAME_LENGTH    8u
 
+typedef enum {
+    CONFIGURATION_STATE_DEFAULTS_BARE = 0,
+    CONFIGURATION_STATE_DEFAULTS_CUSTOM,
+    CONFIGURATION_STATE_CONFIGURED,
+} configurationState_e;
+
 typedef struct pilotConfig_s {
     char name[MAX_NAME_LENGTH + 1];
     char displayName[MAX_NAME_LENGTH + 1];
@@ -46,7 +52,7 @@ typedef struct systemConfig_s {
     uint8_t powerOnArmingGraceTime; // in seconds
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
     uint8_t hseMhz; // Not used for non-F4 targets
-    uint8_t configured;
+    uint8_t configurationState; // The state of the configuration (defaults / configured)
     uint8_t schedulerOptimizeRate;
 } systemConfig_t;
 
@@ -55,12 +61,12 @@ PG_DECLARE(systemConfig_t, systemConfig);
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
 
-
 void initEEPROM(void);
 bool resetEEPROM(bool useCustomDefaults);
 bool readEEPROM(void);
 void writeEEPROM(void);
 void writeEEPROMWithFeatures(uint32_t features);
+void writeUnmodifiedConfigToEEPROM(void);
 void ensureEEPROMStructureIsValid(void);
 
 void saveConfigAndNotify(void);
@@ -82,7 +88,7 @@ bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
 
-void resetConfigs(void);
+void resetConfig(void);
 void targetConfiguration(void);
 void targetValidateConfiguration(void);
 

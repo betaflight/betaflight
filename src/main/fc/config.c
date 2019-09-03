@@ -112,7 +112,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
-    .configured = false,
+    .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
     .schedulerOptimizeRate = true,
 );
 
@@ -136,7 +136,7 @@ uint16_t getCurrentMinthrottle(void)
     return motorConfig()->minthrottle;
 }
 
-void resetConfigs(void)
+void resetConfig(void)
 {
     pgResetAll();
 
@@ -688,19 +688,11 @@ bool readEEPROM(void)
     return success;
 }
 
-static void ValidateAndWriteConfigToEEPROM(bool setConfigured)
+void writeUnmodifiedConfigToEEPROM(void)
 {
     validateAndFixConfig();
 
     suspendRxPwmPpmSignal();
-
-#ifdef USE_CONFIGURATION_STATE
-    if (setConfigured) {
-        systemConfigMutable()->configured = true;
-    }
-#else
-    UNUSED(setConfigured);
-#endif
 
     writeConfigToEEPROM();
 
@@ -710,7 +702,9 @@ static void ValidateAndWriteConfigToEEPROM(bool setConfigured)
 
 void writeEEPROM(void)
 {
-    ValidateAndWriteConfigToEEPROM(true);
+    systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
+
+    writeUnmodifiedConfigToEEPROM();
 }
 
 void writeEEPROMWithFeatures(uint32_t features)
@@ -718,18 +712,27 @@ void writeEEPROMWithFeatures(uint32_t features)
     featureDisableAll();
     featureEnable(features);
 
-    ValidateAndWriteConfigToEEPROM(true);
+    writeEEPROM();
 }
 
 bool resetEEPROM(bool useCustomDefaults)
 {
-    if (cliResetConfig(useCustomDefaults)) {
-        activateConfig();
-
-        return true;
+#if !defined(USE_CUSTOM_DEFAULTS)
+    UNUSED(useCustomDefaults);
+#else
+    if (useCustomDefaults) {
+        if (!resetConfigToCustomDefaults()) {
+            return false;
+        }
+    } else
+#endif
+    {
+        resetConfig();
     }
-    
-    return false;
+
+    writeUnmodifiedConfigToEEPROM();
+
+    return true;
 }
 
 void ensureEEPROMStructureIsValid(void)
@@ -742,7 +745,7 @@ void ensureEEPROMStructureIsValid(void)
 
 void saveConfigAndNotify(void)
 {
-    ValidateAndWriteConfigToEEPROM(true);
+    writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(1);
 }
@@ -797,11 +800,7 @@ void changePidProfile(uint8_t pidProfileIndex)
 
 bool isSystemConfigured(void)
 {
-#ifdef USE_CONFIGURATION_STATE
-    return systemConfig()->configured;
-#else
-    return true;
-#endif
+    return systemConfig()->configurationState == CONFIGURATION_STATE_CONFIGURED;
 }
 
 void setRebootRequired(void)

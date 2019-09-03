@@ -531,8 +531,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define TARGET_HAS_SOFTSERIAL_BIT 1
 #define TARGET_IS_UNIFIED_BIT 2
 #define TARGET_HAS_FLASH_BOOTLOADER_BIT 3
-#define TARGET_SUPPORTS_CUSTOM_DEFAULTS 4
-#define TARGET_HAS_CUSTOM_DEFAULTS 5
+#define TARGET_SUPPORTS_CUSTOM_DEFAULTS_BIT 4
+#define TARGET_HAS_CUSTOM_DEFAULTS_BIT 5
 
         uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
@@ -548,9 +548,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         targetCapabilities |= 1 << TARGET_HAS_FLASH_BOOTLOADER_BIT;
 #endif
 #if defined(USE_CUSTOM_DEFAULTS)
-        targetCapabilities |= 1 << TARGET_SUPPORTS_CUSTOM_DEFAULTS;
+        targetCapabilities |= 1 << TARGET_SUPPORTS_CUSTOM_DEFAULTS_BIT;
         if (hasCustomDefaults()) {
-            targetCapabilities |= 1 << TARGET_HAS_CUSTOM_DEFAULTS;
+            targetCapabilities |= 1 << TARGET_HAS_CUSTOM_DEFAULTS_BIT;
         }
 #endif
 
@@ -585,6 +585,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #endif
 
         sbufWriteU8(dst, MCU_TYPE_ID);
+
+        // Added in API version 1.42
+        sbufWriteU8(dst, systemConfig()->configurationState);
 
         break;
     }
