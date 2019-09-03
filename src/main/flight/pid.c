@@ -205,7 +205,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .d_min_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
-        .transient_throttle_limit = 15,
+        .transient_throttle_limit = 0,
         .profileName = { 0 },
         .idle_min_rpm = 0,
         .idle_adjustment_speed = 50,
