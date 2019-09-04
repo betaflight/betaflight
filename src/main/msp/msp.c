@@ -76,12 +76,13 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
+#include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -1017,7 +1018,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             bool rpmDataAvailable = false;
 
 #ifdef USE_DSHOT_TELEMETRY
-            if (useDshotTelemetry) {
+            if (motorConfig()->dev.useDshotTelemetry) {
                 rpm = (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount;
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
@@ -1186,7 +1187,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, getMotorCount());
         sbufWriteU8(dst, motorConfig()->motorPoleCount);
 #ifdef USE_DSHOT_TELEMETRY
-        sbufWriteU8(dst, useDshotTelemetry);  // DSHOT telemetry is enabled
+        sbufWriteU8(dst, motorConfig()->dev.useDshotTelemetry);
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -1556,8 +1557,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
         // Added in MSP API 1.42
+#if defined(USE_GYRO_DATA_ANALYSE)
         sbufWriteU8(dst, gyroConfig()->dyn_notch_range);
         sbufWriteU8(dst, gyroConfig()->dyn_notch_width_percent);
         sbufWriteU16(dst, gyroConfig()->dyn_notch_q);
@@ -1568,6 +1569,15 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
 #endif
+
+#if defined(USE_RPM_FILTER)
+        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_harmonics);
+        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_min);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
+
         break;
     case MSP_PID_ADVANCED:
         sbufWriteU16(dst, 0);
@@ -2118,8 +2128,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->mincommand = sbufReadU16(src);
 
         // version 1.42
-        if (sbufBytesRemaining(src)) {
+        if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->motorPoleCount = sbufReadU8(src);
+#if defined(USE_DSHOT_TELEMETRY)
+            motorConfigMutable()->dev.useDshotTelemetry = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
         }
         break;
 
@@ -2336,7 +2351,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU16(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 6) {
+        if (sbufBytesRemaining(src) >= 8) {
             // Added in MSP API 1.42
 #if defined(USE_GYRO_DATA_ANALYSE)
             gyroConfigMutable()->dyn_notch_range = sbufReadU8(src);
@@ -2348,6 +2363,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src);
             sbufReadU16(src);
             sbufReadU16(src);
+#endif
+
+#if defined(USE_RPM_FILTER)
+            rpmFilterConfigMutable()->gyro_rpm_notch_harmonics = sbufReadU8(src);
+            rpmFilterConfigMutable()->gyro_rpm_notch_min = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU8(src);
 #endif
         }
 
