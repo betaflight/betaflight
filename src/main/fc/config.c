@@ -494,7 +494,6 @@ static void validateAndFixConfig(void)
     bool usingDshotProtocol;
     switch (motorConfig()->dev.motorPwmProtocol) {
     case PWM_TYPE_PROSHOT1000:
-    case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:

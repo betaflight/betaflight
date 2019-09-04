@@ -98,7 +98,6 @@ void motorInitEndpoints(float outputLimit, float *outputLow, float *outputHigh, 
     switch (motorConfig()->dev.motorPwmProtocol) {
 #ifdef USE_DSHOT
     case PWM_TYPE_PROSHOT1000:
-    case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
@@ -215,7 +214,6 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     case PWM_TYPE_DSHOT150:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT600:
-    case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_PROSHOT1000:
 #ifdef USE_DSHOT_BITBANG
         if (isDshotBitbangActive(motorConfig)) {
