@@ -182,9 +182,8 @@ typedef struct pidProfile_s {
     uint8_t idle_max_increase;              // max integrated correction
     
     uint8_t ff_interpolate_sp;              // Calculate FF from interpolated setpoint
-    uint8_t ff_spread;                      // Spread ff out over at least min spread ms
     uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
-    uint8_t ff_lookahead_limit;             // FF stick extrapolation lookahead period in ms
+    uint8_t ff_jerk_limit;             // FF stick extrapolation lookahead period in ms
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -262,3 +261,4 @@ float pidGetPreviousSetpoint(int axis);
 float pidGetDT();
 float pidGetPidFrequency();
 float pidGetFfBoostFactor();
+float pidGetJerkLimitInverse();
