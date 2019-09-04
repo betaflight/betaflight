@@ -35,6 +35,12 @@ typedef enum {
     CONFIGURATION_STATE_CONFIGURED,
 } configurationState_e;
 
+typedef enum {
+    SCHEDULER_OPTIMIZE_RATE_OFF = 0,
+    SCHEDULER_OPTIMIZE_RATE_ON,
+    SCHEDULER_OPTIMIZE_RATE_AUTO,
+} schedulerOptimizeRate_e;
+
 typedef struct pilotConfig_s {
     char name[MAX_NAME_LENGTH + 1];
     char displayName[MAX_NAME_LENGTH + 1];
