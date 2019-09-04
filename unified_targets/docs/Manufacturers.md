@@ -28,6 +28,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |MERA|MerakRC|http://www.merakrc.com/|
 |MOLA|MotoLab|https://github.com/MotoLab|
 |MTKS|Matek Systems|http://www.mateksys.com/|
+|RAST|Racerstar|https://www.racerstar.com/|
 |RCTI|RCTimer|http://rctimer.com/|
 |RUSH|FPV Racing Rush|http://www.rushfpv.com/|
 |SPBE|LangTian Technology (Shenzhen) Co. (SpeedyBee)|https://www.speedybee.com/|
