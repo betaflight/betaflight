@@ -215,8 +215,6 @@ const timerHardware_t* dshotBitbangGetPacerTimer(int index)
 static uint32_t getDshotBaseFrequency(motorPwmProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-    case(PWM_TYPE_DSHOT1200):
-        return MOTOR_DSHOT1200_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
     case(PWM_TYPE_DSHOT600):
         return MOTOR_DSHOT600_SYMBOL_RATE * MOTOR_DSHOT_STATE_PER_SYMBOL;
     case(PWM_TYPE_DSHOT300):
