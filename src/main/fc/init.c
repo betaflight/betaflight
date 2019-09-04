@@ -918,6 +918,7 @@ void init(void)
 #endif // USE_RCDEVICE
 
 #ifdef USE_MOTOR
+    motorPostInit();
     motorEnable();
 #endif
 

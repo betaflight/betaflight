@@ -138,6 +138,7 @@ static FAST_CODE void dshotWrite(uint8_t index, float value)
 }
 
 static motorVTable_t dshotPwmVTable = {
+    .postInit = motorPostInitNull,
     .enable = dshotPwmEnableMotors,
     .disable = dshotPwmDisableMotors,
     .isMotorEnabled = dshotPwmIsMotorEnabled,

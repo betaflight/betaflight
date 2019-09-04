@@ -50,6 +50,7 @@ void detectBrushedESC(ioTag_t motorIoTag)
     } else {
         hardwareMotorType = MOTOR_BRUSHED;
     }
+    IORelease(motorDetectPin);
 }
 
 uint8_t getDetectedMotorType(void)

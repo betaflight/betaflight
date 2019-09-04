@@ -40,9 +40,6 @@
 
 #define DSHOT_TELEMETRY_DEADTIME_US   (30 + 5) // 30 to switch lines and 5 to switch lines back
 
-#define MIN_GCR_EDGES         7
-#define MAX_GCR_EDGES         22
-
 
 typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 extern FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
@@ -134,9 +131,7 @@ typedef struct motorDmaOutput_s {
 
 #ifdef USE_DSHOT_TELEMETRY
     volatile bool isInput;
-    uint16_t dshotTelemetryValue;
     timeDelta_t dshotTelemetryDeadtimeUs;
-    bool dshotTelemetryActive;
     uint8_t dmaInputLen;
 
 #ifdef USE_HAL_DRIVER

@@ -389,6 +389,13 @@ static void validateAndFixConfig(void)
         }
     }
 
+#if defined(USE_DSHOT_TELEMETRY) && defined(USE_DSHOT_BITBANG)
+    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_PROSHOT1000 && motorConfig()->dev.useDshotTelemetry &&
+        motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_ON) {
+        motorConfigMutable()->dev.useDshotBitbang = DSHOT_BITBANG_AUTO;
+    }
+#endif    
+
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
 
@@ -504,7 +511,7 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if ((!usingDshotProtocol || motorConfig()->dev.useBurstDshot || !systemConfig()->schedulerOptimizeRate)
+    if ((!usingDshotProtocol || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && motorConfig()->dev.useBurstDshot) || !systemConfig()->schedulerOptimizeRate)
         && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
