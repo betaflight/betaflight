@@ -233,7 +233,8 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .autoBaud = GPS_AUTOBAUD_OFF,
     .gps_ublox_use_galileo = false,
     .gps_set_home_point_once = false,
-    .gps_use_3d_speed = false
+    .gps_use_3d_speed = false,
+    .distanceLimit = 0
 );
 
 static void shiftPacketLog(void)
@@ -273,7 +274,7 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
-    
+
     if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
         gpsSetState(GPS_INITIALIZED);
         return;
@@ -1382,5 +1383,15 @@ void onGpsNewData(void)
     rescueNewGpsData();
 #endif
 }
+
+bool isLimitDistanceReach(void){
+
+  if(gpsConfig()->distanceLimit > 0 && GPS_distanceToHome >= gpsConfig()->distanceLimit){
+      return true;
+    }else{
+      return false;
+    }
+}
+
 
 #endif

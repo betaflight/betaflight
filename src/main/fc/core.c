@@ -148,6 +148,7 @@ bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
 static int tryingToArm = ARMING_DELAYED_DISARMED;
+bool limitDistanceReach;
 
 #ifdef USE_RUNAWAY_TAKEOFF
 static timeUs_t runawayTakeoffDeactivateUs = 0;
@@ -619,7 +620,7 @@ int8_t calculateThrottlePercent(void)
     if (featureIsEnabled(FEATURE_3D)
         && !IS_RC_MODE_ACTIVE(BOX3D)
         && !flight3DConfig()->switched_mode3d) {
-        
+
         if (channelData > (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) {
             ret = ((channelData - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) * 100) / (PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle);
         } else if (channelData < (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle)) {
@@ -680,7 +681,7 @@ bool processRx(timeUs_t currentTimeUs)
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
-    
+
     const bool launchControlActive = isLaunchControlActive();
 
     if (airmodeIsEnabled() && ARMING_FLAG(ARMED) && !launchControlActive) {
@@ -890,12 +891,19 @@ bool processRx(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+if(isLimitDistanceReach()){
+  limitDistanceReach = true;
+  }
+
+    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) || (!IS_RC_MODE_ACTIVE(BOXGPSRESCUE)  && !FLIGHT_MODE(ANGLE_MODE) && limitDistanceReach) )) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }
     } else {
-        DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+      if(!limitDistanceReach || FLIGHT_MODE(ANGLE_MODE)){
+      DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+      limitDistanceReach = false;
+    }
     }
 #endif
 

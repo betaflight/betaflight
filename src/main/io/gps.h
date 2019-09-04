@@ -76,6 +76,7 @@ typedef struct gpsConfig_s {
     uint8_t gps_ublox_use_galileo;
     uint8_t gps_set_home_point_once;
     uint8_t gps_use_3d_speed;
+    int16_t distanceLimit;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
@@ -167,4 +168,4 @@ void onGpsNewData(void);
 void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
-
+bool isLimitDistanceReach(void);
