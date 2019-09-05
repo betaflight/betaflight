@@ -58,7 +58,7 @@ void targetConfiguration(void)
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(1, 12) | OSD_PROFILE_1_FLAG;
     osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(1, 11) | OSD_PROFILE_1_FLAG;
 
-    motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT1200;
+    motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
 }
 
 #endif
