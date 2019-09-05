@@ -67,6 +67,8 @@ void setLedValue(uint16_t index, const uint8_t value);
 void setStripColor(const hsvColor_t *color);
 void setStripColors(const hsvColor_t *colors);
 
+void setUsedLedCount(unsigned ledCount);
+
 bool isWS2811LedStripReady(void);
 
 #if defined(STM32F1) || defined(STM32F3)
