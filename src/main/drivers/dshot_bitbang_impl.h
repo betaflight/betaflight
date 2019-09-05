@@ -42,7 +42,6 @@
 // XXX Trying to fiddle with constants here.
 
 // Symbol rate [symbol/sec]
-#define MOTOR_DSHOT1200_SYMBOL_RATE    (1200 * 1000)
 #define MOTOR_DSHOT600_SYMBOL_RATE     (600 * 1000)
 #define MOTOR_DSHOT300_SYMBOL_RATE     (300 * 1000)
 #define MOTOR_DSHOT150_SYMBOL_RATE     (150 * 1000)
