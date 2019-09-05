@@ -1281,7 +1281,7 @@ void GPS_calc_longitude_scaling(int32_t lat)
 static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
 {
     static int32_t lastCoord[2] = { 0, 0 };
-    static int16_t lastAlt;
+    static int32_t lastAlt;
     static int32_t lastMillis;
 
     int currentMillis = millis();
@@ -1303,9 +1303,8 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
                 GPS_distanceFlownInCm += dist;
             }
         }
-
         GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
-        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500, 1500);
     }
     lastCoord[LON] = gpsSol.llh.lon;
     lastCoord[LAT] = gpsSol.llh.lat;
