@@ -39,6 +39,7 @@
 #include "drivers/motor.h"
 #include "drivers/nvic.h"
 #include "drivers/pwm_output.h" // XXX for pwmOutputPort_t motors[]; should go away with refactoring
+#include "drivers/dshot_dpwm.h" // XXX for motorDmaOutput_t *getMotorDmaOutput(uint8_t index); should go away with refactoring
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
@@ -475,8 +476,12 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
         return;
     }
 
-    // If there is a command ready to go overwrite the value and send that instead
+    // fetch requestTelemetry from motors. Needs to be refactored.
+    motorDmaOutput_t * const motor = getMotorDmaOutput(motorIndex);
+    bbmotor->protocolControl.requestTelemetry = motor->protocolControl.requestTelemetry;
+    motor->protocolControl.requestTelemetry = false;
 
+    // If there is a command ready to go overwrite the value and send that instead
     if (dshotCommandIsProcessing()) {
         value = dshotCommandGetCurrent(motorIndex);
         if (value) {
