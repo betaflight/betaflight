@@ -140,6 +140,13 @@ static void motorDisableNull(void)
 {
 }
 
+static bool motorIsEnabledNull(uint8_t index)
+{
+    UNUSED(index);
+
+    return false;
+}
+
 bool motorUpdateStartNull(void)
 {
     return true;
@@ -181,6 +188,7 @@ static const motorVTable_t motorNullVTable = {
     .postInit = motorPostInitNull,
     .enable = motorEnableNull,
     .disable = motorDisableNull,
+    .isMotorEnabled = motorIsEnabledNull,
     .updateStart = motorUpdateStartNull,
     .write = motorWriteNull,
     .writeInt = motorWriteIntNull,
