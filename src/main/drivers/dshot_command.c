@@ -210,7 +210,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool 
         if (commandControl) {
             commandControl->repeats = repeats;
             commandControl->delayAfterCommandUs = delayAfterCommandUs;
-            for (unsigned i = 0; i < dshotPwmDevice.count; i++) {
+            for (unsigned i = 0; i < motorCount; i++) {
                 if (index == i || index == ALL_MOTORS) {
                     commandControl->command[i] = command;
                 } else {
