@@ -142,14 +142,14 @@ bool busBusy(const busDevice_t *busdev, bool *error)
 #ifdef USE_SPI
     case BUSTYPE_SPI:
         // No waiting on SPI
-#ifdef USE_SPI_TRANSACTION
         return false;
 #endif
-#endif
+
 #ifdef USE_I2C
     case BUSTYPE_I2C:
         return i2cBusBusy(busdev, error);
 #endif
+
     default:
         return false;
     }
