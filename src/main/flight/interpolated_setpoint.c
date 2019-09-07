@@ -60,16 +60,15 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
 
         const float setpointSpeed = (rawSetpoint - prevRawSetpoint[axis]) * rxRate;
         const float setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * pidGetDT();
-        const float setpointJerk = setpointAcceleration - prevSetpointAcceleration[axis];
-        
+
         setpointDeltaImpl[axis] = setpointSpeed * pidGetDT();
         
         const float ffBoostFactor = pidGetFfBoostFactor();
         float clip = 1.0f;
         float boostAmount = 0.0f;
         if (ffBoostFactor != 0.0f) {
-            if (pidGetJerkLimitInverse()) {
-                clip = 1 / (1 + fabsf(setpointJerk * pidGetJerkLimitInverse()));
+            if (pidGetSpikeLimitInverse()) {
+                clip = 1 / (1 + fabsf(setpointAcceleration * pidGetSpikeLimitInverse()));
                 clip *= clip;
             }
 
@@ -83,10 +82,10 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         prevRawSetpoint[axis] = rawSetpoint;
         
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 1000);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 1000);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, boostAmount * clip * 1000);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, setpointJerk * 1000);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 100);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 100);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, boostAmount * clip * 100);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, clip * 100);
         }
         setpointDeltaImpl[axis] += boostAmount * clip;
         if (type == FF_INTERPOLATE_ON) {

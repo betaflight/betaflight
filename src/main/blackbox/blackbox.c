@@ -1343,7 +1343,7 @@ static bool blackboxWriteSysinfo(void)
                                                                             currentPidProfile->pid[PID_YAW].F);
 #ifdef USE_INTERPOLATED_SP
         BLACKBOX_PRINT_HEADER_LINE("ff_interpolate_sp", "%d",               currentPidProfile->ff_interpolate_sp);
-        BLACKBOX_PRINT_HEADER_LINE("ff_jerk_limit", "%d",                   currentPidProfile->ff_jerk_limit);
+        BLACKBOX_PRINT_HEADER_LINE("ff_spike_limit", "%d",                  currentPidProfile->ff_spike_limit);
         BLACKBOX_PRINT_HEADER_LINE("ff_max_rate_limit", "%d",               currentPidProfile->ff_max_rate_limit);
 #endif
         BLACKBOX_PRINT_HEADER_LINE("ff_boost", "%d",                        currentPidProfile->ff_boost);
