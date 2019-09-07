@@ -82,9 +82,9 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         prevRawSetpoint[axis] = rawSetpoint;
         
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 100);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 100);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, boostAmount * clip * 100);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 1000);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 1000);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, boostAmount * clip * 1000);
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, clip * 100);
         }
         setpointDeltaImpl[axis] += boostAmount * clip;
