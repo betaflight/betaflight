@@ -199,7 +199,8 @@ extern uint32_t bbOutputBuffer[MOTOR_DSHOT_BUFFER_SIZE * MAX_SUPPORTED_MOTOR_POR
 // <sampling period> = 0.44us
 // <slack> = 10%
 // (30 + 26 + 3) / 0.44 = 134
-#define DSHOT_BITBANG_PORT_INPUT_BUFFER_LENGTH 134
+// In some cases this was not enough, so we add 6 extra samples
+#define DSHOT_BITBANG_PORT_INPUT_BUFFER_LENGTH 140
 extern uint16_t bbInputBuffer[DSHOT_BITBANG_PORT_INPUT_BUFFER_LENGTH * MAX_SUPPORTED_MOTOR_PORTS];
 
 void bbGpioSetup(bbMotor_t *bbMotor);

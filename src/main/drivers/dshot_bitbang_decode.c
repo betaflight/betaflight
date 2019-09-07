@@ -129,14 +129,17 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 #endif
 
     while (endP > p) {
-        while (endP > p) {
+        do {
             // Look for next positive edge. Manual loop unrolling and branch hinting to produce faster code.
-            if(__builtin_expect(!(p++)->value, 1) &&
-             __builtin_expect(!(p++)->value, 1) &&
-             __builtin_expect(!(p++)->value, 1) &&
-             __builtin_expect(!(p++)->value, 1)) {
-                continue;
+            if(__builtin_expect((p++)->value, 0) ||
+               __builtin_expect((p++)->value, 0) ||
+               __builtin_expect((p++)->value, 0) ||
+               __builtin_expect((p++)->value, 0)) {
+                break;
             }
+        } while (endP > p);
+
+        if (endP > p) {
 
 #ifdef DEBUG_BBDECODE
             sequence[sequenceIndex++] = p - b;
@@ -149,29 +152,31 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
             value <<= len;
             value |= 1 << (len - 1);
             oldP = p;
-            break;
-        }
 
-        // Look for next zero edge. Manual loop unrolling and branch hinting to produce faster code.
-        while (endP > p) {
-            if (__builtin_expect((p++)->value, 1) &&
-                __builtin_expect((p++)->value, 1) &&
-                __builtin_expect((p++)->value, 1) &&
-                __builtin_expect((p++)->value, 1)) {
-                continue;
-            }
+            // Look for next zero edge. Manual loop unrolling and branch hinting to produce faster code.
+            do {
+                if (__builtin_expect(!(p++)->value, 0) ||
+                    __builtin_expect(!(p++)->value, 0) ||
+                    __builtin_expect(!(p++)->value, 0) ||
+                    __builtin_expect(!(p++)->value, 0)) {
+                    break;
+                }
+            } while (endP > p);
+
+            if (endP > p) {
+
 #ifdef DEBUG_BBDECODE
-            sequence[sequenceIndex++] = p - b;
+                sequence[sequenceIndex++] = p - b;
 #endif
-            // A level of length n gets decoded to a sequence of bits of
-            // the form 1000 with a length of (n+1) / 3 to account for 3x
-            // oversampling.
-            const int len = MAX((p - oldP + 1) / 3, 1);
-            bits += len;
-            value <<= len;
-            value |= 1 << (len - 1);
-            oldP = p;
-            break;
+                // A level of length n gets decoded to a sequence of bits of
+                // the form 1000 with a length of (n+1) / 3 to account for 3x
+                // oversampling.
+                const int len = MAX((p - oldP + 1) / 3, 1);
+                bits += len;
+                value <<= len;
+                value |= 1 << (len - 1);
+                oldP = p;
+            }
         }
     }
 
@@ -243,27 +248,27 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
     sequence[sequenceIndex++] = p - buffer;
 #endif
 
-    // Look for next edge. Manual loop unrolling and branch hinting to produce faster code.
-    while (endP > p) {
-        if (__builtin_expect((*p++ & mask) == lastValue, 1) &&
-            __builtin_expect((*p++ & mask) == lastValue, 1) &&
-            __builtin_expect((*p++ & mask) == lastValue, 1) &&
-            __builtin_expect((*p++ & mask) == lastValue, 1)) {
-            continue;
-        }
-
+    while (endP > p ) {
+        // Look for next edge. Manual loop unrolling and branch hinting to produce faster code.
+        if (__builtin_expect((*p++ & mask) != lastValue, 0) ||
+            __builtin_expect((*p++ & mask) != lastValue, 0) ||
+            __builtin_expect((*p++ & mask) != lastValue, 0) ||
+            __builtin_expect((*p++ & mask) != lastValue, 0)) {
+            if (endP > p) {
 #ifdef DEBUG_BBDECODE
-        sequence[sequenceIndex++] = p - buffer;
+                sequence[sequenceIndex++] = p - buffer;
 #endif
-        // A level of length n gets decoded to a sequence of bits of
-        // the form 1000 with a length of (n+1) / 3 to account for 3x
-        // oversampling.
-        const int len = MAX((p - oldP + 1) / 3,1);
-        bits += len;
-        value <<= len;
-        value |= 1 << (len - 1);
-        oldP = p;
-        lastValue = *(p-1) & mask;
+                // A level of length n gets decoded to a sequence of bits of
+                // the form 1000 with a length of (n+1) / 3 to account for 3x
+                // oversampling.
+                const int len = MAX((p - oldP + 1) / 3,1);
+                bits += len;
+                value <<= len;
+                value |= 1 << (len - 1);
+                oldP = p;
+                lastValue = *(p-1) & mask;
+            }
+        }
     }
 
     // length of last sequence has to be inferred since the last bit with inverted dshot is high
