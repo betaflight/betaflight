@@ -3017,12 +3017,14 @@ static void printBoardName(dumpFlags_t dumpMask)
 static void cliBoardName(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
-    if (len > 0 && boardInformationIsSet() && (len != strlen(getBoardName()) || strncmp(getBoardName(), cmdline, len))) {
-        cliPrintErrorLinef(ERROR_MESSAGE, "BOARD_NAME", getBoardName());
+    const char *boardName = getBoardName();
+    if (len > 0 && strlen(boardName) != 0 && boardInformationIsSet() && (len != strlen(boardName) || strncmp(boardName, cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "BOARD_NAME", boardName);
     } else {
-        if (len > 0) {
-            setBoardName(cmdline);
+        if (len > 0 && !configIsInCopy && setBoardName(cmdline)) {
             boardInformationUpdated = true;
+
+            cliPrintHashLine("Set board_name.");
         }
         printBoardName(DUMP_ALL);
     }
@@ -3038,12 +3040,14 @@ static void printManufacturerId(dumpFlags_t dumpMask)
 static void cliManufacturerId(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
-    if (len > 0 && boardInformationIsSet() && (len != strlen(getManufacturerId()) || strncmp(getManufacturerId(), cmdline, len))) {
-        cliPrintErrorLinef(ERROR_MESSAGE, "MANUFACTURER_ID", getManufacturerId());
+    const char *manufacturerId = getManufacturerId();
+    if (len > 0 && boardInformationIsSet() && strlen(manufacturerId) != 0 && (len != strlen(manufacturerId) || strncmp(manufacturerId, cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "MANUFACTURER_ID", manufacturerId);
     } else {
-        if (len > 0) {
-            setManufacturerId(cmdline);
+        if (len > 0 && !configIsInCopy && setManufacturerId(cmdline)) {
             boardInformationUpdated = true;
+
+            cliPrintHashLine("Set manufacturer_id.");
         }
         printManufacturerId(DUMP_ALL);
     }
@@ -3092,12 +3096,12 @@ static void cliSignature(char *cmdline)
         writeSignature(signatureStr, getSignature());
         cliPrintErrorLinef(ERROR_MESSAGE, "SIGNATURE", signatureStr);
     } else {
-        if (len > 0) {
-            setSignature(signature);
-
+        if (len > 0 && !configIsInCopy && setSignature(signature)) {
             signatureUpdated = true;
 
             writeSignature(signatureStr, getSignature());
+
+            cliPrintHashLine("Set signature.");
         } else if (signatureUpdated || signatureIsSet()) {
             writeSignature(signatureStr, getSignature());
         }
