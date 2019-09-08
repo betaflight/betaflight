@@ -206,9 +206,18 @@ static bbPort_t *bbAllocMotorPort(int portIndex)
     return bbPort;
 }
 
-const timerHardware_t* dshotBitbangGetPacerTimer(int index)
+const resourceOwner_t *dshotBitbangTimerGetOwner(int8_t timerNumber, uint16_t timerChannel)
 {
-    return index < usedMotorPorts ? bbPorts[index].timhw : NULL;
+    static resourceOwner_t bitbangOwner = { .owner = OWNER_DSHOT_BITBANG, .resourceIndex = 0 };
+
+    for (int index = 0; index < usedMotorPorts; index++) {
+        const timerHardware_t *timer = bbPorts[index].timhw;
+        if (timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel) {
+            return &bitbangOwner;
+        }
+    }
+
+    return &freeOwner;
 }
 
 // Return frequency of smallest change [state/sec]
@@ -304,7 +313,8 @@ static void bbFindPacerTimer(void)
             int timNumber = timerGetTIMNumber(timer->tim);
             bool timerConflict = false;
             for (int channel = 0; channel < CC_CHANNELS_PER_TIMER; channel++) {
-                if(timerGetOwner(timNumber, CC_CHANNEL_FROM_INDEX(channel))->owner != OWNER_FREE) {
+                const resourceOwner_e timerOwner = timerGetOwner(timNumber, CC_CHANNEL_FROM_INDEX(channel))->owner;
+                if (timerOwner != OWNER_FREE && timerOwner != OWNER_DSHOT_BITBANG) {
                     timerConflict = true;
                     break;
                 }
