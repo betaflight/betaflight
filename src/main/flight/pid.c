@@ -213,7 +213,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .idle_pid_limit = 200,
         .idle_max_increase = 150,
         .ff_interpolate_sp = FF_INTERPOLATE_AVG,
-        .ff_jerk_limit = 25,
+        .ff_spike_limit = 40,
         .ff_max_rate_limit = 100,
         .ff_boost = 15,
     );
@@ -314,11 +314,11 @@ static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
 
 static FAST_RAM_ZERO_INIT float ffBoostFactor;
-static FAST_RAM_ZERO_INIT float ffJerkLimitInverse;
+static FAST_RAM_ZERO_INIT float ffSpikeLimitInverse;
 
-float pidGetJerkLimitInverse()
+float pidGetSpikeLimitInverse()
 {
-    return ffJerkLimitInverse;
+    return ffSpikeLimitInverse;
 }
 
 
@@ -466,7 +466,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
 
     ffBoostFactor = (float)pidProfile->ff_boost / 10.0f;
-    ffJerkLimitInverse = pidProfile->ff_jerk_limit ? 1.0f / ((float)pidProfile->ff_jerk_limit / 10.0f) : 0.0f;
+    ffSpikeLimitInverse = pidProfile->ff_spike_limit ? 1.0f / ((float)pidProfile->ff_spike_limit / 10.0f) : 0.0f;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
