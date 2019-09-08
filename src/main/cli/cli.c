@@ -2319,6 +2319,12 @@ static void cliSdInfo(char *cmdline)
 
     cliPrint("SD card: ");
 
+    if (sdcardConfig()->mode == SDCARD_MODE_NONE) {
+        cliPrintLine("Not configured");
+
+        return;
+    }
+
     if (!sdcard_isInserted()) {
         cliPrintLine("None inserted");
         return;
