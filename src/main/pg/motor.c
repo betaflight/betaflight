@@ -76,6 +76,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
 #ifdef USE_DSHOT_BITBANG
     motorConfig->dev.useDshotBitbang = DSHOT_BITBANG_AUTO;
+    motorConfig->dev.useDshotBitbangedTimer = DSHOT_BITBANGED_TIMER_AUTO;
 #endif
 }
 
