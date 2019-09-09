@@ -309,6 +309,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     }
 
     osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
+
+    osdConfig->distance_alarm = 0;
 }
 
 static void osdDrawLogo(int x, int y)

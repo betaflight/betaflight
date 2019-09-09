@@ -166,6 +166,7 @@ static uint16_t osdConfig_link_quality_alarm;
 static uint8_t osdConfig_rssi_dbm_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
+static uint16_t osdConfig_distance_alarm;
 static uint8_t batteryConfig_vbatDurationForWarning;
 static uint8_t batteryConfig_vbatDurationForCritical;
 
@@ -176,6 +177,7 @@ static long menuAlarmsOnEnter(void)
     osdConfig_rssi_dbm_alarm = osdConfig()->rssi_dbm_alarm;
     osdConfig_cap_alarm = osdConfig()->cap_alarm;
     osdConfig_alt_alarm = osdConfig()->alt_alarm;
+    osdConfig_distance_alarm = osdConfig()->distance_alarm;
     batteryConfig_vbatDurationForWarning = batteryConfig()->vbatDurationForWarning;
     batteryConfig_vbatDurationForCritical = batteryConfig()->vbatDurationForCritical;
 
@@ -191,6 +193,7 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     osdConfigMutable()->rssi_dbm_alarm = osdConfig_rssi_dbm_alarm;
     osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
     osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
+    osdConfigMutable()->distance_alarm = osdConfig_distance_alarm;
     batteryConfigMutable()->vbatDurationForWarning = batteryConfig_vbatDurationForWarning;
     batteryConfigMutable()->vbatDurationForCritical = batteryConfig_vbatDurationForCritical;
 
@@ -205,6 +208,7 @@ const OSD_Entry menuAlarmsEntries[] =
     {"RSSI DBM", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_dbm_alarm, 5, 130, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+    {"MAX DISTANCE", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_distance_alarm, 0, UINT16_MAX, 10}, 0},
     {"VBAT WARN DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForWarning, 0, 200, 1 }, 0 },
     {"VBAT CRIT DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForCritical, 0, 200, 1 }, 0 },
     {"BACK", OME_Back, NULL, NULL, 0},

@@ -270,6 +270,7 @@ typedef struct osdConfig_s {
     uint8_t gps_sats_show_hdop;
     int8_t rcChannels[OSD_RCCHANNELS_COUNT];  // RC channel values to display, -1 if none
     uint8_t displayPortDevice;                // osdDisplayPortDevice_e
+    uint16_t distance_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
