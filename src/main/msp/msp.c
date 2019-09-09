@@ -319,7 +319,7 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
     uint32_t totalSpace = 0;
 
 #if defined(USE_SDCARD)
-    if (sdcardConfig()->mode) {
+    if (sdcardConfig()->mode != SDCARD_MODE_NONE) {
         flags = MSP_SDCARD_FLAG_SUPPORTED;
 
         // Merge the card and filesystem states together
