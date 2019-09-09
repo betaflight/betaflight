@@ -5626,28 +5626,12 @@ static void showTimers(void)
     cliRepeat('-', 23);
 #endif
 
-#ifdef USE_DSHOT_BITBANG
-    resourceOwner_t bitbangOwner = { OWNER_DSHOT_BITBANG, 0 };
-#endif
     int8_t timerNumber;
     for (int i = 0; (timerNumber = timerGetNumberByIndex(i)); i++) {
         cliPrintf("TIM%d:", timerNumber);
         bool timerUsed = false;
         for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
             const resourceOwner_t *timerOwner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
-#ifdef USE_DSHOT_BITBANG
-            if (!timerOwner->owner) {
-                const timerHardware_t* timer;
-                int pacerIndex = 0;
-                while ((timer = dshotBitbangGetPacerTimer(pacerIndex++))) {
-                    if (timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == CC_CHANNEL_FROM_INDEX(timerIndex)) {
-                        timerOwner = &bitbangOwner;
-                        bitbangOwner.resourceIndex++;
-                        break;
-                    }
-                }
-            }
-#endif
             if (timerOwner->owner) {
                 if (!timerUsed) {
                     timerUsed = true;

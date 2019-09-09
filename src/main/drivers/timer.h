@@ -274,6 +274,8 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 uint8_t timerInputIrq(TIM_TypeDef *tim);
 
 #if defined(USE_TIMER_MGMT)
+extern const resourceOwner_t freeOwner;
+
 timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag);
 const resourceOwner_t *timerGetOwner(int8_t timerNumber, uint16_t timerChannel);
 #endif
