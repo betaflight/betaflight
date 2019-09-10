@@ -32,7 +32,7 @@ typedef enum {
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
-    PWM_TYPE_DSHOT1200,
+//    PWM_TYPE_DSHOT1200, removed
     PWM_TYPE_PROSHOT1000,
 #endif
     PWM_TYPE_MAX
@@ -41,10 +41,12 @@ typedef enum {
 
 typedef struct motorVTable_s {
     // Common
+    void (*postInit)(void);
     float (*convertExternalToMotor)(uint16_t externalValue);
     uint16_t (*convertMotorToExternal)(float motorValue);
     bool (*enable)(void);
     void (*disable)(void);
+    bool (*isMotorEnabled)(uint8_t index);
     bool (*updateStart)(void);
     void (*write)(uint8_t index, float value);
     void (*writeInt)(uint8_t index, uint16_t value);
@@ -62,10 +64,12 @@ typedef struct motorDevice_s {
     bool          enabled;
 } motorDevice_t;
 
+void motorPostInitNull();
 void motorWriteNull(uint8_t index, float value);
 bool motorUpdateStartNull(void);
 void motorUpdateCompleteNull(void);
 
+void motorPostInit();
 void motorWriteAll(float *values);
 
 void motorInitEndpoints(float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
@@ -80,4 +84,11 @@ bool isMotorProtocolDshot(void);
 void motorDisable(void);
 void motorEnable(void);
 bool motorIsEnabled(void);
+bool motorIsMotorEnabled(uint8_t index);
 void motorShutdown(void); // Replaces stopPwmAllMotors
+
+#ifdef USE_DSHOT_BITBANG
+struct motorDevConfig_s;
+typedef struct motorDevConfig_s motorDevConfig_t;
+bool isDshotBitbangActive(const motorDevConfig_t *motorConfig);
+#endif

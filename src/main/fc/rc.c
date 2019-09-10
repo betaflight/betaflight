@@ -58,6 +58,8 @@ typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCom
 static float rawSetpoint[XYZ_AXIS_COUNT];
 // Stick deflection [-1.0, 1.0] before RC-Smoothing is applied
 static float rawDeflection[XYZ_AXIS_COUNT];
+static float oldRcCommand[XYZ_AXIS_COUNT];
+static bool isDuplicateFrame;
 #endif
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -124,6 +126,12 @@ float getRawDeflection(int axis)
 {
     return rawDeflection[axis];
 }
+
+bool rcIsDuplicateFrame()
+{
+    return isDuplicateFrame;
+}
+
 #endif
 
 #define THROTTLE_LOOKUP_LENGTH 12
@@ -186,6 +194,11 @@ float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs
 float applyCurve(int axis, float deflection)
 {
     return applyRates(axis, deflection, fabsf(deflection));
+}
+
+float getRcCurveSlope(int axis, float deflection)
+{
+    return (applyCurve(axis, deflection + 0.01f) - applyCurve(axis, deflection)) * 100.0f;
 }
 
 static void calculateSetpointRate(int axis)
@@ -600,7 +613,12 @@ FAST_CODE void processRcCommand(void)
 
 #ifdef USE_INTERPOLATED_SP
     if (isRXDataNew) {
+        isDuplicateFrame = true;
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            if (rcCommand[i] != oldRcCommand[i]) {
+                isDuplicateFrame = false;
+            }
+            oldRcCommand[i] = rcCommand[i];
             const float rcCommandf = rcCommand[i] / 500.0f;
             const float rcCommandfAbs = fabsf(rcCommandf);
             rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
@@ -647,7 +665,7 @@ FAST_CODE void processRcCommand(void)
     }
 }
 
-FAST_CODE FAST_CODE_NOINLINE void updateRcCommands(void)
+FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;

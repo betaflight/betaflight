@@ -35,6 +35,7 @@
 #include "drivers/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "drivers/system.h"
 #if defined(STM32F4)
 #include "stm32f4xx.h"
 #elif defined(STM32F3)
@@ -63,10 +64,8 @@ void dshotEnableChannels(uint8_t motorCount)
 
 #endif
 
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor);
-
 FAST_CODE void pwmDshotSetDirectionOutput(
-    motorDmaOutput_t * const motor, bool output
+    motorDmaOutput_t * const motor
 #ifndef USE_DSHOT_TELEMETRY
     ,TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
 #endif
@@ -91,58 +90,68 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     xDMA_DeInit(dmaRef);
 
 #ifdef USE_DSHOT_TELEMETRY
-    if (!output) {
-        motor->isInput = true;
-        if (!inputStampUs) {
-            inputStampUs = micros();
-        }
-        TIM_ARRPreloadConfig(timer, ENABLE);
-        timer->ARR = 0xffffffff;
-
-        TIM_ICInit(timer, &motor->icInitStruct);
-
-#if defined(STM32F3)
-        motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralSRC;
-        motor->dmaInitStruct.DMA_M2M = DMA_M2M_Disable;
-#elif defined(STM32F4)
-        motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralToMemory;
+    motor->isInput = false;
 #endif
-    } else
-#else
-    UNUSED(output);
-#endif
-    {
-#ifdef USE_DSHOT_TELEMETRY
-        motor->isInput = false;
-#endif
-        timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Disable);
-        timerOCInit(timer, timerHardware->channel, pOcInit);
-        timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
+    timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Disable);
+    timerOCInit(timer, timerHardware->channel, pOcInit);
+    timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
 
 #ifdef USE_DSHOT_DMAR
-        if (useBurstDshot) {
+    if (useBurstDshot) {
 #if defined(STM32F3)
-            pDmaInit->DMA_DIR = DMA_DIR_PeripheralDST;
+        pDmaInit->DMA_DIR = DMA_DIR_PeripheralDST;
 #else
-            pDmaInit->DMA_DIR = DMA_DIR_MemoryToPeripheral;
+        pDmaInit->DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #endif
-        } else
+    } else
 #endif
-        {
+    {
 #if defined(STM32F3)
-            pDmaInit->DMA_DIR = DMA_DIR_PeripheralDST;
-            pDmaInit->DMA_M2M = DMA_M2M_Disable;
+        pDmaInit->DMA_DIR = DMA_DIR_PeripheralDST;
+        pDmaInit->DMA_M2M = DMA_M2M_Disable;
 #elif defined(STM32F4)
-            pDmaInit->DMA_DIR = DMA_DIR_MemoryToPeripheral;
+        pDmaInit->DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #endif
-        }
     }
 
     xDMA_Init(dmaRef, pDmaInit);
-    if (output) {
-        xDMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
-    }
+    xDMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
 }
+
+
+#ifdef USE_DSHOT_TELEMETRY
+FAST_CODE static void pwmDshotSetDirectionInput(
+    motorDmaOutput_t * const motor
+)
+{
+    DMA_InitTypeDef* pDmaInit = &motor->dmaInitStruct;
+
+    const timerHardware_t * const timerHardware = motor->timerHardware;
+    TIM_TypeDef *timer = timerHardware->tim;
+
+    dmaResource_t *dmaRef = motor->dmaRef;
+
+    xDMA_DeInit(dmaRef);
+
+    motor->isInput = true;
+    if (!inputStampUs) {
+        inputStampUs = micros();
+    }
+    TIM_ARRPreloadConfig(timer, ENABLE);
+    timer->ARR = 0xffffffff;
+
+    TIM_ICInit(timer, &motor->icInitStruct);
+
+#if defined(STM32F3)
+    motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralSRC;
+    motor->dmaInitStruct.DMA_M2M = DMA_M2M_Disable;
+#elif defined(STM32F4)
+    motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralToMemory;
+#endif
+
+    xDMA_Init(dmaRef, pDmaInit);
+}
+#endif
 
 
 void pwmCompleteDshotMotorUpdate(void)
@@ -179,7 +188,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
 #ifdef USE_DSHOT_TELEMETRY
-        uint32_t irqStart = micros();
+        dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
 #endif
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
@@ -194,11 +203,11 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
-            pwmDshotSetDirectionOutput(motor, false);
+            pwmDshotSetDirectionInput(motor);
             xDMA_SetCurrDataCounter(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
             xDMA_Cmd(motor->dmaRef, ENABLE);
             TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, ENABLE);
-            setDirectionMicros = micros() - irqStart;
+            dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
         }
 #endif
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
@@ -392,9 +401,9 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
         (16 * MOTOR_BITLENGTH) / getDshotHz(pwmProtocolType);
     motor->timer->outputPeriod = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
-    pwmDshotSetDirectionOutput(motor, true);
+    pwmDshotSetDirectionOutput(motor);
 #else
-    pwmDshotSetDirectionOutput(motor, true, &OCINIT, &DMAINIT);
+    pwmDshotSetDirectionOutput(motor, &OCINIT, &DMAINIT);
 #endif
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {

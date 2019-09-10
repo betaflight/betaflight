@@ -131,15 +131,15 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 42, 60, 35, 70 },
-            [PID_PITCH] = { 46, 70, 38, 75 },
-            [PID_YAW] =   { 30, 80, 0, 70 },
+            [PID_ROLL] =  { 42, 85, 35, 90 },
+            [PID_PITCH] = { 46, 90, 38, 95 },
+            [PID_YAW] =   { 30, 90, 0, 90 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -206,17 +206,16 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .d_min_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
-        .transient_throttle_limit = 15,
+        .transient_throttle_limit = 0,
         .profileName = { 0 },
         .idle_min_rpm = 0,
         .idle_adjustment_speed = 50,
         .idle_p = 50,
         .idle_pid_limit = 200,
         .idle_max_increase = 150,
-        .ff_interpolate_sp = 0,
-        .ff_spread = 0,
-        .ff_max_rate_limit = 0,
-        .ff_lookahead_limit = 0,
+        .ff_interpolate_sp = FF_INTERPOLATE_AVG,
+        .ff_spike_limit = 40,
+        .ff_max_rate_limit = 100,
         .ff_boost = 15,
     );
 #ifndef USE_D_MIN
@@ -316,6 +315,13 @@ static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
 
 static FAST_RAM_ZERO_INIT float ffBoostFactor;
+static FAST_RAM_ZERO_INIT float ffSpikeLimitInverse;
+
+float pidGetSpikeLimitInverse()
+{
+    return ffSpikeLimitInverse;
+}
+
 
 float pidGetFfBoostFactor()
 {
@@ -461,6 +467,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
 
     ffBoostFactor = (float)pidProfile->ff_boost / 10.0f;
+    ffSpikeLimitInverse = pidProfile->ff_spike_limit ? 1.0f / ((float)pidProfile->ff_spike_limit / 10.0f) : 0.0f;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -588,7 +595,7 @@ static FAST_RAM_ZERO_INIT float dMinSetpointGain;
 #endif
 
 #ifdef USE_INTERPOLATED_SP
-static FAST_RAM_ZERO_INIT bool ffFromInterpolatedSetpoint;
+static FAST_RAM_ZERO_INIT ffInterpolationType_t ffFromInterpolatedSetpoint;
 #endif
 
 void pidInitConfig(const pidProfile_t *pidProfile)
@@ -1419,7 +1426,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         float pidSetpointDelta = 0;
 #ifdef USE_INTERPOLATED_SP
         if (ffFromInterpolatedSetpoint) {
-            pidSetpointDelta = interpolatedSpApply(axis, pidFrequency, newRcFrame);
+            pidSetpointDelta = interpolatedSpApply(axis, newRcFrame, ffFromInterpolatedSetpoint);
         } else {
             pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
         }

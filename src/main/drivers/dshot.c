@@ -50,6 +50,7 @@
 
 #include "rx/rx.h"
 
+
 void dshotInitEndpoints(float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow) {
     float outputLimitOffset = (DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) * (1 - outputLimit);
     *disarm = DSHOT_CMD_MOTOR_STOP;
@@ -131,4 +132,37 @@ FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
 
     return packet;
 }
+
+#ifdef USE_DSHOT_TELEMETRY
+FAST_RAM_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
+
+uint16_t getDshotTelemetry(uint8_t index)
+{
+    return dshotTelemetryState.motorState[index].telemetryValue;
+}
+
+#endif
+
+#ifdef USE_DSHOT_TELEMETRY_STATS
+FAST_RAM_ZERO_INIT dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
+
+void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool packetValid, timeMs_t currentTimeMs)
+{
+    uint8_t statsBucketIndex = (currentTimeMs / DSHOT_TELEMETRY_QUALITY_BUCKET_MS) % DSHOT_TELEMETRY_QUALITY_BUCKET_COUNT;
+    if (statsBucketIndex != qualityStats->lastBucketIndex) {
+        qualityStats->packetCountSum -= qualityStats->packetCountArray[statsBucketIndex];
+        qualityStats->invalidCountSum -= qualityStats->invalidCountArray[statsBucketIndex];
+        qualityStats->packetCountArray[statsBucketIndex] = 0;
+        qualityStats->invalidCountArray[statsBucketIndex] = 0;
+        qualityStats->lastBucketIndex = statsBucketIndex;
+    }
+    qualityStats->packetCountSum++;
+    qualityStats->packetCountArray[statsBucketIndex]++;
+    if (!packetValid) {
+        qualityStats->invalidCountSum++;
+        qualityStats->invalidCountArray[statsBucketIndex]++;
+    }
+}
+#endif // USE_DSHOT_TELEMETRY_STATS
+
 #endif // USE_DSHOT

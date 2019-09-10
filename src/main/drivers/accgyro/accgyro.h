@@ -87,12 +87,11 @@ typedef struct gyroDev_s {
     sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
     extiCallbackRec_t exti;
     busDevice_t bus;
-    float scale;                                            // scalefactor
+    float scale;                                             // scalefactor
     float gyroZero[XYZ_AXIS_COUNT];
-    float gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
-    float gyroADCf[XYZ_AXIS_COUNT];
+    float gyroADC[XYZ_AXIS_COUNT];                           // gyro data after calibration and alignment
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];                      // raw data from sensor
     int16_t temperature;
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e gyroAlign;

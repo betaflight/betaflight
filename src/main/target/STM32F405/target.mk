@@ -2,6 +2,8 @@ F405_TARGETS += $(TARGET)
 
 FEATURES       += SDCARD_SPI VCP ONBOARDFLASH
 
+# Use a full block (16 kB) of flash for custom defaults - with 1 MB flash we have more than we know how to use anyway
+
 CUSTOM_DEFAULTS_EXTENDED = yes
 
 TARGET_SRC = \

@@ -306,10 +306,22 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     }
 }
 
+// Write and keep track of written servos
+
+static uint32_t servoWritten;
+
+STATIC_ASSERT(sizeof(servoWritten) * 8 >= MAX_SUPPORTED_SERVOS, servoWritten_is_too_small);
+
+static void writeServoWithTracking(uint8_t index, servoIndex_e servoname)
+{
+    pwmWriteServo(index, servo[servoname]);
+    servoWritten |= (1 << servoname);
+}
+
 static void updateGimbalServos(uint8_t firstServoIndex)
 {
-    pwmWriteServo(firstServoIndex + 0, servo[SERVO_GIMBAL_PITCH]);
-    pwmWriteServo(firstServoIndex + 1, servo[SERVO_GIMBAL_ROLL]);
+    writeServoWithTracking(firstServoIndex + 0, SERVO_GIMBAL_PITCH);
+    writeServoWithTracking(firstServoIndex + 1, SERVO_GIMBAL_ROLL);
 }
 
 static void servoTable(void);
@@ -324,51 +336,46 @@ void writeServos(void)
     switch (currentMixerMode) {
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
-        if (servosTricopterIsEnabledServoUnarmed()) {
-            // if unarmed flag set, we always move servo
-            pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-        } else {
-            // otherwise, only move servo when copter is armed
-            if (ARMING_FLAG(ARMED))
-                pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-            else
-                pwmWriteServo(servoIndex++, 0); // kill servo signal completely.
+        // We move servo if unarmed flag set or armed
+        if (!(servosTricopterIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
+            servo[SERVO_RUDDER] = 0; // kill servo signal completely.
         }
+        writeServoWithTracking(servoIndex++, SERVO_RUDDER);
         break;
 
     case MIXER_FLYING_WING:
-        pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_1]);
-        pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
+        writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_1);
+        writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_2);
         break;
 
     case MIXER_CUSTOM_AIRPLANE:
     case MIXER_AIRPLANE:
         for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
-            pwmWriteServo(servoIndex++, servo[i]);
+            writeServoWithTracking(servoIndex++, i);
         }
         break;
 
 #ifdef USE_UNCOMMON_MIXERS
     case MIXER_BICOPTER:
-        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
+        writeServoWithTracking(servoIndex++, SERVO_BICOPTER_LEFT);
+        writeServoWithTracking(servoIndex++, SERVO_BICOPTER_RIGHT);
         break;
 
     case MIXER_HELI_120_CCPM:
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_LEFT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RIGHT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_TOP]);
-        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RUD]);
+        writeServoWithTracking(servoIndex++, SERVO_HELI_LEFT);
+        writeServoWithTracking(servoIndex++, SERVO_HELI_RIGHT);
+        writeServoWithTracking(servoIndex++, SERVO_HELI_TOP);
+        writeServoWithTracking(servoIndex++, SERVO_HELI_RUD);
         break;
 
     case MIXER_DUALCOPTER:
-        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
-        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
+        writeServoWithTracking(servoIndex++, SERVO_DUALCOPTER_LEFT);
+        writeServoWithTracking(servoIndex++, SERVO_DUALCOPTER_RIGHT);
         break;
 
     case MIXER_SINGLECOPTER:
         for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
-            pwmWriteServo(servoIndex++, servo[i]);
+            writeServoWithTracking(servoIndex++, i);
         }
         break;
 #endif // USE_UNCOMMON_MIXERS
@@ -381,6 +388,14 @@ void writeServos(void)
     if (featureIsEnabled(FEATURE_SERVO_TILT) || currentMixerMode == MIXER_GIMBAL) {
         updateGimbalServos(servoIndex);
         servoIndex += 2;
+    }
+
+    // Scan servos and write those marked forwarded and not written yet
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        const uint8_t channelToForwardFrom = servoParams(i)->forwardFromChannel;
+        if ((channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) && !(servoWritten & (1 << i))) {
+            pwmWriteServo(servoIndex++, servo[i]);
+        }
     }
 
     // forward AUX to remaining servo outputs (not constrained)

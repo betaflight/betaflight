@@ -24,7 +24,6 @@
 
 #include "drivers/motor.h"
 
-#define MOTOR_DSHOT1200_HZ    MHZ_TO_HZ(24)
 #define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
 #define MOTOR_DSHOT300_HZ     MHZ_TO_HZ(6)
 #define MOTOR_DSHOT150_HZ     MHZ_TO_HZ(3)
@@ -39,9 +38,6 @@
 #define MOTOR_NIBBLE_LENGTH_PROSHOT  (PROSHOT_BASE_SYMBOL * 4) // 4uS
 
 #define DSHOT_TELEMETRY_DEADTIME_US   (30 + 5) // 30 to switch lines and 5 to switch lines back
-
-#define MIN_GCR_EDGES         7
-#define MAX_GCR_EDGES         22
 
 
 typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
@@ -134,9 +130,7 @@ typedef struct motorDmaOutput_s {
 
 #ifdef USE_DSHOT_TELEMETRY
     volatile bool isInput;
-    uint16_t dshotTelemetryValue;
     timeDelta_t dshotTelemetryDeadtimeUs;
-    bool dshotTelemetryActive;
     uint8_t dmaInputLen;
 
 #ifdef USE_HAL_DRIVER

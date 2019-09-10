@@ -79,6 +79,9 @@ include $(ROOT)/make/system-id.mk
 # developer preferences, edit these at will, they'll be gitignored
 -include $(ROOT)/make/local.mk
 
+# pre-build sanity checks
+include $(ROOT)/make/checks.mk
+
 # configure some directories that are relative to wherever ROOT_DIR is located
 ifndef TOOLS_DIR
 TOOLS_DIR := $(ROOT)/tools
@@ -656,39 +659,6 @@ test_help:
 test_%:
 	$(V0) cd src/test && $(MAKE) $@
 
-
-check-target-independence:
-	$(V1) for test_target in $(VALID_TARGETS); do \
-		FOUND=$$(grep -rE "\W$${test_target}(\W.*)?$$" src/main | grep -vE "(//)|(/\*).*\W$${test_target}(\W.*)?$$" | grep -vE "^src/main/target"); \
-		if [ "$${FOUND}" != "" ]; then \
-			echo "Target dependencies for target '$${test_target}' found:"; \
-			echo "$${FOUND}"; \
-			exit 1; \
-		fi; \
-	done
-
-check-fastram-usage-correctness:
-	$(V1) NON_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM_ZERO_INIT\W.*=.*" src/main/ | grep -Ev "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
-	if [ "$${NON_TRIVIALLY_INITIALIZED}" != "" ]; then \
-		echo "Non-trivially initialized FAST_RAM_ZERO_INIT variables found, use FAST_RAM instead:"; \
-		echo "$${NON_TRIVIALLY_INITIALIZED}"; \
-		exit 1; \
-	fi; \
-	TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -v "="); \
-	EXPLICITLY_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -E "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
-	if [ "$${TRIVIALLY_INITIALIZED}$${EXPLICITLY_TRIVIALLY_INITIALIZED}" != "" ]; then \
-		echo "Trivially initialized FAST_RAM variables found, use FAST_RAM_ZERO_INIT instead to save FLASH:"; \
-		echo "$${TRIVIALLY_INITIALIZED}\n$${EXPLICITLY_TRIVIALLY_INITIALIZED}"; \
-		exit 1; \
-	fi
-
-check-platform-included:
-	$(V1) PLATFORM_NOT_INCLUDED=$$(find src/main -type d -name target -prune -o -type f -name \*.c -exec grep -L "^#include \"platform.h\"" {} \;); \
-	if [ "$$(echo $${PLATFORM_NOT_INCLUDED} | grep -v -e '^$$' | wc -l)" -ne 0 ]; then \
-		echo "The following compilation units do not include the required target specific configuration provided by 'platform.h':"; \
-		echo "$${PLATFORM_NOT_INCLUDED}"; \
-		exit 1; \
-	fi
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)

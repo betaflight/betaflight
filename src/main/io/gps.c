@@ -82,7 +82,7 @@ int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t nav_takeoff_bearing;
 
-#define GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
+#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
 
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
@@ -127,26 +127,10 @@ static const gpsInitData_t gpsInitData[] = {
 #ifdef USE_GPS_UBLOX
 static const uint8_t ubloxInit[] = {
     //Preprocessor Pedestrian Dynamic Platform Model Option
-    #if defined(GPS_UBLOX_MODE_PEDESTRIAN)
     0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x03, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
     0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0xC2,
-
-    //Preprocessor Airborne_1g Dynamic Platform Model Option
-    #elif defined(GPS_UBLOX_MODE_AIRBORNE_1G)
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <1g acceleration and capturing the data from the U-Center binary console.
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28,
-
-    //Default Airborne_4g Dynamic Platform Model
-    #else
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <4g acceleration and capturing the data from the U-Center binary console.
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C,
-    #endif
 
     // DISABLE NMEA messages
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
@@ -165,6 +149,23 @@ static const uint8_t ubloxInit[] = {
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67,           // set VELNED MSG rate
 
     0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A,             // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
+};
+
+static const uint8_t ubloxAirborne[] = {
+    //Preprocessor Airborne_1g Dynamic Platform Model Option
+    #if defined(GPS_UBLOX_MODE_AIRBORNE_1G)
+    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <1g acceleration and capturing the data from the U-Center binary console.
+    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28,
+
+    //Default Airborne_4g Dynamic Platform Model
+    #else
+    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <4g acceleration and capturing the data from the U-Center binary console.
+    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C,
+    #endif
 };
 
 // UBlox 6 Protocol documentation - GPS.G6-SW-10018-F
@@ -231,7 +232,8 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
     .gps_ublox_use_galileo = false,
-    .gps_set_home_point_once = false
+    .gps_set_home_point_once = false,
+    .gps_use_3d_speed = false
 );
 
 static void shiftPacketLog(void)
@@ -447,7 +449,7 @@ void gpsInitUblox(void)
                 }
             }
 
-            if (gpsData.messageState >= GPS_MESSAGE_STATE_ENTRY_COUNT) {
+            if (gpsData.messageState >= GPS_MESSAGE_STATE_INITIALIZED) {
                 // ublox should be initialised, try receiving
                 gpsSetState(GPS_RECEIVING_DATA);
             }
@@ -528,6 +530,21 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
+#if !defined(GPS_UBLOX_MODE_PEDESTRIAN)
+            } else {
+                if ((gpsData.messageState == GPS_MESSAGE_STATE_IDLE) && STATE(GPS_FIX)) {
+                    gpsData.messageState = GPS_MESSAGE_STATE_AIRBORNE;
+                    gpsData.state_position = 0;
+                }
+                if (gpsData.messageState == GPS_MESSAGE_STATE_AIRBORNE) {
+                    if (gpsData.state_position < sizeof(ubloxAirborne)) {
+                        serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
+                        gpsData.state_position++;
+                    } else {
+                        gpsData.messageState = GPS_MESSAGE_STATE_ENTRY_COUNT;
+                    }
+                }
+#endif
             }
             break;
     }
@@ -1104,7 +1121,7 @@ static bool UBLOX_parse_gps(void)
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
-        // speed_3d                        = _buffer.velned.speed_3d;  // cm/s
+        gpsSol.speed3d = _buffer.velned.speed_3d;       // cm/s
         gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
@@ -1264,7 +1281,7 @@ void GPS_calc_longitude_scaling(int32_t lat)
 static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
 {
     static int32_t lastCoord[2] = { 0, 0 };
-    static int16_t lastAlt;
+    static int32_t lastAlt;
     static int32_t lastMillis;
 
     int currentMillis = millis();
@@ -1274,17 +1291,20 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
         GPS_verticalSpeedInCmS = 0;
     } else {
         if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
+            uint16_t speed = gpsConfig()->gps_use_3d_speed ? gpsSol.speed3d : gpsSol.groundSpeed;
             // Only add up movement when speed is faster than minimum threshold
-            if (gpsSol.groundSpeed > GPS_DISTANCE_FLOWN_MIN_GROUND_SPEED_THRESHOLD_CM_S) {
+            if (speed > GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S) {
                 uint32_t dist;
                 int32_t dir;
                 GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+                if (gpsConfig()->gps_use_3d_speed) {
+                    dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
+                }
                 GPS_distanceFlownInCm += dist;
             }
         }
-
         GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
-        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500.0f, 1500.0f);
+        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500, 1500);
     }
     lastCoord[LON] = gpsSol.llh.lon;
     lastCoord[LAT] = gpsSol.llh.lat;

@@ -146,8 +146,11 @@ extern "C" {
 void delay(uint32_t) {}
 void delayMicroseconds(uint32_t) {}
 
+bool busBusy(const busDevice_t*, bool*) {return false;}
 bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
+bool busReadRegisterBufferStart(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
 bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
+bool busWriteRegisterStart(const busDevice_t*, uint8_t, uint8_t) {return true;}
 
 void spiBusSetDivisor() {
 }

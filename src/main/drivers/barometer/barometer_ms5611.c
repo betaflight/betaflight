@@ -55,17 +55,21 @@
 static void ms5611Reset(busDevice_t *busdev);
 static uint16_t ms5611Prom(busDevice_t *busdev, int8_t coef_num);
 STATIC_UNIT_TESTED int8_t ms5611CRC(uint16_t *prom);
-static uint32_t ms5611ReadAdc(busDevice_t *busdev);
+static void ms5611ReadAdc(busDevice_t *busdev);
 static void ms5611StartUT(baroDev_t *baro);
-static void ms5611GetUT(baroDev_t *baro);
+static bool ms5611ReadUT(baroDev_t *baro);
+static bool ms5611GetUT(baroDev_t *baro);
 static void ms5611StartUP(baroDev_t *baro);
-static void ms5611GetUP(baroDev_t *baro);
+static bool ms5611ReadUP(baroDev_t *baro);
+static bool ms5611GetUP(baroDev_t *baro);
 STATIC_UNIT_TESTED void ms5611Calculate(int32_t *pressure, int32_t *temperature);
 
 STATIC_UNIT_TESTED uint32_t ms5611_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
+#define MS5611_DATA_FRAME_SIZE 3
+static uint8_t sensor_data[MS5611_DATA_FRAME_SIZE];
 
 void ms5611BusInit(busDevice_t *busdev)
 {
@@ -133,8 +137,10 @@ bool ms5611Detect(baroDev_t *baro)
     baro->ut_delay = 10000;
     baro->up_delay = 10000;
     baro->start_ut = ms5611StartUT;
+    baro->read_ut = ms5611ReadUT;
     baro->get_ut = ms5611GetUT;
     baro->start_up = ms5611StartUP;
+    baro->read_up = ms5611ReadUP;
     baro->get_up = ms5611GetUP;
     baro->calculate = ms5611Calculate;
 
@@ -196,23 +202,33 @@ STATIC_UNIT_TESTED int8_t ms5611CRC(uint16_t *prom)
     return -1;
 }
 
-static uint32_t ms5611ReadAdc(busDevice_t *busdev)
+static void ms5611ReadAdc(busDevice_t *busdev)
 {
-    uint8_t rxbuf[3];
-
-    busReadRegisterBuffer(busdev, CMD_ADC_READ, rxbuf, 3); // read ADC
-
-    return (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];
+    busReadRegisterBufferStart(busdev, CMD_ADC_READ, sensor_data, MS5611_DATA_FRAME_SIZE); // read ADC
 }
 
 static void ms5611StartUT(baroDev_t *baro)
 {
-    busWriteRegister(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
+    busWriteRegisterStart(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 }
 
-static void ms5611GetUT(baroDev_t *baro)
+static bool ms5611ReadUT(baroDev_t *baro)
 {
-    ms5611_ut = ms5611ReadAdc(&baro->busdev);
+    if (busBusy(&baro->busdev, NULL)) {
+        return false;
+    }
+
+    ms5611ReadAdc(&baro->busdev);
+    return true;
+}
+
+static bool ms5611GetUT(baroDev_t *baro)
+{
+    if (busBusy(&baro->busdev, NULL)) {
+        return false;
+    }
+    ms5611_ut = sensor_data[0] << 16 | sensor_data[1] << 8 | sensor_data[2];
+    return true;
 }
 
 static void ms5611StartUP(baroDev_t *baro)
@@ -220,9 +236,23 @@ static void ms5611StartUP(baroDev_t *baro)
     busWriteRegister(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
 }
 
-static void ms5611GetUP(baroDev_t *baro)
+static bool ms5611ReadUP(baroDev_t *baro)
 {
-    ms5611_up = ms5611ReadAdc(&baro->busdev);
+    if (busBusy(&baro->busdev, NULL)) {
+        return false;
+    }
+
+    ms5611ReadAdc(&baro->busdev);
+    return true;
+}
+
+static bool ms5611GetUP(baroDev_t *baro)
+{
+    if (busBusy(&baro->busdev, NULL)) {
+        return false;
+    }
+    ms5611_up = sensor_data[0] << 16 | sensor_data[1] << 8 | sensor_data[2];
+    return true;
 }
 
 STATIC_UNIT_TESTED void ms5611Calculate(int32_t *pressure, int32_t *temperature)

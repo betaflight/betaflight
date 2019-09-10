@@ -225,7 +225,13 @@ static void lpsNothing(baroDev_t *baro)
     return;
 }
 
-static void lpsRead(baroDev_t *baro)
+static bool lpsNothingBool(baroDev_t *baro)
+{
+    UNUSED(baro);
+    return true;
+}
+
+static bool lpsRead(baroDev_t *baro)
 {
     uint8_t status = 0x00;
     lpsReadCommand(&baro->busdev, LPS_STATUS, &status, 1);
@@ -240,6 +246,8 @@ static void lpsRead(baroDev_t *baro)
         rawP = 0;
         rawT = 0;
     }
+
+    return true;
 }
 
 static void lpsCalculate(int32_t *pressure, int32_t *temperature)
@@ -282,12 +290,15 @@ bool lpsDetect(baroDev_t *baro)
 
     lpsReadCommand(busdev, LPS_CTRL1, &temp, 1);
 
+    baro->combined_read = true;
     baro->ut_delay = 1;
     baro->up_delay = 1000000 / 24;
     baro->start_ut = lpsNothing;
-    baro->get_ut = lpsNothing;
+    baro->get_ut = lpsNothingBool;
+    baro->read_ut = lpsNothingBool;
     baro->start_up = lpsNothing;
     baro->get_up = lpsRead;
+    baro->read_up = lpsNothingBool;
     baro->calculate = lpsCalculate;
     uint32_t timeout = millis();
     do {

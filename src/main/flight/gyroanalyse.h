@@ -24,7 +24,6 @@
 
 #include "common/filter.h"
 
-#include "sensors/gyro.h"
 
 // max for F3 targets
 #define FFT_WINDOW_SIZE 32

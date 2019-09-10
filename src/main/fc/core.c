@@ -85,6 +85,7 @@
 
 #include "osd/osd.h"
 
+#include "pg/motor.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
@@ -305,6 +306,14 @@ void updateArmingStatus(void)
             setArmingDisabled(ARMING_DISABLED_RPMFILTER);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_RPMFILTER);
+        }
+#endif
+
+#ifdef USE_DSHOT_BITBANG
+        if (isDshotBitbangActive(&motorConfig()->dev) && dshotBitbangGetStatus() != DSHOT_BITBANG_OK) {
+            setArmingDisabled(ARMING_DISABLED_DSHOT_BITBANG);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_DSHOT_BITBANG);
         }
 #endif
 

@@ -66,6 +66,7 @@ bool cliMode = false;
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
 #include "drivers/dshot_dpwm.h"
+#include "drivers/pwm_output_dshot_shared.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
@@ -137,6 +138,7 @@ bool cliMode = false;
 #include "pg/mco.h"
 #include "pg/motor.h"
 #include "pg/pinio.h"
+#include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
@@ -226,8 +228,8 @@ static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
 #endif
 
 #if defined(USE_CUSTOM_DEFAULTS_ADDRESS)
-static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
-static char __attribute__ ((section(".custom_defaults_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
+static char __attribute__ ((section(".custom_defaults_start_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
+static char __attribute__ ((section(".custom_defaults_end_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -274,12 +276,6 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
-#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
-extern uint32_t readDoneCount;
-extern uint32_t inputBuffer[GCR_TELEMETRY_INPUT_LEN];
-extern uint32_t setDirectionMicros;
-#endif
-
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
@@ -306,75 +302,6 @@ typedef struct serialPassthroughPort_e {
     unsigned mode;
     serialPort_t *port;
 } serialPassthroughPort_t;
-
-static void backupPgConfig(const pgRegistry_t *pg)
-{
-    memcpy(pg->copy, pg->address, pg->size);
-}
-
-static void restorePgConfig(const pgRegistry_t *pg)
-{
-    memcpy(pg->address, pg->copy, pg->size);
-}
-
-static void backupConfigs(void)
-{
-    if (configIsInCopy) {
-        return;
-    }
-
-    // make copies of configs to do differencing
-    PG_FOREACH(pg) {
-        backupPgConfig(pg);
-    }
-
-    configIsInCopy = true;
-}
-
-static void restoreConfigs(void)
-{
-    if (!configIsInCopy) {
-        return;
-    }
-
-    PG_FOREACH(pg) {
-        restorePgConfig(pg);
-    }
-
-    configIsInCopy = false;
-}
-
-#if defined(USE_RESOURCE_MGMT) || defined(USE_TIMER_MGMT)
-static bool isReadingConfigFromCopy()
-{
-    return configIsInCopy;
-}
-#endif
-
-static bool isWritingConfigToCopy()
-{
-    return configIsInCopy
-#if defined(USE_CUSTOM_DEFAULTS)
-        && !processingCustomDefaults
-#endif
-        ;
-}
-
-static void backupAndResetConfigs(const bool useCustomDefaults)
-{
-    backupConfigs();
-
-    // reset all configs to defaults to do differencing
-    resetConfigs();
-
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (useCustomDefaults) {
-        cliProcessCustomDefaults();
-    }
-#else
-    UNUSED(useCustomDefaults);
-#endif
-}
 
 static void cliWriterFlush()
 {
@@ -686,6 +613,81 @@ static const char *cliPrintSectionHeading(dumpFlags_t dumpMask, bool outputFlag,
     } else {
         return headingStr;
     }
+}
+
+static void backupPgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->copy, pg->address, pg->size);
+}
+
+static void restorePgConfig(const pgRegistry_t *pg)
+{
+    memcpy(pg->address, pg->copy, pg->size);
+}
+
+static void backupConfigs(void)
+{
+    if (configIsInCopy) {
+        return;
+    }
+
+    // make copies of configs to do differencing
+    PG_FOREACH(pg) {
+        backupPgConfig(pg);
+    }
+
+    configIsInCopy = true;
+}
+
+static void restoreConfigs(void)
+{
+    if (!configIsInCopy) {
+        return;
+    }
+
+    PG_FOREACH(pg) {
+        restorePgConfig(pg);
+    }
+
+    configIsInCopy = false;
+}
+
+#if defined(USE_RESOURCE_MGMT) || defined(USE_TIMER_MGMT)
+static bool isReadingConfigFromCopy()
+{
+    return configIsInCopy;
+}
+#endif
+
+static bool isWritingConfigToCopy()
+{
+    return configIsInCopy
+#if defined(USE_CUSTOM_DEFAULTS)
+        && !processingCustomDefaults
+#endif
+        ;
+}
+
+#if defined(USE_CUSTOM_DEFAULTS)
+bool cliProcessCustomDefaults(void);
+#endif
+
+static void backupAndResetConfigs(const bool useCustomDefaults)
+{
+    backupConfigs();
+
+    // reset all configs to defaults to do differencing
+    resetConfig();
+
+#if defined(USE_CUSTOM_DEFAULTS)
+    if (useCustomDefaults) {
+        if (!cliProcessCustomDefaults()) {
+            cliPrintLine("###WARNING: NO CUSTOM DEFAULTS FOUND###");
+        }
+    }
+#else
+    UNUSED(useCustomDefaults);
+#endif
 }
 
 static uint8_t getPidProfileIndexToUse()
@@ -2318,6 +2320,12 @@ static void cliSdInfo(char *cmdline)
 
     cliPrint("SD card: ");
 
+    if (sdcardConfig()->mode == SDCARD_MODE_NONE) {
+        cliPrintLine("Not configured");
+
+        return;
+    }
+
     if (!sdcard_isInserted()) {
         cliPrintLine("None inserted");
         return;
@@ -3016,12 +3024,14 @@ static void printBoardName(dumpFlags_t dumpMask)
 static void cliBoardName(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
-    if (len > 0 && boardInformationIsSet() && (len != strlen(getBoardName()) || strncmp(getBoardName(), cmdline, len))) {
-        cliPrintErrorLinef(ERROR_MESSAGE, "BOARD_NAME", getBoardName());
+    const char *boardName = getBoardName();
+    if (len > 0 && strlen(boardName) != 0 && boardInformationIsSet() && (len != strlen(boardName) || strncmp(boardName, cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "BOARD_NAME", boardName);
     } else {
-        if (len > 0) {
-            setBoardName(cmdline);
+        if (len > 0 && !configIsInCopy && setBoardName(cmdline)) {
             boardInformationUpdated = true;
+
+            cliPrintHashLine("Set board_name.");
         }
         printBoardName(DUMP_ALL);
     }
@@ -3037,12 +3047,14 @@ static void printManufacturerId(dumpFlags_t dumpMask)
 static void cliManufacturerId(char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
-    if (len > 0 && boardInformationIsSet() && (len != strlen(getManufacturerId()) || strncmp(getManufacturerId(), cmdline, len))) {
-        cliPrintErrorLinef(ERROR_MESSAGE, "MANUFACTURER_ID", getManufacturerId());
+    const char *manufacturerId = getManufacturerId();
+    if (len > 0 && boardInformationIsSet() && strlen(manufacturerId) != 0 && (len != strlen(manufacturerId) || strncmp(manufacturerId, cmdline, len))) {
+        cliPrintErrorLinef(ERROR_MESSAGE, "MANUFACTURER_ID", manufacturerId);
     } else {
-        if (len > 0) {
-            setManufacturerId(cmdline);
+        if (len > 0 && !configIsInCopy && setManufacturerId(cmdline)) {
             boardInformationUpdated = true;
+
+            cliPrintHashLine("Set manufacturer_id.");
         }
         printManufacturerId(DUMP_ALL);
     }
@@ -3091,12 +3103,12 @@ static void cliSignature(char *cmdline)
         writeSignature(signatureStr, getSignature());
         cliPrintErrorLinef(ERROR_MESSAGE, "SIGNATURE", signatureStr);
     } else {
-        if (len > 0) {
-            setSignature(signature);
-
+        if (len > 0 && !configIsInCopy && setSignature(signature)) {
             signatureUpdated = true;
 
             writeSignature(signatureStr, getSignature());
+
+            cliPrintHashLine("Set signature.");
         } else if (signatureUpdated || signatureIsSet()) {
             writeSignature(signatureStr, getSignature());
         }
@@ -4135,25 +4147,19 @@ static void cliBatch(char *cmdline)
 }
 #endif
 
-static void cliSave(char *cmdline)
+static bool prepareSave(void)
 {
-    UNUSED(cmdline);
-
 #if defined(USE_CUSTOM_DEFAULTS)
     if (processingCustomDefaults) {
-        return;
+        return true;
     }
 #endif
 
 #ifdef USE_CLI_BATCH
     if (commandBatchActive && commandBatchError) {
-        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
-        resetCommandBatch();
-        return;
+        return false;
     }
 #endif
-
-    cliPrintHashLine("saving");
 
 #if defined(USE_BOARD_INFO)
     if (boardInformationUpdated) {
@@ -4167,18 +4173,64 @@ static void cliSave(char *cmdline)
 #endif // USE_BOARD_INFO
 
     if (featureMaskIsCopied) {
-        writeEEPROMWithFeatures(featureMaskCopy);
-    } else {
-        writeEEPROM();
+        featureDisableAll();
+        featureEnable(featureMaskCopy);
     }
 
-    cliReboot();
+    return true;
+}
+
+bool tryPrepareSave(void)
+{
+    bool success = prepareSave();
+#if defined(USE_CLI_BATCH)
+    if (!success) {
+        cliPrintCommandBatchWarning("PLEASE FIX ERRORS THEN 'SAVE'");
+        resetCommandBatch();
+
+        return false;
+    }
+#else
+    UNUSED(success);
+#endif
+
+    return true;
+}
+
+static void cliSave(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (tryPrepareSave()) {
+        writeEEPROM();
+        cliPrintHashLine("saving");
+
+        cliReboot();
+    }
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-static bool isDefaults(char *ptr)
+bool resetConfigToCustomDefaults(void)
+{
+    resetConfig();
+
+#ifdef USE_CLI_BATCH
+    commandBatchError = false;
+#endif
+
+    cliProcessCustomDefaults();
+
+    return prepareSave();
+}
+
+static bool isCustomDefaults(char *ptr)
 {
     return strncmp(ptr, "# " FC_FIRMWARE_NAME, 12) == 0;
+}
+
+bool hasCustomDefaults(void)
+{
+    return isCustomDefaults(customDefaultsStart);
 }
 #endif
 
@@ -4202,7 +4254,7 @@ static void cliDefaults(char *cmdline)
         useCustomDefaults = false;
     } else if (strncasecmp(cmdline, "show", 4) == 0) {
         char *customDefaultsPtr = customDefaultsStart;
-        if (isDefaults(customDefaultsPtr)) {
+        if (isCustomDefaults(customDefaultsPtr)) {
             while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
                 if (*customDefaultsPtr != '\n') {
                     cliPrintf("%c", *customDefaultsPtr++);
@@ -4212,7 +4264,7 @@ static void cliDefaults(char *cmdline)
                 }
             }
         } else {
-            cliPrintError("NO DEFAULTS FOUND");
+            cliPrintError("NO CUSTOM DEFAULTS FOUND");
         }
 
         return;
@@ -4225,7 +4277,7 @@ static void cliDefaults(char *cmdline)
 
     cliPrintHashLine("resetting to defaults");
 
-    resetConfigs();
+    resetConfig();
 
 #ifdef USE_CLI_BATCH
     // Reset only the error state and allow the batch active state to remain.
@@ -4241,8 +4293,10 @@ static void cliDefaults(char *cmdline)
     }
 #endif
 
-    if (saveConfigs) {
-        cliSave(NULL);
+    if (saveConfigs && tryPrepareSave()) {
+        writeUnmodifiedConfigToEEPROM();
+
+        cliReboot();
     }
 }
 
@@ -4866,6 +4920,14 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SDCARD
     DEFS( OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, sdcardConfig_t, cardDetectTag ),
 #endif
+#if defined(STM32H7) && defined(USE_SDCARD_SDIO)
+    DEFS( OWNER_SDIO_CK,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CKPin ),
+    DEFS( OWNER_SDIO_CMD,      PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CMDPin ),
+    DEFS( OWNER_SDIO_D0,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D0Pin ),
+    DEFS( OWNER_SDIO_D1,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D1Pin ),
+    DEFS( OWNER_SDIO_D2,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D2Pin ),
+    DEFS( OWNER_SDIO_D3,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D3Pin ),
+#endif
 #ifdef USE_PINIO
     DEFA( OWNER_PINIO,         PG_PINIO_CONFIG, pinioConfig_t, ioTag, PINIO_COUNT ),
 #endif
@@ -4903,6 +4965,10 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_VTX_CS,        PG_VTX_IO_CONFIG, vtxIOConfig_t, csTag ),
     DEFS( OWNER_VTX_DATA,      PG_VTX_IO_CONFIG, vtxIOConfig_t, dataTag ),
     DEFS( OWNER_VTX_CLK,       PG_VTX_IO_CONFIG, vtxIOConfig_t, clockTag ),
+#endif
+#ifdef USE_PIN_PULL_UP_DOWN
+    DEFA( OWNER_PULLUP,        PG_PULLUP_CONFIG,   pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),
+    DEFA( OWNER_PULLDOWN,      PG_PULLDOWN_CONFIG, pinPullUpDownConfig_t, ioTag, PIN_PULL_UP_DOWN_COUNT ),
 #endif
 };
 
@@ -5824,21 +5890,25 @@ static void cliDshotTelemetryInfo(char *cmdline)
     UNUSED(cmdline);
 
     if (useDshotTelemetry) {
-        cliPrintLinef("Dshot reads: %u", readDoneCount);
-        cliPrintLinef("Dshot invalid pkts: %u", dshotInvalidPacketCount);
-        extern uint32_t setDirectionMicros;
-        cliPrintLinef("Dshot irq micros: %u", setDirectionMicros);
+        cliPrintLinef("Dshot reads: %u", dshotTelemetryState.readCount);
+        cliPrintLinef("Dshot invalid pkts: %u", dshotTelemetryState.invalidPacketCount);
+        uint32_t directionChangeCycles = dshotDMAHandlerCycleCounters.changeDirectionCompletedAt - dshotDMAHandlerCycleCounters.irqAt;
+        uint32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
+        cliPrintLinef("Dshot directionChange cycles: %u, micros: %u", directionChangeCycles, directionChangeDurationUs);
         cliPrintLinefeed();
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
-        cliPrintLine("Motor     RPM   Invalid");
-        cliPrintLine("=====   =====   =======");
+        cliPrintLine("Motor      eRPM      RPM      Hz   Invalid");
+        cliPrintLine("=====   =======   ======   =====   =======");
 #else
-        cliPrintLine("Motor     RPM");
-        cliPrintLine("=====   =====");
+        cliPrintLine("Motor      eRPM      RPM      Hz");
+        cliPrintLine("=====   =======   ======   =====");
 #endif
         for (uint8_t i = 0; i < getMotorCount(); i++) {
-            cliPrintf("%5d   %5d   ", i, (int)getDshotTelemetry(i));
+            cliPrintf("%5d   %7d   %6d   %5d   ", i,
+                      (int)getDshotTelemetry(i) * 100,
+                      (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount,
+                      (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount / 60);
 #ifdef USE_DSHOT_TELEMETRY_STATS
             if (isDshotMotorTelemetryActive(i)) {
                 const int calcPercent = getDshotTelemetryMotorInvalidPercent(i);
@@ -5853,12 +5923,19 @@ static void cliDshotTelemetryInfo(char *cmdline)
         cliPrintLinefeed();
 
         const int len = MAX_GCR_EDGES;
+#ifdef DEBUG_BBDECODE
+        extern uint16_t bbBuffer[134];
+        for (int i = 0; i < 134; i++) {
+            cliPrintf("%u ", (int)bbBuffer[i]);
+        }
+        cliPrintLinefeed();
+#endif
         for (int i = 0; i < len; i++) {
-            cliPrintf("%u ", (int)inputBuffer[i]);
+            cliPrintf("%u ", (int)dshotTelemetryState.inputBuffer[i]);
         }
         cliPrintLinefeed();
         for (int i = 1; i < len; i++) {
-            cliPrintf("%u ", (int)(inputBuffer[i]  - inputBuffer[i-1]));
+            cliPrintf("%u ", (int)(dshotTelemetryState.inputBuffer[i]  - dshotTelemetryState.inputBuffer[i-1]));
         }
         cliPrintLinefeed();
     } else {
@@ -6451,36 +6528,36 @@ void cliProcess(void)
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-void cliProcessCustomDefaults(void)
+bool cliProcessCustomDefaults(void)
 {
-    if (processingCustomDefaults) {
-        return;
-    }
-
     char *customDefaultsPtr = customDefaultsStart;
-    if (isDefaults(customDefaultsPtr)) {
-#if !defined(DEBUG_CUSTOM_DEFAULTS)
-        bufWriter_t *cliWriterTemp = cliWriter;
-        cliWriter = NULL;
-#endif
-        memcpy(cliBufferTemp, cliBuffer, sizeof(cliBuffer));
-        uint32_t bufferIndexTemp = bufferIndex;
-        bufferIndex = 0;
-        processingCustomDefaults = true;
-
-        while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
-            processCharacter(*customDefaultsPtr++);
-        }
-
-        processingCustomDefaults = false;
-#if !defined(DEBUG_CUSTOM_DEFAULTS)
-        cliWriter = cliWriterTemp;
-#endif
-        memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
-        bufferIndex = bufferIndexTemp;
-    } else {
-        cliPrintError("NO DEFAULTS FOUND");
+    if (processingCustomDefaults || !isCustomDefaults(customDefaultsPtr)) {
+        return false;
     }
+
+#if !defined(DEBUG_CUSTOM_DEFAULTS)
+    bufWriter_t *cliWriterTemp = cliWriter;
+    cliWriter = NULL;
+#endif
+    memcpy(cliBufferTemp, cliBuffer, sizeof(cliBuffer));
+    uint32_t bufferIndexTemp = bufferIndex;
+    bufferIndex = 0;
+    processingCustomDefaults = true;
+
+    while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
+        processCharacter(*customDefaultsPtr++);
+    }
+
+    processingCustomDefaults = false;
+#if !defined(DEBUG_CUSTOM_DEFAULTS)
+    cliWriter = cliWriterTemp;
+#endif
+    memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
+    bufferIndex = bufferIndexTemp;
+
+    systemConfigMutable()->configurationState = CONFIGURATION_STATE_DEFAULTS_CUSTOM;
+
+    return true;
 }
 #endif
 
@@ -6506,4 +6583,5 @@ void cliEnter(serialPort_t *serialPort)
     resetCommandBatch();
 #endif
 }
+
 #endif // USE_CLI

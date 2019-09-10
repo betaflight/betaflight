@@ -139,6 +139,7 @@
 #undef USE_VTX_CONTROL
 #undef USE_VTX_TRAMP
 #undef USE_VTX_SMARTAUDIO
+#undef USE_VTX_TABLE
 #endif
 
 #if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
@@ -223,10 +224,6 @@
 // CX10 is a special case of SPI RX which requires XN297
 #if defined(USE_RX_CX10)
 #define USE_RX_XN297
-#endif
-
-#ifdef USE_UNIFIED_TARGET
-#define USE_CONFIGURATION_STATE
 #endif
 
 // Setup crystal frequency on F4 for backward compatibility

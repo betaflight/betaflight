@@ -48,7 +48,7 @@
 #define UART1_TX_PIN            PA9
 
 #define USE_UART2
-#define UART2_RX_PIN            PD6
+#define UART2_RX_PIN            NONE // PD6, collide with SDMMC2_CK
 #define UART2_TX_PIN            PD5
 
 #define USE_UART3
@@ -133,6 +133,34 @@
 
 #define QUADSPI1_MODE QUADSPI_MODE_BK1_ONLY
 #define QUADSPI1_CS_FLAGS (QUADSPI_BK1_CS_HARDWARE | QUADSPI_BK2_CS_NONE | QUADSPI_CS_MODE_LINKED)
+
+#if !defined(NUCLEOH743_RAMBASED)
+
+#define USE_SDCARD
+#define USE_SDCARD_SDIO
+#define SDCARD_DETECT_PIN       NONE
+
+// SDMMC1
+// CK  PC12
+// CMD PD2
+// D0  PC8
+// D1  PC9
+// D2  PC10
+// D3  PC11
+
+// SDIO configuration for SDMMC1, 1-bit width
+#define SDIO_DEVICE             SDIODEV_2 // SDIODEV_1 (for SDMMC1) or SDIODEV_2 (for SDMMC2) (or SDIOINVALID)
+#define SDIO_USE_4BIT           false
+#define SDIO_CK_PIN             PD6       // SDMMC1: PC12  SDMMC2: PC1 or PD6
+#define SDIO_CMD_PIN            PD7       // SDMMC1: PD2   SDMMC2: PA0 or PD7
+#define SDIO_D0_PIN             PB14      // SDMMC1: PC8   SDMMC2: PB14
+#define SDIO_D1_PIN             NONE      // SDMMC1: PC9   SDMMC2: PB15
+#define SDIO_D2_PIN             NONE      // SDMMC1: PC10  SDMMC2: PB3
+#define SDIO_D3_PIN             NONE      // SDMMC2: PC11  SDMMC2: PB4
+
+#define USE_BLACKBOX
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#endif
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

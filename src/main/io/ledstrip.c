@@ -269,6 +269,7 @@ STATIC_UNIT_TESTED void updateLedCount(void)
     ledCounts.count = count;
     ledCounts.ring = countRing;
     ledCounts.larson = countScanner;
+    setUsedLedCount(ledCounts.count);
 }
 
 void reevaluateLedConfig(void)
