@@ -158,7 +158,7 @@ COMMON_SRC = \
             io/rcdevice.c \
             io/gps.c \
             io/ledstrip.c \
-			io/mavlink_attrate.c \
+            io/mavlink_attrate.c \
             io/pidaudio.c \
             osd/osd.c \
             osd/osd_elements.c \
@@ -249,7 +249,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/mixer.c \
             flight/pid.c \
             flight/rpm_filter.c \
-			io/mavlink_attrate.c \
+            io/mavlink_attrate.c \
             rx/ibus.c \
             rx/rx.c \
             rx/rx_spi.c \
