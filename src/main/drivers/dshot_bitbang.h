@@ -29,9 +29,10 @@ typedef enum {
 } dshotBitbangMode_e;
 
 typedef enum {
-    DSHOT_BITBANG_OK,
-    DSHOT_BITBANG_MOTOR_PIN_CONFLICT,
-    DSHOT_BITBANG_NO_PACER
+    DSHOT_BITBANG_STATUS_OK,
+    DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT,
+    DSHOT_BITBANG_STATUS_NO_PACER,
+    DSHOT_BITBANG_STATUS_TOO_MANY_PORTS,
 } dshotBitbangStatus_e;
 
 struct motorDevConfig_s;
