@@ -136,6 +136,7 @@
 #define OSD_STICK_OVERLAY_VERTICAL_POSITIONS (OSD_STICK_OVERLAY_HEIGHT * OSD_STICK_OVERLAY_SPRITE_HEIGHT)
 
 #define FULL_CIRCLE 360
+#define EFFICIENCY_MINIMUM_SPEED_CM_S 100
 
 #ifdef USE_OSD_STICK_OVERLAY
 typedef struct radioControls_s {
@@ -922,6 +923,26 @@ static void osdElementGpsSpeed(osdElementParms_t *element)
 {
     tfp_sprintf(element->buff, "%c%3d%c", SYM_SPEED, osdGetSpeedToSelectedUnit(gpsConfig()->gps_use_3d_speed ? gpsSol.speed3d : gpsSol.groundSpeed), osdGetSpeedToSelectedUnitSymbol());
 }
+
+static void osdElementEfficiency(osdElementParms_t *element)
+{
+    int efficiency = 0;
+    if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
+        const int speedX100 = osdGetSpeedToSelectedUnit(gpsSol.groundSpeed * 100); // speed * 100 for improved resolution at slow speeds
+        
+        if (speedX100 > 0) {
+            const int mAmperage = getAmperage() * 10; // Current in mA
+            efficiency = mAmperage * 100 / speedX100; // mAmperage * 100 to cancel out speed * 100 from above
+        }
+    }
+
+    const char unitSymbol = osdConfig()->units == OSD_UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
+    if (efficiency > 0 && efficiency <= 9999) {
+        tfp_sprintf(element->buff, "%4d%c/%c", efficiency, SYM_MAH, unitSymbol);
+    } else {
+        tfp_sprintf(element->buff, "----%c/%c", SYM_MAH, unitSymbol);
+    }
+}
 #endif // USE_GPS
 
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
@@ -1697,6 +1718,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
     [OSD_RC_CHANNELS]             = osdElementRcChannels,
+#ifdef USE_GPS
+    [OSD_EFFICIENCY]              = osdElementEfficiency,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -1748,6 +1772,7 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIST);
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
+        osdAddActiveElement(OSD_EFFICIENCY);
     }
 #endif // GPS
 #ifdef USE_ESC_SENSOR
