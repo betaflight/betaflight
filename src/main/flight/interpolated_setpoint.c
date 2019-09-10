@@ -66,15 +66,16 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         const float ffBoostFactor = pidGetFfBoostFactor();
         float clip = 1.0f;
         float boostAmount = 0.0f;
-        if (ffBoostFactor != 0.0f) {
-            if (pidGetSpikeLimitInverse()) {
-                clip = 1 / (1 + fabsf(setpointAcceleration * pidGetSpikeLimitInverse()));
-                clip *= clip;
-            }
-
-            // prevent kick-back spike at max deflection
-            if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis] || fabsf(setpointSpeed) > 3.0f * fabsf(prevSetpointSpeed[axis])) {
-                boostAmount = ffBoostFactor * setpointAcceleration;
+        if ((axis == FD_ROLL)||(axis == FD_PITCH)) {
+            if (ffBoostFactor != 0.0f) {
+                if (pidGetSpikeLimitInverse()) {
+                    clip = 1 / (1 + (setpointAcceleration * setpointAcceleration * pidGetSpikeLimitInverse()));
+                    clip *= clip;
+                }
+                // prevent kick-back spike at max deflection
+                if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis]) {
+                   boostAmount = ffBoostFactor * setpointAcceleration;
+                }
             }
         }
         prevSetpointSpeed[axis] = setpointSpeed;
