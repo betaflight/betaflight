@@ -96,6 +96,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXACROTRAINER, "ACRO TRAINER", 47 },
     { BOXVTXCONTROLDISABLE, "DISABLE VTX CONTROL", 48},
     { BOXLAUNCHCONTROL, "LAUNCH CONTROL", 49 },
+    { BOXMAVLINKATTRATE, "MAVLINK ATTRATE", 50 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -303,6 +304,12 @@ void initActiveBoxIds(void)
 
 #ifdef USE_LAUNCH_CONTROL
     BME(BOXLAUNCHCONTROL);
+#endif
+
+#ifdef USE_MAVLINK_ATTRATE
+    if (featureIsEnabled(FEATURE_MAVLINK_ATTRATE)) {
+        BME(BOXMAVLINKATTRATE);
+    }
 #endif
 
 #undef BME
