@@ -72,7 +72,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
                 clip *= clip;
             }
             // prevent kick-back spike at max deflection
-            if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis]) {
+            if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis] || fabsf(setpointSpeed) > 3.0f * fabsf(prevSetpointSpeed[axis])) {
                 boostAmount = ffBoostFactor * setpointAcceleration;
             }
         }
