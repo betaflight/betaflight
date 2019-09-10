@@ -93,7 +93,7 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 0),
-#if !defined(STM32F40_41xxx)
+#if !defined(STM32F411xE)
     DEF_TIM(TIM8,  CH1, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM8,  CH2, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM8,  CH3, NONE,  TIM_USE_NONE, 0, 1),
