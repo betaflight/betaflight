@@ -62,26 +62,23 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         const float setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * pidGetDT();
 
         setpointDeltaImpl[axis] = setpointSpeed * pidGetDT();
-        
+
         const float ffBoostFactor = pidGetFfBoostFactor();
         float clip = 1.0f;
         float boostAmount = 0.0f;
-        if ((axis == FD_ROLL)||(axis == FD_PITCH)) {
-            if (ffBoostFactor != 0.0f) {
-                if (pidGetSpikeLimitInverse()) {
-                    clip = 1 / (1 + (setpointAcceleration * setpointAcceleration * pidGetSpikeLimitInverse()));
-                    clip *= clip;
-                }
-                // prevent kick-back spike at max deflection
-                if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis]) {
-                   boostAmount = ffBoostFactor * setpointAcceleration;
-                }
+        if (axis != FD_YAW && ffBoostFactor != 0.0f) {
+            if (pidGetSpikeLimitInverse()) {
+                clip = 1 / (1 + (setpointAcceleration * setpointAcceleration * pidGetSpikeLimitInverse()));
+                clip *= clip;
+            }
+            // prevent kick-back spike at max deflection
+            if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis]) {
+                boostAmount = ffBoostFactor * setpointAcceleration;
             }
         }
         prevSetpointSpeed[axis] = setpointSpeed;
         prevSetpointAcceleration[axis] = setpointAcceleration;
         prevRawSetpoint[axis] = rawSetpoint;
-        
         if (axis == FD_ROLL) {
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 1000);
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 1000);
