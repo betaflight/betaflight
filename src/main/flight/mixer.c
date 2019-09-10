@@ -520,8 +520,10 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
         const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
         
-        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isFlipOverAfterCrashActive() ||
-            (IS_RC_MODE_ACTIVE(BOXMAVLINKATTRATE) &&
+        if ((!mavlinkAttrateActive &&
+             rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) ||
+            isFlipOverAfterCrashActive() ||
+            (mavlinkAttrateActive &&
              mavlinkCommandThrottle <= MAVLINK_ATTRATE_DEADBAND_LOW)) {
             // INVERTED
             motorRangeMin = motorOutputLow;
@@ -545,8 +547,9 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-        } else if ((rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) ||
-                   (IS_RC_MODE_ACTIVE(BOXMAVLINKATTRATE) &&
+        } else if ((!mavlinkAttrateActive &&
+                    rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) ||
+                   (mavlinkAttrateActive &&
                     mavlinkCommandThrottle >= MAVLINK_ATTRATE_DEADBAND_LOW)) {
             // NORMAL
             motorRangeMin = deadbandMotor3dHigh;
