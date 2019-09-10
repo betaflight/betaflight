@@ -311,6 +311,10 @@ static void bbFindPacerTimer(void)
         for (unsigned timerIndex = 0; timerIndex < ARRAYLEN(bbTimerHardware); timerIndex++) {
             timer = &bbTimerHardware[timerIndex];
             int timNumber = timerGetTIMNumber(timer->tim);
+            if ((motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM1 && timNumber != 1)
+                || (motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM8 && timNumber != 8)) {
+                continue;
+            }
             bool timerConflict = false;
             for (int channel = 0; channel < CC_CHANNELS_PER_TIMER; channel++) {
                 const resourceOwner_e timerOwner = timerGetOwner(timNumber, CC_CHANNEL_FROM_INDEX(channel))->owner;
@@ -334,6 +338,7 @@ static void bbFindPacerTimer(void)
             if (dmaGetOwner(dmaIdentifier)->owner == OWNER_FREE &&
                 !usedTimerChannels[timNumber][timer->channel]) {
                 usedTimerChannels[timNumber][timer->channel] = true;
+
                 break;
             }
         }

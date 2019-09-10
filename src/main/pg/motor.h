@@ -25,6 +25,12 @@
 #include "drivers/io.h"
 #include "drivers/dshot_bitbang.h"
 
+typedef enum {
+    DSHOT_BITBANGED_TIMER_AUTO = 0,
+    DSHOT_BITBANGED_TIMER_TIM1,
+    DSHOT_BITBANGED_TIMER_TIM8,
+} dshotBitbangedTimer_e;
+
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
     uint8_t  motorPwmProtocol;              // Pwm Protocol
@@ -35,6 +41,7 @@ typedef struct motorDevConfig_s {
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
     uint8_t  motorTransportProtocol;
     uint8_t  useDshotBitbang;
+    uint8_t  useDshotBitbangedTimer;
 } motorDevConfig_t;
 
 typedef struct motorConfig_s {
