@@ -213,7 +213,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .idle_pid_limit = 200,
         .idle_max_increase = 150,
         .ff_interpolate_sp = FF_INTERPOLATE_AVG,
-        .ff_spike_limit = 40,
+        .ff_spike_limit = 60,
         .ff_max_rate_limit = 100,
         .ff_boost = 15,
     );
