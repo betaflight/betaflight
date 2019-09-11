@@ -1676,7 +1676,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_VTX_CONFIG:
         {
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            unsigned vtxStatus;
+            unsigned vtxStatus = 0;
             vtxDevType_e vtxType = VTXDEV_UNKNOWN;
             uint8_t deviceIsReady = 0;
             if (vtxDevice) {
