@@ -148,7 +148,7 @@ bool vtxCommonGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
 
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 {
-    if (vtxDevice) {
+    if (vtxDevice && band > 0 && band <= vtxTableBandCount) {
         return vtxTableBandNames[band];
     } else {
         return "?";
@@ -157,7 +157,7 @@ const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 
 char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
 {
-    if (vtxDevice) {
+    if (vtxDevice && band > 0 && band <= vtxTableBandCount) {
         return vtxTableBandLetters[band];
     } else {
         return '?';
@@ -166,7 +166,7 @@ char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
 
 const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel)
 {
-    if (vtxDevice) {
+    if (vtxDevice && channel > 0 && channel <= vtxTableChannelCount) {
         return vtxTableChannelNames[channel];
     } else {
         return "?";
@@ -214,7 +214,7 @@ uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int ch
 
 const char *vtxCommonLookupPowerName(const vtxDevice_t *vtxDevice, int index)
 {
-    if (vtxDevice) {
+    if (vtxDevice && index > 0 && index <= vtxTablePowerLevels) {
         return vtxTablePowerLabels[index];
     } else {
         return "?";
