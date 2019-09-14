@@ -30,6 +30,8 @@
 
 static float setpointDeltaImpl[XYZ_AXIS_COUNT];
 static float prevSetpointDeltaImpl[XYZ_AXIS_COUNT];
+static float prevSetpointDeltaImpl2[XYZ_AXIS_COUNT];
+static float prevSetpointDeltaImpl3[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];
 
 
@@ -89,11 +91,18 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         if (type == FF_INTERPOLATE_ON) {
             setpointDelta[axis] = setpointDeltaImpl[axis];
         } else {
-            setpointDelta[axis] = 0.5f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis]);
-            prevSetpointDeltaImpl[axis] = setpointDeltaImpl[axis];
+            if (type == FF_INTERPOLATE_AVG4) {
+                setpointDelta[axis] = 0.25f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis] + prevSetpointDeltaImpl2[axis] + prevSetpointDeltaImpl3[axis]);
+            } else if (type == FF_INTERPOLATE_AVG3) {
+                setpointDelta[axis] = 0.33f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis] + prevSetpointDeltaImpl2[axis]);
+            } else if (type == FF_INTERPOLATE_AVG2) {
+                setpointDelta[axis] = 0.5f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis]);
+            }
+        prevSetpointDeltaImpl3[axis] = prevSetpointDeltaImpl2[axis];
+        prevSetpointDeltaImpl2[axis] = prevSetpointDeltaImpl[axis];
+        prevSetpointDeltaImpl[axis] = setpointDeltaImpl[axis];
         }
     }
-    
     return setpointDelta[axis];
 }
 

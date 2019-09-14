@@ -474,7 +474,7 @@ static const char * const lookupTableOffOnAuto[] = {
 };
 
 static const char* const lookupTableInterpolatedSetpoint[] = {
-    "OFF", "ON", "AVERAGED"
+    "OFF", "ON", "AVERAGE2", "AVERAGE3", "AVERAGE4"
 };
 
 static const char* const lookupTableDshotBitbangedTimer[] = {
