@@ -156,28 +156,12 @@ vtxtable powervalues  13 20 26
 vtxtable powerlabels 25 100 400
 ```
 
-[TBS Unify Pro32 Nano 5G8](https://www.team-blacksheep.com/products/prod:unifypro32_nano):
-
-```
-vtxtable powerlevels 3
-vtxtable powervalues 14 20 26
-vtxtable powerlabels 25 100 400
-```
-
 [TBS Unify Pro32 HV (MMCX)](https://www.team-blacksheep.com/products/prod:unifypro32_hv):
 
 ```
 vtxtable powerlevels 4
 vtxtable powervalues 14 20 26 30
 vtxtable powerlabels 25 100 400 1W
-```
-
-[TBS Unify EVO](https://www.team-blacksheep.com/products/prod:tbs_unify_evo):
-
-```
-vtxtable powerlevels 4
-vtxtable powervalues  14 20 26 29
-vtxtable powerlabels 25 100 400 800
 ```
 
 [TBS Unify EVO](https://www.team-blacksheep.com/products/prod:tbs_unify_evo):
