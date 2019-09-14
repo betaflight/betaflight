@@ -30,6 +30,7 @@ then release as appropriate.
 | 5s or more    | Save FC settings          | 1         |
 
 Example to cycle VTX power
+
 ```
 | 0 seconds      | 1 second      | 2 seconds    | 3 seconds     | 4 seconds     | 5 seconds     | 6 seconds or more |
 |-HOLD BUTTON-----------------------------------|-RELEASE BUTTON-NOW------------|-RELEASED TOO LATE TO CHANGE POWER-|
@@ -87,6 +88,7 @@ In the example above this was used to only allow frequencies between 5725 and 58
 German laws. Additionally, the Fatshark band was replaced with a new custom one.
 
 As a starting point, the following table contains the commonly used frequencies:
+
 ```
 # This table should not be used as-is, but trimmed down according to local laws and regulations.
 vtxtable band 1 BOSCAM_A A FACTORY 5865 5845 5825 5805 5785 5765 5745 5725
@@ -134,7 +136,7 @@ vtxtable powerlabels 25 200 500 800
 ```
 
 #### SmartAudio V2.1 devices vary depending on their model. Check the manufacturers website.
-For these devices the `powervalues` are the output power in dB.
+For these devices the `powervalues` are the output power in dBm.
 
 For example the
 
