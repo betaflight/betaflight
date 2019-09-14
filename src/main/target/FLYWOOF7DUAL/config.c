@@ -18,39 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
-
-#if defined(FLYWOOF405)
-#include "pg/piniobox.h"
-#endif
-
-#ifdef USE_TARGET_CONFIG
-
-#include "config_helper.h"
 #include "io/serial.h"
-#include "pg/max7456.h"
-#include "telemetry/telemetry.h"
+#include "pg/piniobox.h"
+#include "target.h"
 
-#define TELEMETRY_UART          SERIAL_PORT_USART1
-
-static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { TELEMETRY_UART, FUNCTION_TELEMETRY_SMARTPORT },
-};
+#define  USE_TARGET_CONFIG
 
 void targetConfiguration(void)
 {
-#if defined(FLYWOOF405)
     pinioBoxConfigMutable()->permanentId[0] = 40;
     pinioBoxConfigMutable()->permanentId[1] = 41;
-#endif
-    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
-    telemetryConfigMutable()->halfDuplex = 0;
-    telemetryConfigMutable()->telemetry_inverted = true;
-
-    // Mark MAX7456 CS pin as OPU
-    max7456ConfigMutable()->preInitOPU = true;
+    
 }
-#endif
+
