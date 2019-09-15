@@ -328,7 +328,8 @@ static void bbFindPacerTimer(void)
             }
 
             for (int index = 0; index < bbPortIndex; index++) {
-                if (bbPorts[index].timhw == timer) {
+                const timerHardware_t* t = bbPorts[index].timhw;
+                if (timerGetTIMNumber(t->tim) == timNumber && timer->channel == t->channel) {
                     timerConflict = true;
                     break;
                 }
