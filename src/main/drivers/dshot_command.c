@@ -152,8 +152,6 @@ static bool allMotorsAreIdle(void)
 
 void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
-    UNUSED(motorCount);
-
     if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
         return;
     }
