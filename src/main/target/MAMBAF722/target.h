@@ -34,7 +34,7 @@
 #define BEEPER_PIN              PB2
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define USE_PINIO
 #define PINIO1_PIN PB0 // Bluetooth mode control, PB0 is connected to the 36 pin (P2.0) of the Bluetooth chip. Replace PB0 with the pin for your flight control and 36-pin connection

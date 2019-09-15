@@ -59,7 +59,7 @@
 #undef USE_TELEMETRY_SRXL
 #endif
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PB3
 #define USE_BEEPER 

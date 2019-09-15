@@ -23,7 +23,7 @@
 #define TARGET_BOARD_IDENTIFIER "DLF7"
 #define USBD_PRODUCT_STRING  "DALRCF722DUAL"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 #define LED0_PIN                PC14
 
 #define USE_BEEPER

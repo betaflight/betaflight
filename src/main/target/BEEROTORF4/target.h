@@ -30,7 +30,7 @@
 #define BEEPER_INVERTED
 
 // Tim_UP 1 (motors 1 & 2) conflicts with Tim 4 Ch 3 (LED_STRIP)
-#define ENABLE_DSHOT_DMAR       false
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_OFF
 
 // ICM20689 interrupt
 #define USE_EXTI

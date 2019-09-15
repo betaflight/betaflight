@@ -30,7 +30,7 @@
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
 #endif
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 #define REMAP_TIM16_DMA
 
 

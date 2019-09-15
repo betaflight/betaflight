@@ -23,7 +23,7 @@
 #define TARGET_BOARD_IDENTIFIER "FXF7"
 #define USBD_PRODUCT_STRING  "FOXEER722DUAL"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 #define LED0_PIN                PC15
 
 #define USE_BEEPER

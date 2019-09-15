@@ -29,7 +29,7 @@
 #define BEEPER_PIN              PB2
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define USE_TARGET_CONFIG
 
