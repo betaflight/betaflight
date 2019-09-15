@@ -32,7 +32,8 @@
 #define BEEPER_PIN              PB2
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#undef  ENABLE_DSHOT_DMAR
+#define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_OFF
 
 // ******* INVERTER PIN ********
 
