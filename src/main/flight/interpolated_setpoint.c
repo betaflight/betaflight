@@ -33,7 +33,7 @@ static float prevSetpointDeltaImpl[XYZ_AXIS_COUNT];
 static float prevSetpointDeltaImpl2[XYZ_AXIS_COUNT];
 static float prevSetpointDeltaImpl3[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];
-
+static float holdCount[XYZ_AXIS_COUNT];
 
 static float prevSetpointSpeed[XYZ_AXIS_COUNT];
 static float prevRawSetpoint[XYZ_AXIS_COUNT];
@@ -60,8 +60,33 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         const float rxInterval = currentRxRefreshRate * 1e-6f;
         const float rxRate = 1.0f / rxInterval;
 
-        const float setpointSpeed = (rawSetpoint - prevRawSetpoint[axis]) * rxRate;
-        const float setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * pidGetDT();
+        float setpointSpeed = (rawSetpoint - prevRawSetpoint[axis]) * rxRate;
+        float setpointAcceleration;
+        
+        const float holdSteps = 2.0f;
+        // sticks NOT moving, and not near max
+        if ((setpointSpeed == 0) && (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis])) {
+            // not yet at timeout, or sticks centred, use previous values, increment timer
+            if ((holdCount[axis] < holdSteps) && (fabsf(rawSetpoint) > 5.0f)){
+                setpointSpeed = prevSetpointSpeed[axis];
+                setpointAcceleration = prevSetpointAcceleration[axis];
+                holdCount[axis] += 1;
+            // hit timeout, or at centre and not moving, lock speed and acceleration to zero, reset timer
+            } else {
+                setpointSpeed = 0;
+                prevSetpointSpeed[axis] = 0;
+                prevSetpointAcceleration[axis] = 0;
+                holdCount[axis] = 1.0f;
+            }
+        } else {
+            // we're moving!
+            if (holdCount[axis] > 1.0f) {
+                // after a hold, re-start with setpoint speed averaged over hold time
+                setpointSpeed /= holdCount[axis];
+            }
+            setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * pidGetDT();
+            holdCount[axis] = 1.0f;
+        }
 
         setpointDeltaImpl[axis] = setpointSpeed * pidGetDT();
 
@@ -84,7 +109,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         if (axis == FD_ROLL) {
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 1000);
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 1000);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, boostAmount * clip * 1000);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, holdCount[axis]);
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, clip * 100);
         }
         setpointDeltaImpl[axis] += boostAmount * clip;
