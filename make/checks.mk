@@ -1,3 +1,8 @@
+checks: check-target-independence \
+	check-fastram-usage-correctness \
+	check-platform-included \
+	check-unified-target-naming
+
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
 		FOUND=$$(grep -rE "\W$${test_target}(\W.*)?$$" src/main | grep -vE "(//)|(/\*).*\W$${test_target}(\W.*)?$$" | grep -vE "^src/main/target"); \
@@ -33,7 +38,7 @@ check-platform-included:
 
 check-unified-target-naming:
 	$(V1) for target_config in unified_targets/configs/*; do \
-		if [ $$(sed -n 's/board_name \([A-Z]*\)/\1/p' $${target_config}).config != $$(basename $${target_config}) ]; then \
+		if [ -f $${target_config} ] && [ $$(sed -n 's/board_name \([A-Z]*\)/\1/p' $${target_config}).config != $$(basename $${target_config}) ]; then \
 			echo "Invalid board name ($$(sed -n 's/board_name \([A-Z]*\)/\1/p' $${target_config})) in Unified Target configuration $${target_config}."; \
 			exit 1; \
 		fi; \
