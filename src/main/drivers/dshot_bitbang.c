@@ -87,17 +87,17 @@ FAST_RAM_ZERO_INIT timeUs_t dshotFrameUs;
 
 const timerHardware_t bbTimerHardware[] = {
 #if defined(STM32F4) || defined(STM32F7)
-    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 2),
-    DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 1),
-    DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 0),
 #if !defined(STM32F411xE)
     DEF_TIM(TIM8,  CH1, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM8,  CH2, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM8,  CH3, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM8,  CH4, NONE,  TIM_USE_NONE, 0, 0),
 #endif
+    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 1),
+    DEF_TIM(TIM1,  CH1, NONE,  TIM_USE_NONE, 0, 2),
+    DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1),
+    DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 1),
+    DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 0),
 #endif
 };
 
