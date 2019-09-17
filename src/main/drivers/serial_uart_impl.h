@@ -170,7 +170,7 @@ typedef struct uartHardware_s {
     uint8_t txPriority;
     uint8_t rxPriority;
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32F4)
     volatile uint8_t *txBuffer;
     volatile uint8_t *rxBuffer;
     uint16_t txBufferSize;
@@ -188,8 +188,9 @@ typedef struct uartDevice_s {
     const uartHardware_t *hardware;
     uartPinDef_t rx;
     uartPinDef_t tx;
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32F4)
     // For H7, buffers with possible DMA access is placed in D2 SRAM.
+    // For F4, buffers should NOT be in CCM DATA RAM (uartDevice is).
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
 #else
