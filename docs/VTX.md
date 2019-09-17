@@ -274,6 +274,23 @@ vtxtable powervalues 0 1 2
 vtxtable powerlabels OFF MIN MAX
 ```
 
+#### EWRF 709tm3
+```
+#https://www.banggood.com/E709MT3-5_8G-40CH-25mW-200mW-600mW-Adjustable-AV-Transmitter-w-Mounting-Hole-for-Flight-Controller-p-1191064.html?cur_warehouse=CN
+#SmartAudio VTX
+vtxtable bands 5
+vtxtable channels 8
+vtxtable band 1 BOSCAM_A A FACTORY 5865 5845 5825 5805 5785 5765 5745 5725
+vtxtable band 2 BOSCAM_B B FACTORY 5733 5752 5771 5790 5809 5828 5847 5866
+vtxtable band 3 BOSCAM_E E FACTORY 5705 5685 5665 5645 5885 5905 5925 5945
+vtxtable band 4 FATSHARK F FACTORY 5740 5760 5780 5800 5820 5840 5860 5880
+vtxtable band 5 RACEBAND R FACTORY 5658 5695 5732 5769 5806 5843 5880 5917
+vtxtable powerlevels 3
+vtxtable powervalues 1 2 3
+vtxtable powerlabels 25 200 600
+```
+
+
 ### Pitmode
 Pitmode is separate from vtxTable. No power level should be created for pitmode.
 Pitmode can be controlled in a variety of ways including OSD, AUX switches and lua scripts.
