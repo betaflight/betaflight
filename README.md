@@ -34,9 +34,9 @@ In order to be prepared for this move, the following new requirements for pull r
 
 1. No new F3 based targets will be accepted;
 
-2. For any new target that is to be added, both a 'legacy' format target definition into `src/main/target/` and a new Unified Target config into `unified_targets/configs/` need to be submitted. See the [instructions](https://github.com/betaflight/betaflight/blob/master/unified_targets/docs/CreatingAUnifiedTarget.md) for how to create a Unified Target configuration;
+2. For any new target that is to be added, both a 'legacy' format target definition into `src/main/target/` and a new Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default need to be submitted. See the [instructions](https://github.com/betaflight/betaflight/blob/master/unified_targets/docs/CreatingAUnifiedTarget.md) for how to create a Unified Target configuration;
 
-3. For changes to existing targets, the change needs to be applied to both the 'legacy' format target definition in `src/main/target/` and a new Unified Target config in `unified_targets/configs/`. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted alongside the proposed change.
+3. For changes to existing targets, the change needs to be applied to both the 'legacy' format target definition in `src/main/target/` and a new Unified Target config in https://github.com/betaflight/unified-targets/tree/master/configs/default. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted alongside the proposed change.
 
 
 ### End of active development for STM32F3 based flight controllers
