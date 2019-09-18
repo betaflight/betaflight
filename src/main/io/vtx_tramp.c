@@ -519,7 +519,7 @@ static void vtxTrampSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint
 static void vtxTrampSetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 {
     uint16_t powerValue = 0;
-    if (vtxCommonLookupPowerValue(vtxDevice, index, &powerValue) && (trampRFPowerMax == 0 || powerValue <= trampRFPowerMax)) {
+    if (vtxCommonLookupPowerValue(vtxDevice, index, &powerValue)) {
         trampSetRFPower(powerValue);
         trampCommitChanges();
     }
