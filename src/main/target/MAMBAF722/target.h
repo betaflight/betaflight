@@ -56,6 +56,27 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
+// *************** I2C /Baro/Mag *********************
+
+#define USE_I2C
+
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE_1            (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
+
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
+#define MAG_I2C_INSTANCE        (I2CDEV_1)
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
+
 // ******* SERIAL ********
 
 #define USE_VCP
