@@ -29,12 +29,16 @@
 #include "flight/interpolated_setpoint.h"
 
 static float setpointDeltaImpl[XYZ_AXIS_COUNT];
-static float prevSetpointDeltaImpl[XYZ_AXIS_COUNT];
-static float prevSetpointDeltaImpl2[XYZ_AXIS_COUNT];
-static float prevSetpointDeltaImpl3[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];
 static float holdCount[XYZ_AXIS_COUNT];
 
+typedef struct laggedMovingAverageCombined_u {
+     laggedMovingAverage_t filter;
+     float buf[4];
+} laggedMovingAverageCombined_t;
+
+laggedMovingAverageCombined_t  setpointDeltaAvg[XYZ_AXIS_COUNT];
+ 
 static float prevSetpointSpeed[XYZ_AXIS_COUNT];
 static float prevRawSetpoint[XYZ_AXIS_COUNT];
 static float prevSetpointAcceleration[XYZ_AXIS_COUNT];
@@ -46,9 +50,22 @@ static float ffMaxRate[XYZ_AXIS_COUNT];
 
 void interpolatedSpInit(const pidProfile_t *pidProfile) {
     const float ffMaxRateScale = pidProfile->ff_max_rate_limit * 0.01f;
+    int j = 1;
+    switch(pidProfile->ff_interpolate_sp){
+        case FF_INTERPOLATE_AVG2:
+            j = 2;
+            break;
+        case FF_INTERPOLATE_AVG3:
+            j = 3;
+            break;
+        case FF_INTERPOLATE_AVG4:
+            j = 4;
+            break;
+    }
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         ffMaxRate[i] = applyCurve(i, 1.0f);
         ffMaxRateLimit[i] = ffMaxRate[i] * ffMaxRateScale;
+        laggedMovingAverageInit(&setpointDeltaAvg[i].filter, j, (float *)&setpointDeltaAvg[i].buf);
     }
 }
 
@@ -116,16 +133,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         if (type == FF_INTERPOLATE_ON) {
             setpointDelta[axis] = setpointDeltaImpl[axis];
         } else {
-            if (type == FF_INTERPOLATE_AVG4) {
-                setpointDelta[axis] = 0.25f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis] + prevSetpointDeltaImpl2[axis] + prevSetpointDeltaImpl3[axis]);
-            } else if (type == FF_INTERPOLATE_AVG3) {
-                setpointDelta[axis] = 0.33f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis] + prevSetpointDeltaImpl2[axis]);
-            } else if (type == FF_INTERPOLATE_AVG2) {
-                setpointDelta[axis] = 0.5f * (setpointDeltaImpl[axis] + prevSetpointDeltaImpl[axis]);
-            }
-        prevSetpointDeltaImpl3[axis] = prevSetpointDeltaImpl2[axis];
-        prevSetpointDeltaImpl2[axis] = prevSetpointDeltaImpl[axis];
-        prevSetpointDeltaImpl[axis] = setpointDeltaImpl[axis];
+            setpointDelta[axis] = laggedMovingAverageUpdate(&setpointDeltaAvg[axis].filter, setpointDeltaImpl[axis]);
         }
     }
     return setpointDelta[axis];
