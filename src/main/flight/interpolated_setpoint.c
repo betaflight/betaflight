@@ -102,11 +102,11 @@ FAST_CODE_NOINLINE float applyFfLimit(int axis, float value, float Kp, float cur
         DEBUG_SET(DEBUG_FF_LIMIT, 0, value);
     }
 
-    if (axis == FD_ROLL) {
+    if (axis == FD_PITCH) {
         DEBUG_SET(DEBUG_FF_LIMIT, 1, value);
     }
 
-    if (ffMaxRateLimit[axis]) {
+    if (ffMaxRateLimit[axis] && (axis < FD_YAW)) {
         if (fabsf(currentPidSetpoint) <= ffMaxRateLimit[axis]) {
             value = constrainf(value, (-ffMaxRateLimit[axis] - currentPidSetpoint) * Kp, (ffMaxRateLimit[axis] - currentPidSetpoint) * Kp);
         } else {
