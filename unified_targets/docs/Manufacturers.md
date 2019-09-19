@@ -17,6 +17,7 @@ This is the official list of manufacturer ids (`manufacturer_id` in the target c
 |FFPV|Furious FPV|https://furiousfpv.com/|
 |FLWO|Flywoo|https://flywoo.net/|
 |FOXE|Foxeer|http://www.foxeer.com/|
+|FPVM|FPV Model|https://fpvmodel.com/|
 |HAMO|Happymodel|http://www.happymodel.cn/|
 |HARC|HAKRC|https://github.com/loopur|
 |HBRO|Holybro|http://www.holybro.com/index.html|
