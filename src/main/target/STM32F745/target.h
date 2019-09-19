@@ -46,8 +46,6 @@
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
 #define USE_SPI_DEVICE_4
-#define USE_SPI_DEVICE_5
-#define USE_SPI_DEVICE_6
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
