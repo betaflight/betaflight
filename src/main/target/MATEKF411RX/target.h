@@ -42,7 +42,7 @@
 
 #define USE_SPI
 
-#undef  ENABLE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_AUTO
 #define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_OFF
 
 // *************** SPI1 Gyro & ACC **********************

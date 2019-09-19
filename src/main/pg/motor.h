@@ -31,6 +31,12 @@ typedef enum {
     DSHOT_BITBANGED_TIMER_TIM8,
 } dshotBitbangedTimer_e;
 
+typedef enum {
+    DSHOT_DMAR_OFF,
+    DSHOT_DMAR_ON,
+    DSHOT_DMAR_AUTO
+} dshotDmar_e;
+
 typedef struct motorDevConfig_s {
     uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
     uint8_t  motorPwmProtocol;              // Pwm Protocol
