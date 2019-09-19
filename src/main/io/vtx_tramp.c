@@ -92,7 +92,9 @@ static uint8_t trampControlMode = 0;
 #define TRAMP_CONTROL_RACE_LOCK 0x01
 
 // Maximum number of requests sent to try a config change
-#define TRAMP_MAX_RETRIES 2
+// Some VTX fail to respond to every request (like Matek FCHUB-VTX) so
+// we sometimes need multiple retries to get the VTX to respond.
+#define TRAMP_MAX_RETRIES 20
 
 uint32_t trampConfFreq = 0;
 uint8_t  trampFreqRetries = 0;

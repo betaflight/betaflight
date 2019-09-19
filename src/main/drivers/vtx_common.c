@@ -119,16 +119,11 @@ bool vtxCommonGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, ui
         && !vtxTableIsFactoryBand[selectedBand - 1]) {
         uint16_t freq;
         result = vtxCommonGetFrequency(vtxDevice, &freq);
-        if (!result || freq != vtxCommonLookupFrequency(vtxDevice, selectedBand, selectedChannel)) {
-            return false;
-        } else {
-            *pBand = selectedBand;
-            *pChannel = selectedChannel;
-            return true;
+        if (result) {
+            vtxCommonLookupBandChan(vtxDevice, freq, pBand, pChannel);
         }
-    } else {
-        return result;
     }
+    return result;
 }
 
 bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
@@ -174,8 +169,11 @@ const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel
 }
 
 //Converts frequency (in MHz) to band and channel values.
-bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
+//If frequency not found in the vtxtable then band and channel will return 0
+void vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
 {
+    *pBand = 0;
+    *pChannel = 0;
     if (vtxDevice) {
         // Use reverse lookup order so that 5880Mhz
         // get Raceband 7 instead of Fatshark 8.
@@ -184,16 +182,11 @@ bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_
                 if (vtxTableFrequency[band][channel] == freq) {
                     *pBand = band + 1;
                     *pChannel = channel + 1;
-                    return true;
+                    return;
                 }
             }
         }
     }
-
-    *pBand = 0;
-    *pChannel = 0;
-
-    return false;
 }
 
 //Converts band and channel values to a frequency (in MHz) value.

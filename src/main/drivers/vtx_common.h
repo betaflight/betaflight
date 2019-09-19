@@ -140,6 +140,6 @@ char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band);
 char vtxCommonGetBandLetter(const vtxDevice_t *vtxDevice, int band);
 const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel);
 uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int channel);
-bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel);
+void vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel);
 const char *vtxCommonLookupPowerName(const vtxDevice_t *vtxDevice, int index);
 bool vtxCommonLookupPowerValue(const vtxDevice_t *vtxDevice, int index, uint16_t *pPowerValue);
