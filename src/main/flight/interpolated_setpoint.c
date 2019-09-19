@@ -78,7 +78,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         const float rxRate = 1.0f / rxInterval;
 
         float setpointSpeed = (rawSetpoint - prevRawSetpoint[axis]) * rxRate;
-        float setpointAcceleration;
+        float setpointAcceleration = 0;
         
         const float holdSteps = 2.0f;
         // sticks NOT moving, and not near max
