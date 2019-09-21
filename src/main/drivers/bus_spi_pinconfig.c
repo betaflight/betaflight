@@ -358,7 +358,21 @@ const spiHardware_t spiHardware[] = {
         .rcc = RCC_APB2(SPI4),
         //.dmaIrqHandler = DMA2_ST1_HANDLER,
     },
-    // SPI5 is not available for LPQFP-100 or 144 package
+    {
+        .device = SPIDEV_5,
+        .reg = SPI5,
+        .sckPins = {
+            { DEFIO_TAG_E(PF7), GPIO_AF5_SPI5 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PF8), GPIO_AF5_SPI5 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PF11), GPIO_AF5_SPI5 },
+        },
+        .rcc = RCC_APB2(SPI5),
+        //.dmaIrqHandler = DMA2_ST1_HANDLER,
+    },
     {
         .device = SPIDEV_6,
         .reg = SPI6,
