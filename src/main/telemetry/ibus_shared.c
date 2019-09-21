@@ -131,27 +131,42 @@ static uint8_t sendBuffer[IBUS_BUFFSIZE];
 
 static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length);
 
-static uint8_t getSensorID(ibusAddress_t address)
+static uint8_t getSensorType(ibusAddress_t address)
 {
     //all checks are done in theAddressIsWithinOurRange
     uint32_t index = address - ibusBaseAddress;
     return telemetryConfig()->flysky_sensors[index];
 }
-
-static uint8_t getSensorLength(uint8_t sensorID)
+static const uint8_t* getSensorStruct(uint8_t sensorType, uint8_t* itemCount){
+    const uint8_t* structure = 0;
+    if (sensorType == IBUS_SENSOR_TYPE_GPS_FULL) {
+        structure = FULL_GPS_IDS;
+        *itemCount = sizeof(FULL_GPS_IDS);
+    }
+    if (sensorType == IBUS_SENSOR_TYPE_VOLT_FULL) {
+        structure = FULL_VOLT_IDS;
+        *itemCount = sizeof(FULL_VOLT_IDS);
+    }
+    if (sensorType == IBUS_SENSOR_TYPE_ACC_FULL) {
+        structure = FULL_ACC_IDS;
+        *itemCount = sizeof(FULL_ACC_IDS);
+    }
+    return structure;
+}
+static uint8_t getSensorLength(uint8_t sensorType)
 {
-    if (sensorID == IBUS_SENSOR_TYPE_PRES || (sensorID >= IBUS_SENSOR_TYPE_GPS_LAT && sensorID <= IBUS_SENSOR_TYPE_ALT_MAX)) {
+    if (sensorType == IBUS_SENSOR_TYPE_PRES || (sensorType >= IBUS_SENSOR_TYPE_GPS_LAT && sensorType <= IBUS_SENSOR_TYPE_ALT_MAX)) {
         return IBUS_4BYTE_SESNSOR;
     }
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
-    if (sensorID == IBUS_SENSOR_TYPE_GPS_FULL) {
-        return 14;
-    }
-    if (sensorID == IBUS_SENSOR_TYPE_VOLT_FULL) {
-        return 10;
-    }
-    if (sensorID == IBUS_SENSOR_TYPE_VOLT_FULL) {
-        return 12;
+    uint8_t itemCount;
+    const uint8_t* structure = getSensorStruct(sensorType, &itemCount);
+    if (structure != 0) {
+        uint8_t size = 0;
+        for (unsigned i = 0; i < itemCount; i++) {
+            size += getSensorLength(structure[i]);
+        }
+        return size;
     }
 #endif
     return IBUS_2BYTE_SESNSOR;
@@ -181,11 +196,11 @@ static void setIbusDiscoverSensorReply(ibusAddress_t address)
 
 static void setIbusSensorType(ibusAddress_t address)
 {
-    uint8_t sensorID = getSensorID(address);
-    uint8_t sensorLength = getSensorLength(sensorID);
+    uint8_t sensorType = getSensorType(address);
+    uint8_t sensorLength = getSensorLength(sensorType);
     sendBuffer[0] = IBUS_HEADER_FOOTER_SIZE + 2;
     sendBuffer[1] = IBUS_COMMAND_SENSOR_TYPE | address;
-    sendBuffer[2] = sensorID;
+    sendBuffer[2] = sensorType;
     sendBuffer[3] = sensorLength;
 }
 
@@ -275,59 +290,51 @@ static void setCombinedFrame(uint8_t* bufferPtr, const uint8_t* structure, uint8
 }
 #endif
 
-
-
 #if defined(USE_GPS)
-static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
+static bool getGPSsensor(uint8_t sensorType, ibusTelemetry_s* value)
 {
-    bool result = false;
+    bool isGPSsensor = false;
     for (unsigned i = 0; i < sizeof(GPS_IDS); i++) {
         if (sensorType == GPS_IDS[i]) {
-            result = true;
+            isGPSsensor = true;
             break;
         }
     }
-    if (!result) return result;
+    if (!isGPSsensor) return false;
+    if (!sensors(SENSOR_GPS)) return true;
 
-    uint16_t gpsFixType = 0;
-    uint16_t sats = 0;
-    if (sensors(SENSOR_GPS)) {
-        gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < 5 ? 2 : 3);
-        sats = gpsSol.numSat;
-        if (STATE(GPS_FIX) || sensorType == IBUS_SENSOR_TYPE_GPS_STATUS) {
-            result = true;
-            switch (sensorType) {
-            case IBUS_SENSOR_TYPE_SPE:
-                value->uint16 = gpsSol.groundSpeed * 36 / 100;
-                break;
-            case IBUS_SENSOR_TYPE_GPS_LAT:
-                value->int32 = gpsSol.llh.lat;
-                break;
-            case IBUS_SENSOR_TYPE_GPS_LON:
-                value->int32 = gpsSol.llh.lon;
-                break;
-            case IBUS_SENSOR_TYPE_GPS_ALT:
-                value->int32 = (int32_t)gpsSol.llh.altCm;
-                break;
-            case IBUS_SENSOR_TYPE_GROUND_SPEED:
-                value->uint16 = gpsSol.groundSpeed;
-                break;
-            case IBUS_SENSOR_TYPE_ODO1:
-            case IBUS_SENSOR_TYPE_ODO2:
-            case IBUS_SENSOR_TYPE_GPS_DIST:
-                value->uint16 = GPS_distanceToHome;
-                break;
-            case IBUS_SENSOR_TYPE_COG:
-                value->uint16 = gpsSol.groundCourse * 100;
-                break;
-            case IBUS_SENSOR_TYPE_GPS_STATUS:
-                value->byte[0] = gpsFixType;
-                value->byte[1] = sats;
-                break;
-            }
-        }
+    if (sensorType == IBUS_SENSOR_TYPE_GPS_STATUS) {
+        value->byte[0] = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < 5 ? 2 : 3);
+        value->byte[1] = gpsSol.numSat;
     }
-    return result;
+    if (!STATE(GPS_FIX)) return true;
+    
+    switch (sensorType) {
+    case IBUS_SENSOR_TYPE_SPE:
+        value->uint16 = gpsSol.groundSpeed * 36 / 100;
+        break;
+    case IBUS_SENSOR_TYPE_GPS_LAT:
+        value->int32 = gpsSol.llh.lat;
+        break;
+    case IBUS_SENSOR_TYPE_GPS_LON:
+        value->int32 = gpsSol.llh.lon;
+        break;
+    case IBUS_SENSOR_TYPE_GPS_ALT:
+        value->int32 = (int32_t)gpsSol.llh.altCm;
+        break;
+    case IBUS_SENSOR_TYPE_GROUND_SPEED:
+        value->uint16 = gpsSol.groundSpeed;
+        break;
+    case IBUS_SENSOR_TYPE_ODO1:
+    case IBUS_SENSOR_TYPE_ODO2:
+    case IBUS_SENSOR_TYPE_GPS_DIST:
+        value->uint16 = GPS_distanceToHome;
+        break;
+    case IBUS_SENSOR_TYPE_COG:
+        value->uint16 = gpsSol.groundCourse * 100;
+        break;
+    }
+    return true;
 }
 #endif //defined(USE_GPS)
 
@@ -336,35 +343,25 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
     ibusTelemetry_s value;
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
-    const uint8_t* structure = 0;
     uint8_t itemCount;
-    if (sensorType == IBUS_SENSOR_TYPE_GPS_FULL) {
-        structure = FULL_GPS_IDS;
-        itemCount = sizeof(FULL_GPS_IDS);
-    }
-    if (sensorType == IBUS_SENSOR_TYPE_VOLT_FULL) {
-        structure = FULL_VOLT_IDS;
-        itemCount = sizeof(FULL_VOLT_IDS);
-    }
-    if (sensorType == IBUS_SENSOR_TYPE_ACC_FULL) {
-        structure = FULL_ACC_IDS;
-        itemCount = sizeof(FULL_ACC_IDS);
-    }
+    const uint8_t* structure = getSensorStruct(sensorType, &itemCount);
     if (structure != 0) {
-        setCombinedFrame(bufferPtr, structure, sizeof(itemCount));
+        setCombinedFrame(bufferPtr, structure, itemCount);
         return;
     }
 #endif //defined(USE_TELEMETRY_IBUS_EXTENDED)
-
-#if defined(USE_GPS)
-    if (setGPS(sensorType, &value)) {
-        return;
-    }
-#endif //defined(USE_TELEMETRY_IBUS_EXTENDED)
-
+    //clear result
     for (unsigned i = 0; i < length; i++) {
         bufferPtr[i] = value.byte[i] = 0;
     }
+#if defined(USE_GPS)
+    if (getGPSsensor(sensorType, &value)) {
+        for (unsigned i = 0; i < length; i++) {
+            bufferPtr[i] = value.byte[i];
+        }
+        return;
+    }
+#endif //defined(USE_TELEMETRY_IBUS_EXTENDED)
     switch (sensorType) {
         case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
             value.uint16 = getVoltage();
@@ -432,11 +429,11 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
 }
 static void setIbusMeasurement(ibusAddress_t address)
 {
-    uint8_t sensorID = getSensorID(address);
-    uint8_t sensorLength = getSensorLength(sensorID);
+    uint8_t sensorType = getSensorType(address);
+    uint8_t sensorLength = getSensorLength(sensorType);
     sendBuffer[0] = IBUS_HEADER_FOOTER_SIZE + sensorLength;
     sendBuffer[1] = IBUS_COMMAND_MEASUREMENT | address;
-    setValue(sendBuffer + 2, sensorID, sensorLength);
+    setValue(sendBuffer + 2, sensorType, sensorLength);
 }
 
 static bool isCommand(ibusCommand_e expected, const uint8_t *ibusPacket)
