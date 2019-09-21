@@ -37,6 +37,7 @@
 #include "drivers/dshot_command.h"
 #include "drivers/pwm_output.h"
 
+#define DSHOT_PROTOCOL_DETECTION_DELAY_MS 3000
 #define DSHOT_INITIAL_DELAY_US 10000
 #define DSHOT_COMMAND_DELAY_US 1000
 #define DSHOT_ESCINFO_DELAY_US 12000
@@ -150,9 +151,18 @@ static bool allMotorsAreIdle(void)
     return true;
 }
 
+bool dshotCommandsAreEnabled(void)
+{
+    if (motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
-    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
+    if (!isMotorProtocolDshot() || !dshotCommandsAreEnabled() || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
         return;
     }
 

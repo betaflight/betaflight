@@ -50,6 +50,7 @@ void motorShutdown(void)
 {
     motorDevice->vTable.shutdown();
     motorDevice->enabled = false;
+    motorDevice->motorEnableTimeMs = 0;
     motorDevice->initialized = false;
     delayMicroseconds(1500);
 }
@@ -246,6 +247,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     if (motorDevice) {
         motorDevice->count = motorCount;
         motorDevice->initialized = true;
+        motorDevice->motorEnableTimeMs = 0;
         motorDevice->enabled = false;
     } else {
         motorNullDevice.vTable = motorNullVTable;
@@ -257,12 +259,14 @@ void motorDisable(void)
 {
     motorDevice->vTable.disable();
     motorDevice->enabled = false;
+    motorDevice->motorEnableTimeMs = 0;
 }
 
 void motorEnable(void)
 {
     if (motorDevice->initialized && motorDevice->vTable.enable()) {
         motorDevice->enabled = true;
+        motorDevice->motorEnableTimeMs = millis();
     }
 }
 
@@ -280,6 +284,13 @@ bool isMotorProtocolDshot(void)
 {
     return isDshot;
 }
+
+#ifdef USE_DSHOT
+timeMs_t motorGetMotorEnableTimeMs(void)
+{
+    return motorDevice->motorEnableTimeMs;
+}
+#endif
 
 #ifdef USE_DSHOT_BITBANG
 bool isDshotBitbangActive(const motorDevConfig_t *motorConfig) {

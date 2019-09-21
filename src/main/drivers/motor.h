@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 typedef enum {
     PWM_TYPE_STANDARD = 0,
     PWM_TYPE_ONESHOT125,
@@ -62,6 +64,7 @@ typedef struct motorDevice_s {
     uint8_t       count;
     bool          initialized;
     bool          enabled;
+    timeMs_t      motorEnableTimeMs;
 } motorDevice_t;
 
 void motorPostInitNull();
@@ -85,6 +88,7 @@ void motorDisable(void);
 void motorEnable(void);
 bool motorIsEnabled(void);
 bool motorIsMotorEnabled(uint8_t index);
+timeMs_t motorGetMotorEnableTimeMs(void);
 void motorShutdown(void); // Replaces stopPwmAllMotors
 
 #ifdef USE_DSHOT_BITBANG
