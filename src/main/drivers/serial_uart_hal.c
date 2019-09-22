@@ -111,7 +111,7 @@ void uartReconfigure(uartPort_t *uartPort)
 #if !defined(STM32H7)
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
 #else 
-            uartPort->txDMAHandle.Init.Request = uartPort->rxDMARequest;
+            uartPort->txDMAHandle.Init.Request = uartPort->rxDMAChannel;
 #endif
             uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
             uartPort->rxDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
@@ -159,7 +159,7 @@ void uartReconfigure(uartPort_t *uartPort)
 #if !defined(STM32H7)
             uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
 #else 
-            uartPort->txDMAHandle.Init.Request = uartPort->txDMARequest;
+            uartPort->txDMAHandle.Init.Request = uartPort->txDMAChannel;
 #endif
             uartPort->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;
             uartPort->txDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
@@ -230,6 +230,100 @@ void uartTryStartTxDMA(uartPort_t *s)
         HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
     }
 }
+
+static void handleUsartTxDma(uartPort_t *s)
+{
+    uartTryStartTxDMA(s);
+}
+
+void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
+{
+    uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
+    HAL_DMA_IRQHandler(&s->txDMAHandle);
+}
 #endif
 
+void uartIrqHandler(uartPort_t *s)
+{
+    UART_HandleTypeDef *huart = &s->Handle;
+    /* UART in mode Receiver ---------------------------------------------------*/
+    if ((__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET)) {
+        uint8_t rbyte = (uint8_t)(huart->Instance->RDR & (uint8_t) 0xff);
+
+        if (s->port.rxCallback) {
+            s->port.rxCallback(rbyte, s->port.rxCallbackData);
+        } else {
+            s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
+            s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
+        }
+        CLEAR_BIT(huart->Instance->CR1, (USART_CR1_PEIE));
+
+        /* Disable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+        CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+        __HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST);
+    }
+
+    /* UART parity error interrupt occurred -------------------------------------*/
+    if ((__HAL_UART_GET_IT(huart, UART_IT_PE) != RESET)) {
+        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_PEF);
+    }
+
+    /* UART frame error interrupt occurred --------------------------------------*/
+    if ((__HAL_UART_GET_IT(huart, UART_IT_FE) != RESET)) {
+        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_FEF);
+    }
+
+    /* UART noise error interrupt occurred --------------------------------------*/
+    if ((__HAL_UART_GET_IT(huart, UART_IT_NE) != RESET)) {
+        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_NEF);
+    }
+
+    /* UART Over-Run interrupt occurred -----------------------------------------*/
+    if ((__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET)) {
+        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
+    }
+
+    /* UART in mode Transmitter ------------------------------------------------*/
+    if (
+#ifdef USE_DMA
+        !s->txDMAResource &&
+#endif
+        (__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET)) {
+        /* Check that a Tx process is ongoing */
+        if (huart->gState != HAL_UART_STATE_BUSY_TX) {
+            if (s->port.txBufferTail == s->port.txBufferHead) {
+                huart->TxXferCount = 0;
+                /* Disable the UART Transmit Data Register Empty Interrupt */
+                CLEAR_BIT(huart->Instance->CR1, USART_CR1_TXEIE);
+            } else {
+                if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE)) {
+                    huart->Instance->TDR = (((uint16_t) s->port.txBuffer[s->port.txBufferTail]) & (uint16_t) 0x01FFU);
+                } else {
+                    huart->Instance->TDR = (uint8_t)(s->port.txBuffer[s->port.txBufferTail]);
+                }
+                s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+            }
+        }
+    }
+
+    /* UART in mode Transmitter (transmission end) -----------------------------*/
+    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
+        HAL_UART_IRQHandler(huart);
+#ifdef USE_DMA
+        if (s->txDMAResource) {
+            handleUsartTxDma(s);
+        }
+#endif
+    }
+
+    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        __HAL_UART_CLEAR_IDLEFLAG(huart);
+    }
+
+}
 #endif // USE_UART
