@@ -98,24 +98,27 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
 }
 
 FAST_CODE_NOINLINE float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint) {
-    if (axis == FD_ROLL) {
+    switch (axis) {
+    case FD_ROLL:
         DEBUG_SET(DEBUG_FF_LIMIT, 0, value);
-    }
 
-    if (axis == FD_PITCH) {
+        break;
+    case FD_PITCH:
         DEBUG_SET(DEBUG_FF_LIMIT, 1, value);
+
+        break;
     }
 
-    if (ffMaxRateLimit[axis]) {
-        if (fabsf(currentPidSetpoint) <= ffMaxRateLimit[axis]) {
-            value = constrainf(value, (-ffMaxRateLimit[axis] - currentPidSetpoint) * Kp, (ffMaxRateLimit[axis] - currentPidSetpoint) * Kp);
-        } else {
-            value = 0;
-        }
+    if (fabsf(currentPidSetpoint) <= ffMaxRateLimit[axis]) {
+        value = constrainf(value, (-ffMaxRateLimit[axis] - currentPidSetpoint) * Kp, (ffMaxRateLimit[axis] - currentPidSetpoint) * Kp);
+    } else {
+        value = 0;
     }
+
     if (axis == FD_ROLL) {
         DEBUG_SET(DEBUG_FF_LIMIT, 2, value);
     }
+
     return value;
 }
 
@@ -123,6 +126,4 @@ bool shouldApplyFfLimits(int axis)
 {
     return ffMaxRateLimit[axis] != 0.0f && axis < FD_YAW;
 }
-
-
 #endif
