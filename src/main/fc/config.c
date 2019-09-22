@@ -298,22 +298,6 @@ static void validateAndFixConfig(void)
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
-#ifdef USE_SOFTSPI
-    if (featureIsEnabled(FEATURE_SOFTSPI)) {
-        featureDisable(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL);
-        batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_NONE;
-#if defined(STM32F10X)
-        featureDisable(FEATURE_LED_STRIP);
-        // rssi adc needs the same ports
-        featureDisable(FEATURE_RSSI_ADC);
-        // current meter needs the same ports
-        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
-            batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
-        }
-#endif // STM32F10X
-    }
-#endif // USE_SOFTSPI
-
 #if defined(USE_ADC)
     if (featureIsEnabled(FEATURE_RSSI_ADC)) {
         rxConfigMutable()->rssi_channel = 0;
@@ -449,10 +433,6 @@ static void validateAndFixConfig(void)
 
 #ifndef USE_RX_SPI
     featureDisable(FEATURE_RX_SPI);
-#endif
-
-#ifndef USE_SOFTSPI
-    featureDisable(FEATURE_SOFTSPI);
 #endif
 
 #ifndef USE_ESC_SENSOR
