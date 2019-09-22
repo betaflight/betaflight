@@ -30,3 +30,7 @@ const char * const buildTime = __TIME__;
 #ifdef STM32F1
 #warning STM32F1 based targets are unsupported as of Betaflight 3.3.
 #endif
+
+#ifdef STM32F3
+#warning STM32F3 based targets are unsupported as of Betaflight 4.1.
+#endif
