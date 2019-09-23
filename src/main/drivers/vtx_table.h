@@ -49,11 +49,7 @@
 #define VTX_TABLE_DEFAULT_CHANNEL       1
 #define VTX_TABLE_DEFAULT_FREQ          5740
 #define VTX_TABLE_DEFAULT_PITMODE_FREQ  0
-#ifdef USE_VTX_RTC6705
-#define VTX_TABLE_DEFAULT_POWER         VTX_RTC6705_DEFAULT_POWER_INDEX
-#else
-#define VTX_TABLE_DEFAULT_POWER         1 //lowest actual power mode
-#endif
+#define VTX_TABLE_DEFAULT_POWER         1 //1-based indexing. 0 means unknown and 1 is the lowest actual power mode
 
 struct vtxTableConfig_s;
 void vtxTableInit(void);
