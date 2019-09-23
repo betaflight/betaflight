@@ -71,7 +71,6 @@ void initEEPROM(void);
 bool resetEEPROM(bool useCustomDefaults);
 bool readEEPROM(void);
 void writeEEPROM(void);
-void writeEEPROMWithFeatures(uint32_t features);
 void writeUnmodifiedConfigToEEPROM(void);
 void ensureEEPROMStructureIsValid(void);
 

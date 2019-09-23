@@ -272,41 +272,41 @@ static void validateAndFixConfig(void)
     buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(1)->customAlignment, gyroDeviceConfig(1)->alignment);
 #endif
 
-    if (!(featureIsEnabled(FEATURE_RX_PARALLEL_PWM) || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_SERIAL) || featureIsEnabled(FEATURE_RX_MSP) || featureIsEnabled(FEATURE_RX_SPI))) {
+    if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI))) {
         featureEnable(DEFAULT_RX_FEATURE);
     }
 
-    if (featureIsEnabled(FEATURE_RX_PPM)) {
+    if (featureIsConfigured(FEATURE_RX_PPM)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
     }
 
-    if (featureIsEnabled(FEATURE_RX_MSP)) {
+    if (featureIsConfigured(FEATURE_RX_MSP)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
-    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
+    if (featureIsConfigured(FEATURE_RX_SERIAL)) {
         featureDisable(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
 #ifdef USE_RX_SPI
-    if (featureIsEnabled(FEATURE_RX_SPI)) {
+    if (featureIsConfigured(FEATURE_RX_SPI)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
 #endif // USE_RX_SPI
 
-    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+    if (featureIsConfigured(FEATURE_RX_PARALLEL_PWM)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
 #if defined(USE_ADC)
-    if (featureIsEnabled(FEATURE_RSSI_ADC)) {
+    if (featureIsConfigured(FEATURE_RSSI_ADC)) {
         rxConfigMutable()->rssi_channel = 0;
         rxConfigMutable()->rssi_src_frame_errors = false;
     } else
 #endif
     if (rxConfigMutable()->rssi_channel
 #if defined(USE_PWM) || defined(USE_PPM)
-        || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)
+        || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_PARALLEL_PWM)
 #endif
         ) {
         rxConfigMutable()->rssi_src_frame_errors = false;
@@ -340,7 +340,7 @@ static void validateAndFixConfig(void)
 #endif
 
     if (
-        featureIsEnabled(FEATURE_3D) || !featureIsEnabled(FEATURE_GPS)
+        featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS)
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif
@@ -665,6 +665,8 @@ bool readEEPROM(void)
     // Sanity check, read flash
     bool success = loadEEPROM();
 
+    featureInit();
+
     validateAndFixConfig();
 
     activateConfig();
@@ -691,14 +693,6 @@ void writeEEPROM(void)
     systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
 
     writeUnmodifiedConfigToEEPROM();
-}
-
-void writeEEPROMWithFeatures(uint32_t features)
-{
-    featureDisableAll();
-    featureEnable(features);
-
-    writeEEPROM();
 }
 
 bool resetEEPROM(bool useCustomDefaults)

@@ -185,18 +185,6 @@ typedef enum {
 static bool vtxTableNeedsInit = false;
 #endif
 
-static bool featureMaskIsCopied = false;
-static uint32_t featureMaskCopy;
-
-static uint32_t getFeatureMask(void)
-{
-    if (featureMaskIsCopied) {
-        return featureMaskCopy;
-    } else {
-        return featureConfig()->enabledFeatures;
-    }
-}
-
 static int mspDescriptor = 0;
 
 mspDescriptor_t mspDescriptorAlloc(void)
@@ -644,7 +632,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_FEATURE_CONFIG:
-        sbufWriteU32(dst, getFeatureMask());
+        sbufWriteU32(dst, featureConfig()->enabledFeatures);
         break;
 
 #ifdef USE_BEEPER
@@ -2547,11 +2535,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
             return MSP_RESULT_ERROR;
         }
 
-        if (featureMaskIsCopied) {
-            writeEEPROMWithFeatures(featureMaskCopy);
-        } else {
-            writeEEPROM();
-        }
+        writeEEPROM();
         readEEPROM();
 
 #ifdef USE_VTX_TABLE
@@ -2814,11 +2798,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
         break;
 #endif // USE_GPS
     case MSP_SET_FEATURE_CONFIG:
-        featureMaskCopy = sbufReadU32(src);
-        if (!featureMaskIsCopied) {
-            featureMaskIsCopied = true;
-        }
-
+        featureConfigReplace(sbufReadU32(src));
         break;
 
 #ifdef USE_BEEPER
