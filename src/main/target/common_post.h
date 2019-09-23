@@ -284,6 +284,7 @@
 
 #ifndef USE_DSHOT
 #undef USE_DSHOT_TELEMETRY
+#undef USE_DSHOT_BITBANG
 #endif
 
 #ifndef USE_DSHOT_TELEMETRY
