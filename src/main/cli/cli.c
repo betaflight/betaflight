@@ -3335,8 +3335,13 @@ static void cliBeeper(char *cmdline)
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
 void cliRxBind(char *cmdline){
     UNUSED(cmdline);
-    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
-        switch (rxConfig()->serialrx_provider) {
+    switch (rxRuntimeConfig.rxProvider) {
+    default:
+        cliPrint("Not supported.");
+
+        break;
+    case RX_PROVIDER_SERIAL:
+        switch (rxRuntimeConfig.serialrxProvider) {
         default:
             cliPrint("Not supported.");
             break;
@@ -3347,9 +3352,10 @@ void cliRxBind(char *cmdline){
             break;
 #endif
         }
-    } 
+
+        break;
 #if defined(USE_RX_SPI)
-    else if (featureIsEnabled(FEATURE_RX_SPI)) {
+    case RX_PROVIDER_SPI:
         switch (rxSpiConfig()->rx_spi_protocol) {
         default:
             cliPrint("Not supported.");
@@ -3379,9 +3385,10 @@ void cliRxBind(char *cmdline){
             break;
 #endif
         }
-    
-    }
+
+        break;
 #endif
+    }
 }
 #endif
 
