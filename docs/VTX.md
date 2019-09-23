@@ -278,9 +278,9 @@ vtxtable band 2 BOSCAM_B B CUSTOM 5733 5752 5771 5790 5809 5828 5847 5866
 vtxtable band 3 BOSCAM_E E CUSTOM 5705 5685 5665 5645 5885 5905 5925 5945
 vtxtable band 4 FATSHARK F CUSTOM 5740 5760 5780 5800 5820 5840 5860 5880
 vtxtable band 5 RACEBAND R CUSTOM 5658 5695 5732 5769 5806 5843 5880 5917
-vtxtable powerlevels 3
-vtxtable powervalues 0 1 2
-vtxtable powerlabels OFF MIN MAX
+vtxtable powerlevels 2
+vtxtable powervalues 1 2
+vtxtable powerlabels MIN MAX
 ```
 
 ### Pitmode
