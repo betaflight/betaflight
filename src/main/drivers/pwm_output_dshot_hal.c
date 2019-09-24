@@ -115,7 +115,17 @@ static void pwmDshotSetDirectionInput(
     }
     LL_TIM_EnableARRPreload(timer); // Only update the period once all channels are done
     timer->ARR = 0xffffffff;
+
+#ifdef STM32H7
+    IOConfigGPIO(motor->io, GPIO_MODE_OUTPUT_PP);
+#endif
+
     LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
+
+#ifdef STM32H7
+    IOConfigGPIOAF(motor->io, motor->iocfg, timerHardware->alternateFunction);
+#endif
+
     motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
     xLL_EX_DMA_Init(motor->dmaRef, pDmaInit);
 }
@@ -240,11 +250,21 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         output ^= TIMER_OUTPUT_INVERTED;
+#ifdef STM32H7
+        if (output & TIMER_OUTPUT_INVERTED) {
+            IOHi(motorIO);
+        } else {
+            IOLo(motorIO);
+        }
+#endif
     }
 #endif
     motor->timerHardware = timerHardware;
 
     motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode);
+#ifdef STM32H7
+    motor->io = motorIO;
+#endif
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     if (configureTimer) {
