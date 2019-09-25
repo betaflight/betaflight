@@ -914,7 +914,7 @@ static void vtxSASetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 
 static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 {
-    if (!(vtxSAIsReady(vtxDevice) && (saDevice.version >= 2))) {
+    if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
         return;
     }
 
@@ -1013,7 +1013,7 @@ static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
 
 static bool vtxSAGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
 {
-    if (!(vtxSAIsReady(vtxDevice) && (saDevice.version == 2))) {
+    if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
         return false;
     }
 
