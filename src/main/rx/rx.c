@@ -180,10 +180,10 @@ STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 }
 
 #ifdef USE_SERIAL_RX
-bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool enabled = false;
-    switch (rxConfig->serialrx_provider) {
+    switch (rxRuntimeConfig->serialrxProvider) {
 #ifdef USE_SERIALRX_SRXL2
     case SERIALRX_SRXL2:
         enabled = srxl2RxInit(rxConfig, rxRuntimeConfig);
@@ -252,6 +252,20 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
 void rxInit(void)
 {
+    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+        rxRuntimeConfig.rxProvider = RX_PROVIDER_PARALLEL_PWM;
+    } else if (featureIsEnabled(FEATURE_RX_PPM)) {
+        rxRuntimeConfig.rxProvider = RX_PROVIDER_PPM;
+    } else if (featureIsEnabled(FEATURE_RX_SERIAL)) {
+        rxRuntimeConfig.rxProvider = RX_PROVIDER_SERIAL;
+    } else if (featureIsEnabled(FEATURE_RX_MSP)) {
+        rxRuntimeConfig.rxProvider = RX_PROVIDER_MSP;
+    } else if (featureIsEnabled(FEATURE_RX_SPI)) {
+        rxRuntimeConfig.rxProvider = RX_PROVIDER_SPI;
+    } else {
+        rxRuntimeConfig.rxProvider = RX_PROVIDER_NONE;
+    }
+    rxRuntimeConfig.serialrxProvider = rxConfig()->serialrx_provider;
     rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
     rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeConfig.rcProcessFrameFn = nullProcessFrame;
@@ -282,38 +296,52 @@ void rxInit(void)
         }
     }
 
+    switch (rxRuntimeConfig.rxProvider) {
+    default:
+
+        break;
 #ifdef USE_SERIAL_RX
-    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
-        const bool enabled = serialRxInit(rxConfig(), &rxRuntimeConfig);
-        if (!enabled) {
-            rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
-            rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
+    case RX_PROVIDER_SERIAL:
+        {
+            const bool enabled = serialRxInit(rxConfig(), &rxRuntimeConfig);
+            if (!enabled) {
+                rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
+                rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
+            }
         }
-    }
+
+        break;
 #endif
 
 #ifdef USE_RX_MSP
-    if (featureIsEnabled(FEATURE_RX_MSP)) {
+    case RX_PROVIDER_MSP:
         rxMspInit(rxConfig(), &rxRuntimeConfig);
         needRxSignalMaxDelayUs = DELAY_5_HZ;
-    }
+
+        break;
 #endif
 
 #ifdef USE_RX_SPI
-    if (featureIsEnabled(FEATURE_RX_SPI)) {
-        const bool enabled = rxSpiInit(rxSpiConfig(), &rxRuntimeConfig);
-        if (!enabled) {
-            rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
-            rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
+    case RX_PROVIDER_SPI:
+        {
+            const bool enabled = rxSpiInit(rxSpiConfig(), &rxRuntimeConfig);
+            if (!enabled) {
+                rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
+                rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
+            }
         }
-    }
+
+        break;
 #endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
-    if (featureIsEnabled(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM)) {
+    case RX_PROVIDER_PPM:
+    case RX_PROVIDER_PARALLEL_PWM:
         rxPwmInit(rxConfig(), &rxRuntimeConfig);
-    }
+
+        break;
 #endif
+    }
 
 #if defined(USE_ADC)
     if (featureIsEnabled(FEATURE_RSSI_ADC)) {
@@ -343,7 +371,7 @@ bool rxAreFlightChannelsValid(void)
 void suspendRxPwmPpmSignal(void)
 {
 #if defined(USE_PWM) || defined(USE_PPM)
-    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+    if (rxRuntimeConfig.rxProvider == RX_PROVIDER_PARALLEL_PWM || rxRuntimeConfig.rxProvider == RX_PROVIDER_PPM) {
         suspendRxSignalUntil = micros() + SKIP_RC_ON_SUSPEND_PERIOD;
         skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
         failsafeOnRxSuspend(SKIP_RC_ON_SUSPEND_PERIOD);
@@ -354,7 +382,7 @@ void suspendRxPwmPpmSignal(void)
 void resumeRxPwmPpmSignal(void)
 {
 #if defined(USE_PWM) || defined(USE_PPM)
-    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+    if (rxRuntimeConfig.rxProvider == RX_PROVIDER_PARALLEL_PWM || rxRuntimeConfig.rxProvider == RX_PROVIDER_PPM) {
         suspendRxSignalUntil = micros();
         skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
         failsafeOnRxResume();
@@ -419,39 +447,52 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
 
+    switch (rxRuntimeConfig.rxProvider) {
+    default:
+
+        break;
 #if defined(USE_PWM) || defined(USE_PPM)
-    if (featureIsEnabled(FEATURE_RX_PPM)) {
+    case RX_PROVIDER_PPM:
         if (isPPMDataBeingReceived()) {
             signalReceived = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             resetPPMDataReceivedState();
         }
-    } else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+
+        break;
+    case RX_PROVIDER_PARALLEL_PWM:
         if (isPWMDataBeingReceived()) {
             signalReceived = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
             useDataDrivenProcessing = false;
         }
-    } else
+
+        break;
 #endif
-    {
-        const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
-        if (frameStatus & RX_FRAME_COMPLETE) {
-            rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
-            bool rxFrameDropped = (frameStatus & RX_FRAME_DROPPED) != 0;
-            signalReceived = !(rxIsInFailsafeMode || rxFrameDropped);
-            if (signalReceived) {
-                needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+    case RX_PROVIDER_SERIAL:
+    case RX_PROVIDER_MSP:
+    case RX_PROVIDER_SPI:
+        {
+            const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig);
+            if (frameStatus & RX_FRAME_COMPLETE) {
+                rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
+                bool rxFrameDropped = (frameStatus & RX_FRAME_DROPPED) != 0;
+                signalReceived = !(rxIsInFailsafeMode || rxFrameDropped);
+                if (signalReceived) {
+                    needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+                }
+
+                setLinkQuality(signalReceived, currentDeltaTime);
             }
 
-            setLinkQuality(signalReceived, currentDeltaTime);
+            if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
+                auxiliaryProcessingRequired = true;
+            }
         }
 
-        if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
-            auxiliaryProcessingRequired = true;
-        }
+        break;
     }
 
     if (signalReceived) {
@@ -584,7 +625,7 @@ static void detectAndApplySignalLossBehaviour(void)
             }
         }
 #if defined(USE_PWM) || defined(USE_PPM)
-        if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM)) {
+        if (rxRuntimeConfig.rxProvider == RX_PROVIDER_PARALLEL_PWM || rxRuntimeConfig.rxProvider == RX_PROVIDER_PPM) {
             // smooth output for PWM and PPM
             rcData[channel] = calculateChannelMovingAverage(channel, sample);
         } else
