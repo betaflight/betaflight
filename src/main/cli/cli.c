@@ -4769,11 +4769,30 @@ static void cliVersion(char *cmdline)
         shortGitRevision,
         MSP_API_VERSION_STRING
     );
+
 #ifdef FEATURE_CUT_LEVEL
     cliPrintLinef(" / FEATURE CUT LEVEL %d", FEATURE_CUT_LEVEL);
 #else
     cliPrintLinefeed();
 #endif
+
+#ifdef USE_UNIFIED_TARGET
+    cliPrint("# ");
+#ifdef USE_BOARD_INFO
+    if (strlen(getManufacturerId())) {
+        cliPrintf("manufacturer_id: %s   ", getManufacturerId());
+    }
+    if (strlen(getBoardName())) {
+        cliPrintf("board_name: %s   ", getBoardName());
+    }
+#endif // USE_BOARD_INFO
+
+#ifdef USE_CUSTOM_DEFAULTS
+    cliPrintf("custom defaults: %s", hasCustomDefaults() ? "YES" : "NO");
+#endif // USE_CUSTOM_DEFAULTS
+
+    cliPrintLinefeed();
+#endif // USE_UNIFIED_TARGET
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
