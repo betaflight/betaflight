@@ -6566,6 +6566,10 @@ bool cliProcessCustomDefaults(void)
         processCharacter(*customDefaultsPtr++);
     }
 
+    // Process a newline at the very end so that the last command gets executed,
+    // even when the file did not contain a trailing newline
+    processCharacter('\r');
+
     processingCustomDefaults = false;
 #if !defined(DEBUG_CUSTOM_DEFAULTS)
     cliWriter = cliWriterTemp;
