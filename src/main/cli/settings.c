@@ -481,6 +481,10 @@ static const char* const lookupTableDshotBitbangedTimer[] = {
     "AUTO", "TIM1", "TIM8"
 };
 
+static const char * const lookupTableOsdDisplayPortDevice[] = {
+    "NONE", "AUTO", "MAX7456", "MSP",
+};
+
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
@@ -599,6 +603,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableOffOnAuto),
     LOOKUP_TABLE_ENTRY(lookupTableInterpolatedSetpoint),
     LOOKUP_TABLE_ENTRY(lookupTableDshotBitbangedTimer),
+    LOOKUP_TABLE_ENTRY(lookupTableOsdDisplayPortDevice),
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -1355,6 +1360,7 @@ const clivalue_t valueTable[] = {
     { "osd_profile_3_name",         VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, OSD_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_OSD_CONFIG, offsetof(osdConfig_t, profile[2]) },
 #endif
     { "osd_gps_sats_show_hdop",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, gps_sats_show_hdop) },
+    { "osd_displayport_device",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_DISPLAYPORT_DEVICE }, PG_OSD_CONFIG, offsetof(osdConfig_t, displayPortDevice) },
 #endif
 
     { "osd_rcchannels",             VAR_INT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = OSD_RCCHANNELS_COUNT, PG_OSD_CONFIG, offsetof(osdConfig_t, rcChannels) },
