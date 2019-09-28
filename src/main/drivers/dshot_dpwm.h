@@ -116,6 +116,7 @@ typedef struct motorDmaOutput_s {
 #ifdef STM32H7
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
+    IO_t io;
 #endif
     uint8_t output;
     uint8_t index;
