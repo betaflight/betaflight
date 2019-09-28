@@ -97,11 +97,12 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
             }
         } else {
             // we're moving!
+            setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * pidGetDT();
             if (holdCount[axis] > 1.0f) {
                 // after a hold, re-start with setpoint speed averaged over hold time
                 setpointSpeed /= holdCount[axis];
+                setpointAcceleration /= holdCount[axis];
             }
-            setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * pidGetDT();
             holdCount[axis] = 1.0f;
         }
 
