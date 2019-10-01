@@ -119,6 +119,7 @@ bool cliMode = false;
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
+#include "io/vtx_smartaudio.h"
 #include "io/vtx.h"
 
 #include "msp/msp.h"
@@ -5969,6 +5970,28 @@ static void cliDshotTelemetryInfo(char *cmdline)
 }
 #endif
 
+#ifdef USE_VTX_CONTROL
+static void cliSmartAudioDeviceInfo(char *cmdline)
+{
+  UNUSED(cmdline);
+
+  cliPrintLinef("vtx version: %d", saDevice.version);
+  cliPrintLinef("mode(0x%x): fmode=%s", saDevice.mode,  (saDevice.mode & 1) ? "freq" : "chan");
+  cliPrintLinef(" pit=%s ", (saDevice.mode & 2) ? "on " : "off");
+  cliPrintLinef(" inb=%s", (saDevice.mode & 4) ? "on " : "off");
+  cliPrintLinef(" outb=%s", (saDevice.mode & 8) ? "on " : "off");
+  cliPrintLinef(" lock=%s", (saDevice.mode & 16) ? "unlocked" : "locked");
+  cliPrintLinef(" deferred=%s\r\n", (saDevice.mode & 32) ? "on" : "off");
+  cliPrintLinef("  channel: %d ", saDevice.channel);
+  cliPrintLinef("freq: %d ", saDevice.freq);
+  cliPrintLinef("power: %d ", saDevice.power);
+  cliPrintLinef("powerval: %d ", saDevice.power > 0 ? vtxTablePowerValues[saDevice.power - 1] : -1);
+  cliPrintLinef("pitfreq: %d ", saDevice.orfreq);
+  cliPrintLinef("BootIntoPitMode: %s ", saDevice.willBootIntoPitMode ? "yes" : "no");
+  cliPrintLinefeed();
+}
+#endif
+
 static void printConfig(char *cmdline, bool doDiff)
 {
     dumpFlags_t dumpMask = DUMP_MASTER;
@@ -6394,6 +6417,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #else
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", "<index> <aux_channel> <vtx_band> <vtx_channel> <vtx_power> <start_range> <end_range>", cliVtx),
+    CLI_COMMAND_DEF("vtx_smartaudio_info", "display SmartAudio vtx info", NULL, cliSmartAudioDeviceInfo),
 #endif
 #endif
 #ifdef USE_VTX_TABLE
