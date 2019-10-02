@@ -112,10 +112,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
 
-// *************** CAM *****************************
-
-#define CAMERA_CONTROL_PIN      PA8
-
 // *************** PIN *****************************
 
 #define PINIO1_PIN             PB1

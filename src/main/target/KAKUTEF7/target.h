@@ -39,8 +39,11 @@
 #define BEEPER_PIN              PD15
 #define BEEPER_INVERTED
 
+// XXX CAMERA_CONTROL_PIN is deprecated, so it was moved to PE13 entry in timerHardware[] array,
+// XXX where it is shared with PPM.
+// XXX Target maintainer must confirm intended operation under this change.
 //define camera control
-#define CAMERA_CONTROL_PIN      PE13
+//#define CAMERA_CONTROL_PIN      PE13
 
 #define USE_ACC
 #define USE_GYRO

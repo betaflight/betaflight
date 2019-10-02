@@ -40,7 +40,9 @@
 #define BARO_I2C_INSTANCE       (I2CDEV_1)
 #define DEFAULT_BARO_QMP6988
 
-#define CAMERA_CONTROL_PIN 	PB5
+// XXX CAMERA_CONTROL_PIN is deprecated.
+// XXX Target maintainer must create a valid timerHardware[] array entry for PB5 with TIM_USE_CAMERA_CONTROL
+//#define CAMERA_CONTROL_PIN 	PB5
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

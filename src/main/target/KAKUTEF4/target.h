@@ -44,8 +44,6 @@
 #define USE_BEEPER
 
 #if defined(FLYWOOF405)
-//define camera control
-#define CAMERA_CONTROL_PIN      PA9
 #define BEEPER_PIN              PC13
 #else
 #define BEEPER_PIN              PC9
