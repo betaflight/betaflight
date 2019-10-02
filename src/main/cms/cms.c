@@ -720,6 +720,7 @@ void cmsMenuOpen(void)
         currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
+        displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
