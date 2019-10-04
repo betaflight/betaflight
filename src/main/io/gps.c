@@ -231,9 +231,9 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbasMode = SBAS_AUTO,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
-    .gps_ublox_use_galileo = false,
-    .gps_set_home_point_once = false,
-    .gps_use_3d_speed = false
+    .gpsUbloxUseGalileo = false,
+    .gpsSetHomePointOnce = false,
+    .gpsUse3dSpeed = false
 );
 
 static void shiftPacketLog(void)
@@ -440,7 +440,7 @@ void gpsInitUblox(void)
             }
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_GALILEO) {
-                if ((gpsConfig()->gps_ublox_use_galileo) && (gpsData.state_position < sizeof(ubloxGalileoInit))) {
+                if ((gpsConfig()->gpsUbloxUseGalileo) && (gpsData.state_position < sizeof(ubloxGalileoInit))) {
                     serialWrite(gpsPort, ubloxGalileoInit[gpsData.state_position]);
                     gpsData.state_position++;
                 } else {
@@ -551,7 +551,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
-    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
+    if (!ARMING_FLAG(ARMED) && !gpsConfig()->gpsSetHomePointOnce) {
         DISABLE_STATE(GPS_FIX_HOME);
     }
 #if defined(USE_GPS_RESCUE)
@@ -1291,13 +1291,13 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
         GPS_verticalSpeedInCmS = 0;
     } else {
         if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
-            uint16_t speed = gpsConfig()->gps_use_3d_speed ? gpsSol.speed3d : gpsSol.groundSpeed;
+            uint16_t speed = gpsConfig()->gpsUse3dSpeed ? gpsSol.speed3d : gpsSol.groundSpeed;
             // Only add up movement when speed is faster than minimum threshold
             if (speed > GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S) {
                 uint32_t dist;
                 int32_t dir;
                 GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
-                if (gpsConfig()->gps_use_3d_speed) {
+                if (gpsConfig()->gpsUse3dSpeed) {
                     dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
                 }
                 GPS_distanceFlownInCm += dist;
@@ -1314,7 +1314,7 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
 
 void GPS_reset_home_position(void)
 {
-    if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
+    if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gpsSetHomePointOnce) {
         if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
             GPS_home[LAT] = gpsSol.llh.lat;
             GPS_home[LON] = gpsSol.llh.lon;

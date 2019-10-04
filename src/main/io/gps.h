@@ -73,9 +73,9 @@ typedef struct gpsConfig_s {
     sbasMode_e sbasMode;
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
-    uint8_t gps_ublox_use_galileo;
-    uint8_t gps_set_home_point_once;
-    uint8_t gps_use_3d_speed;
+    uint8_t gpsUbloxUseGalileo;
+    uint8_t gpsSetHomePointOnce;
+    uint8_t gpsUse3dSpeed;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
