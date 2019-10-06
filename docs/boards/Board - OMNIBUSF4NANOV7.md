@@ -20,16 +20,20 @@ This is the new Nano FC from Airbot! With added features in comparison to the pr
 |      SBUS     |         SBUS         |    RX1   |   PA10  |       Buildin-Inverter      |
 |      DSM2     |          TX1         |    TX1   |   PA9   | CLI serialrx_halduplex = ON |
 |   SmartAudio  |          S/A         |    TX5   |   PC12  |                             |
-|   Smartport   |          S.P         |   UART6  |  PC6/7  |      Buildin-Inverters      |
+|   Smartport   |          S.P         |   UART4  |  PA0/1  |      Buildin-Inverters      |
 | ESC Telemetry |          TLM         |    RX2   |   PA3   |                             |
 |   CamControl  |          CC          |          |   PA8   |                             |
 |      SDA      |          SDA         | I2C1_SDA |   PB9   |                             |
 |      SCL      |          SCL         | I2C1_SCL |   PB8   |                             |
-|      GPS      |        RX4/TX4       |   UART4  |  PA0/1  |        on Bottom side       |
+|      GPS      |        RX6/TX6       |   UART6  |  PC6/7  |        on Bottom side       |
 |  WS2812B LED  |          LED         |          |   PA15  |                             |
 |     Buzzer    |        BZ-/BZ+       |          |   PC5   |                             |
-|     UART4     |        RX3/TX3       |          | PC11/10 |                             |
+|     UART3     |        RX3/TX3       |          | PC11/10 |                             |
 
+## Revisions
+
+* Revision 1.0 UART4 and UART6 are swapped
+* Revision 1.1 use table above
 
 ## Pinmap
 ![O4N7 Top](images/OMNIBUSF4NANOV7-TopSide.png)
