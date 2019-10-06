@@ -1376,6 +1376,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("dyn_notch_q", "%d",                     gyroConfig()->dyn_notch_q);
         BLACKBOX_PRINT_HEADER_LINE("dyn_notch_min_hz", "%d",                gyroConfig()->dyn_notch_min_hz);
 #endif
+#ifdef USE_DSHOT_TELEMETRY
+        BLACKBOX_PRINT_HEADER_LINE("dshot_bidir", "%d",                     motorConfig()->dev.useDshotTelemetry);
+#endif
 #ifdef USE_RPM_FILTER
         BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_harmonics", "%d",        rpmFilterConfig()->gyro_rpm_notch_harmonics);
         BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_q", "%d",                rpmFilterConfig()->gyro_rpm_notch_q);
