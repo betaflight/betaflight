@@ -554,7 +554,7 @@ rx_spi_received_e frSkyXProcessFrame(uint8_t * const packet)
                 remoteToProcessIndex = 0;
                 telemetryRxBuffer[remoteToProcessId].needsProcessing = false;
                 remoteProcessedId = remoteToProcessId;
-                remoteToProcessId = (remoteProcessedId + 1) % TELEMETRY_SEQUENCE_LENGTH;
+                remoteToProcessId = (remoteToProcessId + 1) % TELEMETRY_SEQUENCE_LENGTH;
             }
         }
     }

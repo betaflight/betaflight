@@ -133,24 +133,24 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     return enabled;
 }
 
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider)
 {
     if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK &&
-        (rxRuntimeConfig.serialrxProvider == SERIALRX_SPEKTRUM1024 ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_SPEKTRUM2048 ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_SBUS ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_SUMD ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_SUMH ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_XBUS_MODE_B ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_XBUS_MODE_B_RJ01 ||
-        rxRuntimeConfig.serialrxProvider == SERIALRX_IBUS)) {
+        (serialrxProvider == SERIALRX_SPEKTRUM1024 ||
+        serialrxProvider == SERIALRX_SPEKTRUM2048 ||
+        serialrxProvider == SERIALRX_SBUS ||
+        serialrxProvider == SERIALRX_SUMD ||
+        serialrxProvider == SERIALRX_SUMH ||
+        serialrxProvider == SERIALRX_XBUS_MODE_B ||
+        serialrxProvider == SERIALRX_XBUS_MODE_B_RJ01 ||
+        serialrxProvider == SERIALRX_IBUS)) {
 
         return true;
     }
 #ifdef USE_TELEMETRY_IBUS
-    if (   portConfig->functionMask & FUNCTION_TELEMETRY_IBUS
+    if (portConfig->functionMask & FUNCTION_TELEMETRY_IBUS
         && portConfig->functionMask & FUNCTION_RX_SERIAL
-        && rxRuntimeConfig.serialrxProvider == SERIALRX_IBUS) {
+        && serialrxProvider == SERIALRX_IBUS) {
         // IBUS serial RX & telemetry
         return true;
     }
