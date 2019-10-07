@@ -421,13 +421,14 @@ void emfat_init_files(void)
     const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY);
 
     int entryIndex = PREDEFINED_ENTRY_COUNT + logCount;
+    const int usedSpace = flashfsIdentifyStartOfFreeSpace();
 
     if (logCount > 0) {
         // Create the all logs entry that represents all used flash space to
         // allow downloading the entire log in one file
         entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
         entry = &entries[entryIndex];
-        entry->curr_size = flashfsIdentifyStartOfFreeSpace();
+        entry->curr_size = usedSpace;
         entry->max_size = entry->curr_size;
         // This entry has timestamps corresponding to when the filesystem is mounted
         emfat_set_entry_cma(entry);
@@ -435,13 +436,15 @@ void emfat_init_files(void)
     }
 
     // Padding file to fill out the filesystem size to FILESYSTEM_SIZE_MB
-    entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
-    entry = &entries[entryIndex];
-    // used space is doubled because of the individual files plus the single complete file
-    entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsIdentifyStartOfFreeSpace() * 2);
-    entry->max_size = entry->curr_size;
-    // This entry has timestamps corresponding to when the filesystem is mounted
-    emfat_set_entry_cma(entry);
+    if (usedSpace * 2 < FILESYSTEM_SIZE_MB * 1024 * 1024) {
+        entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
+        entry = &entries[entryIndex];
+        // used space is doubled because of the individual files plus the single complete file
+        entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (usedSpace * 2);
+        entry->max_size = entry->curr_size;
+        // This entry has timestamps corresponding to when the filesystem is mounted
+        emfat_set_entry_cma(entry);
+    }
 
     emfat_init(&emfat, "BETAFLT", entries);
 }
