@@ -16,11 +16,17 @@ These instructions explain how to create a Unified Target configuration for an e
 
 ## 2. Get a dump of your board configuration
 
-- re-start CLI (Disconnect / Connect), then do a `dump hardware`, save the output into a file with 'Save to File';
+- re-start CLI (Disconnect / Connect), then do a `dump hardware`, save the output into a file with 'Save to File'.
 
-- edit the resulting file and verify that `board_name` is set to the target name, and `manufacturer_id` is set to the manufacturer's id as listed in [this document](https://github.com/betaflight/unified-targets/tree/master/Manufacturers.md). If the manufacturer is not listed, open an [issue](https://github.com/betaflight/betaflight/issues) and ask for a new id to be assigned. For boards that are homebrew and / or not planned for commercial availability, use `CUST` as the `manufacturer_id`.
 
-## 3. Flash the Unified Target firmware
+## 3. Add the board and manufacturer information
+
+- edit the file from the previous step, and verify that `board_name` is set to the target name, and `manufacturer_id` is set to the manufacturer's id as listed in [this document](https://github.com/betaflight/unified-targets/tree/master/Manufacturers.md);
+- if the manufacturer is not listed, open an [issue](https://github.com/betaflight/betaflight/issues) and ask for a new id to be assigned. This issue needs to contain the following: name of the company selling the board and supporting customers of it; a website URL for this company. In a future release of the Betaflight configurator, the listing for every board will include this company name, and users will be able to open the company's website from within Betaflight configurator. Allow for a day or two for the Betaflight team to respond to your issue and assign a manufacturer it;
+- for boards that are homebrew and / or not planned for commercial availability, use `CUST` as the `manufacturer_id`.
+
+
+## 4. Flash the Unified Target firmware
 
 - find the correct Unified Target for your board based on the MCU type, according to the table below. If your target's MCU is not listed, please open an [issue](https://github.com/betaflight/betaflight/issues) about this to let us know there is demand. Currently, MCU types with only one or two boards using them are not released as unified targets.
 
@@ -34,7 +40,7 @@ These instructions explain how to create a Unified Target configuration for an e
 - find and install the firmware (4.0 or newer) for the Unified Target identified above. The firmware is available from the board type drop-down in configurator. Be aware that after flashing this firmware, the LEDs on your board will not be working - this is normal.
 
 
-## 4. Do the initial setup for your Unified Target configuration
+## 5. Do the initial setup for your Unified Target configuration
 
 - connect to your board running the Unified Target firmware, enter CLI;
 
@@ -43,7 +49,7 @@ These instructions explain how to create a Unified Target configuration for an e
 - when the board reboots now, the LEDs should start working again - this is a sign that the previous step was successful.
 
 
-## 5. Add custom settings for your board to the Unified Target configuration
+## 6. Add custom settings for your board to the Unified Target configuration
 
 - this step is optional. Omitting it will give users of your board a minimal but working board configuration when using a Unified Target;
 
@@ -54,7 +60,7 @@ These instructions explain how to create a Unified Target configuration for an e
 - save the changes;
 
 
-## 6. Create a Unified Target configuration file for your board
+## 7. Create a Unified Target configuration file for your board
 
 - re-start CLI (Disconnect / Connect), then do a `diff all bare`, save the output into a file named `<manufacturer_id>-<board_name>.config` with 'Save to File'. It is crucial that the name exactly matches the manufacturer id and board name specified in the file, or else checking of the pull request you are going to open in a subsequent step will fail;
 
