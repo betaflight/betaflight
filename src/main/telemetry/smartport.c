@@ -207,7 +207,7 @@ static smartPortWriteFrameFn *smartPortWriteFrame;
 static bool smartPortMspReplyPending = false;
 #endif
 
-smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPortCheckQueueEmptyFn *checkQueueEmpty, bool useChecksum)
+smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPortReadyToSendFn *readyToSend, bool useChecksum)
 {
     static uint8_t rxBuffer[sizeof(smartPortPayload_t)];
     static uint8_t smartPortRxBytes = 0;
@@ -229,9 +229,10 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
 
     if (awaitingSensorId) {
         awaitingSensorId = false;
-        if ((c == FSSP_SENSOR_ID1) && checkQueueEmpty()) {
-            // our slot is starting, no need to decode more
+        if ((c == FSSP_SENSOR_ID1) && readyToSend()) {
+            // our slot is starting, start sending
             *clearToSend = true;
+            // no need to decode more
             skipUntilStart = true;
         } else if (c == FSSP_SENSOR_ID2) {
             checksum = 0;
@@ -865,7 +866,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     }
 }
 
-static bool serialCheckQueueEmpty(void)
+static bool serialReadyToSend(void)
 {
     return (serialRxBytesWaiting(smartPortSerialPort) == 0);
 }
@@ -879,7 +880,7 @@ void handleSmartPortTelemetry(void)
         bool clearToSend = false;
         while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
             uint8_t c = serialRead(smartPortSerialPort);
-            payload = smartPortDataReceive(c, &clearToSend, serialCheckQueueEmpty, true);
+            payload = smartPortDataReceive(c, &clearToSend, serialReadyToSend, true);
         }
 
             processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
