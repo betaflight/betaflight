@@ -183,7 +183,7 @@ void configureMAVLinkTelemetryPort(void)
 
 void checkMAVLinkTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeConfig.serialrxProvider)) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             mavlinkTelemetryEnabled = true;

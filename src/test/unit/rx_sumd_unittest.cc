@@ -46,10 +46,12 @@ extern "C" {
 }
 
 
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider)
 {
     //TODO: implement
-    (void) portConfig;
+    UNUSED(portConfig);
+    UNUSED(serialrxProvider);
+
     return false;
 }
 

@@ -220,7 +220,6 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
 #ifdef USE_TELEMETRY
-    // bool portShared = telemetryCheckRxPortShared(portConfig);
     bool portShared = isSerialPortShared(portConfig, FUNCTION_RX_SERIAL, FUNCTION_TELEMETRY_IBUS);
 #else
     bool portShared = false;

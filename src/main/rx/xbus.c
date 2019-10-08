@@ -303,7 +303,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
 #ifdef USE_TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
+    bool portShared = telemetryCheckRxPortShared(portConfig, rxRuntimeConfig->serialrxProvider);
 #else
     bool portShared = false;
 #endif

@@ -289,7 +289,7 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeConfig.serialrxProvider)) {
         if (!ltmEnabled && telemetrySharedPort != NULL) {
             ltmPort = telemetrySharedPort;
             ltmEnabled = true;

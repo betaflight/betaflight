@@ -29,7 +29,13 @@ extern "C" {
 
     #include "io/serial.h"
 
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/rx.h"
+
     void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
+
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
