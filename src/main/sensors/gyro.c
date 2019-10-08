@@ -910,9 +910,9 @@ static FAST_CODE_NOINLINE void handleOverflow(timeUs_t currentTimeUs)
     // after both sensors are scaled and averaged.
     const float gyroOverflowResetRate = GYRO_OVERFLOW_RESET_THRESHOLD * gyro.scale;
 
-    if ((abs(gyro.gyroADCf[X]) < gyroOverflowResetRate)
-          && (abs(gyro.gyroADCf[Y]) < gyroOverflowResetRate)
-          && (abs(gyro.gyroADCf[Z]) < gyroOverflowResetRate)) {
+    if ((fabsf(gyro.gyroADCf[X]) < gyroOverflowResetRate)
+          && (fabsf(gyro.gyroADCf[Y]) < gyroOverflowResetRate)
+          && (fabsf(gyro.gyroADCf[Z]) < gyroOverflowResetRate)) {
         // if we have 50ms of consecutive OK gyro vales, then assume yaw readings are OK again and reset overflowDetected
         // reset requires good OK values on all axes
         if (cmpTimeUs(currentTimeUs, overflowTimeUs) > 50000) {
@@ -943,13 +943,13 @@ static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
         // after both sensors are scaled and averaged.
         const float gyroOverflowTriggerRate = GYRO_OVERFLOW_TRIGGER_THRESHOLD * gyro.scale;
 
-        if (abs(gyro.gyroADCf[X]) > gyroOverflowTriggerRate) {
+        if (fabsf(gyro.gyroADCf[X]) > gyroOverflowTriggerRate) {
             overflowCheck |= GYRO_OVERFLOW_X;
         }
-        if (abs(gyro.gyroADCf[Y]) > gyroOverflowTriggerRate) {
+        if (fabsf(gyro.gyroADCf[Y]) > gyroOverflowTriggerRate) {
             overflowCheck |= GYRO_OVERFLOW_Y;
         }
-        if (abs(gyro.gyroADCf[Z]) > gyroOverflowTriggerRate) {
+        if (fabsf(gyro.gyroADCf[Z]) > gyroOverflowTriggerRate) {
             overflowCheck |= GYRO_OVERFLOW_Z;
         }
         if (overflowCheck & overflowAxisMask) {
@@ -968,7 +968,7 @@ static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
 static FAST_CODE_NOINLINE void handleYawSpin(timeUs_t currentTimeUs)
 {
     const float yawSpinResetRate = gyroConfig()->yaw_spin_threshold - 100.0f;
-    if (abs(gyro.gyroADCf[Z]) < yawSpinResetRate) {
+    if (fabsf(gyro.gyroADCf[Z]) < yawSpinResetRate) {
         // testing whether 20ms of consecutive OK gyro yaw values is enough
         if (cmpTimeUs(currentTimeUs, yawSpinTimeUs) > 20000) {
             yawSpinDetected = false;
