@@ -249,7 +249,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 }
             }
             if (!packetOk) {
-                cc2500Strobe(CC2500_SRX);
+                cc2500Strobe(CC2500_SFRX);
             }
         }
 
