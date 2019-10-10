@@ -249,7 +249,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                 }
             }
             if (!packetOk) {
-                cc2500Strobe(CC2500_SRX);
+                cc2500Strobe(CC2500_SFRX);
             }
         }
 
@@ -295,7 +295,6 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
             cc2500Strobe(CC2500_SIDLE);
             cc2500WriteFifo(frame, frame[0] + 1);
             *protocolState = STATE_DATA;
-            ret = RX_SPI_RECEIVED_DATA;
             lastPacketReceivedTime = currentPacketReceivedTime;
         }
 

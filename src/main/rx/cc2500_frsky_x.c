@@ -155,7 +155,8 @@ static uint8_t telemetryOutBuffer[TELEMETRY_OUT_BUFFER_SIZE];
 
 static bool telemetryEnabled = false;
 
-static uint8_t remoteProcessedId = 0;
+static uint8_t remoteToProcessId = 0;
+static uint8_t remoteToProcessIndex = 0;
 #endif
 #endif // USE_RX_FRSKY_SPI_TELEMETRY
 
@@ -368,12 +369,10 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         // here FS code could be
     case STATE_DATA:
         if (cc2500getGdo() && (frameReceived == false)){
-            bool packetOk = false;
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             if (ccLen >= packetLength) {
                 cc2500ReadFifo(packet, packetLength);
                 if (isValidPacket(packet)) {
-                    packetOk = true;
                     missingPackets = 0;
                     timeoutUs = 1;
                     receiveDelayUs = 0;
@@ -432,7 +431,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 
                     if (receiveTelemetryRetryCount >= 5) {
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_SMARTPORT)
-                         remoteProcessedId = TELEMETRY_SEQUENCE_LENGTH - 1;
+                         remoteToProcessId = 0;
+                         remoteToProcessIndex = 0;
 #endif
                          remoteAckId = TELEMETRY_SEQUENCE_LENGTH - 1;
                          for (unsigned i = 0; i < TELEMETRY_SEQUENCE_LENGTH; i++) {
@@ -448,10 +448,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
                 if (!frameReceived) {
                     packetErrors++;
                     DEBUG_SET(DEBUG_RX_FRSKY_SPI, DEBUG_DATA_BAD_FRAME, packetErrors);
+                    cc2500Strobe(CC2500_SFRX);
                 }
-            }
-            if (!packetOk) {
-                cc2500Strobe(CC2500_SRX);
             }
         }
         if (telemetryReceived) {
@@ -468,6 +466,10 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             cc2500Strobe(CC2500_SRX);
             *protocolState = STATE_UPDATE;
         }
+        if (frameReceived) {
+            ret |= RX_SPI_RECEIVED_DATA;
+        }
+
         break;
 #ifdef USE_RX_FRSKY_SPI_TELEMETRY
     case STATE_TELEMETRY:
@@ -488,9 +490,6 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
             }
 #endif
             *protocolState = STATE_RESUME;
-            if (frameReceived) {
-                ret |= RX_SPI_RECEIVED_DATA;
-            }
         }
 
         break;
@@ -531,7 +530,6 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
 rx_spi_received_e frSkyXProcessFrame(uint8_t * const packet)
 {
     static timeMs_t pollingTimeMs = 0;
-    static uint8_t remoteToProcessIndex = 0;
 
     UNUSED(packet);
 
@@ -543,18 +541,20 @@ rx_spi_received_e frSkyXProcessFrame(uint8_t * const packet)
 
         clearToSend = true;
     } else {
-        uint8_t remoteToProcessId = (remoteProcessedId + 1) % TELEMETRY_SEQUENCE_LENGTH;
         while (telemetryRxBuffer[remoteToProcessId].needsProcessing && !payload) {
+            if (remoteToProcessIndex >= telemetryRxBuffer[remoteToProcessId].data.dataLength) {
+                remoteToProcessIndex = 0;
+                telemetryRxBuffer[remoteToProcessId].needsProcessing = false;
+                remoteToProcessId = (remoteToProcessId + 1) % TELEMETRY_SEQUENCE_LENGTH;
+
+                if (!telemetryRxBuffer[remoteToProcessId].needsProcessing) {
+                    break;
+                }
+            }
+
             while (remoteToProcessIndex < telemetryRxBuffer[remoteToProcessId].data.dataLength && !payload) {
                 payload = smartPortDataReceive(telemetryRxBuffer[remoteToProcessId].data.data[remoteToProcessIndex], &clearToSend, frSkyXCheckQueueEmpty, false);
                 remoteToProcessIndex = remoteToProcessIndex + 1;
-            }
-
-            if (remoteToProcessIndex == telemetryRxBuffer[remoteToProcessId].data.dataLength) {
-                remoteToProcessIndex = 0;
-                telemetryRxBuffer[remoteToProcessId].needsProcessing = false;
-                remoteProcessedId = remoteToProcessId;
-                remoteToProcessId = (remoteToProcessId + 1) % TELEMETRY_SEQUENCE_LENGTH;
             }
         }
     }
