@@ -49,3 +49,4 @@ void osdAnalyzeActiveElements(void);
 void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs);
 void osdResetAlarms(void);
 void osdUpdateAlarms(void);
+bool osdElementsNeedAccelerometer(void);

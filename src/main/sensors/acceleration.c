@@ -96,6 +96,11 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
     );
 }
 
+static void setConfigCalibrationCompleted(void)
+{
+    accelerometerConfigMutable()->calibrationCompleted = true;
+}
+
 void accResetRollAndPitchTrims(void)
 {
     resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
@@ -119,6 +124,7 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
         .acc_lpf_hz = 10,
         .acc_hardware = ACC_DEFAULT,
         .acc_high_fsr = false,
+        .calibrationCompleted = false,
     );
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
@@ -405,6 +411,7 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
         accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
+        setConfigCalibrationCompleted();
 
         saveConfigAndNotify();
     }
@@ -459,6 +466,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
         accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
+        setConfigCalibrationCompleted();
 
         saveConfigAndNotify();
     }
