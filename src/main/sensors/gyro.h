@@ -37,6 +37,11 @@
 #include "pg/pg.h"
 
 #define FILTER_FREQUENCY_MAX 4000 // maximum frequency for filter cutoffs (nyquist limit of 8K max sampling)
+#define DYN_LPF_FILTER_FREQUENCY_MAX 1000
+
+#define DYN_LPF_GYRO_MIN_HZ_DEFAULT 200
+#define DYN_LPF_GYRO_MAX_HZ_DEFAULT 500
+#define GYRO_LOWPASS_2_HZ_DEFAULT 250
 
 #ifdef USE_YAW_SPIN_RECOVERY
 #define YAW_SPIN_RECOVERY_THRESHOLD_MIN 500
@@ -199,6 +204,8 @@ typedef struct gyroConfig_s {
 
     uint8_t gyrosDetected; // What gyros should detection be attempted for on startup. Automatically set on first startup.
     uint8_t dyn_lpf_curve_expo; // set the curve for dynamic gyro lowpass filter
+    uint8_t  slider_gyro_filter;
+    uint8_t  slider_gyro_filter_multiplier;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

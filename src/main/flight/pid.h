@@ -36,6 +36,10 @@
 #define PIDSUM_LIMIT_MIN            100
 #define PIDSUM_LIMIT_MAX            1000
 
+#define PID_GAIN_MAX 200
+#define F_GAIN_MAX 2000
+#define D_MIN_GAIN_MAX 100
+
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
 #define ITERM_SCALE 0.244381f
@@ -54,6 +58,15 @@
 
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 30000
+#define PID_ROLL_DEFAULT  { 42, 85, 35, 90 }
+#define PID_PITCH_DEFAULT { 46, 90, 38, 95 }
+#define PID_YAW_DEFAULT   { 45, 90,  0, 90 }
+#define D_MIN_DEFAULT     { 23, 25, 0 }
+
+#define DYN_LPF_DTERM_MIN_HZ_DEFAULT 70
+#define DYN_LPF_DTERM_MAX_HZ_DEFAULT 170
+#define DTERM_LOWPASS_2_HZ_DEFAULT 150
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,
@@ -200,6 +213,18 @@ typedef struct pidProfile_s {
     uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
+
+    uint8_t slider_pids_mode;
+    uint8_t slider_master_multiplier;
+    uint8_t slider_roll_pitch_ratio;
+    uint8_t slider_i_gain;
+    uint8_t slider_pd_ratio;
+    uint8_t slider_pd_gain;
+    uint8_t slider_dmin_ratio;
+    uint8_t slider_ff_gain;
+
+    uint8_t slider_dterm_filter;
+    uint8_t slider_dterm_filter_multiplier;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

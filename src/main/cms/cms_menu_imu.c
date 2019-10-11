@@ -40,6 +40,7 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
+#include "config/tuning_sliders.h"
 
 #include "drivers/pwm_output.h"
 
@@ -228,6 +229,113 @@ static CMS_Menu cmsx_menuPid = {
     .entries = cmsx_menuPidEntries
 };
 
+#ifdef USE_TUNING_SLIDERS
+static uint8_t cmsx_slider_pids_mode;
+static uint8_t cmsx_slider_master_multiplier;
+static uint8_t cmsx_slider_roll_pitch_ratio;
+static uint8_t cmsx_slider_i_gain;
+static uint8_t cmsx_slider_pd_ratio;
+static uint8_t cmsx_slider_pd_gain;
+static uint8_t cmsx_slider_dmin_ratio;
+static uint8_t cmsx_slider_ff_gain;
+
+static uint8_t cmsx_slider_dterm_filter;
+static uint8_t cmsx_slider_dterm_filter_multiplier;
+static uint8_t cmsx_slider_gyro_filter;
+static uint8_t cmsx_slider_gyro_filter_multiplier;
+
+static const void *cmsx_slidersOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+
+    cmsx_slider_pids_mode = pidProfile->slider_pids_mode;
+    cmsx_slider_master_multiplier = pidProfile->slider_master_multiplier;
+    cmsx_slider_roll_pitch_ratio = pidProfile->slider_roll_pitch_ratio;
+    cmsx_slider_i_gain = pidProfile->slider_i_gain;
+    cmsx_slider_pd_ratio = pidProfile->slider_pd_ratio;
+    cmsx_slider_pd_gain = pidProfile->slider_pd_gain;
+    cmsx_slider_dmin_ratio = pidProfile->slider_dmin_ratio;
+    cmsx_slider_ff_gain = pidProfile->slider_ff_gain;
+
+    cmsx_slider_dterm_filter = pidProfile->slider_dterm_filter;
+    cmsx_slider_dterm_filter_multiplier = pidProfile->slider_dterm_filter_multiplier;
+    cmsx_slider_gyro_filter = gyroConfig()->slider_gyro_filter;
+    cmsx_slider_gyro_filter_multiplier = gyroConfig()->slider_gyro_filter_multiplier;
+
+    return 0;
+}
+
+static const void *cmsx_slidersOnExit(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    pidProfile_t *pidProfile = currentPidProfile;
+
+    pidProfile->slider_pids_mode = cmsx_slider_pids_mode;
+    pidProfile->slider_master_multiplier = cmsx_slider_master_multiplier;
+    pidProfile->slider_roll_pitch_ratio = cmsx_slider_roll_pitch_ratio;
+    pidProfile->slider_i_gain = cmsx_slider_i_gain;
+    pidProfile->slider_pd_ratio = cmsx_slider_pd_ratio;
+    pidProfile->slider_pd_gain = cmsx_slider_pd_gain;
+    pidProfile->slider_dmin_ratio = cmsx_slider_dmin_ratio;
+    pidProfile->slider_ff_gain = cmsx_slider_ff_gain;
+
+    pidProfile->slider_dterm_filter = cmsx_slider_dterm_filter;
+    pidProfile->slider_dterm_filter_multiplier = cmsx_slider_dterm_filter_multiplier;
+    gyroConfigMutable()->slider_gyro_filter = cmsx_slider_gyro_filter;
+    gyroConfigMutable()->slider_gyro_filter_multiplier = cmsx_slider_gyro_filter_multiplier;
+
+    return 0;
+}
+
+static const void *cmsx_applyTuningSliders(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    applyTuningSliders(currentPidProfile);
+
+    return 0;
+}
+
+static const OSD_Entry cmsx_menuSlidersEntries[] =
+{
+    { "-- PID SLIDERS --", OME_Label, NULL, NULL, 0},
+    { "PID SLIDERS",    OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_slider_pids_mode, PID_TUNING_SLIDERS_MODE_COUNT - 1, lookupTableSliderPidsMode }, 0 },
+    { "MASTER MULT",    OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_master_multiplier, SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "R/P RATIO",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_roll_pitch_ratio,  SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "I GAIN",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_i_gain,            SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "PD RATIO",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_pd_ratio,          SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "PD GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_pd_gain,           SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "DMIN RATIO",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_dmin_ratio,        SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "FF GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_ff_gain,           SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+
+    { "-- FILTER SLIDERS --", OME_Label, NULL, NULL, 0},
+    { "GYRO SLIDER",    OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_slider_gyro_filter,  1, lookupTableOffOn }, 0 },
+    { "GYRO MULT",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_gyro_filter_multiplier,  SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+    { "DTERM SLIDER",   OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_slider_dterm_filter, 1, lookupTableOffOn }, 0 },
+    { "DTERM MULT",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_slider_dterm_filter_multiplier, SLIDER_MIN, SLIDER_MAX, 1, 10 }, 0 },
+
+    { "APPLY SLIDERS",  OME_Funcall, cmsx_applyTuningSliders, NULL, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuSliders = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "XSLIDER",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_slidersOnEnter,
+    .onExit = cmsx_slidersOnExit,
+    .entries = cmsx_menuSlidersEntries,
+};
+#endif // USE_TUNING_SLIDERS
+
 //
 // Rate & Expo
 //
@@ -344,7 +452,7 @@ static const OSD_Entry cmsx_menuLaunchControlEntries[] = {
     { "TRIGGER THROTTLE", OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlThrottlePercent, 0,  LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX, 1 } , 0 },
     { "ANGLE LIMIT",      OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlAngleLimit,      0,  80, 1 } , 0 },
     { "ITERM GAIN",       OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_launchControlGain,            0, 200, 1 } , 0 },
-	
+
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -604,7 +712,7 @@ static const OSD_Entry cmsx_menuFilterGlobalEntries[] =
 #ifdef USE_MULTI_GYRO
     { "GYRO TO USE",  OME_TAB,  NULL, &(OSD_TAB_t)    { &gyroConfig_gyro_to_use,  2, osdTableGyroToUse}, REBOOT_REQUIRED },
 #endif
-	
+
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -767,7 +875,7 @@ static const OSD_Entry cmsx_menuFilterPerProfileEntries[] =
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, FILTER_FREQUENCY_MAX, 1 }, 0 },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, FILTER_FREQUENCY_MAX, 1 }, 0 },
     { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lowpass_hz,       0, 500, 1 }, 0 },
-	
+
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -864,6 +972,9 @@ static const OSD_Entry cmsx_menuImuEntries[] =
 
     {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, PID_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
+#ifdef USE_TUNING_SLIDERS
+    {"SLIDERS",   OME_Submenu, cmsMenuChange,                 &cmsx_menuSliders,                                             0},
+#endif
     {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 

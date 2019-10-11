@@ -33,6 +33,7 @@
 #include "common/maths.h"
 
 #include "config/config_reset.h"
+#include "config/tuning_sliders.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
@@ -127,9 +128,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 42, 85, 35, 90 },
-            [PID_PITCH] = { 46, 90, 38, 95 },
-            [PID_YAW] =   { 45, 90, 0, 90 },
+            [PID_ROLL] =  PID_ROLL_DEFAULT,
+            [PID_PITCH] = PID_PITCH_DEFAULT,
+            [PID_YAW] =   PID_YAW_DEFAULT,
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -177,11 +178,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
                                     // overridden and the static lowpass 1 is disabled. We can't set this
                                     // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                     // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
-        .dterm_lowpass2_hz = 150,   // second Dterm LPF ON by default
+        .dterm_lowpass2_hz = DTERM_LOWPASS_2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
-        .dyn_lpf_dterm_min_hz = 70,
-        .dyn_lpf_dterm_max_hz = 170,
+        .dyn_lpf_dterm_min_hz = DYN_LPF_DTERM_MIN_HZ_DEFAULT,
+        .dyn_lpf_dterm_max_hz = DYN_LPF_DTERM_MAX_HZ_DEFAULT,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
         .launchControlThrottlePercent = 20,
         .launchControlAngleLimit = 0,
@@ -190,7 +191,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min = { 23, 25, 0 },      // roll, pitch, yaw
+        .d_min = D_MIN_DEFAULT,
         .d_min_gain = 37,
         .d_min_advance = 20,
         .motor_output_limit = 100,
@@ -209,6 +210,16 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
+        .slider_pids_mode = PID_TUNING_SLIDERS_OFF,
+        .slider_master_multiplier = 100,
+        .slider_roll_pitch_ratio = 100,
+        .slider_i_gain = 100,
+        .slider_pd_ratio = 100,
+        .slider_pd_gain = 100,
+        .slider_dmin_ratio = 100,
+        .slider_ff_gain = 100,
+        .slider_dterm_filter = true,
+        .slider_dterm_filter_multiplier = 100,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
