@@ -1,25 +1,28 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
@@ -50,8 +53,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { DEFIO_TAG_E(PA15), DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB8) },
-        .sdaPins = { DEFIO_TAG_E(PA14), DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB9) },
+        .sclPins = { I2CPINDEF(PA15), I2CPINDEF(PB6), I2CPINDEF(PB8) },
+        .sdaPins = { I2CPINDEF(PA14), I2CPINDEF(PB7), I2CPINDEF(PB9) },
         .rcc = RCC_APB1(I2C1),
     },
 #endif
@@ -59,8 +62,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = I2C2,
-        .sclPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PF6) },
-        .sdaPins = { DEFIO_TAG_E(PA10) },
+        .sclPins = { I2CPINDEF(PA9), I2CPINDEF(PF6) },
+        .sdaPins = { I2CPINDEF(PA10) },
         .rcc = RCC_APB1(I2C2),
     },
 #endif
@@ -281,4 +284,27 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     return true;
 }
 
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+{
+    bool status = true;
+
+    for (uint8_t i = 0; i < len_; i++) {
+        status &= i2cWrite(device, addr_, reg_ + i, data[i]);
+    }
+
+    return status;
+}
+
+bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+{
+    return i2cRead(device, addr_, reg, len, buf);
+}
+
+bool i2cBusy(I2CDevice device, bool *error)
+{
+    UNUSED(device);
+    UNUSED(error);
+
+    return false;
+}
 #endif

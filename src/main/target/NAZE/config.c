@@ -1,37 +1,43 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 
 #include "common/axis.h"
 #include "common/utils.h"
 
+#include "drivers/io.h"
+
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/controlrate_profile.h"
 
 #include "flight/failsafe.h"
-#include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -41,6 +47,7 @@
 
 #include "pg/beeper_dev.h"
 #include "pg/flash.h"
+#include "pg/motor.h"
 
 #include "hardware_revision.h"
 
@@ -54,7 +61,9 @@ void targetConfiguration(void)
 
     motorConfigMutable()->minthrottle = 1049;
 
-    gyroConfigMutable()->gyro_lpf = GYRO_LPF_188HZ;
+    gyroDeviceConfigMutable()->extiTag = selectMPUIntExtiConfigByHardwareRevision();
+
+    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
     gyroConfigMutable()->gyro_soft_lpf_hz = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
@@ -64,7 +73,7 @@ void targetConfiguration(void)
         rxChannelRangeConfigsMutable(channel)->max = 1860;
     }*/
 
-    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
         pidProfile->pid[PID_ROLL].P = 60;
@@ -78,8 +87,9 @@ void targetConfiguration(void)
         pidProfile->pid[PID_LEVEL].P = 30;
         pidProfile->pid[PID_LEVEL].D = 30;
 
-        pidProfile->dtermSetpointWeight = 200;
-        pidProfile->setpointRelaxRatio = 50;
+        pidProfile->pid[PID_PITCH].F = 200;
+        pidProfile->pid[PID_ROLL].F = 200;
+        pidProfile->feedForwardTransition = 50;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
@@ -87,7 +97,7 @@ void targetConfiguration(void)
 
         controlRateConfig->rcRates[FD_ROLL] = 100;
         controlRateConfig->rcRates[FD_PITCH] = 100;
-        controlRateConfig->rcRate[FD_YAW] = 110;
+        controlRateConfig->rcRates[FD_YAW] = 110;
         controlRateConfig->rcExpo[FD_ROLL] = 0;
         controlRateConfig->rcExpo[FD_PITCH] = 0;
         controlRateConfig->rates[FD_ROLL] = 77;

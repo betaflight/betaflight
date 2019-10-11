@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -21,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_TELEMETRY
+#ifdef USE_TELEMETRY_CRSF
 
 #include "build/atomic.h"
 #include "build/build_config.h"
@@ -37,6 +40,8 @@
 #include "common/streambuf.h"
 #include "common/utils.h"
 
+#include "cms/cms.h"
+
 #include "drivers/nvic.h"
 
 #include "fc/config.h"
@@ -44,20 +49,22 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
+#include "flight/position.h"
 
-#include "interface/crsf_protocol.h"
-
+#include "io/displayport_crsf.h"
 #include "io/gps.h"
 #include "io/serial.h"
 
 #include "rx/crsf.h"
+#include "rx/crsf_protocol.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
+
+#include "telemetry/crsf.h"
 
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
@@ -106,7 +113,7 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
     int pos = 0;
     while (true) {
         const int mspFrameLength = mspRxBuffer.bytes[pos];
-        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength)) {
+        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
             requestHandled |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
@@ -126,7 +133,7 @@ static void crsfInitializeFrame(sbuf_t *dst)
     dst->ptr = crsfFrame;
     dst->end = ARRAYEND(crsfFrame);
 
-    sbufWriteU8(dst, CRSF_ADDRESS_BROADCAST);
+    sbufWriteU8(dst, CRSF_SYNC_BYTE);
 }
 
 static void crsfFinalize(sbuf_t *dst)
@@ -174,10 +181,9 @@ void crsfFrameGps(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
     sbufWriteU32BigEndian(dst, gpsSol.llh.lat); // CRSF and betaflight use same units for degrees
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
-    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 50) / 100); // gpsSol.groundSpeed is in cm/s
     sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
-    //Send real GPS altitude only if it's reliable (there's a GPS fix)
-    const uint16_t altitude = (STATE(GPS_FIX) ? gpsSol.llh.alt : 0) + 1000;
+    const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
     sbufWriteU8(dst, gpsSol.numSat);
 }
@@ -195,7 +201,11 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
-    sbufWriteU16BigEndian(dst, getBatteryVoltage()); // vbat is in units of 0.1V
+    if (telemetryConfig()->report_cell_voltage) {
+        sbufWriteU16BigEndian(dst, (getBatteryAverageCellVoltage() + 5) / 10); // vbat is in units of 0.01V
+    } else {
+        sbufWriteU16BigEndian(dst, getLegacyBatteryVoltage());
+    }
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
     const uint32_t mAhDrawn = getMAhDrawn();
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentageRemaining();
@@ -257,19 +267,39 @@ void crsfFrameFlightMode(sbuf_t *dst)
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
 
-    // use same logic as OSD, so telemetry displays same flight text as OSD
+    // Acro is the default mode
     const char *flightMode = "ACRO";
-    if (isAirmodeActive()) {
-        flightMode = "AIR";
-    }
+
+    // Modes that are only relevant when disarmed
+    if (!ARMING_FLAG(ARMED) && isArmingDisabled()) {
+        flightMode = "!ERR";
+    } else
+
+#if defined(USE_GPS)
+    if (!ARMING_FLAG(ARMED) && featureIsEnabled(FEATURE_GPS) && (!STATE(GPS_FIX) || !STATE(GPS_FIX_HOME))) {
+        flightMode = "WAIT"; // Waiting for GPS lock
+    } else
+#endif
+
+    // Flight modes in decreasing order of importance
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
-        flightMode = "!FS";
+        flightMode = "!FS!";
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        flightMode = "RTH";
+    } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
+        flightMode = "MANU";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "STAB";
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
+    } else if (airmodeIsEnabled()) {
+        flightMode = "AIR";
     }
+
     sbufWriteString(dst, flightMode);
+    if (!ARMING_FLAG(ARMED)) {
+        sbufWriteU8(dst, '*');
+    }
     sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
@@ -305,6 +335,37 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     sbufWriteU8(dst, CRSF_DEVICEINFO_VERSION);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+
+static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row)
+{
+    uint8_t *lengthPtr = sbufPtr(dst);
+    uint8_t buflen = crsfDisplayPortScreen()->cols;
+    char *rowStart = &crsfDisplayPortScreen()->buffer[row * buflen];
+    const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + buflen;
+    sbufWriteU8(dst, frameLength);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
+    sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_UPDATE);
+    sbufWriteU8(dst, row);
+    sbufWriteData(dst, rowStart, buflen);
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
+}
+
+static void crsfFrameDisplayPortClear(sbuf_t *dst)
+{
+    uint8_t *lengthPtr = sbufPtr(dst);
+    sbufWriteU8(dst, CRSF_DISPLAY_PORT_COLS_MAX + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
+    sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_CLEAR);
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
+}
+
+#endif
 
 #define BV(x)  (1 << (x)) // bit value
 
@@ -348,6 +409,7 @@ void crsfSendMspResponse(uint8_t *payload)
 static void processCrsf(void)
 {
     static uint8_t crsfScheduleIndex = 0;
+
     const uint8_t currentSchedule = crsfSchedule[crsfScheduleIndex];
 
     sbuf_t crsfPayloadBuf;
@@ -384,36 +446,73 @@ void crsfScheduleDeviceInfoResponse(void)
     deviceInfoReplyPending = true;
 }
 
+
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
     // and feature is enabled, if so, set CRSF telemetry enabled
     crsfTelemetryEnabled = crsfRxIsActive();
 
+    if (!crsfTelemetryEnabled) {
+        return;
+    }
+
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
 #endif
 
+#if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY)
+    cmsDisplayPortRegister(displayPortCrsfInit());
+#endif
+
     int index = 0;
-    if (sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
     }
-    if (isBatteryVoltageAvailable() || isAmperageAvailable()) {
+    if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
+        || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
         crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     }
     crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
-    if (feature(FEATURE_GPS)) {
+#ifdef USE_GPS
+    if (featureIsEnabled(FEATURE_GPS)
+       && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
     }
+#endif
     crsfScheduleCount = (uint8_t)index;
-
  }
 
 bool checkCrsfTelemetryState(void)
 {
     return crsfTelemetryEnabled;
 }
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+void crsfProcessDisplayPortCmd(uint8_t *frameStart)
+{
+    uint8_t cmd = *frameStart;
+    switch (cmd) {
+    case CRSF_DISPLAYPORT_SUBCMD_OPEN: ;
+        const uint8_t rows = *(frameStart + CRSF_DISPLAYPORT_OPEN_ROWS_OFFSET);
+        const uint8_t cols = *(frameStart + CRSF_DISPLAYPORT_OPEN_COLS_OFFSET);
+        crsfDisplayPortSetDimensions(rows, cols);
+        crsfDisplayPortMenuOpen();
+        break;
+    case CRSF_DISPLAYPORT_SUBCMD_CLOSE:
+        crsfDisplayPortMenuExit();
+        break;
+    case CRSF_DISPLAYPORT_SUBCMD_POLL:
+        crsfDisplayPortRefresh();
+        break;
+    default:
+        break;
+    }
+
+}
+
+#endif
 
 /*
  * Called periodically by the scheduler
@@ -449,6 +548,30 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+    if (crsfDisplayPortScreen()->reset) {
+        crsfDisplayPortScreen()->reset = false;
+        sbuf_t crsfDisplayPortBuf;
+        sbuf_t *dst = &crsfDisplayPortBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameDisplayPortClear(dst);
+        crsfFinalize(dst);
+        crsfLastCycleTime = currentTimeUs;
+        return;
+    }
+    const int nextRow = crsfDisplayPortNextRow();
+    if (nextRow >= 0) {
+        sbuf_t crsfDisplayPortBuf;
+        sbuf_t *dst = &crsfDisplayPortBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameDisplayPortRow(dst, nextRow);
+        crsfFinalize(dst);
+        crsfDisplayPortScreen()->pendingTransport[nextRow] = false;
+        crsfLastCycleTime = currentTimeUs;
+        return;
+    }
+#endif
 
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
     // Spread out scheduled frames evenly so each frame is sent at the same frequency.

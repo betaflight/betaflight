@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -27,7 +30,10 @@
 
 #include "platform.h"
 
+#ifdef USE_UART
+
 #include "build/build_config.h"
+#include "build/atomic.h"
 
 #include "common/utils.h"
 #include "drivers/io.h"
@@ -62,19 +68,6 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 
 void uartReconfigure(uartPort_t *uartPort)
 {
-    /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
-    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3|
-            RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART5|RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART8;
-    RCC_PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Uart4ClockSelection = RCC_UART4CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Uart5ClockSelection = RCC_UART5CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Usart6ClockSelection = RCC_USART6CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Uart7ClockSelection = RCC_UART7CLKSOURCE_SYSCLK;
-    RCC_PeriphClkInit.Uart8ClockSelection = RCC_UART8CLKSOURCE_SYSCLK;
-    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);*/
-
     HAL_UART_DeInit(&uartPort->Handle);
     uartPort->Handle.Init.BaudRate = uartPort->port.baudRate;
     // according to the stm32 documentation wordlen has to be 9 for parity bits
@@ -94,6 +87,11 @@ void uartReconfigure(uartPort_t *uartPort)
 
     usartConfigurePinInversion(uartPort);
 
+#ifdef TARGET_USART_CONFIG
+    void usartTargetConfigure(uartPort_t *);
+    usartTargetConfigure(uartPort);
+#endif
+
     if (uartPort->port.options & SERIAL_BIDIR)
     {
         HAL_HalfDuplex_Init(&uartPort->Handle);
@@ -106,10 +104,15 @@ void uartReconfigure(uartPort_t *uartPort)
     // Receive DMA or IRQ
     if (uartPort->port.mode & MODE_RX)
     {
-        if (uartPort->rxDMAStream)
+#ifdef USE_DMA
+        if (uartPort->rxDMAResource)
         {
-            uartPort->rxDMAHandle.Instance = uartPort->rxDMAStream;
+            uartPort->rxDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->rxDMAResource;
+#if !defined(STM32H7)
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
+#else 
+            uartPort->txDMAHandle.Init.Request = uartPort->rxDMARequest;
+#endif
             uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
             uartPort->rxDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
             uartPort->rxDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
@@ -131,9 +134,8 @@ void uartReconfigure(uartPort_t *uartPort)
             HAL_UART_Receive_DMA(&uartPort->Handle, (uint8_t*)uartPort->port.rxBuffer, uartPort->port.rxBufferSize);
 
             uartPort->rxDMAPos = __HAL_DMA_GET_COUNTER(&uartPort->rxDMAHandle);
-
-        }
-        else
+        } else
+#endif
         {
             /* Enable the UART Parity Error Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_PEIE);
@@ -143,15 +145,22 @@ void uartReconfigure(uartPort_t *uartPort)
 
             /* Enable the UART Data Register not empty Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_RXNEIE);
+
+            /* Enable Idle Line detection */
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_IDLEIE);
         }
     }
 
     // Transmit DMA or IRQ
     if (uartPort->port.mode & MODE_TX) {
-
-        if (uartPort->txDMAStream) {
-            uartPort->txDMAHandle.Instance = uartPort->txDMAStream;
+#ifdef USE_DMA
+        if (uartPort->txDMAResource) {
+            uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
+#if !defined(STM32H7)
             uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
+#else 
+            uartPort->txDMAHandle.Init.Request = uartPort->txDMARequest;
+#endif
             uartPort->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;
             uartPort->txDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
             uartPort->txDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
@@ -175,7 +184,10 @@ void uartReconfigure(uartPort_t *uartPort)
             __HAL_LINKDMA(&uartPort->Handle, hdmatx, uartPort->txDMAHandle);
 
             __HAL_DMA_SET_COUNTER(&uartPort->txDMAHandle, 0);
-        } else {
+        } else
+#endif
+        {
+
             /* Enable the UART Transmit Data Register Empty Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_TXEIE);
         }
@@ -183,254 +195,41 @@ void uartReconfigure(uartPort_t *uartPort)
     return;
 }
 
-serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr callback, void *callbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+#ifdef USE_DMA
+void uartTryStartTxDMA(uartPort_t *s)
 {
-    uartPort_t *s = serialUART(device, baudRate, mode, options);
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+        if (IS_DMA_ENABLED(s->txDMAResource)) {
+            // DMA is already in progress
+            return;
+        }
 
-    if (!s) {
-        return (serialPort_t *)s;
-    }
+        HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
+        if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX) {
+            return;
+        }
 
-    s->txDMAEmpty = true;
+        if (s->port.txBufferHead == s->port.txBufferTail) {
+            // No more data to transmit
+            s->txDMAEmpty = true;
+            return;
+        }
 
-    // common serial initialisation code should move to serialPort::init()
-    s->port.rxBufferHead = s->port.rxBufferTail = 0;
-    s->port.txBufferHead = s->port.txBufferTail = 0;
-    // callback works for IRQ-based RX ONLY
-    s->port.rxCallback = callback;
-    s->port.rxCallbackData = callbackData;
-    s->port.mode = mode;
-    s->port.baudRate = baudRate;
-    s->port.options = options;
+        uint16_t size;
+        uint32_t fromwhere = s->port.txBufferTail;
 
-    uartReconfigure(s);
-
-    return (serialPort_t *)s;
-}
-
-void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
-{
-    uartPort_t *uartPort = (uartPort_t *)instance;
-    uartPort->port.baudRate = baudRate;
-    uartReconfigure(uartPort);
-}
-
-void uartSetMode(serialPort_t *instance, portMode_e mode)
-{
-    uartPort_t *uartPort = (uartPort_t *)instance;
-    uartPort->port.mode = mode;
-    uartReconfigure(uartPort);
-}
-
-void uartStartTxDMA(uartPort_t *s)
-{
-    uint16_t size = 0;
-    uint32_t fromwhere=0;
-    HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
-    if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
-        return;
-
-    if (s->port.txBufferHead > s->port.txBufferTail) {
-        size = s->port.txBufferHead - s->port.txBufferTail;
-        fromwhere = s->port.txBufferTail;
-        s->port.txBufferTail = s->port.txBufferHead;
-    } else {
-        size = s->port.txBufferSize - s->port.txBufferTail;
-        fromwhere = s->port.txBufferTail;
-        s->port.txBufferTail = 0;
-    }
-    s->txDMAEmpty = false;
-    //HAL_CLEANCACHE((uint8_t *)&s->port.txBuffer[fromwhere],size);
-    HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
-}
-
-uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
-{
-    uartPort_t *s = (uartPort_t*)instance;
-
-    if (s->rxDMAStream) {
-        uint32_t rxDMAHead = __HAL_DMA_GET_COUNTER(s->Handle.hdmarx);
-
-        if (rxDMAHead >= s->rxDMAPos) {
-            return rxDMAHead - s->rxDMAPos;
+        if (s->port.txBufferHead > s->port.txBufferTail) {
+            size = s->port.txBufferHead - s->port.txBufferTail;
+            s->port.txBufferTail = s->port.txBufferHead;
         } else {
-            return s->port.rxBufferSize + rxDMAHead - s->rxDMAPos;
+            size = s->port.txBufferSize - s->port.txBufferTail;
+            s->port.txBufferTail = 0;
         }
+        s->txDMAEmpty = false;
+
+        HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
     }
-
-    if (s->port.rxBufferHead >= s->port.rxBufferTail) {
-        return s->port.rxBufferHead - s->port.rxBufferTail;
-    } else {
-        return s->port.rxBufferSize + s->port.rxBufferHead - s->port.rxBufferTail;
-    }
-}
-
-uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
-{
-    uartPort_t *s = (uartPort_t*)instance;
-
-    uint32_t bytesUsed;
-
-    if (s->port.txBufferHead >= s->port.txBufferTail) {
-        bytesUsed = s->port.txBufferHead - s->port.txBufferTail;
-    } else {
-        bytesUsed = s->port.txBufferSize + s->port.txBufferHead - s->port.txBufferTail;
-    }
-
-    if (s->txDMAStream) {
-        /*
-         * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
-         * the remaining size of that in-progress transfer here instead:
-         */
-        bytesUsed += __HAL_DMA_GET_COUNTER(s->Handle.hdmatx);
-
-        /*
-         * If the Tx buffer is being written to very quickly, we might have advanced the head into the buffer
-         * space occupied by the current DMA transfer. In that case the "bytesUsed" total will actually end up larger
-         * than the total Tx buffer size, because we'll end up transmitting the same buffer region twice. (So we'll be
-         * transmitting a garbage mixture of old and new bytes).
-         *
-         * Be kind to callers and pretend like our buffer can only ever be 100% full.
-         */
-        if (bytesUsed >= s->port.txBufferSize - 1) {
-            return 0;
-        }
-    }
-
-    return (s->port.txBufferSize - 1) - bytesUsed;
-}
-
-bool isUartTransmitBufferEmpty(const serialPort_t *instance)
-{
-    const uartPort_t *s = (uartPort_t *)instance;
-    if (s->txDMAStream)
-        return s->txDMAEmpty;
-    else
-        return s->port.txBufferTail == s->port.txBufferHead;
-}
-
-uint8_t uartRead(serialPort_t *instance)
-{
-    uint8_t ch;
-    uartPort_t *s = (uartPort_t *)instance;
-
-    if (s->rxDMAStream) {
-        ch = s->port.rxBuffer[s->port.rxBufferSize - s->rxDMAPos];
-        if (--s->rxDMAPos == 0)
-            s->rxDMAPos = s->port.rxBufferSize;
-    } else {
-        ch = s->port.rxBuffer[s->port.rxBufferTail];
-        if (s->port.rxBufferTail + 1 >= s->port.rxBufferSize) {
-            s->port.rxBufferTail = 0;
-        } else {
-            s->port.rxBufferTail++;
-        }
-    }
-
-    return ch;
-}
-
-void uartWrite(serialPort_t *instance, uint8_t ch)
-{
-    uartPort_t *s = (uartPort_t *)instance;
-    s->port.txBuffer[s->port.txBufferHead] = ch;
-    if (s->port.txBufferHead + 1 >= s->port.txBufferSize) {
-        s->port.txBufferHead = 0;
-    } else {
-        s->port.txBufferHead++;
-    }
-
-    if (s->txDMAStream) {
-        if (!(s->txDMAStream->CR & 1))
-            uartStartTxDMA(s);
-    } else {
-        __HAL_UART_ENABLE_IT(&s->Handle, UART_IT_TXE);
-    }
-}
-
-const struct serialPortVTable uartVTable[] = {
-    {
-        .serialWrite = uartWrite,
-        .serialTotalRxWaiting = uartTotalRxBytesWaiting,
-        .serialTotalTxFree = uartTotalTxBytesFree,
-        .serialRead = uartRead,
-        .serialSetBaudRate = uartSetBaudRate,
-        .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
-        .setMode = uartSetMode,
-        .writeBuf = NULL,
-        .beginWrite = NULL,
-        .endWrite = NULL,
-    }
-};
-
-#ifdef USE_UART1
-// USART1 Rx/Tx IRQ Handler
-void USART1_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_1]->port);
-    uartIrqHandler(s);
 }
 #endif
 
-#ifdef USE_UART2
-// USART2 Rx/Tx IRQ Handler
-void USART2_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_2]->port);
-    uartIrqHandler(s);
-}
-#endif
-
-#ifdef USE_UART3
-// USART3 Rx/Tx IRQ Handler
-void USART3_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_3]->port);
-    uartIrqHandler(s);
-}
-#endif
-
-#ifdef USE_UART4
-// UART4 Rx/Tx IRQ Handler
-void UART4_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_4]->port);
-    uartIrqHandler(s);
-}
-#endif
-
-#ifdef USE_UART5
-// UART5 Rx/Tx IRQ Handler
-void UART5_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_5]->port);
-    uartIrqHandler(s);
-}
-#endif
-
-#ifdef USE_UART6
-// USART6 Rx/Tx IRQ Handler
-void USART6_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_6]->port);
-    uartIrqHandler(s);
-}
-#endif
-
-#ifdef USE_UART7
-// UART7 Rx/Tx IRQ Handler
-void UART7_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_7]->port);
-    uartIrqHandler(s);
-}
-#endif
-
-#ifdef USE_UART8
-// UART8 Rx/Tx IRQ Handler
-void UART8_IRQHandler(void)
-{
-    uartPort_t *s = &(uartDevmap[UARTDEV_8]->port);
-    uartIrqHandler(s);
-}
-#endif
+#endif // USE_UART

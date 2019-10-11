@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_fmc.c
   * @author  MCD Application Team
-  * @version V1.2.2
-  * @date    14-April-2017
   * @brief   FMC Low Layer HAL module driver.
   *    
   *          This file provides firmware functions to manage the following 
@@ -46,29 +44,13 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */ 
@@ -143,8 +125,8 @@
 /**
   * @brief  Initialize the FMC_NORSRAM device according to the specified
   *         control parameters in the FMC_NORSRAM_InitTypeDef
-  * @param  Device: Pointer to NORSRAM device instance
-  * @param  Init: Pointer to NORSRAM Initialization structure   
+  * @param  Device Pointer to NORSRAM device instance
+  * @param  Init Pointer to NORSRAM Initialization structure   
   * @retval HAL status
   */
 HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_InitTypeDef* Init)
@@ -219,9 +201,9 @@ HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_Ini
 
 /**
   * @brief  DeInitialize the FMC_NORSRAM peripheral 
-  * @param  Device: Pointer to NORSRAM device instance
-  * @param  ExDevice: Pointer to NORSRAM extended mode device instance  
-  * @param  Bank: NORSRAM bank number  
+  * @param  Device Pointer to NORSRAM device instance
+  * @param  ExDevice Pointer to NORSRAM extended mode device instance  
+  * @param  Bank NORSRAM bank number  
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NORSRAM_DeInit(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_EXTENDED_TypeDef *ExDevice, uint32_t Bank)
@@ -256,9 +238,9 @@ HAL_StatusTypeDef FMC_NORSRAM_DeInit(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_EX
 /**
   * @brief  Initialize the FMC_NORSRAM Timing according to the specified
   *         parameters in the FMC_NORSRAM_TimingTypeDef
-  * @param  Device: Pointer to NORSRAM device instance
-  * @param  Timing: Pointer to NORSRAM Timing structure
-  * @param  Bank: NORSRAM bank number  
+  * @param  Device Pointer to NORSRAM device instance
+  * @param  Timing Pointer to NORSRAM Timing structure
+  * @param  Bank NORSRAM bank number  
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NORSRAM_Timing_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_TimingTypeDef *Timing, uint32_t Bank)
@@ -310,9 +292,9 @@ HAL_StatusTypeDef FMC_NORSRAM_Timing_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSR
 /**
   * @brief  Initialize the FMC_NORSRAM Extended mode Timing according to the specified
   *         parameters in the FMC_NORSRAM_TimingTypeDef
-  * @param  Device: Pointer to NORSRAM device instance
-  * @param  Timing: Pointer to NORSRAM Timing structure
-  * @param  Bank: NORSRAM bank number  
+  * @param  Device Pointer to NORSRAM device instance
+  * @param  Timing Pointer to NORSRAM Timing structure
+  * @param  Bank NORSRAM bank number  
   * @retval HAL status
   */
 HAL_StatusTypeDef  FMC_NORSRAM_Extended_Timing_Init(FMC_NORSRAM_EXTENDED_TypeDef *Device, FMC_NORSRAM_TimingTypeDef *Timing, uint32_t Bank, uint32_t ExtendedMode)
@@ -379,8 +361,8 @@ HAL_StatusTypeDef  FMC_NORSRAM_Extended_Timing_Init(FMC_NORSRAM_EXTENDED_TypeDef
 
 /**
   * @brief  Enables dynamically FMC_NORSRAM write operation.
-  * @param  Device: Pointer to NORSRAM device instance
-  * @param  Bank: NORSRAM bank number   
+  * @param  Device Pointer to NORSRAM device instance
+  * @param  Bank NORSRAM bank number   
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NORSRAM_WriteOperation_Enable(FMC_NORSRAM_TypeDef *Device, uint32_t Bank)
@@ -397,8 +379,8 @@ HAL_StatusTypeDef FMC_NORSRAM_WriteOperation_Enable(FMC_NORSRAM_TypeDef *Device,
 
 /**
   * @brief  Disables dynamically FMC_NORSRAM write operation.
-  * @param  Device: Pointer to NORSRAM device instance
-  * @param  Bank: NORSRAM bank number   
+  * @param  Device Pointer to NORSRAM device instance
+  * @param  Bank NORSRAM bank number   
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NORSRAM_WriteOperation_Disable(FMC_NORSRAM_TypeDef *Device, uint32_t Bank)
@@ -466,8 +448,8 @@ HAL_StatusTypeDef FMC_NORSRAM_WriteOperation_Disable(FMC_NORSRAM_TypeDef *Device
 /**
   * @brief  Initializes the FMC_NAND device according to the specified
   *         control parameters in the FMC_NAND_HandleTypeDef
-  * @param  Device: Pointer to NAND device instance
-  * @param  Init: Pointer to NAND Initialization structure
+  * @param  Device Pointer to NAND device instance
+  * @param  Init Pointer to NAND Initialization structure
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NAND_Init(FMC_NAND_TypeDef *Device, FMC_NAND_InitTypeDef *Init)
@@ -510,9 +492,9 @@ HAL_StatusTypeDef FMC_NAND_Init(FMC_NAND_TypeDef *Device, FMC_NAND_InitTypeDef *
 /**
   * @brief  Initializes the FMC_NAND Common space Timing according to the specified
   *         parameters in the FMC_NAND_PCC_TimingTypeDef
-  * @param  Device: Pointer to NAND device instance
-  * @param  Timing: Pointer to NAND timing structure
-  * @param  Bank: NAND bank number   
+  * @param  Device Pointer to NAND device instance
+  * @param  Timing Pointer to NAND timing structure
+  * @param  Bank NAND bank number   
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NAND_CommonSpace_Timing_Init(FMC_NAND_TypeDef *Device, FMC_NAND_PCC_TimingTypeDef *Timing, uint32_t Bank)
@@ -549,9 +531,9 @@ HAL_StatusTypeDef FMC_NAND_CommonSpace_Timing_Init(FMC_NAND_TypeDef *Device, FMC
 /**
   * @brief  Initializes the FMC_NAND Attribute space Timing according to the specified
   *         parameters in the FMC_NAND_PCC_TimingTypeDef
-  * @param  Device: Pointer to NAND device instance
-  * @param  Timing: Pointer to NAND timing structure
-  * @param  Bank: NAND bank number 
+  * @param  Device Pointer to NAND device instance
+  * @param  Timing Pointer to NAND timing structure
+  * @param  Bank NAND bank number 
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NAND_AttributeSpace_Timing_Init(FMC_NAND_TypeDef *Device, FMC_NAND_PCC_TimingTypeDef *Timing, uint32_t Bank)
@@ -586,8 +568,8 @@ HAL_StatusTypeDef FMC_NAND_AttributeSpace_Timing_Init(FMC_NAND_TypeDef *Device, 
 
 /**
   * @brief  DeInitializes the FMC_NAND device 
-  * @param  Device: Pointer to NAND device instance
-  * @param  Bank: NAND bank number
+  * @param  Device Pointer to NAND device instance
+  * @param  Bank NAND bank number
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NAND_DeInit(FMC_NAND_TypeDef *Device, uint32_t Bank)
@@ -630,8 +612,8 @@ HAL_StatusTypeDef FMC_NAND_DeInit(FMC_NAND_TypeDef *Device, uint32_t Bank)
     
 /**
   * @brief  Enables dynamically FMC_NAND ECC feature.
-  * @param  Device: Pointer to NAND device instance
-  * @param  Bank: NAND bank number
+  * @param  Device Pointer to NAND device instance
+  * @param  Bank NAND bank number
   * @retval HAL status
   */    
 HAL_StatusTypeDef FMC_NAND_ECC_Enable(FMC_NAND_TypeDef *Device, uint32_t Bank)
@@ -649,8 +631,8 @@ HAL_StatusTypeDef FMC_NAND_ECC_Enable(FMC_NAND_TypeDef *Device, uint32_t Bank)
 
 /**
   * @brief  Disables dynamically FMC_NAND ECC feature.
-  * @param  Device: Pointer to NAND device instance
-  * @param  Bank: NAND bank number
+  * @param  Device Pointer to NAND device instance
+  * @param  Bank NAND bank number
   * @retval HAL status
   */  
 HAL_StatusTypeDef FMC_NAND_ECC_Disable(FMC_NAND_TypeDef *Device, uint32_t Bank)  
@@ -667,10 +649,10 @@ HAL_StatusTypeDef FMC_NAND_ECC_Disable(FMC_NAND_TypeDef *Device, uint32_t Bank)
 
 /**
   * @brief  Disables dynamically FMC_NAND ECC feature.
-  * @param  Device: Pointer to NAND device instance
-  * @param  ECCval: Pointer to ECC value
-  * @param  Bank: NAND bank number
-  * @param  Timeout: Timeout wait value  
+  * @param  Device Pointer to NAND device instance
+  * @param  ECCval Pointer to ECC value
+  * @param  Bank NAND bank number
+  * @param  Timeout Timeout wait value  
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_NAND_GetECC(FMC_NAND_TypeDef *Device, uint32_t *ECCval, uint32_t Bank, uint32_t Timeout)
@@ -753,8 +735,8 @@ HAL_StatusTypeDef FMC_NAND_GetECC(FMC_NAND_TypeDef *Device, uint32_t *ECCval, ui
 /**
   * @brief  Initializes the FMC_SDRAM device according to the specified
   *         control parameters in the FMC_SDRAM_InitTypeDef
-  * @param  Device: Pointer to SDRAM device instance
-  * @param  Init: Pointer to SDRAM Initialization structure   
+  * @param  Device Pointer to SDRAM device instance
+  * @param  Init Pointer to SDRAM Initialization structure   
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_SDRAM_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_InitTypeDef *Init)
@@ -833,9 +815,9 @@ HAL_StatusTypeDef FMC_SDRAM_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_InitTypeDe
 /**
   * @brief  Initializes the FMC_SDRAM device timing according to the specified
   *         parameters in the FMC_SDRAM_TimingTypeDef
-  * @param  Device: Pointer to SDRAM device instance
-  * @param  Timing: Pointer to SDRAM Timing structure
-  * @param  Bank: SDRAM bank number   
+  * @param  Device Pointer to SDRAM device instance
+  * @param  Timing Pointer to SDRAM Timing structure
+  * @param  Bank SDRAM bank number   
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_SDRAM_Timing_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_TimingTypeDef *Timing, uint32_t Bank)
@@ -905,7 +887,7 @@ HAL_StatusTypeDef FMC_SDRAM_Timing_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_Tim
 
 /**
   * @brief  DeInitializes the FMC_SDRAM peripheral 
-  * @param  Device: Pointer to SDRAM device instance
+  * @param  Device Pointer to SDRAM device instance
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_SDRAM_DeInit(FMC_SDRAM_TypeDef *Device, uint32_t Bank)
@@ -945,8 +927,8 @@ HAL_StatusTypeDef FMC_SDRAM_DeInit(FMC_SDRAM_TypeDef *Device, uint32_t Bank)
 
 /**
   * @brief  Enables dynamically FMC_SDRAM write protection.
-  * @param  Device: Pointer to SDRAM device instance
-  * @param  Bank: SDRAM bank number 
+  * @param  Device Pointer to SDRAM device instance
+  * @param  Bank SDRAM bank number 
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_SDRAM_WriteProtection_Enable(FMC_SDRAM_TypeDef *Device, uint32_t Bank)
@@ -963,7 +945,7 @@ HAL_StatusTypeDef FMC_SDRAM_WriteProtection_Enable(FMC_SDRAM_TypeDef *Device, ui
 
 /**
   * @brief  Disables dynamically FMC_SDRAM write protection.
-  * @param  hsdram: FMC_SDRAM handle
+  * @param  hsdram FMC_SDRAM handle
   * @retval HAL status
   */
 HAL_StatusTypeDef FMC_SDRAM_WriteProtection_Disable(FMC_SDRAM_TypeDef *Device, uint32_t Bank)
@@ -980,16 +962,15 @@ HAL_StatusTypeDef FMC_SDRAM_WriteProtection_Disable(FMC_SDRAM_TypeDef *Device, u
   
 /**
   * @brief  Send Command to the FMC SDRAM bank
-  * @param  Device: Pointer to SDRAM device instance
-  * @param  Command: Pointer to SDRAM command structure   
-  * @param  Timing: Pointer to SDRAM Timing structure
-  * @param  Timeout: Timeout wait value
+  * @param  Device Pointer to SDRAM device instance
+  * @param  Command Pointer to SDRAM command structure   
+  * @param  Timing Pointer to SDRAM Timing structure
+  * @param  Timeout Timeout wait value
   * @retval HAL state
   */  
 HAL_StatusTypeDef FMC_SDRAM_SendCommand(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_CommandTypeDef *Command, uint32_t Timeout)
 {
   __IO uint32_t tmpr = 0;
-  uint32_t tickstart = 0;
   
   /* Check the parameters */
   assert_param(IS_FMC_SDRAM_DEVICE(Device));
@@ -1006,30 +987,14 @@ HAL_StatusTypeDef FMC_SDRAM_SendCommand(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_Com
                     );
     
   Device->SDCMR = tmpr;
-
-  /* Get tick */ 
-  tickstart = HAL_GetTick();
-
-  /* wait until command is send */
-  while(HAL_IS_BIT_SET(Device->SDSR, FMC_SDSR_BUSY))
-  {
-    /* Check for the Timeout */
-    if(Timeout != HAL_MAX_DELAY)
-    {
-      if((Timeout == 0)||((HAL_GetTick() - tickstart ) > Timeout))
-      {
-        return HAL_TIMEOUT;
-      }
-    }     
-  }
   
   return HAL_OK;  
 }
 
 /**
   * @brief  Program the SDRAM Memory Refresh rate.
-  * @param  Device: Pointer to SDRAM device instance  
-  * @param  RefreshRate: The SDRAM refresh rate value.       
+  * @param  Device Pointer to SDRAM device instance  
+  * @param  RefreshRate The SDRAM refresh rate value.       
   * @retval HAL state
   */
 HAL_StatusTypeDef FMC_SDRAM_ProgramRefreshRate(FMC_SDRAM_TypeDef *Device, uint32_t RefreshRate)
@@ -1046,8 +1011,8 @@ HAL_StatusTypeDef FMC_SDRAM_ProgramRefreshRate(FMC_SDRAM_TypeDef *Device, uint32
 
 /**
   * @brief  Set the Number of consecutive SDRAM Memory auto Refresh commands.
-  * @param  Device: Pointer to SDRAM device instance  
-  * @param  AutoRefreshNumber: Specifies the auto Refresh number.       
+  * @param  Device Pointer to SDRAM device instance  
+  * @param  AutoRefreshNumber Specifies the auto Refresh number.       
   * @retval None
   */
 HAL_StatusTypeDef FMC_SDRAM_SetAutoRefreshNumber(FMC_SDRAM_TypeDef *Device, uint32_t AutoRefreshNumber)
@@ -1064,8 +1029,8 @@ HAL_StatusTypeDef FMC_SDRAM_SetAutoRefreshNumber(FMC_SDRAM_TypeDef *Device, uint
 
 /**
   * @brief  Returns the indicated FMC SDRAM bank mode status.
-  * @param  Device: Pointer to SDRAM device instance  
-  * @param  Bank: Defines the FMC SDRAM bank. This parameter can be 
+  * @param  Device Pointer to SDRAM device instance  
+  * @param  Bank Defines the FMC SDRAM bank. This parameter can be 
   *                     FMC_Bank1_SDRAM or FMC_Bank2_SDRAM. 
   * @retval The FMC SDRAM bank mode status, could be on of the following values:
   *         FMC_SDRAM_NORMAL_MODE, FMC_SDRAM_SELF_REFRESH_MODE or 

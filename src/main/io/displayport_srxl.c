@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -20,7 +23,7 @@
 #include <string.h>
 
 #include "platform.h"
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS) && defined(USE_TELEMETRY_SRXL)
 
 #include "common/utils.h"
 
@@ -29,7 +32,7 @@
 
 #include "telemetry/srxl.h"
 
-static displayPort_t srxlDisplayPort;
+displayPort_t srxlDisplayPort;
 
 static int srxlDrawScreen(displayPort_t *displayPort)
 {
@@ -52,24 +55,24 @@ static int srxlWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, u
 static int srxlWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *s)
 {
     while (*s) {
-        srxlWriteChar(displayPort,  col++, row, *(s++));
+        srxlWriteChar(displayPort, col++, row, *(s++));
     }
     return 0;
 }
 
 static int srxlClearScreen(displayPort_t *displayPort)
 {
-    for (int row = 0;  row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS; row++) {
+    for (int row = 0; row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS; row++) {
         for (int col= 0; col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS; col++) {
             srxlWriteChar(displayPort, col, row, ' ');
         }
     }
-    srxlWriteString(displayPort, 1, 0,  "BETAFLIGHT");
+    srxlWriteString(displayPort, 1, 0, "BETAFLIGHT");
 
-    if ( displayPort->grabCount == 0 ) {
-        srxlWriteString(displayPort, 0, 3,  CMS_STARTUP_HELP_TEXT1);
-        srxlWriteString(displayPort, 2, 4,  CMS_STARTUP_HELP_TEXT2);
-        srxlWriteString(displayPort, 2, 5,  CMS_STARTUP_HELP_TEXT3);
+    if (displayPort->grabCount == 0) {
+        srxlWriteString(displayPort, 0, 2, CMS_STARTUP_HELP_TEXT1);
+        srxlWriteString(displayPort, 2, 3, CMS_STARTUP_HELP_TEXT2);
+        srxlWriteString(displayPort, 2, 4, CMS_STARTUP_HELP_TEXT3);
     }
     return 0;
 }
@@ -78,6 +81,12 @@ static bool srxlIsTransferInProgress(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return false;
+}
+
+static bool srxlIsSynced(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return true;
 }
 
 static int srxlHeartbeat(displayPort_t *displayPort)
@@ -120,6 +129,7 @@ static const displayPortVTable_t srxlVTable = {
     .isTransferInProgress = srxlIsTransferInProgress,
     .heartbeat = srxlHeartbeat,
     .resync = srxlResync,
+    .isSynced = srxlIsSynced,
     .txBytesFree = srxlTxBytesFree
 };
 

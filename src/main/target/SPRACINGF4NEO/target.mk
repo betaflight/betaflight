@@ -1,5 +1,5 @@
 F405_TARGETS  += $(TARGET)
-FEATURES    = VCP SDCARD
+FEATURES    = VCP SDCARD_SPI
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu6500.c \
@@ -8,8 +8,6 @@ TARGET_SRC = \
             drivers/barometer/barometer_ms5611.c \
             drivers/compass/compass_ak8975.c \
             drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_qmc5883l.c \
             drivers/max7456.c \
-            drivers/transponder_ir.c \
-            drivers/vtx_rtc6705.c \
-            io/osd.c \
-            io/transponder_ir.c \
+            drivers/vtx_rtc6705.c

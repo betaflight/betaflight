@@ -1,24 +1,27 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build/debug.h"
 
@@ -26,11 +29,12 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/rx.h"
 
 #include "drivers/time.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -64,9 +68,19 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_throttle_low_delay = 100,              // default throttle low delay for "just disarm" on failsafe condition
     .failsafe_delay = 4,                             // 0,4sec
     .failsafe_off_delay = 10,                        // 1sec
-    .failsafe_kill_switch = 0,                       // default failsafe switch action is identical to rc link loss
-    .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT // default full failsafe procedure is 0: auto-landing
+    .failsafe_switch_mode = 0,                       // default failsafe switch action is identical to rc link loss
+    .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT,// default full failsafe procedure is 0: auto-landing
+    .failsafe_recovery_delay = 20,                   // 2 sec of valid rx data (plus 200ms) needed to allow recovering from failsafe procedure
+    .failsafe_stick_threshold = 30                   // 30 percent of stick deflection to exit GPS Rescue procedure
 );
+
+const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
+    "AUTO-LAND",
+    "DROP",
+#ifdef USE_GPS_RESCUE
+    "GPS-RESCUE",
+#endif
+};
 
 /*
  * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
@@ -74,6 +88,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 void failsafeReset(void)
 {
     failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.rxDataRecoveryPeriod = PERIOD_RXDATA_RECOVERY + failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND;
     failsafeState.validRxDataReceivedAt = 0;
     failsafeState.validRxDataFailedAt = 0;
     failsafeState.throttleLowPeriod = 0;
@@ -120,7 +135,9 @@ static bool failsafeShouldHaveCausedLandingByNow(void)
 static void failsafeActivate(void)
 {
     failsafeState.active = true;
+
     failsafeState.phase = FAILSAFE_LANDING;
+    
     ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
     failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
 
@@ -129,6 +146,13 @@ static void failsafeActivate(void)
 
 static void failsafeApplyControlInput(void)
 {
+#ifdef USE_GPS_RESCUE
+    if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+        ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+        return;
+    }
+#endif
+
     for (int i = 0; i < 3; i++) {
         rcData[i] = rxConfig()->midrc;
     }
@@ -154,7 +178,7 @@ void failsafeOnRxResume(void)
 void failsafeOnValidDataReceived(void)
 {
     failsafeState.validRxDataReceivedAt = millis();
-    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > PERIOD_RXDATA_RECOVERY) {
+    if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > failsafeState.rxDataRecoveryPeriod) {
         failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;
         unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
     }
@@ -180,6 +204,10 @@ void failsafeUpdateState(void)
     bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
+    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_STAGE2) {
+        receivingRxData = false; // force Stage2
+    }
+
     // Beep RX lost only if we are not seeing data and we have been armed earlier
     if (!receivingRxData && ARMING_FLAG(WAS_EVER_ARMED)) {
         beeperMode = BEEPER_RX_LOST;
@@ -198,14 +226,18 @@ void failsafeUpdateState(void)
                         failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
-                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_kill_switch) {
+                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
                         failsafeActivate();
                         failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
                         failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_1_SECONDS;    // require 1 seconds of valid rxData
                         reprocessState = true;
                     } else if (!receivingRxData) {
-                        if (millis() > failsafeState.throttleLowPeriod) {
+                        if (millis() > failsafeState.throttleLowPeriod 
+#ifdef USE_GPS_RESCUE
+                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
+#endif
+                            ) {
                             // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
@@ -232,7 +264,6 @@ void failsafeUpdateState(void)
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
                     switch (failsafeConfig()->failsafe_procedure) {
-                        default:
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             // Stabilize, and set Throttle to specified level
                             failsafeActivate();
@@ -242,8 +273,13 @@ void failsafeUpdateState(void)
                             // Drop the craft
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
-                            failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                             break;
+#ifdef USE_GPS_RESCUE
+                        case FAILSAFE_PROCEDURE_GPS_RESCUE:
+                            failsafeActivate();
+                            failsafeState.phase = FAILSAFE_GPS_RESCUE;
+                            break;
+#endif
                     }
                 }
                 reprocessState = true;
@@ -264,7 +300,24 @@ void failsafeUpdateState(void)
                     reprocessState = true;
                 }
                 break;
-
+#ifdef USE_GPS_RESCUE
+            case FAILSAFE_GPS_RESCUE:
+                if (receivingRxData) {
+                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold)) {
+                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                        reprocessState = true;
+                    }
+                }
+                if (armed) {
+                    failsafeApplyControlInput();
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+                } else {
+                    failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_30_SECONDS; // require 30 seconds of valid rxData
+                    failsafeState.phase = FAILSAFE_LANDED;
+                    reprocessState = true;
+                }
+                break;
+#endif
             case FAILSAFE_LANDED:
                 setArmingDisabled(ARMING_DISABLED_FAILSAFE); // To prevent accidently rearming by an intermittent rx link
                 disarm();

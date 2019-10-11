@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -330,9 +333,9 @@ static bool ak8963Read(magDev_t *mag, int16_t *magData)
         return false;
     }
 
-    magData[X] = -parseMag(buf + 0, mag->magGain[X]);
-    magData[Y] = -parseMag(buf + 2, mag->magGain[Y]);
-    magData[Z] = -parseMag(buf + 4, mag->magGain[Z]);
+    magData[X] = parseMag(buf + 0, mag->magGain[X]);
+    magData[Y] = parseMag(buf + 2, mag->magGain[Y]);
+    magData[Z] = parseMag(buf + 4, mag->magGain[Z]);
 
     return true;
 }
@@ -363,7 +366,7 @@ static bool ak8963Init(magDev_t *mag)
     return true;
 }
 
-void ak8963BusInit(const busDevice_t *busdev)
+void ak8963BusInit(busDevice_t *busdev)
 {
     switch (busdev->bustype) {
 #ifdef USE_MAG_AK8963
@@ -377,12 +380,15 @@ void ak8963BusInit(const busDevice_t *busdev)
         IOHi(busdev->busdev_u.spi.csnPin);                                                  // Disable
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD);
+#else
+        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+#endif
         break;
 #endif
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
-#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
     case BUSTYPE_MPU_SLAVE:
         rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
 
@@ -408,9 +414,7 @@ void ak8963BusDeInit(const busDevice_t *busdev)
 
 #ifdef USE_MAG_SPI_AK8963
     case BUSTYPE_SPI:
-        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
-        IORelease(busdev->busdev_u.spi.csnPin);
-        IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+        spiPreinitByIO(busdev->busdev_u.spi.csnPin);
         break;
 #endif
 

@@ -23,7 +23,10 @@
 extern "C" {
     #include "platform.h"
 
+    #include "pg/rx.h"
+    #include "build/debug.h"
     #include "drivers/io.h"
+    #include "fc/rc_controls.h"
     #include "rx/rx.h"
     #include "fc/rc_modes.h"
     #include "common/maths.h"
@@ -34,15 +37,16 @@ extern "C" {
     #include "io/beeper.h"
 
     boxBitmask_t rcModeActivationMask;
+    int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode = 0;
 
-    void rxResetFlightChannelStatus(void);
-    bool rxHaveValidFlightChannels(void);
     bool isPulseValid(uint16_t pulseDuration);
-    void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
 
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
     );
+
+    PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -57,7 +61,8 @@ typedef struct testData_s {
 
 static testData_t testData;
 
-TEST(RxTest, TestValidFlightChannelsLowArm)
+#if 0 //!! valid pulse handling has changed so these test now test removed functions
+TEST(RxTest, TestValidFlightChannels)
 {
     // given
     memset(&testData, 0, sizeof(testData));
@@ -72,6 +77,8 @@ TEST(RxTest, TestValidFlightChannelsLowArm)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MIN);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(1600);
+
+    analyzeModeActivationConditions();
 
     // when
     rxInit();
@@ -108,6 +115,8 @@ TEST(RxTest, TestValidFlightChannelsHighArm)
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1400);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
 
+    analyzeModeActivationConditions();
+
     // when
     rxInit();
 
@@ -141,6 +150,8 @@ TEST(RxTest, TestInvalidFlightChannels)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1400);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+
+    analyzeModeActivationConditions();
 
     // and
     uint16_t channelPulses[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -189,7 +200,7 @@ TEST(RxTest, TestInvalidFlightChannels)
         EXPECT_FALSE(rxHaveValidFlightChannels());
     }
 }
-
+#endif
 
 // STUBS
 
@@ -224,4 +235,23 @@ extern "C" {
     void xBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
     void rxMspInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
     void rxPwmInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+    float pt1FilterGain(float f_cut, float dT)
+    {
+        UNUSED(f_cut);
+        UNUSED(dT);
+        return 0.0;
+    }
+
+    void pt1FilterInit(pt1Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+
+    float pt1FilterApply(pt1Filter_t *filter, float input)
+    {
+        UNUSED(filter);
+        UNUSED(input);
+        return 0.0;
+    }
 }

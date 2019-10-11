@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -20,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
@@ -34,11 +37,20 @@
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
+// Number of bits in I2C protocol phase
+#define LEN_ADDR 7
+#define LEN_RW 1
+#define LEN_ACK 1
+
+// Clock period in us during unstick transfer
+#define UNSTICK_CLK_US 10
+
+// Allow 500us for clock strech to complete during unstick
+#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
+
 static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
 static void i2cUnstick(IO_t scl, IO_t sda);
-
-#define GPIO_AF_I2C GPIO_AF_I2C1
 
 #ifdef STM32F4
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
@@ -52,8 +64,14 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB8) },
-        .sdaPins = { DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB9) },
+        .sclPins = {
+            I2CPINDEF(PB6, GPIO_AF_I2C1),
+            I2CPINDEF(PB8, GPIO_AF_I2C1),
+        },
+        .sdaPins = {
+            I2CPINDEF(PB7, GPIO_AF_I2C1),
+            I2CPINDEF(PB9, GPIO_AF_I2C1),
+        },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EV_IRQn,
         .er_irq = I2C1_ER_IRQn,
@@ -63,8 +81,20 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = I2C2,
-        .sclPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PF1) },
-        .sdaPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PF0) },
+        .sclPins = {
+            I2CPINDEF(PB10, GPIO_AF_I2C2),
+            I2CPINDEF(PF1,  GPIO_AF_I2C2),
+        },
+        .sdaPins = {
+            I2CPINDEF(PB11, GPIO_AF_I2C2),
+            I2CPINDEF(PF0,  GPIO_AF_I2C2),
+
+#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+            // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
+            I2CPINDEF(PB3,  GPIO_AF9_I2C2),
+            I2CPINDEF(PB9,  GPIO_AF9_I2C2),
+#endif
+        },
         .rcc = RCC_APB1(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,
@@ -74,8 +104,18 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_3,
         .reg = I2C3,
-        .sclPins = { DEFIO_TAG_E(PA8) },
-        .sdaPins = { DEFIO_TAG_E(PC9) },
+        .sclPins = {
+            I2CPINDEF(PA8, GPIO_AF_I2C3),
+        },
+        .sdaPins = {
+            I2CPINDEF(PC9, GPIO_AF_I2C3),
+
+#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+            // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
+            I2CPINDEF(PB4, GPIO_AF9_I2C3),
+            I2CPINDEF(PB8, GPIO_AF9_I2C3),
+#endif
+        },
         .rcc = RCC_APB1(I2C3),
         .ev_irq = I2C3_EV_IRQn,
         .er_irq = I2C3_ER_IRQn,
@@ -134,6 +174,10 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     }
 
     i2cState_t *state = &i2cDevice[device].state;
+    if (state->busy) {
+        return false;
+    }
+
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     state->addr = addr_ << 1;
@@ -156,32 +200,52 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
     }
 
-    timeout = I2C_DEFAULT_TIMEOUT;
+    return true;
+}
+
+bool i2cBusy(I2CDevice device, bool *error)
+{
+    i2cState_t *state = &i2cDevice[device].state;
+
+    if (error) {
+        *error = state->error;
+    }
+    return state->busy;
+}
+
+bool i2cWait(I2CDevice device)
+{
+    i2cState_t *state = &i2cDevice[device].state;
+    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+
     while (state->busy && --timeout > 0) {; }
     if (timeout == 0)
-        return i2cHandleHardwareFailure(device);
+        return i2cHandleHardwareFailure(device) && i2cWait(device);
 
     return !(state->error);
 }
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
-    return i2cWriteBuffer(device, addr_, reg_, 1, &data);
+    return i2cWriteBuffer(device, addr_, reg_, 1, &data) && i2cWait(device);
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
         return false;
     }
 
     I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-
     if (!I2Cx) {
         return false;
     }
 
     i2cState_t *state = &i2cDevice[device].state;
+    if (state->busy) {
+        return false;
+    }
+
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     state->addr = addr_ << 1;
@@ -204,12 +268,12 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
     }
 
-    timeout = I2C_DEFAULT_TIMEOUT;
-    while (state->busy && --timeout > 0) {; }
-    if (timeout == 0)
-        return i2cHandleHardwareFailure(device);
+    return true;
+}
 
-    return !(state->error);
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+{
+    return i2cReadBuffer(device, addr_, reg_, len, buf) && i2cWait(device);
 }
 
 static void i2c_er_handler(I2CDevice device) {
@@ -221,11 +285,11 @@ static void i2c_er_handler(I2CDevice device) {
     // Read the I2C1 status register
     volatile uint32_t SR1Register = I2Cx->SR1;
 
-    if (SR1Register & 0x0F00)                                           // an error
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR)) // an error
         state->error = true;
 
     // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
-    if (SR1Register & 0x0700) {
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF)) {
         (void)I2Cx->SR2;                                                        // read second status register to clear ADDR if it is set (note that BTF will not be set after a NACK)
         I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                                // disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
         if (!(SR1Register & I2C_SR1_ARLO) && !(I2Cx->CR1 & I2C_CR1_STOP)) {     // if we dont have an ARLO error, ensure sending of a stop
@@ -241,7 +305,7 @@ static void i2c_er_handler(I2CDevice device) {
             }
         }
     }
-    I2Cx->SR1 &= ~0x0F00;                                                       // reset all the error bits to clear the interrupt
+    I2Cx->SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR);     // reset all the error bits to clear the interrupt
     state->busy = 0;
 }
 
@@ -330,7 +394,7 @@ void i2c_ev_handler(I2CDevice device) {
             }
         }
         // we must wait for the start to clear, otherwise we get constant BTF
-        while (I2Cx->CR1 & 0x0100) {; }
+        while (I2Cx->CR1 & I2C_CR1_START) {; }
     }
     else if (SReg_1 & I2C_SR1_RXNE) {                                 // Byte received - EV7
         state->read_p[index++] = (uint8_t)I2Cx->DR;
@@ -394,8 +458,8 @@ void i2cInit(I2CDevice device)
 
     // Init pins
 #ifdef STM32F4
-    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF_I2C);
-    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF_I2C);
+    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
+    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 #else
     IOConfigGPIO(scl, IOCFG_I2C);
     IOConfigGPIO(sda, IOCFG_I2C);
@@ -444,7 +508,6 @@ uint16_t i2cGetErrorCounter(void)
 static void i2cUnstick(IO_t scl, IO_t sda)
 {
     int i;
-    int timeout = 100;
 
     IOHi(scl);
     IOHi(sda);
@@ -452,27 +515,33 @@ static void i2cUnstick(IO_t scl, IO_t sda)
     IOConfigGPIO(scl, IOCFG_OUT_OD);
     IOConfigGPIO(sda, IOCFG_OUT_OD);
 
-    for (i = 0; i < 8; i++) {
+    // Clock out, with SDA high:
+    //   7 data bits
+    //   1 READ bit
+    //   1 cycle for the ACK
+    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
         // Wait for any clock stretching to finish
+        int timeout = UNSTICK_CLK_STRETCH;
         while (!IORead(scl) && timeout) {
-            delayMicroseconds(10);
+            delayMicroseconds(UNSTICK_CLK_US);
             timeout--;
         }
 
         // Pull low
         IOLo(scl); // Set bus low
-        delayMicroseconds(10);
+        delayMicroseconds(UNSTICK_CLK_US/2);
         IOHi(scl); // Set bus high
-        delayMicroseconds(10);
+        delayMicroseconds(UNSTICK_CLK_US/2);
     }
 
-    // Generate a start then stop condition
-    IOLo(sda); // Set bus data low
-    delayMicroseconds(10);
-    IOLo(scl); // Set bus scl low
-    delayMicroseconds(10);
+    // Generate a stop condition in case there was none
+    IOLo(scl);
+    delayMicroseconds(UNSTICK_CLK_US/2);
+    IOLo(sda);
+    delayMicroseconds(UNSTICK_CLK_US/2);
+
     IOHi(scl); // Set bus scl high
-    delayMicroseconds(10);
+    delayMicroseconds(UNSTICK_CLK_US/2);
     IOHi(sda); // Set bus sda high
 }
 

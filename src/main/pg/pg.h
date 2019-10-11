@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -38,10 +41,11 @@ typedef enum {
 } pgRegistryInternal_e;
 
 // function that resets a single parameter group instance
-typedef void (pgResetFunc)(void * /* base */, int /* size */);
+typedef void (pgResetFunc)(void * /* base */);
 
 typedef struct pgRegistry_s {
     pgn_t pgn;             // The parameter group number, the top 4 bits are reserved for version
+    uint8_t length;        // The number of elements in the group 
     uint16_t size;         // Size of the group in RAM, the top 4 bits are reserved for flags
     uint8_t *address;      // Address of the group in RAM.
     uint8_t *copy;         // Address of the copy in RAM.
@@ -55,6 +59,7 @@ typedef struct pgRegistry_s {
 static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_MASK;}
 static inline uint8_t pgVersion(const pgRegistry_t* reg) {return (uint8_t)(reg->pgn >> 12);}
 static inline uint16_t pgSize(const pgRegistry_t* reg) {return reg->size & PGR_SIZE_MASK;}
+static inline uint16_t pgElementSize(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_MASK) / reg->length;}
 
 #define PG_PACKED __attribute__((packed))
 
@@ -100,12 +105,12 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 
 // Declare system config array
-#define PG_DECLARE_ARRAY(_type, _size, _name)                           \
-    extern _type _name ## _SystemArray[_size];                          \
-    extern _type _name ## _CopyArray[_size];                            \
+#define PG_DECLARE_ARRAY(_type, _length, _name)                         \
+    extern _type _name ## _SystemArray[_length];                        \
+    extern _type _name ## _CopyArray[_length];                          \
     static inline const _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
     static inline _type* _name ## Mutable(int _index) { return &_name ## _SystemArray[_index]; } \
-    static inline _type (* _name ## _array(void))[_size] { return &_name ## _SystemArray; } \
+    static inline _type (* _name ## _array(void))[_length] { return &_name ## _SystemArray; } \
     struct _dummy                                                       \
     /**/
 
@@ -117,6 +122,7 @@ extern const uint8_t __pg_resetdata_end[];
     extern const pgRegistry_t _name ## _Registry;                       \
     const pgRegistry_t _name ##_Registry PG_REGISTER_ATTRIBUTES = {     \
         .pgn = _pgn | (_version << 12),                                 \
+        .length = 1,                                                    \
         .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name ## _System,                         \
         .copy = (uint8_t*)&_name ## _Copy,                              \
@@ -140,13 +146,14 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 
 // Register system config array
-#define PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, _reset)  \
-    _type _name ## _SystemArray[_size];                                 \
-    _type _name ## _CopyArray[_size];                                   \
+#define PG_REGISTER_ARRAY_I(_type, _length, _name, _pgn, _version, _reset)  \
+    _type _name ## _SystemArray[_length];                               \
+    _type _name ## _CopyArray[_length];                                 \
     extern const pgRegistry_t _name ##_Registry;                        \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \
         .pgn = _pgn | (_version << 12),                                 \
-        .size = (sizeof(_type) * _size) | PGR_SIZE_SYSTEM_FLAG,         \
+        .length = _length,                                              \
+        .size = (sizeof(_type) * _length) | PGR_SIZE_SYSTEM_FLAG,       \
         .address = (uint8_t*)&_name ## _SystemArray,                    \
         .copy = (uint8_t*)&_name ## _CopyArray,                         \
         .ptr = 0,                                                       \
@@ -154,22 +161,24 @@ extern const uint8_t __pg_resetdata_end[];
     }                                                                   \
     /**/
 
-#define PG_REGISTER_ARRAY(_type, _size, _name, _pgn, _version)            \
-    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = 0}) \
+#define PG_REGISTER_ARRAY(_type, _length, _name, _pgn, _version)        \
+    PG_REGISTER_ARRAY_I(_type, _length, _name, _pgn, _version, .reset = {.ptr = 0}) \
     /**/
 
-#define PG_REGISTER_ARRAY_WITH_RESET_FN(_type, _size, _name, _pgn, _version) \
+#define PG_REGISTER_ARRAY_WITH_RESET_FN(_type, _length, _name, _pgn, _version) \
     extern void pgResetFn_ ## _name(_type *);    \
-    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name}) \
+    PG_REGISTER_ARRAY_I(_type, _length, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name}) \
     /**/
 
 #if 0
 // ARRAY reset mechanism is not implemented yet, only few places in code would benefit from it - See pgResetInstance
-#define PG_REGISTER_ARRAY_WITH_RESET_TEMPLATE(_type, _size, _name, _pgn, _version) \
+#define PG_REGISTER_ARRAY_WITH_RESET_TEMPLATE(_type, _length, _name, _pgn, _version) \
     extern const _type pgResetTemplate_ ## _name;                       \
-    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
+    PG_REGISTER_ARRAY_I(_type, _length, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
     /**/
 #endif
+
+#define PG_ARRAY_ELEMENT_OFFSET(type, index, member) (index * sizeof(type) + offsetof(type, member))
 
 // Emit reset defaults for config.
 // Config must be registered with PG_REGISTER_<xxx>_WITH_RESET_TEMPLATE macro
@@ -184,7 +193,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 
-void pgLoad(const pgRegistry_t* reg, const void *from, int size, int version);
+bool pgLoad(const pgRegistry_t* reg, const void *from, int size, int version);
 int pgStore(const pgRegistry_t* reg, void *to, int size);
 void pgResetAll(void);
 void pgResetInstance(const pgRegistry_t *reg, uint8_t *base);

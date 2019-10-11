@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -25,6 +28,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "drivers/adc.h"
 #include "drivers/adc_impl.h"
 #include "drivers/io.h"
 
@@ -36,6 +40,11 @@ PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
+    adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
+#ifndef STM32F1
+    adcConfig->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;
+    adcConfig->dmaopt[ADCDEV_3] = ADC3_DMA_OPT;
+#endif
 
 #ifdef VBAT_ADC_PIN
     adcConfig->vbat.enabled = true;
@@ -57,5 +66,8 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
     adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
 #endif
 
+    adcConfig->vrefIntCalibration = 0;
+    adcConfig->tempSensorCalibration1 = 0;
+    adcConfig->tempSensorCalibration2 = 0;
 }
 #endif // USE_ADC

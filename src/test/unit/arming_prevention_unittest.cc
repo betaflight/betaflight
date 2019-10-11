@@ -24,12 +24,14 @@ extern "C" {
     #include "config/feature.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
     #include "fc/config.h"
     #include "fc/controlrate_profile.h"
-    #include "fc/fc_core.h"
+    #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+    #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -41,6 +43,7 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
     #include "telemetry/telemetry.h"
+    #include "flight/gps_rescue.h"
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -51,6 +54,7 @@ extern "C" {
     PG_REGISTER(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
     float rcCommand[4];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -64,6 +68,11 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     uint32_t targetPidLooptime;
     bool cmsInMenu = false;
+    float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
+    rxRuntimeConfig_t rxRuntimeConfig = {};
+    uint16_t GPS_distanceToHome = 0;
+    int16_t GPS_directionToHome = 0;
+    acc_t acc = {};
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -84,7 +93,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -174,7 +183,7 @@ TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -252,7 +261,7 @@ TEST(ArmingPreventionTest, Prearm)
     modeActivationConditionsMutable(1)->modeId = BOXPREARM;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -295,7 +304,7 @@ TEST(ArmingPreventionTest, RadioTurnedOnAtAnyTimeArmed)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -361,7 +370,7 @@ TEST(ArmingPreventionTest, In3DModeAllowArmingWhenEnteringThrottleDeadband)
     modeActivationConditionsMutable(0)->modeId = BOXARM;
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->midrc = 1500;
@@ -425,10 +434,10 @@ TEST(ArmingPreventionTest, When3DModeDisabledThenNormalThrottleArmingConditionAp
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
     modeActivationConditionsMutable(1)->auxChannelIndex = 1;
-    modeActivationConditionsMutable(1)->modeId = BOX3DDISABLE;
+    modeActivationConditionsMutable(1)->modeId = BOX3D;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -526,10 +535,10 @@ TEST(ArmingPreventionTest, WhenUsingSwitched3DModeThenNormalThrottleArmingCondit
     modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
     modeActivationConditionsMutable(1)->auxChannelIndex = 1;
-    modeActivationConditionsMutable(1)->modeId = BOX3DONASWITCH;
+    modeActivationConditionsMutable(1)->modeId = BOX3D;
     modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
     modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
-    useRcControlsConfig(NULL);
+    rcControlsInit();
 
     // and
     rxConfigMutable()->mincheck = 1050;
@@ -607,13 +616,414 @@ TEST(ArmingPreventionTest, WhenUsingSwitched3DModeThenNormalThrottleArmingCondit
     EXPECT_EQ(0, getArmingDisableFlags());
 }
 
+TEST(ArmingPreventionTest, GPSRescueWithoutFixPreventsArm)
+{
+    // given
+    simulationFeatureFlags = 0;
+    simulationTime = 0;
+    gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOXGPSRESCUE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    rcControlsInit();
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_GPS, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH|ARMING_DISABLED_GPS, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_GPS, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // receive GPS fix
+    ENABLE_STATE(GPS_FIX);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+}
+
+TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
+{
+    // given
+    simulationFeatureFlags = 0;
+    simulationTime = 0;
+    gyroCalibDone = true;
+    gpsSol.numSat = 5;
+    ENABLE_STATE(GPS_FIX);
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOXGPSRESCUE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    rcControlsInit();
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1800; // Start out with rescue enabled
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_RESC, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH|ARMING_DISABLED_RESC, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_RESC, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disable Rescue
+    rcData[AUX2] = 1000;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGPSRESCUE));
+}
+
+TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
+{
+    // given
+    simulationFeatureFlags = 0;
+    simulationTime = 0;
+    gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOXPARALYZE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    rcControlsInit();
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1800; // Paralyze on at boot
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // when
+    updateActivatedModes();
+
+    // expect
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+}
+
+TEST(ArmingPreventionTest, Paralyze)
+{
+    // given
+    simulationFeatureFlags = 0;
+    simulationTime = 0;
+    gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOXPARALYZE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(2)->auxChannelIndex = 2;
+    modeActivationConditionsMutable(2)->modeId = BOXBEEPERON;
+    modeActivationConditionsMutable(2)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(2)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(3)->modeId = BOXVTXPITMODE;
+    modeActivationConditionsMutable(3)->linkedTo = BOXPARALYZE;
+    rcControlsInit();
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    rcData[AUX1] = 1000;
+    rcData[AUX2] = 1800; // Start out with paralyze enabled
+    rcData[AUX3] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // arm
+    rcData[AUX1] = 1800;
+
+    // when
+    tryArm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // disarm
+    rcData[AUX1] = 1000;
+
+    // when
+    disarm();
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // given
+    simulationTime = 10e6; // 10 seconds after boot
+
+    // when
+    updateActivatedModes();
+
+    // expect
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+
+    // given
+    // disable paralyze once after the startup timer
+    rcData[AUX2] = 1000;
+
+    // when
+    updateActivatedModes();
+
+    // enable paralyze again
+    rcData[AUX2] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_PARALYZE, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXBEEPERON));
+
+    // given
+    // enable beeper
+    rcData[AUX3] = 1800;
+
+    // when
+    updateActivatedModes();
+
+    // expect
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXBEEPERON));
+    
+    // given
+    // try exiting paralyze mode and ensure arming and pit mode are still disabled
+    rcData[AUX2] = 1000;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_PARALYZE, getArmingDisableFlags());
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXPARALYZE));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
+}
+
 // STUBS
 extern "C" {
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
     bool rxIsReceivingSignal(void) { return simulationHaveRx; }
 
-    bool feature(uint32_t f) { return simulationFeatureFlags & f; }
+    bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
     void warningLedFlash(void) {}
     void warningLedDisable(void) {}
     void warningLedUpdate(void) {}
@@ -629,12 +1039,12 @@ extern "C" {
     bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
-    void pidController(const pidProfile_t *, const rollAndPitchTrims_t *, timeUs_t) {}
+    void pidController(const pidProfile_t *, timeUs_t) {}
     void pidStabilisationState(pidStabilisationState_e) {}
     void mixTable(timeUs_t , uint8_t) {};
     void writeMotors(void) {};
     void writeServos(void) {};
-    void calculateRxChannelsAndUpdateFailsafe(timeUs_t) {}
+    bool calculateRxChannelsAndUpdateFailsafe(timeUs_t) { return true; }
     bool isMixerUsingServos(void) { return false; }
     void gyroUpdate(timeUs_t) {}
     timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 0; }
@@ -643,11 +1053,11 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
-    void pidResetITerm(void) {}
+    void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
     void updateGpsWaypointsAndMode(void) {}
-    void releaseSharedTelemetryPorts(void) {}
+    void mspSerialReleaseSharedTelemetryPorts(void) {}
     void telemetryCheckState(void) {}
     void mspSerialAllocatePorts(void) {}
     void gyroReadTemperature(void) {}
@@ -667,4 +1077,17 @@ extern "C" {
     void dashboardEnablePageCycling(void) {}
     void dashboardDisablePageCycling(void) {}
     bool imuQuaternionHeadfreeOffsetSet(void) { return true; }
+    void rescheduleTask(cfTaskId_e, uint32_t) {}
+    bool usbCableIsInserted(void) { return false; }
+    bool usbVcpIsConnected(void) { return false; }
+    void pidSetAntiGravityState(bool) {}
+    void osdSuppressStats(bool) {}
+    float scaleRangef(float, float, float, float, float) { return 0.0f; }
+    bool crashRecoveryModeActive(void) { return false; }
+    int32_t getEstimatedAltitudeCm(void) { return 0; }
+    bool gpsIsHealthy() { return false; }
+    bool isAltitudeOffset(void) { return false; }
+    float getCosTiltAngle(void) { return 0.0f; }
+    void pidSetItermReset(bool) {}
+    void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 }

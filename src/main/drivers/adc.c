@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -36,13 +39,11 @@
 //#define DEBUG_ADC_CHANNELS
 
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
-volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
-#ifdef USE_ADC_INTERNAL
-uint16_t adcTSCAL1;
-uint16_t adcTSCAL2;
-uint16_t adcTSSlopeK;
-uint16_t adcVREFINTCAL;
+#if defined(STM32F7)
+volatile FAST_RAM_ZERO_INIT uint16_t adcValues[ADC_CHANNEL_COUNT];
+#else
+volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 #endif
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
@@ -81,6 +82,8 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 
 uint16_t adcGetChannel(uint8_t channel)
 {
+    adcGetChannelValues();
+
 #ifdef DEBUG_ADC_CHANNELS
     if (adcOperatingConfig[0].enabled) {
         debug[0] = adcValues[adcOperatingConfig[0].dmaIndex];
@@ -121,6 +124,29 @@ bool adcVerifyPin(ioTag_t tag, ADCDevice device)
 
     return false;
 }
+
+#ifdef USE_ADC_INTERNAL
+
+int32_t adcVREFINTCAL;      // ADC value (12-bit) of band gap with Vref = VREFINTCAL_VREF
+int32_t adcTSCAL1;
+int32_t adcTSCAL2;
+int32_t adcTSSlopeK;
+
+uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue)
+{
+    // This is essentially a tuned version of
+    // __HAL_ADC_CALC_VREFANALOG_VOLTAGE(vrefAdcValue, ADC_RESOLUTION_12B);
+    return (uint16_t)((uint32_t)(adcVREFINTCAL * VREFINT_CAL_VREF) / vrefAdcValue);
+}
+
+int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
+{
+    // This is essentially a tuned version of
+    // __HAL_ADC_CALC_TEMPERATURE(vrefValue, tempAdcValue, ADC_RESOLUTION_12B);
+
+    return ((((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - adcTSCAL1) * adcTSSlopeK) + 500) / 1000 + TEMPSENSOR_CAL1_TEMP;
+}
+#endif // USE_ADC_INTERNAL
 
 #else
 uint16_t adcGetChannel(uint8_t channel)

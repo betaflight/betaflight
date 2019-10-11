@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -25,8 +28,7 @@
 
 #include "build/debug.h"
 
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/system.h"
+#include "drivers/dma_reqmap.h"
 
 #include "drivers/io.h"
 #include "io_impl.h"
@@ -46,10 +48,31 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_Channel_0 },
+    {
+        .ADCx = ADC1,
+        .rccADC = RCC_APB2(ADC1),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
+        .channel = DMA_Channel_0
+#endif
+    },
 #if !defined(STM32F411xE)
-    { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_Channel_1 },
-    { .ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_Channel_2 }
+    {
+        .ADCx = ADC2,
+        .rccADC = RCC_APB2(ADC2),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
+        .channel = DMA_Channel_1
+#endif
+    },
+    {
+        .ADCx = ADC3,
+        .rccADC = RCC_APB2(ADC3),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)ADC3_DMA_STREAM,
+        .channel = DMA_Channel_2
+#endif
+    }
 #endif
 };
 
@@ -130,7 +153,7 @@ void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 }
 
 #ifdef USE_ADC_INTERNAL
-void adcInitInternalInjected(void)
+void adcInitInternalInjected(const adcConfig_t *config)
 {
     ADC_TempSensorVrefintCmd(ENABLE);
     ADC_InjectedDiscModeCmd(ADC1, DISABLE);
@@ -138,9 +161,10 @@ void adcInitInternalInjected(void)
     ADC_InjectedChannelConfig(ADC1, ADC_Channel_Vrefint, 1, ADC_SampleTime_480Cycles);
     ADC_InjectedChannelConfig(ADC1, ADC_Channel_TempSensor, 2, ADC_SampleTime_480Cycles);
 
-    adcVREFINTCAL = *(uint16_t *)VREFINT_CAL_ADDR;
-    adcTSCAL1 = *(uint16_t *)TS_CAL1_ADDR;
-    adcTSCAL2 = *(uint16_t *)TS_CAL2_ADDR;
+    adcVREFINTCAL = config->vrefIntCalibration ? config->vrefIntCalibration : *(uint16_t *)VREFINT_CAL_ADDR;
+    adcTSCAL1 = config->tempSensorCalibration1 ? config->tempSensorCalibration1 : *(uint16_t *)TS_CAL1_ADDR;
+    adcTSCAL2 = config->tempSensorCalibration2 ? config->tempSensorCalibration2 : *(uint16_t *)TS_CAL2_ADDR;
+
     adcTSSlopeK = (110 - 30) * 1000 / (adcTSCAL2 - adcTSCAL1);
 }
 
@@ -208,8 +232,10 @@ void adcInit(const adcConfig_t *config)
     }
 
     ADCDevice device = ADC_CFG_TO_DEV(config->device);
-    if (device == ADCINVALID)
+
+    if (device == ADCINVALID) {
         return;
+    }
 
     adcDevice_t adc = adcHardware[device];
 
@@ -254,7 +280,7 @@ void adcInit(const adcConfig_t *config)
     }
 
     // Initialize for injected conversion
-    adcInitInternalInjected();
+    adcInitInternalInjected(config);
 
     if (!adcActive) {
         return;
@@ -275,16 +301,33 @@ void adcInit(const adcConfig_t *config)
     ADC_DMACmd(adc.ADCx, ENABLE);
     ADC_Cmd(adc.ADCx, ENABLE);
 
+#ifdef USE_DMA_SPEC
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
+    if (!dmaSpec) {
+        return;
+    }
 
-    DMA_DeInit(adc.DMAy_Streamx);
+    dmaInit(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device));
+
+    xDMA_DeInit(dmaSpec->ref);
+#else
+    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
+
+    xDMA_DeInit(adc.dmaResource);
+#endif
 
     DMA_InitTypeDef DMA_InitStructure;
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
+
+#ifdef USE_DMA_SPEC
+    DMA_InitStructure.DMA_Channel = dmaSpec->channel;
+#else
     DMA_InitStructure.DMA_Channel = adc.channel;
+#endif
+
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)adcValues;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
     DMA_InitStructure.DMA_BufferSize = configuredAdcChannels;
@@ -294,10 +337,20 @@ void adcInit(const adcConfig_t *config)
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-    DMA_Init(adc.DMAy_Streamx, &DMA_InitStructure);
 
-    DMA_Cmd(adc.DMAy_Streamx, ENABLE);
+#ifdef USE_DMA_SPEC
+    xDMA_Init(dmaSpec->ref, &DMA_InitStructure);
+    xDMA_Cmd(dmaSpec->ref, ENABLE);
+#else
+    xDMA_Init(adc.dmaResource, &DMA_InitStructure);
+    xDMA_Cmd(adc.dmaResource, ENABLE);
+#endif
 
     ADC_SoftwareStartConv(adc.ADCx);
+}
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
 }
 #endif

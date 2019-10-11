@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -22,8 +25,10 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/sensor_alignment.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -33,7 +38,7 @@
 #include "boardalignment.h"
 
 static bool standardBoardAlignment = true;     // board orientation correction
-static float boardRotation[3][3];              // matrix
+static fp_rotationMatrix_t boardRotation;
 
 // no template required since defaults are zero
 PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
@@ -56,25 +61,28 @@ void initBoardAlignment(const boardAlignment_t *boardAlignment)
     rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
     rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees  );
 
-    buildRotationMatrix(&rotationAngles, boardRotation);
+    buildRotationMatrix(&rotationAngles, &boardRotation);
 }
 
-static void alignBoard(int32_t *vec)
+FAST_CODE static void alignBoard(float *vec)
 {
-    int32_t x = vec[X];
-    int32_t y = vec[Y];
-    int32_t z = vec[Z];
-
-    vec[X] = lrintf(boardRotation[0][X] * x + boardRotation[1][X] * y + boardRotation[2][X] * z);
-    vec[Y] = lrintf(boardRotation[0][Y] * x + boardRotation[1][Y] * y + boardRotation[2][Y] * z);
-    vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
+    applyRotation(vec, &boardRotation);
 }
 
-FAST_CODE void alignSensors(int32_t *dest, uint8_t rotation)
+FAST_CODE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
 {
-    const int32_t x = dest[X];
-    const int32_t y = dest[Y];
-    const int32_t z = dest[Z];
+    applyRotation(dest, sensorRotationMatrix);
+
+    if (!standardBoardAlignment) {
+        alignBoard(dest);
+    }
+}
+
+FAST_CODE void alignSensorViaRotation(float *dest, uint8_t rotation)
+{
+    const float x = dest[X];
+    const float y = dest[Y];
+    const float z = dest[Z];
 
     switch (rotation) {
     default:
@@ -120,6 +128,7 @@ FAST_CODE void alignSensors(int32_t *dest, uint8_t rotation)
         break;
     }
 
-    if (!standardBoardAlignment)
+    if (!standardBoardAlignment) {
         alignBoard(dest);
+    }
 }

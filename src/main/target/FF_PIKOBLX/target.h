@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -27,33 +30,34 @@
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
 #endif
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+#define ENABLE_DSHOT_DMAR       true
+#define REMAP_TIM16_DMA
+
 
 #define USE_TARGET_CONFIG
-#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PB5
 
-#define BEEPER                  PA0
+#define USE_BEEPER
+#define BEEPER_PIN              PA0
 #define BEEPER_INVERTED
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PA15
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PA15
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
 
-#define MPU6000_CS_GPIO         GPIOB
-#define MPU6000_CS_PIN          PB12
-#define MPU6000_SPI_INSTANCE    SPI2
+#define GYRO_1_CS_PIN           PB12
+#define GYRO_1_SPI_INSTANCE     SPI2
 
 #define USE_VCP
 #define USE_UART1
@@ -99,7 +103,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
 #define USE_TRANSPONDER
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff

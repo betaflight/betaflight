@@ -29,7 +29,13 @@ extern "C" {
 
     #include "io/serial.h"
 
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/rx.h"
+
     void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
+
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -71,4 +77,12 @@ extern "C" {
     serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {
       return NULL;
     }
+
+    void serialSetCtrlLineStateCb(serialPort_t *, void (*)(void *, uint16_t ), void *) {}
+    void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
+    uint32_t serialTxBytesFree(const serialPort_t *) {return 1;}
+
+    void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
+
+    void pinioSet(int, bool) {}
 }

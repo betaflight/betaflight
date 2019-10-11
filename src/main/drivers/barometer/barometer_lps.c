@@ -1,7 +1,27 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_BARO) && defined(USE_BARO_SPI_LPS)
 
@@ -199,13 +219,19 @@ static void lpsOff(busDevice_t *busdev)
     lpsWriteCommand(busdev, LPS_CTRL1, 0x00 | (0x01 << 2));
 }
 
-static void lps_nothing(baroDev_t *baro)
+static void lpsNothing(baroDev_t *baro)
 {
     UNUSED(baro);
     return;
 }
 
-static void lps_read(baroDev_t *baro)
+static bool lpsNothingBool(baroDev_t *baro)
+{
+    UNUSED(baro);
+    return true;
+}
+
+static bool lpsRead(baroDev_t *baro)
 {
     uint8_t status = 0x00;
     lpsReadCommand(&baro->busdev, LPS_STATUS, &status, 1);
@@ -220,9 +246,11 @@ static void lps_read(baroDev_t *baro)
         rawP = 0;
         rawT = 0;
     }
+
+    return true;
 }
 
-static void lps_calculate(int32_t *pressure, int32_t *temperature)
+static void lpsCalculate(int32_t *pressure, int32_t *temperature)
 {
     *pressure = (int32_t)rawP * 100 / 4096;
     *temperature = (int32_t)rawT * 10 / 48 + 4250;
@@ -232,10 +260,19 @@ bool lpsDetect(baroDev_t *baro)
 {
     //Detect
     busDevice_t *busdev = &baro->busdev;
+
+    if (busdev->bustype != BUSTYPE_SPI) {
+        return false;
+    }
+
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
     IOHi(busdev->busdev_u.spi.csnPin); // Disable
-    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // Baro can work only on up to 10Mhz SPI bus
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD); // Baro can work only on up to 10Mhz SPI bus
+#else
+    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD); // Baro can work only on up to 10Mhz SPI bus
+#endif
 
     uint8_t temp = 0x00;
     lpsReadCommand(&baro->busdev, LPS_WHO_AM_I, &temp, 1);
@@ -253,16 +290,19 @@ bool lpsDetect(baroDev_t *baro)
 
     lpsReadCommand(busdev, LPS_CTRL1, &temp, 1);
 
+    baro->combined_read = true;
     baro->ut_delay = 1;
     baro->up_delay = 1000000 / 24;
-    baro->start_ut = lps_nothing;
-    baro->get_ut = lps_nothing;
-    baro->start_up = lps_nothing;
-    baro->get_up = lps_read;
-    baro->calculate = lps_calculate;
+    baro->start_ut = lpsNothing;
+    baro->get_ut = lpsNothingBool;
+    baro->read_ut = lpsNothingBool;
+    baro->start_up = lpsNothing;
+    baro->get_up = lpsRead;
+    baro->read_up = lpsNothingBool;
+    baro->calculate = lpsCalculate;
     uint32_t timeout = millis();
     do {
-        lps_read(baro);
+        lpsRead(baro);
         if ((millis() - timeout) > 500) return false;
     } while (rawT == 0 && rawP == 0);
     rawT = 0;

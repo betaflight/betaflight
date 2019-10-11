@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 // This file is copied with modifications from project Deviation,
@@ -22,11 +25,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RX_NRF24
 
 #include "build/build_config.h"
+
+#include "pg/rx.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
@@ -64,14 +69,14 @@ static void NRF24L01_InitGpio(void)
     NRF24_CE_LO();
 }
 
-uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data)
+void NRF24L01_WriteReg(uint8_t reg, uint8_t data)
 {
-    return rxSpiWriteCommand(W_REGISTER | (REGISTER_MASK & reg), data);
+    rxSpiWriteCommand(W_REGISTER | (REGISTER_MASK & reg), data);
 }
 
-uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length)
+void NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t length)
 {
-    return rxSpiWriteCommandMulti(W_REGISTER | ( REGISTER_MASK & reg), data, length);
+    rxSpiWriteCommandMulti(W_REGISTER | ( REGISTER_MASK & reg), data, length);
 }
 
 /*
@@ -79,14 +84,14 @@ uint8_t NRF24L01_WriteRegisterMulti(uint8_t reg, const uint8_t *data, uint8_t le
  * Packets in the TX FIFO are transmitted when the
  * nRF24L01 next enters TX mode
  */
-uint8_t NRF24L01_WritePayload(const uint8_t *data, uint8_t length)
+void NRF24L01_WritePayload(const uint8_t *data, uint8_t length)
 {
-    return rxSpiWriteCommandMulti(W_TX_PAYLOAD, data, length);
+    rxSpiWriteCommandMulti(W_TX_PAYLOAD, data, length);
 }
 
-uint8_t NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe)
+void NRF24L01_WriteAckPayload(const uint8_t *data, uint8_t length, uint8_t pipe)
 {
-    return rxSpiWriteCommandMulti(W_ACK_PAYLOAD | (pipe & 0x07), data, length);
+    rxSpiWriteCommandMulti(W_ACK_PAYLOAD | (pipe & 0x07), data, length);
 }
 
 uint8_t NRF24L01_ReadReg(uint8_t reg)
@@ -94,17 +99,17 @@ uint8_t NRF24L01_ReadReg(uint8_t reg)
     return rxSpiReadCommand(R_REGISTER | (REGISTER_MASK & reg), NOP);
 }
 
-uint8_t NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length)
+void NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t *data, uint8_t length)
 {
-    return rxSpiReadCommandMulti(R_REGISTER | (REGISTER_MASK & reg), NOP, data, length);
+    rxSpiReadCommandMulti(R_REGISTER | (REGISTER_MASK & reg), NOP, data, length);
 }
 
 /*
  * Read a packet from the nRF24L01 RX FIFO.
  */
-uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length)
+void NRF24L01_ReadPayload(uint8_t *data, uint8_t length)
 {
-    return rxSpiReadCommandMulti(R_RX_PAYLOAD, NOP, data, length);
+    rxSpiReadCommandMulti(R_RX_PAYLOAD, NOP, data, length);
 }
 
 /*
@@ -123,9 +128,9 @@ void NRF24L01_FlushRx(void)
     rxSpiWriteByte(FLUSH_RX);
 }
 
-uint8_t NRF24L01_Activate(uint8_t code)
+void NRF24L01_Activate(uint8_t code)
 {
-    return rxSpiWriteCommand(ACTIVATE, code);
+    rxSpiWriteCommand(ACTIVATE, code);
 }
 
 // standby configuration, used to simplify switching between RX, TX, and Standby modes

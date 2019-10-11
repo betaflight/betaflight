@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -30,6 +33,8 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
+
 #include "drivers/adc.h"
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
@@ -38,6 +43,12 @@
 
 #include "fc/config.h"
 
+#include "pg/rx.h"
+#include "pg/rx_spi.h"
+#include "pg/rx_spi_cc2500.h"
+
+#include "rx/rx_spi_common.h"
+#include "rx/cc2500_common.h"
 #include "rx/cc2500_frsky_common.h"
 #include "rx/cc2500_frsky_shared.h"
 
@@ -55,6 +66,8 @@ static uint8_t telemetryId;
 static bool telemetryEnabled = false;
 
 #define MAX_SERIAL_BYTES 64
+
+#define A1_CONST_D 100
 
 static uint8_t telemetryBytesGenerated;
 static uint8_t serialBuffer[MAX_SERIAL_BYTES]; // buffer for telemetry serial data
@@ -102,15 +115,26 @@ static void frSkyDTelemetryWriteByte(const char data)
 
 static void buildTelemetryFrame(uint8_t *packet)
 {
-    const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
-    const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
+    uint8_t a1Value;
+    switch (rxCc2500SpiConfig()->a1Source) {
+    case FRSKY_SPI_A1_SOURCE_VBAT:
+        a1Value = (getBatteryVoltage() / 5) & 0xff;
+        break;
+    case FRSKY_SPI_A1_SOURCE_EXTADC:
+        a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
+        break;
+    case FRSKY_SPI_A1_SOURCE_CONST:
+        a1Value = A1_CONST_D & 0xff;
+        break;
+    }
+    const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
     telemetryId = packet[4];
     frame[0] = 0x11; // length
-    frame[1] = rxFrSkySpiConfig()->bindTxId[0];
-    frame[2] = rxFrSkySpiConfig()->bindTxId[1];
-    frame[3] = (uint8_t)((adcExternal1Sample & 0xff0) >> 4); // A1
-    frame[4] = (uint8_t)((adcRssiSample & 0xff0) >> 4);      // A2
-    frame[5] = (uint8_t)rssiDbm;
+    frame[1] = rxCc2500SpiConfig()->bindTxId[0];
+    frame[2] = rxCc2500SpiConfig()->bindTxId[1];
+    frame[3] = a1Value;
+    frame[4] = a2Value;
+    frame[5] = (uint8_t)cc2500getRssiDbm();
     uint8_t bytesUsed = 0;
 #if defined(USE_TELEMETRY_FRSKY_HUB)
     if (telemetryEnabled) {
@@ -163,8 +187,6 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
     static timeUs_t lastPacketReceivedTime = 0;
     static timeUs_t telemetryTimeUs;
 
-    static bool ledIsOn;
-
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
 
     const timeUs_t currentPacketReceivedTime = micros();
@@ -172,7 +194,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
     switch (*protocolState) {
     case STATE_STARTING:
         listLength = 47;
-        initialiseData(0);
+        initialiseData(false);
         *protocolState = STATE_UPDATE;
         nextChannel(1);
         cc2500Strobe(CC2500_SRX);
@@ -182,7 +204,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         lastPacketReceivedTime = currentPacketReceivedTime;
         *protocolState = STATE_DATA;
 
-        if (checkBindRequested(false)) {
+        if (rxSpiCheckBindRequested(false)) {
             lastPacketReceivedTime = 0;
             timeoutUs = 50;
             missingPackets = 0;
@@ -194,22 +216,24 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH; //!!TODO -check this fall through is correct
     // here FS code could be
     case STATE_DATA:
-        if (IORead(gdoPin)) {
+        if (cc2500getGdo()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
+            bool packetOk = false;
             if (ccLen >= 20) {
                 cc2500ReadFifo(packet, 20);
                 if (packet[19] & 0x80) {
+                    packetOk = true;
                     missingPackets = 0;
                     timeoutUs = 1;
                     if (packet[0] == 0x11) {
-                        if ((packet[1] == rxFrSkySpiConfig()->bindTxId[0]) &&
-                            (packet[2] == rxFrSkySpiConfig()->bindTxId[1])) {
-                            LedOn();
+                        if ((packet[1] == rxCc2500SpiConfig()->bindTxId[0]) &&
+                            (packet[2] == rxCc2500SpiConfig()->bindTxId[1])) {
+                            rxSpiLedOn();
                             nextChannel(1);
+                            cc2500setRssiDbm(packet[18]);
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY)
                             if ((packet[3] % 4) == 2) {
                                 telemetryTimeUs = micros();
-                                setRssiDbm(packet[18]);
                                 buildTelemetryFrame(packet);
                                 *protocolState = STATE_TELEMETRY;
                             } else
@@ -224,40 +248,34 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                     }
                 }
             }
+            if (!packetOk) {
+                cc2500Strobe(CC2500_SFRX);
+            }
         }
 
         if (cmpTimeUs(currentPacketReceivedTime, lastPacketReceivedTime) > (timeoutUs * SYNC_DELAY_MAX)) {
-#if defined(USE_RX_FRSKY_SPI_PA_LNA)
-            TxDisable();
+#if defined(USE_RX_CC2500_SPI_PA_LNA)
+            cc2500TxDisable();
 #endif
             if (timeoutUs == 1) {
-#if defined(USE_RX_FRSKY_SPI_PA_LNA) && defined(USE_RX_FRSKY_SPI_DIVERSITY) // SE4311 chip
+#if defined(USE_RX_CC2500_SPI_PA_LNA) && defined(USE_RX_CC2500_SPI_DIVERSITY) // SE4311 chip
                 if (missingPackets >= 2) {
-                    switchAntennae();
+                    cc2500switchAntennae();
                 }
 #endif
 
                 if (missingPackets > MAX_MISSING_PKT) {
                     timeoutUs = 50;
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-                    setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
+                    setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
                 }
 
                 missingPackets++;
                 nextChannel(1);
             } else {
-                if (ledIsOn) {
-                    LedOff();
-                } else {
-                    LedOn();
-                }
-                ledIsOn = !ledIsOn;
+                rxSpiLedToggle();
 
-#if defined(USE_RX_FRSKY_SPI_TELEMETRY)
-                setRssiUnfiltered(0, RSSI_SOURCE_RX_PROTOCOL);
-#endif
+                setRssi(0, RSSI_SOURCE_RX_PROTOCOL);
                 nextChannel(13);
             }
 
@@ -271,13 +289,12 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
             cc2500Strobe(CC2500_SIDLE);
             cc2500SetPower(6);
             cc2500Strobe(CC2500_SFRX);
-#if defined(USE_RX_FRSKY_SPI_PA_LNA)
-            TxEnable();
+#if defined(USE_RX_CC2500_SPI_PA_LNA)
+            cc2500TxEnable();
 #endif
             cc2500Strobe(CC2500_SIDLE);
             cc2500WriteFifo(frame, frame[0] + 1);
             *protocolState = STATE_DATA;
-            ret = RX_SPI_RECEIVED_DATA;
             lastPacketReceivedTime = currentPacketReceivedTime;
         }
 
@@ -292,7 +309,9 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
 void frSkyDInit(void)
 {
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_FRSKY_HUB)
-    telemetryEnabled = initFrSkyHubTelemetryExternal(frSkyDTelemetryWriteByte);
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
+        telemetryEnabled = initFrSkyHubTelemetryExternal(frSkyDTelemetryWriteByte);
+    }
 #endif
 }
 #endif

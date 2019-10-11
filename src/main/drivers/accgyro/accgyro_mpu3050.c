@@ -1,19 +1,24 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
+
+// NOTE: This gyro is considered obsolete and may be removed in the future.
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -48,6 +53,17 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
+static uint8_t mpu3050GetDLPF(uint8_t lpf)
+{
+    uint8_t ret;
+    if (lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
+        ret = MPU3050_DLPF_188HZ;
+    } else {
+        ret = MPU3050_DLPF_256HZ;
+    }
+    return ret;
+}
+
 static void mpu3050Init(gyroDev_t *gyro)
 {
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
@@ -57,7 +73,7 @@ static void mpu3050Init(gyroDev_t *gyro)
         failureMode(FAILURE_ACC_INIT);
     }
 
-    busWriteRegister(&gyro->bus, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | gyro->lpf);
+    busWriteRegister(&gyro->bus, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpu3050GetDLPF(gyro->hardware_lpf));
     busWriteRegister(&gyro->bus, MPU3050_INT_CFG, 0);
     busWriteRegister(&gyro->bus, MPU3050_USER_CTRL, MPU3050_USER_RESET);
     busWriteRegister(&gyro->bus, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);

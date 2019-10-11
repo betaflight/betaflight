@@ -1,18 +1,24 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  * Author: 4712
 */
 
@@ -27,8 +33,8 @@
 #include "drivers/buf_writer.h"
 #include "drivers/io.h"
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
 
 #include "flight/mixer.h"
@@ -70,9 +76,9 @@
 // *** change to adapt Revision
 #define SERIAL_4WAY_VER_MAIN 20
 #define SERIAL_4WAY_VER_SUB_1 (uint8_t) 0
-#define SERIAL_4WAY_VER_SUB_2 (uint8_t) 02
+#define SERIAL_4WAY_VER_SUB_2 (uint8_t) 04
 
-#define SERIAL_4WAY_PROTOCOL_VER 107
+#define SERIAL_4WAY_PROTOCOL_VER 108
 // *** end
 
 #if (SERIAL_4WAY_VER_MAIN > 24)
@@ -131,7 +137,8 @@ inline void setEscOutput(uint8_t selEsc)
 uint8_t esc4wayInit(void)
 {
     // StopPwmAllMotors();
-    pwmDisableMotors();
+    // XXX Review effect of motor refactor
+    //pwmDisableMotors();
     escCount = 0;
     memset(&escHardware, 0, sizeof(escHardware));
     pwmOutputPort_t *pwmMotors = pwmGetMotors();
@@ -145,6 +152,7 @@ uint8_t esc4wayInit(void)
             }
         }
     }
+    motorDisable();
     return escCount;
 }
 
@@ -155,7 +163,7 @@ void esc4wayRelease(void)
         IOConfigGPIO(escHardware[escCount].io, IOCFG_AF_PP);
         setEscLo(escCount);
     }
-    pwmEnableMotors();
+    motorEnable();
 }
 
 
@@ -330,14 +338,15 @@ uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data) {
         (pDeviceInfo->words[0] == 0xE8B2))
 
 #define ARM_DEVICE_MATCH ((pDeviceInfo->words[0] == 0x1F06) || \
-        (pDeviceInfo->words[0] == 0x3306) || (pDeviceInfo->words[0] == 0x3406) || (pDeviceInfo->words[0] == 0x3506))
+        (pDeviceInfo->words[0] == 0x3306) || (pDeviceInfo->words[0] == 0x3406) || (pDeviceInfo->words[0] == 0x3506) || \
+        (pDeviceInfo->words[0] == 0x2B06) || (pDeviceInfo->words[0] == 0x4706))
 
 static uint8_t CurrentInterfaceMode;
 
 static uint8_t Connect(uint8_32_u *pDeviceInfo)
 {
     for (uint8_t I = 0; I < 3; ++I) {
-        #if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
+#if (defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_SERIAL_4WAY_SK_BOOTLOADER))
         if ((CurrentInterfaceMode != imARM_BLB) && Stk_ConnectEx(pDeviceInfo) && ATMEL_DEVICE_MATCH) {
             CurrentInterfaceMode = imSK;
             return 1;
@@ -355,7 +364,7 @@ static uint8_t Connect(uint8_32_u *pDeviceInfo)
                 }
             }
         }
-        #elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
+#elif defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
         if (BL_ConnectEx(pDeviceInfo)) {
             if SILABS_DEVICE_MATCH {
                 CurrentInterfaceMode = imSIL_BLB;
@@ -368,12 +377,12 @@ static uint8_t Connect(uint8_32_u *pDeviceInfo)
                 return 1;
             }
         }
-        #elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
+#elif defined(USE_SERIAL_4WAY_SK_BOOTLOADER)
         if (Stk_ConnectEx(pDeviceInfo)) {
             CurrentInterfaceMode = imSK;
             if ATMEL_DEVICE_MATCH return 1;
         }
-        #endif
+#endif
     }
     return 0;
 }
@@ -425,11 +434,11 @@ void esc4wayProcess(serialPort_t *mspPort)
     port = mspPort;
 
     // Start here  with UART Main loop
-    #ifdef BEEPER
+#ifdef USE_BEEPER
     // fix for buzzer often starts beeping continuously when the ESCs are read
     // switch beeper silent here
     beeperSilence();
-    #endif
+#endif
     bool isExitScheduled = false;
 
     while (1) {
@@ -557,9 +566,13 @@ void esc4wayProcess(serialPort_t *mspPort)
 
                 case cmd_DeviceReset:
                 {
+                    bool rebootEsc = false;
                     if (ParamBuf[0] < escCount) {
                         // Channel may change here
                         selected_esc = ParamBuf[0];
+                        if (ioMem.D_FLASH_ADDR_L == 1) {
+                            rebootEsc = true;
+                        }
                     }
                     else {
                         ACK_OUT = ACK_I_INVALID_CHANNEL;
@@ -573,6 +586,14 @@ void esc4wayProcess(serialPort_t *mspPort)
                         case imARM_BLB:
                         {
                             BL_SendCMDRunRestartBootloader(&DeviceInfo);
+                            if (rebootEsc) {
+                                ESC_OUTPUT;
+                                setEscLo(selected_esc);
+                                timeMs_t m = millis();
+                                while (millis() - m < 300);
+                                setEscHi(selected_esc);
+                                ESC_INPUT;
+                            }
                             break;
                         }
                         #endif

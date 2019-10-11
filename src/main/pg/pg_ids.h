@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -75,6 +78,9 @@
 #define PG_SERVO_CONFIG 52
 #define PG_IBUS_TELEMETRY_CONFIG 53 // CF 1.x
 //#define PG_VTX_CONFIG 54 // CF 1.x
+#define PG_GPS_RESCUE 55 // struct OK
+#define PG_POSITION 56
+#define PG_VTX_IO_CONFIG 57
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight
@@ -113,12 +119,37 @@
 #define PG_SPI_PIN_CONFIG 520
 #define PG_ESCSERIAL_CONFIG 521
 #define PG_CAMERA_CONTROL_CONFIG 522
-#define PG_RX_FRSKY_SPI_CONFIG 523
+#define PG_RX_CC2500_SPI_CONFIG 523
 #define PG_MAX7456_CONFIG 524
 #define PG_FLYSKY_CONFIG 525
 #define PG_TIME_CONFIG 526
 #define PG_RANGEFINDER_CONFIG 527 // iNav
-#define PG_BETAFLIGHT_END 527
+#define PG_TRICOPTER_CONFIG 528
+#define PG_PINIO_CONFIG 529
+#define PG_PINIOBOX_CONFIG 530
+#define PG_USB_CONFIG 531
+#define PG_SDIO_CONFIG 532
+#define PG_DISPLAY_PORT_CRSF_CONFIG 533  // no longer required -- never released
+#define PG_TIMER_IO_CONFIG 534 // used to store the index for timer use in timerHardware array in target.c
+#define PG_SPI_PREINIT_IPU_CONFIG 535
+#define PG_SPI_PREINIT_OPU_CONFIG 536
+#define PG_RX_SPI_CONFIG 537
+#define PG_BOARD_CONFIG 538
+#define PG_RCDEVICE_CONFIG 539
+#define PG_GYRO_DEVICE_CONFIG 540
+#define PG_MCO_CONFIG 541
+#define PG_RX_SPEKTRUM_SPI_CONFIG 542
+#define PG_SERIAL_UART_CONFIG 543
+#define PG_RPM_FILTER_CONFIG 544
+#define PG_LED_STRIP_STATUS_MODE_CONFIG 545 // Used to hold the configuration for the LED_STRIP status mode (not built on targets with limited flash)
+#define PG_VTX_TABLE_CONFIG 546
+#define PG_STATS_CONFIG 547
+#define PG_QUADSPI_CONFIG 548
+#define PG_TIMER_UP_CONFIG 549 // used to store dmaopt for TIMx_UP channel
+#define PG_SDIO_PIN_CONFIG 550
+#define PG_PULLUP_CONFIG 551
+#define PG_PULLDOWN_CONFIG 552
+#define PG_BETAFLIGHT_END 552
 
 
 // OSD configuration (subject to change)

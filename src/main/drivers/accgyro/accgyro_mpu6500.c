@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -53,6 +56,14 @@ void mpu6500GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
+    int gyro_range = INV_FSR_2000DPS;
+    int accel_range = INV_FSR_16G;
+
+    if (gyro->mpuDetectionResult.sensor == ICM_20601_SPI) {
+        gyro_range = gyro->gyro_high_fsr ? ICM_HIGH_RANGE_FSR_4000DPS : ICM_HIGH_RANGE_FSR_2000DPS;
+        accel_range = ICM_HIGH_RANGE_FSR_16G;
+    }
+
     busWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
     busWriteRegister(&gyro->bus, MPU_RA_SIGNAL_PATH_RESET, 0x07);
@@ -61,12 +72,11 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     delay(100);
     busWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
-    busWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    busWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, gyro_range << 3);
     delay(15);
-    busWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    busWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, accel_range << 3);
     delay(15);
-    busWriteRegister(&gyro->bus, MPU_RA_CONFIG, gyro->lpf);
+    busWriteRegister(&gyro->bus, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
     delay(15);
     busWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);

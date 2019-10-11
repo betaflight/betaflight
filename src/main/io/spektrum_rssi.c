@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "platform.h"
@@ -26,10 +29,14 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "io/spektrum_rssi.h"
 
+// Number of fade outs counted as a link loss when using USE_SPEKTRUM_REAL_RSSI
+#define SPEKTRUM_RSSI_LINK_LOSS_FADES 5
 
 #ifdef USE_SPEKTRUM_FAKE_RSSI
 // Spektrum Rx type. Determined by bind method.
@@ -102,21 +109,35 @@ static int8_t dBm2range (int8_t dBm) {
 void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
 #ifdef USE_SPEKTRUM_REAL_RSSI
     static int8_t spek_last_rssi = SPEKTRUM_RSSI_MAX;
+    static uint8_t spek_fade_count = 0;
 
     // Fetch RSSI
     if (srxlEnabled) {
-        // Real RSSI reported omly by SRXL Telemetry Rx, in dBm.
+        // Real RSSI reported only by SRXL Telemetry Rx, in dBm.
         int8_t rssi = spekFrame[0];
 
         if (rssi <= SPEKTRUM_RSSI_FADE_LIMIT ) {
-        // If Rx reports -100 dBm or less, it is a fade out and frame loss.
-        // If it is a temporary fade, real RSSI will come back in the next frame, in that case.
-        // we should not report 0% back as OSD keeps a "minimum RSSI" value. Instead keep last good report
-        // If it is a total link loss, failsafe will kick in.
-        // We could count the fades here, but currentlly to no use
+            // If Rx reports -100 dBm or less, it is a fade out and frame
+            // loss.
+            // If it is a temporary fade, real RSSI will come back in the
+            // next frame, in that case
+            // we should not report 0% back as OSD keeps a "minimum RSSI"
+            // value. Instead keep last good report.
+            // If it is a total link loss, failsafe will kick in.
+            // The number of fades are counted and if it is equal or above
+            // SPEKTRUM_RSSI_LINK_LOSS_FADES a link loss is assumed and
+            // RSSI is set to Spektrums minimum RSSI value.
 
-        // Ignore report and Keep last known good value
-        rssi = spek_last_rssi;
+            spek_fade_count++;
+            if (spek_fade_count < SPEKTRUM_RSSI_LINK_LOSS_FADES) {
+                // Ignore report and keep last known good value
+                rssi = spek_last_rssi;
+            } else {
+                // Link loss assumed, set RSSI to minimum value
+                rssi = SPEKTRUM_RSSI_MIN;
+            }
+        } else {
+            spek_fade_count = 0;
         }
 
         if(rssi_channel != 0) {
@@ -162,9 +183,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
                     (system == SPEKTRUM_DSMX_11) ) ){
                 spektrumSatInternal =false; // Nope, this is an externally bound Sat Rx
             }
-        }
-
-        if (!spektrumSatInternal) {
+        } else {
             // External Rx, bind values 4, 6, 8, 10
             fade = ((spekFrame[0] << 8) + spekFrame[1]);
         }

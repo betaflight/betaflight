@@ -22,10 +22,12 @@
 
 extern "C" {
     #include "platform.h"
-
+    #include "build/debug.h"
     #include "drivers/io.h"
     #include "common/maths.h"
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "rx/rx.h"
@@ -35,7 +37,12 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
+
+PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+
 boxBitmask_t rcModeActivationMask;
+int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode = 0;
 
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
 }
@@ -182,11 +189,11 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     return true;
 }
 
-bool feature(uint32_t) {
+bool featureIsEnabled(uint32_t) {
     return false;
 }
 
-void featureClear(uint32_t) {
+void featureDisable(uint32_t) {
 }
 
 bool rxMspFrameComplete(void)
@@ -214,6 +221,26 @@ void failsafeOnValidDataReceived(void)
 
 void failsafeOnValidDataFailed(void)
 {
+}
+
+float pt1FilterGain(float f_cut, float dT)
+{
+    UNUSED(f_cut);
+    UNUSED(dT);
+    return 0.0;
+}
+
+void pt1FilterInit(pt1Filter_t *filter, float k)
+{
+    UNUSED(filter);
+    UNUSED(k);
+}
+
+float pt1FilterApply(pt1Filter_t *filter, float input)
+{
+    UNUSED(filter);
+    UNUSED(input);
+    return 0.0;
 }
 
 }

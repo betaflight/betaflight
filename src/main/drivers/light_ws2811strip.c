@@ -1,20 +1,22 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /*
  * "Note that the timing on the WS2812/WS2812B LEDs has changed as of batches from WorldSemi
@@ -28,7 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_LED_STRIP
 
@@ -36,22 +38,34 @@
 
 #include "common/color.h"
 #include "common/colorconversion.h"
-#include "dma.h"
+
+#include "drivers/dma.h"
 #include "drivers/io.h"
+
 #include "light_ws2811strip.h"
 
 #if defined(STM32F1) || defined(STM32F3)
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#elif defined(STM32F7)
+FAST_RAM_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#elif defined(STM32H7)
+DMA_RAM uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
 uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #endif
-volatile uint8_t ws2811LedDataTransferInProgress = 0;
+
+static ioTag_t ledStripIoTag;
+static bool ws2811Initialised = false;
+volatile bool ws2811LedDataTransferInProgress = false;
+static unsigned usedLedCount = 0;
+static bool needsFullRefresh = true;
 
 uint16_t BIT_COMPARE_1 = 0;
 uint16_t BIT_COMPARE_0 = 0;
 
-static hsvColor_t ledColorBuffer[WS2811_LED_STRIP_LENGTH];
+static hsvColor_t ledColorBuffer[WS2811_DATA_BUFFER_SIZE];
 
+#if !defined(USE_WS2811_SINGLE_COLOUR)
 void setLedHsv(uint16_t index, const hsvColor_t *color)
 {
     ledColorBuffer[index] = *color;
@@ -71,106 +85,106 @@ void scaleLedValue(uint16_t index, const uint8_t scalePercent)
 {
     ledColorBuffer[index].v = ((uint16_t)ledColorBuffer[index].v * scalePercent / 100);
 }
+#endif
 
 void setStripColor(const hsvColor_t *color)
 {
-    uint16_t index;
-    for (index = 0; index < WS2811_LED_STRIP_LENGTH; index++) {
-        setLedHsv(index, color);
+    for (unsigned index = 0; index < usedLedCount; index++) {
+        ledColorBuffer[index] = *color;
     }
 }
 
 void setStripColors(const hsvColor_t *colors)
 {
-    uint16_t index;
-    for (index = 0; index < WS2811_LED_STRIP_LENGTH; index++) {
+    for (unsigned index = 0; index < usedLedCount; index++) {
         setLedHsv(index, colors++);
     }
+}
+
+void setUsedLedCount(unsigned ledCount)
+{
+    usedLedCount = (ledCount < WS2811_DATA_BUFFER_SIZE) ? ledCount : WS2811_DATA_BUFFER_SIZE;
+
+     // Update all possible positions on the next update in case the count
+     // decreased otherwise LEDs on the end could be left in their previous state
+    needsFullRefresh = true;
 }
 
 void ws2811LedStripInit(ioTag_t ioTag)
 {
     memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
-    ws2811LedStripHardwareInit(ioTag);
 
-    const hsvColor_t hsv_white = { 0, 255, 255 };
-    setStripColor(&hsv_white);
-    ws2811UpdateStrip();
+    ledStripIoTag = ioTag;
+}
+
+void ws2811LedStripEnable(void)
+{
+    if (!ws2811Initialised) {
+        if (!ws2811LedStripHardwareInit(ledStripIoTag)) {
+            return;
+        }
+
+        const hsvColor_t hsv_black = { 0, 0, 0 };
+        setStripColor(&hsv_black);
+        // RGB or GRB ordering doesn't matter for black
+        ws2811UpdateStrip(LED_RGB);
+
+        ws2811Initialised = true;
+    }
 }
 
 bool isWS2811LedStripReady(void)
 {
-    return !ws2811LedDataTransferInProgress;
+    return ws2811Initialised && !ws2811LedDataTransferInProgress;
 }
 
-STATIC_UNIT_TESTED uint16_t dmaBufferOffset;
-static int16_t ledIndex;
-
-#define USE_FAST_DMA_BUFFER_IMPL
-#ifdef USE_FAST_DMA_BUFFER_IMPL
-
-STATIC_UNIT_TESTED void fastUpdateLEDDMABuffer(rgbColor24bpp_t *color)
+STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex)
 {
-    uint32_t grb = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
 
-    for (int8_t index = 23; index >= 0; index--) {
-        ledStripDMABuffer[dmaBufferOffset++] = (grb & (1 << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
+    uint32_t packed_colour;
+
+    switch (ledFormat) {
+        case LED_RGB: // WS2811 drivers use RGB format
+            packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
+            break;
+
+        case LED_GRB: // WS2812 drivers use GRB format
+        default:
+            packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
+        break;
+    }
+
+    unsigned dmaBufferOffset = 0;
+    for (int index = 23; index >= 0; index--) {
+        ledStripDMABuffer[ledIndex * WS2811_BITS_PER_LED + dmaBufferOffset++] = (packed_colour & (1 << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
     }
 }
-#else
-STATIC_UNIT_TESTED void updateLEDDMABuffer(uint8_t componentValue)
-{
-    uint8_t bitIndex;
-
-    for (bitIndex = 0; bitIndex < 8; bitIndex++)
-    {
-        if ((componentValue << bitIndex) & 0x80 )    // data sent MSB first, j = 0 is MSB j = 7 is LSB
-        {
-            ledStripDMABuffer[dmaBufferOffset] = BIT_COMPARE_1;
-        }
-        else
-        {
-            ledStripDMABuffer[dmaBufferOffset] = BIT_COMPARE_0;   // compare value for logical 0
-        }
-        dmaBufferOffset++;
-    }
-}
-#endif
 
 /*
  * This method is non-blocking unless an existing LED update is in progress.
  * it does not wait until all the LEDs have been updated, that happens in the background.
  */
-void ws2811UpdateStrip(void)
+void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
 {
-    static rgbColor24bpp_t *rgb24;
-
     // don't wait - risk of infinite block, just get an update next time round
-    if (ws2811LedDataTransferInProgress) {
+    if (!ws2811Initialised || ws2811LedDataTransferInProgress) {
         return;
     }
 
-    dmaBufferOffset = 0;                // reset buffer memory index
-    ledIndex = 0;                       // reset led index
+    unsigned ledIndex = 0;              // reset led index
 
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values
-    while (ledIndex < WS2811_LED_STRIP_LENGTH)
-    {
-        rgb24 = hsvToRgb24(&ledColorBuffer[ledIndex]);
+    const unsigned ledUpdateCount = needsFullRefresh ? WS2811_DATA_BUFFER_SIZE : usedLedCount;
+    const hsvColor_t hsvBlack = { 0, 0, 0 };
+    while (ledIndex < ledUpdateCount) {
+        rgbColor24bpp_t *rgb24 = hsvToRgb24(ledIndex < usedLedCount ? &ledColorBuffer[ledIndex] : &hsvBlack);
 
-#ifdef USE_FAST_DMA_BUFFER_IMPL
-        fastUpdateLEDDMABuffer(rgb24);
-#else
-        updateLEDDMABuffer(rgb24->rgb.g);
-        updateLEDDMABuffer(rgb24->rgb.r);
-        updateLEDDMABuffer(rgb24->rgb.b);
-#endif
-
-        ledIndex++;
+        updateLEDDMABuffer(ledFormat, rgb24, ledIndex++);
     }
+    needsFullRefresh = false;
 
-    ws2811LedDataTransferInProgress = 1;
+    ws2811LedDataTransferInProgress = true;
     ws2811LedStripDMAEnable();
 }
 

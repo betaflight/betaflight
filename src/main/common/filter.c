@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -28,8 +31,7 @@
 
 #define M_LN2_FLOAT 0.69314718055994530942f
 #define M_PI_FLOAT  3.14159265358979323846f
-#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
-#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
+#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
 
 // NULL filter
 
@@ -42,10 +44,21 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 // PT1 Low Pass filter
 
-void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
+float pt1FilterGain(float f_cut, float dT)
 {
-    float RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-    filter->k = dT / (RC + dT);
+    float RC = 1 / ( 2 * M_PI_FLOAT * f_cut);
+    return dT / (RC + dT);
+}
+
+void pt1FilterInit(pt1Filter_t *filter, float k)
+{
+    filter->state = 0.0f;
+    filter->k = k;
+}
+
+void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
+{
+    filter->k = k;
 }
 
 FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
@@ -79,10 +92,10 @@ FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
     return filter->state;
 }
 
-
-float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
-    float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
-    return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
+// get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
+// Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
+float filterGetNotchQ(float centerFreq, float cutoffFreq) {
+    return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
 /* sets up a biquad Filter */
@@ -103,6 +116,8 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
 
     switch (filterType) {
     case FILTER_LPF:
+        // 2nd order Butterworth (with Q=1/sqrt(2)) / Butterworth biquad section with Q
+        // described in http://www.ti.com/lit/an/slaa447/slaa447.pdf
         b0 = (1 - cs) * 0.5f;
         b1 = 1 - cs;
         b2 = (1 - cs) * 0.5f;
@@ -157,6 +172,11 @@ FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint
     filter->y2 = y2;
 }
 
+FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+{
+    biquadFilterUpdate(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
+}
+
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
 FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 {
@@ -183,163 +203,25 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-/*
- * FIR filter
- */
-void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
+void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
 {
+    filter->movingWindowIndex = 0;
+    filter->windowSize = windowSize;
     filter->buf = buf;
-    filter->bufLength = bufLength;
-    filter->coeffs = coeffs;
-    filter->coeffsLength = coeffsLength;
-    filter->movingSum = 0.0f;
-    filter->index = 0;
-    filter->count = 0;
-    memset(filter->buf, 0, sizeof(float) * filter->bufLength);
+    filter->primed = false;
 }
 
-/*
- * FIR filter initialisation
- * If the FIR filter is just to be used for averaging, then coeffs can be set to NULL
- */
-void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
+FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input)
 {
-    firFilterInit2(filter, buf, bufLength, coeffs, bufLength);
-}
+    filter->movingSum -= filter->buf[filter->movingWindowIndex];
+    filter->buf[filter->movingWindowIndex] = input;
+    filter->movingSum += input;
 
-void firFilterUpdate(firFilter_t *filter, float input)
-{
-    filter->buf[filter->index++] = input; // index is at the first empty buffer positon
-    if (filter->index >= filter->bufLength) {
-        filter->index = 0;
+    if (++filter->movingWindowIndex == filter->windowSize) {
+        filter->movingWindowIndex = 0;
+        filter->primed = true;
     }
-}
 
-/*
- * Update FIR filter maintaining a moving sum for quick moving average computation
- */
-void firFilterUpdateAverage(firFilter_t *filter, float input)
-{
-    filter->movingSum += input; // sum of the last <count> items, to allow quick moving average computation
-    filter->movingSum -=  filter->buf[filter->index]; // subtract the value that "drops off" the end of the moving sum
-    filter->buf[filter->index++] = input; // index is at the first empty buffer positon
-    if (filter->index >= filter->bufLength) {
-        filter->index = 0;
-    }
-    if (filter->count < filter->bufLength) {
-        ++filter->count;
-    }
-}
-
-FAST_CODE float firFilterApply(const firFilter_t *filter)
-{
-    float ret = 0.0f;
-    int ii = 0;
-    int index;
-    for (index = filter->index - 1; index >= 0; ++ii, --index) {
-        ret += filter->coeffs[ii] * filter->buf[index];
-    }
-    for (index = filter->bufLength - 1; ii < filter->coeffsLength; ++ii, --index) {
-        ret += filter->coeffs[ii] * filter->buf[index];
-    }
-    return ret;
-}
-
-FAST_CODE float firFilterUpdateAndApply(firFilter_t *filter, float input)
-{
-    firFilterUpdate(filter, input);
-    return firFilterApply(filter);
-}
-
-/*
- * Returns average of the last <count> items.
- */
-float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
-{
-    float ret = 0.0f;
-    int index = filter->index;
-    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
-        --index;
-        if (index < 0) {
-            index = filter->bufLength - 1;
-        }
-        ret += filter->buf[index];
-    }
-    return ret / count;
-}
-
-float firFilterCalcMovingAverage(const firFilter_t *filter)
-{
-    return filter->movingSum / filter->count;
-}
-
-float firFilterLastInput(const firFilter_t *filter)
-{
-    // filter->index points to next empty item in buffer
-    const int index = filter->index == 0 ? filter->bufLength - 1 : filter->index - 1;
-    return filter->buf[index];
-}
-
-void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime)
-{
-    memset(filter, 0, sizeof(firFilterDenoise_t));
-    filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_FIR_DENOISE_WINDOW_SIZE);
-}
-
-// prototype function for denoising of signal by dynamic moving average. Mainly for test purposes
-float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
-{
-    filter->state[filter->index] = input;
-    filter->movingSum += filter->state[filter->index++];
-    if (filter->index == filter->targetCount) {
-        filter->index = 0;
-    }
-    filter->movingSum -= filter->state[filter->index];
-
-    if (filter->targetCount >= filter->filledCount) {
-        return filter->movingSum / filter->targetCount;
-    } else {
-        return filter->movingSum / ++filter->filledCount + 1;
-    }
-}
-
-// ledvinap's proposed RC+FIR2 Biquad-- equivalent to 'static' fast Kalman, without error estimation
-void biquadRCFIR2FilterInit(biquadFilter_t *filter, float q, float r)
-{
-    float k = 2 * 2 * sqrt(q) / (sqrt(q + 4 * r) + sqrt(q));  // 1st order IIR filter k
-    filter->b0 = k / 2;
-    filter->b1 = k / 2;
-    filter->b2 = 0;
-    filter->a1 = -(1 - k);
-    filter->a2 = 0;
-}
-
-// Fast two-state Kalman
-void fastKalmanInit(fastKalman_t *filter, float q, float r, float p)
-{
-    filter->q     = q * 0.000001f; // add multiplier to make tuning easier
-    filter->r     = r * 0.001f;    // add multiplier to make tuning easier
-    filter->p     = p * 0.001f;    // add multiplier to make tuning easier
-    filter->x     = 0.0f;          // set initial value, can be zero if unknown
-    filter->lastX = 0.0f;          // set initial value, can be zero if unknown
-    filter->k     = 0.0f;          // kalman gain
-}
-
-FAST_CODE float fastKalmanUpdate(fastKalman_t *filter, float input)
-{
-    // project the state ahead using acceleration
-    filter->x += (filter->x - filter->lastX);
-
-    // update last state
-    filter->lastX = filter->x;
-
-    // prediction update
-    filter->p = filter->p + filter->q;
-
-    // measurement update
-    filter->k = filter->p / (filter->p + filter->r);
-    filter->x += filter->k * (input - filter->x);
-    filter->p = (1.0f - filter->k) * filter->p;
-
-    return filter->x;
+    const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
+    return filter->movingSum  / denom;
 }

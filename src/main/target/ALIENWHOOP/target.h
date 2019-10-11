@@ -1,20 +1,22 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /*
 
@@ -46,9 +48,7 @@
 
 #define USE_TARGET_CONFIG // see config.c for target specific customizations
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define BRUSHED_MOTORS
-#define USE_BRUSHED_ESC_AUTODETECT
 
 /* Visual Alerts - SMD LEDs
  */
@@ -57,7 +57,8 @@
 
 /* Lost Quad Mode and Alerts - RCX03-787 Low Voltage Active Buzzer
  */
-#define BEEPER                 PA2
+#define USE_BEEPER
+#define BEEPER_PIN             PA2
 #define BEEPER_INVERTED
 
 /* Serial Peripheral Interface (SPI) - Up to 50 Mbit/s on F7
@@ -103,38 +104,42 @@
 #endif
 
 /* OSD MAX7456E */
-#define USE_OSD
-
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
+/* BLACKBOX dataflash available as of V2.1 -- did not exist on V1 and V2 */
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define FLASH_CS_PIN         SPI3_NSS_PIN
+#define FLASH_SPI_INSTANCE   SPI3
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 /* Motion Processing Unit (MPU) - Invensense 6-axis MPU-6500 or 9-axis MPU-9250
  */
 // Interrupt
 #define USE_EXTI
-#define MPU_INT_EXTI            PC14
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC14
 // MPU
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI1
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 // MAG
 #define USE_MAG
 #define USE_MAG_AK8963
+#define USE_MAG_LIS3MDL
 #define MAG_AK8963_ALIGN        CW0_DEG
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 // GYRO
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define GYRO_1_ALIGN            CW0_DEG
 // ACC
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
 
 /* Optional Digital Pressure Sensor (barometer) - Bosch BMP280
  * TODO: not implemented on V1 or V2 pcb
@@ -143,8 +148,8 @@
 #define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
-#define BMP280_SPI_INSTANCE     SPI3
-#define BMP280_CS_PIN           SPI3_NSS_PIN
+#define BARO_SPI_INSTANCE       SPI3
+#define BARO_CS_PIN             SPI3_NSS_PIN
 #endif
 
 /* Serial ports etc.
@@ -174,7 +179,7 @@
 #define UART4_TX_PIN            PA0 // PC10 currently used by USART3
 #define UART4_RX_PIN            PA1 // PC11 currently used by USART3
 
-// UART5 async only on F4
+// UART5 async only on F4 ... PB3 and PB4 used by SPI3
 //#define UART5_TX_PIN            PB3 // PC12
 //#define UART5_RX_PIN            PB4 // PD2
 
@@ -187,7 +192,7 @@
 #define BINDPLUG_PIN            PC13 // PC13 Current Limited (3 mA). Not suitable for LED/Beeper
 #define SERIALRX_UART           SERIAL_PORT_USART3
 #define RX_CHANNELS_TAER        //RX_CHANNELS_AETR
-#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM1024 //SERIALRX_SBUS
+#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048 //SERIALRX_SBUS
 
 /* Defaults - What do we want out of the box?
  */
@@ -196,13 +201,6 @@
 #else
 #define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP )  // TODO FEATURE_OSD for V3 board ... FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
-
-/* OSD currently dependent upon CMS, SMARTAUDIO, TRAMP
-#undef USE_VTX_COMMON
-#undef USE_VTX_CONTROL
-#undef USE_VTX_SMARTAUDIO
-#undef USE_VTX_TRAMP
-*/
 
 /* OLED Support
  */

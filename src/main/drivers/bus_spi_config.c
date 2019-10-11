@@ -1,57 +1,121 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_SPI
 
-#include "drivers/bus_spi.h"
 #include "drivers/io.h"
+#include "drivers/resource.h"
+#include "drivers/system.h"
 
-// Bring a pin for possible CS line to pull-up state in preparation for
-// sequential initialization by relevant drivers.
+#include "drivers/flash.h"
+#include "drivers/max7456.h"
+#include "drivers/rx/rx_spi.h"
+#include "drivers/sdcard.h"
 
-// There are two versions:
-// spiPreInitCs set the pin to input with pullup (IOCFG_IPU) for safety at this point.
-// spiPreInitCsOutPU which actually drive the pin for digital hi.
-//
-// The later is required for SPI slave devices on some targets, interfaced through level shifters, such as Kakute F4.
-// Note that with this handling, a pin declared as CS pin for MAX7456 needs special care when re-purposing the pin for other, especially, input uses.
-// This will/should be fixed when we go fully reconfigurable.
+#include "pg/flash.h"
+#include "pg/max7456.h"
+#include "pg/rx_spi.h"
+#include "pg/sdcard.h"
 
-void spiPreInitCs(ioTag_t iotag)
+typedef struct spiPreinit_s {
+    ioTag_t iotag;
+    uint8_t iocfg;
+    bool init;
+} spiPreinit_t;
+
+static spiPreinit_t spiPreinitArray[SPI_PREINIT_COUNT];
+static int spiPreinitCount = 0;
+
+void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init)
 {
-    IO_t io = IOGetByTag(iotag);
-    if (io) {
-        IOInit(io, OWNER_SPI_PREINIT, 0);
-        IOConfigGPIO(io, IOCFG_IPU);
+    if (!iotag) {
+        return;
+    }
+
+    if (spiPreinitCount == SPI_PREINIT_COUNT) {
+        indicateFailure(FAILURE_DEVELOPER, 5);
+        return;
+    }
+
+    spiPreinitArray[spiPreinitCount].iotag = iotag;
+    spiPreinitArray[spiPreinitCount].iocfg = iocfg;
+    spiPreinitArray[spiPreinitCount].init = init;
+    ++spiPreinitCount;
+}
+
+static void spiPreinitPin(spiPreinit_t *preinit, int index)
+{
+    IO_t io = IOGetByTag(preinit->iotag);
+    IOInit(io, OWNER_PREINIT, RESOURCE_INDEX(index));
+    IOConfigGPIO(io, preinit->iocfg);
+    if (preinit->init) {
+        IOHi(io);
+    } else {
+        IOLo(io);
     }
 }
 
-void spiPreInitCsOutPU(ioTag_t iotag)
+void spiPreinit(void)
 {
-    IO_t io = IOGetByTag(iotag);
-    if (io) {
-        IOInit(io, OWNER_SPI_PREINIT, 0);
-        IOConfigGPIO(io, IOCFG_OUT_PP);
-        IOHi(io);
+#ifdef USE_SDCARD_SPI
+    sdcard_preInit(sdcardConfig());
+#endif
+
+#if defined(RTC6705_CS_PIN) && !defined(USE_VTX_RTC6705_SOFTSPI) // RTC6705 soft SPI initialisation handled elsewhere.
+    // XXX Waiting for "RTC6705 cleanup #7114" to be done
+#endif
+
+#ifdef USE_FLASH_CHIP
+    flashPreInit(flashConfig());
+#endif
+
+#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+    rxSpiDevicePreInit(rxSpiConfig());
+#endif
+
+#ifdef USE_MAX7456
+    max7456PreInit(max7456Config());
+#endif
+
+    for (int i = 0; i < spiPreinitCount; i++) {
+        spiPreinitPin(&spiPreinitArray[i], i);
     }
+}
+
+void spiPreinitByIO(IO_t io)
+{
+    for (int i = 0; i < spiPreinitCount; i++) {
+        if (io == IOGetByTag(spiPreinitArray[i].iotag)) {
+            spiPreinitPin(&spiPreinitArray[i], i);
+            return;
+        }
+    }
+}
+
+void spiPreinitByTag(ioTag_t tag)
+{
+    spiPreinitByIO(IOGetByTag(tag));
 }
 #endif

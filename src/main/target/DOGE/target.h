@@ -1,25 +1,27 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "DOGE"
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 // tqfp48 pin 34
 #define LED0_PIN                PA13
@@ -28,7 +30,8 @@
 // tqfp48 pin 38
 #define LED2_PIN                PA15
 
-#define BEEPER                  PB2
+#define USE_BEEPER
+#define BEEPER_PIN              PB2
 #define BEEPER_INVERTED
 
 #define USE_SPI
@@ -54,35 +57,27 @@
 #define SPI2_NSS_PIN            PB12
 
 // tqfp48 pin 3
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
-#define MPU6000_CS_PIN          SPI1_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           SPI1_NSS_PIN
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 // tqfp48 pin 25
-#define BMP280_CS_PIN           SPI2_NSS_PIN
-#define BMP280_SPI_INSTANCE     SPI2
+#define BARO_CS_PIN             SPI2_NSS_PIN
+#define BARO_SPI_INSTANCE       SPI2
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_SPI_SHARED
-#define M25P16_CS_PIN           PC15
-#define M25P16_SPI_INSTANCE     SPI2
+#define FLASH_SPI_SHARED
+#define FLASH_CS_PIN            PC15
+#define FLASH_SPI_INSTANCE      SPI2
 
 #define USE_GYRO
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
-
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW270_DEG
+#define GYRO_1_ALIGN            CW270_DEG
 
 #define USE_ACC
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW270_DEG
 
 #define USE_BARO
 #define USE_BARO_BMP280
@@ -118,16 +113,13 @@
 
 // mpu_int definition in sensors/initialisation.c
 #define USE_EXTI
-#define MPU_INT_EXTI            PC13
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC13
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define USE_ESC_SENSOR
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // !!TODO - check the TARGET_IO_PORTs are correct
 #define TARGET_IO_PORTA         0xffff
@@ -139,4 +131,4 @@
 // channel mapping in drivers/pwm_mapping.c
 // only 6 outputs available on hardware
 #define USABLE_TIMER_CHANNEL_COUNT 10
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(16))

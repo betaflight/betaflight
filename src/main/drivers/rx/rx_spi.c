@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 // This file is copied with modifications from project Deviation,
@@ -22,126 +25,87 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_RX_SPI
 
 #include "build/build_config.h"
 
 #include "drivers/bus_spi.h"
-#include "drivers/bus_spi_soft.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
 #include "drivers/system.h"
 
+#include "pg/rx_spi.h"
+
 #include "rx_spi.h"
 
-#define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
-#define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
+#define ENABLE_RX() IOLo(busdev->busdev_u.spi.csnPin)
+#define DISABLE_RX() IOHi(busdev->busdev_u.spi.csnPin)
 
-#ifdef USE_RX_SOFTSPI
-static const softSPIDevice_t softSPIDevice = {
-    .sckTag = IO_TAG(RX_SCK_PIN),
-    .mosiTag = IO_TAG(RX_MOSI_PIN),
-    .misoTag = IO_TAG(RX_MISO_PIN),
-    // Note: Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-    .nssTag = IO_TAG(RX_NSS_PIN),
-};
-static bool useSoftSPI = false;
-#endif // USE_RX_SOFTSPI
+static busDevice_t rxSpiDevice;
+static busDevice_t *busdev = &rxSpiDevice;
 
-void rxSpiDeviceInit(rx_spi_type_e spiType)
+void rxSpiDevicePreInit(const rxSpiConfig_t *rxSpiConfig)
 {
-    static bool hardwareInitialised = false;
+    spiPreinitRegister(rxSpiConfig->csnTag, IOCFG_IPU, 1);
+}
 
-    if (hardwareInitialised) {
-        return;
+bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
+{
+    SPI_TypeDef *instance = spiInstanceByDevice(SPI_CFG_TO_DEV(rxSpiConfig->spibus));
+
+    if (!instance) {
+        return false;
     }
 
-#ifdef USE_RX_SOFTSPI
-    if (spiType == RX_SPI_SOFTSPI) {
-        useSoftSPI = true;
-        softSpiInit(&softSPIDevice);
-    }
-    const SPIDevice rxSPIDevice = SOFT_SPIDEV_1;
-#else
-    UNUSED(spiType);
-    const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    const IO_t rxCsPin = DEFIO_IO(RX_NSS_PIN);
-    IOInit(rxCsPin, OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    spiBusSetInstance(busdev, instance);
+
+    const IO_t rxCsPin = IOGetByTag(rxSpiConfig->csnTag);
+    IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);
-#endif // USE_RX_SOFTSPI
+    busdev->busdev_u.spi.csnPin = rxCsPin;
 
-    DISABLE_RX();
-
-#ifdef RX_SPI_INSTANCE
-    spiSetDivisor(RX_SPI_INSTANCE, SPI_CLOCK_STANDARD);
+    IOHi(rxCsPin);
+#ifdef USE_SPI_TRANSACTION
+    spiBusTransactionInit(busdev, SPI_MODE0_POL_LOW_EDGE_1ST, SPI_CLOCK_STANDARD);
+#else
+    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
 #endif
-    hardwareInitialised = true;
+
+    return true;
 }
 
 uint8_t rxSpiTransferByte(uint8_t data)
 {
-#ifdef USE_RX_SOFTSPI
-    if (useSoftSPI) {
-        return softSpiTransferByte(&softSPIDevice, data);
-    } else
-#endif
-    {
-#ifdef RX_SPI_INSTANCE
-        return spiTransferByte(RX_SPI_INSTANCE, data);
-#else
-        return 0;
-#endif
-    }
+    return spiBusTransferByte(busdev, data);
 }
 
-uint8_t rxSpiWriteByte(uint8_t data)
+void rxSpiWriteByte(uint8_t data)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(data);
-    DISABLE_RX();
-    return ret;
+    spiBusWriteByte(busdev, data);
 }
 
-uint8_t rxSpiWriteCommand(uint8_t command, uint8_t data)
+void rxSpiWriteCommand(uint8_t command, uint8_t data)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(command);
-    rxSpiTransferByte(data);
-    DISABLE_RX();
-    return ret;
+    spiBusWriteRegister(busdev, command, data);
 }
 
-uint8_t rxSpiWriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
+void rxSpiWriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(command);
-    for (uint8_t i = 0; i < length; i++) {
-        rxSpiTransferByte(data[i]);
-    }
-    DISABLE_RX();
-    return ret;
+    spiBusWriteRegisterBuffer(busdev, command, data, length);
 }
 
 uint8_t rxSpiReadCommand(uint8_t command, uint8_t data)
 {
-    ENABLE_RX();
-    rxSpiTransferByte(command);
-    const uint8_t ret = rxSpiTransferByte(data);
-    DISABLE_RX();
-    return ret;
+    UNUSED(data);
+    return spiBusRawReadRegister(busdev, command);
 }
 
-uint8_t rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *retData, uint8_t length)
+void rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *retData, uint8_t length)
 {
-    ENABLE_RX();
-    const uint8_t ret = rxSpiTransferByte(command);
-    for (uint8_t i = 0; i < length; i++) {
-        retData[i] = rxSpiTransferByte(commandData);
-    }
-    DISABLE_RX();
-    return ret;
+    UNUSED(commandData);
+    spiBusRawReadRegisterBuffer(busdev, command, retData, length);
 }
 #endif

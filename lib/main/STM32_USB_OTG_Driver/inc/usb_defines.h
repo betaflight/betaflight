@@ -174,7 +174,9 @@
 #define HCCHAR_BULK                            2
 #define HCCHAR_INTR                            3
 
+#ifndef MIN
 #define  MIN(a, b)      (((a) < (b)) ? (a) : (b))
+#endif
 
 /**
   * @}

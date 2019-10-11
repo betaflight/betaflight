@@ -7,7 +7,7 @@ CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(ROOT)/lib/main/STM32F7/Drivers/CMSIS
+CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7/Drivers/STM32F7xx_HAL_Driver
@@ -18,8 +18,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_crc_ex.c \
                   stm32f7xx_hal_cryp.c \
                   stm32f7xx_hal_cryp_ex.c \
-                  stm32f7xx_hal_dac.c \
-                  stm32f7xx_hal_dac_ex.c \
                   stm32f7xx_hal_dcmi.c \
                   stm32f7xx_hal_dcmi_ex.c \
                   stm32f7xx_hal_dfsdm.c \
@@ -43,8 +41,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_nor.c \
                   stm32f7xx_hal_qspi.c \
                   stm32f7xx_hal_rng.c \
-                  stm32f7xx_hal_rtc.c \
-                  stm32f7xx_hal_rtc_ex.c \
                   stm32f7xx_hal_sai.c \
                   stm32f7xx_hal_sai_ex.c \
                   stm32f7xx_hal_sd.c \
@@ -84,11 +80,21 @@ USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
 EXCLUDES   = usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 
-VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src
+USBHID_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/HID
+USBHID_SRC = $(notdir $(wildcard $(USBHID_DIR)/Src/*.c))
+
+USBMSC_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
+USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
+EXCLUDES   = usbd_msc_storage_template.c
+USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
+
+VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
-                        $(USBCDC_SRC)
+                        $(USBCDC_SRC) \
+                        $(USBHID_SRC) \
+                        $(USBMSC_SRC)
 
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32F7xx
@@ -98,11 +104,19 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/Include \
-                   $(CMSIS_DIR)/Device/ST/STM32F7xx/Include \
+                   $(USBHID_DIR)/Inc \
+                   $(USBMSC_DIR)/Inc \
+                   $(CMSIS_DIR)/Core/Include \
+                   $(ROOT)/lib/main/STM32F7/Drivers/CMSIS/Device/ST/STM32F7xx/Include \
                    $(ROOT)/src/main/vcp_hal
 
-ifneq ($(filter SDCARD,$(FEATURES)),)
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+endif
+
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
@@ -112,16 +126,21 @@ endif
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
-ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
+ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XI_TARGETS)))
+DEVICE_FLAGS   += -DSTM32F765xx
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f765.ld
+STARTUP_SRC     = startup_stm32f765xx.s
+TARGET_FLASH	= 2048
+else ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F745xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f745xx.s
-TARGET_FLASH   := 2048
+TARGET_FLASH   := 1024
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7X6XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F746xx
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f746.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f746xx.s
-TARGET_FLASH   := 2048
+TARGET_FLASH   := 1024
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7X2RE_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F722xx
 ifndef LD_SCRIPT
@@ -138,30 +157,60 @@ TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf.c \
+            vcp_hal/usbd_conf_stm32f7xx.c \
+            vcp_hal/usbd_cdc_hid.c \
             vcp_hal/usbd_cdc_interface.c \
             drivers/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            target/system_stm32f7xx.c \
+            startup/system_stm32f7xx.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f7xx.c \
+            drivers/audio_stm32f7xx.c \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
+            drivers/transponder_ir_io_hal.c \
             drivers/bus_spi_ll.c \
+            drivers/persistent.c \
+            drivers/dshot_bitbang.c \
+            drivers/dshot_bitbang_decode.c \
+            drivers/dshot_bitbang_ll.c \
             drivers/pwm_output_dshot_hal.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \
-            drivers/serial_uart_stm32f7xx.c \
-            drivers/serial_uart_hal.c
+            drivers/serial_uart_hal.c \
+            drivers/serial_uart_stm32f7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
-            drivers/timer.c \
-            drivers/serial_uart.c
+            drivers/timer.c
 
-DSP_LIB := $(ROOT)/lib/main/DSP_Lib
+MSC_SRC = \
+            drivers/usb_msc_f7xx.c \
+            msc/usbd_storage.c
+
+ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
+MCU_COMMON_SRC += \
+            drivers/sdio_f7xx.c            
+MSC_SRC += \
+            msc/usbd_storage_sdio.c
+endif
+
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_sd_spi.c
+endif
+
+ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
+endif
+
+DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

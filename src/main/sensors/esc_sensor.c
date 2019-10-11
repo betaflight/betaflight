@@ -1,38 +1,47 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#ifdef USE_DSHOT
+#if defined(USE_ESC_SENSOR)
 
 #include "build/debug.h"
+
+#include "common/time.h"
 
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+#include "pg/motor.h"
 
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/pwm_output.h"
+#include "drivers/timer.h"
+#include "drivers/motor.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_dpwm.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
@@ -145,6 +154,10 @@ bool isEscSensorActive(void)
 
 escSensorData_t *getEscSensorData(uint8_t motorNumber)
 {
+    if (!featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return NULL;
+    }
+
     if (motorNumber < getMotorCount()) {
         return &escSensorData[motorNumber];
     } else if (motorNumber == ESC_SENSOR_COMBINED) {
@@ -257,7 +270,7 @@ static uint8_t decodeEscFrame(void)
 
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
-        DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, escSensorData[escSensorMotor].rpm);
+        DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, calcEscRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
         DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
@@ -283,11 +296,13 @@ static void selectNextMotor(void)
     }
 }
 
+// XXX Review ESC sensor under refactored motor handling
+
 void escSensorProcess(timeUs_t currentTimeUs)
 {
     const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
-    if (!escSensorPort || !pwmAreMotorsEnabled()) {
+    if (!escSensorPort || !motorIsEnabled()) {
         return;
     }
 
@@ -304,7 +319,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
             startEscDataRead(telemetryBuffer, TELEMETRY_FRAME_SIZE);
             motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
-            motor->requestTelemetry = true;
+            motor->protocolControl.requestTelemetry = true;
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
 
             DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);
@@ -342,5 +357,10 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
             break;
     }
+}
+
+int calcEscRpm(int erpm)
+{
+    return (erpm * 100) / (motorConfig()->motorPoleCount / 2);
 }
 #endif

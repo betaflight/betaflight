@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -23,29 +26,44 @@
 
 #ifdef USE_ADC
 
-#include "drivers/accgyro/accgyro.h"
+#include "common/utils.h"
+
+#include "drivers/adc_impl.h"
+#include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
+#include "drivers/rcc.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#include "adc.h"
-#include "adc_impl.h"
-#include "rcc.h"
-#include "dma.h"
-
-#include "common/utils.h"
-
 #include "pg/adc.h"
 
+#include "adc.h"
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
-#ifdef ADC24_DMA_REMAP
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 },
-#else
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 },
+    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)DMA1_Channel1,
 #endif
-    { .ADCx = ADC3, .rccADC = RCC_AHB(ADC34), .DMAy_Channelx = DMA2_Channel5 }
+    },
+#ifdef ADC24_DMA_REMAP
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)DMA2_Channel3,
+#endif
+    },
+#else
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)DMA2_Channel1,
+#endif
+    },
+#endif
+    { .ADCx = ADC3, .rccADC = RCC_AHB(ADC34),
+#if !defined(USE_DMA_SPEC)
+        .dmaResource = (dmaResource_t *)DMA2_Channel5,
+#endif
+    }
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -115,9 +133,11 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
-    if (device == ADCINVALID)
+    ADCDevice device = ADC_CFG_TO_DEV(config->device);
+
+    if (device == ADCINVALID) {
         return;
+    }
 
 #ifdef ADC24_DMA_REMAP
     SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_ADC2ADC4, ENABLE);
@@ -153,9 +173,21 @@ void adcInit(const adcConfig_t *config)
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
+#if defined(USE_DMA_SPEC)
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
-    DMA_DeInit(adc.DMAy_Channelx);
+    if (!dmaSpec) {
+        return;
+    }
+
+    dmaInit(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device));
+
+    DMA_DeInit(dmaSpec->ref);
+#else
+    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
+
+    xDMA_DeInit(adc.dmaResource);
+#endif
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
@@ -170,9 +202,13 @@ void adcInit(const adcConfig_t *config)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(adc.DMAy_Channelx, &DMA_InitStructure);
-
-    DMA_Cmd(adc.DMAy_Channelx, ENABLE);
+#if defined(USE_DMA_SPEC)
+    xDMA_Init(dmaSpec->ref, &DMA_InitStructure);
+    xDMA_Cmd(dmaSpec->ref, ENABLE);
+#else
+    xDMA_Init(adc.dmaResource, &DMA_InitStructure);
+    xDMA_Cmd(adc.dmaResource, ENABLE);
+#endif
 
     // calibrate
 
@@ -223,5 +259,10 @@ void adcInit(const adcConfig_t *config)
     ADC_DMACmd(adc.ADCx, ENABLE);
 
     ADC_StartConversion(adc.ADCx);
+}
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
 }
 #endif

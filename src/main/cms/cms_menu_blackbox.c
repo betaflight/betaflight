@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -61,7 +64,7 @@ static const char * const cmsx_BlackboxDeviceNames[] = {
     "SERIAL"
 };
 
-static uint16_t blackboxConfig_p_denom;
+static uint16_t blackboxConfig_p_ratio;
 
 static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
@@ -119,13 +122,15 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
     case BLACKBOX_DEVICE_FLASH:
         unit = "KB";
 
-        storageDeviceIsWorking = flashfsIsReady();
+        storageDeviceIsWorking = flashfsIsSupported();
         if (storageDeviceIsWorking) {
             tfp_sprintf(cmsx_BlackboxStatus, "READY");
 
-            const flashGeometry_t *geometry = flashfsGetGeometry();
+            const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
+            const flashGeometry_t *flashGeometry = flashGetGeometry();
+
             storageUsed = flashfsGetOffset() / 1024;
-            storageFree = (geometry->totalSize / 1024) - storageUsed;
+            storageFree = ((FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGeometry->sectorSize) / 1024) - storageUsed;
         } else {
             tfp_sprintf(cmsx_BlackboxStatus, "FAULT");
         }
@@ -146,6 +151,10 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
 static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
+
+    if (!flashfsIsSupported()) {
+        return 0;
+    }
 
     displayClearScreen(pDisplay);
     displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
@@ -172,7 +181,7 @@ static long cmsx_Blackbox_onEnter(void)
     cmsx_Blackbox_GetDeviceStatus();
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
-    blackboxConfig_p_denom = blackboxConfig()->p_denom;
+    blackboxConfig_p_ratio = blackboxConfig()->p_ratio;
     return 0;
 }
 
@@ -184,18 +193,18 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
         blackboxConfigMutable()->device = cmsx_BlackboxDevice;
         blackboxValidateConfig();
     }
-    blackboxConfigMutable()->p_denom = blackboxConfig_p_denom;
+    blackboxConfigMutable()->p_ratio = blackboxConfig_p_ratio;
     return 0;
 }
 
-static OSD_Entry cmsx_menuBlackboxEntries[] =
+static const OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
-    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 0 },
+    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 REBOOT_REQUIRED },
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "P DENOM",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_denom, 1, INT16_MAX, 1 },0 },
+    { "P RATIO",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_ratio, 1, INT16_MAX, 1 }, REBOOT_REQUIRED },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },

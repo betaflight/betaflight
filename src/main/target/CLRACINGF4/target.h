@@ -1,16 +1,21 @@
 /*
- * This is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This file is part of Cleanflight and Betaflight.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -19,82 +24,66 @@
 
 #define USBD_PRODUCT_STRING "CLRACINGF4"
 
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
-#endif
+#define USE_TARGET_CONFIG
 
 #define LED0_PIN                  PB5
-#define BEEPER                    PB4
+#define USE_BEEPER
+#define BEEPER_PIN                PB4
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
 
-#define USE_DSHOT_DMAR
+#define ENABLE_DSHOT_DMAR         false // Motors 3 / 4 conflict with LED_STRIP if enabled
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
-#define CAMERA_CONTROL_PIN    PB9    // define dedicated camera_osd_control pin
+#define CAMERA_CONTROL_PIN        PB9    // define dedicated camera_osd_control pin
 
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN           PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-//  MPU 6000
-#define MPU6000_CS_PIN            PA4
-#define MPU6000_SPI_INSTANCE      SPI1
 #define USE_ACC
-#define USE_ACC_SPI_MPU6000
 #define USE_GYRO
+
+//  MPU 6000
+#define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN       CW0_DEG
-#define ACC_MPU6000_ALIGN        CW0_DEG
 
 // ICM-20602
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN             PA4
+#define GYRO_1_SPI_INSTANCE       SPI1
+#define GYRO_1_ALIGN              CW0_DEG
 
-
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
+#define USE_SDCARD_SPI
 #define SDCARD_DETECT_PIN             PB7
 #define SDCARD_SPI_INSTANCE           SPI2
 #define SDCARD_SPI_CS_PIN             SPI2_NSS_PIN
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER  256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER  4 // 21MHz
-#define SDCARD_DMA_CHANNEL_TX                DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG  DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                       RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                   DMA_Channel_0
+#define SPI2_TX_DMA_OPT                      0     // DMA 1 Stream 4 Channel 0
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_CS_PIN           PB3
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_CS_PIN            PB3
+#define FLASH_SPI_INSTANCE      SPI3
 
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PC5
+#define USE_USB_DETECT
+#define USB_DETECT_PIN   PC5
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11
@@ -138,13 +127,16 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_TRANSPONDER
+#define USE_PINIO
+#define PINIO1_PIN             PA14 // VTX power switcher
+#define USE_PINIOBOX
+
 
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )
 #define CURRENT_METER_SCALE_DEFAULT 250
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
+#define TARGET_IO_PORTA (0xffff )
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)

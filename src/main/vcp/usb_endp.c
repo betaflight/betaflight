@@ -26,6 +26,9 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+
+#include "platform.h"
+
 #include "usb_lib.h"
 #include "usb_desc.h"
 #include "usb_mem.h"

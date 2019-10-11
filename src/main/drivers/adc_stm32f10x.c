@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -25,7 +28,6 @@
 
 #include "build/build_config.h"
 
-#include "drivers/accgyro/accgyro.h"
 #include "drivers/sensor.h"
 #include "adc.h"
 #include "adc_impl.h"
@@ -37,7 +39,7 @@
 
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .dmaResource = (dmaResource_t *)DMA1_Channel1 }
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -113,9 +115,9 @@ void adcInit(const adcConfig_t *config)
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
+    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
 
-    DMA_DeInit(adc.DMAy_Channelx);
+    xDMA_DeInit(adc.dmaResource);
     DMA_InitTypeDef DMA_InitStructure;
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&adc.ADCx->DR;
@@ -129,8 +131,8 @@ void adcInit(const adcConfig_t *config)
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-    DMA_Init(adc.DMAy_Channelx, &DMA_InitStructure);
-    DMA_Cmd(adc.DMAy_Channelx, ENABLE);
+    xDMA_Init(adc.dmaResource, &DMA_InitStructure);
+    xDMA_Cmd(adc.dmaResource, ENABLE);
 
     ADC_InitTypeDef ADC_InitStructure;
     ADC_StructInit(&ADC_InitStructure);
@@ -159,5 +161,10 @@ void adcInit(const adcConfig_t *config)
     while (ADC_GetCalibrationStatus(adc.ADCx));
 
     ADC_SoftwareStartConvCmd(adc.ADCx, ENABLE);
+}
+
+void adcGetChannelValues(void)
+{
+    // Nothing to do
 }
 #endif

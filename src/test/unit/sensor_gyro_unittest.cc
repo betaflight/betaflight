@@ -40,10 +40,13 @@ extern "C" {
     #include "sensors/acceleration.h"
     #include "sensors/sensors.h"
 
-    STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev);
+    STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev);
     struct gyroSensor_s;
     STATIC_UNIT_TESTED void performGyroCalibration(struct gyroSensor_s *gyroSensor, uint8_t gyroMovementCalibrationThreshold);
     STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro);
+
+    uint8_t debugMode;
+    int16_t debug[DEBUG16_VALUE_COUNT];
 }
 
 #include "unittest_macros.h"
@@ -54,9 +57,8 @@ extern gyroDev_t * const gyroDevPtr;
 
 TEST(SensorGyro, Detect)
 {
-    const gyroSensor_e detected = gyroDetect(gyroDevPtr);
+    const gyroHardware_e detected = gyroDetect(gyroDevPtr);
     EXPECT_EQ(GYRO_FAKE, detected);
-    EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
 }
 
 TEST(SensorGyro, Init)
@@ -112,7 +114,8 @@ TEST(SensorGyro, Update)
 {
     pgResetAll();
     // turn off filters
-    gyroConfigMutable()->gyro_soft_lpf_hz = 0;
+    gyroConfigMutable()->gyro_lowpass_hz = 0;
+    gyroConfigMutable()->gyro_lowpass2_hz = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     gyroInit();
@@ -141,9 +144,9 @@ TEST(SensorGyro, Update)
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Z]);
     fakeGyroSet(gyroDevPtr, 15, 26, 97);
     gyroUpdate(currentTimeUs);
-    EXPECT_FLOAT_EQ(10 * gyroDevPtr->scale, gyro.gyroADCf[X]); // gyroADCf values are scaled
-    EXPECT_FLOAT_EQ(20 * gyroDevPtr->scale, gyro.gyroADCf[Y]);
-    EXPECT_FLOAT_EQ(90 * gyroDevPtr->scale, gyro.gyroADCf[Z]);
+    EXPECT_NEAR(10 * gyroDevPtr->scale, gyro.gyroADCf[X], 1e-3); // gyroADCf values are scaled
+    EXPECT_NEAR(20 * gyroDevPtr->scale, gyro.gyroADCf[Y], 1e-3);
+    EXPECT_NEAR(90 * gyroDevPtr->scale, gyro.gyroADCf[Z], 1e-3);
 }
 
 // STUBS

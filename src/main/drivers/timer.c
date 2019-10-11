@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -21,6 +24,8 @@
 #include <math.h>
 
 #include "platform.h"
+
+#ifdef USE_TIMER
 
 #include "build/atomic.h"
 
@@ -61,7 +66,8 @@ timerConfig_t timerConfig[USED_TIMER_COUNT];
 typedef struct {
     channelType_t type;
 } timerChannelInfo_t;
-timerChannelInfo_t timerChannelInfo[USABLE_TIMER_CHANNEL_COUNT];
+
+timerChannelInfo_t timerChannelInfo[TIMER_CHANNEL_COUNT];
 
 typedef struct {
     uint8_t priority;
@@ -251,15 +257,20 @@ const int8_t timerNumbers[USED_TIMER_COUNT] = {
 #undef _DEF
 };
 
-int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
+int8_t timerGetNumberByIndex(uint8_t index)
 {
-    uint8_t index = lookupTimerIndex(tim);
-
     if (index < USED_TIMER_COUNT) {
         return timerNumbers[index];
     } else {
         return 0;
     }
+}
+
+int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
+{
+    const uint8_t index = lookupTimerIndex(tim);
+
+    return timerGetNumberByIndex(index);
 }
 
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
@@ -360,9 +371,10 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
 void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
-    unsigned channel = timHw - timerHardware;
-    if (channel >= USABLE_TIMER_CHANNEL_COUNT)
+    unsigned channel = timHw - TIMER_HARDWARE;
+    if (channel >= TIMER_CHANNEL_COUNT) {
         return;
+    }
 
     timerChannelInfo[channel].type = type;
     unsigned timer = lookupTimerIndex(timHw->tim);
@@ -771,31 +783,21 @@ void timerInit(void)
 {
     memset(timerConfig, 0, sizeof (timerConfig));
 
-#ifdef CC3D
+#if defined(PARTIAL_REMAP_TIM3)
     GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 #endif
 
     /* enable the timer peripherals */
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+        RCC_ClockCmd(timerRCC(TIMER_HARDWARE[i].tim), ENABLE);
     }
-
-#if defined(STM32F3) || defined(STM32F4)
-    for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
-        const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        if (timerHardwarePtr->usageFlags == TIM_USE_NONE) {
-            continue;
-        }
-        // XXX IOConfigGPIOAF in timerInit should eventually go away.
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
-    }
-#endif
 
     // initialize timer channel structures
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }
-    for (int i = 0; i < USED_TIMER_COUNT; i++) {
+
+    for (unsigned i = 0; i < USED_TIMER_COUNT; i++) {
         timerInfo[i].priority = ~0;
     }
 }
@@ -809,10 +811,10 @@ void timerStart(void)
     for (unsigned timer = 0; timer < USED_TIMER_COUNT; timer++) {
         int priority = -1;
         int irq = -1;
-        for (unsigned hwc = 0; hwc < USABLE_TIMER_CHANNEL_COUNT; hwc++)
-            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (timerHardware[hwc].tim == usedTimers[timer])) {
+        for (unsigned hwc = 0; hwc < TIMER_CHANNEL_COUNT; hwc++)
+            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (TIMER_HARDWARE[hwc].tim == usedTimers[timer])) {
                 // TODO - move IRQ to timer info
-                irq = timerHardware[hwc].irq;
+                irq = TIMER_HARDWARE[hwc].irq;
             }
         // TODO - aggregate required timer paramaters
         configTimeBase(usedTimers[timer], 0, 1);
@@ -847,22 +849,6 @@ void timerForceOverflow(TIM_TypeDef *tim)
         // Force an overflow by setting the UG bit
         tim->EGR |= TIM_EGR_UG;
     }
-}
-
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
-{
-    if (!tag) {
-        return NULL;
-    }
-
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if (timerHardware[i].tag == tag) {
-            if (timerHardware[i].usageFlags & flag || flag == 0) {
-                return &timerHardware[i];
-            }
-        }
-    }
-    return NULL;
 }
 
 #if !defined(USE_HAL_DRIVER)
@@ -932,7 +918,7 @@ uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
 
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz)
 {
-    return ((uint16_t)((timerClock(tim) / (prescaler + 1)) / hz));
+    return (uint16_t)((timerClock(tim) / (prescaler + 1)) / hz);
 }
 
 uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
@@ -943,3 +929,4 @@ uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
     }
     return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
+#endif

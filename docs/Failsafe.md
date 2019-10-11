@@ -21,21 +21,21 @@ __Stage 1__ is entered when __a flightchannel__ has an __*invalid pulse length*_
 
 __Note:__ Prior to entering __stage 1__, fallback settings are also applied to __*individual AUX channels*__ that have invalid pulses.
 
+__Stage 1__ can also directly be activated when a transmitter switch that is configured to control the failsafe mode is switched ON and `failsafe_switch_mode` is set to `STAGE1`. Stage 1 will be aborted if the switch is moved to the OFF position before Stage 2 is engaged (see next).
+
 __Stage 2__ is entered when your craft is __armed__ and __stage 1__ persists longer then the configured guard time (`failsafe_delay`). All channels will remain at the applied fallback setting unless overruled by the chosen stage 2 procedure (`failsafe_procedure`).
 
 __Stage 2__ is not activated until 5 seconds after the flight controller boots up.  This is to prevent unwanted activation, as in the case of TX/RX gear with long bind procedures, before the RX sends out valid data.
 
-__Stage 2__ can also directly be activated when a transmitter switch that is configured to control the failsafe mode is switched ON (and `failsafe_kill_switch` is set to OFF).
+__Stage 2__ can also directly be activated when a transmitter switch that is configured to control the failsafe mode is switched ON and `failsafe_switch_mode` is set to `STAGE2`.
 
 __Stage 2__ will be aborted when it was due to:
 
 * a lost RC signal and the RC signal has recovered.
-* a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and `failsafe_kill_switch` is set to OFF).
+* a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and `failsafe_switch_mode` is _not_ set to `KILL`).
 
 Note that:
-* At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when an arm switch is in use).
-
-* When `failsafe_kill_switch` is set to ON and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed. Re-arming is possible when the signal from the receiver has restored for at least 3 seconds AND the arming switch is in the OFF position (when one is in use). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0. This is not the prefered method, since the reaction is slower and re-arming will be locked.
+* At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for specific amount of time depending on the procedure (see below) AND the arming switch is in the OFF position (when an arm switch is in use).
 
 * Prior to starting a stage 2 intervention it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle.     
 
@@ -89,9 +89,15 @@ Delay after failsafe activates before motors finally turn off.  This is the amou
 
 Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
 
-### `failsafe_kill_switch`
+### `failsafe_switch_mode`
 
-Configure the rc switched failsafe action: the same action as when the rc link is lost (set to OFF) or disarms instantly (set to ON). Also see above.
+Configure the RC switched failsafe action. It can be one of:
+* `STAGE1` - activates Stage 1 failsafe. RC controls are applied as configured for Stage 1 and the `failsafe_delay` guard time will have to elapse before Stage 2 is activated. This is useful if you want to simulate with a switch the exact signal loss failsafe behavior.
+* `STAGE2` - skips Stage 1 and activates the Stage 2 procedure immediately (see `failsafe_procedure`). Useful if you want to assign instant auto-landing to a switch.
+* `KILL` - disarms instantly (your craft will crash). Re-arming is locked for 1 second AND until the arming switch (if used) is moved to the OFF position. Similar effect can be achieved by:
+  * setting `failsafe_switch_mode` to `STAGE2` and `failsafe_procedure` to `DROP`. The difference is that `DROP` locks re-arming for 3 seconds instead of 1.
+  * setting `failsafe_switch_mode` to `STAGE2`, `failsafe_procedure` to `AUTO-LAND`, setting `failsafe_throttle` to 1000 and `failsafe_off_delay` to 0 (basically initiates an auto-landing but cuts it short immediately). This is not preferred method, since the reaction is slower and re-arming will be locked for 30 seconds.
+  * using arm switch. This does not introduce re-arming locking.
 
 ### `failsafe_throttle_low_delay`
 
@@ -101,8 +107,8 @@ Use standard RX usec values.  See [Rx documentation](Rx.md).
 
 ### `failsafe_procedure`
 
-* __Drop:__ Just kill the motors and disarm (crash the craft).
-* __Land:__ Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
+* `DROP`: Just kill the motors and disarm (crash the craft). Re-arming is locked until RC link is available for at least 3 seconds and the arm switch (if used) is in the OFF position.
+* `AUTO-LAND`: Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing. Re-arming is locked until RC link is available for at least 30 seconds and the arm switch (if used) is in the OFF position.
 
 ### `rx_min_usec`
 

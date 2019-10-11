@@ -1,27 +1,29 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
 
-#if defined(USE_ADC) && defined(USE_ADC_INTERNAL)
+#if defined(USE_ADC_INTERNAL)
 
 #include "build/debug.h"
 
@@ -55,17 +57,18 @@ static uint16_t adcTempsensorValues[8];
 movingAverageStateUint16_t adcTempsensorAverageState = { 0, adcTempsensorValues, 8, 0 } ;
 
 static int16_t coreTemperature;
+static uint16_t vrefMv;
 
 uint16_t getVrefMv(void)
 {
 #ifdef ADC_VOLTAGE_REFERENCE_MV
     return ADC_VOLTAGE_REFERENCE_MV;
 #else
-    return 3300 * adcVrefintValue / adcVREFINTCAL;
+    return vrefMv;
 #endif
 }
 
-uint16_t getCoreTemperatureCelsius(void)
+int16_t getCoreTemperatureCelsius(void)
 {
     return coreTemperature;
 }
@@ -84,10 +87,13 @@ void adcInternalProcess(timeUs_t currentTimeUs)
     adcVrefintValue = updateMovingAverageUint16(&adcVrefintAverageState, vrefintSample);
     adcTempsensorValue = updateMovingAverageUint16(&adcTempsensorAverageState, tempsensorSample);
 
-    int32_t adcTempsensorAdjusted = (int32_t)adcTempsensorValue * 3300 / getVrefMv();
-    coreTemperature = ((adcTempsensorAdjusted - adcTSCAL1) * adcTSSlopeK + 30 * 1000 + 500) / 1000;
+    vrefMv = adcInternalCompensateVref(adcVrefintValue);
+    coreTemperature = adcInternalComputeTemperature(adcTempsensorValue, vrefMv);
 
-    DEBUG_SET(DEBUG_CORE_TEMP, 0, coreTemperature);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 0, coreTemperature);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 1, vrefintSample);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 2, tempsensorSample);
+    DEBUG_SET(DEBUG_ADC_INTERNAL, 3, vrefMv);
 
     adcInternalStartConversion(); // Start next conversion
 }

@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -42,9 +45,6 @@ static void icm20689SpiInit(const busDevice_t *bus)
         return;
     }
 
-    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->busdev_u.spi.csnPin);
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
@@ -55,7 +55,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 {
     icm20689SpiInit(bus);
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed
 
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
@@ -92,7 +92,6 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
     return icmDetected;
-
 }
 
 void icm20689AccInit(accDev_t *acc)
@@ -102,7 +101,11 @@ void icm20689AccInit(accDev_t *acc)
 
 bool icm20689SpiAccDetect(accDev_t *acc)
 {
-    if (acc->mpuDetectionResult.sensor != ICM_20689_SPI) {
+    switch (acc->mpuDetectionResult.sensor) {
+    case ICM_20602_SPI:
+    case ICM_20689_SPI:
+        break;
+    default:
         return false;
     }
 
@@ -116,7 +119,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
 
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
     delay(100);
@@ -126,21 +129,11 @@ void icm20689GyroInit(gyroDev_t *gyro)
 //    delay(100);
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    uint8_t raGyroConfigData = INV_FSR_2000DPS << 3;
-    if (gyro->gyroRateKHz > GYRO_RATE_8_kHz) {
-        // use otherwise redundant LPF value to configure FCHOICE_B
-        // see REGISTER 27 – GYROSCOPE CONFIGURATION in datasheet
-        if (gyro->lpf==GYRO_LPF_NONE) {
-            raGyroConfigData |= FCB_8800_32;
-        } else {
-            raGyroConfigData |= FCB_3600_32;
-        }
-    }
-    spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
-    spiBusWriteRegister(&gyro->bus, MPU_RA_CONFIG, gyro->lpf);
+    spiBusWriteRegister(&gyro->bus, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
     delay(100);

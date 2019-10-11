@@ -30,6 +30,7 @@ extern "C" {
     #include "target.h"
     #include "cms/cms.h"
     #include "cms/cms_types.h"
+    #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     void cmsMenuOpen(void);
     long cmsMenuBack(displayPort_t *pDisplay);
@@ -141,8 +142,11 @@ uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }
 void saveConfigAndNotify(void) {}
 void stopMotors(void) {}
-void stopPwmAllMotors(void) {}
+void motorShutdown(void) {}
 void systemReset(void) {}
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+void setRebootRequired(void) {}
+bool getRebootRequired(void) { return false; }
 }

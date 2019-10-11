@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -132,13 +135,15 @@ static void serialInputPortActivate(softSerial_t *softSerial)
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPD);
 #else
-        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_PD, softSerial->timerHardware->alternateFunction);
+        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_PD;
+        IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
 #endif
     } else {
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
 #else
-        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_UP, softSerial->timerHardware->alternateFunction);
+        const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_UP;
+        IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
 #endif
     }
 
@@ -237,8 +242,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
     ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
 
-    const timerHardware_t *timerRx = timerGetByTag(tagRx, TIM_USE_ANY);
-    const timerHardware_t *timerTx = timerGetByTag(tagTx, TIM_USE_ANY);
+    const timerHardware_t *timerTx = timerAllocate(tagTx, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
 
     IO_t rxIO = IOGetByTag(tagRx);
     IO_t txIO = IOGetByTag(tagTx);
@@ -264,7 +269,9 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            if (!((mode & MODE_TX) && rxIO == txIO)) {
+                IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            }
         }
 
         if (mode & MODE_TX) {
@@ -520,7 +527,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         }
 
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_FALLING : ICPOLARITY_RISING, 0);
-#ifdef STM32F7
+#if defined(STM32F7) || defined(STM32H7)
         serialEnableCC(self);
 #endif
         self->rxEdge = LEADING;
@@ -545,7 +552,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         self->rxEdge = TRAILING;
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     }
-#ifdef STM32F7
+#if defined(STM32F7) || defined(STM32H7)
     serialEnableCC(self);
 #endif
 }
@@ -633,6 +640,8 @@ static const struct serialPortVTable softSerialVTable = {
     .serialSetBaudRate = softSerialSetBaudRate,
     .isSerialTransmitBufferEmpty = isSoftSerialTransmitBufferEmpty,
     .setMode = softSerialSetMode,
+    .setCtrlLineStateCb = NULL,
+    .setBaudRateCb = NULL,
     .writeBuf = NULL,
     .beginWrite = NULL,
     .endWrite = NULL

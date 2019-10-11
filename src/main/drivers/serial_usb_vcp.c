@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
@@ -25,15 +28,26 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
+
 #include "drivers/io.h"
+
+#include "pg/usb.h"
 
 #if defined(STM32F4)
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
+#ifdef USE_USB_CDC_HID
+#include "usbd_hid_cdc_wrapper.h"
+#endif
 #include "usb_io.h"
-#elif defined(STM32F7)
+#elif defined(STM32F7) || defined(STM32H7)
 #include "vcp_hal/usbd_cdc_interface.h"
 #include "usb_io.h"
+#ifdef USE_USB_CDC_HID
+#include "usbd_ioreq.h"
+
+extern USBD_ClassTypeDef  USBD_HID_CDC;
+#endif
 USBD_HandleTypeDef USBD_Device;
 #else
 #include "usb_core.h"
@@ -65,6 +79,22 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_e mode)
     UNUSED(mode);
 
     // TODO implement
+}
+
+static void usbVcpSetCtrlLineStateCb(serialPort_t *instance, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    UNUSED(instance);
+
+    // Register upper driver control line state callback routine with USB driver
+    CDC_SetCtrlLineStateCb((void (*)(void *context, uint16_t ctrlLineState))cb, context);
+}
+
+static void usbVcpSetBaudRateCb(serialPort_t *instance, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
+{
+    UNUSED(instance);
+
+    // Register upper driver baud rate callback routine with USB driver
+    CDC_SetBaudRateCb((void (*)(void *context, uint32_t baud))cb, (void *)context);
 }
 
 static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
@@ -178,6 +208,8 @@ static const struct serialPortVTable usbVTable[] = {
         .serialSetBaudRate = usbVcpSetBaudRate,
         .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
         .setMode = usbVcpSetMode,
+        .setCtrlLineStateCb = usbVcpSetCtrlLineStateCb,
+        .setBaudRateCb = usbVcpSetBaudRateCb,
         .writeBuf = usbVcpWriteBuf,
         .beginWrite = usbVcpBeginWrite,
         .endWrite = usbVcpEndWrite
@@ -188,28 +220,54 @@ serialPort_t *usbVcpOpen(void)
 {
     vcpPort_t *s;
 
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
+
 #if defined(STM32F4)
     usbGenerateDisconnectPulse();
 
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
-    USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
-#elif defined(STM32F7)
+    switch (usbDevConfig()->type) {
+#ifdef USE_USB_CDC_HID
+    case COMPOSITE:
+        USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_HID_CDC_cb, &USR_cb);
+        break;
+#endif
+    default:
+        USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
+        break;
+    }
+#elif defined(STM32F7) || defined(STM32H7)
+
     usbGenerateDisconnectPulse();
 
-    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
-    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     /* Init Device Library */
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
 
     /* Add Supported Class */
-    USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+    switch (usbDevConfig()->type) {
+#ifdef USE_USB_CDC_HID
+    case COMPOSITE:
+        USBD_RegisterClass(&USBD_Device, &USBD_HID_CDC);
+        break;
+#endif
+    default:
+        USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+        break;
+    }
 
+    /* HID Interface doesn't have any callbacks... */
     /* Add CDC Interface Class */
     USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
 
     /* Start Device Process */
     USBD_Start(&USBD_Device);
+
+#ifdef STM32H7
+    HAL_PWREx_EnableUSBVoltageDetector();
+    delay(100); // Cold boot failures observed without this, even when USB cable is not connected
+#endif
+
+
 #else
     Set_System();
     Set_USBClock();
@@ -228,5 +286,10 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
     UNUSED(instance);
 
     return CDC_BaudRate();
+}
+
+uint8_t usbVcpIsConnected(void)
+{
+    return usbIsConnected();
 }
 #endif

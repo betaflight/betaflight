@@ -21,13 +21,16 @@
 #include <cmath>
 
 extern "C" {
+    #include "platform.h"
     #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/maths.h"
 
     #include "config/feature.h"
+    #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "drivers/accgyro/accgyro.h"
     #include "drivers/compass/compass.h"
@@ -205,6 +208,7 @@ acc_t acc;
 mag_t mag;
 
 gpsSolutionData_t gpsSol;
+int16_t GPS_verticalSpeedInCmS;
 
 uint8_t debugMode;
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -234,9 +238,12 @@ bool sensors(uint32_t mask)
 uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }
 
+bool compassIsHealthy(void) { return true; }
 bool isBaroCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
 bool gyroGetAccumulationAverage(float *) { return false; }
 bool accGetAccumulationAverage(float *) { return false; }
+void mixerSetThrottleAngleCorrection(int) {};
+bool gpsRescueIsRunning(void) { return false; }
 }

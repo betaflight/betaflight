@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -84,6 +87,24 @@ bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
 void serialSetMode(serialPort_t *instance, portMode_e mode)
 {
     instance->vTable->setMode(instance, mode);
+}
+
+void serialSetCtrlLineStateCb(serialPort_t *serialPort, void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    // If a callback routine for changes to control line state is supported by the underlying
+    // driver, then set the callback.
+    if (serialPort->vTable->setCtrlLineStateCb) {
+        serialPort->vTable->setCtrlLineStateCb(serialPort, cb, context);
+    }
+}
+
+void serialSetBaudRateCb(serialPort_t *serialPort, void (*cb)(serialPort_t *context, uint32_t baud), serialPort_t *context)
+{
+    // If a callback routine for changes to baud rate is supported by the underlying
+    // driver, then set the callback.
+    if (serialPort->vTable->setBaudRateCb) {
+        serialPort->vTable->setBaudRateCb(serialPort, cb, context);
+    }
 }
 
 void serialWriteBufShim(void *instance, const uint8_t *data, int count)

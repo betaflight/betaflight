@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -20,13 +23,14 @@
 
 #include "platform.h"
 
-#if defined(USE_VTX_RTC6705) && defined(USE_VTX_RTC6705_SOFTSPI)
+#if defined(USE_VTX_RTC6705_SOFTSPI)
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
+
 
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00
@@ -37,83 +41,84 @@
 
 #define PA_CONTROL_DEFAULT          0x4FBD
 
-#define RTC6705_SPICLK_ON     IOHi(rtc6705ClkPin)
-#define RTC6705_SPICLK_OFF    IOLo(rtc6705ClkPin)
+#define RTC6705_SPICLK_ON()   IOHi(rtc6705ClkPin)
+#define RTC6705_SPICLK_OFF()  IOLo(rtc6705ClkPin)
 
-#define RTC6705_SPIDATA_ON    IOHi(rtc6705DataPin)
-#define RTC6705_SPIDATA_OFF   IOLo(rtc6705DataPin)
+#define RTC6705_SPIDATA_ON()  IOHi(rtc6705DataPin)
+#define RTC6705_SPIDATA_OFF() IOLo(rtc6705DataPin)
 
-#define DISABLE_RTC6705       IOHi(rtc6705CsnPin)
-#define ENABLE_RTC6705        IOLo(rtc6705CsnPin)
-
-const uint16_t vtx_freq[] =
-{
-    5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725, // Boacam A
-    5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866, // Boscam B
-    5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945, // Boscam E
-    5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880, // FatShark
-    5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
-};
+#define DISABLE_RTC6705()     IOHi(rtc6705CsnPin)
+#define ENABLE_RTC6705()      IOLo(rtc6705CsnPin)
 
 static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
-void rtc6705IOInit(void)
+
+bool rtc6705SoftSpiIOInit(const vtxIOConfig_t *vtxIOConfig, const IO_t csnPin)
 {
-    rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPI_MOSI_PIN));
-    rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
-    rtc6705CsnPin   = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
+    rtc6705CsnPin  = csnPin;
 
-    IOInit(rtc6705CsnPin, OWNER_SPI_CS, RESOURCE_SOFT_OFFSET);
-    IOConfigGPIO(rtc6705CsnPin, IOCFG_OUT_PP);
-    DISABLE_RTC6705;
+    rtc6705DataPin = IOGetByTag(vtxIOConfig->dataTag);
+    rtc6705ClkPin  = IOGetByTag(vtxIOConfig->clockTag);
 
-    IOInit(rtc6705DataPin, OWNER_SPI_MOSI, RESOURCE_SOFT_OFFSET);
+    if (!(rtc6705DataPin && rtc6705ClkPin)) {
+        return false;
+    }
+
+    IOInit(rtc6705DataPin, OWNER_VTX_DATA, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705ClkPin, OWNER_SPI_SCK, RESOURCE_SOFT_OFFSET);
+    IOInit(rtc6705ClkPin, OWNER_VTX_CLK, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705ClkPin, IOCFG_OUT_PP);
+
+    // Important: The order of GPIO configuration calls are critical to ensure that incorrect signals are not briefly sent to the VTX.
+    // GPIO bit is enabled so here so the CS/LE pin output is not pulled low when the GPIO is set in output mode.
+    DISABLE_RTC6705();
+    IOInit(rtc6705CsnPin, OWNER_VTX_CS, RESOURCE_SOFT_OFFSET);
+    IOConfigGPIO(rtc6705CsnPin, IOCFG_OUT_PP);
+
+    return true;
 }
 
 static void rtc6705_write_register(uint8_t addr, uint32_t data)
 {
-    ENABLE_RTC6705;
+    ENABLE_RTC6705();
     delay(1);
     // send address
     for (int i = 0; i < 4; i++) {
         if ((addr >> i) & 1) {
-            RTC6705_SPIDATA_ON;
+            RTC6705_SPIDATA_ON();
         } else {
-            RTC6705_SPIDATA_OFF;
+            RTC6705_SPIDATA_OFF();
         }
 
-        RTC6705_SPICLK_ON;
+        RTC6705_SPICLK_ON();
         delay(1);
-        RTC6705_SPICLK_OFF;
+        RTC6705_SPICLK_OFF();
         delay(1);
     }
     // Write bit
-    RTC6705_SPIDATA_ON;
-    RTC6705_SPICLK_ON;
+    RTC6705_SPIDATA_ON();
+    RTC6705_SPICLK_ON();
     delay(1);
-    RTC6705_SPICLK_OFF;
+    RTC6705_SPICLK_OFF();
     delay(1);
     for (int i = 0; i < 20; i++) {
         if ((data >> i) & 1) {
-            RTC6705_SPIDATA_ON;
+            RTC6705_SPIDATA_ON();
         } else {
-            RTC6705_SPIDATA_OFF;
+            RTC6705_SPIDATA_OFF();
         }
-        RTC6705_SPICLK_ON;
+        RTC6705_SPICLK_ON();
         delay(1);
-        RTC6705_SPICLK_OFF;
+        RTC6705_SPICLK_OFF();
         delay(1);
     }
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
 }
 
-void rtc6705SetFreq(uint16_t channel_freq)
+void rtc6705SoftSpiSetFrequency(uint16_t channel_freq)
 {
     uint32_t freq = (uint32_t)channel_freq * 1000;
     freq /= 40;
@@ -123,25 +128,8 @@ void rtc6705SetFreq(uint16_t channel_freq)
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
-{
-    const uint8_t freqIndex = (band * VTX_RTC6705_CHANNEL_COUNT) + channel;
-
-    const uint16_t freq = vtx_freq[freqIndex];
-    rtc6705SetFreq(freq);
-}
-
-void rtc6705SetRFPower(uint8_t rf_power)
+void rtc6705SoftSpiSetRFPower(uint8_t rf_power)
 {
     rtc6705_write_register(7, (rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
 }
-
-void rtc6705Disable(void)
-{
-}
-
-void rtc6705Enable(void)
-{
-}
-
 #endif

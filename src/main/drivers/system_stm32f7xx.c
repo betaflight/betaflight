@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
@@ -26,28 +29,33 @@
 #include "drivers/exti.h"
 #include "drivers/nvic.h"
 #include "drivers/system.h"
+#include "drivers/persistent.h"
+
+#include "stm32f7xx_ll_cortex.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
+
+#define DEFAULT_STACK_POINTER ((uint32_t *) 0x1FF00000)
+#define SYSTEM_MEMORY_RESET_VECTOR ((uint32_t *) 0x1FF00004)
+
 void SystemClock_Config(void);
 
 void systemReset(void)
 {
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
-
     __disable_irq();
     NVIC_SystemReset();
 }
 
-void systemResetToBootloader(void)
+void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    if (mpuResetFn) {
-        mpuResetFn();
-    }
+    switch (requestType) {
+    case BOOTLOADER_REQUEST_ROM:
+    default:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
 
-    (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) = 0xDEADBEEF;   // flag that will be readable after reboot
+        break;
+    }
 
     __disable_irq();
     NVIC_SystemReset();
@@ -155,9 +163,32 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+static void checkForBootLoaderRequest(void)
+{
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+
+    if (bootloaderRequest != RESET_BOOTLOADER_REQUEST_ROM) {
+        return;
+    }
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+
+    __SYSCFG_CLK_ENABLE();
+    SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
+
+    __set_MSP(*DEFAULT_STACK_POINTER);
+
+    ((void (*)(void))*SYSTEM_MEMORY_RESET_VECTOR)();
+
+    while (1);
+}
+
 void systemInit(void)
 {
     checkForBootLoaderRequest();
+
+    //  Mark ITCM-RAM as read-only
+    LL_MPU_ConfigRegion(LL_MPU_REGION_NUMBER0, 0, RAMITCM_BASE, LL_MPU_REGION_SIZE_16KB | LL_MPU_REGION_PRIV_RO_URO);
+    LL_MPU_Enable(LL_MPU_CTRL_PRIVILEGED_DEFAULT);
 
     //SystemClock_Config();
 
@@ -184,27 +215,4 @@ void systemInit(void)
     HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-}
-
-void(*bootJump)(void);
-void checkForBootLoaderRequest(void)
-{
-    uint32_t bt;
-    __PWR_CLK_ENABLE();
-    __BKPSRAM_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
-
-    bt = (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) ;
-    if ( bt == 0xDEADBEEF ) {
-        (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) =  0xCAFEFEED; // Reset our trigger
-
-        void (*SysMemBootJump)(void);
-        __SYSCFG_CLK_ENABLE();
-        SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;
-        uint32_t p =  (*((uint32_t *) 0x1ff00000));
-        __set_MSP(p); //Set the main stack pointer to its defualt values
-        SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1ff00004)); // Point the PC to the System Memory reset vector (+4)
-        SysMemBootJump();
-        while (1);
-    }
 }

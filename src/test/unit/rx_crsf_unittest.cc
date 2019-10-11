@@ -28,6 +28,8 @@ extern "C" {
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
+    #include "pg/rx.h"
+
     #include "common/crc.h"
     #include "common/utils.h"
 
@@ -38,6 +40,8 @@ extern "C" {
     #include "rx/crsf.h"
 
     #include "telemetry/msp_shared.h"
+
+    rssiSource_e rssiSource;
 
     void crsfDataReceive(uint16_t c);
     uint8_t crsfFrameCRC(void);

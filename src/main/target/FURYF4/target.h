@@ -1,134 +1,107 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #ifdef FURYF4OSD
-    #define TARGET_BOARD_IDENTIFIER "FY4O"
-    #define USBD_PRODUCT_STRING     "FuryF4OSD"
+#define TARGET_BOARD_IDENTIFIER "FY4O"
+#define USBD_PRODUCT_STRING     "FuryF4OSD"
 #else
-    #define TARGET_BOARD_IDENTIFIER "FYF4"
-    #define USBD_PRODUCT_STRING     "FuryF4"
+#define TARGET_BOARD_IDENTIFIER "FYF4"
+#define USBD_PRODUCT_STRING     "FuryF4"
 #endif
 
 #define LED0_PIN                PB5
 #define LED1_PIN                PB4
 
-#define BEEPER                  PA8
+#define USE_BEEPER
+#define BEEPER_PIN              PA8
 #define BEEPER_INVERTED
 
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 
 // MPU6000 interrupts
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define ICM20689_CS_PIN          PA4
-#define ICM20689_SPI_INSTANCE    SPI1
-
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
 
 #define USE_GYRO
-#define USE_GYRO_SPI_ICM20689
-#define GYRO_ICM20689_ALIGN      CW180_DEG
-
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
-
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define USE_GYRO_SPI_ICM20689
+#define GYRO_1_ALIGN            CW180_DEG
 
 #define USE_ACC
-#define USE_ACC_SPI_ICM20689
-#define ACC_ICM20689_ALIGN       CW180_DEG
-
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
-
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
+#define USE_ACC_SPI_ICM20689
+
+#define USE_BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP280
+#define MS5611_I2C_INSTANCE     I2CDEV_1
+
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 
 #ifdef FURYF4OSD
-    #define USE_OSD
-    #define USE_MAX7456
-    #define MAX7456_SPI_INSTANCE    SPI2
-    #define MAX7456_SPI_CS_PIN      PB12
-    #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
-    #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI2
+#define MAX7456_SPI_CS_PIN      PB12
 
-    #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-    #define DEFAULT_FEATURES        FEATURE_OSD
+#define DEFAULT_FEATURES        FEATURE_OSD
 
 #else
 
-    #define USE_BARO
-    #define USE_BARO_MS5611
-    #define MS5611_I2C_INSTANCE     I2CDEV_1
-
-    #define USE_SDCARD
-
-    #define SDCARD_DETECT_INVERTED
-
-    #define SDCARD_DETECT_PIN                   PD2
-    #define SDCARD_SPI_INSTANCE                 SPI2
-    #define SDCARD_SPI_CS_PIN                   PB12
-
-    // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-    #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-    // Divide to under 25MHz for normal operation:
-    #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
-    //#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-    //#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
-    //#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-    //#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
-
-    #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-    #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-    #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-    #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
-
-    #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+#define SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_PIN                   PD2
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_PIN                   PB12
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #endif
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_CS_PIN           PB3
-#define M25P16_SPI_INSTANCE     SPI3
+#define FLASH_CS_PIN            PB3
+#define FLASH_SPI_INSTANCE      SPI3
 
 #define USE_VCP
-#define VBUS_SENSING_PIN        PC5
-#define VBUS_SENSING_ENABLED
+#define USB_DETECT_PIN          PC5
+#define USE_USB_DETECT
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-//#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11
@@ -179,12 +152,10 @@
 #define SERIALRX_UART           SERIAL_PORT_USART1
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) )
+#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(11) )

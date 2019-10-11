@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 // This file borrows heavily from project Deviation,
@@ -21,7 +24,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
+#if defined(USE_RX_XN297)
+
 #include "common/crc.h"
+
+#include "pg/rx.h"
 
 #include "drivers/rx/rx_nrf24l01.h"
 #include "drivers/rx/rx_spi.h"
@@ -70,7 +79,7 @@ uint16_t XN297_UnscramblePayload(uint8_t *data, int len, const uint8_t *rxAddr)
     return crc;
 }
 
-uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
+void XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
 {
     uint8_t packet[NRF24L01_MAX_PAYLOAD_SIZE];
     uint16_t crc = 0xb5d2;
@@ -86,5 +95,6 @@ uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
     crc ^= xn297_crc_xorout[len];
     packet[RX_TX_ADDR_LEN + len] = crc >> 8;
     packet[RX_TX_ADDR_LEN + len + 1] = crc & 0xff;
-    return NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);
+    NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);
 }
+#endif

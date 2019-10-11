@@ -46,18 +46,28 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f7xx_hal.h"
+
+#include "platform.h"
+
+#include "build/atomic.h"
+
+#include "usbd_conf.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 #include "stdbool.h"
+
+#include "drivers/nvic.h"
+#include "drivers/serial_usb_vcp.h"
 #include "drivers/time.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define APP_RX_DATA_SIZE  2048
 #define APP_TX_DATA_SIZE  2048
+
+#define APP_TX_BLOCK_SIZE 512
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -69,12 +79,12 @@ USBD_CDC_LineCodingTypeDef LineCoding =
   0x08    /* nb. of bits 8*/
 };
 
-uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
-uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
+volatile uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
+volatile uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
 uint32_t BuffLength;
-uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
+volatile uint32_t UserTxBufPtrIn = 0;/* Increment this pointer or roll it back to
                                start address when data are received over USART */
-uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
+volatile uint32_t UserTxBufPtrOut = 0; /* Increment this pointer or roll it back to
                                  start address when data are sent over USB */
 
 uint32_t rxAvailable = 0;
@@ -82,8 +92,11 @@ uint8_t* rxBuffPtr = NULL;
 
 /* TIM handler declaration */
 TIM_HandleTypeDef  TimHandle;
-/* USB handler declaration */
-extern USBD_HandleTypeDef  USBD_Device;
+
+static void (*ctrlLineStateCb)(void *context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
+static void (*baudRateCb)(void *context, uint32_t baud);
+static void *baudRateCbContext;
 
 /* Private function prototypes -----------------------------------------------*/
 static int8_t CDC_Itf_Init(void);
@@ -130,8 +143,11 @@ static int8_t CDC_Itf_Init(void)
   }
 
   /*##-5- Set Application Buffers ############################################*/
-  USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
-  USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
+  USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t *)UserTxBuffer, 0);
+  USBD_CDC_SetRxBuffer(&USBD_Device, (uint8_t *)UserRxBuffer);
+
+  ctrlLineStateCb = NULL;
+  baudRateCb = NULL;
 
   return (USBD_OK);
 }
@@ -158,7 +174,8 @@ static int8_t CDC_Itf_DeInit(void)
   */
 static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
-    UNUSED(length);
+  LINE_CODING* plc = (LINE_CODING*)pbuf;
+
   switch (cmd)
   {
   case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -182,26 +199,36 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_LINE_CODING:
-    LineCoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |\
-                            (pbuf[2] << 16) | (pbuf[3] << 24));
-    LineCoding.format     = pbuf[4];
-    LineCoding.paritytype = pbuf[5];
-    LineCoding.datatype   = pbuf[6];
+    if (pbuf && (length == sizeof (*plc))) {
+        LineCoding.bitrate    = plc->bitrate;
+        LineCoding.format     = plc->format;
+        LineCoding.paritytype = plc->paritytype;
+        LineCoding.datatype   = plc->datatype;
+
+        // If a callback is provided, tell the upper driver of changes in baud rate
+        if (baudRateCb) {
+            baudRateCb(baudRateCbContext, LineCoding.bitrate);
+        }
+    }
 
     break;
 
   case CDC_GET_LINE_CODING:
-    pbuf[0] = (uint8_t)(LineCoding.bitrate);
-    pbuf[1] = (uint8_t)(LineCoding.bitrate >> 8);
-    pbuf[2] = (uint8_t)(LineCoding.bitrate >> 16);
-    pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
-    pbuf[4] = LineCoding.format;
-    pbuf[5] = LineCoding.paritytype;
-    pbuf[6] = LineCoding.datatype;
+    if (pbuf && (length == sizeof (*plc))) {
+        plc->bitrate = LineCoding.bitrate;
+        plc->format = LineCoding.format;
+        plc->paritytype = LineCoding.paritytype;
+        plc->datatype = LineCoding.datatype;
+    }
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
-    /* Add your code here */
+    // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+    if (pbuf && (length == sizeof (uint16_t))) {
+         if (ctrlLineStateCb) {
+             ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)pbuf));
+         }
+    }
     break;
 
   case CDC_SEND_BREAK:
@@ -222,32 +249,39 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim->Instance != TIMusb) return;
+    if (htim->Instance != TIMusb) {
+        return;
+    }
 
-    uint32_t buffptr;
     uint32_t buffsize;
+    static uint32_t lastBuffsize = 0;
 
-    if (UserTxBufPtrOut != UserTxBufPtrIn)
-    {
-        if (UserTxBufPtrOut > UserTxBufPtrIn) /* Roll-back */
-        {
-            buffsize = APP_RX_DATA_SIZE - UserTxBufPtrOut;
-        }
-        else
-        {
-            buffsize = UserTxBufPtrIn - UserTxBufPtrOut;
-        }
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pCDC_ClassData;
 
-        buffptr = UserTxBufPtrOut;
-
-        USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[buffptr], buffsize);
-
-        if (USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
-        {
-            UserTxBufPtrOut += buffsize;
-            if (UserTxBufPtrOut == APP_TX_DATA_SIZE)
-            {
+    if (hcdc->TxState == 0) {
+        // endpoint has finished transmitting previous block
+        if (lastBuffsize) {
+            // move the ring buffer tail based on the previous succesful transmission
+            UserTxBufPtrOut += lastBuffsize;
+            if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
                 UserTxBufPtrOut = 0;
+            }
+            lastBuffsize = 0;
+        }
+        if (UserTxBufPtrOut != UserTxBufPtrIn) {
+            if (UserTxBufPtrOut > UserTxBufPtrIn) { /* Roll-back */
+                buffsize = APP_TX_DATA_SIZE - UserTxBufPtrOut;
+            } else {
+                buffsize = UserTxBufPtrIn - UserTxBufPtrOut;
+            }
+            if (buffsize > APP_TX_BLOCK_SIZE) {
+                buffsize = APP_TX_BLOCK_SIZE;
+            }
+
+            USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], buffsize);
+
+            if (USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK) {
+                lastBuffsize = buffsize;
             }
         }
     }
@@ -347,7 +381,13 @@ uint32_t CDC_Send_FreeBytes(void)
         (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
         but without the impact of the condition check.
     */
-    return ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
+    uint32_t freeBytes;
+
+    ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
+        freeBytes = ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
+    }
+
+    return freeBytes;
 }
 
 /**
@@ -360,15 +400,14 @@ uint32_t CDC_Send_FreeBytes(void)
  */
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pClassData;
-    while (hcdc->TxState != 0);
-
-    for (uint32_t i = 0; i < sendLength; i++)
-    {
-        UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
-        UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
+    for (uint32_t i = 0; i < sendLength; i++) {
         while (CDC_Send_FreeBytes() == 0) {
+            // block until there is free space in the ring buffer
             delay(1);
+        }
+        ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) { // Paranoia
+            UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
+            UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
         }
     }
     return sendLength;
@@ -410,4 +449,31 @@ uint32_t CDC_BaudRate(void)
 {
     return LineCoding.bitrate;
 }
+
+/*******************************************************************************
+ * Function Name  : CDC_SetBaudRateCb
+ * Description    : Set a callback to call when baud rate changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
+{
+    baudRateCbContext = context;
+    baudRateCb = cb;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    ctrlLineStateCbContext = context;
+    ctrlLineStateCb = cb;
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

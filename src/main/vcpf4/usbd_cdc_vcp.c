@@ -19,15 +19,20 @@
  ******************************************************************************
  */
 
-#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-#pragma     data_alignment = 4
-#endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
-
 /* Includes ------------------------------------------------------------------*/
+
+#include "platform.h"
+
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
 #include "stdbool.h"
 #include "drivers/time.h"
+
+#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
+#pragma     data_alignment = 4
+#endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
+
+__ALIGN_BEGIN USB_OTG_CORE_HANDLE USB_OTG_dev __ALIGN_END;
 
 LINE_CODING g_lc;
 
@@ -58,6 +63,11 @@ static uint16_t VCP_DeInit(void);
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len);
+static void (*ctrlLineStateCb)(void* context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
+static void (*baudRateCb)(void *context, uint32_t baud);
+static void *baudRateCbContext;
+
 
 CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx };
 
@@ -71,6 +81,8 @@ CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_
 static uint16_t VCP_Init(void)
 {
     bDeviceState = CONFIGURED;
+    ctrlLineStateCb = NULL;
+    baudRateCb = NULL;
     return USBD_OK;
 }
 
@@ -104,7 +116,6 @@ void ust_cpy(LINE_CODING* plc2, const LINE_CODING* plc1)
  */
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 {
-    (void)Len;
     LINE_CODING* plc = (LINE_CODING*)Buf;
 
     assert_param(Len>=sizeof(LINE_CODING));
@@ -124,18 +135,30 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 
       //Note - hw flow control on UART 1-3 and 6 only
       case SET_LINE_CODING:
-         ust_cpy(&g_lc, plc);           //Copy into structure to save for later
+         // If a callback is provided, tell the upper driver of changes in baud rate
+         if (plc && (Len == sizeof (*plc))) {
+             if (baudRateCb) {
+                 baudRateCb(baudRateCbContext, plc->bitrate);
+             }
+             ust_cpy(&g_lc, plc);           //Copy into structure to save for later
+         }
          break;
 
 
       case GET_LINE_CODING:
-         ust_cpy(plc, &g_lc);
+         if (plc && (Len == sizeof (*plc))) {
+             ust_cpy(plc, &g_lc);
+         }
          break;
 
 
       case SET_CONTROL_LINE_STATE:
-         /* Not  needed for this driver */
-         //RSW - This tells how to set RTS and DTR
+         // If a callback is provided, tell the upper driver of changes in DTR/RTS state
+         if (plc && (Len == sizeof (uint16_t))) {
+             if (ctrlLineStateCb) {
+                 ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)Buf));
+             }
+         }
          break;
 
       case SEND_BREAK:
@@ -290,6 +313,32 @@ uint8_t usbIsConnected(void)
 uint32_t CDC_BaudRate(void)
 {
     return g_lc.bitrate;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetBaudRateCb
+ * Description    : Set a callback to call when baud rate changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
+{
+    baudRateCbContext = context;
+    baudRateCb = cb;
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_SetCtrlLineStateCb
+ * Description    : Set a callback to call when control line state changes
+ * Input          : callback function and context.
+ * Output         : None.
+ * Return         : None.
+ *******************************************************************************/
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    ctrlLineStateCbContext = context;
+    ctrlLineStateCb = cb;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

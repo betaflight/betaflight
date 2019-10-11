@@ -19,18 +19,23 @@
 #include <string.h>
 
 extern "C" {
-#include <platform.h>
+#include "platform.h"
 #include "common/utils.h"
 #include "pg/pg.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
+#include "io/gps.h"
+#include "flight/imu.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
+#include "sensors/barometer.h"
+#include "sensors/acceleration.h"
 #include "scheduler/scheduler.h"
-#include "fc/fc_tasks.h"
+#include "fc/tasks.h"
 }
 
 #include "unittest_macros.h"
@@ -38,9 +43,18 @@ extern "C" {
 
 
 extern "C" {
+    uint8_t armingFlags = 0;
+    uint8_t stateFlags = 0;
+    uint16_t flightModeFlags = 0;
     uint8_t testBatteryCellCount =3;
     float rcCommand[4] = {0, 0, 0, 0};
     telemetryConfig_t telemetryConfig_System;
+    batteryConfig_s batteryConfig_System;
+    attitudeEulerAngles_t attitude = EULER_INITIALIZE;
+    acc_t acc;
+    baro_t baro;
+    gpsSolutionData_t gpsSol;
+    uint16_t GPS_distanceToHome;
 }
 
 static int16_t gyroTemperature;
@@ -48,10 +62,61 @@ int16_t gyroGetTemperature(void) {
     return gyroTemperature;
 }
 
-static uint16_t vbat = 100;
+static uint16_t vbat = 1000;
 uint16_t getVbat(void)
 {
     return vbat;
+}
+
+extern "C" {
+static int32_t amperage = 100;
+static int32_t estimatedVario = 0;
+static uint8_t batteryRemaining = 0;
+static uint16_t avgCellVoltage = vbat/testBatteryCellCount;
+static throttleStatus_e throttleStatus = THROTTLE_HIGH;
+static uint32_t definedFeatures = 0;
+static uint32_t definedSensors = SENSOR_GYRO | SENSOR_ACC | SENSOR_MAG | SENSOR_SONAR | SENSOR_GPS | SENSOR_GPSMAG;
+
+
+int32_t getAmperage(void)
+{
+    return amperage;
+}
+
+int32_t getEstimatedVario(void)
+{
+    return estimatedVario;
+}
+
+uint8_t calculateBatteryPercentageRemaining(void)
+{
+    return batteryRemaining;
+}
+
+uint16_t getBatteryAverageCellVoltage(void)
+{
+    return avgCellVoltage;
+}
+
+int32_t getMAhDrawn(void)
+{
+    return 0;
+}
+
+throttleStatus_e calculateThrottleStatus(void)
+{
+    return throttleStatus;
+}
+
+bool featureIsEnabled(uint32_t mask)
+{
+    return (definedFeatures & mask) != 0;
+}
+
+bool sensors(sensors_e sensor)
+{
+    return (definedSensors & sensor) != 0;
+}
 }
 
 #define SERIAL_BUFFER_SIZE 256
@@ -63,7 +128,7 @@ typedef struct serialPortStub_s {
 } serialPortStub_t;
 
 
-static uint16_t testBatteryVoltage = 100;
+static uint16_t testBatteryVoltage = 1000;
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
@@ -116,6 +181,12 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 {
     (void) portSharing;
     return telemetryDetermineEnabledState_stub_retval;
+}
+
+
+bool telemetryIsSensorEnabled(sensor_e sensor) {
+    UNUSED(sensor);
+    return true;
 }
 
 
@@ -202,6 +273,13 @@ void serialTestResetBuffers()
     memset(&serialWriteStub, 0, sizeof(serialWriteStub));
 }
 
+void setTestSensors()
+{
+    telemetryConfig_System.flysky_sensors[0] = 0x03;
+    telemetryConfig_System.flysky_sensors[1] = 0x01;
+    telemetryConfig_System.flysky_sensors[2] = 0x02;
+    telemetryConfig_System.flysky_sensors[3] = 0x00;
+}
 
 void serialTestResetPort()
 {
@@ -221,6 +299,7 @@ protected:
     virtual void SetUp()
     {
         serialTestResetPort();
+        setTestSensors();
     }
 };
 
@@ -390,13 +469,13 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattCellV
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
     testBatteryCellCount =3;
-    testBatteryVoltage = 30;
+    testBatteryVoltage = 300;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
     testBatteryCellCount =1;
-    testBatteryVoltage = 10;
+    testBatteryVoltage = 100;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
@@ -407,13 +486,13 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattPackV
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
     testBatteryCellCount =3;
-    testBatteryVoltage = 10;
+    testBatteryVoltage = 100;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
     testBatteryCellCount =1;
-    testBatteryVoltage = 10;
+    testBatteryVoltage = 100;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
@@ -501,7 +580,7 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasureme
     //Given ibus command: Sensor at address 3, please send your measurement
     //then we respond with: I'm reading 0.1 volts
     testBatteryCellCount = 1;
-    testBatteryVoltage = 10;
+    testBatteryVoltage = 100;
     checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xfe", 6);
 
     //Given ibus command: Sensor at address 4, please send your measurement

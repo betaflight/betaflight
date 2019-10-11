@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 //
@@ -59,22 +62,23 @@ typedef struct
     const OSD_MenuElement type;
     const CMSEntryFuncPtr func;
     void *data;
-    uint8_t flags;
-} OSD_Entry;
+    const uint8_t flags;
+} __attribute__((packed)) OSD_Entry;
 
 // Bits in flags
 #define PRINT_VALUE    0x01  // Value has been changed, need to redraw
 #define PRINT_LABEL    0x02  // Text label should be printed
 #define DYNAMIC        0x04  // Value should be updated dynamically
 #define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
+#define REBOOT_REQUIRED 0x10 // Reboot is required if the value is changed
 
-#define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
-#define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
-#define CLR_PRINTVALUE(p) { (p)->flags &= ~PRINT_VALUE; }
+#define IS_PRINTVALUE(x) ((x) & PRINT_VALUE)
+#define SET_PRINTVALUE(x) do { (x) |= PRINT_VALUE; } while (0)
+#define CLR_PRINTVALUE(x) do { (x) &= ~PRINT_VALUE; } while (0)
 
-#define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
-#define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
-#define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
+#define IS_PRINTLABEL(x) ((x) & PRINT_LABEL)
+#define SET_PRINTLABEL(x) do { (x) |= PRINT_LABEL; } while (0)
+#define CLR_PRINTLABEL(x) do { (x) &= ~PRINT_LABEL; } while (0)
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
@@ -101,7 +105,7 @@ typedef struct
 #endif
     const CMSMenuFuncPtr onEnter;
     const CMSMenuOnExitPtr onExit;
-    OSD_Entry *entries;
+    const OSD_Entry *entries;
 } CMS_Menu;
 
 typedef struct

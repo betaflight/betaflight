@@ -1,18 +1,21 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdbool.h>
@@ -34,13 +37,32 @@ void systemReset(void)
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
 
-void systemResetToBootloader(void)
+void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
+    UNUSED(requestType);
+
     // 1FFFF000 -> 20000200 -> SP
     // 1FFFF004 -> 1FFFF021 -> PC
 
     *((uint32_t *)0x20004FF0) = 0xDEADBEEF; // 20KB STM32F103
     systemReset();
+}
+
+static void checkForBootLoaderRequest(void)
+{
+    void(*bootJump)(void);
+
+    if (*((uint32_t *)0x20004FF0) == 0xDEADBEEF) {
+
+        *((uint32_t *)0x20004FF0) = 0x0;
+
+        __enable_irq();
+        __set_MSP(*((uint32_t *)0x1FFFF000));
+
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFF004));
+        bootJump();
+        while (1);
+    }
 }
 
 void enableGPIOPowerUsageAndNoiseReductions(void)
@@ -71,7 +93,7 @@ void systemInit(void)
 
     SetSysClock(false);
 
-#ifdef CC3D
+#if defined(OPBL)
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     extern void *isr_vector_table_base;
 
@@ -109,21 +131,4 @@ void systemInit(void)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-}
-
-void checkForBootLoaderRequest(void)
-{
-    void(*bootJump)(void);
-
-    if (*((uint32_t *)0x20004FF0) == 0xDEADBEEF) {
-
-        *((uint32_t *)0x20004FF0) = 0x0;
-
-        __enable_irq();
-        __set_MSP(*((uint32_t *)0x1FFFF000));
-
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFF004));
-        bootJump();
-        while (1);
-    }
 }

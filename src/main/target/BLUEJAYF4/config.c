@@ -1,24 +1,27 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Cleanflight and Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_TARGET_CONFIG
 
@@ -29,20 +32,22 @@
 #include "drivers/adc.h"
 #include "drivers/io.h"
 
-#include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
 #include "pg/adc.h"
 #include "pg/beeper_dev.h"
+#include "pg/gyrodev.h"
 
 #include "hardware_revision.h"
+
+// BEEPER_OPT will be handled by post-flash configuration
+#define BEEPER_OPT              PB7
 
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(void)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
-        gyroConfigMutable()->gyro_align = CW180_DEG;
-        accelerometerConfigMutable()->acc_align  = CW180_DEG;
+        gyroDeviceConfigMutable(0)->alignment = CW180_DEG;
         beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
     }
 
