@@ -129,7 +129,7 @@
 
 // *************** ADC *****************************
 #define USE_ADC
-#define ADC3_DMA_STREAM         DMA2_Stream0
+#define ADC3_DMA_OPT            0
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 #define RSSI_ADC_PIN            PC2
