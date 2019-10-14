@@ -284,8 +284,11 @@ extern "C" {
 
     bool airmodeIsEnabled(void) {return true;}
 
-    mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn) {
+    mspDescriptor_t mspDescriptorAlloc(void) {return 0;}
 
+    mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn) {
+
+        UNUSED(srcDesc);
         UNUSED(mspPostProcessFn);
 
         sbuf_t *dst = &reply->buf;

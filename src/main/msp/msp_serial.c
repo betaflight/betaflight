@@ -48,6 +48,7 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
 
     mspPortToReset->port = serialPort;
     mspPortToReset->sharedWithTelemetry = sharedWithTelemetry;
+    mspPortToReset->descriptor = mspDescriptorAlloc();
 }
 
 void mspSerialAllocatePorts(void)
@@ -413,7 +414,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     };
 
     mspPostProcessFnPtr mspPostProcessFn = NULL;
-    const mspResult_e status = mspProcessCommandFn(&command, &reply, &mspPostProcessFn);
+    const mspResult_e status = mspProcessCommandFn(msp->descriptor, &command, &reply, &mspPostProcessFn);
 
     if (status != MSP_RESULT_NO_REPLY) {
         sbufSwitchToReader(&reply.buf, outBufHead); // change streambuf direction
