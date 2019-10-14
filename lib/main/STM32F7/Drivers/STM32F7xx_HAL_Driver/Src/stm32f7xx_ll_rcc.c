@@ -2,35 +2,17 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_rcc.c
   * @author  MCD Application Team
-  * @version V1.2.2
-  * @date    14-April-2017
   * @brief   RCC LL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */
@@ -168,7 +150,7 @@ uint32_t RCC_PLLI2S_GetFreqDomain_SPDIFRX(void);
   * @brief  Reset the RCC clock configuration to the default reset state.
   * @note   The default reset state of the clock configuration is given below:
   *         - HSI ON and used as system clock source
-  *         - HSE and PLL OFF
+  *         - HSE, PLL, PLLI2S, PLLSAI OFF
   *         - AHB, APB1 and APB2 prescaler set to 1.
   *         - CSS, MCO OFF
   *         - All interrupts disabled
@@ -181,30 +163,38 @@ uint32_t RCC_PLLI2S_GetFreqDomain_SPDIFRX(void);
   */
 ErrorStatus LL_RCC_DeInit(void)
 {
-  uint32_t vl_mask = 0U;
+  uint32_t vl_mask = 0xFFFFFFFFU;
 
   /* Set HSION bit */
   LL_RCC_HSI_Enable();
 
+  /* Wait for HSI READY bit */
+  while(LL_RCC_HSI_IsReady() != 1U)
+  {}
+
   /* Reset CFGR register */
   LL_RCC_WriteReg(CFGR, 0x00000000U);
 
-  vl_mask = 0xFFFFFFFFU;
-
-  /* Reset HSEON, PLLSYSON bits */
-  CLEAR_BIT(vl_mask, (RCC_CR_HSEON | RCC_CR_HSEBYP | RCC_CR_PLLON | RCC_CR_CSSON));
-
-  /* Reset PLLSAION bit */
-  CLEAR_BIT(vl_mask, RCC_CR_PLLSAION);
-
-  /* Reset PLLI2SON bit */
-  CLEAR_BIT(vl_mask, RCC_CR_PLLI2SON);
+  /* Reset HSEON, HSEBYP, PLLON, CSSON, PLLI2SON and PLLSAION bits */
+  CLEAR_BIT(vl_mask, (RCC_CR_HSEON | RCC_CR_HSEBYP | RCC_CR_PLLON | RCC_CR_CSSON | RCC_CR_PLLSAION | RCC_CR_PLLI2SON));
 
   /* Write new mask in CR register */
   LL_RCC_WriteReg(CR, vl_mask);
 
   /* Set HSITRIM bits to the reset value*/
   LL_RCC_HSI_SetCalibTrimming(0x10U);
+
+  /* Wait for PLL READY bit to be reset */
+  while(LL_RCC_PLL_IsReady() != 0U)
+  {}
+
+  /* Wait for PLLI2S READY bit to be reset */
+  while(LL_RCC_PLLI2S_IsReady() != 0U)
+  {}
+
+  /* Wait for PLLSAI READY bit to be reset */
+  while(LL_RCC_PLLSAI_IsReady() != 0U)
+  {}
 
   /* Reset PLLCFGR register */
   LL_RCC_WriteReg(PLLCFGR, 0x24003010U);
@@ -215,11 +205,17 @@ ErrorStatus LL_RCC_DeInit(void)
   /* Reset PLLSAICFGR register */
   LL_RCC_WriteReg(PLLSAICFGR, 0x24003000U);
 
-  /* Reset HSEBYP bit */
-  LL_RCC_HSE_DisableBypass();
-
   /* Disable all interrupts */
-  LL_RCC_WriteReg(CIR, 0x00000000U);
+  CLEAR_BIT(RCC->CIR, RCC_CIR_LSIRDYIE | RCC_CIR_LSERDYIE | RCC_CIR_HSIRDYIE | RCC_CIR_HSERDYIE | RCC_CIR_PLLRDYIE | RCC_CIR_PLLI2SRDYIE | RCC_CIR_PLLSAIRDYIE);
+
+  /* Clear all interrupt flags */
+  SET_BIT(RCC->CIR, RCC_CIR_LSIRDYC | RCC_CIR_LSERDYC | RCC_CIR_HSIRDYC | RCC_CIR_HSERDYC | RCC_CIR_PLLRDYC | RCC_CIR_PLLI2SRDYC | RCC_CIR_PLLSAIRDYC | RCC_CIR_CSSC);
+
+  /* Clear LSION bit */
+  CLEAR_BIT(RCC->CSR, RCC_CSR_LSION);
+
+  /* Reset all CSR flags */
+  SET_BIT(RCC->CSR, RCC_CSR_RMVF);
 
   return SUCCESS;
 }
@@ -759,7 +755,6 @@ uint32_t LL_RCC_GetLPTIMClockFreq(uint32_t LPTIMxSource)
   *         @arg @ref LL_RCC_SAI2_CLKSOURCE
   * @retval SAI clock frequency (in Hz)
   *         - @ref  LL_RCC_PERIPH_FREQUENCY_NO indicates that PLL is not ready
-  *         - @ref  LL_RCC_PERIPH_FREQUENCY_NA indicates that external clock is used
   */
 uint32_t LL_RCC_GetSAIClockFreq(uint32_t SAIxSource)
 {
@@ -809,8 +804,10 @@ uint32_t LL_RCC_GetSAIClockFreq(uint32_t SAIxSource)
         break;
 #endif /* RCC_SAI1SEL_PLLSRC_SUPPORT */
       case LL_RCC_SAI1_CLKSOURCE_PIN:        /* External input clock used as SAI1 clock source */
+        sai_frequency = EXTERNAL_SAI1_CLOCK_VALUE;
+        break;
+
       default:
-        sai_frequency = LL_RCC_PERIPH_FREQUENCY_NA;
         break;
     }
   }
@@ -857,9 +854,11 @@ uint32_t LL_RCC_GetSAIClockFreq(uint32_t SAIxSource)
         break;
 #endif /* RCC_SAI2SEL_PLLSRC_SUPPORT */
         case LL_RCC_SAI2_CLKSOURCE_PIN:      /* External input clock used as SAI2 clock source */
-        default:
-          sai_frequency = LL_RCC_PERIPH_FREQUENCY_NA;
+          sai_frequency = EXTERNAL_SAI2_CLOCK_VALUE;
           break;
+
+      default:
+        break;
       }
     }
   }
@@ -1168,7 +1167,8 @@ uint32_t LL_RCC_GetDSIClockFreq(uint32_t DSIxSource)
   */
 uint32_t LL_RCC_GetLTDCClockFreq(uint32_t LTDCxSource)
 {
-  (void)LTDCxSource;
+  UNUSED(LTDCxSource);
+
   uint32_t ltdc_frequency = LL_RCC_PERIPH_FREQUENCY_NO;
 
   /* Check parameter */
@@ -1193,7 +1193,8 @@ uint32_t LL_RCC_GetLTDCClockFreq(uint32_t LTDCxSource)
   */
 uint32_t LL_RCC_GetSPDIFRXClockFreq(uint32_t SPDIFRXxSource)
 {
-  (void)SPDIFRXxSource;
+  UNUSED(SPDIFRXxSource);
+
   uint32_t spdifrx_frequency = LL_RCC_PERIPH_FREQUENCY_NO;
 
   /* Check parameter */

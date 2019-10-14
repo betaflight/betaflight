@@ -220,47 +220,5 @@ void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)
     if (device != SPIINVALID)
         HAL_DMA_IRQHandler(&spiDevice[device].hdma);
 }
-
-DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size)
-{
-    SPIDevice device = spiDeviceByInstance(Instance);
-    spiDevice_t *spi = &(spiDevice[device]);
-
-    spi->hdma.Instance = Stream;
-#if !defined(STM32H7)
-    spi->hdma.Init.Channel = Channel;
-#else
-    UNUSED(Channel);
-#endif
-    spi->hdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    spi->hdma.Init.PeriphInc = DMA_PINC_DISABLE;
-    spi->hdma.Init.MemInc = DMA_MINC_ENABLE;
-    spi->hdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    spi->hdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    spi->hdma.Init.Mode = DMA_NORMAL;
-    spi->hdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    spi->hdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
-    spi->hdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-    spi->hdma.Init.MemBurst = DMA_MBURST_SINGLE;
-    spi->hdma.Init.Priority = DMA_PRIORITY_LOW;
-
-    HAL_DMA_DeInit(&spi->hdma);
-    HAL_DMA_Init(&spi->hdma);
-
-    __HAL_DMA_ENABLE(&spi->hdma);
-    __HAL_SPI_ENABLE(&spi->hspi);
-
-    /* Associate the initialized DMA handle to the spi handle */
-    __HAL_LINKDMA(&spi->hspi, hdmatx, spi->hdma);
-
-    // DMA TX Interrupt
-    dmaSetHandler(spi->dmaIrqHandler, dmaSPIIRQHandler, NVIC_BUILD_PRIORITY(3, 0), (uint32_t)device);
-
-    //HAL_CLEANCACHE(pData,Size);
-    // And Transmit
-    HAL_SPI_Transmit_DMA(&spi->hspi, pData, Size);
-
-    return &spi->hdma;
-}
 #endif // USE_DMA
 #endif

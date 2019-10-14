@@ -451,6 +451,15 @@ void uartIrqHandler(uartPort_t *s)
         }
 #endif
     }
+
+    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
+        if (s->port.idleCallback) {
+            s->port.idleCallback();
+        }
+
+        __HAL_UART_CLEAR_IDLEFLAG(huart);
+    }
+
 }
 
 #ifdef USE_DMA

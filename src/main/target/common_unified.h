@@ -117,3 +117,5 @@
 
 #define USE_RX_FLYSKY
 #define USE_RX_FLYSKY_SPI_LED
+
+#define USE_CUSTOM_DEFAULTS

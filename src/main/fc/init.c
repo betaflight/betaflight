@@ -30,8 +30,6 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "cli/cli.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
@@ -61,6 +59,7 @@
 #include "drivers/mco.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
+#include "drivers/pin_pull_up_down.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
@@ -69,6 +68,7 @@
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/sdcard.h"
+#include "drivers/sdio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -141,6 +141,7 @@
 #include "pg/motor.h"
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
+#include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -180,8 +181,6 @@ serialPort_t *loopbackPort;
 #endif
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
-
-void SDIO_GPIO_Init(void);
 
 void processLoopback(void)
 {
@@ -290,7 +289,7 @@ void init(void)
     uint8_t initFlags = 0;
 
 
-#ifdef EEPROM_IN_SDCARD
+#ifdef CONFIG_IN_SDCARD
 
     //
     // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
@@ -302,7 +301,7 @@ void init(void)
     // the system to boot and/or to save the config.
     //
     // note that target specific SDCARD/SDIO/SPI/QUADSPI configs are
-    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_SDCARD.
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_SDCARD.
     //
 
     //
@@ -312,12 +311,13 @@ void init(void)
     //
 
 #ifdef TARGET_BUS_INIT
-#error "EEPROM_IN_SDCARD and TARGET_BUS_INIT are mutually exclusive"
+#error "CONFIG_IN_SDCARD and TARGET_BUS_INIT are mutually exclusive"
 #endif
 
     pgResetAll();
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
 #ifdef USE_SDCARD_SPI
@@ -336,9 +336,9 @@ void init(void)
         }
     }
 
-#endif // EEPROM_IN_SDCARD
+#endif // CONFIG_IN_SDCARD
 
-#ifdef EEPROM_IN_EXTERNAL_FLASH
+#ifdef CONFIG_IN_EXTERNAL_FLASH
     //
     // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
     // external flash are in the config which is on a chip which we can't read yet!
@@ -349,7 +349,7 @@ void init(void)
     // the system to boot and/or to save the config.
     //
     // note that target specific FLASH/SPI/QUADSPI configs are
-    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using EEPROM_IN_EXTERNAL_FLASH.
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH.
     //
 
     //
@@ -360,7 +360,7 @@ void init(void)
     pgResetAll();
 
 #ifdef TARGET_BUS_INIT
-#error "EEPROM_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
+#error "CONFIG_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
 #endif
 
     configureSPIAndQuadSPI();
@@ -368,7 +368,7 @@ void init(void)
 
 
 #ifndef USE_FLASH_CHIP
-#error "EEPROM_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
+#error "CONFIG_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
 #endif
 
     bool haveFlash = flashInit(flashConfig());
@@ -378,7 +378,7 @@ void init(void)
     }
     initFlags |= FLASH_INIT_ATTEMPTED;
 
-#endif // EEPROM_IN_EXTERNAL_FLASH
+#endif // CONFIG_IN_EXTERNAL_FLASH
 
     initEEPROM();
 
@@ -391,7 +391,7 @@ void init(void)
 #endif
 
     if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
-        resetEEPROM();
+        resetEEPROM(false);
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
@@ -442,7 +442,10 @@ void init(void)
             bothButtonsHeld = buttonAPressed() && buttonBPressed();
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
-                    resetEEPROM();
+                    resetEEPROM(false);
+#ifdef USE_PERSISTENT_OBJECTS
+                    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+#endif
                     systemReset();
                 }
                 delay(1000);
@@ -615,6 +618,7 @@ void init(void)
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
     if (!(initFlags & SD_INIT_ATTEMPTED)) {
+        sdioPinConfigure();
         SDIO_GPIO_Init();
     }
 #endif
@@ -658,7 +662,11 @@ void init(void)
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
-        if (isSystemConfigured()) {
+        if (true
+#if defined(USE_UNIFIED_TARGET)
+            && isSystemConfigured()
+#endif
+            ) {
             indicateFailure(FAILURE_MISSING_ACC, 2);
         }
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
@@ -692,6 +700,10 @@ void init(void)
     pinioInit(pinioConfig());
 #endif
 
+#ifdef USE_PIN_PULL_UP_DOWN
+    pinPullupPulldownInit();
+#endif
+
 #ifdef USE_PINIOBOX
     pinioBoxInit(pinioBoxConfig());
 #endif
@@ -721,10 +733,6 @@ void init(void)
 
     mspInit();
     mspSerialInit();
-
-#ifdef USE_CLI
-    cliInit(serialConfig());
-#endif
 
     failsafeInit();
 
@@ -910,6 +918,7 @@ void init(void)
 #endif // USE_RCDEVICE
 
 #ifdef USE_MOTOR
+    motorPostInit();
     motorEnable();
 #endif
 

@@ -31,6 +31,9 @@
 #include "common/time.h"
 
 #include "drivers/vtx_common.h"
+#if defined(USE_VTX_RTC6705)
+#include "drivers/vtx_rtc6705.h"
+#endif
 #include "drivers/vtx_table.h"
 
 #include "fc/config.h"
@@ -47,16 +50,24 @@
 #include "vtx.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
 
-PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
-                  .band = VTX_TABLE_DEFAULT_BAND,
-                  .channel = VTX_TABLE_DEFAULT_CHANNEL,
-                  .power = VTX_TABLE_DEFAULT_POWER,
-                  .freq = VTX_TABLE_DEFAULT_FREQ,
-                  .pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ,
-                  .lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF,
-                 );
+void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
+{
+#ifdef USE_VTX_TABLE
+    vtxSettingsConfig->band = 0;
+    vtxSettingsConfig->channel = 0;
+    vtxSettingsConfig->power = 0;
+    vtxSettingsConfig->freq = 0;
+#else
+    vtxSettingsConfig->freq = VTX_TABLE_DEFAULT_FREQ;
+    vtxSettingsConfig->band = VTX_TABLE_DEFAULT_BAND;
+    vtxSettingsConfig->channel = VTX_TABLE_DEFAULT_CHANNEL;
+    vtxSettingsConfig->power = VTX_TABLE_DEFAULT_POWER;
+#endif
+    vtxSettingsConfig->pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ;
+    vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
+}
 
 typedef enum {
     VTX_PARAM_POWER = 0,
@@ -101,6 +112,27 @@ void vtxInit(void)
     }
 }
 
+// Once refactoring for RTC6705 to handle pit mode properly and remove the requirement
+// for having a 0 value in the vtxtable power levels is completed then this function will
+// no longer be required and the VTX_TABLE_LOW_POWER_INDEX value can always be used.
+static uint8_t vtxGetMinimumPowerIndex(void)
+{
+    const vtxDevice_t *vtxDevice = vtxCommonDevice();
+    vtxDevType_e vtxType = VTXDEV_UNKNOWN;
+    if (vtxDevice) {
+        vtxType = vtxCommonGetDeviceType(vtxDevice);
+    }
+    switch (vtxType) {
+#if defined(USE_VTX_RTC6705)
+    case VTXDEV_RTC6705:
+        // special handling for rtc6705 which has the low power setting in index 2
+        return VTX_RTC6705_DEFAULT_POWER_INDEX;
+#endif
+    default:
+        return VTX_TABLE_LOW_POWER_INDEX;
+    }
+}
+
 STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
 {
     vtxSettingsConfig_t settings = {
@@ -116,14 +148,14 @@ STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
     if (IS_RC_MODE_ACTIVE(BOXVTXPITMODE) && settings.pitModeFreq) {
         settings.band = 0;
         settings.freq = settings.pitModeFreq;
-        settings.power = VTX_TABLE_DEFAULT_POWER;
+        settings.power = vtxGetMinimumPowerIndex();
     }
 #endif
 
     if (!ARMING_FLAG(ARMED) && !failsafeIsActive() &&
         (settings.lowPowerDisarm == VTX_LOW_POWER_DISARM_ALWAYS ||
         (settings.lowPowerDisarm == VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM && !ARMING_FLAG(WAS_EVER_ARMED)))) {
-        settings.power = VTX_TABLE_DEFAULT_POWER;
+        settings.power = vtxGetMinimumPowerIndex();
     }
 
     return settings;

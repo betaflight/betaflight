@@ -135,3 +135,6 @@
 #error "The USE_SERIAL_4WAY_BLHELI_INTERFACE define should not be part of the target definition"
 #endif
 
+#if defined(USE_DMA_SPEC) && (defined(ADC1_DMA_STREAM) || defined(ADC2_DMA_STREAM) || defined(ADC3_DMA_STREAM))
+#error "ADCx_DMA_STREAM defines cannot be used when USE_DMA_OPT is used."
+#endif

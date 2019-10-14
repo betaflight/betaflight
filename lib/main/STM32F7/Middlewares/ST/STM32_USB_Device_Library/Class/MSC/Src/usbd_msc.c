@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    usbd_msc.c
   * @author  MCD Application Team
-  * @version V2.4.2
-  * @date    11-December-2015
   * @brief   This file provides all the MSC core functions.
   *
   * @verbatim
@@ -23,22 +21,22 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2015 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
-  *
-  *        http://www.st.com/software_license_agreement_liberty_v2
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                      http://www.st.com/SLA0044
   *
   ******************************************************************************
   */
+
+  /* BSPDependencies
+  - "stm32xxxxx_{eval}{discovery}{nucleo_144}.c"
+  - "stm32xxxxx_{eval}{discovery}_io.c"
+  - "stm32xxxxx_{eval}{discovery}{adafruit}_sd.c"
+  EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_msc.h"
@@ -295,54 +293,41 @@ __ALIGN_BEGIN  uint8_t USBD_MSC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] 
   * @param  cfgidx: configuration index
   * @retval status
   */
-uint8_t  USBD_MSC_Init (USBD_HandleTypeDef *pdev,
-                            uint8_t cfgidx)
+uint8_t  USBD_MSC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
-  int16_t ret = 0;
-  (void)cfgidx;
+  UNUSED(cfgidx);
 
-  if(pdev->dev_speed == USBD_SPEED_HIGH  )
+  if(pdev->dev_speed == USBD_SPEED_HIGH)
   {
     /* Open EP OUT */
-    USBD_LL_OpenEP(pdev,
-                   MSC_EPOUT_ADDR,
-                   USBD_EP_TYPE_BULK,
-                   MSC_MAX_HS_PACKET);
+    USBD_LL_OpenEP(pdev, MSC_EPOUT_ADDR, USBD_EP_TYPE_BULK, MSC_MAX_HS_PACKET);
+    pdev->ep_out[MSC_EPOUT_ADDR & 0xFU].is_used = 1U;
 
     /* Open EP IN */
-    USBD_LL_OpenEP(pdev,
-                   MSC_EPIN_ADDR,
-                   USBD_EP_TYPE_BULK,
-                   MSC_MAX_HS_PACKET);
+    USBD_LL_OpenEP(pdev, MSC_EPIN_ADDR, USBD_EP_TYPE_BULK, MSC_MAX_HS_PACKET);
+    pdev->ep_in[MSC_EPIN_ADDR & 0xFU].is_used = 1U;
   }
   else
   {
     /* Open EP OUT */
-    USBD_LL_OpenEP(pdev,
-                   MSC_EPOUT_ADDR,
-                   USBD_EP_TYPE_BULK,
-                   MSC_MAX_FS_PACKET);
+    USBD_LL_OpenEP(pdev, MSC_EPOUT_ADDR, USBD_EP_TYPE_BULK, MSC_MAX_FS_PACKET);
+    pdev->ep_out[MSC_EPOUT_ADDR & 0xFU].is_used = 1U;
 
     /* Open EP IN */
-    USBD_LL_OpenEP(pdev,
-                   MSC_EPIN_ADDR,
-                   USBD_EP_TYPE_BULK,
-                   MSC_MAX_FS_PACKET);
+    USBD_LL_OpenEP(pdev, MSC_EPIN_ADDR, USBD_EP_TYPE_BULK, MSC_MAX_FS_PACKET);
+    pdev->ep_in[MSC_EPIN_ADDR & 0xFU].is_used = 1U;
   }
   pdev->pMSC_ClassData = USBD_malloc(sizeof (USBD_MSC_BOT_HandleTypeDef));
 
   if(pdev->pMSC_ClassData == NULL)
   {
-    ret = 1;
-  }
-  else
-  {
-    /* Init the BOT  layer */
-    MSC_BOT_Init(pdev);
-    ret = 0;
+    return USBD_FAIL;
   }
 
-  return ret;
+  /* Init the BOT  layer */
+  MSC_BOT_Init(pdev);
+
+  return USBD_OK;
 }
 
 /**
@@ -355,16 +340,15 @@ uint8_t  USBD_MSC_Init (USBD_HandleTypeDef *pdev,
 uint8_t  USBD_MSC_DeInit (USBD_HandleTypeDef *pdev,
                               uint8_t cfgidx)
 {
-  (void) cfgidx;
+  UNUSED(cfgidx);
 
   /* Close MSC EPs */
-  USBD_LL_CloseEP(pdev,
-                  MSC_EPOUT_ADDR);
+  USBD_LL_CloseEP(pdev, MSC_EPOUT_ADDR);
+  pdev->ep_out[MSC_EPOUT_ADDR & 0xFU].is_used = 0U;
 
-  /* Open EP IN */
-  USBD_LL_CloseEP(pdev,
-                  MSC_EPIN_ADDR);
-
+  /* Close EP IN */
+  USBD_LL_CloseEP(pdev, MSC_EPIN_ADDR);
+  pdev->ep_in[MSC_EPIN_ADDR & 0xFU].is_used = 0U;
 
     /* De-Init the BOT layer */
   MSC_BOT_DeInit(pdev);
@@ -375,7 +359,7 @@ uint8_t  USBD_MSC_DeInit (USBD_HandleTypeDef *pdev,
     USBD_free(pdev->pMSC_ClassData);
     pdev->pMSC_ClassData  = NULL;
   }
-  return 0;
+  return USBD_OK;
 }
 /**
 * @brief  USBD_MSC_Setup
@@ -386,64 +370,88 @@ uint8_t  USBD_MSC_DeInit (USBD_HandleTypeDef *pdev,
 */
 uint8_t  USBD_MSC_Setup (USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-  USBD_MSC_BOT_HandleTypeDef     *hmsc = (USBD_MSC_BOT_HandleTypeDef*) pdev->pMSC_ClassData;
+  USBD_MSC_BOT_HandleTypeDef *hmsc = (USBD_MSC_BOT_HandleTypeDef*) pdev->pMSC_ClassData;
+  uint8_t ret = USBD_OK;
+  uint16_t status_info = 0U;
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK)
   {
 
-  /* Class request */
-  case USB_REQ_TYPE_CLASS :
+    /* Class request */
+  case USB_REQ_TYPE_CLASS:
     switch (req->bRequest)
     {
-    case BOT_GET_MAX_LUN :
-
-      if((req->wValue  == 0) &&
-         (req->wLength == 1) &&
-         ((req->bmRequest & 0x80) == 0x80))
+    case BOT_GET_MAX_LUN:
+      if((req->wValue  == 0U) && (req->wLength == 1U) &&
+         ((req->bmRequest & 0x80U) == 0x80U))
       {
-        hmsc->max_lun = ((USBD_StorageTypeDef *)pdev->pMSC_UserData)->GetMaxLun();
-        USBD_CtlSendData (pdev,
-                          (uint8_t *)&hmsc->max_lun,
-                          1);
+        hmsc->max_lun = (uint32_t)((USBD_StorageTypeDef *)pdev->pMSC_UserData)->GetMaxLun();
+        USBD_CtlSendData (pdev, (uint8_t *)(void *)&hmsc->max_lun, 1U);
       }
       else
       {
-         USBD_CtlError(pdev , req);
-         return USBD_FAIL;
+        USBD_CtlError(pdev, req);
+        ret = USBD_FAIL;
       }
       break;
 
     case BOT_RESET :
-      if((req->wValue  == 0) &&
-         (req->wLength == 0) &&
-        ((req->bmRequest & 0x80) != 0x80))
+      if((req->wValue  == 0U) && (req->wLength == 0U) &&
+         ((req->bmRequest & 0x80U) != 0x80U))
       {
-         MSC_BOT_Reset(pdev);
+        MSC_BOT_Reset(pdev);
       }
       else
       {
-         USBD_CtlError(pdev , req);
-         return USBD_FAIL;
+        USBD_CtlError(pdev , req);
+        ret = USBD_FAIL;
       }
       break;
 
     default:
-       USBD_CtlError(pdev , req);
-       return USBD_FAIL;
+      USBD_CtlError(pdev , req);
+      ret = USBD_FAIL;
+      break;
     }
     break;
-  /* Interface & Endpoint request */
+    /* Interface & Endpoint request */
   case USB_REQ_TYPE_STANDARD:
     switch (req->bRequest)
     {
-    case USB_REQ_GET_INTERFACE :
-      USBD_CtlSendData (pdev,
-                        (uint8_t *)&hmsc->interface,
-                        1);
+    case USB_REQ_GET_STATUS:
+      if (pdev->dev_state == USBD_STATE_CONFIGURED)
+      {
+        USBD_CtlSendData (pdev, (uint8_t *)(void *)&status_info, 2U);
+      }
+      else
+      {
+        USBD_CtlError (pdev, req);
+        ret = USBD_FAIL;
+      }
       break;
 
-    case USB_REQ_SET_INTERFACE :
-      hmsc->interface = (uint8_t)(req->wValue);
+    case USB_REQ_GET_INTERFACE:
+      if (pdev->dev_state == USBD_STATE_CONFIGURED)
+      {
+        USBD_CtlSendData (pdev, (uint8_t *)(void *)&hmsc->interface, 1U);
+      }
+      else
+      {
+        USBD_CtlError (pdev, req);
+        ret = USBD_FAIL;
+      }
+      break;
+
+    case USB_REQ_SET_INTERFACE:
+      if (pdev->dev_state == USBD_STATE_CONFIGURED)
+      {
+        hmsc->interface = (uint8_t)(req->wValue);
+      }
+      else
+      {
+        USBD_CtlError (pdev, req);
+        ret = USBD_FAIL;
+      }
       break;
 
     case USB_REQ_CLEAR_FEATURE:
@@ -453,56 +461,59 @@ uint8_t  USBD_MSC_Setup (USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 
       /* Reactivate the EP */
       USBD_LL_CloseEP (pdev , (uint8_t)req->wIndex);
-      if((((uint8_t)req->wIndex) & 0x80) == 0x80)
+      if((((uint8_t)req->wIndex) & 0x80U) == 0x80U)
       {
-        if(pdev->dev_speed == USBD_SPEED_HIGH  )
+        pdev->ep_in[(uint8_t)req->wIndex & 0xFU].is_used = 0U;
+        if(pdev->dev_speed == USBD_SPEED_HIGH)
         {
           /* Open EP IN */
-          USBD_LL_OpenEP(pdev,
-                         MSC_EPIN_ADDR,
-                         USBD_EP_TYPE_BULK,
+          USBD_LL_OpenEP(pdev, MSC_EPIN_ADDR, USBD_EP_TYPE_BULK,
                          MSC_MAX_HS_PACKET);
         }
         else
         {
           /* Open EP IN */
-          USBD_LL_OpenEP(pdev,
-                         MSC_EPIN_ADDR,
-                         USBD_EP_TYPE_BULK,
+          USBD_LL_OpenEP(pdev, MSC_EPIN_ADDR, USBD_EP_TYPE_BULK,
                          MSC_MAX_FS_PACKET);
         }
+        pdev->ep_in[MSC_EPIN_ADDR & 0xFU].is_used = 1U;
       }
       else
       {
-        if(pdev->dev_speed == USBD_SPEED_HIGH  )
+        pdev->ep_out[(uint8_t)req->wIndex & 0xFU].is_used = 0U;
+        if(pdev->dev_speed == USBD_SPEED_HIGH)
         {
-          /* Open EP IN */
-          USBD_LL_OpenEP(pdev,
-                         MSC_EPOUT_ADDR,
-                         USBD_EP_TYPE_BULK,
+          /* Open EP OUT */
+          USBD_LL_OpenEP(pdev, MSC_EPOUT_ADDR, USBD_EP_TYPE_BULK,
                          MSC_MAX_HS_PACKET);
         }
         else
         {
-          /* Open EP IN */
-          USBD_LL_OpenEP(pdev,
-                         MSC_EPOUT_ADDR,
-                         USBD_EP_TYPE_BULK,
+          /* Open EP OUT */
+          USBD_LL_OpenEP(pdev, MSC_EPOUT_ADDR, USBD_EP_TYPE_BULK,
                          MSC_MAX_FS_PACKET);
         }
+        pdev->ep_out[MSC_EPOUT_ADDR & 0xFU].is_used = 1U;
       }
 
       /* Handle BOT error */
       MSC_BOT_CplClrFeature(pdev, (uint8_t)req->wIndex);
       break;
 
+    default:
+      USBD_CtlError (pdev, req);
+      ret = USBD_FAIL;
+      break;
     }
     break;
 
   default:
+    USBD_CtlError (pdev, req);
+    ret = USBD_FAIL;
     break;
   }
-  return 0;
+
+  return ret;
 }
 
 /**
@@ -516,7 +527,7 @@ uint8_t  USBD_MSC_DataIn (USBD_HandleTypeDef *pdev,
                               uint8_t epnum)
 {
   MSC_BOT_DataIn(pdev , epnum);
-  return 0;
+  return USBD_OK;
 }
 
 /**
@@ -530,7 +541,7 @@ uint8_t  USBD_MSC_DataOut (USBD_HandleTypeDef *pdev,
                                uint8_t epnum)
 {
   MSC_BOT_DataOut(pdev , epnum);
-  return 0;
+  return USBD_OK;
 }
 
 /**
@@ -590,9 +601,9 @@ uint8_t  USBD_MSC_RegisterStorage  (USBD_HandleTypeDef   *pdev,
 {
   if(fops != NULL)
   {
-    pdev->pMSC_UserData= fops;
+    pdev->pMSC_UserData = fops;
   }
-  return 0;
+  return USBD_OK;
 }
 
 /**

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_mdios.c
   * @author  MCD Application Team
-  * @version V1.2.2
-  * @date    14-April-2017
   * @brief   MDIOS HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the MDIOS Peripheral.
@@ -60,36 +58,71 @@
         (##) HAL_MDIOS_MspDeInit() must be implemented to reset low level ressources 
             (GPIO, Clocks, NVIC configuration ...)
 
+  *** Callback registration ***
+  =============================================
+
+  The compilation define  USE_HAL_MDIOS_REGISTER_CALLBACKS when set to 1
+  allows the user to configure dynamically the driver callbacks.
+  Use Function @ref HAL_MDIOS_RegisterCallback() to register an interrupt callback.
+
+  Function @ref HAL_MDIOS_RegisterCallback() allows to register following callbacks:
+    (+) WriteCpltCallback  : Write Complete Callback.
+    (+) ReadCpltCallback   : Read Complete Callback.
+    (+) ErrorCallback      : Error Callback.
+    (+) WakeUpCallback     : Wake UP Callback
+    (+) MspInitCallback    : MspInit Callback.
+    (+) MspDeInitCallback  : MspDeInit Callback.
+
+  This function takes as parameters the HAL peripheral handle, the Callback ID
+  and a pointer to the user callback function.
+
+  Use function @ref HAL_MDIOS_UnRegisterCallback() to reset a callback to the default
+  weak function.
+  @ref HAL_MDIOS_UnRegisterCallback takes as parameters the HAL peripheral handle,
+  and the Callback ID.
+  This function allows to reset following callbacks:
+    (+) WriteCpltCallback  : Write Complete Callback.
+    (+) ReadCpltCallback   : Read Complete Callback.
+    (+) ErrorCallback      : Error Callback.
+    (+) WakeUpCallback     : Wake UP Callback
+    (+) MspInitCallback    : MspInit Callback.
+    (+) MspDeInitCallback  : MspDeInit Callback.
+
+  By default, after the HAL_MDIOS_Init and when the state is HAL_MDIOS_STATE_RESET
+  all callbacks are set to the corresponding weak functions:
+  examples @ref HAL_MDIOS_WriteCpltCallback(), @ref HAL_MDIOS_ReadCpltCallback().
+  Exception done for MspInit and MspDeInit functions that are
+  reset to the legacy weak function in the HAL_MDIOS_Init/ @ref HAL_MDIOS_DeInit only when
+  these callbacks are null (not registered beforehand).
+  if not, MspInit or MspDeInit are not null, the HAL_MDIOS_Init/ @ref HAL_MDIOS_DeInit
+  keep and use the user MspInit/MspDeInit callbacks (registered beforehand)
+
+  Callbacks can be registered/unregistered in HAL_MDIOS_STATE_READY state only.
+  Exception done MspInit/MspDeInit that can be registered/unregistered
+  in HAL_MDIOS_STATE_READY or HAL_MDIOS_STATE_RESET state,
+  thus registered (user) MspInit/DeInit callbacks can be used during the Init/DeInit.
+  In that case first register the MspInit/MspDeInit user callbacks
+  using @ref HAL_MDIOS_RegisterCallback() before calling @ref HAL_MDIOS_DeInit
+  or HAL_MDIOS_Init function.
+
+  When The compilation define USE_HAL_MDIOS_REGISTER_CALLBACKS is set to 0 or
+  not defined, the callback registration feature is not available and all callbacks
+  are set to the corresponding weak functions.
+
 
   @endverbatim
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
@@ -119,6 +152,9 @@
 /* Private macro -------------------------------------------------------------*/ 
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+static void MDIOS_InitCallbacksToDefault(MDIOS_HandleTypeDef *hmdios);
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
 /* Private functions ---------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup MDIOS_Exported_Functions MDIOS Exported Functions
@@ -145,7 +181,7 @@
 /**
   * @brief  Initializes the MDIOS according to the specified parameters in 
   *         the MDIOS_InitTypeDef and creates the associated handle .
-  * @param  hmdios: pointer to a MDIOS_HandleTypeDef structure that contains
+  * @param  hmdios pointer to a MDIOS_HandleTypeDef structure that contains
   *         the configuration information for MDIOS module
   * @retval HAL status
   */
@@ -169,8 +205,23 @@ HAL_StatusTypeDef HAL_MDIOS_Init(MDIOS_HandleTypeDef *hmdios)
   
   if(hmdios->State == HAL_MDIOS_STATE_RESET)
   {
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+
+    MDIOS_InitCallbacksToDefault(hmdios);
+
+    if(hmdios->MspInitCallback == NULL)
+    {
+      hmdios->MspInitCallback = HAL_MDIOS_MspInit;
+    }
+
     /* Init the low level hardware */
+    hmdios->MspInitCallback(hmdios);
+
+#else
+   /* Init the low level hardware */
     HAL_MDIOS_MspInit(hmdios);
+
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
   }
   
   /* Change the MDIOS state */
@@ -203,7 +254,7 @@ HAL_StatusTypeDef HAL_MDIOS_Init(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  DeInitializes the MDIOS peripheral.
-  * @param  hmdios: MDIOS handle
+  * @param  hmdios MDIOS handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
@@ -223,9 +274,22 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
   /* Disable the Peripheral */
   __HAL_MDIOS_DISABLE(hmdios);
   
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+
+  if(hmdios->MspDeInitCallback == NULL)
+  {
+    hmdios->MspDeInitCallback = HAL_MDIOS_MspDeInit;
+  }
+  /* DeInit the low level hardware */
+  hmdios->MspDeInitCallback(hmdios);
+
+#else
+
   /* DeInit the low level hardware */
   HAL_MDIOS_MspDeInit(hmdios);
   
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
+
   /* Change the MDIOS state */
   hmdios->State = HAL_MDIOS_STATE_RESET;
   
@@ -238,7 +302,7 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  MDIOS MSP Init
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_MspInit(MDIOS_HandleTypeDef *hmdios)
@@ -253,7 +317,7 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  MDIOS MSP DeInit
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_MspDeInit(MDIOS_HandleTypeDef *hmdios)
@@ -265,6 +329,194 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
             the HAL_MDIOS_MspDeInit can be implemented in the user file
    */ 
 }
+
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+/**
+* @brief  Register a User MDIOS Callback
+*         To be used instead of the weak predefined callback
+* @param hmdios mdios handle
+* @param CallbackID ID of the callback to be registered
+*        This parameter can be one of the following values:
+*          @arg @ref HAL_MDIOS_WRITE_COMPLETE_CB_ID Write Complete Callback ID
+*          @arg @ref HAL_MDIOS_READ_COMPLETE_CB_ID  Read Complete Callback ID
+*          @arg @ref HAL_MDIOS_ERROR_CB_ID          Error Callback ID
+*          @arg @ref HAL_MDIOS_WAKEUP_CB_ID         Wake Up Callback ID
+*          @arg @ref HAL_MDIOS_MSPINIT_CB_ID        MspInit callback ID
+*          @arg @ref HAL_MDIOS_MSPDEINIT_CB_ID      MspDeInit callback ID
+* @param pCallback pointer to the Callback function
+* @retval status
+*/
+HAL_StatusTypeDef HAL_MDIOS_RegisterCallback(MDIOS_HandleTypeDef *hmdios, HAL_MDIOS_CallbackIDTypeDef CallbackID, pMDIOS_CallbackTypeDef pCallback)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(pCallback == NULL)
+  {
+    /* Return error status */
+    return HAL_ERROR;
+  }
+  /* Process locked */
+  __HAL_LOCK(hmdios);
+
+  if(hmdios->State == HAL_MDIOS_STATE_READY)
+  {
+    switch (CallbackID)
+    {
+    case HAL_MDIOS_WRITE_COMPLETE_CB_ID :
+      hmdios->WriteCpltCallback = pCallback;
+      break;
+
+    case HAL_MDIOS_READ_COMPLETE_CB_ID :
+      hmdios->ReadCpltCallback = pCallback;
+      break;
+
+    case HAL_MDIOS_ERROR_CB_ID :
+      hmdios->ErrorCallback = pCallback;
+      break;
+
+    case HAL_MDIOS_WAKEUP_CB_ID :
+      hmdios->WakeUpCallback = pCallback;
+      break;
+
+    case HAL_MDIOS_MSPINIT_CB_ID :
+      hmdios->MspInitCallback = pCallback;
+      break;
+
+    case HAL_MDIOS_MSPDEINIT_CB_ID :
+      hmdios->MspDeInitCallback = pCallback;
+      break;
+
+    default :
+      /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else if(hmdios->State == HAL_MDIOS_STATE_RESET)
+  {
+    switch (CallbackID)
+    {
+    case HAL_MDIOS_MSPINIT_CB_ID :
+      hmdios->MspInitCallback = pCallback;
+      break;
+
+    case HAL_MDIOS_MSPDEINIT_CB_ID :
+      hmdios->MspDeInitCallback = pCallback;
+      break;
+
+    default :
+      /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* Return error status */
+    status =  HAL_ERROR;
+  }
+
+  /* Release Lock */
+  __HAL_UNLOCK(hmdios);
+
+  return status;
+}
+
+/**
+* @brief  Unregister an MDIOS Callback
+*         MDIOS callabck is redirected to the weak predefined callback
+* @param hmdios mdios handle
+* @param CallbackID ID of the callback to be unregistered
+*        This parameter can be one of the following values:
+*          @arg @ref HAL_MDIOS_WRITE_COMPLETE_CB_ID Write Complete Callback ID
+*          @arg @ref HAL_MDIOS_READ_COMPLETE_CB_ID  Read Complete Callback ID
+*          @arg @ref HAL_MDIOS_ERROR_CB_ID          Error Callback ID
+*          @arg @ref HAL_MDIOS_WAKEUP_CB_ID         Wake Up Callback ID
+*          @arg @ref HAL_MDIOS_MSPINIT_CB_ID        MspInit callback ID
+*          @arg @ref HAL_MDIOS_MSPDEINIT_CB_ID      MspDeInit callback ID
+* @retval status
+*/
+HAL_StatusTypeDef HAL_MDIOS_UnRegisterCallback(MDIOS_HandleTypeDef *hmdios, HAL_MDIOS_CallbackIDTypeDef CallbackID)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  /* Process locked */
+  __HAL_LOCK(hmdios);
+
+  if(hmdios->State == HAL_MDIOS_STATE_READY)
+  {
+    switch (CallbackID)
+    {
+    case HAL_MDIOS_WRITE_COMPLETE_CB_ID :
+      hmdios->WriteCpltCallback = HAL_MDIOS_WriteCpltCallback;
+      break;
+
+    case HAL_MDIOS_READ_COMPLETE_CB_ID :
+      hmdios->ReadCpltCallback = HAL_MDIOS_ReadCpltCallback;
+      break;
+
+    case HAL_MDIOS_ERROR_CB_ID :
+      hmdios->ErrorCallback = HAL_MDIOS_ErrorCallback;
+      break;
+
+    case HAL_MDIOS_WAKEUP_CB_ID :
+      hmdios->WakeUpCallback = HAL_MDIOS_WakeUpCallback;
+      break;
+
+    case HAL_MDIOS_MSPINIT_CB_ID :
+      hmdios->MspInitCallback = HAL_MDIOS_MspInit;
+      break;
+
+    case HAL_MDIOS_MSPDEINIT_CB_ID :
+      hmdios->MspDeInitCallback = HAL_MDIOS_MspDeInit;
+      break;
+
+    default :
+      /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else if(hmdios->State == HAL_MDIOS_STATE_RESET)
+  {
+    switch (CallbackID)
+    {
+    case HAL_MDIOS_MSPINIT_CB_ID :
+      hmdios->MspInitCallback = HAL_MDIOS_MspInit;
+      break;
+
+    case HAL_MDIOS_MSPDEINIT_CB_ID :
+      hmdios->MspDeInitCallback = HAL_MDIOS_MspDeInit;
+      break;
+
+    default :
+      /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* Return error status */
+    status =  HAL_ERROR;
+  }
+
+  /* Release Lock */
+  __HAL_UNLOCK(hmdios);
+
+  return status;
+}
+
+static void MDIOS_InitCallbacksToDefault(MDIOS_HandleTypeDef *hmdios)
+{
+  /* Init the MDIOS Callback settings */
+  hmdios->WriteCpltCallback  = HAL_MDIOS_WriteCpltCallback;   /* Legacy weak WriteCpltCallback   */
+  hmdios->ReadCpltCallback   = HAL_MDIOS_ReadCpltCallback;    /* Legacy weak ReadCpltCallback    */
+  hmdios->ErrorCallback      = HAL_MDIOS_ErrorCallback;       /* Legacy weak ErrorCallback       */
+  hmdios->WakeUpCallback     = HAL_MDIOS_WakeUpCallback;      /* Legacy weak WakeUpCallback      */
+}
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
+
 /**
   * @}
   */
@@ -304,9 +556,9 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Writes to an MDIOS output register
-  * @param  hmdios: mdios handle
-  * @param  RegNum: MDIOS input register number    
-  * @param  Data: Data to write
+  * @param  hmdios mdios handle
+  * @param  RegNum MDIOS input register number    
+  * @param  Data Data to write
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_WriteReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum, uint16_t Data)
@@ -333,9 +585,9 @@ HAL_StatusTypeDef HAL_MDIOS_WriteReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNu
       
 /**
   * @brief  Reads an MDIOS input register
-  * @param  hmdios: mdios handle
-  * @param  RegNum: MDIOS input register number
-  * @param  pData: pointer to Data
+  * @param  hmdios mdios handle
+  * @param  RegNum MDIOS input register number
+  * @param  pData pointer to Data
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_ReadReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum, uint16_t *pData)
@@ -362,7 +614,7 @@ HAL_StatusTypeDef HAL_MDIOS_ReadReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum
 
 /**
   * @brief  Gets Written registers by MDIO master
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval bit map of written registers addresses
   */
 uint32_t HAL_MDIOS_GetWrittenRegAddress(MDIOS_HandleTypeDef *hmdios)
@@ -372,7 +624,7 @@ uint32_t HAL_MDIOS_GetWrittenRegAddress(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Gets Read registers by MDIO master
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval bit map of read registers addresses
   */
 uint32_t HAL_MDIOS_GetReadRegAddress(MDIOS_HandleTypeDef *hmdios)
@@ -382,8 +634,8 @@ uint32_t HAL_MDIOS_GetReadRegAddress(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Clears Write registers flag
-  * @param  hmdios: mdios handle
-  * @param  RegNum: registers addresses to be cleared
+  * @param  hmdios mdios handle
+  * @param  RegNum registers addresses to be cleared
   * @retval HAL status 
   */
 HAL_StatusTypeDef HAL_MDIOS_ClearWriteRegAddress(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum)
@@ -405,8 +657,8 @@ HAL_StatusTypeDef HAL_MDIOS_ClearWriteRegAddress(MDIOS_HandleTypeDef *hmdios, ui
 
 /**
   * @brief  Clears Read register flag
-  * @param  hmdios: mdios handle
-  * @param  RegNum: registers addresses to be cleared
+  * @param  hmdios mdios handle
+  * @param  RegNum registers addresses to be cleared
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_ClearReadRegAddress(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum)
@@ -428,7 +680,7 @@ HAL_StatusTypeDef HAL_MDIOS_ClearReadRegAddress(MDIOS_HandleTypeDef *hmdios, uin
 
 /**
   * @brief  Enables Events for MDIOS peripheral 
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_EnableEvents(MDIOS_HandleTypeDef *hmdios)
@@ -447,7 +699,7 @@ HAL_StatusTypeDef HAL_MDIOS_EnableEvents(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief This function handles MDIOS interrupt request.
-  * @param hmdios: MDIOS handle
+  * @param hmdios MDIOS handle
   * @retval None
   */
 void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
@@ -458,8 +710,13 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
     /* Write register flag */
     if(HAL_MDIOS_GetWrittenRegAddress(hmdios) != RESET)
     {
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+        /* Call registered Write complete callback */
+        hmdios->WriteCpltCallback(hmdios);
+#else
       /* Write callback function */
       HAL_MDIOS_WriteCpltCallback(hmdios);
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
       
       /* Clear write register flag */
       HAL_MDIOS_ClearWriteRegAddress(hmdios, MDIOS_ALL_REG_FLAG);
@@ -472,8 +729,13 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
     /* Read register flag */
     if(HAL_MDIOS_GetReadRegAddress(hmdios) != RESET)
     {
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+      /* Call registered Read complete callback */
+      hmdios->ReadCpltCallback(hmdios);
+#else
       /* Read callback function  */
       HAL_MDIOS_ReadCpltCallback(hmdios);
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
       
       /* Clear read register flag */
       HAL_MDIOS_ClearReadRegAddress(hmdios, MDIOS_ALL_REG_FLAG);
@@ -486,8 +748,13 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
     /* All Errors Flag */
     if(__HAL_MDIOS_GET_ERROR_FLAG(hmdios, MDIOS_ALL_ERRORS_FLAG) !=RESET)
     {
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+      /* Call registered Error callback */
+      hmdios->ErrorCallback(hmdios);
+#else
       /* Error Callback */
       HAL_MDIOS_ErrorCallback(hmdios);
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
       
       /* Clear errors flag */
       __HAL_MDIOS_CLEAR_ERROR_FLAG(hmdios, MDIOS_ALL_ERRORS_FLAG);
@@ -497,9 +764,14 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
   /* check MDIOS WAKEUP exti flag */
   if(__HAL_MDIOS_WAKEUP_EXTI_GET_FLAG() != RESET)
   {
+#if (USE_HAL_MDIOS_REGISTER_CALLBACKS == 1)
+    /* Call registered WakeUp callback */
+    hmdios->WakeUpCallback(hmdios);
+#else
     /* MDIOS WAKEUP interrupt user callback */
     HAL_MDIOS_WakeUpCallback(hmdios);
-    
+#endif /* USE_HAL_MDIOS_REGISTER_CALLBACKS */
+
     /* Clear MDIOS WAKEUP Exti pending bit */
     __HAL_MDIOS_WAKEUP_EXTI_CLEAR_FLAG();
   }
@@ -507,7 +779,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Write Complete Callback
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_WriteCpltCallback(MDIOS_HandleTypeDef *hmdios)
@@ -522,7 +794,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Read Complete Callback
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_ReadCpltCallback(MDIOS_HandleTypeDef *hmdios)
@@ -537,7 +809,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief Error Callback
-  * @param hmdios: mdios handle
+  * @param hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_ErrorCallback(MDIOS_HandleTypeDef *hmdios)
@@ -552,7 +824,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  MDIOS WAKEUP interrupt callback
-  * @param hmdios: mdios handle
+  * @param hmdios mdios handle
   * @retval None
   */
 __weak void HAL_MDIOS_WakeUpCallback(MDIOS_HandleTypeDef *hmdios)
@@ -579,7 +851,7 @@ __weak void HAL_MDIOS_WakeUpCallback(MDIOS_HandleTypeDef *hmdios)
     [..]
     This subsection provides a set of functions allowing to control the MDIOS.
      (+) HAL_MDIOS_GetState() API, helpful to check in run-time the state. 
-     (+) HAL_MDIOS_GetError() API, returns the errors occured during data transfer. 
+     (+) HAL_MDIOS_GetError() API, returns the errors occurred during data transfer. 
         
 @endverbatim
   * @{
@@ -587,8 +859,8 @@ __weak void HAL_MDIOS_WakeUpCallback(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Gets MDIOS error flags 
-  * @param  hmdios: mdios handle
-  * @retval bit map of occured errors 
+  * @param  hmdios mdios handle
+  * @retval bit map of occurred errors 
   */
 uint32_t HAL_MDIOS_GetError(MDIOS_HandleTypeDef *hmdios)
 {
@@ -598,7 +870,7 @@ uint32_t HAL_MDIOS_GetError(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Return the MDIOS HAL state
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval MDIOS state
   */
 HAL_MDIOS_StateTypeDef HAL_MDIOS_GetState(MDIOS_HandleTypeDef *hmdios)

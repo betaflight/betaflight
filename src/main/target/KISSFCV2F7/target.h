@@ -26,6 +26,8 @@
 
 #define USBD_PRODUCT_STRING "KISSFCV2F7"
 
+#undef USE_CUSTOM_DEFAULTS_ADDRESS
+
 #define LED0_PIN   PA8  // blue
 #define LED1_PIN   PC8 // blingbling
 #define LED1_INVERTED

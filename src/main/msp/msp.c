@@ -24,6 +24,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <ctype.h>
 
 #include "platform.h"
 
@@ -32,6 +33,8 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 #include "build/version.h"
+
+#include "cli/cli.h"
 
 #include "common/axis.h"
 #include "common/bitarray.h"
@@ -48,6 +51,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#include "drivers/dshot.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
@@ -60,6 +64,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_msc.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
 #include "fc/config.h"
@@ -71,12 +76,13 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
+#include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -109,6 +115,7 @@
 #include "pg/rx_spi.h"
 #include "pg/usb.h"
 #include "pg/vcd.h"
+#include "pg/vtx_table.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -157,7 +164,7 @@ typedef enum {
 } mspSDCardState_e;
 
 typedef enum {
-    MSP_SDCARD_FLAG_SUPPORTTED   = 1
+    MSP_SDCARD_FLAG_SUPPORTED   = 1
 } mspSDCardFlags_e;
 
 typedef enum {
@@ -169,6 +176,15 @@ typedef enum {
 
 #define RTC_NOT_SUPPORTED 0xff
 
+typedef enum {
+    DEFAULTS_TYPE_BASE = 0,
+    DEFAULTS_TYPE_CUSTOM,
+} defaultsType_e;
+
+#ifdef USE_VTX_TABLE
+static bool vtxTableNeedsInit = false;
+#endif
+
 static bool featureMaskIsCopied = false;
 static uint32_t featureMaskCopy;
 
@@ -177,7 +193,7 @@ static uint32_t getFeatureMask(void)
     if (featureMaskIsCopied) {
         return featureMaskCopy;
     } else {
-        return featureMask();
+        return featureConfig()->enabledFeatures;
     }
 }
 
@@ -296,56 +312,57 @@ static void mspRebootFn(serialPort_t *serialPort)
 
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
-#ifdef USE_SDCARD
-    uint8_t flags = MSP_SDCARD_FLAG_SUPPORTTED;
+    uint8_t flags = 0;
     uint8_t state = 0;
+    uint8_t lastError = 0;
+    uint32_t freeSpace = 0;
+    uint32_t totalSpace = 0;
 
-    sbufWriteU8(dst, flags);
+#if defined(USE_SDCARD)
+    if (sdcardConfig()->mode != SDCARD_MODE_NONE) {
+        flags = MSP_SDCARD_FLAG_SUPPORTED;
 
-    // Merge the card and filesystem states together
-    if (!sdcard_isInserted()) {
-        state = MSP_SDCARD_STATE_NOT_PRESENT;
-    } else if (!sdcard_isFunctional()) {
-        state = MSP_SDCARD_STATE_FATAL;
-    } else {
-        switch (afatfs_getFilesystemState()) {
-        case AFATFS_FILESYSTEM_STATE_READY:
-            state = MSP_SDCARD_STATE_READY;
-            break;
-
-        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-            if (sdcard_isInitialized()) {
-                state = MSP_SDCARD_STATE_FS_INIT;
-            } else {
-                state = MSP_SDCARD_STATE_CARD_INIT;
-            }
-            break;
-
-        case AFATFS_FILESYSTEM_STATE_FATAL:
-        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
-        default:
+        // Merge the card and filesystem states together
+        if (!sdcard_isInserted()) {
+            state = MSP_SDCARD_STATE_NOT_PRESENT;
+        } else if (!sdcard_isFunctional()) {
             state = MSP_SDCARD_STATE_FATAL;
-            break;
+        } else {
+            switch (afatfs_getFilesystemState()) {
+            case AFATFS_FILESYSTEM_STATE_READY:
+                state = MSP_SDCARD_STATE_READY;
+                break;
+
+            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+             if (sdcard_isInitialized()) {
+                 state = MSP_SDCARD_STATE_FS_INIT;
+             } else {
+                 state = MSP_SDCARD_STATE_CARD_INIT;
+             }
+             break;
+
+            case AFATFS_FILESYSTEM_STATE_FATAL:
+            case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+            default:
+                state = MSP_SDCARD_STATE_FATAL;
+                break;
+            }
+        }
+
+        lastError = afatfs_getLastError();
+        // Write free space and total space in kilobytes
+        if (state == MSP_SDCARD_STATE_READY) {
+            freeSpace = afatfs_getContiguousFreeSpace() / 1024;
+            totalSpace = sdcard_getMetadata()->numBlocks / 2;
         }
     }
-
-    sbufWriteU8(dst, state);
-    sbufWriteU8(dst, afatfs_getLastError());
-    // Write free space and total space in kilobytes
-    if (state == MSP_SDCARD_STATE_READY) {
-        sbufWriteU32(dst, afatfs_getContiguousFreeSpace() / 1024);
-        sbufWriteU32(dst, sdcard_getMetadata()->numBlocks / 2); // Block size is half a kilobyte
-    } else {
-        sbufWriteU32(dst, 0);
-        sbufWriteU32(dst, 0);
-    }
-#else
-    sbufWriteU8(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU32(dst, 0);
-    sbufWriteU32(dst, 0);
 #endif
+
+    sbufWriteU8(dst, flags);
+    sbufWriteU8(dst, state);
+    sbufWriteU8(dst, lastError);
+    sbufWriteU32(dst, freeSpace);
+    sbufWriteU32(dst, totalSpace);
 }
 
 static void serializeDataflashSummaryReply(sbuf_t *dst)
@@ -514,6 +531,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define TARGET_HAS_VCP_BIT 0
 #define TARGET_HAS_SOFTSERIAL_BIT 1
 #define TARGET_IS_UNIFIED_BIT 2
+#define TARGET_HAS_FLASH_BOOTLOADER_BIT 3
+#define TARGET_SUPPORTS_CUSTOM_DEFAULTS_BIT 4
+#define TARGET_HAS_CUSTOM_DEFAULTS_BIT 5
 
         uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
@@ -524,6 +544,15 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #endif
 #if defined(USE_UNIFIED_TARGET)
         targetCapabilities |= 1 << TARGET_IS_UNIFIED_BIT;
+#endif
+#if defined(USE_FLASH_BOOT_LOADER)
+        targetCapabilities |= 1 << TARGET_HAS_FLASH_BOOTLOADER_BIT;
+#endif
+#if defined(USE_CUSTOM_DEFAULTS)
+        targetCapabilities |= 1 << TARGET_SUPPORTS_CUSTOM_DEFAULTS_BIT;
+        if (hasCustomDefaults()) {
+            targetCapabilities |= 1 << TARGET_HAS_CUSTOM_DEFAULTS_BIT;
+        }
 #endif
 
         sbufWriteU8(dst, targetCapabilities);
@@ -557,6 +586,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #endif
 
         sbufWriteU8(dst, MCU_TYPE_ID);
+
+        // Added in API version 1.42
+        sbufWriteU8(dst, systemConfig()->configurationState);
 
         break;
     }
@@ -611,7 +643,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
         // battery alerts
         sbufWriteU8(dst, (uint8_t)getBatteryState());
-		
+
         sbufWriteU16(dst, getBatteryVoltage()); // in 0.01V steps
         break;
     }
@@ -958,8 +990,8 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_MOTOR:
         for (unsigned i = 0; i < 8; i++) {
-#ifdef USE_PWM_OUTPUT
-            if (i >= MAX_SUPPORTED_MOTORS || !pwmGetMotors()[i].enabled) {
+#ifdef USE_MOTOR
+            if (!motorIsEnabled() || i >= MAX_SUPPORTED_MOTORS || !motorIsMotorEnabled(i)) {
                 sbufWriteU16(dst, 0);
                 continue;
             }
@@ -970,6 +1002,55 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
         }
 
+        break;
+
+    // Added in API version 1.42
+    case MSP_MOTOR_TELEMETRY:
+        sbufWriteU8(dst, getMotorCount());
+        for (unsigned i = 0; i < getMotorCount(); i++) {
+            int rpm = 0;
+            uint16_t invalidPct = 0;
+            uint8_t escTemperature = 0;  // degrees celcius
+            uint16_t escVoltage = 0;     // 0.01V per unit
+            uint16_t escCurrent = 0;     // 0.01A per unit
+            uint16_t escConsumption = 0; // mAh
+
+            bool rpmDataAvailable = false;
+
+#ifdef USE_DSHOT_TELEMETRY
+            if (motorConfig()->dev.useDshotTelemetry) {
+                rpm = (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount;
+                rpmDataAvailable = true;
+                invalidPct = 10000; // 100.00%
+#ifdef USE_DSHOT_TELEMETRY_STATS
+                if (isDshotMotorTelemetryActive(i)) {
+                    invalidPct = getDshotTelemetryMotorInvalidPercent(i);
+                }
+#endif
+            }
+#endif
+
+#ifdef USE_ESC_SENSOR
+            if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+                escSensorData_t *escData = getEscSensorData(i);
+                if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
+                    rpm = calcEscRpm(escData->rpm);
+                    rpmDataAvailable = true;
+                }
+                escTemperature = escData->temperature;
+                escVoltage = escData->voltage;
+                escCurrent = escData->current;
+                escConsumption = escData->consumption;
+            }
+#endif
+
+            sbufWriteU32(dst, (rpmDataAvailable ? rpm : 0));
+            sbufWriteU16(dst, invalidPct);
+            sbufWriteU8(dst, escTemperature);
+            sbufWriteU16(dst, escVoltage);
+            sbufWriteU16(dst, escCurrent);
+            sbufWriteU16(dst, escConsumption);
+        }
         break;
 
     case MSP_RC:
@@ -1101,6 +1182,21 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, motorConfig()->minthrottle);
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
+
+        // API 1.42
+        sbufWriteU8(dst, getMotorCount());
+        sbufWriteU8(dst, motorConfig()->motorPoleCount);
+#ifdef USE_DSHOT_TELEMETRY
+        sbufWriteU8(dst, motorConfig()->dev.useDshotTelemetry);
+#else
+        sbufWriteU8(dst, 0);
+#endif
+
+#ifdef USE_ESC_SENSOR
+        sbufWriteU8(dst, featureIsEnabled(FEATURE_ESC_SENSOR)); // ESC sensor available
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
 #ifdef USE_MAG
@@ -1110,6 +1206,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
 
 #if defined(USE_ESC_SENSOR)
+    // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
     case MSP_ESC_SENSOR_DATA:
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
             sbufWriteU8(dst, getMotorCount());
@@ -1236,7 +1333,12 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
-
+        // Added in MSP API 1.42
+#if defined(USE_RC_SMOOTHING_FILTER)
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_auto_factor);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
     case MSP_FAILSAFE_CONFIG:
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
@@ -1419,6 +1521,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gyroConfig()->gyroCalibrationDuration);
         sbufWriteU16(dst, gyroConfig()->gyro_offset_yaw);
         sbufWriteU8(dst, gyroConfig()->checkOverflow);
+        //Added in MSP API 1.42
+        sbufWriteU8(dst, systemConfig()->debug_mode);
+        sbufWriteU8(dst, DEBUG_COUNT);
 
         break;
     case MSP_FILTER_CONFIG :
@@ -1451,6 +1556,26 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
+#endif
+        // Added in MSP API 1.42
+#if defined(USE_GYRO_DATA_ANALYSE)
+        sbufWriteU8(dst, gyroConfig()->dyn_notch_range);
+        sbufWriteU8(dst, gyroConfig()->dyn_notch_width_percent);
+        sbufWriteU16(dst, gyroConfig()->dyn_notch_q);
+        sbufWriteU16(dst, gyroConfig()->dyn_notch_min_hz);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+#endif
+
+#if defined(USE_RPM_FILTER)
+        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_harmonics);
+        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_min);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
 #endif
 
         break;
@@ -1521,6 +1646,12 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
+#if defined(USE_ITERM_RELAX)
+        // Added in MSP API 1.42
+        sbufWriteU8(dst, currentPidProfile->iterm_relax_cutoff);
+#else
+        sbufWriteU8(dst, 0);
+#endif
 
         break;
     case MSP_SENSOR_CONFIG:
@@ -1545,7 +1676,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_VTX_CONFIG:
         {
             const vtxDevice_t *vtxDevice = vtxCommonDevice();
-            unsigned vtxStatus;
+            unsigned vtxStatus = 0;
             vtxDevType_e vtxType = VTXDEV_UNKNOWN;
             uint8_t deviceIsReady = 0;
             if (vtxDevice) {
@@ -1561,7 +1692,21 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             sbufWriteU16(dst, vtxSettingsConfig()->freq);
             sbufWriteU8(dst, deviceIsReady);
             sbufWriteU8(dst, vtxSettingsConfig()->lowPowerDisarm);
-            // future extensions here...
+
+            // API version 1.42
+            sbufWriteU16(dst, vtxSettingsConfig()->pitModeFreq);
+#ifdef USE_VTX_TABLE
+            sbufWriteU8(dst, 1);   // vtxtable is available
+            sbufWriteU8(dst, vtxTableConfig()->bands);
+            sbufWriteU8(dst, vtxTableConfig()->channels);
+            sbufWriteU8(dst, vtxTableConfig()->powerLevels);
+#else
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 0);
+#endif
+
         }
         break;
 #endif
@@ -1686,6 +1831,79 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *src, sb
             }
             dst->ptr = packetOut.buf.ptr;
         }
+        break;
+
+#ifdef USE_VTX_TABLE
+    case MSP_VTXTABLE_BAND:
+        {
+            const uint8_t band = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+            if (band > 0 && band <= VTX_TABLE_MAX_BANDS) {
+                sbufWriteU8(dst, band);  // band number (same as request)
+                sbufWriteU8(dst, VTX_TABLE_BAND_NAME_LENGTH); // band name length
+                for (int i = 0; i < VTX_TABLE_BAND_NAME_LENGTH; i++) { // band name bytes
+                    sbufWriteU8(dst, vtxTableConfig()->bandNames[band - 1][i]);
+                }
+                sbufWriteU8(dst, vtxTableConfig()->bandLetters[band - 1]); // band letter
+                sbufWriteU8(dst, vtxTableConfig()->isFactoryBand[band - 1]); // CUSTOM = 0; FACTORY = 1
+                sbufWriteU8(dst, vtxTableConfig()->channels); // number of channel frequencies to follow
+                for (int i = 0; i < vtxTableConfig()->channels; i++) { // the frequency for each channel
+                    sbufWriteU16(dst, vtxTableConfig()->frequency[band - 1][i]);
+                }
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+        }
+        break;
+
+    case MSP_VTXTABLE_POWERLEVEL:
+        {
+            const uint8_t powerLevel = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+            if (powerLevel > 0 && powerLevel <= VTX_TABLE_MAX_POWER_LEVELS) {
+                sbufWriteU8(dst, powerLevel);  // powerLevel number (same as request)
+                sbufWriteU16(dst, vtxTableConfig()->powerValues[powerLevel - 1]);
+                sbufWriteU8(dst, VTX_TABLE_POWER_LABEL_LENGTH); // powerLevel label length
+                for (int i = 0; i < VTX_TABLE_POWER_LABEL_LENGTH; i++) { // powerlevel label bytes
+                    sbufWriteU8(dst, vtxTableConfig()->powerLabels[powerLevel - 1][i]);
+                }
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+        }
+        break;
+#endif // USE_VTX_TABLE
+
+    case MSP_RESET_CONF:
+        {
+#if defined(USE_CUSTOM_DEFAULTS)
+            defaultsType_e defaultsType = DEFAULTS_TYPE_CUSTOM;
+#endif
+            if (sbufBytesRemaining(src) >= 1) {
+                // Added in MSP API 1.42
+#if defined(USE_CUSTOM_DEFAULTS)
+                defaultsType = sbufReadU8(src);
+#else
+                sbufReadU8(src);
+#endif
+            }
+
+            bool success = false;
+            if (!ARMING_FLAG(ARMED)) {
+#if defined(USE_CUSTOM_DEFAULTS)
+                success = resetEEPROM(defaultsType == DEFAULTS_TYPE_CUSTOM);
+#else
+                success = resetEEPROM(false);
+#endif
+
+                if (success && mspPostProcessFn) {
+                    rebootMode = MSP_REBOOT_FIRMWARE;
+                    *mspPostProcessFn = mspRebootFn;
+                }
+            }
+
+            // Added in API version 1.42
+            sbufWriteU8(dst, success);
+        }
+
         break;
     default:
         return MSP_RESULT_CMD_UNKNOWN;
@@ -1908,6 +2126,16 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->minthrottle = sbufReadU16(src);
         motorConfigMutable()->maxthrottle = sbufReadU16(src);
         motorConfigMutable()->mincommand = sbufReadU16(src);
+
+        // version 1.42
+        if (sbufBytesRemaining(src) >= 2) {
+            motorConfigMutable()->motorPoleCount = sbufReadU8(src);
+#if defined(USE_DSHOT_TELEMETRY)
+            motorConfigMutable()->dev.useDshotTelemetry = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
         break;
 
 #ifdef USE_GPS
@@ -2074,6 +2302,10 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfigMutable()->gyro_offset_yaw = sbufReadU16(src);
             gyroConfigMutable()->checkOverflow = sbufReadU8(src);
         }
+        if (sbufBytesRemaining(src) >= 1) {
+            //Added in MSP API 1.42
+            systemConfigMutable()->debug_mode = sbufReadU8(src);
+        }
 
         validateAndFixGyroConfig();
 
@@ -2117,6 +2349,28 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU16(src);
             sbufReadU16(src);
             sbufReadU16(src);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 8) {
+            // Added in MSP API 1.42
+#if defined(USE_GYRO_DATA_ANALYSE)
+            gyroConfigMutable()->dyn_notch_range = sbufReadU8(src);
+            gyroConfigMutable()->dyn_notch_width_percent = sbufReadU8(src);
+            gyroConfigMutable()->dyn_notch_q = sbufReadU16(src);
+            gyroConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
+#else
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
+
+#if defined(USE_RPM_FILTER)
+            rpmFilterConfigMutable()->gyro_rpm_notch_harmonics = sbufReadU8(src);
+            rpmFilterConfigMutable()->gyro_rpm_notch_min = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU8(src);
 #endif
         }
 
@@ -2207,6 +2461,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src);
 #endif
         }
+        if(sbufBytesRemaining(src) >= 1) {
+            // Added in MSP API 1.42
+#if defined(USE_ITERM_RELAX)
+            currentPidProfile->iterm_relax_cutoff = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
         pidInitConfig(currentPidProfile);
 
         break;
@@ -2226,13 +2488,6 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
-        break;
-
-    case MSP_RESET_CONF:
-        if (!ARMING_FLAG(ARMED)) {
-            resetEEPROM();
-            readEEPROM();
-        }
         break;
 
 #ifdef USE_ACC
@@ -2258,6 +2513,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             writeEEPROM();
         }
         readEEPROM();
+
+#ifdef USE_VTX_TABLE
+        if (vtxTableNeedsInit) {
+            vtxTableNeedsInit = false;
+            vtxTableInit();  // Reinitialize and refresh the in-memory copies
+        }
+#endif
+
         break;
 
 #ifdef USE_BLACKBOX
@@ -2300,19 +2563,145 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (sbufBytesRemaining(src) >= 2) {
                 vtxSettingsConfigMutable()->power = sbufReadU8(src);
+                const uint8_t newPitmode = sbufReadU8(src);
                 if (vtxType != VTXDEV_UNKNOWN) {
                     // Delegate pitmode to vtx directly
-                    const uint8_t newPitmode = sbufReadU8(src);
                     unsigned vtxCurrentStatus;
                     vtxCommonGetStatus(vtxDevice, &vtxCurrentStatus);
                     if ((bool)(vtxCurrentStatus & VTX_STATUS_PIT_MODE) != (bool)newPitmode) {
                         vtxCommonSetPitMode(vtxDevice, newPitmode);
                     }
-
-                    if (sbufBytesRemaining(src)) {
-                        vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadU8(src);
-                    }
                 }
+            }
+
+            if (sbufBytesRemaining(src)) {
+                    vtxSettingsConfigMutable()->lowPowerDisarm = sbufReadU8(src);
+            }
+
+            // API version 1.42 - this parameter kept separate since clients may already be supplying
+            if (sbufBytesRemaining(src) >= 2) {
+                vtxSettingsConfigMutable()->pitModeFreq = sbufReadU16(src);
+            }
+
+            // API version 1.42 - extensions for non-encoded versions of the band, channel or frequency
+            if (sbufBytesRemaining(src) >= 4) {
+                // Added standalone values for band, channel and frequency to move
+                // away from the flawed encoded combined method originally implemented.
+                uint8_t newBand = sbufReadU8(src);
+                const uint8_t newChannel = sbufReadU8(src);
+                uint16_t newFreq = sbufReadU16(src);
+                if (newBand) {
+                    newFreq = vtxCommonLookupFrequency(vtxDevice, newBand, newChannel);
+                }
+                vtxSettingsConfigMutable()->band = newBand;
+                vtxSettingsConfigMutable()->channel = newChannel;
+                vtxSettingsConfigMutable()->freq = newFreq;
+            }
+
+            // API version 1.42 - extensions for vtxtable support
+            if (sbufBytesRemaining(src) >= 4) {
+#ifdef USE_VTX_TABLE
+                const uint8_t newBandCount = sbufReadU8(src);
+                const uint8_t newChannelCount = sbufReadU8(src);
+                const uint8_t newPowerCount = sbufReadU8(src);
+
+                if ((newBandCount > VTX_TABLE_MAX_BANDS) ||
+                    (newChannelCount > VTX_TABLE_MAX_CHANNELS) ||
+                    (newPowerCount > VTX_TABLE_MAX_POWER_LEVELS)) {
+                    return MSP_RESULT_ERROR;
+                }
+                vtxTableConfigMutable()->bands = newBandCount;
+                vtxTableConfigMutable()->channels = newChannelCount;
+                vtxTableConfigMutable()->powerLevels = newPowerCount;
+
+                // boolean to determine whether the vtxtable should be cleared in
+                // expectation that the detailed band/channel and power level messages
+                // will follow to repopulate the tables
+                if (sbufReadU8(src)) {
+                    for (int i = 0; i < VTX_TABLE_MAX_BANDS; i++) {
+                        vtxTableConfigClearBand(vtxTableConfigMutable(), i);
+                        vtxTableConfigClearChannels(vtxTableConfigMutable(), i, 0);
+                    }
+                    vtxTableConfigClearPowerLabels(vtxTableConfigMutable(), 0);
+                    vtxTableConfigClearPowerValues(vtxTableConfigMutable(), 0);
+                }
+#else
+                sbufReadU8(src);
+                sbufReadU8(src);
+                sbufReadU8(src);
+                sbufReadU8(src);
+#endif
+            }
+        }
+        break;
+#endif
+
+#ifdef USE_VTX_TABLE
+    case MSP_SET_VTXTABLE_BAND:
+        {
+            char bandName[VTX_TABLE_BAND_NAME_LENGTH + 1];
+            memset(bandName, 0, VTX_TABLE_BAND_NAME_LENGTH + 1);
+            uint16_t frequencies[VTX_TABLE_MAX_CHANNELS];
+            const uint8_t band = sbufReadU8(src);
+            const uint8_t bandNameLength = sbufReadU8(src);
+            for (int i = 0; i < bandNameLength; i++) {
+                const char nameChar = sbufReadU8(src);
+                if (i < VTX_TABLE_BAND_NAME_LENGTH) {
+                    bandName[i] = toupper(nameChar);
+                }
+            }
+            const char bandLetter = toupper(sbufReadU8(src));
+            const bool isFactoryBand = (bool)sbufReadU8(src);
+            const uint8_t channelCount = sbufReadU8(src);
+            for (int i = 0; i < channelCount; i++) {
+                const uint16_t frequency = sbufReadU16(src);
+                if (i < vtxTableConfig()->channels) {
+                    frequencies[i] = frequency;
+                }
+            }
+
+            if (band > 0 && band <= vtxTableConfig()->bands) {
+                vtxTableStrncpyWithPad(vtxTableConfigMutable()->bandNames[band - 1], bandName, VTX_TABLE_BAND_NAME_LENGTH);
+                vtxTableConfigMutable()->bandLetters[band - 1] = bandLetter;
+                vtxTableConfigMutable()->isFactoryBand[band - 1] = isFactoryBand;
+                for (int i = 0; i < vtxTableConfig()->channels; i++) {
+                    vtxTableConfigMutable()->frequency[band - 1][i] = frequencies[i];
+                }
+                // If this is the currently selected band then reset the frequency
+                if (band == vtxSettingsConfig()->band) {
+                    uint16_t newFreq = 0;
+                    if (vtxSettingsConfig()->channel > 0 && vtxSettingsConfig()->channel <= vtxTableConfig()->channels) {
+                        newFreq = frequencies[vtxSettingsConfig()->channel - 1];
+                    }
+                    vtxSettingsConfigMutable()->freq = newFreq;
+                }
+                vtxTableNeedsInit = true;  // reinintialize vtxtable after eeprom write
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+        }
+        break;
+
+    case MSP_SET_VTXTABLE_POWERLEVEL:
+        {
+            char powerLevelLabel[VTX_TABLE_POWER_LABEL_LENGTH + 1];
+            memset(powerLevelLabel, 0, VTX_TABLE_POWER_LABEL_LENGTH + 1);
+            const uint8_t powerLevel = sbufReadU8(src);
+            const uint16_t powerValue = sbufReadU16(src);
+            const uint8_t powerLevelLabelLength = sbufReadU8(src);
+            for (int i = 0; i < powerLevelLabelLength; i++) {
+                const char labelChar = sbufReadU8(src);
+                if (i < VTX_TABLE_POWER_LABEL_LENGTH) {
+                    powerLevelLabel[i] = toupper(labelChar);
+                }
+            }
+
+            if (powerLevel > 0 && powerLevel <= vtxTableConfig()->powerLevels) {
+                vtxTableConfigMutable()->powerValues[powerLevel - 1] = powerValue;
+                vtxTableStrncpyWithPad(vtxTableConfigMutable()->powerLabels[powerLevel - 1], powerLevelLabel, VTX_TABLE_POWER_LABEL_LENGTH);
+                vtxTableNeedsInit = true;  // reinintialize vtxtable after eeprom write
+            } else {
+                return MSP_RESULT_ERROR;
             }
         }
         break;
@@ -2468,6 +2857,14 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // Kept separate from the section above to work around missing Configurator support in version < 10.4.2
 #if defined(USE_USB_CDC_HID)
             usbDevConfigMutable()->type = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            // Added in MSP API 1.42
+#if defined(USE_RC_SMOOTHING_FILTER)
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor, sbufReadU8(src));
 #else
             sbufReadU8(src);
 #endif

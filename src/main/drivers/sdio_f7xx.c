@@ -47,22 +47,6 @@
 
 #include "build/debug.h"
 
-
-/* Define(s) --------------------------------------------------------------------------------------------------------*/
-
-//#define DMA_CHANNEL_4                   ((uint32_t)0x08000000)
-#define DMA_MEMORY_TO_PERIPH            ((uint32_t)DMA_SxCR_DIR_0)
-//#define DMA_PERIPH_TO_MEMORY            ((uint32_t)0x00)
-#define DMA_MINC_ENABLE                 ((uint32_t)DMA_SxCR_MINC)
-#define DMA_MDATAALIGN_WORD             ((uint32_t)DMA_SxCR_MSIZE_1)
-#define DMA_PDATAALIGN_WORD             ((uint32_t)DMA_SxCR_PSIZE_1)
-#define DMA_PRIORITY_LOW                ((uint32_t)0x00000000U)
-#define DMA_PRIORITY_MEDIUM             ((uint32_t)DMA_SxCR_PL_0)
-#define DMA_PRIORITY_HIGH               ((uint32_t)DMA_SxCR_PL_1)
-#define DMA_PRIORITY_VERY_HIGH          ((uint32_t)DMA_SxCR_PL)
-#define DMA_MBURST_INC4                 ((uint32_t)DMA_SxCR_MBURST_0)
-#define DMA_PBURST_INC4                 ((uint32_t)DMA_SxCR_PBURST_0)
-
 #define BLOCK_SIZE                      ((uint32_t)(512))
 
 #define IFCR_CLEAR_MASK_STREAM3         (DMA_LIFCR_CTCIF3 | DMA_LIFCR_CHTIF3 | DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 | DMA_LIFCR_CFEIF3)
@@ -906,7 +890,7 @@ SD_Error_t SD_GetCardInfo(void)
         SD_CardInfo.CardCapacity  = (SD_CardInfo.SD_csd.DeviceSize + 1) ;
         SD_CardInfo.CardCapacity *= (1 << (SD_CardInfo.SD_csd.DeviceSizeMul + 2));
         SD_CardInfo.CardBlockSize = 1 << (SD_CardInfo.SD_csd.RdBlockLen);
-        SD_CardInfo.CardCapacity *= SD_CardInfo.CardBlockSize;
+        SD_CardInfo.CardCapacity = SD_CardInfo.CardCapacity * SD_CardInfo.CardBlockSize / 512; // In 512 byte blocks
     }
     else if(SD_CardType == SD_HIGH_CAPACITY)
     {

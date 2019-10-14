@@ -39,6 +39,36 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+#define UART_BUFFERS(n) \
+  volatile uint8_t uart ## n ## RxBuffer[UART_RX_BUFFER_SIZE]; \
+  volatile uint8_t uart ## n ## TxBuffer[UART_TX_BUFFER_SIZE]; struct dummy_s
+
+#ifdef USE_UART1
+UART_BUFFERS(1);
+#endif
+
+#ifdef USE_UART2
+UART_BUFFERS(2);
+#endif
+
+#ifdef USE_UART3
+UART_BUFFERS(3);
+#endif
+
+#ifdef USE_UART4
+UART_BUFFERS(4);
+#endif
+
+#ifdef USE_UART5
+UART_BUFFERS(5);
+#endif
+
+#ifdef USE_UART6
+UART_BUFFERS(6);
+#endif
+
+#undef UART_BUFFERS
+
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
@@ -51,13 +81,25 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1_TX_DMA
         .txDMAResource = (dmaResource_t *)DMA2_Stream7,
 #endif
-        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) } },
-        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) } },
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) }, 
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PB3) },
+#endif
+            },
+        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PB6) },
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PA15) },
+#endif
+            },
         .af = GPIO_AF_USART1,
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART1
+        .rxPriority = NVIC_PRIO_SERIALUART1,
+        .txBuffer = uart1TxBuffer,
+        .rxBuffer = uart1RxBuffer,
+        .txBufferSize = sizeof(uart1TxBuffer),
+        .rxBufferSize = sizeof(uart1RxBuffer),
     },
 #endif
 
@@ -78,7 +120,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART2
+        .rxPriority = NVIC_PRIO_SERIALUART2,
+        .txBuffer = uart2TxBuffer,
+        .rxBuffer = uart2RxBuffer,
+        .txBufferSize = sizeof(uart2TxBuffer),
+        .rxBufferSize = sizeof(uart2RxBuffer),
     },
 #endif
 
@@ -99,7 +145,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB1(USART3),
         .irqn = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART3
+        .rxPriority = NVIC_PRIO_SERIALUART3,
+        .txBuffer = uart3TxBuffer,
+        .rxBuffer = uart3RxBuffer,
+        .txBufferSize = sizeof(uart3TxBuffer),
+        .rxBufferSize = sizeof(uart3RxBuffer),
     },
 #endif
 
@@ -120,7 +170,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB1(UART4),
         .irqn = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART4
+        .rxPriority = NVIC_PRIO_SERIALUART4,
+        .txBuffer = uart4TxBuffer,
+        .rxBuffer = uart4RxBuffer,
+        .txBufferSize = sizeof(uart4TxBuffer),
+        .rxBufferSize = sizeof(uart4RxBuffer),
     },
 #endif
 
@@ -141,7 +195,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB1(UART5),
         .irqn = UART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART5
+        .rxPriority = NVIC_PRIO_SERIALUART5,
+        .txBuffer = uart5TxBuffer,
+        .rxBuffer = uart5RxBuffer,
+        .txBufferSize = sizeof(uart5TxBuffer),
+        .rxBufferSize = sizeof(uart5RxBuffer),
     },
 #endif
 
@@ -156,13 +214,29 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6_TX_DMA
         .txDMAResource = (dmaResource_t *)DMA2_Stream6,
 #endif
-        .rxPins = { { DEFIO_TAG_E(PC7) }, { DEFIO_TAG_E(PG9) } },
-        .txPins = { { DEFIO_TAG_E(PC6) }, { DEFIO_TAG_E(PG14) } },
+        .rxPins = { { DEFIO_TAG_E(PC7) },
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PA12) },
+#else
+            { DEFIO_TAG_E(PG9) },
+#endif
+            },
+        .txPins = { { DEFIO_TAG_E(PC6) },
+#if defined (STM32F411xE)
+            { DEFIO_TAG_E(PA11) },
+#else
+            { DEFIO_TAG_E(PG14) },
+#endif
+            },
         .af = GPIO_AF_USART6,
         .rcc = RCC_APB2(USART6),
         .irqn = USART6_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART6
+        .rxPriority = NVIC_PRIO_SERIALUART6,
+        .txBuffer = uart6TxBuffer,
+        .rxBuffer = uart6RxBuffer,
+        .txBufferSize = sizeof(uart6TxBuffer),
+        .rxBufferSize = sizeof(uart6RxBuffer),
     },
 #endif
 };
@@ -211,10 +285,10 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->port.baudRate = baudRate;
 
-    s->port.rxBuffer = uart->rxBuffer;
-    s->port.txBuffer = uart->txBuffer;
-    s->port.rxBufferSize = sizeof(uart->rxBuffer);
-    s->port.txBufferSize = sizeof(uart->txBuffer);
+    s->port.rxBuffer = hardware->rxBuffer;
+    s->port.txBuffer = hardware->txBuffer;
+    s->port.rxBufferSize = hardware->rxBufferSize;
+    s->port.txBufferSize = hardware->txBufferSize;
 
     s->USARTx = hardware->reg;
 

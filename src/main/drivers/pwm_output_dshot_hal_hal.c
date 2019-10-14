@@ -151,7 +151,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
     /*If there is a command ready to go overwrite the value and send that instead*/
     if (dshotCommandIsProcessing()) {
-        value = pwmGetDshotCommand(index);
+        value = dshotCommandGetCurrent(index);
         if (value) {
             motor->protocolControl.requestTelemetry = true;
         }
@@ -233,7 +233,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     dmaResource_t *dmaRef = NULL;
     uint32_t dmaChannel;
@@ -266,7 +266,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
 
     if (dmaRef == NULL) {
-        return;
+        return false;
     }
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
@@ -274,12 +274,19 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     TIM_TypeDef *timer = timerHardware->tim; // "timer" is confusing; "tim"?
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
+    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULLDOWN : GPIO_PULLUP;
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        output ^= TIMER_OUTPUT_INVERTED;
+    }
+#endif
 
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode);
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
+    IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     // Configure time base
 
@@ -298,7 +305,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
         if (result != HAL_OK) {
             /* Initialization Error */
-            return;
+            return false;
         }
     }
 
@@ -334,7 +341,7 @@ P    -    High -     High -
 
     if (result != HAL_OK) {
         /* Configuration Error */
-        return;
+        return false;
     }
 
     // DMA setup
@@ -347,7 +354,7 @@ P    -    High -     High -
 
         if (!configureTimer) {
             motor->configured = true;
-            return;
+            return false;
         }
     } else
 #endif
@@ -418,7 +425,7 @@ P    -    High -     High -
 
     if (result != HAL_OK) {
         /* Initialization Error */
-        return;
+        return false;
     }
 
     dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
@@ -444,9 +451,11 @@ P    -    High -     High -
 
     if (result != HAL_OK) {
         /* Starting PWM generation Error */
-        return;
+        return false;
     }
 
     motor->configured = true;
+
+    return true;
 }
 #endif

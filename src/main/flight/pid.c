@@ -49,6 +49,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
+#include "flight/interpolated_setpoint.h"
 
 #include "io/gps.h"
 
@@ -129,15 +130,15 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 42, 60, 35, 70 },
-            [PID_PITCH] = { 46, 70, 38, 75 },
-            [PID_YAW] =   { 30, 80, 0, 70 },
+            [PID_ROLL] =  { 42, 85, 35, 90 },
+            [PID_PITCH] = { 46, 90, 38, 95 },
+            [PID_YAW] =   { 30, 90, 0, 90 },
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -187,7 +188,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
                                     // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                     // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
         .dterm_lowpass2_hz = 150,   // second Dterm LPF ON by default
-        .dterm_filter_type = FILTER_BIQUAD,
+        .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
         .dyn_lpf_dterm_min_hz = 70,
         .dyn_lpf_dterm_max_hz = 170,
@@ -204,8 +205,17 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .d_min_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
-        .transient_throttle_limit = 15,
+        .transient_throttle_limit = 0,
         .profileName = { 0 },
+        .idle_min_rpm = 0,
+        .idle_adjustment_speed = 50,
+        .idle_p = 50,
+        .idle_pid_limit = 200,
+        .idle_max_increase = 150,
+        .ff_interpolate_sp = FF_INTERPOLATE_AVG,
+        .ff_spike_limit = 60,
+        .ff_max_rate_limit = 100,
+        .ff_boost = 15,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -280,6 +290,7 @@ static FAST_RAM_ZERO_INIT float acLimit;
 static FAST_RAM_ZERO_INIT float acErrorLimit;
 static FAST_RAM_ZERO_INIT float acCutoff;
 static FAST_RAM_ZERO_INIT pt1Filter_t acLpf[XYZ_AXIS_COUNT];
+static FAST_RAM_ZERO_INIT float oldSetpointCorrection[XYZ_AXIS_COUNT];
 #endif
 
 #if defined(USE_D_MIN)
@@ -301,6 +312,21 @@ static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
 #endif
 
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
+
+static FAST_RAM_ZERO_INIT float ffBoostFactor;
+static FAST_RAM_ZERO_INIT float ffSpikeLimitInverse;
+
+float pidGetSpikeLimitInverse()
+{
+    return ffSpikeLimitInverse;
+}
+
+
+float pidGetFfBoostFactor()
+{
+    return ffBoostFactor;
+}
+
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -438,6 +464,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     pt1FilterInit(&antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, dT));
+
+    ffBoostFactor = (float)pidProfile->ff_boost / 10.0f;
+    ffSpikeLimitInverse = pidProfile->ff_spike_limit ? 1.0f / ((float)pidProfile->ff_spike_limit / 10.0f) : 0.0f;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -558,6 +587,10 @@ static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
 static FAST_RAM_ZERO_INIT float dMinPercent[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT float dMinGyroGain;
 static FAST_RAM_ZERO_INIT float dMinSetpointGain;
+#endif
+
+#ifdef USE_INTERPOLATED_SP
+static FAST_RAM_ZERO_INIT ffInterpolationType_t ffFromInterpolatedSetpoint;
 #endif
 
 void pidInitConfig(const pidProfile_t *pidProfile)
@@ -702,6 +735,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 #if defined(USE_AIRMODE_LPF)
     airmodeThrottleOffsetLimit = pidProfile->transient_throttle_limit / 100.0f;
+#endif
+#ifdef USE_INTERPOLATED_SP
+    ffFromInterpolatedSetpoint = pidProfile->ff_interpolate_sp;
+    interpolatedSpInit(pidProfile);
 #endif
 }
 
@@ -1207,6 +1244,9 @@ static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
+#ifdef USE_INTERPOLATED_SP
+    static FAST_RAM_ZERO_INIT uint32_t lastFrameNumber;
+#endif
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
@@ -1281,6 +1321,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
+#ifdef USE_INTERPOLATED_SP
+    bool newRcFrame = false;
+    if (lastFrameNumber != getRcFrameNumber()) {
+        lastFrameNumber = getRcFrameNumber();
+        newRcFrame = true;
+    }
+#endif
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1331,12 +1378,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
+#ifdef USE_ABSOLUTE_CONTROL
+        float uncorrectedSetpoint = currentPidSetpoint;
+#endif
 
 #if defined(USE_ITERM_RELAX)
         if (!launchControlActive && !inCrashRecoveryMode) {
             applyItermRelax(axis, previousIterm, gyroRate, &itermErrorRate, &currentPidSetpoint);
             errorRate = currentPidSetpoint - gyroRate;
         }
+#endif
+#ifdef USE_ABSOLUTE_CONTROL
+        float setpointCorrection = currentPidSetpoint - uncorrectedSetpoint;
 #endif
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
@@ -1360,8 +1413,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
+#ifdef USE_INTERPOLATED_SP
+        if (ffFromInterpolatedSetpoint) {
+            pidSetpointDelta = interpolatedSpApply(axis, newRcFrame, ffFromInterpolatedSetpoint);
+        } else {
+            pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
+        }
+#else
         pidSetpointDelta = currentPidSetpoint - previousPidSetpoint[axis];
+#endif
         previousPidSetpoint[axis] = currentPidSetpoint;
+
 
 #ifdef USE_RC_SMOOTHING_FILTER
         pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
@@ -1411,12 +1473,25 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
+#ifdef USE_ABSOLUTE_CONTROL
+        // include abs control correction in FF
+        pidSetpointDelta += setpointCorrection - oldSetpointCorrection[axis];
+        oldSetpointCorrection[axis] = setpointCorrection;
+#endif
+
         // Only enable feedforward for rate mode and if launch control is inactive
         const float feedforwardGain = (flightModeFlags || launchControlActive) ? 0.0f : pidCoefficient[axis].Kf;
         if (feedforwardGain > 0) {
             // no transition if feedForwardTransition == 0
             float transition = feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * feedForwardTransition) : 1;
-            pidData[axis].F = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
+            float feedForward = feedforwardGain * transition * pidSetpointDelta * pidFrequency;
+
+#ifdef USE_INTERPOLATED_SP
+            pidData[axis].F = shouldApplyFfLimits(axis) ?
+                applyFfLimit(axis, feedForward, pidCoefficient[axis].Kp, currentPidSetpoint) : feedForward;
+#else
+            pidData[axis].F = feedForward;
+#endif
         } else {
             pidData[axis].F = 0;
         }
@@ -1538,4 +1613,14 @@ void pidSetItermReset(bool enabled)
 float pidGetPreviousSetpoint(int axis)
 {
     return previousPidSetpoint[axis];
+}
+
+float pidGetDT()
+{
+    return dT;
+}
+
+float pidGetPidFrequency()
+{
+    return pidFrequency;
 }

@@ -2379,6 +2379,10 @@ __STATIC_INLINE uint32_t LL_SPI_IsEnabledDMAReq_TX(SPI_TypeDef *SPIx)
   * @}
   */
 
+// Avoid strict aliasing warnings from deferencing type-punned pointers
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+
 /** @defgroup SPI_LL_EF_DATA_Management DATA_Management
   * @{
   */
@@ -2451,6 +2455,8 @@ __STATIC_INLINE void LL_SPI_TransmitData32(SPI_TypeDef *SPIx, uint32_t TxData)
 {
   *((__IO uint32_t *)&SPIx->TXDR) = TxData;
 }
+
+#pragma GCC diagnostic pop
 
 /**
   * @brief  Set polynomial for CRC calcul

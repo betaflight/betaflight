@@ -27,8 +27,12 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "io/serial.h"
+
+#include "pg/pg.h"
+
+#include "rx/rx.h"
+
 #include "telemetry/ibus_shared.h"
 
 typedef enum {
@@ -90,7 +94,7 @@ PG_DECLARE(telemetryConfig_t, telemetryConfig);
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryInit(void);
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig);
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider);
 
 void telemetryCheckState(void);
 void telemetryProcess(uint32_t currentTime);

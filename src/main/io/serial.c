@@ -290,7 +290,7 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
             if ((portConfig->functionMask & FUNCTION_MSP) && (portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
                 // MSP & telemetry
 #ifdef USE_TELEMETRY
-            } else if (telemetryCheckRxPortShared(portConfig)) {
+            } else if (telemetryCheckRxPortShared(portConfig, rxConfig()->serialrx_provider)) {
                 // serial RX & telemetry
 #endif
             } else {

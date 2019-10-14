@@ -22,6 +22,8 @@
 
 #if defined(USE_SDCARD_SDIO)
 
+#include "drivers/io.h"
+#include "drivers/sdio.h"
 #include "pg/pg_ids.h"
 #include "pg/sdio.h"
 
@@ -30,8 +32,22 @@ PG_REGISTER_WITH_RESET_TEMPLATE(sdioConfig_t, sdioConfig, PG_SDIO_CONFIG, 0);
 PG_RESET_TEMPLATE(sdioConfig_t, sdioConfig,
     .clockBypass = 0,
     .useCache = 0,
-    .use4BitWidth = true,
+    .use4BitWidth = SDIO_USE_4BIT,
     .dmaopt = SDCARD_SDIO_DMA_OPT,
+    .device = SDIO_DEV_TO_CFG(SDIO_DEVICE),
 );
+
+#ifdef STM32H7
+PG_REGISTER_WITH_RESET_TEMPLATE(sdioPinConfig_t, sdioPinConfig, PG_SDIO_PIN_CONFIG, 0);
+
+PG_RESET_TEMPLATE(sdioPinConfig_t, sdioPinConfig,
+    .CKPin = IO_TAG(SDIO_CK_PIN),
+    .CMDPin = IO_TAG(SDIO_CMD_PIN),
+    .D0Pin = IO_TAG(SDIO_D0_PIN),
+    .D1Pin = IO_TAG(SDIO_D1_PIN),
+    .D2Pin = IO_TAG(SDIO_D2_PIN),
+    .D3Pin = IO_TAG(SDIO_D3_PIN),
+);
+#endif
 
 #endif

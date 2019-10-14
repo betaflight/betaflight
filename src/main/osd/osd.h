@@ -257,6 +257,7 @@ typedef struct osdConfig_s {
     char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
     uint16_t link_quality_alarm;
     uint8_t rssi_dbm_alarm;
+    uint8_t gps_sats_show_hdop;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);

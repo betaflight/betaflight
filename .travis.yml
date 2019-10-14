@@ -3,17 +3,7 @@ os:
 
 sudo: false
 
-dist: trusty
-
-addons:
-  apt:
-    packages:
-      - lcov
-      - build-essential
-      - git
-      - libc6-i386
-      - time
-      - libblocksruntime-dev
+dist: bionic
 
 git:
   depth: 5
@@ -42,6 +32,8 @@ env:
 #  - TARGET=...
 
 before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y lcov libc6-i386 libblocksruntime-dev
   - |
     echo "Target branch: $TRAVIS_BRANCH"
     echo "Commit range: $TRAVIS_COMMIT_RANGE"
@@ -50,7 +42,7 @@ before_install:
     else
       COMMIT_RANGE="$TRAVIS_COMMIT_RANGE"
     fi
-    git diff --name-only $COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|support|unified_targets))/' || {
+    git diff --name-only $COMMIT_RANGE | grep -qvE '(\.md$)|(^(docs|support))/' || {
       echo "Only files not used in the build process were updated, aborting."
       exit
     }

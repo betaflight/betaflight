@@ -83,7 +83,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_OCInitTypeDef  TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    const timerHardware_t *timerHardware = timerGetByTag(ioTag);
+    const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_LED_STRIP, 0);
 
     if (timerHardware == NULL) {
         return false;

@@ -57,6 +57,7 @@
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
+#include "cli/settings.h"
 
 //
 // PID
@@ -351,6 +352,7 @@ static CMS_Menu cmsx_menuLaunchControl = {
 #endif
 
 static uint8_t  cmsx_feedForwardTransition;
+static uint8_t  cmsx_ff_boost;
 static uint8_t  cmsx_angleStrength;
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonTransition;
@@ -365,6 +367,12 @@ static uint8_t  cmsx_d_min_gain;
 static uint8_t  cmsx_d_min_advance;
 #endif
 
+#ifdef USE_ITERM_RELAX
+static uint8_t cmsx_iterm_relax;
+static uint8_t cmsx_iterm_relax_type;
+static uint8_t cmsx_iterm_relax_cutoff;
+#endif
+
 static long cmsx_profileOtherOnEnter(void)
 {
     setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
@@ -372,6 +380,7 @@ static long cmsx_profileOtherOnEnter(void)
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
     cmsx_feedForwardTransition  = pidProfile->feedForwardTransition;
+    cmsx_ff_boost = pidProfile->ff_boost;
 
     cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
     cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
@@ -392,6 +401,12 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_d_min_advance = pidProfile->d_min_advance;
 #endif
 
+#ifdef USE_ITERM_RELAX
+    cmsx_iterm_relax = pidProfile->iterm_relax;
+    cmsx_iterm_relax_type = pidProfile->iterm_relax_type;
+    cmsx_iterm_relax_cutoff = pidProfile->iterm_relax_cutoff;
+#endif
+
     return 0;
 }
 
@@ -402,6 +417,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidProfile->feedForwardTransition = cmsx_feedForwardTransition;
     pidInitConfig(currentPidProfile);
+    pidProfile->ff_boost = cmsx_ff_boost;
 
     pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
     pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
@@ -422,6 +438,12 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->d_min_advance = cmsx_d_min_advance;
 #endif
 
+#ifdef USE_ITERM_RELAX
+    pidProfile->iterm_relax = cmsx_iterm_relax;
+    pidProfile->iterm_relax_type = cmsx_iterm_relax_type;
+    pidProfile->iterm_relax_cutoff = cmsx_iterm_relax_cutoff;
+#endif
+
     initEscEndpoints();
     return 0;
 }
@@ -430,6 +452,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "FF TRANS",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
+    { "FF BOOST",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_boost,               0,     50,   1  }   , 0 },
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }   , 0 },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }   , 0 },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }   , 0 },
@@ -437,6 +460,11 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "AG THR",      OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_itermThrottleThreshold, 20,   1000,  1  }   , 0 },
 #ifdef USE_THROTTLE_BOOST
     { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }   , 0 },
+#endif
+#ifdef USE_ITERM_RELAX
+    { "I_RELAX",         OME_TAB,    NULL, &(OSD_TAB_t)     { &cmsx_iterm_relax,        ITERM_RELAX_COUNT - 1,      lookupTableItermRelax       }, 0 },
+    { "I_RELAX TYPE",    OME_TAB,    NULL, &(OSD_TAB_t)     { &cmsx_iterm_relax_type,   ITERM_RELAX_TYPE_COUNT - 1, lookupTableItermRelaxType   }, 0 },
+    { "I_RELAX CUTOFF",  OME_UINT8,  NULL, &(OSD_UINT8_t)   { &cmsx_iterm_relax_cutoff, 1, 100, 1 }, 0 },
 #endif
 #ifdef USE_LAUNCH_CONTROL
     {"LAUNCH CONTROL", OME_Submenu, cmsMenuChange, &cmsx_menuLaunchControl, 0 },

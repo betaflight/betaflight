@@ -135,6 +135,9 @@ typedef enum {
 #endif
     TABLE_GYRO_FILTER_DEBUG,
     TABLE_POSITION_ALT_SOURCE,
+    TABLE_OFF_ON_AUTO,
+    TABLE_INTERPOLATED_SP,
+    TABLE_DSHOT_BITBANGED_TIMER,
 
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
@@ -245,3 +248,7 @@ extern const char * const lookupTableRangefinderHardware[];
 extern const char * const lookupTableLedstripColors[];
 
 extern const char * const lookupTableRescueAltitudeMode[];
+
+extern const char * const lookupTableItermRelax[];
+
+extern const char * const lookupTableItermRelaxType[];

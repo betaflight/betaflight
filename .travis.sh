@@ -67,9 +67,7 @@ elif [ $TARGET ] ; then
 
 elif [ $GOAL ] ; then
     if [ "test-all" == "$GOAL" ] ; then
-        $MAKE check-target-independence || exit $?
-        $MAKE check-fastram-usage-correctness || exit $?
-        $MAKE check-platform-included || exit $?
+        $MAKE checks || exit $?
     else
 	 export V=0
     fi

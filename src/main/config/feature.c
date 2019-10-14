@@ -64,8 +64,3 @@ void featureDisableAll(void)
 {
     featureConfigMutable()->enabledFeatures = 0;
 }
-
-uint32_t featureMask(void)
-{
-    return featureConfig()->enabledFeatures;
-}

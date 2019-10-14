@@ -80,6 +80,12 @@ extern "C" {
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
     void disarm(void) { }
+    float applyFFLimit(int axis, float value, float Kp, float currentPidSetpoint) {
+        UNUSED(axis);
+        UNUSED(Kp);
+        UNUSED(currentPidSetpoint);
+        return value;
+    }
 }
 
 pidProfile_t *pidProfile;

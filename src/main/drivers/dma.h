@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "resource.h"
+#include "drivers/resource.h"
 
 // dmaResource_t is a opaque data type which represents a single DMA engine,
 // called and implemented differently in different families of STM32s.
@@ -52,7 +52,7 @@ typedef struct dmaChannelDescriptor_s {
     uint8_t                     flagsShift;
     IRQn_Type                   irqN;
     uint32_t                    userParam;
-    resourceOwner_e             owner;
+    resourceOwner_t             owner;
     uint8_t                     resourceIndex;
     uint32_t                    completeFlag;
 } dmaChannelDescriptor_t;
@@ -102,14 +102,15 @@ typedef enum {
     .flagsShift = f, \
     .irqN = d ## _Stream ## s ## _IRQn, \
     .userParam = 0, \
-    .owner = 0, \
-    .resourceIndex = 0 \
+    .owner.owner = 0, \
+    .owner.resourceIndex = 0 \
     } 
 
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
                                                                 const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
-                                                                if (dmaDescriptors[index].irqHandlerCallback)\
-                                                                    dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);\
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
                                                             }
 
 #define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
@@ -163,14 +164,15 @@ typedef enum {
     .flagsShift = f, \
     .irqN = d ## _Channel ## c ## _IRQn, \
     .userParam = 0, \
-    .owner = 0, \
-    .resourceIndex = 0 \
+    .owner.owner = 0, \
+    .owner.resourceIndex = 0 \
     }
 
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
                                                                         const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
-                                                                        if (dmaDescriptors[index].irqHandlerCallback)\
-                                                                            dmaDescriptors[index].irqHandlerCallback(&dmaDescriptors[index]);\
+                                                                        dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                        if (handler) \
+                                                                            handler(&dmaDescriptors[index]); \
                                                                     }
 
 #define DMA_CLEAR_FLAG(d, flag) d->dma->IFCR = (flag << d->flagsShift)
@@ -212,8 +214,7 @@ dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 
-resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier);
-uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier);
+const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier);
 dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier);
 
 //
@@ -226,8 +227,8 @@ dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e ident
 
 #define xLL_EX_DMA_DeInit(dmaResource) LL_EX_DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_Init(dmaResource, initstruct) LL_EX_DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initstruct)
-#define xLL_EX_DMA_DisableStream(dmaResource) LL_EX_DMA_DisableStream((DMA_ARCH_TYPE *)(dmaResource))
-#define xLL_EX_DMA_EnableStream(dmaResource) LL_EX_DMA_EnableStream((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_DisableResource(dmaResource) LL_EX_DMA_DisableResource((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_EnableResource(dmaResource) LL_EX_DMA_EnableResource((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))

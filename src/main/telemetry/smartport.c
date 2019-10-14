@@ -263,7 +263,6 @@ smartPortPayload_t *smartPortDataReceive(uint16_t c, bool *clearToSend, smartPor
             checksum += c;
             checksum = (checksum & 0xFF) + (checksum >> 8);
             if (checksum == 0xFF) {
-
                 return (smartPortPayload_t *)&rxBuffer;
             }
         }

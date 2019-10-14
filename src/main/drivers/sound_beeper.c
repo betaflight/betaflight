@@ -61,12 +61,12 @@ static void pwmToggleBeeper(void)
 
 static void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
-    const timerHardware_t *timer = timerGetByTag(tag);
+    const timerHardware_t *timer = timerAllocate(tag, OWNER_BEEPER, 0);
     IO_t beeperIO = IOGetByTag(tag);
 
     if (beeperIO && timer) {
         beeperPwm.io = beeperIO;
-        IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
+        IOInit(beeperPwm.io, OWNER_BEEPER, 0);
 #if defined(STM32F1)
         IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
 #else

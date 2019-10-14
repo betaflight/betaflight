@@ -266,7 +266,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     uint32_t baudRate;
 
-    switch (rxConfig->serialrx_provider) {
+    switch (rxRuntimeConfig->serialrxProvider) {
     case SERIALRX_XBUS_MODE_B:
         rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
         xBusFrameReceived = false;
@@ -303,7 +303,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
 #ifdef USE_TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
+    bool portShared = telemetryCheckRxPortShared(portConfig, rxRuntimeConfig->serialrxProvider);
 #else
     bool portShared = false;
 #endif

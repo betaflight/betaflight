@@ -37,6 +37,7 @@
 #include "drivers/dshot_command.h"
 #include "drivers/pwm_output.h"
 
+#define DSHOT_PROTOCOL_DETECTION_DELAY_MS 3000
 #define DSHOT_INITIAL_DELAY_US 10000
 #define DSHOT_COMMAND_DELAY_US 1000
 #define DSHOT_ESCINFO_DELAY_US 12000
@@ -150,11 +151,18 @@ static bool allMotorsAreIdle(void)
     return true;
 }
 
+bool dshotCommandsAreEnabled(void)
+{
+    if (motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
 {
-    UNUSED(motorCount);
-
-    if (!isMotorProtocolDshot() || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
+    if (!isMotorProtocolDshot() || !dshotCommandsAreEnabled() || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
         return;
     }
 
@@ -210,7 +218,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool 
         if (commandControl) {
             commandControl->repeats = repeats;
             commandControl->delayAfterCommandUs = delayAfterCommandUs;
-            for (unsigned i = 0; i < dshotPwmDevice.count; i++) {
+            for (unsigned i = 0; i < motorCount; i++) {
                 if (index == i || index == ALL_MOTORS) {
                     commandControl->command[i] = command;
                 } else {
@@ -229,7 +237,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool 
     }
 }
 
-uint8_t pwmGetDshotCommand(uint8_t index)
+uint8_t dshotCommandGetCurrent(uint8_t index)
 {
     return commandQueue[commandQueueTail].command[index];
 }

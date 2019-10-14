@@ -23,6 +23,10 @@
 
 #include "platform.h"
 
+#if defined(FLYWOOF405)
+#include "pg/piniobox.h"
+#endif
+
 #ifdef USE_TARGET_CONFIG
 
 #include "config_helper.h"
@@ -38,6 +42,10 @@ static targetSerialPortFunction_t targetSerialPortFunction[] = {
 
 void targetConfiguration(void)
 {
+#if defined(FLYWOOF405)
+    pinioBoxConfigMutable()->permanentId[0] = 40;
+    pinioBoxConfigMutable()->permanentId[1] = 41;
+#endif
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     telemetryConfigMutable()->halfDuplex = 0;
     telemetryConfigMutable()->telemetry_inverted = true;

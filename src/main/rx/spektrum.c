@@ -33,6 +33,8 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/serial.h"
+#include "drivers/serial_uart.h"
 
 #include "io/serial.h"
 
@@ -240,10 +242,10 @@ void spektrumBind(rxConfig_t *rxConfig)
         ioTag_t rxPin = serialPinConfig()->ioTagRx[index];
 
         // Take care half-duplex case
-        switch (rxConfig->serialrx_provider) {
+        switch (rxRuntimeConfig.serialrxProvider) {
         case SERIALRX_SRXL:
 #if defined(USE_TELEMETRY_SRXL)
-            if (featureIsEnabled(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
+            if (featureIsEnabled(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig, rxRuntimeConfig.serialrxProvider)) {
                 bindPin = txPin;
             }
             break;
@@ -350,12 +352,15 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     srxlEnabled = false;
 #if defined(USE_TELEMETRY_SRXL)
-    bool portShared = telemetryCheckRxPortShared(portConfig);
+    bool portShared = telemetryCheckRxPortShared(portConfig, rxRuntimeConfig->serialrxProvider);
 #else
     bool portShared = false;
 #endif
 
-    switch (rxConfig->serialrx_provider) {
+    switch (rxRuntimeConfig->serialrxProvider) {
+    default:
+
+        break;
     case SERIALRX_SRXL:
 #if defined(USE_TELEMETRY_SRXL)
         srxlEnabled = (featureIsEnabled(FEATURE_TELEMETRY) && !portShared);
@@ -393,8 +398,10 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         NULL,
         SPEKTRUM_BAUDRATE,
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
-        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
+        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) |
+        ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
         );
+
 #if defined(USE_TELEMETRY_SRXL)
     if (portShared) {
         telemetrySharedPort = serialPort;

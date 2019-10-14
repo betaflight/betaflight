@@ -89,6 +89,9 @@ static FAST_RAM_ZERO_INIT uint8_t gyroDebugMode;
 
 static FAST_RAM_ZERO_INIT uint8_t gyroToUse;
 static FAST_RAM_ZERO_INIT bool overflowDetected;
+#ifdef USE_GYRO_OVERFLOW_CHECK
+static FAST_RAM_ZERO_INIT timeUs_t overflowTimeUs;
+#endif
 
 #ifdef USE_GYRO_OVERFLOW_CHECK
 static FAST_RAM_ZERO_INIT uint8_t overflowAxisMask;
@@ -96,6 +99,7 @@ static FAST_RAM_ZERO_INIT uint8_t overflowAxisMask;
 
 #ifdef USE_YAW_SPIN_RECOVERY
 static FAST_RAM_ZERO_INIT bool yawSpinDetected;
+static FAST_RAM_ZERO_INIT timeUs_t yawSpinTimeUs;
 #endif
 
 static FAST_RAM_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
@@ -107,6 +111,7 @@ static FAST_RAM_ZERO_INIT int16_t gyroSensorTemperature;
 static bool gyroHasOverflowProtection = true;
 
 static FAST_RAM_ZERO_INIT bool useDualGyroDebugging;
+static FAST_RAM_ZERO_INIT flight_dynamics_index_t gyroDebugAxis;
 
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
@@ -116,50 +121,9 @@ typedef struct gyroCalibration_s {
 
 bool firstArmingCalibrationWasStarted = false;
 
-typedef union gyroLowpassFilter_u {
-    pt1Filter_t pt1FilterState;
-    biquadFilter_t biquadFilterState;
-} gyroLowpassFilter_t;
-
 typedef struct gyroSensor_s {
     gyroDev_t gyroDev;
     gyroCalibration_t calibration;
-
-    // lowpass gyro soft filter
-    filterApplyFnPtr lowpassFilterApplyFn;
-    gyroLowpassFilter_t lowpassFilter[XYZ_AXIS_COUNT];
-
-    // lowpass2 gyro soft filter
-    filterApplyFnPtr lowpass2FilterApplyFn;
-    gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
-
-    // notch filters
-    filterApplyFnPtr notchFilter1ApplyFn;
-    biquadFilter_t notchFilter1[XYZ_AXIS_COUNT];
-
-    filterApplyFnPtr notchFilter2ApplyFn;
-    biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
-
-    filterApplyFnPtr notchFilterDynApplyFn;
-    filterApplyFnPtr notchFilterDynApplyFn2;
-    biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT];
-    biquadFilter_t notchFilterDyn2[XYZ_AXIS_COUNT];
-
-    // overflow and recovery
-    timeUs_t overflowTimeUs;
-    bool overflowDetected;
-#ifdef USE_YAW_SPIN_RECOVERY
-    timeUs_t yawSpinTimeUs;
-    bool yawSpinDetected;
-#endif // USE_YAW_SPIN_RECOVERY
-
-#ifdef USE_GYRO_DATA_ANALYSE
-#define DYNAMIC_NOTCH_DEFAULT_CENTER_HZ 350
-#define DYNAMIC_NOTCH_DEFAULT_CUTOFF_HZ 300
-    gyroAnalyseState_t gyroAnalyseState;
-#endif
-
-    flight_dynamics_index_t gyroDebugAxis;
 } gyroSensor_t;
 
 STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT gyroSensor_t gyroSensor1;
@@ -175,7 +139,7 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyroSensor1.gyroDev;
 #endif
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
-static void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int type, uint16_t lpfHz);
+static void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz);
 
 #define DEBUG_GYRO_CALIBRATION 3
 
@@ -197,6 +161,11 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 7);
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 #endif
 
+#ifdef USE_GYRO_DATA_ANALYSE
+#define DYNAMIC_NOTCH_DEFAULT_CENTER_HZ 350
+#define DYNAMIC_NOTCH_DEFAULT_CUTOFF_HZ 300
+#endif
+
 void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 { 
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
@@ -204,7 +173,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
     gyroConfig->gyro_lowpass_type = FILTER_PT1;
-    gyroConfig->gyro_lowpass_hz = 150;  // NOTE: dynamic lpf is enabled by default so this setting is actually
+    gyroConfig->gyro_lowpass_hz = 200;  // NOTE: dynamic lpf is enabled by default so this setting is actually
                                         // overridden and the static lowpass 1 is disabled. We can't set this
                                         // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                         // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
@@ -222,7 +191,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->yaw_spin_threshold = 1950;
     gyroConfig->dyn_lpf_gyro_min_hz = 200;
     gyroConfig->dyn_lpf_gyro_max_hz = 500;
-    gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_AUTO;
+    gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_MEDIUM;
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
@@ -436,7 +405,6 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 
 static void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
 {
-    gyroSensor->gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
     gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
     gyroSensor->gyroDev.gyroAlign = config->alignment;
     buildRotationMatrixFromAlignment(&config->customAlignment, &gyroSensor->gyroDev.rotationMatrix);
@@ -479,10 +447,6 @@ static void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
 
     gyroInitSensorFilters(gyroSensor);
 
-#ifdef USE_GYRO_DATA_ANALYSE
-    gyroDataAnalyseStateInit(&gyroSensor->gyroAnalyseState, gyro.targetLooptime);
-    
-#endif
 }
 
 void gyroPreInit(void)
@@ -517,8 +481,6 @@ bool gyroInit(void)
     case DEBUG_DYN_LPF:
         gyroDebugMode = debugMode;
         break;
-    case DEBUG_DUAL_GYRO:
-    case DEBUG_DUAL_GYRO_COMBINE:
     case DEBUG_DUAL_GYRO_DIFF:
     case DEBUG_DUAL_GYRO_RAW:
     case DEBUG_DUAL_GYRO_SCALED:
@@ -530,6 +492,7 @@ bool gyroInit(void)
     gyroDetectionFlags = NO_GYROS_DETECTED;
 
     gyroToUse = gyroConfig()->gyro_to_use;
+    gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     if (gyroDetectSensor(&gyroSensor1, gyroDeviceConfig(0))) {
         gyroDetectionFlags |= DETECTED_GYRO_1;
@@ -580,6 +543,20 @@ bool gyroInit(void)
         detectedSensors[SENSOR_INDEX_GYRO] = gyroSensor1.gyroDev.gyroHardware;
     }
 
+    // Copy the sensor's scale to the high-level gyro object. If running in "BOTH" mode
+    // then logic above requires both sensors to be the same so we'll use sensor1's scale.
+    // This will need to be revised if we ever allow different sensor types to be used simultaneously.
+    // Likewise determine the appropriate raw data for use in DEBUG_GYRO_RAW
+    gyro.scale = gyroSensor1.gyroDev.scale;
+    gyro.rawSensorDev = &gyroSensor1.gyroDev;
+#if defined(USE_MULTI_GYRO)
+    if (gyroToUse == GYRO_CONFIG_USE_GYRO_2) {
+        gyro.scale = gyroSensor2.gyroDev.scale;
+        gyro.rawSensorDev = &gyroSensor2.gyroDev;
+    }
+#endif
+
+    gyroInitFilters();
     return true;
 }
 
@@ -615,20 +592,20 @@ static void dynLpfFilterInit()
 }
 #endif
 
-void gyroInitLowpassFilterLpf(gyroSensor_t *gyroSensor, int slot, int type, uint16_t lpfHz)
+void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz)
 {
     filterApplyFnPtr *lowpassFilterApplyFn;
     gyroLowpassFilter_t *lowpassFilter = NULL;
 
     switch (slot) {
     case FILTER_LOWPASS:
-        lowpassFilterApplyFn = &gyroSensor->lowpassFilterApplyFn;
-        lowpassFilter = gyroSensor->lowpassFilter;
+        lowpassFilterApplyFn = &gyro.lowpassFilterApplyFn;
+        lowpassFilter = gyro.lowpassFilter;
         break;
 
     case FILTER_LOWPASS2:
-        lowpassFilterApplyFn = &gyroSensor->lowpass2FilterApplyFn;
-        lowpassFilter = gyroSensor->lowpass2Filter;
+        lowpassFilterApplyFn = &gyro.lowpass2FilterApplyFn;
+        lowpassFilter = gyro.lowpass2Filter;
         break;
 
     default:
@@ -692,32 +669,32 @@ void gyroInitSlewLimiter(gyroSensor_t *gyroSensor) {
 }
 #endif
 
-static void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
+static void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz)
 {
-    gyroSensor->notchFilter1ApplyFn = nullFilterApply;
+    gyro.notchFilter1ApplyFn = nullFilterApply;
 
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyroSensor->notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        gyro.notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInit(&gyroSensor->notchFilter1[axis], notchHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyro.notchFilter1[axis], notchHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
         }
     }
 }
 
-static void gyroInitFilterNotch2(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
+static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz)
 {
-    gyroSensor->notchFilter2ApplyFn = nullFilterApply;
+    gyro.notchFilter2ApplyFn = nullFilterApply;
 
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyroSensor->notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        gyro.notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInit(&gyroSensor->notchFilter2[axis], notchHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyro.notchFilter2[axis], notchHz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
         }
     }
 }
@@ -728,20 +705,20 @@ static bool isDynamicFilterActive(void)
     return featureIsEnabled(FEATURE_DYNAMIC_FILTER);
 }
 
-static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
+static void gyroInitFilterDynamicNotch()
 {
-    gyroSensor->notchFilterDynApplyFn = nullFilterApply;
-    gyroSensor->notchFilterDynApplyFn2 = nullFilterApply;
+    gyro.notchFilterDynApplyFn = nullFilterApply;
+    gyro.notchFilterDynApplyFn2 = nullFilterApply;
 
     if (isDynamicFilterActive()) {
-        gyroSensor->notchFilterDynApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
+        gyro.notchFilterDynApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
         if(gyroConfig()->dyn_notch_width_percent != 0) {
-            gyroSensor->notchFilterDynApplyFn2 = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
+            gyro.notchFilterDynApplyFn2 = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
         }
         const float notchQ = filterGetNotchQ(DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, DYNAMIC_NOTCH_DEFAULT_CUTOFF_HZ); // any defaults OK here
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInit(&gyroSensor->notchFilterDyn[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
-            biquadFilterInit(&gyroSensor->notchFilterDyn2[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyro.notchFilterDyn[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyro.notchFilterDyn2[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
         }
     }
 }
@@ -751,8 +728,13 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
 #if defined(USE_GYRO_SLEW_LIMITER)
     gyroInitSlewLimiter(gyroSensor);
+#else
+    UNUSED(gyroSensor);
 #endif
+}
 
+void gyroInitFilters(void)
+{
     uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
 
 #ifdef USE_DYN_LPF
@@ -762,34 +744,27 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 #endif
 
     gyroInitLowpassFilterLpf(
-      gyroSensor,
       FILTER_LOWPASS,
       gyroConfig()->gyro_lowpass_type,
       gyro_lowpass_hz
     );
 
     gyroInitLowpassFilterLpf(
-      gyroSensor,
       FILTER_LOWPASS2,
       gyroConfig()->gyro_lowpass2_type,
       gyroConfig()->gyro_lowpass2_hz
     );
 
-    gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
-    gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
+    gyroInitFilterNotch1(gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
+    gyroInitFilterNotch2(gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
 #ifdef USE_GYRO_DATA_ANALYSE
-    gyroInitFilterDynamicNotch(gyroSensor);
+    gyroInitFilterDynamicNotch();
 #endif
 #ifdef USE_DYN_LPF
     dynLpfFilterInit();
 #endif
-}
-
-void gyroInitFilters(void)
-{
-    gyroInitSensorFilters(&gyroSensor1);
-#ifdef USE_MULTI_GYRO
-    gyroInitSensorFilters(&gyroSensor2);
+#ifdef USE_GYRO_DATA_ANALYSE
+    gyroDataAnalyseStateInit(&gyro.gyroAnalyseState, gyro.targetLooptime);
 #endif
 }
 
@@ -927,50 +902,61 @@ FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 #endif
 
 #ifdef USE_GYRO_OVERFLOW_CHECK
-static FAST_CODE_NOINLINE void handleOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void handleOverflow(timeUs_t currentTimeUs)
 {
-    const float gyroOverflowResetRate = GYRO_OVERFLOW_RESET_THRESHOLD * gyroSensor->gyroDev.scale;
-    if ((abs(gyroSensor->gyroDev.gyroADCf[X]) < gyroOverflowResetRate)
-          && (abs(gyroSensor->gyroDev.gyroADCf[Y]) < gyroOverflowResetRate)
-          && (abs(gyroSensor->gyroDev.gyroADCf[Z]) < gyroOverflowResetRate)) {
+    // This will need to be revised if we ever allow different sensor types to be 
+    // used simultaneously. In that case the scale might be different between sensors.
+    // It's complicated by the fact that we're using filtered gyro data here which is
+    // after both sensors are scaled and averaged.
+    const float gyroOverflowResetRate = GYRO_OVERFLOW_RESET_THRESHOLD * gyro.scale;
+
+    if ((fabsf(gyro.gyroADCf[X]) < gyroOverflowResetRate)
+          && (fabsf(gyro.gyroADCf[Y]) < gyroOverflowResetRate)
+          && (fabsf(gyro.gyroADCf[Z]) < gyroOverflowResetRate)) {
         // if we have 50ms of consecutive OK gyro vales, then assume yaw readings are OK again and reset overflowDetected
         // reset requires good OK values on all axes
-        if (cmpTimeUs(currentTimeUs, gyroSensor->overflowTimeUs) > 50000) {
-            gyroSensor->overflowDetected = false;
+        if (cmpTimeUs(currentTimeUs, overflowTimeUs) > 50000) {
+            overflowDetected = false;
         }
     } else {
         // not a consecutive OK value, so reset the overflow time
-        gyroSensor->overflowTimeUs = currentTimeUs;
+        overflowTimeUs = currentTimeUs;
     }
 }
 
-static FAST_CODE void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
 {
     // check for overflow to handle Yaw Spin To The Moon (YSTTM)
     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
     // This can cause an overflow and sign reversal in the output.
     // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
-    if (gyroSensor->overflowDetected) {
-        handleOverflow(gyroSensor, currentTimeUs);
+    if (overflowDetected) {
+        handleOverflow(currentTimeUs);
     } else {
 #ifndef SIMULATOR_BUILD
         // check for overflow in the axes set in overflowAxisMask
         gyroOverflow_e overflowCheck = GYRO_OVERFLOW_NONE;
-        const float gyroOverflowTriggerRate = GYRO_OVERFLOW_TRIGGER_THRESHOLD * gyroSensor->gyroDev.scale;
-        if (abs(gyroSensor->gyroDev.gyroADCf[X]) > gyroOverflowTriggerRate) {
+
+        // This will need to be revised if we ever allow different sensor types to be 
+        // used simultaneously. In that case the scale might be different between sensors.
+        // It's complicated by the fact that we're using filtered gyro data here which is
+        // after both sensors are scaled and averaged.
+        const float gyroOverflowTriggerRate = GYRO_OVERFLOW_TRIGGER_THRESHOLD * gyro.scale;
+
+        if (fabsf(gyro.gyroADCf[X]) > gyroOverflowTriggerRate) {
             overflowCheck |= GYRO_OVERFLOW_X;
         }
-        if (abs(gyroSensor->gyroDev.gyroADCf[Y]) > gyroOverflowTriggerRate) {
+        if (fabsf(gyro.gyroADCf[Y]) > gyroOverflowTriggerRate) {
             overflowCheck |= GYRO_OVERFLOW_Y;
         }
-        if (abs(gyroSensor->gyroDev.gyroADCf[Z]) > gyroOverflowTriggerRate) {
+        if (fabsf(gyro.gyroADCf[Z]) > gyroOverflowTriggerRate) {
             overflowCheck |= GYRO_OVERFLOW_Z;
         }
         if (overflowCheck & overflowAxisMask) {
-            gyroSensor->overflowDetected = true;
-            gyroSensor->overflowTimeUs = currentTimeUs;
+            overflowDetected = true;
+            overflowTimeUs = currentTimeUs;
 #ifdef USE_YAW_SPIN_RECOVERY
-            gyroSensor->yawSpinDetected = false;
+            yawSpinDetected = false;
 #endif // USE_YAW_SPIN_RECOVERY
         }
 #endif // SIMULATOR_BUILD
@@ -979,57 +965,45 @@ static FAST_CODE void checkForOverflow(gyroSensor_t *gyroSensor, timeUs_t curren
 #endif // USE_GYRO_OVERFLOW_CHECK
 
 #ifdef USE_YAW_SPIN_RECOVERY
-static FAST_CODE_NOINLINE void handleYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void handleYawSpin(timeUs_t currentTimeUs)
 {
     const float yawSpinResetRate = gyroConfig()->yaw_spin_threshold - 100.0f;
-    if (abs(gyroSensor->gyroDev.gyroADCf[Z]) < yawSpinResetRate) {
+    if (fabsf(gyro.gyroADCf[Z]) < yawSpinResetRate) {
         // testing whether 20ms of consecutive OK gyro yaw values is enough
-        if (cmpTimeUs(currentTimeUs, gyroSensor->yawSpinTimeUs) > 20000) {
-            gyroSensor->yawSpinDetected = false;
+        if (cmpTimeUs(currentTimeUs, yawSpinTimeUs) > 20000) {
+            yawSpinDetected = false;
         }
     } else {
         // reset the yaw spin time
-        gyroSensor->yawSpinTimeUs = currentTimeUs;
+        yawSpinTimeUs = currentTimeUs;
     }
 }
 
-static FAST_CODE void checkForYawSpin(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE void checkForYawSpin(timeUs_t currentTimeUs)
 {
     // if not in overflow mode, handle yaw spins above threshold
 #ifdef USE_GYRO_OVERFLOW_CHECK
-    if (gyroSensor->overflowDetected) {
-        gyroSensor->yawSpinDetected = false;
+    if (overflowDetected) {
+        yawSpinDetected = false;
         return;
     }
 #endif // USE_GYRO_OVERFLOW_CHECK
 
-    if (gyroSensor->yawSpinDetected) {
-        handleYawSpin(gyroSensor, currentTimeUs);
+    if (yawSpinDetected) {
+        handleYawSpin(currentTimeUs);
     } else {
 #ifndef SIMULATOR_BUILD
         // check for spin on yaw axis only
-         if (abs(gyroSensor->gyroDev.gyroADCf[Z]) > gyroConfig()->yaw_spin_threshold) {
-            gyroSensor->yawSpinDetected = true;
-            gyroSensor->yawSpinTimeUs = currentTimeUs;
+         if (abs(gyro.gyroADCf[Z]) > gyroConfig()->yaw_spin_threshold) {
+            yawSpinDetected = true;
+            yawSpinTimeUs = currentTimeUs;
         }
 #endif // SIMULATOR_BUILD
     }
 }
 #endif // USE_YAW_SPIN_RECOVERY
 
-#define GYRO_FILTER_FUNCTION_NAME filterGyro
-#define GYRO_FILTER_DEBUG_SET(mode, index, value) { UNUSED(mode); UNUSED(index); UNUSED(value); }
-#include "gyro_filter_impl.c"
-#undef GYRO_FILTER_FUNCTION_NAME
-#undef GYRO_FILTER_DEBUG_SET
-
-#define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
-#define GYRO_FILTER_DEBUG_SET DEBUG_SET
-#include "gyro_filter_impl.c"
-#undef GYRO_FILTER_FUNCTION_NAME
-#undef GYRO_FILTER_DEBUG_SET
-
-static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor, timeUs_t currentTimeUs)
+static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
         return;
@@ -1056,129 +1030,111 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
         }
     } else {
         performGyroCalibration(gyroSensor, gyroConfig()->gyroMovementCalibrationThreshold);
-        // still calibrating, so no need to further process gyro data
-        return;
     }
-
-    if (gyroDebugMode == DEBUG_NONE) {
-        filterGyro(gyroSensor);
-    } else {
-        filterGyroDebug(gyroSensor);
-    }
-
-#ifdef USE_GYRO_OVERFLOW_CHECK
-    if (gyroConfig()->checkOverflow && !gyroHasOverflowProtection) {
-        checkForOverflow(gyroSensor, currentTimeUs);
-    }
-#endif
-
-#ifdef USE_YAW_SPIN_RECOVERY
-    if (gyroConfig()->yaw_spin_recovery) {
-        checkForYawSpin(gyroSensor, currentTimeUs);
-    }
-#endif
-
-#ifdef USE_GYRO_DATA_ANALYSE
-    if (isDynamicFilterActive()) {
-        gyroDataAnalyse(&gyroSensor->gyroAnalyseState, gyroSensor->notchFilterDyn, gyroSensor->notchFilterDyn2);
-    }
-#endif
-
-#if (!defined(USE_GYRO_OVERFLOW_CHECK) && !defined(USE_YAW_SPIN_RECOVERY))
-    UNUSED(currentTimeUs);
-#endif
 }
+
+#define GYRO_FILTER_FUNCTION_NAME filterGyro
+#define GYRO_FILTER_DEBUG_SET(mode, index, value) { UNUSED(mode); UNUSED(index); UNUSED(value); }
+#include "gyro_filter_impl.c"
+#undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_DEBUG_SET
+
+#define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
+#define GYRO_FILTER_DEBUG_SET DEBUG_SET
+#include "gyro_filter_impl.c"
+#undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_DEBUG_SET
 
 FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
 {
 
     switch (gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
-        gyroUpdateSensor(&gyroSensor1, currentTimeUs);
+        gyroUpdateSensor(&gyroSensor1);
         if (isGyroSensorCalibrationComplete(&gyroSensor1)) {
-            gyro.gyroADCf[X] = gyroSensor1.gyroDev.gyroADCf[X];
-            gyro.gyroADCf[Y] = gyroSensor1.gyroDev.gyroADCf[Y];
-            gyro.gyroADCf[Z] = gyroSensor1.gyroDev.gyroADCf[Z];
-#ifdef USE_GYRO_OVERFLOW_CHECK
-            overflowDetected = gyroSensor1.overflowDetected;
-#endif
-#ifdef USE_YAW_SPIN_RECOVERY
-            yawSpinDetected = gyroSensor1.yawSpinDetected;
-#endif
-        }
-        if (useDualGyroDebugging) {
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 0, gyroSensor1.gyroDev.gyroADCRaw[X]);
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 1, gyroSensor1.gyroDev.gyroADCRaw[Y]);
-            DEBUG_SET(DEBUG_DUAL_GYRO, 0, lrintf(gyroSensor1.gyroDev.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO, 1, lrintf(gyroSensor1.gyroDev.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 0, lrintf(gyro.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 1, lrintf(gyro.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0, lrintf(gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1, lrintf(gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale));
+            gyro.gyroADC[X] = gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale;
+            gyro.gyroADC[Y] = gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale;
+            gyro.gyroADC[Z] = gyroSensor1.gyroDev.gyroADC[Z] * gyroSensor1.gyroDev.scale;
         }
         break;
 #ifdef USE_MULTI_GYRO
     case GYRO_CONFIG_USE_GYRO_2:
-        gyroUpdateSensor(&gyroSensor2, currentTimeUs);
+        gyroUpdateSensor(&gyroSensor2);
         if (isGyroSensorCalibrationComplete(&gyroSensor2)) {
-            gyro.gyroADCf[X] = gyroSensor2.gyroDev.gyroADCf[X];
-            gyro.gyroADCf[Y] = gyroSensor2.gyroDev.gyroADCf[Y];
-            gyro.gyroADCf[Z] = gyroSensor2.gyroDev.gyroADCf[Z];
-#ifdef USE_GYRO_OVERFLOW_CHECK
-            overflowDetected = gyroSensor2.overflowDetected;
-#endif
-#ifdef USE_YAW_SPIN_RECOVERY
-            yawSpinDetected = gyroSensor2.yawSpinDetected;
-#endif
-        }
-        if (useDualGyroDebugging) {
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 2, gyroSensor2.gyroDev.gyroADCRaw[X]);
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 3, gyroSensor2.gyroDev.gyroADCRaw[Y]);
-            DEBUG_SET(DEBUG_DUAL_GYRO, 2, lrintf(gyroSensor2.gyroDev.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO, 3, lrintf(gyroSensor2.gyroDev.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 2, lrintf(gyro.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 3, lrintf(gyro.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 2, lrintf(gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 3, lrintf(gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale));
+            gyro.gyroADC[X] = gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale;
+            gyro.gyroADC[Y] = gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale;
+            gyro.gyroADC[Z] = gyroSensor2.gyroDev.gyroADC[Z] * gyroSensor2.gyroDev.scale;
         }
         break;
     case GYRO_CONFIG_USE_GYRO_BOTH:
-        gyroUpdateSensor(&gyroSensor1, currentTimeUs);
-        gyroUpdateSensor(&gyroSensor2, currentTimeUs);
+        gyroUpdateSensor(&gyroSensor1);
+        gyroUpdateSensor(&gyroSensor2);
         if (isGyroSensorCalibrationComplete(&gyroSensor1) && isGyroSensorCalibrationComplete(&gyroSensor2)) {
-            gyro.gyroADCf[X] = (gyroSensor1.gyroDev.gyroADCf[X] + gyroSensor2.gyroDev.gyroADCf[X]) / 2.0f;
-            gyro.gyroADCf[Y] = (gyroSensor1.gyroDev.gyroADCf[Y] + gyroSensor2.gyroDev.gyroADCf[Y]) / 2.0f;
-            gyro.gyroADCf[Z] = (gyroSensor1.gyroDev.gyroADCf[Z] + gyroSensor2.gyroDev.gyroADCf[Z]) / 2.0f;
-#ifdef USE_GYRO_OVERFLOW_CHECK
-            overflowDetected = gyroSensor1.overflowDetected || gyroSensor2.overflowDetected;
-#endif
-#ifdef USE_YAW_SPIN_RECOVERY
-            yawSpinDetected = gyroSensor1.yawSpinDetected || gyroSensor2.yawSpinDetected;
-#endif
-        }
-
-        if (useDualGyroDebugging) {
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 0, gyroSensor1.gyroDev.gyroADCRaw[X]);
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 1, gyroSensor1.gyroDev.gyroADCRaw[Y]);
-            DEBUG_SET(DEBUG_DUAL_GYRO, 0, lrintf(gyroSensor1.gyroDev.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO, 1, lrintf(gyroSensor1.gyroDev.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 2, gyroSensor2.gyroDev.gyroADCRaw[X]);
-            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 3, gyroSensor2.gyroDev.gyroADCRaw[Y]);
-            DEBUG_SET(DEBUG_DUAL_GYRO, 2, lrintf(gyroSensor2.gyroDev.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO, 3, lrintf(gyroSensor2.gyroDev.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 1, lrintf(gyro.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_COMBINE, 2, lrintf(gyro.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 0, lrintf(gyroSensor1.gyroDev.gyroADCf[X] - gyroSensor2.gyroDev.gyroADCf[X]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 1, lrintf(gyroSensor1.gyroDev.gyroADCf[Y] - gyroSensor2.gyroDev.gyroADCf[Y]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 2, lrintf(gyroSensor1.gyroDev.gyroADCf[Z] - gyroSensor2.gyroDev.gyroADCf[Z]));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0, lrintf(gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1, lrintf(gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 2, lrintf(gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale));
-            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 3, lrintf(gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale));
+            gyro.gyroADC[X] = ((gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale) + (gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale)) / 2.0f;
+            gyro.gyroADC[Y] = ((gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale) + (gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale)) / 2.0f;
+            gyro.gyroADC[Z] = ((gyroSensor1.gyroDev.gyroADC[Z] * gyroSensor1.gyroDev.scale) + (gyroSensor2.gyroDev.gyroADC[Z] * gyroSensor2.gyroDev.scale)) / 2.0f;
         }
         break;
 #endif
     }
+
+    if (gyroDebugMode == DEBUG_NONE) {
+        filterGyro();
+    } else {
+        filterGyroDebug();
+    }
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    if (isDynamicFilterActive()) {
+        gyroDataAnalyse(&gyro.gyroAnalyseState, gyro.notchFilterDyn, gyro.notchFilterDyn2);
+    }
+#endif
+
+    if (useDualGyroDebugging) {
+        switch (gyroToUse) {
+        case GYRO_CONFIG_USE_GYRO_1:
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 0, gyroSensor1.gyroDev.gyroADCRaw[X]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 1, gyroSensor1.gyroDev.gyroADCRaw[Y]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0, lrintf(gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1, lrintf(gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale));
+            break;
+
+#ifdef USE_MULTI_GYRO
+        case GYRO_CONFIG_USE_GYRO_2:
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 2, gyroSensor2.gyroDev.gyroADCRaw[X]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 3, gyroSensor2.gyroDev.gyroADCRaw[Y]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 2, lrintf(gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 3, lrintf(gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale));
+            break;
+
+    case GYRO_CONFIG_USE_GYRO_BOTH:
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 0, gyroSensor1.gyroDev.gyroADCRaw[X]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 1, gyroSensor1.gyroDev.gyroADCRaw[Y]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 2, gyroSensor2.gyroDev.gyroADCRaw[X]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_RAW, 3, gyroSensor2.gyroDev.gyroADCRaw[Y]);
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 0, lrintf(gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 1, lrintf(gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 2, lrintf(gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_SCALED, 3, lrintf(gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale));
+            DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 0, lrintf((gyroSensor1.gyroDev.gyroADC[X] * gyroSensor1.gyroDev.scale) - (gyroSensor2.gyroDev.gyroADC[X] * gyroSensor2.gyroDev.scale)));
+            DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 1, lrintf((gyroSensor1.gyroDev.gyroADC[Y] * gyroSensor1.gyroDev.scale) - (gyroSensor2.gyroDev.gyroADC[Y] * gyroSensor2.gyroDev.scale)));
+            DEBUG_SET(DEBUG_DUAL_GYRO_DIFF, 2, lrintf((gyroSensor1.gyroDev.gyroADC[Z] * gyroSensor1.gyroDev.scale) - (gyroSensor2.gyroDev.gyroADC[Z] * gyroSensor2.gyroDev.scale)));
+            break;
+#endif
+        }
+    }
+
+#ifdef USE_GYRO_OVERFLOW_CHECK
+    if (gyroConfig()->checkOverflow && !gyroHasOverflowProtection) {
+        checkForOverflow(currentTimeUs);
+    }
+#endif
+
+#ifdef USE_YAW_SPIN_RECOVERY
+    if (gyroConfig()->yaw_spin_recovery) {
+        checkForYawSpin(currentTimeUs);
+    }
+#endif
 
     if (!overflowDetected) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -1189,6 +1145,9 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
         accumulatedMeasurementCount++;
     }
 
+#if !defined(USE_GYRO_OVERFLOW_CHECK) && !defined(USE_YAW_SPIN_RECOVERY)
+    UNUSED(currentTimeUs);
+#endif
 }
 
 bool gyroGetAccumulationAverage(float *accumulationAverage)
@@ -1290,30 +1249,12 @@ void dynLpfGyroUpdate(float throttle)
             DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             const float gyroDt = gyro.targetLooptime * 1e-6f;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-#ifdef USE_MULTI_GYRO
-                if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-                    pt1FilterUpdateCutoff(&gyroSensor1.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
-                }
-                if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-                    pt1FilterUpdateCutoff(&gyroSensor2.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
-                }
-#else
-                pt1FilterUpdateCutoff(&gyroSensor1.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
-#endif
+                pt1FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
             }
         } else if (dynLpfFilter == DYN_LPF_BIQUAD) {
             DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-#ifdef USE_MULTI_GYRO
-                if (gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
-                    biquadFilterUpdateLPF(&gyroSensor1.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
-                }
-                if (gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {     
-                    biquadFilterUpdateLPF(&gyroSensor2.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
-                }
-#else
-                biquadFilterUpdateLPF(&gyroSensor1.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
-#endif
+                biquadFilterUpdateLPF(&gyro.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
             }
         }
     }

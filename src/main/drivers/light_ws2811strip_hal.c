@@ -37,8 +37,6 @@
 
 #include "light_ws2811strip.h"
 
-typedef DMA_Stream_TypeDef dmaStream_t;
-
 static IO_t ws2811IO = IO_NONE;
 
 static TIM_HandleTypeDef TimHandle;
@@ -57,7 +55,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
         return false;
     }
 
-    const timerHardware_t *timerHardware = timerGetByTag(ioTag);
+    const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_LED_STRIP, 0);
 
     if (timerHardware == NULL) {
         return false;

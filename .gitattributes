@@ -1,5 +1,7 @@
+LICENSE text eol=lf
 *.md text eol=lf
 *.c text eol=lf
+*.cc text eol=lf
 *.h text eol=lf
 *.cc text eol=lf
 *.S text eol=lf
@@ -9,7 +11,20 @@
 *.ld text eol=lf
 Makefile text eol=lf
 *.mk text eol=lf
-*.bat eol=crlf
+*.nomk text eol=lf
+*.pl text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.svg text eol=lf
+*.png -crlf -diff
+*.yml text eol=lf
+*.xml text eol=lf
+*.mcm text eol=lf
+*.nsi text eol=lf
+*.nsh text eol=lf
+*.lua text eol=lf
 *.txt text eol=lf
 *.sh text eol=lf
 *.config text eol=lf

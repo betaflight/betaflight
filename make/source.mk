@@ -31,6 +31,7 @@ COMMON_SRC = \
             drivers/mco.c \
             drivers/motor.c \
             drivers/pinio.c \
+            drivers/pin_pull_up_down.c \
             drivers/resource.c \
             drivers/rcc.c \
             drivers/serial.c \
@@ -90,6 +91,7 @@ COMMON_SRC = \
             flight/gps_rescue.c \
             flight/gyroanalyse.c \
             flight/imu.c \
+            flight/interpolated_setpoint.c \
             flight/mixer.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
@@ -110,6 +112,7 @@ COMMON_SRC = \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
+            rx/srxl2.c \
             io/spektrum_vtx_control.c \
             io/spektrum_rssi.c \
             rx/sumd.c \
@@ -191,7 +194,7 @@ TARGET_FLAGS := -DUSE_EXST $(TARGET_FLAGS)
 endif
 
 ifeq ($(RAM_BASED),yes)
-TARGET_FLAGS := -DUSE_EXST -DEEPROM_IN_RAM $(TARGET_FLAGS)
+TARGET_FLAGS := -DUSE_EXST -DCONFIG_IN_RAM -DRAMBASED $(TARGET_FLAGS)
 endif
 
 ifeq ($(SIMULATOR_BUILD),yes)
@@ -253,6 +256,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
+            rx/srxl2.c \
             rx/sumd.c \
             rx/xbus.c \
             rx/fport.c \

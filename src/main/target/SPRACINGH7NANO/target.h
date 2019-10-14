@@ -25,8 +25,6 @@
 
 #define USE_TARGET_CONFIG
 
-#define DEBUG_MODE DEBUG_ADC_INTERNAL
-
 #define LED0_PIN                PE3
 
 #define USE_BEEPER
@@ -61,10 +59,10 @@
 #define QUADSPI1_CS_FLAGS (QUADSPI_BK1_CS_NONE | QUADSPI_BK2_CS_SOFTWARE | QUADSPI_CS_MODE_SEPARATE)
 
 #define USE_FLASH_CHIP
-#define EEPROM_IN_EXTERNAL_FLASH
-//#define EEPROM_IN_SDCARD
-//#define EEPROM_IN_RAM
-#if !defined(EEPROM_IN_RAM) && !defined(EEPROM_IN_SDCARD) && !defined(EEPROM_IN_EXTERNAL_FLASH)
+#define CONFIG_IN_EXTERNAL_FLASH
+//#define CONFIG_IN_SDCARD
+//#define CONFIG_IN_RAM
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
 #error "EEPROM storage location not defined"
 #endif
 
@@ -175,6 +173,14 @@
 #define USE_SDCARD_SDIO
 #define SDCARD_DETECT_PIN PD10
 #define SDCARD_DETECT_INVERTED
+#define SDIO_DEVICE             SDIODEV_1
+#define SDIO_USE_4BIT           true
+#define SDIO_CK_PIN             PC12
+#define SDIO_CMD_PIN            PD2
+#define SDIO_D0_PIN             PC8
+#define SDIO_D1_PIN             PC9
+#define SDIO_D2_PIN             PC10
+#define SDIO_D3_PIN             PC11
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
