@@ -24,7 +24,7 @@
 
 #define USBD_PRODUCT_STRING  "MatekF7"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PB9
 #define LED1_PIN                PA14

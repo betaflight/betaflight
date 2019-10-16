@@ -172,9 +172,8 @@ motorDevice_t *dshotPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
     case PWM_TYPE_DSHOT150:
         loadDmaBuffer = loadDmaBufferDshot;
 #ifdef USE_DSHOT_DMAR
-        if (motorConfig->useBurstDshot) {
-            useBurstDshot = true;
-        }
+        useBurstDshot = motorConfig->useBurstDshot == DSHOT_DMAR_ON ||
+            (motorConfig->useBurstDshot == DSHOT_DMAR_AUTO && !motorConfig->useDshotTelemetry);
 #endif
         break;
     }

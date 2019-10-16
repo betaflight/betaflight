@@ -22,7 +22,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "IMF3"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PB7
 

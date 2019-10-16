@@ -24,7 +24,7 @@
 #define TARGET_BOARD_IDENTIFIER "FWF7"
 #define USBD_PRODUCT_STRING  "FLYWOOF7DUAL"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PC15
 

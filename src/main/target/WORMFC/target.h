@@ -41,7 +41,7 @@
 #define LED1_PIN                PC14
 #endif
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 //define camera control
 #if defined(PIRXF4)

@@ -25,7 +25,7 @@
 #define TARGET_BOARD_IDENTIFIER "MF7S"
 #define USBD_PRODUCT_STRING  "MATEKF722SE"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PA14  //Blue   SWCLK
 #define LED1_PIN                PA13  //Green  SWDIO
