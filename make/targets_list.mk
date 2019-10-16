@@ -94,26 +94,83 @@ UNSUPPORTED_TARGETS := \
     X_RACERSPI \
     ZCOREF3
 
-SUPPORTED_TARGETS := $(filter-out $(UNSUPPORTED_TARGETS), $(VALID_TARGETS))
+# Legacy targets are targets that have been replaced by Unified Target configurations
+LEGACY_TARGETS := AIKONF4 \
+    ALIENFLIGHTF4 \
+    BEEROTORF4 \
+    CLRACINGF4 \
+    CRAZYBEEF4FR \
+    DYSF4PRO \
+    ELINF405 \
+    FF_RACEPIT \
+    FLYWOOF405 \
+    FLYWOOF411 \
+    FURYF4OSD \
+    HAKRCF411 \
+    KAKUTEF4V2 \
+    MAMBAF411 \
+    MATEKF411 \
+    MATEKF411RX \
+    MERAKRCF405 \
+    MLTEMPF4 \
+    MLTYPHF4 \
+    OMNIBUSF4 \
+    OMNIBUSF4FW \
+    OMNIBUSF4NANOV7 \
+    OMNIBUSF4SD \
+    OMNIBUSF4V6 \
+    SPEEDYBEEF4 \
+    SYNERGYF4 \
+    TMOTORF4 \
+    TRANSTECF411 \
+    VGOODRCF4 \
+    XILOF4 \
+    AIRBOTF7 \
+    AIRF7 \
+    ALIENFLIGHTNGF7 \
+    CLRACINGF7 \
+    ELINF722 \
+    EXF722DUAL \
+    FLYWOOF7DUAL \
+    FOXEERF722DUAL \
+    FPVM_BETAFLIGHTF7 \
+    JHEF7DUAL \
+    KAKUTEF7 \
+    KAKUTEF7MINI \
+    LUXMINIF7 \
+    MAMBAF722 \
+    MATEKF722 \
+    MATEKF722SE \
+    MERAKRCF722 \
+    NERO \
+    OMNIBUSF7NANOV7 \
+    OMNIBUSF7V2 \
+    RUSHCORE7 \
+    SPEEDYBEEF7 \
+    SPRACINGF7DUAL \
+    TMOTORF7 \
+    TRANSTECF7 \
 
-TARGETS_TOTAL := $(words $(SUPPORTED_TARGETS))
+CI_TARGETS := $(filter-out $(LEGACY_TARGETS), $(filter-out $(UNSUPPORTED_TARGETS), $(VALID_TARGETS)))
+
+TARGETS_TOTAL := $(words $(CI_TARGETS))
 TARGET_GROUPS := 5
 TARGETS_PER_GROUP := $(shell expr $(TARGETS_TOTAL) / $(TARGET_GROUPS) )
 
 ST := 1
 ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_1_TARGETS := $(wordlist  $(ST), $(ET), $(SUPPORTED_TARGETS))
+GROUP_1_TARGETS := $(wordlist  $(ST), $(ET), $(CI_TARGETS))
 
 ST := $(shell expr $(ET) + 1)
 ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_2_TARGETS := $(wordlist $(ST), $(ET), $(SUPPORTED_TARGETS))
+GROUP_2_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
 
 ST := $(shell expr $(ET) + 1)
 ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_3_TARGETS := $(wordlist $(ST), $(ET), $(SUPPORTED_TARGETS))
+GROUP_3_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
 
 ST := $(shell expr $(ET) + 1)
 ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_4_TARGETS := $(wordlist $(ST), $(ET), $(SUPPORTED_TARGETS))
+GROUP_4_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
 
-GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(SUPPORTED_TARGETS))
+GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(CI_TARGETS))
