@@ -1,13 +1,3 @@
-## Important: Feature freeze / release candidate phase for Betaflight 4.0
-
-From 01 Sept 2019 until the release of Betaflight 4.1.0 (scheduled for 01 Oct 2019), the project is in a 'feature freeze / release candidate' phase. This means:
-
-1. Pull requests can still be submitted as normal. Comments / discussions will probably be slower than normal due to shifted priorities;
-
-2. If your pull request is a fix for an existing bug, or an update for a single target that has a low risk of side effect for other targets, it will be reviewed, and if accepted merged into `master` for the 4.1 release;
-
-3. All other pull requests will be scheduled for 4.2, and discussed / reviewed / merged into `master` after 4.1.0 has been released. Please keep in mind that this potentially means that you will have to rebase your changes if they are broken by bugfixes made for 4.1.
-
 ## Important: New requirements for the submission of new and updated targets
 
 As announced earlier in https://github.com/betaflight/betaflight#betaflight-40, Betaflight 4.0 is introducing a radically new way to define targets, the so-called 'Unified Targets'.
