@@ -310,8 +310,12 @@ static void cliWriterFlush()
 }
 
 
-static void cliPrint(const char *str)
+void cliPrint(const char *str)
 {
+    if (!cliMode) {
+        return;
+    }
+
     if (cliWriter) {
         while (*str) {
             bufWriterAppend(cliWriter, *str++);
@@ -320,12 +324,12 @@ static void cliPrint(const char *str)
     }
 }
 
-static void cliPrintLinefeed(void)
+void cliPrintLinefeed(void)
 {
     cliPrint("\r\n");
 }
 
-static void cliPrintLine(const char *str)
+void cliPrintLine(const char *str)
 {
     cliPrint(str);
     cliPrintLinefeed();
@@ -391,8 +395,12 @@ static bool cliDefaultPrintLinef(dumpFlags_t dumpMask, bool equalsDefault, const
     }
 }
 
-static void cliPrintf(const char *format, ...)
+void cliPrintf(const char *format, ...)
 {
+    if (!cliMode) {
+        return;
+    }
+
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
@@ -400,8 +408,12 @@ static void cliPrintf(const char *format, ...)
 }
 
 
-static void cliPrintLinef(const char *format, ...)
+void cliPrintLinef(const char *format, ...)
 {
+    if (!cliMode) {
+        return;
+    }
+
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
