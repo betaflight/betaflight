@@ -39,6 +39,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_PROFILE_COUNT 1
 #endif
 
+#define OSD_RCCHANNELS_COUNT 4
+
 #define OSD_PROFILE_BITS_POS 11
 #define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
 #define OSD_POS_MAX   0x3FF
@@ -132,6 +134,7 @@ typedef enum {
     OSD_PID_PROFILE_NAME,
     OSD_PROFILE_NAME,
     OSD_RSSI_DBM_VALUE,
+    OSD_RC_CHANNELS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -258,6 +261,7 @@ typedef struct osdConfig_s {
     uint16_t link_quality_alarm;
     uint8_t rssi_dbm_alarm;
     uint8_t gps_sats_show_hdop;
+    int8_t rcChannels[OSD_RCCHANNELS_COUNT];           // RC channel values to display, -1 if none
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
