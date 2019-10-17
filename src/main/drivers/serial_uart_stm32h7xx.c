@@ -88,53 +88,15 @@
 #define UART8_RX_DMA_STREAM NULL
 #endif
 
-#define UART_BUFFERS(n) \
-  DMA_RAM volatile uint8_t uart ## n ## RxBuffer[UART_RX_BUFFER_SIZE]; \
-  DMA_RAM volatile uint8_t uart ## n ## TxBuffer[UART_TX_BUFFER_SIZE]; struct dummy_s
-
-#ifdef USE_UART1
-UART_BUFFERS(1);
-#endif
-
-#ifdef USE_UART2
-UART_BUFFERS(2);
-#endif
-
-#ifdef USE_UART3
-UART_BUFFERS(3);
-#endif
-
-#ifdef USE_UART4
-UART_BUFFERS(4);
-#endif
-
-#ifdef USE_UART5
-UART_BUFFERS(5);
-#endif
-
-#ifdef USE_UART6
-UART_BUFFERS(6);
-#endif
-
-#ifdef USE_UART7
-UART_BUFFERS(7);
-#endif
-
-#ifdef USE_UART8
-UART_BUFFERS(8);
-#endif
-
-#undef UART_BUFFERS
-
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .device = UARTDEV_1,
         .reg = USART1,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_USART1_RX,
+        .rxDMAChannel = DMA_REQUEST_USART1_RX,
         .rxDMAResource = (dmaResource_t *)UART1_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_USART1_TX,
+        .txDMAChannel = DMA_REQUEST_USART1_TX,
         .txDMAResource = (dmaResource_t *)UART1_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -163,9 +125,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_2,
         .reg = USART2,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_USART2_RX,
+        .rxDMAChannel = DMA_REQUEST_USART2_RX,
         .rxDMAResource = (dmaResource_t *)UART2_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_USART2_TX,
+        .txDMAChannel = DMA_REQUEST_USART2_TX,
         .txDMAResource = (dmaResource_t *)UART2_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -192,9 +154,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_3,
         .reg = USART3,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_USART3_RX,
+        .rxDMAChannel = DMA_REQUEST_USART3_RX,
         .rxDMAResource = (dmaResource_t *)UART3_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_USART3_TX,
+        .txDMAChannel = DMA_REQUEST_USART3_TX,
         .txDMAResource = (dmaResource_t *)UART3_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -223,9 +185,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_4,
         .reg = UART4,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_UART4_RX,
+        .rxDMAChannel = DMA_REQUEST_UART4_RX,
         .rxDMAResource = (dmaResource_t *)UART4_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_UART4_TX,
+        .txDMAChannel = DMA_REQUEST_UART4_TX,
         .txDMAResource = (dmaResource_t *)UART4_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -258,9 +220,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_5,
         .reg = UART5,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_UART5_RX,
+        .rxDMAChannel = DMA_REQUEST_UART5_RX,
         .rxDMAResource = (dmaResource_t *)UART5_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_UART5_TX,
+        .txDMAChannel = DMA_REQUEST_UART5_TX,
         .txDMAResource = (dmaResource_t *)UART5_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -289,9 +251,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_6,
         .reg = USART6,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_USART6_RX,
+        .rxDMAChannel = DMA_REQUEST_USART6_RX,
         .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_USART6_TX,
+        .txDMAChannel = DMA_REQUEST_USART6_TX,
         .txDMAResource = (dmaResource_t *)UART6_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -318,9 +280,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_7,
         .reg = UART7,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_UART7_RX,
+        .rxDMAChannel = DMA_REQUEST_UART7_RX,
         .rxDMAResource = (dmaResource_t *)UART7_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_UART7_TX,
+        .txDMAChannel = DMA_REQUEST_UART7_TX,
         .txDMAResource = (dmaResource_t *)UART7_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -351,9 +313,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .device = UARTDEV_8,
         .reg = UART8,
 #ifdef USE_DMA
-        .rxDMARequest = DMA_REQUEST_UART8_RX,
+        .rxDMAChannel = DMA_REQUEST_UART8_RX,
         .rxDMAResource = (dmaResource_t *)UART8_RX_DMA_STREAM,
-        .txDMARequest = DMA_REQUEST_UART8_TX,
+        .txDMAChannel = DMA_REQUEST_UART8_TX,
         .txDMAResource = (dmaResource_t *)UART8_TX_DMA_STREAM,
 #endif
         .rxPins = {
@@ -374,107 +336,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
 };
 
-#ifdef USE_DMA
-static void handleUsartTxDma(uartPort_t *s);
-#endif
-
-void uartIrqHandler(uartPort_t *s)
-{
-    UART_HandleTypeDef *huart = &s->Handle;
-    /* UART in mode Receiver ---------------------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET)) {
-        uint8_t rbyte = (uint8_t)(huart->Instance->RDR & (uint8_t) 0xff);
-
-        if (s->port.rxCallback) {
-            s->port.rxCallback(rbyte, s->port.rxCallbackData);
-        } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
-            s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
-        }
-        CLEAR_BIT(huart->Instance->CR1, (USART_CR1_PEIE));
-
-        /* Disable the UART Error Interrupt: (Frame error, noise error, overrun error) */
-        CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
-
-        __HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST);
-    }
-
-    /* UART parity error interrupt occurred -------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_PE) != RESET)) {
-        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_PEF);
-    }
-
-    /* UART frame error interrupt occurred --------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_FE) != RESET)) {
-        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_FEF);
-    }
-
-    /* UART noise error interrupt occurred --------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_NE) != RESET)) {
-        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_NEF);
-    }
-
-    /* UART Over-Run interrupt occurred -----------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET)) {
-        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
-    }
-
-    /* UART in mode Transmitter ------------------------------------------------*/
-    if (
-#ifdef USE_DMA
-        !s->txDMAResource &&
-#endif
-        (__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET)) {
-        /* Check that a Tx process is ongoing */
-        if (huart->gState != HAL_UART_STATE_BUSY_TX) {
-            if (s->port.txBufferTail == s->port.txBufferHead) {
-                huart->TxXferCount = 0;
-                /* Disable the UART Transmit Data Register Empty Interrupt */
-                CLEAR_BIT(huart->Instance->CR1, USART_CR1_TXEIE);
-            } else {
-                if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE)) {
-                    huart->Instance->TDR = (((uint16_t) s->port.txBuffer[s->port.txBufferTail]) & (uint16_t) 0x01FFU);
-                } else {
-                    huart->Instance->TDR = (uint8_t)(s->port.txBuffer[s->port.txBufferTail]);
-                }
-                s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
-            }
-        }
-    }
-
-    /* UART in mode Transmitter (transmission end) -----------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
-        HAL_UART_IRQHandler(huart);
-#ifdef USE_DMA
-        if (s->txDMAResource) {
-            handleUsartTxDma(s);
-        }
-#endif
-    }
-
-    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
-        if (s->port.idleCallback) {
-            s->port.idleCallback();
-        }
-
-        __HAL_UART_CLEAR_IDLEFLAG(huart);
-    }
-
-}
-
-#ifdef USE_DMA
-static void handleUsartTxDma(uartPort_t *s)
-{
-    uartTryStartTxDMA(s);
-}
-
-static void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
-{
-    uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
-    HAL_DMA_IRQHandler(&s->txDMAHandle);
-}
-#endif
-
 // XXX Should serialUART be consolidated?
 
 uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
@@ -494,39 +355,13 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->USARTx = hardware->reg;
 
-#ifdef STM32H7
     s->port.rxBuffer = hardware->rxBuffer;
     s->port.txBuffer = hardware->txBuffer;
     s->port.rxBufferSize = hardware->rxBufferSize;
     s->port.txBufferSize = hardware->txBufferSize;
-#endif
 
 #ifdef USE_DMA
-    if (hardware->rxDMAResource) {
-        s->rxDMAResource = hardware->rxDMAResource;
-#if defined(STM32H7)
-        s->rxDMARequest = hardware->rxDMARequest;
-#else // F4 & F7
-        s->rxDMAChannel = hardware->DMAChannel;
-#endif
-    }
-
-    if (hardware->txDMAResource) {
-        s->txDMAResource = hardware->txDMAResource;
-#if defined(STM32H7)
-        s->txDMARequest = hardware->txDMARequest;
-#else // F4 & F7
-        s->txDMAChannel = hardware->DMAChannel;
-#endif
-
-        // DMA TX Interrupt
-        dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAResource);
-        dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        dmaSetHandler(identifier, dmaIRQHandler, hardware->txPriority, (uint32_t)uartdev);
-    }
-
-    s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
-    s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
+    uartConfigureDma(uartdev);
 #endif
 
     s->Handle.Instance = hardware->reg;
@@ -556,11 +391,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
     }
 
 #ifdef USE_DMA
-#if defined(STM32H7)
     if (!s->rxDMAResource)
-#else
-    if (!s->rxDMAChannel)
-#endif
 #endif
     {
         HAL_NVIC_SetPriority(hardware->rxIrq, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));

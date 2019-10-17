@@ -44,9 +44,6 @@ typedef struct uartPort_s {
     serialPort_t port;
 
 #ifdef USE_DMA
-    bool rxUseDma;
-    bool txUseDma;
-
 #ifdef USE_HAL_DRIVER
     DMA_HandleTypeDef rxDMAHandle;
     DMA_HandleTypeDef txDMAHandle;
@@ -54,13 +51,8 @@ typedef struct uartPort_s {
 
     dmaResource_t *rxDMAResource;
     dmaResource_t *txDMAResource;
-#if defined(STM32F4) || defined(STM32F7)
     uint32_t rxDMAChannel;
     uint32_t txDMAChannel;
-#elif defined(STM32H7)
-    uint8_t rxDMARequest;
-    uint8_t txDMARequest;
-#endif
 
     uint32_t rxDMAIrq;
     uint32_t txDMAIrq;

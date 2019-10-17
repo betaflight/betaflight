@@ -73,7 +73,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
-        .rxPriority = NVIC_PRIO_SERIALUART1
+        .rxPriority = NVIC_PRIO_SERIALUART1,
+        .txBuffer = uart1TxBuffer,
+        .rxBuffer = uart1RxBuffer,
+        .txBufferSize = sizeof(uart1TxBuffer),
+        .rxBufferSize = sizeof(uart1RxBuffer),
     },
 #endif
 #ifdef USE_UART2
@@ -88,7 +92,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2,
-        .rxPriority = NVIC_PRIO_SERIALUART2
+        .rxPriority = NVIC_PRIO_SERIALUART2,
+        .txBuffer = uart2TxBuffer,
+        .rxBuffer = uart2RxBuffer,
+        .txBufferSize = sizeof(uart2TxBuffer),
+        .rxBufferSize = sizeof(uart2RxBuffer),
     },
 #endif
 #ifdef USE_UART3
@@ -103,12 +111,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rcc = RCC_APB1(USART3),
         .irqn = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3,
-        .rxPriority = NVIC_PRIO_SERIALUART3
+        .rxPriority = NVIC_PRIO_SERIALUART3,
+        .txBuffer = uart3TxBuffer,
+        .rxBuffer = uart3RxBuffer,
+        .txBufferSize = sizeof(uart3TxBuffer),
+        .rxBufferSize = sizeof(uart3RxBuffer),
     },
 #endif
 };
 
-void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
+void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
@@ -132,30 +144,18 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->port.baudRate = baudRate;
 
-    s->port.rxBuffer = uartdev->rxBuffer;
-    s->port.txBuffer = uartdev->txBuffer;
-    s->port.rxBufferSize = ARRAYLEN(uartdev->rxBuffer);
-    s->port.txBufferSize = ARRAYLEN(uartdev->txBuffer);
-
     const uartHardware_t *hardware = uartdev->hardware;
 
     s->USARTx = hardware->reg;
 
+    s->port.rxBuffer = hardware->rxBuffer;
+    s->port.txBuffer = hardware->txBuffer;
+    s->port.rxBufferSize = hardware->rxBufferSize;
+    s->port.txBufferSize = hardware->txBufferSize;
+
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
-    if (hardware->rxDMAResource) {
-        dmaInit(dmaGetIdentifier(hardware->rxDMAResource), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
-        s->rxDMAResource = hardware->rxDMAResource;
-        s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
-    }
-
-    if (hardware->txDMAResource) {
-        const dmaIdentifier_e identifier = dmaGetIdentifier(hardware->txDMAResource);
-        dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        dmaSetHandler(identifier, uart_tx_dma_IRQHandler, hardware->txPriority, (uint32_t)s);
-        s->txDMAResource = hardware->txDMAResource;
-        s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
-    }
+    uartConfigureDma(uartdev);
 
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
