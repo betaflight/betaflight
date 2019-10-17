@@ -50,9 +50,6 @@ serialPort_t *debugSerialPort = NULL;
 #define DPRINTF(x)
 #endif
 
-// JEDEC ID
-#define JEDEC_ID_WINBOND_W25N01GV    0xEFAA21
-
 // Device size parameters
 #define W25N01G_PAGE_SIZE         2048
 #define W25N01G_PAGES_PER_BLOCK   64

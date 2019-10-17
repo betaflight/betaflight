@@ -133,6 +133,16 @@
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
 #define SPI4_TX_DMA_OPT                     0     // DMA 2 Stream 1 Channel 4
 
+#define USE_FLASHFS
+#define USE_FLASH_CHIP
+#define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G          // 1Gb NAND flash support
+#define USE_FLASH_W25M             // Stacked die support
+#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define FLASH_SPI_INSTANCE      SPI4
+#define FLASH_CS_PIN            PE10
+
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE                  (I2CDEV_1)
