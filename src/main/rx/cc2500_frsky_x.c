@@ -254,7 +254,7 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[14]=lcrc;
 }
 
-static bool frSkyXCheckQueueEmpty(void)
+static bool frSkyXReadyToSend(void)
 {
     return true;
 }
@@ -553,7 +553,7 @@ rx_spi_received_e frSkyXProcessFrame(uint8_t * const packet)
             }
 
             while (remoteToProcessIndex < telemetryRxBuffer[remoteToProcessId].data.dataLength && !payload) {
-                payload = smartPortDataReceive(telemetryRxBuffer[remoteToProcessId].data.data[remoteToProcessIndex], &clearToSend, frSkyXCheckQueueEmpty, false);
+                payload = smartPortDataReceive(telemetryRxBuffer[remoteToProcessId].data.data[remoteToProcessIndex], &clearToSend, frSkyXReadyToSend, false);
                 remoteToProcessIndex = remoteToProcessIndex + 1;
             }
         }
