@@ -60,6 +60,7 @@ typedef struct displayPortProfile_s {
     bool invert;
     uint8_t blackBrightness;
     uint8_t whiteBrightness;
+    int8_t displayPortSerial;  // serialPortIdentifier_e
 } displayPortProfile_t;
 
 // Note: displayPortProfile_t used as a parameter group for CMS over CRSF (io/displayport_crsf)
