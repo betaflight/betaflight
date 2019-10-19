@@ -439,9 +439,30 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 
     spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(max7456Config->spiDevice)));
 
-    // Detect device type by writing and reading CA[8] bit at CMAL[6].
-    // Do this at half the speed for safety.
+    // Detect MAX7456 existence and device type. Do this at half the speed for safety.
+
+    // Detect MAX7456 and compatible device by reading OSDM (OSD Insertion MUX) register.
+    // This register is not modified in this driver, therefore ensured to remain at its default value (0x1B).
+
     spiSetDivisor(busdev->busdev_u.spi.instance, MAX7456_SPI_CLK * 2);
+
+    __spiBusTransactionBegin(busdev);
+
+    uint8_t osdm = max7456Send(MAX7456ADD_OSDM|MAX7456ADD_READ, 0xff);
+
+    if (osdm != 0x1B) {
+        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
+        return false;
+    }
+
+    __spiBusTransactionEnd(busdev);
+
+    // At this point, we can claim the ownership of the CS pin
+
+    IOInit(busdev->busdev_u.spi.csnPin, OWNER_OSD_CS, 0);
+
+    // Detect device type by writing and reading CA[8] bit at CMAL[6].
+    // This is a bit for accessing second half of character glyph storage, supported only by AT variant.
 
     __spiBusTransactionBegin(busdev);
 

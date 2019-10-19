@@ -219,6 +219,13 @@ typedef enum {
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
+typedef enum {
+    OSD_DISPLAYPORT_DEVICE_NONE = 0,
+    OSD_DISPLAYPORT_DEVICE_AUTO,
+    OSD_DISPLAYPORT_DEVICE_MAX7456,
+    OSD_DISPLAYPORT_DEVICE_MSP,
+} osdDisplayPortDevice_e;
+
 // Make sure the number of warnings do not exceed the available 32bit storage
 STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 
@@ -251,7 +258,7 @@ typedef struct osdConfig_s {
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
     uint8_t core_temp_alarm;
-    uint8_t ahInvert;         // invert the artificial horizon
+    uint8_t ahInvert;                         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
     char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
