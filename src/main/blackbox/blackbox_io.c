@@ -28,6 +28,17 @@
 
 #ifdef USE_BLACKBOX
 
+#include "build/debug.h"
+
+// Debugging code that occasionally become useful when users start to complain broken log output.
+// Enable DEBUG_BB_OUTPUT and set debug_mode = BLACKBOX_OUTPUT to see debug values.
+// (Note that bandwidth usage slightly uincrease as it will include debug variables themselves).
+//
+// 0: Average output bandwidth in last 100ms
+// 1: Maximum hold of above.
+// 2: Bytes dropped due to output buffer full.
+//#define DEBUG_BB_OUTPUT
+
 #include "blackbox.h"
 #include "blackbox_io.h"
 
@@ -87,8 +98,19 @@ void blackboxOpen(void)
     }
 }
 
+#ifdef DEBUG_BB_OUTPUT
+static uint32_t bbBits;
+static timeMs_t bbLastclearMs;
+static uint16_t bbRateMax;
+static uint32_t bbDrops;
+#endif
+
 void blackboxWrite(uint8_t value)
 {
+#ifdef DEBUG_BB_OUTPUT
+    bbBits += 8;
+#endif
+
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
@@ -102,9 +124,32 @@ void blackboxWrite(uint8_t value)
 #endif
     case BLACKBOX_DEVICE_SERIAL:
     default:
+#ifdef DEBUG_BB_OUTPUT
+        bbBits += 2;
+        if (serialTxBytesFree(blackboxPort) == 0) {
+            ++bbDrops;
+            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 2, bbDrops);
+            return;
+        }
+#endif
         serialWrite(blackboxPort, value);
         break;
     }
+
+#ifdef DEBUG_BB_OUTPUT
+    timeMs_t now = millis();
+
+    if (now > bbLastclearMs + 100) {  // Debug log every 100[msec]
+        uint16_t bbRate = ((bbBits * 10 + 5) / (now - bbLastclearMs)) / 10; // In unit of [Kbps]
+        DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 0, bbRate);
+        if (bbRate > bbRateMax) {
+            bbRateMax = bbRate;
+            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 1, bbRateMax);
+        }
+        bbLastclearMs = now;
+        bbBits = 0;
+    }
+#endif
 }
 
 // Print the null-terminated string 's' to the blackbox device and return the number of bytes written
