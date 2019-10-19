@@ -307,6 +307,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
         osdConfig->rcChannels[i] = -1;
     }
+
+    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
 }
 
 static void osdDrawLogo(int x, int y)
