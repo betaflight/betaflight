@@ -245,6 +245,9 @@ CFLAGS     += $(ARCH_FLAGS) \
               -fdata-sections \
               -fno-common \
               -pedantic \
+              -Wno-stringop-truncation \
+              -Wno-attributes \
+              -Wno-cast-function-type \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
               -DUSE_STDPERIPH_DRIVER \
