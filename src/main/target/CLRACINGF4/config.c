@@ -46,7 +46,7 @@
 
 void targetConfiguration(void)
 {
-    pinioBoxConfigMutable()->permanentId[0] = 39;
+    pinioBoxConfigMutable()->permanentId[0] = 40;
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
     gyroConfigMutable()->gyro_sync_denom = 1;  // 8kHz gyro
     pidConfigMutable()->pid_process_denom = 1; // 8kHz PID
