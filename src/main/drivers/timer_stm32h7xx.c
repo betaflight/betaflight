@@ -148,14 +148,15 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM14, CH1N, PF9, TIM_USE_ANY, 0, 0, 0),
 
 // Port H
-    DEF_TIM(TIM12, CH1, PH6, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM12, CH2, PH9, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM5, CH1, PH10, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM5, CH2, PH11, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM5, CH3, PH12, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM8, CH1N, PH13, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM8, CH2N, PH14, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM8, CH3N, PH15, TIM_USE_ANY, 0, 0, 0),
+// Port H is not available for LPQFP-100 or 144 and TFBGA-100 package
+//    DEF_TIM(TIM12, CH1, PH6, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM12, CH2, PH9, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM5, CH1, PH10, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM5, CH2, PH11, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM5, CH3, PH12, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM8, CH1N, PH13, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM8, CH2N, PH14, TIM_USE_ANY, 0, 0, 0),
+//    DEF_TIM(TIM8, CH3N, PH15, TIM_USE_ANY, 0, 0, 0),
 };
 #endif
 
