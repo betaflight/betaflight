@@ -680,7 +680,7 @@ static bool isWritingConfigToCopy()
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-bool cliProcessCustomDefaults(void);
+static bool cliProcessCustomDefaults(void);
 #endif
 
 static void backupAndResetConfigs(const bool useCustomDefaults)
@@ -6547,7 +6547,7 @@ void cliProcess(void)
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-bool cliProcessCustomDefaults(void)
+static bool cliProcessCustomDefaults(void)
 {
     char *customDefaultsPtr = customDefaultsStart;
     if (processingCustomDefaults || !isCustomDefaults(customDefaultsPtr)) {
