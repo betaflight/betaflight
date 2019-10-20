@@ -955,7 +955,7 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
-    fcTasksInit();
+    tasksInit();
 
     systemState |= SYSTEM_STATE_READY;
 }
