@@ -168,7 +168,13 @@ typedef enum {
     .owner.resourceIndex = 0 \
     }
 
-#define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
+#if defined(USE_CCM_CODE) && defined(STM32F3)
+#define DMA_HANDLER_CODE CCM_CODE
+#else
+#define DMA_HANDLER_CODE
+#endif
+
+#define DEFINE_DMA_IRQ_HANDLER(d, c, i) DMA_HANDLER_CODE void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
                                                                         const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
                                                                         dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
                                                                         if (handler) \
