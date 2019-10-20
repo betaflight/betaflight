@@ -30,14 +30,17 @@
 
 #include "build/debug.h"
 
-// Debugging code that occasionally become useful when users start to complain broken log output.
-// Enable DEBUG_BB_OUTPUT and set debug_mode = BLACKBOX_OUTPUT to see debug values.
-// (Note that bandwidth usage slightly uincrease as it will include debug variables themselves).
+// Debugging code that become useful when output bandwidth saturation is suspected.
+// Set debug_mode = BLACKBOX_OUTPUT to see following debug values.
 //
 // 0: Average output bandwidth in last 100ms
 // 1: Maximum hold of above.
 // 2: Bytes dropped due to output buffer full.
-//#define DEBUG_BB_OUTPUT
+//
+// Note that bandwidth usage slightly increases when DEBUG_BB_OUTPUT is enabled,
+// as output will include debug variables themselves.
+
+#define DEBUG_BB_OUTPUT
 
 #include "blackbox.h"
 #include "blackbox_io.h"
