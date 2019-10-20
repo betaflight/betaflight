@@ -45,6 +45,9 @@
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 
+#ifdef USE_BATTERY_CONTINUE
+#include "io/battery_continue.h"
+#endif
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
@@ -71,6 +74,10 @@
 static bool isUsingSticksToArm = true;
 
 float rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
+
+#ifdef USE_BATTERY_CONTINUE
+extern bool isBatteryContinueActive;
+#endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
@@ -289,6 +296,19 @@ void processRcStickPositions()
         return;
     }
 
+#ifdef USE_BATTERY_CONTINUE
+    if (isBatteryContinueActive) {
+        if (rcSticks == THR_HI + YAW_LO + PIT_HI + ROL_HI) {
+            setMAhDrawn(batContinueReadMAh());
+            batContinueWriteMAh(0);
+            isBatteryContinueActive = false;
+        }
+        if (rcSticks == THR_HI + YAW_LO + PIT_HI + ROL_LO) {
+            batContinueWriteMAh(0);
+            isBatteryContinueActive = false;
+        }
+    }
+#endif
 
     if (FLIGHT_MODE(ANGLE_MODE|HORIZON_MODE)) {
         // in ANGLE or HORIZON mode, so use sticks to apply accelerometer trims

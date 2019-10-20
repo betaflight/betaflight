@@ -873,6 +873,26 @@ void init(void)
     blackboxInit();
 #endif
 
+#ifdef USE_BATTERY_CONTINUE
+    if (batteryConfig()->isBatteryContinueEnabled == 1) {
+#ifdef USE_BLACKBOX
+        // If blackbox isn't configured to use the sdcard, try to initialize it for battery continuation
+        if (blackboxConfig()->device != BLACKBOX_DEVICE_SDCARD
+            && sdcardConfig()->mode) {
+            if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                initFlags |= SD_INIT_ATTEMPTED;
+                sdCardAndFSInit();
+            }
+        }
+#else
+        if (!(initFlags & SD_INIT_ATTEMPTED)) {
+            initFlags |= SD_INIT_ATTEMPTED;
+            sdCardAndFSInit();
+        }
+#endif
+    }
+#endif
+
 #ifdef USE_ACC
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);

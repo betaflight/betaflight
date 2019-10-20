@@ -70,6 +70,9 @@
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
+#ifdef USE_BATTERY_CONTINUE
+#include "io/battery_continue.h"
+#endif
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -367,6 +370,10 @@ void updateArmingStatus(void)
     }
 }
 
+#ifdef USE_BATTERY_CONTINUE
+extern bool saveMAhDrawn;
+#endif
+
 void disarm(void)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -400,6 +407,11 @@ void disarm(void)
         if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
             beeper(BEEPER_DISARMING);      // emit disarm tone
         }
+#ifdef USE_BATTERY_CONTINUE
+        if (batteryConfig()->isBatteryContinueEnabled == 1 && batContinueReadMAh() != getMAhDrawn()) {
+            saveMAhDrawn = true;
+        }
+#endif
     }
 }
 

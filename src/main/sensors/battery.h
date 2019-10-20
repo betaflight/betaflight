@@ -65,6 +65,9 @@ typedef struct batteryConfig_s {
     uint8_t ibatLpfPeriod;                  // Period of the cutoff frequency for the Ibat filter (in 0.1 s)
     uint8_t vbatDurationForWarning;      // Period voltage has to sustain before the battery state is set to BATTERY_WARNING (in 0.1 s)
     uint8_t vbatDurationForCritical;         // Period voltage has to sustain before the battery state is set to BATTERY_CRIT (in 0.1 s)
+
+    uint8_t isBatteryContinueEnabled;           // Save and offer lipo mah continuation
+    uint8_t batteryContinuePeriod;              // Period to offer the lipo continuation question
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);
@@ -110,6 +113,9 @@ bool isAmperageConfigured(void);
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
+#ifdef USE_BATTERY_CONTINUE
+void setMAhDrawn(uint32_t mAhDrawn);
+#endif
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 

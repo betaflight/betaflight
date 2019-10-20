@@ -135,6 +135,7 @@ typedef enum {
     OSD_PROFILE_NAME,
     OSD_RSSI_DBM_VALUE,
     OSD_RC_CHANNELS,
+    OSD_BATTERY_CONTINUE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

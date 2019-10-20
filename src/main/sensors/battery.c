@@ -43,6 +43,12 @@
 
 #include "sensors/battery.h"
 
+#ifdef USE_BATTERY_CONTINUE
+#include "blackbox/blackbox.h"
+#include "io/battery_continue.h"
+#include "osd/osd.h"
+#endif
+
 /**
  * terminology: meter vs sensors
  *
@@ -71,6 +77,12 @@ static voltageMeter_t voltageMeter;
 static batteryState_e batteryState;
 static batteryState_e voltageState;
 static batteryState_e consumptionState;
+
+#ifdef USE_BATTERY_CONTINUE
+timeUs_t batteryContinueEndTimeUs = 0;
+extern bool isBatteryContinueActive;
+bool saveMAhDrawn = false;
+#endif
 
 #ifndef DEFAULT_CURRENT_METER_SOURCE
 #ifdef USE_VIRTUAL_CURRENT_METER
@@ -118,7 +130,37 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .ibatLpfPeriod = 10,
     .vbatDurationForWarning = 0,
     .vbatDurationForCritical = 0,
+
+    .batteryContinuePeriod = 15,
 );
+
+#ifdef USE_BATTERY_CONTINUE
+static void updateBatteryDrawn(timeUs_t currentTimeUs)
+{
+    isBatteryContinueActive = false;
+
+    if (!ARMING_FLAG(WAS_EVER_ARMED)
+        && getBatteryState() == BATTERY_OK
+        && batteryConfig()->isBatteryContinueEnabled == 1
+        && batContinueReadMAh() > 0
+        && VISIBLE(osdConfig()->item_pos[OSD_BATTERY_CONTINUE])) {
+
+        if (getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
+            if (batteryContinueEndTimeUs == 0 || currentTimeUs < batteryContinueEndTimeUs) {
+                if (batteryContinueEndTimeUs == 0) {
+                    isBatteryContinueActive = true;
+                    batteryContinueEndTimeUs = currentTimeUs + batteryConfig()->batteryContinuePeriod * 1000000;
+                } else if (currentTimeUs < batteryContinueEndTimeUs) {
+                    isBatteryContinueActive = true;
+                }
+            }
+        } else {
+            isBatteryContinueActive = false;
+            batContinueWriteMAh(0);
+        }
+    }
+}
+#endif
 
 void batteryUpdateVoltage(timeUs_t currentTimeUs)
 {
@@ -148,6 +190,10 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
         debug[0] = voltageMeter.unfiltered;
         debug[1] = voltageMeter.filtered;
     }
+
+#ifdef USE_BATTERY_CONTINUE
+    updateBatteryDrawn(currentTimeUs);
+#endif
 }
 
 static void updateBatteryBeeperAlert(void)
@@ -455,6 +501,15 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
             currentMeterReset(&currentMeter);
             break;
     }
+#ifdef USE_BATTERY_CONTINUE
+    if (saveMAhDrawn && !ARMING_FLAG(ARMED)) {
+        // Wait until the blackbox is done
+        if (blackboxConfig()->device != BLACKBOX_DEVICE_SDCARD || blackboxMayEditConfig()) {
+            saveMAhDrawn = false;
+            batContinueWriteMAh(getMAhDrawn());
+        }
+    }
+#endif
 }
 
 float calculateVbatPidCompensation(void) {
@@ -536,5 +591,16 @@ int32_t getAmperageLatest(void)
 
 int32_t getMAhDrawn(void)
 {
+#ifdef USE_BATTERY_CONTINUE
+    return currentMeter.mAhDrawn + currentMeter.mAhDrawnOffset;
+#else
     return currentMeter.mAhDrawn;
+#endif
 }
+
+#ifdef USE_BATTERY_CONTINUE
+void setMAhDrawn(uint32_t mAhDrawn)
+{
+    currentMeter.mAhDrawnOffset = mAhDrawn;
+}
+#endif

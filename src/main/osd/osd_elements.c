@@ -87,6 +87,11 @@
 #include "flight/pid.h"
 
 #include "io/beeper.h"
+
+#ifdef USE_BATTERY_CONTINUE
+#include "io/battery_continue.h"
+#endif
+
 #include "io/gps.h"
 #include "io/vtx.h"
 
@@ -158,6 +163,11 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 #define CLR_BLINK(item) (blinkBits[(item) / 32] &= ~(1 << ((item) % 32)))
 #define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
 #define BLINK(item) (IS_BLINK(item) && blinkState)
+
+#ifdef USE_BATTERY_CONTINUE
+extern bool isBatteryContinueActive;
+extern timeUs_t batteryContinueEndTimeUs;
+#endif
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 typedef int (*getEscRpmOrFreqFnPtr)(int i);
@@ -1160,6 +1170,22 @@ static void osdElementVtxChannel(osdElementParms_t *element)
 }
 #endif // USE_VTX_COMMON
 
+#ifdef USE_BATTERY_CONTINUE
+static void osdElementBatteryContinue(osdElementParms_t *element)
+{
+    if (isBatteryContinueActive) {
+        timeUs_t currentTimeUs = micros();
+
+        int timeLeft = MIN((batteryContinueEndTimeUs - currentTimeUs) / 100000, UINT32_C(999));
+        int saved = MIN(batContinueReadMAh(), 99999);
+
+        tfp_sprintf(element->buff, "CONT. %5d%c %2d.%1d", saved, SYM_MAH, timeLeft / 10, timeLeft % 10);
+    } else {
+        element->drawElement = false;
+    }
+}
+#endif
+
 static void osdElementWarnings(osdElementParms_t *element)
 {
 #define OSD_WARNINGS_MAX_SIZE 12
@@ -1478,6 +1504,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_PROFILE_NAME,
 #endif
     OSD_RC_CHANNELS,
+#ifdef USE_BATTERY_CONTINUE
+    OSD_BATTERY_CONTINUE,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1584,6 +1613,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
     [OSD_RC_CHANNELS]             = osdElementRcChannels,
+#ifdef USE_BATTERY_CONTINUE
+    [OSD_BATTERY_CONTINUE]           = osdElementBatteryContinue,
+#endif
 };
 
 static void osdAddActiveElement(osd_items_e element)

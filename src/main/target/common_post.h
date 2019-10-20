@@ -374,3 +374,7 @@ extern uint8_t __config_end;
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
 #endif
+
+#if defined(USE_BATTERY_CONTINUE) && !defined(USE_SDCARD)
+#undef USE_BATTERY_CONTINUE
+#endif
