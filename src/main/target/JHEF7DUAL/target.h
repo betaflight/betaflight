@@ -22,8 +22,17 @@
 
 #define USE_TARGET_CONFIG
 
+#if defined(HIFIONRCF7)
+#define TARGET_BOARD_IDENTIFIER "HF7D"
+#else
 #define TARGET_BOARD_IDENTIFIER "JH7D"
+#endif
+
+#if defined(HIFIONRCF7)
+#define USBD_PRODUCT_STRING     "HIFIONRCF7"
+#else
 #define USBD_PRODUCT_STRING     "JHEF7DUAL"
+#endif
 
 #define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
