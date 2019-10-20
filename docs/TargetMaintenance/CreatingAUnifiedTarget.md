@@ -44,7 +44,9 @@ These instructions explain how to create a Unified Target configuration for an e
 
 - connect to your board running the Unified Target firmware, enter CLI;
 
-- copy / paste the contents of the dump created in 2. into CLI, then enter `save`;
+- copy / paste the contents of the dump created in 2. into CLI
+
+- enter the command: `feature OSD` in CLI, just before the #master section (to switch on OSD by default), then enter `save`;
 
 - when the board reboots now, the LEDs should start working again - this is a sign that the previous step was successful.
 
@@ -64,6 +66,6 @@ These instructions explain how to create a Unified Target configuration for an e
 
 - re-start CLI (Disconnect / Connect), then do a `diff all bare`, save the output into a file named `<manufacturer_id>-<board_name>.config` with 'Save to File'. It is crucial that the name exactly matches the manufacturer id and board name specified in the file, or else checking of the pull request you are going to open in a subsequent step will fail;
 
-- edit the resulting file and verify that there are no extra lines before the one starting with `# Betaflight`, and no extra lines after the last line starting with `set`;
+- edit the resulting file and verify that the first line in the file starts with `# Betaflight`, otherwise delete the lines before this line. Likewise, there must be no extra lines after the last line starting with `set`, delete all subsequnet lines otherwise;
 
 - open a [pull request](https://github.com/betaflight/unified-targets/pulls) to put your target configuration into `configs/default`.
