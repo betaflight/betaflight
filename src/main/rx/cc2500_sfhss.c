@@ -423,13 +423,13 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
     return ret;
 }
 
-bool sfhssSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool sfhssSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
 {
     rxSpiCommonIOInit(rxSpiConfig);
 
     cc2500SpiInit();
 
-    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_SFHSS;
+    rxRuntimeState->channelCount = RC_CHANNEL_COUNT_SFHSS;
 
     start_time = millis();
     SET_STATE(STATE_INIT);

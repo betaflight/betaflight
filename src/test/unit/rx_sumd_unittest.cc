@@ -151,30 +151,30 @@ protected:
 TEST_F(SumdRxInitUnitTest, Test_SumdRxNotEnabled)
 {
     const rxConfig_t initialRxConfig = {};
-    rxRuntimeConfig_t rxRuntimeConfig = {};
+    rxRuntimeState_t rxRuntimeState = {};
     findSerialPortConfig_stub_retval = NULL;
 
-    EXPECT_FALSE(sumdInit(&initialRxConfig, &rxRuntimeConfig));
+    EXPECT_FALSE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
-    EXPECT_EQ(18, rxRuntimeConfig.channelCount);
-    EXPECT_EQ(11000, rxRuntimeConfig.rxRefreshRate);
-    EXPECT_FALSE(NULL == rxRuntimeConfig.rcReadRawFn);
-    EXPECT_FALSE(NULL == rxRuntimeConfig.rcFrameStatusFn);
+    EXPECT_EQ(18, rxRuntimeState.channelCount);
+    EXPECT_EQ(11000, rxRuntimeState.rxRefreshRate);
+    EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
+    EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 }
 
 
 TEST_F(SumdRxInitUnitTest, Test_SumdRxEnabled)
 {
     const rxConfig_t initialRxConfig = {};
-    rxRuntimeConfig_t rxRuntimeConfig = {};
+    rxRuntimeState_t rxRuntimeState = {};
     findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
-    EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeConfig));
+    EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
-    EXPECT_EQ(18, rxRuntimeConfig.channelCount);
-    EXPECT_EQ(11000, rxRuntimeConfig.rxRefreshRate);
-    EXPECT_FALSE(NULL == rxRuntimeConfig.rcReadRawFn);
-    EXPECT_FALSE(NULL == rxRuntimeConfig.rcFrameStatusFn);
+    EXPECT_EQ(18, rxRuntimeState.channelCount);
+    EXPECT_EQ(11000, rxRuntimeState.rxRefreshRate);
+    EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
+    EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 
     EXPECT_TRUE(openSerial_called);
 }
@@ -184,7 +184,7 @@ TEST_F(SumdRxInitUnitTest, Test_SumdRxEnabled)
 class SumdRxProtocollUnitTest : public ::testing::Test
 {
 protected:
-    rxRuntimeConfig_t rxRuntimeConfig = {};
+    rxRuntimeState_t rxRuntimeState = {};
     virtual void SetUp()
     {
         serialTestResetPort();
@@ -192,22 +192,22 @@ protected:
         const rxConfig_t initialRxConfig = {};
         findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
-        EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeConfig));
+        EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeState));
         microseconds_stub_value += 5000;
-        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
     }
 
     virtual void checkValidChannels()
     {
         //report frame complete once
-        EXPECT_EQ(RX_FRAME_COMPLETE, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
-        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+        EXPECT_EQ(RX_FRAME_COMPLETE, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
 
-        ASSERT_EQ(900, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 0));
-        ASSERT_EQ(1100, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 1));
-        ASSERT_EQ(1500, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 2));
-        ASSERT_EQ(1900, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 3));
-        ASSERT_EQ(2100, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 4));
+        ASSERT_EQ(900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 0));
+        ASSERT_EQ(1100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 1));
+        ASSERT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 2));
+        ASSERT_EQ(1900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 3));
+        ASSERT_EQ(2100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 4));
     }
 
     /*
@@ -227,7 +227,7 @@ protected:
                            };
 
         for (size_t i = 0; i < sizeof(packet); i++) {
-            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
             stub_serialRxCallback(packet[i], NULL);
         }
         checkValidChannels();
@@ -247,7 +247,7 @@ protected:
                            };
 
         for (size_t i = 0; i < sizeof(packet); i++) {
-            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
             stub_serialRxCallback(packet[i], NULL);
         }
         checkValidChannels();
@@ -264,7 +264,7 @@ protected:
                            };
 
         for (size_t i = 0; i < sizeof(packet); i++) {
-            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
             stub_serialRxCallback(packet[i], NULL);
         }
 
@@ -280,15 +280,15 @@ protected:
                            };
 
         for (size_t i = 0; i < sizeof(packet); i++) {
-            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
             stub_serialRxCallback(packet[i], NULL);
         }
 
-        EXPECT_EQ(RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
-        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+        EXPECT_EQ(RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
 
         for  (size_t i = 0; i < 8; i++) {
-            ASSERT_EQ(1500, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
+            ASSERT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
         }
     }
 
@@ -303,17 +303,17 @@ protected:
                            };
 
         for (size_t i = 0; i < sizeof(packet); i++) {
-            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
             stub_serialRxCallback(packet[i], NULL);
         }
 
-        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
 
-        ASSERT_EQ(900, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 0));
-        ASSERT_EQ(1100, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 1));
-        ASSERT_EQ(1500, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 2));
-        ASSERT_EQ(1900, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 3));
-        ASSERT_EQ(2100, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, 4));
+        ASSERT_EQ(900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 0));
+        ASSERT_EQ(1100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 1));
+        ASSERT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 2));
+        ASSERT_EQ(1900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 3));
+        ASSERT_EQ(2100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 4));
     }
 
     virtual void sendIncompletePacket()
@@ -323,13 +323,13 @@ protected:
                            };
 
         for (size_t i = 0; i < sizeof(packet); i++) {
-            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
             stub_serialRxCallback(packet[i], NULL);
         }
 
         microseconds_stub_value += 5000;
 
-        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn(&rxRuntimeConfig));
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
     }
 };
 

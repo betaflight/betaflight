@@ -252,7 +252,7 @@ static bool checkChecksum(uint8_t *data, uint8_t length)
     return checksum == FPORT_CRC_VALUE;
 }
 
-static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
+static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     static bool hasTelemetryRequest = false;
 
@@ -281,7 +281,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
                     if (frameLength != FPORT_FRAME_PAYLOAD_LENGTH_CONTROL) {
                         reportFrameError(DEBUG_FPORT_ERROR_TYPE_SIZE);
                     } else {
-                        result = sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
+                        result = sbusChannelsDecode(rxRuntimeState, &frame->data.controlData.channels);
 
                         setRssi(scaleRange(frame->data.controlData.rssi, 0, 100, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_PROTOCOL);
 
@@ -359,9 +359,9 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
     return result;
 }
 
-static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
+static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeConfig);
+    UNUSED(rxRuntimeState);
 
 #if defined(USE_TELEMETRY_SMARTPORT)
     static timeUs_t lastTelemetryFrameSentUs;
@@ -390,17 +390,17 @@ static bool fportProcessFrame(const rxRuntimeConfig_t *rxRuntimeConfig)
     return true;
 }
 
-bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
-    rxRuntimeConfig->channelData = sbusChannelData;
-    sbusChannelsInit(rxConfig, rxRuntimeConfig);
+    rxRuntimeState->channelData = sbusChannelData;
+    sbusChannelsInit(rxConfig, rxRuntimeState);
 
-    rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
-    rxRuntimeConfig->rxRefreshRate = 11000;
+    rxRuntimeState->channelCount = SBUS_MAX_CHANNEL;
+    rxRuntimeState->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcFrameStatusFn = fportFrameStatus;
-    rxRuntimeConfig->rcProcessFrameFn = fportProcessFrame;
+    rxRuntimeState->rcFrameStatusFn = fportFrameStatus;
+    rxRuntimeState->rcProcessFrameFn = fportProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

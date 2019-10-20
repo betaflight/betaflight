@@ -121,10 +121,10 @@ typedef struct rxChannelRangeConfig_s {
 
 PG_DECLARE_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
 
-struct rxRuntimeConfig_s;
-typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
-typedef uint8_t (*rcFrameStatusFnPtr)(struct rxRuntimeConfig_s *rxRuntimeConfig);
-typedef bool (*rcProcessFrameFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig);
+struct rxRuntimeState_s;
+typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeState_s *rxRuntimeState, uint8_t chan); // used by receiver driver to return channel data
+typedef uint8_t (*rcFrameStatusFnPtr)(struct rxRuntimeState_s *rxRuntimeState);
+typedef bool (*rcProcessFrameFnPtr)(const struct rxRuntimeState_s *rxRuntimeState);
 
 typedef enum {
     RX_PROVIDER_NONE = 0,
@@ -135,7 +135,7 @@ typedef enum {
     RX_PROVIDER_SPI,
 } rxProvider_t;
 
-typedef struct rxRuntimeConfig_s {
+typedef struct rxRuntimeState_s {
     rxProvider_t        rxProvider;
     SerialRXType        serialrxProvider;
     uint8_t             channelCount; // number of RC channels as reported by current input driver
@@ -145,7 +145,7 @@ typedef struct rxRuntimeConfig_s {
     rcProcessFrameFnPtr rcProcessFrameFn;
     uint16_t            *channelData;
     void                *frameData;
-} rxRuntimeConfig_t;
+} rxRuntimeState_t;
 
 typedef enum {
     RSSI_SOURCE_NONE = 0,
@@ -166,7 +166,7 @@ typedef enum {
 
 extern linkQualitySource_e linkQualitySource;
 
-extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
+extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
 
 void rxInit(void);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);

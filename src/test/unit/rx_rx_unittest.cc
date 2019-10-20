@@ -225,16 +225,16 @@ extern "C" {
     void resetPPMDataReceivedState(void) {}
     bool rxMspFrameComplete(void) { return false; }
 
-    void crsfRxInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void ibusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void jetiExBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void sbusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void spektrumInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void sumdInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void sumhInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void xBusInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void rxMspInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
-    void rxPwmInit(const rxConfig_t *, rxRuntimeConfig_t *) {}
+    void crsfRxInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void ibusInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void jetiExBusInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void sbusInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void spektrumInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void sumdInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void sumhInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void xBusInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void rxMspInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void rxPwmInit(const rxConfig_t *, rxRuntimeState_t *) {}
     float pt1FilterGain(float f_cut, float dT)
     {
         UNUSED(f_cut);

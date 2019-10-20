@@ -424,9 +424,9 @@ static void inavNrf24Setup(rx_spi_protocol_e protocol, const uint32_t *rxSpiId, 
     writeAckPayload(ackPayload, payloadSize);
 }
 
-bool inavNrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool inavNrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
 {
-    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_MAX;
+    rxRuntimeState->channelCount = RC_CHANNEL_COUNT_MAX;
     inavNrf24Setup((rx_spi_protocol_e)rxSpiConfig->rx_spi_protocol, &rxSpiConfig->rx_spi_id, rxSpiConfig->rx_spi_rf_channel_count);
 
     return true;
