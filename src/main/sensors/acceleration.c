@@ -108,11 +108,6 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
     accZero->values.yaw = 0;
 }
 
-void accResetFlightDynamicsTrims(void)
-{
-    resetFlightDynamicsTrims(&accelerometerConfigMutable()->accZero);
-}
-
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
