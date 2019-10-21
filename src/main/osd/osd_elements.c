@@ -1755,6 +1755,18 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_ALTITUDE);
     }
 
+#ifdef USE_GPS
+    if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+        if (osdConfig()->distance_alarm && GPS_distanceToHome >= osdConfig()->distance_alarm) {
+            SET_BLINK(OSD_HOME_DIST);
+        } else {
+            CLR_BLINK(OSD_HOME_DIST);
+        }
+    } else {
+        CLR_BLINK(OSD_HOME_DIST);;
+    }
+#endif
+
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
