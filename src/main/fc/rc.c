@@ -59,7 +59,6 @@ static float rawSetpoint[XYZ_AXIS_COUNT];
 // Stick deflection [-1.0, 1.0] before RC-Smoothing is applied
 static float rawDeflection[XYZ_AXIS_COUNT];
 static float oldRcCommand[XYZ_AXIS_COUNT];
-static bool isDuplicateFrame;
 #endif
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -125,11 +124,6 @@ float getRawSetpoint(int axis)
 float getRawDeflection(int axis)
 {
     return rawDeflection[axis];
-}
-
-bool rcIsDuplicateFrame()
-{
-    return isDuplicateFrame;
 }
 
 #endif
@@ -613,11 +607,7 @@ FAST_CODE void processRcCommand(void)
 
 #ifdef USE_INTERPOLATED_SP
     if (isRXDataNew) {
-        isDuplicateFrame = true;
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
-            if (rcCommand[i] != oldRcCommand[i]) {
-                isDuplicateFrame = false;
-            }
             oldRcCommand[i] = rcCommand[i];
             const float rcCommandf = rcCommand[i] / 500.0f;
             const float rcCommandfAbs = fabsf(rcCommandf);
