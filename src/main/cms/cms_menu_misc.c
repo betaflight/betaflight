@@ -93,6 +93,7 @@ CMS_Menu cmsx_menuRcPreview = {
 #endif
     .onEnter = NULL,
     .onExit = cmsx_menuRcConfirmBack,
+    .checkRedirect = NULL,
     .entries = cmsx_menuRcEntries
 };
 
@@ -144,6 +145,7 @@ CMS_Menu cmsx_menuMisc = {
 #endif
     .onEnter = cmsx_menuMiscOnEnter,
     .onExit = cmsx_menuMiscOnExit,
+    .checkRedirect = NULL,
     .entries = menuMiscEntries
 };
 
