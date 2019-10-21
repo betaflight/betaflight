@@ -223,7 +223,7 @@ static void taskCameraControl(uint32_t currentTime)
 }
 #endif
 
-void fcTasksInit(void)
+void tasksInit(void)
 {
     schedulerInit();
 
