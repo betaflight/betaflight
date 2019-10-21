@@ -3314,13 +3314,13 @@ static void cliBeeper(char *cmdline)
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
 void cliRxBind(char *cmdline){
     UNUSED(cmdline);
-    switch (rxRuntimeConfig.rxProvider) {
+    switch (rxRuntimeState.rxProvider) {
     default:
         cliPrint("Not supported.");
 
         break;
     case RX_PROVIDER_SERIAL:
-        switch (rxRuntimeConfig.serialrxProvider) {
+        switch (rxRuntimeState.serialrxProvider) {
         default:
             cliPrint("Not supported.");
             break;

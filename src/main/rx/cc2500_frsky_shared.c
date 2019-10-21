@@ -418,7 +418,7 @@ void nextChannel(uint8_t skip)
     }
 }
 
-bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
 {
     rxSpiCommonIOInit(rxSpiConfig);
     if (!cc2500SpiInit()) {
@@ -429,7 +429,7 @@ bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntime
 
     switch (spiProtocol) {
     case RX_SPI_FRSKY_D:
-        rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_D;
+        rxRuntimeState->channelCount = RC_CHANNEL_COUNT_FRSKY_D;
 
         handlePacket = frSkyDHandlePacket;
         setRcData = frSkyDSetRcData;
@@ -438,7 +438,7 @@ bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntime
         break;
     case RX_SPI_FRSKY_X:
     case RX_SPI_FRSKY_X_LBT:
-        rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_X;
+        rxRuntimeState->channelCount = RC_CHANNEL_COUNT_FRSKY_X;
 
         handlePacket = frSkyXHandlePacket;
 #if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_SMARTPORT)

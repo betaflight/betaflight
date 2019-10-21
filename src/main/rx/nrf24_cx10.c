@@ -299,9 +299,9 @@ static void cx10Nrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-bool cx10Nrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool cx10Nrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
 {
-    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
+    rxRuntimeState->channelCount = RC_CHANNEL_COUNT;
     cx10Nrf24Setup((rx_spi_protocol_e)rxSpiConfig->rx_spi_protocol);
 
     return true;

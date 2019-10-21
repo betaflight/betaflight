@@ -85,7 +85,7 @@ extern "C" {
     extern bool isError = false;
 
     static const dsmReceiver_t empty = dsmReceiver_t();
-    static rxRuntimeConfig_t config = rxRuntimeConfig_t();
+    static rxRuntimeState_t config = rxRuntimeState_t();
     static uint8_t packetLen;
     static uint8_t packet[16];
     static uint16_t rssi = 0;

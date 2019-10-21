@@ -167,9 +167,9 @@ static void updateChannelData(void) {
     }
 }
 
-static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
+static uint8_t ibusFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeConfig);
+    UNUSED(rxRuntimeState);
 
     uint8_t frameStatus = RX_FRAME_PENDING;
 
@@ -196,23 +196,23 @@ static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 }
 
 
-static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t ibusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
-    UNUSED(rxRuntimeConfig);
+    UNUSED(rxRuntimeState);
     return ibusChannelData[chan];
 }
 
 
-bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxConfig);
     ibusSyncByte = 0;
 
-    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
-    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
+    rxRuntimeState->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeState->rxRefreshRate = 20000; // TODO - Verify speed
 
-    rxRuntimeConfig->rcReadRawFn = ibusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFn = ibusFrameStatus;
+    rxRuntimeState->rcReadRawFn = ibusReadRawRC;
+    rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
