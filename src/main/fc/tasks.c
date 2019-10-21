@@ -160,11 +160,12 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
+    static timeUs_t lastRxTimeUs;
+
     if (!processRx(currentTimeUs)) {
         return;
     }
 
-    static timeUs_t lastRxTimeUs;
     currentRxRefreshRate = constrain(currentTimeUs - lastRxTimeUs, 1000, 30000);
     lastRxTimeUs = currentTimeUs;
     isRXDataNew = true;
