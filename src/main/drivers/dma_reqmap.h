@@ -18,7 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//#pragma once
+#pragma once
 
 #include "platform.h"
 
@@ -63,9 +63,11 @@ typedef int8_t dmaoptValue_t;
 #define MAX_TIMER_DMA_OPTIONS 3
 #endif
 
+struct timerHardware_s;
+
 dmaoptValue_t dmaoptByTag(ioTag_t ioTag);
 const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, uint8_t index, int8_t opt);
 const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt);
-const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const timerHardware_t *timer);
-dmaoptValue_t dmaGetOptionByTimer(const timerHardware_t *timer);
-dmaoptValue_t dmaGetUpOptionByTimer(const timerHardware_t *timer);
+const dmaChannelSpec_t *dmaGetChannelSpecByTimer(const struct timerHardware_s *timer);
+dmaoptValue_t dmaGetOptionByTimer(const struct timerHardware_s *timer);
+dmaoptValue_t dmaGetUpOptionByTimer(const struct timerHardware_s *timer);

@@ -26,6 +26,9 @@
 #include "pg/pg.h"
 #include "drivers/adc.h"
 #include "drivers/io_types.h"
+#include "drivers/dma_reqmap.h"
+
+#define MAX_ADC_SUPPORTED 4
 
 #define MAX_ADC_SUPPORTED 4
 
