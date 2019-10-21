@@ -51,11 +51,13 @@ These instructions explain how to create a Unified Target configuration for an e
 
 ## 6. Add custom settings for your board to the Unified Target configuration
 
-- this step is optional. Omitting it will give users of your board a minimal but working board configuration when using a Unified Target;
+- enter the command: `feature OSD` in CLI, just before the #master section (to switch on OSD by default);
 
-- set all the custom settings that are specific to your board (e.g. presets for serial RX on a specific port if the board's instructions are for users to use this port for the serial RX). Changes can be done in the UI or in CLI;
+- the following steps are optional (omitting it will give users of your board a minimal but working board configuration when using a Unified Target):;
 
-- try to only include extra settings if you are certain that most / all of your users will want them - unwanted extra changes just make it harder for your users to use your board;
+	- set all the custom settings that are specific to your board (e.g. presets for serial RX on a specific port if the board's instructions are for users to use this port for the serial RX). Changes can be done in the UI or in CLI;
+
+	- try to only include extra settings if you are certain that most / all of your users will want them - unwanted extra changes just make it harder for your users to use your board;
 
 - save the changes;
 
@@ -64,6 +66,6 @@ These instructions explain how to create a Unified Target configuration for an e
 
 - re-start CLI (Disconnect / Connect), then do a `diff all bare`, save the output into a file named `<manufacturer_id>-<board_name>.config` with 'Save to File'. It is crucial that the name exactly matches the manufacturer id and board name specified in the file, or else checking of the pull request you are going to open in a subsequent step will fail;
 
-- edit the resulting file and verify that there are no extra lines before the one starting with `# Betaflight`, and no extra lines after the last line starting with `set`;
+- edit the resulting file and identify the first line in the file starting with `# Betaflight`. This line (called the banner line) should be left untouched, and it has to be the first line in the file. Whatever content is found above this line,  delete it. Likewise, there must be no extra lines after the last line starting with `set` - delete all subsequnet lines otherwise;
 
 - open a [pull request](https://github.com/betaflight/unified-targets/pulls) to put your target configuration into `configs/default`.
