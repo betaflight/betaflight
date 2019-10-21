@@ -71,6 +71,7 @@
 #define USE_SDCARD_SPI
 
 #define USE_FLASHFS
+#define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
 #define USE_FLASH_W25M
 #define USE_FLASH_W25N01G          // 1G NAND flash support
