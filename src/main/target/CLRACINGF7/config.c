@@ -27,6 +27,6 @@
 
 void targetConfiguration(void)
 {	
-    pinioBoxConfigMutable()->permanentId[0] = 39;
+    pinioBoxConfigMutable()->permanentId[0] = 40;
 }
 #endif
