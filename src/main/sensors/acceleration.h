@@ -72,7 +72,6 @@ typedef struct accelerometerConfig_s {
     bool acc_high_fsr;
     flightDynamicsTrims_t accZero;
     rollAndPitchTrims_t accelerometerTrims;
-    bool calibrationCompleted;              // has ACC calibration been performed (should not be exposed in settings)
 } accelerometerConfig_t;
 
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);

@@ -98,7 +98,7 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 
 static void setConfigCalibrationCompleted(void)
 {
-    accelerometerConfigMutable()->calibrationCompleted = true;
+    accelerometerConfigMutable()->accZero.values.calibrationCompleted = 1;
 }
 
 void accResetRollAndPitchTrims(void)
@@ -111,6 +111,7 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
     accZero->values.roll = 0;
     accZero->values.pitch = 0;
     accZero->values.yaw = 0;
+    accZero->values.calibrationCompleted = 0;
 }
 
 void accResetFlightDynamicsTrims(void)
@@ -124,13 +125,12 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
         .acc_lpf_hz = 10,
         .acc_hardware = ACC_DEFAULT,
         .acc_high_fsr = false,
-        .calibrationCompleted = false,
     );
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
 }
 
-PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 2);
 
 extern uint16_t InflightcalibratingA;
 extern bool AccInflightCalibrationMeasurementDone;

@@ -220,7 +220,7 @@ static bool accNeedsCalibration(void)
     if (sensors(SENSOR_ACC)) {
 
         // Check to see if the ACC has already been calibrated
-        if (accelerometerConfig()->calibrationCompleted ||
+        if (accelerometerConfig()->accZero.values.calibrationCompleted ||
             accelerometerConfig()->accZero.values.roll != 0 ||
             accelerometerConfig()->accZero.values.pitch != 0 ||
             accelerometerConfig()->accZero.values.yaw != 0) {
