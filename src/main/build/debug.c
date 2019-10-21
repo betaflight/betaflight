@@ -93,4 +93,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "DYN_IDLE",
     "FF_LIMIT",
     "FF_INTERPOLATED",
+    "BLACKBOX_OUTPUT",
 };
