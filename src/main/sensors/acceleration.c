@@ -96,6 +96,11 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
     );
 }
 
+static void setConfigCalibrationCompleted(void)
+{
+    accelerometerConfigMutable()->accZero.values.calibrationCompleted = 1;
+}
+
 void accResetRollAndPitchTrims(void)
 {
     resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
@@ -106,6 +111,7 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
     accZero->values.roll = 0;
     accZero->values.pitch = 0;
     accZero->values.yaw = 0;
+    accZero->values.calibrationCompleted = 0;
 }
 
 void accResetFlightDynamicsTrims(void)
@@ -124,7 +130,7 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     resetFlightDynamicsTrims(&instance->accZero);
 }
 
-PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 2);
 
 extern uint16_t InflightcalibratingA;
 extern bool AccInflightCalibrationMeasurementDone;
@@ -405,6 +411,7 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
         accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
+        setConfigCalibrationCompleted();
 
         saveConfigAndNotify();
     }
@@ -459,6 +466,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
         accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
+        setConfigCalibrationCompleted();
 
         saveConfigAndNotify();
     }

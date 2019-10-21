@@ -36,6 +36,8 @@
     Add the mapping from the element ID added in the first step to the function
     created in the third step to the osdElementDrawFunction array.
 
+    If the new element utilizes the accelerometer, add it to the osdElementsNeedAccelerometer() function.
+
     Finally add a CLI parameter for the new element in cli/settings.c.
 */
 
@@ -1778,5 +1780,28 @@ void osdUpdateAlarms(void)
     }
 #endif
 }
+
+#ifdef USE_ACC
+static bool osdElementIsActive(osd_items_e element)
+{
+    for (unsigned i = 0; i < activeOsdElementCount; i++) {
+        if (activeOsdElementArray[i] == element) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Determine if any active elements need the ACC
+bool osdElementsNeedAccelerometer(void)
+{
+    return osdElementIsActive(OSD_ARTIFICIAL_HORIZON) ||
+           osdElementIsActive(OSD_PITCH_ANGLE) ||
+           osdElementIsActive(OSD_ROLL_ANGLE) ||
+           osdElementIsActive(OSD_G_FORCE) ||
+           osdElementIsActive(OSD_FLIP_ARROW);
+}
+
+#endif // USE_ACC
 
 #endif // USE_OSD

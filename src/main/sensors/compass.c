@@ -58,7 +58,7 @@
 magDev_t magDev;
 mag_t mag;                   // mag access functions
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 2);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {

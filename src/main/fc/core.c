@@ -214,6 +214,61 @@ void resetArmingDisabled(void)
     lastArmingDisabledReason = 0;
 }
 
+#ifdef USE_ACC
+static bool accNeedsCalibration(void)
+{
+    if (sensors(SENSOR_ACC)) {
+
+        // Check to see if the ACC has already been calibrated
+        if (accelerometerConfig()->accZero.values.calibrationCompleted ||
+            accelerometerConfig()->accZero.values.roll != 0 ||
+            accelerometerConfig()->accZero.values.pitch != 0 ||
+            accelerometerConfig()->accZero.values.yaw != 0) {
+
+            return false;
+        }
+
+        // We've determined that there's a detected ACC that has not
+        // yet been calibrated. Check to see if anything is using the
+        // ACC that would be affected by the lack of calibration.
+
+        // Check for any configured modes that use the ACC
+        if (isModeActivationConditionPresent(BOXANGLE) ||
+            isModeActivationConditionPresent(BOXHORIZON) ||
+            isModeActivationConditionPresent(BOXGPSRESCUE) ||
+            isModeActivationConditionPresent(BOXCAMSTAB) ||
+            isModeActivationConditionPresent(BOXCALIB) ||
+            isModeActivationConditionPresent(BOXACROTRAINER)) {
+
+            return true;
+        }
+
+        // Launch Control only requires the ACC if a angle limit is set
+        if (isModeActivationConditionPresent(BOXLAUNCHCONTROL) && currentPidProfile->launchControlAngleLimit) {
+            return true;
+        }
+
+#ifdef USE_OSD
+        // Check for any enabled OSD elements that need the ACC
+        if (featureIsEnabled(FEATURE_OSD)) {
+            if (osdNeedsAccelerometer()) {
+                return true;
+            }
+        }
+#endif
+
+#ifdef USE_GPS_RESCUE
+        // Check if failsafe will use GPS Rescue
+        if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+            return true;
+        }
+#endif
+    }
+
+    return false;
+}
+#endif
+
 void updateArmingStatus(void)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -327,6 +382,14 @@ void updateArmingStatus(void)
         if (IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
             setArmingDisabled(ARMING_DISABLED_PARALYZE);
         }
+
+#ifdef USE_ACC
+        if (accNeedsCalibration()) {
+            setArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
+        }
+#endif
 
         if (!isUsingSticksForArming()) {
           /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */

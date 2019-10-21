@@ -57,6 +57,7 @@ const char *armingDisableFlagNames[]= {
     "RPMFILTER",
     "REBOOT_REQD",
     "DSHOT_BBANG",
+    "ACC_CALIB",
     "ARMSWITCH",
 };
 
