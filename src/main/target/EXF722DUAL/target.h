@@ -118,6 +118,11 @@
 #define USE_BARO_BMP280
 #define DEFAULT_BARO_BMP280
 
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+#define MAG_I2C_INSTANCE         (I2CDEV_2)
+
 #define USE_ADC
 #define ADC_INSTANCE            ADC3
 #define ADC3_DMA_OPT            0  // DMA 2 Stream 0 Channel 2 
