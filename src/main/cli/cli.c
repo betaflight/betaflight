@@ -4683,7 +4683,7 @@ static void cliTasks(char *cmdline)
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
-        cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload     total/ms");
+        cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload  total/ms");
     } else {
         cliPrintLine("Task list");
     }
