@@ -127,15 +127,23 @@ void blackboxWrite(uint8_t value)
 #endif
     case BLACKBOX_DEVICE_SERIAL:
     default:
+        {
+            int txBytesFree = serialTxBytesFree(blackboxPort);
+
 #ifdef DEBUG_BB_OUTPUT
-        bbBits += 2;
-        if (serialTxBytesFree(blackboxPort) == 0) {
-            ++bbDrops;
-            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 2, bbDrops);
-            return;
-        }
+            bbBits += 2;
+            DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 3, txBytesFree);
 #endif
-        serialWrite(blackboxPort, value);
+
+            if (txBytesFree == 0) {
+#ifdef DEBUG_BB_OUTPUT
+                ++bbDrops;
+                DEBUG_SET(DEBUG_BLACKBOX_OUTPUT, 2, bbDrops);
+#endif
+                return;
+            }
+            serialWrite(blackboxPort, value);
+        }
         break;
     }
 
@@ -181,7 +189,7 @@ int blackboxWriteString(const char *s)
     default:
         pos = (uint8_t*) s;
         while (*pos) {
-            serialWrite(blackboxPort, *pos);
+            blackboxWrite(*pos);
             pos++;
         }
 
