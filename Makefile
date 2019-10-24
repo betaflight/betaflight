@@ -248,6 +248,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -Wno-stringop-truncation \
               -Wno-attributes \
               -Wno-cast-function-type \
+              -Wno-stringop-overflow \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
               -DUSE_STDPERIPH_DRIVER \
