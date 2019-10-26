@@ -37,6 +37,8 @@
 #include "io/serial.h"
 #include "io/displayport_msp.h"
 
+#include "pg/msp_port.h"
+
 #include "msp/msp.h"
 
 #include "msp_serial.h"
@@ -70,11 +72,15 @@ void mspSerialAllocatePorts(void)
             resetMspPort(mspPort, serialPort, sharedWithTelemetry);
 
 #ifdef USE_MSP_DISPLAYPORT
-            if (serialPort->identifier == displayPortProfileMsp()->displayPortSerial) {
+            if (serialPort->identifier == mspPortConfig()->displayPortSerial) {
                 mspPort->isDisplayPort = true;
             }
 #endif
-
+#ifdef USE_MSP_CURRENT_METER
+            if (serialPort->identifier == mspPortConfig()->mspSensorSerial) {
+                mspPort->isSensorPort = true;
+            }
+#endif
             portIndex++;
         }
 
@@ -572,7 +578,9 @@ int mspSerialPush(uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direct
     for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
 
-        if (!mspPort->port || !mspPort->isDisplayPort) {
+        // Note that displayPort MSP is sent to MSP sensor ports and vice versa.
+        // We need more strict port management mechanism to avoid this, and is a future work.
+        if (!mspPort->port || !(mspPort->isDisplayPort || mspPort->isSensorPort)) {
             continue;
         }
 

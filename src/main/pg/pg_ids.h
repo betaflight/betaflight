@@ -149,7 +149,8 @@
 #define PG_SDIO_PIN_CONFIG 550
 #define PG_PULLUP_CONFIG 551
 #define PG_PULLDOWN_CONFIG 552
-#define PG_BETAFLIGHT_END 552
+#define PG_MSP_PORT_CONFIG 553
+#define PG_BETAFLIGHT_END 553
 
 
 // OSD configuration (subject to change)

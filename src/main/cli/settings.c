@@ -80,6 +80,7 @@
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
+#include "pg/msp_port.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pinio.h"
@@ -1424,7 +1425,14 @@ const clivalue_t valueTable[] = {
 #ifdef USE_MSP_DISPLAYPORT
     { "displayport_msp_col_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_msp_row_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
-    { "displayport_msp_serial",     VAR_INT8    | MASTER_VALUE, .config.minmax = { SERIAL_PORT_NONE, SERIAL_PORT_IDENTIFIER_MAX }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, displayPortSerial) },
+#endif
+
+// PG_MSP_PORT_CONFIG
+#ifdef USE_MSP_DISPLAYPORT
+    { "displayport_msp_serial",     VAR_INT8    | MASTER_VALUE, .config.minmax = { SERIAL_PORT_NONE, SERIAL_PORT_IDENTIFIER_MAX }, PG_MSP_PORT_CONFIG, offsetof(mspPortConfig_t, displayPortSerial) },
+#endif
+#ifdef USE_MSP_CURRENT_METER
+    { "msp_sensor_serial",          VAR_INT8    | MASTER_VALUE, .config.minmax = { SERIAL_PORT_NONE, SERIAL_PORT_IDENTIFIER_MAX }, PG_MSP_PORT_CONFIG, offsetof(mspPortConfig_t, mspSensorSerial) },
 #endif
 
 // PG_DISPLAY_PORT_MSP_CONFIG

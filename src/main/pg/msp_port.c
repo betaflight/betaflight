@@ -23,35 +23,14 @@
 
 #include "platform.h"
 
-#ifdef USE_TARGET_CONFIG
-
 #include "io/serial.h"
 
 #include "pg/msp_port.h"
-#include "pg/rx.h"
+#include "pg/pg_ids.h"
 
-#include "rx/rx.h"
+PG_REGISTER_WITH_RESET_TEMPLATE(mspPortConfig_t, mspPortConfig, PG_MSP_PORT_CONFIG, 0);
 
-#include "sensors/barometer.h"
-
-#include "telemetry/telemetry.h"
-
-#include "config_helper.h"
-
-#define TELEMETRY_UART                      SERIAL_PORT_UART5
-
-static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { SERIAL_PORT_USART1, FUNCTION_MSP                 },  // So SPRacingF3OSD users don't have to change anything.
-    { TELEMETRY_UART,     FUNCTION_TELEMETRY_SMARTPORT },
-};
-
-void targetConfiguration(void)
-{
-    barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
-    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
-    telemetryConfigMutable()->halfDuplex = 0;
-    telemetryConfigMutable()->telemetry_inverted = true;
-
-    mspPortConfigMutable()->mspSensorSerial = SERIAL_PORT_USART1;
-}
-#endif
+PG_RESET_TEMPLATE(mspPortConfig_t, mspPortConfig,
+    .displayPortSerial = SERIAL_PORT_NONE,
+    .mspSensorSerial = SERIAL_PORT_NONE,
+);

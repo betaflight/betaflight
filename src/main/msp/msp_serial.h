@@ -112,6 +112,7 @@ typedef struct mspPort_s {
     bool sharedWithTelemetry;
     mspDescriptor_t descriptor;
     bool isDisplayPort;
+    bool isSensorPort;
 } mspPort_t;
 
 void mspSerialInit(void);
