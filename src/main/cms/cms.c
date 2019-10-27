@@ -59,7 +59,7 @@
 #include "pg/rx.h"
 
 // For 'ARM' related
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 

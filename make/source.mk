@@ -9,6 +9,7 @@ COMMON_SRC = \
             $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
             cli/cli.c \
             cli/settings.c \
+            config/config.c \
             drivers/adc.c \
             drivers/dshot.c \
             drivers/dshot_dpwm.c \
@@ -47,7 +48,6 @@ COMMON_SRC = \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
             fc/board_info.c \
-            fc/config.c \
             fc/dispatch.c \
             fc/hardfaults.c \
             fc/tasks.c \

@@ -44,7 +44,7 @@ extern "C" {
     #include "drivers/system.h"
 
     #include "fc/runtime_config.h"
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "flight/imu.h"
 
     #include "io/serial.h"

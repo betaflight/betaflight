@@ -29,7 +29,7 @@
 
 #include "drivers/pwm_esc_detect.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "flight/pid.h"
 

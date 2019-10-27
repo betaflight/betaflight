@@ -34,7 +34,7 @@
 #include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/rx_spi.h"
 

@@ -45,7 +45,7 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 #include "pg/pg_ids.h"
 #include "sensors/battery.h"
 #include "fc/rc_controls.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "sensors/gyro.h"
 #include "drivers/accgyro/accgyro.h"
 #include "fc/runtime_config.h"

@@ -49,7 +49,7 @@
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"

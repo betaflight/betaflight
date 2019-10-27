@@ -44,7 +44,7 @@
 #include "pg/motor.h"
 #include "pg/rx.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/mixer.h"

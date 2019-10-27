@@ -24,7 +24,7 @@
 
 #ifdef USE_TARGET_CONFIG
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "sensors/battery.h"
 

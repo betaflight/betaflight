@@ -35,7 +35,7 @@
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/spektrum_vtx_control.h"

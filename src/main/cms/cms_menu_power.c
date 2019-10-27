@@ -37,7 +37,7 @@
 #include "sensors/current.h"
 #include "sensors/voltage.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 voltageMeterSource_e batteryConfig_voltageMeterSource;
 currentMeterSource_e batteryConfig_currentMeterSource;

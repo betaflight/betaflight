@@ -30,7 +30,7 @@
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/displayport_max7456.h"
 
