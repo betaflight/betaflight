@@ -119,6 +119,7 @@
 #define VIN_IS_NTSC_alt(val)  (!STAT_IS_LOS(val) && !STAT_IS_PAL(val))
 
 #define MAX7456_SIGNAL_CHECK_INTERVAL_MS 1000 // msec
+#define MAX7456_STALL_CHECK_INTERVAL_MS  1000 // msec
 
 // DMM special bits
 #define CLEAR_DISPLAY 0x04
@@ -613,19 +614,24 @@ bool max7456BuffersSynced(void)
     return true;
 }
 
-void max7456ReInitIfRequired(void)
+void max7456ReInitIfRequired(bool forceStallCheck)
 {
-    static uint32_t lastSigCheckMs = 0;
-    static uint32_t videoDetectTimeMs = 0;
+    static timeMs_t lastSigCheckMs = 0;
+    static timeMs_t videoDetectTimeMs = 0;
     static uint16_t reInitCount = 0;
-
-    __spiBusTransactionBegin(busdev);
-    const uint8_t stallCheck = max7456Send(MAX7456ADD_VM0|MAX7456ADD_READ, 0x00);
-    __spiBusTransactionEnd(busdev);
+    static timeMs_t lastStallCheckMs = MAX7456_STALL_CHECK_INTERVAL_MS / 2; // offset so that it doesn't coincide with the signal check
 
     const timeMs_t nowMs = millis();
 
-    if (stallCheck != videoSignalReg) {
+    bool stalled = false;
+    if (forceStallCheck || (lastStallCheckMs + MAX7456_STALL_CHECK_INTERVAL_MS < nowMs)) {
+        lastStallCheckMs = nowMs;
+        __spiBusTransactionBegin(busdev);
+        stalled = (max7456Send(MAX7456ADD_VM0|MAX7456ADD_READ, 0x00) != videoSignalReg);
+        __spiBusTransactionEnd(busdev);
+    }
+
+    if (stalled) {
         max7456ReInit();
     } else if ((videoSignalCfg == VIDEO_SYSTEM_AUTO)
               && ((nowMs - lastSigCheckMs) > MAX7456_SIGNAL_CHECK_INTERVAL_MS)) {
@@ -671,7 +677,7 @@ void max7456DrawScreen(void)
 
         // (Re)Initialize MAX7456 at startup or stall is detected.
 
-        max7456ReInitIfRequired();
+        max7456ReInitIfRequired(false);
 
         int buff_len = 0;
         for (int k = 0; k < MAX_CHARS2UPDATE; k++) {
@@ -751,7 +757,7 @@ void max7456RefreshAll(void)
     while (dmaTransactionInProgress);
 #endif
 
-    max7456ReInitIfRequired();
+    max7456ReInitIfRequired(true);
     max7456DrawScreenSlow();
 }
 
