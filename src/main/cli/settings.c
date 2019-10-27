@@ -75,6 +75,7 @@
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/dashboard.h"
+#include "pg/displayport_profiles.h"
 #include "pg/flash.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"

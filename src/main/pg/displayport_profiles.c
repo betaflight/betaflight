@@ -18,11 +18,33 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
 
-#include "drivers/display.h"
+#include "platform.h"
 
 #include "pg/displayport_profiles.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-struct vcdProfile_s;
-displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);
+#if defined(USE_MSP_DISPLAYPORT)
+
+PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 0);
+
+#endif
+
+#if defined(USE_MAX7456)
+
+PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
+
+void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfile)
+{
+    displayPortProfile->colAdjust = 0;
+    displayPortProfile->rowAdjust = 0;
+
+    // Set defaults as per MAX7456 datasheet
+    displayPortProfile->invert = false;
+    displayPortProfile->blackBrightness = 0;
+    displayPortProfile->whiteBrightness = 2;
+}
+
+#endif
