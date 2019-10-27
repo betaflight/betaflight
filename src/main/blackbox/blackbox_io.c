@@ -102,7 +102,14 @@ void blackboxWrite(uint8_t value)
 #endif
     case BLACKBOX_DEVICE_SERIAL:
     default:
-        serialWrite(blackboxPort, value);
+        {
+            int txBytesFree = serialTxBytesFree(blackboxPort);
+
+            if (txBytesFree == 0) {
+                return;
+            }
+            serialWrite(blackboxPort, value);
+        }
         break;
     }
 }
@@ -133,7 +140,7 @@ int blackboxWriteString(const char *s)
     default:
         pos = (uint8_t*) s;
         while (*pos) {
-            serialWrite(blackboxPort, *pos);
+            blackboxWrite(*pos);
             pos++;
         }
 
