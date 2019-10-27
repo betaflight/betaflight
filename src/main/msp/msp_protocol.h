@@ -341,5 +341,7 @@
 #define MSP_RTC                  247    //out message         Gets the RTC clock
 #define MSP_SET_BOARD_INFO       248    //in message          Sets the board information for this board
 #define MSP_SET_SIGNATURE        249    //in message          Sets the signature of the board and serial number
-#define MSP_RXRANGE_CONFIG       243    //out message
-#define MSP_SET_RXRANGE_CONFIG   244    //in message
+#define MSP_RXRANGE_CONFIG       231    //out message
+#define MSP_SET_RXRANGE_CONFIG   232    //in message
+
+#define MSP_SET_1WIRE            243
