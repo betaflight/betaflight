@@ -4,7 +4,7 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
+            $(addprefix pg/, $(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
             $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
             cli/cli.c \
@@ -339,8 +339,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
             osd/osd.c \
-            osd/osd_elements.c \
-            pg/pg.h
+            osd/osd_elements.c
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
@@ -385,7 +384,6 @@ SRC += \
             drivers/flash_w25n01g.c \
             drivers/flash_w25m.c \
             io/flashfs.c \
-            pg/flash.c \
             $(MSC_SRC)
 endif
 
@@ -411,7 +409,6 @@ SRC += \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \
-            pg/sdio.c \
             $(MSC_SRC)
 endif
 
