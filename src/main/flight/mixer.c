@@ -736,8 +736,8 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
 //called at (TASK_GYROPID_DESIRED_PERIOD * 4) period.(fc/core.c -> "taskMainPidLoop" func.)
 //As fast as 2khz. Battery loop is 100Hz. 20 times faster.
 static float applyMaxPowerLimit(float throttle) {
-    static float throttleTrackArray[POWER_TRACK_ARRAY_LEN] = {};//throttles.
-    static int16_t powerTrackArray[POWER_TRACK_ARRAY_LEN] = {};//in Watts.
+    static float throttleTrackArray[POWER_TRACK_ARRAY_LEN];//throttles.
+    static int16_t powerTrackArray[POWER_TRACK_ARRAY_LEN];//in Watts.
     static int32_t powerSum = 0;
     static float throttleSum = 0.0f;
     static int8_t current_idx = 0;
@@ -764,13 +764,12 @@ static float applyMaxPowerLimit(float throttle) {
                 maxPower_throttleLimit = 1.0f;//no limit.
             }
             current_idx = (current_idx + 1) % POWER_TRACK_ARRAY_LEN;//update idx.
+            //debug - int16_t.
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 0, (powerSum / POWER_TRACK_ARRAY_LEN));
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 1, (throttleSum / POWER_TRACK_ARRAY_LEN));
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 2, maxPower_throttleLimit * 1000);
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 3, power_now);
         }
-        //debug - int16_t.
-        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 0, (powerSum / POWER_TRACK_ARRAY_LEN));
-        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 1, (throttleSum / POWER_TRACK_ARRAY_LEN));
-        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 2, maxPower_throttleLimit * 1000);
-        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 3, slope_estimate);
-
         if(throttle > maxPower_throttleLimit) {
             return maxPower_throttleLimit;//I don't like this but............(191028_1733)
         }
