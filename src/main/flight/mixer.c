@@ -730,6 +730,54 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
     }
 }
 
+//Junwoo HWANG added(191028)
+#define POWER_TRACK_ARRAY_LEN 10
+
+//called at (TASK_GYROPID_DESIRED_PERIOD * 4) period.(fc/core.c -> "taskMainPidLoop" func.)
+//As fast as 2khz. Battery loop is 100Hz. 20 times faster.
+static float applyMaxPowerLimit(float throttle) {
+    static float throttleTrackArray[POWER_TRACK_ARRAY_LEN] = {};//throttles.
+    static int16_t powerTrackArray[POWER_TRACK_ARRAY_LEN] = {};//in Watts.
+    static int32_t powerSum = 0;
+    static float throttleSum = 0.0f;
+    static int8_t current_idx = 0;
+    static float maxPower_throttleLimit = 1.0f;//no limit at first.
+
+    if(isAmperageConfigured()) {//sensors/battery.c
+        int32_t amperage = getAmperage();//Centi-amps.
+        uint16_t voltage = getBatteryVoltage();//Centi-volts.
+        int16_t power_now = (amperage * voltage) / 10000;//in Watts.
+        //Because this mixer loop is so fast(pid-loop), must wait for the power-value to change.
+        if(power_now != powerTrackArray[current_idx]) {
+            powerSum += (power_now - powerTrackArray[current_idx]);//update sum.
+            throttleSum += (throttle - throttleTrackArray[current_idx]);
+
+            throttleTrackArray[current_idx] = throttle;
+            powerTrackArray[current_idx] = power_now;
+
+            //linear approximation.
+            if(power_now >= 0.90f * currentControlRateProfile -> maxPower_limit) { // must be valid. for limiting.
+                float slope_estimate = (powerSum / throttleSum);//est. about 3000(if 3000W at full throttle.)
+                maxPower_throttleLimit = constrainf((currentControlRateProfile -> maxPower_limit / slope_estimate), 0.5f, 1.0f);//don't fall out of the sky- Constraint.
+            }
+            else {//not in 90% ~ 100% zone(not a watch zone.)
+                maxPower_throttleLimit = 1.0f;//no limit.
+            }
+            current_idx = (current_idx + 1) % POWER_TRACK_ARRAY_LEN;//update idx.
+        }
+        //debug - int16_t.
+        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 0, (powerSum / POWER_TRACK_ARRAY_LEN));
+        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 1, (throttleSum / POWER_TRACK_ARRAY_LEN));
+        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 2, maxPower_throttleLimit * 1000);
+        DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 3, slope_estimate);
+
+        if(throttle > maxPower_throttleLimit) {
+            return maxPower_throttleLimit;//I don't like this but............(191028_1733)
+        }
+    }
+    return throttle;//no setting. Or no Amperage-meter.
+}
+
 static float applyThrottleLimit(float throttle)
 {
     if (currentControlRateProfile->throttle_limit_percent < 100) {
@@ -820,6 +868,10 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     // Apply the throttle_limit_percent to scale or limit the throttle based on throttle_limit_type
     if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
         throttle = applyThrottleLimit(throttle);
+    }
+
+    if(currentControlRateProfile -> maxPower_limit > 0) {
+        throttle = applyMaxPowerLimit(throttle);
     }
 
     const bool airmodeEnabled = airmodeIsEnabled() || launchControlActive;
