@@ -1361,7 +1361,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
         break;
 
+        // Added in MSP API 1.43
     case MSP_RXRANGE_CONFIG:
+        sbufWriteU8(dst, NON_AUX_CHANNEL_COUNT);
         for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
             sbufWriteU16(dst, rxChannelRangeConfigs(i)->min);
             sbufWriteU16(dst, rxChannelRangeConfigs(i)->max);
@@ -2908,10 +2910,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
         }
         break;
 
+        // Added in MSP API 1.43
     case MSP_SET_RXRANGE_CONFIG:
-        for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-            rxChannelRangeConfigsMutable(0)[i].min = sbufReadU16(src);
-            rxChannelRangeConfigsMutable(0)[i].max = sbufReadU16(src);
+        {
+            uint8_t length = sbufReadU8(src);
+            for (int i = 0; i < length; i++) {
+                rxChannelRangeConfigsMutable(0)[i].min = sbufReadU16(src);
+                rxChannelRangeConfigsMutable(0)[i].max = sbufReadU16(src);
+            }
         }
         break;
 
