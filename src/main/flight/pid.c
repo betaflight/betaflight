@@ -155,7 +155,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 250,
-        .itermAcceleratorGain = 5000,
+        .itermAcceleratorGain = 3500,
         .crash_time = 500,          // ms
         .crash_delay = 0,           // ms
         .crash_recovery_angle = 10, // degrees
