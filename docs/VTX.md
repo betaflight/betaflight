@@ -138,6 +138,15 @@ vtxtable powerlabels 25 200 500 800
 #### SmartAudio V2.1 devices vary depending on their model. Check the manufacturers website.
 For these devices the `powervalues` are the output power in dBm.
 
+To query the available power levels from a SmartAudio 2.1 VTX enter the `vtxtable powerlevels` command with no parameters. This will report the available power settings suitable for pasting into the CLI thus:
+
+```
+# vtxtable powerlevels
+vtxtable powerlevels 3
+vtxtable powervalues 14 20 26
+vtxtable powerlabels 25 100 400
+```
+
 For example the
 
 [TBS Unify Pro32 Nano 5G8](https://www.team-blacksheep.com/products/prod:unifypro32_nano):

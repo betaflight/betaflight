@@ -141,6 +141,11 @@ bool vtxCommonGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
     return vtxDevice->vTable->getStatus(vtxDevice, status);
 }
 
+uint8_t vtxCommonGetVTXPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *levels, uint16_t *powers)
+{
+    return vtxDevice->vTable->getPowerLevels(vtxDevice, levels, powers);
+}
+
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 {
     if (vtxDevice && band > 0 && band <= vtxTableBandCount) {
