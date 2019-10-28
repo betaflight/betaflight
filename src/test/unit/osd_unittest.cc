@@ -36,7 +36,7 @@ extern "C" {
 
     #include "common/time.h"
 
-    #include "drivers/max7456_symbols.h"
+    #include "drivers/osd_symbols.h"
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
 

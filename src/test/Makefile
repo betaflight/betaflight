@@ -439,7 +439,9 @@ COMMON_FLAGS = \
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 COMMON_FLAGS += -fblocks
 ifndef CYGWIN
+ifndef MACOSX
 LDFLAGS	     += -lBlocksRuntime
+endif
 endif
 endif
 

@@ -1253,8 +1253,8 @@ static void cliSerial(char *cmdline)
 
     ptr = nextArg(ptr);
     if (ptr) {
-        val = atoi(ptr);
-        portConfig.functionMask = val & 0xFFFF;
+        val = strtoul(ptr, NULL, 10);
+        portConfig.functionMask = val;
         validArgumentCount++;
     }
 

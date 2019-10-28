@@ -29,6 +29,7 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456.h"
+#include "drivers/osd.h"
 
 #include "config/config.h"
 
@@ -156,6 +157,13 @@ static bool layerCopy(displayPort_t *displayPort, displayPortLayer_e destLayer, 
     return max7456LayerCopy(destLayer, sourceLayer);
 }
 
+static bool writeFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr)
+{
+    UNUSED(instance);
+
+    return max7456WriteNvm(addr, (const uint8_t *)chr);
+}
+
 static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
@@ -172,6 +180,7 @@ static const displayPortVTable_t max7456VTable = {
     .layerSupported = layerSupported,
     .layerSelect = layerSelect,
     .layerCopy = layerCopy,
+    .writeFontCharacter = writeFontCharacter,
 };
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)

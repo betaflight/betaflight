@@ -119,7 +119,7 @@ serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e id
     return NULL;
 }
 
-PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 1);
 
 void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 {

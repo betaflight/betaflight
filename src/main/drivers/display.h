@@ -35,6 +35,15 @@ typedef enum {
     DISPLAYPORT_LAYER_COUNT,
 } displayPortLayer_e;
 
+typedef enum {
+    DISPLAY_TRANSACTION_OPT_NONE = 0,
+    DISPLAY_TRANSACTION_OPT_PROFILED = 1 << 0,
+    DISPLAY_TRANSACTION_OPT_RESET_DRAWING = 1 << 1,
+} displayTransactionOption_e;
+
+
+struct displayCanvas_s;
+struct osdCharacter_s;
 struct displayPortVTable_s;
 
 typedef struct displayPort_s {
@@ -68,6 +77,11 @@ typedef struct displayPortVTable_s {
     bool (*layerSupported)(displayPort_t *displayPort, displayPortLayer_e layer);
     bool (*layerSelect)(displayPort_t *displayPort, displayPortLayer_e layer);
     bool (*layerCopy)(displayPort_t *displayPort, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer);
+    bool (*writeFontCharacter)(displayPort_t *instance, uint16_t addr, const struct osdCharacter_s *chr);
+    bool (*isReady)(displayPort_t *displayPort);
+    void (*beginTransaction)(displayPort_t *displayPort, displayTransactionOption_e opts);
+    void (*commitTransaction)(displayPort_t *displayPort);
+    bool (*getCanvas)(struct displayCanvas_s *canvas, const displayPort_t *displayPort);
 } displayPortVTable_t;
 
 void displayGrab(displayPort_t *instance);
@@ -85,6 +99,11 @@ void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);
 bool displayIsSynced(const displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);
+bool displayWriteFontCharacter(displayPort_t *instance, uint16_t addr, const struct osdCharacter_s *chr);
+bool displayIsReady(displayPort_t *instance);
+void displayBeginTransaction(displayPort_t *instance, displayTransactionOption_e opts);
+void displayCommitTransaction(displayPort_t *instance);
+bool displayGetCanvas(struct displayCanvas_s *canvas, const displayPort_t *instance);
 void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable);
 bool displayLayerSupported(displayPort_t *instance, displayPortLayer_e layer);
 bool displayLayerSelect(displayPort_t *instance, displayPortLayer_e layer);

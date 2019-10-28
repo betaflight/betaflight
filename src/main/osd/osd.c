@@ -54,7 +54,7 @@
 
 #include "drivers/display.h"
 #include "drivers/flash.h"
-#include "drivers/max7456_symbols.h"
+#include "drivers/osd_symbols.h"
 #include "drivers/sdcard.h"
 #include "drivers/time.h"
 
@@ -126,6 +126,7 @@ static uint8_t armState;
 static uint8_t osdProfile = 1;
 #endif
 static displayPort_t *osdDisplayPort;
+static bool osdIsReady;
 
 static bool suppressStatsDisplay = false;
 static uint8_t osdStatsRowCount = 0;
@@ -135,6 +136,8 @@ static bool backgroundLayerSupported = false;
 #ifdef USE_ESC_SENSOR
 escSensorData_t *osdEscDataCombined;
 #endif
+
+STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 6);
 
@@ -354,26 +357,16 @@ static void osdDrawLogo(int x, int y)
     }
 }
 
-void osdInit(displayPort_t *osdDisplayPortToUse)
+static void osdCompleteInitialization(void)
 {
-    if (!osdDisplayPortToUse) {
-        return;
-    }
-
-    STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
-
-    osdDisplayPort = osdDisplayPortToUse;
-#ifdef USE_CMS
-    cmsDisplayPortRegister(osdDisplayPort);
-#endif
-
-    backgroundLayerSupported = displayLayerSupported(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
-    displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
-
     armState = ARMING_FLAG(ARMED);
 
     osdResetAlarms();
 
+    backgroundLayerSupported = displayLayerSupported(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
+    displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
+
+    displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
     displayClearScreen(osdDisplayPort);
 
     osdDrawLogo(3, 1);
@@ -394,8 +387,6 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     }
 #endif
 
-    displayResync(osdDisplayPort);
-
     resumeRefreshAt = micros() + (4 * REFRESH_1S);
 #ifdef USE_OSD_PROFILES
     setOsdProfile(osdConfig()->osdProfileIndex);
@@ -403,6 +394,25 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     osdElementsInit(backgroundLayerSupported);
     osdAnalyzeActiveElements();
+    displayCommitTransaction(osdDisplayPort);
+
+    osdIsReady = true;
+}
+
+void osdInit(displayPort_t *osdDisplayPortToUse)
+{
+    if (!osdDisplayPortToUse) {
+        return;
+    }
+
+    osdDisplayPort = osdDisplayPortToUse;
+#ifdef USE_CMS
+    cmsDisplayPortRegister(osdDisplayPort);
+#endif
+
+    if (displayIsReady(osdDisplayPort)) {
+        osdCompleteInitialization();
+    }
 }
 
 bool osdInitialized(void)
@@ -838,6 +848,14 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     static bool osdStatsVisible = false;
     static timeUs_t osdStatsRefreshTimeUs;
 
+    if (!osdIsReady) {
+        if (!displayIsReady(osdDisplayPort)) {
+            displayResync(osdDisplayPort);
+            return;
+        }
+        osdCompleteInitialization();
+    }
+
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED)) {
@@ -887,6 +905,8 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     }
     lastTimeUs = currentTimeUs;
 
+    displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
+
     if (resumeRefreshAt) {
         if (cmp32(currentTimeUs, resumeRefreshAt) < 0) {
             // in timeout period, check sticks for activity to resume display.
@@ -929,6 +949,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         osdDrawElements(currentTimeUs);
         displayHeartbeat(osdDisplayPort);
     }
+    displayCommitTransaction(osdDisplayPort);
 }
 
 /*
@@ -1011,5 +1032,10 @@ bool osdNeedsAccelerometer(void)
     return osdStatsNeedAccelerometer() || osdElementsNeedAccelerometer();
 }
 #endif // USE_ACC
+
+displayPort_t *osdGetDisplayPort(void)
+{
+    return osdDisplayPort;
+}
 
 #endif // USE_OSD
