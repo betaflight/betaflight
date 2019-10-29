@@ -35,7 +35,7 @@
 
 #include "drivers/vtx_common.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/vtx_rtc6705.h"
 #include "io/vtx.h"

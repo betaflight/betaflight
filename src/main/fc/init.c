@@ -83,7 +83,7 @@
 #include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/dispatch.h"
 #include "fc/init.h"
 #include "fc/rc_controls.h"

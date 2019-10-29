@@ -67,7 +67,7 @@
 
 #include "drivers/bus_spi.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"

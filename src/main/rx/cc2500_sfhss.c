@@ -33,7 +33,7 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/rx.h"
 #include "pg/rx_spi.h"

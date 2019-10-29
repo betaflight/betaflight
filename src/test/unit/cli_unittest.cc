@@ -32,7 +32,7 @@ extern "C" {
     #include "config/feature.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/rc_adjustments.h"
     #include "fc/runtime_config.h"
     #include "flight/mixer.h"

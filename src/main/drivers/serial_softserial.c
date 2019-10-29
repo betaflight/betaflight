@@ -39,12 +39,10 @@
 
 #include "drivers/nvic.h"
 #include "drivers/io.h"
-#include "timer.h"
+#include "drivers/serial.h"
+#include "drivers/timer.h"
 
-#include "serial.h"
 #include "serial_softserial.h"
-
-#include "fc/config.h" //!!TODO remove this dependency
 
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10

@@ -36,7 +36,7 @@
 
 #include "drivers/rx/rx_pwm.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

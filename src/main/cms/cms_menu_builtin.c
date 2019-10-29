@@ -53,7 +53,7 @@
 
 #include "drivers/system.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
 

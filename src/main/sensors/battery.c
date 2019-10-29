@@ -36,7 +36,7 @@
 #include "drivers/adc.h"
 
 #include "fc/runtime_config.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 
 #include "io/beeper.h"

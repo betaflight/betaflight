@@ -26,7 +26,7 @@ extern "C" {
 #include "io/serial.h"
 #include "io/gps.h"
 #include "flight/imu.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"

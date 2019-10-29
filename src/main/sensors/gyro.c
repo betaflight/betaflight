@@ -63,7 +63,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #ifdef USE_GYRO_DATA_ANALYSE
