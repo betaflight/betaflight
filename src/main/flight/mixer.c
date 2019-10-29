@@ -869,9 +869,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         throttle = applyThrottleLimit(throttle);
     }
 
-    if(currentControlRateProfile -> maxPower_limit > 0) {
+    /*if(currentControlRateProfile -> maxPower_limit > 0) {
         throttle = applyMaxPowerLimit(throttle);
-    }
+    }*/
 
     const bool airmodeEnabled = airmodeIsEnabled() || launchControlActive;
 

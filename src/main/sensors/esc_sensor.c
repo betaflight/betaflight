@@ -273,6 +273,7 @@ static uint8_t decodeEscFrame(void)
         if (escSensorMotor < 4) {
             DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, calcEscRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
             DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+            DEBUG_SET(DEBUG_ESC_SENSOR_CURRENT, escSensorMotor, escSensorData[escSensorMotor].current);//current!
         }
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
