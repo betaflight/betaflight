@@ -20,9 +20,17 @@
 
 #pragma once
 
-#include "drivers/display.h"
+#include "pg/pg.h"
 
-#include "pg/displayport_profiles.h"
+typedef struct displayPortProfile_s {
+    int8_t colAdjust;
+    int8_t rowAdjust;
+    bool invert;
+    uint8_t blackBrightness;
+    uint8_t whiteBrightness;
+    int8_t displayPortSerial;  // serialPortIdentifier_e
+} displayPortProfile_t;
 
-struct vcdProfile_s;
-displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);
+PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
+
+PG_DECLARE(displayPortProfile_t, displayPortProfileMax7456);

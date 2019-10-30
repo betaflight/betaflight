@@ -43,8 +43,6 @@ typedef struct displayPort_s {
     int8_t grabCount;
 } displayPort_t;
 
-// displayPort_t is used as a parameter group in 'displayport_msp.h' and 'displayport_max7456`.h'. Treat accordingly!
-
 typedef struct displayPortVTable_s {
     int (*grab)(displayPort_t *displayPort);
     int (*release)(displayPort_t *displayPort);
@@ -62,17 +60,6 @@ typedef struct displayPortVTable_s {
     bool (*layerSelect)(displayPort_t *displayPort, displayPortLayer_e layer);
     bool (*layerCopy)(displayPort_t *displayPort, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer);
 } displayPortVTable_t;
-
-typedef struct displayPortProfile_s {
-    int8_t colAdjust;
-    int8_t rowAdjust;
-    bool invert;
-    uint8_t blackBrightness;
-    uint8_t whiteBrightness;
-    int8_t displayPortSerial;  // serialPortIdentifier_e
-} displayPortProfile_t;
-
-// Note: displayPortProfile_t used as a parameter group for CMS over CRSF (io/displayport_crsf)
 
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);

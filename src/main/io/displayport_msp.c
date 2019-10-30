@@ -29,9 +29,6 @@
 
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/display.h"
 
 #include "io/displayport_msp.h"
@@ -41,8 +38,6 @@
 #include "msp/msp_serial.h"
 
 // no template required since defaults are zero
-PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 0);
-
 static displayPort_t mspDisplayPort;
 
 #ifdef USE_CLI

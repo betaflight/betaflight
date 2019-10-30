@@ -36,25 +36,11 @@
 
 #include "osd/osd.h"
 
+#include "pg/displayport_profiles.h"
 #include "pg/max7456.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 #include "pg/vcd.h"
 
 displayPort_t max7456DisplayPort;
-
-PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
-
-void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfile)
-{
-    displayPortProfile->colAdjust = 0;
-    displayPortProfile->rowAdjust = 0;
-
-    // Set defaults as per MAX7456 datasheet
-    displayPortProfile->invert = false;
-    displayPortProfile->blackBrightness = 0;
-    displayPortProfile->whiteBrightness = 2;
-}
 
 static int grab(displayPort_t *displayPort)
 {
