@@ -30,8 +30,6 @@
 
 #define MAX_ADC_SUPPORTED 4
 
-#define MAX_ADC_SUPPORTED 4
-
 typedef struct adcChannelConfig_t {
     bool enabled;
     ioTag_t ioTag;
