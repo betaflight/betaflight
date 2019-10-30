@@ -124,6 +124,8 @@ static displayPort_t *osdDisplayPort;
 static bool suppressStatsDisplay = false;
 static uint8_t osdStatsRowCount = 0;
 
+static bool backgroundLayerSupported = false;
+
 #ifdef USE_ESC_SENSOR
 escSensorData_t *osdEscDataCombined;
 #endif
@@ -225,13 +227,28 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 }
 #endif
 
+void osdAnalyzeActiveElements(void)
+{
+    osdAddActiveElements();
+    osdDrawActiveElementsBackground(osdDisplayPort);
+}
+
 static void osdDrawElements(timeUs_t currentTimeUs)
 {
-    displayClearScreen(osdDisplayPort);
-
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
+        displayClearScreen(osdDisplayPort);
         return;
+    }
+
+    if (backgroundLayerSupported) {
+        // Background layer is supported, overlay it onto the foreground
+        // so that we only need to draw the active parts of the elements.
+        displayLayerCopy(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND, DISPLAYPORT_LAYER_BACKGROUND);
+    } else {
+        // Background layer not supported, just clear the foreground in preparation
+        // for drawing the elements including their backgrounds.
+        displayClearScreen(osdDisplayPort);
     }
 
     osdDrawActiveElements(osdDisplayPort, currentTimeUs);
@@ -342,6 +359,9 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
 
+    backgroundLayerSupported = displayLayerSupported(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
+    displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
+
     armState = ARMING_FLAG(ARMED);
 
     osdResetAlarms();
@@ -372,6 +392,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 #ifdef USE_OSD_PROFILES
     setOsdProfile(osdConfig()->osdProfileIndex);
 #endif
+
+    osdElementsInit(backgroundLayerSupported);
     osdAnalyzeActiveElements();
 }
 
@@ -921,7 +943,6 @@ void osdUpdate(timeUs_t currentTimeUs)
 #else
 #define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud (
 #endif
-#define STATS_FREQ_DENOM    50
 
     if (counter % DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);

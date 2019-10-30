@@ -167,7 +167,10 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .heartbeat = heartbeat,
     .resync = resync,
     .isSynced = isSynced,
-    .txBytesFree = txBytesFree
+    .txBytesFree = txBytesFree,
+    .layerSupported = NULL,
+    .layerSelect = NULL,
+    .layerCopy = NULL,
 };
 
 displayPort_t *displayPortMspInit(void)

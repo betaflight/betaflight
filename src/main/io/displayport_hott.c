@@ -119,7 +119,10 @@ static const displayPortVTable_t hottVTable = {
     .isTransferInProgress = hottIsTransferInProgress,
     .heartbeat = hottHeartbeat,
     .resync = hottResync,
-    .txBytesFree = hottTxBytesFree
+    .txBytesFree = hottTxBytesFree,
+    .layerSupported = NULL,
+    .layerSelect = NULL,
+    .layerCopy = NULL,
 };
 
 displayPort_t *displayPortHottInit()

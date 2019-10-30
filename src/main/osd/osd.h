@@ -311,6 +311,7 @@ void osdWarnSetState(uint8_t warningIndex, bool enabled);
 bool osdWarnGetState(uint8_t warningIndex);
 void osdSuppressStats(bool flag);
 
+void osdAnalyzeActiveElements(void);
 uint8_t getCurrentOsdProfileIndex(void);
 void changeOsdProfileIndex(uint8_t profileIndex);
 bool osdElementVisible(uint16_t value);

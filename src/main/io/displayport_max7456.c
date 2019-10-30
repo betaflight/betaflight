@@ -148,6 +148,24 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
+static bool layerSupported(displayPort_t *displayPort, displayPortLayer_e layer)
+{
+    UNUSED(displayPort);
+    return max7456LayerSupported(layer);
+}
+
+static bool layerSelect(displayPort_t *displayPort, displayPortLayer_e layer)
+{
+    UNUSED(displayPort);
+    return max7456LayerSelect(layer);
+}
+
+static bool layerCopy(displayPort_t *displayPort, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer)
+{
+    UNUSED(displayPort);
+    return max7456LayerCopy(destLayer, sourceLayer);
+}
+
 static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
@@ -161,6 +179,9 @@ static const displayPortVTable_t max7456VTable = {
     .resync = resync,
     .isSynced = isSynced,
     .txBytesFree = txBytesFree,
+    .layerSupported = layerSupported,
+    .layerSelect = layerSelect,
+    .layerCopy = layerCopy,
 };
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
