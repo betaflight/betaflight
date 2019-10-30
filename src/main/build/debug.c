@@ -94,6 +94,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FF_LIMIT",
     "FF_INTERPOLATED",
     "BLACKBOX_OUTPUT",
-    "DEBUG_MAX_POWER_LIMITER",
-    "DEBUG_ESC_SENSOR_CURRENT",
+    "MAX_POWER_LIMITER",
+    "ESC_SENSOR_CURRENT",
 };

@@ -439,7 +439,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_ESC_SENSOR
-    [TASK_ESC_SENSOR] = DEFINE_TASK("ESC_SENSOR", NULL, NULL, escSensorProcess, TASK_PERIOD_HZ(200), TASK_PRIORITY_LOW),//is 200Hz too much? 4 motors -> 50Hz update rate.
+    [TASK_ESC_SENSOR] = DEFINE_TASK("ESC_SENSOR", NULL, NULL, escSensorProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),//is 200Hz too much? 4 motors -> 50Hz update rate.
 #endif
 
 #ifdef USE_CMS
