@@ -45,8 +45,16 @@ char trampCmsStatusString[31] = "- -- ---- ----";
 //                               m bc ffff tppp
 //                               01234567890123
 
+
+static bool trampDeviceConfigured = false;
+
 void trampCmsUpdateStatusString(void)
 {
+    if (!trampDeviceConfigured) {
+        strncpy(trampCmsStatusString, "TRAMP NOT CONFIGURED", sizeof(trampCmsStatusString));
+        return;
+    }
+
     vtxDevice_t *vtxDevice = vtxCommonDevice();
 
     if (vtxTableBandCount == 0 || vtxTablePowerLevels == 0) {
@@ -95,8 +103,12 @@ static OSD_TAB_t trampCmsEntPower;
 
 static void trampCmsUpdateFreqRef(void)
 {
-    if (trampCmsBand > 0 && trampCmsChan > 0) {
-        trampCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), trampCmsBand, trampCmsChan);
+    if (trampDeviceConfigured) {
+        if (trampCmsBand > 0 && trampCmsChan > 0) {
+            trampCmsFreqRef = vtxCommonLookupFrequency(vtxCommonDevice(), trampCmsBand, trampCmsChan);
+        }
+    } else {
+        trampCmsFreqRef = 0;
     }
 }
 
@@ -105,11 +117,16 @@ static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (trampCmsBand == 0)
-        // Bounce back
-        trampCmsBand = 1;
-    else
-        trampCmsUpdateFreqRef();
+    if (trampDeviceConfigured) {
+        if (trampCmsBand == 0) {
+            // Bounce back
+            trampCmsBand = 1;
+        } else {
+            trampCmsUpdateFreqRef();
+        }
+    } else {
+        trampCmsBand = 0;
+    }
 
     return 0;
 }
@@ -119,11 +136,16 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (trampCmsChan == 0)
-        // Bounce back
-        trampCmsChan = 1;
-    else
-        trampCmsUpdateFreqRef();
+    if (trampDeviceConfigured) {
+        if (trampCmsChan == 0) {
+            // Bounce back
+            trampCmsChan = 1;
+        } else {
+            trampCmsUpdateFreqRef();
+        }
+    } else {
+        trampCmsChan = 0;
+    }
 
     return 0;
 }
@@ -133,9 +155,14 @@ static long trampCmsConfigPower(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (trampCmsPower == 0)
-        // Bounce back
-        trampCmsPower = 1;
+    if (trampDeviceConfigured) {
+        if (trampCmsPower == 0) {
+            // Bounce back
+            trampCmsPower = 1;
+        }
+    } else {
+        trampCmsPower = 0;
+    }
 
     return 0;
 }
@@ -153,13 +180,16 @@ static long trampCmsSetPitMode(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (trampCmsPitMode == 0) {
-        // Bouce back
-        trampCmsPitMode = 1;
+    if (trampDeviceConfigured) {
+        if (trampCmsPitMode == 0) {
+            // Bouce back
+            trampCmsPitMode = 1;
+        } else {
+            trampSetPitMode(trampCmsPitMode - 1);
+        }
     } else {
-        trampSetPitMode(trampCmsPitMode - 1);
+        trampCmsPitMode = 0;
     }
-
     return 0;
 }
 
@@ -189,32 +219,52 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
 static bool trampCmsInitSettings(void)
 {
     vtxDevice_t *device = vtxCommonDevice();
+    trampDeviceConfigured = false;
 
     if (!device) {
         return false;
     }
 
-    vtxCommonGetBandAndChannel(device, &trampCmsBand, &trampCmsChan);
+    vtxDevType_e vtxType = vtxCommonGetDeviceType(device);
+    trampDeviceConfigured = (vtxType == VTXDEV_TRAMP);
 
-    trampCmsUpdateFreqRef();
-    trampCmsPitMode = trampPitMode + 1;
+    if (trampDeviceConfigured) {
+        vtxCommonGetBandAndChannel(device, &trampCmsBand, &trampCmsChan);
 
-    if (trampConfiguredPower > 0) {
-        if (!vtxCommonGetPowerIndex(vtxCommonDevice(), &trampCmsPower)) {
-            trampCmsPower = 1;
+        trampCmsUpdateFreqRef();
+        trampCmsPitMode = trampPitMode + 1;
+
+        if (trampConfiguredPower > 0) {
+            if (!vtxCommonGetPowerIndex(vtxCommonDevice(), &trampCmsPower)) {
+                trampCmsPower = 1;
+            }
         }
-    }
+        trampCmsEntBand.max = vtxTableBandCount;
+        trampCmsEntChan.max = vtxTableChannelCount;
+        trampCmsEntPower.max = vtxTablePowerLevels;
+    } else {
+        trampCmsPitMode = 0;
+        trampCmsBand = 0;
+        trampCmsChan = 0;
+        trampCmsPower = 0;
 
+        trampCmsEntBand.max = 0;
+        trampCmsEntBand.names = 0;
+
+        trampCmsEntChan.max = 0;
+        trampCmsEntChan.names = 0;
+
+        trampCmsEntPower.max = 0;
+
+        trampCmsUpdateStatusString();
+    }
     trampCmsEntBand.val = &trampCmsBand;
-    trampCmsEntBand.max = vtxTableBandCount;
     trampCmsEntBand.names = vtxTableBandNames;
 
     trampCmsEntChan.val = &trampCmsChan;
-    trampCmsEntChan.max = vtxTableChannelCount;
     trampCmsEntChan.names = vtxTableChannelNames;
 
     trampCmsEntPower.val = &trampCmsPower;
-    trampCmsEntPower.max = vtxTablePowerLevels;
     trampCmsEntPower.names = vtxTablePowerLabels;
 
     return true;
@@ -226,6 +276,14 @@ static long trampCmsOnEnter(void)
         return MENU_CHAIN_BACK;
     }
 
+    return 0;
+}
+
+static long trampCmsCommenceOnEnter(void)
+{
+    if (!trampDeviceConfigured) {
+        return MENU_CHAIN_BACK;
+    }
     return 0;
 }
 
@@ -241,7 +299,7 @@ static CMS_Menu trampCmsMenuCommence = {
     .GUARD_text = "XVTXTRC",
     .GUARD_type = OME_MENU,
 #endif
-    .onEnter = NULL,
+    .onEnter = trampCmsCommenceOnEnter,
     .onExit = NULL,
     .entries = trampCmsMenuCommenceEntries,
 };
