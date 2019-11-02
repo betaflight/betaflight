@@ -923,7 +923,12 @@ static void osdElementLogStatus(osdElementParms_t *element)
         } else if (isBlackboxDeviceFull()) {
             tfp_sprintf(element->buff, "%c>", SYM_BBLOG);
         } else {
-            tfp_sprintf(element->buff, "%c%d", SYM_BBLOG, blackboxGetLogNumber());
+            int32_t logNumber = blackboxGetLogNumber();
+            if (logNumber >= 0) {
+                tfp_sprintf(element->buff, "%c%d", SYM_BBLOG, logNumber);
+            } else {
+                tfp_sprintf(element->buff, "%c", SYM_BBLOG);
+            }
         }
     }
 }
