@@ -1,4 +1,4 @@
-![Important Notice: Betaflight 4.0 is the last release to include support for STM32F3 based flight controllers. (This includes all boards with 'F3' in the name.)](docs/assets/images/stm32f3_retirement_notice.svg)
+![Important Notice: Support for STM32F3 based flight controllers was dropped in Betaflight 4.1. (This includes all boards with 'F3' in the name.)](docs/assets/images/stm32f3_retirement_notice.svg)
 
 (Please see the [note](https://github.com/betaflight/betaflight#end-of-active-development-for-stm32f3-based-flight-controllers) below.)
 
