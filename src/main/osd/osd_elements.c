@@ -1274,6 +1274,11 @@ static void osdElementWarnings(osdElementParms_t *element)
         {
             tfp_sprintf(element->buff, "LAUNCH");
         }
+
+        // Blink the message if the throttle is within 10% of the launch setting
+        if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
+            SET_BLINK(OSD_WARNINGS);
+        }
         return;
     }
 #endif // USE_LAUNCH_CONTROL
