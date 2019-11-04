@@ -1132,7 +1132,7 @@ extern "C" {
         return simulationVerticalSpeed;
     }
 
-    unsigned int blackboxGetLogNumber() {
+    int32_t blackboxGetLogNumber() {
         return 0;
     }
 

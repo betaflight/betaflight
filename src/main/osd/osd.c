@@ -670,10 +670,13 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         break;
 
     case OSD_STAT_BLACKBOX_NUMBER:
-        if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-            itoa(blackboxGetLogNumber(), buff, 10);
-            osdDisplayStatisticLabel(displayRow, "BB LOG NUM", buff);
-            return true;
+        {
+            int32_t logNumber = blackboxGetLogNumber();
+            if (logNumber >= 0) {
+                itoa(logNumber, buff, 10);
+                osdDisplayStatisticLabel(displayRow, "BB LOG NUM", buff);
+                return true;
+            }
         }
         break;
 #endif

@@ -76,7 +76,7 @@ static struct {
     afatfsFilePtr_t logFile;
     afatfsFilePtr_t logDirectory;
     afatfsFinder_t logDirectoryFinder;
-    uint32_t largestLogFileNumber;
+    int32_t largestLogFileNumber;
 
     enum {
         BLACKBOX_SDCARD_INITIAL,
@@ -440,7 +440,7 @@ static void blackboxLogFileCreated(afatfsFilePtr_t file)
 
 static void blackboxCreateLogFile(void)
 {
-    uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
+    int32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
     char filename[] = LOGFILE_PREFIX "00000." LOGFILE_SUFFIX;
 
@@ -488,7 +488,7 @@ static bool blackboxSDCardBeginLog(void)
                     memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
                     logSequenceNumberString[5] = '\0';
 
-                    blackboxSDCard.largestLogFileNumber = MAX((uint32_t) atoi(logSequenceNumberString), blackboxSDCard.largestLogFileNumber);
+                    blackboxSDCard.largestLogFileNumber = MAX((int32_t)atoi(logSequenceNumberString), blackboxSDCard.largestLogFileNumber);
                 }
             } else {
                 // We're done checking all the files on the card, now we can create a new log file
@@ -619,12 +619,17 @@ bool isBlackboxDeviceWorking(void)
     }
 }
 
-unsigned int blackboxGetLogNumber(void)
+int32_t blackboxGetLogNumber(void)
 {
+    switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
-    return blackboxSDCard.largestLogFileNumber;
+    case BLACKBOX_DEVICE_SDCARD:
+        return blackboxSDCard.largestLogFileNumber;
 #endif
-    return 0;
+
+    default:
+        return -1;
+    }
 }
 
 /**
