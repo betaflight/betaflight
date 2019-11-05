@@ -138,13 +138,22 @@ vtxtable powerlabels 25 200 500 800
 #### SmartAudio V2.1 devices vary depending on their model. Check the manufacturers website.
 For these devices the `powervalues` are the output power in dBm.
 
+To query the available power levels from a SmartAudio 2.1 VTX enter the `vtx_info` command with no parameters. This will report the available power settings thus:
+
+```
+# vtx_info
+level 14 dBm, power 25 mW
+level 20 dBm, power 100 mW
+level 26 dBm, power 400 mW
+```
+
 For example the
 
 [TBS Unify Pro32 Nano 5G8](https://www.team-blacksheep.com/products/prod:unifypro32_nano):
 
 ```
 vtxtable powerlevels 3
-vtxtable powervalues  14 20 26
+vtxtable powervalues 14 20 26
 vtxtable powerlabels 25 100 400
 ```
 
@@ -152,7 +161,7 @@ vtxtable powerlabels 25 100 400
 
 ```
 vtxtable powerlevels 3
-vtxtable powervalues  13 20 26
+vtxtable powervalues 13 20 26
 vtxtable powerlabels 25 100 400
 ```
 
@@ -168,7 +177,7 @@ vtxtable powerlabels 25 100 400 1W
 
 ```
 vtxtable powerlevels 4
-vtxtable powervalues  14 20 26 29
+vtxtable powervalues 14 20 26 29
 vtxtable powerlabels 25 100 400 800
 ```
 
@@ -178,7 +187,7 @@ For example a TBS Unify EVO will also work the this config:
 
 ```
 vtxtable powerlevels 2
-vtxtable powervalues  20 26
+vtxtable powervalues 20 26
 vtxtable powerlabels .1W .4W
 ```
 

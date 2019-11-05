@@ -112,6 +112,7 @@ typedef struct vtxVTable_s {
     bool (*getPowerIndex)(const vtxDevice_t *vtxDevice, uint8_t *pIndex);
     bool (*getFrequency)(const vtxDevice_t *vtxDevice, uint16_t *pFreq);
     bool (*getStatus)(const vtxDevice_t *vtxDevice, unsigned *status);
+    uint8_t (*getPowerLevels)(const vtxDevice_t *vtxDevice, uint16_t *levels, uint16_t *powers);
 } vtxVTable_t;
 
 // 3.1.0
@@ -135,6 +136,7 @@ bool vtxCommonGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, ui
 bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex);
 bool vtxCommonGetFrequency(const vtxDevice_t *vtxDevice, uint16_t *pFreq);
 bool vtxCommonGetStatus(const vtxDevice_t *vtxDevice, unsigned *status);
+uint8_t vtxCommonGetVTXPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *levels, uint16_t *powers);
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band);
 char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band);
 char vtxCommonGetBandLetter(const vtxDevice_t *vtxDevice, int band);
