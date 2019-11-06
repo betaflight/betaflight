@@ -1,6 +1,7 @@
 COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
+            build/debug_pin.c \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
