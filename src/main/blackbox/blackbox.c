@@ -1035,7 +1035,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->setpoint[i] = lrintf(pidGetPreviousSetpoint(i));
     }
     // log the final throttle value used in the mixer
-    blackboxCurrent->setpoint[3] = lrintf(mixerGetLoggingThrottle() * 1000);
+    blackboxCurrent->setpoint[3] = lrintf(mixerGetThrottle() * 1000);
 
     for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
         blackboxCurrent->debug[i] = debug[i];

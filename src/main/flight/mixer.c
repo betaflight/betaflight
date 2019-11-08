@@ -472,7 +472,7 @@ void stopMotors(void)
 }
 
 static FAST_RAM_ZERO_INIT float throttle = 0;
-static FAST_RAM_ZERO_INIT float loggingThrottle = 0;
+static FAST_RAM_ZERO_INIT float mixerThrottle = 0;
 static FAST_RAM_ZERO_INIT float motorOutputMin;
 static FAST_RAM_ZERO_INIT float motorRangeMin;
 static FAST_RAM_ZERO_INIT float motorRangeMax;
@@ -891,7 +891,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     throttle += pidGetAirmodeThrottleOffset();
     float airmodeThrottleChange = 0;
 #endif
-    loggingThrottle = throttle;
+    mixerThrottle = throttle;
 
     motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {
@@ -934,7 +934,7 @@ void mixerSetThrottleAngleCorrection(int correctionValue)
     throttleAngleCorrection = correctionValue;
 }
 
-float mixerGetLoggingThrottle(void)
+float mixerGetThrottle(void)
 {
-    return loggingThrottle;
+    return mixerThrottle;
 }
