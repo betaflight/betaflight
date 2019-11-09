@@ -193,6 +193,7 @@ static displayPortLayer_e activeLayer = DISPLAYPORT_LAYER_FOREGROUND;
 busDevice_t max7456BusDevice;
 busDevice_t *busdev = &max7456BusDevice;
 
+static bool max7456DeviceDetected = false;
 static uint16_t max7456SpiClock = MAX7456_SPI_CLK;
 
 uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
@@ -450,6 +451,8 @@ void max7456PreInit(const max7456Config_t *max7456Config)
 
 bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdProfile, bool cpuOverclock)
 {
+    max7456DeviceDetected = false;
+
     // initialize all layers
     for (unsigned i = 0; i < MAX7456_SUPPORTED_LAYER_COUNT; i++) {
         max7456ClearLayer(i);
@@ -484,15 +487,15 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 
     uint8_t osdm = max7456Send(MAX7456ADD_OSDM|MAX7456ADD_READ, 0xff);
 
+    __spiBusTransactionEnd(busdev);
+
     if (osdm != 0x1B) {
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
         return false;
     }
 
-    __spiBusTransactionEnd(busdev);
-
     // At this point, we can claim the ownership of the CS pin
-
+    max7456DeviceDetected = true;
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_OSD_CS, 0);
 
     // Detect device type by writing and reading CA[8] bit at CMAL[6].
@@ -822,8 +825,11 @@ void max7456RefreshAll(void)
     max7456DrawScreenSlow();
 }
 
-void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
+bool max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
 {
+    if (!max7456DeviceDetected) {
+        return false;
+    }
 #ifdef MAX7456_DMA_CHANNEL_TX
     while (dmaTransactionInProgress);
 #endif
@@ -854,6 +860,7 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
     while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
 
     __spiBusTransactionEnd(busdev);
+    return true;
 }
 
 #ifdef MAX7456_NRST_PIN
@@ -877,4 +884,8 @@ void max7456HardwareReset(void)
 #endif
 }
 
+bool max7456IsDeviceDetected(void)
+{
+    return max7456DeviceDetected;
+}
 #endif // USE_MAX7456
