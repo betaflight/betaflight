@@ -783,8 +783,13 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
         const adjustmentFunction_e adjustmentFunction = adjustmentConfig->adjustmentFunction;
 
         if (!isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) ||
-            adjustmentFunction == ADJUSTMENT_NONE ||
-            rcData[channelIndex] == adjustmentState->lastRcData) {
+            adjustmentFunction == ADJUSTMENT_NONE) {
+            adjustmentState->lastRcData = 0;
+
+            continue;
+        }
+
+        if (rcData[channelIndex] == adjustmentState->lastRcData) {
             continue;
         }
 
