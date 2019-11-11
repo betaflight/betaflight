@@ -39,15 +39,7 @@ Up to 4 RX channels can be used to make different adjustments at the same time.
 
 The adjustment the Adjustment Channel makes is controlled by the Range Channel.
 
-The following adjustments can be made, in flight, as well as on the ground.
-
-* RC Rate
-* RC Expo
-* Throttle Expo
-* Roll & Pitch Rate
-* Yaw Rate
-* Pitch+Roll P I and D
-* Yaw P I and D
+The available adjustments are listed in [this table](#adjustment-functions).
 
 Example scenarios:
 Up to 4 3-position switches or pots can be used to adjust 4 different settings at the same time.
@@ -89,12 +81,12 @@ Configure a range using:
 
 | Argument | Value | Meaning |
 | -------- | ----- |-------- |
-| Index | 0 - 11 | Select the adjustment range to configure |
+| Index | 0 - 29 | Select the adjustment range to configure |
 | 0 | 0 | Used as slot before Betaflight 4.1 |
 | Range Channel | 0 based index, AUX1 = 0, AUX2 = 1 | The AUX channel to use to select an adjustment for a switch/pot | 
 | Range Start | 900 - 2100. Steps of 25, e.g. 900, 925, 950... | Start of range | 
 | Range End | 900 - 2100 | End of range |
-| Adjustment function | 0 - 11 | See Adjustment function table |
+| Adjustment function | | See [Adjustment functions table](#adjustment-functions) |
 | Adjustment channel | 0 based index, AUX1 = 0, AUX2 = 1 | The channel that is controlled by a 3 Position switch/Pot |
 | Center Value | If this is non-zero then Absolute Mode is used for this range otherwise Increment/Decrement Mode is used. In Absolute Mode this value is the value which will be assigned to the setting when the Adjustment Channel is set to mid-position. |
 | Scale Value | This specifies the amount that will be subtracted/added to the center value when the Adjustment Channel is at min/max respectively. |
@@ -105,33 +97,43 @@ The Range Channel and the Adjustment Channel can be the same channel.  This is u
 to a single adjustment function regardless of other switch positions.
  
 The adjustment function is applied to the adjustment channel when range channel is between the range values.
-The adjustment is made when the adjustment channel is in the high or low position.  high = mid_rc + 200, low = mid_rc - 200.  by default this is 1700 and 1300 respectively.
+The adjustment is made when the adjustment channel is in the high or low position.  high = mid\_rc + 200, low = mid\_rc - 200.  by default this is 1700 and 1300 respectively.
 
-### Adjustment function
+### Adjustment functions
 
 | Value | Adjustment | Notes |
 | ----- | ---------- |------ |
-| 0     | None |
-| 1     | RC RATE |
-| 2     | RC_EXPO |
-| 3     | THROTTLE_EXPO |
-| 4     | PITCH_ROLL_RATE |
-| 5     | YAW_RATE |
-| 6     | PITCH_ROLL_P |
-| 7     | PITCH_ROLL_I |
-| 8     | PITCH_ROLL_D |
-| 9     | YAW_P |
-| 10    | YAW_I |
-| 11    | YAW_D |
-| 12    | RATE_PROFILE | Switch between 3 rate profiles using a 3 position switch. |
-| 13    | PITCH_RATE |
-| 14    | ROLL_RATE |
-| 15    | PITCH_P |
-| 16    | PITCH_I |
-| 17    | PITCH_D |
-| 18    | ROLL_P |
-| 19    | ROLL_I |
-| 20    | ROLL_D |
+| 0     | None | |
+| 1     | RC RATE | Step / absolute setting |
+| 2     | RC\_EXPO | Step / absolute setting |
+| 3     | THROTTLE\_EXPO | Step / absolute setting |
+| 4     | PITCH\_ROLL\_RATE | Step / absolute setting |
+| 5     | YAW\_RATE | Step / absolute setting |
+| 6     | PITCH\_ROLL\_P | Step / absolute setting |
+| 7     | PITCH\_ROLL\_I | Step / absolute setting |
+| 8     | PITCH\_ROLL\_D | Step / absolute setting |
+| 9     | YAW\_P | Step / absolute setting |
+| 10    | YAW\_I | Step / absolute setting |
+| 11    | YAW\_D | Step / absolute setting |
+| 12    | RATE\_PROFILE | Switch between 3 or 6 rate profiles (uses `rate_6pos_switch` setting) |
+| 13    | PITCH\_RATE | Step / absolute setting |
+| 14    | ROLL\_RATE | Step / absolute setting |
+| 15    | PITCH\_P | Step / absolute setting |
+| 16    | PITCH\_I | Step / absolute setting |
+| 17    | PITCH\_D | Step / absolute setting |
+| 18    | ROLL\_P | Step / absolute setting |
+| 19    | ROLL\_I | Step / absolute setting |
+| 20    | ROLL\_D | Step / absolute setting |
+| 21    | RC\_RATE\_YAW | Step / absolute setting |
+| 22    | PITCH\_ROLL\_F | Step / absolute setting |
+| 23    | FEEDFORWARD\_TRANSITION | Step / absolute setting |
+| 24    | HORIZON\_STRENGTH | Select the horizon strength |
+| 25    | PID\_AUDIO | Select the PID value to be turned into tones |
+| 26    | PITCH\_F | Step / absolute setting |
+| 27    | ROLL\_F | Step / absolute setting |
+| 28    | YAW\_F | Step / absolute setting |
+| 29    | OSD\_PROFILE | Switch between 3 OSD profiles |
+| 30    | LED\_PROFILE | Switch between the RACE / BEACON / STATUS LED strip profiles |
 
 ## Examples
 
