@@ -693,16 +693,81 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
+//191113(Wed). Junwoo HWANG Added.
+float get_maxPowerLimiting_motorFactor() {
+    static float maxPowerLimiting_motorFactor = 1.0f;//at first.
+    //static float throttleTrackArray[POWER_TRACK_ARRAY_LEN];//throttles.
+    static int16_t powerTrackArray[POWER_TRACK_ARRAY_LEN];//in Watts.
+    //static int32_t powerSum = 0;
+    //static float throttleSum = 0.0f;
+    static int8_t current_idx = 0;
+    //static float maxPower_throttleLimit = 1.0f;//no limit at first.
+
+    if(isAmperageConfigured()) {//sensors/battery.c
+        int32_t amperage = getAmperage();//Centi-amps.
+        uint16_t voltage = getBatteryVoltage();//Centi-volts.
+        int16_t power_now = (amperage * voltage) / 10000;//in Watts.
+        //Because this mixer loop is so fast(pid-loop), must wait for the power-value to change.
+        if(power_now != powerTrackArray[current_idx]) {
+            //powerSum += (power_now - powerTrackArray[current_idx]);//update sum.
+            //throttleSum += (throttle - throttleTrackArray[current_idx]);
+
+            //throttleTrackArray[current_idx] = throttle;
+            powerTrackArray[current_idx] = power_now;
+            //linear approximation.
+
+            //maxPowerLimiting_motorFactor - calculation.
+            int16_t power_now_centiPercentage = (int)((power_now / currentControlRateProfile -> maxPower_limit) * 10000.0f);
+            if(power_now_centiPercentage >= 9000) { // must be valid. for limiting.
+                if(power_now_centiPercentage >= 9600) {//so-called 'Danger' zone. Ex. 1800W -> 1728W.
+                    maxPowerLimiting_motorFactor *= 0.99f;//reduce.
+                }
+                else {
+                    maxPowerLimiting_motorFactor *= 1.01f;//increase.
+                }
+                //float slope_estimate = (powerSum / throttleSum);//est. about 3000(if 3000W at full throttle.)
+                //maxPower_throttleLimit = constrainf((currentControlRateProfile -> maxPower_limit / slope_estimate), 0.5f, 1.0f);//don't fall out of the sky- Constraint.
+            }
+            else if(maxPowerLimiting_motorFactor < 0.95f) {//EASE-zone. Just in case Power peaks after -> 1.0f.
+                maxPowerLimiting_motorFactor *= 1.01f;//ease out.
+            }
+            else {//not in 90% ~ 100% zone(not a watch zone.)
+                maxPowerLimiting_motorFactor = 1.0f;
+                //maxPower_throttleLimit = 1.0f;//no limit.
+            }
+            maxPowerLimiting_motorFactor = constrainf(maxPowerLimiting_motorFactor, 0.0f, 1.0f);//
+
+            current_idx = (current_idx + 1) % POWER_TRACK_ARRAY_LEN;//update idx.
+            //debug - int16_t.
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 0, 10000 * maxPowerLimiting_motorFactor);
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 1, power_now_centiPercentage);
+            //DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 2, maxPower_throttleLimit * 1000);
+            DEBUG_SET(DEBUG_MAX_POWER_LIMITER, 3, power_now);
+        }
+        /*
+        if(throttle > maxPower_throttleLimit) {
+            return maxPower_throttleLimit;//I don't like this but............(191028_1733)
+        }*/
+    }
+    return maxPowerLimiting_motorFactor;//no setting. Or no Amperage-meter.
+}
+
+
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
+    
+    //Experimental!! (191113_Junwoo HWANG).
+    float maxPowerLimitFactor =  get_maxPowerLimiting_motorFactor();
+
     for (int i = 0; i < motorCount; i++) {
         float motorOutput = motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle;
 #ifdef USE_THRUST_LINEARIZATION
         motorOutput = pidApplyThrustLinearization(motorOutput);
 #endif
         motorOutput = motorOutputMin + motorOutputRange * motorOutput;
+        motorOutput *= maxPowerLimitFactor;//experimental.
 
 #ifdef USE_SERVOS
         if (mixerIsTricopter()) {
