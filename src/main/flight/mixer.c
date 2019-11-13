@@ -694,6 +694,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 }
 
 //191113(Wed). Junwoo HWANG Added.
+#define POWER_TRACK_ARRAY_LEN 10// lol.
 float get_maxPowerLimiting_motorFactor() {
     static float maxPowerLimiting_motorFactor = 1.0f;//at first.
     //static float throttleTrackArray[POWER_TRACK_ARRAY_LEN];//throttles.
