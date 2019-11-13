@@ -94,7 +94,7 @@ bool cliMode = false;
 #include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -1598,8 +1598,8 @@ static void cliAdjustmentRange(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-		// Was: slot
-		// Keeping the parameter to retain backwards compatibility for the command format.
+                // Was: slot
+                // Keeping the parameter to retain backwards compatibility for the command format.
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
@@ -2991,6 +2991,29 @@ static void cliVtxTable(char *cmdline)
     } else {
         // Bad subcommand
         cliPrintErrorLinef("INVALID SUBCOMMAND %s", tok);
+    }
+}
+
+static void cliVtxInfo(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    // Display the available power levels
+    uint16_t levels[VTX_TABLE_MAX_POWER_LEVELS];
+    uint16_t powers[VTX_TABLE_MAX_POWER_LEVELS];
+    vtxDevice_t *vtxDevice = vtxCommonDevice();
+    if (vtxDevice) {
+        uint8_t level_count = vtxCommonGetVTXPowerLevels(vtxDevice, levels, powers);
+
+        if (level_count) {
+            for (int i = 0; i < level_count; i++) {
+                cliPrintLinef("level %d dBm, power %d mW", levels[i], powers[i]);
+            }
+        } else {
+            cliPrintErrorLinef("NO POWER VALUES DEFINED");
+        }
+    } else {
+        cliPrintErrorLinef("NO VTX");
     }
 }
 #endif // USE_VTX_TABLE
@@ -5832,7 +5855,7 @@ static void cliResource(char *cmdline)
             return;
         }
 
-	const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
+    const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
         if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
             break;
         }
@@ -6370,6 +6393,7 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
 #ifdef USE_VTX_TABLE
+    CLI_COMMAND_DEF("vtx_info", "vtx power config dump", NULL, cliVtxInfo),
     CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
 #endif
 };

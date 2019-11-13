@@ -30,7 +30,7 @@
 
 #include "config/feature.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"

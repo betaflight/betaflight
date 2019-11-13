@@ -32,7 +32,7 @@
 
 #include "sensors/battery.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "config/feature.h"
 
 #include "pg/pg.h"

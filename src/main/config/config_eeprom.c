@@ -32,7 +32,7 @@
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"
 #include "pg/pg.h"
-#include "fc/config.h"
+#include "config/config.h"
 
 #ifdef CONFIG_IN_SDCARD
 #include "io/asyncfatfs/asyncfatfs.h"

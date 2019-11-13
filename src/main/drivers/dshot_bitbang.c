@@ -46,10 +46,13 @@
 
 #include "pg/motor.h"
 
-//TODO: Change these to be only used if USE_DEBUG_PIN is not defined once the debug_pin functionality has been merged
+#if defined(USE_DEBUG_PIN)
+#include "build/debug_pin.h"
+#else
 #define dbgPinInit()
 #define dbgPinHi(x)
 #define dbgPinLo(x)
+#endif
 
 FAST_RAM_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
 FAST_RAM_ZERO_INIT int usedMotorPacers = 0;

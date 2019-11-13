@@ -34,7 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/pwm_esc_detect.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_modes.h"
 #include "fc/rc_controls.h"

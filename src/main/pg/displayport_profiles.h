@@ -18,27 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "platform.h"
-
-#include "drivers/serial.h"
-#include "pg/rx.h"
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-
-#include "config/config.h"
-
-
-#ifdef USE_TARGET_CONFIG
+#pragma once
 
 #include "pg/pg.h"
 
+typedef struct displayPortProfile_s {
+    int8_t colAdjust;
+    int8_t rowAdjust;
+    bool invert;
+    uint8_t blackBrightness;
+    uint8_t whiteBrightness;
+    int8_t displayPortSerial;  // serialPortIdentifier_e
+} displayPortProfile_t;
 
-void targetConfiguration(void)
-{
-    rxConfigMutable()->halfDuplex = true;
-}
-#endif
+PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
+
+PG_DECLARE(displayPortProfile_t, displayPortProfileMax7456);

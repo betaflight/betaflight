@@ -46,7 +46,7 @@ const timerHardware_t timerHardware[1]; // unused
 #include "flight/imu.h"
 
 #include "config/feature.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "scheduler/scheduler.h"
 
 #include "pg/rx.h"

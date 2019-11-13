@@ -46,7 +46,7 @@
 #include "drivers/usb_io.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/dispatch.h"

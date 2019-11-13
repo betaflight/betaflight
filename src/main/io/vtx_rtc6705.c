@@ -226,6 +226,15 @@ static bool vtxRTC6705GetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
     return false;
 }
 
+static uint8_t vtxRTC6705GetPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *levels, uint16_t *powers)
+{
+    UNUSED(vtxDevice);
+    UNUSED(levels);
+    UNUSED(powers);
+
+    return 0;
+}
+
 static vtxVTable_t rtc6705VTable = {
     .process = vtxRTC6705Process,
     .getDeviceType = vtxRTC6705GetDeviceType,
@@ -238,6 +247,7 @@ static vtxVTable_t rtc6705VTable = {
     .getPowerIndex = vtxRTC6705GetPowerIndex,
     .getFrequency = vtxRTC6705GetFreq,
     .getStatus = vtxRTC6705GetStatus,
+    .getPowerLevels = vtxRTC6705GetPowerLevels,
 };
 #endif // VTX_COMMON
 

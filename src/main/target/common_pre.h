@@ -120,6 +120,7 @@
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
+#define USE_DMA_RAM
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)

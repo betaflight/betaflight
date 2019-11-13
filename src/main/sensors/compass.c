@@ -43,7 +43,7 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/boardalignment.h"

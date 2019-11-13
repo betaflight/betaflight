@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "drivers/vtx_common.h"
 #include "io/vtx.h"
 

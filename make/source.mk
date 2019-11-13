@@ -1,14 +1,16 @@
 COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
+            build/debug_pin.c \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            $(addprefix pg/,$(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
+            $(addprefix pg/, $(notdir $(wildcard $(SRC_DIR)/pg/*.c))) \
             $(addprefix common/,$(notdir $(wildcard $(SRC_DIR)/common/*.c))) \
             $(addprefix config/,$(notdir $(wildcard $(SRC_DIR)/config/*.c))) \
             cli/cli.c \
             cli/settings.c \
+            config/config.c \
             drivers/adc.c \
             drivers/dshot.c \
             drivers/dshot_dpwm.c \
@@ -47,7 +49,6 @@ COMMON_SRC = \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
             fc/board_info.c \
-            fc/config.c \
             fc/dispatch.c \
             fc/hardfaults.c \
             fc/tasks.c \
@@ -339,8 +340,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
             osd/osd.c \
-            osd/osd_elements.c \
-            pg/pg.h
+            osd/osd_elements.c
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
@@ -385,7 +385,6 @@ SRC += \
             drivers/flash_w25n01g.c \
             drivers/flash_w25m.c \
             io/flashfs.c \
-            pg/flash.c \
             $(MSC_SRC)
 endif
 
@@ -411,7 +410,6 @@ SRC += \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
             io/asyncfatfs/fat_standard.c \
-            pg/sdio.c \
             $(MSC_SRC)
 endif
 

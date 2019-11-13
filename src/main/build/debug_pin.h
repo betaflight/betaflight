@@ -18,27 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+#pragma once
 
-#include "platform.h"
-
-#include "drivers/serial.h"
-#include "pg/rx.h"
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-
-#include "config/config.h"
-
-
-#ifdef USE_TARGET_CONFIG
-
-#include "pg/pg.h"
-
-
-void targetConfiguration(void)
-{
-    rxConfigMutable()->halfDuplex = true;
-}
-#endif
+void dbgPinInit(void);
+void dbgPinHi(int index);
+void dbgPinLo(int index);

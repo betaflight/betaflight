@@ -38,7 +38,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
@@ -423,7 +423,7 @@ extern "C" {
     int32_t getMAhDrawn() { return 0; }
     int32_t getEstimatedAltitudeCm() { return 0; }
     int32_t getEstimatedVario() { return 0; }
-    unsigned int blackboxGetLogNumber() { return 0; }
+    int32_t blackboxGetLogNumber() { return 0; }
     bool isBlackboxDeviceWorking() { return true; }
     bool isBlackboxDeviceFull() { return false; }
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}

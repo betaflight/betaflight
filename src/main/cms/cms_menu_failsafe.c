@@ -37,7 +37,7 @@
 
 #include "config/feature.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "flight/failsafe.h"
 

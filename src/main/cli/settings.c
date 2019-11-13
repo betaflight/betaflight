@@ -43,7 +43,7 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_adjustments.h"
@@ -75,6 +75,7 @@
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/dashboard.h"
+#include "pg/displayport_profiles.h"
 #include "pg/flash.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"

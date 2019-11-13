@@ -49,7 +49,7 @@
 #include "drivers/time.h"
 #include "drivers/sdcard.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"

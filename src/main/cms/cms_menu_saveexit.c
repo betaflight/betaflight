@@ -32,7 +32,7 @@
 
 #include "config/feature.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 static const OSD_Entry cmsx_menuSaveExitEntries[] =
 {

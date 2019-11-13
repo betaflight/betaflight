@@ -27,7 +27,7 @@
 #include "pg/piniobox.h"
 #include "rx/rx.h"
 #include "telemetry/telemetry.h"
-#include "fc/config.h"
+#include "config/config.h"
 
 #ifdef USE_TARGET_CONFIG
 #include "pg/pg.h"

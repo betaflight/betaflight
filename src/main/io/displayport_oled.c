@@ -114,7 +114,10 @@ static const displayPortVTable_t oledVTable = {
     .heartbeat = oledHeartbeat,
     .resync = oledResync,
     .isSynced = oledIsSynced,
-    .txBytesFree = oledTxBytesFree
+    .txBytesFree = oledTxBytesFree,
+    .layerSupported = NULL,
+    .layerSelect = NULL,
+    .layerCopy = NULL,
 };
 
 displayPort_t *displayPortOledInit(void *device)

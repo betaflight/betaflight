@@ -44,6 +44,7 @@
 #include "common/streambuf.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
@@ -67,7 +68,6 @@
 #include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
-#include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -110,6 +110,7 @@
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/gyrodev.h"
+#include "pg/max7456.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -796,13 +797,19 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_RESERVED_1            (1 << 2)
 #define OSD_FLAGS_RESERVED_2            (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
+#define OSD_FLAGS_MAX7456_DETECTED      (1 << 5)
 
         uint8_t osdFlags = 0;
 #if defined(USE_OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 #endif
 #ifdef USE_MAX7456
-        osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+        if (max7456Config()->csTag && max7456Config()->spiDevice) {
+            osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+            if (max7456IsDeviceDetected()) {
+                osdFlags |= OSD_FLAGS_MAX7456_DETECTED;
+            }
+        }
 #endif
 
         sbufWriteU8(dst, osdFlags);
@@ -3281,7 +3288,9 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, uint8_t cm
                 font_data[i] = sbufReadU8(src);
             }
             // !!TODO - replace this with a device independent implementation
-            max7456WriteNvm(addr, font_data);
+            if (!max7456WriteNvm(addr, font_data)) {
+                return MSP_RESULT_ERROR;
+            }
         }
         break;
 #else

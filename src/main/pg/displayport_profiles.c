@@ -19,26 +19,32 @@
  */
 
 #include <stdbool.h>
-#include <stdint.h>
 
 #include "platform.h"
 
-#include "drivers/serial.h"
-#include "pg/rx.h"
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-
-#include "config/config.h"
-
-
-#ifdef USE_TARGET_CONFIG
-
+#include "pg/displayport_profiles.h"
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
+#if defined(USE_MSP_DISPLAYPORT)
 
-void targetConfiguration(void)
+PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 0);
+
+#endif
+
+#if defined(USE_MAX7456)
+
+PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
+
+void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfile)
 {
-    rxConfigMutable()->halfDuplex = true;
+    displayPortProfile->colAdjust = 0;
+    displayPortProfile->rowAdjust = 0;
+
+    // Set defaults as per MAX7456 datasheet
+    displayPortProfile->invert = false;
+    displayPortProfile->blackBrightness = 0;
+    displayPortProfile->whiteBrightness = 2;
 }
+
 #endif
