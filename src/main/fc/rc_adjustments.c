@@ -782,45 +782,45 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
         const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
         const adjustmentFunction_e adjustmentFunction = adjustmentConfig->adjustmentFunction;
 
-        if (!isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) ||
-            adjustmentFunction == ADJUSTMENT_NONE ||
-            rcData[channelIndex] == adjustmentState->lastRcData) {
-            continue;
-        }
+        if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range) &&
+            adjustmentFunction != ADJUSTMENT_NONE) {
 
-        adjustmentState->lastRcData = rcData[channelIndex];
+            if (rcData[channelIndex] != adjustmentState->lastRcData) {
+                int newValue = -1;
 
-        int newValue = -1;
+                if (adjustmentConfig->mode == ADJUSTMENT_MODE_SELECT) {
+                    int switchPositions = adjustmentConfig->data.switchPositions;
+                    if (adjustmentFunction == ADJUSTMENT_RATE_PROFILE && systemConfig()->rateProfile6PosSwitch) {
+                        switchPositions =  6;
+                    }
+                    const uint16_t rangeWidth = (2100 - 900) / switchPositions;
+                    const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
+                    newValue = applySelectAdjustment(adjustmentFunction, position);
 
-        if (adjustmentConfig->mode == ADJUSTMENT_MODE_SELECT) {
-            int switchPositions = adjustmentConfig->data.switchPositions;
-            if (adjustmentFunction == ADJUSTMENT_RATE_PROFILE && systemConfig()->rateProfile6PosSwitch) {
-                switchPositions =  6;
-            }
-            const uint16_t rangeWidth = (2100 - 900) / switchPositions;
-            const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
-            newValue = applySelectAdjustment(adjustmentFunction, position);
+                    setConfigDirtyIfNotPermanent(&adjustmentRange->range);
+                } else {
+                    // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
+                    if (adjustmentRange->adjustmentCenter &&
+                        (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP)) {
+                        int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
 
-            setConfigDirtyIfNotPermanent(&adjustmentRange->range);
-        } else {
-            // If setting is defined for step adjustment and center value has been specified, apply values directly (scaled) from aux channel
-            if (adjustmentRange->adjustmentCenter &&
-                (adjustmentConfig->mode == ADJUSTMENT_MODE_STEP)) {
-                int value = (((rcData[channelIndex] - PWM_RANGE_MIDDLE) * adjustmentRange->adjustmentScale) / (PWM_RANGE_MIDDLE - PWM_RANGE_MIN)) + adjustmentRange->adjustmentCenter;
+                        newValue = applyAbsoluteAdjustment(controlRateConfig, adjustmentFunction, value);
 
-                newValue = applyAbsoluteAdjustment(controlRateConfig, adjustmentFunction, value);
+                        setConfigDirtyIfNotPermanent(&adjustmentRange->range);
 
-                setConfigDirtyIfNotPermanent(&adjustmentRange->range);
-
-                pidInitConfig(currentPidProfile);
-            }
-        }
-
+                        pidInitConfig(currentPidProfile);
+                    }
+                }
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-        updateOsdAdjustmentData(newValue, adjustmentConfig->adjustmentFunction);
+                updateOsdAdjustmentData(newValue, adjustmentConfig->adjustmentFunction);
 #else
-        UNUSED(newValue);
+                UNUSED(newValue);
 #endif
+                adjustmentState->lastRcData = rcData[channelIndex];
+            }
+        } else {
+            adjustmentState->lastRcData = 0;
+        }
     }
 }
 
