@@ -536,7 +536,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 #if defined(USE_ACC)
         case BST_ACC_CALIBRATION:
            if (!ARMING_FLAG(ARMED))
-               accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+               accStartCalibration();
            break;
 #endif
         case BST_MAG_CALIBRATION:

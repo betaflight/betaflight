@@ -79,7 +79,7 @@ PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
 bool accInit(uint32_t gyroTargetLooptime);
 bool accIsCalibrationComplete(void);
-void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void accStartCalibration(void);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);
 bool accGetAccumulationAverage(float *accumulation);

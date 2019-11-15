@@ -164,7 +164,6 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
-#include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
 
@@ -875,7 +874,7 @@ void init(void)
 
 #ifdef USE_ACC
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
-        accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+        accStartCalibration();
     }
 #endif
     gyroStartCalibration(false);
