@@ -631,7 +631,7 @@ uint8_t getCurrentControlRateProfileIndex(void) {
     return 0;
 }
 void GPS_reset_home_position(void) {}
-void baroSetCalibrationCycles(uint16_t) {}
+void baroSetGroundLevel(void) {}
 
 void blackboxLogEvent(FlightLogEvent, flightLogEventData_t *) {}
 
