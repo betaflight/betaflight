@@ -116,10 +116,12 @@ vtxtable powerlabels 25 100 200 400 600
 
 #### rtc6705 should use:
 ```
-vtxtable powerlevels 3
-vtxtable powervalues 0 1 2
-vtxtable powerlabels OFF MIN MAX
+vtxtable powerlevels 2
+vtxtable powervalues 1 2
+vtxtable powerlabels MIN MAX
 ```
+
+Please note that turning off rtc6705 devices is not possible using powervalues. Use pitmode instead.
 
 #### SmartAudio V1.0 devices should use:
 ```
@@ -289,3 +291,5 @@ Pitmode can be controlled in a variety of ways including OSD, AUX switches and l
 
 Some videotransmitters have restrictions on its usage. For example, SmartAudio V1.0 and V2.0 devices can only enter pitmode on power-up.
 Betaflight can make the these devices leave pitmode, but not enter it.
+
+rtc6705 devices do not support a proper ultra-low power pitmode. Instead, if the board supports it, pitmode turns off rtc6705 devices completely.
