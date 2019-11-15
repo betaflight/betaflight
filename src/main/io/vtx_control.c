@@ -180,7 +180,7 @@ void vtxCyclePower(const uint8_t powerStep)
 
         int newPower = power + powerStep;
         if (newPower >= vtxTablePowerLevels) {
-            newPower = 0;
+            newPower = 1;
         } else if (newPower < 0) {
             newPower = vtxTablePowerLevels;
         }

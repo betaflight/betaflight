@@ -187,6 +187,7 @@ void rtc6705SetFrequency(uint16_t frequency)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
+    rf_power = constrain(rf_power, 1, 2);
 #if defined(USE_VTX_RTC6705_SOFTSPI)
     if (!busdev) {
         rtc6705SoftSpiSetRFPower(rf_power);
@@ -194,8 +195,6 @@ void rtc6705SetRFPower(uint8_t rf_power)
         return;
     }
 #endif
-
-    rf_power = constrain(rf_power, VTX_RTC6705_MIN_POWER_VALUE, VTX_RTC6705_POWER_COUNT - 1);
 
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
     val_hex |= RTC6705_ADDRESS; // address
