@@ -332,7 +332,7 @@ void compassStartCalibration(void)
     }
 }
 
-bool isCompassCalibrationComplete(void)
+bool compassIsCalibrationComplete(void)
 {
     return tCal == 0;
 }

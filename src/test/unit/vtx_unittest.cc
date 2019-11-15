@@ -129,8 +129,9 @@ extern "C" {
     void saveConfigAndNotify(void) {}
     void blackboxFinish(void) {}
     bool accIsCalibrationComplete(void) { return true; }
-    bool isBaroCalibrationComplete(void) { return true; }
-    bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
+    bool accHasBeenCalibrated(void) { return true; }
+    bool baroIsCalibrationComplete(void) { return true; }
+    bool gyroIsCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
     void pidController(const pidProfile_t *, timeUs_t) {}
@@ -180,6 +181,6 @@ extern "C" {
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
     bool isFixedWing(void) { return false; }
     void compassStartCalibration(void) {}
-    bool isCompassCalibrationComplete(void) { return true; }
+    bool compassIsCalibrationComplete(void) { return true; }
     bool isUpright(void) { return true; }
 }

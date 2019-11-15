@@ -261,7 +261,7 @@ static const emfat_entry_t entriesPredefined[] =
 #ifdef USE_EMFAT_README
     { "readme.txt",   false, 0,           1,  0,      README_SIZE,     1024*1024,      (long)readme_file,  CMA,  memory_read_proc,  NULL, { 0 } },
 #endif
-    { "BTFL_ALL.BBL", 0,     0,           1,  0,      0,               0,              0,                  CMA,  bblog_read_proc,   NULL, { 0 } },
+    { FC_FIRMWARE_IDENTIFIER "_ALL.BBL", 0,     0,           1,  0,      0,               0,              0,                  CMA,  bblog_read_proc,   NULL, { 0 } },
     { "PADDING.TXT",  0,     ATTR_HIDDEN, 1,  0,      0,               0,              0,                  CMA,  NULL,              NULL, { 0 } },
 };
 
@@ -288,7 +288,7 @@ static void emfat_set_entry_cma(emfat_entry_t *entry)
 
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uint32_t size)
 {
-    tfp_sprintf(logNames[number], "BTFL_%03d.BBL", number + 1);
+    tfp_sprintf(logNames[number], FC_FIRMWARE_IDENTIFIER "_%03d.BBL", number + 1);
     entry->name = logNames[number];
     entry->level = 1;
     entry->offset = offset;

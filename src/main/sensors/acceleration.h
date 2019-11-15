@@ -79,6 +79,7 @@ PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
 bool accInit(uint32_t gyroTargetLooptime);
 bool accIsCalibrationComplete(void);
+bool accHasBeenCalibrated(void);
 void accStartCalibration(void);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);

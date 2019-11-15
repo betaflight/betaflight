@@ -119,7 +119,7 @@ typedef struct gyroCalibration_s {
     int32_t cyclesRemaining;
 } gyroCalibration_t;
 
-bool firstArmingCalibrationWasStarted = false;
+static bool firstArmingCalibrationWasStarted = false;
 
 typedef struct gyroSensor_s {
     gyroDev_t gyroDev;
@@ -773,7 +773,7 @@ FAST_CODE bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
     return gyroSensor->calibration.cyclesRemaining == 0;
 }
 
-FAST_CODE bool isGyroCalibrationComplete(void)
+FAST_CODE bool gyroIsCalibrationComplete(void)
 {
     switch (gyroToUse) {
         default:
@@ -819,21 +819,23 @@ static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 
 void gyroStartCalibration(bool isFirstArmingCalibration)
 {
-    if (!(isFirstArmingCalibration && firstArmingCalibrationWasStarted)) {
-        gyroSetCalibrationCycles(&gyroSensor1);
+    if (isFirstArmingCalibration && firstArmingCalibrationWasStarted) {
+        return;
+    }
+
+    gyroSetCalibrationCycles(&gyroSensor1);
 #ifdef USE_MULTI_GYRO
-        gyroSetCalibrationCycles(&gyroSensor2);
+    gyroSetCalibrationCycles(&gyroSensor2);
 #endif
 
-        if (isFirstArmingCalibration) {
-            firstArmingCalibrationWasStarted = true;
-        }
+    if (isFirstArmingCalibration) {
+        firstArmingCalibrationWasStarted = true;
     }
 }
 
 bool isFirstArmingGyroCalibrationRunning(void)
 {
-    return firstArmingCalibrationWasStarted && !isGyroCalibrationComplete();
+    return firstArmingCalibrationWasStarted && !gyroIsCalibrationComplete();
 }
 
 STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t gyroMovementCalibrationThreshold)
@@ -879,8 +881,8 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
             beeper(BEEPER_GYRO_CALIBRATED);
         }
     }
-    --gyroSensor->calibration.cyclesRemaining;
 
+    --gyroSensor->calibration.cyclesRemaining;
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)

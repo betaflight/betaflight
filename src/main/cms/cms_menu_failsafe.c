@@ -92,6 +92,7 @@ CMS_Menu cmsx_menuFailsafe = {
     .onEnter = cmsx_Failsafe_onEnter,
     .onExit = cmsx_Failsafe_onExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuFailsafeEntries
 };
 

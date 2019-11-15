@@ -242,7 +242,7 @@ uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }
 
 bool compassIsHealthy(void) { return true; }
-bool isBaroCalibrationComplete(void) { return true; }
+bool baroIsCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
 bool gyroGetAccumulationAverage(float *) { return false; }

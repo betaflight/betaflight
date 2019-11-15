@@ -128,6 +128,7 @@ CMS_Menu cmsx_menuLedstrip = {
     .onEnter = cmsx_Ledstrip_OnEnter,
     .onExit = cmsx_Ledstrip_OnExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuLedstripEntries
 };
 #endif // LED_STRIP

@@ -52,6 +52,7 @@ CMS_Menu cmsx_menuSaveExit = {
     .onEnter = NULL,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuSaveExitEntries
 };
 
@@ -72,6 +73,7 @@ CMS_Menu cmsx_menuSaveExitReboot = {
     .onEnter = NULL,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuSaveExitRebootEntries
 };
 

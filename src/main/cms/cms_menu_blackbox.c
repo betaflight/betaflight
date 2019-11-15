@@ -222,6 +222,7 @@ CMS_Menu cmsx_menuBlackbox = {
     .onEnter = cmsx_Blackbox_onEnter,
     .onExit = cmsx_Blackbox_onExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuBlackboxEntries
 };
 

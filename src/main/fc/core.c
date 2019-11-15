@@ -177,15 +177,15 @@ PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
 
 static bool isCalibrating(void)
 {
-    return !isGyroCalibrationComplete()
+    return (sensors(SENSOR_GYRO) && !gyroIsCalibrationComplete())
 #ifdef USE_ACC
         || (sensors(SENSOR_ACC) && !accIsCalibrationComplete())
 #endif
 #ifdef USE_BARO
-        || (sensors(SENSOR_BARO) && !isBaroCalibrationComplete())
+        || (sensors(SENSOR_BARO) && !baroIsCalibrationComplete())
 #endif
 #ifdef USE_MAG
-        || (sensors(SENSOR_MAG) && !isCompassCalibrationComplete())
+        || (sensors(SENSOR_MAG) && !compassIsCalibrationComplete())
 #endif
         ;
 }
@@ -216,11 +216,7 @@ static bool accNeedsCalibration(void)
     if (sensors(SENSOR_ACC)) {
 
         // Check to see if the ACC has already been calibrated
-        if (accelerometerConfig()->accZero.values.calibrationCompleted ||
-            accelerometerConfig()->accZero.values.roll != 0 ||
-            accelerometerConfig()->accZero.values.pitch != 0 ||
-            accelerometerConfig()->accZero.values.yaw != 0) {
-
+        if (accHasBeenCalibrated()) {
             return false;
         }
 

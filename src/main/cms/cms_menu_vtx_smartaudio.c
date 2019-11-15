@@ -417,6 +417,7 @@ static CMS_Menu saCmsMenuStats = {
     .onEnter = NULL,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = saCmsMenuStatsEntries
 };
 #endif /* USE_EXTENDED_CMS_MENUS */
@@ -615,6 +616,7 @@ static CMS_Menu saCmsMenuPORFreq =
     .onEnter = saCmsSetPORFreqOnEnter,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = saCmsMenuPORFreqEntries,
 };
 
@@ -638,6 +640,7 @@ static CMS_Menu saCmsMenuUserFreq =
     .onEnter = saCmsSetUserFreqOnEnter,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = saCmsMenuUserFreqEntries,
 };
 
@@ -666,6 +669,7 @@ static CMS_Menu saCmsMenuConfig = {
     .onEnter = NULL,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = saCmsMenuConfigEntries
 };
 
@@ -686,6 +690,7 @@ static CMS_Menu saCmsMenuCommence = {
     .onEnter = NULL,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = saCmsMenuCommenceEntries,
 };
 
@@ -759,6 +764,7 @@ CMS_Menu cmsx_menuVtxSmartAudio = {
     .onEnter = sacms_SetupTopMenu,
     .onExit = NULL,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = saCmsMenuOfflineEntries,
 };
 
