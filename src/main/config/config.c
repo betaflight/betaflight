@@ -114,6 +114,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
     .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
     .schedulerOptimizeRate = SCHEDULER_OPTIMIZE_RATE_AUTO,
+    .enableStickArming = false,
 );
 
 uint8_t getCurrentPidProfileIndex(void)
