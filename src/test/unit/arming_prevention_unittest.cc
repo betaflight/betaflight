@@ -1092,5 +1092,7 @@ extern "C" {
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
     bool isFixedWing(void) { return false; }
+    void compassStartCalibration(void) {}
+    bool isCompassCalibrationComplete(void) { return true; }
     bool isUpright(void) { return mockIsUpright; }
 }

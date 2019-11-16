@@ -654,4 +654,5 @@ bool isTryingToArm(void) { return false; }
 void resetTryingToArm(void) {}
 void setLedProfile(uint8_t profile) { UNUSED(profile); }
 uint8_t getLedProfile(void) { return 0; }
+void compassStartCalibration(void) {}
 }
