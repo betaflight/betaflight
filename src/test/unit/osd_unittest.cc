@@ -1173,4 +1173,5 @@ extern "C" {
     int8_t calculateThrottlePercent(void) { return 0; }
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
+    bool isUpright(void) { return true; }
 }

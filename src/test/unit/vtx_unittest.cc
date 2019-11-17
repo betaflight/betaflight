@@ -179,4 +179,5 @@ extern "C" {
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
     bool isFixedWing(void) { return false; }
+    bool isUpright(void) { return true; }
 }

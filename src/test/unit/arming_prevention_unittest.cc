@@ -73,6 +73,7 @@ extern "C" {
     uint16_t GPS_distanceToHome = 0;
     int16_t GPS_directionToHome = 0;
     acc_t acc = {};
+    bool mockIsUpright = false;
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -129,7 +130,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
 
     // given
     // quad is level
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateArmingStatus();
@@ -190,7 +191,7 @@ TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
 
     // and
     rcData[THROTTLE] = 1000;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateActivatedModes();
@@ -268,7 +269,7 @@ TEST(ArmingPreventionTest, Prearm)
 
     // given
     rcData[THROTTLE] = 1000;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateActivatedModes();
@@ -311,7 +312,7 @@ TEST(ArmingPreventionTest, RadioTurnedOnAtAnyTimeArmed)
 
     // and
     rcData[THROTTLE] = 1000;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // and
     // RX has no link to radio
@@ -378,7 +379,7 @@ TEST(ArmingPreventionTest, In3DModeAllowArmingWhenEnteringThrottleDeadband)
 
     // and
     rcData[THROTTLE] = 1400;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
     simulationHaveRx = true;
 
     // and
@@ -447,7 +448,7 @@ TEST(ArmingPreventionTest, When3DModeDisabledThenNormalThrottleArmingConditionAp
     // and
     // safe throttle value for 3D mode
     rcData[THROTTLE] = 1500;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
     simulationHaveRx = true;
 
     // and
@@ -545,7 +546,7 @@ TEST(ArmingPreventionTest, WhenUsingSwitched3DModeThenNormalThrottleArmingCondit
 
     // and
     rcData[THROTTLE] = 1000;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
     simulationHaveRx = true;
 
     // and
@@ -641,7 +642,7 @@ TEST(ArmingPreventionTest, GPSRescueWithoutFixPreventsArm)
     rcData[THROTTLE] = 1000;
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1000;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateActivatedModes();
@@ -755,7 +756,7 @@ TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
     rcData[THROTTLE] = 1000;
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1800; // Start out with rescue enabled
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateActivatedModes();
@@ -867,7 +868,7 @@ TEST(ArmingPreventionTest, ParalyzeOnAtBoot)
     rcData[THROTTLE] = 1000;
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1800; // Paralyze on at boot
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateActivatedModes();
@@ -918,7 +919,7 @@ TEST(ArmingPreventionTest, Paralyze)
     rcData[AUX1] = 1000;
     rcData[AUX2] = 1800; // Start out with paralyze enabled
     rcData[AUX3] = 1000;
-    ENABLE_STATE(SMALL_ANGLE);
+    mockIsUpright = true;
 
     // when
     updateActivatedModes();
@@ -1091,4 +1092,5 @@ extern "C" {
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
     bool isFixedWing(void) { return false; }
+    bool isUpright(void) { return mockIsUpright; }
 }
