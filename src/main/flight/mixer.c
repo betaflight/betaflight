@@ -938,3 +938,25 @@ float mixerGetThrottle(void)
 {
     return mixerThrottle;
 }
+
+mixerMode_e getMixerMode(void)
+{
+    return currentMixerMode;
+}
+
+
+bool isFixedWing(void)
+{
+    switch (currentMixerMode) {
+    case MIXER_FLYING_WING:
+    case MIXER_AIRPLANE:
+    case MIXER_CUSTOM_AIRPLANE:
+        return true;
+
+        break;
+    default:
+        return false;
+
+        break;
+    }
+}
