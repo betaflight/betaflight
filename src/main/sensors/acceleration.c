@@ -80,11 +80,9 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-#include "hardware_revision.h"
-#endif
-
 #include "acceleration.h"
+
+#define CALIBRATING_ACC_CYCLES              400
 
 FAST_RAM_ZERO_INIT acc_t acc;                       // acc access functions
 
@@ -359,9 +357,9 @@ bool accInit(uint32_t gyroSamplingInverval)
     return true;
 }
 
-void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void accStartCalibration(void)
 {
-    calibratingA = calibrationCyclesRequired;
+    calibratingA = CALIBRATING_ACC_CYCLES;
 }
 
 bool accIsCalibrationComplete(void)

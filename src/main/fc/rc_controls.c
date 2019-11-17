@@ -63,7 +63,6 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
-#include "sensors/sensors.h"
 
 #include "rc_controls.h"
 
@@ -278,7 +277,7 @@ void processRcStickPositions()
 #ifdef USE_ACC
     if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) {
         // Calibrating Acc
-        accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+        accStartCalibration();
         return;
     }
 #endif

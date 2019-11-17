@@ -122,16 +122,14 @@
 
 #include "scheduler/scheduler.h"
 
-#include "sensors/battery.h"
-
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/battery.h"
 #include "sensors/boardalignment.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
-#include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
 
@@ -2517,7 +2515,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
 #ifdef USE_ACC
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
-            accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+            accStartCalibration();
         break;
 #endif
 
