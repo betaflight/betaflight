@@ -724,5 +724,5 @@ void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v)
 
 bool isUpright(void)
 {
-    return attitudeIsEstablished && getCosTiltAngle() <= smallAngleCosZ;
+    return attitudeIsEstablished && getCosTiltAngle() > smallAngleCosZ;
 }
