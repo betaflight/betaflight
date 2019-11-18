@@ -108,15 +108,17 @@ typedef struct sbusFrameData_s {
     bool done;
 } sbusFrameData_t;
 
+static timeDelta_t lastFrameDelta = 0;
 
 // Receive ISR callback
 static void sbusDataReceive(uint16_t c, void *data)
 {
+    static timeUs_t lastFrameCompleteTimeUs = 0;
     sbusFrameData_t *sbusFrameData = data;
 
-    const uint32_t nowUs = micros();
+    const timeUs_t nowUs = micros();
 
-    const int32_t sbusFrameTime = nowUs - sbusFrameData->startAtUs;
+    const timeDelta_t sbusFrameTime = cmpTimeUs(nowUs, sbusFrameData->startAtUs);
 
     if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500)) {
         sbusFrameData->position = 0;
@@ -134,6 +136,8 @@ static void sbusDataReceive(uint16_t c, void *data)
         if (sbusFrameData->position < SBUS_FRAME_SIZE) {
             sbusFrameData->done = false;
         } else {
+            lastFrameDelta = cmpTimeUs(nowUs, lastFrameCompleteTimeUs);
+            lastFrameCompleteTimeUs = nowUs;
             sbusFrameData->done = true;
             DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, sbusFrameTime);
         }
@@ -151,6 +155,11 @@ static uint8_t sbusFrameStatus(rxRuntimeState_t *rxRuntimeState)
     DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);
 
     return sbusChannelsDecode(rxRuntimeState, &sbusFrameData->frame.frame.channels);
+}
+
+static timeDelta_t sbusFrameDelta(void)
+{
+    return lastFrameDelta;
 }
 
 bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -174,6 +183,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->rcFrameStatusFn = sbusFrameStatus;
+    rxRuntimeState->rcFrameDeltaFn = sbusFrameDelta;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
