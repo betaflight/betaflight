@@ -879,7 +879,7 @@ void init(void)
 #endif
     gyroStartCalibration(false);
 #ifdef USE_BARO
-    baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+    baroStartCalibration();
 #endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
