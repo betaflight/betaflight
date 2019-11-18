@@ -197,7 +197,7 @@ static bool isCalibrating(void)
 #ifdef USE_LAUNCH_CONTROL
 bool canUseLaunchControl(void)
 {
-    if (!STATE(FIXED_WING)
+    if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
         && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled())  // can't use when motors are stopped
@@ -795,7 +795,7 @@ bool processRx(timeUs_t currentTimeUs)
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashActive
         && !runawayTakeoffTemporarilyDisabled
-        && !STATE(FIXED_WING)) {
+        && !isFixedWing()) {
 
         // Determine if we're in "flight"
         //   - motors running
@@ -880,7 +880,7 @@ bool processRx(timeUs_t currentTimeUs)
     const timeUs_t autoDisarmDelayUs = armingConfig()->auto_disarm_delay * 1e6;
     if (ARMING_FLAG(ARMED)
         && featureIsEnabled(FEATURE_MOTOR_STOP)
-        && !STATE(FIXED_WING)
+        && !isFixedWing()
         && !featureIsEnabled(FEATURE_3D)
         && !airmodeIsEnabled()
         && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
@@ -1082,7 +1082,7 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
     // and gyro rate for any axis is above the limit for at least the activate delay period.
     // If so, disarm for safety
     if (ARMING_FLAG(ARMED)
-        && !STATE(FIXED_WING)
+        && !isFixedWing()
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashActive
