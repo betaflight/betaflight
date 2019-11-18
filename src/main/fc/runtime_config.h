@@ -114,7 +114,6 @@ typedef enum {
     GPS_FIX_HOME   = (1 << 0),
     GPS_FIX        = (1 << 1),
     CALIBRATE_MAG  = (1 << 2),
-    SMALL_ANGLE    = (1 << 3),
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))

@@ -543,4 +543,5 @@ extern "C" {
         return 0.0;
     }
 
+    bool isUpright(void) { return true; }
 }

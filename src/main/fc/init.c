@@ -915,8 +915,6 @@ void init(void)
     timerStart();
 #endif
 
-    ENABLE_STATE(SMALL_ANGLE);
-
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
     loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
