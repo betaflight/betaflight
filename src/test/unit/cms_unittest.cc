@@ -48,10 +48,10 @@ TEST(CMSUnittest, TestCmsDisplayPortRegister)
     displayPort_t *displayPort = displayPortTestInit();
     for (int ii = 0; ii < CMS_MAX_DEVICE; ++ii) {
         const bool registered = cmsDisplayPortRegister(displayPort);
-        EXPECT_EQ(true, registered);
+        EXPECT_TRUE(registered);
     }
     const bool registered = cmsDisplayPortRegister(displayPort);
-    EXPECT_EQ(false, registered);
+    EXPECT_FALSE(registered);
 }
 
 TEST(CMSUnittest, TestCmsMenuOpen)

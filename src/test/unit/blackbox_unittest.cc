@@ -125,16 +125,16 @@ TEST(BlackboxTest, Test_500Hz)
     // 500Hz PIDloop
     targetPidLooptime = 2000;
     blackboxInit();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
     for (int ii = 0; ii < 15; ++ii) {
         blackboxAdvanceIterationTimers();
-        EXPECT_EQ(false, blackboxShouldLogIFrame());
-        EXPECT_EQ(true, blackboxShouldLogPFrame());
+        EXPECT_FALSE(blackboxShouldLogIFrame());
+        EXPECT_TRUE(blackboxShouldLogPFrame());
     }
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
 }
 
 TEST(BlackboxTest, Test_1kHz)
@@ -143,24 +143,24 @@ TEST(BlackboxTest, Test_1kHz)
     // 1kHz PIDloop
     targetPidLooptime = 1000;
     blackboxInit();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
     EXPECT_EQ(0, blackboxSlowFrameIterationTimer);
-    EXPECT_EQ(false, blackboxSlowFrameIterationTimer >= blackboxSInterval);
+    EXPECT_FALSE(blackboxSlowFrameIterationTimer >= blackboxSInterval);
     blackboxSlowFrameIterationTimer = blackboxSInterval;
-    EXPECT_EQ(true, writeSlowFrameIfNeeded());
+    EXPECT_TRUE(writeSlowFrameIfNeeded());
     EXPECT_EQ(0, blackboxSlowFrameIterationTimer);
 
     for (int ii = 0; ii < 31; ++ii) {
         blackboxAdvanceIterationTimers();
-        EXPECT_EQ(false, blackboxShouldLogIFrame());
-        EXPECT_EQ(true, blackboxShouldLogPFrame());
+        EXPECT_FALSE(blackboxShouldLogIFrame());
+        EXPECT_TRUE(blackboxShouldLogPFrame());
         EXPECT_EQ(ii + 1, blackboxSlowFrameIterationTimer);
-        EXPECT_EQ(false, writeSlowFrameIfNeeded());
+        EXPECT_FALSE(writeSlowFrameIfNeeded());
     }
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
 }
 
 TEST(BlackboxTest, Test_2kHz)
@@ -171,29 +171,29 @@ TEST(BlackboxTest, Test_2kHz)
     blackboxInit();
     EXPECT_EQ(64, blackboxIInterval);
     EXPECT_EQ(2, blackboxPInterval);
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(false, blackboxShouldLogIFrame());
-    EXPECT_EQ(false, blackboxShouldLogPFrame());
+    EXPECT_FALSE(blackboxShouldLogIFrame());
+    EXPECT_FALSE(blackboxShouldLogPFrame());
 
     for (int ii = 0; ii < 31; ++ii) {
         blackboxAdvanceIterationTimers();
-        EXPECT_EQ(false, blackboxShouldLogIFrame());
-        EXPECT_EQ(true, blackboxShouldLogPFrame());
+        EXPECT_FALSE(blackboxShouldLogIFrame());
+        EXPECT_TRUE(blackboxShouldLogPFrame());
 
         blackboxAdvanceIterationTimers();
-        EXPECT_EQ(false, blackboxShouldLogIFrame());
-        EXPECT_EQ(false, blackboxShouldLogPFrame());
+        EXPECT_FALSE(blackboxShouldLogIFrame());
+        EXPECT_FALSE(blackboxShouldLogPFrame());
     }
 
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
 
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(false, blackboxShouldLogIFrame());
-    EXPECT_EQ(false, blackboxShouldLogPFrame());
+    EXPECT_FALSE(blackboxShouldLogIFrame());
+    EXPECT_FALSE(blackboxShouldLogPFrame());
 }
 
 TEST(BlackboxTest, Test_8kHz)
@@ -202,23 +202,23 @@ TEST(BlackboxTest, Test_8kHz)
     // 8kHz PIDloop
     targetPidLooptime = 125;
     blackboxInit();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
     EXPECT_EQ(0, blackboxSlowFrameIterationTimer);
-    EXPECT_EQ(false, blackboxSlowFrameIterationTimer >= blackboxSInterval);
+    EXPECT_FALSE(blackboxSlowFrameIterationTimer >= blackboxSInterval);
     blackboxSlowFrameIterationTimer = blackboxSInterval;
-    EXPECT_EQ(true, writeSlowFrameIfNeeded());
+    EXPECT_TRUE(writeSlowFrameIfNeeded());
     EXPECT_EQ(0, blackboxSlowFrameIterationTimer);
 
     for (int ii = 0; ii < 255; ++ii) {
         blackboxAdvanceIterationTimers();
-        EXPECT_EQ(false, blackboxShouldLogIFrame());
+        EXPECT_FALSE(blackboxShouldLogIFrame());
         EXPECT_EQ(ii + 1, blackboxSlowFrameIterationTimer);
-        EXPECT_EQ(false, writeSlowFrameIfNeeded());
+        EXPECT_FALSE(writeSlowFrameIfNeeded());
     }
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(true, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_TRUE(blackboxShouldLogPFrame());
 }
 
 TEST(BlackboxTest, Test_zero_p_ratio)
@@ -229,17 +229,17 @@ TEST(BlackboxTest, Test_zero_p_ratio)
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
     EXPECT_EQ(0, blackboxPInterval);
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(false, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_FALSE(blackboxShouldLogPFrame());
 
     for (int ii = 0; ii < 31; ++ii) {
         blackboxAdvanceIterationTimers();
-        EXPECT_EQ(false, blackboxShouldLogIFrame());
-        EXPECT_EQ(false, blackboxShouldLogPFrame());
+        EXPECT_FALSE(blackboxShouldLogIFrame());
+        EXPECT_FALSE(blackboxShouldLogPFrame());
     }
     blackboxAdvanceIterationTimers();
-    EXPECT_EQ(true, blackboxShouldLogIFrame());
-    EXPECT_EQ(false, blackboxShouldLogPFrame());
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_FALSE(blackboxShouldLogPFrame());
 }
 
 TEST(BlackboxTest, Test_CalculatePDenom)

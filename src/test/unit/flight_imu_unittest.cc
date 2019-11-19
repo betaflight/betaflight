@@ -175,7 +175,11 @@ TEST(FlightImuTest, TestSmallAngle)
     imuComputeRotationMatrix();
 
     // expect
+<<<<<<< HEAD
     EXPECT_EQ(false, isUpright());
+=======
+    EXPECT_TRUE(isUpright());
+>>>>>>> Improved tests.
 
     // given
     rMat[0][0] = r1;
@@ -187,7 +191,7 @@ TEST(FlightImuTest, TestSmallAngle)
     imuComputeRotationMatrix();
 
     // expect
-    EXPECT_EQ(false, isUpright());
+    EXPECT_FALSE(isUpright());
 
     // given
     memset(rMat, 0.0, sizeof(float) * 9);
@@ -196,7 +200,7 @@ TEST(FlightImuTest, TestSmallAngle)
     imuComputeRotationMatrix();
 
     // expect
-    EXPECT_EQ(false, isUpright());
+    EXPECT_FALSE(isUpright());
 }
 
 // STUBS

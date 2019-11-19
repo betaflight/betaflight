@@ -166,7 +166,7 @@ TEST(LedStripTest, parseLedStripConfig)
 
     // when
     for (uint8_t index = 0; index < (sizeof(ledStripConfigCommands) / sizeof(ledStripConfigCommands[0])); index++) {
-        EXPECT_EQ(true, parseLedStripConfig(index, ledStripConfigCommands[index]));
+        EXPECT_TRUE(parseLedStripConfig(index, ledStripConfigCommands[index]));
     }
 
     // then

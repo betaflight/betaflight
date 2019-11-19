@@ -116,7 +116,7 @@ TEST(CLIUnittest, TestCliSetArray)
 
 
     //cliGet((char *)"osd_item_vbat");
-    //EXPECT_EQ(false, false);
+    //EXPECT_FALSE(false);
 }
 
 TEST(CLIUnittest, TestCliSetStringNoFlags)
