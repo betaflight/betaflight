@@ -45,7 +45,7 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_1_ALIGN            CW270_DEG_FLIP
+#define GYRO_1_ALIGN            CW270_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -56,7 +56,7 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
-#define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
+#define MAG_HMC5883_ALIGN       CW270_DEG
 
 #define MAG_INT_EXTI            PC1
 #define USE_MAG_DATA_READY_SIGNAL
@@ -154,7 +154,7 @@
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
-#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_D
+#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define USE_RX_FRSKY_SPI_TELEMETRY
 
 #define RX_NSS_PIN              PD2
