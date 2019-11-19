@@ -234,8 +234,7 @@ uint16_t disableFlightMode(flightModeFlags_e mask)
 
 bool sensors(uint32_t mask)
 {
-    UNUSED(mask);
-    return false;
+    return mask & SENSOR_ACC;
 };
 
 uint32_t millis(void) { return 0; }
