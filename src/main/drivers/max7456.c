@@ -774,7 +774,7 @@ void max7456DrawScreen(void)
 
 static void max7456DrawScreenSlow(void)
 {
-    bool escapeCharFound;
+    bool escapeCharFound = false;
     uint8_t *buffer = getActiveLayerBuffer();
 
     __spiBusTransactionBegin(busdev);
