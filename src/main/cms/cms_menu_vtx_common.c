@@ -114,6 +114,7 @@ CMS_Menu cmsx_menuVtxRedirect = {
     .onEnter = setStatusMessage,
     .onExit = NULL,
     .checkRedirect = vtxMenuRedirect,
+    .onDisplayUpdate = NULL,
     .entries = vtxRedirectMenuEntries,
 };
 

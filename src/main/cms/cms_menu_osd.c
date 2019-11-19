@@ -151,7 +151,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {NULL,                 OME_END,     NULL, NULL, 0}
 };
 
-CMS_Menu menuOsdActiveElems = {
+static CMS_Menu menuOsdActiveElems = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUOSDACT",
     .GUARD_type = OME_MENU,
@@ -159,6 +159,7 @@ CMS_Menu menuOsdActiveElems = {
     .onEnter = menuOsdActiveElemsOnEnter,
     .onExit = menuOsdActiveElemsOnExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuOsdActiveElemsEntries
 };
 
@@ -216,7 +217,7 @@ const OSD_Entry menuAlarmsEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu menuAlarms = {
+static CMS_Menu menuAlarms = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUALARMS",
     .GUARD_type = OME_MENU,
@@ -224,6 +225,7 @@ CMS_Menu menuAlarms = {
     .onEnter = menuAlarmsOnEnter,
     .onExit = menuAlarmsOnExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuAlarmsEntries,
 };
 
@@ -269,7 +271,7 @@ const OSD_Entry menuTimersEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu menuTimers = {
+static CMS_Menu menuTimers = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUTIMERS",
     .GUARD_type = OME_MENU,
@@ -277,6 +279,7 @@ CMS_Menu menuTimers = {
     .onEnter = menuTimersOnEnter,
     .onExit = menuTimersOnExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuTimersEntries,
 };
 #endif /* USE_EXTENDED_CMS_MENUS */
@@ -351,6 +354,7 @@ CMS_Menu cmsx_menuOsd = {
     .onEnter = cmsx_menuOsdOnEnter,
     .onExit = cmsx_menuOsdOnExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuOsdEntries
 };
 #endif // CMS

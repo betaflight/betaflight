@@ -22,4 +22,4 @@
 
 #include "cms/cms_types.h"
 
-extern CMS_Menu menuMain;
+extern CMS_Menu cmsx_menuMain;

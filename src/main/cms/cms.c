@@ -41,7 +41,7 @@
 #include "build/version.h"
 
 #include "cms/cms.h"
-#include "cms/cms_menu_builtin.h"
+#include "cms/cms_menu_main.h"
 #include "cms/cms_menu_saveexit.h"
 #include "cms/cms_types.h"
 
@@ -393,20 +393,21 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
 
     case OME_Submenu:
     case OME_Funcall:
-        if (IS_PRINTVALUE(*flags))  {
-
+        if (IS_PRINTVALUE(*flags)) {
             buff[0]= 0x0;
 
-            if ((p->type == OME_Submenu) && p->func && (*flags & OPTSTRING)) {
+            if (p->type == OME_Submenu && p->func && *flags & OPTSTRING) {
 
                 // Special case of sub menu entry with optional value display.
 
                 char *str = ((CMSMenuOptFuncPtr)p->func)();
-                strncpy( buff, str, CMS_DRAW_BUFFER_LEN);
+                strncpy(buff, str, CMS_DRAW_BUFFER_LEN);
+            } else if (p->type == OME_Funcall && p->data) {
+                strncpy(buff, p->data, CMS_DRAW_BUFFER_LEN);
             }
             strncat(buff, ">", CMS_DRAW_BUFFER_LEN);
 
-            row = smallScreen  ? row - 1  : row;
+            row = smallScreen ? row - 1 : row;
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, strlen(buff));
             CLR_PRINTVALUE(*flags);
         }
@@ -526,7 +527,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
         // Shouldn't happen. Notify creator of this menu content
 #ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
         cnt = displayWrite(pDisplay, rightMenuColumn - 6, row, "BADENT");
-#else.
+#else
         cnt = displayWrite(pDisplay, rightMenuColumn, row, "BADENT");
 #endif
 #endif
@@ -535,6 +536,8 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
 
     return cnt;
 }
+
+STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward; will be resolved after merging
 
 static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 {
@@ -572,8 +575,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     // Cursor manipulation
 
-    while ((pageTop + currentCtx.cursorRow)->type == OME_Label) // skip label
+    while ((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String) { // skip labels and strings
         currentCtx.cursorRow++;
+    }
 
     cmsPageDebug();
 
@@ -581,16 +585,27 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         room -= displayWrite(pDisplay, leftMenuColumn, top + pDisplay->cursorRow * linesPerMenuItem, " ");
     }
 
-    if (room < 30)
+    if (room < 30) {
         return;
+    }
 
     if (pDisplay->cursorRow != currentCtx.cursorRow) {
         room -= displayWrite(pDisplay, leftMenuColumn, top + currentCtx.cursorRow * linesPerMenuItem, ">");
         pDisplay->cursorRow = currentCtx.cursorRow;
     }
 
-    if (room < 30)
+    if (room < 30) {
         return;
+    }
+
+    if (currentCtx.menu->onDisplayUpdate) {
+        long result = currentCtx.menu->onDisplayUpdate(pageTop + currentCtx.cursorRow);
+        if (result == MENU_CHAIN_BACK) {
+            cmsMenuBack(pDisplay);
+
+            return;
+        }
+    }
 
     // Print text labels
     for (i = 0, p = pageTop; (p <= pageTop + pageMaxRow); i++, p++) {
@@ -599,8 +614,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
             coloff += (p->type == OME_Label) ? 0 : 1;
             room -= displayWrite(pDisplay, coloff, top + i * linesPerMenuItem, p->text);
             CLR_PRINTLABEL(runtimeEntryFlags[i]);
-            if (room < 30)
+            if (room < 30) {
                 return;
+            }
         }
 
     // Print values
@@ -624,8 +640,6 @@ static void cmsMenuCountPage(displayPort_t *pDisplay)
     for (p = currentCtx.menu->entries; p->type != OME_END; p++);
     pageCount = (p - currentCtx.menu->entries - 1) / maxMenuItems + 1;
 }
-
-STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward; will be resolved after merging
 
 long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
@@ -666,8 +680,11 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
         currentCtx.menu = pMenu;
         currentCtx.cursorRow = 0;
 
-        if (pMenu->onEnter && (pMenu->onEnter() == MENU_CHAIN_BACK)) {
-            return cmsMenuBack(pDisplay);
+        if (pMenu->onEnter) {
+            long result = pMenu->onEnter();
+            if (result == MENU_CHAIN_BACK) {
+                return cmsMenuBack(pDisplay);
+            }
         }
 
         cmsMenuCountPage(pDisplay);
@@ -691,8 +708,11 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
 {
     // Let onExit function decide whether to allow exit or not.
 
-    if (currentCtx.menu->onExit && currentCtx.menu->onExit(pageTop + currentCtx.cursorRow) < 0) {
-        return -1;
+    if (currentCtx.menu->onExit) {
+        long result = currentCtx.menu->onExit(pageTop + currentCtx.cursorRow);
+        if (result < 0) {
+            return MENU_CHAIN_BACK;
+        }
     }
 
     if (!menuStackIdx) {
@@ -717,7 +737,7 @@ void cmsMenuOpen(void)
         if (!pCurrentDisplay)
             return;
         cmsInMenu = true;
-        currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
+        currentCtx = (cmsCtx_t){ &cmsx_menuMain, 0, 0 };
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
         displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
@@ -783,7 +803,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     case CMS_POPUP_SAVE:
     case CMS_POPUP_SAVEREBOOT:
 
-        cmsTraverseGlobalExit(&menuMain);
+        cmsTraverseGlobalExit(&cmsx_menuMain);
 
         if (currentCtx.menu->onExit) {
             currentCtx.menu->onExit((OSD_Entry *)NULL); // Forced exit
@@ -1261,10 +1281,9 @@ static void cmsUpdate(uint32_t currentTimeUs)
 
 void cmsHandler(timeUs_t currentTimeUs)
 {
-    if (cmsDeviceCount < 0)
+    if (cmsDeviceCount < 0) {
         return;
-
-
+    }
 
     static timeUs_t lastCalledUs = 0;
 

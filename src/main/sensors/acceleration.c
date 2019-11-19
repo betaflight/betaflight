@@ -99,6 +99,11 @@ static void setConfigCalibrationCompleted(void)
     accelerometerConfigMutable()->accZero.values.calibrationCompleted = 1;
 }
 
+bool accHasBeenCalibrated(void)
+{
+    return accelerometerConfig()->accZero.values.calibrationCompleted;
+}
+
 void accResetRollAndPitchTrims(void)
 {
     resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);

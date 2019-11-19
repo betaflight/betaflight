@@ -165,6 +165,7 @@ CMS_Menu cmsx_menuVtxRTC6705 = {
     .onEnter = cmsx_Vtx_onEnter,
     .onExit = cmsx_Vtx_onExit,
     .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuVtxEntries
 };
 

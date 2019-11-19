@@ -125,7 +125,7 @@ static OSD_Entry menuMainEntries[] =
     {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
-CMS_Menu menuMain = {
+CMS_Menu cmsx_menuMain = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUMAIN",
     .GUARD_type = OME_MENU,

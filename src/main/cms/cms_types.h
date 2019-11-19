@@ -98,6 +98,8 @@ typedef long (*CMSMenuOnExitPtr)(const OSD_Entry *self);
 
 typedef const void * (*CMSMenuCheckRedirectPtr)(void);
 
+typedef long (*CMSMenuOnDisplayUpdatePtr)(const OSD_Entry *selected);
+
 typedef struct
 {
 #ifdef CMS_MENU_DEBUG
@@ -108,6 +110,7 @@ typedef struct
     const CMSMenuFuncPtr onEnter;
     const CMSMenuOnExitPtr onExit;
     const CMSMenuCheckRedirectPtr checkRedirect;
+    const CMSMenuOnDisplayUpdatePtr onDisplayUpdate;
     const OSD_Entry *entries;
 } CMS_Menu;
 

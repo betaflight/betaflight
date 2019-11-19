@@ -20,6 +20,6 @@
 
 #pragma once
 
-#include "cms_types.h"
+#include "cms/cms_types.h"
 
-extern CMS_Menu cmsx_menuMisc;
+extern CMS_Menu cmsx_menuFirmware;

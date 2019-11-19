@@ -276,6 +276,12 @@ static void validateAndFixConfig(void)
     buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(1)->customAlignment, gyroDeviceConfig(1)->alignment);
 #endif
 
+    if (accelerometerConfig()->accZero.values.roll != 0 ||
+        accelerometerConfig()->accZero.values.pitch != 0 ||
+        accelerometerConfig()->accZero.values.yaw != 0) {
+        accelerometerConfigMutable()->accZero.values.calibrationCompleted = 1;
+    }
+
     if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI))) {
         featureEnable(DEFAULT_RX_FEATURE);
     }

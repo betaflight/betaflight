@@ -68,5 +68,5 @@ void compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
 void compassPreInit(void);
 void compassStartCalibration(void);
-bool isCompassCalibrationComplete(void);
+bool compassIsCalibrationComplete(void);
 

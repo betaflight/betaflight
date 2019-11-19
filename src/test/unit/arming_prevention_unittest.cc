@@ -88,6 +88,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
     // given
     simulationTime = 0;
     gyroCalibDone = false;
+    sensorsSet(SENSOR_GYRO);
 
     // and
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -178,6 +179,7 @@ TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
     // given
     simulationTime = 0;
     gyroCalibDone = false;
+    sensorsSet(SENSOR_GYRO);
 
     // and
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -1036,8 +1038,8 @@ extern "C" {
     void saveConfigAndNotify(void) {}
     void blackboxFinish(void) {}
     bool accIsCalibrationComplete(void) { return true; }
-    bool isBaroCalibrationComplete(void) { return true; }
-    bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
+    bool baroIsCalibrationComplete(void) { return true; }
+    bool gyroIsCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
     void pidController(const pidProfile_t *, timeUs_t) {}
@@ -1072,6 +1074,7 @@ extern "C" {
     void transponderUpdate(timeUs_t) {}
     void GPS_reset_home_position(void) {}
     void accStartCalibration(void) {}
+    bool accHasBeenCalibrated(void) { return true; }
     void baroSetGroundLevel(void) {}
     void changePidProfile(uint8_t) {}
     void changeControlRateProfile(uint8_t) {}
@@ -1093,6 +1096,6 @@ extern "C" {
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
     bool isFixedWing(void) { return false; }
     void compassStartCalibration(void) {}
-    bool isCompassCalibrationComplete(void) { return true; }
+    bool compassIsCalibrationComplete(void) { return true; }
     bool isUpright(void) { return mockIsUpright; }
 }
