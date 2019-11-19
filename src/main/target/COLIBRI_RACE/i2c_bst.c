@@ -539,9 +539,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                accStartCalibration();
            break;
 #endif
+
+#if defined(USE_MAG)
         case BST_MAG_CALIBRATION:
-           if (!ARMING_FLAG(ARMED))
-               ENABLE_STATE(CALIBRATE_MAG);
+           if (!ARMING_FLAG(ARMED)) {
+               compassStartCalibration();
+           }
+#endif
+
            break;
         case BST_EEPROM_WRITE:
             if (ARMING_FLAG(ARMED)) {

@@ -24,15 +24,15 @@
 
 #include "platform.h"
 
+#if defined(USE_MAG)
+
 #include "common/axis.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+#include "config/config.h"
 
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "drivers/bus.h"
-#include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/compass/compass.h"
 #include "drivers/compass/compass_ak8975.h"
 #include "drivers/compass/compass_ak8963.h"
@@ -42,18 +42,22 @@
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
+#include "drivers/time.h"
 
-#include "config/config.h"
 #include "fc/runtime_config.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "sensors/boardalignment.h"
-#include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-#include "hardware_revision.h"
-#endif
+#include "compass.h"
+
+static timeUs_t tCal = 0;
+static flightDynamicsTrims_t magZeroTempMin;
+static flightDynamicsTrims_t magZeroTempMax;
 
 magDev_t magDev;
 mag_t mag;                   // mag access functions
@@ -101,8 +105,6 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 #endif
     compassConfig->interruptTag = IO_TAG(MAG_INT_EXTI);
 }
-
-#if defined(USE_MAG)
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
@@ -319,11 +321,24 @@ bool compassIsHealthy(void)
     return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
 }
 
+void compassStartCalibration(void)
+{
+    tCal = micros();
+    flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+    for (int axis = 0; axis < 3; axis++) {
+        magZero->raw[axis] = 0;
+        magZeroTempMin.raw[axis] = mag.magADC[axis];
+        magZeroTempMax.raw[axis] = mag.magADC[axis];
+    }
+}
+
+bool isCompassCalibrationComplete(void)
+{
+    return tCal == 0;
+}
+
 void compassUpdate(timeUs_t currentTimeUs)
 {
-    static timeUs_t tCal = 0;
-    static flightDynamicsTrims_t magZeroTempMin;
-    static flightDynamicsTrims_t magZeroTempMax;
 
     magDev.read(&magDev, magADCRaw);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -336,16 +351,6 @@ void compassUpdate(timeUs_t currentTimeUs)
     }
 
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
-    if (STATE(CALIBRATE_MAG)) {
-        tCal = currentTimeUs;
-        for (int axis = 0; axis < 3; axis++) {
-            magZero->raw[axis] = 0;
-            magZeroTempMin.raw[axis] = mag.magADC[axis];
-            magZeroTempMax.raw[axis] = mag.magADC[axis];
-        }
-        DISABLE_STATE(CALIBRATE_MAG);
-    }
-
     if (magInit) {              // we apply offset only once mag calibration is done
         mag.magADC[X] -= magZero->raw[X];
         mag.magADC[Y] -= magZero->raw[Y];

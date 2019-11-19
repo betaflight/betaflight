@@ -62,6 +62,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/compass.h"
 #include "sensors/gyro.h"
 
 #include "rc_controls.h"
@@ -283,11 +284,14 @@ void processRcStickPositions()
     }
 #endif
 
+#if defined(USE_MAG)
     if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) {
         // Calibrating Mag
-        ENABLE_STATE(CALIBRATE_MAG);
+        compassStartCalibration();
+
         return;
     }
+#endif
 
 
     if (FLIGHT_MODE(ANGLE_MODE|HORIZON_MODE)) {

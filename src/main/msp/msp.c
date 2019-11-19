@@ -963,7 +963,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 sbufWriteU16(dst, gyroRateDps(i));
             }
             for (int i = 0; i < 3; i++) {
+#if defined(USE_MAG)
                 sbufWriteU16(dst, lrintf(mag.magADC[i]));
+#else
+                sbufWriteU16(dst, 0);
+#endif
             }
         }
         break;
@@ -1515,7 +1519,11 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #endif
         sbufWriteU8(dst, gyroAlignment);
         sbufWriteU8(dst, gyroAlignment);  // Starting with 4.0 gyro and acc alignment are the same
+#if defined(USE_MAG)
         sbufWriteU8(dst, compassConfig()->mag_alignment);
+#else
+        sbufWriteU8(dst, 0);
+#endif
 
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectionFlags());
@@ -2278,7 +2286,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
         // maintain backwards compatibility for API < 1.41
         const uint8_t gyroAlignment = sbufReadU8(src);
         sbufReadU8(src);  // discard deprecated acc_align
+#if defined(USE_MAG)
         compassConfigMutable()->mag_alignment = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
 
         if (sbufBytesRemaining(src) >= 3) {
             // API >= 1.41 - support the gyro_to_use and alignment for gyros 1 & 2
@@ -2534,11 +2546,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
         break;
 #endif
 
+#if defined(USE_MAG)
     case MSP_MAG_CALIBRATION:
-        if (!ARMING_FLAG(ARMED))
-            ENABLE_STATE(CALIBRATE_MAG);
-        break;
+        if (!ARMING_FLAG(ARMED)) {
+            compassStartCalibration();
+        }
+#endif
 
+        break;
     case MSP_EEPROM_WRITE:
         if (ARMING_FLAG(ARMED)) {
             return MSP_RESULT_ERROR;
