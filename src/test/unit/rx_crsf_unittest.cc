@@ -50,6 +50,7 @@ extern "C" {
 
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
+    extern crsfFrame_t crsfChannelDataFrame;
     extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
     uint32_t dummyTimeUs;
@@ -178,6 +179,7 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     const uint8_t crc = crsfFrameCRC();
     crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
 
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     const uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
@@ -222,6 +224,7 @@ TEST(CrossFireTest, TestCapturedData)
     const crsfRcChannelsFrame_t *framePtr = (const crsfRcChannelsFrame_t*)capturedData;
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
@@ -244,6 +247,7 @@ TEST(CrossFireTest, TestCapturedData)
     ++framePtr;
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
@@ -268,7 +272,7 @@ TEST(CrossFireTest, TestCrsfDataReceive)
     for (unsigned int ii = 0; ii < sizeof(crsfRcChannelsFrame_t); ++ii) {
         crsfDataReceive(*pData++);
     }
-    EXPECT_EQ(true, crsfFrameDone);
+    EXPECT_EQ(false, crsfFrameDone); // data is not a valid rc channels frame so don't expect crsfFrameDone to be true
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
