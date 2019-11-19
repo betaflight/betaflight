@@ -175,11 +175,7 @@ TEST(FlightImuTest, TestSmallAngle)
     imuComputeRotationMatrix();
 
     // expect
-<<<<<<< HEAD
-    EXPECT_EQ(false, isUpright());
-=======
-    EXPECT_TRUE(isUpright());
->>>>>>> Improved tests.
+    EXPECT_FALSE(isUpright());
 
     // given
     rMat[0][0] = r1;
