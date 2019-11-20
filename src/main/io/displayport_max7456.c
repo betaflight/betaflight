@@ -30,31 +30,17 @@
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/displayport_max7456.h"
 
 #include "osd/osd.h"
 
+#include "pg/displayport_profiles.h"
 #include "pg/max7456.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 #include "pg/vcd.h"
 
 displayPort_t max7456DisplayPort;
-
-PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
-
-void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfile)
-{
-    displayPortProfile->colAdjust = 0;
-    displayPortProfile->rowAdjust = 0;
-
-    // Set defaults as per MAX7456 datasheet
-    displayPortProfile->invert = false;
-    displayPortProfile->blackBrightness = 0;
-    displayPortProfile->whiteBrightness = 2;
-}
 
 static int grab(displayPort_t *displayPort)
 {
@@ -148,6 +134,24 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
+static bool layerSupported(displayPort_t *displayPort, displayPortLayer_e layer)
+{
+    UNUSED(displayPort);
+    return max7456LayerSupported(layer);
+}
+
+static bool layerSelect(displayPort_t *displayPort, displayPortLayer_e layer)
+{
+    UNUSED(displayPort);
+    return max7456LayerSelect(layer);
+}
+
+static bool layerCopy(displayPort_t *displayPort, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer)
+{
+    UNUSED(displayPort);
+    return max7456LayerCopy(destLayer, sourceLayer);
+}
+
 static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
@@ -161,6 +165,9 @@ static const displayPortVTable_t max7456VTable = {
     .resync = resync,
     .isSynced = isSynced,
     .txBytesFree = txBytesFree,
+    .layerSupported = layerSupported,
+    .layerSelect = layerSelect,
+    .layerCopy = layerCopy,
 };
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)

@@ -31,7 +31,7 @@
 #define BEEPER_PIN              PC13
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define USE_EXTI
 #define USE_GYRO_EXTI

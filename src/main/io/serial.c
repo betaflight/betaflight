@@ -48,7 +48,7 @@
 #include "drivers/serial_usb_vcp.h"
 #endif
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/serial.h"
 

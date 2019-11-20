@@ -20,10 +20,9 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "drivers/display.h"
 
-PG_DECLARE(displayPortProfile_t, displayPortProfileMax7456);
+#include "pg/displayport_profiles.h"
 
 struct vcdProfile_s;
 displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);

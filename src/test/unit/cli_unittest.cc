@@ -32,7 +32,7 @@ extern "C" {
     #include "config/feature.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/rc_adjustments.h"
     #include "fc/runtime_config.h"
     #include "flight/mixer.h"
@@ -282,7 +282,6 @@ uint8_t getCurrentControlRateProfileIndex(void){ return 1; }
 void changeControlRateProfile(uint8_t) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *) {}
 void writeEEPROM() {}
-void writeEEPROMWithFeatures(uint32_t) {}
 serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) {return NULL; }
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }

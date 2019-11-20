@@ -30,7 +30,7 @@
 #define BEEPER_PIN              PC5
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 // *************** Gyro & ACC **********************
 #define USE_SPI
@@ -111,10 +111,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
-
-// *************** CAM *****************************
-
-#define CAMERA_CONTROL_PIN      PA8
 
 // *************** PIN *****************************
 

@@ -20,6 +20,12 @@
 
 #pragma once
 
+typedef enum {
+    DISPLAYPORT_LAYER_FOREGROUND,
+    DISPLAYPORT_LAYER_BACKGROUND,
+    DISPLAYPORT_LAYER_COUNT,
+} displayPortLayer_e;
+
 struct displayPortVTable_s;
 
 typedef struct displayPort_s {
@@ -37,8 +43,6 @@ typedef struct displayPort_s {
     int8_t grabCount;
 } displayPort_t;
 
-// displayPort_t is used as a parameter group in 'displayport_msp.h' and 'displayport_max7456`.h'. Treat accordingly!
-
 typedef struct displayPortVTable_s {
     int (*grab)(displayPort_t *displayPort);
     int (*release)(displayPort_t *displayPort);
@@ -52,17 +56,10 @@ typedef struct displayPortVTable_s {
     void (*resync)(displayPort_t *displayPort);
     bool (*isSynced)(const displayPort_t *displayPort);
     uint32_t (*txBytesFree)(const displayPort_t *displayPort);
+    bool (*layerSupported)(displayPort_t *displayPort, displayPortLayer_e layer);
+    bool (*layerSelect)(displayPort_t *displayPort, displayPortLayer_e layer);
+    bool (*layerCopy)(displayPort_t *displayPort, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer);
 } displayPortVTable_t;
-
-typedef struct displayPortProfile_s {
-    int8_t colAdjust;
-    int8_t rowAdjust;
-    bool invert;
-    uint8_t blackBrightness;
-    uint8_t whiteBrightness;
-} displayPortProfile_t;
-
-// Note: displayPortProfile_t used as a parameter group for CMS over CRSF (io/displayport_crsf)
 
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
@@ -80,3 +77,7 @@ void displayResync(displayPort_t *instance);
 bool displayIsSynced(const displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);
 void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable);
+bool displayLayerSupported(displayPort_t *instance, displayPortLayer_e layer);
+bool displayLayerSelect(displayPort_t *instance, displayPortLayer_e layer);
+bool displayLayerCopy(displayPort_t *instance, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer);
+

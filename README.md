@@ -1,9 +1,11 @@
-![Important Notice: Betaflight 4.0 will be the last release to include support for STM32F3 based flight controllers. (This includes all boards with 'F3' in the name.)](docs/assets/images/stm32f3_retirement_notice.svg)
+![Important Notice: Support for STM32F3 based flight controllers was dropped in Betaflight 4.1. (This includes all boards with 'F3' in the name.)](docs/assets/images/stm32f3_retirement_notice.svg)
 
 (Please see the [note](https://github.com/betaflight/betaflight#end-of-active-development-for-stm32f3-based-flight-controllers) below.)
 
 
 ![Betaflight](docs/assets/images/bf_logo.png)
+
+[![Build Status](https://travis-ci.com/betaflight/betaflight.svg?branch=master)](https://travis-ci.com/betaflight/betaflight)
 
 Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
@@ -54,8 +56,7 @@ This does not mean that it won't be possible to use these flight controllers aft
 
 | Date  | Event |
 | - | - |
-| 01 September 2019 | Start of feature freeze / Release Candidate window for Betaflight 4.1 |
-| 01 October 2019 | Planned [release](https://github.com/betaflight/betaflight/milestone/30) date for Betaflight 4.1 |
+
 
 ## Features
 

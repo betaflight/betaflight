@@ -62,7 +62,7 @@
 #define BEEPER_INVERTED
 
 #if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 #endif
 
 #ifdef OMNIBUSF4SD

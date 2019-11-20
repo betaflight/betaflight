@@ -62,13 +62,13 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   42 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   43 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
 #define MULTIWII_IDENTIFIER "MWII";
 #define BASEFLIGHT_IDENTIFIER "BAFL";
-#define BETAFLIGHT_IDENTIFIER "BTFL"
+//#define BETAFLIGHT_IDENTIFIER "BTFL" Actual value stored in FC_FIRMWARE_IDENTIFIER in build/version.h
 #define CLEANFLIGHT_IDENTIFIER "CLFL"
 #define INAV_IDENTIFIER "INAV"
 #define RACEFLIGHT_IDENTIFIER "RCFL"

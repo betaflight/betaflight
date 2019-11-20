@@ -20,6 +20,7 @@
 
 #include "stdbool.h"
 #include "stdint.h"
+#include "math.h"
 
 #include "platform.h"
 
@@ -29,17 +30,20 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/adc.h"
 
 #include "fc/runtime_config.h"
-#include "fc/config.h"
 #include "fc/rc_controls.h"
 
+#include "flight/mixer.h"
+
 #include "io/beeper.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #include "sensors/battery.h"
 
@@ -427,7 +431,7 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 #ifdef USE_VIRTUAL_CURRENT_METER
             throttleStatus_e throttleStatus = calculateThrottleStatus();
             bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && featureIsEnabled(FEATURE_MOTOR_STOP));
-            int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
+            const int32_t throttleOffset = lrintf(mixerGetThrottle() * 1000);
 
             currentMeterVirtualRefresh(lastUpdateAt, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
             currentMeterVirtualRead(&currentMeter);

@@ -28,7 +28,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_modes.h"
 #include "fc/rc_controls.h"

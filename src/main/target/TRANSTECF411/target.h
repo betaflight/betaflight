@@ -32,7 +32,7 @@
 #define BEEPER_PIN                          PB5
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR                   true
+#define ENABLE_DSHOT_DMAR                   DSHOT_DMAR_ON
 
 #define USE_PINIO
 #define PINIO1_PIN                          PB6         //VTX Power Switch

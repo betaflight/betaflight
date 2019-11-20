@@ -430,11 +430,14 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 
-## all               : Build all targets (excluding unsupported)
-all: $(SUPPORTED_TARGETS)
+## all               : Build all currently built targets
+all: $(CI_TARGETS)
 
-## all_with_unsupported : Build all targets (including unsupported)
-all_with_unsupported: $(VALID_TARGETS)
+## all_all : Build all targets (including legacy / unsupported)
+all_all: $(VALID_TARGETS)
+
+## legacy : Build legacy targets
+legacy: $(LEGACY_TARGETS)
 
 ## unsupported : Build unsupported targets
 unsupported: $(UNSUPPORTED_TARGETS)
@@ -583,7 +586,8 @@ help: Makefile make/tools.mk
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
 	@echo "Valid targets:       $(VALID_TARGETS)"
-	@echo "Supported targets:   $(SUPPORTED_TARGETS)"
+	@echo "Built targets:       $(CI_TARGETS)"
+	@echo "Legacy targets:      $(LEGACY_TARGETS)"
 	@echo "Unsupported targets: $(UNSUPPORTED_TARGETS)"
 	@echo "Target:              $(TARGET)"
 	@echo "Base target:         $(BASE_TARGET)"
@@ -598,7 +602,7 @@ targets:
 	@echo "targets-group-3:     $(words $(GROUP_3_TARGETS)) targets"
 	@echo "targets-group-4:     $(words $(GROUP_4_TARGETS)) targets"
 	@echo "targets-group-rest:  $(words $(GROUP_OTHER_TARGETS)) targets"
-	@echo "total in all groups  $(words $(SUPPORTED_TARGETS)) targets"
+	@echo "total in all groups  $(words $(CI_TARGETS)) targets"
 
 ## target-mcu        : print the MCU type of the target
 target-mcu:
@@ -606,7 +610,7 @@ target-mcu:
 
 ## targets-by-mcu    : make all targets that have a MCU_TYPE mcu
 targets-by-mcu:
-	$(V1) for target in $(VALID_TARGETS); do \
+	$(V1) for target in $${TARGETS}; do \
 		TARGET_MCU_TYPE=$$($(MAKE) -s TARGET=$${target} target-mcu); \
 		if [ "$${TARGET_MCU_TYPE}" = "$${MCU_TYPE}" ]; then \
 			if [ "$${DO_BUILD}" = 1 ]; then \
@@ -625,24 +629,30 @@ targets-by-mcu:
 
 ## targets-f3        : make all F3 targets
 targets-f3:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 DO_BUILD=1
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
 
 targets-f3-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 TARGETS="$(VALID_TARGETS)"
 
 ## targets-f4        : make all F4 targets
 targets-f4:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 DO_BUILD=1
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
 
 targets-f4-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(VALID_TARGETS)"
+
+targets-ci-f4-print:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(CI_TARGETS)"
 
 ## targets-f7        : make all F7 targets
 targets-f7:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 DO_BUILD=1
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
 
 targets-f7-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 TARGETS="$(VALID_TARGETS)"
+
+targets-ci-f7-print:
+	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 TARGETS="$(CI_TARGETS)"
 
 ## test              : run the Betaflight test suite
 ## junittest         : run the Betaflight test suite, producing Junit XML result files.

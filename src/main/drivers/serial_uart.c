@@ -37,11 +37,61 @@
 #include "common/utils.h"
 
 #include "drivers/dma.h"
+#include "drivers/dma_reqmap.h"
 #include "drivers/rcc.h"
-
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
+
+#include "pg/serial_uart.h"
+
+#if defined(STM32H7)
+#define UART_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
+#elif defined(STM32F7)
+#define UART_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT // DTCM RAM
+#elif defined(STM32F4) || defined(STM32F3) || defined(STM32F1)
+#define UART_BUFFER_ATTRIBUTE                    // NONE
+#else
+#error Undefined UART_BUFFER_ATTRIBUTE for this MCU
+#endif
+
+#define UART_BUFFERS(n) \
+    UART_BUFFER(UART_BUFFER_ATTRIBUTE, n, R); \
+    UART_BUFFER(UART_BUFFER_ATTRIBUTE, n, T); struct dummy_s
+
+#ifdef USE_UART1
+UART_BUFFERS(1);
+#endif
+
+#ifdef USE_UART2
+UART_BUFFERS(2);
+#endif
+
+#ifdef USE_UART3
+UART_BUFFERS(3);
+#endif
+
+#ifdef USE_UART4
+UART_BUFFERS(4);
+#endif
+
+#ifdef USE_UART5
+UART_BUFFERS(5);
+#endif
+
+#ifdef USE_UART6
+UART_BUFFERS(6);
+#endif
+
+#ifdef USE_UART7
+UART_BUFFERS(7);
+#endif
+
+#ifdef USE_UART8
+UART_BUFFERS(8);
+#endif
+
+#undef UART_BUFFERS
 
 serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {   
@@ -231,6 +281,60 @@ const struct serialPortVTable uartVTable[] = {
         .endWrite = NULL,
     }
 };
+
+#ifdef USE_DMA
+void uartConfigureDma(uartDevice_t *uartdev)
+{
+    uartPort_t *s = &(uartdev->port);
+    const uartHardware_t *hardware = uartdev->hardware;
+
+#ifdef USE_DMA_SPEC
+    UARTDevice_e device = hardware->device;
+    const dmaChannelSpec_t *dmaChannelSpec;
+
+    if (serialUartConfig(device)->txDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, device, serialUartConfig(device)->txDmaopt);
+        if (dmaChannelSpec) {
+            s->txDMAResource = dmaChannelSpec->ref;
+            s->txDMAChannel = dmaChannelSpec->channel;
+        }
+    }
+
+    if (serialUartConfig(device)->rxDmaopt != DMA_OPT_UNUSED) {
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->txDmaopt);
+        if (dmaChannelSpec) {
+            s->rxDMAResource = dmaChannelSpec->ref;
+            s->rxDMAChannel = dmaChannelSpec->channel;
+        }
+    }
+#else
+    // Non USE_DMA_SPEC does not support configurable ON/OFF of UART DMA
+
+    if (hardware->rxDMAResource) {
+        s->rxDMAResource = hardware->rxDMAResource;
+        s->rxDMAChannel = hardware->rxDMAChannel;
+    }
+
+    if (hardware->txDMAResource) {
+        s->txDMAResource = hardware->txDMAResource;
+        s->txDMAChannel = hardware->txDMAChannel;
+    }
+#endif
+
+    if (s->txDMAResource) {
+        dmaIdentifier_e identifier = dmaGetIdentifier(s->txDMAResource);
+        dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(hardware->device));
+        dmaSetHandler(identifier, uartDmaIrqHandler, hardware->txPriority, (uint32_t)uartdev);
+        s->txDMAPeripheralBaseAddr = (uint32_t)&UART_REG_TXD(hardware->reg);
+    }
+
+    if (s->rxDMAResource) {
+        dmaIdentifier_e identifier = dmaGetIdentifier(s->rxDMAResource);
+        dmaInit(identifier, OWNER_SERIAL_RX, RESOURCE_INDEX(hardware->device));
+        s->rxDMAPeripheralBaseAddr = (uint32_t)&UART_REG_RXD(hardware->reg);
+    }
+}
+#endif
 
 #define UART_IRQHandler(type, dev)                            \
     void type ## dev ## _IRQHandler(void)                     \

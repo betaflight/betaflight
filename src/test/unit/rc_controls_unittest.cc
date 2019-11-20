@@ -45,7 +45,7 @@ extern "C" {
 
     #include "flight/pid.h"
 
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/controlrate_profile.h"
     #include "fc/rc_modes.h"
     #include "fc/rc_adjustments.h"
@@ -78,8 +78,8 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
     rcModeUpdate(&mask);
 
     // and
-    memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
-    rxRuntimeConfig.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+    memset(&rxRuntimeState, 0, sizeof(rxRuntimeState_t));
+    rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
     for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
@@ -152,8 +152,8 @@ TEST_F(RcControlsModesTest, updateActivatedModesUsingValidAuxConfigurationAndRXV
     rcModeUpdate(&mask);
 
     // and
-    memset(&rxRuntimeConfig, 0, sizeof(rxRuntimeConfig_t));
-    rxRuntimeConfig.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
+    memset(&rxRuntimeState, 0, sizeof(rxRuntimeState_t));
+    rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT;
 
     // and
     for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
@@ -610,7 +610,7 @@ void saveConfigAndNotify(void) {}
 void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}
 void pidInitConfig(const pidProfile_t *) {}
-void accSetCalibrationCycles(uint16_t) {}
+void accStartCalibration(void) {}
 void gyroStartCalibration(bool isFirstArmingCalibration)
 {
     UNUSED(isFirstArmingCalibration);
@@ -631,7 +631,7 @@ uint8_t getCurrentControlRateProfileIndex(void) {
     return 0;
 }
 void GPS_reset_home_position(void) {}
-void baroSetCalibrationCycles(uint16_t) {}
+void baroSetGroundLevel(void) {}
 
 void blackboxLogEvent(FlightLogEvent, flightLogEventData_t *) {}
 
@@ -642,7 +642,7 @@ int16_t heading;
 uint8_t stateFlags = 0;
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 pidProfile_t *currentPidProfile;
-rxRuntimeConfig_t rxRuntimeConfig;
+rxRuntimeState_t rxRuntimeState;
 PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 void resetArmingDisabled(void) {}
@@ -654,4 +654,5 @@ bool isTryingToArm(void) { return false; }
 void resetTryingToArm(void) {}
 void setLedProfile(uint8_t profile) { UNUSED(profile); }
 uint8_t getLedProfile(void) { return 0; }
+void compassStartCalibration(void) {}
 }

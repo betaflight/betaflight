@@ -47,7 +47,7 @@
 
 #include "esc_sensor.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "flight/mixer.h"
 
@@ -270,8 +270,10 @@ static uint8_t decodeEscFrame(void)
 
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
-        DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, calcEscRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
-        DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+        if (escSensorMotor < 4) {
+            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, calcEscRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
+            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+        }
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
     }

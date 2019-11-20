@@ -20,4 +20,4 @@
 
 #pragma once
 
-void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);

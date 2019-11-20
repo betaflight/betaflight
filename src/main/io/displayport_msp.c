@@ -29,9 +29,6 @@
 
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/display.h"
 
 #include "io/displayport_msp.h"
@@ -41,8 +38,6 @@
 #include "msp/msp_serial.h"
 
 // no template required since defaults are zero
-PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 0);
-
 static displayPort_t mspDisplayPort;
 
 #ifdef USE_CLI
@@ -59,7 +54,7 @@ static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len
         return 0;
     }
 #endif
-    return mspSerialPush(cmd, buf, len, MSP_DIRECTION_REPLY);
+    return mspSerialPush(displayPortProfileMsp()->displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY);
 }
 
 static int heartbeat(displayPort_t *displayPort)
@@ -167,7 +162,10 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .heartbeat = heartbeat,
     .resync = resync,
     .isSynced = isSynced,
-    .txBytesFree = txBytesFree
+    .txBytesFree = txBytesFree,
+    .layerSupported = NULL,
+    .layerSelect = NULL,
+    .layerCopy = NULL,
 };
 
 displayPort_t *displayPortMspInit(void)

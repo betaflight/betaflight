@@ -67,7 +67,7 @@
 
 #include "drivers/bus_spi.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
@@ -80,11 +80,9 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-#include "hardware_revision.h"
-#endif
-
 #include "acceleration.h"
+
+#define CALIBRATING_ACC_CYCLES              400
 
 FAST_RAM_ZERO_INIT acc_t acc;                       // acc access functions
 
@@ -94,6 +92,16 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
         .values.roll = 0,
         .values.pitch = 0,
     );
+}
+
+static void setConfigCalibrationCompleted(void)
+{
+    accelerometerConfigMutable()->accZero.values.calibrationCompleted = 1;
+}
+
+bool accHasBeenCalibrated(void)
+{
+    return accelerometerConfig()->accZero.values.calibrationCompleted;
 }
 
 void accResetRollAndPitchTrims(void)
@@ -106,11 +114,7 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
     accZero->values.roll = 0;
     accZero->values.pitch = 0;
     accZero->values.yaw = 0;
-}
-
-void accResetFlightDynamicsTrims(void)
-{
-    resetFlightDynamicsTrims(&accelerometerConfigMutable()->accZero);
+    accZero->values.calibrationCompleted = 0;
 }
 
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
@@ -124,7 +128,7 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     resetFlightDynamicsTrims(&instance->accZero);
 }
 
-PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 2);
 
 extern uint16_t InflightcalibratingA;
 extern bool AccInflightCalibrationMeasurementDone;
@@ -359,9 +363,9 @@ bool accInit(uint32_t gyroSamplingInverval)
     return true;
 }
 
-void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void accStartCalibration(void)
 {
-    calibratingA = calibrationCyclesRequired;
+    calibratingA = CALIBRATING_ACC_CYCLES;
 }
 
 bool accIsCalibrationComplete(void)
@@ -405,6 +409,7 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
         accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
+        setConfigCalibrationCompleted();
 
         saveConfigAndNotify();
     }
@@ -459,6 +464,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
         accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
+        setConfigCalibrationCompleted();
 
         saveConfigAndNotify();
     }

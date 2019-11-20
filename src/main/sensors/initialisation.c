@@ -30,7 +30,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"

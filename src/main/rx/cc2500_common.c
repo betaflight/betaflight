@@ -30,7 +30,7 @@
 #include "drivers/rx/rx_cc2500.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <common/printf.h>
 
 #include "platform.h"
 
@@ -32,6 +31,8 @@
 
 #include "cli/cli.h"
 
+#include "common/sensor_alignment.h"
+
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
@@ -39,7 +40,6 @@
 #include "drivers/motor.h"
 #include "drivers/system.h"
 
-#include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -65,9 +65,9 @@
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/gyrodev.h"
+#include "pg/motor.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
-#include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/vtx_table.h"
 
@@ -80,7 +80,7 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
-#include "common/sensor_alignment.h"
+#include "config.h"
 
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
@@ -108,12 +108,14 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
+    .rateProfile6PosSwitch = false,
     .cpu_overclock = 0,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
     .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
     .schedulerOptimizeRate = SCHEDULER_OPTIMIZE_RATE_AUTO,
+    .enableStickArming = false,
 );
 
 uint8_t getCurrentPidProfileIndex(void)
@@ -266,63 +268,55 @@ static void validateAndFixConfig(void)
 
     validateAndFixGyroConfig();
 
+#if defined(USE_MAG)
     buildAlignmentFromStandardAlignment(&compassConfigMutable()->mag_customAlignment, compassConfig()->mag_alignment);
+#endif
     buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(0)->customAlignment, gyroDeviceConfig(0)->alignment);
 #if defined(USE_MULTI_GYRO)
     buildAlignmentFromStandardAlignment(&gyroDeviceConfigMutable(1)->customAlignment, gyroDeviceConfig(1)->alignment);
 #endif
 
-    if (!(featureIsEnabled(FEATURE_RX_PARALLEL_PWM) || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_SERIAL) || featureIsEnabled(FEATURE_RX_MSP) || featureIsEnabled(FEATURE_RX_SPI))) {
+    if (accelerometerConfig()->accZero.values.roll != 0 ||
+        accelerometerConfig()->accZero.values.pitch != 0 ||
+        accelerometerConfig()->accZero.values.yaw != 0) {
+        accelerometerConfigMutable()->accZero.values.calibrationCompleted = 1;
+    }
+
+    if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI))) {
         featureEnable(DEFAULT_RX_FEATURE);
     }
 
-    if (featureIsEnabled(FEATURE_RX_PPM)) {
+    if (featureIsConfigured(FEATURE_RX_PPM)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
     }
 
-    if (featureIsEnabled(FEATURE_RX_MSP)) {
+    if (featureIsConfigured(FEATURE_RX_MSP)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
-    if (featureIsEnabled(FEATURE_RX_SERIAL)) {
+    if (featureIsConfigured(FEATURE_RX_SERIAL)) {
         featureDisable(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
 #ifdef USE_RX_SPI
-    if (featureIsEnabled(FEATURE_RX_SPI)) {
+    if (featureIsConfigured(FEATURE_RX_SPI)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
 #endif // USE_RX_SPI
 
-    if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
+    if (featureIsConfigured(FEATURE_RX_PARALLEL_PWM)) {
         featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
-#ifdef USE_SOFTSPI
-    if (featureIsEnabled(FEATURE_SOFTSPI)) {
-        featureDisable(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL);
-        batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_NONE;
-#if defined(STM32F10X)
-        featureDisable(FEATURE_LED_STRIP);
-        // rssi adc needs the same ports
-        featureDisable(FEATURE_RSSI_ADC);
-        // current meter needs the same ports
-        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
-            batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
-        }
-#endif // STM32F10X
-    }
-#endif // USE_SOFTSPI
-
 #if defined(USE_ADC)
-    if (featureIsEnabled(FEATURE_RSSI_ADC)) {
+    if (featureIsConfigured(FEATURE_RSSI_ADC)) {
         rxConfigMutable()->rssi_channel = 0;
         rxConfigMutable()->rssi_src_frame_errors = false;
     } else
 #endif
     if (rxConfigMutable()->rssi_channel
 #if defined(USE_PWM) || defined(USE_PPM)
-        || featureIsEnabled(FEATURE_RX_PPM) || featureIsEnabled(FEATURE_RX_PARALLEL_PWM)
+        || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_PARALLEL_PWM)
 #endif
         ) {
         rxConfigMutable()->rssi_src_frame_errors = false;
@@ -356,7 +350,7 @@ static void validateAndFixConfig(void)
 #endif
 
     if (
-        featureIsEnabled(FEATURE_3D) || !featureIsEnabled(FEATURE_GPS)
+        featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS)
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif
@@ -451,10 +445,6 @@ static void validateAndFixConfig(void)
     featureDisable(FEATURE_RX_SPI);
 #endif
 
-#ifndef USE_SOFTSPI
-    featureDisable(FEATURE_SOFTSPI);
-#endif
-
 #ifndef USE_ESC_SENSOR
     featureDisable(FEATURE_ESC_SENSOR);
 #endif
@@ -510,7 +500,7 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if ((!usingDshotProtocol || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && motorConfig()->dev.useBurstDshot) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF)
+    if ((!usingDshotProtocol || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF)
         && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
@@ -685,6 +675,8 @@ bool readEEPROM(void)
     // Sanity check, read flash
     bool success = loadEEPROM();
 
+    featureInit();
+
     validateAndFixConfig();
 
     activateConfig();
@@ -711,14 +703,6 @@ void writeEEPROM(void)
     systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
 
     writeUnmodifiedConfigToEEPROM();
-}
-
-void writeEEPROMWithFeatures(uint32_t features)
-{
-    featureDisableAll();
-    featureEnable(features);
-
-    writeEEPROM();
 }
 
 bool resetEEPROM(bool useCustomDefaults)

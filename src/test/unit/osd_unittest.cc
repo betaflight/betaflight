@@ -40,7 +40,7 @@ extern "C" {
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
 
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
@@ -1132,7 +1132,7 @@ extern "C" {
         return simulationVerticalSpeed;
     }
 
-    unsigned int blackboxGetLogNumber() {
+    int32_t blackboxGetLogNumber() {
         return 0;
     }
 
@@ -1173,4 +1173,5 @@ extern "C" {
     int8_t calculateThrottlePercent(void) { return 0; }
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
+    bool isUpright(void) { return true; }
 }

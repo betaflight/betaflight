@@ -45,7 +45,7 @@
 #include "drivers/serial.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -494,7 +494,7 @@ static void configureFrSkyHubTelemetryPort(void)
 void checkFrSkyHubTelemetryState(void)
 {
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL) {
-        if (telemetryCheckRxPortShared(portConfig, rxRuntimeConfig.serialrxProvider)) {
+        if (telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
             if (frSkyHubPort == NULL && telemetrySharedPort != NULL) {
                 frSkyHubPort = telemetrySharedPort;
             }

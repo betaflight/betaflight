@@ -137,13 +137,10 @@ typedef struct uartHardware_s {
 #ifdef USE_DMA
     dmaResource_t *txDMAResource;
     dmaResource_t *rxDMAResource;
-#if defined(STM32F4) || defined(STM32F7)
-    uint32_t DMAChannel;
-#elif defined(STM32H7)
-    // DMAMUX input from peripherals (DMA_REQUEST_xxx); RM0433 Table 110.
-    uint8_t txDMARequest;
-    uint8_t rxDMARequest;
-#endif
+    // For H7, {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); RM0433 Table 110.
+    // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x).
+    uint32_t txDMAChannel;
+    uint32_t rxDMAChannel;
 #endif // USE_DMA
 
     uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
@@ -170,12 +167,10 @@ typedef struct uartHardware_s {
     uint8_t txPriority;
     uint8_t rxPriority;
 
-#if defined(STM32H7) || defined(STM32F4)
     volatile uint8_t *txBuffer;
     volatile uint8_t *rxBuffer;
     uint16_t txBufferSize;
     uint16_t rxBufferSize;
-#endif
 } uartHardware_t;
 
 extern const uartHardware_t uartHardware[];
@@ -188,15 +183,8 @@ typedef struct uartDevice_s {
     const uartHardware_t *hardware;
     uartPinDef_t rx;
     uartPinDef_t tx;
-#if defined(STM32H7) || defined(STM32F4)
-    // For H7, buffers with possible DMA access is placed in D2 SRAM.
-    // For F4, buffers should NOT be in CCM DATA RAM (uartDevice is).
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-#else
-    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
-    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
-#endif
 } uartDevice_t;
 
 extern uartDevice_t *uartDevmap[];
@@ -210,3 +198,55 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 void uartIrqHandler(uartPort_t *s);
 
 void uartReconfigure(uartPort_t *uartPort);
+
+void uartConfigureDma(uartDevice_t *uartdev);
+
+void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
+
+#if defined(STM32F3) || defined(STM32F7) || defined(STM32H7)
+#define UART_REG_RXD(base) ((base)->RDR)
+#define UART_REG_TXD(base) ((base)->TDR)
+#elif defined(STM32F1) || defined(STM32F4)
+#define UART_REG_RXD(base) ((base)->DR)
+#define UART_REG_TXD(base) ((base)->DR)
+#endif
+
+#define UART_BUFFER(type, n, rxtx) type volatile uint8_t uart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
+
+#define UART_BUFFERS_EXTERN(n) \
+    UART_BUFFER(extern, n, R); \
+    UART_BUFFER(extern, n, T); struct dummy_s
+
+#ifdef USE_UART1
+UART_BUFFERS_EXTERN(1);
+#endif
+
+#ifdef USE_UART2
+UART_BUFFERS_EXTERN(2);
+#endif
+
+#ifdef USE_UART3
+UART_BUFFERS_EXTERN(3);
+#endif
+
+#ifdef USE_UART4
+UART_BUFFERS_EXTERN(4);
+#endif
+
+#ifdef USE_UART5
+UART_BUFFERS_EXTERN(5);
+#endif
+
+#ifdef USE_UART6
+UART_BUFFERS_EXTERN(6);
+#endif
+
+#ifdef USE_UART7
+UART_BUFFERS_EXTERN(7);
+#endif
+
+#ifdef USE_UART8
+UART_BUFFERS_EXTERN(8);
+#endif
+
+#undef UART_BUFFERS_EXTERN

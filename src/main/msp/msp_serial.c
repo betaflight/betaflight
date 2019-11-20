@@ -34,7 +34,7 @@
 
 #include "drivers/system.h"
 
-#include "io/serial.h"
+#include "io/displayport_msp.h"
 
 #include "msp/msp.h"
 
@@ -48,6 +48,7 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
 
     mspPortToReset->port = serialPort;
     mspPortToReset->sharedWithTelemetry = sharedWithTelemetry;
+    mspPortToReset->descriptor = mspDescriptorAlloc();
 }
 
 void mspSerialAllocatePorts(void)
@@ -56,6 +57,7 @@ void mspSerialAllocatePorts(void)
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
+
         if (mspPort->port) {
             portIndex++;
             continue;
@@ -65,6 +67,7 @@ void mspSerialAllocatePorts(void)
         if (serialPort) {
             bool sharedWithTelemetry = isSerialPortShared(portConfig, FUNCTION_MSP, TELEMETRY_PORT_FUNCTIONS_MASK);
             resetMspPort(mspPort, serialPort, sharedWithTelemetry);
+
             portIndex++;
         }
 
@@ -413,7 +416,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     };
 
     mspPostProcessFnPtr mspPostProcessFn = NULL;
-    const mspResult_e status = mspProcessCommandFn(&command, &reply, &mspPostProcessFn);
+    const mspResult_e status = mspProcessCommandFn(msp->descriptor, &command, &reply, &mspPostProcessFn);
 
     if (status != MSP_RESULT_NO_REPLY) {
         sbufSwitchToReader(&reply.buf, outBufHead); // change streambuf direction
@@ -555,18 +558,15 @@ void mspSerialInit(void)
     mspSerialAllocatePorts();
 }
 
-int mspSerialPush(uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction)
+int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction)
 {
     int ret = 0;
 
     for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
-        if (!mspPort->port) {
-            continue;
-        }
 
         // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
-        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+        if (!mspPort->port || mspPort->port->identifier == SERIAL_PORT_USB_VCP || (port != SERIAL_PORT_NONE && mspPort->port->identifier != port)) {
             continue;
         }
 

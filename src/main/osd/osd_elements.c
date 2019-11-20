@@ -28,13 +28,32 @@
 
     Next add the element to the osdElementDisplayOrder array defined in this file.
     If the element needs special runtime conditional processing then it should be added
-    to the osdAnalyzeActiveElements() function instead.
+    to the osdAddActiveElements() function instead.
 
-    Create the function to "draw" the element. It should be named like "osdElementSomething()"
-    where the "Something" describes the element.
+    Create the function to "draw" the element.
+    ------------------------------------------
+    It should be named like "osdElementSomething()" where the "Something" describes
+    the element. The drawing function should only render the dynamic portions of the
+    element. If the element has static (unchanging) portions then those should be
+    rendered in the background function. The exception to this is elements that are
+    expected to blink (have a warning associated). In this case the entire element
+    must be handled in the main draw function and you can't use the background capability.
 
     Add the mapping from the element ID added in the first step to the function
     created in the third step to the osdElementDrawFunction array.
+
+    Create the function to draw the element's static (background) portion.
+    ---------------------------------------------------------------------
+    If an element has static (unchanging) portions then create a function to draw only those
+    parts. It should be named like "osdBackgroundSomething()" where the "Something" matches
+    the related element function.
+
+    Add the mapping for the element ID to the background drawing function to the
+    osdElementBackgroundFunction array.
+
+    Accelerometer reqirement:
+    -------------------------
+    If the new element utilizes the accelerometer, add it to the osdElementsNeedAccelerometer() function.
 
     Finally add a CLI parameter for the new element in cli/settings.c.
 */
@@ -62,6 +81,7 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/display.h"
@@ -70,7 +90,6 @@
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_adjustments.h"
@@ -150,6 +169,7 @@ static const char compassBar[] = {
 
 static unsigned activeOsdElementCount = 0;
 static uint8_t activeOsdElementArray[OSD_ITEM_COUNT];
+static bool backgroundLayerSupported = false;
 
 // Blink control
 static bool blinkState = true;
@@ -576,7 +596,7 @@ static void osdElementCoreTemperature(osdElementParms_t *element)
 }
 #endif // USE_ADC_INTERNAL
 
-static void osdElementCraftName(osdElementParms_t *element)
+static void osdBackgroundCraftName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->name) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
@@ -602,7 +622,7 @@ static void osdElementCrashFlipArrow(osdElementParms_t *element)
         rollAngle = (rollAngle < 0 ? -180 : 180) - rollAngle;
     }
 
-    if ((isFlipOverAfterCrashActive() || (!ARMING_FLAG(ARMED) && !STATE(SMALL_ANGLE))) && !((imuConfig()->small_angle < 180) && STATE(SMALL_ANGLE)) && (rollAngle || pitchAngle)) {
+    if ((isFlipOverAfterCrashActive() || (!ARMING_FLAG(ARMED) && !isUpright())) && !((imuConfig()->small_angle < 180 && isUpright()) || (rollAngle == 0 && pitchAngle == 0))) {
         if (abs(pitchAngle) < 2 * abs(rollAngle) && abs(rollAngle) < 2 * abs(pitchAngle)) {
             if (pitchAngle > 0) {
                 if (rollAngle > 0) {
@@ -637,7 +657,7 @@ static void osdElementCrashFlipArrow(osdElementParms_t *element)
 }
 #endif // USE_ACC
 
-static void osdElementCrosshairs(osdElementParms_t *element)
+static void osdBackgroundCrosshairs(osdElementParms_t *element)
 {
     element->buff[0] = SYM_AH_CENTER_LINE;
     element->buff[1] = SYM_AH_CENTER;
@@ -663,7 +683,7 @@ static void osdElementDisarmed(osdElementParms_t *element)
     }
 }
 
-static void osdElementDisplayName(osdElementParms_t *element)
+static void osdBackgroundDisplayName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->displayName) == 0) {
         strcpy(element->buff, "DISPLAY_NAME");
@@ -860,7 +880,7 @@ static void osdElementGpsSpeed(osdElementParms_t *element)
 }
 #endif // USE_GPS
 
-static void osdElementHorizonSidebars(osdElementParms_t *element)
+static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 {
     // Draw AH sides
     const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
@@ -903,7 +923,12 @@ static void osdElementLogStatus(osdElementParms_t *element)
         } else if (isBlackboxDeviceFull()) {
             tfp_sprintf(element->buff, "%c>", SYM_BBLOG);
         } else {
-            tfp_sprintf(element->buff, "%c%d", SYM_BBLOG, blackboxGetLogNumber());
+            int32_t logNumber = blackboxGetLogNumber();
+            if (logNumber >= 0) {
+                tfp_sprintf(element->buff, "%c%d", SYM_BBLOG, logNumber);
+            } else {
+                tfp_sprintf(element->buff, "%c", SYM_BBLOG);
+            }
         }
     }
 }
@@ -1017,6 +1042,26 @@ static void osdElementPower(osdElementParms_t *element)
     tfp_sprintf(element->buff, "%4dW", getAmperage() * getBatteryVoltage() / 10000);
 }
 
+static void osdElementRcChannels(osdElementParms_t *element)
+{
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
+
+    for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
+        if (osdConfig()->rcChannels[i] >= 0) {
+            // Translate (1000, 2000) to (-1000, 1000)
+            int data = scaleRange(rcData[osdConfig()->rcChannels[i]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
+            // Opt for the simplest formatting for now.
+            // Decimal notation can be added when tfp_sprintf supports float among fancy options.
+            char fmtbuf[6];
+            tfp_sprintf(fmtbuf, "%5d", data);
+            displayWrite(element->osdDisplayPort, xpos, ypos + i, fmtbuf);
+        }
+    }
+
+    element->drawElement = false;  // element already drawn
+}
+
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
@@ -1056,7 +1101,7 @@ static void osdElementRssiDbm(osdElementParms_t *element)
 #endif // USE_RX_RSSI_DBM
 
 #ifdef USE_OSD_STICK_OVERLAY
-static void osdElementStickOverlay(osdElementParms_t *element)
+static void osdBackgroundStickOverlay(osdElementParms_t *element)
 {
     const uint8_t xpos = element->elemPosX;
     const uint8_t ypos = element->elemPosY;
@@ -1074,6 +1119,14 @@ static void osdElementStickOverlay(osdElementParms_t *element)
             }
         }
     }
+
+    element->drawElement = false;  // element already drawn
+}
+
+static void osdElementStickOverlay(osdElementParms_t *element)
+{
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
 
     // Now draw the cursor
     rc_alias_e vertical_channel, horizontal_channel;
@@ -1225,6 +1278,11 @@ static void osdElementWarnings(osdElementParms_t *element)
 #endif // USE_ACC
         {
             tfp_sprintf(element->buff, "LAUNCH");
+        }
+
+        // Blink the message if the throttle is within 10% of the launch setting
+        if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
+            SET_BLINK(OSD_WARNINGS);
         }
         return;
     }
@@ -1388,7 +1446,7 @@ static void osdElementWarnings(osdElementParms_t *element)
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
 // Elements that need special runtime conditional processing should be added
-// to osdAnalyzeActiveElements()
+// to osdAddActiveElements()
 
 static const uint8_t osdElementDisplayOrder[] = {
     OSD_MAIN_BATT_VOLTAGE,
@@ -1457,7 +1515,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_OSD_PROFILES
     OSD_PROFILE_NAME,
 #endif
-
+    OSD_RC_CHANNELS,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1465,15 +1523,15 @@ static const uint8_t osdElementDisplayOrder[] = {
 const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_RSSI_VALUE]              = osdElementRssi,
     [OSD_MAIN_BATT_VOLTAGE]       = osdElementMainBatteryVoltage,
-    [OSD_CROSSHAIRS]              = osdElementCrosshairs,
+    [OSD_CROSSHAIRS]              = NULL,  // only has background
 #ifdef USE_ACC
     [OSD_ARTIFICIAL_HORIZON]      = osdElementArtificialHorizon,
 #endif
-    [OSD_HORIZON_SIDEBARS]        = osdElementHorizonSidebars,
+    [OSD_HORIZON_SIDEBARS]        = NULL,  // only has background
     [OSD_ITEM_TIMER_1]            = osdElementTimer,
     [OSD_ITEM_TIMER_2]            = osdElementTimer,
     [OSD_FLYMODE]                 = osdElementFlymode,
-    [OSD_CRAFT_NAME]              = osdElementCraftName,
+    [OSD_CRAFT_NAME]              = NULL,  // only has background
     [OSD_THROTTLE_POS]            = osdElementThrottlePosition,
 #ifdef USE_VTX_COMMON
     [OSD_VTX_CHANNEL]             = osdElementVtxChannel,
@@ -1549,7 +1607,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_LEFT]      = osdElementStickOverlay,
     [OSD_STICK_OVERLAY_RIGHT]     = osdElementStickOverlay,
 #endif
-    [OSD_DISPLAY_NAME]            = osdElementDisplayName,
+    [OSD_DISPLAY_NAME]            = NULL,  // only has background
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
 #endif
@@ -1563,6 +1621,21 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_RX_RSSI_DBM
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
+    [OSD_RC_CHANNELS]             = osdElementRcChannels,
+};
+
+// Define the mapping between the OSD element id and the function to draw its background (static part)
+// Only necessary to define the entries that actually have a background function
+
+const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
+    [OSD_CROSSHAIRS]              = osdBackgroundCrosshairs,
+    [OSD_HORIZON_SIDEBARS]        = osdBackgroundHorizonSidebars,
+    [OSD_CRAFT_NAME]              = osdBackgroundCraftName,
+#ifdef USE_OSD_STICK_OVERLAY
+    [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundStickOverlay,
+    [OSD_STICK_OVERLAY_RIGHT]     = osdBackgroundStickOverlay,
+#endif
+    [OSD_DISPLAY_NAME]            = osdBackgroundDisplayName,
 };
 
 static void osdAddActiveElement(osd_items_e element)
@@ -1575,7 +1648,7 @@ static void osdAddActiveElement(osd_items_e element)
 // Examine the elements and build a list of only the active (enabled)
 // ones to speed up rendering.
 
-void osdAnalyzeActiveElements(void)
+void osdAddActiveElements(void)
 {
     activeOsdElementCount = 0;
 
@@ -1615,10 +1688,14 @@ void osdAnalyzeActiveElements(void)
 #endif
 }
 
-static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
+static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
 {
+    if (!osdElementDrawFunction[item]) {
+        // Element has no drawing function
+        return;
+    }
     if (BLINK(item)) {
-        return false;
+        return;
     }
 
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
@@ -1638,8 +1715,32 @@ static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     if (element.drawElement) {
         displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
     }
+}
 
-    return true;
+static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_t item)
+{
+    if (!osdElementBackgroundFunction[item]) {
+        // Element has no background drawing function
+        return;
+    }
+
+    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
+    char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
+
+    osdElementParms_t element;
+    element.item = item;
+    element.elemPosX = elemPosX;
+    element.elemPosY = elemPosY;
+    element.buff = (char *)&buff;
+    element.osdDisplayPort = osdDisplayPort;
+    element.drawElement = true;
+
+    // Call the element background drawing function
+    osdElementBackgroundFunction[item](&element);
+    if (element.drawElement) {
+        displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
+    }
 }
 
 void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs)
@@ -1658,8 +1759,31 @@ void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs
     blinkState = (currentTimeUs / 200000) % 2;
 
     for (unsigned i = 0; i < activeOsdElementCount; i++) {
+        if (!backgroundLayerSupported) {
+            // If the background layer isn't supported then we
+            // have to draw the element's static layer as well.
+            osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
+        }
         osdDrawSingleElement(osdDisplayPort, activeOsdElementArray[i]);
     }
+}
+
+void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
+{
+    if (backgroundLayerSupported) {
+        displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
+        displayClearScreen(osdDisplayPort);
+        for (unsigned i = 0; i < activeOsdElementCount; i++) {
+            osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
+        }
+        displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
+    }
+}
+
+void osdElementsInit(bool backgroundLayerFlag)
+{
+    backgroundLayerSupported = backgroundLayerFlag;
+    activeOsdElementCount = 0;
 }
 
 void osdResetAlarms(void)
@@ -1734,6 +1858,18 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_ALTITUDE);
     }
 
+#ifdef USE_GPS
+    if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+        if (osdConfig()->distance_alarm && GPS_distanceToHome >= osdConfig()->distance_alarm) {
+            SET_BLINK(OSD_HOME_DIST);
+        } else {
+            CLR_BLINK(OSD_HOME_DIST);
+        }
+    } else {
+        CLR_BLINK(OSD_HOME_DIST);;
+    }
+#endif
+
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
@@ -1745,5 +1881,28 @@ void osdUpdateAlarms(void)
     }
 #endif
 }
+
+#ifdef USE_ACC
+static bool osdElementIsActive(osd_items_e element)
+{
+    for (unsigned i = 0; i < activeOsdElementCount; i++) {
+        if (activeOsdElementArray[i] == element) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Determine if any active elements need the ACC
+bool osdElementsNeedAccelerometer(void)
+{
+    return osdElementIsActive(OSD_ARTIFICIAL_HORIZON) ||
+           osdElementIsActive(OSD_PITCH_ANGLE) ||
+           osdElementIsActive(OSD_ROLL_ANGLE) ||
+           osdElementIsActive(OSD_G_FORCE) ||
+           osdElementIsActive(OSD_FLIP_ARROW);
+}
+
+#endif // USE_ACC
 
 #endif // USE_OSD

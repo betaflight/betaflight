@@ -50,7 +50,7 @@
 #include "pg/dashboard.h"
 #include "pg/rx.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -261,12 +261,12 @@ static void drawRxChannel(uint8_t channelIndex, uint8_t width)
 #define RX_CHANNELS_PER_PAGE_COUNT 14
 static void showRxPage(void)
 {
-    for (int channelIndex = 0; channelIndex < rxRuntimeConfig.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
+    for (int channelIndex = 0; channelIndex < rxRuntimeState.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
         i2c_OLED_set_line(bus, (channelIndex / 2) + PAGE_TITLE_LINE_COUNT);
 
         drawRxChannel(channelIndex, HALF_SCREEN_CHARACTER_COLUMN_COUNT);
 
-        if (channelIndex >= rxRuntimeConfig.channelCount) {
+        if (channelIndex >= rxRuntimeState.channelCount) {
             continue;
         }
 

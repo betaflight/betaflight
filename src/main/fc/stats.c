@@ -24,7 +24,7 @@
 
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/dispatch.h"
 #include "fc/runtime_config.h"
 #include "fc/stats.h"

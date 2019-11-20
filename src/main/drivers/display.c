@@ -115,6 +115,33 @@ uint16_t displayTxBytesFree(const displayPort_t *instance)
     return instance->vTable->txBytesFree(instance);
 }
 
+bool displayLayerSupported(displayPort_t *instance, displayPortLayer_e layer)
+{
+    if (layer == DISPLAYPORT_LAYER_FOREGROUND) {
+        // Every device must support the foreground (default) layer
+        return true;
+    } else if (layer < DISPLAYPORT_LAYER_COUNT && instance->vTable->layerSupported) {
+        return instance->vTable->layerSupported(instance, layer);
+    }
+    return false;
+}
+
+bool displayLayerSelect(displayPort_t *instance, displayPortLayer_e layer)
+{
+    if (instance->vTable->layerSelect) {
+        return instance->vTable->layerSelect(instance, layer);
+    }
+    return false;
+}
+
+bool displayLayerCopy(displayPort_t *instance, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer)
+{
+    if (instance->vTable->layerCopy && sourceLayer != destLayer) {
+        return instance->vTable->layerCopy(instance, destLayer, sourceLayer);
+    }
+    return false;
+}
+
 void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable)
 {
     instance->vTable = vTable;

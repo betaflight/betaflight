@@ -1,4 +1,4 @@
-## Betaflight 3.4 Release Notes
+# Betaflight 3.4 Release Notes
 
 **Version 3.4.0: The best Betaflight ever!**
 

@@ -25,7 +25,7 @@ extern "C" {
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/controlrate_profile.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
@@ -71,7 +71,7 @@ extern "C" {
     uint32_t targetPidLooptime;
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
-    rxRuntimeConfig_t rxRuntimeConfig = {};
+    rxRuntimeState_t rxRuntimeState = {};
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -129,8 +129,9 @@ extern "C" {
     void saveConfigAndNotify(void) {}
     void blackboxFinish(void) {}
     bool accIsCalibrationComplete(void) { return true; }
-    bool isBaroCalibrationComplete(void) { return true; }
-    bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
+    bool accHasBeenCalibrated(void) { return true; }
+    bool baroIsCalibrationComplete(void) { return true; }
+    bool gyroIsCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
     void pidController(const pidProfile_t *, timeUs_t) {}
@@ -164,8 +165,8 @@ extern "C" {
     void blackboxUpdate(timeUs_t) {}
     void transponderUpdate(timeUs_t) {}
     void GPS_reset_home_position(void) {}
-    void accSetCalibrationCycles(uint16_t) {}
-    void baroSetCalibrationCycles(uint16_t) {}
+    void accStartCalibration(void) {}
+    void baroSetGroundLevel(void) {}
     void changePidProfile(uint8_t) {}
     void changeControlRateProfile(uint8_t) {}
     void dashboardEnablePageCycling(void) {}
@@ -178,4 +179,8 @@ extern "C" {
     void osdSuppressStats(bool) {}
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
+    bool isFixedWing(void) { return false; }
+    void compassStartCalibration(void) {}
+    bool compassIsCalibrationComplete(void) { return true; }
+    bool isUpright(void) { return true; }
 }

@@ -44,6 +44,6 @@ void crsfRxWriteTelemetryData(const void *data, int len);
 void crsfRxSendTelemetryData(void);
 
 struct rxConfig_s;
-struct rxRuntimeConfig_s;
-bool crsfRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+struct rxRuntimeState_s;
+bool crsfRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);
 bool crsfRxIsActive(void);

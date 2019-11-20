@@ -32,7 +32,7 @@
 
 #include "config/feature.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 static const OSD_Entry cmsx_menuSaveExitEntries[] =
 {
@@ -49,6 +49,10 @@ CMS_Menu cmsx_menuSaveExit = {
     .GUARD_text = "MENUSAVE",
     .GUARD_type = OME_MENU,
 #endif
+    .onEnter = NULL,
+    .onExit = NULL,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuSaveExitEntries
 };
 
@@ -66,6 +70,10 @@ CMS_Menu cmsx_menuSaveExitReboot = {
     .GUARD_text = "MENUSAVE",
     .GUARD_type = OME_MENU,
 #endif
+    .onEnter = NULL,
+    .onExit = NULL,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuSaveExitRebootEntries
 };
 

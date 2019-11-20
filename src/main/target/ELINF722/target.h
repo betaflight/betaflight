@@ -121,7 +121,7 @@
 #define SERIALRX_UART           SERIAL_PORT_USART1
 
 #define DEFAULT_MIXER           MIXER_QUADX
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB6
 

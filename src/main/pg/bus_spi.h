@@ -22,6 +22,7 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/io_types.h"
+#include "drivers/dma_reqmap.h"
 
 #include "pg/pg.h"
 

@@ -23,6 +23,10 @@
 
 ![Bottom](images/EXF722DUAL-bottom.png)
 
+### Known Issues
+
+- Motors 5 and 6 cannot be used with Dshot when LED\_STRIP is enabled (https://github.com/betaflight/betaflight/issues/8412).
+
 ### Manufacturer
 - EXUAV FPV
 - FaceBook: https://www.facebook.com/profile.php?id=100013651722728

@@ -63,7 +63,8 @@ typedef enum {
     ARMING_DISABLED_RPMFILTER       = (1 << 20),
     ARMING_DISABLED_REBOOT_REQUIRED = (1 << 21),
     ARMING_DISABLED_DSHOT_BITBANG   = (1 << 22),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 23), // Needs to be the last element, since it's always activated if one of the others is active when arming
+    ARMING_DISABLED_ACC_CALIBRATION = (1 << 23),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 24), // Needs to be the last element, since it's always activated if one of the others is active when arming
 } armingDisableFlags_e;
 
 #define ARMING_DISABLE_FLAGS_COUNT (LOG2(ARMING_DISABLED_ARM_SWITCH) + 1)
@@ -112,9 +113,6 @@ extern uint16_t flightModeFlags;
 typedef enum {
     GPS_FIX_HOME   = (1 << 0),
     GPS_FIX        = (1 << 1),
-    CALIBRATE_MAG  = (1 << 2),
-    SMALL_ANGLE    = (1 << 3),
-    FIXED_WING     = (1 << 4)                    // set when in flying_wing or airplane mode. currently used by althold selection code
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))

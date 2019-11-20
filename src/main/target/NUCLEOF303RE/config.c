@@ -18,8 +18,22 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#include "cms/cms_types.h"
+#include "platform.h"
 
-extern CMS_Menu menuMain;
+#ifdef USE_TARGET_CONFIG
+
+#include "io/serial.h"
+
+#include "config_helper.h"
+
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { SERIAL_PORT_UART5, FUNCTION_MSP },
+};
+
+void targetConfiguration(void)
+{
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
+}
+#endif

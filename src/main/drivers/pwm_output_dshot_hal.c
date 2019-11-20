@@ -98,7 +98,7 @@ void pwmDshotSetDirectionOutput(
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-static void pwmDshotSetDirectionInput(
+FAST_CODE static void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
 )
 {
@@ -164,7 +164,7 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
     }
 }
 
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];

@@ -39,7 +39,7 @@
 #define USE_BEEPER
 #define BEEPER_PIN              PB4
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define USE_TRANSPONDER
 

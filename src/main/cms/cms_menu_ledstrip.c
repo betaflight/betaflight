@@ -36,7 +36,7 @@
 
 #include "config/feature.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/ledstrip.h"
 
@@ -127,6 +127,8 @@ CMS_Menu cmsx_menuLedstrip = {
 #endif
     .onEnter = cmsx_Ledstrip_OnEnter,
     .onExit = cmsx_Ledstrip_OnExit,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuLedstripEntries
 };
 #endif // LED_STRIP

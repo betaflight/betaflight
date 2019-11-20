@@ -44,7 +44,7 @@
 
 #include "io/motors.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -472,7 +472,7 @@ void stopMotors(void)
 }
 
 static FAST_RAM_ZERO_INIT float throttle = 0;
-static FAST_RAM_ZERO_INIT float loggingThrottle = 0;
+static FAST_RAM_ZERO_INIT float mixerThrottle = 0;
 static FAST_RAM_ZERO_INIT float motorOutputMin;
 static FAST_RAM_ZERO_INIT float motorRangeMin;
 static FAST_RAM_ZERO_INIT float motorRangeMax;
@@ -891,7 +891,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     throttle += pidGetAirmodeThrottleOffset();
     float airmodeThrottleChange = 0;
 #endif
-    loggingThrottle = throttle;
+    mixerThrottle = throttle;
 
     motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {
@@ -934,7 +934,29 @@ void mixerSetThrottleAngleCorrection(int correctionValue)
     throttleAngleCorrection = correctionValue;
 }
 
-float mixerGetLoggingThrottle(void)
+float mixerGetThrottle(void)
 {
-    return loggingThrottle;
+    return mixerThrottle;
+}
+
+mixerMode_e getMixerMode(void)
+{
+    return currentMixerMode;
+}
+
+
+bool isFixedWing(void)
+{
+    switch (currentMixerMode) {
+    case MIXER_FLYING_WING:
+    case MIXER_AIRPLANE:
+    case MIXER_CUSTOM_AIRPLANE:
+        return true;
+
+        break;
+    default:
+        return false;
+
+        break;
+    }
 }

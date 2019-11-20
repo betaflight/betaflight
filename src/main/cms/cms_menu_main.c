@@ -19,19 +19,14 @@
  */
 
 //
-// Built-in menu contents and support functions
+// Main menu structure and support functions
 //
 
 #include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <ctype.h>
 
 #include "platform.h"
 
 #ifdef USE_CMS
-
-#include "build/version.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -41,6 +36,7 @@
 #include "cms/cms_menu_imu.h"
 #include "cms/cms_menu_blackbox.h"
 #include "cms/cms_menu_failsafe.h"
+#include "cms/cms_menu_firmware.h"
 #include "cms/cms_menu_ledstrip.h"
 #include "cms/cms_menu_misc.h"
 #include "cms/cms_menu_osd.h"
@@ -49,57 +45,12 @@
 
 // VTX supplied menus
 
-#include "cms/cms_menu_vtx_rtc6705.h"
-#include "cms/cms_menu_vtx_smartaudio.h"
-#include "cms/cms_menu_vtx_tramp.h"
+#include "cms/cms_menu_vtx_common.h"
 
-#include "drivers/system.h"
+#include "config/config.h"
 
-#include "fc/config.h"
+#include "cms_menu_main.h"
 
-#include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
-
-#include "cms_menu_builtin.h"
-
-
-// Info
-
-static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
-static char infoTargetName[] = __TARGET__;
-
-static long cmsx_InfoInit(void)
-{
-    int i;
-    for ( i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
-        if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
-            infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
-        else
-            infoGitRev[i] = shortGitRevision[i];
-    }
-
-    infoGitRev[i] = 0x0; // Terminate string
-    return 0;
-}
-
-static const OSD_Entry menuInfoEntries[] = {
-    { "--- INFO ---", OME_Label, NULL, NULL, 0 },
-    { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
-    { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
-    { "GITREV", OME_String, NULL, infoGitRev, 0 },
-    { "TARGET", OME_String, NULL, infoTargetName, 0 },
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
-
-static CMS_Menu menuInfo = {
-#ifdef CMS_MENU_DEBUG
-    .GUARD_text = "MENUINFO",
-    .GUARD_type = OME_MENU,
-#endif
-    .onEnter = cmsx_InfoInit,
-    .onExit = NULL,
-    .entries = menuInfoEntries
-};
 
 // Features
 
@@ -111,14 +62,8 @@ static const OSD_Entry menuFeaturesEntries[] =
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #endif
 #if defined(USE_VTX_CONTROL)
-#if defined(USE_VTX_RTC6705)
-    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRTC6705, 0},
-#endif // VTX_RTC6705
-#if defined(USE_VTX_SMARTAUDIO)
-    {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
-#endif
-#if defined(USE_VTX_TRAMP)
-    {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
+#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
+    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRedirect, 0},
 #endif
 #endif // VTX_CONTROL
 #ifdef USE_LED_STRIP
@@ -132,13 +77,15 @@ static const OSD_Entry menuFeaturesEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-static CMS_Menu menuFeatures = {
+static CMS_Menu cmsx_menuFeatures = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUFEATURES",
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = NULL,
     .onExit = NULL,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuFeaturesEntries,
 };
 
@@ -161,27 +108,25 @@ static const OSD_Entry menuMainEntries[] =
     {"-- MAIN --",  OME_Label, NULL, NULL, 0},
 
     {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
-    {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
+    {"FEATURES",    OME_Submenu,  cmsMenuChange, &cmsx_menuFeatures, 0},
 #ifdef USE_OSD
     {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
 #endif
-    {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
+    {"FC&FIRMWARE", OME_Submenu,  cmsMenuChange, &cmsx_menuFirmware, 0},
     {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
     {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL, 0},
-#ifdef CMS_MENU_DEBUG
-    {"ERR SAMPLE",  OME_Submenu,  cmsMenuChange, &menuInfoEntries[0], 0},
-#endif
-
-    {NULL,OME_END, NULL, NULL, 0}
+    {NULL,OME_END, NULL, NULL, 0},
 };
 
-CMS_Menu menuMain = {
+CMS_Menu cmsx_menuMain = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUMAIN",
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = NULL,
     .onExit = NULL,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuMainEntries,
 };
 #endif

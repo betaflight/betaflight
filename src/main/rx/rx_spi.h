@@ -82,4 +82,4 @@ typedef enum {
 #define RC_CHANNEL_HEADLESS    RC_SPI_AUX5
 #define RC_CHANNEL_RTH         RC_SPI_AUX6 // return to home
 
-bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState);

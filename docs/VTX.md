@@ -116,10 +116,12 @@ vtxtable powerlabels 25 100 200 400 600
 
 #### rtc6705 should use:
 ```
-vtxtable powerlevels 3
-vtxtable powervalues 0 1 2
-vtxtable powerlabels OFF MIN MAX
+vtxtable powerlevels 2
+vtxtable powervalues 1 2
+vtxtable powerlabels MIN MAX
 ```
+
+Please note that turning off rtc6705 devices is not possible using powervalues. Use pitmode instead.
 
 #### SmartAudio V1.0 devices should use:
 ```
@@ -138,13 +140,22 @@ vtxtable powerlabels 25 200 500 800
 #### SmartAudio V2.1 devices vary depending on their model. Check the manufacturers website.
 For these devices the `powervalues` are the output power in dBm.
 
+To query the available power levels from a SmartAudio 2.1 VTX enter the `vtx_info` command with no parameters. This will report the available power settings thus:
+
+```
+# vtx_info
+level 14 dBm, power 25 mW
+level 20 dBm, power 100 mW
+level 26 dBm, power 400 mW
+```
+
 For example the
 
 [TBS Unify Pro32 Nano 5G8](https://www.team-blacksheep.com/products/prod:unifypro32_nano):
 
 ```
 vtxtable powerlevels 3
-vtxtable powervalues  14 20 26
+vtxtable powervalues 14 20 26
 vtxtable powerlabels 25 100 400
 ```
 
@@ -152,7 +163,7 @@ vtxtable powerlabels 25 100 400
 
 ```
 vtxtable powerlevels 3
-vtxtable powervalues  13 20 26
+vtxtable powervalues 13 20 26
 vtxtable powerlabels 25 100 400
 ```
 
@@ -168,7 +179,7 @@ vtxtable powerlabels 25 100 400 1W
 
 ```
 vtxtable powerlevels 4
-vtxtable powervalues  14 20 26 29
+vtxtable powervalues 14 20 26 29
 vtxtable powerlabels 25 100 400 800
 ```
 
@@ -178,7 +189,7 @@ For example a TBS Unify EVO will also work the this config:
 
 ```
 vtxtable powerlevels 2
-vtxtable powervalues  20 26
+vtxtable powervalues 20 26
 vtxtable powerlabels .1W .4W
 ```
 
@@ -269,9 +280,9 @@ vtxtable band 2 BOSCAM_B B CUSTOM 5733 5752 5771 5790 5809 5828 5847 5866
 vtxtable band 3 BOSCAM_E E CUSTOM 5705 5685 5665 5645 5885 5905 5925 5945
 vtxtable band 4 FATSHARK F CUSTOM 5740 5760 5780 5800 5820 5840 5860 5880
 vtxtable band 5 RACEBAND R CUSTOM 5658 5695 5732 5769 5806 5843 5880 5917
-vtxtable powerlevels 3
-vtxtable powervalues 0 1 2
-vtxtable powerlabels OFF MIN MAX
+vtxtable powerlevels 2
+vtxtable powervalues 1 2
+vtxtable powerlabels MIN MAX
 ```
 
 ### Pitmode
@@ -280,3 +291,5 @@ Pitmode can be controlled in a variety of ways including OSD, AUX switches and l
 
 Some videotransmitters have restrictions on its usage. For example, SmartAudio V1.0 and V2.0 devices can only enter pitmode on power-up.
 Betaflight can make the these devices leave pitmode, but not enter it.
+
+rtc6705 devices do not support a proper ultra-low power pitmode. Instead, if the board supports it, pitmode turns off rtc6705 devices completely.

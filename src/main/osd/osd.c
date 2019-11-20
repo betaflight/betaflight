@@ -124,6 +124,8 @@ static displayPort_t *osdDisplayPort;
 static bool suppressStatsDisplay = false;
 static uint8_t osdStatsRowCount = 0;
 
+static bool backgroundLayerSupported = false;
+
 #ifdef USE_ESC_SENSOR
 escSensorData_t *osdEscDataCombined;
 #endif
@@ -136,6 +138,10 @@ PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 6);
 // be shown on the the post-flight statistics page.
 // If you reorder the stats it's likely that you'll need to make likewise updates
 // to the unit tests.
+
+// If adding new stats, please add to the osdStatsNeedAccelerometer() function
+// if the statistic utilizes the accelerometer.
+//
 const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_RTC_DATE_TIME,
     OSD_STAT_TIMER_1,
@@ -221,13 +227,28 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 }
 #endif
 
+void osdAnalyzeActiveElements(void)
+{
+    osdAddActiveElements();
+    osdDrawActiveElementsBackground(osdDisplayPort);
+}
+
 static void osdDrawElements(timeUs_t currentTimeUs)
 {
-    displayClearScreen(osdDisplayPort);
-
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
+        displayClearScreen(osdDisplayPort);
         return;
+    }
+
+    if (backgroundLayerSupported) {
+        // Background layer is supported, overlay it onto the foreground
+        // so that we only need to draw the active parts of the elements.
+        displayLayerCopy(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND, DISPLAYPORT_LAYER_BACKGROUND);
+    } else {
+        // Background layer not supported, just clear the foreground in preparation
+        // for drawing the elements including their backgrounds.
+        displayClearScreen(osdDisplayPort);
     }
 
     osdDrawActiveElements(osdDisplayPort, currentTimeUs);
@@ -303,6 +324,14 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     }
     osdConfig->rssi_dbm_alarm = 60;
     osdConfig->gps_sats_show_hdop = false;
+
+    for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
+        osdConfig->rcChannels[i] = -1;
+    }
+
+    osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
+
+    osdConfig->distance_alarm = 0;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -329,6 +358,9 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 #ifdef USE_CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
+
+    backgroundLayerSupported = displayLayerSupported(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
+    displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
 
     armState = ARMING_FLAG(ARMED);
 
@@ -360,6 +392,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 #ifdef USE_OSD_PROFILES
     setOsdProfile(osdConfig()->osdProfileIndex);
 #endif
+
+    osdElementsInit(backgroundLayerSupported);
     osdAnalyzeActiveElements();
 }
 
@@ -636,10 +670,13 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         break;
 
     case OSD_STAT_BLACKBOX_NUMBER:
-        if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-            itoa(blackboxGetLogNumber(), buff, 10);
-            osdDisplayStatisticLabel(displayRow, "BB LOG NUM", buff);
-            return true;
+        {
+            int32_t logNumber = blackboxGetLogNumber();
+            if (logNumber >= 0) {
+                itoa(logNumber, buff, 10);
+                osdDisplayStatisticLabel(displayRow, "BB LOG NUM", buff);
+                return true;
+            }
         }
         break;
 #endif
@@ -909,7 +946,6 @@ void osdUpdate(timeUs_t currentTimeUs)
 #else
 #define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud (
 #endif
-#define STATS_FREQ_DENOM    50
 
     if (counter % DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);
@@ -942,4 +978,20 @@ statistic_t *osdGetStats(void)
 {
     return &stats;
 }
+
+#ifdef USE_ACC
+// Determine if there are any enabled stats that need
+// the ACC (currently only MAX_G_FORCE).
+static bool osdStatsNeedAccelerometer(void)
+{
+    return osdStatGetState(OSD_STAT_MAX_G_FORCE);
+}
+
+// Check if any enabled elements or stats need the ACC
+bool osdNeedsAccelerometer(void)
+{
+    return osdStatsNeedAccelerometer() || osdElementsNeedAccelerometer();
+}
+#endif // USE_ACC
+
 #endif // USE_OSD

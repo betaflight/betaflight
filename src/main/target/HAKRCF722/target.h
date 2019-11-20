@@ -85,7 +85,7 @@
 #define FLASH_CS_PIN           PB12
 #define FLASH_SPI_INSTANCE     SPI2          
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define USE_VCP
 

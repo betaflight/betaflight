@@ -39,6 +39,8 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_PROFILE_COUNT 1
 #endif
 
+#define OSD_RCCHANNELS_COUNT 4
+
 #define OSD_PROFILE_BITS_POS 11
 #define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
 #define OSD_POS_MAX   0x3FF
@@ -132,6 +134,7 @@ typedef enum {
     OSD_PID_PROFILE_NAME,
     OSD_PROFILE_NAME,
     OSD_RSSI_DBM_VALUE,
+    OSD_RC_CHANNELS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -219,6 +222,13 @@ typedef enum {
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
+typedef enum {
+    OSD_DISPLAYPORT_DEVICE_NONE = 0,
+    OSD_DISPLAYPORT_DEVICE_AUTO,
+    OSD_DISPLAYPORT_DEVICE_MAX7456,
+    OSD_DISPLAYPORT_DEVICE_MSP,
+} osdDisplayPortDevice_e;
+
 // Make sure the number of warnings do not exceed the available 32bit storage
 STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 
@@ -251,13 +261,16 @@ typedef struct osdConfig_s {
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
     uint8_t core_temp_alarm;
-    uint8_t ahInvert;         // invert the artificial horizon
+    uint8_t ahInvert;                         // invert the artificial horizon
     uint8_t osdProfileIndex;
     uint8_t overlay_radio_mode;
     char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
     uint16_t link_quality_alarm;
     uint8_t rssi_dbm_alarm;
     uint8_t gps_sats_show_hdop;
+    int8_t rcChannels[OSD_RCCHANNELS_COUNT];  // RC channel values to display, -1 if none
+    uint8_t displayPortDevice;                // osdDisplayPortDevice_e
+    uint16_t distance_alarm;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -298,8 +311,10 @@ void osdWarnSetState(uint8_t warningIndex, bool enabled);
 bool osdWarnGetState(uint8_t warningIndex);
 void osdSuppressStats(bool flag);
 
+void osdAnalyzeActiveElements(void);
 uint8_t getCurrentOsdProfileIndex(void);
 void changeOsdProfileIndex(uint8_t profileIndex);
 bool osdElementVisible(uint16_t value);
 bool osdGetVisualBeeperState(void);
 statistic_t *osdGetStats(void);
+bool osdNeedsAccelerometer(void);

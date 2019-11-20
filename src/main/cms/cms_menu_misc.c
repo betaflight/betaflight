@@ -30,28 +30,31 @@
 #include "build/debug.h"
 #include "build/version.h"
 
-#include "drivers/time.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_ledstrip.h"
 
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/motor.h"
-#include "pg/rx.h"
 
-#include "fc/config.h"
+#include "drivers/time.h"
+
 #include "fc/rc_controls.h"
 
 #include "flight/mixer.h"
 
+#include "pg/motor.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
+
+#include "cms_menu_misc.h"
 
 //
 // Misc
@@ -93,6 +96,8 @@ CMS_Menu cmsx_menuRcPreview = {
 #endif
     .onEnter = NULL,
     .onExit = cmsx_menuRcConfirmBack,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuRcEntries
 };
 
@@ -144,6 +149,8 @@ CMS_Menu cmsx_menuMisc = {
 #endif
     .onEnter = cmsx_menuMiscOnEnter,
     .onExit = cmsx_menuMiscOnExit,
+    .checkRedirect = NULL,
+    .onDisplayUpdate = NULL,
     .entries = menuMiscEntries
 };
 

@@ -48,12 +48,9 @@
 
 #include "fc/runtime_config.h"
 
-#include "sensors/barometer.h"
 #include "sensors/sensors.h"
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-#include "hardware_revision.h"
-#endif
+#include "barometer.h"
 
 baro_t baro;                        // barometer access functions
 
@@ -138,6 +135,11 @@ static int32_t baroTemperature = 0;
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 8*101325;
 static uint32_t baroPressureSum = 0;
+
+#define CALIBRATING_BARO_CYCLES 200 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
+#define SET_GROUND_LEVEL_BARO_CYCLES 10 // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
+
+static bool baroReady = false;
 
 void baroPreInit(void)
 {
@@ -273,17 +275,25 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     return true;
 }
 
-bool isBaroCalibrationComplete(void)
+bool baroIsCalibrationComplete(void)
 {
     return calibratingB == 0;
 }
 
-void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
+static void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
     calibratingB = calibrationCyclesRequired;
 }
 
-static bool baroReady = false;
+void baroStartCalibration(void)
+{
+    baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+}
+
+void baroSetGroundLevel(void)
+{
+    baroSetCalibrationCycles(SET_GROUND_LEVEL_BARO_CYCLES);
+}
 
 #define PRESSURE_SAMPLES_MEDIAN 3
 
@@ -424,7 +434,7 @@ int32_t baroCalculateAltitude(void)
 
     // calculates height from ground via baro readings
     // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-    if (isBaroCalibrationComplete()) {
+    if (baroIsCalibrationComplete()) {
         BaroAlt_tmp = lrintf((1.0f - pow_approx((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190259f)) * 4433000.0f); // in cm
         BaroAlt_tmp -= baroGroundAltitude;
         baro.BaroAlt = lrintf((float)baro.BaroAlt * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf) + (float)BaroAlt_tmp * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf))); // additional LPF to reduce baro noise
@@ -443,11 +453,11 @@ void performBaroCalibrationCycle(void)
     baroGroundPressure += baroPressureSum / PRESSURE_SAMPLE_COUNT;
     baroGroundAltitude = (1.0f - pow_approx((baroGroundPressure / 8) / 101325.0f, 0.190259f)) * 4433000.0f;
 
-    if (baroGroundPressure == savedGroundPressure)
-      calibratingB = 0;
-    else {
-      calibratingB--;
-      savedGroundPressure=baroGroundPressure;
+    if (baroGroundPressure == savedGroundPressure) {
+        calibratingB = 0;
+    } else {
+        calibratingB--;
+        savedGroundPressure = baroGroundPressure;
     }
 }
 

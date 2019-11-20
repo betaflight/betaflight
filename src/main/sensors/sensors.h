@@ -36,15 +36,13 @@ typedef struct int16_flightDynamicsTrims_s {
     int16_t roll;
     int16_t pitch;
     int16_t yaw;
+    int16_t calibrationCompleted;
 } flightDynamicsTrims_def_t;
 
 typedef union flightDynamicsTrims_u {
-    int16_t raw[3];
+    int16_t raw[4];
     flightDynamicsTrims_def_t values;
 } flightDynamicsTrims_t;
-
-#define CALIBRATING_ACC_CYCLES              400
-#define CALIBRATING_BARO_CYCLES             200 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
 
 typedef enum {
     SENSOR_GYRO = 1 << 0, // always present

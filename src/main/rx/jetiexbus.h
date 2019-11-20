@@ -52,4 +52,4 @@ struct serialPort_s;
 extern struct serialPort_s *jetiExBusPort;
 
 uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen);
-bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);

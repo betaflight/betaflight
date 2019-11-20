@@ -1,4 +1,4 @@
-## Betaflight 3.5 Release Notes
+# Betaflight 3.5 Release Notes
 
 **Wait, there is one more thing we can do to make it better!**
 
