@@ -70,7 +70,7 @@ void targetConfiguration(void)
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
 #endif
 #ifdef SYNERGYF4
-    pinioBoxConfigMutable()->permanentId[0] = 39;
+    pinioBoxConfigMutable()->permanentId[0] = 40;
     vtxSettingsConfigMutable()->pitModeFreq = 0;
     ledStripStatusModeConfigMutable()->ledConfigs[0] = DEFINE_LED(0, 0, 0, 0, LF(COLOR), LO(VTX), 0);
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
