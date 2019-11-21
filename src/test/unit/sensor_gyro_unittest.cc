@@ -65,7 +65,7 @@ TEST(SensorGyro, Init)
 {
     pgResetAll();
     const bool initialised = gyroInit();
-    EXPECT_EQ(true, initialised);
+    EXPECT_TRUE(initialised);
     EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
 }
 
@@ -75,7 +75,7 @@ TEST(SensorGyro, Read)
     gyroInit();
     fakeGyroSet(gyroDevPtr, 5, 6, 7);
     const bool read = gyroDevPtr->readFn(gyroDevPtr);
-    EXPECT_EQ(true, read);
+    EXPECT_TRUE(read);
     EXPECT_EQ(5, gyroDevPtr->gyroADCRaw[X]);
     EXPECT_EQ(6, gyroDevPtr->gyroADCRaw[Y]);
     EXPECT_EQ(7, gyroDevPtr->gyroADCRaw[Z]);
@@ -87,7 +87,7 @@ TEST(SensorGyro, Calibrate)
     gyroInit();
     fakeGyroSet(gyroDevPtr, 5, 6, 7);
     const bool read = gyroDevPtr->readFn(gyroDevPtr);
-    EXPECT_EQ(true, read);
+    EXPECT_TRUE(read);
     EXPECT_EQ(5, gyroDevPtr->gyroADCRaw[X]);
     EXPECT_EQ(6, gyroDevPtr->gyroADCRaw[Y]);
     EXPECT_EQ(7, gyroDevPtr->gyroADCRaw[Z]);
@@ -100,7 +100,7 @@ TEST(SensorGyro, Calibrate)
     EXPECT_EQ(9, gyroDevPtr->gyroZero[Y]);
     EXPECT_EQ(10, gyroDevPtr->gyroZero[Z]);
     gyroStartCalibration(false);
-    EXPECT_EQ(false, gyroIsCalibrationComplete());
+    EXPECT_FALSE(gyroIsCalibrationComplete());
     while (!gyroIsCalibrationComplete()) {
         gyroDevPtr->readFn(gyroDevPtr);
         performGyroCalibration(gyroSensorPtr, gyroMovementCalibrationThreshold);
@@ -121,7 +121,7 @@ TEST(SensorGyro, Update)
     gyroInit();
     gyroDevPtr->readFn = fakeGyroRead;
     gyroStartCalibration(false);
-    EXPECT_EQ(false, gyroIsCalibrationComplete());
+    EXPECT_FALSE(gyroIsCalibrationComplete());
 
     timeUs_t currentTimeUs = 0;
     fakeGyroSet(gyroDevPtr, 5, 6, 7);
@@ -130,7 +130,7 @@ TEST(SensorGyro, Update)
         fakeGyroSet(gyroDevPtr, 5, 6, 7);
         gyroUpdate(currentTimeUs);
     }
-    EXPECT_EQ(true, gyroIsCalibrationComplete());
+    EXPECT_TRUE(gyroIsCalibrationComplete());
     EXPECT_EQ(5, gyroDevPtr->gyroZero[X]);
     EXPECT_EQ(6, gyroDevPtr->gyroZero[Y]);
     EXPECT_EQ(7, gyroDevPtr->gyroZero[Z]);

@@ -204,7 +204,7 @@ TEST(SchedulerUnittest, TestQueueAddAndRemove)
     // fill up the queue
     for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
         const bool added = queueAdd(&cfTasks[taskId]);
-        EXPECT_EQ(true, added);
+        EXPECT_TRUE(added);
         EXPECT_EQ(taskId + 1, taskQueueSize);
         EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
     }
@@ -218,7 +218,7 @@ TEST(SchedulerUnittest, TestQueueAddAndRemove)
     // and empty it again
     for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
         const bool removed = queueRemove(&cfTasks[taskId]);
-        EXPECT_EQ(true, removed);
+        EXPECT_TRUE(removed);
         EXPECT_EQ(TASK_COUNT - taskId - 1, taskQueueSize);
         EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - taskId]);
         EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
@@ -272,7 +272,7 @@ TEST(SchedulerUnittest, TestQueueArray)
 
     cfTaskInfo_t taskInfo;
     getTaskInfo(static_cast<cfTaskId_e>(enqueuedTasks + 1), &taskInfo);
-    EXPECT_EQ(false, taskInfo.isEnabled);
+    EXPECT_FALSE(taskInfo.isEnabled);
     setTaskEnabled(static_cast<cfTaskId_e>(enqueuedTasks), true);
     EXPECT_EQ(enqueuedTasks, taskQueueSize);
     EXPECT_EQ(lastTaskPrev, taskQueueArray[enqueuedTasks - 1]);

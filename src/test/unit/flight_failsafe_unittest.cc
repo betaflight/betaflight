@@ -118,8 +118,8 @@ TEST(FlightFailsafeTest, TestFailsafeInitialState)
     failsafeReset();
 
     // then
-    EXPECT_EQ(false, failsafeIsMonitoring());
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsMonitoring());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
@@ -130,8 +130,8 @@ TEST(FlightFailsafeTest, TestFailsafeStartMonitoring)
     failsafeStartMonitoring();
 
     // then
-    EXPECT_EQ(true, failsafeIsMonitoring());
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsMonitoring());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
@@ -150,7 +150,7 @@ TEST(FlightFailsafeTest, TestFailsafeFirstArmedCycle)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 }
 
@@ -164,7 +164,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenReceivingData)
         failsafeUpdateState();
 
         // then
-        EXPECT_EQ(false, failsafeIsActive());
+        EXPECT_FALSE(failsafeIsActive());
         EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     }
 }
@@ -188,7 +188,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
         failsafeUpdateState();
 
         // then
-        EXPECT_EQ(false, failsafeIsActive());
+        EXPECT_FALSE(failsafeIsActive());
         EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     }
 
@@ -201,7 +201,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
 
     // then
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
 }
 
 /****************************************************************************************/
@@ -216,7 +216,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());
@@ -230,7 +230,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());
@@ -243,7 +243,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM)); // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
@@ -269,7 +269,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
         failsafeUpdateState();
 
         // then
-        EXPECT_EQ(false, failsafeIsActive());
+        EXPECT_FALSE(failsafeIsActive());
         EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     }
 
@@ -282,7 +282,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());
@@ -296,7 +296,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());
@@ -309,7 +309,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
@@ -338,7 +338,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     failsafeUpdateState();                          // kill switch handling should come first
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
@@ -354,7 +354,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
@@ -367,7 +367,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
@@ -394,7 +394,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Drop)
     failsafeUpdateState();                          // should activate stage2 immediately
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
@@ -408,7 +408,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Drop)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
@@ -434,7 +434,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     failsafeUpdateState();                          // should activate stage2 immediately
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
@@ -449,7 +449,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
@@ -465,7 +465,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
@@ -503,7 +503,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
         failsafeUpdateState();
 
         // then
-        EXPECT_EQ(false, failsafeIsActive());
+        EXPECT_FALSE(failsafeIsActive());
         EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     }
 
@@ -515,8 +515,8 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(true, failsafeIsMonitoring());
-    EXPECT_EQ(false, failsafeIsActive());
+    EXPECT_TRUE(failsafeIsMonitoring());
+    EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());

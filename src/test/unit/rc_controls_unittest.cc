@@ -95,7 +95,7 @@ TEST_F(RcControlsModesTest, updateActivatedModesWithAllInputsAtMidde)
 #ifdef DEBUG_RC_CONTROLS
         printf("iteration: %d\n", index);
 #endif
-        EXPECT_EQ(false, IS_RC_MODE_ACTIVE((boxId_e)index));
+        EXPECT_FALSE(IS_RC_MODE_ACTIVE((boxId_e)index));
     }
 }
 
@@ -351,7 +351,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsSticksInMiddle)
     EXPECT_EQ(90, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(90, controlRateConfig.rcRates[FD_PITCH]);
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP));
-    EXPECT_EQ(true, adjustmentState->ready);
+    EXPECT_TRUE(adjustmentState->ready);
 }
 
 TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp)
@@ -401,7 +401,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(91, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(91, controlRateConfig.rcRates[FD_PITCH]);
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP));
-    EXPECT_EQ(false, adjustmentState->ready);
+    EXPECT_FALSE(adjustmentState->ready);
 
     //
     // now pretend a short amount of time has passed, but not enough time to allow the value to have been increased
@@ -415,7 +415,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 
     EXPECT_EQ(91, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(91, controlRateConfig.rcRates[FD_PITCH]);
-    EXPECT_EQ(false, adjustmentState->ready);
+    EXPECT_FALSE(adjustmentState->ready);
 
 
     //
@@ -434,7 +434,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
 
     EXPECT_EQ(91, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(91, controlRateConfig.rcRates[FD_PITCH]);
-    EXPECT_EQ(true, adjustmentState->ready);
+    EXPECT_TRUE(adjustmentState->ready);
 
 
     //
@@ -453,7 +453,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(92, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(92, controlRateConfig.rcRates[FD_PITCH]);
     EXPECT_EQ(2, CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP));
-    EXPECT_EQ(false, adjustmentState->ready);
+    EXPECT_FALSE(adjustmentState->ready);
 
     //
     // leaving the switch up, after the original timer would have reset the state should now NOT cause
@@ -469,7 +469,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     // then
     EXPECT_EQ(92, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(92, controlRateConfig.rcRates[FD_PITCH]);
-    EXPECT_EQ(false, adjustmentState->ready);
+    EXPECT_FALSE(adjustmentState->ready);
 
     //
     // should still not be able to be increased
@@ -484,7 +484,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     // then
     EXPECT_EQ(92, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(92, controlRateConfig.rcRates[FD_PITCH]);
-    EXPECT_EQ(false, adjustmentState->ready);
+    EXPECT_FALSE(adjustmentState->ready);
 
     //
     // 500ms has now passed since the switch was returned to the middle, now that
@@ -502,7 +502,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     EXPECT_EQ(93, controlRateConfig.rcRates[FD_ROLL]);
     EXPECT_EQ(93, controlRateConfig.rcRates[FD_PITCH]);
     EXPECT_EQ(3, CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP));
-    EXPECT_EQ(false, adjustmentState->ready);
+    EXPECT_FALSE(adjustmentState->ready);
 }
 
 #define ADJUSTMENT_RATE_PROFILE_INDEX 12
@@ -585,12 +585,12 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 
     // then
     EXPECT_EQ(6, CALL_COUNTER(COUNTER_QUEUE_CONFIRMATION_BEEP));
-    EXPECT_EQ(false, adjustmentState1->ready);
-    EXPECT_EQ(false, adjustmentState2->ready);
-    EXPECT_EQ(false, adjustmentState3->ready);
-    EXPECT_EQ(false, adjustmentState4->ready);
-    EXPECT_EQ(false, adjustmentState5->ready);
-    EXPECT_EQ(false, adjustmentState6->ready);
+    EXPECT_FALSE(adjustmentState1->ready);
+    EXPECT_FALSE(adjustmentState2->ready);
+    EXPECT_FALSE(adjustmentState3->ready);
+    EXPECT_FALSE(adjustmentState4->ready);
+    EXPECT_FALSE(adjustmentState5->ready);
+    EXPECT_FALSE(adjustmentState6->ready);
 
     // and
     EXPECT_EQ(1,  pidProfile.pid[PID_PITCH].P);
