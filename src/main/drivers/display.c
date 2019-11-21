@@ -76,18 +76,18 @@ void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y)
     instance->posY = y;
 }
 
-int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s)
+int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *s)
 {
     instance->posX = x + strlen(s);
     instance->posY = y;
-    return instance->vTable->writeString(instance, x, y, s);
+    return instance->vTable->writeString(instance, x, y, attr, s);
 }
 
-int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c)
+int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, uint8_t c)
 {
     instance->posX = x + 1;
     instance->posY = y;
-    return instance->vTable->writeChar(instance, x, y, c);
+    return instance->vTable->writeChar(instance, x, y, attr, c);
 }
 
 bool displayIsTransferInProgress(const displayPort_t *instance)

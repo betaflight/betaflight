@@ -341,7 +341,7 @@ static void osdDrawLogo(int x, int y)
     for (int row = 0; row < 4; row++) {
         for (int column = 0; column < 24; column++) {
             if (fontOffset <= SYM_END_OF_FONT)
-                displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
+                displayWriteChar(osdDisplayPort, x + column, y + row, DISPLAYPORT_ATTR_NONE, fontOffset++);
         }
     }
 }
@@ -372,17 +372,17 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, 20, 6, string_buffer);
+    displayWrite(osdDisplayPort, 20, 6, DISPLAYPORT_ATTR_NONE, string_buffer);
 #ifdef USE_CMS
-    displayWrite(osdDisplayPort, 7, 8,  CMS_STARTUP_HELP_TEXT1);
-    displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT2);
-    displayWrite(osdDisplayPort, 11, 10, CMS_STARTUP_HELP_TEXT3);
+    displayWrite(osdDisplayPort, 7, 8,  DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, 11, 9, DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, 11, 10, DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT3);
 #endif
 
 #ifdef USE_RTC_TIME
     char dateTimeBuffer[FORMATTED_DATE_TIME_BUFSIZE];
     if (osdFormatRtcDateTime(&dateTimeBuffer[0])) {
-        displayWrite(osdDisplayPort, 5, 12, dateTimeBuffer);
+        displayWrite(osdDisplayPort, 5, 12, DISPLAYPORT_ATTR_NONE, dateTimeBuffer);
     }
 #endif
 
@@ -541,9 +541,9 @@ static void osdGetBlackboxStatusString(char * buff)
 
 static void osdDisplayStatisticLabel(uint8_t y, const char * text, const char * value)
 {
-    displayWrite(osdDisplayPort, 2, y, text);
-    displayWrite(osdDisplayPort, 20, y, ":");
-    displayWrite(osdDisplayPort, 22, y, value);
+    displayWrite(osdDisplayPort, 2, y, DISPLAYPORT_ATTR_NONE, text);
+    displayWrite(osdDisplayPort, 20, y, DISPLAYPORT_ATTR_NONE, ":");
+    displayWrite(osdDisplayPort, 22, y, DISPLAYPORT_ATTR_NONE, value);
 }
 
 /*
@@ -575,7 +575,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             tfp_sprintf(buff, "NO RTC");
         }
 
-        displayWrite(osdDisplayPort, 2, displayRow, buff);
+        displayWrite(osdDisplayPort, 2, displayRow, DISPLAYPORT_ATTR_NONE, buff);
         return true;
     }
 
@@ -779,7 +779,7 @@ static uint8_t osdShowStats(int statsRowCount)
     }
 
     if (displayLabel) {
-        displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
+        displayWrite(osdDisplayPort, 2, top++, DISPLAYPORT_ATTR_NONE, "  --- STATS ---");
     }
 
     for (int i = 0; i < OSD_STAT_COUNT; i++) {
@@ -809,7 +809,7 @@ static void osdRefreshStats(void)
 static void osdShowArmed(void)
 {
     displayClearScreen(osdDisplayPort);
-    displayWrite(osdDisplayPort, 12, 7, "ARMED");
+    displayWrite(osdDisplayPort, 12, 7, DISPLAYPORT_ATTR_NONE, "ARMED");
 }
 
 STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)

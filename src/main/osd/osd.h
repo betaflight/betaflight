@@ -22,6 +22,8 @@
 
 #include "common/time.h"
 
+#include "drivers/display.h"
+
 #include "pg/pg.h"
 
 #include "sensors/esc_sensor.h"
@@ -299,7 +301,6 @@ extern float osdGForce;
 #ifdef USE_ESC_SENSOR
 extern escSensorData_t *osdEscDataCombined;
 #endif
-
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);

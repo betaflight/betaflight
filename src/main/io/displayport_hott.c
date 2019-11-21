@@ -42,18 +42,21 @@ static int hottScreenSize(const displayPort_t *displayPort)
     return displayPort->rows * displayPort->cols;
 }
 
-static int hottWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t c)
+static int hottWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, uint8_t c)
 {
     UNUSED(displayPort);
+    UNUSED(attr);
 
     hottTextmodeWriteChar(col, row, c);
     return 0;
 }
 
-static int hottWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *s)
+static int hottWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, const char *s)
 {
+    UNUSED(attr);
+
     while (*s) {
-        hottWriteChar(displayPort,  col++, row, *(s++));
+        hottWriteChar(displayPort,  col++, row, 0, *(s++));
     }
     return 0;
 }
@@ -62,7 +65,7 @@ static int hottClearScreen(displayPort_t *displayPort)
 {
     for (int row = 0; row < displayPort->rows; row++) {
         for (int col= 0; col < displayPort->cols; col++) {
-            hottWriteChar(displayPort, col, row, ' ');
+            hottWriteChar(displayPort, col, row, 0, ' ');
         }
     }
     return 0;

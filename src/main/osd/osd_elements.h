@@ -31,6 +31,7 @@ typedef struct osdElementParms_s {
     char *buff;
     displayPort_t *osdDisplayPort;
     bool drawElement;
+    uint8_t attr;
 } osdElementParms_t;
 
 typedef void (*osdElementDrawFn)(osdElementParms_t *element);
