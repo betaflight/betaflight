@@ -212,9 +212,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .idle_p = 50,
         .idle_pid_limit = 200,
         .idle_max_increase = 150,
-        .ff_interpolate_sp = FF_INTERPOLATE_AVG,
+        .ff_interpolate_sp = FF_INTERPOLATE_ON,
         .ff_spike_limit = 60,
         .ff_max_rate_limit = 100,
+        .ff_smooth_factor = 37,
         .ff_boost = 15,
     );
 #ifndef USE_D_MIN
@@ -314,6 +315,7 @@ static FAST_RAM_ZERO_INIT pt1Filter_t airmodeThrottleLpf2;
 static FAST_RAM_ZERO_INIT pt1Filter_t antiGravityThrottleLpf;
 
 static FAST_RAM_ZERO_INIT float ffBoostFactor;
+static FAST_RAM_ZERO_INIT float ffSmoothFactor;
 static FAST_RAM_ZERO_INIT float ffSpikeLimitInverse;
 
 float pidGetSpikeLimitInverse()
@@ -325,6 +327,11 @@ float pidGetSpikeLimitInverse()
 float pidGetFfBoostFactor()
 {
     return ffBoostFactor;
+}
+
+float pidGetFfSmoothFactor()
+{
+    return ffSmoothFactor;
 }
 
 
@@ -738,6 +745,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 #ifdef USE_INTERPOLATED_SP
     ffFromInterpolatedSetpoint = pidProfile->ff_interpolate_sp;
+    ffSmoothFactor = 1.0f - ((float)pidProfile->ff_smooth_factor) / 100.0f;
     interpolatedSpInit(pidProfile);
 #endif
 }

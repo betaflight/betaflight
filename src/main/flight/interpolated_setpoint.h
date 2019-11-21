@@ -28,7 +28,9 @@
 typedef enum ffInterpolationType_e {
     FF_INTERPOLATE_OFF,
     FF_INTERPOLATE_ON,
-    FF_INTERPOLATE_AVG
+    FF_INTERPOLATE_AVG2,
+    FF_INTERPOLATE_AVG3,
+    FF_INTERPOLATE_AVG4
 } ffInterpolationType_t;
 
 void interpolatedSpInit(const pidProfile_t *pidProfile);
