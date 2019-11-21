@@ -862,3 +862,12 @@ bool isRssiConfigured(void)
 {
     return rssiSource != RSSI_SOURCE_NONE;
 }
+
+bool rxGetFrameDelta(timeDelta_t *deltaUs)
+{
+    if (rxRuntimeState.rcFrameDeltaFn) {
+        *deltaUs = rxRuntimeState.rcFrameDeltaFn();
+        return true;
+    }
+    return false;  // No frame delta function available for protocol type
+}
