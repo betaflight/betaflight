@@ -2817,7 +2817,7 @@ static void cliVtxTable(char *cmdline)
         tok = strtok_r(NULL, " ", &saveptr);
 
         int channels = atoi(tok);
-        if (channels < 0 || channels > VTX_TABLE_MAX_BANDS) {
+        if (channels < 0 || channels > VTX_TABLE_MAX_CHANNELS) {
             cliPrintErrorLinef("INVALID CHANNEL COUNT (SHOULD BE BETWEEN 0 AND %d)", VTX_TABLE_MAX_CHANNELS);
             return;
         }
