@@ -34,7 +34,7 @@ static float setpointDeltaImpl[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];
 static uint8_t holdCount[XYZ_AXIS_COUNT];
 
-typedef struct laggedMovingAverageCombined_u {
+typedef struct laggedMovingAverageCombined_s {
      laggedMovingAverage_t filter;
      float buf[4];
 } laggedMovingAverageCombined_t;
