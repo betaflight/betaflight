@@ -69,6 +69,11 @@ uint32_t micros(void)
     return microseconds_stub_value;
 }
 
+uint32_t microsISR(void)
+{
+    return micros();
+}
+
 #define SERIAL_BUFFER_SIZE 256
 #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
 
