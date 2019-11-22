@@ -109,7 +109,12 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
     buf[0] = 3;
     buf[1] = row;
     buf[2] = col;
-    buf[3] = displayPortProfileMsp()->attrValues[attr];
+    buf[3] = displayPortProfileMsp()->attrValues[attr] & ~DISPLAYPORT_MSP_ATTR_BLINK & DISPLAYPORT_MSP_ATTR_MASK;
+
+    if (attr & DISPLAYPORT_ATTR_BLINK) {
+        buf[3] |= DISPLAYPORT_MSP_ATTR_BLINK;
+    }
+
     memcpy(&buf[4], string, len);
 
     return output(displayPort, MSP_DISPLAYPORT, buf, len + 4);
@@ -185,6 +190,11 @@ displayPort_t *displayPortMspInit(void)
 #endif
 
     displayInit(&mspDisplayPort, &mspDisplayPortVTable);
+
+    if (displayPortProfileMsp()->useDeviceBlink) {
+        mspDisplayPort.useDeviceBlink = true;
+    }
+
     resync(&mspDisplayPort);
     return &mspDisplayPort;
 }

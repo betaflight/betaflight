@@ -33,6 +33,7 @@ typedef struct displayPortProfile_s {
     // For attribute-rich OSDs
 
     uint8_t attrValues[4];     // NORMAL, INFORMATIONAL, WARNING, CRITICAL
+    uint8_t useDeviceBlink;    // Use device local blink capability
 #ifdef USE_DISPLAYPORT_MSP_VENDOR_SPECIFIC
     uint8_t vendorInitLength;  // Actual length of vendorInit byte string
     uint8_t vendorInit[253];   // Max 253 bytes of vendor specific initialization byte string
