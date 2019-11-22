@@ -233,7 +233,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     UNUSED(data);
 
     static uint8_t crsfFramePosition = 0;
-    const timeUs_t currentTimeUs = micros();
+    const timeUs_t currentTimeUs = microsISR();
     static timeUs_t lastRcFrameCompleteTimeUs = 0;
 
 #ifdef DEBUG_CRSF_PACKETS

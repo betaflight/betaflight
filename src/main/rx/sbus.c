@@ -116,7 +116,7 @@ static void sbusDataReceive(uint16_t c, void *data)
     static timeUs_t lastFrameCompleteTimeUs = 0;
     sbusFrameData_t *sbusFrameData = data;
 
-    const timeUs_t nowUs = micros();
+    const timeUs_t nowUs = microsISR();
 
     const timeDelta_t sbusFrameTime = cmpTimeUs(nowUs, sbusFrameData->startAtUs);
 
