@@ -75,7 +75,7 @@ static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 
 static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
-
+static timeDelta_t lastFrameDelta = 0;
 
 static bool isValidIa6bIbusPacketLength(uint8_t length)
 {
@@ -88,13 +88,13 @@ static void ibusDataReceive(uint16_t c, void *data)
 {
     UNUSED(data);
 
-    uint32_t ibusTime;
-    static uint32_t ibusTimeLast;
+    static timeUs_t ibusTimeLast;
     static uint8_t ibusFramePosition;
+    static timeUs_t lastFrameCompleteTimeUs = 0;
 
-    ibusTime = micros();
+    const timeUs_t ibusTime = microsISR();
 
-    if ((ibusTime - ibusTimeLast) > IBUS_FRAME_GAP) {
+    if (cmpTimeUs(ibusTime, ibusTimeLast) > IBUS_FRAME_GAP) {
         ibusFramePosition = 0;
         rxBytesToIgnore = 0;
     } else if (rxBytesToIgnore) {
@@ -125,6 +125,8 @@ static void ibusDataReceive(uint16_t c, void *data)
     ibus[ibusFramePosition] = (uint8_t)c;
 
     if (ibusFramePosition == ibusFrameSize - 1) {
+        lastFrameDelta = cmpTimeUs(ibusTime, lastFrameCompleteTimeUs);
+        lastFrameCompleteTimeUs = ibusTime;
         ibusFrameDone = true;
     } else {
         ibusFramePosition++;
@@ -202,6 +204,10 @@ static uint16_t ibusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
     return ibusChannelData[chan];
 }
 
+static timeDelta_t ibusFrameDelta(void)
+{
+    return lastFrameDelta;
+}
 
 bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
@@ -213,6 +219,7 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = ibusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
+    rxRuntimeState->rcFrameDeltaFn = ibusFrameDelta;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
