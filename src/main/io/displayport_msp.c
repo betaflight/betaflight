@@ -170,6 +170,21 @@ static const displayPortVTable_t mspDisplayPortVTable = {
 
 displayPort_t *displayPortMspInit(void)
 {
+#ifdef USE_DISPLAYPORT_MSP_VENDOR_SPECIFIC
+    // XXX Should handle the case that a device starts to listen after the init string is sent
+    // XXX 1. Send the init string periodically while not armed.
+    // XXX 2. Send the init string in response to device identification message from a device.
+
+    // Send vendor specific initialization string.
+    // The string start with subcommand code.
+
+    int initLength = displayPortProfileMsp()->vendorInitLength;
+
+    if (initLength) {
+        output(&mspDisplayPort, MSP_DISPLAYPORT, (uint8_t *)displayPortProfileMsp()->vendorInit, initLength);
+    }
+#endif
+
     displayInit(&mspDisplayPort, &mspDisplayPortVTable);
     resync(&mspDisplayPort);
     return &mspDisplayPort;
