@@ -60,8 +60,7 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 void dshotEnableChannels(uint8_t motorCount);
 
 #ifdef USE_DSHOT_TELEMETRY
-
-FAST_CODE void pwmDshotSetDirectionOutput(
+void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
 #ifndef USE_DSHOT_TELEMETRY
 #if defined(STM32F7) || defined(STM32H7)

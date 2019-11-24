@@ -30,11 +30,12 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
-#include "config/config.h"
-#include "fc/controlrate_profile.h"
 #include "drivers/time.h"
+
+#include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
@@ -45,11 +46,15 @@
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/pid.h"
+
 #include "pg/rx.h"
+
 #include "rx/rx.h"
 
-
 #include "sensors/battery.h"
+
+#include "rc.h"
+
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 
@@ -272,7 +277,7 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
     }
 }
 
-FAST_CODE uint8_t processRcInterpolation(void)
+static FAST_CODE uint8_t processRcInterpolation(void)
 {
     static FAST_RAM_ZERO_INIT float rcCommandInterp[4];
     static FAST_RAM_ZERO_INIT float rcStepSize[4];
@@ -351,7 +356,7 @@ FAST_CODE_NOINLINE int calcRcSmoothingCutoff(int avgRxFrameTimeUs, bool pt1, uin
 
 // Preforms a reasonableness check on the rx frame time to avoid bad data
 // skewing the average.
-FAST_CODE bool rcSmoothingRxRateValid(int currentRxRefreshRate)
+static FAST_CODE bool rcSmoothingRxRateValid(int currentRxRefreshRate)
 {
     return (currentRxRefreshRate >= RC_SMOOTHING_RX_RATE_MIN_US && currentRxRefreshRate <= RC_SMOOTHING_RX_RATE_MAX_US);
 }
@@ -417,7 +422,7 @@ FAST_CODE_NOINLINE void rcSmoothingResetAccumulation(rcSmoothingFilter_t *smooth
 
 // Accumulate the rx frame time samples. Once we've collected enough samples calculate the
 // average and return true.
-FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothingData, int rxFrameTimeUs)
+static FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothingData, int rxFrameTimeUs)
 {
     smoothingData->training.sum += rxFrameTimeUs;
     smoothingData->training.count++;
@@ -455,7 +460,7 @@ FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
     return ret;
 }
 
-FAST_CODE uint8_t processRcSmoothingFilter(void)
+static FAST_CODE uint8_t processRcSmoothingFilter(void)
 {
     uint8_t updatedChannel = 0;
     static FAST_RAM_ZERO_INIT float lastRxData[4];
