@@ -1,20 +1,3 @@
-OFFICIAL_TARGETS  = \
-    ALIENFLIGHTF3 \
-    ALIENFLIGHTF4 \
-    ANYFCF7 \
-    BETAFLIGHTF3 \
-    BLUEJAYF4 \
-    FURYF4 REVO \
-    SIRINFPV \
-    SPARKY \
-    SPRACINGF3 \
-    SPRACINGF3EVO \
-    SPRACINGF3NEO \
-    SPRACINGF4EVO \
-    SPRACINGF7DUAL \
-    SPRACINGH7EXTREME \
-    STM32F3DISCOVERY
-
 ALT_TARGET_PATHS  = $(filter-out %/target,$(basename $(wildcard $(ROOT)/src/main/target/*/*.mk)))
 ALT_TARGET_NAMES  = $(notdir $(ALT_TARGET_PATHS))
 BASE_TARGET_NAMES = $(notdir $(patsubst %/,%,$(dir $(ALT_TARGET_PATHS))))
