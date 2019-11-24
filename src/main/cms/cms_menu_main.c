@@ -63,7 +63,7 @@ static const OSD_Entry menuFeaturesEntries[] =
 #endif
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
-    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRedirect, 0},
+    {"VTX", OME_Funcall, cmsSelectVtx, NULL, 0},
 #endif
 #endif // VTX_CONTROL
 #ifdef USE_LED_STRIP
