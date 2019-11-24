@@ -64,12 +64,12 @@ void initBoardAlignment(const boardAlignment_t *boardAlignment)
     buildRotationMatrix(&rotationAngles, &boardRotation);
 }
 
-FAST_CODE static void alignBoard(float *vec)
+static FAST_CODE void alignBoard(float *vec)
 {
     applyRotation(vec, &boardRotation);
 }
 
-FAST_CODE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
+FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
 {
     applyRotation(dest, sensorRotationMatrix);
 
