@@ -406,6 +406,10 @@ extern "C" {
         return simulationTime;
     }
 
+    uint32_t microsISR() {
+        return micros();
+    }
+
     uint32_t millis() {
         return micros() / 1000;
     }

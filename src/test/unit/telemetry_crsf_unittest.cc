@@ -313,6 +313,7 @@ gpsSolutionData_t gpsSol;
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
 uint32_t micros(void) {return 0;}
+uint32_t microsISR(void) {return micros();}
 
 bool featureIsEnabled(uint32_t) {return true;}
 
