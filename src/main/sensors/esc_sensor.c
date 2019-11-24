@@ -209,7 +209,7 @@ static void escSensorDataReceive(uint16_t c, void *data)
 
 bool escSensorInit(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
     if (!portConfig) {
         return false;
     }

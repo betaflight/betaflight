@@ -62,6 +62,7 @@
 
 #include "osd/osd.h"
 
+#include "pg/adc.h"
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/gyrodev.h"
@@ -69,9 +70,12 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
+#include "pg/rx_spi.h"
+#include "pg/sdcard.h"
 #include "pg/vtx_table.h"
 
 #include "rx/rx.h"
+#include "rx/rx_spi.h"
 
 #include "scheduler/scheduler.h"
 
@@ -205,7 +209,7 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_GPS)
-    serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
+    const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
     if (gpsConfig()->provider == GPS_MSP && gpsSerial) {
         serialRemovePort(gpsSerial->identifier);
     }
@@ -391,6 +395,18 @@ static void validateAndFixConfig(void)
         motorConfigMutable()->dev.useDshotBitbang = DSHOT_BITBANG_AUTO;
     }
 #endif    
+
+#ifdef USE_ADC
+    adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
+    adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
+
+    // The FrSky D SPI RX sends RSSI_ADC_PIN (if configured) as A2
+    adcConfigMutable()->rssi.enabled = featureIsEnabled(FEATURE_RSSI_ADC);
+#ifdef USE_RX_SPI
+    adcConfigMutable()->rssi.enabled |= (featureIsEnabled(FEATURE_RX_SPI) && rxSpiConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
+#endif
+#endif // USE_ADC
+
 
 // clear features that are not supported.
 // I have kept them all here in one place, some could be moved to sections of code above.
@@ -647,16 +663,19 @@ void validateAndFixGyroConfig(void)
 
 #ifdef USE_BLACKBOX
 #ifndef USE_FLASHFS
-    if (blackboxConfig()->device == 1) {  // BLACKBOX_DEVICE_FLASH (but not defined)
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
 #endif // USE_FLASHFS
 
-#ifndef USE_SDCARD
-    if (blackboxConfig()->device == 2) {  // BLACKBOX_DEVICE_SDCARD (but not defined)
-        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+#if defined(USE_SDCARD)
+        if (!sdcardConfig()->mode)
+#endif
+        {
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
+        }
     }
-#endif // USE_SDCARD
 #endif // USE_BLACKBOX
 
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {

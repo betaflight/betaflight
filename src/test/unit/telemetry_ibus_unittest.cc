@@ -162,7 +162,7 @@ void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
 
 
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
     return findSerialPortConfig_stub_retval;

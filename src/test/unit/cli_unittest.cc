@@ -278,7 +278,7 @@ uint8_t getCurrentControlRateProfileIndex(void){ return 1; }
 void changeControlRateProfile(uint8_t) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *) {}
 void writeEEPROM() {}
-serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) {return NULL; }
+serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e) {return NULL; }
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }

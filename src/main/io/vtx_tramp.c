@@ -620,7 +620,7 @@ static const vtxVTable_t trampVTable = {
 
 bool vtxTrampInit(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 
     if (portConfig) {
         portOptions_e portOptions = 0;

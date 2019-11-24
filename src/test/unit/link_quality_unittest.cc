@@ -431,7 +431,7 @@ extern "C" {
     bool isBlackboxDeviceWorking() { return true; }
     bool isBlackboxDeviceFull() { return false; }
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-    serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
+    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
     bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
     bool cmsDisplayPortRegister(displayPort_t *) { return false; }
     uint16_t getCoreTemperatureCelsius(void) { return 0; }

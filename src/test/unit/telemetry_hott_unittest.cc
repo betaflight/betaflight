@@ -237,7 +237,7 @@ void closeSerialPort(serialPort_t *serialPort)
     UNUSED(serialPort);
 }
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
     UNUSED(function);
 

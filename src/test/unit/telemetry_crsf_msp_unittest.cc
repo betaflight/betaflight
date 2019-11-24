@@ -257,7 +257,7 @@ extern "C" {
     uint32_t micros(void) {return dummyTimeUs;}
     uint32_t microsISR(void) {return micros();}
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-    serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
+    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
     bool isBatteryVoltageConfigured(void) { return true; }
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;

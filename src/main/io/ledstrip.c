@@ -435,14 +435,14 @@ static quadrant_e getLedQuadrant(const int ledIndex)
     return quad;
 }
 
-static hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
+static const hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
 {
     const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[ledIndex];
     const int ledDirection = ledGetDirection(ledConfig);
 
     for (unsigned i = 0; i < LED_DIRECTION_COUNT; i++) {
         if (ledDirection & (1 << i)) {
-            return &ledStripStatusModeConfigMutable()->colors[modeColors->color[i]];
+            return &ledStripStatusModeConfig()->colors[modeColors->color[i]];
         }
     }
 

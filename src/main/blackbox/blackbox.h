@@ -27,12 +27,8 @@
 
 typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_NONE = 0,
-#ifdef USE_FLASHFS
     BLACKBOX_DEVICE_FLASH = 1,
-#endif
-#ifdef USE_SDCARD
     BLACKBOX_DEVICE_SDCARD = 2,
-#endif
     BLACKBOX_DEVICE_SERIAL = 3
 } BlackboxDevice_e;
 
