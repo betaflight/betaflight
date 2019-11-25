@@ -115,7 +115,7 @@ static const OSD_Entry menuMainEntries[] =
     {"FC&FIRMWARE", OME_Submenu,  cmsMenuChange, &cmsx_menuFirmware, 0},
     {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
     {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL, 0},
-    {NULL,OME_END, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0},
 };
 
 CMS_Menu cmsx_menuMain = {

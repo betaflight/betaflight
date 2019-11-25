@@ -541,8 +541,9 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward; will b
 
 static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 {
-    if (!pageTop)
+    if (!pageTop || !cmsInMenu) {
         return;
+    }
 
     uint8_t i;
     const OSD_Entry *p;
