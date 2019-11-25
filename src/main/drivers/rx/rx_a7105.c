@@ -54,7 +54,6 @@ void a7105extiHandler(extiCallbackRec_t* cb)
 
 void A7105Init(uint32_t id, IO_t extiPin, IO_t txEnPin)
 {
-    spiDeviceByInstance(RX_SPI_INSTANCE);
     rxIntIO = extiPin; /* config receiver IRQ pin */
     IOInit(rxIntIO, OWNER_RX_SPI_EXTI, 0);
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);

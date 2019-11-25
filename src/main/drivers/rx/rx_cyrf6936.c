@@ -71,7 +71,6 @@ bool cyrf6936RxFinished(uint32_t *timeStamp)
 
 bool cyrf6936Init(IO_t extiPin)
 {
-    spiDeviceByInstance(RX_SPI_INSTANCE);
     rxIntIO = extiPin;
     IOInit(rxIntIO, OWNER_RX_SPI_EXTI, 0);
     EXTIHandlerInit(&cyrf6936extiCallbackRec, cyrf6936ExtiHandler);
