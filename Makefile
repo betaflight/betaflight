@@ -225,6 +225,7 @@ CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
 OBJDUMP     := $(ARM_SDK_PREFIX)objdump
 SIZE        := $(ARM_SDK_PREFIX)size
+DFUSE-PACK  := src/utils/dfuse-pack.py
 
 #
 # Tool options.
@@ -305,6 +306,7 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_S19      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).s19
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
+TARGET_DFU      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).dfu
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
 TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_EXST.elf
 TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_UNPATCHED.bin
@@ -319,6 +321,7 @@ CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
+CLEAN_ARTIFACTS += $(TARGET_DFU)
 
 # Make sure build date and revision is updated on every incremental build
 $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
@@ -342,6 +345,10 @@ $(TARGET_BIN): $(TARGET_ELF)
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+
+$(TARGET_DFU): $(TARGET_HEX)
+	@echo "Creating DFU $(TARGET_DFU)" "$(STDOUT)"
+	$(V1) $(DFUSE-PACK) -i $< $@
 
 else
 CLEAN_ARTIFACTS += $(TARGET_UNPATCHED_BIN) $(TARGET_EXST_HASH_SECTION_FILE) $(TARGET_EXST_ELF)
@@ -510,7 +517,7 @@ TARGETS_FLASH = $(addsuffix _flash,$(VALID_TARGETS) )
 
 ## <TARGET>_flash    : build and flash a target
 $(TARGETS_FLASH):
-	$(V0) $(MAKE) binary hex TARGET=$(subst _flash,,$@)
+	$(V0) $(MAKE) hex TARGET=$(subst _flash,,$@)
 ifneq (,$(findstring /dev/ttyUSB,$(SERIAL_DEVICE)))
 	$(V0) $(MAKE) tty_flash TARGET=$(subst _flash,,$@)
 else
@@ -530,7 +537,8 @@ ifneq (no-port-found,$(SERIAL_DEVICE))
 	$(V0) echo -n 'R' > $(SERIAL_DEVICE)
 	$(V0) sleep 1
 endif
-	$(V0) dfu-util -a 0 -D $(TARGET_BIN) -s 0x08000000:leave
+	$(V0) $(MAKE) $(TARGET_DFU)
+	$(V0) dfu-util -a 0 -D $(TARGET_DFU) -s :leave
 
 st-flash_$(TARGET): $(TARGET_BIN)
 	$(V0) st-flash --reset write $< 0x08000000
