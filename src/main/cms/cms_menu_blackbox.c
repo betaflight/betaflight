@@ -148,12 +148,12 @@ static void cmsx_Blackbox_GetDeviceStatus(void)
 }
 
 #ifdef USE_FLASHFS
-static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
+static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
     if (!flashfsIsSupported()) {
-        return 0;
+        return NULL;
     }
 
     displayClearScreen(pDisplay);
@@ -172,20 +172,20 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
     // Update storage device status to show new used space amount
     cmsx_Blackbox_GetDeviceStatus();
 
-    return 0;
+    return NULL;
 }
 #endif // USE_FLASHFS
 
-static long cmsx_Blackbox_onEnter(void)
+static const void *cmsx_Blackbox_onEnter(void)
 {
     cmsx_Blackbox_GetDeviceStatus();
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
     blackboxConfig_p_ratio = blackboxConfig()->p_ratio;
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Blackbox_onExit(const OSD_Entry *self)
+static const void *cmsx_Blackbox_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -194,7 +194,8 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
         blackboxValidateConfig();
     }
     blackboxConfigMutable()->p_ratio = blackboxConfig_p_ratio;
-    return 0;
+
+    return NULL;
 }
 
 static const OSD_Entry cmsx_menuBlackboxEntries[] =

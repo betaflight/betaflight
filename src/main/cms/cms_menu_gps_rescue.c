@@ -59,7 +59,7 @@ static uint8_t gpsRescueConfig_altitudeMode;
 static uint16_t gpsRescueConfig_ascendRate;
 static uint16_t gpsRescueConfig_descendRate;
 
-static long cms_menuGpsRescuePidOnEnter(void)
+static const void *cms_menuGpsRescuePidOnEnter(void)
 {
 
     gpsRescueConfig_throttleP = gpsRescueConfig()->throttleP;
@@ -72,10 +72,10 @@ static long cms_menuGpsRescuePidOnEnter(void)
     gpsRescueConfig_velI = gpsRescueConfig()->velI;
     gpsRescueConfig_velD = gpsRescueConfig()->velD;
 
-    return 0;
+    return NULL;
 }
 
-static long cms_menuGpsRescuePidOnExit(const OSD_Entry *self)
+static const void *cms_menuGpsRescuePidOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -89,7 +89,7 @@ static long cms_menuGpsRescuePidOnExit(const OSD_Entry *self)
     gpsRescueConfigMutable()->velI = gpsRescueConfig_velI;
     gpsRescueConfigMutable()->velD = gpsRescueConfig_velD;
 
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry cms_menuGpsRescuePidEntries[] =
@@ -121,7 +121,7 @@ CMS_Menu cms_menuGpsRescuePid = {
     .entries = cms_menuGpsRescuePidEntries,
 };
 
-static long cmsx_menuGpsRescueOnEnter(void)
+static const void *cmsx_menuGpsRescueOnEnter(void)
 {
 
     gpsRescueConfig_angle = gpsRescueConfig()->angle;
@@ -140,10 +140,10 @@ static long cmsx_menuGpsRescueOnEnter(void)
     gpsRescueConfig_ascendRate = gpsRescueConfig()->ascendRate;
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_menuGpsRescueOnExit(const OSD_Entry *self)
+static const void *cmsx_menuGpsRescueOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -164,7 +164,7 @@ static long cmsx_menuGpsRescueOnExit(const OSD_Entry *self)
     gpsRescueConfigMutable()->ascendRate = gpsRescueConfig_ascendRate;
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
 
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry cmsx_menuGpsRescueEntries[] =

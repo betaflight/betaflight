@@ -48,19 +48,19 @@
 #ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
-static long menuOsdActiveElemsOnEnter(void)
+static const void *menuOsdActiveElemsOnEnter(void)
 {
     memcpy(&osdConfig_item_pos[0], &osdConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
-    return 0;
+    return NULL;
 }
 
-static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
+static const void *menuOsdActiveElemsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
     memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     osdAnalyzeActiveElements();
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry menuOsdActiveElemsEntries[] =
@@ -171,7 +171,7 @@ static uint16_t osdConfig_distance_alarm;
 static uint8_t batteryConfig_vbatDurationForWarning;
 static uint8_t batteryConfig_vbatDurationForCritical;
 
-static long menuAlarmsOnEnter(void)
+static const void *menuAlarmsOnEnter(void)
 {
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
     osdConfig_link_quality_alarm = osdConfig()->link_quality_alarm;
@@ -182,10 +182,10 @@ static long menuAlarmsOnEnter(void)
     batteryConfig_vbatDurationForWarning = batteryConfig()->vbatDurationForWarning;
     batteryConfig_vbatDurationForCritical = batteryConfig()->vbatDurationForCritical;
 
-    return 0;
+    return NULL;
 }
 
-static long menuAlarmsOnExit(const OSD_Entry *self)
+static const void *menuAlarmsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -198,7 +198,7 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     batteryConfigMutable()->vbatDurationForWarning = batteryConfig_vbatDurationForWarning;
     batteryConfigMutable()->vbatDurationForCritical = batteryConfig_vbatDurationForCritical;
 
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry menuAlarmsEntries[] =
@@ -231,7 +231,7 @@ osd_timer_source_e timerSource[OSD_TIMER_COUNT];
 osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
-static long menuTimersOnEnter(void)
+static const void *menuTimersOnEnter(void)
 {
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
@@ -240,10 +240,10 @@ static long menuTimersOnEnter(void)
         timerAlarm[i] = OSD_TIMER_ALARM(timer);
     }
 
-    return 0;
+    return NULL;
 }
 
-static long menuTimersOnExit(const OSD_Entry *self)
+static const void *menuTimersOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -251,7 +251,7 @@ static long menuTimersOnExit(const OSD_Entry *self)
         osdConfigMutable()->timers[i] = OSD_TIMER(timerSource[i], timerPrecision[i], timerAlarm[i]);
     }
 
-    return 0;
+    return NULL;
 }
 
 static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH"};
@@ -291,7 +291,7 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static uint8_t osdConfig_osdProfileIndex;
 #endif
 
-static long cmsx_menuOsdOnEnter(void)
+static const void *cmsx_menuOsdOnEnter(void)
 {
 #ifdef USE_OSD_PROFILES
     osdConfig_osdProfileIndex = osdConfig()->osdProfileIndex;
@@ -303,10 +303,10 @@ static long cmsx_menuOsdOnEnter(void)
     displayPortProfileMax7456_whiteBrightness = displayPortProfileMax7456()->whiteBrightness;
 #endif
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_menuOsdOnExit(const OSD_Entry *self)
+static const void *cmsx_menuOsdOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -320,7 +320,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
     displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
 #endif
 
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry cmsx_menuOsdEntries[] =
