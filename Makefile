@@ -239,8 +239,7 @@ CC_NO_OPTIMISATION      :=
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
-TEMPORARY_FLAGS := -Wno-stringop-truncation \
-              -Wno-attributes \
+TEMPORARY_FLAGS := -Wno-attributes \
               -Wno-cast-function-type
 
 CFLAGS     += $(ARCH_FLAGS) \
