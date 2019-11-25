@@ -235,6 +235,13 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 CC_NO_OPTIMISATION      := 
 
+#
+# Added after GCC version update, remove once the warnings have been fixed
+#
+TEMPORARY_FLAGS := -Wno-stringop-truncation \
+              -Wno-attributes \
+              -Wno-cast-function-type
+
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
@@ -245,6 +252,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -fdata-sections \
               -fno-common \
               -pedantic \
+              $(TEMPORARY_FLAGS) \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
               -DUSE_STDPERIPH_DRIVER \
@@ -458,8 +466,11 @@ targets-group-2: $(GROUP_2_TARGETS)
 ## targets-group-3   : build some targets
 targets-group-3: $(GROUP_3_TARGETS)
 
-## targets-group-3   : build some targets
+## targets-group-4   : build some targets
 targets-group-4: $(GROUP_4_TARGETS)
+
+## targets-group-5   : build some targets
+targets-group-5: $(GROUP_5_TARGETS)
 
 ## targets-group-rest: build the rest of the targets (not listed in group 1, 2 or 3)
 targets-group-rest: $(GROUP_OTHER_TARGETS)
@@ -595,12 +606,14 @@ targets:
 	@echo "targets-group-2:     $(GROUP_2_TARGETS)"
 	@echo "targets-group-3:     $(GROUP_3_TARGETS)"
 	@echo "targets-group-4:     $(GROUP_4_TARGETS)"
+	@echo "targets-group-5:     $(GROUP_5_TARGETS)"
 	@echo "targets-group-rest:  $(GROUP_OTHER_TARGETS)"
 
 	@echo "targets-group-1:     $(words $(GROUP_1_TARGETS)) targets"
 	@echo "targets-group-2:     $(words $(GROUP_2_TARGETS)) targets"
 	@echo "targets-group-3:     $(words $(GROUP_3_TARGETS)) targets"
 	@echo "targets-group-4:     $(words $(GROUP_4_TARGETS)) targets"
+	@echo "targets-group-5:     $(words $(GROUP_5_TARGETS)) targets"
 	@echo "targets-group-rest:  $(words $(GROUP_OTHER_TARGETS)) targets"
 	@echo "total in all groups  $(words $(CI_TARGETS)) targets"
 
