@@ -74,9 +74,10 @@ static int crsfScreenSize(const displayPort_t *displayPort)
 }
 
 
-static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *s)
+static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, const char *s)
 {
     UNUSED(displayPort);
+    UNUSED(attr);
     if (row >= crsfScreen.rows || col >= crsfScreen.cols) {
         return 0;
     }
@@ -89,11 +90,11 @@ static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row,
     return 0;
 }
 
-static int crsfWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t c)
+static int crsfWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, uint8_t c)
 {
     char s[1];
     tfp_sprintf(s, "%c", c);
-    return crsfWriteString(displayPort, col, row, s);
+    return crsfWriteString(displayPort, col, row, attr, s);
 }
 
 static bool crsfIsTransferInProgress(const displayPort_t *displayPort)

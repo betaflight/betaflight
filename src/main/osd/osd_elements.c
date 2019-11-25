@@ -211,7 +211,7 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
         const int rpm = MIN((*escFnPtr)(i),99999);
         const int len = tfp_sprintf(rpmStr, "%d", rpm);
         rpmStr[len] = '\0';
-        displayWrite(element->osdDisplayPort, x, y + i, rpmStr);
+        displayWrite(element->osdDisplayPort, x, y + i, DISPLAYPORT_ATTR_NONE, rpmStr);
     }
     element->drawElement = false;
 }
@@ -568,7 +568,7 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
     for (int x = -4; x <= 4; x++) {
         const int y = ((-rollAngle * x) / 64) - pitchAngle;
         if (y >= 0 && y <= 81) {
-            displayWriteChar(element->osdDisplayPort, element->elemPosX + x, element->elemPosY + (y / AH_SYMBOL_COUNT), (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
+            displayWriteChar(element->osdDisplayPort, element->elemPosX + x, element->elemPosY + (y / AH_SYMBOL_COUNT), DISPLAYPORT_ATTR_NONE, (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
         }
     }
 
@@ -886,13 +886,13 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
     const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
     const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
     for (int y = -hudheight; y <= hudheight; y++) {
-        displayWriteChar(element->osdDisplayPort, element->elemPosX - hudwidth, element->elemPosY + y, SYM_AH_DECORATION);
-        displayWriteChar(element->osdDisplayPort, element->elemPosX + hudwidth, element->elemPosY + y, SYM_AH_DECORATION);
+        displayWriteChar(element->osdDisplayPort, element->elemPosX - hudwidth, element->elemPosY + y, DISPLAYPORT_ATTR_NONE, SYM_AH_DECORATION);
+        displayWriteChar(element->osdDisplayPort, element->elemPosX + hudwidth, element->elemPosY + y, DISPLAYPORT_ATTR_NONE, SYM_AH_DECORATION);
     }
 
     // AH level indicators
-    displayWriteChar(element->osdDisplayPort, element->elemPosX - hudwidth + 1, element->elemPosY, SYM_AH_LEFT);
-    displayWriteChar(element->osdDisplayPort, element->elemPosX + hudwidth - 1, element->elemPosY, SYM_AH_RIGHT);
+    displayWriteChar(element->osdDisplayPort, element->elemPosX - hudwidth + 1, element->elemPosY, DISPLAYPORT_ATTR_NONE, SYM_AH_LEFT);
+    displayWriteChar(element->osdDisplayPort, element->elemPosX + hudwidth - 1, element->elemPosY, DISPLAYPORT_ATTR_NONE, SYM_AH_RIGHT);
 
     element->drawElement = false;  // element already drawn
 }
@@ -1055,7 +1055,7 @@ static void osdElementRcChannels(osdElementParms_t *element)
             // Decimal notation can be added when tfp_sprintf supports float among fancy options.
             char fmtbuf[6];
             tfp_sprintf(fmtbuf, "%5d", data);
-            displayWrite(element->osdDisplayPort, xpos, ypos + i, fmtbuf);
+            displayWrite(element->osdDisplayPort, xpos, ypos + i, DISPLAYPORT_ATTR_NONE, fmtbuf);
         }
     }
 
@@ -1111,11 +1111,11 @@ static void osdBackgroundStickOverlay(osdElementParms_t *element)
         for (unsigned  y = 0; y < OSD_STICK_OVERLAY_HEIGHT; y++) {
             // draw the axes, vertical and horizonal
             if ((x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) && (y == (OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                displayWriteChar(element->osdDisplayPort, xpos + x, ypos + y, SYM_STICK_OVERLAY_CENTER);
+                displayWriteChar(element->osdDisplayPort, xpos + x, ypos + y, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_CENTER);
             } else if (x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) {
-                displayWriteChar(element->osdDisplayPort, xpos + x, ypos + y, SYM_STICK_OVERLAY_VERTICAL);
+                displayWriteChar(element->osdDisplayPort, xpos + x, ypos + y, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_VERTICAL);
             } else if (y == ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                displayWriteChar(element->osdDisplayPort, xpos + x, ypos + y, SYM_STICK_OVERLAY_HORIZONTAL);
+                displayWriteChar(element->osdDisplayPort, xpos + x, ypos + y, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_HORIZONTAL);
             }
         }
     }
@@ -1143,7 +1143,7 @@ static void osdElementStickOverlay(osdElementParms_t *element)
     const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 
-    displayWriteChar(element->osdDisplayPort, xpos + cursorX, ypos + cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, cursor);
+    displayWriteChar(element->osdDisplayPort, xpos + cursorX, ypos + cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, DISPLAYPORT_ATTR_NONE, cursor);
 
     element->drawElement = false;  // element already drawn
 }
@@ -1235,6 +1235,7 @@ static void osdElementWarnings(osdElementParms_t *element)
             }
 
             tfp_sprintf(element->buff, "%s", armingDisableFlagNames[armingDisabledDisplayIndex]);
+            element->attr = DISPLAYPORT_ATTR_WARNING;
             return;
         } else {
             armingDisabledUpdateTimeUs = 0;
@@ -1252,11 +1253,13 @@ static void osdElementWarnings(osdElementParms_t *element)
         } else {
             tfp_sprintf(element->buff, "ARM IN %d.%d", armingDelayTime / 10, armingDelayTime % 10);
         }
+        element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
 #endif // USE_DSHOT
     if (osdWarnGetState(OSD_WARNING_FAIL_SAFE) && failsafeIsActive()) {
         tfp_sprintf(element->buff, "FAIL SAFE");
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1264,6 +1267,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     // Warn when in flip over after crash mode
     if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashActive()) {
         tfp_sprintf(element->buff, "CRASH FLIP");
+        element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
 
@@ -1284,6 +1288,8 @@ static void osdElementWarnings(osdElementParms_t *element)
         if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
             SET_BLINK(OSD_WARNINGS);
         }
+
+        element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
 #endif // USE_LAUNCH_CONTROL
@@ -1291,6 +1297,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     // RSSI
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(element->buff, "RSSI LOW");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1298,6 +1305,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     // rssi dbm
     if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() > osdConfig()->rssi_dbm_alarm)) {
         tfp_sprintf(element->buff, "RSSI DBM");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1307,6 +1315,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     // Link Quality
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
         tfp_sprintf(element->buff, "LINK QUALITY");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1314,6 +1323,7 @@ static void osdElementWarnings(osdElementParms_t *element)
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
         tfp_sprintf(element->buff, " LAND NOW");
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1325,6 +1335,7 @@ static void osdElementWarnings(osdElementParms_t *element)
        !gpsRescueIsDisabled() &&
        !gpsRescueIsAvailable()) {
         tfp_sprintf(element->buff, "RESCUE N/A");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1337,6 +1348,7 @@ static void osdElementWarnings(osdElementParms_t *element)
         statistic_t *stats = osdGetStats();
         if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
             tfp_sprintf(element->buff, "RESCUE OFF");
+            element->attr = DISPLAYPORT_ATTR_WARNING;
             SET_BLINK(OSD_WARNINGS);
             return;
         }
@@ -1347,6 +1359,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     // Show warning if in HEADFREE flight mode
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         tfp_sprintf(element->buff, "HEADFREE");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1355,6 +1368,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     const int16_t coreTemperature = getCoreTemperatureCelsius();
     if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
         tfp_sprintf(element->buff, "CORE %c: %3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1406,6 +1420,7 @@ static void osdElementWarnings(osdElementParms_t *element)
 
         if (escWarningCount > 0) {
             tfp_sprintf(element->buff, "%s", escWarningMsg);
+            element->attr = DISPLAYPORT_ATTR_WARNING;
             SET_BLINK(OSD_WARNINGS);
             return;
         }
@@ -1414,6 +1429,7 @@ static void osdElementWarnings(osdElementParms_t *element)
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
         tfp_sprintf(element->buff, "LOW BATTERY");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1422,6 +1438,7 @@ static void osdElementWarnings(osdElementParms_t *element)
     // Show warning if rc smoothing hasn't initialized the filters
     if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
         tfp_sprintf(element->buff, "RCSMOOTHING");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);
         return;
     }
@@ -1431,12 +1448,14 @@ static void osdElementWarnings(osdElementParms_t *element)
     if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
           && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
         tfp_sprintf(element->buff, "BATT < FULL");
+        element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
 
     // Visual beeper
     if (osdWarnGetState(OSD_WARNING_VISUAL_BEEPER) && osdGetVisualBeeperState()) {
         tfp_sprintf(element->buff, "  * * * *");
+        element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
 
@@ -1709,11 +1728,12 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.buff = (char *)&buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
+    element.attr = DISPLAYPORT_ATTR_NONE;
 
     // Call the element drawing function
     osdElementDrawFunction[item](&element);
     if (element.drawElement) {
-        displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
+        displayWrite(osdDisplayPort, elemPosX, elemPosY, element.attr, buff);
     }
 }
 
@@ -1739,7 +1759,7 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     // Call the element background drawing function
     osdElementBackgroundFunction[item](&element);
     if (element.drawElement) {
-        displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
+        displayWrite(osdDisplayPort, elemPosX, elemPosY, DISPLAYPORT_ATTR_NONE, buff);
     }
 }
 
