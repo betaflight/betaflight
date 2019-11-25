@@ -57,7 +57,7 @@ void dshotInitEndpoints(float outputLimit, float *outputLow, float *outputHigh, 
 float dshotConvertFromExternal(uint16_t externalValue);
 uint16_t dshotConvertToExternal(float motorValue);
 
-FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
+uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
 
 #ifdef USE_DSHOT_TELEMETRY
 extern bool useDshotTelemetry;

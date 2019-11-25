@@ -42,8 +42,8 @@
 
 typedef uint8_t loadDmaBufferFn(uint32_t *dmaBuffer, int stride, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 extern FAST_RAM_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
-FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
-FAST_CODE uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
+uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
+uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet);
 
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
 
