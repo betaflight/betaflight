@@ -461,9 +461,6 @@ unsupported: $(UNSUPPORTED_TARGETS)
 pre-push:
 	$(MAKE) $(addsuffix _clean,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
 
-## official          : Build all official (travis) targets
-official: $(OFFICIAL_TARGETS)
-
 ## targets-group-1   : build some targets
 targets-group-1: $(GROUP_1_TARGETS)
 
