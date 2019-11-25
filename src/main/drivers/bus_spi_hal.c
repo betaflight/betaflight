@@ -36,7 +36,7 @@
 #include "nvic.h"
 #include "rcc.h"
 
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(SPIDevice device, bool leadingEdge)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
@@ -44,16 +44,7 @@ void spiInitDevice(SPIDevice device)
         return;
     }
 
-#ifdef SDCARD_SPI_INSTANCE
-    if (spi->dev == SDCARD_SPI_INSTANCE) {
-        spi->leadingEdge = true;
-    }
-#endif
-#ifdef RX_SPI_INSTANCE
-    if (spi->dev == RX_SPI_INSTANCE) {
-        spi->leadingEdge = true;
-    }
-#endif
+    spi->leadingEdge = leadingEdge;
 
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);

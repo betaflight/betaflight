@@ -122,7 +122,7 @@ void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, uint8_t init);
 void spiPreinitByIO(IO_t io);
 void spiPreinitByTag(ioTag_t tag);
 
-bool spiInit(SPIDevice device);
+bool spiInit(SPIDevice device, bool leadingEdge);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);
 bool spiIsBusBusy(SPI_TypeDef *instance);

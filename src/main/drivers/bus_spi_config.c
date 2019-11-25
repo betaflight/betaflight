@@ -91,7 +91,7 @@ void spiPreinit(void)
     flashPreInit(flashConfig());
 #endif
 
-#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+#if defined(USE_RX_SPI)
     rxSpiDevicePreInit(rxSpiConfig());
 #endif
 
