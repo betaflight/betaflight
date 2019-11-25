@@ -56,7 +56,7 @@ static int hottWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row,
     UNUSED(attr);
 
     while (*s) {
-        hottWriteChar(displayPort,  col++, row, 0, *(s++));
+        hottWriteChar(displayPort,  col++, row, DISPLAYPORT_ATTR_NONE, *(s++));
     }
     return 0;
 }
@@ -65,7 +65,7 @@ static int hottClearScreen(displayPort_t *displayPort)
 {
     for (int row = 0; row < displayPort->rows; row++) {
         for (int col= 0; col < displayPort->cols; col++) {
-            hottWriteChar(displayPort, col, row, 0, ' ');
+            hottWriteChar(displayPort, col, row, DISPLAYPORT_ATTR_NONE, ' ');
         }
     }
     return 0;
