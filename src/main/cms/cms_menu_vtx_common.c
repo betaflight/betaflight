@@ -80,7 +80,6 @@ static CMS_Menu cmsx_menuVtxError = {
 #endif
     .onEnter = setStatusMessage,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = vtxErrorMenuEntries,
 };

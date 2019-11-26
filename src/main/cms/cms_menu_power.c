@@ -126,7 +126,6 @@ CMS_Menu cmsx_menuPower = {
 #endif
     .onEnter = cmsx_Power_onEnter,
     .onExit = cmsx_Power_onExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuPowerEntries
 };

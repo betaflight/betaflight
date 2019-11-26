@@ -158,7 +158,6 @@ static CMS_Menu menuOsdActiveElems = {
 #endif
     .onEnter = menuOsdActiveElemsOnEnter,
     .onExit = menuOsdActiveElemsOnExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuOsdActiveElemsEntries
 };
@@ -224,7 +223,6 @@ static CMS_Menu menuAlarms = {
 #endif
     .onEnter = menuAlarmsOnEnter,
     .onExit = menuAlarmsOnExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuAlarmsEntries,
 };
@@ -278,7 +276,6 @@ static CMS_Menu menuTimers = {
 #endif
     .onEnter = menuTimersOnEnter,
     .onExit = menuTimersOnExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuTimersEntries,
 };
@@ -353,7 +350,6 @@ CMS_Menu cmsx_menuOsd = {
 #endif
     .onEnter = cmsx_menuOsdOnEnter,
     .onExit = cmsx_menuOsdOnExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuOsdEntries
 };

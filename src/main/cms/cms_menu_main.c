@@ -84,7 +84,6 @@ static CMS_Menu cmsx_menuFeatures = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuFeaturesEntries,
 };
@@ -125,7 +124,6 @@ CMS_Menu cmsx_menuMain = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuMainEntries,
 };
