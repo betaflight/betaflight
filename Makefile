@@ -240,7 +240,8 @@ CC_NO_OPTIMISATION      :=
 # Added after GCC version update, remove once the warnings have been fixed
 #
 TEMPORARY_FLAGS := -Wno-attributes \
-              -Wno-cast-function-type
+              -Wno-cast-function-type \
+              -Wno-address-of-packed-member
 
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
