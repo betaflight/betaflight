@@ -109,7 +109,6 @@ typedef struct
 #endif
     const CMSMenuFuncPtr onEnter;
     const CMSMenuOnExitPtr onExit;
-    const CMSMenuCheckRedirectPtr checkRedirect;
     const CMSMenuOnDisplayUpdatePtr onDisplayUpdate;
     const OSD_Entry *entries;
 } CMS_Menu;

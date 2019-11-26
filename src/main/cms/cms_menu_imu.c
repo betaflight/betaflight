@@ -223,7 +223,6 @@ static CMS_Menu cmsx_menuPid = {
 #endif
     .onEnter = cmsx_PidOnEnter,
     .onExit = cmsx_PidWriteback,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuPidEntries
 };
@@ -291,7 +290,6 @@ static CMS_Menu cmsx_menuRateProfile = {
 #endif
     .onEnter = cmsx_RateProfileOnEnter,
     .onExit = cmsx_RateProfileWriteback,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuRateProfileEntries
 };
@@ -351,7 +349,6 @@ static CMS_Menu cmsx_menuLaunchControl = {
 #endif
     .onEnter = cmsx_launchControlOnEnter,
     .onExit = cmsx_launchControlOnExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuLaunchControlEntries,
 };
@@ -498,7 +495,6 @@ static CMS_Menu cmsx_menuProfileOther = {
 #endif
     .onEnter = cmsx_profileOtherOnEnter,
     .onExit = cmsx_profileOtherOnExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuProfileOtherEntries,
 };
@@ -567,7 +563,6 @@ static CMS_Menu cmsx_menuFilterGlobal = {
 #endif
     .onEnter = cmsx_menuGyro_onEnter,
     .onExit = cmsx_menuGyro_onExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuFilterGlobalEntries,
 };
@@ -656,7 +651,6 @@ static CMS_Menu cmsx_menuDynFilt = {
 #endif
     .onEnter = cmsx_menuDynFilt_onEnter,
     .onExit = cmsx_menuDynFilt_onExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuDynFiltEntries,
 };
@@ -718,7 +712,6 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
 #endif
     .onEnter = cmsx_FilterPerProfileRead,
     .onExit = cmsx_FilterPerProfileWriteback,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuFilterPerProfileEntries,
 };
@@ -790,7 +783,6 @@ CMS_Menu cmsx_menuCopyProfile = {
 #endif
     .onEnter = cmsx_menuCopyProfile_onEnter,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuCopyProfileEntries,
 };
@@ -829,7 +821,6 @@ CMS_Menu cmsx_menuImu = {
 #endif
     .onEnter = cmsx_menuImu_onEnter,
     .onExit = cmsx_menuImu_onExit,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuImuEntries,
 };

@@ -132,7 +132,6 @@ CMS_Menu cmsx_menuMain = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .entries = menuMainEntries,
 };
 uint8_t armingFlags;

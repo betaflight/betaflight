@@ -669,13 +669,6 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
             return 0;
         }
 
-        if (pMenu->checkRedirect) {
-            const CMS_Menu *pRedirectMenu = (const CMS_Menu *)pMenu->checkRedirect();
-            if (pRedirectMenu) {
-                return cmsMenuChange(pDisplay, pRedirectMenu);
-            }
-        }
-
         menuStack[menuStackIdx++] = currentCtx;
 
         currentCtx.menu = pMenu;

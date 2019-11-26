@@ -140,7 +140,6 @@ static CMS_Menu cmsx_menuCalibration = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .onDisplayUpdate = cmsx_CalibrationOnDisplayUpdate,
     .entries = menuCalibrationEntries
 };
@@ -185,7 +184,6 @@ CMS_Menu cmsx_menuFirmware = {
 #endif
     .onEnter = cmsx_FirmwareInit,
     .onExit = NULL,
-    .checkRedirect = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuFirmwareEntries
 };
