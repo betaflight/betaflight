@@ -29,9 +29,6 @@
 
 #include "common/utils.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "drivers/display.h"
 
 #include "io/displayport_msp.h"

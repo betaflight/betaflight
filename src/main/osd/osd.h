@@ -22,8 +22,6 @@
 
 #include "common/time.h"
 
-#include "drivers/display.h"
-
 #include "pg/pg.h"
 
 #include "sensors/esc_sensor.h"
