@@ -61,10 +61,7 @@ MEMORY
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
     CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
-    /*EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size*/
-/* Workaround for https://sourceware.org/bugzilla/show_bug.cgi?id=24289,
- * revert after this has been fixed in the ARM gcc. */
-    EXST_HASH (rx)    : ORIGIN = 0x2407FFC0, LENGTH = _exst_hash_size
+    EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
 
