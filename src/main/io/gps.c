@@ -279,7 +279,7 @@ void gpsInit(void)
         return;
     }
 
-    serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
+    const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
     if (!gpsPortConfig) {
         return;
     }

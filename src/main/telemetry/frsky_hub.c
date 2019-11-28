@@ -74,7 +74,7 @@
 #include "frsky_hub.h"
 
 static serialPort_t *frSkyHubPort = NULL;
-static serialPortConfig_t *portConfig = NULL;
+static const serialPortConfig_t *portConfig = NULL;
 
 #define FRSKY_HUB_BAUDRATE 9600
 #define FRSKY_HUB_INITIAL_PORT_MODE MODE_TX

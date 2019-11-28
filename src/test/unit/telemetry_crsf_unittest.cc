@@ -327,7 +327,7 @@ serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, seria
 void closeSerialPort(serialPort_t *) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *, SerialRXType) {return true;}

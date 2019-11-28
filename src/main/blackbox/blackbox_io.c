@@ -261,7 +261,7 @@ bool blackboxDeviceOpen(void)
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_SERIAL:
         {
-            serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+            const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
             baudRate_e baudRateIndex;
             portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
 

@@ -144,14 +144,12 @@
 #include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/rx.h"
-#include "pg/rx_spi.h"
 #include "pg/rx_pwm.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 #include "pg/vtx_io.h"
 
 #include "rx/rx.h"
-#include "rx/rx_spi.h"
 #include "rx/spektrum.h"
 
 #include "scheduler/scheduler.h"
@@ -682,14 +680,6 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
-    adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
-
-    // The FrSky D SPI RX sends RSSI_ADC_PIN (if configured) as A2
-    adcConfigMutable()->rssi.enabled = featureIsEnabled(FEATURE_RSSI_ADC);
-#ifdef USE_RX_SPI
-    adcConfigMutable()->rssi.enabled |= (featureIsEnabled(FEATURE_RX_SPI) && rxSpiConfig()->rx_spi_protocol == RX_SPI_FRSKY_D);
-#endif
     adcInit(adcConfig());
 #endif
 
@@ -900,8 +890,6 @@ void init(void)
                 initFlags |= SD_INIT_ATTEMPTED;
                 sdCardAndFSInit();
             }
-        } else {
-            blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
         }
     }
 #endif

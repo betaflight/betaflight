@@ -99,7 +99,7 @@ static portMode_e serialExpectedMode = MODE_RX;
 static portOptions_e serialExpectedOptions = SERIAL_UNIDIR;
 
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
     EXPECT_EQ(function, FUNCTION_RX_SERIAL);
     return findSerialPortConfig_stub_retval;

@@ -2961,7 +2961,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, uint8_t cmdMSP, 
             while (remainingPortsInPacket--) {
                 uint8_t identifier = sbufReadU8(src);
 
-                serialPortConfig_t *portConfig = serialFindPortConfiguration(identifier);
+                serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(identifier);
+
                 if (!portConfig) {
                     return MSP_RESULT_ERROR;
                 }

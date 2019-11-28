@@ -272,7 +272,7 @@ void runcamDeviceInit(runcamDevice_t *device)
 {
     device->isReady = false;
     serialPortFunction_e portID = FUNCTION_RCDEVICE;
-    serialPortConfig_t *portConfig = findSerialPortConfig(portID);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(portID);
     if (portConfig != NULL) {
         device->serialPort = openSerialPort(portConfig->identifier, portID, NULL, NULL, 115200, MODE_RXTX, SERIAL_NOT_INVERTED);
         device->info.protocolVersion = rcdeviceConfig()->protocolVersion;

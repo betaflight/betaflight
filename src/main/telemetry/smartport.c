@@ -180,7 +180,7 @@ static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, 0, 0};
 #define SMARTPORT_SERVICE_TIMEOUT_US 1000 // max allowed time to find a value to send
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
-static serialPortConfig_t *portConfig;
+static const serialPortConfig_t *portConfig;
 
 static portSharing_e smartPortPortSharing;
 

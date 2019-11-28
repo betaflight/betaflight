@@ -228,6 +228,6 @@ void telemetryProcess(uint32_t currentTime)
 
 bool telemetryIsSensorEnabled(sensor_e sensor)
 {
-    return ~(telemetryConfigMutable()->disabledSensors) & sensor;
+    return ~(telemetryConfig()->disabledSensors) & sensor;
 }
 #endif

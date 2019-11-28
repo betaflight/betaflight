@@ -791,7 +791,7 @@ extern "C" {
         return NULL;
     }
 
-    serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
     {
         UNUSED(function);
         if (testData.isRunCamSplitPortConfigurated) {
@@ -960,7 +960,7 @@ extern "C" {
         // testData.maxTimesOfRespDataAvailable = testData.responseDataLen + 1;
     }
 
-    serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
+    const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
     {
         UNUSED(function);
 

@@ -124,7 +124,7 @@ static uint8_t hottMsgCrc;
 #define HOTT_PORT_MODE MODE_RXTX // must be opened in RXTX so that TX and RX pins are allocated.
 
 static serialPort_t *hottPort = NULL;
-static serialPortConfig_t *portConfig;
+static const serialPortConfig_t *portConfig;
 
 static bool hottTelemetryEnabled =  false;
 static portSharing_e hottPortSharing;

@@ -55,7 +55,7 @@ void targetPreInit(void)
     IOConfigGPIO(inverter, IOCFG_OUT_PP);
 
     bool high = false;
-    serialPortConfig_t *portConfig = serialFindPortConfiguration(SERIAL_PORT_USART1);
+    serialPortConfig_t *portConfig = serialFindPortConfigurationMutable(SERIAL_PORT_USART1);
     if (portConfig) {
         bool smartportEnabled = (portConfig->functionMask & FUNCTION_TELEMETRY_SMARTPORT);
         if (smartportEnabled && (!telemetryConfig()->telemetry_inverted) && (featureIsEnabled(FEATURE_TELEMETRY))) {

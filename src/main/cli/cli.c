@@ -1238,14 +1238,14 @@ static void cliSerial(char *cmdline)
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
 
-    serialPortConfig_t *currentConfig;
 
     uint8_t validArgumentCount = 0;
 
     const char *ptr = cmdline;
 
     int val = atoi(ptr++);
-    currentConfig = serialFindPortConfiguration(val);
+    serialPortConfig_t *currentConfig = serialFindPortConfigurationMutable(val);
+
     if (currentConfig) {
         portConfig.identifier = val;
         validArgumentCount++;

@@ -103,7 +103,7 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig,
     return portIsShared;
 }
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
     EXPECT_EQ(function, FUNCTION_RX_SERIAL);
     return findSerialPortConfig_stub_retval;

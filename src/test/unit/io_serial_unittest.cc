@@ -47,7 +47,7 @@ TEST(IoSerialTest, TestFindPortConfig)
     serialInit(false, SERIAL_PORT_NONE);
 
     // when
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
 
     // then
     EXPECT_EQ(NULL, portConfig);

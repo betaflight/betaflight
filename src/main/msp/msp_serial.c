@@ -54,7 +54,7 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bo
 void mspSerialAllocatePorts(void)
 {
     uint8_t portIndex = 0;
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
 
