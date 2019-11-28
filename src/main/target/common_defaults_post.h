@@ -680,5 +680,5 @@
 
 // XXX Tentative; may be removed
 #if defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
-#define USE_DISPLAYPORT_MSP_VENDOR_SPECIFIC
+//#define USE_DISPLAYPORT_MSP_VENDOR_SPECIFIC
 #endif

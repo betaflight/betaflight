@@ -60,12 +60,12 @@
 // Misc
 //
 
-static long cmsx_menuRcConfirmBack(const OSD_Entry *self)
+static const void *cmsx_menuRcConfirmBack(const OSD_Entry *self)
 {
     if (self && self->type == OME_Back)
-        return 0;
+        return NULL;
     else
-        return -1;
+        return MENU_CHAIN_BACK;
 }
 
 //
@@ -105,17 +105,17 @@ static uint8_t motorConfig_digitalIdleOffsetValue;
 static uint8_t rxConfig_fpvCamAngleDegrees;
 static debugType_e systemConfig_debug_mode;
 
-static long cmsx_menuMiscOnEnter(void)
+static const void *cmsx_menuMiscOnEnter(void)
 {
     motorConfig_minthrottle = motorConfig()->minthrottle;
     motorConfig_digitalIdleOffsetValue = motorConfig()->digitalIdleOffsetValue / 10;
     rxConfig_fpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
     systemConfig_debug_mode = systemConfig()->debug_mode;
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_menuMiscOnExit(const OSD_Entry *self)
+static const void *cmsx_menuMiscOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -124,7 +124,7 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
     rxConfigMutable()->fpvCamAngleDegrees = rxConfig_fpvCamAngleDegrees;
     systemConfigMutable()->debug_mode = systemConfig_debug_mode;
 
-    return 0;
+    return NULL;
 }
 
 static const OSD_Entry menuMiscEntries[]=

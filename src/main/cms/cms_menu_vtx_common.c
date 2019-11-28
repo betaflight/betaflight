@@ -43,7 +43,7 @@
 static char statusLine1[MAX_STATUS_LINE_LENGTH] = "";
 static char statusLine2[MAX_STATUS_LINE_LENGTH] = "";
 
-static long setStatusMessage(void)
+static const void *setStatusMessage(void)
 {
     vtxDevice_t *device = vtxCommonDevice();
 
@@ -61,7 +61,7 @@ static long setStatusMessage(void)
             tfp_sprintf(&statusLine1[0], "UNKNOWN VTX TYPE");
         }
     }
-    return 0;
+    return NULL;
 }
 
 static const OSD_Entry vtxErrorMenuEntries[] =
@@ -87,7 +87,7 @@ static CMS_Menu cmsx_menuVtxError = {
 // Redirect to the proper menu based on the vtx device type
 // If device isn't valid or not a supported type then don't
 // redirect and instead display a local informational menu.
-long cmsSelectVtx(displayPort_t *pDisplay, const void *ptr)
+const void *cmsSelectVtx(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
@@ -126,6 +126,6 @@ long cmsSelectVtx(displayPort_t *pDisplay, const void *ptr)
         cmsMenuChange(pDisplay, &cmsx_menuVtxError);
     }
 
-    return 0;
+    return NULL;
 }
 #endif

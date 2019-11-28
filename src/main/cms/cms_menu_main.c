@@ -88,7 +88,7 @@ static CMS_Menu cmsx_menuFeatures = {
     .entries = menuFeaturesEntries,
 };
 
-static long cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
+static const void *cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
@@ -97,7 +97,7 @@ static long cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
     } else {
         cmsMenuChange(pDisplay, &cmsx_menuSaveExit);
     }
-    return 0;
+    return NULL;
 }
 
 // Main

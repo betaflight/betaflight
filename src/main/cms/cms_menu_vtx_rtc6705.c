@@ -78,7 +78,7 @@ static void cmsx_Vtx_ConfigWriteback(void)
     saveConfigAndNotify();
 }
 
-static long cmsx_Vtx_onEnter(void)
+static const void *cmsx_Vtx_onEnter(void)
 {
     cmsx_Vtx_ConfigRead();
 
@@ -94,57 +94,57 @@ static long cmsx_Vtx_onEnter(void)
     entryVtxPower.max = vtxTablePowerLevels;
     entryVtxPower.names = vtxTablePowerLabels;
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Vtx_onExit(const OSD_Entry *self)
+static const void *cmsx_Vtx_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
     vtxCommonSetPitMode(vtxCommonDevice(), cmsx_vtxPit);
     cmsx_Vtx_ConfigWriteback();
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Vtx_onBandChange(displayPort_t *pDisp, const void *self)
+static const void *cmsx_Vtx_onBandChange(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
     if (cmsx_vtxBand == 0) {
         cmsx_vtxBand = 1;
     }
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Vtx_onChanChange(displayPort_t *pDisp, const void *self)
+static const void *cmsx_Vtx_onChanChange(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
     if (cmsx_vtxChannel == 0) {
         cmsx_vtxChannel = 1;
     }
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Vtx_onPowerChange(displayPort_t *pDisp, const void *self)
+static const void *cmsx_Vtx_onPowerChange(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
     if (cmsx_vtxPower == 0) {
         cmsx_vtxPower = 1;
     }
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Vtx_onPitChange(displayPort_t *pDisp, const void *self)
+static const void *cmsx_Vtx_onPitChange(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
     if (cmsx_vtxPit == 0) {
         cmsx_vtxPit = 1;
     }
-    return 0;
+    return NULL;
 }
 
 static const OSD_Entry cmsx_menuVtxEntries[] = {

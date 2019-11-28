@@ -65,7 +65,7 @@ static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 static char baroCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 #endif
 
-static long cmsx_CalibrationOnDisplayUpdate(const OSD_Entry *selected)
+static const void *cmsx_CalibrationOnDisplayUpdate(const OSD_Entry *selected)
 {
     UNUSED(selected);
 
@@ -77,10 +77,10 @@ static long cmsx_CalibrationOnDisplayUpdate(const OSD_Entry *selected)
     tfp_sprintf(baroCalibrationStatus, sensors(SENSOR_BARO) ? baroIsCalibrationComplete() ? CALIBRATION_STATUS_OK : CALIBRATION_STATUS_WAIT: CALIBRATION_STATUS_OFF);
 #endif
 
-    return 0;
+    return NULL;
 }
 
-static long cmsCalibrateGyro(displayPort_t *pDisp, const void *self)
+static const void *cmsCalibrateGyro(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -89,11 +89,11 @@ static long cmsCalibrateGyro(displayPort_t *pDisp, const void *self)
         gyroStartCalibration(false);
     }
 
-    return 0;
+    return NULL;
 }
 
 #if defined(USE_ACC)
-static long cmsCalibrateAcc(displayPort_t *pDisp, const void *self)
+static const void *cmsCalibrateAcc(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -102,12 +102,12 @@ static long cmsCalibrateAcc(displayPort_t *pDisp, const void *self)
         accStartCalibration();
     }
 
-    return 0;
+    return NULL;
 }
 #endif
 
 #if defined(USE_BARO)
-static long cmsCalibrateBaro(displayPort_t *pDisp, const void *self)
+static const void *cmsCalibrateBaro(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -116,7 +116,7 @@ static long cmsCalibrateBaro(displayPort_t *pDisp, const void *self)
         baroStartCalibration();
     }
 
-    return 0;
+    return NULL;
 }
 #endif
 
@@ -149,7 +149,7 @@ static CMS_Menu cmsx_menuCalibration = {
 static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
 static char infoTargetName[] = __TARGET__;
 
-static long cmsx_FirmwareInit(void)
+static const void *cmsx_FirmwareInit(void)
 {
     unsigned i;
     for (i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
@@ -162,7 +162,7 @@ static long cmsx_FirmwareInit(void)
 
     infoGitRev[i] = 0x0; // Terminate string
 
-    return 0;
+    return NULL;
 }
 
 static const OSD_Entry menuFirmwareEntries[] = {

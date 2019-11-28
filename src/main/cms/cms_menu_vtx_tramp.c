@@ -100,7 +100,7 @@ static void trampCmsUpdateFreqRef(void)
     }
 }
 
-static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
+static const void *trampCmsConfigBand(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -111,10 +111,10 @@ static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
     else
         trampCmsUpdateFreqRef();
 
-    return 0;
+    return NULL;
 }
 
-static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
+static const void *trampCmsConfigChan(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -125,10 +125,10 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
     else
         trampCmsUpdateFreqRef();
 
-    return 0;
+    return NULL;
 }
 
-static long trampCmsConfigPower(displayPort_t *pDisp, const void *self)
+static const void *trampCmsConfigPower(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -137,7 +137,7 @@ static long trampCmsConfigPower(displayPort_t *pDisp, const void *self)
         // Bounce back
         trampCmsPower = 1;
 
-    return 0;
+    return NULL;
 }
 
 static OSD_INT16_t trampCmsEntTemp = { &trampTemperature, -100, 300, 0 };
@@ -148,7 +148,7 @@ static const char * const trampCmsPitModeNames[] = {
 
 static OSD_TAB_t trampCmsEntPitMode = { &trampCmsPitMode, 2, trampCmsPitModeNames };
 
-static long trampCmsSetPitMode(displayPort_t *pDisp, const void *self)
+static const void *trampCmsSetPitMode(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -160,10 +160,10 @@ static long trampCmsSetPitMode(displayPort_t *pDisp, const void *self)
         trampSetPitMode(trampCmsPitMode - 1);
     }
 
-    return 0;
+    return NULL;
 }
 
-static long trampCmsCommence(displayPort_t *pDisp, const void *self)
+static const void *trampCmsCommence(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -220,13 +220,13 @@ static bool trampCmsInitSettings(void)
     return true;
 }
 
-static long trampCmsOnEnter(void)
+static const void *trampCmsOnEnter(void)
 {
     if (!trampCmsInitSettings()) {
         return MENU_CHAIN_BACK;
     }
 
-    return 0;
+    return NULL;
 }
 
 static const OSD_Entry trampCmsMenuCommenceEntries[] = {

@@ -33,7 +33,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     void cmsMenuOpen(void);
-    long cmsMenuBack(displayPort_t *pDisplay);
+    const void *cmsMenuBack(displayPort_t *pDisplay);
     uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
     extern CMS_Menu *currentMenu;    // Points to top entry of the current page
 }
@@ -71,8 +71,8 @@ TEST(CMSUnittest, TestCmsMenuExit0)
     cmsDisplayPortRegister(displayPort);
 
     cmsMenuOpen();
-    long exit = cmsMenuExit(displayPort, (void*)0);
-    EXPECT_EQ(0, exit);
+    const void *exit = cmsMenuExit(displayPort, (void*)0);
+    EXPECT_EQ(NULL, exit);
 }
 
 TEST(CMSUnittest, TestCmsMenuExit1)
@@ -82,8 +82,8 @@ TEST(CMSUnittest, TestCmsMenuExit1)
     cmsDisplayPortRegister(displayPort);
 
     cmsMenuOpen();
-    long exit = cmsMenuExit(displayPort, (void*)0);
-    EXPECT_EQ(0, exit);
+    const void *exit = cmsMenuExit(displayPort, (void*)0);
+    EXPECT_EQ(NULL, exit);
 }
 
 TEST(CMSUnittest, TestCmsMenuBack)
@@ -93,8 +93,8 @@ TEST(CMSUnittest, TestCmsMenuBack)
     cmsDisplayPortRegister(displayPort);
 
     cmsMenuOpen();
-    long exit = cmsMenuBack(displayPort);
-    EXPECT_EQ(0, exit);
+    const void *exit = cmsMenuBack(displayPort);
+    EXPECT_EQ(NULL, exit);
 }
 
 TEST(CMSUnittest, TestCmsMenuKey)

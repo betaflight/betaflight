@@ -23,4 +23,4 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
-long cmsSelectVtx(displayPort_t *pDisplay, const void *ptr);
+const void *cmsSelectVtx(displayPort_t *pDisplay, const void *ptr);
