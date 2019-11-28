@@ -44,6 +44,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/interpolated_setpoint.h"
 #include "flight/gps_rescue.h"
 #include "flight/pid.h"
 
@@ -91,6 +92,7 @@ enum {
 #define RC_SMOOTHING_RX_RATE_CHANGE_PERCENT     20    // Look for samples varying this much from the current detected frame rate to initiate retraining
 #define RC_SMOOTHING_RX_RATE_MIN_US             1000  // 1ms
 #define RC_SMOOTHING_RX_RATE_MAX_US             50000 // 50ms or 20hz
+#define RC_SMOOTHING_INTERPOLATED_FEEDFORWARD_DERIVATIVE_PT1_HZ 100 // The value to use for "auto" when interpolated feedforward is enabled
 
 static FAST_RAM_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 #endif // USE_RC_SMOOTHING_FILTER
@@ -401,7 +403,10 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
 
     // update or initialize the derivative filter
     oldCutoff = smoothingData->derivativeCutoffFrequency;
-    if ((smoothingData->derivativeCutoffSetting == 0) && (smoothingData->derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+    if ((rcSmoothingData.derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF)
+        && (currentPidProfile->ff_interpolate_sp == FF_INTERPOLATE_OFF)
+        && (rcSmoothingData.derivativeCutoffSetting == 0)) {
+
         smoothingData->derivativeCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs, (smoothingData->derivativeFilterType == RC_SMOOTHING_DERIVATIVE_PT1), smoothingData->autoSmoothnessFactor);
     }
 
@@ -444,20 +449,18 @@ static FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothing
 // examining the rx frame times completely 
 FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
 {
-    bool ret = false;
-
     // if the input cutoff is 0 (auto) then we need to calculate cutoffs
     if (rcSmoothingData.inputCutoffSetting == 0) {
-        ret = true;
+        return true;
     }
 
-    // if the derivative type isn't OFF and the cutoff is 0 then we need to calculate
-    if (rcSmoothingData.derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF) {
-        if (rcSmoothingData.derivativeCutoffSetting == 0) {
-            ret = true;
-        }
+    // if the derivative type isn't OFF, and the cutoff is 0, and interpolated feedforward is not enabled then we need to calculate
+    if ((rcSmoothingData.derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF)
+        && (currentPidProfile->ff_interpolate_sp == FF_INTERPOLATE_OFF)
+        && (rcSmoothingData.derivativeCutoffSetting == 0)) {
+        return true;
     }
-    return ret;
+    return false;
 }
 
 static FAST_CODE uint8_t processRcSmoothingFilter(void)
@@ -477,14 +480,37 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
         rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
         rcSmoothingData.inputFilterType = rxConfig()->rc_smoothing_input_type;
         rcSmoothingData.inputCutoffSetting = rxConfig()->rc_smoothing_input_cutoff;
-        rcSmoothingData.derivativeFilterType = rxConfig()->rc_smoothing_derivative_type;
+
+        rcSmoothingData.derivativeFilterTypeSetting = rxConfig()->rc_smoothing_derivative_type;
+        if (rxConfig()->rc_smoothing_derivative_type == RC_SMOOTHING_DERIVATIVE_AUTO) {
+            // for derivative filter type "AUTO" set to BIQUAD for classic FF and PT1 for interpolated FF
+            if (currentPidProfile->ff_interpolate_sp == FF_INTERPOLATE_OFF) {
+                rcSmoothingData.derivativeFilterType = RC_SMOOTHING_DERIVATIVE_BIQUAD;
+            } else {
+                rcSmoothingData.derivativeFilterType = RC_SMOOTHING_DERIVATIVE_PT1;
+            }
+        } else {
+            rcSmoothingData.derivativeFilterType = rxConfig()->rc_smoothing_derivative_type;
+        }
+
         rcSmoothingData.derivativeCutoffSetting = rxConfig()->rc_smoothing_derivative_cutoff;
         rcSmoothingResetAccumulation(&rcSmoothingData);
         
         rcSmoothingData.inputCutoffFrequency = rcSmoothingData.inputCutoffSetting;
         
         if (rcSmoothingData.derivativeFilterType != RC_SMOOTHING_DERIVATIVE_OFF) {
-            rcSmoothingData.derivativeCutoffFrequency = rcSmoothingData.derivativeCutoffSetting;
+            if ((currentPidProfile->ff_interpolate_sp != FF_INTERPOLATE_OFF) && (rcSmoothingData.derivativeCutoffSetting == 0)) {
+                // calculate the fixed derivative cutoff used for interpolated feedforward
+                const float cutoffFactor = (100 - rcSmoothingData.autoSmoothnessFactor) / 100.0f;
+                float derivativeCutoff = RC_SMOOTHING_INTERPOLATED_FEEDFORWARD_DERIVATIVE_PT1_HZ * cutoffFactor;  // PT1 cutoff frequency
+                if (rcSmoothingData.derivativeFilterType == RC_SMOOTHING_DERIVATIVE_BIQUAD) {
+                    // convert to an equivalent BIQUAD cutoff
+                    derivativeCutoff = sqrt(derivativeCutoff * RC_SMOOTHING_IDENTITY_FREQUENCY);
+                }
+                rcSmoothingData.derivativeCutoffFrequency = lrintf(derivativeCutoff);
+            } else {
+                rcSmoothingData.derivativeCutoffFrequency = rcSmoothingData.derivativeCutoffSetting;
+            }
         }
         
         calculateCutoffs = rcSmoothingAutoCalculate();

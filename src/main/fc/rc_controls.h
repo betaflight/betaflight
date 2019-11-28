@@ -74,7 +74,8 @@ typedef enum {
 typedef enum {
     RC_SMOOTHING_DERIVATIVE_OFF,
     RC_SMOOTHING_DERIVATIVE_PT1,
-    RC_SMOOTHING_DERIVATIVE_BIQUAD
+    RC_SMOOTHING_DERIVATIVE_BIQUAD,
+    RC_SMOOTHING_DERIVATIVE_AUTO,
 } rcSmoothingDerivativeFilter_e;
 
 #define ROL_LO (1 << (2 * ROLL))
@@ -122,6 +123,7 @@ typedef struct rcSmoothingFilter_s {
     rcSmoothingInputFilter_e inputFilterType;
     uint8_t inputCutoffSetting;
     uint16_t inputCutoffFrequency;
+    rcSmoothingDerivativeFilter_e derivativeFilterTypeSetting;
     rcSmoothingDerivativeFilter_e derivativeFilterType;
     uint8_t derivativeCutoffSetting;
     uint16_t derivativeCutoffFrequency;
