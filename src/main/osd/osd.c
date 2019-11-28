@@ -91,6 +91,12 @@
 #include "hardware_revision.h"
 #endif
 
+typedef enum {
+    OSD_LOGO_ARMING_OFF,
+    OSD_LOGO_ARMING_ON,
+    OSD_LOGO_ARMING_FIRST
+} osd_logo_on_arming_e;
+
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
     "TOTAL ARM",
@@ -332,6 +338,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->displayPortDevice = OSD_DISPLAYPORT_DEVICE_AUTO;
 
     osdConfig->distance_alarm = 0;
+    osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
 }
 
 static void osdDrawLogo(int x, int y)
@@ -808,8 +815,14 @@ static void osdRefreshStats(void)
 
 static void osdShowArmed(void)
 {
+    static bool everArmed = false;
+
     displayClearScreen(osdDisplayPort);
+    if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !everArmed)) {
+        osdDrawLogo(3, 1);
+    }
     displayWrite(osdDisplayPort, 12, 7, DISPLAYPORT_ATTR_NONE, "ARMED");
+    everArmed = true;
 }
 
 STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
