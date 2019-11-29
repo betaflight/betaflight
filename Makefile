@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= OMNIBUSF4
+TARGET    ?= STM32F405
 
 # Compile-time options
 OPTIONS   ?=
