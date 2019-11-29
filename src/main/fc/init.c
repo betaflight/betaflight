@@ -145,6 +145,7 @@
 #include "pg/pg.h"
 #include "pg/rx.h"
 #include "pg/rx_pwm.h"
+#include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 #include "pg/vtx_io.h"
