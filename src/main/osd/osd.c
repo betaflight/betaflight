@@ -339,6 +339,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->distance_alarm = 0;
     osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
+    osdConfig->logo_on_arming_duration = 5;  // 0.5 seconds
 }
 
 static void osdDrawLogo(int x, int y)
@@ -813,16 +814,21 @@ static void osdRefreshStats(void)
     osdShowStats(osdStatsRowCount);
 }
 
-static void osdShowArmed(void)
+static timeDelta_t osdShowArmed(void)
 {
     static bool everArmed = false;
+    timeDelta_t ret;
 
     displayClearScreen(osdDisplayPort);
     if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !everArmed)) {
         osdDrawLogo(3, 1);
+        ret = osdConfig()->logo_on_arming_duration * 1e5;
+    } else {
+        ret = (REFRESH_1S / 2);
     }
     displayWrite(osdDisplayPort, 12, 7, DISPLAYPORT_ATTR_NONE, "ARMED");
     everArmed = true;
+    return ret;
 }
 
 STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
@@ -838,8 +844,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             osdStatsEnabled = false;
             osdStatsVisible = false;
             osdResetStats();
-            osdShowArmed();
-            resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
+            resumeRefreshAt = osdShowArmed() + currentTimeUs;
         } else if (isSomeStatEnabled()
                    && !suppressStatsDisplay
                    && (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))
