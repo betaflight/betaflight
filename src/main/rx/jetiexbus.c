@@ -91,7 +91,7 @@ static uint8_t jetiExBusChannelFrame[EXBUS_MAX_CHANNEL_FRAME_SIZE];
 uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 
 static uint16_t jetiExBusChannelData[JETIEXBUS_CHANNEL_COUNT];
-
+static timeDelta_t lastFrameDelta = 0;
 
 // Jeti Ex Bus CRC calculations for a frame
 uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
@@ -152,23 +152,18 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 {
     UNUSED(data);
 
-    uint32_t now;
-    static uint32_t jetiExBusTimeLast = 0;
-    static int32_t jetiExBusTimeInterval;
-
+    static timeUs_t jetiExBusTimeLast = 0;
     static uint8_t *jetiExBusFrame;
+    static timeUs_t lastFrameCompleteTimeUs = 0;
+    const timeUs_t now = microsISR();
 
     // Check if we shall reset frame position due to time
-    now = micros();
-
-    jetiExBusTimeInterval = now - jetiExBusTimeLast;
-    jetiExBusTimeLast = now;
-
-    if (jetiExBusTimeInterval > JETIEXBUS_MIN_FRAME_GAP) {
+    if (cmpTimeUs(now, jetiExBusTimeLast) > JETIEXBUS_MIN_FRAME_GAP) {
         jetiExBusFrameReset();
         jetiExBusFrameState = EXBUS_STATE_ZERO;
         jetiExBusRequestState = EXBUS_STATE_ZERO;
     }
+    jetiExBusTimeLast = now;
 
     // Check if we shall start a frame?
     if (jetiExBusFramePosition == 0) {
@@ -216,8 +211,10 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         if (jetiExBusFrameState == EXBUS_STATE_IN_PROGRESS)
             jetiExBusFrameState = EXBUS_STATE_RECEIVED;
         if (jetiExBusRequestState == EXBUS_STATE_IN_PROGRESS) {
+            lastFrameDelta = cmpTimeUs(now, lastFrameCompleteTimeUs);
+            lastFrameCompleteTimeUs = now;
             jetiExBusRequestState = EXBUS_STATE_RECEIVED;
-            jetiTimeStampRequest = micros();
+            jetiTimeStampRequest = now;
         }
 
         jetiExBusFrameReset();
@@ -250,6 +247,11 @@ static uint16_t jetiExBusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8
     return (jetiExBusChannelData[chan]);
 }
 
+static timeDelta_t jetiExBusFrameDelta(void)
+{
+    return lastFrameDelta;
+}
+
 bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxConfig);
@@ -259,6 +261,7 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
+    rxRuntimeState->rcFrameDeltaFn = jetiExBusFrameDelta;
 
     jetiExBusFrameReset();
 
