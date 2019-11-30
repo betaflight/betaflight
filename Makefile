@@ -239,7 +239,7 @@ CC_NO_OPTIMISATION      :=
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
-TEMPORARY_FLAGS := -Wno-absolute-value
+TEMPORARY_FLAGS :=
 
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \

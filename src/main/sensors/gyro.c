@@ -996,7 +996,7 @@ static FAST_CODE void checkForYawSpin(timeUs_t currentTimeUs)
     } else {
 #ifndef SIMULATOR_BUILD
         // check for spin on yaw axis only
-         if (abs(gyro.gyroADCf[Z]) > gyroConfig()->yaw_spin_threshold) {
+         if (abs((int)gyro.gyroADCf[Z]) > gyroConfig()->yaw_spin_threshold) {
             yawSpinDetected = true;
             yawSpinTimeUs = currentTimeUs;
         }
