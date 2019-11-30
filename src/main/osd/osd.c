@@ -816,18 +816,18 @@ static void osdRefreshStats(void)
 
 static timeDelta_t osdShowArmed(void)
 {
-    static bool everArmed = false;
     timeDelta_t ret;
 
     displayClearScreen(osdDisplayPort);
-    if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !everArmed)) {
+
+    if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !ARMING_FLAG(WAS_EVER_ARMED))) {
         osdDrawLogo(3, 1);
         ret = osdConfig()->logo_on_arming_duration * 1e5;
     } else {
         ret = (REFRESH_1S / 2);
     }
     displayWrite(osdDisplayPort, 12, 7, DISPLAYPORT_ATTR_NONE, "ARMED");
-    everArmed = true;
+
     return ret;
 }
 

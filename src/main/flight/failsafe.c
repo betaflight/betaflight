@@ -209,7 +209,7 @@ void failsafeUpdateState(void)
     }
 
     // Beep RX lost only if we are not seeing data and we have been armed earlier
-    if (!receivingRxData && ARMING_FLAG(WAS_EVER_ARMED)) {
+    if (!receivingRxData && (armed || ARMING_FLAG(WAS_EVER_ARMED))) {
         beeperMode = BEEPER_RX_LOST;
     }
 
