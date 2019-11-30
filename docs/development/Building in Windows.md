@@ -35,6 +35,7 @@ for Installation:
 - Devel/binutils
 - Editors/vim	 or  Editors/nano  (file editors, `nano` is most straightforward while `vim` offers more advanced options)
 - Shells/mintty (should be already selected)
+- Archive/unzip
 
 ![Cygwin Installation](assets/002.cygwin_setup.png)
 
