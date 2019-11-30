@@ -271,6 +271,8 @@ typedef struct osdConfig_s {
     int8_t rcChannels[OSD_RCCHANNELS_COUNT];  // RC channel values to display, -1 if none
     uint8_t displayPortDevice;                // osdDisplayPortDevice_e
     uint16_t distance_alarm;
+    uint8_t logo_on_arming;                   // show the logo on arming
+    uint8_t logo_on_arming_duration;          // display duration in 0.1s units
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
