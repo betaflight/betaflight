@@ -614,7 +614,7 @@ void init(void)
     if (mscCheckBoot() || mscCheckButton()) {
         ledInit(statusLedConfig());
 
-#if defined(USE_FLASHFS) && defined(USE_FLASH_CHIP)
+#if defined(USE_FLASHFS)
         // If the blackbox device is onboard flash, then initialize and scan
         // it to identify the log files *before* starting the USB device to
         // prevent timeouts of the mass storage device.
