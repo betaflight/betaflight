@@ -33,16 +33,9 @@
 #include "common/utils.h"
 
 #include "drivers/light_led.h"
-#include "drivers/time.h"
-#include "drivers/flash.h"
 
-#include "io/flashfs.h"
-
-#include "pg/flash.h"
-
-#include "usbd_storage.h"
-#include "usbd_storage_emfat.h"
-#include "emfat_file.h"
+#include "msc/usbd_storage.h"
+#include "msc/usbd_storage_emfat.h"
 
 
 #define STORAGE_LUN_NBR 1
@@ -65,18 +58,6 @@ static const uint8_t STORAGE_Inquirydata[] =
 static int8_t STORAGE_Init(uint8_t lun)
 {
     UNUSED(lun);
-
-    LED0_ON;
-
-#ifdef USE_FLASHFS 
-#ifdef USE_FLASH_CHIP
-    flashInit(flashConfig());
-#endif
-    flashfsInit();
-#endif
-    emfat_init_files();
-
-    delay(1000);
 
     LED0_OFF;
 

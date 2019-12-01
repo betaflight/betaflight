@@ -74,8 +74,6 @@ void mscInit(void)
 
 uint8_t mscStart(void)
 {
-    ledInit(statusLedConfig());
-
     //Start USB
     usbGenerateDisconnectPulse();
 
