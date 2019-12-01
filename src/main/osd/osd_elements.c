@@ -85,8 +85,8 @@
 #include "config/feature.h"
 
 #include "drivers/display.h"
-#include "drivers/max7456_symbols.h"
 #include "drivers/dshot.h"
+#include "drivers/osd_symbols.h"
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 

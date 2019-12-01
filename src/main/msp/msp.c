@@ -57,6 +57,7 @@
 #include "drivers/io.h"
 #include "drivers/max7456.h"
 #include "drivers/motor.h"
+#include "drivers/osd.h"
 #include "drivers/pwm_output.h"
 #include "drivers/sdcard.h"
 #include "drivers/serial.h"
@@ -3294,22 +3295,42 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, uint8_t cm
         break;
 
     case MSP_OSD_CHAR_WRITE:
-#ifdef USE_MAX7456
         {
-            uint8_t font_data[64];
-            const uint8_t addr = sbufReadU8(src);
-            for (int i = 0; i < 54; i++) {
-                font_data[i] = sbufReadU8(src);
+            osdCharacter_t chr;
+            size_t osdCharacterBytes;
+            uint16_t addr;
+            if (dataSize >= OSD_CHAR_VISIBLE_BYTES + 2) {
+                if (dataSize >= OSD_CHAR_BYTES + 2) {
+                    // 16 bit address, full char with metadata
+                    addr = sbufReadU16(src);
+                    osdCharacterBytes = OSD_CHAR_BYTES;
+                } else if (dataSize >= OSD_CHAR_BYTES + 1) {
+                    // 8 bit address, full char with metadata
+                    addr = sbufReadU8(src);
+                    osdCharacterBytes = OSD_CHAR_BYTES;
+                } else {
+                    // 16 bit character address, only visible char bytes
+                    addr = sbufReadU16(src);
+                    osdCharacterBytes = OSD_CHAR_VISIBLE_BYTES;
+                }
+            } else {
+                // 8 bit character address, only visible char bytes
+                addr = sbufReadU8(src);
+                osdCharacterBytes = OSD_CHAR_VISIBLE_BYTES;
             }
-            // !!TODO - replace this with a device independent implementation
-            if (!max7456WriteNvm(addr, font_data)) {
+            for (unsigned ii = 0; ii < MIN(osdCharacterBytes, sizeof(chr.data)); ii++) {
+                chr.data[ii] = sbufReadU8(src);
+            }
+            displayPort_t *osdDisplayPort = osdGetDisplayPort();
+            if (!osdDisplayPort) {
+                return MSP_RESULT_ERROR;
+            }
+
+            if (!displayWriteFontCharacter(osdDisplayPort, addr, &chr)) {
                 return MSP_RESULT_ERROR;
             }
         }
         break;
-#else
-        return MSP_RESULT_ERROR;
-#endif
 #endif // OSD
 
     default:

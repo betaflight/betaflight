@@ -26,6 +26,9 @@
 
 #include "common/utils.h"
 
+#include "drivers/display_canvas.h"
+#include "drivers/osd.h"
+
 #include "display.h"
 
 void displayClearScreen(displayPort_t *instance)
@@ -139,6 +142,54 @@ bool displayLayerCopy(displayPort_t *instance, displayPortLayer_e destLayer, dis
     if (instance->vTable->layerCopy && sourceLayer != destLayer) {
         return instance->vTable->layerCopy(instance, destLayer, sourceLayer);
     }
+    return false;
+}
+
+bool displayWriteFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr)
+{
+    if (instance->vTable->writeFontCharacter) {
+        return instance->vTable->writeFontCharacter(instance, addr, chr);
+    }
+    return false;
+}
+
+bool displayIsReady(displayPort_t *instance)
+{
+    if (instance->vTable->isReady) {
+        return instance->vTable->isReady(instance);
+    }
+    // Drivers that don't provide an isReady method are
+    // assumed to be immediately ready (either by actually
+    // begin ready very quickly or by blocking)
+    return true;
+}
+
+void displayBeginTransaction(displayPort_t *instance, displayTransactionOption_e opts)
+{
+    if (instance->vTable->beginTransaction) {
+        instance->vTable->beginTransaction(instance, opts);
+    }
+}
+
+void displayCommitTransaction(displayPort_t *instance)
+{
+    if (instance->vTable->commitTransaction) {
+        instance->vTable->commitTransaction(instance);
+    }
+}
+
+bool displayGetCanvas(displayCanvas_t *canvas, const displayPort_t *instance)
+{
+#if defined(USE_CANVAS)
+    if (canvas && instance->vTable->getCanvas && instance->vTable->getCanvas(canvas, instance)) {
+        canvas->gridElementWidth = canvas->width / instance->cols;
+        canvas->gridElementHeight = canvas->height / instance->rows;
+        return true;
+    }
+#else
+    UNUSED(canvas);
+    UNUSED(instance);
+#endif
     return false;
 }
 

@@ -101,6 +101,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
 #include "io/displayport_srxl.h"
@@ -785,6 +786,18 @@ void init(void)
 
         case OSD_DISPLAYPORT_DEVICE_AUTO:
             FALLTHROUGH;
+
+#if defined(USE_FRSKYOSD)
+        // Test OSD_DISPLAYPORT_DEVICE_FRSKYOSD first, since an FC could
+        // have a builtin MAX7456 but also an FRSKYOSD connected to an
+        // uart.
+        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+            osdDisplayPort = frskyOsdDisplayPortInit(vcdProfile()->video_system);
+            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
+                break;
+            }
+            FALLTHROUGH;
+#endif
 
 #if defined(USE_MAX7456)
         case OSD_DISPLAYPORT_DEVICE_MAX7456:

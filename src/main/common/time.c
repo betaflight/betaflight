@@ -1,5 +1,5 @@
 /*
- * This file is part of INAV.
+ * This file is part of Cleanflight, Betaflight and INAV.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,

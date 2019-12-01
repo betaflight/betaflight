@@ -33,7 +33,7 @@ extern "C" {
     #include "common/printf.h"
     #include "common/streambuf.h"
 
-    #include "drivers/max7456_symbols.h"
+    #include "drivers/osd_symbols.h"
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
     #include "drivers/system.h"

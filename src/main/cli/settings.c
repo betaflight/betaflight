@@ -484,7 +484,7 @@ static const char* const lookupTableDshotBitbangedTimer[] = {
 };
 
 static const char * const lookupTableOsdDisplayPortDevice[] = {
-    "NONE", "AUTO", "MAX7456", "MSP",
+    "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD"
 };
 
 #ifdef USE_OSD

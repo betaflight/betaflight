@@ -227,6 +227,7 @@ typedef enum {
     OSD_DISPLAYPORT_DEVICE_AUTO,
     OSD_DISPLAYPORT_DEVICE_MAX7456,
     OSD_DISPLAYPORT_DEVICE_MSP,
+    OSD_DISPLAYPORT_DEVICE_FRSKYOSD,
 } osdDisplayPortDevice_e;
 
 // Make sure the number of warnings do not exceed the available 32bit storage
@@ -319,3 +320,4 @@ bool osdElementVisible(uint16_t value);
 bool osdGetVisualBeeperState(void);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
+struct displayPort_s *osdGetDisplayPort(void);
