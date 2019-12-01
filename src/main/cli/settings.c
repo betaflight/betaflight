@@ -400,7 +400,7 @@ static const char * const lookupTableRcSmoothingInputType[] = {
     "PT1", "BIQUAD"
 };
 static const char * const lookupTableRcSmoothingDerivativeType[] = {
-    "OFF", "PT1", "BIQUAD"
+    "OFF", "PT1", "BIQUAD", "AUTO"
 };
 #endif // USE_RC_SMOOTHING_FILTER
 
