@@ -6315,7 +6315,7 @@ const clicmd_t cmdTable[] = {
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
-    CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
+    CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
@@ -6400,19 +6400,38 @@ const clicmd_t cmdTable[] = {
 
 static void cliHelp(char *cmdline)
 {
-    UNUSED(cmdline);
+    bool anyMatches = false;
 
     for (uint32_t i = 0; i < ARRAYLEN(cmdTable); i++) {
-        cliPrint(cmdTable[i].name);
+        bool printEntry = false;
+        if (isEmpty(cmdline)) {
+            printEntry = true;
+        } else {
+            if (strcasestr(cmdTable[i].name, cmdline)
 #ifndef MINIMAL_CLI
-        if (cmdTable[i].description) {
-            cliPrintf(" - %s", cmdTable[i].description);
-        }
-        if (cmdTable[i].args) {
-            cliPrintf("\r\n\t%s", cmdTable[i].args);
-        }
+                || strcasestr(cmdTable[i].description, cmdline)
 #endif
-        cliPrintLinefeed();
+               ) {
+                printEntry = true;
+            }
+        } 
+
+        if (printEntry) {
+            anyMatches = true;
+            cliPrint(cmdTable[i].name);
+#ifndef MINIMAL_CLI
+            if (cmdTable[i].description) {
+                cliPrintf(" - %s", cmdTable[i].description);
+            }
+            if (cmdTable[i].args) {
+                cliPrintf("\r\n\t%s", cmdTable[i].args);
+            }
+#endif
+            cliPrintLinefeed();
+        }
+    }
+    if (!isEmpty(cmdline) && !anyMatches) {
+        cliPrintErrorLinef("NO MATCHES FOR '%s'", cmdline);
     }
 }
 
