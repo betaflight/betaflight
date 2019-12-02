@@ -191,7 +191,7 @@ char *ftoa(float x, char *floatString)
 
     dpLocation = strlen(intString2) - 3;
 
-    strncpy(floatString, intString2, dpLocation);
+    memcpy(floatString, intString2, dpLocation);
     floatString[dpLocation] = '\0';
     strcat(floatString, decimalPoint);
     strcat(floatString, intString2 + dpLocation);
