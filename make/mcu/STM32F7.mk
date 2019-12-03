@@ -192,6 +192,7 @@ MCU_EXCLUDES = \
             drivers/timer.c
 
 MSC_SRC = \
+            drivers/usb_msc_common.c \
             drivers/usb_msc_f7xx.c \
             msc/usbd_storage.c
 

@@ -34,6 +34,7 @@
 #include "drivers/flash.h"
 #include "drivers/light_led.h"
 #include "drivers/time.h"
+#include "drivers/usb_msc.h"
 
 #include "io/flashfs.h"
 
@@ -278,7 +279,6 @@ static const emfat_entry_t entriesPredefined[] =
 #define EMFAT_MAX_ENTRY (PREDEFINED_ENTRY_COUNT + EMFAT_MAX_LOG_ENTRY + APPENDED_ENTRY_COUNT)
 
 static emfat_entry_t entries[EMFAT_MAX_ENTRY];
-static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3];
 
 emfat_t emfat;
 static uint32_t cmaTime = CMA_TIME;
@@ -292,8 +292,11 @@ static void emfat_set_entry_cma(emfat_entry_t *entry)
     entry->cma_time[2] = cmaTime;
 }
 
+#ifdef USE_FLASHFS
 static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uint32_t size)
 {
+    static char logNames[EMFAT_MAX_LOG_ENTRY][8+1+3];
+
     tfp_sprintf(logNames[number], FC_FIRMWARE_IDENTIFIER "_%03d.BBL", number + 1);
     entry->name = logNames[number];
     entry->level = 1;
@@ -304,16 +307,6 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uin
     // Set file modification/access times to be the same as the creation time
     entry->cma_time[1] = entry->cma_time[0];
     entry->cma_time[2] = entry->cma_time[0];
-}
-
-static void blinkStatusLed(void)
-{
-    static timeMs_t nextToggleMs = 0;
-    const timeMs_t nowMs = millis();
-    if (nowMs > nextToggleMs) {
-        LED0_TOGGLE;
-        nextToggleMs = nowMs + 50; // toggle the status LED every 50ms
-    }
 }
 
 static int emfat_find_log(emfat_entry_t *entry, int maxCount, int flashfsUsedSpace)
@@ -333,7 +326,9 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount, int flashfsUsedSpa
 
     for ( ; currOffset < flashfsUsedSpace ; currOffset += 2048) { // XXX 2048 = FREE_BLOCK_SIZE in io/flashfs.c
 
-        blinkStatusLed();
+        mscSetActive();
+        mscActivityLed();
+
         flashfsReadAbs(currOffset, buffer, HDR_BUF_SIZE);
 
         if (strncmp((char *)buffer, logHeader, lenLogHeader)) {
@@ -413,9 +408,12 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount, int flashfsUsedSpa
 
     return logCount;
 }
+#endif  // USE_FLASHFS
 
 void emfat_init_files(void)
 {
+    int flashfsUsedSpace = 0;
+    int entryIndex = PREDEFINED_ENTRY_COUNT;
     emfat_entry_t *entry;
     memset(entries, 0, sizeof(entries));
 
@@ -427,22 +425,24 @@ void emfat_init_files(void)
     }
 #endif
 
-    flashInit(flashConfig());
-    flashfsInit();
-    LED0_OFF;
-
-    const int flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
-
+    // create the predefined entries
     for (size_t i = 0 ; i < PREDEFINED_ENTRY_COUNT ; i++) {
         entries[i] = entriesPredefined[i];
         // These entries have timestamps corresponding to when the filesystem is mounted
         emfat_set_entry_cma(&entries[i]);
     }
 
+#ifdef USE_FLASHFS
+    flashInit(flashConfig());
+    flashfsInit();
+    LED0_OFF;
+
+    flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
+
     // Detect and create entries for each individual log
     const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY, flashfsUsedSpace);
 
-    int entryIndex = PREDEFINED_ENTRY_COUNT + logCount;
+    entryIndex += logCount;
 
     if (logCount > 0) {
         // Create the all logs entry that represents all used flash space to
@@ -455,6 +455,7 @@ void emfat_init_files(void)
         emfat_set_entry_cma(entry);
         ++entryIndex;
     }
+#endif // USE_FLASHFS
 
     // Padding file to fill out the filesystem size to FILESYSTEM_SIZE_MB
     if (flashfsUsedSpace * 2 < FILESYSTEM_SIZE_MB * 1024 * 1024) {

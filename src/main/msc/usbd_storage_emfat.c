@@ -33,6 +33,7 @@
 #include "common/utils.h"
 
 #include "drivers/light_led.h"
+#include "drivers/usb_msc.h"
 
 #include "msc/usbd_storage.h"
 #include "msc/usbd_storage_emfat.h"
@@ -95,9 +96,8 @@ static int8_t STORAGE_Read(
     uint16_t blk_len)   // nmber of blocks to be read
 {
     UNUSED(lun);
-    LED0_ON;
+    mscSetActive();
     emfat_read(&emfat, buf, blk_addr, blk_len);
-    LED0_OFF;
     return 0;
 }
 
