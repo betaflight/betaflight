@@ -169,20 +169,6 @@
 #undef USE_ADC_INTERNAL
 #endif
 
-#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !defined(USE_BLACKBOX)
-#undef USE_USB_MSC
-#endif
-
-#if !defined(USE_VCP)
-#undef USE_USB_CDC_HID
-#undef USE_USB_MSC
-#endif
-
-#if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
-#define USE_USB_ADVANCED_PROFILES
-#endif
-
-
 #if defined(USE_FLASH_W25M512)
 #define USE_FLASH_W25M
 #define USE_FLASH_M25P16
@@ -196,6 +182,23 @@
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)
 #define USE_FLASH_CHIP
+#endif
+
+#ifndef USE_FLASH_CHIP
+#undef USE_FLASHFS
+#endif
+
+#if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !defined(USE_BLACKBOX)
+#undef USE_USB_MSC
+#endif
+
+#if !defined(USE_VCP)
+#undef USE_USB_CDC_HID
+#undef USE_USB_MSC
+#endif
+
+#if defined(USE_USB_CDC_HID) || defined(USE_USB_MSC)
+#define USE_USB_ADVANCED_PROFILES
 #endif
 
 #if defined(USE_MAX7456)
