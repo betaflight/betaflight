@@ -121,6 +121,7 @@
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
 
+#include "msc/emfat_file.h"
 #ifdef USE_PERSISTENT_MSC_RTC
 #include "msc/usbd_storage.h"
 #endif
@@ -611,6 +612,16 @@ void init(void)
  *  so there is no bottleneck in reading and writing data */
     mscInit();
     if (mscCheckBoot() || mscCheckButton()) {
+        ledInit(statusLedConfig());
+
+#if defined(USE_FLASHFS) && defined(USE_FLASH_CHIP)
+        // If the blackbox device is onboard flash, then initialize and scan
+        // it to identify the log files *before* starting the USB device to
+        // prevent timeouts of the mass storage device.
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
+            emfat_init_files();
+        }
+#endif
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {

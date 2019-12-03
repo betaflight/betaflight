@@ -31,7 +31,13 @@
 #include "common/time.h"
 #include "common/utils.h"
 
+#include "drivers/flash.h"
+#include "drivers/light_led.h"
+#include "drivers/time.h"
+
 #include "io/flashfs.h"
+
+#include "pg/flash.h"
 
 #include "msc/usbd_storage.h"
 
@@ -300,9 +306,18 @@ static void emfat_add_log(emfat_entry_t *entry, int number, uint32_t offset, uin
     entry->cma_time[2] = entry->cma_time[0];
 }
 
-static int emfat_find_log(emfat_entry_t *entry, int maxCount)
+static void blinkStatusLed(void)
 {
-    int limit = flashfsIdentifyStartOfFreeSpace();
+    static timeMs_t nextToggleMs = 0;
+    const timeMs_t nowMs = millis();
+    if (nowMs > nextToggleMs) {
+        LED0_TOGGLE;
+        nextToggleMs = nowMs + 50; // toggle the status LED every 50ms
+    }
+}
+
+static int emfat_find_log(emfat_entry_t *entry, int maxCount, int flashfsUsedSpace)
+{
     int lastOffset = 0;
     int currOffset = 0;
     int buffOffset;
@@ -316,8 +331,9 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount)
     int lenTimeHeader = strlen(timeHeader);
     int timeHeaderMatched = 0;
 
-    for ( ; currOffset < limit ; currOffset += 2048) { // XXX 2048 = FREE_BLOCK_SIZE in io/flashfs.c
+    for ( ; currOffset < flashfsUsedSpace ; currOffset += 2048) { // XXX 2048 = FREE_BLOCK_SIZE in io/flashfs.c
 
+        blinkStatusLed();
         flashfsReadAbs(currOffset, buffer, HDR_BUF_SIZE);
 
         if (strncmp((char *)buffer, logHeader, lenLogHeader)) {
@@ -373,7 +389,7 @@ static int emfat_find_log(emfat_entry_t *entry, int maxCount)
                 hdrOffset += HDR_BUF_SIZE;
 
                 // Check for flash overflow
-                if (hdrOffset > limit) {
+                if (hdrOffset > flashfsUsedSpace) {
                     break;
                 }
 
@@ -411,6 +427,12 @@ void emfat_init_files(void)
     }
 #endif
 
+    flashInit(flashConfig());
+    flashfsInit();
+    LED0_OFF;
+
+    const int flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
+
     for (size_t i = 0 ; i < PREDEFINED_ENTRY_COUNT ; i++) {
         entries[i] = entriesPredefined[i];
         // These entries have timestamps corresponding to when the filesystem is mounted
@@ -418,7 +440,7 @@ void emfat_init_files(void)
     }
 
     // Detect and create entries for each individual log
-    const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY);
+    const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY, flashfsUsedSpace);
 
     int entryIndex = PREDEFINED_ENTRY_COUNT + logCount;
 
@@ -427,7 +449,7 @@ void emfat_init_files(void)
         // allow downloading the entire log in one file
         entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
         entry = &entries[entryIndex];
-        entry->curr_size = flashfsIdentifyStartOfFreeSpace();
+        entry->curr_size = flashfsUsedSpace;
         entry->max_size = entry->curr_size;
         // This entry has timestamps corresponding to when the filesystem is mounted
         emfat_set_entry_cma(entry);
@@ -435,13 +457,16 @@ void emfat_init_files(void)
     }
 
     // Padding file to fill out the filesystem size to FILESYSTEM_SIZE_MB
-    entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
-    entry = &entries[entryIndex];
-    // used space is doubled because of the individual files plus the single complete file
-    entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsIdentifyStartOfFreeSpace() * 2);
-    entry->max_size = entry->curr_size;
-    // This entry has timestamps corresponding to when the filesystem is mounted
-    emfat_set_entry_cma(entry);
+    if (flashfsUsedSpace * 2 < FILESYSTEM_SIZE_MB * 1024 * 1024) {
+        entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT + 1];
+        entry = &entries[entryIndex];
+        // used space is doubled because of the individual files plus the single complete file
+        entry->curr_size = (FILESYSTEM_SIZE_MB * 1024 * 1024) - (flashfsUsedSpace * 2);
+        entry->max_size = entry->curr_size;
+        // This entry has timestamps corresponding to when the filesystem is mounted
+        emfat_set_entry_cma(entry);
+    }
 
     emfat_init(&emfat, "BETAFLT", entries);
+    LED0_OFF;
 }
