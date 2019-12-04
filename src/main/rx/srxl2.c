@@ -168,18 +168,17 @@ bool srxl2ProcessHandshake(const Srxl2Header* header)
 }
 
 void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntimeConfig_t *rxRuntimeConfig) {
+    globalResult = RX_FRAME_COMPLETE;
+
     if (channelData->rssi >= 0) {
         const int rssiPercent = channelData->rssi;
         setRssi(scaleRange(rssiPercent, 0, 100, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_PROTOCOL);
-    } else {
-        // If dBm value provided, cant properly convert to % without knowing the receivers sensitivity range. Fix at 50% for now.
-        setRssi(RSSI_MAX_VALUE / 2, RSSI_SOURCE_RX_PROTOCOL);
     }
 
-    if (channelData->rssi == 0) {
-        globalResult = RX_FRAME_FAILSAFE;
-    } else {
-        globalResult = RX_FRAME_COMPLETE;
+    //If receiver is in a connected state, and a packet is missed, the channel mask will be 0.
+    if (!channelData->channelMask.u32) {
+        globalResult |= RX_FRAME_FAILSAFE;
+        return;
     }
 
     const uint16_t *frameChannels = (const uint16_t *) (channelData + 1);
@@ -209,7 +208,7 @@ bool srxl2ProcessControlData(const Srxl2Header* header, rxRuntimeConfig_t *rxRun
         break;
 
     case FailsafeChannelData: {
-        srxl2ProcessChannelData((const Srxl2ChannelDataHeader *) (controlData + 1), rxRuntimeConfig);
+        globalResult |= RX_FRAME_FAILSAFE;
         setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
         // DEBUG_PRINTF("fs channel data\r\n");
     } break;
