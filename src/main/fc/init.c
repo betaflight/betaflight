@@ -769,95 +769,9 @@ void init(void)
 
     imuInit();
 
-    mspInit();
-    mspSerialInit();
-
     failsafeInit();
 
     rxInit();
-
-/*
- * CMS, display devices and OSD
- */
-#ifdef USE_CMS
-    cmsInit();
-#endif
-
-#if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
-    displayPort_t *osdDisplayPort = NULL;
-#endif
-
-#if defined(USE_OSD)
-    //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
-
-    if (featureIsEnabled(FEATURE_OSD)) {
-        osdDisplayPortDevice_e device = osdConfig()->displayPortDevice;
-
-        switch(device) {
-
-        case OSD_DISPLAYPORT_DEVICE_AUTO:
-            FALLTHROUGH;
-
-#if defined(USE_FRSKYOSD)
-        // Test OSD_DISPLAYPORT_DEVICE_FRSKYOSD first, since an FC could
-        // have a builtin MAX7456 but also an FRSKYOSD connected to an
-        // uart.
-        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
-            osdDisplayPort = frskyOsdDisplayPortInit(vcdProfile()->video_system);
-            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
-                break;
-            }
-            FALLTHROUGH;
-#endif
-
-#if defined(USE_MAX7456)
-        case OSD_DISPLAYPORT_DEVICE_MAX7456:
-            // If there is a max7456 chip for the OSD configured and detectd then use it.
-            osdDisplayPort = max7456DisplayPortInit(vcdProfile());
-            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MAX7456) {
-                break;
-            }
-            FALLTHROUGH;
-#endif
-
-#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
-        case OSD_DISPLAYPORT_DEVICE_MSP:
-            osdDisplayPort = displayPortMspInit();
-            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MSP) {
-                break;
-            }
-            FALLTHROUGH;
-#endif
-
-        // Other device cases can be added here
-
-        case OSD_DISPLAYPORT_DEVICE_NONE:
-        default:
-            break;
-        }
-
-        // osdInit will register with CMS by itself.
-        osdInit(osdDisplayPort);
-    }
-#endif // USE_OSD
-
-#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)
-    // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
-    if (!osdDisplayPort)
-        cmsDisplayPortRegister(displayPortMspInit());
-#endif
-
-#ifdef USE_DASHBOARD
-    // Dashbord will register with CMS by itself.
-    if (featureIsEnabled(FEATURE_DASHBOARD)) {
-        dashboardInit();
-    }
-#endif
-
-#if defined(USE_CMS) && defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
-    // Register the srxl Textgen telemetry sensor as a displayport device
-    cmsDisplayPortRegister(displayPortSrxlInit());
-#endif
 
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
@@ -997,6 +911,93 @@ void init(void)
 
 #ifdef USE_PERSISTENT_STATS
     statsInit();
+#endif
+
+    // Initialize MSP
+    mspInit();
+    mspSerialInit();
+
+/*
+ * CMS, display devices and OSD
+ */
+#ifdef USE_CMS
+    cmsInit();
+#endif
+
+#if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
+    displayPort_t *osdDisplayPort = NULL;
+#endif
+
+#if defined(USE_OSD)
+    //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
+
+    if (featureIsEnabled(FEATURE_OSD)) {
+        osdDisplayPortDevice_e device = osdConfig()->displayPortDevice;
+
+        switch(device) {
+
+        case OSD_DISPLAYPORT_DEVICE_AUTO:
+            FALLTHROUGH;
+
+#if defined(USE_FRSKYOSD)
+        // Test OSD_DISPLAYPORT_DEVICE_FRSKYOSD first, since an FC could
+        // have a builtin MAX7456 but also an FRSKYOSD connected to an
+        // uart.
+        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+            osdDisplayPort = frskyOsdDisplayPortInit(vcdProfile()->video_system);
+            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
+#if defined(USE_MAX7456)
+        case OSD_DISPLAYPORT_DEVICE_MAX7456:
+            // If there is a max7456 chip for the OSD configured and detectd then use it.
+            osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MAX7456) {
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
+#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
+        case OSD_DISPLAYPORT_DEVICE_MSP:
+            osdDisplayPort = displayPortMspInit();
+            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MSP) {
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
+        // Other device cases can be added here
+
+        case OSD_DISPLAYPORT_DEVICE_NONE:
+        default:
+            break;
+        }
+
+        // osdInit will register with CMS by itself.
+        osdInit(osdDisplayPort);
+    }
+#endif // USE_OSD
+
+#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)
+    // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
+    if (!osdDisplayPort)
+        cmsDisplayPortRegister(displayPortMspInit());
+#endif
+
+#ifdef USE_DASHBOARD
+    // Dashbord will register with CMS by itself.
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
+        dashboardInit();
+    }
+#endif
+
+#if defined(USE_CMS) && defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
+    // Register the srxl Textgen telemetry sensor as a displayport device
+    cmsDisplayPortRegister(displayPortSrxlInit());
 #endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);

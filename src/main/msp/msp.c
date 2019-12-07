@@ -878,6 +878,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif // USE_OSD_STICK_OVERLAY
 
+        // API >= 1.43
+        // Add the camera frame element width/height
+        sbufWriteU8(dst, osdConfig()->camera_frame_width);
+        sbufWriteU8(dst, osdConfig()->camera_frame_height);
+
 #endif // USE_OSD
         break;
     }
@@ -3258,6 +3263,13 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, uint8_t cm
                     sbufReadU8(src);
 #endif // USE_OSD_STICK_OVERLAY
 
+                }
+
+                if (sbufBytesRemaining(src) >= 2) {
+                    // API >= 1.43
+                    // OSD camera frame element width/height
+                    osdConfigMutable()->camera_frame_width = sbufReadU8(src);
+                    osdConfigMutable()->camera_frame_height = sbufReadU8(src);
                 }
 #endif
             } else if ((int8_t)addr == -2) {

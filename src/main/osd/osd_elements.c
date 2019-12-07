@@ -596,6 +596,30 @@ static void osdElementCoreTemperature(osdElementParms_t *element)
 }
 #endif // USE_ADC_INTERNAL
 
+static void osdBackgroundCameraFrame(osdElementParms_t *element)
+{
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
+    const uint8_t width = constrain(osdConfig()->camera_frame_width, OSD_CAMERA_FRAME_MIN_WIDTH, OSD_CAMERA_FRAME_MAX_WIDTH);
+    const uint8_t height = constrain(osdConfig()->camera_frame_height, OSD_CAMERA_FRAME_MIN_HEIGHT, OSD_CAMERA_FRAME_MAX_HEIGHT);
+
+    element->buff[0] = SYM_STICK_OVERLAY_CENTER;
+    for (int i = 1; i < (width - 1); i++) {
+        element->buff[i] = SYM_STICK_OVERLAY_HORIZONTAL;
+    }
+    element->buff[width - 1] = SYM_STICK_OVERLAY_CENTER;
+    element->buff[width] = 0;  // string terminator
+
+    displayWrite(element->osdDisplayPort, xpos, ypos, DISPLAYPORT_ATTR_NONE, element->buff);
+    for (int i = 1; i < (height - 1); i++) {
+        displayWriteChar(element->osdDisplayPort, xpos, ypos + i, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_VERTICAL);
+        displayWriteChar(element->osdDisplayPort, xpos + width - 1, ypos + i, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_VERTICAL);
+    }
+    displayWrite(element->osdDisplayPort, xpos, ypos + height - 1, DISPLAYPORT_ATTR_NONE, element->buff);
+
+    element->drawElement = false;  // element already drawn
+}
+
 static void osdBackgroundCraftName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->name) == 0) {
@@ -1535,11 +1559,13 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_PROFILE_NAME,
 #endif
     OSD_RC_CHANNELS,
+    OSD_CAMERA_FRAME,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
 
 const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
+    [OSD_CAMERA_FRAME]            = NULL,  // only has background. Added first so it's the lowest "layer" and doesn't cover other elements
     [OSD_RSSI_VALUE]              = osdElementRssi,
     [OSD_MAIN_BATT_VOLTAGE]       = osdElementMainBatteryVoltage,
     [OSD_CROSSHAIRS]              = NULL,  // only has background
@@ -1647,6 +1673,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 // Only necessary to define the entries that actually have a background function
 
 const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
+    [OSD_CAMERA_FRAME]            = osdBackgroundCameraFrame,
     [OSD_CROSSHAIRS]              = osdBackgroundCrosshairs,
     [OSD_HORIZON_SIDEBARS]        = osdBackgroundHorizonSidebars,
     [OSD_CRAFT_NAME]              = osdBackgroundCraftName,

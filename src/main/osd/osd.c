@@ -286,6 +286,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
     osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
     osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
+    osdConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS(3, 1);
 
     // Enable the default stats
     osdConfig->enabled_stats = 0; // reset all to off and enable only a few initially
@@ -343,6 +344,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->distance_alarm = 0;
     osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
     osdConfig->logo_on_arming_duration = 5;  // 0.5 seconds
+
+    osdConfig->camera_frame_width = 24;
+    osdConfig->camera_frame_height = 11;
 }
 
 static void osdDrawLogo(int x, int y)
