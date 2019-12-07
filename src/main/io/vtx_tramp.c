@@ -423,8 +423,12 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         if (cmp32(currentTimeUs, lastQueryTimeUs) > 1000 * 1000) { // 1s
 
             if (trampStatus == TRAMP_STATUS_OFFLINE) {
-                trampQueryR();
-            } else {
+                if (vtxConfig()->trampNoRx) {
+                    trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+                } else {
+                    trampQueryR();
+                }
+            } else if (!vtxConfig()->trampNoRx) {
                 static unsigned int cnt = 0;
                 if (((cnt++) & 1) == 0) {
                     trampQueryV();
@@ -447,6 +451,9 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                 debugFreqReqCounter++;
 #endif
                 done = false;
+                if (vtxConfig()->trampNoRx) {
+                    trampCurFreq = trampConfFreq;
+                }
             } else if (trampConfPower && trampPowerRetries && (trampConfPower != trampConfiguredPower)) {
                 trampSendRFPower(trampConfPower);
                 trampPowerRetries--;
@@ -454,6 +461,9 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                 debugPowReqCounter++;
 #endif
                 done = false;
+                if (vtxConfig()->trampNoRx) {
+                    trampConfiguredPower = trampConfPower;
+                }
             }
 
             if (!done) {
@@ -474,7 +484,11 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     case TRAMP_STATUS_CHECK_FREQ_PW:
         if (cmp32(currentTimeUs, lastQueryTimeUs) > 200 * 1000) {
-            trampQueryV();
+            if (vtxConfig()->trampNoRx) {
+                trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+            } else {
+                trampQueryV();
+            }
             lastQueryTimeUs = currentTimeUs;
         }
         break;

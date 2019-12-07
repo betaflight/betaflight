@@ -48,11 +48,12 @@
 #include "pg/pg_ids.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 2);
 
 PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
 //    .vtxChannelActivationConditions = { 0 },
-    .halfDuplex = true
+    .halfDuplex = true,
+    .trampNoRx = false
 );
 
 static uint8_t locked = 0;
