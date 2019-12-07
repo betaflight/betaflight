@@ -550,9 +550,11 @@ static void cmsMenuCountPage(displayPort_t *pDisplay)
 STATIC_UNIT_TESTED const void *cmsMenuBack(displayPort_t *pDisplay)
 {
     // Let onExit function decide whether to allow exit or not.
-
     if (currentCtx.menu->onExit) {
-        return currentCtx.menu->onExit(pageTop + currentCtx.cursorRow);
+        const void *result = currentCtx.menu->onExit(pageTop + currentCtx.cursorRow);
+        if (result == MENU_CHAIN_BACK) {
+            return result;
+        }
     }
 
     if (!menuStackIdx) {
