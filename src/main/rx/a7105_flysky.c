@@ -32,6 +32,7 @@
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_a7105.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
@@ -354,16 +355,18 @@ static rx_spi_received_e flySkyReadAndProcess(uint8_t *payload, const uint32_t t
     return result;
 }
 
-bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeState_s *rxRuntimeState)
+bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
-    IO_t extiPin = IOGetByTag(rxSpiConfig->extiIoTag);
-    if (!extiPin) {
+    if (!rxSpiExtiConfigured()) {
         return false;
     }
 
     protocol = rxSpiConfig->rx_spi_protocol;
 
     rxSpiCommonIOInit(rxSpiConfig);
+
+    extiConfig->ioConfig = IOCFG_IPD;
+    extiConfig->trigger = EXTI_TRIGGER_RISING;
 
     uint8_t startRxChannel;
 
@@ -372,13 +375,13 @@ bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeState_s *rxRun
         timings = &flySky2ATimings;
         rxId = U_ID_0 ^ U_ID_1 ^ U_ID_2;
         startRxChannel = flySky2ABindChannels[0];
-        A7105Init(0x5475c52A, extiPin, IO_NONE);
+        A7105Init(0x5475c52A, IO_NONE);
         A7105Config(flySky2ARegs, sizeof(flySky2ARegs));
     } else {
         rxRuntimeState->channelCount = FLYSKY_CHANNEL_COUNT;
         timings = &flySkyTimings;
         startRxChannel = 0;
-        A7105Init(0x5475c52A, extiPin, IO_NONE);
+        A7105Init(0x5475c52A, IO_NONE);
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 

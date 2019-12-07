@@ -36,8 +36,9 @@
 #include "config/feature.h"
 
 #include "drivers/adc.h"
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
@@ -216,7 +217,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH; //!!TODO -check this fall through is correct
     // here FS code could be
     case STATE_DATA:
-        if (cc2500getGdo()) {
+        if (rxSpiGetExtiState()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             bool packetOk = false;
             if (ccLen >= 20) {

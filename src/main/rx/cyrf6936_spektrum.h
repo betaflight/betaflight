@@ -48,6 +48,6 @@ typedef struct spektrumConfig_s {
 
 PG_DECLARE(spektrumConfig_t, spektrumConfig);
 
-bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState);
+bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 void spektrumSpiSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e spektrumSpiDataReceived(uint8_t *payload);

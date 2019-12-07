@@ -26,8 +26,9 @@
 
 #include "common/maths.h"
 
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
 #include "config/config.h"
@@ -195,7 +196,7 @@ static bool tuneRx(uint8_t *packet)
         bindOffset += 5;
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset);
     }
-    if (cc2500getGdo()) {
+    if (rxSpiGetExtiState()) {
         uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
         if (ccLen) {
             cc2500ReadFifo(packet, ccLen);
@@ -235,7 +236,7 @@ static bool getBind1(uint8_t *packet)
     // len|bind |tx
     // id|03|01|idx|h0|h1|h2|h3|h4|00|00|00|00|00|00|00|00|00|00|00|00|00|00|00|CHK1|CHK2|RSSI|LQI/CRC|
     // Start by getting bind packet 0 and the txid
-    if (cc2500getGdo()) {
+    if (rxSpiGetExtiState()) {
         uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
         if (ccLen) {
             cc2500ReadFifo(packet, ccLen);
@@ -264,7 +265,7 @@ static bool getBind1(uint8_t *packet)
 static bool getBind2(uint8_t *packet)
 {
     if (bindIdx <= 120) {
-        if (cc2500getGdo()) {
+        if (rxSpiGetExtiState()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             if (ccLen) {
                 cc2500ReadFifo(packet, ccLen);
@@ -418,8 +419,10 @@ void nextChannel(uint8_t skip)
     }
 }
 
-bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
+bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
+    UNUSED(extiConfig);
+
     rxSpiCommonIOInit(rxSpiConfig);
     if (!cc2500SpiInit()) {
         return false;

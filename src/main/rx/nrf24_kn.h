@@ -25,6 +25,6 @@
 
 struct rxConfig_s;
 struct rxRuntimeState_s;
-bool knNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState);
+bool knNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 void knNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e knNrf24DataReceived(uint8_t *payload);
