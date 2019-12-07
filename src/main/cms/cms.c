@@ -190,6 +190,8 @@ static uint8_t pageMaxRow;       // Max row in the current page
 
 static cmsCtx_t currentCtx;
 
+static bool saveMenuInhibited = false;
+
 #ifdef CMS_MENU_DEBUG // For external menu content creators
 
 static char menuErrLabel[21 + 1] = "RANDOM DATA";
@@ -217,8 +219,6 @@ static CMS_Menu menuErr = {
     debug[1] = currentCtx.page; \
     debug[2] = pageMaxRow; \
     debug[3] = currentCtx.cursorRow; } struct _dummy
-#else
-#define cmsPageDebug()
 #endif
 
 static void cmsUpdateMaxRow(displayPort_t *instance)
@@ -555,6 +555,8 @@ STATIC_UNIT_TESTED const void *cmsMenuBack(displayPort_t *pDisplay)
         return currentCtx.menu->onExit(pageTop + currentCtx.cursorRow);
     }
 
+    saveMenuInhibited = false;
+
     if (!menuStackIdx) {
         return NULL;
     }
@@ -564,7 +566,9 @@ STATIC_UNIT_TESTED const void *cmsMenuBack(displayPort_t *pDisplay)
     cmsMenuCountPage(pDisplay);
     cmsPageSelect(pDisplay, currentCtx.page);
 
+#if defined(CMS_PAGE_DEBUG)
     cmsPageDebug();
+#endif
 
     return NULL;
 }
@@ -610,7 +614,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         currentCtx.cursorRow++;
     }
 
+#if defined(CMS_PAGE_DEBUG)
     cmsPageDebug();
+#endif
 
     if (pDisplay->cursorRow >= 0 && currentCtx.cursorRow != pDisplay->cursorRow) {
         room -= displayWrite(pDisplay, leftMenuColumn, top + pDisplay->cursorRow * linesPerMenuItem, DISPLAYPORT_ATTR_NONE, " ");
@@ -685,6 +691,8 @@ const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 #endif
 
     if (pMenu != currentCtx.menu) {
+        saveMenuInhibited = false;
+
         // Stack the current menu and move to a new menu.
         if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
             // menu stack limit reached - prevent array overflow
@@ -715,7 +723,9 @@ const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
         cmsPageSelect(pDisplay, cursorAbs / maxMenuItems);
     }
 
+#if defined(CMS_PAGE_DEBUG)
     cmsPageDebug();
+#endif
 
     return NULL;
 }
@@ -871,13 +881,10 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         return BUTTON_PAUSE;
     }
 
-    if (key == CMS_KEY_SAVEMENU) {
+    if (key == CMS_KEY_SAVEMENU && !saveMenuInhibited) {
         osdElementEditing = false;
-        if (getRebootRequired()) {
-            cmsMenuChange(pDisplay, &cmsx_menuSaveExitReboot);
-        } else {
-            cmsMenuChange(pDisplay, &cmsx_menuSaveExit);
-        }
+        cmsMenuChange(pDisplay, getSaveExitMenu());
+
         return BUTTON_PAUSE;
     }
 
@@ -1288,6 +1295,11 @@ void cmsInit(void)
 {
     cmsDeviceCount = 0;
     cmsCurrentDevice = -1;
+}
+
+void inhibitSaveMenu(void)
+{
+    saveMenuInhibited = true;
 }
 
 #endif // CMS
