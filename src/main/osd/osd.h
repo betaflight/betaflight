@@ -41,6 +41,11 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_RCCHANNELS_COUNT 4
 
+#define OSD_CAMERA_FRAME_MIN_WIDTH  2
+#define OSD_CAMERA_FRAME_MAX_WIDTH  30    // Characters per row supportes by MAX7456
+#define OSD_CAMERA_FRAME_MIN_HEIGHT 2
+#define OSD_CAMERA_FRAME_MAX_HEIGHT 16    // Rows supported by MAX7456 (PAL)
+
 #define OSD_PROFILE_BITS_POS 11
 #define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
 #define OSD_POS_MAX   0x3FF
@@ -135,6 +140,7 @@ typedef enum {
     OSD_PROFILE_NAME,
     OSD_RSSI_DBM_VALUE,
     OSD_RC_CHANNELS,
+    OSD_CAMERA_FRAME,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -274,6 +280,8 @@ typedef struct osdConfig_s {
     uint16_t distance_alarm;
     uint8_t logo_on_arming;                   // show the logo on arming
     uint8_t logo_on_arming_duration;          // display duration in 0.1s units
+    uint8_t camera_frame_width;               // The width of the box for the camera frame element
+    uint8_t camera_frame_height;              // The height of the box for the camera frame element
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
