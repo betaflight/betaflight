@@ -952,6 +952,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
                 if ((p->flags & REBOOT_REQUIRED) && (*val != previousValue)) {
                     setRebootRequired();
                 }
+                if (p->func) {
+                    p->func(pDisplay, p->data);
+                }
             }
             break;
 
