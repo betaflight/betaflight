@@ -193,7 +193,7 @@ bool featureIsEnabled(uint32_t) {
     return false;
 }
 
-void featureDisable(uint32_t) {
+void featureDisableImmediate(uint32_t) {
 }
 
 bool rxMspFrameComplete(void)

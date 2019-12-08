@@ -74,7 +74,7 @@ void targetConfiguration(void)
         telemetryConfigMutable()->telemetry_inverted = false;
         batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_ADC;
         batteryConfigMutable()->currentMeterSource = CURRENT_METER_ADC;
-        featureEnable(FEATURE_TELEMETRY);
+        featureConfigSet(FEATURE_TELEMETRY);
     }
 
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {

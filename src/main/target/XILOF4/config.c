@@ -54,8 +54,8 @@ void targetConfiguration(void)
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
     pidConfigMutable()->pid_process_denom = 1;
     currentSensorADCConfigMutable()->scale = CURRENT_SCALE;
-    featureDisable(FEATURE_SOFTSERIAL);
-    featureEnable(FEATURE_ESC_SENSOR);
+    featureConfigClear(FEATURE_SOFTSERIAL);
+    featureConfigSet(FEATURE_ESC_SENSOR);
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
 }
 
