@@ -145,6 +145,10 @@ typedef enum {
 } osd_items_e;
 
 // *** IMPORTANT ***
+// Whenever new elements are added to 'osd_items_e', make sure to increment
+// the parameter group version for 'osdConfig' in 'osd.c'
+
+// *** IMPORTANT ***
 // DO NOT REORDER THE STATS ENUMERATION. The order here cooresponds to the enabled flag bit position
 // storage and changing the order will corrupt user settings. Any new stats MUST be added to the end
 // just before the OSD_STAT_COUNT entry. YOU MUST ALSO add the new stat to the
