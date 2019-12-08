@@ -26,6 +26,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/serial_softserial.h"
     #include "drivers/serial_uart.h"
+    #include "drivers/time.h"
 
     #include "io/serial.h"
 
@@ -56,6 +57,8 @@ TEST(IoSerialTest, TestFindPortConfig)
 
 // STUBS
 extern "C" {
+    timeMs_t millis(void) { return 0; }
+
     void delay(uint32_t) {}
 
     bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }

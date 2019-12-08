@@ -51,6 +51,7 @@
 #include "config/config.h"
 
 #include "io/serial.h"
+#include "io/serial_command_interpreter.h"
 
 #include "msp/msp_serial.h"
 
@@ -544,32 +545,50 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     LED0_OFF;
     LED1_OFF;
 
+    serialCommandInterpreter_t leftCommandInterpreter;
+    serialCommandInterpreter_t rightCommandInterpreter;
+
+    serialCommandInterpreterInit(&leftCommandInterpreter);
+    serialCommandInterpreterInit(&rightCommandInterpreter);
+
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No
     // special handling is necessary OR performed.
     while (1) {
-        // TODO: maintain a timestamp of last data received. Use this to
-        // implement a guard interval and check for `+++` as an escape sequence
-        // to return to CLI command mode.
-        // https://en.wikipedia.org/wiki/Escape_sequence#Modem_control
         if (serialRxBytesWaiting(left)) {
             LED0_ON;
             uint8_t c = serialRead(left);
-            // Make sure there is space in the tx buffer
-            while (!serialTxBytesFree(right));
-            serialWrite(right, c);
-            leftC(c);
+            switch (serialCommandInterpreterUpdate(&leftCommandInterpreter, c)) {
+            case SERIAL_COMMAND_INTERPRETER_RESULT_NONE:
+                // Make sure there is space in the tx buffer
+                while (!serialTxBytesFree(right));
+                serialWrite(right, c);
+                leftC(c);
+                break;
+            case SERIAL_COMMAND_INTERPRETER_RESULT_USED:
+                break;
+            case SERIAL_COMMAND_INTERPRETER_RESULT_HANG:
+                return;
+            }
             LED0_OFF;
-         }
-         if (serialRxBytesWaiting(right)) {
-             LED0_ON;
-             uint8_t c = serialRead(right);
-             // Make sure there is space in the tx buffer
-             while (!serialTxBytesFree(left));
-             serialWrite(left, c);
-             rightC(c);
-             LED0_OFF;
-         }
+        }
+        if (serialRxBytesWaiting(right)) {
+            LED0_ON;
+            uint8_t c = serialRead(right);
+            switch (serialCommandInterpreterUpdate(&rightCommandInterpreter, c)) {
+            case SERIAL_COMMAND_INTERPRETER_RESULT_NONE:
+                // Make sure there is space in the tx buffer
+                while (!serialTxBytesFree(left));
+                serialWrite(left, c);
+                rightC(c);
+                break;
+            case SERIAL_COMMAND_INTERPRETER_RESULT_USED:
+                break;
+            case SERIAL_COMMAND_INTERPRETER_RESULT_HANG:
+                return;
+            }
+            LED0_OFF;
+        }
      }
  }
  #endif

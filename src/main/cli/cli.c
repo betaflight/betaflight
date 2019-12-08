@@ -1500,10 +1500,10 @@ static void cliSerialPassthrough(char *cmdline)
 
     char *resetMessage = "";
     if (port1ResetOnDtr && ports[1].id == SERIAL_PORT_USB_VCP) {
-        resetMessage = "or drop DTR ";
+        resetMessage = ", or drop DTR ";
     }
 
-    cliPrintLinef("Forwarding, power cycle %sto exit.", resetMessage);
+    cliPrintLinef("Forwarding. Power cycle, or use +++ (pause) ATH %sto exit.", resetMessage);
 
     if ((ports[1].id == SERIAL_PORT_USB_VCP) && (port1ResetOnDtr
 #ifdef USE_PINIO
@@ -1541,6 +1541,7 @@ static void cliSerialPassthrough(char *cmdline)
 #endif
 
     serialPassthrough(ports[0].port, ports[1].port, NULL, NULL);
+    cliPrintLinef("Exited serial passthrough");
 }
 #endif
 

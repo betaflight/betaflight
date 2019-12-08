@@ -58,6 +58,7 @@ COMMON_SRC = \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/serial_command_interpreter.c \
             io/smartaudio_protocol.c \
             io/statusindicator.c \
             io/tramp_protocol.c \
