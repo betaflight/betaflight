@@ -60,12 +60,20 @@
 // Misc
 //
 
+static const void *cmsx_menuRcOnEnter(void)
+{
+    inhibitSaveMenu();
+
+    return NULL;
+}
+
 static const void *cmsx_menuRcConfirmBack(const OSD_Entry *self)
 {
-    if (self && self->type == OME_Back)
+    if (self && self->type == OME_Back) {
         return NULL;
-    else
+    } else {
         return MENU_CHAIN_BACK;
+    }
 }
 
 //
@@ -94,7 +102,7 @@ CMS_Menu cmsx_menuRcPreview = {
     .GUARD_text = "XRCPREV",
     .GUARD_type = OME_MENU,
 #endif
-    .onEnter = NULL,
+    .onEnter = cmsx_menuRcOnEnter,
     .onExit = cmsx_menuRcConfirmBack,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuRcEntries

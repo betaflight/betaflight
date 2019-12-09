@@ -92,11 +92,8 @@ static const void *cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
-    if (getRebootRequired()) {
-        cmsMenuChange(pDisplay, &cmsx_menuSaveExitReboot);
-    } else {
-        cmsMenuChange(pDisplay, &cmsx_menuSaveExit);
-    }
+    cmsMenuChange(pDisplay, getSaveExitMenu());
+
     return NULL;
 }
 
