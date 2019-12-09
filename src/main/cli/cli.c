@@ -5850,22 +5850,21 @@ static void cliResource(char *cmdline)
         return;
     }
 
-    uint8_t resourceIndex = 0;
-    int index = 0;
-    for (resourceIndex = 0; ; resourceIndex++) {
+    unsigned resourceIndex = 0;
+    for (; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
             cliPrintErrorLinef("INVALID RESOURCE NAME: '%s'", pch);
             return;
         }
 
-    const char * resourceName = ownerNames[resourceTable[resourceIndex].owner];
+        const char *resourceName = ownerNames[resourceTable[resourceIndex].owner];
         if (strncasecmp(pch, resourceName, strlen(resourceName)) == 0) {
             break;
         }
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    index = atoi(pch);
+    int index = atoi(pch);
 
     if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
         if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
