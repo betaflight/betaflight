@@ -314,14 +314,23 @@ static const void *cmsx_menuOsdOnExit(const OSD_Entry *self)
     changeOsdProfileIndex(osdConfig_osdProfileIndex);
 #endif
 
+    return NULL;
+}
+
 #ifdef USE_MAX7456
+static const void *cmsx_max7456Update(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+
     displayPortProfileMax7456Mutable()->invert = displayPortProfileMax7456_invert;
     displayPortProfileMax7456Mutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
     displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
-#endif
+
+    displayClearScreen(pDisp);
 
     return NULL;
 }
+#endif // USE_MAX7456
 
 const OSD_Entry cmsx_menuOsdEntries[] =
 {
@@ -335,9 +344,9 @@ const OSD_Entry cmsx_menuOsdEntries[] =
     {"ALARMS",      OME_Submenu, cmsMenuChange, &menuAlarms,         0},
 #endif
 #ifdef USE_MAX7456
-    {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
-    {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
-    {"BRT WHITE", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
+    {"INVERT",    OME_Bool,  cmsx_max7456Update, &displayPortProfileMax7456_invert,                                   0},
+    {"BRT BLACK", OME_UINT8, cmsx_max7456Update, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
+    {"BRT WHITE", OME_UINT8, cmsx_max7456Update, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
 #endif
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL,   OME_END,  NULL, NULL, 0}
