@@ -85,11 +85,11 @@ static const void *cmsx_Ledstrip_OnExit(const OSD_Entry *self)
     UNUSED(self);
 
     if (cmsx_FeatureLedstrip) {
-        featureEnable(FEATURE_LED_STRIP);
+        featureEnableImmediate(FEATURE_LED_STRIP);
         ledStripEnable();
     } else {
         ledStripDisable();
-        featureDisable(FEATURE_LED_STRIP);
+        featureDisableImmediate(FEATURE_LED_STRIP);
     }
 
     setLedProfile(cmsx_ledProfile);

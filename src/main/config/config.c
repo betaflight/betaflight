@@ -219,7 +219,7 @@ static void validateAndFixConfig(void)
         gpsConfig()->provider != GPS_MSP && !gpsSerial &&
 #endif
         true) {
-        featureDisable(FEATURE_GPS);
+        featureDisableImmediate(FEATURE_GPS);
     }
 
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
@@ -259,7 +259,7 @@ static void validateAndFixConfig(void)
     }
 
     if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
-        featureDisable(FEATURE_3D);
+        featureDisableImmediate(FEATURE_3D);
 
         if (motorConfig()->mincommand < 1000) {
             motorConfigMutable()->mincommand = 1000;
@@ -289,29 +289,29 @@ static void validateAndFixConfig(void)
 #endif // USE_ACC
 
     if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI))) {
-        featureEnable(DEFAULT_RX_FEATURE);
+        featureEnableImmediate(DEFAULT_RX_FEATURE);
     }
 
     if (featureIsConfigured(FEATURE_RX_PPM)) {
-        featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
     }
 
     if (featureIsConfigured(FEATURE_RX_MSP)) {
-        featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
     if (featureIsConfigured(FEATURE_RX_SERIAL)) {
-        featureDisable(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
 #ifdef USE_RX_SPI
     if (featureIsConfigured(FEATURE_RX_SPI)) {
-        featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
 #endif // USE_RX_SPI
 
     if (featureIsConfigured(FEATURE_RX_PARALLEL_PWM)) {
-        featureDisable(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
 #if defined(USE_ADC)
@@ -375,7 +375,7 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_ESC_SENSOR)
     if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
-        featureDisable(FEATURE_ESC_SENSOR);
+        featureDisableImmediate(FEATURE_ESC_SENSOR);
     }
 #endif
 
@@ -412,67 +412,67 @@ static void validateAndFixConfig(void)
 // I have kept them all here in one place, some could be moved to sections of code above.
 
 #ifndef USE_PPM
-    featureDisable(FEATURE_RX_PPM);
+    featureDisableImmediate(FEATURE_RX_PPM);
 #endif
 
 #ifndef USE_SERIAL_RX
-    featureDisable(FEATURE_RX_SERIAL);
+    featureDisableImmediate(FEATURE_RX_SERIAL);
 #endif
 
 #if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
-    featureDisable(FEATURE_SOFTSERIAL);
+    featureDisableImmediate(FEATURE_SOFTSERIAL);
 #endif
 
 #ifndef USE_RANGEFINDER
-    featureDisable(FEATURE_RANGEFINDER);
+    featureDisableImmediate(FEATURE_RANGEFINDER);
 #endif
 
 #ifndef USE_TELEMETRY
-    featureDisable(FEATURE_TELEMETRY);
+    featureDisableImmediate(FEATURE_TELEMETRY);
 #endif
 
 #ifndef USE_PWM
-    featureDisable(FEATURE_RX_PARALLEL_PWM);
+    featureDisableImmediate(FEATURE_RX_PARALLEL_PWM);
 #endif
 
 #ifndef USE_RX_MSP
-    featureDisable(FEATURE_RX_MSP);
+    featureDisableImmediate(FEATURE_RX_MSP);
 #endif
 
 #ifndef USE_LED_STRIP
-    featureDisable(FEATURE_LED_STRIP);
+    featureDisableImmediate(FEATURE_LED_STRIP);
 #endif
 
 #ifndef USE_DASHBOARD
-    featureDisable(FEATURE_DASHBOARD);
+    featureDisableImmediate(FEATURE_DASHBOARD);
 #endif
 
 #ifndef USE_OSD
-    featureDisable(FEATURE_OSD);
+    featureDisableImmediate(FEATURE_OSD);
 #endif
 
 #ifndef USE_SERVOS
-    featureDisable(FEATURE_SERVO_TILT | FEATURE_CHANNEL_FORWARDING);
+    featureDisableImmediate(FEATURE_SERVO_TILT | FEATURE_CHANNEL_FORWARDING);
 #endif
 
 #ifndef USE_TRANSPONDER
-    featureDisable(FEATURE_TRANSPONDER);
+    featureDisableImmediate(FEATURE_TRANSPONDER);
 #endif
 
 #ifndef USE_RX_SPI
-    featureDisable(FEATURE_RX_SPI);
+    featureDisableImmediate(FEATURE_RX_SPI);
 #endif
 
 #ifndef USE_ESC_SENSOR
-    featureDisable(FEATURE_ESC_SENSOR);
+    featureDisableImmediate(FEATURE_ESC_SENSOR);
 #endif
 
 #ifndef USE_GYRO_DATA_ANALYSE
-    featureDisable(FEATURE_DYNAMIC_FILTER);
+    featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
 #endif
 
 #if !defined(USE_ADC)
-    featureDisable(FEATURE_RSSI_ADC);
+    featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
 
 #if defined(USE_BEEPER)
@@ -562,7 +562,7 @@ void validateAndFixGyroConfig(void)
 #ifdef USE_GYRO_DATA_ANALYSE
     // Disable dynamic filter if gyro loop is less than 2KHz
     if (gyro.targetLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
-        featureDisable(FEATURE_DYNAMIC_FILTER);
+        featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
     }
 #endif
 

@@ -104,7 +104,7 @@ void targetConfiguration(void)
         rxConfigMutable()->serialrx_inverted = true;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_RX_SERIAL;
         telemetryConfigMutable()->telemetry_inverted = false;
-        featureEnable(FEATURE_TELEMETRY);
+        featureConfigSet(FEATURE_TELEMETRY);
         beeperDevConfigMutable()->isOpenDrain = false;
         beeperDevConfigMutable()->isInverted = true;
         parseRcChannels("AETR1234", rxConfigMutable());

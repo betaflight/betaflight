@@ -70,7 +70,7 @@ bool featureIsConfigured(const uint32_t mask)
 
 // Updates the configuration *AND* runtime state of a feature.
 // Used *ONLY* by the config check process that runs at startup and EEPROM save.
-void featureEnable(const uint32_t mask)
+void featureEnableImmediate(const uint32_t mask)
 {
     featureSet(mask, &featureConfigMutable()->enabledFeatures);
     featureSet(mask, &runtimeFeatureMask);
@@ -78,7 +78,7 @@ void featureEnable(const uint32_t mask)
 
 // Updates the configuration *AND* runtime state of a feature.
 // Used *ONLY* by the config check process that runs at startup and EEPROM save.
-void featureDisable(const uint32_t mask)
+void featureDisableImmediate(const uint32_t mask)
 {
     featureClear(mask, &featureConfigMutable()->enabledFeatures);
     featureClear(mask, &runtimeFeatureMask);
