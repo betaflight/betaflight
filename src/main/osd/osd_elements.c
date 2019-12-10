@@ -1686,7 +1686,7 @@ const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
 
 static void osdAddActiveElement(osd_items_e element)
 {
-    if (VISIBLE(osdConfig()->item_pos[element])) {
+    if (VISIBLE(osdElementConfig()->item_pos[element])) {
         activeOsdElementArray[activeOsdElementCount++] = element;
     }
 }
@@ -1744,8 +1744,8 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
         return;
     }
 
-    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
-    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdElementConfig()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdElementConfig()->item_pos[item]);
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
     osdElementParms_t element;
@@ -1771,8 +1771,8 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
         return;
     }
 
-    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
-    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdElementConfig()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdElementConfig()->item_pos[item]);
     char buff[OSD_ELEMENT_BUFFER_LENGTH] = "";
 
     osdElementParms_t element;
