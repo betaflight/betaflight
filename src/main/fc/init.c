@@ -904,11 +904,6 @@ void init(void)
     rcdeviceInit();
 #endif // USE_RCDEVICE
 
-#ifdef USE_MOTOR
-    motorPostInit();
-    motorEnable();
-#endif
-
 #ifdef USE_PERSISTENT_STATS
     statsInit();
 #endif
@@ -1001,6 +996,11 @@ void init(void)
 #endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+
+#ifdef USE_MOTOR
+    motorPostInit();
+    motorEnable();
+#endif
 
     tasksInit();
 
