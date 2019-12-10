@@ -253,8 +253,6 @@ extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
 extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];
 
 typedef struct osdConfig_s {
-    uint16_t item_pos[OSD_ITEM_COUNT];
-
     // Alarms
     uint16_t cap_alarm;
     uint16_t alt_alarm;
@@ -289,6 +287,12 @@ typedef struct osdConfig_s {
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
+
+typedef struct osdElementConfig_s {
+    uint16_t item_pos[OSD_ITEM_COUNT];
+} osdElementConfig_t;
+
+PG_DECLARE(osdElementConfig_t, osdElementConfig);
 
 typedef struct statistic_s {
     timeUs_t armed_time;

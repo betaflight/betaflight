@@ -141,6 +141,8 @@ STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 7);
 
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 0);
+
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
 // Every entry in osd_stats_e should be represented. Any that are missing will not
@@ -270,24 +272,6 @@ const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
-    // Position elements near centre of screen and disabled by default
-    for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-        osdConfig->item_pos[i] = OSD_POS(10, 7);
-    }
-
-    // Always enable warnings elements by default
-    uint16_t profileFlags = 0;
-    for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
-        profileFlags |= OSD_PROFILE_FLAG(i);
-    }
-    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | profileFlags;
-
-    // Default to old fixed positions for these elements
-    osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
-    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
-    osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
-    osdConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS(3, 1);
-
     // Enable the default stats
     osdConfig->enabled_stats = 0; // reset all to off and enable only a few initially
     osdStatSetState(OSD_STAT_MAX_SPEED, true);
@@ -347,6 +331,27 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
+}
+
+void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
+{
+    // Position elements near centre of screen and disabled by default
+    for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        osdElementConfig->item_pos[i] = OSD_POS(10, 7);
+    }
+
+    // Always enable warnings elements by default
+    uint16_t profileFlags = 0;
+    for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
+        profileFlags |= OSD_PROFILE_FLAG(i);
+    }
+    osdElementConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | profileFlags;
+
+    // Default to old fixed positions for these elements
+    osdElementConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
+    osdElementConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
+    osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
+    osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS(3, 1);
 }
 
 static void osdDrawLogo(int x, int y)
@@ -870,7 +875,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         } else if (isSomeStatEnabled()
                    && !suppressStatsDisplay
                    && (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))
-                       || !VISIBLE(osdConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
+                       || !VISIBLE(osdElementConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
             stats.end_voltage = getBatteryVoltage();
@@ -935,7 +940,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC)
-       && (VISIBLE(osdConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE))) {
+       && (VISIBLE(osdElementConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE))) {
             // only calculate the G force if the element is visible or the stat is enabled
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             const float a = accAverage[axis];

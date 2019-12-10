@@ -50,7 +50,7 @@ static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
 static const void *menuOsdActiveElemsOnEnter(void)
 {
-    memcpy(&osdConfig_item_pos[0], &osdConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfig_item_pos[0], &osdElementConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     return NULL;
 }
 
@@ -58,7 +58,7 @@ static const void *menuOsdActiveElemsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdElementConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     osdAnalyzeActiveElements();
     return NULL;
 }
