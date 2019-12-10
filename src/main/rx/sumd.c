@@ -75,7 +75,7 @@ static uint16_t crc;
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
-static timeDelta_t lastFrameDelta = 0;
+static timeUs_t lastRcFrameTimeUs = 0;
 
 // Receive ISR callback
 static void sumdDataReceive(uint16_t c, void *data)
@@ -84,7 +84,6 @@ static void sumdDataReceive(uint16_t c, void *data)
 
     static timeUs_t sumdTimeLast;
     static uint8_t sumdIndex;
-    static timeUs_t lastFrameCompleteTimeUs = 0;
 
     const timeUs_t sumdTime = microsISR();
     if (cmpTimeUs(sumdTime, sumdTimeLast) > SUMD_TIME_NEEDED_PER_FRAME) {
@@ -111,8 +110,7 @@ static void sumdDataReceive(uint16_t c, void *data)
     if (sumdIndex <= sumdChannelCount * SUMD_BYTES_PER_CHANNEL + SUMD_HEADER_LENGTH) {
         crc = crc16_ccitt(crc, (uint8_t)c);
     } else if (sumdIndex == sumdChannelCount * SUMD_BYTES_PER_CHANNEL + SUMD_HEADER_LENGTH + SUMD_CRC_LENGTH) {
-        lastFrameDelta = cmpTimeUs(sumdTime, lastFrameCompleteTimeUs);
-        lastFrameCompleteTimeUs = sumdTime;
+        lastRcFrameTimeUs = sumdTime;
         sumdIndex = 0;
         sumdFrameDone = true;
     }
@@ -131,31 +129,35 @@ static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
     sumdFrameDone = false;
 
     // verify CRC
-    if (crc != ((sumd[SUMD_BYTES_PER_CHANNEL * sumdChannelCount + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
+    if (crc == ((sumd[SUMD_BYTES_PER_CHANNEL * sumdChannelCount + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
             (sumd[SUMD_BYTES_PER_CHANNEL * sumdChannelCount + SUMD_OFFSET_CHANNEL_1_LOW]))) {
-        return frameStatus;
+
+        switch (sumd[1]) {
+        case SUMD_FRAME_STATE_FAILSAFE:
+            frameStatus = RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
+            break;
+        case SUMDV1_FRAME_STATE_OK:
+        case SUMDV3_FRAME_STATE_OK:
+            frameStatus = RX_FRAME_COMPLETE;
+            break;
+        }
+
+        if (frameStatus & RX_FRAME_COMPLETE) {
+            const unsigned channelsToProcess = MIN(sumdChannelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
+
+            for (unsigned channelIndex = 0; channelIndex < channelsToProcess; channelIndex++) {
+                sumdChannels[channelIndex] = (
+                    (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
+                    sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
+                );
+            }
+        }
     }
 
-    switch (sumd[1]) {
-    case SUMD_FRAME_STATE_FAILSAFE:
-        frameStatus = RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
-        break;
-    case SUMDV1_FRAME_STATE_OK:
-    case SUMDV3_FRAME_STATE_OK:
-        frameStatus = RX_FRAME_COMPLETE;
-        break;
-    default:
-        return frameStatus;
+    if (frameStatus != RX_FRAME_COMPLETE) {
+        lastRcFrameTimeUs = 0;  // We received a frame but it wasn't valid new channel data
     }
 
-    const unsigned channelsToProcess = MIN(sumdChannelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
-
-    for (unsigned channelIndex = 0; channelIndex < channelsToProcess; channelIndex++) {
-        sumdChannels[channelIndex] = (
-            (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
-            sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
-        );
-    }
     return frameStatus;
 }
 
@@ -165,9 +167,11 @@ static uint16_t sumdReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
     return sumdChannels[chan] / 8;
 }
 
-static timeDelta_t sumdFrameDelta(void)
+static timeUs_t sumdFrameTimeUs(void)
 {
-    return lastFrameDelta;
+    const timeUs_t result = lastRcFrameTimeUs;
+    lastRcFrameTimeUs = 0;
+    return result;
 }
 
 bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -179,7 +183,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = sumdReadRawRC;
     rxRuntimeState->rcFrameStatusFn = sumdFrameStatus;
-    rxRuntimeState->rcFrameDeltaFn = sumdFrameDelta;
+    rxRuntimeState->rcFrameTimeUsFn = sumdFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

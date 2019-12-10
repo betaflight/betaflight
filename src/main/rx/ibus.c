@@ -75,7 +75,7 @@ static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 
 static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
-static timeDelta_t lastFrameDelta = 0;
+static timeUs_t lastRcFrameTimeUs = 0;
 
 static bool isValidIa6bIbusPacketLength(uint8_t length)
 {
@@ -90,7 +90,6 @@ static void ibusDataReceive(uint16_t c, void *data)
 
     static timeUs_t ibusTimeLast;
     static uint8_t ibusFramePosition;
-    static timeUs_t lastFrameCompleteTimeUs = 0;
 
     const timeUs_t ibusTime = microsISR();
 
@@ -125,8 +124,7 @@ static void ibusDataReceive(uint16_t c, void *data)
     ibus[ibusFramePosition] = (uint8_t)c;
 
     if (ibusFramePosition == ibusFrameSize - 1) {
-        lastFrameDelta = cmpTimeUs(ibusTime, lastFrameCompleteTimeUs);
-        lastFrameCompleteTimeUs = ibusTime;
+        lastRcFrameTimeUs = ibusTime;
         ibusFrameDone = true;
     } else {
         ibusFramePosition++;
@@ -194,6 +192,10 @@ static uint8_t ibusFrameStatus(rxRuntimeState_t *rxRuntimeState)
         }
     }
 
+    if (frameStatus != RX_FRAME_COMPLETE) {
+        lastRcFrameTimeUs = 0;  // We received a frame but it wasn't valid new channel data
+    }
+
     return frameStatus;
 }
 
@@ -204,9 +206,11 @@ static uint16_t ibusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
     return ibusChannelData[chan];
 }
 
-static timeDelta_t ibusFrameDelta(void)
+static timeUs_t ibusFrameTimeUs(void)
 {
-    return lastFrameDelta;
+    const timeUs_t result = lastRcFrameTimeUs;
+    lastRcFrameTimeUs = 0;
+    return result;
 }
 
 bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -219,7 +223,7 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = ibusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
-    rxRuntimeState->rcFrameDeltaFn = ibusFrameDelta;
+    rxRuntimeState->rcFrameTimeUsFn = ibusFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
