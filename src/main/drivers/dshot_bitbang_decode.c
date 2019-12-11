@@ -115,7 +115,10 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         // not returning telemetry is ok if the esc cpu is
         // overburdened.  in that case no edge will be found and
         // BB_NOEDGE indicates the condition to caller
-        return BB_NOEDGE;
+		
+		// test
+        //return BB_NOEDGE;
+		return BB_INVALID;
     }
 
     int remaining = MIN(count - (p - b), (unsigned int)MAX_VALID_BBSAMPLES);
@@ -181,7 +184,9 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     }
 
     if (bits < 18) {
-        return BB_NOEDGE;
+		// test
+        //return BB_NOEDGE;
+		return BB_INVALID;
     }
 
     // length of last sequence has to be inferred since the last bit with inverted dshot is high
@@ -235,7 +240,10 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         // not returning telemetry is ok if the esc cpu is
         // overburdened.  in that case no edge will be found and
         // BB_NOEDGE indicates the condition to caller
-        return BB_NOEDGE;
+		
+		// test
+        //return BB_NOEDGE;
+		return BB_INVALID;
     }
 
     int remaining = MIN(count - (p - buffer), (unsigned int)MAX_VALID_BBSAMPLES);
@@ -273,7 +281,9 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 
     // length of last sequence has to be inferred since the last bit with inverted dshot is high
     if (bits < 18) {
-        return BB_NOEDGE;
+		// test
+        //return BB_NOEDGE;
+		return BB_INVALID;
     }
 
     const int nlen = 21 - bits;
