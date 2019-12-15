@@ -126,6 +126,8 @@ enum
     FSSP_DATAID_CELLS_LAST = 0x030F ,
     FSSP_DATAID_HEADING    = 0x0840 ,
 #if defined(USE_ACC)
+    FSSP_DATAID_PITCH      = 0x5230 , // custom
+    FSSP_DATAID_ROLL       = 0x5240 , // custom
     FSSP_DATAID_ACCX       = 0x0700 ,
     FSSP_DATAID_ACCY       = 0x0710 ,
     FSSP_DATAID_ACCZ       = 0x0720 ,
@@ -149,8 +151,8 @@ enum
     FSSP_DATAID_A4         = 0x0910
 };
 
-// if adding more sensors then increase this value
-#define MAX_DATAIDS 17
+// if adding more sensors then increase this value (should be equal to the maximum number of ADD_SENSOR calls)
+#define MAX_DATAIDS 20
 
 static uint16_t frSkyDataIdTable[MAX_DATAIDS];
 
@@ -365,6 +367,12 @@ static void initSmartPortSensors(void)
 
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC)) {
+        if (telemetryIsSensorEnabled(SENSOR_PITCH)) {
+            ADD_SENSOR(FSSP_DATAID_PITCH);
+        }
+        if (telemetryIsSensorEnabled(SENSOR_ROLL)) {
+            ADD_SENSOR(FSSP_DATAID_ROLL);
+        }
         if (telemetryIsSensorEnabled(SENSOR_ACC_X)) {
             ADD_SENSOR(FSSP_DATAID_ACCX);
         }
@@ -704,6 +712,14 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 *clearToSend = false;
                 break;
 #if defined(USE_ACC)
+            case FSSP_DATAID_PITCH      :
+                smartPortSendPackage(id, attitude.values.pitch); // given in 10*deg
+                *clearToSend = false;
+                break;
+            case FSSP_DATAID_ROLL       :
+                smartPortSendPackage(id, attitude.values.roll); // given in 10*deg
+                *clearToSend = false;
+                break;
             case FSSP_DATAID_ACCX       :
                 smartPortSendPackage(id, lrintf(100 * acc.accADC[X] * acc.dev.acc_1G_rec)); // Multiply by 100 to show as x.xx g on Taranis
                 *clearToSend = false;
