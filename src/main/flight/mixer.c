@@ -74,6 +74,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = DEFAULT_MIXER,
     .yaw_motors_reversed = false,
     .crashflip_motor_percent = 0,
+    .crashflip_power_percent = 100,
 );
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
@@ -662,7 +663,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 
         // Apply a reasonable amount of stick deadband
         const float flipStickRange = 1.0f - CRASH_FLIP_STICK_MINF;
-        float flipPower = MAX(0.0f, stickDeflectionLength - CRASH_FLIP_STICK_MINF) / flipStickRange;
+        float flipPower = MAX(0.0f, stickDeflectionLength - CRASH_FLIP_STICK_MINF) / (flipStickRange / ((float)mixerConfig()->crashflip_power_percent / 100.0f));
 
         for (int i = 0; i < motorCount; ++i) {
             float motorOutputNormalised =
