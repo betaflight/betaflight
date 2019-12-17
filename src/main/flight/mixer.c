@@ -74,7 +74,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = DEFAULT_MIXER,
     .yaw_motors_reversed = false,
     .crashflip_motor_percent = 0,
-    .crashflip_power_percent = 100,
+    .crashflip_expo = 0,
 );
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
@@ -630,18 +630,26 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     if (ARMING_FLAG(ARMED)) {
-        float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
-        float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
-        float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
+        const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
+        const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
+        const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
+        const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
+
+        const float stickDeflectionPitchExpo = flipPowerFactor * stickDeflectionPitchAbs + power3(stickDeflectionPitchAbs) * (1 - flipPowerFactor);
+        const float stickDeflectionRollExpo = flipPowerFactor * stickDeflectionRollAbs + power3(stickDeflectionRollAbs) * (1 - flipPowerFactor);
+        const float stickDeflectionYawExpo = flipPowerFactor * stickDeflectionYawAbs + power3(stickDeflectionYawAbs) * (1 - flipPowerFactor);
+
         float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
         float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
         float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
 
-        float stickDeflectionLength = sqrtf(stickDeflectionPitchAbs*stickDeflectionPitchAbs + stickDeflectionRollAbs*stickDeflectionRollAbs);
+        float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
+        float stickDeflectionExpoLength = sqrtf(sq(stickDeflectionPitchExpo) + sq(stickDeflectionRollExpo));
 
         if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
             // If yaw is the dominant, disable pitch and roll
             stickDeflectionLength = stickDeflectionYawAbs;
+            stickDeflectionExpoLength = stickDeflectionYawExpo;
             signRoll = 0;
             signPitch = 0;
         } else {
@@ -649,7 +657,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             signYaw = 0;
         }
 
-        float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength);
+        const float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength);
         const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
 
         if (cosPhi < cosThreshold) {
@@ -662,8 +670,9 @@ static void applyFlipOverAfterCrashModeToMotors(void)
         }
 
         // Apply a reasonable amount of stick deadband
-        const float flipStickRange = 1.0f - CRASH_FLIP_STICK_MINF;
-        float flipPower = MAX(0.0f, stickDeflectionLength - CRASH_FLIP_STICK_MINF) / (flipStickRange / ((float)mixerConfig()->crashflip_power_percent / 100.0f));
+        const float crashFlipStickMinExpo = flipPowerFactor * CRASH_FLIP_STICK_MINF + power3(CRASH_FLIP_STICK_MINF) * (1 - flipPowerFactor);
+        const float flipStickRange = 1.0f - crashFlipStickMinExpo;
+        const float flipPower = MAX(0.0f, stickDeflectionExpoLength - crashFlipStickMinExpo) / flipStickRange;
 
         for (int i = 0; i < motorCount; ++i) {
             float motorOutputNormalised =
