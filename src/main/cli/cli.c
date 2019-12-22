@@ -2583,7 +2583,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val <= vtxTableBandCount) {
+                if (val >= 0 && val <= vtxTableConfig()->bands) {
                     cac->band = val;
                     validArgumentCount++;
                 }
@@ -2591,7 +2591,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val <= vtxTableChannelCount) {
+                if (val >= 0 && val <= vtxTableConfig()->channels) {
                     cac->channel = val;
                     validArgumentCount++;
                 }
@@ -2599,7 +2599,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val < vtxTablePowerLevels) {
+                if (val >= 0 && val <= vtxTableConfig()->powerLevels) {
                     cac->power= val;
                     validArgumentCount++;
                 }
@@ -6099,12 +6099,12 @@ static void printConfig(char *cmdline, bool doDiff)
 
             printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0), "rxrange");
 
-#ifdef USE_VTX_CONTROL
-            printVtx(dumpMask, &vtxConfig_Copy, vtxConfig(), "vtx");
-#endif
-
 #ifdef USE_VTX_TABLE
             printVtxTable(dumpMask, &vtxTableConfig_Copy, vtxTableConfig(), "vtxtable");
+#endif
+
+#ifdef USE_VTX_CONTROL
+            printVtx(dumpMask, &vtxConfig_Copy, vtxConfig(), "vtx");
 #endif
 
             printRxFailsafe(dumpMask, rxFailsafeChannelConfigs_CopyArray, rxFailsafeChannelConfigs(0), "rxfail");
