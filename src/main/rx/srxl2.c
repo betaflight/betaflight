@@ -177,7 +177,7 @@ void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntim
 
     //If receiver is in a connected state, and a packet is missed, the channel mask will be 0.
     if (!channelData->channelMask.u32) {
-        globalResult |= RX_FRAME_FAILSAFE;
+        globalResult |= RX_FRAME_DROPPED;
         return;
     }
 
