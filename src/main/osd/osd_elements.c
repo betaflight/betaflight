@@ -56,6 +56,7 @@
     If the new element utilizes the accelerometer, add it to the osdElementsNeedAccelerometer() function.
 
     Finally add a CLI parameter for the new element in cli/settings.c.
+    CLI parameters should be added before line #endif // end of #ifdef USE_OSD
 */
 
 #include <stdbool.h>
