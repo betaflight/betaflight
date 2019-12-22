@@ -440,6 +440,7 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
     return ret;
 }
 
+#if defined(USE_GPS)
 static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t initialRoll, int16_t initialPitch, int16_t initialYaw)
 {
     if (initialRoll > 1800) {
@@ -484,6 +485,7 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
 
     attitudeIsEstablished = true;
 }
+#endif
 
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
