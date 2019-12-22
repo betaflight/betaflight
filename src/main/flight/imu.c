@@ -200,7 +200,7 @@ static float invSqrt(float x)
 
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
-                                bool useMag, float mx, float my, float mz,
+                                bool useMag,
                                 bool useCOG, float courseOverGround, const float dcmKpGain)
 {
     static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
@@ -228,6 +228,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
+    float mx = mag.magADC[X];
+    float my = mag.magADC[Y];
+    float mz = mag.magADC[Z];
     float recipMagNorm = sq(mx) + sq(my) + sq(mz);
     if (useMag && recipMagNorm > 0.01f) {
         // Normalise magnetometer measurement
@@ -255,9 +258,6 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 #else
     UNUSED(useMag);
-    UNUSED(mx);
-    UNUSED(my);
-    UNUSED(mz);
 #endif
 
     // Use measured acceleration vector
@@ -496,7 +496,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, accAverage[X], accAverage[Y], accAverage[Z],
-                        useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
+                        useMag,
                         useCOG, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
