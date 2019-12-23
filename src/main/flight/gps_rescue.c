@@ -174,7 +174,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .useMag = GPS_RESCUE_USE_MAG,
     .targetLandingAltitudeM = 5,
     .targetLandingDistanceM = 10,
-    .altitudeMode = MAX_ALT,
+    .altitudeMode = FIXED_ALT,
     .ascendRate = 500,
     .descendRate = 150,
 );
