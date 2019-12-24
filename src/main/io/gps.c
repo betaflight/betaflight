@@ -1124,10 +1124,16 @@ static bool UBLOX_parse_gps(void)
         if (GPS_numCh > 16)
             GPS_numCh = 16;
         for (i = 0; i < GPS_numCh; i++) {
-            GPS_svinfo_chn[i]= _buffer.svinfo.channel[i].chn;
-            GPS_svinfo_svid[i]= _buffer.svinfo.channel[i].svid;
-            GPS_svinfo_quality[i]=_buffer.svinfo.channel[i].quality;
-            GPS_svinfo_cno[i]= _buffer.svinfo.channel[i].cno;
+            GPS_svinfo_chn[i] = _buffer.svinfo.channel[i].chn;
+            GPS_svinfo_svid[i] = _buffer.svinfo.channel[i].svid;
+            GPS_svinfo_quality[i] =_buffer.svinfo.channel[i].quality;
+            GPS_svinfo_cno[i] = _buffer.svinfo.channel[i].cno;
+        }
+        for (i = GPS_numCh; i < 16; i++) {
+            GPS_svinfo_chn[i] = 0;
+            GPS_svinfo_svid[i] = 0;
+            GPS_svinfo_quality[i] = 0;
+            GPS_svinfo_cno[i] = 0;
         }
         GPS_svInfoReceivedCount++;
         break;
