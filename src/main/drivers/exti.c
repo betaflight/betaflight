@@ -229,9 +229,11 @@ void EXTIEnable(IO_t io, bool enable)
 #endif
 }
 
+#define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
+
 void EXTI_IRQHandler(void)
 {
-    uint32_t exti_active = EXTI_REG_IMR & EXTI_REG_PR;
+    uint32_t exti_active = (EXTI_REG_IMR & EXTI_REG_PR) & EXTI_EVENT_MASK;
 
     while (exti_active) {
         unsigned idx = 31 - __builtin_clz(exti_active);
