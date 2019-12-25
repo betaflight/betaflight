@@ -204,8 +204,10 @@ static void knNrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-bool knNrf24Init(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
+bool knNrf24Init(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
+    UNUSED(extiConfig);
+
     rxRuntimeState->channelCount = KN_RC_CHANNEL_COUNT;
     knNrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
 

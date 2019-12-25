@@ -259,8 +259,10 @@ static void v202Nrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-bool v202Nrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
+bool v202Nrf24Init(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
+    UNUSED(extiConfig);
+
     rxRuntimeState->channelCount = V2X2_RC_CHANNEL_COUNT;
     v202Nrf24Setup((rx_spi_protocol_e)rxSpiConfig->rx_spi_protocol);
 

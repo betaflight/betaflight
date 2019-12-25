@@ -25,7 +25,7 @@
 
 struct rxSpiConfig_s;
 struct rxRuntimeState_s;
-bool inavNrf24Init(const struct rxSpiConfig_s *rxSpiConfig, struct rxRuntimeState_s *rxRuntimeState);
+bool inavNrf24Init(const struct rxSpiConfig_s *rxSpiConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e inavNrf24DataReceived(uint8_t *payload);
 

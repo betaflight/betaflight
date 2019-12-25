@@ -29,8 +29,9 @@
 
 #include "common/maths.h"
 
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
 #include "config/config.h"
@@ -138,7 +139,7 @@ static bool sfhssRecv(uint8_t *packet)
 {
     uint8_t ccLen;
 
-    if (!(cc2500getGdo())) {
+    if (!(rxSpiGetExtiState())) {
         return false;
     }
     ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
@@ -423,8 +424,10 @@ rx_spi_received_e sfhssSpiDataReceived(uint8_t *packet)
     return ret;
 }
 
-bool sfhssSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState)
+bool sfhssSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
+    UNUSED(extiConfig);
+
     rxSpiCommonIOInit(rxSpiConfig);
 
     cc2500SpiInit();

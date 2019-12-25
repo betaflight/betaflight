@@ -27,35 +27,18 @@
 #ifdef USE_RX_SPEKTRUM
 
 #include "drivers/bus_spi.h"
-#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/nvic.h"
 #include "drivers/rx/rx_cyrf6936.h"
 #include "drivers/rx/rx_spi.h"
-#include "drivers/time.h"
 
-static IO_t rxIntIO = IO_NONE;
-static extiCallbackRec_t cyrf6936extiCallbackRec;
-static volatile uint32_t timeEvent = 0;
-static volatile bool occurEvent = false;
-volatile bool isError = false;
+bool isError = false;
 
-void cyrf6936ExtiHandler(extiCallbackRec_t *cb)
+bool cyrf6936RxFinished(timeUs_t *timeStamp)
 {
-    UNUSED(cb);
-
-    if (IORead(rxIntIO) == 0) {
-        timeEvent = micros();
-        occurEvent = true;
-    }
-}
-
-bool cyrf6936RxFinished(uint32_t *timeStamp)
-{
-    if (occurEvent) {
-        if (timeStamp) {
-            *timeStamp = timeEvent;
+    if (rxSpiPollExti()) {
+        if (rxSpiGetLastExtiTimeUs()) {
+            *timeStamp = rxSpiGetLastExtiTimeUs();
         }
 
         uint8_t rxIrqStatus = cyrf6936ReadRegister(CYRF6936_RX_IRQ_STATUS);
@@ -63,19 +46,18 @@ bool cyrf6936RxFinished(uint32_t *timeStamp)
             isError = (rxIrqStatus & CYRF6936_RXE_IRQ) > 0x0;
         }
 
-        occurEvent = false;
+        rxSpiResetExti();
+
         return true;
     }
     return false;
 }
 
-bool cyrf6936Init(IO_t extiPin)
+bool cyrf6936Init(void)
 {
-    rxIntIO = extiPin;
-    IOInit(rxIntIO, OWNER_RX_SPI_EXTI, 0);
-    EXTIHandlerInit(&cyrf6936extiCallbackRec, cyrf6936ExtiHandler);
-    EXTIConfig(rxIntIO, &cyrf6936extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IPD, EXTI_TRIGGER_FALLING);
-    EXTIEnable(rxIntIO, false);
+    if (!rxSpiExtiConfigured()) {
+        return false;
+    }
 
     uint16_t timeout = 1000;
     do { // Check if chip has waken up
@@ -168,7 +150,6 @@ void cyrf6936StartRecv(void)
 {
     cyrf6936WriteRegister(CYRF6936_RX_IRQ_STATUS, CYRF6936_RXOW_IRQ);
     cyrf6936WriteRegister(CYRF6936_RX_CTRL, CYRF6936_RX_GO | CYRF6936_RXC_IRQEN | CYRF6936_RXE_IRQEN);
-    EXTIEnable(rxIntIO, true);
 }
 
 void cyrf6936RecvLen(uint8_t *data, const uint8_t length)

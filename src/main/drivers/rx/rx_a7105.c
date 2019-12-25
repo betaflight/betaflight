@@ -27,39 +27,17 @@
 #ifdef USE_RX_FLYSKY
 
 #include "drivers/bus_spi.h"
-#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/nvic.h"
 #include "drivers/rx/rx_a7105.h"
 #include "drivers/rx/rx_spi.h"
-#include "drivers/time.h"
 
 static IO_t txEnIO = IO_NONE;
 
-static IO_t rxIntIO = IO_NONE;
-static extiCallbackRec_t a7105extiCallbackRec;
-static volatile uint32_t timeEvent = 0;
-static volatile bool occurEvent = false;
+static bool consumeExti = true;
 
-void a7105extiHandler(extiCallbackRec_t* cb)
+void A7105Init(uint32_t id, IO_t txEnPin)
 {
-    UNUSED(cb);
-
-    if (IORead(rxIntIO) != 0) {
-        timeEvent = micros();
-        occurEvent = true;
-    }
-}
-
-void A7105Init(uint32_t id, IO_t extiPin, IO_t txEnPin)
-{
-    rxIntIO = extiPin; /* config receiver IRQ pin */
-    IOInit(rxIntIO, OWNER_RX_SPI_EXTI, 0);
-    EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
-    EXTIConfig(rxIntIO, &a7105extiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IPD, EXTI_TRIGGER_RISING);
-    EXTIEnable(rxIntIO, false);
-
     if (txEnPin) {
         txEnIO = txEnPin;
         //TODO: Create resource for this if it ever gets used
@@ -98,15 +76,16 @@ void A7105Config(const uint8_t *regsTable, uint8_t size)
     }
 }
 
-bool A7105RxTxFinished(uint32_t *timeStamp) {
+bool A7105RxTxFinished(timeUs_t *timeStamp) {
     bool result = false;
 
-    if (occurEvent) {
-        if (timeStamp) {
-            *timeStamp = timeEvent;
+    if (consumeExti && rxSpiPollExti()) {
+        if (rxSpiGetLastExtiTimeUs()) {
+            *timeStamp = rxSpiGetLastExtiTimeUs();
         }
 
-        occurEvent = false;
+        rxSpiResetExti();
+
         result = true;
     }
     return result;
@@ -130,9 +109,10 @@ void A7105WriteReg(A7105Reg_t reg, uint8_t data)
 void A7105Strobe(A7105State_t state)
 {
     if (A7105_TX == state || A7105_RX == state) {
-        EXTIEnable(rxIntIO, true);
+        consumeExti = true;
+        rxSpiResetExti();
     } else {
-        EXTIEnable(rxIntIO, false);
+        consumeExti = false;
     }
 
     if (txEnIO) {

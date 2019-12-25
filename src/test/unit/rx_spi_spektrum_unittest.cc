@@ -86,6 +86,7 @@ extern "C" {
 
     static const dsmReceiver_t empty = dsmReceiver_t();
     static rxRuntimeState_t config = rxRuntimeState_t();
+    static rxSpiExtiConfig_t extiConfig;
     static uint8_t packetLen;
     static uint8_t packet[16];
     static uint16_t rssi = 0;
@@ -142,7 +143,7 @@ extern "C" {
 TEST(RxSpiSpektrumUnitTest, TestInitUnbound)
 {
     dsmReceiver = empty;
-    spektrumSpiInit(&injectedConfig, &config);
+    spektrumSpiInit(&injectedConfig, &config, &extiConfig);
     EXPECT_FALSE(dsmReceiver.bound);
     EXPECT_EQ(DSM_RECEIVER_BIND, dsmReceiver.status);
     EXPECT_EQ(DSM_INITIAL_BIND_CHANNEL, dsmReceiver.rfChannel);
@@ -160,7 +161,7 @@ TEST(RxSpiSpektrumUnitTest, TestInitBound)
 
     spektrumConfigMutable()->protocol = DSMX_11;
 
-    bool result = spektrumSpiInit(&injectedConfig, &config);
+    bool result = spektrumSpiInit(&injectedConfig, &config, &extiConfig);
 
     EXPECT_TRUE(result);
     EXPECT_TRUE(dsmReceiver.bound);
@@ -180,7 +181,7 @@ TEST(RxSpiSpektrumUnitTest, TestInitBound)
     dsmReceiver = empty;
     spektrumConfigMutable()->protocol = DSM2_11;
 
-    spektrumSpiInit(&injectedConfig, &config);
+    spektrumSpiInit(&injectedConfig, &config, &extiConfig);
 
     EXPECT_TRUE(dsmReceiver.bound);
     EXPECT_EQ(DSM2_11, dsmReceiver.protocol);
@@ -388,8 +389,9 @@ extern "C" {
     void rxSpiCommonIOInit(const rxSpiConfig_t *) {}
     void rxSpiLedBlinkRxLoss(rx_spi_received_e ) {}
     void rxSpiLedBlinkBind(void) {};
-    bool rxSpiCheckBindRequested(bool )
+    bool rxSpiCheckBindRequested(bool)
     {
         return false;
     }
+    bool rxSpiExtiConfigured(void) { return true; }
 }

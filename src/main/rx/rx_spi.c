@@ -31,6 +31,7 @@
 
 #include "config/feature.h"
 
+#include "drivers/io.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
 
@@ -55,7 +56,7 @@ uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
-typedef bool (*protocolInitFnPtr)(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState);
+typedef bool (*protocolInitFnPtr)(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
 typedef rx_spi_received_e (*protocolProcessFrameFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
@@ -82,7 +83,6 @@ STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeState_t *rxRuntimeStat
 STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 {
     switch (protocol) {
-    default:
 #ifdef USE_RX_V202
     case RX_SPI_NRF24_V202_250K:
     case RX_SPI_NRF24_V202_1M:
@@ -165,7 +165,10 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = spektrumSpiSetRcDataFromPayload;
         break;
 #endif
+    default:
+        return false;
     }
+
     return true;
 }
 
@@ -224,8 +227,19 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
         return false;
     }
 
-    if (rxSpiSetProtocol(rxSpiConfig->rx_spi_protocol)) {
-        ret = protocolInit(rxSpiConfig, rxRuntimeState);
+    if (!rxSpiSetProtocol(rxSpiConfig->rx_spi_protocol)) {
+        return false;
+    }
+
+    rxSpiExtiConfig_t extiConfig = {
+        .ioConfig = IOCFG_IN_FLOATING,
+        .trigger = EXTI_TRIGGER_RISING,
+    };
+
+    ret = protocolInit(rxSpiConfig, rxRuntimeState, &extiConfig);
+
+    if (rxSpiExtiConfigured()) {
+        rxSpiExtiInit(extiConfig.ioConfig, extiConfig.trigger);
     }
     rxSpiNewPacketAvailable = false;
     rxRuntimeState->rxRefreshRate = 20000;
