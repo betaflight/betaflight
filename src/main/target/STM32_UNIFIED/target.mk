@@ -35,6 +35,7 @@ TARGET_SRC = \
     rx/cc2500_frsky_d.c \
     rx/cc2500_frsky_x.c \
     rx/cc2500_sfhss.c \
+    rx/cc2500_redpine.c \
     rx/a7105_flysky.c \
     rx/cyrf6936_spektrum.c \
     drivers/rx/rx_cc2500.c \

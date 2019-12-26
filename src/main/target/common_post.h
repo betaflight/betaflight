@@ -142,7 +142,7 @@
 #undef USE_VTX_TABLE
 #endif
 
-#if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X)
+#if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X) || defined(USE_RX_REDPINE_SPI)
 #define USE_RX_CC2500
 #define USE_RX_FRSKY_SPI
 #endif
