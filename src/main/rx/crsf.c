@@ -68,7 +68,7 @@ static timeUs_t crsfFrameStartAtUs = 0;
 static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
-static timeDelta_t lastRcFrameDelta = 0;
+static timeUs_t lastRcFrameTimeUs = 0;
 
 /*
  * CRSF protocol
@@ -234,7 +234,6 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 
     static uint8_t crsfFramePosition = 0;
     const timeUs_t currentTimeUs = microsISR();
-    static timeUs_t lastRcFrameCompleteTimeUs = 0;
 
 #ifdef DEBUG_CRSF_PACKETS
     debug[2] = currentTimeUs - crsfFrameStartAtUs;
@@ -263,8 +262,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                 {
                     case CRSF_FRAMETYPE_RC_CHANNELS_PACKED:
                         if (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) {
-                            lastRcFrameDelta = cmpTimeUs(currentTimeUs, lastRcFrameCompleteTimeUs);
-                            lastRcFrameCompleteTimeUs = currentTimeUs;
+                            lastRcFrameTimeUs = currentTimeUs;
                             crsfFrameDone = true;
                             memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
                         }
@@ -374,9 +372,11 @@ void crsfRxSendTelemetryData(void)
     }
 }
 
-static timeDelta_t crsfFrameDelta(void)
+static timeUs_t crsfFrameTimeUs(void)
 {
-    return lastRcFrameDelta;
+    const timeUs_t result = lastRcFrameTimeUs;
+    lastRcFrameTimeUs = 0;
+    return result;
 }
 
 bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -390,7 +390,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = crsfReadRawRC;
     rxRuntimeState->rcFrameStatusFn = crsfFrameStatus;
-    rxRuntimeState->rcFrameDeltaFn = crsfFrameDelta;
+    rxRuntimeState->rcFrameTimeUsFn = crsfFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

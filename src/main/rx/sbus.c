@@ -108,12 +108,11 @@ typedef struct sbusFrameData_s {
     bool done;
 } sbusFrameData_t;
 
-static timeDelta_t lastFrameDelta = 0;
+static timeUs_t lastRcFrameTimeUs = 0;
 
 // Receive ISR callback
 static void sbusDataReceive(uint16_t c, void *data)
 {
-    static timeUs_t lastFrameCompleteTimeUs = 0;
     sbusFrameData_t *sbusFrameData = data;
 
     const timeUs_t nowUs = microsISR();
@@ -136,8 +135,7 @@ static void sbusDataReceive(uint16_t c, void *data)
         if (sbusFrameData->position < SBUS_FRAME_SIZE) {
             sbusFrameData->done = false;
         } else {
-            lastFrameDelta = cmpTimeUs(nowUs, lastFrameCompleteTimeUs);
-            lastFrameCompleteTimeUs = nowUs;
+            lastRcFrameTimeUs = nowUs;
             sbusFrameData->done = true;
             DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, sbusFrameTime);
         }
@@ -154,12 +152,19 @@ static uint8_t sbusFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
     DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_FLAGS, sbusFrameData->frame.frame.channels.flags);
 
-    return sbusChannelsDecode(rxRuntimeState, &sbusFrameData->frame.frame.channels);
+    const uint8_t frameStatus = sbusChannelsDecode(rxRuntimeState, &sbusFrameData->frame.frame.channels);
+
+    if (frameStatus != RX_FRAME_COMPLETE) {
+        lastRcFrameTimeUs = 0;  // We received a frame but it wasn't valid new channel data
+    }
+    return frameStatus;
 }
 
-static timeDelta_t sbusFrameDelta(void)
+static timeUs_t sbusFrameTimeUs(void)
 {
-    return lastFrameDelta;
+    const timeUs_t result = lastRcFrameTimeUs;
+    lastRcFrameTimeUs = 0;
+    return result;
 }
 
 bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -183,7 +188,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->rcFrameStatusFn = sbusFrameStatus;
-    rxRuntimeState->rcFrameDeltaFn = sbusFrameDelta;
+    rxRuntimeState->rcFrameTimeUsFn = sbusFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
