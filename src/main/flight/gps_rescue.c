@@ -578,7 +578,7 @@ void updateGPSRescueState(void)
 
         if (!STATE(GPS_FIX_HOME)) {
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            disarm();
+            disarm(DISARM_REASON_GPS_RESCUE);
         }
 
         // Minimum distance detection.
@@ -588,7 +588,7 @@ void updateGPSRescueState(void)
             // Never allow rescue mode to engage as a failsafe when too close.
             if (rescueState.isFailsafe) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-                disarm();
+                disarm(DISARM_REASON_GPS_RESCUE);
             }
             
             // When not in failsafe mode: leave it up to the sanity check setting.
@@ -677,7 +677,7 @@ void updateGPSRescueState(void)
 
         if (rescueState.sensor.accMagnitude > magnitudeTrigger) {
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            disarm();
+            disarm(DISARM_REASON_GPS_RESCUE);
             rescueState.phase = RESCUE_COMPLETE;
         }
 
@@ -692,7 +692,7 @@ void updateGPSRescueState(void)
         break;
     case RESCUE_ABORT:
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-        disarm();
+        disarm(DISARM_REASON_GPS_RESCUE);
         rescueStop();
         break;
     default:

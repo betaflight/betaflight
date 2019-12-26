@@ -35,6 +35,7 @@ extern "C" {
     #include "fc/runtime_config.h"
     #include "fc/rc_modes.h"
     #include "fc/rc_controls.h"
+    #include "fc/core.h"
 
     #include "flight/failsafe.h"
 
@@ -571,7 +572,7 @@ bool featureIsEnabled(uint32_t mask) {
     return (mask & testFeatureMask);
 }
 
-void disarm(void) {
+void disarm(flightLogDisarmReason_e) {
     callCounts[COUNTER_MW_DISARM]++;
 }
 

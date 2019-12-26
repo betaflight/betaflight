@@ -676,7 +676,7 @@ TEST(ArmingPreventionTest, GPSRescueWithoutFixPreventsArm)
     rcData[AUX1] = 1000;
 
     // when
-    disarm();
+    disarm(DISARM_REASON_SYSTEM);
     updateActivatedModes();
     updateArmingStatus();
 
@@ -720,7 +720,7 @@ TEST(ArmingPreventionTest, GPSRescueWithoutFixPreventsArm)
     rcData[AUX1] = 1000;
 
     // when
-    disarm();
+    disarm(DISARM_REASON_SYSTEM);
     updateActivatedModes();
     updateArmingStatus();
 
@@ -790,7 +790,7 @@ TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
     rcData[AUX1] = 1000;
 
     // when
-    disarm();
+    disarm(DISARM_REASON_SYSTEM);
     updateActivatedModes();
     updateArmingStatus();
 
@@ -834,7 +834,7 @@ TEST(ArmingPreventionTest, GPSRescueSwitchPreventsArm)
     rcData[AUX1] = 1000;
 
     // when
-    disarm();
+    disarm(DISARM_REASON_SYSTEM);
     updateActivatedModes();
     updateArmingStatus();
 
@@ -951,7 +951,7 @@ TEST(ArmingPreventionTest, Paralyze)
     rcData[AUX1] = 1000;
 
     // when
-    disarm();
+    disarm(DISARM_REASON_SYSTEM);
     updateActivatedModes();
     updateArmingStatus();
 
@@ -1098,4 +1098,5 @@ extern "C" {
     void compassStartCalibration(void) {}
     bool compassIsCalibrationComplete(void) { return true; }
     bool isUpright(void) { return mockIsUpright; }
+    void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
 }

@@ -113,6 +113,10 @@ typedef struct flightLogEvent_syncBeep_s {
     uint32_t time;
 } flightLogEvent_syncBeep_t;
 
+typedef struct flightLogEvent_disarm_s {
+    uint32_t reason;
+} flightLogEvent_disarm_t;
+
 typedef struct flightLogEvent_flightMode_s { // New Event Data type
     uint32_t flags;
     uint32_t lastFlags;
@@ -135,6 +139,7 @@ typedef struct flightLogEvent_loggingResume_s {
 typedef union flightLogEventData_u {
     flightLogEvent_syncBeep_t syncBeep;
     flightLogEvent_flightMode_t flightMode; // New event data
+    flightLogEvent_disarm_t disarm;
     flightLogEvent_inflightAdjustment_t inflightAdjustment;
     flightLogEvent_loggingResume_t loggingResume;
 } flightLogEventData_t;

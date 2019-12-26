@@ -614,7 +614,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_DISARM:
             if (ARMING_FLAG(ARMED)) {
-                    disarm();
+                disarm(DISARM_REASON_SERIAL_COMMAND);
             }
             setArmingDisabled(ARMING_DISABLED_BST);
             break;

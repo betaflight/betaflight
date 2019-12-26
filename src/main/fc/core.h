@@ -47,6 +47,21 @@ typedef enum {
     LAUNCH_CONTROL_MODE_COUNT // must be the last element
 } launchControlMode_e;
 
+typedef enum {
+    DISARM_REASON_ARMING_DISABLED   = 0,
+    DISARM_REASON_FAILSAFE          = 1,
+    DISARM_REASON_THROTTLE_TIMEOUT  = 2,
+    DISARM_REASON_STICKS            = 3,
+    DISARM_REASON_SWITCH            = 4,
+    DISARM_REASON_CRASH_PROTECTION  = 5,
+    DISARM_REASON_RUNAWAY_TAKEOFF   = 6,
+    DISARM_REASON_GPS_RESCUE        = 7,
+    DISARM_REASON_SERIAL_COMMAND    = 8,
+#ifdef UNIT_TEST
+    DISARM_REASON_SYSTEM            = 255,
+#endif
+} flightLogDisarmReason_e;
+
 #ifdef USE_LAUNCH_CONTROL
 #define LAUNCH_CONTROL_THROTTLE_TRIGGER_MAX 90
 extern const char * const osdLaunchControlModeNames[LAUNCH_CONTROL_MODE_COUNT];
@@ -59,7 +74,7 @@ void handleInflightCalibrationStickPosition(void);
 
 void resetArmingDisabled(void);
 
-void disarm(void);
+void disarm(flightLogDisarmReason_e reason);
 void tryArm(void);
 
 bool processRx(timeUs_t currentTimeUs);
