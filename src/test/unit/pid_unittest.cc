@@ -251,13 +251,13 @@ TEST(pidControllerTest, testPidLoop) {
     pidController(pidProfile, currentTestTime());
 
     // Loop 2 - Expect PID loop reaction to ROLL error
-    ASSERT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
+    EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    ASSERT_NEAR(-7.8, pidData[FD_ROLL].I, calculateTolerance(-7.8));
+    EXPECT_NEAR(-7.8, pidData[FD_ROLL].I, calculateTolerance(-7.8));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
-    ASSERT_NEAR(-198.4, pidData[FD_ROLL].D, calculateTolerance(-198.4));
+    EXPECT_NEAR(-198.4, pidData[FD_ROLL].D, calculateTolerance(-198.4));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 
@@ -266,14 +266,14 @@ TEST(pidControllerTest, testPidLoop) {
     pidController(pidProfile, currentTestTime());
 
     // Loop 3 - Expect PID loop reaction to PITCH error, ROLL is still in error
-    ASSERT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
-    ASSERT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
+    EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
+    EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    ASSERT_NEAR(-15.6, pidData[FD_ROLL].I, calculateTolerance(-15.6));
-    ASSERT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
+    EXPECT_NEAR(-15.6, pidData[FD_ROLL].I, calculateTolerance(-15.6));
+    EXPECT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
-    ASSERT_NEAR(231.4, pidData[FD_PITCH].D, calculateTolerance(231.4));
+    EXPECT_NEAR(231.4, pidData[FD_PITCH].D, calculateTolerance(231.4));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 
     // Add some rotation on YAW to generate error
@@ -281,22 +281,22 @@ TEST(pidControllerTest, testPidLoop) {
     pidController(pidProfile, currentTestTime());
 
     // Loop 4 - Expect PID loop reaction to PITCH error, ROLL and PITCH are still in error
-    ASSERT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
-    ASSERT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
-    ASSERT_NEAR(-224.2, pidData[FD_YAW].P, calculateTolerance(-224.2));
-    ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
-    ASSERT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
+    EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
+    EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
+    EXPECT_NEAR(-224.2, pidData[FD_YAW].P, calculateTolerance(-224.2));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    ASSERT_NEAR(-132.25, pidData[FD_YAW].D, calculateTolerance(-132.25));
+    EXPECT_NEAR(-132.25, pidData[FD_YAW].D, calculateTolerance(-132.25));
 
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
     pidController(pidProfile, currentTestTime());
-    ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
-    ASSERT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
     simulatedMotorMixRange = 0;
 
     // Match the stick to gyro to stop error
@@ -311,9 +311,9 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    ASSERT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    ASSERT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
-    ASSERT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
@@ -401,7 +401,7 @@ TEST(pidControllerTest, testPidHorizon) {
     // Test small stick response
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
-    ASSERT_NEAR(0.82, calcHorizonLevelStrength(), calculateTolerance(0.82));
+    EXPECT_NEAR(0.82, calcHorizonLevelStrength(), calculateTolerance(0.82));
 }
 
 TEST(pidControllerTest, testMixerSaturation) {
@@ -444,9 +444,9 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_YAW, 0.1f);
     simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
     pidController(pidProfile, currentTestTime());
-    ASSERT_LT(pidData[FD_ROLL].I, rollTestIterm);
-    ASSERT_GE(pidData[FD_PITCH].I, pitchTestIterm);
-    ASSERT_LT(pidData[FD_YAW].I, yawTestIterm);
+    EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
+    EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
+    EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
 }
 
 // TODO - Add more scenarios
@@ -491,9 +491,9 @@ TEST(pidControllerTest, testFeedForward) {
 
     pidController(pidProfile, currentTestTime());
 
-    ASSERT_NEAR(2232.78, pidData[FD_ROLL].F, calculateTolerance(2232.78));
-    ASSERT_NEAR(-2061.03, pidData[FD_PITCH].F, calculateTolerance(-2061.03));
-    ASSERT_NEAR(-82.52, pidData[FD_YAW].F, calculateTolerance(-82.5));
+    EXPECT_NEAR(2232.78, pidData[FD_ROLL].F, calculateTolerance(2232.78));
+    EXPECT_NEAR(-2061.03, pidData[FD_PITCH].F, calculateTolerance(-2061.03));
+    EXPECT_NEAR(-82.52, pidData[FD_YAW].F, calculateTolerance(-82.5));
 
     // Match the stick to gyro to stop error
     setStickPosition(FD_ROLL, 0.5f);
@@ -502,9 +502,9 @@ TEST(pidControllerTest, testFeedForward) {
 
     pidController(pidProfile, currentTestTime());
 
-    ASSERT_NEAR(-558.20, pidData[FD_ROLL].F, calculateTolerance(-558.20));
-    ASSERT_NEAR(515.26, pidData[FD_PITCH].F, calculateTolerance(515.26));
-    ASSERT_NEAR(-41.26, pidData[FD_YAW].F, calculateTolerance(-41.26));
+    EXPECT_NEAR(-558.20, pidData[FD_ROLL].F, calculateTolerance(-558.20));
+    EXPECT_NEAR(515.26, pidData[FD_PITCH].F, calculateTolerance(515.26));
+    EXPECT_NEAR(-41.26, pidData[FD_YAW].F, calculateTolerance(-41.26));
 
     for (int loop =0; loop <= 15; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
@@ -538,12 +538,12 @@ TEST(pidControllerTest, testItermRelax) {
 
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
 
-    ASSERT_NEAR(-8.16, itermErrorRate, calculateTolerance(-8.16));
+    EXPECT_NEAR(-8.16, itermErrorRate, calculateTolerance(-8.16));
     currentPidSetpoint += ITERM_RELAX_SETPOINT_THRESHOLD;
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    ASSERT_NEAR(-2.69, itermErrorRate, calculateTolerance(-2.69));
+    EXPECT_NEAR(-2.69, itermErrorRate, calculateTolerance(-2.69));
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    ASSERT_NEAR(-0.84, itermErrorRate, calculateTolerance(-0.84));
+    EXPECT_NEAR(-0.84, itermErrorRate, calculateTolerance(-0.84));
 
     pidProfile->iterm_relax_type = ITERM_RELAX_GYRO;
     pidInit(pidProfile);
@@ -554,10 +554,10 @@ TEST(pidControllerTest, testItermRelax) {
     gyroRate = 10;
     itermErrorRate = -10;
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    ASSERT_NEAR(7, itermErrorRate, calculateTolerance(7));
+    EXPECT_NEAR(7, itermErrorRate, calculateTolerance(7));
     gyroRate += 100;
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    ASSERT_NEAR(-10, itermErrorRate, calculateTolerance(-10));
+    EXPECT_NEAR(-10, itermErrorRate, calculateTolerance(-10));
 
     pidProfile->iterm_relax = ITERM_RELAX_RP_INC;
     pidInit(pidProfile);
@@ -587,7 +587,7 @@ TEST(pidControllerTest, testItermRelax) {
     pidProfile->iterm_relax = ITERM_RELAX_RPY;
     pidInit(pidProfile);
     applyItermRelax(FD_YAW, pidData[FD_YAW].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    ASSERT_NEAR(-6.46, itermErrorRate, calculateTolerance(-3.6));
+    EXPECT_NEAR(-6.46, itermErrorRate, calculateTolerance(-3.6));
 }
 
 // TODO - Add more tests
@@ -605,18 +605,18 @@ TEST(pidControllerTest, testAbsoluteControl) {
 
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
 
-    ASSERT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
-    ASSERT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
+    EXPECT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
+    EXPECT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
 
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-    ASSERT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
-    ASSERT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
+    EXPECT_NEAR(10.8, itermErrorRate, calculateTolerance(10.8));
+    EXPECT_NEAR(10.8, currentPidSetpoint, calculateTolerance(10.8));
 
     gyroRate = -53;
     axisError[FD_PITCH] = -60;
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-    ASSERT_NEAR(-79.2, itermErrorRate, calculateTolerance(-79.2));
-    ASSERT_NEAR(-79.2, currentPidSetpoint, calculateTolerance(-79.2));
+    EXPECT_NEAR(-79.2, itermErrorRate, calculateTolerance(-79.2));
+    EXPECT_NEAR(-79.2, currentPidSetpoint, calculateTolerance(-79.2));
 }
 
 TEST(pidControllerTest, testDtermFiltering) {
@@ -646,8 +646,8 @@ TEST(pidControllerTest, testItermRotationHandling) {
     gyro.gyroADCf[FD_ROLL] = -1000;
     rotateItermAndAxisError();
     EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
-    ASSERT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
-    ASSERT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
+    EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
+    EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
 
     pidProfile->abs_control_gain = 10;
     pidInit(pidProfile);
@@ -661,8 +661,8 @@ TEST(pidControllerTest, testItermRotationHandling) {
     axisError[FD_YAW] = 1000;
     rotateItermAndAxisError();
     EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
-    ASSERT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
-    ASSERT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
+    EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
+    EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
 }
 
 TEST(pidControllerTest, testLaunchControl) {
@@ -722,11 +722,11 @@ TEST(pidControllerTest, testLaunchControl) {
     gyro.gyroADCf[FD_YAW] = -20;
     pidController(pidProfile, currentTestTime());
 
-    ASSERT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
-    ASSERT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
-    ASSERT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
-    ASSERT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
-    ASSERT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
+    EXPECT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
+    EXPECT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
+    EXPECT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
+    EXPECT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
+    EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
     // test PITCHONLY mode - expect P/I only on pitch; I cannot go negative
@@ -753,8 +753,8 @@ TEST(pidControllerTest, testLaunchControl) {
 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-    ASSERT_NEAR(37.15, pidData[FD_PITCH].P, calculateTolerance(37.15));
-    ASSERT_NEAR(1.56,  pidData[FD_PITCH].I, calculateTolerance(1.56));
+    EXPECT_NEAR(37.15, pidData[FD_PITCH].P, calculateTolerance(37.15));
+    EXPECT_NEAR(1.56,  pidData[FD_PITCH].I, calculateTolerance(1.56));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
@@ -772,10 +772,10 @@ TEST(pidControllerTest, testLaunchControl) {
     gyro.gyroADCf[FD_YAW] = -20;
     pidController(pidProfile, currentTestTime());
 
-    ASSERT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
-    ASSERT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
-    ASSERT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
-    ASSERT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
-    ASSERT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
-    ASSERT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
+    EXPECT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
+    EXPECT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
+    EXPECT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
+    EXPECT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
+    EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
+    EXPECT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
 }
