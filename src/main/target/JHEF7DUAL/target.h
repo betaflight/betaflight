@@ -151,8 +151,8 @@
 #define USE_ESCSERIAL
 
 #define USE_PINIO
-#define PINIO1_PIN              PC14 // VTX power switcher
-#define PINIO2_PIN              PB9  // 2xCamera switcher
+#define PINIO1_PIN              PC14 // 2xCamera switcher
+#define PINIO2_PIN              PB9  // VTX power switcher
 #define USE_PINIOBOX
 
 #define TARGET_IO_PORTA         0xffff
