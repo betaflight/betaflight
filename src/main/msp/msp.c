@@ -1686,7 +1686,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #endif
         // Added in MSP API 1.42
 #if defined(USE_GYRO_DATA_ANALYSE)
-        sbufWriteU8(dst, gyroConfig()->dyn_notch_range);
+        sbufWriteU8(dst, 0); // DEPRECATED 1.43: dyn_notch_range
         sbufWriteU8(dst, gyroConfig()->dyn_notch_width_percent);
         sbufWriteU16(dst, gyroConfig()->dyn_notch_q);
         sbufWriteU16(dst, gyroConfig()->dyn_notch_min_hz);
@@ -1696,13 +1696,18 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
 #endif
-
 #if defined(USE_RPM_FILTER)
         sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_harmonics);
         sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_min);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
+#endif
+#if defined(USE_GYRO_DATA_ANALYSE)
+        // Added in MSP API 1.43
+        sbufWriteU16(dst, gyroConfig()->dyn_notch_max_hz);
+#else
+        sbufWriteU16(dst, 0);
 #endif
 
         break;
@@ -2497,7 +2502,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 8) {
             // Added in MSP API 1.42
 #if defined(USE_GYRO_DATA_ANALYSE)
-            gyroConfigMutable()->dyn_notch_range = sbufReadU8(src);
+            sbufReadU8(src); // DEPRECATED: dyn_notch_range
             gyroConfigMutable()->dyn_notch_width_percent = sbufReadU8(src);
             gyroConfigMutable()->dyn_notch_q = sbufReadU16(src);
             gyroConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
@@ -2507,7 +2512,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
             sbufReadU16(src);
 #endif
-
 #if defined(USE_RPM_FILTER)
             rpmFilterConfigMutable()->gyro_rpm_notch_harmonics = sbufReadU8(src);
             rpmFilterConfigMutable()->gyro_rpm_notch_min = sbufReadU8(src);
@@ -2516,6 +2520,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
+        if (sbufBytesRemaining(src) >= 1) {
+#if defined(USE_GYRO_DATA_ANALYSE)
+            // Added in MSP API 1.43
+            gyroConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+#endif
+        }
+        
 
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
