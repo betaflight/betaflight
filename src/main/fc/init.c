@@ -921,6 +921,7 @@ void init(void)
 
 #if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
     displayPort_t *osdDisplayPort = NULL;
+    osdDisplayPortDevice_e osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_NONE;
 #endif
 
 #if defined(USE_OSD)
@@ -941,6 +942,7 @@ void init(void)
         case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
             osdDisplayPort = frskyOsdDisplayPortInit(vcdProfile()->video_system);
             if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FRSKYOSD;
                 break;
             }
             FALLTHROUGH;
@@ -951,6 +953,7 @@ void init(void)
             // If there is a max7456 chip for the OSD configured and detectd then use it.
             osdDisplayPort = max7456DisplayPortInit(vcdProfile());
             if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MAX7456) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
                 break;
             }
             FALLTHROUGH;
@@ -960,6 +963,7 @@ void init(void)
         case OSD_DISPLAYPORT_DEVICE_MSP:
             osdDisplayPort = displayPortMspInit();
             if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MSP) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
                 break;
             }
             FALLTHROUGH;
@@ -973,7 +977,7 @@ void init(void)
         }
 
         // osdInit will register with CMS by itself.
-        osdInit(osdDisplayPort);
+        osdInit(osdDisplayPort, osdDisplayPortDevice);
     }
 #endif // USE_OSD
 

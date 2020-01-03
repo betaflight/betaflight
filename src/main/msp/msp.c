@@ -52,10 +52,10 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#include "drivers/display.h"
 #include "drivers/dshot.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
-#include "drivers/max7456.h"
 #include "drivers/motor.h"
 #include "drivers/osd.h"
 #include "drivers/pwm_output.h"
@@ -111,7 +111,6 @@
 #include "pg/beeper.h"
 #include "pg/board.h"
 #include "pg/gyrodev.h"
-#include "pg/max7456.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -847,23 +846,37 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_FEATURE           (1 << 0)
 //#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
 #define OSD_FLAGS_RESERVED_1            (1 << 2)
-#define OSD_FLAGS_RESERVED_2            (1 << 3)
+#define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
-#define OSD_FLAGS_MAX7456_DETECTED      (1 << 5)
+#define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
 
         uint8_t osdFlags = 0;
 #if defined(USE_OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
-#endif
-#ifdef USE_MAX7456
-        if (max7456Config()->csTag && max7456Config()->spiDevice) {
-            osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
-            if (max7456IsDeviceDetected()) {
-                osdFlags |= OSD_FLAGS_MAX7456_DETECTED;
+
+        osdDisplayPortDevice_e device = OSD_DISPLAYPORT_DEVICE_NONE;
+        displayPort_t *osdDisplayPort = osdGetDisplayPort(&device);
+        if (osdDisplayPort) {
+            switch (device) {
+                case OSD_DISPLAYPORT_DEVICE_NONE:
+                case OSD_DISPLAYPORT_DEVICE_AUTO:
+                    break;
+                case OSD_DISPLAYPORT_DEVICE_MAX7456:
+                    osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+                    break;
+                case OSD_DISPLAYPORT_DEVICE_MSP:
+                    break;
+                case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+                    osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
+                    break;
+            }
+            if (osdFlags | (OSD_FLAGS_OSD_HARDWARE_MAX_7456 | OSD_FLAGS_OSD_HARDWARE_FRSKYOSD)) {
+                if (displayIsReady(osdDisplayPort)) {
+                    osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
+                }
             }
         }
 #endif
-
         sbufWriteU8(dst, osdFlags);
 
 #ifdef USE_MAX7456
@@ -3386,7 +3399,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, uint8_t cm
             for (unsigned ii = 0; ii < MIN(osdCharacterBytes, sizeof(chr.data)); ii++) {
                 chr.data[ii] = sbufReadU8(src);
             }
-            displayPort_t *osdDisplayPort = osdGetDisplayPort();
+            displayPort_t *osdDisplayPort = osdGetDisplayPort(NULL);
             if (!osdDisplayPort) {
                 return MSP_RESULT_ERROR;
             }

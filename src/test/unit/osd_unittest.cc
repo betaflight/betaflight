@@ -223,7 +223,7 @@ TEST(OsdTest, TestInit)
 
     // when
     // OSD is initialised
-    osdInit(&testDisplayPort);
+    osdInit(&testDisplayPort, OSD_DISPLAYPORT_DEVICE_AUTO);
 
     // then
     // display buffer should contain splash screen

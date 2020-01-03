@@ -164,6 +164,13 @@ static bool writeFontCharacter(displayPort_t *instance, uint16_t addr, const osd
     return max7456WriteNvm(addr, (const uint8_t *)chr);
 }
 
+static bool isReady(displayPort_t *instance)
+{
+    UNUSED(instance);
+
+    return max7456IsDeviceDetected();
+}
+
 static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
@@ -181,6 +188,7 @@ static const displayPortVTable_t max7456VTable = {
     .layerSelect = layerSelect,
     .layerCopy = layerCopy,
     .writeFontCharacter = writeFontCharacter,
+    .isReady = isReady,
 };
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
