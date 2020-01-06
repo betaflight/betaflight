@@ -80,6 +80,10 @@ void tryArm(void);
 bool processRx(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 
+void taskGyroSample(timeUs_t currentTimeUs);
+bool gyroFilterReady(void);
+bool pidLoopReady(void);
+void taskFiltering(timeUs_t currentTimeUs);
 void taskMainPidLoop(timeUs_t currentTimeUs);
 
 bool isFlipOverAfterCrashActive(void);

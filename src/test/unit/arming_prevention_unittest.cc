@@ -74,6 +74,7 @@ extern "C" {
     int16_t GPS_directionToHome = 0;
     acc_t acc = {};
     bool mockIsUpright = false;
+    uint8_t activePidLoopDenom = 1;
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -1049,7 +1050,7 @@ extern "C" {
     void writeServos(void) {};
     bool calculateRxChannelsAndUpdateFailsafe(timeUs_t) { return true; }
     bool isMixerUsingServos(void) { return false; }
-    void gyroUpdate(timeUs_t) {}
+    void gyroUpdate(void) {}
     timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 0; }
     void updateRSSI(timeUs_t) {}
     bool failsafeIsMonitoring(void) { return false; }
@@ -1099,4 +1100,5 @@ extern "C" {
     bool compassIsCalibrationComplete(void) { return true; }
     bool isUpright(void) { return mockIsUpright; }
     void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
+    void gyroFiltering(timeUs_t) {};
 }

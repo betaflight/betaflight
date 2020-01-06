@@ -124,7 +124,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
         return;
     }
 
-    pidLooptime = gyro.targetLooptime * pidConfig()->pid_process_denom;
+    pidLooptime = gyro.targetLooptime;
     if (config->gyro_rpm_notch_harmonics) {
         gyroFilter = &filters[numberRpmNotchFilters++];
         rpmNotchFilterInit(gyroFilter, config->gyro_rpm_notch_harmonics,

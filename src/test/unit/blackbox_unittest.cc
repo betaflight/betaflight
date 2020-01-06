@@ -75,14 +75,6 @@ TEST(BlackboxTest, TestInitIntervals)
     EXPECT_EQ(0, blackboxPInterval);
     EXPECT_EQ(4096, blackboxSInterval);
 
-    // 1kHz PIDloop
-    gyro.targetLooptime = gyroSetSampleRate(&gyroDev, GYRO_HARDWARE_LPF_1KHZ_SAMPLE, 1);
-    targetPidLooptime = gyro.targetLooptime * 1;
-    blackboxInit();
-    EXPECT_EQ(32, blackboxIInterval);
-    EXPECT_EQ(1, blackboxPInterval);
-    EXPECT_EQ(8192, blackboxSInterval);
-
     // 2kHz PIDloop
     targetPidLooptime = 500;
     blackboxInit();

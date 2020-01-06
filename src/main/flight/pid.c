@@ -755,7 +755,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 void pidInit(const pidProfile_t *pidProfile)
 {
-    pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
+    pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
 #ifdef USE_RPM_FILTER
@@ -857,7 +857,10 @@ STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
     return constrainf(horizonLevelStrength, 0, 1);
 }
 
-STATIC_UNIT_TESTED float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+// Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM to avoid overflow.
+// The impact is possibly slightly slower performance on F7/H7 but they have more than enough
+// processing power that it should be a non-issue.
+STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
     float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
@@ -1215,7 +1218,10 @@ float pidGetAirmodeThrottleOffset()
 #define LAUNCH_CONTROL_MIN_RATE 5.0f
 #define LAUNCH_CONTROL_ANGLE_WINDOW 10.0f  // The remaining angle degrees where rate dampening starts
 
-static float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
+// Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM to avoid overflow.
+// The impact is possibly slightly slower performance on F7/H7 but they have more than enough
+// processing power that it should be a non-issue.
+static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
 {
     float ret = 0.0f;
 

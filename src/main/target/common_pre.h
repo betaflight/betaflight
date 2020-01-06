@@ -137,6 +137,14 @@
 #define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
 
+// Set the default cpu_overclock to the first level (108MHz) for F411
+// Helps with looptime stability as the CPU is borderline when running native gyro sampling
+#if defined(USE_OVERCLOCK) && defined(STM32F411xE)
+#define DEFAULT_CPU_OVERCLOCK 1
+#else
+#define DEFAULT_CPU_OVERCLOCK 0
+#endif
+
 
 #ifdef USE_ITCM_RAM
 #define FAST_CODE                   __attribute__((section(".tcm_code")))

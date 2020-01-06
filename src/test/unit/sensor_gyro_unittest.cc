@@ -85,6 +85,7 @@ TEST(SensorGyro, Calibrate)
 {
     pgResetAll();
     gyroInit();
+    gyroSetTargetLooptime(1);
     fakeGyroSet(gyroDevPtr, 5, 6, 7);
     const bool read = gyroDevPtr->readFn(gyroDevPtr);
     EXPECT_TRUE(read);
@@ -119,16 +120,16 @@ TEST(SensorGyro, Update)
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     gyroInit();
+    gyroSetTargetLooptime(1);
     gyroDevPtr->readFn = fakeGyroRead;
     gyroStartCalibration(false);
     EXPECT_FALSE(gyroIsCalibrationComplete());
 
-    timeUs_t currentTimeUs = 0;
     fakeGyroSet(gyroDevPtr, 5, 6, 7);
-    gyroUpdate(currentTimeUs);
+    gyroUpdate();
     while (!gyroIsCalibrationComplete()) {
         fakeGyroSet(gyroDevPtr, 5, 6, 7);
-        gyroUpdate(currentTimeUs);
+        gyroUpdate();
     }
     EXPECT_TRUE(gyroIsCalibrationComplete());
     EXPECT_EQ(5, gyroDevPtr->gyroZero[X]);
@@ -137,16 +138,16 @@ TEST(SensorGyro, Update)
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[X]);
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Y]);
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Z]);
-    gyroUpdate(currentTimeUs);
+    gyroUpdate();
     // expect zero values since gyro is calibrated
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[X]);
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Y]);
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Z]);
     fakeGyroSet(gyroDevPtr, 15, 26, 97);
-    gyroUpdate(currentTimeUs);
-    EXPECT_NEAR(10 * gyroDevPtr->scale, gyro.gyroADCf[X], 1e-3); // gyroADCf values are scaled
-    EXPECT_NEAR(20 * gyroDevPtr->scale, gyro.gyroADCf[Y], 1e-3);
-    EXPECT_NEAR(90 * gyroDevPtr->scale, gyro.gyroADCf[Z], 1e-3);
+    gyroUpdate();
+    EXPECT_NEAR(10 * gyroDevPtr->scale, gyro.gyroADC[X], 1e-3); // gyro.gyroADC values are scaled
+    EXPECT_NEAR(20 * gyroDevPtr->scale, gyro.gyroADC[Y], 1e-3);
+    EXPECT_NEAR(90 * gyroDevPtr->scale, gyro.gyroADC[Z], 1e-3);
 }
 
 // STUBS

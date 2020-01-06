@@ -258,7 +258,6 @@ static const char * const lookupTableRxSpi[] = {
 
 static const char * const lookupTableGyroHardwareLpf[] = {
     "NORMAL",
-    "1KHZ_SAMPLING",
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     "EXPERIMENTAL"
 #endif
@@ -621,7 +620,6 @@ const clivalue_t valueTable[] = {
 #if defined(USE_GYRO_SPI_ICM20649)
     { "gyro_high_range",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_high_fsr) },
 #endif
-    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 32 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_sync_denom) },
 
     { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lowpass_type) },
     { "gyro_lowpass_hz",            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, FILTER_FREQUENCY_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lowpass_hz) },

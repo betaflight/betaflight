@@ -279,7 +279,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             }
             break;
         case BST_STATUS:
-            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
+            bstWrite16(getTaskDeltaTime(TASK_PID));
 #ifdef USE_I2C
             bstWrite16(i2cGetErrorCounter());
 #else
@@ -314,7 +314,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(getCurrentPidProfileIndex());
             break;
         case BST_LOOP_TIME:
-            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
+            bstWrite16(getTaskDeltaTime(TASK_PID));
             break;
         case BST_RC_TUNING:
             bstWrite8(currentControlRateProfile->rcRates[FD_ROLL]);
@@ -420,14 +420,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(rcControlsConfig()->yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            switch (gyroConfig()->gyro_hardware_lpf) { // Extra safety to prevent OSD setting corrupt values
-                case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                    bstWrite16(1);
-                    break;
-                default:
-                    bstWrite16(0);
-                    break;
-            }
+            bstWrite16(0);
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -628,14 +621,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             rcControlsConfigMutable()->yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            switch (bstRead16()) {
-                case 1:
-                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
-                    break;
-                default:
-                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-                    break;
-            }
+            bstRead16(); // 1KHz sampling no longer supported
             break;
 
         default:

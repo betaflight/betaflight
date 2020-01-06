@@ -53,17 +53,6 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-static uint8_t mpu3050GetDLPF(uint8_t lpf)
-{
-    uint8_t ret;
-    if (lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
-        ret = MPU3050_DLPF_188HZ;
-    } else {
-        ret = MPU3050_DLPF_256HZ;
-    }
-    return ret;
-}
-
 static void mpu3050Init(gyroDev_t *gyro)
 {
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
@@ -73,7 +62,7 @@ static void mpu3050Init(gyroDev_t *gyro)
         failureMode(FAILURE_ACC_INIT);
     }
 
-    busWriteRegister(&gyro->bus, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | mpu3050GetDLPF(gyro->hardware_lpf));
+    busWriteRegister(&gyro->bus, MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | MPU3050_DLPF_256HZ);
     busWriteRegister(&gyro->bus, MPU3050_INT_CFG, 0);
     busWriteRegister(&gyro->bus, MPU3050_USER_CTRL, MPU3050_USER_RESET);
     busWriteRegister(&gyro->bus, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);

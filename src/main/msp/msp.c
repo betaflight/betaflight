@@ -655,6 +655,9 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         // Added in API version 1.42
         sbufWriteU8(dst, systemConfig()->configurationState);
 
+        //Added in API version 1.43
+        sbufWriteU16(dst, gyro.sampleRateHz); // informational so the configurator can display the correct gyro/pid frequencies in the drop-down
+
         break;
     }
 
@@ -971,7 +974,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             boxBitmask_t flightModeFlags;
             const int flagBits = packFlightModeFlags(&flightModeFlags);
 
-            sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
+            sbufWriteU16(dst, getTaskDeltaTime(TASK_PID));
 #ifdef USE_I2C
             sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -1634,7 +1637,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         break;
     }
     case MSP_ADVANCED_CONFIG:
-        sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
+        sbufWriteU8(dst, 1);  // was gyroConfig()->gyro_sync_denom - removed in API 1.43
         sbufWriteU8(dst, pidConfig()->pid_process_denom);
         sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
@@ -2424,7 +2427,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     }
 
     case MSP_SET_ADVANCED_CONFIG:
-        gyroConfigMutable()->gyro_sync_denom = sbufReadU8(src);
+        sbufReadU8(src); // was gyroConfigMutable()->gyro_sync_denom - removed in API 1.43
         pidConfigMutable()->pid_process_denom = sbufReadU8(src);
         motorConfigMutable()->dev.useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT

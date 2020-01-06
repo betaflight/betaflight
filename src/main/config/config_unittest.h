@@ -26,14 +26,12 @@
 cfTask_t *unittest_scheduler_selectedTask;
 uint8_t unittest_scheduler_selectedTaskDynamicPriority;
 uint16_t unittest_scheduler_waitingTasks;
-bool unittest_outsideRealtimeGuardInterval;
 
 #define GET_SCHEDULER_LOCALS() \
     { \
     unittest_scheduler_selectedTask = selectedTask; \
     unittest_scheduler_selectedTaskDynamicPriority = selectedTaskDynamicPriority; \
     unittest_scheduler_waitingTasks = waitingTasks; \
-    unittest_outsideRealtimeGuardInterval = outsideRealtimeGuardInterval; \
     }
 
 #else

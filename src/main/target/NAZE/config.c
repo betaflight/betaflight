@@ -63,7 +63,6 @@ void targetConfiguration(void)
 
     gyroDeviceConfigMutable()->extiTag = selectMPUIntExtiConfigByHardwareRevision();
 
-    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
     gyroConfigMutable()->gyro_soft_lpf_hz = 100;
     gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;

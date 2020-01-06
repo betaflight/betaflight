@@ -144,7 +144,7 @@ void setDefaultTestSettings(void) {
     pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
     pidProfile->launchControlGain = 40,
 
-    gyro.targetLooptime = 4000;
+    gyro.targetLooptime = 8000;
 }
 
 timeUs_t currentTestTime(void) {

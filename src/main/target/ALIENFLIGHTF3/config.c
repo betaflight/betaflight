@@ -90,8 +90,7 @@ void targetConfiguration(void)
         statusLedConfigMutable()->ioTags[2] = IO_TAG(LED2_A);
 #endif
     } else {
-        gyroConfigMutable()->gyro_sync_denom = 2;
-        pidConfigMutable()->pid_process_denom = 2;
+        pidConfigMutable()->pid_process_denom = 4;
     }
 
     if (!haveFrSkyRX) {

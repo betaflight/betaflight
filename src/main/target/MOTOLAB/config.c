@@ -34,7 +34,6 @@
 // Motolab target supports 2 different type of boards Tornado / Cyclone.
 void targetConfiguration(void)
 {
-    gyroConfigMutable()->gyro_sync_denom = 4;
-    pidConfigMutable()->pid_process_denom = 1;
+    pidConfigMutable()->pid_process_denom = 4;
 }
 #endif
