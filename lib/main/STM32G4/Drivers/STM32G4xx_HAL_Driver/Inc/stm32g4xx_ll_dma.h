@@ -1433,9 +1433,8 @@ __STATIC_INLINE uint32_t LL_DMA_GetM2MDstAddress(DMA_TypeDef *DMAx, uint32_t Cha
   */
 __STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t PeriphRequest)
 {
-  UNUSED(DMAx);
-  MODIFY_REG(((DMAMUX_Channel_TypeDef *)(uint32_t)((uint32_t)DMAMUX1_Channel0 + (DMAMUX_CCR_SIZE * (Channel - 1U))))->CCR,
-             DMAMUX_CxCR_DMAREQ_ID, PeriphRequest);
+  uint32_t dmamux_ccr_offset = ((((uint32_t)DMAx ^ (uint32_t)DMA1) >> 10U) * 8U);
+  MODIFY_REG((DMAMUX1_Channel0 + Channel - 1 + dmamux_ccr_offset)->CCR, DMAMUX_CxCR_DMAREQ_ID, PeriphRequest);
 }
 
 /**
@@ -1578,9 +1577,8 @@ __STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Channel
   */
 __STATIC_INLINE uint32_t LL_DMA_GetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Channel)
 {
-  UNUSED(DMAx);
-  return (READ_BIT(((DMAMUX_Channel_TypeDef *)((uint32_t)((uint32_t)DMAMUX1_Channel0 + (DMAMUX_CCR_SIZE *
-                                                          (Channel - 1U)))))->CCR, DMAMUX_CxCR_DMAREQ_ID));
+  uint32_t dmamux_ccr_offset = ((((uint32_t)DMAx ^ (uint32_t)DMA1) >> 10U) * 8U);
+  return (READ_BIT((DMAMUX1_Channel0 + Channel - 1 + dmamux_ccr_offset)->CCR, DMAMUX_CxCR_DMAREQ_ID));
 }
 
 /**
