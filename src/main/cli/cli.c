@@ -1520,6 +1520,7 @@ static void cliSerialPassthrough(char *cmdline)
         // pwmDisableMotors();
         motorDisable();
         delay(5);
+#ifndef SIMULATOR_BUILD
         unsigned motorsCount = getMotorCount();
         for (unsigned i = 0; i < motorsCount; i++) {
             const ioTag_t tag = motorConfig()->dev.ioTags[i];
@@ -1537,8 +1538,9 @@ static void cliSerialPassthrough(char *cmdline)
                 }
             }
         }
+#endif /* SIMULATOR_BUILD */
     }
-#endif
+#endif /* USE_PWM_OUTPUT */
 
     serialPassthrough(ports[0].port, ports[1].port, NULL, NULL);
 }
