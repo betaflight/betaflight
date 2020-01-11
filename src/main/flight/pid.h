@@ -185,6 +185,7 @@ typedef struct pidProfile_s {
     uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
     uint8_t ff_spike_limit;                 // FF stick extrapolation lookahead period in ms
     uint8_t ff_smooth_factor;               // Amount of smoothing for interpolated FF steps
+    uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -264,3 +265,4 @@ float pidGetPidFrequency();
 float pidGetFfBoostFactor();
 float pidGetFfSmoothFactor();
 float pidGetSpikeLimitInverse();
+float dynDtermLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

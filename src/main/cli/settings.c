@@ -994,6 +994,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_DYN_LPF
     { "dyn_lpf_dterm_min_hz",       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_min_hz) },
     { "dyn_lpf_dterm_max_hz",       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_dterm_max_hz) },
+    { "dyn_lpf_dterm_curve_expo",   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_PID_PROFILE, offsetof(pidProfile_t, dyn_lpf_curve_expo) },
 #endif
     { "dterm_lowpass_type",         VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DTERM_LOWPASS_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_filter_type) },
     { "dterm_lowpass_hz",           VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, FILTER_FREQUENCY_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lowpass_hz) },
