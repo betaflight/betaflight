@@ -232,7 +232,7 @@ void systemInit(void) {
     }
 
     ret = udpInit(&pwmLink, "127.0.0.1", 9002, false);
-    printf("init PwnOut UDP link...%d\n", ret);
+    printf("init PwmOut UDP link...%d\n", ret);
 
     ret = udpInit(&stateLink, NULL, 9003, true);
     printf("start UDP server...%d\n", ret);
@@ -439,6 +439,10 @@ static void pwmShutdownPulsesForAllMotors(void)
     motorPwmDevice.enabled = false;
 }
 
+bool pwmIsMotorEnabled(uint8_t index) {
+    return motors[index].enabled;
+}
+
 static void pwmCompleteMotorUpdate(void)
 {
     // send to simulator
@@ -466,10 +470,12 @@ void pwmWriteServo(uint8_t index, float value) {
 
 static motorDevice_t motorPwmDevice = {
     .vTable = {
+        .postInit = motorPostInitNull,
         .convertExternalToMotor = pwmConvertFromExternal,
         .convertMotorToExternal = pwmConvertToExternal,
         .enable = pwmEnableMotors,
         .disable = pwmDisableMotors,
+        .isMotorEnabled = pwmIsMotorEnabled,
         .updateStart = motorUpdateStartNull,
         .write = pwmWriteMotor,
         .writeInt = pwmWriteMotorInt,
@@ -574,14 +580,15 @@ FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t value) {
     return FLASH_COMPLETE;
 }
 
-void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
+void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
-    UNUSED(pSerialPinConfig);
-    printf("uartPinConfigure");
+    UNUSED(io);
+    UNUSED(cfg);
+    printf("IOConfigGPIO\n");
 }
 
 void spektrumBind(rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);
-    printf("spektrumBind");
+    printf("spektrumBind\n");
 }
