@@ -320,7 +320,7 @@ extern escSensorData_t *osdEscDataCombined;
 #endif
 
 struct displayPort_s;
-void osdInit(struct displayPort_s *osdDisplayPort);
+void osdInit(struct displayPort_s *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdInitialized(void);
 void osdUpdate(timeUs_t currentTimeUs);
 void osdStatSetState(uint8_t statIndex, bool enabled);
@@ -336,4 +336,4 @@ bool osdElementVisible(uint16_t value);
 bool osdGetVisualBeeperState(void);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
-struct displayPort_s *osdGetDisplayPort(void);
+struct displayPort_s *osdGetDisplayPort(osdDisplayPortDevice_e *displayPortDevice);
