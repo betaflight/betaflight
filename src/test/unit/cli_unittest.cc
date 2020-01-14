@@ -65,6 +65,7 @@ extern "C" {
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
+    const char * const lookupTableOsdDisplayPortDevice[] = {};
 
 
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
@@ -342,9 +343,9 @@ void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
 
 void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
-char *getBoardName(void) { return NULL; };
-char *getManufacturerId(void) { return NULL; };
-bool boardInformationIsSet(void) { return true; };
+char *getBoardName(void) { return NULL; }
+char *getManufacturerId(void) { return NULL; }
+bool boardInformationIsSet(void) { return true; }
 
 bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
 bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
@@ -355,4 +356,5 @@ void analyzeModeActivationConditions(void) {}
 bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }
 
 void delay(uint32_t) {}
+displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 }

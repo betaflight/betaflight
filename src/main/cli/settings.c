@@ -483,7 +483,7 @@ static const char* const lookupTableDshotBitbangedTimer[] = {
     "AUTO", "TIM1", "TIM8"
 };
 
-static const char * const lookupTableOsdDisplayPortDevice[] = {
+const char * const lookupTableOsdDisplayPortDevice[] = {
     "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD"
 };
 

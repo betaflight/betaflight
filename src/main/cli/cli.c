@@ -4648,6 +4648,13 @@ static void cliStatus(char *cmdline)
     cliPrintLinefeed();
 #endif /* USE_SENSOR_NAMES */
 
+#if defined(USE_OSD)
+    osdDisplayPortDevice_e displayPortDevice;
+    osdGetDisplayPort(&displayPortDevice);
+
+    cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDevice]);
+#endif
+
     // Uptime and wall clock
 
     cliPrintf("System Uptime: %d seconds", millis() / 1000);

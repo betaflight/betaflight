@@ -19,8 +19,7 @@
  */
 #pragma once
 
+#include "drivers/display.h"
 #include "drivers/osd.h"
-
-typedef struct displayPort_s displayPort_t;
 
 displayPort_t *frskyOsdDisplayPortInit(const videoSystem_e videoSystem);

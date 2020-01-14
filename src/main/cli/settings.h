@@ -256,3 +256,5 @@ extern const char * const lookupTableRescueAltitudeMode[];
 extern const char * const lookupTableItermRelax[];
 
 extern const char * const lookupTableItermRelaxType[];
+
+extern const char * const lookupTableOsdDisplayPortDevice[];
