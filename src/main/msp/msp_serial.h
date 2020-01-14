@@ -111,7 +111,6 @@ typedef struct mspPort_s {
     uint8_t checksum2;
     bool sharedWithTelemetry;
     mspDescriptor_t descriptor;
-    bool isDisplayPort;
 } mspPort_t;
 
 void mspSerialInit(void);
