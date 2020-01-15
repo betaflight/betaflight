@@ -34,8 +34,7 @@ typedef struct crsfDisplayPortScreen_s {
     bool reset;
 } crsfDisplayPortScreen_t;
 
-struct displayPort_s;
-struct displayPort_s *displayPortCrsfInit(void);
+displayPort_t *displayPortCrsfInit(void);
 crsfDisplayPortScreen_t *crsfDisplayPortScreen(void);
 void crsfDisplayPortMenuOpen(void);
 void crsfDisplayPortMenuExit(void);

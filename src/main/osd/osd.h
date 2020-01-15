@@ -22,6 +22,8 @@
 
 #include "common/time.h"
 
+#include "drivers/display.h"
+
 #include "pg/pg.h"
 
 #include "sensors/esc_sensor.h"
@@ -319,8 +321,7 @@ extern float osdGForce;
 extern escSensorData_t *osdEscDataCombined;
 #endif
 
-struct displayPort_s;
-void osdInit(struct displayPort_s *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
+void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdInitialized(void);
 void osdUpdate(timeUs_t currentTimeUs);
 void osdStatSetState(uint8_t statIndex, bool enabled);
@@ -336,4 +337,4 @@ bool osdElementVisible(uint16_t value);
 bool osdGetVisualBeeperState(void);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
-struct displayPort_s *osdGetDisplayPort(osdDisplayPortDevice_e *displayPortDevice);
+displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *displayPortDevice);

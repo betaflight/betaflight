@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/display.h"
+
 #include "pg/displayport_profiles.h"
 
-struct displayPort_s *displayPortMspInit(void);
+displayPort_t *displayPortMspInit(void);
