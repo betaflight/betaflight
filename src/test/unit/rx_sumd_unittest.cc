@@ -208,11 +208,11 @@ protected:
         EXPECT_EQ(RX_FRAME_COMPLETE, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
 
-        ASSERT_EQ(900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 0));
-        ASSERT_EQ(1100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 1));
-        ASSERT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 2));
-        ASSERT_EQ(1900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 3));
-        ASSERT_EQ(2100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 4));
+        EXPECT_EQ(900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 0));
+        EXPECT_EQ(1100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 1));
+        EXPECT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 2));
+        EXPECT_EQ(1900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 3));
+        EXPECT_EQ(2100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 4));
     }
 
     /*
@@ -293,7 +293,7 @@ protected:
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
 
         for  (size_t i = 0; i < 8; i++) {
-            ASSERT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+            EXPECT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
         }
     }
 
@@ -314,11 +314,11 @@ protected:
 
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
 
-        ASSERT_EQ(900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 0));
-        ASSERT_EQ(1100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 1));
-        ASSERT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 2));
-        ASSERT_EQ(1900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 3));
-        ASSERT_EQ(2100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 4));
+        EXPECT_EQ(900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 0));
+        EXPECT_EQ(1100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 1));
+        EXPECT_EQ(1500, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 2));
+        EXPECT_EQ(1900, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 3));
+        EXPECT_EQ(2100, rxRuntimeState.rcReadRawFn(&rxRuntimeState, 4));
     }
 
     virtual void sendIncompletePacket()

@@ -34,7 +34,7 @@ extern "C" {
 
 TEST(TimerDefinitionTest, Test_counterMismatch) {
     for (const timerHardware_t &t : timerHardware)
-        ASSERT_EQ(&t - timerHardware, t.def_tim_counter)
+        EXPECT_EQ(&t - timerHardware, t.def_tim_counter)
             << "Counter mismatch in timerHardware (in target.c) at position "
             << &t - timerHardware << "; the array may have uninitialized "
             << "trailing elements. This happens when USABLE_TIMER_CHANNEL_COUNT"

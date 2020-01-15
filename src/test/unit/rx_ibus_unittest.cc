@@ -303,7 +303,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
 
     //check that channel values have been updated
     for (int i=0; i<18; i++) {
-        ASSERT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+        EXPECT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
     }
 }
 
@@ -327,7 +327,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceivedWithBadCrc)
 
     //check that channel values have not been updated
     for (int i=0; i<14; i++) {
-        ASSERT_NE(i + (0x33 << 8), rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+        EXPECT_NE(i + (0x33 << 8), rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
     }
 }
 
@@ -362,7 +362,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
 
     //check that channel values have been updated
     for (int i=0; i<14; i++) {
-        ASSERT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+        EXPECT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
     }
 }
 
@@ -386,7 +386,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceived)
 
     //check that channel values have been updated
     for (int i=0; i<14; i++) {
-        ASSERT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+        EXPECT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
     }
 }
 
@@ -409,7 +409,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceivedBadCrc)
 
     //check that channel values have not been updated
     for (int i=0; i<14; i++) {
-        ASSERT_NE(i + (0x33 << 8), rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+        EXPECT_NE(i + (0x33 << 8), rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
     }
 }
 
@@ -452,7 +452,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
 
     //check that channel values have been updated
     for (int i=0; i<14; i++) {
-        ASSERT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
+        EXPECT_EQ(i, rxRuntimeState.rcReadRawFn(&rxRuntimeState, i));
     }
 }
 
