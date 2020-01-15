@@ -31,6 +31,7 @@
 
 #if defined(USE_CMS) && defined(USE_BLACKBOX)
 
+#include "build/debug.h"
 #include "build/version.h"
 
 #include "blackbox/blackbox.h"
@@ -68,6 +69,7 @@ static uint16_t blackboxConfig_p_ratio;
 
 static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
+static debugType_e systemConfig_debug_mode;
 
 #define CMS_BLACKBOX_STRING_LENGTH 8
 static char cmsx_BlackboxStatus[CMS_BLACKBOX_STRING_LENGTH];
@@ -182,6 +184,7 @@ static const void *cmsx_Blackbox_onEnter(void)
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
     blackboxConfig_p_ratio = blackboxConfig()->p_ratio;
+    systemConfig_debug_mode = systemConfig()->debug_mode;
     return NULL;
 }
 
@@ -194,6 +197,7 @@ static const void *cmsx_Blackbox_onExit(const OSD_Entry *self)
         blackboxValidateConfig();
     }
     blackboxConfigMutable()->p_ratio = blackboxConfig_p_ratio;
+    systemConfigMutable()->debug_mode = systemConfig_debug_mode;
 
     return NULL;
 }
@@ -206,6 +210,7 @@ static const OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
     { "P RATIO",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_ratio, 1, INT16_MAX, 1 }, REBOOT_REQUIRED },
+    { "DEBUG MODE",  OME_TAB,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames }, REBOOT_REQUIRED },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },
