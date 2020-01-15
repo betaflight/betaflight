@@ -450,6 +450,12 @@ all: $(CI_TARGETS)
 ## all_all : Build all targets (including legacy / unsupported)
 all_all: $(VALID_TARGETS)
 
+## unified : build all Unified Targets
+unified: $(UNIFIED_TARGETS)
+
+## unified_zip : build all Unified Targets as zip files (for posting on GitHub)
+unified_zip: $(addsuffix _zip,$(UNIFIED_TARGETS))
+
 ## legacy : Build legacy targets
 legacy: $(LEGACY_TARGETS)
 
@@ -486,7 +492,7 @@ $(VALID_TARGETS):
 $(NOBUILD_TARGETS):
 	$(MAKE) TARGET=$@
 
-TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
+TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
@@ -509,7 +515,7 @@ $(TARGETS_CLEAN):
 ## clean_all         : clean all valid targets
 clean_all: $(TARGETS_CLEAN) test_clean
 
-TARGETS_FLASH = $(addsuffix _flash,$(VALID_TARGETS) )
+TARGETS_FLASH = $(addsuffix _flash,$(VALID_TARGETS))
 
 ## <TARGET>_flash    : build and flash a target
 $(TARGETS_FLASH):
@@ -547,7 +553,7 @@ openocd-gdb: $(TARGET_ELF)
 	$(V0) $(OPENOCD_COMMAND) & $(CROSS_GDB) $(TARGET_ELF) -ex "target remote localhost:3333" -ex "load"
 endif
 
-TARGETS_ZIP = $(addsuffix _zip,$(VALID_TARGETS) )
+TARGETS_ZIP = $(addsuffix _zip,$(VALID_TARGETS))
 
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
 $(TARGETS_ZIP):
@@ -612,6 +618,7 @@ help: Makefile make/tools.mk
 targets:
 	@echo "Valid targets:       $(VALID_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
+	@echo "Unified targets:     $(UNIFIED_TARGETS)"
 	@echo "Legacy targets:      $(LEGACY_TARGETS)"
 	@echo "Unsupported targets: $(UNSUPPORTED_TARGETS)"
 	@echo "Target:              $(TARGET)"
