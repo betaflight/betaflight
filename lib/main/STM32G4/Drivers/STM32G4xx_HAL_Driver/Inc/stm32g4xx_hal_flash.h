@@ -840,16 +840,19 @@ HAL_StatusTypeDef  FLASH_WaitForLastOperation(uint32_t Timeout);
   */
 #define FLASH_SIZE_DATA_REGISTER        FLASHSIZE_BASE
 
+// The macro name FLASH_SIZE was renamed to HAL_FLASH_SIZE to avoid name crash with Makefile originated FLASH_SIZE.
+// The original FLASH_SIZE here was used in this file only, so it was safe to rename it.
+
 #if defined (FLASH_OPTR_DBANK)
-#define FLASH_SIZE                      ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x200UL << 10U) : \
+#define HAL_FLASH_SIZE                      ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x200UL << 10U) : \
                                         (((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & 0xFFFFUL) << 10U))
-#define FLASH_BANK_SIZE                 (FLASH_SIZE >> 1)
+#define FLASH_BANK_SIZE                 (HAL_FLASH_SIZE >> 1)
 #define FLASH_PAGE_NB                   128U
 #define FLASH_PAGE_SIZE_128_BITS        0x1000U /* 4 KB */
 #else
-#define FLASH_SIZE                      ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x80UL << 10U) : \
+#define HAL_FLASH_SIZE                      ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x80UL << 10U) : \
                                         (((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & 0xFFFFUL) << 10U))
-#define FLASH_BANK_SIZE                 (FLASH_SIZE)
+#define FLASH_BANK_SIZE                 (HAL_FLASH_SIZE)
 #define FLASH_PAGE_NB                   64U
 #endif
 
@@ -886,7 +889,7 @@ HAL_StatusTypeDef  FLASH_WaitForLastOperation(uint32_t Timeout);
                                             ((VALUE) == FLASH_TYPEPROGRAM_FAST) || \
                                             ((VALUE) == FLASH_TYPEPROGRAM_FAST_AND_LAST))
 
-#define IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) (((ADDRESS) >= FLASH_BASE) && ((ADDRESS) < (FLASH_BASE+FLASH_SIZE)))
+#define IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) (((ADDRESS) >= FLASH_BASE) && ((ADDRESS) < (FLASH_BASE+HAL_FLASH_SIZE)))
 
 #define IS_FLASH_OTP_ADDRESS(ADDRESS)      (((ADDRESS) >= 0x1FFF7000U) && ((ADDRESS) <= 0x1FFF73FFU))
 

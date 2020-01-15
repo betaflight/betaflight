@@ -255,8 +255,13 @@ typedef struct _USBD_HandleTypeDef
   USBD_SetupReqTypedef    request;
   USBD_DescriptorsTypeDef *pDesc;
   USBD_ClassTypeDef       *pClass;
-  void                    *pClassData;
-  void                    *pUserData;
+//WARNING: When updating this middleware add this to structure:
+  void                    *pCDC_ClassData;
+  void                    *pCDC_UserData;
+  void                    *pHID_ClassData;
+  void                    *pHID_UserData;
+  void                    *pMSC_ClassData;
+  void                    *pMSC_UserData;
   void                    *pData;
 } USBD_HandleTypeDef;
 
@@ -274,8 +279,9 @@ typedef struct _USBD_HandleTypeDef
 
 #define LOBYTE(x)  ((uint8_t)(x & 0x00FFU))
 #define HIBYTE(x)  ((uint8_t)((x & 0xFF00U) >> 8U))
-#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
-#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+// It's insane to define these here.
+//#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+//#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 
 
 #if  defined ( __GNUC__ )
@@ -288,6 +294,7 @@ typedef struct _USBD_HandleTypeDef
 #endif /* __GNUC__ */
 
 
+#if 0
 /* In HS mode and when the DMA is used, all variables and data structures dealing
    with the DMA during the transaction process should be 4-bytes aligned */
 
@@ -304,6 +311,7 @@ typedef struct _USBD_HandleTypeDef
     #define __ALIGN_BEGIN    __align(4)
   #endif /* __CC_ARM */
 #endif /* __GNUC__ */
+#endif
 
 
 /**
