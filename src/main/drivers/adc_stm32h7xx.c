@@ -453,7 +453,9 @@ void adcGetChannelValues(void)
     // Cache coherency should be maintained by MPU facility
 
     for (int i = 0; i < ADC_CHANNEL_INTERNAL; i++) {
-        adcValues[i] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
+        if (adcOperatingConfig[i].enabled) {
+            adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
+        }
     }
 }
 
