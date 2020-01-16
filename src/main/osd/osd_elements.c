@@ -989,13 +989,14 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
 static void osdElementMainBatteryVoltage(osdElementParms_t *element)
 {
-    const int batteryVoltage = (getBatteryVoltage() + 5) / 10;
+    int batteryVoltage = getBatteryVoltage();
 
     element->buff[0] = osdGetBatterySymbol(getBatteryAverageCellVoltage());
-    if (batteryVoltage >= 100) {
+    if (batteryVoltage >= 1000) {
+        batteryVoltage = (batteryVoltage + 5) / 10;
         tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
     } else {
-        tfp_sprintf(element->buff + 1, "%d.%d0%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 100, batteryVoltage % 100, SYM_VOLT);
     }
 }
 
