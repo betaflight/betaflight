@@ -305,6 +305,7 @@ TARGET_S19      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).s19
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_DFU      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).dfu
+TARGET_ZIP      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).zip
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
 TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_EXST.elf
 TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_UNPATCHED.bin
@@ -545,6 +546,16 @@ ifneq ($(OPENOCD_COMMAND),)
 openocd-gdb: $(TARGET_ELF)
 	$(V0) $(OPENOCD_COMMAND) & $(CROSS_GDB) $(TARGET_ELF) -ex "target remote localhost:3333" -ex "load"
 endif
+
+TARGETS_ZIP = $(addsuffix _zip,$(VALID_TARGETS) )
+
+## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
+$(TARGETS_ZIP):
+	$(V0) $(MAKE) hex TARGET=$(subst _zip,,$@)
+	$(V0) $(MAKE) zip TARGET=$(subst _zip,,$@)
+
+zip:
+	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 binary:
 	$(V0) $(MAKE) -j $(TARGET_BIN)
