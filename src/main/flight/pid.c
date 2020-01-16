@@ -217,6 +217,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ff_max_rate_limit = 100,
         .ff_smooth_factor = 37,
         .ff_boost = 15,
+        .dyn_lpf_curve_expo = 0,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -588,6 +589,7 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
 static FAST_RAM uint8_t dynLpfFilter = DYN_LPF_NONE;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMin;
 static FAST_RAM_ZERO_INIT uint16_t dynLpfMax;
+static FAST_RAM_ZERO_INIT uint8_t dynLpfCurveExpo;
 #endif
 
 #ifdef USE_D_MIN
@@ -703,6 +705,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     dynLpfMin = pidProfile->dyn_lpf_dterm_min_hz;
     dynLpfMax = pidProfile->dyn_lpf_dterm_max_hz;
+    dynLpfCurveExpo = pidProfile->dyn_lpf_curve_expo;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
@@ -1597,8 +1600,13 @@ bool pidAntiGravityEnabled(void)
 #ifdef USE_DYN_LPF
 void dynLpfDTermUpdate(float throttle)
 {
+    static unsigned int cutoffFreq;
     if (dynLpfFilter != DYN_LPF_NONE) {
-        const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+        if (dynLpfCurveExpo > 0) {
+            cutoffFreq = dynDtermLpfCutoffFreq(throttle, dynLpfMin, dynLpfMax, dynLpfCurveExpo);
+        } else {
+            cutoffFreq = fmax(dynThrottle(throttle) * dynLpfMax, dynLpfMin);
+        }
 
          if (dynLpfFilter == DYN_LPF_PT1) {
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -1612,6 +1620,13 @@ void dynLpfDTermUpdate(float throttle)
     }
 }
 #endif
+
+float dynDtermLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo) {
+    const float expof = expo / 10.0f;
+    static float curve;
+    curve = 2 * throttle * (1 - throttle) * expof + powerf(throttle, 2);
+    return (dynLpfMax - dynLpfMin) * curve + dynLpfMin;
+}
 
 void pidSetItermReset(bool enabled)
 {
