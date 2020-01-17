@@ -233,7 +233,7 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
 
     rxSpiExtiConfig_t extiConfig = {
         .ioConfig = IOCFG_IN_FLOATING,
-        .trigger = EXTI_TRIGGER_RISING,
+        .trigger = BETAFLIGHT_EXTI_TRIGGER_RISING,
     };
 
     ret = protocolInit(rxSpiConfig, rxRuntimeState, &extiConfig);

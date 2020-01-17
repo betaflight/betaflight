@@ -68,13 +68,13 @@ static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
 
 static uint32_t triggerLookupTable[] = {
 #if defined(STM32F7) || defined(STM32H7)
-    [EXTI_TRIGGER_RISING] = GPIO_MODE_IT_RISING,
-    [EXTI_TRIGGER_FALLING] = GPIO_MODE_IT_FALLING,
-    [EXTI_TRIGGER_BOTH] = GPIO_MODE_IT_RISING_FALLING
+    [BETAFLIGHT_EXTI_TRIGGER_RISING] = GPIO_MODE_IT_RISING,
+    [BETAFLIGHT_EXTI_TRIGGER_FALLING] = GPIO_MODE_IT_FALLING,
+    [BETAFLIGHT_EXTI_TRIGGER_BOTH] = GPIO_MODE_IT_RISING_FALLING
 #elif defined(STM32F1) || defined(STM32F3) || defined(STM32F4)
-    [EXTI_TRIGGER_RISING] = EXTI_Trigger_Rising,
-    [EXTI_TRIGGER_FALLING] = EXTI_Trigger_Falling,
-    [EXTI_TRIGGER_BOTH] = EXTI_Trigger_Rising_Falling
+    [BETAFLIGHT_EXTI_TRIGGER_RISING] = EXTI_Trigger_Rising,
+    [BETAFLIGHT_EXTI_TRIGGER_FALLING] = EXTI_Trigger_Falling,
+    [BETAFLIGHT_EXTI_TRIGGER_BOTH] = EXTI_Trigger_Rising_Falling
 #else
 # warning "Unknown CPU"
 #endif

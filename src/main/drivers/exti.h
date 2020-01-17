@@ -25,9 +25,9 @@
 #include "drivers/io_types.h"
 
 typedef enum {
-    EXTI_TRIGGER_RISING = 0,
-    EXTI_TRIGGER_FALLING = 1,
-    EXTI_TRIGGER_BOTH = 2
+    BETAFLIGHT_EXTI_TRIGGER_RISING = 0,
+    BETAFLIGHT_EXTI_TRIGGER_FALLING = 1,
+    BETAFLIGHT_EXTI_TRIGGER_BOTH = 2
 } extiTrigger_t;
 
 typedef struct extiCallbackRec_s extiCallbackRec_t;
