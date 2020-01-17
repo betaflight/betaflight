@@ -1459,6 +1459,9 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         blackboxWriteUnsignedVB(data->flightMode.flags);
         blackboxWriteUnsignedVB(data->flightMode.lastFlags);
         break;
+    case FLIGHT_LOG_EVENT_DISARM:
+        blackboxWriteUnsignedVB(data->disarm.reason);
+        break;
     case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
         if (data->inflightAdjustment.floatFlag) {
             blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
@@ -1475,6 +1478,8 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
     case FLIGHT_LOG_EVENT_LOG_END:
         blackboxWriteString("End of log");
         blackboxWrite(0);
+        break;
+    default:
         break;
     }
 }

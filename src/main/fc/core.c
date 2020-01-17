@@ -28,6 +28,7 @@
 #include "build/debug.h"
 
 #include "blackbox/blackbox.h"
+#include "blackbox/blackbox_fielddefs.h"
 
 #include "cli/cli.h"
 
@@ -422,7 +423,7 @@ void updateArmingStatus(void)
     }
 }
 
-void disarm(void)
+void disarm(flightLogDisarmReason_e reason)
 {
     if (ARMING_FLAG(ARMED)) {
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
@@ -436,6 +437,10 @@ void disarm(void)
 #endif
 
 #ifdef USE_BLACKBOX
+        flightLogEvent_disarm_t eventData;
+        eventData.reason = reason;
+        blackboxLogEvent(FLIGHT_LOG_EVENT_DISARM, (flightLogEventData_t*)&eventData);
+
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
             blackboxFinish();
         }
@@ -739,7 +744,7 @@ bool processRx(timeUs_t currentTimeUs)
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
-            disarm();
+            disarm(DISARM_REASON_SWITCH);
     }
 
     updateRSSI(currentTimeUs);
@@ -881,7 +886,7 @@ bool processRx(timeUs_t currentTimeUs)
             if (throttleStatus == THROTTLE_LOW) {
                 if ((autoDisarmDelayUs > 0) && (currentTimeUs > disarmAt)) {
                     // auto-disarm configured and delay is over
-                    disarm();
+                    disarm(DISARM_REASON_THROTTLE_TIMEOUT);
                     armedBeeperOn = false;
                 } else {
                     // still armed; do warning beeps while armed
@@ -1093,7 +1098,7 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
                 runawayTakeoffTriggerUs = currentTimeUs + RUNAWAY_TAKEOFF_ACTIVATE_DELAY;
             } else if (currentTimeUs > runawayTakeoffTriggerUs) {
                 setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
-                disarm();
+                disarm(DISARM_REASON_RUNAWAY_TAKEOFF);
             }
         } else {
             runawayTakeoffTriggerUs = 0;

@@ -183,4 +183,5 @@ extern "C" {
     void compassStartCalibration(void) {}
     bool compassIsCalibrationComplete(void) { return true; }
     bool isUpright(void) { return true; }
+    void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
 }

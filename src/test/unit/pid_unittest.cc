@@ -79,7 +79,7 @@ extern "C" {
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
-    void disarm(void) { }
+    void disarm(flightLogDisarmReason_e) { }
     float applyFFLimit(int axis, float value, float Kp, float currentPidSetpoint) {
         UNUSED(axis);
         UNUSED(Kp);
