@@ -3,10 +3,10 @@
 #
 
 ifeq ($(OPBL),yes)
-LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k_opbl.ld
+LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f303_$(TARGET_FLASH_SIZE)k_opbl.ld
 endif
 
-TARGET_FLASH   := 256
+MCU_FLASH_SIZE  := 256
 # note that there is no hardfault debugging startup file assembly handler for other platforms
 ifeq ($(DEBUG_HARDFAULTS),F3)
 CFLAGS               += -DDEBUG_HARDFAULTS
@@ -58,7 +58,7 @@ VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
 ifeq ($(LD_SCRIPT),)
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(TARGET_FLASH_SIZE)k.ld
 endif
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion

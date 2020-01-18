@@ -17,5 +17,5 @@ It is also easy to convert exisiting F1 targets to be built to run on the Nucleo
     to target.h to avoid non-F1 compatible code from getting in.
 
 - Add
-FLASH_SIZE  = 1024
+MCU_FLASH_SIZE  = 1024
     to target.mk

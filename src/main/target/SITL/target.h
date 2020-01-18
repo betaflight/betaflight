@@ -131,7 +131,7 @@
 #undef USE_I2C
 #undef USE_SPI
 
-#define FLASH_SIZE 2048
+#define TARGET_FLASH_SIZE 2048
 
 
 #define LED_STRIP_TIMER 1

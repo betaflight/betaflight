@@ -3,10 +3,10 @@
 #
 
 ifeq ($(OPBL),yes)
-LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
+LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f103_$(TARGET_FLASH_SIZE)k_opbl.ld
 endif
 
-TARGET_FLASH   := 128
+MCU_FLASH_SIZE := 128
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F1/Drivers/STM32F10x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f10x_crc.c \
@@ -39,7 +39,7 @@ DEVICE_STDPERIPH_SRC := $(DEVICE_STDPERIPH_SRC) \
 endif
 
 ifeq ($(LD_SCRIPT),)
-LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(TARGET_FLASH_SIZE)k.ld
 endif
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
