@@ -319,8 +319,9 @@ __STATIC_INLINE uint16_t SWAPBYTE(uint8_t *addr)
 
 #define LOBYTE(x)  ((uint8_t)((x) & 0x00FFU))
 #define HIBYTE(x)  ((uint8_t)(((x) & 0xFF00U) >> 8U))
-#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
-#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+// It's insane to define these here.
+//#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+//#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 
 
 #if  defined ( __GNUC__ )
