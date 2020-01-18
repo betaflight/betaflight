@@ -82,7 +82,7 @@ static FAST_RAM_ZERO_INIT float pidFrequency;
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
 static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
 static FAST_RAM_ZERO_INIT uint16_t itermAcceleratorGain;
-static FAST_RAM float antiGravityOsdCutoff = 1.0f;
+static FAST_RAM float antiGravityOsdCutoff = 0.0f;
 static FAST_RAM_ZERO_INIT bool antiGravityEnabled;
 static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
 
@@ -242,7 +242,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 #endif
 }
 
-static FAST_RAM float itermAccelerator = 1.0f;
+static FAST_RAM float itermAccelerator = 0.0f;
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {
@@ -656,7 +656,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     // For the new AG it's a continuous floating value so we want to trigger the OSD
     // display when it exceeds 25% of its possible range. This gives a useful indication
     // of AG activity without excessive display.
-    antiGravityOsdCutoff = 1.0f;
+    antiGravityOsdCutoff = 0.0f;
     if (antiGravityMode == ANTI_GRAVITY_SMOOTH) {
         antiGravityOsdCutoff += ((itermAcceleratorGain - 1000) / 1000.0f) * 0.25f;
     }
@@ -1304,13 +1304,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     // Dynamic i component,
     if ((antiGravityMode == ANTI_GRAVITY_SMOOTH) && antiGravityEnabled) {
-        itermAccelerator = 1 + fabsf(antiGravityThrottleHpf) * 0.01f * (itermAcceleratorGain - 1000);
+        itermAccelerator = fabsf(antiGravityThrottleHpf) * 0.01f * (itermAcceleratorGain - 1000);
         DEBUG_SET(DEBUG_ANTI_GRAVITY, 1, lrintf(antiGravityThrottleHpf * 1000));
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(itermAccelerator * 1000));
 
+    float agGain = dT * itermAccelerator * AG_KI;
+
     // gradually scale back integration when above windup point
-    float dynCi = dT * itermAccelerator;
+    float dynCi = dT;
     if (itermWindupPointInv > 1.0f) {
         dynCi *= constrainf((1.0f - getMotorMixRange()) * itermWindupPointInv, 0.0f, 1.0f);
     }
@@ -1420,7 +1422,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
         const float Ki = pidCoefficient[axis].Ki;
 #endif
-        pidData[axis].I = constrainf(previousIterm + Ki * itermErrorRate * dynCi, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(previousIterm + Ki * itermErrorRate * dynCi + agGain * itermErrorRate, -itermLimit, itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
@@ -1587,7 +1589,7 @@ void pidSetAntiGravityState(bool newState)
 {
     if (newState != antiGravityEnabled) {
         // reset the accelerator on state changes
-        itermAccelerator = 1.0f;
+        itermAccelerator = 0.0f;
     }
     antiGravityEnabled = newState;
 }
