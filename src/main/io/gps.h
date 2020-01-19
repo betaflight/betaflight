@@ -51,7 +51,7 @@ typedef enum {
 typedef enum {
     UBLOX_AIRBORNE = 0,
     UBLOX_PEDESTRIAN,
-    UBLOX_AUTO
+    UBLOX_DYNAMIC
 } ubloxMode_e;
 
 typedef enum {

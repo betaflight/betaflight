@@ -539,7 +539,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
             } else {
-                if ((gpsData.messageState == GPS_MESSAGE_STATE_INITIALIZED) && STATE(GPS_FIX) && (gpsConfig()->gps_ublox_mode == UBLOX_AUTO)) {
+                if ((gpsData.messageState == GPS_MESSAGE_STATE_INITIALIZED) && STATE(GPS_FIX) && (gpsConfig()->gps_ublox_mode == UBLOX_DYNAMIC)) {
                     gpsData.messageState = GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE;
                     gpsData.state_position = 0;
                 }
