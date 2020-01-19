@@ -852,6 +852,8 @@ void USBD_ParseSetupRequest(USBD_SetupReqTypedef *req, uint8_t *pdata)
 void USBD_CtlError(USBD_HandleTypeDef *pdev,
                    USBD_SetupReqTypedef *req)
 {
+  UNUSED(req);
+
   USBD_LL_StallEP(pdev, 0x80U);
   USBD_LL_StallEP(pdev, 0U);
 }
