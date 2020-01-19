@@ -1422,7 +1422,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
         const float Ki = pidCoefficient[axis].Ki;
 #endif
-        pidData[axis].I = constrainf(previousIterm + Ki * itermErrorRate * dynCi + agGain * itermErrorRate, -itermLimit, itermLimit);
+        pidData[axis].I = constrainf(previousIterm + (Ki * dynCi + agGain) * itermErrorRate, -itermLimit, itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
