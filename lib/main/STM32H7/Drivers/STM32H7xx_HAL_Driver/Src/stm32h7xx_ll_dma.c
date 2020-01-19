@@ -21,11 +21,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_ll_dma.h"
 #include "stm32h7xx_ll_bus.h"
-#ifdef  USE_FULL_ASSERT
-#include "stm32_assert.h"
-#else
-#define assert_param(expr) ((void)0U)
-#endif
 
 /** @addtogroup STM32H7xx_LL_Driver
   * @{
