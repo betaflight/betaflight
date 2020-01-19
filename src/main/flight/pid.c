@@ -82,7 +82,7 @@ static FAST_RAM_ZERO_INIT float pidFrequency;
 static FAST_RAM_ZERO_INIT uint8_t antiGravityMode;
 static FAST_RAM_ZERO_INIT float antiGravityThrottleHpf;
 static FAST_RAM_ZERO_INIT uint16_t itermAcceleratorGain;
-static FAST_RAM float antiGravityOsdCutoff = 0.0f;
+static FAST_RAM_ZERO_INIT float antiGravityOsdCutoff;
 static FAST_RAM_ZERO_INIT bool antiGravityEnabled;
 static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
 
@@ -242,7 +242,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 #endif
 }
 
-static FAST_RAM float itermAccelerator = 0.0f;
+static FAST_RAM_ZERO_INIT float itermAccelerator;
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {
