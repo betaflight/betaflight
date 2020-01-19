@@ -444,6 +444,17 @@ HAL_StatusTypeDef SDMMC_ConfigData(SDMMC_TypeDef *SDMMCx, SDMMC_DataInitTypeDef*
                        Data->TransferMode  |\
                        Data->DPSM);
 
+  // DC - See errata 2.11.4 - 8 SDMMC clock cycles must elapse before DTEN can be set.
+  // 32U below is used as a VERY rough guess that the SDMMC clock is 1/4 of the sytem clock, 8 * 4 = 32 and that the
+  // assembly below only takes 1 CPU cycle to run. All of which will be wrong, but right enough most of the time, especially
+  // when considering other processing overheads.
+  register uint32_t count = 32U;
+  do
+  {
+    count--;
+  } while(count > 0);
+  // DC - See errata 2.11.4
+
   /* Write to SDMMC DCTRL */
   MODIFY_REG(SDMMCx->DCTRL, DCTRL_CLEAR_MASK, tmpreg);
 
