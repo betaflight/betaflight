@@ -49,6 +49,12 @@ typedef enum {
 #define SBAS_MODE_MAX SBAS_GAGAN
 
 typedef enum {
+    UBLOX_AIRBORNE = 0,
+    UBLOX_PEDESTRIAN,
+    UBLOX_AUTO
+} ubloxMode_e;
+
+typedef enum {
     GPS_BAUDRATE_115200 = 0,
     GPS_BAUDRATE_57600,
     GPS_BAUDRATE_38400,
@@ -74,6 +80,7 @@ typedef struct gpsConfig_s {
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
     uint8_t gps_ublox_use_galileo;
+    ubloxMode_e gps_ublox_mode;
     uint8_t gps_set_home_point_once;
     uint8_t gps_use_3d_speed;
 } gpsConfig_t;
@@ -106,6 +113,8 @@ typedef enum {
     GPS_MESSAGE_STATE_INIT,
     GPS_MESSAGE_STATE_SBAS,
     GPS_MESSAGE_STATE_GALILEO,
+    GPS_MESSAGE_STATE_INITIALIZED,
+    GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE,
     GPS_MESSAGE_STATE_ENTRY_COUNT
 } gpsMessageState_e;
 

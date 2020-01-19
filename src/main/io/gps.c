@@ -232,6 +232,7 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
     .gps_ublox_use_galileo = false,
+    .gps_ublox_mode = UBLOX_AIRBORNE,
     .gps_set_home_point_once = false,
     .gps_use_3d_speed = false
 );
@@ -418,11 +419,11 @@ void gpsInitUblox(void)
             if (gpsData.messageState == GPS_MESSAGE_STATE_INIT) {
                 if (gpsData.state_position < sizeof(ubloxInit)) {
                     if (gpsData.state_position < sizeof(ubloxAirborne)) {
-#if defined(GPS_UBLOX_MODE_PEDESTRIAN)
-                        serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
-#else
-                        serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
-#endif
+                        if (gpsConfig()->gps_ublox_mode == UBLOX_AIRBORNE) {
+                            serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
+                        } else {
+                            serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
+                        }
                     } else {
                         serialWrite(gpsPort, ubloxInit[gpsData.state_position]);
                     }
@@ -456,7 +457,7 @@ void gpsInitUblox(void)
                 }
             }
 
-            if (gpsData.messageState >= GPS_MESSAGE_STATE_ENTRY_COUNT) {
+            if (gpsData.messageState >= GPS_MESSAGE_STATE_INITIALIZED) {
                 // ublox should be initialised, try receiving
                 gpsSetState(GPS_RECEIVING_DATA);
             }
@@ -537,6 +538,21 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
+            } else {
+                if ((gpsData.messageState == GPS_MESSAGE_STATE_INITIALIZED) && STATE(GPS_FIX) && (gpsConfig()->gps_ublox_mode == UBLOX_AUTO)) {
+                    gpsData.messageState = GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE;
+                    gpsData.state_position = 0;
+                }
+                if (gpsData.messageState == GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE) {                
+                    if (gpsData.state_position < sizeof(ubloxAirborne)) {
+                        if (isSerialTransmitBufferEmpty(gpsPort)) {
+                            serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
+                            gpsData.state_position++;
+                        }
+                    } else {
+                        gpsData.messageState = GPS_MESSAGE_STATE_ENTRY_COUNT;
+                    }
+                }
             }
             break;
     }
