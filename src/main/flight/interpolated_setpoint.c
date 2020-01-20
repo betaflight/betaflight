@@ -28,8 +28,6 @@
 #include "fc/rc.h"
 #include "flight/interpolated_setpoint.h"
 
-#define PREV_BIG_STEP 1000.0f //threshold for size of jump of packet before the identical data packet
-
 static float setpointDeltaImpl[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];
 static uint8_t holdCount[XYZ_AXIS_COUNT];
@@ -65,67 +63,95 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
 
     if (newRcFrame) {
         float rawSetpoint = getRawSetpoint(axis); 
-        
+
         const float rxInterval = currentRxRefreshRate * 1e-6f;
         const float rxRate = 1.0f / rxInterval;
-
         float setpointSpeed = (rawSetpoint - prevRawSetpoint[axis]) * rxRate;
         float setpointAcceleration = setpointSpeed - prevSetpointSpeed[axis];
-        const uint8_t holdSteps = 2;
+        float setpointSpeedModified = setpointSpeed;
+        float setpointAccelerationModified = setpointAcceleration;
 
         // Glitch reduction code for identical packets
+        if (fabsf(setpointAcceleration) > 3.0f * fabsf(prevAcceleration[axis])) {
+            bigStep[axis] = true;
+        } else {
+            bigStep[axis] = false;
+        }
+
         if (setpointSpeed == 0 && fabsf(rawSetpoint) < 0.98f * ffMaxRate[axis]) {
-            // identical packets, not at full deflection
-            if (holdCount[axis] < holdSteps && fabsf(rawSetpoint) > 2.0f && !bigStep[axis]) {
-                // holding the entire previous speed is best for missed packets, but bad for early packets
-                setpointSpeed = prevSetpointSpeed[axis] + prevAcceleration[axis];
-                setpointAcceleration = prevAcceleration[axis];
-                holdCount[axis] += 1;
+            // identical packet detected, not at full deflection.  
+            // first packet on leaving full deflection always gets full FF
+            if (holdCount[axis] == 0) {
+                // previous packet had movement
+                if (bigStep[axis]) {
+                    // type 1 = interpolate forward where acceleration change is large
+                    setpointSpeedModified = prevSetpointSpeed[axis];
+                    setpointAccelerationModified = prevAcceleration[axis];
+                    holdCount[axis] = 1;
+                } else {
+                    // type 2 = small change, no interpolation needed
+                    setpointSpeedModified = prevSetpointSpeed[axis];
+                    holdCount[axis] = 2;
+                }
             } else {
-                // identical packets for more than hold steps, or prev big step
-                // lock acceleration to zero and don't interpolate forward until sticks move again
-                holdCount[axis] = holdSteps + 1;
-                setpointAcceleration = 0.0f;
+                // it is an unchanged packet after previous unchanged packet
+                // speed and acceleration will be zero, no need to change anything
+                holdCount[axis] = 3;
             }
         } else {
             // we're moving, or sticks are at max
-            if (holdCount[axis] == 2) {
-                // we are after an identical packet, and the one before was a normal step up,
-                // so raw step speed and acceleration of next 'good' packet is twice what it should be
-                setpointSpeed /= 2.0f;
-                setpointAcceleration /= 2.0f;
-            }
-            if (holdCount[axis] == 3) {
-                // we are starting to move after a gap after a big step up, or persistent flat period, so accelerate gently
-                setpointAcceleration = 0.0f;
-            }
-            holdCount[axis] = 1;
-            if (fabsf(setpointAcceleration - prevAcceleration[axis]) > PREV_BIG_STEP) {
-                bigStep[axis] = true;
-            } else {
-                bigStep[axis] = false;
+            if (holdCount[axis] != 0) {
+                // previous step was a duplicate, handle each type differently
+                if (holdCount[axis] == 1) {
+                    // interpolation was applied
+                    // raw setpoint speed of next 'good' packet is twice what it should be
+                    setpointSpeedModified = setpointSpeed / 2.0f;
+                    // empirically this works best
+                    setpointAccelerationModified = (prevAcceleration[axis] + setpointAcceleration) / 2.0f;
+                } else if (holdCount[axis] == 2) {
+                    // interpolation was not applied
+                    setpointSpeedModified = setpointSpeed / 2.0f;
+                    setpointAccelerationModified = prevAcceleration[axis] / 2.0f;
+                } else if (holdCount[axis] == 3) {
+                    // after persistent flat period or recent big step up, no boost
+                    // reduces jitter from boost when flying smoothly
+                    // WARNING: this means no boost if ADC is active on FrSky radios
+                    setpointAccelerationModified = 0.0f;
+                }
+                holdCount[axis] = 0;
             }
         }
 
+        // smooth deadband type suppression of FF when sticks are centred.
+        const float rawSetpointCentred = fabsf(rawSetpoint) / 2.0f;
+        if (rawSetpointCentred < 1.0f) {
+            // force zero FF when sticks are centred for smoothness
+            setpointSpeedModified *= rawSetpointCentred;
+            setpointAccelerationModified *= rawSetpointCentred;
+        }
+
+        setpointDeltaImpl[axis] = setpointSpeedModified * pidGetDT();
         prevAcceleration[axis] = setpointAcceleration;
+
         setpointAcceleration *= pidGetDT();
-        setpointDeltaImpl[axis] = setpointSpeed * pidGetDT();
+        setpointAccelerationModified *= pidGetDT();
 
         const float ffBoostFactor = pidGetFfBoostFactor();
         float clip = 1.0f;
         float boostAmount = 0.0f;
-        if (axis != FD_YAW && ffBoostFactor != 0.0f) {
+        if (ffBoostFactor != 0.0f) {
+            //calculate clip factor to reduce boost on big spikes
             if (pidGetSpikeLimitInverse()) {
                 clip = 1 / (1 + (setpointAcceleration * setpointAcceleration * pidGetSpikeLimitInverse()));
                 clip *= clip;
             }
-            // prevent kick-back spike at max deflection
-            if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis] || fabsf(setpointSpeed) > 3.0f * fabsf(prevSetpointSpeed[axis])) {
-                boostAmount = ffBoostFactor * setpointAcceleration;
-            }
-            // no clip for first step inwards from max deflection
+            // don't clip first step inwards from max deflection
             if (fabsf(prevRawSetpoint[axis]) > 0.95f * ffMaxRate[axis] && fabsf(setpointSpeed) > 3.0f * fabsf(prevSetpointSpeed[axis])) {
                 clip = 1.0f;
+            }
+            // calculate boost and prevent kick-back spike at max deflection
+            if (fabsf(rawSetpoint) < 0.95f * ffMaxRate[axis] || fabsf(setpointSpeed) > 3.0f * fabsf(prevSetpointSpeed[axis])) {
+                boostAmount = ffBoostFactor * setpointAccelerationModified;
             }
         }
 
@@ -133,14 +159,15 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         prevRawSetpoint[axis] = rawSetpoint;
 
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, setpointDeltaImpl[axis] * 1000);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, boostAmount * 1000);
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, bigStep[axis]);
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, lrintf(setpointDeltaImpl[axis] * 100));
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, lrintf(setpointAccelerationModified * 100));
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, lrintf(setpointAcceleration * 100));
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, holdCount[axis]);
         }
 
         setpointDeltaImpl[axis] += boostAmount * clip;
-        // first order filter FF
+
+        // first order (kind of) smoothing of FF
         const float ffSmoothFactor = pidGetFfSmoothFactor();
         setpointDeltaImpl[axis] = prevDeltaImpl[axis] + ffSmoothFactor * (setpointDeltaImpl[axis] - prevDeltaImpl[axis]);
         prevDeltaImpl[axis] = setpointDeltaImpl[axis];
