@@ -90,7 +90,8 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
                     holdCount[axis] = 1;
                 } else {
                     // type 2 = small change, no interpolation needed
-                    setpointSpeedModified = prevSetpointSpeed[axis];
+                    setpointSpeedModified = 0.0f;
+                    setpointSpeed = setpointSpeed / 2.0f;
                     holdCount[axis] = 2;
                 }
             } else {
@@ -106,12 +107,11 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
                     // interpolation was applied
                     // raw setpoint speed of next 'good' packet is twice what it should be
                     setpointSpeedModified = setpointSpeed / 2.0f;
+                    setpointSpeed = setpointSpeedModified;
                     // empirically this works best
                     setpointAccelerationModified = (prevAcceleration[axis] + setpointAcceleration) / 2.0f;
                 } else if (holdCount[axis] == 2) {
                     // interpolation was not applied
-                    setpointSpeedModified = setpointSpeed / 2.0f;
-                    setpointAccelerationModified = prevAcceleration[axis] / 2.0f;
                 } else if (holdCount[axis] == 3) {
                     // after persistent flat period or recent big step up, no boost
                     // reduces jitter from boost when flying smoothly
