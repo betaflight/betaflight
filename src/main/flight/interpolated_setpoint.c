@@ -128,6 +128,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
             // force zero FF when sticks are centred for smoothness
             setpointSpeedModified *= rawSetpointCentred;
             setpointAccelerationModified *= rawSetpointCentred;
+            holdCount[axis] = 4;
         }
 
         setpointDeltaImpl[axis] = setpointSpeedModified * pidGetDT();
