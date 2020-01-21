@@ -193,6 +193,10 @@ static const char * const lookupTableGPSProvider[] = {
 static const char * const lookupTableGPSSBASMode[] = {
     "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN"
 };
+
+static const char * const lookupTableGPSUBLOXMode[] = {
+    "AIRBORNE", "PEDESTRIAN", "DYNAMIC" 
+};
 #endif
 
 #ifdef USE_SERVOS
@@ -502,6 +506,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_GPS
     LOOKUP_TABLE_ENTRY(lookupTableGPSProvider),
     LOOKUP_TABLE_ENTRY(lookupTableGPSSBASMode),
+    LOOKUP_TABLE_ENTRY(lookupTableGPSUBLOXMode),
 #ifdef USE_GPS_RESCUE
     LOOKUP_TABLE_ENTRY(lookupTableRescueSanityType),
     LOOKUP_TABLE_ENTRY(lookupTableRescueAltitudeMode),
@@ -941,6 +946,7 @@ const clivalue_t valueTable[] = {
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig) },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoBaud) },
     { "gps_ublox_use_galileo",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_ublox_use_galileo) },
+    { "gps_ublox_mode",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_UBLOX_MODE }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_ublox_mode) },
     { "gps_set_home_point_once",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_set_home_point_once) },
     { "gps_use_3d_speed",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_use_3d_speed) },
 
