@@ -1006,6 +1006,8 @@ void init(void)
     motorEnable();
 #endif
 
+    initializeUnusedPins();
+
     tasksInit();
 
     systemState |= SYSTEM_STATE_READY;
