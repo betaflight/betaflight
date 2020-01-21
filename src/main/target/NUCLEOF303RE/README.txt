@@ -10,8 +10,8 @@ NUCLEOF303RE target for use with ST Nucleo-F303RE.
 
 It is easy to build other targets to run on Nucleo-F303RE:
 
-1. Add FLASH_SIZE line to target.mk (This will select stm32_flash_f303_512k.ld as linker script)
-    FLASH_SIZE = 512
+1. Add MCU_FLASH_SIZE line to target.mk (This will select stm32_flash_f303_512k.ld as linker script)
+    MCU_FLASH_SIZE = 512
 
 2. Modify target.h to define extra pins used for UART5 if necessary.
     #define TARGET_IO_PORTC 0xffff

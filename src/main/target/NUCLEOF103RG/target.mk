@@ -1,6 +1,6 @@
 F1_TARGETS  += $(TARGET)
 FEATURES    = ONBOARDFLASH
-FLASH_SIZE  = 1024
+MCU_FLASH_SIZE  = 1024
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

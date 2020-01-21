@@ -4,7 +4,7 @@ FEATURES    = VCP SDCARD_SPI
 
 FEATURE_CUT_LEVEL = 0
 
-FLASH_SIZE  = 512
+MCU_FLASH_SIZE  = 512
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

@@ -161,14 +161,14 @@ ifeq ($(TARGET),$(filter $(TARGET),$(H743xI_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H743xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
 STARTUP_SRC         = startup_stm32h743xx.s
-TARGET_FLASH       := 2048
+MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
 ifeq ($(RAM_BASED),yes)
 FIRMWARE_SIZE      := 448
 # TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
 # and the maximum size of the data stored on the external storage device.
-TARGET_FLASH       := FIRMWARE_SIZE
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_ram_based.ld
 endif
 
@@ -179,14 +179,14 @@ STARTUP_SRC         = startup_stm32h743xx.s
 DEFAULT_TARGET_FLASH := 128
 
 ifeq ($(TARGET_FLASH),)
-TARGET_FLASH := $(DEFAULT_TARGET_FLASH) 
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
 endif
 
 ifeq ($(EXST),yes)
 FIRMWARE_SIZE      := 448
 # TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
 # and the maximum size of the data stored on the external storage device.
-TARGET_FLASH       := FIRMWARE_SIZE
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_exst.ld
 endif
 
