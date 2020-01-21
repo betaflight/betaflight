@@ -91,7 +91,7 @@ static void l3gd20IntExtiInit(gyroDev_t *gyro)
 
     IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, l3gd20ExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO, true);
 }
 #endif

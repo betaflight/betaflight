@@ -366,7 +366,7 @@ bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeState_s *rxRun
     rxSpiCommonIOInit(rxSpiConfig);
 
     extiConfig->ioConfig = IOCFG_IPD;
-    extiConfig->trigger = EXTI_TRIGGER_RISING;
+    extiConfig->trigger = BETAFLIGHT_EXTI_TRIGGER_RISING;
 
     uint8_t startRxChannel;
 

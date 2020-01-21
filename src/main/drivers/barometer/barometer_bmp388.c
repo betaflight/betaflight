@@ -235,7 +235,7 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
     if (baroIntIO) {
         IOInit(baroIntIO, OWNER_BARO_EOC, 0);
         EXTIHandlerInit(&baro->exti, bmp388_extiHandler);
-        EXTIConfig(baroIntIO, &baro->exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
+        EXTIConfig(baroIntIO, &baro->exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
         EXTIEnable(baroIntIO, true);
     }
 #else

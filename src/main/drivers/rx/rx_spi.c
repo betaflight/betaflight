@@ -107,7 +107,7 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 void rxSpiExtiInit(ioConfig_t rxSpiExtiPinConfig, extiTrigger_t rxSpiExtiPinTrigger)
 {
     if (extiPin) {
-        if (rxSpiExtiPinTrigger == EXTI_TRIGGER_FALLING) {
+        if (rxSpiExtiPinTrigger == BETAFLIGHT_EXTI_TRIGGER_FALLING) {
             extiLevel = false;
         }
         EXTIHandlerInit(&rxSpiExtiCallbackRec, rxSpiExtiHandler);

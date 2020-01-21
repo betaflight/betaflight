@@ -387,7 +387,7 @@ bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState
     rxRuntimeState->channelCount = DSM_MAX_CHANNEL_COUNT;
 
     extiConfig->ioConfig = IOCFG_IPD;
-    extiConfig->trigger = EXTI_TRIGGER_FALLING;
+    extiConfig->trigger = BETAFLIGHT_EXTI_TRIGGER_FALLING;
 
     if (!cyrf6936Init()) {
         return false;
