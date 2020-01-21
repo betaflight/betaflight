@@ -874,11 +874,10 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
     if ((key == CMS_KEY_UP) && (!osdElementEditing)) {
         currentCtx.cursorRow--;
 
-        // Skip non-title labels
-        if ((pageTop + currentCtx.cursorRow)->type == OME_Label && currentCtx.cursorRow > 0) {
+        // Skip non-title labels and strings
+        while (((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String) && currentCtx.cursorRow > 0) {
             currentCtx.cursorRow--;
         }
-
         if (currentCtx.cursorRow == -1 || (pageTop + currentCtx.cursorRow)->type == OME_Label) {
             // Goto previous page
             cmsPagePrev(pDisplay);
