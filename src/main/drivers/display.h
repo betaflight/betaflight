@@ -59,6 +59,9 @@ typedef struct displayPort_s {
     bool cleared;
     int8_t cursorRow;
     int8_t grabCount;
+
+    // Displayport device capability
+    bool useDeviceBlink;
 } displayPort_t;
 
 typedef struct displayPortVTable_s {
