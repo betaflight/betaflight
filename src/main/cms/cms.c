@@ -612,7 +612,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     // Cursor manipulation
 
-    while ((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String) { // skip labels and strings
+    while ((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String || (((pageTop + currentCtx.cursorRow)->type == OME_UINT16 || (pageTop + currentCtx.cursorRow)->type == OME_INT16) && (pageTop + currentCtx.cursorRow)->flags == DYNAMIC)) { // skip labels, strings and dynamic info entries
         currentCtx.cursorRow++;
     }
 
@@ -902,8 +902,8 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
     if ((key == CMS_KEY_UP) && (!osdElementEditing)) {
         currentCtx.cursorRow--;
 
-        // Skip non-title labels and strings
-        while (((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String) && currentCtx.cursorRow > 0) {
+        // Skip non-title labels, strings and dynamic info entries
+        while (((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String ||  (((pageTop + currentCtx.cursorRow)->type == OME_UINT16 || (pageTop + currentCtx.cursorRow)->type == OME_INT16) && (pageTop + currentCtx.cursorRow)->flags == DYNAMIC)) && currentCtx.cursorRow > 0) {
             currentCtx.cursorRow--;
         }
         if (currentCtx.cursorRow == -1 || (pageTop + currentCtx.cursorRow)->type == OME_Label) {
