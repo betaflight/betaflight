@@ -314,6 +314,7 @@ const char *armingDisableFlagNames[]= {
 void getTaskInfo(cfTaskId_e, cfTaskInfo_t *) {}
 void getCheckFuncInfo(cfCheckFuncInfo_t *) {}
 void schedulerResetTaskMaxExecutionTime(cfTaskId_e) {}
+void schedulerResetCheckFunctionMaxExecutionTime(void) {}
 
 const char * const targetName = "UNITTEST";
 const char* const buildDate = "Jan 01 2017";

@@ -184,6 +184,7 @@ timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
 void schedulerSetCalulateTaskStatistics(bool calculateTaskStatistics);
 void schedulerResetTaskStatistics(cfTaskId_e taskId);
 void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId);
+void schedulerResetCheckFunctionMaxExecutionTime(void);
 
 void schedulerInit(void);
 void scheduler(void);
