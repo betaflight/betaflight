@@ -127,3 +127,7 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af);
 #endif
 
 void IOInitGlobal(void);
+
+typedef void (*IOTraverseFuncPtr_t)(IO_t io);
+
+void IOTraversePins(IOTraverseFuncPtr_t func);

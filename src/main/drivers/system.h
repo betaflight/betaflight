@@ -83,3 +83,4 @@ typedef void extiCallbackHandlerFunc(void);
 
 void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
 
+void initializeUnusedPins(void);

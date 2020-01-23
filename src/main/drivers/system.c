@@ -26,9 +26,12 @@
 
 #include "build/atomic.h"
 
+#include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/resource.h"
 #include "drivers/sound_beeper.h"
+
 
 #include "system.h"
 
@@ -260,4 +263,16 @@ void initialiseMemorySections(void)
     extern uint8_t _sfastram_idata;
     memcpy(&_sfastram_data, &_sfastram_idata, (size_t) (&_efastram_data - &_sfastram_data));
 #endif
+}
+
+static void initializeUnusedPin(IO_t io)
+{
+    if (IOGetOwner(io) == OWNER_FREE) {
+        IOConfigGPIO(io, IOCFG_IPU);
+    }
+}
+
+void initializeUnusedPins(void)
+{
+    IOTraversePins(initializeUnusedPin);
 }
