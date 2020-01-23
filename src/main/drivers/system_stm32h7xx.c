@@ -118,29 +118,6 @@ void enablePeripherialClocks(void)
 
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
-    // GPIO initialization, copied from drivers/system_stm32f7xx.c
-    // ... It was commented out.
-    // Where does F7 initializes the GPIO pins? It doesn't do it at all???
-
-//
-//    GPIO_InitTypeDef GPIO_InitStructure;
-//    GPIO_StructInit(&GPIO_InitStructure);
-//    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP; // default is un-pulled input
-//
-//    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
-//    GPIO_InitStructure.GPIO_Pin &= ~(GPIO_Pin_11 | GPIO_Pin_12); // leave USB D+/D- alone
-//
-//    GPIO_InitStructure.GPIO_Pin &= ~(GPIO_Pin_13 | GPIO_Pin_14); // leave JTAG pins alone
-//    GPIO_Init(GPIOA, &GPIO_InitStructure);
-//
-//    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
-//    GPIO_Init(GPIOB, &GPIO_InitStructure);
-//
-//    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_All;
-//    GPIO_Init(GPIOC, &GPIO_InitStructure);
-//    GPIO_Init(GPIOD, &GPIO_InitStructure);
-//    GPIO_Init(GPIOE, &GPIO_InitStructure);
-
 }
 
 void configureMasterClockOutputs(void)

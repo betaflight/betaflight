@@ -471,3 +471,9 @@ IO_t IOGetByTag(ioTag_t tag)
     return ioRecs + offset;
 }
 
+void IOTraversePins(IOTraverseFuncPtr_t fnPtr)
+{
+    for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+        fnPtr(&ioRecs[i]);
+    }
+}
