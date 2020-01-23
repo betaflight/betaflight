@@ -903,7 +903,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         currentCtx.cursorRow--;
 
         // Skip non-title labels, strings and dynamic info entries
-        while (((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String ||  (((pageTop + currentCtx.cursorRow)->type == OME_UINT16 || (pageTop + currentCtx.cursorRow)->type == OME_INT16) && (pageTop + currentCtx.cursorRow)->flags == DYNAMIC)) && currentCtx.cursorRow > 0) {
+        while (((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String || (((pageTop + currentCtx.cursorRow)->type == OME_UINT16 || (pageTop + currentCtx.cursorRow)->type == OME_INT16) && (pageTop + currentCtx.cursorRow)->flags == DYNAMIC)) && currentCtx.cursorRow > 0) {
             currentCtx.cursorRow--;
         }
         if (currentCtx.cursorRow == -1 || (pageTop + currentCtx.cursorRow)->type == OME_Label) {
