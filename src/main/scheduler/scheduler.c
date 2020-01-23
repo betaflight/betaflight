@@ -243,6 +243,13 @@ void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId)
 #endif
 }
 
+#if defined(USE_TASK_STATISTICS)
+void schedulerResetCheckFunctionMaxExecutionTime(void)
+{
+    checkFuncMaxExecutionTime = 0;
+}
+#endif
+
 void schedulerInit(void)
 {
     calculateTaskStatistics = true;
