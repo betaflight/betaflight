@@ -48,6 +48,9 @@
 #define ITERM_RELAX_SETPOINT_THRESHOLD 40.0f
 #define ITERM_RELAX_CUTOFF_DEFAULT 20
 
+// Anti gravity I constant
+#define AG_KI 21.586988f;
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,

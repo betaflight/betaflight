@@ -274,7 +274,7 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
         if (ABS(rcCommandSpeed) > throttleVelocityThreshold) {
             pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
         } else {
-            pidSetItermAccelerator(1.0f);
+            pidSetItermAccelerator(0.0f);
         }
     }
 }
