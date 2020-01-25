@@ -67,16 +67,6 @@ static void checkForBootLoaderRequest(void)
 
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC, ENABLE);
-
-    GPIO_InitTypeDef GPIO_InitStructure = {
-        .GPIO_Mode = GPIO_Mode_AIN,
-        .GPIO_Pin = GPIO_Pin_All
-    };
-
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 bool isMPUSoftReset(void)
