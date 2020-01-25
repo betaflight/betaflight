@@ -42,6 +42,8 @@ There are various modes that can be toggled on or off.  Modes can be enabled/dis
 | 45 | PARALYZE                 | Permanently disable a crashed craft until it is power cycled                         |
 | 46 | GPS RESCUE               | Enable 'GPS Rescue' to return the craft to the location where it was last armed      |
 | 47 | ACRO TRAINER             | Enable 'acro trainer' angle limiting in acro mode                                    |
+| 48 | DISABLE VTX CONTROL      | Disable the control of VTX settings through the OSD                                  |
+| 49 | LAUNCH CONTROL           | Race start assistance system                                                         |
 
 ## Auto-leveled flight
 
