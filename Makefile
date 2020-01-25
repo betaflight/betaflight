@@ -112,7 +112,10 @@ PRE_PUSH_TARGET_LIST ?= OMNIBUSF4 STM32F405 SPRACINGF7DUAL STM32F7X2 NUCLEOH743 
 
 include $(ROOT)/make/targets.mk
 
+REVISION := norevision
+ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git log -1 --format="%h")
+endif
 
 FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
 FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
@@ -298,14 +301,17 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
+
+TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(REVISION)
+
 #
 # Things we will build
 #
-TARGET_S19      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).s19
-TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
-TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
-TARGET_DFU      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).dfu
-TARGET_ZIP      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).zip
+TARGET_S19      = $(TARGET_BASENAME).s19
+TARGET_BIN      = $(TARGET_BASENAME).bin
+TARGET_HEX      = $(TARGET_BASENAME).hex
+TARGET_DFU      = $(TARGET_BASENAME).dfu
+TARGET_ZIP      = $(TARGET_BASENAME).zip
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
 TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_EXST.elf
 TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_UNPATCHED.bin
