@@ -77,12 +77,6 @@ static const char * const osdTableThrottleLimitType[] = {
     "OFF", "SCALE", "CLIP"
 };
 
-#if defined(USE_GYRO_DATA_ANALYSE) && defined(USE_EXTENDED_CMS_MENUS)
-static const char * const osdTableDynNotchRangeType[] = {
-    "HIGH", "MED", "LOW", "AUTO"
-};
-#endif
-
 #ifdef USE_MULTI_GYRO
 static const char * const osdTableGyroToUse[] = {
     "FIRST", "SECOND", "BOTH"
@@ -570,7 +564,7 @@ static CMS_Menu cmsx_menuFilterGlobal = {
 #if (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
 
 #ifdef USE_GYRO_DATA_ANALYSE
-static uint8_t  dynFiltNotchRange;
+static uint16_t dynFiltNotchMaxHz;
 static uint8_t  dynFiltWidthPercent;
 static uint16_t dynFiltNotchQ;
 static uint16_t dynFiltNotchMinHz;
@@ -586,7 +580,7 @@ static uint8_t dynFiltDtermExpo;
 static const void *cmsx_menuDynFilt_onEnter(void)
 {
 #ifdef USE_GYRO_DATA_ANALYSE
-    dynFiltNotchRange   = gyroConfig()->dyn_notch_range;
+    dynFiltNotchMaxHz   = gyroConfig()->dyn_notch_max_hz;
     dynFiltWidthPercent = gyroConfig()->dyn_notch_width_percent;
     dynFiltNotchQ       = gyroConfig()->dyn_notch_q;
     dynFiltNotchMinHz   = gyroConfig()->dyn_notch_min_hz;
@@ -608,7 +602,7 @@ static const void *cmsx_menuDynFilt_onExit(const OSD_Entry *self)
     UNUSED(self);
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    gyroConfigMutable()->dyn_notch_range         = dynFiltNotchRange;
+    gyroConfigMutable()->dyn_notch_max_hz        = dynFiltNotchMaxHz;
     gyroConfigMutable()->dyn_notch_width_percent = dynFiltWidthPercent;
     gyroConfigMutable()->dyn_notch_q             = dynFiltNotchQ;
     gyroConfigMutable()->dyn_notch_min_hz        = dynFiltNotchMinHz;
@@ -630,10 +624,10 @@ static const OSD_Entry cmsx_menuDynFiltEntries[] =
     { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    { "NOTCH RANGE",    OME_TAB,    NULL, &(OSD_TAB_t)    { &dynFiltNotchRange,   3, osdTableDynNotchRangeType}, 0 },
     { "NOTCH WIDTH %",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltWidthPercent, 0, 20, 1 }, 0 },
     { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       0, 1000, 1 }, 0 },
     { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   0, 1000, 1 }, 0 },
+    { "NOTCH MAX HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMaxHz,   0, 1000, 1 }, 0 },
 #endif
 
 #ifdef USE_DYN_LPF

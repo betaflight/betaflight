@@ -83,17 +83,6 @@ enum {
 };
 
 enum {
-    DYN_NOTCH_RANGE_HIGH = 0,
-    DYN_NOTCH_RANGE_MEDIUM,
-    DYN_NOTCH_RANGE_LOW,
-    DYN_NOTCH_RANGE_AUTO
-};
-
-#define DYN_NOTCH_RANGE_HZ_HIGH 2000
-#define DYN_NOTCH_RANGE_HZ_MEDIUM 1333
-#define DYN_NOTCH_RANGE_HZ_LOW 1000
-
-enum {
     DYN_LPF_NONE = 0,
     DYN_LPF_PT1,
     DYN_LPF_BIQUAD
@@ -144,13 +133,15 @@ typedef struct gyroConfig_s {
     int16_t  yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;   // Gyro calibration duration in 1/100 second
-    
+
     uint16_t dyn_lpf_gyro_min_hz;
     uint16_t dyn_lpf_gyro_max_hz;
-    uint8_t  dyn_notch_range;            // ignore any FFT bin below this threshold
+
+    uint16_t dyn_notch_max_hz;
     uint8_t  dyn_notch_width_percent;
     uint16_t dyn_notch_q;
     uint16_t dyn_notch_min_hz;
+
     uint8_t  gyro_filter_debug_axis;
 } gyroConfig_t;
 

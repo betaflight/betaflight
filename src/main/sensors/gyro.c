@@ -157,7 +157,7 @@ static void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz);
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
 
-PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 7);
+PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 8);
 
 #ifndef GYRO_CONFIG_USE_GYRO_DEFAULT
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
@@ -193,7 +193,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->yaw_spin_threshold = 1950;
     gyroConfig->dyn_lpf_gyro_min_hz = 200;
     gyroConfig->dyn_lpf_gyro_max_hz = 500;
-    gyroConfig->dyn_notch_range = DYN_NOTCH_RANGE_MEDIUM;
+    gyroConfig->dyn_notch_max_hz = 600;
     gyroConfig->dyn_notch_width_percent = 8;
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
