@@ -60,7 +60,7 @@ static void cmsx_Vtx_ConfigRead(void)
     vtxCommonGetBandAndChannel(vtxCommonDevice(), &cmsx_vtxBand, &cmsx_vtxChannel);
     vtxCommonGetPowerIndex(vtxCommonDevice(), &cmsx_vtxPower);
     unsigned status;
-    if(vtxCommonGetStatus(vtxCommonDevice(), &status)){
+    if (vtxCommonGetStatus(vtxCommonDevice(), &status)) {
         cmsx_vtxPit = status & VTX_STATUS_PIT_MODE ? 2 : 1;
     } else {
         cmsx_vtxPit = 0;
