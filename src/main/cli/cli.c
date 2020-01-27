@@ -2558,6 +2558,15 @@ static void cliVtx(char *cmdline)
     if (isEmpty(cmdline)) {
         printVtx(DUMP_MASTER, vtxConfig(), NULL, NULL);
     } else {
+#ifdef USE_VTX_TABLE
+        const uint8_t maxBandIndex = vtxTableConfig()->bands;
+        const uint8_t maxChannelIndex = vtxTableConfig()->channels;
+        const uint8_t maxPowerIndex = vtxTableConfig()->powerLevels;
+#else
+        const uint8_t maxBandIndex = VTX_TABLE_MAX_BANDS;
+        const uint8_t maxChannelIndex = VTX_TABLE_MAX_CHANNELS;
+        const uint8_t maxPowerIndex = VTX_TABLE_MAX_POWER_LEVELS;
+#endif
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
@@ -2574,7 +2583,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val <= vtxTableConfig()->bands) {
+                if (val >= 0 && val <= maxBandIndex) {
                     cac->band = val;
                     validArgumentCount++;
                 }
@@ -2582,7 +2591,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val <= vtxTableConfig()->channels) {
+                if (val >= 0 && val <= maxChannelIndex) {
                     cac->channel = val;
                     validArgumentCount++;
                 }
@@ -2590,7 +2599,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val <= vtxTableConfig()->powerLevels) {
+                if (val >= 0 && val <= maxPowerIndex) {
                     cac->power= val;
                     validArgumentCount++;
                 }
