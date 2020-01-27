@@ -1444,7 +1444,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate D component
         // disable D if launch control is active
-        if ((pidCoefficient[axis].Kd > 0) && !launchControlActive){
+        if ((pidCoefficient[axis].Kd > 0) && !launchControlActive) {
 
             // Divide rate change by dT to get differential (ie dr/dt).
             // dT is fixed and calculated from the target PID loop time

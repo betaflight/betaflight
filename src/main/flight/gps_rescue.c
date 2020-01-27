@@ -332,7 +332,7 @@ static void rescueAttainPosition()
     const int16_t altitudeError = rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm;
     
     // P component
-    if (ABS(altitudeError) > 0 && ABS(altitudeError) < GPS_RESCUE_ZVELOCITY_THRESHOLD){
+    if (ABS(altitudeError) > 0 && ABS(altitudeError) < GPS_RESCUE_ZVELOCITY_THRESHOLD) {
         scalingRate = (float)altitudeError / GPS_RESCUE_ZVELOCITY_THRESHOLD;
     } else {
         scalingRate = 1;

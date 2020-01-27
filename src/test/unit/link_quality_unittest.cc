@@ -286,7 +286,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_VALUES)
         displayPortTestPrint();
 #endif
         // then
-        if (testdigit >= 10){
+        if (testdigit >= 10) {
             displayPortTestBufferSubstring(8, 1,"%c9", SYM_LINK_QUALITY);
         }else{
             displayPortTestBufferSubstring(8, 1,"%c%1d", SYM_LINK_QUALITY, testdigit - 1);

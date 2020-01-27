@@ -311,7 +311,7 @@ static rx_spi_received_e flySky2AReadAndProcess(uint8_t *payload, const uint32_t
         break;
     }
 
-    if (!waitTx){
+    if (!waitTx) {
         A7105Strobe(A7105_RX);
     }
     return result;

@@ -316,7 +316,7 @@ static SD_Error_t SD_CmdResponse(uint8_t SD_CMD, int8_t ResponseType)
 
     if(ResponseType <= 0)
     {
-        if(TimeOut == 0){
+        if (TimeOut == 0) {
             return SD_CMD_RSP_TIMEOUT;
         } else {
             return SD_OK;
