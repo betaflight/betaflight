@@ -47,4 +47,3 @@
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
-#define TARGET_IO_PORTF 0xffff
