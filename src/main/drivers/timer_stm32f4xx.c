@@ -154,8 +154,10 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM9, CH2, PE6, TIM_USE_ANY, 0, 0),
 
 //PORTF
+#if !defined(STM32F411xE)
     DEF_TIM(TIM10, CH1, PF6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM11, CH1, PF7, TIM_USE_ANY, 0, 0),
+#endif
 
 //PORTH
     DEF_TIM(TIM5, CH1, PH10, TIM_USE_ANY, 0, 0),
