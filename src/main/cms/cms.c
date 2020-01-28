@@ -575,6 +575,23 @@ STATIC_UNIT_TESTED const void *cmsMenuBack(displayPort_t *pDisplay)
     return NULL;
 }
 
+// Skip read-only entries
+static bool rowIsSkippable(const OSD_Entry *row)
+{
+    if (row->type == OME_Label) {
+        return true;
+    }
+
+    if (row->type == OME_String) {
+        return true;
+    }
+	
+    if ((row->type == OME_UINT16 || row->type == OME_INT16) && row->flags == DYNAMIC) {
+        return true;
+    }
+    return false;
+}
+
 static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 {
     if (!pageTop || !cmsInMenu) {
@@ -612,7 +629,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     // Cursor manipulation
 
-    while ((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String) { // skip labels and strings
+    while (rowIsSkippable(pageTop + currentCtx.cursorRow)) { // skip labels, strings and dynamic read-only entries
         currentCtx.cursorRow++;
     }
 
@@ -902,8 +919,8 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
     if ((key == CMS_KEY_UP) && (!osdElementEditing)) {
         currentCtx.cursorRow--;
 
-        // Skip non-title labels and strings
-        while (((pageTop + currentCtx.cursorRow)->type == OME_Label || (pageTop + currentCtx.cursorRow)->type == OME_String) && currentCtx.cursorRow > 0) {
+        // Skip non-title labels, strings and dynamic read-only entries
+        while ((rowIsSkippable(pageTop + currentCtx.cursorRow)) && currentCtx.cursorRow > 0) {
             currentCtx.cursorRow--;
         }
         if (currentCtx.cursorRow == -1 || (pageTop + currentCtx.cursorRow)->type == OME_Label) {
