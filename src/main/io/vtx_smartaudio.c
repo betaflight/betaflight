@@ -130,13 +130,13 @@ static uint8_t saLockMode = SA_MODE_SET_UNLOCK; // saCms variable?
 
 #ifdef USE_VTX_TABLE
 #define VTX_SMARTAUDIO_POWER_COUNT VTX_TABLE_MAX_POWER_LEVELS
-static uint8_t saSupportedNumPowerLevels = VTX_SMARTAUDIO_POWER_COUNT;
-static uint16_t saSupportedPowerValues[VTX_SMARTAUDIO_POWER_COUNT];
 #else // USE_VTX_TABLE
 #define VTX_SMARTAUDIO_POWER_COUNT 4
 static char saSupportedPowerLabels[VTX_SMARTAUDIO_POWER_COUNT + 1][4] = {"---", "25 ", "200", "500", "800"};
 static char *saSupportedPowerLabelPointerArray[VTX_SMARTAUDIO_POWER_COUNT + 1];
 #endif // USE_VTX_TABLE
+static uint8_t saSupportedNumPowerLevels = VTX_SMARTAUDIO_POWER_COUNT;
+static uint16_t saSupportedPowerValues[VTX_SMARTAUDIO_POWER_COUNT];
 
 // XXX Should be configurable by user?
 bool saDeferred = true; // saCms variable?
