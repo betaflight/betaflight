@@ -265,14 +265,14 @@ void initialiseMemorySections(void)
 #endif
 }
 
-static void initializeUnusedPin(IO_t io)
+static void unusedPinInit(IO_t io)
 {
     if (IOGetOwner(io) == OWNER_FREE) {
         IOConfigGPIO(io, IOCFG_IPU);
     }
 }
 
-void initializeUnusedPins(void)
+void unusedPinsInit(void)
 {
-    IOTraversePins(initializeUnusedPin);
+    IOTraversePins(unusedPinInit);
 }

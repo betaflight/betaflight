@@ -593,7 +593,7 @@ void spektrumBind(rxConfig_t *rxConfig)
     printf("spektrumBind\n");
 }
 
-void initializeUnusedPins(void)
+void unusedPinsInit(void)
 {
-    printf("initializeUnusedPins\n");
+    printf("unusedPinsInit\n");
 }

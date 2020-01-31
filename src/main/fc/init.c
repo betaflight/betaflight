@@ -285,12 +285,24 @@ static void configureSPIAndQuadSPI(void)
 }
 
 #ifdef USE_SDCARD
-void sdCardAndFSInit()
+static void sdCardAndFSInit()
 {
     sdcard_init(sdcardConfig());
     afatfs_init();
 }
 #endif
+
+static void swdPinsInit(void)
+{
+    IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
+    if (IOGetOwner(io) == OWNER_FREE) {
+        IOInit(io, OWNER_SWD, 0);
+    }
+    io = IOGetByTag(DEFIO_TAG_E(PA14)); // SWCLK
+    if (IOGetOwner(io) == OWNER_FREE) {
+        IOInit(io, OWNER_SWD, 0);
+    }
+}
 
 void init(void)
 {
@@ -978,6 +990,8 @@ void init(void)
 #endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+
+    swdPinsInit();
 
     initializeUnusedPins();
 
