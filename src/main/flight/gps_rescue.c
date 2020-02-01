@@ -192,7 +192,6 @@ bool          magForceDisable = false;
 static bool newGPSData = false;
 
 rescueState_s rescueState;
-altitudeMode_e altitudeMode;
 throttle_s throttle;
 
 /*
@@ -602,15 +601,16 @@ void updateGPSRescueState(void)
             newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
         
-        switch (altitudeMode) {
-            case MAX_ALT:
-                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
-                break;
+        switch (gpsRescueConfig()->altitudeMode) {
             case FIXED_ALT:
                 newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
                 break;
             case CURRENT_ALT:
                 newAltitude = rescueState.sensor.currentAltitudeCm;
+                break;
+            case MAX_ALT:
+            default:
+                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
                 break;
         }
 
