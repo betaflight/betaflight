@@ -98,7 +98,7 @@
 # warning "Unknown TARGET"
 #endif
 
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 // Expose these for EXTIConfig
 #define IO_CONFIG_GET_MODE(cfg) (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
