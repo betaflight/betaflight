@@ -103,6 +103,7 @@
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
+#include "msp/msp_protocol_v2_betaflight.h"
 #include "msp/msp_protocol_v2_common.h"
 #include "msp/msp_serial.h"
 
@@ -120,6 +121,7 @@
 #include "pg/vtx_table.h"
 
 #include "rx/rx.h"
+#include "rx/rx_bind.h"
 #include "rx/msp.h"
 
 #include "scheduler/scheduler.h"
@@ -599,6 +601,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define TARGET_HAS_FLASH_BOOTLOADER_BIT 3
 #define TARGET_SUPPORTS_CUSTOM_DEFAULTS_BIT 4
 #define TARGET_HAS_CUSTOM_DEFAULTS_BIT 5
+#define TARGET_SUPPORTS_RX_BIND_BIT 6
 
         uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
@@ -618,6 +621,9 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         if (hasCustomDefaults()) {
             targetCapabilities |= 1 << TARGET_HAS_CUSTOM_DEFAULTS_BIT;
         }
+#endif
+#if defined(USE_RX_BIND)
+        targetCapabilities |= (getRxBindSupported() << TARGET_SUPPORTS_RX_BIND_BIT);
 #endif
 
         sbufWriteU8(dst, targetCapabilities);
@@ -3233,6 +3239,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 #endif // USE_BOARD_INFO
+#if defined(USE_RX_BIND)
+    case MSP2_BETAFLIGHT_BIND:
+        if (!startRxBind()) {
+            return MSP_RESULT_ERROR;
+        }
+
+        break;
+#endif
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
