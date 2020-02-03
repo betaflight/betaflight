@@ -69,6 +69,7 @@
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS

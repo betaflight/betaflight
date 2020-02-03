@@ -1,6 +1,6 @@
 F7X5XG_TARGETS += $(TARGET)
 
-FEATURES       += SDCARD_SPI VCP ONBOARDFLASH
+FEATURES       += VCP SDCARD_SPI SDCARD_SDIO ONBOARDFLASH
 
 TARGET_SRC = \
     $(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \
