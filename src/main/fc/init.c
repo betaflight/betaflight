@@ -901,17 +901,6 @@ void init(void)
 
     batteryInit(); // always needs doing, regardless of features.
 
-#ifdef USE_DASHBOARD
-    if (featureIsEnabled(FEATURE_DASHBOARD)) {
-#ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
-        dashboardShowFixedPage(PAGE_GPS);
-#else
-        dashboardResetPageCycling();
-        dashboardEnablePageCycling();
-#endif
-    }
-#endif
-
 #ifdef USE_RCDEVICE
     rcdeviceInit();
 #endif // USE_RCDEVICE
@@ -1003,6 +992,12 @@ void init(void)
     // Dashbord will register with CMS by itself.
     if (featureIsEnabled(FEATURE_DASHBOARD)) {
         dashboardInit();
+#ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
+        dashboardShowFixedPage(PAGE_GPS);
+#else
+        dashboardResetPageCycling();
+        dashboardEnablePageCycling();
+#endif
     }
 #endif
 
