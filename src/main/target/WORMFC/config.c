@@ -19,26 +19,17 @@
  */
 
 #include <stdbool.h>
-#include <stdint.h>
 
 #include "platform.h"
 
-#ifdef USE_TARGET_CONFIG
+#if defined(USE_TARGET_CONFIG)
 
-#include "config_helper.h"
-
-#include "io/serial.h"
-
-#include "osd/osd.h"
-
-static targetSerialPortFunction_t targetSerialPortFunction[] = {
-    { SERIAL_PORT_USART1, FUNCTION_MSP },
-    { SERIAL_PORT_USART2, FUNCTION_MSP },
-};
+#include "pg/sdcard.h"
 
 void targetConfiguration(void)
 {
-    osdConfigMutable()->core_temp_alarm = 85;
-    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
+
+    sdcardConfigMutable()->mode = SDCARD_MODE_SDIO;
+    sdcardConfigMutable()->useDma = true;
 }
 #endif
