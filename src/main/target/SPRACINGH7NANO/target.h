@@ -170,17 +170,8 @@
 // SD card not present on hardware, but pins are reserved.
 //#define USE_SDCARD
 #ifdef USE_SDCARD
-#define USE_SDCARD_SDIO
 #define SDCARD_DETECT_PIN PD10
 #define SDCARD_DETECT_INVERTED
-#define SDIO_DEVICE             SDIODEV_1
-#define SDIO_USE_4BIT           true
-#define SDIO_CK_PIN             PC12
-#define SDIO_CMD_PIN            PD2
-#define SDIO_D0_PIN             PC8
-#define SDIO_D1_PIN             PC9
-#define SDIO_D2_PIN             PC10
-#define SDIO_D3_PIN             PC11
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT

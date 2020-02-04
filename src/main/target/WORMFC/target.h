@@ -32,6 +32,8 @@
 
 #endif
 
+#define USE_TARGET_CONFIGURATION
+
 //LEDs
 #if defined(PIRXF4)
 #define LED0_PIN                PC13
