@@ -53,6 +53,7 @@
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
+#include "sensors/gyro.h"
 
 #include "rc.h"
 
@@ -841,6 +842,11 @@ void initRcProcessing(void)
 
         break;
     }
+
+#ifdef USE_YAW_SPIN_RECOVERY
+    const int maxYawRate = (int)applyRates(FD_YAW, 1.0f, 1.0f);
+    initYawSpinRecovery(maxYawRate);
+#endif
 }
 
 bool rcSmoothingIsEnabled(void)
