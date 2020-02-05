@@ -1737,6 +1737,12 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU16(dst, 0);
 #endif
+#if defined(USE_DYN_LPF)
+        // Added in MSP API 1.44
+        sbufWriteU8(dst, currentPidProfile->dyn_lpf_curve_expo);
+#else
+        sbufWriteU8(dst, 0);
+#endif
 
         break;
     case MSP_PID_ADVANCED:
@@ -2561,7 +2567,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
         }
-
+        if (sbufBytesRemaining(src) >= 1) {
+            // Added in MSP API 1.44
+#if defined(USE_DYN_LPF)
+            currentPidProfile->dyn_lpf_curve_expo = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
 
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
