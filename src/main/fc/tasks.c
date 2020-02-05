@@ -249,14 +249,19 @@ void tasksInit(void)
 #endif
 
     if (sensors(SENSOR_GYRO)) {
-        rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-        setTaskEnabled(TASK_GYROPID, true);
+        rescheduleTask(TASK_GYRO, gyro.sampleLooptime);
+        rescheduleTask(TASK_FILTER, gyro.targetLooptime);
+        rescheduleTask(TASK_PID, gyro.targetLooptime);
+        setTaskEnabled(TASK_GYRO, true);
+        setTaskEnabled(TASK_FILTER, true);
+        setTaskEnabled(TASK_PID, true);
+        schedulerEnableGyro();
     }
 
 #if defined(USE_ACC)
-    if (sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC) && acc.sampleRateHz) {
         setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
+        rescheduleTask(TASK_ACCEL, TASK_PERIOD_HZ(acc.sampleRateHz));
         setTaskEnabled(TASK_ATTITUDE, true);
     }
 #endif
@@ -394,7 +399,9 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_STACK_CHECK] = DEFINE_TASK("STACKCHECK", NULL, NULL, taskStackCheck, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE),
 #endif
 
-    [TASK_GYROPID] = DEFINE_TASK("PID", "GYRO", NULL, taskMainPidLoop, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
+    [TASK_GYRO] = DEFINE_TASK("GYRO", NULL, NULL, taskGyroSample, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
+    [TASK_FILTER] = DEFINE_TASK("FILTER", NULL, NULL, taskFiltering, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
+    [TASK_PID] = DEFINE_TASK("PID", NULL, NULL, taskMainPidLoop, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
 #ifdef USE_ACC
     [TASK_ACCEL] = DEFINE_TASK("ACC", NULL, NULL, taskUpdateAccelerometer, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM),
     [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),

@@ -49,7 +49,7 @@ typedef enum {
 
 typedef struct acc_s {
     accDev_t dev;
-    uint32_t accSamplingInterval;
+    uint16_t sampleRateHz;
     float accADC[XYZ_AXIS_COUNT];
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
@@ -78,7 +78,7 @@ typedef struct accelerometerConfig_s {
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 #endif
 
-bool accInit(uint32_t gyroTargetLooptime);
+bool accInit(uint16_t accSampleRateHz);
 bool accIsCalibrationComplete(void);
 bool accHasBeenCalibrated(void);
 void accStartCalibration(void);

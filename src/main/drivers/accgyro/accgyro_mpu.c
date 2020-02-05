@@ -350,10 +350,6 @@ uint8_t mpuGyroDLPF(gyroDev_t *gyro)
                 break;
 #endif
 
-            case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                ret = 1;
-                break;
-
             case GYRO_HARDWARE_LPF_NORMAL:
             default:
                 ret = 0;

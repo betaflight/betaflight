@@ -75,7 +75,6 @@ void targetConfiguration(void)
     ledStripStatusModeConfigMutable()->ledConfigs[0] = DEFINE_LED(0, 0, 0, 0, LF(COLOR), LO(VTX), 0);
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
-    gyroConfigMutable()->gyro_sync_denom = 1;  // 8kHz gyro
     pidConfigMutable()->pid_process_denom = 1; // 8kHz PID
 #endif
 }

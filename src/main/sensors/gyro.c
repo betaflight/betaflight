@@ -114,6 +114,7 @@ static bool gyroHasOverflowProtection = true;
 
 static FAST_RAM_ZERO_INIT bool useDualGyroDebugging;
 static FAST_RAM_ZERO_INIT flight_dynamics_index_t gyroDebugAxis;
+FAST_RAM uint8_t activePidLoopDenom = 1;
 
 typedef struct gyroCalibration_s {
     float sum[XYZ_AXIS_COUNT];
@@ -141,18 +142,9 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyroSensor1.gyroDev;
 #endif
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
-static void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz);
+static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_t looptime);
 
 #define DEBUG_GYRO_CALIBRATION 3
-
-#ifdef STM32F10X
-#define GYRO_SYNC_DENOM_DEFAULT 8
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) \
-   || defined(USE_GYRO_SPI_ICM20689)
-#define GYRO_SYNC_DENOM_DEFAULT 1
-#else
-#define GYRO_SYNC_DENOM_DEFAULT 3
-#endif
 
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
@@ -172,7 +164,6 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 { 
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;
-    gyroConfig->gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
     gyroConfig->gyro_lowpass_type = FILTER_PT1;
     gyroConfig->gyro_lowpass_hz = 200;  // NOTE: dynamic lpf is enabled by default so this setting is actually
@@ -421,8 +412,8 @@ static void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *c
     buildRotationMatrixFromAlignment(&config->customAlignment, &gyroSensor->gyroDev.rotationMatrix);
     gyroSensor->gyroDev.mpuIntExtiTag = config->extiTag;
 
-    // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
-    gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware_lpf, gyroConfig()->gyro_sync_denom);
+    // The targetLooptime gets set later based on the active sensor's gyroSampleRateHz and pid_process_denom
+    gyroSensor->gyroDev.gyroSampleRateHz = gyroSetSampleRate(&gyroSensor->gyroDev);
     gyroSensor->gyroDev.hardware_lpf = gyroConfig()->gyro_hardware_lpf;
     gyroSensor->gyroDev.initFn(&gyroSensor->gyroDev);
 
@@ -490,6 +481,7 @@ bool gyroInit(void)
     case DEBUG_GYRO_SCALED:
     case DEBUG_GYRO_FILTERED:
     case DEBUG_DYN_LPF:
+    case DEBUG_GYRO_SAMPLE:
         gyroDebugMode = debugMode;
         break;
     case DEBUG_DUAL_GYRO_DIFF:
@@ -567,7 +559,14 @@ bool gyroInit(void)
     }
 #endif
 
-    gyroInitFilters();
+    if (gyro.rawSensorDev) {
+        gyro.sampleRateHz = gyro.rawSensorDev->gyroSampleRateHz;
+        gyro.accSampleRateHz = gyro.rawSensorDev->accSampleRateHz;
+    } else {
+        gyro.sampleRateHz = 0;
+        gyro.accSampleRateHz = 0;
+    }
+
     return true;
 }
 
@@ -603,7 +602,7 @@ static void dynLpfFilterInit()
 }
 #endif
 
-void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz)
+bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_t looptime)
 {
     filterApplyFnPtr *lowpassFilterApplyFn;
     gyroLowpassFilter_t *lowpassFilter = NULL;
@@ -620,12 +619,14 @@ void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz)
         break;
 
     default:
-        return;
+        return false;
     }
 
+    bool ret = false;
+
     // Establish some common constants
-    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
-    const float gyroDt = gyro.targetLooptime * 1e-6f;
+    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / looptime;
+    const float gyroDt = looptime * 1e-6f;
 
     // Gain could be calculated a little later as it is specific to the pt1/bqrcf2/fkf branches
     const float gain = pt1FilterGain(lpfHz, gyroDt);
@@ -642,6 +643,7 @@ void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz)
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain);
             }
+            ret = true;
             break;
         case FILTER_BIQUAD:
 #ifdef USE_DYN_LPF
@@ -650,11 +652,13 @@ void gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz)
             *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
 #endif
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, gyro.targetLooptime);
+                biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
             }
+            ret = true;
             break;
         }
     }
+    return ret;
 }
 
 static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
@@ -744,6 +748,18 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 #endif
 }
 
+void gyroSetTargetLooptime(uint8_t pidDenom)
+{
+    activePidLoopDenom = pidDenom;
+    if (gyro.sampleRateHz) {
+        gyro.sampleLooptime = 1e6 / gyro.sampleRateHz;
+        gyro.targetLooptime = activePidLoopDenom * 1e6 / gyro.sampleRateHz;
+    } else {
+        gyro.sampleLooptime = 0;
+        gyro.targetLooptime = 0;
+    }
+}
+
 void gyroInitFilters(void)
 {
     uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
@@ -757,13 +773,15 @@ void gyroInitFilters(void)
     gyroInitLowpassFilterLpf(
       FILTER_LOWPASS,
       gyroConfig()->gyro_lowpass_type,
-      gyro_lowpass_hz
+      gyro_lowpass_hz,
+      gyro.targetLooptime
     );
 
-    gyroInitLowpassFilterLpf(
+    gyro.downsampleFilterEnabled = gyroInitLowpassFilterLpf(
       FILTER_LOWPASS2,
       gyroConfig()->gyro_lowpass2_type,
-      gyroConfig()->gyro_lowpass2_hz
+      gyroConfig()->gyro_lowpass2_hz,
+      gyro.sampleLooptime
     );
 
     gyroInitFilterNotch1(gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
@@ -809,7 +827,7 @@ static bool isOnFinalGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static int32_t gyroCalculateCalibratingCycles(void)
 {
-    return (gyroConfig()->gyroCalibrationDuration * 10000) / gyro.targetLooptime;
+    return (gyroConfig()->gyroCalibrationDuration * 10000) / gyro.sampleLooptime;
 }
 
 static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibration)
@@ -1046,21 +1064,8 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
     }
 }
 
-#define GYRO_FILTER_FUNCTION_NAME filterGyro
-#define GYRO_FILTER_DEBUG_SET(mode, index, value) { UNUSED(mode); UNUSED(index); UNUSED(value); }
-#include "gyro_filter_impl.c"
-#undef GYRO_FILTER_FUNCTION_NAME
-#undef GYRO_FILTER_DEBUG_SET
-
-#define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
-#define GYRO_FILTER_DEBUG_SET DEBUG_SET
-#include "gyro_filter_impl.c"
-#undef GYRO_FILTER_FUNCTION_NAME
-#undef GYRO_FILTER_DEBUG_SET
-
-FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
+FAST_CODE void gyroUpdate(void)
 {
-
     switch (gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
         gyroUpdateSensor(&gyroSensor1);
@@ -1091,6 +1096,38 @@ FAST_CODE void gyroUpdate(timeUs_t currentTimeUs)
 #endif
     }
 
+    if (gyro.downsampleFilterEnabled) {
+        // using gyro lowpass 2 filter for downsampling
+        gyro.sampleSum[X] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[X], gyro.gyroADC[X]);
+        gyro.sampleSum[Y] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Y], gyro.gyroADC[Y]);
+        gyro.sampleSum[Z] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Z], gyro.gyroADC[Z]);
+    } else {
+        // using simple averaging for downsampling
+        gyro.sampleSum[X] += gyro.gyroADC[X];
+        gyro.sampleSum[Y] += gyro.gyroADC[Y];
+        gyro.sampleSum[Z] += gyro.gyroADC[Z];
+        gyro.sampleCount++;
+    }
+}
+
+#define GYRO_FILTER_FUNCTION_NAME filterGyro
+#define GYRO_FILTER_DEBUG_SET(mode, index, value) do { UNUSED(mode); UNUSED(index); UNUSED(value); } while (0)
+#define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) do { UNUSED(axis); UNUSED(mode); UNUSED(index); UNUSED(value); } while (0)
+#include "gyro_filter_impl.c"
+#undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_DEBUG_SET
+#undef GYRO_FILTER_AXIS_DEBUG_SET
+
+#define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
+#define GYRO_FILTER_DEBUG_SET DEBUG_SET
+#define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) if (axis == (int)gyroDebugAxis) DEBUG_SET(mode, index, value)
+#include "gyro_filter_impl.c"
+#undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_DEBUG_SET
+#undef GYRO_FILTER_AXIS_DEBUG_SET
+
+FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
+{
     if (gyroDebugMode == DEBUG_NONE) {
         filterGyro();
     } else {

@@ -47,41 +47,30 @@ bool gyroSyncCheckUpdate(gyroDev_t *gyro)
     return ret;
 }
 
-uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator)
+uint16_t gyroSetSampleRate(gyroDev_t *gyro)
 {
-    float gyroSamplePeriod;
+    uint16_t gyroSampleRateHz;
+    uint16_t accSampleRateHz;
 
-    if (lpf != GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
-        switch (gyro->mpuDetectionResult.sensor) {
-            case BMI_160_SPI:
-                gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
-                gyroSamplePeriod = 312.0f;
-                break;
-            case ICM_20649_SPI:
-                gyro->gyroRateKHz = GYRO_RATE_9_kHz;
-                gyroSamplePeriod = 1000000.0f / 9000.0f;
-                break;
-            default:
-                gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-                gyroSamplePeriod = 125.0f;
-                break;
-        }
-    } else {
-        switch (gyro->mpuDetectionResult.sensor) {
+    switch (gyro->mpuDetectionResult.sensor) {
+        case BMI_160_SPI:
+            gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+            gyroSampleRateHz = 3200;
+            accSampleRateHz = 800;
+            break;
         case ICM_20649_SPI:
-            gyro->gyroRateKHz = GYRO_RATE_1100_Hz;
-            gyroSamplePeriod = 1000000.0f / 1100.0f;
+            gyro->gyroRateKHz = GYRO_RATE_9_kHz;
+            gyroSampleRateHz = 9000;
+            accSampleRateHz = 1125;
             break;
         default:
-            gyro->gyroRateKHz = GYRO_RATE_1_kHz;
-            gyroSamplePeriod = 1000.0f;
+            gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+            gyroSampleRateHz = 8000;
+            accSampleRateHz = 1000;
             break;
-        }
-        gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 
-    // calculate gyro divider and targetLooptime (expected cycleTime)
-    gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
-    const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
-    return targetLooptime;
+    gyro->mpuDividerDrops  = 0; // we no longer use the gyro's sample divider
+    gyro->accSampleRateHz = accSampleRateHz;
+    return gyroSampleRateHz;
 }

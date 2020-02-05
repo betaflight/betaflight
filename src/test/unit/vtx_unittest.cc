@@ -113,6 +113,7 @@ TEST(VtxTest, PitMode)
 
 // STUBS
 extern "C" {
+    uint8_t activePidLoopDenom = 1;
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
     bool rxIsReceivingSignal(void) { return simulationHaveRx; }
@@ -141,7 +142,7 @@ extern "C" {
     void writeServos(void) {};
     bool calculateRxChannelsAndUpdateFailsafe(timeUs_t) { return true; }
     bool isMixerUsingServos(void) { return false; }
-    void gyroUpdate(timeUs_t) {}
+    void gyroUpdate() {}
     timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 0; }
     void updateRSSI(timeUs_t) {}
     bool failsafeIsMonitoring(void) { return false; }
@@ -184,4 +185,5 @@ extern "C" {
     bool compassIsCalibrationComplete(void) { return true; }
     bool isUpright(void) { return true; }
     void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
+    void gyroFiltering(timeUs_t) {};
 }

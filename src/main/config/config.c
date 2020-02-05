@@ -113,7 +113,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
     .rateProfile6PosSwitch = false,
-    .cpu_overclock = 0,
+    .cpu_overclock = DEFAULT_CPU_OVERCLOCK,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Not used for non-F4 targets
@@ -559,13 +559,6 @@ static void validateAndFixConfig(void)
 
 void validateAndFixGyroConfig(void)
 {
-#ifdef USE_GYRO_DATA_ANALYSE
-    // Disable dynamic filter if gyro loop is less than 2KHz
-    if (gyro.targetLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
-        featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-    }
-#endif
-
     // Fix gyro filter settings to handle cases where an older configurator was used that
     // allowed higher cutoff limits from previous firmware versions.
     adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass_hz, FILTER_FREQUENCY_MAX);
@@ -589,15 +582,6 @@ void validateAndFixGyroConfig(void)
     }
 #endif
 
-    if (gyroConfig()->gyro_hardware_lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
-        pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        gyroConfigMutable()->gyro_sync_denom = 1;
-    }
-
-#if defined(STM32F1)
-    gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
-#endif
-
     float samplingTime;
     switch (gyroMpuDetectionResult()->sensor) {
     case ICM_20649_SPI:
@@ -609,16 +593,6 @@ void validateAndFixGyroConfig(void)
     default:
         samplingTime = 0.000125f;
         break;
-    }
-    if (gyroConfig()->gyro_hardware_lpf == GYRO_HARDWARE_LPF_1KHZ_SAMPLE) {
-        switch (gyroMpuDetectionResult()->sensor) {
-        case ICM_20649_SPI:
-            samplingTime = 1.0f / 1100.0f;
-            break;
-        default:
-            samplingTime = 0.001f;
-            break;
-        }
     }
 
 
@@ -654,12 +628,20 @@ void validateAndFixGyroConfig(void)
             motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
         }
     } else {
-        const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
+        const float pidLooptime = samplingTime * pidConfig()->pid_process_denom;
         if (pidLooptime < motorUpdateRestriction) {
-            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
+            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / samplingTime, 1, MAX_PID_PROCESS_DENOM);
             pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
         }
     }
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    // Disable dynamic filter if gyro loop is less than 2KHz
+    const uint32_t configuredLooptime = (gyro.sampleRateHz > 0) ? (pidConfig()->pid_process_denom * 1e6 / gyro.sampleRateHz) : 0;
+    if (configuredLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
+        featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
+    }
+#endif
 
 #ifdef USE_BLACKBOX
 #ifndef USE_FLASHFS
