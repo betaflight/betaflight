@@ -454,6 +454,7 @@ extern "C" {
     void resetPPMDataReceivedState(void){ }
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
+    void updateArmingStatus(void) { }
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {

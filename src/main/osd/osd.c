@@ -58,6 +58,7 @@
 #include "drivers/sdcard.h"
 #include "drivers/time.h"
 
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -384,10 +385,34 @@ static void osdCompleteInitialization(void)
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
     displayWrite(osdDisplayPort, 20, 6, DISPLAYPORT_ATTR_NONE, string_buffer);
+
+    uint8_t cmsHelpCol = 7;
+    uint8_t cmsHelpOffset = 4;
+
+#ifdef USE_ACC
+    updateArmingStatus();
+    if (sensors(SENSOR_ACC) && (getArmingDisableFlags() & ARMING_DISABLED_ACC_CALIBRATION)) {
+        cmsHelpCol = 1;
+        cmsHelpOffset = 3;
 #ifdef USE_CMS
-    displayWrite(osdDisplayPort, 7, 8,  DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT1);
-    displayWrite(osdDisplayPort, 11, 9, DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT2);
-    displayWrite(osdDisplayPort, 11, 10, DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT3);
+        const uint8_t accHelpCol = 15;
+#else
+        const uint8_t accHelpCol = 7;
+#endif
+        displayWrite(osdDisplayPort, accHelpCol, 8,  DISPLAYPORT_ATTR_NONE, ACC_CALIB_HELP_TEXT1);
+        displayWrite(osdDisplayPort, accHelpCol + 4, 9,  DISPLAYPORT_ATTR_NONE, ACC_CALIB_HELP_TEXT2);
+        displayWrite(osdDisplayPort, accHelpCol + 4, 10, DISPLAYPORT_ATTR_NONE, ACC_CALIB_HELP_TEXT3);
+        displayWrite(osdDisplayPort, accHelpCol + 4, 11, DISPLAYPORT_ATTR_NONE, ACC_CALIB_HELP_TEXT4);
+    }
+#endif // USE_ACC
+
+#ifdef USE_CMS
+    displayWrite(osdDisplayPort, cmsHelpCol, 8,  DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, cmsHelpCol + cmsHelpOffset, 9, DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, cmsHelpCol + cmsHelpOffset, 10, DISPLAYPORT_ATTR_NONE, CMS_STARTUP_HELP_TEXT3);
+#else
+    UNUSED(cmsHelpCol);
+    UNUSED(cmsHelpOffset);
 #endif
 
 #ifdef USE_RTC_TIME

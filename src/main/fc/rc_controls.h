@@ -25,6 +25,13 @@
 #include "common/filter.h"
 #include "pg/pg.h"
 
+#ifdef USE_ACC
+#define ACC_CALIB_HELP_TEXT1 "ACC_CAL:THR HI"
+#define ACC_CALIB_HELP_TEXT2     "+ YAW LEFT"
+#define ACC_CALIB_HELP_TEXT3     "+ PITCH DN"
+#define ACC_CALIB_HELP_TEXT4     "+ ROLL MID"
+#endif
+
 typedef enum rc_alias {
     ROLL = 0,
     PITCH,

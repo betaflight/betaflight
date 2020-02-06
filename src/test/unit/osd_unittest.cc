@@ -1244,4 +1244,5 @@ extern "C" {
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
     bool isUpright(void) { return true; }
+    void updateArmingStatus(void) { }
 }
