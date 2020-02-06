@@ -294,6 +294,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdWarnSetState(OSD_WARNING_RSSI, false);
     osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
     osdWarnSetState(OSD_WARNING_RSSI_DBM, false);
+    // turn off the over mah capacity warning
+    osdWarnSetState(OSD_WARNING_OVER_CAP, false);
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
     osdConfig->timers[OSD_TIMER_2] = osdTimerDefault[OSD_TIMER_2];
