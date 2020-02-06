@@ -447,6 +447,8 @@ void disarm(flightLogDisarmReason_e reason)
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
             blackboxFinish();
         }
+#else
+        UNUSED(reason);
 #endif
         BEEP_OFF;
 #ifdef USE_DSHOT
