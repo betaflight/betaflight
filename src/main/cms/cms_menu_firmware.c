@@ -102,7 +102,7 @@ static const void *cmsCalibrateAcc(displayPort_t *pDisp, const void *self)
         accStartCalibration();
     }
 
-    return NULL;
+    return MENU_CHAIN_BACK;
 }
 #endif
 
@@ -120,11 +120,46 @@ static const void *cmsCalibrateBaro(displayPort_t *pDisp, const void *self)
 }
 #endif
 
+#if defined(USE_ACC)
+static const OSD_Entry menuCalibrateAccEntries[] = {
+    { "--- CALIBRATE ACC ---", OME_Label, NULL, NULL, 0 },
+    { "PLACE ON A LEVEL SURFACE", OME_Label, NULL, NULL, 0},
+    { "MAKE SURE CRAFT IS STILL", OME_Label, NULL, NULL, 0},
+    { " ", OME_Label, NULL, NULL, 0},
+    { "START CALIBRATION",  OME_Funcall, cmsCalibrateAcc, NULL, 0 },
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuCalibrateAcc = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "ACCCALIBRATION",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onDisplayUpdate = NULL,
+    .entries = menuCalibrateAccEntries
+};
+
+static const void *cmsCalibrateAccMenu(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+
+    if (sensors(SENSOR_ACC)) {
+        cmsMenuChange(pDisp, &cmsx_menuCalibrateAcc);
+    }
+
+    return NULL;
+}
+
+#endif
+
 static const OSD_Entry menuCalibrationEntries[] = {
     { "--- CALIBRATE ---", OME_Label, NULL, NULL, 0 },
     { "GYRO", OME_Funcall, cmsCalibrateGyro, gyroCalibrationStatus, DYNAMIC },
 #if defined(USE_ACC)
-    { "ACC",  OME_Funcall, cmsCalibrateAcc, accCalibrationStatus, DYNAMIC },
+    { "ACC",  OME_Funcall, cmsCalibrateAccMenu, accCalibrationStatus, DYNAMIC },
 #endif
 #if defined(USE_BARO)
     { "BARO", OME_Funcall, cmsCalibrateBaro, baroCalibrationStatus, DYNAMIC },
