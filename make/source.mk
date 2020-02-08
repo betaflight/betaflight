@@ -108,6 +108,7 @@ COMMON_SRC = \
             rx/msp.c \
             rx/pwm.c \
             rx/rx.c \
+            rx/rx_bind.c \
             rx/rx_spi.c \
             rx/rx_spi_common.c \
             rx/crsf.c \
@@ -345,7 +346,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
             osd/osd.c \
-            osd/osd_elements.c
+            osd/osd_elements.c \
+            rx/rx_bind.c
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))

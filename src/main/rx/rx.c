@@ -33,15 +33,14 @@
 #include "common/utils.h"
 #include "common/filter.h"
 
+#include "config/config.h"
 #include "config/config_reset.h"
 #include "config/feature.h"
 
 #include "drivers/adc.h"
 #include "drivers/rx/rx_pwm.h"
-#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
-#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 
