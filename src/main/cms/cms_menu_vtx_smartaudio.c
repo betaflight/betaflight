@@ -468,7 +468,7 @@ static const char * const saCmsPitNames[] = {
 static OSD_TAB_t saCmsEntPitFMode = { &saCmsPitFMode, 1, saCmsPitFModeNames };
 static OSD_TAB_t saCmsEntPit = {&saCmsPit, 2, saCmsPitNames};
 
-static const void *sacms_SetupTopMenu(void); // Forward
+static const void *sacms_SetupTopMenu(displayPort_t *pDisp); // Forward
 
 static const void *saCmsConfigFreqModeByGvar(displayPort_t *pDisp, const void *self)
 {
@@ -484,7 +484,7 @@ static const void *saCmsConfigFreqModeByGvar(displayPort_t *pDisp, const void *s
     // don't call 'saSetBandAndChannel()' / 'saSetFreq()' here,
     // wait until SET / 'saCmsCommence()' is activated
 
-    sacms_SetupTopMenu();
+    sacms_SetupTopMenu(pDisp);
 
     return NULL;
 }
@@ -540,8 +540,10 @@ static const void *saCmsCommence(displayPort_t *pDisp, const void *self)
     return MENU_CHAIN_BACK;
 }
 
-static const void *saCmsSetPORFreqOnEnter(void)
+static const void *saCmsSetPORFreqOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     if (saDevice.version == 1)
         return MENU_CHAIN_BACK;
 
@@ -584,8 +586,10 @@ static const char *saCmsUserFreqGetString(displayPort_t *pDisp, const void *self
     return pbuf;
 }
 
-static const void *saCmsSetUserFreqOnEnter(void)
+static const void *saCmsSetUserFreqOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     saCmsUserFreqNew = saCmsUserFreq;
 
     return NULL;
@@ -741,8 +745,10 @@ static const OSD_Entry saCmsMenuOfflineEntries[] =
 
 CMS_Menu cmsx_menuVtxSmartAudio; // Forward
 
-static const void *sacms_SetupTopMenu(void)
+static const void *sacms_SetupTopMenu(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     if (saCmsDeviceStatus) {
         if (saCmsFselModeNew == 0)
             cmsx_menuVtxSmartAudio.entries = saCmsMenuChanModeEntries;

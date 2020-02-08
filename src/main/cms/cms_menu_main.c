@@ -47,10 +47,26 @@
 
 #include "cms/cms_menu_vtx_common.h"
 
+#include "common/printf.h"
+
 #include "config/config.h"
+
+#include "fc/core.h"
+#include "fc/runtime_config.h"
+
+#include "sensors/acceleration.h"
 
 #include "cms_menu_main.h"
 
+#define CALIBRATION_STATUS_MAX_LENGTH 9
+
+#define CALIBRATION_STATUS_REQUIRED "REQUIRED"
+#define CALIBRATION_STATUS_ACTIVE   "  ACTIVE"
+#define CALIBRATION_STATUS_COMPLETE "COMPLETE"
+
+#if defined(USE_ACC)
+static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
+#endif
 
 // Features
 
@@ -97,7 +113,64 @@ static const void *cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
     return NULL;
 }
 
+
+#define SETUP_POPUP_MAX_ENTRIES 1   // Increase as new entries are added
+
+static OSD_Entry setupPopupMenuEntries[SETUP_POPUP_MAX_ENTRIES + 3];
+
+static bool setupPopupMenuBuild(void)
+{
+    uint8_t menuIndex = 0;
+    updateArmingStatus();
+
+    cmsAddMenuEntry(&setupPopupMenuEntries[menuIndex], "-- SETUP MENU --", OME_Label, NULL, NULL, 0);
+
+    // Add menu entries for uncompleted setup tasks
+#if defined(USE_ACC)
+    if (sensors(SENSOR_ACC) && (getArmingDisableFlags() & ARMING_DISABLED_ACC_CALIBRATION)) {
+        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "CALIBRATE ACC", OME_Funcall, cmsCalibrateAccMenu, accCalibrationStatus, DYNAMIC);
+    }
+#endif
+
+    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "EXIT", OME_Back, NULL, NULL, DYNAMIC);
+    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "NULL", OME_END, NULL, NULL, 0);
+
+    return (menuIndex > 2);  // return true if any setup items were added
+}
+
+static const void *setupPopupMenuOnDisplayUpdate(displayPort_t *pDisp, const OSD_Entry *selected)
+{
+    UNUSED(pDisp);
+    UNUSED(selected);
+
+#if defined(USE_ACC)
+    // Update the ACC calibration status message.
+    tfp_sprintf(accCalibrationStatus, accIsCalibrationComplete() ? accHasBeenCalibrated() ? CALIBRATION_STATUS_COMPLETE : CALIBRATION_STATUS_REQUIRED : CALIBRATION_STATUS_ACTIVE);
+#endif
+
+    return NULL;
+}
+
+CMS_Menu cmsx_menuSetupPopup = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "SETUPPOPUP",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onDisplayUpdate = setupPopupMenuOnDisplayUpdate,
+    .entries = setupPopupMenuEntries,
+};
+
 // Main
+static const void *mainMenuOnEnter(displayPort_t *pDisp)
+{
+    if (setupPopupMenuBuild()) {
+        // If setup issues were found then switch to the dynamically constructed menu
+        cmsMenuChange(pDisp, &cmsx_menuSetupPopup);
+    }
+    return NULL;
+}
 
 static const OSD_Entry menuMainEntries[] =
 {
@@ -119,9 +192,10 @@ CMS_Menu cmsx_menuMain = {
     .GUARD_text = "MENUMAIN",
     .GUARD_type = OME_MENU,
 #endif
-    .onEnter = NULL,
+    .onEnter = mainMenuOnEnter,
     .onExit = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuMainEntries,
 };
+
 #endif

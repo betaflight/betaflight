@@ -220,8 +220,10 @@ static bool trampCmsInitSettings(void)
     return true;
 }
 
-static const void *trampCmsOnEnter(void)
+static const void *trampCmsOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     if (!trampCmsInitSettings()) {
         return MENU_CHAIN_BACK;
     }

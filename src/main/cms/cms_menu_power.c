@@ -54,8 +54,10 @@ int16_t currentSensorVirtualConfig_scale;
 int16_t currentSensorVirtualConfig_offset;
 #endif
 
-static const void *cmsx_Power_onEnter(void)
+static const void *cmsx_Power_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     batteryConfig_voltageMeterSource = batteryConfig()->voltageMeterSource;
     batteryConfig_currentMeterSource = batteryConfig()->currentMeterSource;
 
@@ -74,8 +76,9 @@ static const void *cmsx_Power_onEnter(void)
     return NULL;
 }
 
-static const void *cmsx_Power_onExit(const OSD_Entry *self)
+static const void *cmsx_Power_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     batteryConfigMutable()->voltageMeterSource = batteryConfig_voltageMeterSource;
