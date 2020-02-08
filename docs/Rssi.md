@@ -54,7 +54,7 @@ Note: Some systems invert the RSSI ( 0 = Full signal / 100 = Lost signal). To co
 set rssi_invert = ON
 ```
 
-## RSSI_SCALE setup method:
+### RSSI_SCALE setup method
 
 - set rssi_scale = 100. The displayed percentage will then be the raw ADC value.
 - turn on RX (close to board). RSSI value should vary a little.
@@ -63,3 +63,26 @@ set rssi_invert = ON
 FrSky D4R-II and X8R supported.
 
 The feature can not be used when RX_PARALLEL_PWM is enabled.
+
+
+## RSSI_SCALE setup method
+
+To calculate the rssi offset and scale, check the rc value at full signal (`rssi_fullsig`) and at almost no signal strength (`rssi_nosig`).
+Then, calculate the offset and scale values using the following formula:
+
+```
+rssi_offset = 1000-(rssi_nosig) / 10
+rssi_scale = 100 * 1000 * (rssi_fullsig - rssi_nosig)
+```
+
+Examples are:
+
+| RC System | RC value at full strength | RC value at no strength | `rssi_offset` | `rssi_scale` |
+|:----------|:--------------------------|:------------------------|:--------------|:-------------|
+| Graupner  | `1900`                    | `1100`                  | `-10`         | `125`        |
+
+Then set these values via CLI:
+```
+set rssi_offset = -10
+set rssi_scale = 125
+```
