@@ -54,7 +54,7 @@
   *          - SUCCESS: HRTIMx registers are de-initialized
   *          - ERROR: invalid HRTIMx instance
   */
-ErrorStatus LL_HRTIM_DeInit(HRTIM_TypeDef* HRTIMx)
+ErrorStatus LL_HRTIM_DeInit(HRTIM_TypeDef *HRTIMx)
 {
   ErrorStatus result = SUCCESS;
 

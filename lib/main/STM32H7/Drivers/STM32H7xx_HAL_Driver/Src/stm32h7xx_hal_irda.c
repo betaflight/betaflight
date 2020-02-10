@@ -206,7 +206,7 @@
 #define IRDA_TEACK_REACK_TIMEOUT            1000U                                   /*!< IRDA TX or RX enable acknowledge time-out value  */
 
 #define IRDA_CR1_FIELDS  ((uint32_t)(USART_CR1_M | USART_CR1_PCE \
-                                   | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE))  /*!< UART or USART CR1 fields of parameters set by IRDA_SetConfig API */
+                                     | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE))  /*!< UART or USART CR1 fields of parameters set by IRDA_SetConfig API */
 
 #define USART_BRR_MIN    0x10U        /*!< USART BRR minimum authorized value */
 
@@ -225,7 +225,8 @@
   * @param  __PRESCALER__ IRDA clock prescaler value.
   * @retval Division result
   */
-#define IRDA_DIV_SAMPLING16(__PCLK__, __BAUD__, __PRESCALER__)  ((((__PCLK__)/IRDAPrescTable[(__PRESCALER__)]) + ((__BAUD__)/2U)) / (__BAUD__))
+#define IRDA_DIV_SAMPLING16(__PCLK__, __BAUD__, __PRESCALER__)  ((((__PCLK__)/IRDAPrescTable[(__PRESCALER__)])\
+                                                                  + ((__BAUD__)/2U)) / (__BAUD__))
 /**
   * @}
   */
@@ -240,7 +241,8 @@ void IRDA_InitCallbacksToDefault(IRDA_HandleTypeDef *hirda);
 #endif /* USE_HAL_IRDA_REGISTER_CALLBACKS */
 static HAL_StatusTypeDef IRDA_SetConfig(IRDA_HandleTypeDef *hirda);
 static HAL_StatusTypeDef IRDA_CheckIdleState(IRDA_HandleTypeDef *hirda);
-static HAL_StatusTypeDef IRDA_WaitOnFlagUntilTimeout(IRDA_HandleTypeDef *hirda, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout);
+static HAL_StatusTypeDef IRDA_WaitOnFlagUntilTimeout(IRDA_HandleTypeDef *hirda, uint32_t Flag, FlagStatus Status,
+                                                     uint32_t Tickstart, uint32_t Timeout);
 static void IRDA_EndTxTransfer(IRDA_HandleTypeDef *hirda);
 static void IRDA_EndRxTransfer(IRDA_HandleTypeDef *hirda);
 static void IRDA_DMATransmitCplt(DMA_HandleTypeDef *hdma);
@@ -476,7 +478,8 @@ __weak void HAL_IRDA_MspDeInit(IRDA_HandleTypeDef *hirda)
   * @param  pCallback pointer to the Callback function
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_IRDA_RegisterCallback(IRDA_HandleTypeDef *hirda, HAL_IRDA_CallbackIDTypeDef CallbackID, pIRDA_CallbackTypeDef pCallback)
+HAL_StatusTypeDef HAL_IRDA_RegisterCallback(IRDA_HandleTypeDef *hirda, HAL_IRDA_CallbackIDTypeDef CallbackID,
+                                            pIRDA_CallbackTypeDef pCallback)
 {
   HAL_StatusTypeDef status = HAL_OK;
 
@@ -715,6 +718,7 @@ HAL_StatusTypeDef HAL_IRDA_UnRegisterCallback(IRDA_HandleTypeDef *hirda, HAL_IRD
     While receiving data, transmission should be avoided as the data to be transmitted
     could be corrupted.
 
+  [..]
     (#) There are two modes of transfer:
         (++) Blocking mode: the communication is performed in polling mode.
              The HAL status of all data processing is returned by the same function
@@ -752,28 +756,28 @@ HAL_StatusTypeDef HAL_IRDA_UnRegisterCallback(IRDA_HandleTypeDef *hirda, HAL_IRD
         (++) HAL_IRDA_ErrorCallback()
 
     (#) Non-Blocking mode transfers could be aborted using Abort API's :
-        (+) HAL_IRDA_Abort()
-        (+) HAL_IRDA_AbortTransmit()
-        (+) HAL_IRDA_AbortReceive()
-        (+) HAL_IRDA_Abort_IT()
-        (+) HAL_IRDA_AbortTransmit_IT()
-        (+) HAL_IRDA_AbortReceive_IT()
+        (++) HAL_IRDA_Abort()
+        (++) HAL_IRDA_AbortTransmit()
+        (++) HAL_IRDA_AbortReceive()
+        (++) HAL_IRDA_Abort_IT()
+        (++) HAL_IRDA_AbortTransmit_IT()
+        (++) HAL_IRDA_AbortReceive_IT()
 
     (#) For Abort services based on interrupts (HAL_IRDA_Abortxxx_IT), a set of Abort Complete Callbacks are provided:
-        (+) HAL_IRDA_AbortCpltCallback()
-        (+) HAL_IRDA_AbortTransmitCpltCallback()
-        (+) HAL_IRDA_AbortReceiveCpltCallback()
+        (++) HAL_IRDA_AbortCpltCallback()
+        (++) HAL_IRDA_AbortTransmitCpltCallback()
+        (++) HAL_IRDA_AbortReceiveCpltCallback()
 
     (#) In Non-Blocking mode transfers, possible errors are split into 2 categories.
         Errors are handled as follows :
-        (+) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is
-            to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
-            Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
-            and HAL_IRDA_ErrorCallback() user callback is executed. Transfer is kept ongoing on IRDA side.
-            If user wants to abort it, Abort services should be called by user.
-        (+) Error is considered as Blocking : Transfer could not be completed properly and is aborted.
-            This concerns Overrun Error In Interrupt mode reception and all errors in DMA mode.
-            Error code is set to allow user to identify error type, and HAL_IRDA_ErrorCallback() user callback is executed.
+        (++) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is
+             to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
+             Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
+             and HAL_IRDA_ErrorCallback() user callback is executed. Transfer is kept ongoing on IRDA side.
+             If user wants to abort it, Abort services should be called by user.
+        (++) Error is considered as Blocking : Transfer could not be completed properly and is aborted.
+             This concerns Overrun Error In Interrupt mode reception and all errors in DMA mode.
+             Error code is set to allow user to identify error type, and HAL_IRDA_ErrorCallback() user callback is executed.
 
 @endverbatim
   * @{
@@ -781,10 +785,13 @@ HAL_StatusTypeDef HAL_IRDA_UnRegisterCallback(IRDA_HandleTypeDef *hirda, HAL_IRD
 
 /**
   * @brief Send an amount of data in blocking mode.
+  * @note  When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *        the sent data is handled as a set of u16. In this case, Size must reflect the number
+  *        of u16 available through pData.
   * @param hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified IRDA module.
-  * @param pData Pointer to data buffer.
-  * @param Size Amount of data to be sent.
+  * @param pData Pointer to data buffer (u8 or u16 data elements).
+  * @param Size Amount of data elements (u8 or u16) to be sent.
   * @param Timeout Specify timeout value.
   * @retval HAL status
   */
@@ -867,10 +874,13 @@ HAL_StatusTypeDef HAL_IRDA_Transmit(IRDA_HandleTypeDef *hirda, uint8_t *pData, u
 
 /**
   * @brief Receive an amount of data in blocking mode.
+  * @note  When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *        the received data is handled as a set of u16. In this case, Size must reflect the number
+  *        of u16 available through pData.
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param pData Pointer to data buffer.
-  * @param Size Amount of data to be received.
+  * @param pData Pointer to data buffer (u8 or u16 data elements).
+  * @param Size Amount of data elements (u8 or u16) to be received.
   * @param Timeout Specify timeout value.
   * @retval HAL status
   */
@@ -955,10 +965,13 @@ HAL_StatusTypeDef HAL_IRDA_Receive(IRDA_HandleTypeDef *hirda, uint8_t *pData, ui
 
 /**
   * @brief Send an amount of data in interrupt mode.
+  * @note  When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *        the sent data is handled as a set of u16. In this case, Size must reflect the number
+  *        of u16 available through pData.
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param pData Pointer to data buffer.
-  * @param Size Amount of data to be sent.
+  * @param pData Pointer to data buffer (u8 or u16 data elements).
+  * @param Size Amount of data elements (u8 or u16) to be sent.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Transmit_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -997,10 +1010,13 @@ HAL_StatusTypeDef HAL_IRDA_Transmit_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData
 
 /**
   * @brief Receive an amount of data in interrupt mode.
+  * @note  When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *        the received data is handled as a set of u16. In this case, Size must reflect the number
+  *        of u16 available through pData.
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param pData Pointer to data buffer.
-  * @param Size Amount of data to be received.
+  * @param pData Pointer to data buffer (u8 or u16 data elements).
+  * @param Size Amount of data elements (u8 or u16) to be received.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Receive_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -1046,10 +1062,13 @@ HAL_StatusTypeDef HAL_IRDA_Receive_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData,
 
 /**
   * @brief Send an amount of data in DMA mode.
+  * @note  When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *        the sent data is handled as a set of u16. In this case, Size must reflect the number
+  *        of u16 available through pData.
   * @param hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified IRDA module.
-  * @param pData pointer to data buffer.
-  * @param Size amount of data to be sent.
+  * @param pData pointer to data buffer (u8 or u16 data elements).
+  * @param Size Amount of data elements (u8 or u16) to be sent.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Transmit_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -1121,12 +1140,15 @@ HAL_StatusTypeDef HAL_IRDA_Transmit_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pDat
 
 /**
   * @brief Receive an amount of data in DMA mode.
+  * @note  When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *        the received data is handled as a set of u16. In this case, Size must reflect the number
+  *        of u16 available through pData.
   * @note   When the IRDA parity is enabled (PCE = 1), the received data contains
   *         the parity bit (MSB position).
   * @param hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified IRDA module.
-  * @param pData Pointer to data buffer.
-  * @param Size Amount of data to be received.
+  * @param pData Pointer to data buffer (u8 or u16 data elements).
+  * @param Size Amount of data elements (u8 or u16) to be received.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Receive_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -1354,7 +1376,7 @@ HAL_StatusTypeDef HAL_IRDA_DMAStop(IRDA_HandleTypeDef *hirda)
   *           - Set handle State to READY
   * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
   * @retval HAL status
-*/
+  */
 HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda)
 {
   /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
@@ -1440,7 +1462,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda)
   *           - Set handle State to READY
   * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
   * @retval HAL status
-*/
+  */
 HAL_StatusTypeDef HAL_IRDA_AbortTransmit(IRDA_HandleTypeDef *hirda)
 {
   /* Disable TXEIE and TCIE interrupts */
@@ -1492,7 +1514,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit(IRDA_HandleTypeDef *hirda)
   *           - Set handle State to READY
   * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
   * @retval HAL status
-*/
+  */
 HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda)
 {
   /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
@@ -1550,7 +1572,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda)
   * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
   *         considered as completed only when user abort complete callback is executed (not when exiting function).
   * @retval HAL status
-*/
+  */
 HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
 {
   uint32_t abortcplt = 1U;
@@ -1682,7 +1704,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
   * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
   *         considered as completed only when user abort complete callback is executed (not when exiting function).
   * @retval HAL status
-*/
+  */
 HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda)
 {
   /* Disable TXEIE and TCIE interrupts */
@@ -1760,7 +1782,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda)
   * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
   *         considered as completed only when user abort complete callback is executed (not when exiting function).
   * @retval HAL status
-*/
+  */
 HAL_StatusTypeDef HAL_IRDA_AbortReceive_IT(IRDA_HandleTypeDef *hirda)
 {
   /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
@@ -2151,7 +2173,8 @@ __weak void HAL_IRDA_AbortReceiveCpltCallback(IRDA_HandleTypeDef *hirda)
 HAL_IRDA_StateTypeDef HAL_IRDA_GetState(IRDA_HandleTypeDef *hirda)
 {
   /* Return IRDA handle state */
-  uint32_t temp1, temp2;
+  uint32_t temp1;
+  uint32_t temp2;
   temp1 = (uint32_t)hirda->gState;
   temp2 = (uint32_t)hirda->RxState;
 
@@ -2216,6 +2239,7 @@ static HAL_StatusTypeDef IRDA_SetConfig(IRDA_HandleTypeDef *hirda)
   const uint16_t IRDAPrescTable[12] = {1U, 2U, 4U, 6U, 8U, 10U, 12U, 16U, 32U, 64U, 128U, 256U};
   PLL2_ClocksTypeDef pll2_clocks;
   PLL3_ClocksTypeDef pll3_clocks;
+  uint32_t pclk;
 
   /* Check the communication parameters */
   assert_param(IS_IRDA_BAUDRATE(hirda->Init.BaudRate));
@@ -2244,7 +2268,7 @@ static HAL_StatusTypeDef IRDA_SetConfig(IRDA_HandleTypeDef *hirda)
   MODIFY_REG(hirda->Instance->PRESC, USART_PRESC_PRESCALER, hirda->Init.ClockPrescaler);
 
   /*-------------------------- USART GTPR Configuration ----------------------*/
-  MODIFY_REG(hirda->Instance->GTPR, (uint16_t)USART_GTPR_PSC, hirda->Init.Prescaler);
+  MODIFY_REG(hirda->Instance->GTPR, (uint16_t)USART_GTPR_PSC, (uint16_t)hirda->Init.Prescaler);
 
   /*-------------------------- USART BRR Configuration -----------------------*/
   IRDA_GETCLOCKSOURCE(hirda, clocksource);
@@ -2252,10 +2276,12 @@ static HAL_StatusTypeDef IRDA_SetConfig(IRDA_HandleTypeDef *hirda)
   switch (clocksource)
   {
     case IRDA_CLOCKSOURCE_D2PCLK1:
-      tmpreg = (uint16_t)(IRDA_DIV_SAMPLING16(HAL_RCC_GetPCLK1Freq(), hirda->Init.BaudRate, hirda->Init.ClockPrescaler));
+      pclk = HAL_RCC_GetPCLK1Freq();
+      tmpreg = (uint16_t)(IRDA_DIV_SAMPLING16(pclk, hirda->Init.BaudRate, hirda->Init.ClockPrescaler));
       break;
     case IRDA_CLOCKSOURCE_D2PCLK2:
-      tmpreg = (uint16_t)(IRDA_DIV_SAMPLING16(HAL_RCC_GetPCLK2Freq(), hirda->Init.BaudRate, hirda->Init.ClockPrescaler));
+      pclk = HAL_RCC_GetPCLK2Freq();
+      tmpreg = (uint16_t)(IRDA_DIV_SAMPLING16(pclk, hirda->Init.BaudRate, hirda->Init.ClockPrescaler));
       break;
     case IRDA_CLOCKSOURCE_PLL2Q:
       HAL_RCCEx_GetPLL2ClockFreq(&pll2_clocks);
@@ -2349,7 +2375,8 @@ static HAL_StatusTypeDef IRDA_CheckIdleState(IRDA_HandleTypeDef *hirda)
   * @param  Timeout Timeout duration
   * @retval HAL status
   */
-static HAL_StatusTypeDef IRDA_WaitOnFlagUntilTimeout(IRDA_HandleTypeDef *hirda, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout)
+static HAL_StatusTypeDef IRDA_WaitOnFlagUntilTimeout(IRDA_HandleTypeDef *hirda, uint32_t Flag, FlagStatus Status,
+                                                     uint32_t Tickstart, uint32_t Timeout)
 {
   /* Wait until flag is set */
   while ((__HAL_IRDA_GET_FLAG(hirda, Flag) ? SET : RESET) == Status)

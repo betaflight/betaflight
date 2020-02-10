@@ -16,7 +16,7 @@
   ==============================================================================
   [..] The Flexible memory controller (FMC) includes following memory controllers:
        (+) The NOR/PSRAM memory controller
-       (+) The NAND memory controller
+	   (+) The NAND memory controller
        (+) The Synchronous DRAM (SDRAM) controller
 
   [..] The FMC functional block makes the interface with synchronous and asynchronous static
@@ -43,7 +43,8 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
   * the "License"; You may not use this file except in compliance with the
@@ -59,12 +60,13 @@
 /** @addtogroup STM32H7xx_HAL_Driver
   * @{
   */
+#if (((defined HAL_NOR_MODULE_ENABLED || defined HAL_SRAM_MODULE_ENABLED)) || defined HAL_NAND_MODULE_ENABLED || defined HAL_SDRAM_MODULE_ENABLED)
 
 /** @defgroup FMC_LL  FMC Low Layer
   * @brief FMC driver modules
   * @{
   */
-
+	
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
@@ -86,9 +88,14 @@
 
 /* --- BWTR Register ---*/
 /* BWTR register clear mask */
+#if defined(FMC_BWTRx_BUSTURN)
 #define BWTR_CLEAR_MASK   ((uint32_t)(FMC_BWTRx_ADDSET | FMC_BWTRx_ADDHLD  |\
                                       FMC_BWTRx_DATAST | FMC_BWTRx_BUSTURN |\
                                       FMC_BWTRx_ACCMOD))
+#else
+#define BWTR_CLEAR_MASK   ((uint32_t)(FMC_BWTRx_ADDSET | FMC_BWTRx_ADDHLD  |\
+                                      FMC_BWTRx_DATAST | FMC_BWTRx_ACCMOD))
+#endif /* FMC_BWTRx_BUSTURN */
 
 /* --- PCR Register ---*/
 /* PCR register clear mask */
@@ -267,7 +274,6 @@ HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_Ini
   return HAL_OK;
 }
 
-
 /**
   * @brief  DeInitialize the FMC_NORSRAM peripheral
   * @param  Device Pointer to NORSRAM device instance
@@ -302,7 +308,6 @@ HAL_StatusTypeDef FMC_NORSRAM_DeInit(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_EX
 
   return HAL_OK;
 }
-
 
 /**
   * @brief  Initialize the FMC_NORSRAM Timing according to the specified
@@ -372,7 +377,9 @@ HAL_StatusTypeDef FMC_NORSRAM_Extended_Timing_Init(FMC_NORSRAM_EXTENDED_TypeDef 
     assert_param(IS_FMC_ADDRESS_SETUP_TIME(Timing->AddressSetupTime));
     assert_param(IS_FMC_ADDRESS_HOLD_TIME(Timing->AddressHoldTime));
     assert_param(IS_FMC_DATASETUP_TIME(Timing->DataSetupTime));
+#if defined(FMC_BWTRx_BUSTURN)
     assert_param(IS_FMC_TURNAROUND_TIME(Timing->BusTurnAroundDuration));
+#endif /* FMC_BWTRx_BUSTURN */
     assert_param(IS_FMC_ACCESS_MODE(Timing->AccessMode));
     assert_param(IS_FMC_NORSRAM_BANK(Bank));
 
@@ -380,8 +387,12 @@ HAL_StatusTypeDef FMC_NORSRAM_Extended_Timing_Init(FMC_NORSRAM_EXTENDED_TypeDef 
     MODIFY_REG(Device->BWTR[Bank], BWTR_CLEAR_MASK, (Timing->AddressSetupTime                                    |
                                                      ((Timing->AddressHoldTime)        << FMC_BWTRx_ADDHLD_Pos)  |
                                                      ((Timing->DataSetupTime)          << FMC_BWTRx_DATAST_Pos)  |
+#if defined(FMC_BWTRx_BUSTURN)
                                                      Timing->AccessMode                                          |
                                                      ((Timing->BusTurnAroundDuration)  << FMC_BWTRx_BUSTURN_Pos)));
+#else
+                                                     Timing->AccessMode));
+#endif /* FMC_BWTRx_BUSTURN */
   }
   else
   {
@@ -1047,6 +1058,7 @@ uint32_t FMC_SDRAM_GetModeStatus(FMC_SDRAM_TypeDef *Device, uint32_t Bank)
   * @}
   */
 
+#endif /* HAL_NOR_MODULE_ENABLED */
 /**
   * @}
   */

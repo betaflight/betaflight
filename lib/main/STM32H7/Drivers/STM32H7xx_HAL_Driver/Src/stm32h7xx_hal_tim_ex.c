@@ -397,11 +397,11 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32
   /* Check the parameters */
   assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if (((uint32_t)pData == 0U) && (Length > 0U))
     {
@@ -709,11 +709,11 @@ HAL_StatusTypeDef HAL_TIMEx_OCN_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Chan
   /* Check the parameters */
   assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if (((uint32_t)pData == 0U) && (Length > 0U))
     {
@@ -1117,11 +1117,11 @@ HAL_StatusTypeDef HAL_TIMEx_PWMN_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Cha
   /* Check the parameters */
   assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if (((uint32_t)pData == 0U) && (Length > 0U))
     {
@@ -1460,6 +1460,8 @@ HAL_StatusTypeDef HAL_TIMEx_OnePulseN_Stop_IT(TIM_HandleTypeDef *htim, uint32_t 
   *            @arg TIM_TS_ITR1: Internal trigger 1 selected
   *            @arg TIM_TS_ITR2: Internal trigger 2 selected
   *            @arg TIM_TS_ITR3: Internal trigger 3 selected
+  *            @arg TIM_TS_ITR12: Internal trigger 12 selected (*)
+  *            @arg TIM_TS_ITR13: Internal trigger 13 selected (*)
   *            @arg TIM_TS_NONE: No trigger is needed
   * @param  CommutationSource the Commutation Event source
   *          This parameter can be one of the following values:
@@ -1476,8 +1478,9 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigCommutEvent(TIM_HandleTypeDef *htim, uint32_t 
 
   __HAL_LOCK(htim);
 
-  if ((InputTrigger == TIM_TS_ITR0) || (InputTrigger == TIM_TS_ITR1) ||
-      (InputTrigger == TIM_TS_ITR2) || (InputTrigger == TIM_TS_ITR3))
+  if ((InputTrigger == TIM_TS_ITR0)  || (InputTrigger == TIM_TS_ITR1) ||
+      (InputTrigger == TIM_TS_ITR2)  || (InputTrigger == TIM_TS_ITR3) ||
+      (InputTrigger == TIM_TS_ITR12)  || (InputTrigger == TIM_TS_ITR13))
   {
     /* Select the Input trigger */
     htim->Instance->SMCR &= ~TIM_SMCR_TS;
@@ -1516,6 +1519,8 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigCommutEvent(TIM_HandleTypeDef *htim, uint32_t 
   *            @arg TIM_TS_ITR1: Internal trigger 1 selected
   *            @arg TIM_TS_ITR2: Internal trigger 2 selected
   *            @arg TIM_TS_ITR3: Internal trigger 3 selected
+  *            @arg TIM_TS_ITR2: Internal trigger 12 selected (*)
+  *            @arg TIM_TS_ITR3: Internal trigger 13 selected (*)
   *            @arg TIM_TS_NONE: No trigger is needed
   * @param  CommutationSource the Commutation Event source
   *          This parameter can be one of the following values:
@@ -1532,8 +1537,9 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigCommutEvent_IT(TIM_HandleTypeDef *htim, uint32
 
   __HAL_LOCK(htim);
 
-  if ((InputTrigger == TIM_TS_ITR0) || (InputTrigger == TIM_TS_ITR1) ||
-      (InputTrigger == TIM_TS_ITR2) || (InputTrigger == TIM_TS_ITR3))
+  if ((InputTrigger == TIM_TS_ITR0)  || (InputTrigger == TIM_TS_ITR1) ||
+      (InputTrigger == TIM_TS_ITR2)  || (InputTrigger == TIM_TS_ITR3) ||
+      (InputTrigger == TIM_TS_ITR12)  || (InputTrigger == TIM_TS_ITR13))
   {
     /* Select the Input trigger */
     htim->Instance->SMCR &= ~TIM_SMCR_TS;
@@ -1573,7 +1579,12 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigCommutEvent_IT(TIM_HandleTypeDef *htim, uint32
   *            @arg TIM_TS_ITR1: Internal trigger 1 selected
   *            @arg TIM_TS_ITR2: Internal trigger 2 selected
   *            @arg TIM_TS_ITR3: Internal trigger 3 selected
+  *            @arg TIM_TS_ITR2: Internal trigger 12 selected (*)
+  *            @arg TIM_TS_ITR3: Internal trigger 13 selected (*)
   *            @arg TIM_TS_NONE: No trigger is needed
+  *
+  *         (*)  Value not defined in all devices.
+  *
   * @param  CommutationSource the Commutation Event source
   *          This parameter can be one of the following values:
   *            @arg TIM_COMMUTATION_TRGI: Commutation source is the TRGI of the Interface Timer
@@ -1589,8 +1600,9 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigCommutEvent_DMA(TIM_HandleTypeDef *htim, uint3
 
   __HAL_LOCK(htim);
 
-  if ((InputTrigger == TIM_TS_ITR0) || (InputTrigger == TIM_TS_ITR1) ||
-      (InputTrigger == TIM_TS_ITR2) || (InputTrigger == TIM_TS_ITR3))
+  if ((InputTrigger == TIM_TS_ITR0)  || (InputTrigger == TIM_TS_ITR1) ||
+      (InputTrigger == TIM_TS_ITR2)  || (InputTrigger == TIM_TS_ITR3) ||
+      (InputTrigger == TIM_TS_ITR12)  || (InputTrigger == TIM_TS_ITR13))
   {
     /* Select the Input trigger */
     htim->Instance->SMCR &= ~TIM_SMCR_TS;
@@ -1636,7 +1648,7 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   uint32_t tmpsmcr;
 
   /* Check the parameters */
-  assert_param(IS_TIM_SYNCHRO_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_MASTER_INSTANCE(htim->Instance));
   assert_param(IS_TIM_TRGO_SOURCE(sMasterConfig->MasterOutputTrigger));
   assert_param(IS_TIM_MSM_STATE(sMasterConfig->MasterSlaveMode));
 
@@ -1669,16 +1681,19 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   /* Select the TRGO source */
   tmpcr2 |=  sMasterConfig->MasterOutputTrigger;
 
-  /* Reset the MSM Bit */
-  tmpsmcr &= ~TIM_SMCR_MSM;
-  /* Set master mode */
-  tmpsmcr |= sMasterConfig->MasterSlaveMode;
-
   /* Update TIMx CR2 */
   htim->Instance->CR2 = tmpcr2;
 
-  /* Update TIMx SMCR */
-  htim->Instance->SMCR = tmpsmcr;
+  if (IS_TIM_SLAVE_INSTANCE(htim->Instance))
+  {
+    /* Reset the MSM Bit */
+    tmpsmcr &= ~TIM_SMCR_MSM;
+    /* Set master mode */
+    tmpsmcr |= sMasterConfig->MasterSlaveMode;
+
+    /* Update TIMx SMCR */
+    htim->Instance->SMCR = tmpsmcr;
+  }
 
   /* Change the htim state */
   htim->State = HAL_TIM_STATE_READY;
@@ -1694,6 +1709,9 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   * @param  htim TIM handle
   * @param  sBreakDeadTimeConfig pointer to a TIM_ConfigBreakDeadConfigTypeDef structure that
   *         contains the BDTR Register configuration  information for the TIM peripheral.
+  * @note   Interrupts can be generated when an active level is detected on the
+  *         break input, the break 2 input or the system break input. Break
+  *         interrupt can be enabled by calling the @ref __HAL_TIM_ENABLE_IT macro.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
@@ -1767,10 +1785,10 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
 
 {
   uint32_t tmporx;
-  uint32_t bkin_enable_mask = 0U;
-  uint32_t bkin_polarity_mask = 0U;
-  uint32_t bkin_enable_bitpos = 0U;
-  uint32_t bkin_polarity_bitpos = 0U;
+  uint32_t bkin_enable_mask;
+  uint32_t bkin_polarity_mask;
+  uint32_t bkin_enable_bitpos;
+  uint32_t bkin_polarity_bitpos;
 
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
@@ -1815,11 +1833,19 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
     {
       bkin_enable_mask = TIM1_AF1_BKDF1BK0E;
       bkin_enable_bitpos = 8U;
+      bkin_polarity_mask = 0U;
+      bkin_polarity_bitpos = 0U;
       break;
     }
 
     default:
+    {
+      bkin_enable_mask = 0U;
+      bkin_polarity_mask = 0U;
+      bkin_enable_bitpos = 0U;
+      bkin_polarity_bitpos = 0U;
       break;
+    }
   }
 
   switch (BreakInput)
@@ -1903,8 +1929,10 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *
   *         For TIM5, the parameter is one of the following values:
   *            @arg TIM_TIM5_ETR_GPIO:               TIM5_ETR is connected to GPIO
-  *            @arg TIM_TIM5_ETR_SAI2_FSA:           TIM5_ETR is connected to SAI2 FS_A
-  *            @arg TIM_TIM5_ETR_SAI2_FSB:           TIM5_ETR is connected to SAI2 FS_B
+  *            @arg TIM_TIM5_ETR_SAI2_FSA:           TIM5_ETR is connected to SAI2 FS_A (*)
+  *            @arg TIM_TIM5_ETR_SAI2_FSB:           TIM5_ETR is connected to SAI2 FS_B (*)
+  *            @arg TIM_TIM5_ETR_SAI4_FSA:           TIM5_ETR is connected to SAI2 FS_A (*)
+  *            @arg TIM_TIM5_ETR_SAI4_FSB:           TIM5_ETR is connected to SAI2 FS_B (*)
   *
   *         For TIM8, the parameter is one of the following values:
   *            @arg TIM_TIM8_ETR_GPIO:               TIM8_ETR is connected to GPIO
@@ -1916,6 +1944,20 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM8_ETR_ADC3_AWD1:          TIM8_ETR is connected to ADC3 AWD1
   *            @arg TIM_TIM8_ETR_ADC3_AWD2:          TIM8_ETR is connected to ADC3 AWD2
   *            @arg TIM_TIM8_ETR_ADC3_AWD3:          TIM8_ETR is connected to ADC3 AWD3
+  *
+  *         For TIM23, the parameter is one of the following values: (*)
+  *            @arg TIM_TIM23_ETR_GPIO               TIM23_ETR is connected to GPIO
+  *            @arg TIM_TIM23_ETR_COMP1              TIM23_ETR is connected to COMP1 output
+  *            @arg TIM_TIM23_ETR_COMP2              TIM23_ETR is connected to COMP2 output
+  *
+  *         For TIM24, the parameter is one of the following values: (*)
+  *           @arg TIM_TIM24_ETR_GPIO                TIM24_ETR is connected to GPIO
+  *           @arg TIM_TIM24_ETR_SAI4_FSA            TIM24_ETR is connected to SAI4 FS_A
+  *           @arg TIM_TIM24_ETR_SAI4_FSB            TIM24_ETR is connected to SAI4 FS_B
+  *           @arg TIM_TIM24_ETR_SAI1_FSA            TIM24_ETR is connected to SAI1 FS_A
+  *           @arg TIM_TIM24_ETR_SAI1_FSB            TIM24_ETR is connected to SAI1 FS_B
+  *
+  *         (*)  Value not defined in all devices.
   *
   * @retval HAL status
   */
@@ -1969,6 +2011,10 @@ HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
   *            @arg TIM_TIM8_TI1_GPIO:               TIM8 TI1 is connected to GPIO
   *            @arg TIM_TIM8_TI1_COMP2:              TIM8 TI1 is connected to COMP2 output
   *
+  *         For TIM12, the parameter can have the following values: (*)
+  *            @arg TIM_TIM12_TI1_GPIO:              TIM12 TI1 is connected to GPIO
+  *            @arg TIM_TIM12_TI1_SPDIF_FS:          TIM12 TI1 is connected to SPDIF FS
+  *
   *         For TIM15, the parameter is one of the following values:
   *            @arg TIM_TIM15_TI1_GPIO:              TIM15 TI1 is connected to GPIO
   *            @arg TIM_TIM15_TI1_TIM2:              TIM15 TI1 is connected to TIM2 CH1
@@ -1990,10 +2036,23 @@ HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
   *
   *         For TIM17, the parameter can have the following values:
   *            @arg TIM_TIM17_TI1_GPIO:              TIM17 TI1 is connected to GPIO
-  *            @arg TIM_TIM17_TI1_SPDIFFS:           TIM17 TI1 is connected to SPDIF FS
+  *            @arg TIM_TIM17_TI1_SPDIF_FS:          TIM17 TI1 is connected to SPDIF FS (*)
   *            @arg TIM_TIM17_TI1_HSE_1MHZ:          TIM17 TI1 is connected to HSE 1MHz
   *            @arg TIM_TIM17_TI1_MCO1:              TIM17 TI1 is connected to MCO1
   *
+  *         For TIM23, the parameter can have the following values: (*)
+  *            @arg TIM_TIM23_TI4_GPIO               TIM23_TI4 is connected to GPIO
+  *            @arg TIM_TIM23_TI4_COMP1              TIM23_TI4 is connected to COMP1 output
+  *            @arg TIM_TIM23_TI4_COMP2              TIM23_TI4 is connected to COMP2 output
+  *            @arg TIM_TIM23_TI4_COMP1_COMP2        TIM23_TI4 is connected to COMP2 output
+  *
+  *         For TIM24, the parameter can have the following values: (*)
+  *            @arg TIM_TIM24_TI1_GPIO               TIM24_TI1 is connected to GPIO
+  *            @arg TIM_TIM24_TI1_CAN_TMP            TIM24_TI1 is connected to CAN_TMP
+  *            @arg TIM_TIM24_TI1_CAN_RTP            TIM24_TI1 is connected to CAN_RTP
+  *            @arg TIM_TIM24_TI1_CAN_SOC            TIM24_TI1 is connected to CAN_SOC
+  *
+  *         (*)  Value not defined in all devices. \n
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_TIMEx_TISelection(TIM_HandleTypeDef *htim, uint32_t TISelection, uint32_t Channel)

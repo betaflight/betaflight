@@ -25,6 +25,8 @@
  extern "C" {
 #endif
 
+#if defined(QUADSPI)
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal_def.h"
 
@@ -733,6 +735,9 @@ HAL_StatusTypeDef     HAL_QSPI_SetFlashID      (QSPI_HandleTypeDef *hqspi, uint3
 /**
   * @}
   */
+
+#endif /* QUADSPI */
+
 #ifdef __cplusplus
 }
 #endif

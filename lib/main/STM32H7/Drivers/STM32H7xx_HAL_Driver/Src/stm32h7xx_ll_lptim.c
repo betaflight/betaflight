@@ -4,7 +4,7 @@
   * @author  MCD Application Team
   * @brief   LPTIM LL module driver.
   ******************************************************************************
-    * @attention
+  * @attention
   *
   * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
   * All rights reserved.</center></h2>
@@ -13,7 +13,8 @@
   * the "License"; You may not use this file except in compliance with the
   * License. You may obtain a copy of the License at:
   *                        opensource.org/licenses/BSD-3-Clause
-  *  ******************************************************************************
+  *
+  ******************************************************************************
   */
 #if defined(USE_FULL_LL_DRIVER)
 
@@ -109,21 +110,27 @@ ErrorStatus LL_LPTIM_DeInit(LPTIM_TypeDef *LPTIMx)
     LL_APB4_GRP1_ForceReset(LL_APB4_GRP1_PERIPH_LPTIM2);
     LL_APB4_GRP1_ReleaseReset(LL_APB4_GRP1_PERIPH_LPTIM2);
   }
+#if defined(LPTIM3)
   else if (LPTIMx == LPTIM3)
   {
     LL_APB4_GRP1_ForceReset(LL_APB4_GRP1_PERIPH_LPTIM3);
     LL_APB4_GRP1_ReleaseReset(LL_APB4_GRP1_PERIPH_LPTIM3);
   }
+#endif /* LPTIM3 */
+#if defined(LPTIM4)
   else if (LPTIMx == LPTIM4)
   {
     LL_APB4_GRP1_ForceReset(LL_APB4_GRP1_PERIPH_LPTIM4);
     LL_APB4_GRP1_ReleaseReset(LL_APB4_GRP1_PERIPH_LPTIM4);
   }
+#endif /* LPTIM4 */
+#if defined(LPTIM5)
   else if (LPTIMx == LPTIM5)
   {
     LL_APB4_GRP1_ForceReset(LL_APB4_GRP1_PERIPH_LPTIM5);
     LL_APB4_GRP1_ReleaseReset(LL_APB4_GRP1_PERIPH_LPTIM5);
   }
+#endif /* LPTIM5 */
   else
   {
     result = ERROR;
@@ -192,14 +199,6 @@ ErrorStatus LL_LPTIM_Init(LPTIM_TypeDef *LPTIMx, LL_LPTIM_InitTypeDef *LPTIM_Ini
 }
 
 /**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/**
   * @brief  Disable the LPTIM instance
   * @rmtoll CR           ENABLE        LL_LPTIM_Disable
   * @param  LPTIMx Low-Power Timer instance
@@ -233,11 +232,17 @@ void LL_LPTIM_Disable(LPTIM_TypeDef *LPTIMx)
      case LPTIM2_BASE:
        tmpclksource = LL_RCC_GetLPTIMClockSource(LL_RCC_LPTIM2_CLKSOURCE);
        break;
+#if defined(LPTIM3)&&defined(LPTIM4)&&defined(LPTIM5)
      case LPTIM3_BASE:
      case LPTIM4_BASE:
      case LPTIM5_BASE:
        tmpclksource = LL_RCC_GetLPTIMClockSource(LL_RCC_LPTIM345_CLKSOURCE);
        break;
+#elif defined(LPTIM3)
+     case LPTIM3_BASE:
+       tmpclksource = LL_RCC_GetLPTIMClockSource(LL_RCC_LPTIM3_CLKSOURCE);
+       break;
+#endif /* LPTIM3 && LPTIM4 && LPTIM5 */
      default:
        break;
   }
@@ -266,11 +271,17 @@ void LL_LPTIM_Disable(LPTIM_TypeDef *LPTIMx)
        case LPTIM2_BASE:
          LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM2_CLKSOURCE_PCLK4);
          break;
+#if defined(LPTIM3)&&defined(LPTIM4)&&defined(LPTIM5)
        case LPTIM3_BASE:
        case LPTIM4_BASE:
        case LPTIM5_BASE:
          LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM345_CLKSOURCE_PCLK4);
          break;
+#elif defined(LPTIM3)
+     case LPTIM3_BASE:
+       LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM3_CLKSOURCE_PCLK4);
+       break;
+#endif /* LPTIM3 && LPTIM4 && LPTIM5*/
        default:
          break;
     }
@@ -305,6 +316,7 @@ void LL_LPTIM_Disable(LPTIM_TypeDef *LPTIMx)
       LL_LPTIM_ClearFlag_ARROK(LPTIMx);
     }
 
+
     /* Restore LPTIM source kernel clock */
     LL_RCC_SetLPTIMClockSource(tmpclksource);
   }
@@ -317,6 +329,14 @@ void LL_LPTIM_Disable(LPTIM_TypeDef *LPTIMx)
 
   __enable_irq();
 }
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
 
 /**
   * @}

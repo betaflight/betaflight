@@ -490,11 +490,11 @@ HAL_StatusTypeDef HAL_TIM_Base_Start_DMA(TIM_HandleTypeDef *htim, uint32_t *pDat
   /* Check the parameters */
   assert_param(IS_TIM_DMA_INSTANCE(htim->Instance));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((pData == NULL) && (Length > 0U))
     {
@@ -942,11 +942,11 @@ HAL_StatusTypeDef HAL_TIM_OC_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
   /* Check the parameters */
   assert_param(IS_TIM_CCX_INSTANCE(htim->Instance, Channel));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((pData == NULL) && (Length > 0U))
     {
@@ -1521,11 +1521,11 @@ HAL_StatusTypeDef HAL_TIM_PWM_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channe
   /* Check the parameters */
   assert_param(IS_TIM_CCX_INSTANCE(htim->Instance, Channel));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((pData == NULL) && (Length > 0U))
     {
@@ -2069,11 +2069,11 @@ HAL_StatusTypeDef HAL_TIM_IC_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
   assert_param(IS_TIM_CCX_INSTANCE(htim->Instance, Channel));
   assert_param(IS_TIM_DMA_CC_INSTANCE(htim->Instance));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((pData == NULL) && (Length > 0U))
     {
@@ -2624,8 +2624,8 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Init(TIM_HandleTypeDef *htim,  TIM_Encoder_Ini
   assert_param(IS_TIM_ENCODER_MODE(sConfig->EncoderMode));
   assert_param(IS_TIM_IC_SELECTION(sConfig->IC1Selection));
   assert_param(IS_TIM_IC_SELECTION(sConfig->IC2Selection));
-  assert_param(IS_TIM_IC_POLARITY(sConfig->IC1Polarity));
-  assert_param(IS_TIM_IC_POLARITY(sConfig->IC2Polarity));
+  assert_param(IS_TIM_ENCODERINPUT_POLARITY(sConfig->IC1Polarity));
+  assert_param(IS_TIM_ENCODERINPUT_POLARITY(sConfig->IC2Polarity));
   assert_param(IS_TIM_IC_PRESCALER(sConfig->IC1Prescaler));
   assert_param(IS_TIM_IC_PRESCALER(sConfig->IC2Prescaler));
   assert_param(IS_TIM_IC_FILTER(sConfig->IC1Filter));
@@ -2980,11 +2980,11 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Ch
   /* Check the parameters */
   assert_param(IS_TIM_DMA_CC_INSTANCE(htim->Instance));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((((pData1 == NULL) || (pData2 == NULL))) && (Length > 0U))
     {
@@ -3747,6 +3747,10 @@ HAL_StatusTypeDef HAL_TIM_PWM_ConfigChannel(TIM_HandleTypeDef *htim,
   *          This parameter can be one of the following values:
   *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
   *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  * @note  To output a waveform with a minimum delay user can enable the fast
+  *        mode by calling the @ref __HAL_TIM_ENABLE_OCxFAST macro. Then CCx
+  *        output is forced in response to the edge detection on TIx input,
+  *        without taking in account the comparison.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TIM_OnePulse_ConfigChannel(TIM_HandleTypeDef *htim,  TIM_OnePulse_InitTypeDef *sConfig,
@@ -3959,11 +3963,11 @@ HAL_StatusTypeDef HAL_TIM_DMABurst_MultiWriteStart(TIM_HandleTypeDef *htim, uint
   assert_param(IS_TIM_DMA_LENGTH(BurstLength));
   assert_param(IS_TIM_DMA_DATA_LENGTH(DataLength));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((BurstBuffer == NULL) && (BurstLength > 0U))
     {
@@ -4287,11 +4291,11 @@ HAL_StatusTypeDef HAL_TIM_DMABurst_MultiReadStart(TIM_HandleTypeDef *htim, uint3
   assert_param(IS_TIM_DMA_LENGTH(BurstLength));
   assert_param(IS_TIM_DMA_DATA_LENGTH(DataLength));
 
-  if ((htim->State == HAL_TIM_STATE_BUSY))
+  if (htim->State == HAL_TIM_STATE_BUSY)
   {
     return HAL_BUSY;
   }
-  else if ((htim->State == HAL_TIM_STATE_READY))
+  else if (htim->State == HAL_TIM_STATE_READY)
   {
     if ((BurstBuffer == NULL) && (BurstLength > 0U))
     {
@@ -6608,6 +6612,11 @@ static HAL_StatusTypeDef TIM_SlaveTimer_SetConfig(TIM_HandleTypeDef *htim,
     case TIM_TS_ITR6:
     case TIM_TS_ITR7:
     case TIM_TS_ITR8:
+    case TIM_TS_ITR9:
+    case TIM_TS_ITR10:
+    case TIM_TS_ITR11:
+    case TIM_TS_ITR12:
+    case TIM_TS_ITR13:
     {
       /* Check the parameter */
       assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
@@ -6902,11 +6911,19 @@ static void TIM_TI4_SetConfig(TIM_TypeDef *TIMx, uint32_t TIM_ICPolarity, uint32
   *            @arg TIM_TS_TI1FP1: Filtered Timer Input 1
   *            @arg TIM_TS_TI2FP2: Filtered Timer Input 2
   *            @arg TIM_TS_ETRF: External Trigger input
-  *            @arg TIM_TS_ITR4: Internal Trigger 4
+  *            @arg TIM_TS_ITR4: Internal Trigger 4  (*)
   *            @arg TIM_TS_ITR5: Internal Trigger 5
   *            @arg TIM_TS_ITR6: Internal Trigger 6
   *            @arg TIM_TS_ITR7: Internal Trigger 7
-  *            @arg TIM_TS_ITR8: Internal Trigger 8
+  *            @arg TIM_TS_ITR8: Internal Trigger 8  (*)
+  *            @arg TIM_TS_ITR9: Internal Trigger 9  (*)
+  *            @arg TIM_TS_ITR10: Internal Trigger 10 (*)
+  *            @arg TIM_TS_ITR11: Internal Trigger 11 (*)
+  *            @arg TIM_TS_ITR12: Internal Trigger 12 (*)
+  *            @arg TIM_TS_ITR13: Internal Trigger 13 (*)
+  *
+  *       (*)  Value not defined in all devices.
+  *
   * @retval None
   */
 static void TIM_ITRx_SetConfig(TIM_TypeDef *TIMx, uint32_t InputTriggerSource)

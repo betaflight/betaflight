@@ -713,6 +713,7 @@ __STATIC_INLINE void LL_GPIO_LockPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
   WRITE_REG(GPIOx->LCKR, GPIO_LCKR_LCKK | PinMask);
   WRITE_REG(GPIOx->LCKR, PinMask);
   WRITE_REG(GPIOx->LCKR, GPIO_LCKR_LCKK | PinMask);
+  /* Read LCKK register. This read is mandatory to complete key lock sequence */
   temp = READ_REG(GPIOx->LCKR);
   (void) temp;
 }

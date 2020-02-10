@@ -330,10 +330,10 @@ void HAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
       /*------------------------- EXTI Mode Configuration --------------------*/
       /* Clear the External Interrupt or Event for the current IO */
       tmp = SYSCFG->EXTICR[position >> 2U];
-      tmp &= (0x0FUL << (8U * (position & 0x03U)));
-      if (tmp == (GPIO_GET_INDEX(GPIOx) << (8U * (position & 0x03U))))
+      tmp &= (0x0FUL << (4U * (position & 0x03U)));
+      if (tmp == (GPIO_GET_INDEX(GPIOx) << (4U * (position & 0x03U))))
       {
-        tmp = 0x0FUL << (8U * (position & 0x03U));
+        tmp = 0x0FUL << (4U * (position & 0x03U));
         SYSCFG->EXTICR[position >> 2U] &= ~tmp;
 
         /* Clear EXTI line configuration for Current CPU */
@@ -487,9 +487,10 @@ HAL_StatusTypeDef HAL_GPIO_LockPin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
   GPIOx->LCKR = GPIO_Pin;
   /* Set LCKx bit(s): LCKK='1' + LCK[15-0] */
   GPIOx->LCKR = tmp;
-  /* Read LCKK bit*/
+  /* Read LCKK register. This read is mandatory to complete key lock sequence*/
   tmp = GPIOx->LCKR;
 
+  /* read again in order to confirm lock is active */
   if ((GPIOx->LCKR & GPIO_LCKR_LCKK) != 0x00U)
   {
     return HAL_OK;

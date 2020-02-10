@@ -3,7 +3,7 @@
   * @file    usbd_customhid_if_template.c
   * @author  MCD Application Team
   * @brief   USB Device Custom HID interface file.
-  *		     This template should be copied to the user folder, renamed and customized
+  *        This template should be copied to the user folder, renamed and customized
   *          following user needs.
   ******************************************************************************
   * @attention
@@ -14,15 +14,15 @@
   * This software component is licensed by ST under Ultimate Liberty license
   * SLA0044, the "License"; You may not use this file except in compliance with
   * the License. You may obtain a copy of the License at:
-  *                      http://www.st.com/SLA0044
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
   */
 
-  /* BSPDependencies
-  - "stm32xxxxx_{eval}{discovery}{nucleo_144}.c"
-  - "stm32xxxxx_{eval}{discovery}_io.c"
-  EndBSPDependencies */
+/* BSPDependencies
+- "stm32xxxxx_{eval}{discovery}{nucleo_144}.c"
+- "stm32xxxxx_{eval}{discovery}_io.c"
+EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_customhid_if_template.h"
@@ -31,9 +31,9 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 
-static int8_t TEMPLATE_CUSTOM_HID_Init     (void);
-static int8_t TEMPLATE_CUSTOM_HID_DeInit   (void);
-static int8_t TEMPLATE_CUSTOM_HID_OutEvent (uint8_t event_idx, uint8_t state);
+static int8_t TEMPLATE_CUSTOM_HID_Init(void);
+static int8_t TEMPLATE_CUSTOM_HID_DeInit(void);
+static int8_t TEMPLATE_CUSTOM_HID_OutEvent(uint8_t event_idx, uint8_t state);
 /* Private variables ---------------------------------------------------------*/
 USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_template_fops =
 {
@@ -79,7 +79,7 @@ static int8_t TEMPLATE_CUSTOM_HID_DeInit(void)
   * @param  state: event state
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t TEMPLATE_CUSTOM_HID_OutEvent  (uint8_t event_idx, uint8_t state)
+static int8_t TEMPLATE_CUSTOM_HID_OutEvent(uint8_t event_idx, uint8_t state)
 {
 
   return (0);

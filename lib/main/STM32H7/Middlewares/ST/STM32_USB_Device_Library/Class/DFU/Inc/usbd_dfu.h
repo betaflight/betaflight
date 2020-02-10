@@ -12,7 +12,7 @@
   * This software component is licensed by ST under Ultimate Liberty license
   * SLA0044, the "License"; You may not use this file except in compliance with
   * the License. You may obtain a copy of the License at:
-  *                      http://www.st.com/SLA0044
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -22,7 +22,7 @@
 #define __USB_DFU_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -121,7 +121,7 @@
 typedef enum
 {
   DFU_DETACH = 0U,
-  DFU_DNLOAD ,
+  DFU_DNLOAD,
   DFU_UPLOAD,
   DFU_GETSTATUS,
   DFU_CLRSTATUS,
@@ -144,9 +144,9 @@ typedef  void (*pFunction)(void);
                                       USBD_IDX_INTERFACE_STR + (n) + 1U /* iInterface: Index of string descriptor */ \
 
 #define TRANSFER_SIZE_BYTES(size)      ((uint8_t)(size)), /* XFERSIZEB0 */\
-                                       ((uint8_t)(size >> 8)) /* XFERSIZEB1 */
+                                       ((uint8_t)((size) >> 8)) /* XFERSIZEB1 */
 
-#define IS_PROTECTED_AREA(add)         (uint8_t)(((add >= 0x08000000) && (add < (APP_DEFAULT_ADD)))? 1:0)
+#define IS_PROTECTED_AREA(add)         (uint8_t)((((add) >= 0x08000000) && ((add) < (APP_DEFAULT_ADD)))? 1:0)
 
 /**
   * @}
@@ -163,7 +163,7 @@ typedef struct
   {
     uint32_t d32[USBD_DFU_XFER_SIZE / 4U];
     uint8_t  d8[USBD_DFU_XFER_SIZE];
-  }buffer;
+  } buffer;
 
   uint32_t             wblock_num;
   uint32_t             wlength;
@@ -179,12 +179,12 @@ USBD_DFU_HandleTypeDef;
 
 typedef struct
 {
-  const uint8_t* pStrDesc;
-  uint16_t (* Init)     (void);
-  uint16_t (* DeInit)   (void);
-  uint16_t (* Erase)    (uint32_t Add);
-  uint16_t (* Write)    (uint8_t *src, uint8_t *dest, uint32_t Len);
-  uint8_t* (* Read)     (uint8_t *src, uint8_t *dest, uint32_t Len);
+  const uint8_t *pStrDesc;
+  uint16_t (* Init)(void);
+  uint16_t (* DeInit)(void);
+  uint16_t (* Erase)(uint32_t Add);
+  uint16_t (* Write)(uint8_t *src, uint8_t *dest, uint32_t Len);
+  uint8_t *(* Read)(uint8_t *src, uint8_t *dest, uint32_t Len);
   uint16_t (* GetStatus)(uint32_t Add, uint8_t cmd, uint8_t *buff);
 }
 USBD_DFU_MediaTypeDef;
@@ -215,8 +215,8 @@ extern USBD_ClassTypeDef  USBD_DFU;
 /** @defgroup USB_CORE_Exported_Functions
   * @{
   */
-uint8_t  USBD_DFU_RegisterMedia    (USBD_HandleTypeDef   *pdev,
-                                    USBD_DFU_MediaTypeDef *fops);
+uint8_t  USBD_DFU_RegisterMedia(USBD_HandleTypeDef   *pdev,
+                                USBD_DFU_MediaTypeDef *fops);
 /**
   * @}
   */

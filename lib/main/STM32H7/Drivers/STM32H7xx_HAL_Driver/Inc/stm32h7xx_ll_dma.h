@@ -28,6 +28,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx.h"
 #include "stm32h7xx_ll_dmamux.h"
+
 /** @addtogroup STM32H7xx_LL_Driver
   * @{
   */
@@ -269,7 +270,7 @@ typedef struct
 /** @defgroup DMA_LL_EC_OFFSETSIZE OFFSETSIZE
   * @{
   */
-#define LL_DMA_OFFSETSIZE_PSIZE           0x00000000U               /*!< Peripheral increment offset size is linked to the PSIZE */
+#define LL_DMA_OFFSETSIZE_PSIZE           0x00000000U               /*!< Peripheral increment offset size is linked to the PSIZE           */
 #define LL_DMA_OFFSETSIZE_FIXEDTO4        DMA_SxCR_PINCOS           /*!< Peripheral increment offset size is fixed to 4 (32-bit alignment) */
 /**
   * @}
@@ -290,9 +291,9 @@ typedef struct
 /** @defgroup DMA_LL_EC_MBURST MBURST
   * @{
   */
-#define LL_DMA_MBURST_SINGLE              0x00000000U                             /*!< Memory burst single transfer configuration */
-#define LL_DMA_MBURST_INC4                DMA_SxCR_MBURST_0                       /*!< Memory burst of 4 beats transfer configuration */
-#define LL_DMA_MBURST_INC8                DMA_SxCR_MBURST_1                       /*!< Memory burst of 8 beats transfer configuration */
+#define LL_DMA_MBURST_SINGLE              0x00000000U                             /*!< Memory burst single transfer configuration      */
+#define LL_DMA_MBURST_INC4                DMA_SxCR_MBURST_0                       /*!< Memory burst of 4 beats transfer configuration  */
+#define LL_DMA_MBURST_INC8                DMA_SxCR_MBURST_1                       /*!< Memory burst of 8 beats transfer configuration  */
 #define LL_DMA_MBURST_INC16               (DMA_SxCR_MBURST_0 | DMA_SxCR_MBURST_1) /*!< Memory burst of 16 beats transfer configuration */
 /**
   * @}
@@ -301,9 +302,9 @@ typedef struct
 /** @defgroup DMA_LL_EC_PBURST PBURST
   * @{
   */
-#define LL_DMA_PBURST_SINGLE              0x00000000U                             /*!< Peripheral burst single transfer configuration */
-#define LL_DMA_PBURST_INC4                DMA_SxCR_PBURST_0                       /*!< Peripheral burst of 4 beats transfer configuration */
-#define LL_DMA_PBURST_INC8                DMA_SxCR_PBURST_1                       /*!< Peripheral burst of 8 beats transfer configuration */
+#define LL_DMA_PBURST_SINGLE              0x00000000U                             /*!< Peripheral burst single transfer configuration      */
+#define LL_DMA_PBURST_INC4                DMA_SxCR_PBURST_0                       /*!< Peripheral burst of 4 beats transfer configuration  */
+#define LL_DMA_PBURST_INC8                DMA_SxCR_PBURST_1                       /*!< Peripheral burst of 8 beats transfer configuration  */
 #define LL_DMA_PBURST_INC16               (DMA_SxCR_PBURST_0 | DMA_SxCR_PBURST_1) /*!< Peripheral burst of 16 beats transfer configuration */
 /**
   * @}
@@ -313,7 +314,7 @@ typedef struct
   * @{
   */
 #define LL_DMA_FIFOMODE_DISABLE           0x00000000U                             /*!< FIFO mode disable (direct mode is enabled) */
-#define LL_DMA_FIFOMODE_ENABLE            DMA_SxFCR_DMDIS                         /*!< FIFO mode enable  */
+#define LL_DMA_FIFOMODE_ENABLE            DMA_SxFCR_DMDIS                         /*!< FIFO mode enable                           */
 /**
   * @}
   */
@@ -1106,7 +1107,7 @@ __STATIC_INLINE uint32_t LL_DMA_GetDataLength(DMA_TypeDef *DMAx, uint32_t Stream
   *         @arg @ref LL_DMAMUX1_REQ_USART6_TX
   *         @arg @ref LL_DMAMUX1_REQ_I2C3_RX
   *         @arg @ref LL_DMAMUX1_REQ_I2C3_TX
-  *         @arg @ref LL_DMAMUX1_REQ_DCMI
+  *         @arg @ref LL_DMAMUX1_REQ_DCMI_PSSI
   *         @arg @ref LL_DMAMUX1_REQ_CRYP_IN
   *         @arg @ref LL_DMAMUX1_REQ_CRYP_OUT
   *         @arg @ref LL_DMAMUX1_REQ_HASH_IN
@@ -1126,12 +1127,12 @@ __STATIC_INLINE uint32_t LL_DMA_GetDataLength(DMA_TypeDef *DMAx, uint32_t Stream
   *         @arg @ref LL_DMAMUX1_REQ_SWPMI_TX
   *         @arg @ref LL_DMAMUX1_REQ_SPDIF_RX_DT
   *         @arg @ref LL_DMAMUX1_REQ_SPDIF_RX_CS
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_MASTER
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_A
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_B
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_C
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_D
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_E
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_MASTER (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_A (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_B (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_C (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_D (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_E (*)
   *         @arg @ref LL_DMAMUX1_REQ_DFSDM1_FLT0
   *         @arg @ref LL_DMAMUX1_REQ_DFSDM1_FLT1
   *         @arg @ref LL_DMAMUX1_REQ_DFSDM1_FLT2
@@ -1144,9 +1145,14 @@ __STATIC_INLINE uint32_t LL_DMA_GetDataLength(DMA_TypeDef *DMAx, uint32_t Stream
   *         @arg @ref LL_DMAMUX1_REQ_TIM16_UP
   *         @arg @ref LL_DMAMUX1_REQ_TIM17_CH1
   *         @arg @ref LL_DMAMUX1_REQ_TIM17_UP
-  *         @arg @ref LL_DMAMUX1_REQ_SAI3_A
-  *         @arg @ref LL_DMAMUX1_REQ_SAI3_B
-  *         @arg @ref LL_DMAMUX1_REQ_ADC3
+  *         @arg @ref LL_DMAMUX1_REQ_SAI3_A (*)
+  *         @arg @ref LL_DMAMUX1_REQ_SAI3_B (*)
+  *         @arg @ref LL_DMAMUX1_REQ_ADC3 (*)
+  *         @arg @ref LL_DMAMUX1_REQ_UART9_RX (*)
+  *         @arg @ref LL_DMAMUX1_REQ_UART9_RX (*)
+  *         @arg @ref LL_DMAMUX1_REQ_USART10_RX (*)
+  *         @arg @ref LL_DMAMUX1_REQ_USART10_RX (*)
+  * @note   (*) Availability depends on devices.
   * @retval None
   */
 __STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Stream, uint32_t Request)
@@ -1244,7 +1250,7 @@ __STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Stream,
   *         @arg @ref LL_DMAMUX1_REQ_USART6_TX
   *         @arg @ref LL_DMAMUX1_REQ_I2C3_RX
   *         @arg @ref LL_DMAMUX1_REQ_I2C3_TX
-  *         @arg @ref LL_DMAMUX1_REQ_DCMI
+  *         @arg @ref LL_DMAMUX1_REQ_DCMI_PSSI
   *         @arg @ref LL_DMAMUX1_REQ_CRYP_IN
   *         @arg @ref LL_DMAMUX1_REQ_CRYP_OUT
   *         @arg @ref LL_DMAMUX1_REQ_HASH_IN
@@ -1264,12 +1270,12 @@ __STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Stream,
   *         @arg @ref LL_DMAMUX1_REQ_SWPMI_TX
   *         @arg @ref LL_DMAMUX1_REQ_SPDIF_RX_DT
   *         @arg @ref LL_DMAMUX1_REQ_SPDIF_RX_CS
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_MASTER
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_A
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_B
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_C
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_D
-  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_E
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_MASTER (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_A (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_B (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_C (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_D (*)
+  *         @arg @ref LL_DMAMUX1_REQ_HRTIM_TIMER_E (*)
   *         @arg @ref LL_DMAMUX1_REQ_DFSDM1_FLT0
   *         @arg @ref LL_DMAMUX1_REQ_DFSDM1_FLT1
   *         @arg @ref LL_DMAMUX1_REQ_DFSDM1_FLT2
@@ -1282,14 +1288,20 @@ __STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Stream,
   *         @arg @ref LL_DMAMUX1_REQ_TIM16_UP
   *         @arg @ref LL_DMAMUX1_REQ_TIM17_CH1
   *         @arg @ref LL_DMAMUX1_REQ_TIM17_UP
-  *         @arg @ref LL_DMAMUX1_REQ_SAI3_A
-  *         @arg @ref LL_DMAMUX1_REQ_SAI3_B
-  *         @arg @ref LL_DMAMUX1_REQ_ADC3
+  *         @arg @ref LL_DMAMUX1_REQ_SAI3_A (*)
+  *         @arg @ref LL_DMAMUX1_REQ_SAI3_B (*)
+  *         @arg @ref LL_DMAMUX1_REQ_ADC3 (*)
+  *         @arg @ref LL_DMAMUX1_REQ_UART9_RX (*)
+  *         @arg @ref LL_DMAMUX1_REQ_UART9_RX (*)
+  *         @arg @ref LL_DMAMUX1_REQ_USART10_RX (*)
+  *         @arg @ref LL_DMAMUX1_REQ_USART10_RX (*)
+  * @note   (*) Availability depends on devices.
   */
 __STATIC_INLINE  uint32_t LL_DMA_GetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Stream)
 {
   return (READ_BIT(((DMAMUX_Channel_TypeDef *)((uint32_t)((uint32_t)DMAMUX1_Channel0 + (DMAMUX_CCR_SIZE * (Stream)) + (uint32_t)(DMAMUX_CCR_SIZE * LL_DMA_INSTANCE_TO_DMAMUX_CHANNEL(DMAx)))))->CCR, DMAMUX_CxCR_DMAREQ_ID));
 }
+
 /**
   * @brief Set Memory burst transfer configuration.
   * @rmtoll CR          MBURST           LL_DMA_SetMemoryBurstxfer

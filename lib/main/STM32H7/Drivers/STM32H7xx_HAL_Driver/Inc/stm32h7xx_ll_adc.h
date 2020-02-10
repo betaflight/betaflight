@@ -160,10 +160,10 @@ extern "C" {
 /* Mask containing trigger source masks for each of possible                  */
 /* trigger edge selection duplicated with shifts [0; 4; 8; 12]                */
 /* corresponding to {SW start; ext trigger; ext trigger; ext trigger}.        */
-#define ADC_INJ_TRIG_SOURCE_MASK            (((LL_ADC_INJ_TRIG_SOFTWARE & ADC_JSQR_JEXTSEL) << (4U * 0UL)) | \
-                                            ((ADC_JSQR_JEXTSEL)                             << (4U * 1UL)) | \
-                                            ((ADC_JSQR_JEXTSEL)                             << (4U * 2UL)) | \
-                                            ((ADC_JSQR_JEXTSEL)                             << (4U * 3UL))  )
+#define ADC_INJ_TRIG_SOURCE_MASK            (((LL_ADC_INJ_TRIG_SOFTWARE & ADC_JSQR_JEXTSEL)  << (4U * 0UL)) | \
+                                             ((ADC_JSQR_JEXTSEL)                             << (4U * 1UL)) | \
+                                             ((ADC_JSQR_JEXTSEL)                             << (4U * 2UL)) | \
+                                             ((ADC_JSQR_JEXTSEL)                             << (4U * 3UL))  )
 
 /* Mask containing trigger edge masks for each of possible                    */
 /* trigger edge selection duplicated with shifts [0; 4; 8; 12]                */
@@ -371,6 +371,14 @@ extern "C" {
 #define TEMPSENSOR_CAL_VREFANALOG          (3300UL)                     /* Analog voltage reference (Vref+) voltage with which temperature sensor has been calibrated in production (+-10 mV) (unit: mV). */
 
 
+/* Registers addresses with ADC linearity calibration content (programmed during device production, specific to each device) */
+#define ADC_LINEAR_CALIB_REG_1_ADDR ((uint32_t*) (0x1FF1EC00UL))
+#define ADC_LINEAR_CALIB_REG_2_ADDR ((uint32_t*) (0x1FF1EC04UL))
+#define ADC_LINEAR_CALIB_REG_3_ADDR ((uint32_t*) (0x1FF1EC08UL))
+#define ADC_LINEAR_CALIB_REG_4_ADDR ((uint32_t*) (0x1FF1EC0CUL))
+#define ADC_LINEAR_CALIB_REG_5_ADDR ((uint32_t*) (0x1FF1EC10UL))
+#define ADC_LINEAR_CALIB_REG_6_ADDR ((uint32_t*) (0x1FF1EC14UL))
+#define ADC_LINEAR_CALIB_REG_COUNT  (6UL)
 /**
   * @}
   */
@@ -390,7 +398,7 @@ extern "C" {
   * @retval Pointer to register address
   */
 #define __ADC_PTR_REG_OFFSET(__REG__, __REG_OFFFSET__)                         \
- ((__IO uint32_t *)((uint32_t) ((uint32_t)(&(__REG__)) + ((__REG_OFFFSET__) << 2UL))))
+  ((__IO uint32_t *)((uint32_t) ((uint32_t)(&(__REG__)) + ((__REG_OFFFSET__) << 2UL))))
 
 /**
   * @}
@@ -748,7 +756,11 @@ typedef struct
 #define LL_ADC_RESOLUTION_14B              (                                ADC_CFGR_RES_0) /*!< ADC resolution 12 bits */
 #define LL_ADC_RESOLUTION_12B              (               ADC_CFGR_RES_1                 ) /*!< ADC resolution 12 bits */
 #define LL_ADC_RESOLUTION_10B              (               ADC_CFGR_RES_1 | ADC_CFGR_RES_0) /*!< ADC resolution 10 bits */
+#if defined (ADC_VER_V5_3)
+#define LL_ADC_RESOLUTION_8B               (ADC_CFGR_RES_2|ADC_CFGR_RES_1 | ADC_CFGR_RES_0) /*!< ADC resolution  8 bits */
+#else
 #define LL_ADC_RESOLUTION_8B               (ADC_CFGR_RES_2                                ) /*!< ADC resolution  8 bits */
+#endif
 /**
   * @}
   */
@@ -846,12 +858,23 @@ typedef struct
 #define LL_ADC_CHANNEL_17                  (ADC_CHANNEL_17_NUMBER | ADC_CHANNEL_17_SMP | ADC_CHANNEL_17_BITFIELD) /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN17 */
 #define LL_ADC_CHANNEL_18                  (ADC_CHANNEL_18_NUMBER | ADC_CHANNEL_18_SMP | ADC_CHANNEL_18_BITFIELD) /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN18 */
 #define LL_ADC_CHANNEL_19                  (ADC_CHANNEL_19_NUMBER | ADC_CHANNEL_19_SMP | ADC_CHANNEL_19_BITFIELD) /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN19 */
+#if defined(ADC3)
 /*!< ADC3 is defined only in the case of STM32H7XX */
 #define LL_ADC_CHANNEL_VREFINT             (LL_ADC_CHANNEL_19 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to VrefInt: Internal voltage reference. On STM32H7, ADC channel available only on ADC instance: ADC3. */
 #define LL_ADC_CHANNEL_TEMPSENSOR          (LL_ADC_CHANNEL_18 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to Temperature sensor. On STM32H7, ADC channel available only on ADC instance: ADC3. */
 #define LL_ADC_CHANNEL_VBAT                (LL_ADC_CHANNEL_17 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to Vbat/3: Vbat voltage through a divider ladder of factor 1/4 to have Vbat always below Vdda. On STM32H7, ADC channel available only on ADC instance: ADC3. */
+#else
+/*!< Specific define for STM32H7A3xx and STM32HB3xx varieties of STM32H7XXX */
+#define LL_ADC_CHANNEL_VREFINT             (LL_ADC_CHANNEL_19 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to VrefInt: Internal voltage reference. On STM32H7, ADC channel available only on ADC instance: ADC2. */
+#define LL_ADC_CHANNEL_TEMPSENSOR          (LL_ADC_CHANNEL_18 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to Temperature sensor. On STM32H7, ADC channel available only on ADC instance: ADC2. */
+#define LL_ADC_CHANNEL_VBAT                (LL_ADC_CHANNEL_14 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to Vbat/3: Vbat voltage through a divider ladder of factor 1/4 to have Vbat always below Vdda. On STM32H7, ADC channel available only on ADC instance: ADC2. */
+#endif
 #define LL_ADC_CHANNEL_DAC1CH1_ADC2        (LL_ADC_CHANNEL_16 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC2 */
 #define LL_ADC_CHANNEL_DAC1CH2_ADC2        (LL_ADC_CHANNEL_17 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC2 */
+#if defined(DAC2)
+/*!< Specific define for STM32H7A3xx and STM32HB3xx varieties of STM32H7XXX */
+#define LL_ADC_CHANNEL_DAC2CH1_ADC2        (LL_ADC_CHANNEL_15 | ADC_CHANNEL_ID_INTERNAL_CH) /*!< ADC internal channel connected to DAC2 channel 1, channel specific to ADC2 */
+#endif
 /**
   * @}
   */
@@ -896,8 +919,8 @@ typedef struct
   */
 
 /** @defgroup ADC_LL_EC_REG_CONTINUOUS_MODE  ADC group regular - Continuous mode
-* @{
-*/
+  * @{
+  */
 #define LL_ADC_REG_CONV_SINGLE             (0x00000000UL)          /*!< ADC conversions are performed in single mode: one conversion per trigger */
 #define LL_ADC_REG_CONV_CONTINUOUS         (ADC_CFGR_CONT)         /*!< ADC conversions are performed in continuous mode: after the first trigger, following conversions launched successively automatically */
 /**
@@ -916,8 +939,8 @@ typedef struct
   */
 
 /** @defgroup ADC_LL_EC_REG_OVR_DATA_BEHAVIOR  ADC group regular - Overrun behavior on conversion data
-* @{
-*/
+  * @{
+  */
 #define LL_ADC_REG_OVR_DATA_PRESERVED      (0x00000000UL)         /*!< ADC group regular behavior in case of overrun: data preserved */
 #define LL_ADC_REG_OVR_DATA_OVERWRITTEN    (ADC_CFGR_OVRMOD)      /*!< ADC group regular behavior in case of overrun: data overwritten */
 /**
@@ -1026,8 +1049,8 @@ typedef struct
   */
 
 /** @defgroup ADC_LL_EC_INJ_TRIG_AUTO  ADC group injected - Automatic trigger mode
-* @{
-*/
+  * @{
+  */
 #define LL_ADC_INJ_TRIG_INDEPENDENT        (0x00000000UL)         /*!< ADC group injected conversion trigger independent. Setting mandatory if ADC group injected injected trigger source is set to an external trigger. */
 #define LL_ADC_INJ_TRIG_FROM_GRP_REGULAR   (ADC_CFGR_JAUTO)       /*!< ADC group injected conversion trigger from ADC group regular. Setting compliant only with group injected trigger source set to SW start, without any further action on  ADC group injected conversion start or stop: in this case, ADC group injected is controlled only from ADC group regular. */
 /**
@@ -1442,7 +1465,7 @@ typedef struct
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -1451,13 +1474,13 @@ typedef struct
   */
 #define __LL_ADC_CHANNEL_TO_DECIMAL_NB(__CHANNEL__)                                        \
   ((((__CHANNEL__) & ADC_CHANNEL_ID_BITFIELD_MASK) == 0UL)                                 \
-    ? (                                                                                    \
+   ? (                                                                                     \
        ((__CHANNEL__) & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS \
-      )                                                                                    \
-      :                                                                                    \
-      (                                                                                    \
+     )                                                                                     \
+   :                                                                                       \
+   (                                                                                       \
        (uint32_t)POSITION_VAL((__CHANNEL__))                                               \
-      )                                                                                    \
+   )                                                                                       \
   )
 
 /**
@@ -1493,7 +1516,7 @@ typedef struct
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -1504,17 +1527,17 @@ typedef struct
   */
 #define __LL_ADC_DECIMAL_NB_TO_CHANNEL(__DECIMAL_NB__)                                                  \
   (((__DECIMAL_NB__) <= 9UL)                                                                            \
-    ? (                                                                                                 \
+   ? (                                                                                                  \
        ((__DECIMAL_NB__) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS)                             |          \
        (ADC_AWD2CR_AWD2CH_0 << (__DECIMAL_NB__))                                             |          \
        (ADC_SMPR1_REGOFFSET | (((3UL * (__DECIMAL_NB__))) << ADC_CHANNEL_SMPx_BITOFFSET_POS))           \
-      )                                                                                                 \
-      :                                                                                                 \
-      (                                                                                                 \
+     )                                                                                                  \
+   :                                                                                                    \
+   (                                                                                                    \
        ((__DECIMAL_NB__) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS)                                      | \
        (ADC_AWD2CR_AWD2CH_0 << (__DECIMAL_NB__))                                                      | \
        (ADC_SMPR2_REGOFFSET | (((3UL * ((__DECIMAL_NB__) - 10UL))) << ADC_CHANNEL_SMPx_BITOFFSET_POS))  \
-      )                                                                                                 \
+   )                                                                                                    \
   )
 
 /**
@@ -1560,7 +1583,7 @@ typedef struct
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -1610,7 +1633,7 @@ typedef struct
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -1660,12 +1683,13 @@ typedef struct
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.
   * @retval Value "0" if the internal channel selected is not available on the ADC instance selected.
   *         Value "1" if the internal channel selected is available on the ADC instance selected.
   */
+#if defined(ADC3)
 #define __LL_ADC_IS_CHANNEL_INTERNAL_AVAILABLE(__ADC_INSTANCE__, __CHANNEL__)  \
   ((((__ADC_INSTANCE__) == ADC2)                                               \
     &&(                                                                        \
@@ -1682,6 +1706,20 @@ typedef struct
       )                                                                        \
    )                                                                           \
   )
+#else
+#define __LL_ADC_IS_CHANNEL_INTERNAL_AVAILABLE(__ADC_INSTANCE__, __CHANNEL__)  \
+  ((((__ADC_INSTANCE__) == ADC2)                                               \
+    &&(                                                                        \
+       ((__CHANNEL__) == LL_ADC_CHANNEL_DAC1CH1_ADC2) ||                       \
+       ((__CHANNEL__) == LL_ADC_CHANNEL_DAC1CH2_ADC2) ||                       \
+       ((__CHANNEL__) == LL_ADC_CHANNEL_TEMPSENSOR)   ||                       \
+       ((__CHANNEL__) == LL_ADC_CHANNEL_VBAT)         ||                       \
+       ((__CHANNEL__) == LL_ADC_CHANNEL_VREFINT)                               \
+      )                                                                        \
+   )                                                                           \
+  )
+#endif
+
 /**
   * @brief  Helper macro to define ADC analog watchdog parameter:
   *         define a single channel to monitor with analog watchdog
@@ -1717,7 +1755,7 @@ typedef struct
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -1809,19 +1847,19 @@ typedef struct
   *         @arg @ref LL_ADC_AWD_CH_DAC1CH2_ADC2_REG     (0)(2)
   *         @arg @ref LL_ADC_AWD_CH_DAC1CH2_ADC2_INJ     (0)(2)
   *         @arg @ref LL_ADC_AWD_CH_DAC1CH2_ADC2_REG_INJ    (2)
-  *         
+  *
   *         (0) On STM32H7, parameter available only on analog watchdog number: AWD1.\n
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.
   */
 #define __LL_ADC_ANALOGWD_CHANNEL_GROUP(__CHANNEL__, __GROUP__)                                           \
   (((__GROUP__) == LL_ADC_GROUP_REGULAR)                                                                  \
-    ? (((__CHANNEL__) & ADC_CHANNEL_ID_MASK) | ADC_CFGR_AWD1EN | ADC_CFGR_AWD1SGL)                        \
-      :                                                                                                   \
-      ((__GROUP__) == LL_ADC_GROUP_INJECTED)                                                              \
-       ? (((__CHANNEL__) & ADC_CHANNEL_ID_MASK) | ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1SGL)                    \
-         :                                                                                                \
-         (((__CHANNEL__) & ADC_CHANNEL_ID_MASK) | ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN | ADC_CFGR_AWD1SGL)  \
+   ? (((__CHANNEL__) & ADC_CHANNEL_ID_MASK) | ADC_CFGR_AWD1EN | ADC_CFGR_AWD1SGL)                         \
+   :                                                                                                      \
+   ((__GROUP__) == LL_ADC_GROUP_INJECTED)                                                                 \
+   ? (((__CHANNEL__) & ADC_CHANNEL_ID_MASK) | ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1SGL)                        \
+   :                                                                                                      \
+   (((__CHANNEL__) & ADC_CHANNEL_ID_MASK) | ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN | ADC_CFGR_AWD1SGL)        \
   )
 
 /**
@@ -1932,6 +1970,7 @@ typedef struct
   * @param  __ADCx__ ADC instance
   * @retval ADC common register instance
   */
+#if defined(ADC3_COMMON)
 #define __LL_ADC_COMMON_INSTANCE(__ADCx__)                                     \
   ((((__ADCx__) == ADC1) || ((__ADCx__) == ADC2))                              \
     ? (                                                                        \
@@ -1942,6 +1981,9 @@ typedef struct
        (ADC3_COMMON)                                                           \
       )                                                                        \
   )
+#else
+#define __LL_ADC_COMMON_INSTANCE(__ADCx__)   (ADC12_COMMON)
+#endif
 
 /**
   * @brief  Helper macro to check if all ADC instances sharing the same
@@ -2075,10 +2117,9 @@ typedef struct
 #define __LL_ADC_CALC_VREFANALOG_VOLTAGE(__VREFINT_ADC_DATA__,\
                                          __ADC_RESOLUTION__)                   \
   (((uint32_t)(*VREFINT_CAL_ADDR) * VREFINT_CAL_VREF)                          \
-    / __LL_ADC_CONVERT_DATA_RESOLUTION((__VREFINT_ADC_DATA__),                 \
-                                       (__ADC_RESOLUTION__),                   \
-                                       LL_ADC_RESOLUTION_16B)                  \
-  )
+   / __LL_ADC_CONVERT_DATA_RESOLUTION((__VREFINT_ADC_DATA__),                  \
+                                      (__ADC_RESOLUTION__),                    \
+                                      LL_ADC_RESOLUTION_16B))
 
 /**
   * @brief  Helper macro to calculate the temperature (unit: degree Celsius)
@@ -2258,12 +2299,12 @@ __STATIC_INLINE uint32_t LL_ADC_DMA_GetRegAddr(ADC_TypeDef *ADCx, uint32_t Regis
   if (Register == LL_ADC_DMA_REG_REGULAR_DATA)
   {
     /* Retrieve address of register DR */
-    data_reg_addr = (uint32_t)&(ADCx->DR);
+    data_reg_addr = (uint32_t) &(ADCx->DR);
   }
   else /* (Register == LL_ADC_DMA_REG_REGULAR_DATA_MULTI) */
   {
     /* Retrieve address of register CDR */
-    data_reg_addr = (uint32_t)&((__LL_ADC_COMMON_INSTANCE(ADCx))->CDR);
+    data_reg_addr = (uint32_t) &((__LL_ADC_COMMON_INSTANCE(ADCx))->CDR);
   }
 
   return data_reg_addr;
@@ -2561,11 +2602,14 @@ __STATIC_INLINE uint32_t LL_ADC_GetCalibrationLinearFactor(ADC_TypeDef *ADCx, ui
   */
 __STATIC_INLINE void LL_ADC_SetResolution(ADC_TypeDef *ADCx, uint32_t Resolution)
 {
+#if defined (ADC_VER_V5_3)
+  MODIFY_REG(ADCx->CFGR, ADC_CFGR_RES, Resolution);
+#else
   if((DBGMCU->IDCODE & 0x30000000UL) == 0x10000000UL) /* Rev.Y */
   {
     MODIFY_REG(ADCx->CFGR, ADC_CFGR_RES, Resolution);
   }
-  else /* rev.V */
+  else /* Rev.V */
   {
     if(LL_ADC_RESOLUTION_8B == Resolution)
     {
@@ -2576,6 +2620,7 @@ __STATIC_INLINE void LL_ADC_SetResolution(ADC_TypeDef *ADCx, uint32_t Resolution
       MODIFY_REG(ADCx->CFGR, ADC_CFGR_RES, Resolution);
     }
   }
+#endif /* ADC_VER_V5_3*/
 }
 
 /**
@@ -2593,11 +2638,14 @@ __STATIC_INLINE void LL_ADC_SetResolution(ADC_TypeDef *ADCx, uint32_t Resolution
   */
 __STATIC_INLINE uint32_t LL_ADC_GetResolution(ADC_TypeDef *ADCx)
 {
+#if defined (ADC_VER_V5_3)
+    return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_RES));
+#else
   if((DBGMCU->IDCODE & 0x30000000UL) == 0x10000000UL) /* Rev.Y */
   {
     return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_RES));
   }
-  else
+  else /* Rev.V */
   {
     if ((uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_RES)) == 0x0000001CUL)
     {
@@ -2608,6 +2656,7 @@ __STATIC_INLINE uint32_t LL_ADC_GetResolution(ADC_TypeDef *ADCx)
       return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_RES));
     }
   }
+#endif /* ADC_VER_V5_3 */
 }
 
 /**
@@ -2776,7 +2825,7 @@ __STATIC_INLINE uint32_t LL_ADC_GetLowPowerMode(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -2847,7 +2896,7 @@ __STATIC_INLINE void LL_ADC_SetOffset(ADC_TypeDef *ADCx, uint32_t Offsety, uint3
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -3387,7 +3436,7 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetSequencerDiscont(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -3487,7 +3536,7 @@ __STATIC_INLINE void LL_ADC_REG_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -3500,10 +3549,10 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetSequencerRanks(ADC_TypeDef *ADCx, uint32_
 {
   register const __IO uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SQR1, ((Rank & ADC_REG_SQRX_REGOFFSET_MASK) >> ADC_SQRX_REGOFFSET_POS));
 
-  return (uint32_t) ((READ_BIT(*preg,
+  return (uint32_t)((READ_BIT(*preg,
                               ADC_CHANNEL_ID_NUMBER_MASK_POSBIT0 << (Rank & ADC_REG_RANK_ID_SQRX_MASK))
                      >> (Rank & ADC_REG_RANK_ID_SQRX_MASK)) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS
-                    );
+                   );
 }
 
 /**
@@ -3555,7 +3604,11 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetContinuousMode(ADC_TypeDef *ADCx)
   *            - Transfered to DFSDM data register
   * @rmtoll CFGR     DMNGT           LL_ADC_REG_SetDataTransferMode
   * @param  ADCx ADC instance
-  * @param  DataTransferMode Select Data Management configuration
+  * @param  DataTransferMode This parameter can be one of the following values:
+  *         @arg @ref LL_ADC_REG_DR_TRANSFER
+  *         @arg @ref LL_ADC_REG_DMA_TRANSFER_LIMITED
+  *         @arg @ref LL_ADC_REG_DMA_TRANSFER_UNLIMITED
+  *         @arg @ref LL_ADC_REG_DFSDM_TRANSFER
   * @retval None
   */
 __STATIC_INLINE void LL_ADC_REG_SetDataTransferMode(ADC_TypeDef *ADCx, uint32_t DataTransferMode)
@@ -3918,7 +3971,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetSequencerDiscont(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -3988,7 +4041,7 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4000,8 +4053,8 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
 __STATIC_INLINE uint32_t LL_ADC_INJ_GetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Rank)
 {
   return (uint32_t)((READ_BIT(ADCx->JSQR,
-                             (ADC_CHANNEL_ID_NUMBER_MASK >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (Rank & ADC_INJ_RANK_ID_JSQR_MASK))
-                    >> (Rank & ADC_INJ_RANK_ID_JSQR_MASK)) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS
+                              (ADC_CHANNEL_ID_NUMBER_MASK >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (Rank & ADC_INJ_RANK_ID_JSQR_MASK))
+                     >> (Rank & ADC_INJ_RANK_ID_JSQR_MASK)) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS
                    );
 }
 
@@ -4211,7 +4264,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetQueueMode(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4242,7 +4295,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetQueueMode(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4273,7 +4326,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetQueueMode(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4304,7 +4357,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetQueueMode(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4327,15 +4380,15 @@ __STATIC_INLINE void LL_ADC_INJ_ConfigQueueContext(ADC_TypeDef *ADCx,
   /* If parameter "TriggerSource" is set to SW start, then parameter          */
   /* "ExternalTriggerEdge" is discarded.                                      */
   register uint32_t is_trigger_not_sw = (uint32_t)((TriggerSource != LL_ADC_INJ_TRIG_SOFTWARE) ? 1UL : 0UL);
-  MODIFY_REG(ADCx->JSQR           ,
+  MODIFY_REG(ADCx->JSQR,
              ADC_JSQR_JEXTSEL |
              ADC_JSQR_JEXTEN  |
              ADC_JSQR_JSQ4    |
              ADC_JSQR_JSQ3    |
              ADC_JSQR_JSQ2    |
              ADC_JSQR_JSQ1    |
-             ADC_JSQR_JL          ,
-             TriggerSource       |
+             ADC_JSQR_JL,
+             (TriggerSource & ADC_JSQR_JEXTSEL)          |
              (ExternalTriggerEdge * (is_trigger_not_sw)) |
              (((Rank4_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (LL_ADC_INJ_RANK_4 & ADC_INJ_RANK_ID_JSQR_MASK)) |
              (((Rank3_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (LL_ADC_INJ_RANK_3 & ADC_INJ_RANK_ID_JSQR_MASK)) |
@@ -4425,7 +4478,7 @@ __STATIC_INLINE void LL_ADC_INJ_ConfigQueueContext(ADC_TypeDef *ADCx,
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4511,7 +4564,7 @@ __STATIC_INLINE void LL_ADC_SetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t C
   *         @arg @ref LL_ADC_CHANNEL_VBAT         (1)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH1_ADC2 (2)
   *         @arg @ref LL_ADC_CHANNEL_DAC1CH2_ADC2 (2)
-  *         
+  *
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.\n
   *         (3) On STM32H7, fast channel (0.125 us for 14-bit resolution (ADC conversion rate up to 8 Ms/s)).
@@ -4778,7 +4831,7 @@ __STATIC_INLINE uint32_t LL_ADC_GetChannelSingleDiff(ADC_TypeDef *ADCx, uint32_t
   *         @arg @ref LL_ADC_AWD_CH_DAC1CH2_ADC2_REG     (0)(2)
   *         @arg @ref LL_ADC_AWD_CH_DAC1CH2_ADC2_INJ     (0)(2)
   *         @arg @ref LL_ADC_AWD_CH_DAC1CH2_ADC2_REG_INJ    (2)
-  *         
+  *
   *         (0) On STM32H7, parameter available only on analog watchdog number: AWD1.\n
   *         (1) On STM32H7, parameter available only on ADC instance: ADC3.\n
   *         (2) On STM32H7, parameter available only on ADC instance: ADC2.
@@ -4791,7 +4844,7 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint32_t
   /* Parameters "AWDChannelGroup" and "AWDy" are used with masks because      */
   /* containing other bits reserved for other purpose.                        */
   register __IO uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->CFGR, ((AWDy & ADC_AWD_CRX_REGOFFSET_MASK) >> ADC_AWD_CRX_REGOFFSET_POS)
-                                                             + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
+                                                      + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
 
   MODIFY_REG(*preg,
              (AWDy & ADC_AWD_CR_ALL_CHANNEL_MASK),
@@ -4920,13 +4973,13 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint32_t
   *         @arg @ref LL_ADC_AWD_CHANNEL_19_REG          (0)
   *         @arg @ref LL_ADC_AWD_CHANNEL_19_INJ          (0)
   *         @arg @ref LL_ADC_AWD_CHANNEL_19_REG_INJ
-  *         
+  *
   *         (0) On STM32H7, parameter available only on analog watchdog number: AWD1.
   */
 __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint32_t AWDy)
 {
   register const __IO uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->CFGR, ((AWDy & ADC_AWD_CRX_REGOFFSET_MASK) >> ADC_AWD_CRX_REGOFFSET_POS)
-                                                             + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
+                                                            + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
 
   register uint32_t AnalogWDMonitChannels = (READ_BIT(*preg, AWDy) & AWDy & ADC_AWD_CR_ALL_CHANNEL_MASK);
 
@@ -4934,14 +4987,14 @@ __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint
   /* (parameter value LL_ADC_AWD_DISABLE).                                    */
   /* Else, the selected AWD is enabled and is monitoring a group of channels  */
   /* or a single channel.                                                     */
-  if(AnalogWDMonitChannels != 0UL)
+  if (AnalogWDMonitChannels != 0UL)
   {
-    if(AWDy == LL_ADC_AWD1)
+    if (AWDy == LL_ADC_AWD1)
     {
-      if((AnalogWDMonitChannels & ADC_CFGR_AWD1SGL) == 0UL)
+      if ((AnalogWDMonitChannels & ADC_CFGR_AWD1SGL) == 0UL)
       {
         /* AWD monitoring a group of channels */
-        AnalogWDMonitChannels = ((  AnalogWDMonitChannels
+        AnalogWDMonitChannels = ((AnalogWDMonitChannels
                                   | (ADC_AWD_CR23_CHANNEL_MASK)
                                  )
                                  & (~(ADC_CFGR_AWD1CH))
@@ -4957,10 +5010,10 @@ __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint
     }
     else
     {
-      if((AnalogWDMonitChannels & ADC_AWD_CR23_CHANNEL_MASK) == ADC_AWD_CR23_CHANNEL_MASK)
+      if ((AnalogWDMonitChannels & ADC_AWD_CR23_CHANNEL_MASK) == ADC_AWD_CR23_CHANNEL_MASK)
       {
         /* AWD monitoring a group of channels */
-        AnalogWDMonitChannels = (  ADC_AWD_CR23_CHANNEL_MASK
+        AnalogWDMonitChannels = (ADC_AWD_CR23_CHANNEL_MASK
                                  | ((ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN))
                                 );
       }
@@ -4968,7 +5021,7 @@ __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint
       {
         /* AWD monitoring a single channel */
         /* AWD monitoring a group of channels */
-        AnalogWDMonitChannels = (  AnalogWDMonitChannels
+        AnalogWDMonitChannels = (AnalogWDMonitChannels
                                  | (ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN | ADC_CFGR_AWD1SGL)
                                  | (__LL_ADC_CHANNEL_TO_DECIMAL_NB(AnalogWDMonitChannels) << ADC_CFGR_AWD1CH_Pos)
                                 );
@@ -5032,7 +5085,8 @@ __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint
   * @param  AWDThresholdValue Value between Min_Data=0x000 and Max_Data=0xFFF
   * @retval None
   */
-__STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AWDy, uint32_t AWDThresholdsHighLow, uint32_t AWDThresholdValue)
+__STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AWDy, uint32_t AWDThresholdsHighLow,
+                                                  uint32_t AWDThresholdValue)
 {
   /* Set bits with content of parameter "AWDThresholdValue" with bits         */
   /* position in register and register position depending on parameters       */
@@ -5068,7 +5122,7 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AW
   *         @arg @ref LL_ADC_AWD_THRESHOLD_HIGH
   *         @arg @ref LL_ADC_AWD_THRESHOLD_LOW
   * @retval Value between Min_Data=0x000 and Max_Data=0x3FFFFFF
-*/
+  */
 __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AWDy, uint32_t AWDThresholdsHighLow)
 {
   register const __IO uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->LTR1, (((AWDy & ADC_AWD_TRX_REGOFFSET_MASK) >> ADC_AWD_TRX_REGOFFSET_POS) * 2UL)
@@ -5227,7 +5281,7 @@ __STATIC_INLINE void LL_ADC_ConfigOverSamplingRatioShift(ADC_TypeDef *ADCx, uint
   * @rmtoll CFGR2    OVSR           LL_ADC_GetOverSamplingRatio
   * @param  ADCx ADC instance
   * @retval Ratio This parameter can be in the from 1 to 1024.
-*/
+  */
 __STATIC_INLINE uint32_t LL_ADC_GetOverSamplingRatio(ADC_TypeDef *ADCx)
 {
   return (((uint32_t)(READ_BIT(ADCx->CFGR2, ADC_CFGR2_OVSR))+(1UL << ADC_CFGR2_OVSR_Pos)) >> ADC_CFGR2_OVSR_Pos);
@@ -5251,7 +5305,7 @@ __STATIC_INLINE uint32_t LL_ADC_GetOverSamplingRatio(ADC_TypeDef *ADCx)
   *         @arg @ref LL_ADC_OVS_SHIFT_RIGHT_9
   *         @arg @ref LL_ADC_OVS_SHIFT_RIGHT_10
   *         @arg @ref LL_ADC_OVS_SHIFT_RIGHT_11
-*/
+  */
 __STATIC_INLINE uint32_t LL_ADC_GetOverSamplingShift(ADC_TypeDef *ADCx)
 {
   return (uint32_t)(READ_BIT(ADCx->CFGR2, ADC_CFGR2_OVSS));
@@ -6048,7 +6102,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_IsStopConversionOngoing(ADC_TypeDef *ADCx)
 }
 
 /**
-  * @brief  Get ADC group regular conversion data, range fit for
+  * @brief  Get ADC group injected conversion data, range fit for
   *         all ADC configurations: all ADC resolutions and
   *         all oversampling increased data width (for devices
   *         with feature oversampling).

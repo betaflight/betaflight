@@ -12,16 +12,16 @@
   * This software component is licensed by ST under Ultimate Liberty license
   * SLA0044, the "License"; You may not use this file except in compliance with
   * the License. You may obtain a copy of the License at:
-  *                      http://www.st.com/SLA0044
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
   */
 
-  /* BSPDependencies
-  - "stm32xxxxx_{eval}{discovery}.c"
-  - "stm32xxxxx_{eval}{discovery}_io.c"
-  - "stm32xxxxx_{eval}{discovery}_audio.c"
-  EndBSPDependencies */
+/* BSPDependencies
+- "stm32xxxxx_{eval}{discovery}.c"
+- "stm32xxxxx_{eval}{discovery}_io.c"
+- "stm32xxxxx_{eval}{discovery}_audio.c"
+EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_audio_if_template.h"
@@ -65,13 +65,13 @@
   * @{
   */
 
-static int8_t  TEMPLATE_Init         (uint32_t  AudioFreq, uint32_t Volume, uint32_t options);
-static int8_t  TEMPLATE_DeInit       (uint32_t options);
-static int8_t  TEMPLATE_AudioCmd     (uint8_t* pbuf, uint32_t size, uint8_t cmd);
-static int8_t  TEMPLATE_VolumeCtl    (uint8_t vol);
-static int8_t  TEMPLATE_MuteCtl      (uint8_t cmd);
-static int8_t  TEMPLATE_PeriodicTC   (uint8_t cmd);
-static int8_t  TEMPLATE_GetState     (void);
+static int8_t  TEMPLATE_Init(uint32_t  AudioFreq, uint32_t Volume, uint32_t options);
+static int8_t  TEMPLATE_DeInit(uint32_t options);
+static int8_t  TEMPLATE_AudioCmd(uint8_t *pbuf, uint32_t size, uint8_t cmd);
+static int8_t  TEMPLATE_VolumeCtl(uint8_t vol);
+static int8_t  TEMPLATE_MuteCtl(uint8_t cmd);
+static int8_t  TEMPLATE_PeriodicTC(uint8_t cmd);
+static int8_t  TEMPLATE_GetState(void);
 
 USBD_AUDIO_ItfTypeDef USBD_AUDIO_Template_fops =
 {
@@ -123,9 +123,8 @@ static int8_t TEMPLATE_DeInit(uint32_t options)
   * @param  cmd: command opcode
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t TEMPLATE_AudioCmd (uint8_t* pbuf, uint32_t size, uint8_t cmd)
+static int8_t TEMPLATE_AudioCmd(uint8_t *pbuf, uint32_t size, uint8_t cmd)
 {
-
   return (0);
 }
 
@@ -134,9 +133,8 @@ static int8_t TEMPLATE_AudioCmd (uint8_t* pbuf, uint32_t size, uint8_t cmd)
   * @param  vol: volume level (0..100)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t TEMPLATE_VolumeCtl (uint8_t vol)
+static int8_t TEMPLATE_VolumeCtl(uint8_t vol)
 {
-
   return (0);
 }
 
@@ -145,9 +143,8 @@ static int8_t TEMPLATE_VolumeCtl (uint8_t vol)
   * @param  cmd: vmute command
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t TEMPLATE_MuteCtl (uint8_t cmd)
+static int8_t TEMPLATE_MuteCtl(uint8_t cmd)
 {
-
   return (0);
 }
 
@@ -156,9 +153,8 @@ static int8_t TEMPLATE_MuteCtl (uint8_t cmd)
   * @param  cmd
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t TEMPLATE_PeriodicTC (uint8_t cmd)
+static int8_t TEMPLATE_PeriodicTC(uint8_t cmd)
 {
-
   return (0);
 }
 
@@ -167,9 +163,8 @@ static int8_t TEMPLATE_PeriodicTC (uint8_t cmd)
   * @param  None
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t TEMPLATE_GetState (void)
+static int8_t TEMPLATE_GetState(void)
 {
-
   return (0);
 }
 /**

@@ -12,7 +12,7 @@
   * This software component is licensed by ST under Ultimate Liberty license
   * SLA0044, the "License"; You may not use this file except in compliance with
   * the License. You may obtain a copy of the License at:
-  *                      http://www.st.com/SLA0044
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -22,7 +22,7 @@
 #define __USB_HID_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -52,11 +52,11 @@
 #define HID_REPORT_DESC               0x22U
 
 #ifndef HID_HS_BINTERVAL
-  #define HID_HS_BINTERVAL            0x07U
+#define HID_HS_BINTERVAL            0x07U
 #endif /* HID_HS_BINTERVAL */
 
 #ifndef HID_FS_BINTERVAL
-  #define HID_FS_BINTERVAL            0x0AU
+#define HID_FS_BINTERVAL            0x0AU
 #endif /* HID_FS_BINTERVAL */
 
 #define HID_REQ_SET_PROTOCOL          0x0BU
@@ -118,11 +118,11 @@ extern USBD_ClassTypeDef  USBD_HID;
 /** @defgroup USB_CORE_Exported_Functions
   * @{
   */
-uint8_t USBD_HID_SendReport (USBD_HandleTypeDef *pdev,
-                                 uint8_t *report,
-                                 uint16_t len);
+uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev,
+                            uint8_t *report,
+                            uint16_t len);
 
-uint32_t USBD_HID_GetPollingInterval (USBD_HandleTypeDef *pdev);
+uint32_t USBD_HID_GetPollingInterval(USBD_HandleTypeDef *pdev);
 
 /**
   * @}

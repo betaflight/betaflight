@@ -36,7 +36,7 @@
     (+) Debug mode : When the microcontroller enters debug mode (core halted),
         the IWDG counter either continues to work normally or stops, depending
         on DBG_IWDG_STOP configuration bit in DBG module, accessible through
-        __HAL_DBGMCU_FREEZE_IWDG1() or __HAL_DBGMCU_FREEZE2_IWDG2() and 
+        __HAL_DBGMCU_FREEZE_IWDG1() or __HAL_DBGMCU_FREEZE2_IWDG2() and
         __HAL_DBGMCU_UnFreeze_IWDG1 or __HAL_DBGMCU_UnFreeze2_IWDG2() macros.
 
     [..] Min-max timeout value @32KHz (LSI): ~125us / ~32.7s
@@ -49,19 +49,19 @@
   ==============================================================================
   [..]
     (#) Use IWDG using HAL_IWDG_Init() function to :
-      (+) Enable instance by writing Start keyword in IWDG_KEY register. LSI
+      (++) Enable instance by writing Start keyword in IWDG_KEY register. LSI
            clock is forced ON and IWDG counter starts counting down.
-      (+) Enable write access to configuration registers:
+      (++) Enable write access to configuration registers:
           IWDG_PR, IWDG_RLR and IWDG_WINR.
-      (+) Configure the IWDG prescaler and counter reload value. This reload
+      (++) Configure the IWDG prescaler and counter reload value. This reload
            value will be loaded in the IWDG counter each time the watchdog is
            reloaded, then the IWDG will start counting down from this value.
-      (+) Wait for status flags to be reset.
-      (+) Depending on window parameter:
-        (++) If Window Init parameter is same as Window register value,
+      (++) Wait for status flags to be reset.
+      (++) Depending on window parameter:
+        (+++) If Window Init parameter is same as Window register value,
              nothing more is done but reload counter value in order to exit
              function with exact time base.
-        (++) Else modify Window register. This will automatically reload
+        (+++) Else modify Window register. This will automatically reload
              watchdog counter.
 
     (#) Then the application program must refresh the IWDG counter at regular
@@ -127,8 +127,8 @@
   */
 
 /** @addtogroup IWDG_Exported_Functions_Group1
- *  @brief    Initialization and Start functions.
- *
+  *  @brief    Initialization and Start functions.
+  *
 @verbatim
  ===============================================================================
           ##### Initialization and Start functions #####
@@ -216,8 +216,8 @@ HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
 
 
 /** @addtogroup IWDG_Exported_Functions_Group2
- *  @brief   IO operation functions
- *
+  *  @brief   IO operation functions
+  *
 @verbatim
  ===============================================================================
                       ##### IO operation functions #####

@@ -6,7 +6,8 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
   * the "License"; You may not use this file except in compliance with the
@@ -62,10 +63,6 @@ extern "C" {
                                       ((__MODE__) == FMC_ACCESS_MODE_B) || \
                                       ((__MODE__) == FMC_ACCESS_MODE_C) || \
                                       ((__MODE__) == FMC_ACCESS_MODE_D))
-#define IS_FMC_NBL_SETUPTIME(__NBL__) (((__NBL__) == FMC_NBL_SETUPTIME_0) || \
-                                       ((__NBL__) == FMC_NBL_SETUPTIME_1) || \
-                                       ((__NBL__) == FMC_NBL_SETUPTIME_2) || \
-                                       ((__NBL__) == FMC_NBL_SETUPTIME_3))
 #define IS_FMC_BURSTMODE(__STATE__) (((__STATE__) == FMC_BURST_ACCESS_MODE_DISABLE) || \
                                      ((__STATE__) == FMC_BURST_ACCESS_MODE_ENABLE))
 #define IS_FMC_WAIT_POLARITY(__POLARITY__) (((__POLARITY__) == FMC_WAIT_SIGNAL_POLARITY_LOW) || \
@@ -249,7 +246,6 @@ typedef struct
 
   uint32_t PageSize;                     /*!< Specifies the memory page size.
                                               This parameter can be a value of @ref FMC_Page_Size                        */
-
 }FMC_NORSRAM_InitTypeDef;
 
 /**
@@ -354,6 +350,7 @@ typedef struct
                                       on the memory space timing to be configured).
                                       This parameter can be a number between Min_Data = 0 and Max_Data = 254   */
 }FMC_NAND_PCC_TimingTypeDef;
+
 
 /**
   * @brief  FMC SDRAM Configuration Structure definition
@@ -608,24 +605,13 @@ typedef struct
   * @}
   */
 
-/** @defgroup FMC_Access_Mode FMC Access Mode
+  /** @defgroup FMC_Access_Mode FMC Access Mode
   * @{
   */
 #define FMC_ACCESS_MODE_A                       ((uint32_t)0x00000000U)
 #define FMC_ACCESS_MODE_B                       ((uint32_t)0x10000000U)
 #define FMC_ACCESS_MODE_C                       ((uint32_t)0x20000000U)
 #define FMC_ACCESS_MODE_D                       ((uint32_t)0x30000000U)
-/**
-  * @}
-  */
-
-/** @defgroup FMC_Byte_Lane FMC Byte Lane(NBL) Setup
-  * @{
-  */
-#define FMC_NBL_SETUPTIME_0                     ((uint32_t)0x00000000U)
-#define FMC_NBL_SETUPTIME_1                     ((uint32_t)0x00400000U)
-#define FMC_NBL_SETUPTIME_2                     ((uint32_t)0x00800000U)
-#define FMC_NBL_SETUPTIME_3                     ((uint32_t)0x00C00000U)
 /**
   * @}
   */
@@ -755,7 +741,7 @@ typedef struct
   */
 #define FMC_SDRAM_CAS_LATENCY_1                 ((uint32_t)0x00000080U)
 #define FMC_SDRAM_CAS_LATENCY_2                 ((uint32_t)0x00000100U)
-#define FMC_SDRAM_CAS_LATENCY_3                 ((uint32_t)0x00000180)
+#define FMC_SDRAM_CAS_LATENCY_3                 ((uint32_t)0x00000180U)
 /**
   * @}
   */
@@ -774,7 +760,7 @@ typedef struct
   */
 #define FMC_SDRAM_CLOCK_DISABLE                 ((uint32_t)0x00000000U)
 #define FMC_SDRAM_CLOCK_PERIOD_2                ((uint32_t)0x00000800U)
-#define FMC_SDRAM_CLOCK_PERIOD_3                ((uint32_t)0x00000C00)
+#define FMC_SDRAM_CLOCK_PERIOD_3                ((uint32_t)0x00000C00U)
 /**
   * @}
   */
@@ -861,14 +847,15 @@ typedef struct
 /**
   * @}
   */
-/**
-  * @}
-  */
 
 /**
   * @}
   */
 
+/**
+  * @}
+  */
+  
 /* Private macro -------------------------------------------------------------*/
 /** @defgroup FMC_LL_Private_Macros FMC_LL  Private Macros
   * @{
@@ -992,6 +979,7 @@ typedef struct
 /**
   * @}
   */
+
 
 /** @defgroup FMC_LL_SDRAM_Interrupt FMC SDRAM Interrupt
   * @brief macros to handle SDRAM interrupts
@@ -1119,7 +1107,6 @@ HAL_StatusTypeDef  FMC_NAND_GetECC(FMC_NAND_TypeDef *Device, uint32_t *ECCval, u
 HAL_StatusTypeDef  FMC_SDRAM_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_InitTypeDef *Init);
 HAL_StatusTypeDef  FMC_SDRAM_Timing_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_TimingTypeDef *Timing, uint32_t Bank);
 HAL_StatusTypeDef  FMC_SDRAM_DeInit(FMC_SDRAM_TypeDef *Device, uint32_t Bank);
-
 /**
   * @}
   */
@@ -1136,7 +1123,6 @@ uint32_t           FMC_SDRAM_GetModeStatus(FMC_SDRAM_TypeDef *Device, uint32_t B
 /**
   * @}
   */
-
 /**
   * @}
   */

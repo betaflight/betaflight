@@ -12,7 +12,7 @@
   * This software component is licensed by ST under Ultimate Liberty license
   * SLA0044, the "License"; You may not use this file except in compliance with
   * the License. You may obtain a copy of the License at:
-  *                      http://www.st.com/SLA0044
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -22,7 +22,7 @@
 #define __USB_CUSTOMHID_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -51,18 +51,18 @@
 #define USB_CUSTOM_HID_DESC_SIZ              9U
 
 #ifndef CUSTOM_HID_HS_BINTERVAL
-  #define CUSTOM_HID_HS_BINTERVAL            0x05U
+#define CUSTOM_HID_HS_BINTERVAL            0x05U
 #endif /* CUSTOM_HID_HS_BINTERVAL */
 
 #ifndef CUSTOM_HID_FS_BINTERVAL
-  #define CUSTOM_HID_FS_BINTERVAL            0x05U
+#define CUSTOM_HID_FS_BINTERVAL            0x05U
 #endif /* CUSTOM_HID_FS_BINTERVAL */
 
 #ifndef USBD_CUSTOMHID_OUTREPORT_BUF_SIZE
-  #define USBD_CUSTOMHID_OUTREPORT_BUF_SIZE  0x02U
+#define USBD_CUSTOMHID_OUTREPORT_BUF_SIZE  0x02U
 #endif /* USBD_CUSTOMHID_OUTREPORT_BUF_SIZE */
 #ifndef USBD_CUSTOM_HID_REPORT_DESC_SIZE
-  #define USBD_CUSTOM_HID_REPORT_DESC_SIZE   163U
+#define USBD_CUSTOM_HID_REPORT_DESC_SIZE   163U
 #endif /* USBD_CUSTOM_HID_REPORT_DESC_SIZE */
 
 #define CUSTOM_HID_DESCRIPTOR_TYPE           0x21U
@@ -94,11 +94,11 @@ CUSTOM_HID_StateTypeDef;
 typedef struct _USBD_CUSTOM_HID_Itf
 {
   uint8_t                  *pReport;
-  int8_t (* Init)          (void);
-  int8_t (* DeInit)        (void);
-  int8_t (* OutEvent)      (uint8_t event_idx, uint8_t state);
+  int8_t (* Init)(void);
+  int8_t (* DeInit)(void);
+  int8_t (* OutEvent)(uint8_t event_idx, uint8_t state);
 
-}USBD_CUSTOM_HID_ItfTypeDef;
+} USBD_CUSTOM_HID_ItfTypeDef;
 
 typedef struct
 {
@@ -137,14 +137,14 @@ extern USBD_ClassTypeDef  USBD_CUSTOM_HID;
 /** @defgroup USB_CORE_Exported_Functions
   * @{
   */
-uint8_t USBD_CUSTOM_HID_SendReport (USBD_HandleTypeDef *pdev,
-                                 uint8_t *report,
-                                 uint16_t len);
+uint8_t USBD_CUSTOM_HID_SendReport(USBD_HandleTypeDef *pdev,
+                                   uint8_t *report,
+                                   uint16_t len);
 
 
 
-uint8_t  USBD_CUSTOM_HID_RegisterInterface  (USBD_HandleTypeDef   *pdev,
-                                             USBD_CUSTOM_HID_ItfTypeDef *fops);
+uint8_t  USBD_CUSTOM_HID_RegisterInterface(USBD_HandleTypeDef   *pdev,
+                                           USBD_CUSTOM_HID_ItfTypeDef *fops);
 
 /**
   * @}

@@ -12,7 +12,7 @@
   * This software component is licensed by ST under Ultimate Liberty license
   * SLA0044, the "License"; You may not use this file except in compliance with
   * the License. You may obtain a copy of the License at:
-  *                      http://www.st.com/SLA0044
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -22,7 +22,7 @@
 #define __USBD_CONF_TEMPLATE_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -47,7 +47,7 @@
 #define USBD_MAX_NUM_INTERFACES               1U
 #define USBD_MAX_NUM_CONFIGURATION            1U
 #define USBD_MAX_STR_DESC_SIZ                 0x100U
-#define USBD_SUPPORT_USER_STRING              0U
+#define USBD_SUPPORT_USER_STRING_DESC         0U
 #define USBD_SELF_POWERED                     1U
 #define USBD_DEBUG_LEVEL                      2U
 
@@ -57,18 +57,18 @@
 /* CDC Class Config */
 #define USBD_CDC_INTERVAL                      2000U
 
- /* DFU Class Config */
+/* DFU Class Config */
 #define USBD_DFU_MAX_ITF_NUM                   1U
 #define USBD_DFU_XFERS_IZE                     1024U
 
- /* AUDIO Class Config */
+/* AUDIO Class Config */
 #define USBD_AUDIO_FREQ                       22100U
 
 /** @defgroup USBD_Exported_Macros
   * @{
   */
 
- /* Memory management macros */
+/* Memory management macros */
 #define USBD_malloc               malloc
 #define USBD_free                 free
 #define USBD_memset               memset

@@ -105,6 +105,7 @@
   * @{
   */
 #define FLASH_TIMEOUT_VALUE              50000U /* 50 s */
+
 /**
   * @}
   */
@@ -134,11 +135,11 @@ FLASH_ProcessTypeDef pFlash;
   */
 
 /**
-  * @brief  Program flash word of 256 bits at a specified address
+  * @brief  Program flash word at a specified address
   * @param  TypeProgram Indicate the way to program at a specified address.
   *         This parameter can be a value of @ref FLASH_Type_Program
   * @param  FlashAddress specifies the address to be programmed.
-  * @param  DataAddress specifies the address of data (256 bits) to be programmed
+  * @param  DataAddress specifies the address of data to be programmed
   *
   * @retval HAL_StatusTypeDef HAL Status
   */
@@ -159,7 +160,11 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
   /* Process Locked */
   __HAL_LOCK(&pFlash);
 
+#if defined (FLASH_OPTCR_PG_OTP)
+  if((IS_FLASH_PROGRAM_ADDRESS_BANK1(FlashAddress)) || (IS_FLASH_PROGRAM_ADDRESS_OTP(FlashAddress)))
+#else
   if(IS_FLASH_PROGRAM_ADDRESS_BANK1(FlashAddress))
+#endif /* FLASH_OPTCR_PG_OTP */
   {
     bank = FLASH_BANK_1;
   }
@@ -178,8 +183,18 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
   {
     if(bank == FLASH_BANK_1)
     {
-      /* Set PG bit */
-      SET_BIT(FLASH->CR1, FLASH_CR_PG);
+#if defined (FLASH_OPTCR_PG_OTP)
+      if (TypeProgram == FLASH_TYPEPROGRAM_OTPWORD)
+      {
+        /* Set OTP_PG bit */
+        SET_BIT(FLASH->OPTCR, FLASH_OPTCR_PG_OTP);
+      }
+      else
+#endif /* FLASH_OPTCR_PG_OTP */
+      {
+        /* Set PG bit */
+        SET_BIT(FLASH->CR1, FLASH_CR_PG);
+      }
     }
     else
     {
@@ -190,14 +205,24 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
     __ISB();
     __DSB();
 
-    /* Program the 256 bits flash word */
-    do
+#if defined (FLASH_OPTCR_PG_OTP)
+    if (TypeProgram == FLASH_TYPEPROGRAM_OTPWORD)
     {
-      *dest_addr = *src_addr;
-      dest_addr++;
-      src_addr++;
-      row_index--;
-    } while (row_index != 0U);
+      /* Program an OTP word (16 bits) */
+      *(__IO uint16_t *)FlashAddress = *(__IO uint16_t*)DataAddress;
+    }
+    else
+#endif /* FLASH_OPTCR_PG_OTP */
+    {
+      /* Program the flash word */
+      do
+      {
+        *dest_addr = *src_addr;
+        dest_addr++;
+        src_addr++;
+        row_index--;
+     } while (row_index != 0U);
+    }
 
     __ISB();
     __DSB();
@@ -205,15 +230,25 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
     /* Wait for last operation to be completed */
     status = FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE, bank);
 
-    if(bank == FLASH_BANK_1)
+#if defined (FLASH_OPTCR_PG_OTP)
+    if (TypeProgram == FLASH_TYPEPROGRAM_OTPWORD)
     {
-      /* If the program operation is completed, disable the PG*/
-      CLEAR_BIT(FLASH->CR1, FLASH_CR_PG);
+      /* If the program operation is completed, disable the OTP_PG */
+      CLEAR_BIT(FLASH->OPTCR, FLASH_OPTCR_PG_OTP);
     }
     else
+#endif /* FLASH_OPTCR_PG_OTP */
     {
-      /* If the program operation is completed, disable the PG */
-      CLEAR_BIT(FLASH->CR2, FLASH_CR_PG);
+      if(bank == FLASH_BANK_1)
+      {
+        /* If the program operation is completed, disable the PG */
+        CLEAR_BIT(FLASH->CR1, FLASH_CR_PG);
+      }
+      else
+      {
+        /* If the program operation is completed, disable the PG */
+        CLEAR_BIT(FLASH->CR2, FLASH_CR_PG);
+      }
     }
   }
 
@@ -252,7 +287,11 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddre
   /* Reset error code */
   pFlash.ErrorCode = HAL_FLASH_ERROR_NONE;
 
+#if defined (FLASH_OPTCR_PG_OTP)
+  if((IS_FLASH_PROGRAM_ADDRESS_BANK1(FlashAddress)) || (IS_FLASH_PROGRAM_ADDRESS_OTP(FlashAddress)))
+#else
   if(IS_FLASH_PROGRAM_ADDRESS_BANK1(FlashAddress))
+#endif /* FLASH_OPTCR_PG_OTP */
   {
     bank = FLASH_BANK_1;
   }
@@ -278,12 +317,27 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddre
       /* Set internal variables used by the IRQ handler */
       pFlash.ProcedureOnGoing = FLASH_PROC_PROGRAM_BANK1;
 
-      /* Set PG bit */
-      SET_BIT(FLASH->CR1, FLASH_CR_PG);
+#if defined (FLASH_OPTCR_PG_OTP)
+      if (TypeProgram == FLASH_TYPEPROGRAM_OTPWORD)
+      {
+        /* Set OTP_PG bit */
+        SET_BIT(FLASH->OPTCR, FLASH_OPTCR_PG_OTP);
+      }
+      else
+#endif /* FLASH_OPTCR_PG_OTP */
+      {
+        /* Set PG bit */
+        SET_BIT(FLASH->CR1, FLASH_CR_PG);
+      }
 
       /* Enable End of Operation and Error interrupts for Bank 1 */
+#if defined (FLASH_CR_OPERRIE)
       __HAL_FLASH_ENABLE_IT_BANK1(FLASH_IT_EOP_BANK1     | FLASH_IT_WRPERR_BANK1 | FLASH_IT_PGSERR_BANK1 | \
                                   FLASH_IT_STRBERR_BANK1 | FLASH_IT_INCERR_BANK1 | FLASH_IT_OPERR_BANK1);
+#else
+      __HAL_FLASH_ENABLE_IT_BANK1(FLASH_IT_EOP_BANK1     | FLASH_IT_WRPERR_BANK1 | FLASH_IT_PGSERR_BANK1 | \
+                                  FLASH_IT_STRBERR_BANK1 | FLASH_IT_INCERR_BANK1);
+#endif /* FLASH_CR_OPERRIE */
     }
     else
     {
@@ -293,22 +347,37 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddre
       /* Set PG bit */
       SET_BIT(FLASH->CR2, FLASH_CR_PG);
 
-      /* Enable End of Operation and Error interrupts for Bank2*/
+      /* Enable End of Operation and Error interrupts for Bank2 */
+#if defined (FLASH_CR_OPERRIE)
       __HAL_FLASH_ENABLE_IT_BANK2(FLASH_IT_EOP_BANK2     | FLASH_IT_WRPERR_BANK2 | FLASH_IT_PGSERR_BANK2 | \
                                   FLASH_IT_STRBERR_BANK2 | FLASH_IT_INCERR_BANK2 | FLASH_IT_OPERR_BANK2);
+#else
+      __HAL_FLASH_ENABLE_IT_BANK2(FLASH_IT_EOP_BANK2     | FLASH_IT_WRPERR_BANK2 | FLASH_IT_PGSERR_BANK2 | \
+                                  FLASH_IT_STRBERR_BANK2 | FLASH_IT_INCERR_BANK2);
+#endif /* FLASH_CR_OPERRIE */
     }
 
     __ISB();
     __DSB();
 
-    /* Program the 256 bits flash word */
-    do
+#if defined (FLASH_OPTCR_PG_OTP)
+    if (TypeProgram == FLASH_TYPEPROGRAM_OTPWORD)
     {
-      *dest_addr = *src_addr;
-      dest_addr++;
-      src_addr++;
-      row_index--;
-    } while (row_index != 0U);
+      /* Program an OTP word (16 bits) */
+      *(__IO uint16_t *)FlashAddress = *(__IO uint16_t*)DataAddress;
+    }
+    else
+#endif /* FLASH_OPTCR_PG_OTP */
+    {
+      /* Program the flash word */
+      do
+      {
+        *dest_addr = *src_addr;
+        dest_addr++;
+        src_addr++;
+        row_index--;
+      } while (row_index != 0U);
+    }
 
     __ISB();
     __DSB();
@@ -332,10 +401,10 @@ void HAL_FLASH_IRQHandler(void)
   {
     if(pFlash.ProcedureOnGoing == FLASH_PROC_SECTERASE_BANK1)
     {
-      /*Nb of sector to erased can be decreased*/
+      /* Nb of sector to erased can be decreased */
       pFlash.NbSectorsToErase--;
 
-      /* Check if there are still sectors to erase*/
+      /* Check if there are still sectors to erase */
       if(pFlash.NbSectorsToErase != 0U)
       {
         /* Indicate user which sector has been erased */
@@ -344,7 +413,7 @@ void HAL_FLASH_IRQHandler(void)
         /* Clear bank 1 End of Operation pending bit */
         __HAL_FLASH_CLEAR_FLAG_BANK1(FLASH_FLAG_EOP_BANK1);
 
-        /*Increment sector number*/
+        /* Increment sector number */
         pFlash.Sector++;
         temp = pFlash.Sector;
         FLASH_Erase_Sector(temp, FLASH_BANK_1, pFlash.VoltageForErase);
@@ -395,7 +464,7 @@ void HAL_FLASH_IRQHandler(void)
     }
   }
 
- /* Check FLASH Bank2 End of Operation flag  */
+  /* Check FLASH Bank2 End of Operation flag  */
   if(__HAL_FLASH_GET_FLAG_BANK2(FLASH_SR_EOP) != RESET)
   {
     if(pFlash.ProcedureOnGoing == FLASH_PROC_SECTERASE_BANK2)
@@ -464,8 +533,14 @@ void HAL_FLASH_IRQHandler(void)
   }
 
   /* Check FLASH Bank1 operation error flags */
+#if defined (FLASH_SR_OPERR)
   errorflag = FLASH->SR1 & (FLASH_FLAG_WRPERR_BANK1 | FLASH_FLAG_PGSERR_BANK1 | FLASH_FLAG_STRBERR_BANK1 | \
                             FLASH_FLAG_INCERR_BANK1 | FLASH_FLAG_OPERR_BANK1);
+#else
+  errorflag = FLASH->SR1 & (FLASH_FLAG_WRPERR_BANK1 | FLASH_FLAG_PGSERR_BANK1 | FLASH_FLAG_STRBERR_BANK1 | \
+                            FLASH_FLAG_INCERR_BANK1);
+#endif /* FLASH_SR_OPERR */
+
   if(errorflag != 0U)
   {
     /* Save the error code */
@@ -501,10 +576,14 @@ void HAL_FLASH_IRQHandler(void)
   }
 
   /* Check FLASH Bank2 operation error flags */
+#if defined (FLASH_SR_OPERR)
   errorflag = FLASH->SR2 & ((FLASH_FLAG_WRPERR_BANK2 | FLASH_FLAG_PGSERR_BANK2 | FLASH_FLAG_STRBERR_BANK2 | \
                              FLASH_FLAG_INCERR_BANK2 | FLASH_FLAG_OPERR_BANK2) & 0x7FFFFFFFU);
+#else
+  errorflag = FLASH->SR2 & ((FLASH_FLAG_WRPERR_BANK2 | FLASH_FLAG_PGSERR_BANK2 | FLASH_FLAG_STRBERR_BANK2 | \
+                             FLASH_FLAG_INCERR_BANK2) & 0x7FFFFFFFU);
+#endif /* FLASH_SR_OPERR */
 
- /* Check FLASH Bank2 operation error flags */
   if(errorflag != 0U)
   {
     /* Save the error code */
@@ -541,6 +620,7 @@ void HAL_FLASH_IRQHandler(void)
 
   if(pFlash.ProcedureOnGoing == FLASH_PROC_NONE)
   {
+#if defined (FLASH_CR_OPERRIE)
     /* Disable Bank1 Operation and Error source interrupt */
     __HAL_FLASH_DISABLE_IT_BANK1(FLASH_IT_EOP_BANK1    | FLASH_IT_WRPERR_BANK1 | FLASH_IT_PGSERR_BANK1 | \
                                  FLASH_IT_STRBERR_BANK1 | FLASH_IT_INCERR_BANK1 | FLASH_IT_OPERR_BANK1);
@@ -548,6 +628,15 @@ void HAL_FLASH_IRQHandler(void)
     /* Disable Bank2 Operation and Error source interrupt */
     __HAL_FLASH_DISABLE_IT_BANK2(FLASH_IT_EOP_BANK2    | FLASH_IT_WRPERR_BANK2 | FLASH_IT_PGSERR_BANK2 | \
                                  FLASH_IT_STRBERR_BANK2 | FLASH_IT_INCERR_BANK2 | FLASH_IT_OPERR_BANK2);
+#else
+    /* Disable Bank1 Operation and Error source interrupt */
+    __HAL_FLASH_DISABLE_IT_BANK1(FLASH_IT_EOP_BANK1    | FLASH_IT_WRPERR_BANK1 | FLASH_IT_PGSERR_BANK1 | \
+                                 FLASH_IT_STRBERR_BANK1 | FLASH_IT_INCERR_BANK1);
+
+    /* Disable Bank2 Operation and Error source interrupt */
+    __HAL_FLASH_DISABLE_IT_BANK2(FLASH_IT_EOP_BANK2    | FLASH_IT_WRPERR_BANK2 | FLASH_IT_PGSERR_BANK2 | \
+                                 FLASH_IT_STRBERR_BANK2 | FLASH_IT_INCERR_BANK2);
+#endif /* FLASH_CR_OPERRIE */
 
     /* Process Unlocked */
     __HAL_UNLOCK(&pFlash);
@@ -560,7 +649,7 @@ void HAL_FLASH_IRQHandler(void)
   *                  Mass Erase: Bank number which has been requested to erase
   *                  Sectors Erase: Sector which has been erased
   *                    (if 0xFFFFFFFF, it means that all the selected sectors have been erased)
-  *                  Program Address which was selected for data program
+  *                  Program: Address which was selected for data program
   * @retval None
   */
 __weak void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue)
@@ -859,8 +948,8 @@ HAL_StatusTypeDef FLASH_WaitForLastOperation(uint32_t Timeout, uint32_t Bank)
     errorflag = (FLASH->SR2 & FLASH_FLAG_ALL_ERRORS_BANK2) | 0x80000000U;
   }
 
-  /* In case of error reported in Flash SR1 or SR2 register */
-  if((errorflag & 0x7FFFFFFFU) != 0U)
+  /* In case of error reported in Flash SR1 or SR2 registers (ECCC not managed as an error) */
+  if((errorflag & 0x7DFFFFFFU) != 0U)
   {
     /*Save the error code*/
     pFlash.ErrorCode |= errorflag;

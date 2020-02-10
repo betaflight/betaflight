@@ -92,7 +92,7 @@ typedef struct
 
   uint32_t Class;                        /*!< Specifies the class of the card class           */
 
-  uint32_t RelCardAdd;                   /*!< Specifies the Relative Card Address            */
+  uint32_t RelCardAdd;                   /*!< Specifies the Relative Card Address             */
 
   uint32_t BlockNbr;                     /*!< Specifies the Card Capacity in blocks           */
 
@@ -115,29 +115,29 @@ typedef struct
 {
   MMC_TypeDef                  *Instance;        /*!< MMC registers base address           */
 
-  MMC_InitTypeDef              Init;             /*!< MMC required parameters                         */
+  MMC_InitTypeDef              Init;             /*!< MMC required parameters              */
 
-  HAL_LockTypeDef              Lock;             /*!< MMC locking object                              */
+  HAL_LockTypeDef              Lock;             /*!< MMC locking object                   */
 
-  uint8_t                      *pTxBuffPtr;      /*!< Pointer to MMC Tx transfer Buffer              */
+  uint8_t                      *pTxBuffPtr;      /*!< Pointer to MMC Tx transfer Buffer    */
 
-  uint32_t                     TxXferSize;       /*!< MMC Tx Transfer size                           */
+  uint32_t                     TxXferSize;       /*!< MMC Tx Transfer size                 */
 
-  uint8_t                      *pRxBuffPtr;      /*!< Pointer to MMC Rx transfer Buffer              */
+  uint8_t                      *pRxBuffPtr;      /*!< Pointer to MMC Rx transfer Buffer    */
 
-  uint32_t                     RxXferSize;       /*!< MMC Rx Transfer size                           */
+  uint32_t                     RxXferSize;       /*!< MMC Rx Transfer size                 */
 
-  __IO uint32_t                Context;          /*!< MMC transfer context                           */
+  __IO uint32_t                Context;          /*!< MMC transfer context                 */
 
-  __IO HAL_MMC_StateTypeDef    State;           /*!< MMC card State                                   */
+  __IO HAL_MMC_StateTypeDef    State;            /*!< MMC card State                       */
 
-  __IO uint32_t                ErrorCode;       /*!< MMC Card Error codes                              */
+  __IO uint32_t                ErrorCode;        /*!< MMC Card Error codes                 */
 
-  HAL_MMC_CardInfoTypeDef      MmcCard;           /*!< MMC Card information                 */
+  HAL_MMC_CardInfoTypeDef      MmcCard;          /*!< MMC Card information                 */
 
-  uint32_t                     CSD[4];           /*!< MMC card specific data table         */
+  uint32_t                     CSD[4U];          /*!< MMC card specific data table         */
 
-  uint32_t                     CID[4];           /*!< MMC card identification number table */
+  uint32_t                     CID[4U];          /*!< MMC card identification number table */
 
   uint32_t                     Ext_CSD[128];
 
@@ -283,12 +283,12 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 #define HAL_MMC_ERROR_RX_OVERRUN               SDMMC_ERROR_RX_OVERRUN              /*!< Receive FIFO overrun                                          */
 #define HAL_MMC_ERROR_ADDR_MISALIGNED          SDMMC_ERROR_ADDR_MISALIGNED         /*!< Misaligned address                                            */
 #define HAL_MMC_ERROR_BLOCK_LEN_ERR            SDMMC_ERROR_BLOCK_LEN_ERR           /*!< Transferred block length is not allowed for the card or the
-                                                                                          number of transferred bytes does not match the block length   */
+                                                                                        number of transferred bytes does not match the block length   */
 #define HAL_MMC_ERROR_ERASE_SEQ_ERR            SDMMC_ERROR_ERASE_SEQ_ERR           /*!< An error in the sequence of erase command occurs              */
 #define HAL_MMC_ERROR_BAD_ERASE_PARAM          SDMMC_ERROR_BAD_ERASE_PARAM         /*!< An invalid selection for erase groups                         */
 #define HAL_MMC_ERROR_WRITE_PROT_VIOLATION     SDMMC_ERROR_WRITE_PROT_VIOLATION    /*!< Attempt to program a write protect block                      */
 #define HAL_MMC_ERROR_LOCK_UNLOCK_FAILED       SDMMC_ERROR_LOCK_UNLOCK_FAILED      /*!< Sequence or password error has been detected in unlock
-                                                                                           command or if there was an attempt to access a locked card   */
+                                                                                        command or if there was an attempt to access a locked card    */
 #define HAL_MMC_ERROR_COM_CRC_FAILED           SDMMC_ERROR_COM_CRC_FAILED          /*!< CRC check of the previous command failed                      */
 #define HAL_MMC_ERROR_ILLEGAL_CMD              SDMMC_ERROR_ILLEGAL_CMD             /*!< Command is not legal for the card state                       */
 #define HAL_MMC_ERROR_CARD_ECC_FAILED          SDMMC_ERROR_CARD_ECC_FAILED         /*!< Card internal ECC was applied but failed to correct the data  */
@@ -300,7 +300,7 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 #define HAL_MMC_ERROR_WP_ERASE_SKIP            SDMMC_ERROR_WP_ERASE_SKIP           /*!< Only partial address space was erased                         */
 #define HAL_MMC_ERROR_CARD_ECC_DISABLED        SDMMC_ERROR_CARD_ECC_DISABLED       /*!< Command has been executed without using internal ECC          */
 #define HAL_MMC_ERROR_ERASE_RESET              SDMMC_ERROR_ERASE_RESET             /*!< Erase sequence was cleared before executing because an out
-                                                                                           of erase sequence command was received                       */
+                                                                                        of erase sequence command was received                        */
 #define HAL_MMC_ERROR_AKE_SEQ_ERR              SDMMC_ERROR_AKE_SEQ_ERR             /*!< Error in sequence of authentication                           */
 #define HAL_MMC_ERROR_INVALID_VOLTRANGE        SDMMC_ERROR_INVALID_VOLTRANGE       /*!< Error in case of invalid voltage range                        */
 #define HAL_MMC_ERROR_ADDR_OUT_OF_RANGE        SDMMC_ERROR_ADDR_OUT_OF_RANGE       /*!< Error when addressed block is out of range                    */
@@ -352,7 +352,7 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
   * @{
   */
 #define  MMC_LOW_CAPACITY_CARD     ((uint32_t)0x00000000U)   /*!< MMC Card Capacity <=2Gbytes   */
-#define  MMC_HIGH_CAPACITY_CARD     ((uint32_t)0x00000001U)  /*!< MMC Card Capacity >2Gbytes and <2Tbytes   */
+#define  MMC_HIGH_CAPACITY_CARD    ((uint32_t)0x00000001U)   /*!< MMC Card Capacity >2Gbytes and <2Tbytes   */
 
 /**
   * @}
@@ -368,7 +368,7 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
  * @{
  */
 /** @brief Reset MMC handle state.
-  * @param  __HANDLE__ : MMC handle.
+  * @param  __HANDLE__ MMC Handle.
   * @retval None
   */
 #if defined (USE_HAL_MMC_REGISTER_CALLBACKS) && (USE_HAL_MMC_REGISTER_CALLBACKS == 1U)
@@ -383,8 +383,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 
 /**
   * @brief  Enable the MMC device interrupt.
-  * @param  __HANDLE__: MMC Handle
-  * @param  __INTERRUPT__: specifies the SDMMC interrupt sources to be enabled.
+  * @param  __HANDLE__ MMC Handle.
+  * @param  __INTERRUPT__ specifies the SDMMC interrupt sources to be enabled.
   *         This parameter can be one or a combination of the following values:
   *            @arg SDMMC_IT_CCRCFAIL:   Command response received (CRC check failed) interrupt
   *            @arg SDMMC_IT_DCRCFAIL:   Data block sent/received (CRC check failed) interrupt
@@ -415,8 +415,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 
 /**
   * @brief  Disable the MMC device interrupt.
-  * @param  __HANDLE__: MMC Handle
-  * @param  __INTERRUPT__: specifies the SDMMC interrupt sources to be disabled.
+  * @param  __HANDLE__ MMC Handle.
+  * @param  __INTERRUPT__ specifies the SDMMC interrupt sources to be disabled.
   *          This parameter can be one or a combination of the following values:
   *            @arg SDMMC_IT_CCRCFAIL:   Command response received (CRC check failed) interrupt
   *            @arg SDMMC_IT_DCRCFAIL:   Data block sent/received (CRC check failed) interrupt
@@ -447,8 +447,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 
 /**
   * @brief  Check whether the specified MMC flag is set or not.
-  * @param  __HANDLE__: MMC Handle
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ MMC Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *          This parameter can be one of the following values:
   *            @arg SDMMC_FLAG_CCRCFAIL:   Command response received (CRC check failed)
   *            @arg SDMMC_FLAG_DCRCFAIL:   Data block sent/received (CRC check failed)
@@ -462,8 +462,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
   *            @arg SDMMC_FLAG_DHOLD:      Data transfer Hold
   *            @arg SDMMC_FLAG_DBCKEND:    Data block sent/received (CRC check passed)
   *            @arg SDMMC_FLAG_DABORT:     Data transfer aborted by CMD12
-  *            @arg SDMMC_FLAG_CPSMACT:    Command path state machine active
   *            @arg SDMMC_FLAG_DPSMACT:    Data path state machine active
+  *            @arg SDMMC_FLAG_CPSMACT:    Command path state machine active
   *            @arg SDMMC_FLAG_TXFIFOHE:   Transmit FIFO Half Empty
   *            @arg SDMMC_FLAG_RXFIFOHF:   Receive FIFO Half Full
   *            @arg SDMMC_FLAG_TXFIFOF:    Transmit FIFO full
@@ -485,8 +485,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 
 /**
   * @brief  Clear the MMC's pending flags.
-  * @param  __HANDLE__: MMC Handle
-  * @param  __FLAG__: specifies the flag to clear.
+  * @param  __HANDLE__ MMC Handle.
+  * @param  __FLAG__ specifies the flag to clear.
   *          This parameter can be one or a combination of the following values:
   *            @arg SDMMC_FLAG_CCRCFAIL:   Command response received (CRC check failed)
   *            @arg SDMMC_FLAG_DCRCFAIL:   Data block sent/received (CRC check failed)
@@ -514,8 +514,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 
 /**
   * @brief  Check whether the specified MMC interrupt has occurred or not.
-  * @param  __HANDLE__: MMC Handle
-  * @param  __INTERRUPT__: specifies the SDMMC interrupt source to check.
+  * @param  __HANDLE__ MMC Handle.
+  * @param  __INTERRUPT__ specifies the SDMMC interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg SDMMC_IT_CCRCFAIL:   Command response received (CRC check failed) interrupt
   *            @arg SDMMC_IT_DCRCFAIL:   Data block sent/received (CRC check failed) interrupt
@@ -529,22 +529,16 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
   *            @arg SDMMC_IT_DHOLD:      Data transfer Hold interrupt
   *            @arg SDMMC_IT_DBCKEND:    Data block sent/received (CRC check passed) interrupt
   *            @arg SDMMC_IT_DABORT:     Data transfer aborted by CMD12 interrupt
-  *            @arg SDMMC_IT_DPSMACT:    Data path state machine active interrupt
-  *            @arg SDMMC_IT_CPSMACT:    Command path state machine active interrupt
   *            @arg SDMMC_IT_TXFIFOHE:   Transmit FIFO Half Empty interrupt
   *            @arg SDMMC_IT_RXFIFOHF:   Receive FIFO Half Full interrupt
-  *            @arg SDMMC_IT_TXFIFOF:    Transmit FIFO full interrupt
   *            @arg SDMMC_IT_RXFIFOF:    Receive FIFO full interrupt
   *            @arg SDMMC_IT_TXFIFOE:    Transmit FIFO empty interrupt
-  *            @arg SDMMC_IT_RXFIFOE:    Receive FIFO empty interrupt
-  *            @arg SDMMC_IT_BUSYD0:     Inverted value of SDMMC_D0 line (Busy)
   *            @arg SDMMC_IT_BUSYD0END:  End of SDMMC_D0 Busy following a CMD response detected interrupt
   *            @arg SDMMC_IT_SDIOIT:     SD I/O interrupt received interrupt
   *            @arg SDMMC_IT_ACKFAIL:    Boot Acknowledgment received interrupt
   *            @arg SDMMC_IT_ACKTIMEOUT: Boot Acknowledgment timeout interrupt
   *            @arg SDMMC_IT_VSWEND:     Voltage switch critical timing section completion interrupt
   *            @arg SDMMC_IT_CKSTOP:     SDMMC_CK stopped in Voltage switch procedure interrupt
-  *            @arg SDMMC_IT_IDMATE:     IDMA transfer error interrupt
   *            @arg SDMMC_IT_IDMABTC:    IDMA buffer transfer complete interrupt
   * @retval The new state of MMC IT (SET or RESET).
   */
@@ -552,8 +546,8 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
 
 /**
   * @brief  Clear the MMC's interrupt pending bits.
-  * @param  __HANDLE__: MMC Handle
-  * @param  __INTERRUPT__: specifies the interrupt pending bit to clear.
+  * @param  __HANDLE__ MMC Handle.
+  * @param  __INTERRUPT__ specifies the interrupt pending bit to clear.
   *          This parameter can be one or a combination of the following values:
   *            @arg SDMMC_IT_CCRCFAIL:   Command response received (CRC check failed) interrupt
   *            @arg SDMMC_IT_DCRCFAIL:   Data block sent/received (CRC check failed) interrupt
@@ -567,13 +561,16 @@ typedef void (*pMMC_CallbackTypeDef)           (MMC_HandleTypeDef *hmmc);
   *            @arg SDMMC_IT_DHOLD:      Data transfer Hold interrupt
   *            @arg SDMMC_IT_DBCKEND:    Data block sent/received (CRC check passed) interrupt
   *            @arg SDMMC_IT_DABORT:     Data transfer aborted by CMD12 interrupt
+  *            @arg SDMMC_IT_TXFIFOHE:   Transmit FIFO Half Empty interrupt
+  *            @arg SDMMC_IT_RXFIFOHF:   Receive FIFO Half Full interrupt
+  *            @arg SDMMC_IT_RXFIFOF:    Receive FIFO full interrupt
+  *            @arg SDMMC_IT_TXFIFOE:    Transmit FIFO empty interrupt
   *            @arg SDMMC_IT_BUSYD0END:  End of SDMMC_D0 Busy following a CMD response detected interrupt
   *            @arg SDMMC_IT_SDIOIT:     SD I/O interrupt received interrupt
   *            @arg SDMMC_IT_ACKFAIL:    Boot Acknowledgment received interrupt
   *            @arg SDMMC_IT_ACKTIMEOUT: Boot Acknowledgment timeout interrupt
   *            @arg SDMMC_IT_VSWEND:     Voltage switch critical timing section completion interrupt
   *            @arg SDMMC_IT_CKSTOP:     SDMMC_CK stopped in Voltage switch procedure interrupt
-  *            @arg SDMMC_IT_IDMATE:     IDMA transfer error interrupt
   *            @arg SDMMC_IT_IDMABTC:    IDMA buffer transfer complete interrupt
   * @retval None
   */
@@ -639,6 +636,7 @@ HAL_StatusTypeDef HAL_MMC_UnRegisterCallback(MMC_HandleTypeDef *hmmc, HAL_MMC_Ca
   * @{
   */
 HAL_StatusTypeDef HAL_MMC_ConfigWideBusOperation(MMC_HandleTypeDef *hmmc, uint32_t WideMode);
+HAL_StatusTypeDef HAL_MMC_ConfigSpeedBusOperation(MMC_HandleTypeDef *hmmc, uint32_t SpeedMode);
 /**
   * @}
   */

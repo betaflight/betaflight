@@ -6,7 +6,8 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
   * the "License"; You may not use this file except in compliance with the
@@ -211,7 +212,6 @@ void               HAL_NAND_ITCallback(NAND_HandleTypeDef *hnand);
   */
 
 /* IO operation functions  ****************************************************/
-
 HAL_StatusTypeDef  HAL_NAND_Reset(NAND_HandleTypeDef *hnand);
 
 HAL_StatusTypeDef  HAL_NAND_Read_Page_8b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint8_t *pBuffer, uint32_t NumPageToRead);
@@ -264,6 +264,7 @@ uint32_t              HAL_NAND_Read_Status(NAND_HandleTypeDef *hnand);
 /**
   * @}
   */
+
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
@@ -315,6 +316,11 @@ uint32_t              HAL_NAND_Read_Status(NAND_HandleTypeDef *hnand);
 #define ARRAY_ADDRESS(__ADDRESS__ , __HANDLE__) ((__ADDRESS__)->Page + \
                          (((__ADDRESS__)->Block + (((__ADDRESS__)->Plane) * ((__HANDLE__)->Config.PlaneSize)))* ((__HANDLE__)->Config.BlockSize)))
 
+/**
+  * @brief  NAND memory Column address computation.
+  * @param  __HANDLE__ NAND handle.
+  * @retval NAND Raw address value
+  */
 #define COLUMN_ADDRESS( __HANDLE__) ((__HANDLE__)->Config.PageSize)
 
 /**
@@ -332,7 +338,7 @@ uint32_t              HAL_NAND_Read_Status(NAND_HandleTypeDef *hnand);
   * @param  __ADDRESS__ NAND memory address.
   * @retval NAND Column address cycling value.
   */
-#define COLUMN_1ST_CYCLE(__ADDRESS__)       (uint8_t)(__ADDRESS__)              /* 1st Column addressing cycle */
+#define COLUMN_1ST_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) & 0xFFU)    /* 1st Column addressing cycle */
 #define COLUMN_2ND_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 8)       /* 2nd Column addressing cycle */
 
 /**
