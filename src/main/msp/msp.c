@@ -2672,6 +2672,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->motor_output_limit = sbufReadU8(src);
             currentPidProfile->auto_profile_cell_count = sbufReadU8(src);
             currentPidProfile->idle_min_rpm = sbufReadU8(src);
+        }
         if (sbufBytesRemaining(src) >= 3) {
             // Added in MSP API 1.44
 #if defined(USE_INTERPOLATED_SP)
