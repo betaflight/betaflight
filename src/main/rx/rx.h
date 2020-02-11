@@ -200,6 +200,9 @@ uint8_t getRssiDbm(void);
 void setRssiDbm(uint8_t newRssiDbm, rssiSource_e source);
 void setRssiDbmDirect(uint8_t newRssiDbm, rssiSource_e source);
 
+void rxSetRfMode(uint8_t rfModeValue);
+uint8_t rxGetRfMode(void);
+
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
 void suspendRxPwmPpmSignal(void);

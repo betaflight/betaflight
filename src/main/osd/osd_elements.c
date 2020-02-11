@@ -945,9 +945,10 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 static void osdElementLinkQuality(osdElementParms_t *element)
 {
     uint16_t osdLinkQuality = 0;
-    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-300
-        osdLinkQuality = rxGetLinkQuality()  / 3.41;
-        tfp_sprintf(element->buff, "%c%3d", SYM_LINK_QUALITY, osdLinkQuality);
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
+        osdLinkQuality = rxGetLinkQuality();
+        const uint8_t osdRfMode = rxGetRfMode();
+        tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
     } else { // 0-9
         osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
         if (osdLinkQuality >= 10) {
