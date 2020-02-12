@@ -79,6 +79,7 @@ static pt1Filter_t frameErrFilter;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 static uint16_t linkQuality = 0;
+static uint8_t rfMode = 0;
 #endif
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
@@ -402,6 +403,11 @@ STATIC_UNIT_TESTED uint16_t updateLinkQualitySamples(uint16_t value)
     samples[sampleIndex] = value;
     sampleIndex = (sampleIndex + 1) % LINK_QUALITY_SAMPLE_COUNT;
     return sum / LINK_QUALITY_SAMPLE_COUNT;
+}
+
+void rxSetRfMode(uint8_t rfModeValue)
+{
+    rfMode = rfModeValue;
 }
 #endif
 
@@ -846,9 +852,14 @@ uint16_t rxGetLinkQuality(void)
     return linkQuality;
 }
 
+uint8_t rxGetRfMode(void)
+{
+    return rfMode;
+}
+
 uint16_t rxGetLinkQualityPercent(void)
 {
-    return (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ?  (linkQuality / 3.41) : scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100);
+    return (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ?  linkQuality : scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100);
 }
 #endif
 

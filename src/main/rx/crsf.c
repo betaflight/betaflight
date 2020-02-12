@@ -152,11 +152,6 @@ typedef struct crsfPayloadLinkstatistics_s {
 
 static timeUs_t lastLinkStatisticsFrameUs;
 
-#ifdef USE_RX_LINK_QUALITY_INFO
-STATIC_UNIT_TESTED uint16_t scaleCrsfLq(uint16_t lqvalue) {
-  return (lqvalue % 100) ? ((lqvalue * 3.41) + 1) : (lqvalue * 3.41);
-}
-#endif
 static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, timeUs_t currentTimeUs)
 {
     const crsfLinkStatistics_t stats = *statsPtr;
@@ -172,7 +167,8 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) {
-        setLinkQualityDirect(scaleCrsfLq((stats.rf_Mode * 100) + stats.uplink_Link_quality));
+        setLinkQualityDirect(stats.uplink_Link_quality);
+        rxSetRfMode(stats.rf_Mode);
     }
 #endif
 
@@ -211,6 +207,7 @@ static void crsfCheckRssi(uint32_t currentTimeUs) {
 #ifdef USE_RX_LINK_QUALITY_INFO
         if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) {
             setLinkQualityDirect(0);
+            rxSetRfMode(0);            
         }
 #endif
     }
