@@ -656,7 +656,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteData(dst, &emptySignature, sizeof(emptySignature));
 #endif
 
-        sbufWriteU8(dst, MCU_TYPE_ID);
+        sbufWriteU8(dst, getMcuTypeId());
 
         // Added in API version 1.42
         sbufWriteU8(dst, systemConfig()->configurationState);
