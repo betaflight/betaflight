@@ -130,7 +130,7 @@ static FAST_RAM_ZERO_INIT float airmodeThrottleOffsetLimit;
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 14);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -218,6 +218,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ff_smooth_factor = 37,
         .ff_boost = 15,
         .dyn_lpf_curve_expo = 0,
+        .level_race_mode = false,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -553,6 +554,8 @@ static FAST_RAM_ZERO_INIT bool useIntegratedYaw;
 static FAST_RAM_ZERO_INIT uint8_t integratedYawRelax;
 #endif
 
+static FAST_RAM_ZERO_INIT bool levelRaceMode;
+
 void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
@@ -751,6 +754,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     ffSmoothFactor = 1.0f - ((float)pidProfile->ff_smooth_factor) / 100.0f;
     interpolatedSpInit(pidProfile);
 #endif
+
+    levelRaceMode = pidProfile->level_race_mode;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -1294,6 +1299,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #if defined(USE_ACC)
     const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
     const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive;
+    const bool levelRaceModeActive = levelRaceMode && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && !gpsRescueIsActive;
 
     // Keep track of when we entered a self-level mode so that we can
     // add a guard time before crash recovery can activate.
@@ -1356,8 +1362,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
+        // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
-        if (levelModeActive && (axis != FD_YAW)) {
+        if (levelModeActive && (axis != FD_YAW) && !(levelRaceModeActive && (axis == FD_PITCH))) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 #endif
