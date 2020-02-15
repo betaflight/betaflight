@@ -728,7 +728,7 @@ uint32_t emfat_cma_time_from_unix(uint32_t tim)
 
     /* Days are what is left over (+1) from all that. */
     ymd[2] = day + 1;
-    
+
     return EMFAT_ENCODE_CMA_TIME(ymd[2], ymd[1], ymd[0], hms[0], hms[1], hms[2]);
 }
 

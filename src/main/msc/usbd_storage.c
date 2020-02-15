@@ -21,7 +21,7 @@
 /*
  * Author: jflyper (https://github.com/jflyper)
  */
- 
+
 #include "platform.h"
 #include "common/time.h"
 

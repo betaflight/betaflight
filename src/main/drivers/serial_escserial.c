@@ -947,7 +947,7 @@ bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig
     LED0_OFF;
     LED1_OFF;
     //StopPwmAllMotors();
-    // XXX Review effect of motor refactor 
+    // XXX Review effect of motor refactor
     //pwmDisableMotors();
     motorDisable();
     passPort = escPassthroughPort;

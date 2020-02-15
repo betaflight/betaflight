@@ -45,7 +45,7 @@ typedef void (pgResetFunc)(void * /* base */);
 
 typedef struct pgRegistry_s {
     pgn_t pgn;             // The parameter group number, the top 4 bits are reserved for version
-    uint8_t length;        // The number of elements in the group 
+    uint8_t length;        // The number of elements in the group
     uint16_t size;         // Size of the group in RAM, the top 4 bits are reserved for flags
     uint8_t *address;      // Address of the group in RAM.
     uint8_t *copy;         // Address of the copy in RAM.

@@ -394,7 +394,7 @@ static void validateAndFixConfig(void)
         motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_ON) {
         motorConfigMutable()->dev.useDshotBitbang = DSHOT_BITBANG_AUTO;
     }
-#endif    
+#endif
 
 #ifdef USE_ADC
     adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);

@@ -139,7 +139,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
-    /* 
+    /*
      * Some newer chips require one dummy byte to be read; we can read
      * 4 bytes for these chips while retaining backward compatibility.
      */

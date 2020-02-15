@@ -196,7 +196,7 @@ static const char * const lookupTableGPSSBASMode[] = {
 };
 
 static const char * const lookupTableGPSUBLOXMode[] = {
-    "AIRBORNE", "PEDESTRIAN", "DYNAMIC" 
+    "AIRBORNE", "PEDESTRIAN", "DYNAMIC"
 };
 #endif
 

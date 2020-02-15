@@ -97,7 +97,7 @@ const void *cmsSelectVtx(displayPort_t *pDisplay, const void *ptr)
         vtxDevType_e vtxType = vtxCommonGetDeviceType(device);
 
         switch (vtxType) {
-        
+
 #if defined(USE_VTX_RTC6705)
         case VTXDEV_RTC6705:
             cmsMenuChange(pDisplay, &cmsx_menuVtxRTC6705);

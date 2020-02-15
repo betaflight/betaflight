@@ -163,7 +163,7 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 8);
 #endif
 
 void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
-{ 
+{
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;
     gyroConfig->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
@@ -595,7 +595,7 @@ static void dynLpfFilterInit()
         default:
             dynLpfFilter = DYN_LPF_NONE;
             break;
-        } 
+        }
     } else {
         dynLpfFilter = DYN_LPF_NONE;
     }
@@ -937,7 +937,7 @@ FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 #ifdef USE_GYRO_OVERFLOW_CHECK
 static FAST_CODE_NOINLINE void handleOverflow(timeUs_t currentTimeUs)
 {
-    // This will need to be revised if we ever allow different sensor types to be 
+    // This will need to be revised if we ever allow different sensor types to be
     // used simultaneously. In that case the scale might be different between sensors.
     // It's complicated by the fact that we're using filtered gyro data here which is
     // after both sensors are scaled and averaged.
@@ -970,7 +970,7 @@ static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
         // check for overflow in the axes set in overflowAxisMask
         gyroOverflow_e overflowCheck = GYRO_OVERFLOW_NONE;
 
-        // This will need to be revised if we ever allow different sensor types to be 
+        // This will need to be revised if we ever allow different sensor types to be
         // used simultaneously. In that case the scale might be different between sensors.
         // It's complicated by the fact that we're using filtered gyro data here which is
         // after both sensors are scaled and averaged.

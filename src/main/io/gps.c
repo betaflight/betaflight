@@ -274,7 +274,7 @@ void gpsInit(void)
     gpsSetState(GPS_UNKNOWN);
 
     gpsData.lastMessage = millis();
-    
+
     if (gpsConfig()->provider == GPS_MSP) { // no serial ports used when GPS_MSP is configured
         gpsSetState(GPS_INITIALIZED);
         return;
@@ -543,7 +543,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                     gpsData.messageState = GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE;
                     gpsData.state_position = 0;
                 }
-                if (gpsData.messageState == GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE) {                
+                if (gpsData.messageState == GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE) {
                     if (gpsData.state_position < sizeof(ubloxAirborne)) {
                         if (isSerialTransmitBufferEmpty(gpsPort)) {
                             serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);

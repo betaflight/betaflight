@@ -322,7 +322,7 @@ void adcInit(const adcConfig_t *config)
             // Find an ADC device that can handle this input pin
 
             for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!adcDevice[dev].ADCx 
+                if (!adcDevice[dev].ADCx
 #ifndef USE_DMA_SPEC
                      || !adcDevice[dev].dmaResource
 #endif
@@ -397,9 +397,9 @@ void adcInit(const adcConfig_t *config)
             sConfig.Rank         = adcRegularRank[rank++];      /* Rank of sampled channel number ADCx_CHANNEL */
             sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;  /* Sampling time (number of clock cycles unit) */
             sConfig.SingleDiff   = ADC_SINGLE_ENDED;            /* Single-ended input channel */
-            sConfig.OffsetNumber = ADC_OFFSET_NONE;             /* No offset subtraction */ 
+            sConfig.OffsetNumber = ADC_OFFSET_NONE;             /* No offset subtraction */
             sConfig.Offset = 0;                                 /* Parameter discarded because offset correction is disabled */
-  
+
             if (HAL_ADC_ConfigChannel(&adc->ADCHandle, &sConfig) != HAL_OK) {
                 handleError();
             }
@@ -437,7 +437,7 @@ void adcInit(const adcConfig_t *config)
         HAL_DMA_Init(&adc->DmaHandle);
 
         dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
-  
+
         // Associate the DMA handle
 
         __HAL_LINKDMA(&adc->ADCHandle, DMA_Handle, adc->DmaHandle);
@@ -450,7 +450,7 @@ void adcInit(const adcConfig_t *config)
         // NVIC configuration for DMA Input data interrupt
 
         HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 1, 0);
-        HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);  
+        HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 #endif
     }
 
@@ -521,7 +521,7 @@ adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
 
 uint16_t adcInternalReadTempsensor(void)
 {
-    uint16_t value = adcInternalRead(ADC_TEMPSENSOR); 
+    uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
 adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
     return value;
 }

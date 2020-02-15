@@ -115,7 +115,7 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->rxDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->rxDMAResource;
 #if !(defined(STM32H7) || defined(STM32G4))
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
-#else 
+#else
             uartPort->txDMAHandle.Init.Request = uartPort->rxDMAChannel;
 #endif
             uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
@@ -165,7 +165,7 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
 #if !(defined(STM32H7) || defined(STM32G4))
             uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
-#else 
+#else
             uartPort->txDMAHandle.Init.Request = uartPort->txDMAChannel;
 #endif
             uartPort->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;

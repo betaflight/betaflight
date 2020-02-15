@@ -46,7 +46,7 @@
 
 // FFT_WINDOW_SIZE defaults to 32 (gyroanalyse.h)
 // We get 16 frequency bins from 32 consecutive data values
-// Bin 0 is DC and can't be used.  
+// Bin 0 is DC and can't be used.
 // Only bins 1 to 15 are usable.
 
 // A gyro sample is collected every gyro loop
@@ -59,7 +59,7 @@
 // Note that lower max requires more samples to be averaged, increasing precision but taking longer to get enough samples.
 // For Bosch at 3200Hz gyro, max of 600, int(3200/1200) = 2, fftSamplingRateHz = 1600, range to 800hz
 // For Bosch on XClass, better to set a max of 300, int(3200/600) = 5, fftSamplingRateHz = 640, range to 320Hz
-// 
+//
 // When sampleCount reaches maxSampleCount, the averaged gyro value is put into the circular buffer of 32 samples
 // At 8k, with 600Hz max, maxSampleCount = 6, this happens every 6 * 0.125us, or every 0.75ms
 // Hence to completely replace all 32 samples of the FFT input buffer with clean new data takes 24ms
@@ -78,7 +78,7 @@
 // Calculation steps 1 and 2 then calculate the fft output (32 data points) and put that back into the same fftData[i] array.
 // We then use fftData[i] array for frequency centre calculations for that axis
 
-// Each FFT output bin has width fftSamplingRateHz/32, ie 41.65Hz per bin at 1333Hz 
+// Each FFT output bin has width fftSamplingRateHz/32, ie 41.65Hz per bin at 1333Hz
 // Usable bandwidth is half this, ie 666Hz if fftSamplingRateHz is 1333Hz, i.e. bin 1 is 41.65hz, bin 2 83.3hz etc
 
 #define DYN_NOTCH_SMOOTH_HZ       4
@@ -124,7 +124,7 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     const int gyroLoopRateHz = lrintf((1.0f / targetLooptimeUs) * 1e6f);
     samples = MAX(1, gyroLoopRateHz / (2 * dynNotchMaxHz)); //600hz, 8k looptime, 13.333
 
-    fftSamplingRateHz = gyroLoopRateHz / samples; 
+    fftSamplingRateHz = gyroLoopRateHz / samples;
     // eg 8k, user max 600hz, int(8000/1200) = 6 (6.666), fftSamplingRateHz = 1333hz, range 666Hz
     // eg 4k, user max 600hz, int(4000/1200) = 3 (3.333), fftSamplingRateHz = 1333hz, range 666Hz
     // eg 2k, user max 600hz, int(2000/1200) = 1 (1.666) fftSamplingRateHz = 2000hz, range 1000Hz
@@ -278,7 +278,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
         }
         case STEP_CALC_FREQUENCIES:
         {
-            // identify max bin and max/min heights 
+            // identify max bin and max/min heights
             float dataMax = 0.0f;
             float dataMin = 1.0f;
             uint8_t binMax = 0;

@@ -110,7 +110,7 @@ typedef struct bbPort_s {
 
     uint8_t direction;
 
-#ifdef USE_DMA_REGISTER_CACHE 
+#ifdef USE_DMA_REGISTER_CACHE
     // DMA resource register cache
     dmaRegCache_t dmaRegOutput;
     dmaRegCache_t dmaRegInput;

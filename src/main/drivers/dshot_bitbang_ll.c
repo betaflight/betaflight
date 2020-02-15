@@ -186,7 +186,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 void bbSwitchToInput(bbPort_t *bbPort)
 {
     // Set GPIO to input
-      
+
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         MODIFY_REG(bbPort->gpio->MODER, bbPort->gpioModeMask, bbPort->gpioModeInput);
     }

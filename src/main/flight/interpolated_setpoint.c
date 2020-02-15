@@ -38,7 +38,7 @@ typedef struct laggedMovingAverageCombined_s {
 } laggedMovingAverageCombined_t;
 
 laggedMovingAverageCombined_t  setpointDeltaAvg[XYZ_AXIS_COUNT];
- 
+
 static float prevSetpointSpeed[XYZ_AXIS_COUNT];
 static float prevAcceleration[XYZ_AXIS_COUNT];
 static float prevRawSetpoint[XYZ_AXIS_COUNT];
@@ -63,7 +63,7 @@ void interpolatedSpInit(const pidProfile_t *pidProfile) {
 FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type) {
 
     if (newRcFrame) {
-        float rawSetpoint = getRawSetpoint(axis); 
+        float rawSetpoint = getRawSetpoint(axis);
 
         const float rxInterval = currentRxRefreshRate * 1e-6f;
         const float rxRate = 1.0f / rxInterval;
@@ -80,7 +80,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         }
 
         if (setpointSpeed == 0 && fabsf(rawSetpoint) < 0.98f * ffMaxRate[axis]) {
-            // identical packet detected, not at full deflection.  
+            // identical packet detected, not at full deflection.
             // first packet on leaving full deflection always gets full FF
             if (holdCount[axis] == 0) {
                 // previous packet had movement

@@ -271,7 +271,7 @@ static void setBearing(int16_t desiredHeading)
     }
 
     errorAngle *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-        
+
     // Calculate a desired yaw rate based on a maximum limit beyond
     // an error window and then scale the requested rate down inside
     // the window as error approaches 0.
@@ -329,7 +329,7 @@ static void rescueAttainPosition()
         Altitude controller
     */
     const int16_t altitudeError = rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm;
-    
+
     // P component
     if (ABS(altitudeError) > 0 && ABS(altitudeError) < GPS_RESCUE_ZVELOCITY_THRESHOLD) {
         scalingRate = (float)altitudeError / GPS_RESCUE_ZVELOCITY_THRESHOLD;
@@ -382,7 +382,7 @@ static void performSanityChecks()
     static uint32_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
     static int8_t secondsStalled = 0; // Stalled movement detection
     static uint16_t lastDistanceToHomeM = 0; // Fly Away detection
-    static int8_t secondsFlyingAway = 0; 
+    static int8_t secondsFlyingAway = 0;
     static int8_t secondsLowSats = 0; // Minimum sat detection
 
     const uint32_t currentTimeUs = micros();
@@ -583,24 +583,24 @@ void updateGPSRescueState(void)
         // Minimum distance detection.
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minRescueDth) {
             rescueState.failure = RESCUE_TOO_CLOSE;
-            
+
             // Never allow rescue mode to engage as a failsafe when too close.
             if (rescueState.isFailsafe) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
                 disarm(DISARM_REASON_GPS_RESCUE);
             }
-            
+
             // When not in failsafe mode: leave it up to the sanity check setting.
         }
-        
+
         newSpeed = gpsRescueConfig()->rescueGroundspeed;
-        //set new descent distance if actual distance to home is lower 
+        //set new descent distance if actual distance to home is lower
         if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->descentDistanceM) {
             newDescentDistanceM = MAX(rescueState.sensor.distanceToHomeM - 5, GPS_RESCUE_MIN_DESCENT_DIST_M);
         } else {
             newDescentDistanceM = gpsRescueConfig()->descentDistanceM;
         }
-        
+
         switch (gpsRescueConfig()->altitudeMode) {
             case FIXED_ALT:
                 newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
@@ -653,7 +653,7 @@ void updateGPSRescueState(void)
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
         const int32_t newAlt = MAX((lineSlope * rescueState.sensor.distanceToHomeM + lineOffsetM) * 100, 0);
-        
+
         // Start to decrease proportionally the quad's speed when the distance to home is less or equal than GPS_RESCUE_SLOWDOWN_DISTANCE_M
         if (rescueState.sensor.distanceToHomeM <= GPS_RESCUE_SLOWDOWN_DISTANCE_M) {
             newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHomeM / GPS_RESCUE_SLOWDOWN_DISTANCE_M;
@@ -720,7 +720,7 @@ float gpsRescueGetThrottle(void)
     // is based on the raw rcCommand value commanded by the pilot.
     float commandedThrottle = scaleRangef(rescueThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     commandedThrottle = constrainf(commandedThrottle, 0.0f, 1.0f);
-    
+
     return commandedThrottle;
 }
 

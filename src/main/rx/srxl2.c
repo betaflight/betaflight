@@ -244,11 +244,11 @@ bool srxl2ProcessControlData(const Srxl2Header* header, rxRuntimeState_t *rxRunt
 bool srxl2ProcessPacket(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeState)
 {
     switch (header->packetType) {
-    case Handshake: 
+    case Handshake:
         return srxl2ProcessHandshake(header);
-    case ControlData: 
+    case ControlData:
         return srxl2ProcessControlData(header, rxRuntimeState);
-    default: 
+    default:
         DEBUG_PRINTF("Other packet type, ID: %x \r\n", header->packetType);
         break;
     }
@@ -474,7 +474,7 @@ void srxl2RxWriteData(const void *data, int len)
     const uint16_t crc = crc16_ccitt_update(0, (uint8_t*)data, len - 2);
     ((uint8_t*)data)[len-2] = ((uint8_t *) &crc)[1] & 0xFF;
     ((uint8_t*)data)[len-1] = ((uint8_t *) &crc)[0] & 0xFF;
-    
+
     len = MIN(len, (int)sizeof(writeBuffer));
     memcpy(writeBuffer, data, len);
     writeBufferIdx = len;

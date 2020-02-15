@@ -2389,7 +2389,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_RESET_CURR_PID:
         resetPidProfile(currentPidProfile);
         break;
-        
+
     case MSP_SET_SENSOR_ALIGNMENT: {
         // maintain backwards compatibility for API < 1.41
         const uint8_t gyroAlignment = sbufReadU8(src);
@@ -2537,7 +2537,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
         }
-        
+
 
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();

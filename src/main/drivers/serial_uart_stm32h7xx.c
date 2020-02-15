@@ -194,14 +194,14 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA1),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PA11), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PB8),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PD0),  GPIO_AF8_UART4 }
         },
         .txPins = {
             { DEFIO_TAG_E(PA0),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PA12), GPIO_AF6_UART4 },
             { DEFIO_TAG_E(PB9),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },         
+            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PD1),  GPIO_AF8_UART4 }
         },
         .rcc_apb1 = RCC_APB1L(UART4),
