@@ -1490,6 +1490,14 @@ static void osdElementWarnings(osdElementParms_t *element)
     }
 #endif // USE_RC_SMOOTHING_FILTER
 
+    // Show warning if mah consumed is over the configured limit
+    if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
+        tfp_sprintf(element->buff, "OVER CAP");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+
     // Show warning if battery is not fresh
     if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !(ARMING_FLAG(ARMED) || ARMING_FLAG(WAS_EVER_ARMED)) && (getBatteryState() == BATTERY_OK)
           && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
