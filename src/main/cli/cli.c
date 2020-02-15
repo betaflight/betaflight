@@ -258,7 +258,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
-static const char * const sensorTypeNames[] = {
+static const char *const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "GPS", "GPS+MAG", NULL
 };
 
@@ -268,6 +268,25 @@ static const char * const *sensorHardwareNames[] = {
     lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware
 };
 #endif // USE_SENSOR_NAMES
+
+// Needs to be aligned with mcuTypeId_e
+static const char *mcuTypeNames[] = {
+    "SIMULATOR",
+    "F103",
+    "F303",
+    "F40X",
+    "F411",
+    "F446",
+    "F722",
+    "F745",
+    "F746",
+    "F765",
+    "H750",
+    "H743 (Rev Unknown)",
+    "H743 (Rev.Y)",
+    "H743 (Rev.X)",
+    "H743 (Rev.V)",
+};
 
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
@@ -289,7 +308,7 @@ typedef enum {
     REBOOT_TARGET_BOOTLOADER_FLASH,
 } rebootTarget_e;
 
-typedef struct serialPassthroughPort_e {
+typedef struct serialPassthroughPort_s {
     int id;
     uint32_t baud;
     unsigned mode;
@@ -4537,13 +4556,22 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
     }
 }
 
+const char *getMcuTypeById(mcuTypeId_e id)
+{
+    if (id < MCU_TYPE_UNKNOWN) {
+        return mcuTypeNames[id];
+    } else {
+        return "UNKNOWN";
+    }
+}
+
 static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf("MCU %s Clock=%dMHz", MCU_TYPE_NAME, (SystemCoreClock / 1000000));
+    cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
 
 #ifdef STM32F4
     // Only F4 is capable of switching between HSE/HSI (for now)

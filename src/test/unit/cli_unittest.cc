@@ -358,4 +358,5 @@ bool isModeActivationConditionConfigured(const modeActivationCondition_t *, cons
 
 void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
+mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
 }
