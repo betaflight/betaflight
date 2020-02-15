@@ -44,6 +44,7 @@ static float prevAcceleration[XYZ_AXIS_COUNT];
 static float prevRawSetpoint[XYZ_AXIS_COUNT];
 static float prevDeltaImpl[XYZ_AXIS_COUNT];
 static bool bigStep[XYZ_AXIS_COUNT];
+static uint8_t averagingCount;
 
 // Configuration
 static float ffMaxRateLimit[XYZ_AXIS_COUNT];
@@ -51,11 +52,11 @@ static float ffMaxRate[XYZ_AXIS_COUNT];
 
 void interpolatedSpInit(const pidProfile_t *pidProfile) {
     const float ffMaxRateScale = pidProfile->ff_max_rate_limit * 0.01f;
-    uint8_t j = pidProfile->ff_interpolate_sp;
+    averagingCount = pidProfile->ff_interpolate_sp;
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         ffMaxRate[i] = applyCurve(i, 1.0f);
         ffMaxRateLimit[i] = ffMaxRate[i] * ffMaxRateScale;
-        laggedMovingAverageInit(&setpointDeltaAvg[i].filter, j, (float *)&setpointDeltaAvg[i].buf[0]);
+        laggedMovingAverageInit(&setpointDeltaAvg[i].filter, averagingCount, (float *)&setpointDeltaAvg[i].buf[0]);
     }
 }
 
@@ -113,22 +114,27 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
                 } else if (holdCount[axis] == 2) {
                     // interpolation was not applied
                 } else if (holdCount[axis] == 3) {
-                    // after persistent flat period or recent big step up, no boost
-                    // reduces jitter from boost when flying smoothly
+                    // after persistent flat period, no boost
+                    // reduces jitter from boost when flying smooth lines
+                    // but only when no ff_averaging is active, eg hard core race setups
                     // WARNING: this means no boost if ADC is active on FrSky radios
-                    setpointAccelerationModified = 0.0f;
+                    if (averagingCount > 1) {
+                        setpointAccelerationModified /= averagingCount;
+                    }
                 }
                 holdCount[axis] = 0;
             }
         }
 
-        // smooth deadband type suppression of FF when sticks are centred.
-        const float rawSetpointCentred = fabsf(rawSetpoint) / 2.0f;
-        if (rawSetpointCentred < 1.0f) {
-            // force zero FF when sticks are centred for smoothness
-            setpointSpeedModified *= rawSetpointCentred;
-            setpointAccelerationModified *= rawSetpointCentred;
-            holdCount[axis] = 4;
+        // smooth deadband type suppression of FF jitter when sticks are at or returning to centre
+        // only when ff_averaging is 3 or more, for HD or cinematic flying
+        if (averagingCount > 2) {
+            const float rawSetpointCentred = fabsf(rawSetpoint) / averagingCount;
+            if (rawSetpointCentred < 1.0f) {
+                setpointSpeedModified *= rawSetpointCentred;
+                setpointAccelerationModified *= rawSetpointCentred;
+                holdCount[axis] = 4;
+            }
         }
 
         setpointDeltaImpl[axis] = setpointSpeedModified * pidGetDT();
