@@ -665,8 +665,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxType = pidProfile->iterm_relax_type;
     itermRelaxCutoff = pidProfile->iterm_relax_cutoff;
-    // adapt setpoint threshold to user changes from default cutoff value
-    itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD * ITERM_RELAX_CUTOFF_DEFAULT / itermRelaxCutoff;
+    itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD;
 #endif
 
 #ifdef USE_ACRO_TRAINER
