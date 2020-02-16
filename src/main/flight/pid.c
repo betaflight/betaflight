@@ -283,7 +283,6 @@ static FAST_RAM_ZERO_INIT pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
 static FAST_RAM_ZERO_INIT uint8_t itermRelax;
 static FAST_RAM_ZERO_INIT uint8_t itermRelaxType;
 static uint8_t itermRelaxCutoff;
-static FAST_RAM_ZERO_INIT float itermRelaxSetpointThreshold;
 #endif
 
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -668,8 +667,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     itermRelax = pidProfile->iterm_relax;
     itermRelaxType = pidProfile->iterm_relax_type;
     itermRelaxCutoff = pidProfile->iterm_relax_cutoff;
-    // adapt setpoint threshold to user changes from default cutoff value
-    itermRelaxSetpointThreshold = ITERM_RELAX_SETPOINT_THRESHOLD * ITERM_RELAX_CUTOFF_DEFAULT / itermRelaxCutoff;
 #endif
 
 #ifdef USE_ACRO_TRAINER
@@ -1166,7 +1163,7 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 
     if (itermRelax) {
         if (axis < FD_YAW || itermRelax == ITERM_RELAX_RPY || itermRelax == ITERM_RELAX_RPY_INC) {
-            const float itermRelaxFactor = MAX(0, 1 - setpointHpf / itermRelaxSetpointThreshold);
+            const float itermRelaxFactor = MAX(0, 1 - setpointHpf / ITERM_RELAX_SETPOINT_THRESHOLD);
             const bool isDecreasingI =
                 ((iterm > 0) && (*itermErrorRate < 0)) || ((iterm < 0) && (*itermErrorRate > 0));
             if ((itermRelax >= ITERM_RELAX_RP_INC) && isDecreasingI) {

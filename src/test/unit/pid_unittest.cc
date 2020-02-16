@@ -542,9 +542,9 @@ TEST(pidControllerTest, testItermRelax) {
     EXPECT_NEAR(-8.16, itermErrorRate, calculateTolerance(-8.16));
     currentPidSetpoint += ITERM_RELAX_SETPOINT_THRESHOLD;
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_NEAR(-2.69, itermErrorRate, calculateTolerance(-2.69));
+    EXPECT_NEAR(0, itermErrorRate, calculateTolerance(0));
     applyItermRelax(FD_PITCH, pidData[FD_PITCH].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_NEAR(-0.84, itermErrorRate, calculateTolerance(-0.84));
+    EXPECT_NEAR(0, itermErrorRate, calculateTolerance(0));
 
     pidProfile->iterm_relax_type = ITERM_RELAX_GYRO;
     pidInit(pidProfile);
@@ -588,7 +588,7 @@ TEST(pidControllerTest, testItermRelax) {
     pidProfile->iterm_relax = ITERM_RELAX_RPY;
     pidInit(pidProfile);
     applyItermRelax(FD_YAW, pidData[FD_YAW].I, gyroRate, &itermErrorRate, &currentPidSetpoint);
-    EXPECT_NEAR(-6.46, itermErrorRate, calculateTolerance(-3.6));
+    EXPECT_NEAR(-3.6, itermErrorRate, calculateTolerance(-3.6));
 }
 
 // TODO - Add more tests
