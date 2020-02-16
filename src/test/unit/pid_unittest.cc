@@ -143,6 +143,7 @@ void setDefaultTestSettings(void) {
     pidProfile->abs_control_gain = 0,
     pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
     pidProfile->launchControlGain = 40,
+    pidProfile->level_race_mode = false,
 
     gyro.targetLooptime = 8000;
 }
