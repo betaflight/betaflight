@@ -370,6 +370,11 @@ static uint8_t cmsx_iterm_relax_type;
 static uint8_t cmsx_iterm_relax_cutoff;
 #endif
 
+#ifdef USE_INTERPOLATED_SP
+static uint8_t cmsx_ff_interpolate_sp;
+static uint8_t cmsx_ff_smooth_factor;
+#endif
+
 static const void *cmsx_profileOtherOnEnter(void)
 {
     setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
@@ -402,6 +407,11 @@ static const void *cmsx_profileOtherOnEnter(void)
     cmsx_iterm_relax = pidProfile->iterm_relax;
     cmsx_iterm_relax_type = pidProfile->iterm_relax_type;
     cmsx_iterm_relax_cutoff = pidProfile->iterm_relax_cutoff;
+#endif
+
+#ifdef USE_INTERPOLATED_SP
+    cmsx_ff_interpolate_sp = pidProfile->ff_interpolate_sp;
+    cmsx_ff_smooth_factor = pidProfile->ff_smooth_factor;
 #endif
 
     return NULL;
@@ -441,6 +451,11 @@ static const void *cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->iterm_relax_cutoff = cmsx_iterm_relax_cutoff;
 #endif
 
+#ifdef USE_INTERPOLATED_SP
+    pidProfile->ff_interpolate_sp = cmsx_ff_interpolate_sp;
+    pidProfile->ff_smooth_factor = cmsx_ff_smooth_factor;
+#endif
+
     initEscEndpoints();
     return NULL;
 }
@@ -448,7 +463,11 @@ static const void *cmsx_profileOtherOnExit(const OSD_Entry *self)
 static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
-    { "FF TRANS",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
+    { "FF TRANS",      OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
+#ifdef USE_INTERPOLATED_SP
+    { "FF MODE",       OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_ff_interpolate_sp,  4, lookupTableInterpolatedSetpoint}, 0 },
+    { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_smooth_factor,     0,     75,   1  }   , 0 },
+#endif
     { "FF BOOST",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_boost,               0,     50,   1  }   , 0 },
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }   , 0 },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }   , 0 },
