@@ -539,8 +539,19 @@ void init(void)
 
     // Configure MCO output after config is stable
 #ifdef USE_MCO
-    mcoInit(mcoConfig());
+    // Note that mcoConfigure must be augmented with an additional argument to
+    // indicate which device instance to configure when MCO and MCO2 are both supported
+
+#if defined(STM32F4) || defined(STM32F7)
+    // F4 and F7 support MCO on PA8 and MCO2 on PC9, but only MCO2 is supported for now
+    mcoConfigure(MCODEV_2, mcoConfig(MCODEV_2));
+#elif defined(STM32G4)
+    // G4 only supports one MCO on PA8
+    mcoConfigure(MCODEV_1, mcoConfig(MCODEV_1));
+#else
+#error Unsupported MCU
 #endif
+#endif // USE_MCO
 
 #ifdef USE_TIMER
     timerInit();  // timer must be initialized before any channel is allocated
