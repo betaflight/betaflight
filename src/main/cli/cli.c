@@ -5752,15 +5752,9 @@ static void cliTimer(char *cmdline)
                 return;
             }
         } else if (strcasecmp(pch, "none") != 0) {
-            timerIndex = atoi(pch);
+            cliPrintErrorLinef("INVALID TIMER OPTION FOR %c%02d: '%s'", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), pch);
 
-            const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIndex + 1);
-
-            if (!timer) {
-                cliPrintErrorLinef("INVALID TIMER OPTION FOR %c%02d: '%s'", IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag), pch);
-
-                return;
-            }
+            return;
         }
 
         int oldTimerIndex = isExistingTimerOpt ? timerIOConfig(timerIOIndex)->index - 1 : -1;
