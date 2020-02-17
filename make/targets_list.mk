@@ -170,7 +170,7 @@ LEGACY_TARGETS := MATEKF405 \
 CI_TARGETS := $(filter-out $(LEGACY_TARGETS) $(UNSUPPORTED_TARGETS), $(VALID_TARGETS))
 
 TARGETS_TOTAL := $(words $(CI_TARGETS))
-TARGET_GROUPS := 6
+TARGET_GROUPS := 3
 TARGETS_PER_GROUP := $(shell expr $(TARGETS_TOTAL) / $(TARGET_GROUPS) )
 
 ST := 1
@@ -181,16 +181,4 @@ ST := $(shell expr $(ET) + 1)
 ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
 GROUP_2_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
 
-ST := $(shell expr $(ET) + 1)
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_3_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
-
-ST := $(shell expr $(ET) + 1)
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_4_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
-
-ST := $(shell expr $(ET) + 1)
-ET := $(shell expr $(ST) + $(TARGETS_PER_GROUP))
-GROUP_5_TARGETS := $(wordlist $(ST), $(ET), $(CI_TARGETS))
-
-GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS) $(GROUP_5_TARGETS), $(CI_TARGETS))
+GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS), $(CI_TARGETS))
