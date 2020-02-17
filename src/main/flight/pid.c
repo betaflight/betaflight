@@ -1636,7 +1636,7 @@ void dynLpfDTermUpdate(float throttle)
 float dynDtermLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo) {
     const float expof = expo / 10.0f;
     static float curve;
-    curve = 2 * throttle * (1 - throttle) * expof + powerf(throttle, 2);
+    curve = throttle * (1 - throttle) * expof + throttle;
     return (dynLpfMax - dynLpfMin) * curve + dynLpfMin;
 }
 
