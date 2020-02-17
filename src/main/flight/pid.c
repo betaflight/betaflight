@@ -62,6 +62,12 @@
 
 #include "pid.h"
 
+typedef enum {
+    LEVEL_MODE_OFF = 0,
+    LEVEL_MODE_R,
+    LEVEL_MODE_RP,
+} levelMode_e;
+
 const char pidNames[] =
     "ROLL;"
     "PITCH;"
@@ -1295,13 +1301,21 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #if defined(USE_ACC)
     const bool gpsRescueIsActive = FLIGHT_MODE(GPS_RESCUE_MODE);
-    const bool levelModeActive = FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive;
-    const bool levelRaceModeActive = levelRaceMode && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && !gpsRescueIsActive;
+    levelMode_e levelMode;
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || gpsRescueIsActive) {
+        if (levelRaceMode && !gpsRescueIsActive) {
+            levelMode = LEVEL_MODE_R;
+        } else {
+            levelMode = LEVEL_MODE_RP;
+        }
+    } else {
+        levelMode = LEVEL_MODE_OFF;
+    }
 
     // Keep track of when we entered a self-level mode so that we can
     // add a guard time before crash recovery can activate.
     // Also reset the guard time whenever GPS Rescue is activated.
-    if (levelModeActive) {
+    if (levelMode) {
         if ((levelModeStartTimeUs == 0) || (gpsRescueIsActive && !gpsRescuePreviousState)) {
             levelModeStartTimeUs = currentTimeUs;
         }
@@ -1361,7 +1375,20 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
-        if (levelModeActive && (axis != FD_YAW) && !(levelRaceModeActive && (axis == FD_PITCH))) {
+        switch (levelMode) {
+        case LEVEL_MODE_OFF:
+
+            break;
+        case LEVEL_MODE_R:
+            if (axis == FD_PITCH) {
+                break;
+            }
+
+            FALLTHROUGH;
+        case LEVEL_MODE_RP:
+            if (axis == FD_YAW) {
+                break;
+            }
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 #endif
