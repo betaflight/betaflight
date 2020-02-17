@@ -4068,7 +4068,7 @@ static void cliDumpPidProfile(uint8_t pidProfileIndex, dumpFlags_t dumpMask)
 
     cliPrintLinefeed();
     cliProfile("");
-    
+
     char profileStr[10];
     tfp_sprintf(profileStr, "profile %d", pidProfileIndex);
     dumpAllValues(PROFILE_VALUE, dumpMask, profileStr);
@@ -6391,7 +6391,7 @@ static void cliHelp(char *cmdline)
                ) {
                 printEntry = true;
             }
-        } 
+        }
 
         if (printEntry) {
             anyMatches = true;

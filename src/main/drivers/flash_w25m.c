@@ -21,7 +21,7 @@
 /*
  * Winbond W25M series stacked die flash driver.
  * Handles homogeneous stack of identical dies by calling die drivers.
- * 
+ *
  * Author: jflyper
  */
 

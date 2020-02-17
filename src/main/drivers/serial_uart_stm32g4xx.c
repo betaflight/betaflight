@@ -179,10 +179,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART4_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PC11), GPIO_AF5_UART4 },         
+            { DEFIO_TAG_E(PC11), GPIO_AF5_UART4 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PC10), GPIO_AF5_UART4 },         
+            { DEFIO_TAG_E(PC10), GPIO_AF5_UART4 },
         },
         .rcc_apb1 = RCC_APB11(UART4),
         .rxIrq = UART4_IRQn,

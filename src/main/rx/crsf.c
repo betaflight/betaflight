@@ -207,7 +207,7 @@ static void crsfCheckRssi(uint32_t currentTimeUs) {
 #ifdef USE_RX_LINK_QUALITY_INFO
         if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) {
             setLinkQualityDirect(0);
-            rxSetRfMode(0);            
+            rxSetRfMode(0);
         }
 #endif
     }

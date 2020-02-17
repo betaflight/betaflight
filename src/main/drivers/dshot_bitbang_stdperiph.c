@@ -182,7 +182,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
     dbgPinHi(1);
 
     // Set GPIO to input
-      
+
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         MODIFY_REG(bbPort->gpio->MODER, bbPort->gpioModeMask, bbPort->gpioModeInput);
     }

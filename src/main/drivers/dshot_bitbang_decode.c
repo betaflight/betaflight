@@ -52,16 +52,16 @@ static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t coun
     static const uint32_t decode[32] = {
         iv, iv, iv, iv, iv, iv, iv, iv, iv, 9, 10, 11, iv, 13, 14, 15,
         iv, iv, 2, 3, iv, 5, 6, 7, iv, 0, 8, 1, iv, 4, 12, iv };
-    
+
     uint32_t decodedValue = decode[value & 0x1f];
     decodedValue |= decode[(value >> 5) & 0x1f] << 4;
     decodedValue |= decode[(value >> 10) & 0x1f] << 8;
     decodedValue |= decode[(value >> 15) & 0x1f] << 12;
-    
+
     uint32_t csum = decodedValue;
     csum = csum ^ (csum >> 8); // xor bytes
     csum = csum ^ (csum >> 4); // xor nibbles
-    
+
     if ((csum & 0xf) != 0xf || decodedValue > 0xffff) {
 #ifdef DEBUG_BBDECODE
         memcpy(dshotTelemetryState.inputBuffer, sequence, sizeof(sequence));
@@ -72,7 +72,7 @@ static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t coun
         value = BB_INVALID;
     } else {
         value = decodedValue >> 4;
-        
+
         if (value == 0x0fff) {
             return 0;
         }
@@ -189,7 +189,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     if (nlen < 0) {
         value = BB_INVALID;
     }
-    
+
 #ifdef DEBUG_BBDECODE
     sequence[sequenceIndex] = sequence[sequenceIndex] + (nlen) * 3;
     sequenceIndex++;

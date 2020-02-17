@@ -226,7 +226,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
             if (edges > MIN_GCR_EDGES) {
                 dshotTelemetryState.readCount++;
                 value = decodeTelemetryPacket(dmaMotors[i].dmaBuffer, edges);
-                
+
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 bool validTelemetryPacket = false;
 #endif

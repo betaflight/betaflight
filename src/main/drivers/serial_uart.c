@@ -100,16 +100,16 @@ UART_BUFFERS(8);
 #undef UART_BUFFERS
 
 serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
-{   
+{
     uartPort_t *s = serialUART(device, baudRate, mode, options);
-    
+
     if (!s)
         return (serialPort_t *)s;
-    
+
 #ifdef USE_DMA
     s->txDMAEmpty = true;
 #endif
-    
+
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
@@ -119,9 +119,9 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
     s->port.mode = mode;
     s->port.baudRate = baudRate;
     s->port.options = options;
-    
+
     uartReconfigure(s);
-    
+
     return (serialPort_t *)s;
 }
 

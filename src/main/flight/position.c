@@ -143,8 +143,8 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     }
     baroAlt -= baroAltOffset;
     gpsAlt -= gpsAltOffset;
-    
-    
+
+
     if (haveGpsAlt && haveBaroAlt && positionConfig()->altSource == DEFAULT) {
         estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
 #ifdef USE_VARIO
@@ -162,9 +162,9 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
         estimatedVario = calculateEstimatedVario(baroAlt, dTime);
 #endif
     }
-    
+
 	
-    
+
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
     DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);

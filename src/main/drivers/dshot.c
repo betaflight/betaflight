@@ -106,7 +106,7 @@ uint16_t dshotConvertToExternal(float motorValue)
 }
 
 FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
-{   
+{
     uint16_t packet;
 
     ATOMIC_BLOCK(NVIC_PRIO_DSHOT_DMA) {
@@ -115,14 +115,14 @@ FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
     }
 
     // compute checksum
-    unsigned csum = 0; 
+    unsigned csum = 0;
     unsigned csum_data = packet;
     for (int i = 0; i < 3; i++) {
         csum ^=  csum_data;   // xor data by nibbles
         csum_data >>= 4;
     }
     // append checksum
-#ifdef USE_DSHOT_TELEMETRY 
+#ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         csum = ~csum;
     }

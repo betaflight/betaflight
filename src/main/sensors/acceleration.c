@@ -353,7 +353,7 @@ bool accInit(uint16_t accSampleRateHz)
 #ifdef USE_MULTI_GYRO
     if (gyroConfig()->gyro_to_use == GYRO_CONFIG_USE_GYRO_2) {
         alignment = gyroDeviceConfig(1)->alignment;
-    
+
         customAlignment = &gyroDeviceConfig(1)->customAlignment;
     }
 #endif

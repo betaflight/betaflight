@@ -523,9 +523,9 @@ static uint32_t currentPage = UINT32_MAX;
 void w25n01g_pageProgramFinish(flashDevice_t *fdevice)
 {
     if (bufferDirty && W25N01G_LINEAR_TO_COLUMN(programLoadAddress) == 0) {
-        
+
         currentPage = W25N01G_LINEAR_TO_PAGE(programStartAddress); // reset page to the page being written
-        
+
         w25n01g_programExecute(fdevice, W25N01G_LINEAR_TO_PAGE(programStartAddress));
 
         bufferDirty = false;

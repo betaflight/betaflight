@@ -77,40 +77,40 @@ void dshotSetPidLoopTime(uint32_t pidLoopTime)
 }
 
 static FAST_CODE bool dshotCommandQueueFull()
-{   
+{
     return (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueTail;
-}   
-    
+}
+
 FAST_CODE bool dshotCommandQueueEmpty(void)
-{   
+{
     return commandQueueHead == commandQueueTail;
-}       
+}
 
 static FAST_CODE bool isLastDshotCommand(void)
-{   
+{
     return ((commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueHead);
-}   
-    
+}
+
 FAST_CODE bool dshotCommandIsProcessing(void)
-{       
+{
     if (dshotCommandQueueEmpty()) {
         return false;
     }
     dshotCommandControl_t* command = &commandQueue[commandQueueTail];
     const bool commandIsProcessing = command->state == DSHOT_COMMAND_STATE_STARTDELAY
-                                     || command->state == DSHOT_COMMAND_STATE_ACTIVE   
+                                     || command->state == DSHOT_COMMAND_STATE_ACTIVE
                                      || (command->state == DSHOT_COMMAND_STATE_POSTDELAY && !isLastDshotCommand());
     return commandIsProcessing;
 }
 
 static FAST_CODE bool dshotCommandQueueUpdate(void)
-{   
+{
     if (!dshotCommandQueueEmpty()) {
         commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
         if (!dshotCommandQueueEmpty()) {
-            // There is another command in the queue so update it so it's ready to output in   
-            // sequence. It can go directly to the DSHOT_COMMAND_STATE_ACTIVE state and bypass 
-            // the DSHOT_COMMAND_STATE_IDLEWAIT and DSHOT_COMMAND_STATE_STARTDELAY states.     
+            // There is another command in the queue so update it so it's ready to output in
+            // sequence. It can go directly to the DSHOT_COMMAND_STATE_ACTIVE state and bypass
+            // the DSHOT_COMMAND_STATE_IDLEWAIT and DSHOT_COMMAND_STATE_STARTDELAY states.
             dshotCommandControl_t* nextCommand = &commandQueue[commandQueueTail];
             nextCommand->state = DSHOT_COMMAND_STATE_ACTIVE;
             nextCommand->nextCommandCycleDelay = 0;

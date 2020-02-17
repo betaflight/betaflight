@@ -43,7 +43,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->dev.useUnsyncedPwm = true;
 #else
-#ifdef USE_BRUSHED_ESC_AUTODETECT 
+#ifdef USE_BRUSHED_ESC_AUTODETECT
     if (getDetectedMotorType() == MOTOR_BRUSHED) {
         motorConfig->minthrottle = 1000;
         motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
@@ -51,7 +51,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
         motorConfig->dev.useUnsyncedPwm = true;
     } else
 #endif // USE_BRUSHED_ESC_AUTODETECT
-    {   
+    {
         motorConfig->minthrottle = 1070;
         motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
         motorConfig->dev.motorPwmProtocol = PWM_TYPE_ONESHOT125;
@@ -68,10 +68,10 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
 #ifdef USE_TIMER
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
-        motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex);   
+        motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex);
     }
 #endif
-    
+
     motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
 
 #ifdef USE_DSHOT_BITBANG

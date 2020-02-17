@@ -181,9 +181,9 @@ typedef struct pidProfile_s {
     uint8_t idle_min_rpm;                   // minimum motor speed enforced by integrating p controller
     uint8_t idle_adjustment_speed;          // how quickly the integrating p controller tries to correct
     uint8_t idle_p;                         // kP
-    uint8_t idle_pid_limit;                 // max P 
+    uint8_t idle_pid_limit;                 // max P
     uint8_t idle_max_increase;              // max integrated correction
-    
+
     uint8_t ff_interpolate_sp;              // Calculate FF from interpolated setpoint
     uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
     uint8_t ff_spike_limit;                 // FF stick extrapolation lookahead period in ms

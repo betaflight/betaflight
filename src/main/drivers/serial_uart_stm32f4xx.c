@@ -52,7 +52,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1_TX_DMA
         .txDMAResource = (dmaResource_t *)DMA2_Stream7,
 #endif
-        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) }, 
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB7) },
 #if defined (STM32F411xE)
             { DEFIO_TAG_E(PB3) },
 #endif

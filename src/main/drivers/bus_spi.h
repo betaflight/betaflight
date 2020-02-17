@@ -83,7 +83,7 @@ typedef enum {
 
 // De facto standard mode
 // See https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
-// 
+//
 // Mode CPOL CPHA
 //  0    0    0
 //  1    0    1

@@ -75,7 +75,7 @@ static void rcdeviceCameraControlProcess(void)
         uint8_t switchIndex = i - BOXCAMERA1;
 
         if (IS_RC_MODE_ACTIVE(i)) {
-            
+
             // check last state of this mode, if it's true, then ignore it.
             // Here is a logic to make a toggle control for this mode
             if (switchStates[switchIndex].isActivated) {
@@ -87,7 +87,7 @@ static void rcdeviceCameraControlProcess(void)
             case BOXCAMERA1:
                 if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON)) {
                     // avoid display wifi page when arming, in the next firmware(>2.0) of rcsplit we have change the wifi page logic:
-                    // when the wifi was turn on it won't turn off the analog video output, 
+                    // when the wifi was turn on it won't turn off the analog video output,
                     // and just put a wifi indicator on the right top of the video output. here is for the old split firmware
                     if (!ARMING_FLAG(ARMED) && !(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
                         behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_WIFI_BTN;
@@ -96,7 +96,7 @@ static void rcdeviceCameraControlProcess(void)
                 break;
             case BOXCAMERA2:
                 if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON)) {
-                    behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_POWER_BTN;        
+                    behavior = RCDEVICE_PROTOCOL_CAM_CTRL_SIMULATE_POWER_BTN;
                 }
                 break;
             case BOXCAMERA3:
@@ -128,7 +128,7 @@ static void rcdeviceSimulationOSDCableFailed(rcdeviceResponseParseContext_t *ctx
         if (operationID == RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE) {
             return;
         }
-    } 
+    }
 }
 
 static void rcdeviceSimulationRespHandle(rcdeviceResponseParseContext_t *ctx)

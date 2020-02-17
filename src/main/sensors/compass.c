@@ -147,7 +147,7 @@ bool compassDetect(magDev_t *dev, uint8_t *alignment)
             if (!instance) {
                 return false;
             }
-      
+
             busdev->bustype = BUSTYPE_SPI;
             spiBusSetInstance(busdev, instance);
             busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
@@ -310,7 +310,7 @@ bool compassInit(void)
     if (compassConfig()->mag_alignment != ALIGN_DEFAULT) {
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
-    
+
     buildRotationMatrixFromAlignment(&compassConfig()->mag_customAlignment, &magDev.rotationMatrix);
 
     return true;

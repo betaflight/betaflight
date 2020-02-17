@@ -41,7 +41,7 @@
 
 #define STORAGE_LUN_NBR 1
 
-static const uint8_t STORAGE_Inquirydata[] = 
+static const uint8_t STORAGE_Inquirydata[] =
 {
     0x00, 0x80, 0x02, 0x02,
 #ifdef USE_HAL_DRIVER
