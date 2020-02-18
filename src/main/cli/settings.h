@@ -256,3 +256,5 @@ extern const char * const lookupTableItermRelax[];
 extern const char * const lookupTableItermRelaxType[];
 
 extern const char * const lookupTableOsdDisplayPortDevice[];
+
+extern const char * const lookupTableInterpolatedSetpoint[];
