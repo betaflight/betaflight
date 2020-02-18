@@ -384,7 +384,7 @@ P    -    High -     High -
         memset(motor->timer->dmaBurstBuffer, 0, DSHOT_DMA_BUFFER_SIZE * 4 * sizeof(uint32_t));
 
         /* Set hdma_tim instance */
-        motor->timer->hdma_tim.Instance = dmaRef;
+        motor->timer->hdma_tim.Instance = (DMA_ARCH_TYPE *)dmaRef;
         motor->timer->hdma_tim.Init.Request = dmaChannel;
 
         /* Link hdma_tim to hdma[TIM_DMA_ID_UPDATE] (update) */
@@ -412,7 +412,7 @@ P    -    High -     High -
         motor->dmaBuffer[DSHOT_DMA_BUFFER_SIZE-2] = 0; // XXX Is this necessary? -> probably.
         motor->dmaBuffer[DSHOT_DMA_BUFFER_SIZE-1] = 0; // XXX Is this necessary?
 
-        motor->hdma_tim.Instance = dmaRef;
+        motor->hdma_tim.Instance = (DMA_ARCH_TYPE *)dmaRef;
         motor->hdma_tim.Init.Request = dmaChannel;
 
         /* Link hdma_tim to hdma[x] (channelx) */
