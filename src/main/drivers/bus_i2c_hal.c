@@ -358,6 +358,8 @@ void i2cInit(I2CDevice device)
     IO_t scl = pDev->scl;
     IO_t sda = pDev->sda;
 
+    RCC_ClockCmd(hardware->rcc, ENABLE);
+
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
     IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
