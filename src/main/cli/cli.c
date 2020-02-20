@@ -839,6 +839,10 @@ static void cliPrintVarRange(const clivalue_t *var)
         cliPrintLinef("Array length: %d", var->config.array.length);
     }
     break;
+    case (MODE_STRING): {
+        cliPrintLinef("String length: %d - %d", var->config.string.minlength, var->config.string.maxlength);
+    }
+    break;
     case (MODE_BITSET): {
         cliPrintLinef("Allowed values: OFF, ON");
     }
