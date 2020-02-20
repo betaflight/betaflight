@@ -28,21 +28,21 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 
 #if defined(USE_HAL_DRIVER)
 
-#define __HAL_RCC_CLK_ENABLE(bus, enbit)   do {          \
+#define __HAL_RCC_CLK_ENABLE(bus, enbit)   do {            \
         __IO uint32_t tmpreg;                              \
-        SET_BIT(RCC->bus ## ENR, enbit);                 \
+        SET_BIT(RCC->bus ## ENR, enbit);                   \
         /* Delay after an RCC peripheral clock enabling */ \
-        tmpreg = READ_BIT(RCC->bus ## ENR, enbit);       \
+        tmpreg = READ_BIT(RCC->bus ## ENR, enbit);         \
         UNUSED(tmpreg);                                    \
     } while(0)
 
 #define __HAL_RCC_CLK_DISABLE(bus, enbit) (RCC->bus ## ENR &= ~(enbit))
 
-#define __HAL_RCC_CLK(enreg, enbit, newState) \
-    if (newState == ENABLE) {                 \
-        __HAL_RCC_CLK_ENABLE(enreg, enbit);   \
-    } else {                                  \
-        __HAL_RCC_CLK_DISABLE(enreg, enbit);  \
+#define __HAL_RCC_CLK(bus, enbit, newState) \
+    if (newState == ENABLE) {               \
+        __HAL_RCC_CLK_ENABLE(bus, enbit);   \
+    } else {                                \
+        __HAL_RCC_CLK_DISABLE(bus, enbit);  \
     }
 
     switch (tag) {
@@ -119,12 +119,12 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     uint32_t mask = 1 << (periphTag & 0x1f);
 
 // Peripheral reset control relies on RSTR bits are identical to ENR bits where applicable
-#define __HAL_RCC_FORCE_RESET(bus, enbit) (RCC->bus ## RSTR &= ~(enbit))
+#define __HAL_RCC_FORCE_RESET(bus, enbit) (RCC->bus ## RSTR |= (enbit))
 #define __HAL_RCC_RELEASE_RESET(bus, enbit) (RCC->bus ## RSTR &= ~(enbit))
 #define __HAL_RCC_RESET(bus, enbit, NewState) \
-    if (NewState == ENABLE) {                    \
+    if (NewState == ENABLE) {                 \
         __HAL_RCC_RELEASE_RESET(bus, enbit);  \
-    } else {                                     \
+    } else {                                  \
         __HAL_RCC_FORCE_RESET(bus, enbit);    \
     }
 
