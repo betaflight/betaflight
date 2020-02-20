@@ -22,10 +22,6 @@
 
 #include "rcc_types.h"
 
-// XXX rcc module is not actively used by HAL based platforms (F7 and H7),
-// XXX as peripherals are turned on statically in enableGPIOPowerUsageAndNoiseReductions()
-// XXX during initialization.
-
 enum rcc_reg {
     RCC_EMPTY = 0,   // make sure that default value (0) does not enable anything
 #ifdef STM32H7
@@ -39,7 +35,7 @@ enum rcc_reg {
     RCC_APB3,
     RCC_AHB4,
     RCC_APB4,
-#elif defined(STM32G4)
+#elif defined(STM32G4) || defined(STM32F7)
     RCC_AHB2,
     RCC_APB2,
     RCC_APB1,
@@ -75,6 +71,13 @@ enum rcc_reg {
 #define RCC_APB12(periph) RCC_ENCODE(RCC_APB1, RCC_APB1ENR2_ ## periph ## EN)
 #define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCC_AHB1ENR_ ## periph ## EN)
 #define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, RCC_AHB2ENR_ ## periph ## EN)
+#endif
+
+#ifdef STM32F7
+#define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCC_AHB1ENR_ ## periph ## EN)
+#define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, RCC_AHB2ENR_ ## periph ## EN)
+#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, RCC_APB1ENR_ ## periph ## EN)
+#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, RCC_APB2ENR_ ## periph ## EN)
 #endif
 
 void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState);

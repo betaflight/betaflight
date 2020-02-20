@@ -364,6 +364,18 @@ P    -    High -     High -
         motor->timerDmaIndex = timerDmaIndex(timerHardware->channel);
     }
 
+    dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
+
+#ifdef USE_DSHOT_DMAR
+    if (useBurstDshot) {
+        dmaInit(identifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
+        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, timerIndex);
+    } else
+#endif
+    {
+        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motorIndex);
+    }
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
@@ -426,18 +438,6 @@ P    -    High -     High -
     if (result != HAL_OK) {
         /* Initialization Error */
         return false;
-    }
-
-    dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
-#ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        dmaInit(identifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
-        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, timerIndex);
-    } else
-#endif
-    {
-        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motorIndex);
     }
 
     // Start the timer channel now.

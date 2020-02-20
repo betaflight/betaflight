@@ -1641,6 +1641,8 @@ bool SD_Init(void)
 {
     SD_Error_t ErrorState;
 
+    __HAL_RCC_SDMMC1_CLK_ENABLE();
+
     // Initialize SDMMC1 peripheral interface with default configuration for SD card initialization
     MODIFY_REG(SDMMC1->CLKCR, CLKCR_CLEAR_MASK, (uint32_t) SDMMC_INIT_CLK_DIV);
 

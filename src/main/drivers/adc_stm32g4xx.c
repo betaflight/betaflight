@@ -433,10 +433,12 @@ void adcInit(const adcConfig_t *config)
 
         // Deinitialize  & Initialize the DMA for new transfer
 
+        // dmaInit must be called before calling HAL_DMA_Init,
+        // to enable clock for associated DMA if not already done so.
+        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
+
         HAL_DMA_DeInit(&adc->DmaHandle);
         HAL_DMA_Init(&adc->DmaHandle);
-
-        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
 
         // Associate the DMA handle
 

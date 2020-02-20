@@ -155,13 +155,7 @@ typedef struct uartHardware_s {
     uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
     uartPinDef_t txPins[UARTHARDWARE_MAX_PINS];
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-    uint32_t rcc_ahb1;
-    rccPeriphTag_t rcc_apb2;
-    rccPeriphTag_t rcc_apb1;
-#else
     rccPeriphTag_t rcc;
-#endif
 
 #if !defined(STM32F7)
     uint8_t af;

@@ -68,10 +68,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB14), GPIO_AF4_USART1 }
 #endif
         },
-#ifdef UART1_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART1_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb2 = RCC_APB2(USART1),
+        .rcc = RCC_APB2(USART1),
         .rxIrq = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1,
@@ -102,10 +99,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA2), GPIO_AF7_USART2 },
             { DEFIO_TAG_E(PD5), GPIO_AF7_USART2 }
         },
-#ifdef UART2_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART2_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb1 = RCC_APB1(USART2),
+        .rcc = RCC_APB1(USART2),
         .rxIrq = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2,
@@ -138,10 +132,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC10), GPIO_AF7_USART3 },
             { DEFIO_TAG_E(PD8), GPIO_AF7_USART3 }
         },
-#ifdef UART3_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART3_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb1 = RCC_APB1(USART3),
+        .rcc = RCC_APB1(USART3),
         .rxIrq = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3,
@@ -180,10 +171,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PD1), GPIO_AF8_UART4 }
 #endif
         },
-#ifdef UART4_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART4_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb1 = RCC_APB1(UART4),
+        .rcc = RCC_APB1(UART4),
         .rxIrq = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4,
@@ -222,10 +210,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB13), GPIO_AF8_UART5 }
 #endif
         },
-#ifdef UART5_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb1 = RCC_APB1(UART5),
+        .rcc = RCC_APB1(UART5),
         .rxIrq = UART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART5,
@@ -256,10 +241,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC6), GPIO_AF8_USART6 },
             { DEFIO_TAG_E(PG14), GPIO_AF8_USART6 }
         },
-#ifdef UART6_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART6_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb2 = RCC_APB2(USART6),
+        .rcc = RCC_APB2(USART6),
         .rxIrq = USART6_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
@@ -298,10 +280,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB4), GPIO_AF12_UART7 }
 #endif
         },
-#ifdef UART7_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART7_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb1 = RCC_APB1(UART7),
+        .rcc = RCC_APB1(UART7),
         .rxIrq = UART7_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART7_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART7,
@@ -330,10 +309,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPins = {
             { DEFIO_TAG_E(PE1), GPIO_AF8_UART8 }
         },
-#ifdef UART8_AHB1_PERIPHERALS
-        .rcc_ahb1 = UART8_AHB1_PERIPHERALS,
-#endif
-        .rcc_apb1 = RCC_APB1(UART8),
+        .rcc = RCC_APB1(UART8),
         .rxIrq = UART8_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART8_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART8,
@@ -374,6 +350,10 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 #endif
 
     s->Handle.Instance = hardware->reg;
+
+    if (hardware->rcc) {
+        RCC_ClockCmd(hardware->rcc, ENABLE);
+    }
 
     IO_t txIO = IOGetByTag(uartdev->tx.pin);
     IO_t rxIO = IOGetByTag(uartdev->rx.pin);
