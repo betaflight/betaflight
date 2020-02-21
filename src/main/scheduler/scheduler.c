@@ -321,7 +321,7 @@ FAST_CODE void scheduler(void)
     uint16_t selectedTaskDynamicPriority = 0;
     uint16_t waitingTasks = 0;
     bool realtimeTaskRan = false;
-    timeDelta_t gyroTaskDelayUs;
+    timeDelta_t gyroTaskDelayUs = 0;
 
     if (gyroEnabled) {
         // Realtime gyro/filtering/PID tasks get complete priority
