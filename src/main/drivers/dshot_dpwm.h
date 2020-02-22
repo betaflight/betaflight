@@ -62,13 +62,15 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 // For H7, DMA buffer is placed in a dedicated segment for coherency management
 #if defined(STM32H7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
+#elif defined(STM32G4)
+#define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_W
 #elif defined(STM32F7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT
 #else
-#define DSHOT_DMA_BUFFER_ATTRIBUTE
+#define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t
@@ -93,7 +95,7 @@ typedef struct {
 #if defined(USE_DSHOT)
     uint16_t outputPeriod;
 #if defined(USE_DSHOT_DMAR)
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     TIM_HandleTypeDef timHandle;
     DMA_HandleTypeDef hdma_tim;
 #endif
@@ -113,7 +115,7 @@ typedef struct motorDmaOutput_s {
     uint16_t timerDmaSource;
     uint8_t timerDmaIndex;
     bool configured;
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32G4)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
     IO_t io;
