@@ -28,6 +28,7 @@
 
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
+#include "drivers/rcc.h"
 #include "resource.h"
 
 /*
@@ -75,18 +76,9 @@ DEFINE_DMA_IRQ_HANDLER(2, 8, DMA2_CH8_HANDLER)
 
 static void enableDmaClock(int index)
 {
-    // This is essentially copies of __HAL_RCC_DMA{1,2}_CLK_ENABLE macros
-    // squashed into one.
-
-    const uint32_t rcc = dmaDescriptors[index].dma == DMA1 ? RCC_AHB1ENR_DMA1EN : RCC_AHB1ENR_DMA2EN;
-
-    do {
-        __IO uint32_t tmpreg;
-        SET_BIT(RCC->AHB1ENR, rcc);
-        /* Delay after an RCC peripheral clock enabling */
-        tmpreg = READ_BIT(RCC->AHB1ENR, rcc);
-        UNUSED(tmpreg);
-    } while (0);
+    RCC_ClockCmd(dmaDescriptors[index].dma == DMA1 ?  RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
+    // G4 has an independent enable bit for DMAMUX
+    RCC_ClockCmd(RCC_AHB1(DMAMUX1), ENABLE);
 }
 
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
