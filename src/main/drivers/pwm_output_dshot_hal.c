@@ -334,13 +334,15 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
 
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32G4)
         DMAINIT.PeriphRequest = dmaChannel;
 #else
         DMAINIT.Channel = dmaChannel;
 #endif
         DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->timer->dmaBurstBuffer;
+#ifndef STM32G4
         DMAINIT.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
+#endif
         DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)&timerHardware->tim->DMAR;
     } else
 #endif
@@ -349,20 +351,24 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
 
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32G4)
         DMAINIT.PeriphRequest = dmaChannel;
 #else
         DMAINIT.Channel = dmaChannel;
 #endif
         DMAINIT.MemoryOrM2MDstAddress = (uint32_t)motor->dmaBuffer;
+#ifndef STM32G4
         DMAINIT.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_1_4;
+#endif
         DMAINIT.PeriphOrM2MSrcAddress = (uint32_t)timerChCCR(timerHardware);
     }
 
     DMAINIT.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+#ifndef STM32G4
     DMAINIT.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
     DMAINIT.MemBurst = LL_DMA_MBURST_SINGLE;
     DMAINIT.PeriphBurst = LL_DMA_PBURST_SINGLE;
+#endif
     DMAINIT.NbData = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
     DMAINIT.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
     DMAINIT.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
