@@ -206,7 +206,7 @@ static uint16_t ibusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
     return ibusChannelData[chan];
 }
 
-static timeUs_t ibusFrameTimeUs(void)
+static timeUs_t ibusFrameTimeUsOrZeroFn(void)
 {
     const timeUs_t result = lastRcFrameTimeUs;
     lastRcFrameTimeUs = 0;
@@ -223,7 +223,7 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = ibusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = ibusFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsOrZeroFn = ibusFrameTimeUsOrZeroFn;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

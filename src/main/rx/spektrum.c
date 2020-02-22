@@ -343,7 +343,7 @@ void srxlRxWriteTelemetryData(const void *data, int len)
 }
 #endif
 
-static timeUs_t spektrumFrameTimeUs(void)
+static timeUs_t spektrumFrameTimeUsOrZeroFn(void)
 {
     const timeUs_t result = lastRcFrameTimeUs;
     lastRcFrameTimeUs = 0;
@@ -397,7 +397,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = spektrumReadRawRC;
     rxRuntimeState->rcFrameStatusFn = spektrumFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = spektrumFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsOrZeroFn = spektrumFrameTimeUsOrZeroFn;
 #if defined(USE_TELEMETRY_SRXL)
     rxRuntimeState->rcProcessFrameFn = spektrumProcessFrame;
 #endif

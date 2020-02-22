@@ -167,7 +167,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     }
 
     timeDelta_t rxFrameDeltaUs;
-    if (!rxGetFrameDelta(&rxFrameDeltaUs)) {
+    if (!rxTryGetFrameDelta(&rxFrameDeltaUs)) {
         rxFrameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
     }
     lastRxTimeUs = currentTimeUs;

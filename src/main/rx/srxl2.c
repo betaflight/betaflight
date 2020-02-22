@@ -480,7 +480,7 @@ void srxl2RxWriteData(const void *data, int len)
     writeBufferIdx = len;
 }
 
-static timeUs_t srxl2FrameTimeUs(void)
+static timeUs_t srxl2FrameTimeUsOrZeroFn(void)
 {
     const timeUs_t result = lastRcFrameTimeUs;
     lastRcFrameTimeUs = 0;
@@ -503,7 +503,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = srxl2ReadRawRC;
     rxRuntimeState->rcFrameStatusFn = srxl2FrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = srxl2FrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsOrZeroFn = srxl2FrameTimeUsOrZeroFn;
     rxRuntimeState->rcProcessFrameFn = srxl2ProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
