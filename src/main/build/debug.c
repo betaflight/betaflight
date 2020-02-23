@@ -95,4 +95,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FF_INTERPOLATED",
     "BLACKBOX_OUTPUT",
     "GYRO_SAMPLE",
+    "RX_TIMING",
 };

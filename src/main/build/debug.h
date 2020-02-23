@@ -111,6 +111,7 @@ typedef enum {
     DEBUG_FF_INTERPOLATED,
     DEBUG_BLACKBOX_OUTPUT,
     DEBUG_GYRO_SAMPLE,
+    DEBUG_RX_TIMING,
     DEBUG_COUNT
 } debugType_e;
 

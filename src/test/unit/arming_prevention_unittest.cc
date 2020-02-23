@@ -1101,4 +1101,5 @@ extern "C" {
     bool isUpright(void) { return mockIsUpright; }
     void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
     void gyroFiltering(timeUs_t) {};
+    timeDelta_t rxGetFrameDelta(timeDelta_t *) { return 0; }
 }

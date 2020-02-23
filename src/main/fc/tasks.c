@@ -166,12 +166,12 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         return;
     }
 
-    timeDelta_t rxFrameDeltaUs;
-    if (!rxTryGetFrameDelta(&rxFrameDeltaUs)) {
-        rxFrameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
+    timeDelta_t refreshRateUs;
+    if (!rxTryGetFrameDeltaOrZero(&refreshRateUs)) {
+        refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
     }
     lastRxTimeUs = currentTimeUs;
-    currentRxRefreshRate = constrain(rxFrameDeltaUs, 1000, 30000);
+    currentRxRefreshRate = constrain(refreshRateUs, 1000, 30000);
     isRXDataNew = true;
 
 #ifdef USE_USB_CDC_HID
