@@ -20,10 +20,6 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "stm32f7xx.h"
 #include "common/utils.h"
 
@@ -108,7 +104,3 @@ __STATIC_INLINE void LL_EX_TIM_CC_EnableNChannel(TIM_TypeDef *TIMx, uint32_t Cha
 {
 	LL_TIM_CC_EnableChannel(TIMx, 4 * Channel);
 }
-
-#ifdef __cplusplus
-}
-#endif
