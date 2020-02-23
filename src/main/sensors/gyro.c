@@ -1320,10 +1320,6 @@ void initYawSpinRecovery(int maxYawRate)
     int threshold;
 
     switch (gyroConfig()->yaw_spin_recovery) {
-    case YAW_SPIN_RECOVERY_OFF:
-        enabledFlag = false;
-        threshold = YAW_SPIN_RECOVERY_THRESHOLD_MAX;
-        break;
     case YAW_SPIN_RECOVERY_ON:
         enabledFlag = true;
         threshold = gyroConfig()->yaw_spin_threshold;
@@ -1332,6 +1328,11 @@ void initYawSpinRecovery(int maxYawRate)
         enabledFlag = true;
         const int overshootAllowance = MAX(maxYawRate / 4, 200); // Allow a 25% or minimum 200dps overshoot tolerance
         threshold = constrain(maxYawRate + overshootAllowance, YAW_SPIN_RECOVERY_THRESHOLD_MIN, YAW_SPIN_RECOVERY_THRESHOLD_MAX);
+        break;
+    case YAW_SPIN_RECOVERY_OFF:
+    default:
+        enabledFlag = false;
+        threshold = YAW_SPIN_RECOVERY_THRESHOLD_MAX;
         break;
     }
 
