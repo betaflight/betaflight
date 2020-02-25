@@ -368,8 +368,9 @@ static void SystemClockHSE_Config(void)
 
 void SystemClock_Config(void)
 {
+    // Configure power supply
 
-    MODIFY_REG(PWR->CR3, PWR_CR3_SCUEN, 0);
+    HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
     // Pre-configure voltage scale to PWR_REGULATOR_VOLTAGE_SCALE1.
     // SystemClockHSE_Config may configure PWR_REGULATOR_VOLTAGE_SCALE0.
@@ -383,11 +384,15 @@ void SystemClock_Config(void)
     SystemClockHSE_Config();
 
     /*activate CSI clock mondatory for I/O Compensation Cell*/
+
     __HAL_RCC_CSI_ENABLE() ;
 
     /* Enable SYSCFG clock mondatory for I/O Compensation Cell */
+
     __HAL_RCC_SYSCFG_CLK_ENABLE() ;
+
     /* Enables the I/O Compensation Cell */
+
     HAL_EnableCompensationCell();
 
     HandleStuckSysTick();
@@ -427,11 +432,7 @@ void SystemClock_Config(void)
     __HAL_RCC_CRS_ENABLE_IT(RCC_CRS_IT_SYNCOK|RCC_CRS_IT_SYNCWARN|RCC_CRS_IT_ESYNC|RCC_CRS_IT_ERR);
 #endif
 
-#if 0
-    // XXX This is currently done in serial_uart_hal.c, but should be done here,
-    // XXX where all clock distribution can be centrally managed.
-
-    // Configure peripheral clocks for UARTs
+    // Configure UART peripheral clock sources
     //
     // Possible sources:
     //   D2PCLK1 (pclk1 for APB1 = USART234578)
@@ -445,9 +446,8 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2;
     RCC_PeriphClkInit.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
-#endif
 
-    // Configure SPI clock sources
+    // Configure SPI peripheral clock sources
     //
     // Possible sources for SPI123:
     //   PLL (pll1_q_ck)
