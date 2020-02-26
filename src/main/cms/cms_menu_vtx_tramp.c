@@ -232,7 +232,7 @@ static const void *trampCmsOnEnter(void)
 static const OSD_Entry trampCmsMenuCommenceEntries[] = {
     { "CONFIRM", OME_Label,   NULL,          NULL, 0 },
     { "YES",     OME_Funcall, trampCmsCommence, NULL, 0 },
-    { "BACK",    OME_Back, NULL, NULL, 0 },
+    { "NO",    OME_Back, NULL, NULL, 0 },
     { NULL,      OME_END, NULL, NULL, 0 }
 };
 

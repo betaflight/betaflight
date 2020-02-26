@@ -680,7 +680,7 @@ static const OSD_Entry saCmsMenuCommenceEntries[] = {
 
     { "YES",     OME_Funcall, saCmsCommence, NULL, 0 },
 
-    { "BACK",    OME_Back, NULL, NULL, 0 },
+    { "NO",    OME_Back, NULL, NULL, 0 },
     { NULL,      OME_END, NULL, NULL, 0 }
 };
 
