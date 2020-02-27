@@ -1225,6 +1225,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_PITCH]);
         sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_YAW]);
 
+        // added in 1.43
+        sbufWriteU8(dst, currentControlRateProfile->rates_type);
+
         break;
 
     case MSP_PID:
@@ -2258,6 +2261,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 currentControlRateProfile->rate_limit[FD_ROLL] = sbufReadU16(src);
                 currentControlRateProfile->rate_limit[FD_PITCH] = sbufReadU16(src);
                 currentControlRateProfile->rate_limit[FD_YAW] = sbufReadU16(src);
+            }
+
+            // version 1.43
+            if (sbufBytesRemaining(src) >= 1) {
+                currentControlRateProfile->rates_type = sbufReadU8(src);
             }
 
             initRcProcessing();
