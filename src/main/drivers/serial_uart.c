@@ -342,43 +342,47 @@ void uartConfigureDma(uartDevice_t *uartdev)
 }
 #endif
 
-#define UART_IRQHandler(type, dev)                            \
-    void type ## dev ## _IRQHandler(void)                     \
+#define UART_IRQHandler(type, number, dev)                    \
+    void type ## number ## _IRQHandler(void)                  \
     {                                                         \
         uartPort_t *s = &(uartDevmap[UARTDEV_ ## dev]->port); \
         uartIrqHandler(s);                                    \
     }
 
 #ifdef USE_UART1
-UART_IRQHandler(USART, 1) // USART1 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 1, 1) // USART1 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART2
-UART_IRQHandler(USART, 2) // USART2 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 2, 2) // USART2 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART3
-UART_IRQHandler(USART, 3) // USART3 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 3, 3) // USART3 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART4
-UART_IRQHandler(UART, 4)  // UART4 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 4, 4)  // UART4 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART5
-UART_IRQHandler(UART, 5)  // UART5 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 5, 5)  // UART5 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART6
-UART_IRQHandler(USART, 6) // USART6 Rx/Tx IRQ Handler
+#ifdef STM32G4
+UART_IRQHandler(LPUART, 1, 6) // UART6 (implemented with LPUART1) Rx/Tx IRQ Handler
+#else
+UART_IRQHandler(USART, 6, 6) // USART6 Rx/Tx IRQ Handler
+#endif
 #endif
 
 #ifdef USE_UART7
-UART_IRQHandler(UART, 7)  // UART7 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 7, 7)  // UART7 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART8
-UART_IRQHandler(UART, 8)  // UART8 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 8, 8)  // UART8 Rx/Tx IRQ Handler
 #endif
 
 #endif // USE_UART
