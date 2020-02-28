@@ -35,10 +35,16 @@ enum rcc_reg {
     RCC_APB3,
     RCC_AHB4,
     RCC_APB4,
-#elif defined(STM32G4) || defined(STM32F7)
+#elif defined(STM32F7)
     RCC_AHB2,
     RCC_APB2,
     RCC_APB1,
+    RCC_AHB1,
+#elif defined(STM32G4)
+    RCC_AHB2,
+    RCC_APB2,
+    RCC_APB11,
+    RCC_APB12,
     RCC_AHB1,
 #else
     RCC_AHB,
@@ -67,8 +73,8 @@ enum rcc_reg {
 
 #ifdef STM32G4
 #undef  RCC_APB1
-#define RCC_APB11(periph) RCC_ENCODE(RCC_APB1, RCC_APB1ENR1_ ## periph ## EN)
-#define RCC_APB12(periph) RCC_ENCODE(RCC_APB1, RCC_APB1ENR2_ ## periph ## EN)
+#define RCC_APB11(periph) RCC_ENCODE(RCC_APB11, RCC_APB1ENR1_ ## periph ## EN)
+#define RCC_APB12(periph) RCC_ENCODE(RCC_APB12, RCC_APB1ENR2_ ## periph ## EN)
 #define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCC_AHB1ENR_ ## periph ## EN)
 #define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, RCC_AHB2ENR_ ## periph ## EN)
 #endif
