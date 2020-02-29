@@ -757,7 +757,7 @@ static float applyThrottleLimit(float throttle)
 
 static float applyThrottleVbatLimit(float throttle)
 {
-    if (currentControlRateProfile->throttle_vbat_limit_percent > 0) {
+    if (currentControlRateProfile->throttle_vbat_limit_percent) {
         const float throttleVbatLimitFactor = calculateThrottleVbatLimitFactor();
         throttle *= scaleRangef(currentControlRateProfile->throttle_vbat_limit_percent, 0.0f, 100.0f, 1.0f, throttleVbatLimitFactor);
     }
