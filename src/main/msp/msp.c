@@ -1225,9 +1225,6 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_PITCH]);
         sbufWriteU16(dst, currentControlRateProfile->rate_limit[FD_YAW]);
 
-        // added in TODO
-        sbufWriteU8(dst, currentControlRateProfile->throttle_vbat_limit_percent);
-
         break;
 
     case MSP_PID:
@@ -2261,11 +2258,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 currentControlRateProfile->rate_limit[FD_ROLL] = sbufReadU16(src);
                 currentControlRateProfile->rate_limit[FD_PITCH] = sbufReadU16(src);
                 currentControlRateProfile->rate_limit[FD_YAW] = sbufReadU16(src);
-            }
-
-            // version TODO
-            if (sbufBytesRemaining(src) >= 1) {
-                currentControlRateProfile->throttle_vbat_limit_percent = sbufReadU8(src);
             }
 
             initRcProcessing();
