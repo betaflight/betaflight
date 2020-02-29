@@ -755,6 +755,16 @@ static float applyThrottleLimit(float throttle)
     return throttle;
 }
 
+static float applyThrottleVbatLimit(float throttle)
+{
+    if (currentControlRateProfile->throttle_vbat_limit_percent > 0) {
+        const float throttleVbatLimitFactor = calculateThrottleVbatLimitFactor();
+        throttle *= scaleRangef(currentControlRateProfile->throttle_vbat_limit_percent, 0.0f, 100.0f, 1.0f, throttleVbatLimitFactor);
+    }
+
+    return throttle;
+}
+
 static void applyMotorStop(void)
 {
     for (int i = 0; i < motorCount; i++) {
@@ -826,6 +836,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = vbatPidCompensation ? calculateVbatPidCompensation() : 1.0f;
+
+    throttle = applyThrottleVbatLimit(throttle);
 
     // Apply the throttle_limit_percent to scale or limit the throttle based on throttle_limit_type
     if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
