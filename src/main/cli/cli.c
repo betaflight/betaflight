@@ -182,6 +182,7 @@ static serialPort_t *cliPort = NULL;
 #define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t *cliWriter = NULL;
+static bufWriter_t *cliErrorWriter = NULL;
 static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_OUT_BUFFER_SIZE];
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
@@ -315,26 +316,31 @@ typedef struct serialPassthroughPort_s {
     serialPort_t *port;
 } serialPassthroughPort_t;
 
-static void cliWriterFlush()
+static void cliWriterFlushInternal(bufWriter_t *writer)
 {
-    if (cliWriter) {
-        bufWriterFlush(cliWriter);
+    if (writer) {
+        bufWriterFlush(writer);
     }
 }
 
+void cliPrintInternal(bufWriter_t *writer, const char *str)
+{
+    if (writer) {
+        while (*str) {
+            bufWriterAppend(writer, *str++);
+        }
+        cliWriterFlushInternal(writer);
+    }
+}
+
+static void cliWriterFlush()
+{
+    cliWriterFlushInternal(cliWriter);
+}
 
 void cliPrint(const char *str)
 {
-    if (!cliMode) {
-        return;
-    }
-
-    if (cliWriter) {
-        while (*str) {
-            bufWriterAppend(cliWriter, *str++);
-        }
-        cliWriterFlush();
-    }
+    cliPrintInternal(cliWriter, str);
 }
 
 void cliPrintLinefeed(void)
@@ -410,10 +416,6 @@ static bool cliDefaultPrintLinef(dumpFlags_t dumpMask, bool equalsDefault, const
 
 void cliPrintf(const char *format, ...)
 {
-    if (!cliMode) {
-        return;
-    }
-
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
@@ -423,10 +425,6 @@ void cliPrintf(const char *format, ...)
 
 void cliPrintLinef(const char *format, ...)
 {
-    if (!cliMode) {
-        return;
-    }
-
     va_list va;
     va_start(va, format);
     cliPrintfva(format, va);
@@ -436,10 +434,14 @@ void cliPrintLinef(const char *format, ...)
 
 static void cliPrintErrorVa(const char *format, va_list va)
 {
-    cliPrint("###ERROR: ");
-    cliPrintfva(format, va);
-    va_end(va);
-    cliPrint("###");
+    if (cliErrorWriter) {
+        cliPrintInternal(cliErrorWriter, "###ERROR: ");
+
+        tfp_format(cliErrorWriter, cliPutp, format, va);
+        va_end(va);
+
+        cliPrintInternal(cliErrorWriter, "###");
+    }
 
 #ifdef USE_CLI_BATCH
     if (commandBatchActive) {
@@ -453,6 +455,13 @@ static void cliPrintError(const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(format, va);
+
+    if (!cliWriter) {
+        // Supply our own linefeed in case we are printing inside a custom defaults operation
+        // TODO: Fix this by rewriting the entire CLI to have self contained line feeds
+        // instead of expecting the directly following command to supply the line feed.
+        cliPrintInternal(cliErrorWriter, "\r\n");
+    }
 }
 
 static void cliPrintErrorLinef(const char *format, ...)
@@ -460,7 +469,7 @@ static void cliPrintErrorLinef(const char *format, ...)
     va_list va;
     va_start(va, format);
     cliPrintErrorVa(format, va);
-    cliPrintLinefeed();
+    cliPrintInternal(cliErrorWriter, "\r\n");
 }
 
 static void getMinMax(const clivalue_t *var, int *min, int *max)
@@ -693,7 +702,7 @@ static bool isWritingConfigToCopy()
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-static bool cliProcessCustomDefaults(void);
+static bool cliProcessCustomDefaults(bool quiet);
 #endif
 
 static void backupAndResetConfigs(const bool useCustomDefaults)
@@ -705,7 +714,7 @@ static void backupAndResetConfigs(const bool useCustomDefaults)
 
 #if defined(USE_CUSTOM_DEFAULTS)
     if (useCustomDefaults) {
-        if (!cliProcessCustomDefaults()) {
+        if (!cliProcessCustomDefaults(true)) {
             cliPrintLine("###WARNING: NO CUSTOM DEFAULTS FOUND###");
         }
     }
@@ -4201,7 +4210,7 @@ bool resetConfigToCustomDefaults(void)
     commandBatchError = false;
 #endif
 
-    cliProcessCustomDefaults();
+    cliProcessCustomDefaults(true);
 
     return prepareSave();
 }
@@ -4272,7 +4281,7 @@ static void cliDefaults(char *cmdline)
 
 #if defined(USE_CUSTOM_DEFAULTS)
     if (useCustomDefaults) {
-        cliProcessCustomDefaults();
+        cliProcessCustomDefaults(false);
     }
 #endif
 
@@ -6550,17 +6559,26 @@ void cliProcess(void)
 }
 
 #if defined(USE_CUSTOM_DEFAULTS)
-static bool cliProcessCustomDefaults(void)
+static bool cliProcessCustomDefaults(bool quiet)
 {
     char *customDefaultsPtr = customDefaultsStart;
     if (processingCustomDefaults || !isCustomDefaults(customDefaultsPtr)) {
         return false;
     }
 
+    bufWriter_t *cliWriterTemp = NULL;
+    if (quiet
 #if !defined(DEBUG_CUSTOM_DEFAULTS)
-    bufWriter_t *cliWriterTemp = cliWriter;
-    cliWriter = NULL;
+        || true
 #endif
+       ) {
+        cliWriterTemp = cliWriter;
+        cliWriter = NULL;
+    }
+    if (quiet) {
+        cliErrorWriter = NULL;
+    }
+
     memcpy(cliBufferTemp, cliBuffer, sizeof(cliBuffer));
     uint32_t bufferIndexTemp = bufferIndex;
     bufferIndex = 0;
@@ -6575,9 +6593,12 @@ static bool cliProcessCustomDefaults(void)
     processCharacter('\r');
 
     processingCustomDefaults = false;
-#if !defined(DEBUG_CUSTOM_DEFAULTS)
-    cliWriter = cliWriterTemp;
-#endif
+
+    if (cliWriterTemp) {
+        cliWriter = cliWriterTemp;
+        cliErrorWriter = cliWriter;
+    }
+
     memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
     bufferIndex = bufferIndexTemp;
 
@@ -6593,6 +6614,7 @@ void cliEnter(serialPort_t *serialPort)
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+    cliErrorWriter = cliWriter;
 
     schedulerSetCalulateTaskStatistics(systemConfig()->task_statistics);
 
