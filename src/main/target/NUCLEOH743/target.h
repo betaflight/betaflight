@@ -52,8 +52,8 @@
 #define UART2_TX_PIN            PD5
 
 #define USE_UART3
-#define UART3_RX_PIN            PD9
-#define UART3_TX_PIN            PD8
+#define UART3_RX_PIN            PD9  // ST-LINK Virtual COM Port
+#define UART3_TX_PIN            PD8  // ST-LINK Virtual COM Port
 
 #define USE_UART4
 #define UART4_RX_PIN            PC11
@@ -75,12 +75,16 @@
 #define UART8_RX_PIN            PE0
 #define UART8_TX_PIN            PE1
 
+#define USE_UART9 // LPUART1
+#define UART9_RX_PIN            PB7 // PA10 (Shared with UART1)
+#define UART9_TX_PIN            PB6 // PA9 (Shared with UART1)
+
 #define USE_VCP
 
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       11
+#define SERIAL_PORT_COUNT       12
 
 #define USE_SPI
 
