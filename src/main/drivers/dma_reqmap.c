@@ -68,8 +68,8 @@ typedef struct dmaTimerMapping_s {
 #define DMA_REQUEST_UART2_TX DMA_REQUEST_USART2_TX
 #define DMA_REQUEST_UART3_RX DMA_REQUEST_USART3_RX
 #define DMA_REQUEST_UART3_TX DMA_REQUEST_USART3_TX
-#define DMA_REQUEST_UART6_RX DMA_REQUEST_LPUART1_RX
-#define DMA_REQUEST_UART6_TX DMA_REQUEST_LPUART1_TX
+#define DMA_REQUEST_UART9_RX DMA_REQUEST_LPUART1_RX
+#define DMA_REQUEST_UART9_TX DMA_REQUEST_LPUART1_TX
 
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
@@ -102,8 +102,8 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 4, RX),
     REQMAP_DIR(UART, 5, TX),
     REQMAP_DIR(UART, 5, RX),
-    REQMAP_DIR(UART, 6, TX),
-    REQMAP_DIR(UART, 6, RX),
+    REQMAP_DIR(UART, 9, TX),
+    REQMAP_DIR(UART, 9, RX),
 #endif
 
 #ifdef USE_TIMER

@@ -67,11 +67,11 @@
 #ifndef UART5_RX_DMA_CHANNEL
 #define UART5_RX_DMA_CHANNEL NULL
 #endif
-#ifndef UART6_TX_DMA_CHANNEL
-#define UART6_TX_DMA_CHANNEL NULL
+#ifndef UART9_TX_DMA_CHANNEL
+#define UART9_TX_DMA_CHANNEL NULL
 #endif
-#ifndef UART6_RX_DMA_CHANNEL
-#define UART6_RX_DMA_CHANNEL NULL
+#ifndef UART9_RX_DMA_CHANNEL
+#define UART9_RX_DMA_CHANNEL NULL
 #endif
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
@@ -222,16 +222,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 
-#ifdef USE_UART6
-    // On G474, UART6 is implemented as LPUART1
+#ifdef USE_UART9
+    // On G474, UART9 is implemented as LPUART1
     {
-        .device = UARTDEV_6,
+        .device = UARTDEV_9,
         .reg = LPUART1,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_LPUART1_RX,
-        .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_CHANNEL,
+        .rxDMAResource = (dmaResource_t *)UART9_RX_DMA_CHANNEL,
         .txDMAChannel = DMA_REQUEST_LPUART1_TX,
-        .txDMAResource = (dmaResource_t *)UART6_TX_DMA_CHANNEL,
+        .txDMAResource = (dmaResource_t *)UART9_TX_DMA_CHANNEL,
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA3),  GPIO_AF12_LPUART1 },
@@ -247,10 +247,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxIrq = LPUART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
-        .txBuffer = uart6TxBuffer,
-        .rxBuffer = uart6RxBuffer,
-        .txBufferSize = sizeof(uart6TxBuffer),
-        .rxBufferSize = sizeof(uart6RxBuffer),
+        .txBuffer = uart9TxBuffer,
+        .rxBuffer = uart9RxBuffer,
+        .txBufferSize = sizeof(uart9TxBuffer),
+        .rxBufferSize = sizeof(uart9RxBuffer),
     },
 #endif
 };
