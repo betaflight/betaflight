@@ -602,6 +602,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define TARGET_SUPPORTS_CUSTOM_DEFAULTS_BIT 4
 #define TARGET_HAS_CUSTOM_DEFAULTS_BIT 5
 #define TARGET_SUPPORTS_RX_BIND_BIT 6
+#define TARGET_ACC_NEEDS_CALIBRATION_BIT 7
 
         uint8_t targetCapabilities = 0;
 #ifdef USE_VCP
@@ -624,6 +625,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #endif
 #if defined(USE_RX_BIND)
         targetCapabilities |= (getRxBindSupported() << TARGET_SUPPORTS_RX_BIND_BIT);
+#endif
+
+#if defined(USE_ACC)
+        targetCapabilities |= (!accHasBeenCalibrated() << TARGET_ACC_NEEDS_CALIBRATION_BIT);
 #endif
 
         sbufWriteU8(dst, targetCapabilities);
