@@ -97,6 +97,10 @@ UART_BUFFERS(7);
 UART_BUFFERS(8);
 #endif
 
+#ifdef USE_UART9
+UART_BUFFERS(9);
+#endif
+
 #undef UART_BUFFERS
 
 serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
@@ -370,11 +374,7 @@ UART_IRQHandler(UART, 5, 5)  // UART5 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART6
-#ifdef STM32G4
-UART_IRQHandler(LPUART, 1, 6) // UART6 (implemented with LPUART1) Rx/Tx IRQ Handler
-#else
 UART_IRQHandler(USART, 6, 6) // USART6 Rx/Tx IRQ Handler
-#endif
 #endif
 
 #ifdef USE_UART7
@@ -383,6 +383,10 @@ UART_IRQHandler(UART, 7, 7)  // UART7 Rx/Tx IRQ Handler
 
 #ifdef USE_UART8
 UART_IRQHandler(UART, 8, 8)  // UART8 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART9
+UART_IRQHandler(LPUART, 1, 9) // UART9 (implemented with LPUART1) Rx/Tx IRQ Handler
 #endif
 
 #endif // USE_UART
