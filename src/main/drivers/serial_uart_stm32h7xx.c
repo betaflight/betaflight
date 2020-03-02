@@ -334,6 +334,36 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxBufferSize = sizeof(uart8RxBuffer),
     },
 #endif
+
+#ifdef USE_UART9
+    // On H7, UART9 is implemented with LPUART1
+    {
+        .device = UARTDEV_9,
+        .reg = LPUART1,
+#ifdef USE_DMA
+        .rxDMAChannel = BDMA_REQUEST_LPUART1_RX,
+        .rxDMAResource = (dmaResource_t *)NULL, // No DMA support yet (Need BDMA support)
+        .txDMAChannel = BDMA_REQUEST_LPUART1_TX,
+        .txDMAResource = (dmaResource_t *)NULL, // No DMA support yet (Need BDMA support)
+#endif
+        .rxPins = {
+            { DEFIO_TAG_E(PA10), GPIO_AF3_LPUART },
+            { DEFIO_TAG_E(PB7),  GPIO_AF8_LPUART }
+        },
+        .txPins = {
+            { DEFIO_TAG_E(PA9),  GPIO_AF3_LPUART },
+            { DEFIO_TAG_E(PB6),  GPIO_AF8_LPUART }
+        },
+        .rcc = RCC_APB4(LPUART1),
+        .rxIrq = LPUART1_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART8_TXDMA, // Not used until DMA is supported
+        .rxPriority = NVIC_PRIO_SERIALUART8,       // Not used until DMA is supported
+        .txBuffer = uart9TxBuffer,
+        .rxBuffer = uart9RxBuffer,
+        .txBufferSize = sizeof(uart9TxBuffer),
+        .rxBufferSize = sizeof(uart9RxBuffer),
+    },
+#endif
 };
 
 // XXX Should serialUART be consolidated?
