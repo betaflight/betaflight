@@ -38,8 +38,6 @@
 
 #include "transponder_ir.h"
 
-typedef DMA_Stream_TypeDef dmaStream_t;
-
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
 static IO_t transponderIO = IO_NONE;
