@@ -25,12 +25,6 @@
 #include <string.h>
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-typedef DMA_Stream_TypeDef dmaStream_t;
-#else
-typedef DMA_Channel_TypeDef dmaStream_t;
-#endif
-
 extern FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount;
 #if defined(STM32F7) || defined(STM32H7)
 extern FAST_RAM_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
