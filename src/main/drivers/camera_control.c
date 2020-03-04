@@ -30,14 +30,6 @@
 #include "time.h"
 #include "pg/pg_ids.h"
 
-#if defined(STM32F40_41xxx)
-#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(84)
-#elif defined(STM32F7)
-#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(216)
-#else
-#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(72)
-#endif
-
 #define CAMERA_CONTROL_PWM_RESOLUTION   128
 #define CAMERA_CONTROL_SOFT_PWM_RESOLUTION 448
 
@@ -143,7 +135,7 @@ void cameraControlInit(void)
             IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
         #endif
 
-        pwmOutConfig(&cameraControlRuntime.channel, timerHardware, CAMERA_CONTROL_TIMER_HZ, CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
+        pwmOutConfig(&cameraControlRuntime.channel, timerHardware, timerClock(TIM6), CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
 
         cameraControlRuntime.period = CAMERA_CONTROL_PWM_RESOLUTION;
         *cameraControlRuntime.channel.ccr = cameraControlRuntime.period;
