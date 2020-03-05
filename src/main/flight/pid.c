@@ -94,13 +94,16 @@ static FAST_RAM_ZERO_INIT bool zeroThrottleItermReset;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
-#ifdef STM32F10X
-#define PID_PROCESS_DENOM_DEFAULT       1
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
+#if defined(STM32F1)
+#define PID_PROCESS_DENOM_DEFAULT       8
+#elif defined(STM32F3)
 #define PID_PROCESS_DENOM_DEFAULT       4
-#else
+#elif defined(STM32F411xE)
 #define PID_PROCESS_DENOM_DEFAULT       2
+#else
+#define PID_PROCESS_DENOM_DEFAULT       1
 #endif
+
 #if defined(USE_D_MIN)
 #define D_MIN_GAIN_FACTOR 0.00005f
 #define D_MIN_SETPOINT_GAIN_FACTOR 0.00005f
