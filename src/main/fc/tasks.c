@@ -166,9 +166,12 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         return;
     }
 
-    timeDelta_t refreshRateUs;
-    if (!rxTryGetFrameDeltaOrZero(&refreshRateUs)) {
-        refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
+    timeDelta_t frameAgeUs;
+    timeDelta_t refreshRateUs = rxGetFrameDelta(&frameAgeUs);
+    if (!refreshRateUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
+        if (!rxTryGetFrameDeltaOrZero(&refreshRateUs)) {
+            refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
+        }
     }
     lastRxTimeUs = currentTimeUs;
     currentRxRefreshRate = constrain(refreshRateUs, 1000, 30000);
