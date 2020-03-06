@@ -73,6 +73,9 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
 static uint8_t rssi_dbm = 130;             // range: [0;130] display 0 to -130
+#ifdef USE_RX_SNR_DBM
+static int8_t snr_dbm = CRSF_MIN_SNR;
+#endif
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 static pt1Filter_t frameErrFilter;
@@ -845,6 +848,25 @@ void setRssiDbmDirect(uint8_t newRssiDbm, rssiSource_e source)
 
     rssi_dbm = newRssiDbm;
 }
+
+#ifdef USE_RX_SNR_DBM
+int8_t getSnrDbm(void)
+{
+    return snr_dbm;
+}
+
+void setSnrDbm(int8_t newSnrDbm)
+{
+    snr_dbm = newSnrDbm;
+    // no filtering as yet
+    // rssi_dbm = updateRssiDbmSamples(rssiDbmValue);
+}
+
+void setSnrDbmDirect(int8_t newSnrDbm)
+{
+    snr_dbm = newSnrDbm;
+}
+#endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 uint16_t rxGetLinkQuality(void)

@@ -98,6 +98,7 @@
 #undef USE_TELEMETRY_CRSF
 #undef USE_CRSF_LINK_STATISTICS
 #undef USE_RX_RSSI_DBM
+#undef USE_RX_SNR_DBM
 #endif
 
 #if !defined(USE_TELEMETRY_CRSF) || !defined(USE_CMS)

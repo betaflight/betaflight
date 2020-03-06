@@ -320,6 +320,7 @@
 #define USE_CRSF_CMS_TELEMETRY
 #define USE_CRSF_LINK_STATISTICS
 #define USE_RX_RSSI_DBM
+#define USE_RX_SNR_DBM
 #endif
 
 #endif // TARGET_FLASH_SIZE > 128

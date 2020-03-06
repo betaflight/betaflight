@@ -70,6 +70,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #ifdef USE_RX_RSSI_DBM
     {"RSSI DBM",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_DBM_VALUE], DYNAMIC},
 #endif
+#ifdef USE_RX_SNR_DBM
+    {"SNR DBM",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_SNR_DBM_VALUE], DYNAMIC},
+#endif
     {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], DYNAMIC},
     {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], DYNAMIC},
     {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], DYNAMIC},

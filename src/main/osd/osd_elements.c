@@ -1146,6 +1146,14 @@ static void osdElementRssiDbm(osdElementParms_t *element)
 }
 #endif // USE_RX_RSSI_DBM
 
+#ifdef USE_RX_SNR_DBM
+static void osdElementSnrDbm(osdElementParms_t *element)
+{
+    // no dedicated symbold for SNR so use RSSi in the mean time.
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getSnrDbm());
+}
+#endif
+
 #ifdef USE_OSD_STICK_OVERLAY
 static void osdBackgroundStickOverlay(osdElementParms_t *element)
 {
@@ -1356,7 +1364,14 @@ static void osdElementWarnings(osdElementParms_t *element)
         return;
     }
 #endif // USE_RX_RSSI_DBM
-
+#ifdef USE_RX_SNR_DBM
+    if (osdWarnGetState(OSD_WARNING_SNR_DBM) && (getSnrDbm() < osdConfig()->snr_dbm_alarm)) {
+        tfp_sprintf(element->buff, "SNR DBM");
+        element->attr = DISPLAYPORT_ATTR_WARNING;
+        SET_BLINK(OSD_WARNINGS);
+        return;
+    }
+#endif // USE_RX_SNR_DBM
 #ifdef USE_RX_LINK_QUALITY_INFO
     // Link Quality
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
@@ -1577,6 +1592,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RX_RSSI_DBM
     OSD_RSSI_DBM_VALUE,
 #endif
+#ifdef USE_RX_SNR_DBM
+    OSD_SNR_DBM_VALUE,
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
@@ -1695,6 +1713,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_RX_RSSI_DBM
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
+#endif
+#ifdef USE_RX_SNR_DBM
+    [OSD_SNR_DBM_VALUE]           = osdElementSnrDbm,
 #endif
     [OSD_RC_CHANNELS]             = osdElementRcChannels,
 };
