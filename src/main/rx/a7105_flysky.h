@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "rx/rx_spi.h"
+
 typedef struct flySkyConfig_s {
     uint32_t txId;
     uint8_t rfChannelMap[16];

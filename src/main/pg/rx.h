@@ -65,6 +65,7 @@ typedef struct rxConfig_s {
     uint8_t srxl2_unit_id; // Spektrum SRXL2 RX unit id
     uint8_t srxl2_baud_fast; // Select Spektrum SRXL2 fast baud rate
     uint8_t sbus_baud_fast; // Select SBus fast baud rate
+    uint8_t crsf_use_rx_snr; // Use RX SNR (in dB) instead of RSSI dBm for CRSF
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

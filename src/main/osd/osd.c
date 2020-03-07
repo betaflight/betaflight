@@ -80,6 +80,7 @@
 #include "pg/pg_ids.h"
 #include "pg/stats.h"
 
+#include "rx/crsf.h"
 #include "rx/rx.h"
 
 #include "sensors/acceleration.h"
@@ -140,7 +141,7 @@ escSensorData_t *osdEscDataCombined;
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 7);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 8);
 
 PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 0);
 
@@ -319,7 +320,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     for (int i=0; i < OSD_PROFILE_COUNT; i++) {
         osdConfig->profile[i][0] = '\0';
     }
-    osdConfig->rssi_dbm_alarm = 60;
+    osdConfig->rssi_dbm_alarm = -60;
     osdConfig->gps_sats_show_hdop = false;
 
     for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
@@ -447,7 +448,7 @@ static void osdResetStats(void)
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
     stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
-    stats.min_rssi_dbm = 0;
+    stats.min_rssi_dbm = CRSF_SNR_MAX;
 }
 
 static void osdUpdateStats(void)
@@ -500,7 +501,7 @@ static void osdUpdateStats(void)
 
 #ifdef USE_RX_RSSI_DBM
     value = getRssiDbm();
-    if (stats.min_rssi_dbm < value) {
+    if (stats.min_rssi_dbm > value) {
         stats.min_rssi_dbm = value;
     }
 #endif
@@ -760,7 +761,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
 #ifdef USE_RX_RSSI_DBM
     case OSD_STAT_MIN_RSSI_DBM:
-        tfp_sprintf(buff, "%3d", stats.min_rssi_dbm * -1);
+        tfp_sprintf(buff, "%3d", stats.min_rssi_dbm);
         osdDisplayStatisticLabel(displayRow, "MIN RSSI DBM", buff);
         return true;
 #endif

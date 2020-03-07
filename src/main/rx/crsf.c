@@ -157,12 +157,15 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
     const crsfLinkStatistics_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
-        const uint8_t rssiDbm = stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1;
+        int16_t rssiDbm = -1 * (stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1);
+        const uint16_t rssiPercentScaled = scaleRange(rssiDbm, CRSF_RSSI_MIN, 0, 0, RSSI_MAX_VALUE);
+        setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #ifdef USE_RX_RSSI_DBM
+        if (rxConfig()->crsf_use_rx_snr) {
+            rssiDbm = stats.uplink_SNR;
+        }
         setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #endif
-        const uint16_t rssiPercentScaled = scaleRange(rssiDbm, 130, 0, 0, RSSI_MAX_VALUE);
-        setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -201,7 +204,11 @@ static void crsfCheckRssi(uint32_t currentTimeUs) {
         if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #ifdef USE_RX_RSSI_DBM
-            setRssiDbmDirect(130, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+            if (rxConfig()->crsf_use_rx_snr) {
+                setRssiDbmDirect(CRSF_SNR_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+            } else {
+                setRssiDbmDirect(CRSF_RSSI_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+            }
 #endif
         }
 #ifdef USE_RX_LINK_QUALITY_INFO
