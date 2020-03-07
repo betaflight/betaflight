@@ -367,4 +367,5 @@
 #define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
 #define USE_INTERPOLATED_SP
 #define USE_CUSTOM_BOX_NAMES
+#define USE_BATTERY_VOLTAGE_SAG_COMPENSATION
 #endif
