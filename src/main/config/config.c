@@ -582,56 +582,51 @@ void validateAndFixGyroConfig(void)
     }
 #endif
 
-    float samplingTime;
-    switch (gyroMpuDetectionResult()->sensor) {
-    case ICM_20649_SPI:
-        samplingTime = 1.0f / 9000.0f;
-        break;
-    case BMI_160_SPI:
-        samplingTime = 0.0003125f;
-        break;
-    default:
-        samplingTime = 0.000125f;
-        break;
-    }
+    if (gyro.sampleRateHz > 0) {
+        float samplingTime = 1.0f / gyro.sampleRateHz;
 
-
-    // check for looptime restrictions based on motor protocol. Motor times have safety margin
-    float motorUpdateRestriction;
-    switch (motorConfig()->dev.motorPwmProtocol) {
-    case PWM_TYPE_STANDARD:
-            motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
-            break;
-    case PWM_TYPE_ONESHOT125:
-            motorUpdateRestriction = 0.0005f;
-            break;
-    case PWM_TYPE_ONESHOT42:
-            motorUpdateRestriction = 0.0001f;
-            break;
+        // check for looptime restrictions based on motor protocol. Motor times have safety margin
+        float motorUpdateRestriction;
+        switch (motorConfig()->dev.motorPwmProtocol) {
+        case PWM_TYPE_STANDARD:
+                motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
+                break;
+        case PWM_TYPE_ONESHOT125:
+                motorUpdateRestriction = 0.0005f;
+                break;
+        case PWM_TYPE_ONESHOT42:
+                motorUpdateRestriction = 0.0001f;
+                break;
 #ifdef USE_DSHOT
-    case PWM_TYPE_DSHOT150:
-            motorUpdateRestriction = 0.000250f;
-            break;
-    case PWM_TYPE_DSHOT300:
-            motorUpdateRestriction = 0.0001f;
-            break;
+        case PWM_TYPE_DSHOT150:
+                motorUpdateRestriction = 0.000250f;
+                break;
+        case PWM_TYPE_DSHOT300:
+                motorUpdateRestriction = 0.0001f;
+                break;
 #endif
-    default:
-        motorUpdateRestriction = 0.00003125f;
-        break;
-    }
-
-    if (motorConfig()->dev.useUnsyncedPwm) {
-        // Prevent overriding the max rate of motors
-        if ((motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && (motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD)) {
-            const uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
-            motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
+        default:
+            motorUpdateRestriction = 0.00003125f;
+            break;
         }
-    } else {
-        const float pidLooptime = samplingTime * pidConfig()->pid_process_denom;
-        if (pidLooptime < motorUpdateRestriction) {
-            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / samplingTime, 1, MAX_PID_PROCESS_DENOM);
-            pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
+
+        if (motorConfig()->dev.useUnsyncedPwm) {
+            // Prevent overriding the max rate of motors
+            if ((motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && (motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD)) {
+                const uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
+                motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
+            }
+        } else {
+            const float pidLooptime = samplingTime * pidConfig()->pid_process_denom;
+            if (pidLooptime < motorUpdateRestriction) {
+                uint8_t minPidProcessDenom = motorUpdateRestriction / samplingTime;
+                if (motorUpdateRestriction / samplingTime > minPidProcessDenom) {
+                    // if any fractional part then round up
+                    minPidProcessDenom++;
+                }
+                minPidProcessDenom = constrain(minPidProcessDenom, 1, MAX_PID_PROCESS_DENOM);
+                pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
+            }
         }
     }
 
