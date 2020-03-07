@@ -96,12 +96,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
 #if defined(STM32F1)
 #define PID_PROCESS_DENOM_DEFAULT       8
-#elif defined(STM32F3)
-#define PID_PROCESS_DENOM_DEFAULT       4
-#elif defined(STM32F411xE)
-#define PID_PROCESS_DENOM_DEFAULT       2
 #else
-#define PID_PROCESS_DENOM_DEFAULT       1
+#define PID_PROCESS_DENOM_DEFAULT       4
 #endif
 
 #if defined(USE_D_MIN)
