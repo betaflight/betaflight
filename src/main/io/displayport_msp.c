@@ -27,6 +27,8 @@
 
 #ifdef USE_MSP_DISPLAYPORT
 
+#include "cli/cli.h"
+
 #include "common/utils.h"
 
 #include "drivers/display.h"
@@ -38,10 +40,6 @@
 #include "msp/msp_serial.h"
 
 static displayPort_t mspDisplayPort;
-
-#ifdef USE_CLI
-extern uint8_t cliMode;
-#endif
 
 static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
