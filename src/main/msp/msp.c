@@ -1804,6 +1804,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         // Added in MSP API 1.43
         sbufWriteU8(dst, currentPidProfile->motor_output_limit);
         sbufWriteU8(dst, currentPidProfile->auto_profile_cell_count);
+        sbufWriteU8(dst, currentPidProfile->idle_min_rpm);
 
         break;
     case MSP_SENSOR_CONFIG:
@@ -2650,10 +2651,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if(sbufBytesRemaining(src) >= 2) {
+        if(sbufBytesRemaining(src) >= 3) {
             // Added in MSP API 1.43
             currentPidProfile->motor_output_limit = sbufReadU8(src);
             currentPidProfile->auto_profile_cell_count = sbufReadU8(src);
+            currentPidProfile->idle_min_rpm = sbufReadU8(src);
         }
         pidInitConfig(currentPidProfile);
 
