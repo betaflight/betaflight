@@ -130,6 +130,7 @@ static const smartPortPayload_t emptySmartPortFrame = { .frameId = 0, .valueId =
 typedef struct fportBuffer_s {
     uint8_t data[BUFFER_SIZE];
     uint8_t length;
+    timeUs_t frameStartTimeUs;
 } fportBuffer_t;
 
 static fportBuffer_t rxBuffer[NUM_RX_BUFFERS];
@@ -150,6 +151,8 @@ static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
 #endif
 
+static timeUs_t lastRcFrameTimeUs = 0;
+
 static void reportFrameError(uint8_t errorReason) {
     static volatile uint16_t frameErrors = 0;
 
@@ -169,7 +172,7 @@ static void fportDataReceive(uint16_t c, void *data)
     static timeUs_t lastFrameReceivedUs = 0;
     static bool telemetryFrame = false;
 
-    const timeUs_t currentTimeUs = micros();
+    const timeUs_t currentTimeUs = microsISR();
 
     clearToSend = false;
 
@@ -203,6 +206,8 @@ static void fportDataReceive(uint16_t c, void *data)
 
         frameStartAt = currentTimeUs;
         framePosition = 1;
+
+        rxBuffer[rxBufferWriteIndex].frameStartTimeUs = currentTimeUs;
     } else if (framePosition > 0) {
         if (framePosition >= BUFFER_SIZE + 1) {
                 framePosition = 0;
@@ -286,6 +291,10 @@ static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
                         setRssi(scaleRange(frame->data.controlData.rssi, 0, 100, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_PROTOCOL);
 
                         lastRcFrameReceivedMs = millis();
+
+                        if (!(result & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
+                            lastRcFrameTimeUs = rxBuffer[rxBufferReadIndex].frameStartTimeUs;
+                        }
                     }
 
                     break;
@@ -390,6 +399,11 @@ static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     return true;
 }
 
+static timeUs_t fportFrameTimeUs(void)
+{
+    return lastRcFrameTimeUs;
+}
+
 bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
@@ -401,6 +415,7 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcFrameStatusFn = fportFrameStatus;
     rxRuntimeState->rcProcessFrameFn = fportProcessFrame;
+    rxRuntimeState->rcFrameTimeUsFn = fportFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

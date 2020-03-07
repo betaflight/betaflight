@@ -247,7 +247,7 @@ static uint16_t jetiExBusReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8
     return (jetiExBusChannelData[chan]);
 }
 
-static timeUs_t jetiExBusFrameTimeUs(void)
+static timeUs_t jetiExBusFrameTimeUsOrZeroFn(void)
 {
     const timeUs_t result = lastRcFrameTimeUs;
     lastRcFrameTimeUs = 0;
@@ -263,7 +263,7 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = jetiExBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = jetiExBusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = jetiExBusFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsOrZeroFn = jetiExBusFrameTimeUsOrZeroFn;
 
     jetiExBusFrameReset();
 

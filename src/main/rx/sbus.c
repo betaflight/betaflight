@@ -160,7 +160,7 @@ static uint8_t sbusFrameStatus(rxRuntimeState_t *rxRuntimeState)
     return frameStatus;
 }
 
-static timeUs_t sbusFrameTimeUs(void)
+static timeUs_t sbusFrameTimeUsOrZeroFn(void)
 {
     const timeUs_t result = lastRcFrameTimeUs;
     lastRcFrameTimeUs = 0;
@@ -188,7 +188,7 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->rcFrameStatusFn = sbusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = sbusFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsOrZeroFn = sbusFrameTimeUsOrZeroFn;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
