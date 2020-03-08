@@ -44,6 +44,9 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
+#if (TARGET_FLASH_SIZE > 512)
+#define USE_ACCGYRO_BMI270
+#endif
 // Other USE_ACCs and USE_GYROs should follow
 
 #define USE_MAG

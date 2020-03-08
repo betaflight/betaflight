@@ -58,6 +58,20 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             gyroSampleRateHz = 3200;
             accSampleRateHz = 800;
             break;
+        case BMI_270_SPI:
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+            if (gyro->hardware_lpf == GYRO_HARDWARE_LPF_EXPERIMENTAL) {
+                // 6.4KHz sampling, but data is unfiltered (no hardware DLPF)
+                gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
+                gyroSampleRateHz = 6400;
+            } else
+#endif
+            {
+                gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+                gyroSampleRateHz = 3200;
+            }
+            accSampleRateHz = 800;
+            break;
         case ICM_20649_SPI:
             gyro->gyroRateKHz = GYRO_RATE_9_kHz;
             gyroSampleRateHz = 9000;
