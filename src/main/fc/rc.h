@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/time.h"
+
 #include "fc/rc_controls.h"
 
 typedef enum {
@@ -29,8 +31,6 @@ typedef enum {
     INTERPOLATION_CHANNELS_T,
     INTERPOLATION_CHANNELS_RPT,
 } interpolationChannels_e;
-
-extern uint16_t currentRxRefreshRate;
 
 #ifdef USE_RC_SMOOTHING_FILTER
 #define RC_SMOOTHING_AUTO_FACTOR_MIN 0
@@ -55,3 +55,5 @@ float getRawDeflection(int axis);
 float applyCurve(int axis, float deflection);
 uint32_t getRcFrameNumber();
 float getRcCurveSlope(int axis, float deflection);
+void updateRcRefreshRate(timeUs_t currentTimeUs);
+uint16_t getCurrentRxRefreshRate(void);

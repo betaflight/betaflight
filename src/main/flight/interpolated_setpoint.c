@@ -65,7 +65,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
     if (newRcFrame) {
         float rawSetpoint = getRawSetpoint(axis);
 
-        const float rxInterval = currentRxRefreshRate * 1e-6f;
+        const float rxInterval = getCurrentRxRefreshRate() * 1e-6f;
         const float rxRate = 1.0f / rxInterval;
         float setpointSpeed = (rawSetpoint - prevRawSetpoint[axis]) * rxRate;
         float setpointAcceleration = setpointSpeed - prevSetpointSpeed[axis];

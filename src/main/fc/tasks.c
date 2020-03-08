@@ -160,32 +160,19 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    static timeUs_t lastRxTimeUs;
-
     if (!processRx(currentTimeUs)) {
         return;
     }
 
-    timeDelta_t frameAgeUs;
-    timeDelta_t refreshRateUs = rxGetFrameDelta(&frameAgeUs);
-    if (!refreshRateUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
-        if (!rxTryGetFrameDeltaOrZero(&refreshRateUs)) {
-            refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
-        }
-    }
-    lastRxTimeUs = currentTimeUs;
-    currentRxRefreshRate = constrain(refreshRateUs, 1000, 30000);
-    isRXDataNew = true;
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    updateRcCommands();
+    updateArmingStatus();
 
 #ifdef USE_USB_CDC_HID
     if (!ARMING_FLAG(ARMED)) {
         sendRcDataToHid();
     }
 #endif
-
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-    updateArmingStatus();
 }
 
 #ifdef USE_BARO
