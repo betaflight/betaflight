@@ -1879,7 +1879,7 @@ static void cliLed(char *cmdline)
     } else {
         ptr = cmdline;
         i = atoi(ptr);
-        if (i > 0 && i < LED_MAX_STRIP_LENGTH) {
+        if (i >= 0 && i < LED_MAX_STRIP_LENGTH) {
             ptr = nextArg(cmdline);
             if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
