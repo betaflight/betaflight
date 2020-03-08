@@ -370,7 +370,7 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH;
         // here FS code could be
     case STATE_DATA:
-        if (rxSpiGetExtiState() && (frameReceived == false)) {
+        if (rxSpiGetExtiState() && (!frameReceived)) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             if (ccLen >= packetLength) {
                 cc2500ReadFifo(packet, packetLength);
@@ -470,6 +470,8 @@ rx_spi_received_e frSkyXHandlePacket(uint8_t * const packet, uint8_t * const pro
         }
         if (frameReceived) {
             ret |= RX_SPI_RECEIVED_DATA;
+
+            frameReceived = false;
         }
 
         break;
