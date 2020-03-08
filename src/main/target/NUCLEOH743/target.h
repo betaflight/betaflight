@@ -172,6 +172,12 @@
 #define I2C1_SDA                PB9
 #define I2C_DEVICE (I2CDEV_1)
 
+// For testing I2C4on APB4
+//#define USE_I2C_DEVICE_4
+//#define I2C4_SCL                PF14
+//#define I2C4_SDA                PF15
+//#define I2C_DEVICE (I2CDEV_4)
+
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_SPI_HMC5883
