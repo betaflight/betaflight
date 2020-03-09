@@ -20,6 +20,127 @@
 
 #pragma once
 
+#if defined(STM32F405)
+#define TARGET_BOARD_IDENTIFIER "S405"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F405"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define USE_UART6
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 6)
+
+#define USE_INVERTER
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0xffff
+
+#elif defined(STM32F411)
+#define TARGET_BOARD_IDENTIFIER "S411"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART6
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
+
+#define USE_INVERTER
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+
+#elif defined(STM32F7X2)
+#define TARGET_BOARD_IDENTIFIER "S7X2"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define USE_UART6
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 6) 
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0xffff
+
+#elif defined(STM32F745)
+#define TARGET_BOARD_IDENTIFIER "S745"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F745"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define USE_UART6
+#define USE_UART7
+#define USE_UART8
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 8)
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0xffff
+#endif
+
 // Treat the target as unified, and expect manufacturer id / board name
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
@@ -44,10 +165,10 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
+
 #if (TARGET_FLASH_SIZE > 512)
 #define USE_ACCGYRO_BMI270
 #endif
-// Other USE_ACCs and USE_GYROs should follow
 
 #define USE_MAG
 #define USE_MAG_DATA_READY_SIGNAL
