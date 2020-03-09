@@ -32,6 +32,11 @@ typedef enum {
 
 extern uint16_t currentRxRefreshRate;
 
+#ifdef USE_RC_SMOOTHING_FILTER
+#define RC_SMOOTHING_AUTO_FACTOR_MIN 0
+#define RC_SMOOTHING_AUTO_FACTOR_MAX 50
+#endif
+
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);
