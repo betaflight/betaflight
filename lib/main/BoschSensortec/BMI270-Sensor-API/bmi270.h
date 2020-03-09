@@ -130,8 +130,3 @@ int8_t bmi270_init(struct bmi2_dev *dev);
 #endif /* End of CPP guard */
 
 #endif /* BMI270_H_ */
-
-// Betaflight modifications begin
-#define BMI270_CONFIG_SIZE 8192
-extern const uint8_t bmi270_config_file[BMI270_CONFIG_SIZE];
-// Betaflight modifications end
