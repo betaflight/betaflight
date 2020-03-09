@@ -28,6 +28,11 @@
 
 #define CRSF_MAX_CHANNEL        16
 
+#define CRSF_RSSI_MIN (-130)
+#define CRSF_RSSI_MAX 0
+#define CRSF_SNR_MIN (-30)
+#define CRSF_SNR_MAX 20
+
 typedef struct crsfFrameDef_s {
     uint8_t deviceAddress;
     uint8_t frameLength;

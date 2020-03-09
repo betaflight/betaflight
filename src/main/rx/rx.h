@@ -198,9 +198,9 @@ uint16_t rxGetLinkQuality(void);
 void setLinkQualityDirect(uint16_t linkqualityValue);
 uint16_t rxGetLinkQualityPercent(void);
 
-uint8_t getRssiDbm(void);
-void setRssiDbm(uint8_t newRssiDbm, rssiSource_e source);
-void setRssiDbmDirect(uint8_t newRssiDbm, rssiSource_e source);
+int16_t getRssiDbm(void);
+void setRssiDbm(int16_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source);
 
 void rxSetRfMode(uint8_t rfModeValue);
 uint8_t rxGetRfMode(void);
