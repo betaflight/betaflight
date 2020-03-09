@@ -26,6 +26,8 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F745"
 
+#define USE_ACCGYRO_BMI270
+
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3

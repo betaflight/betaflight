@@ -4,10 +4,3 @@ Library download location:
     https://github.com/BoschSensortec/BMI270-Sensor-API
 
 The only file that is compiled as part of Betaflight is bmi270.c. This file contains the device microcode that must be uploaded during initialization. 
-
-When upgrading this library the bmi270.h header must have the following code block added:
-
-// Betaflight modifications begin
-#define BMI270_CONFIG_SIZE 8192
-extern const uint8_t bmi270_config_file[BMI270_CONFIG_SIZE];
-// Betaflight modifications end
