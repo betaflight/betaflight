@@ -91,7 +91,6 @@ static bool configIsDirty; /* someone indicated that the config is modified and 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
 
 pidProfile_t *currentPidProfile;
-controlRateConfig_t *currentRateProfile;
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
@@ -138,11 +137,6 @@ static void loadPidProfile(void)
     currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
 }
 
-static void loadCurrentControlRateProfile(void)
-{
-    currentControlRateProfile = controlRateProfilesMutable(systemConfig()->activeRateProfile); 
-}
-
 uint8_t getCurrentControlRateProfileIndex(void)
 {
     return systemConfig()->activeRateProfile;
@@ -167,7 +161,6 @@ static void activateConfig(void)
     schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_ON || (systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_AUTO && motorConfig()->dev.useDshotTelemetry));
     loadPidProfile();
     loadControlRateProfile();
-    loadCurrentControlRateProfile();
 
     initRcProcessing();
 
@@ -568,29 +561,31 @@ static void validateAndFixConfig(void)
     targetValidateConfiguration();
 #endif
 
-    switch (currentControlRateProfile->rates_type) {
-    case RATES_TYPE_BETAFLIGHT:
-    default:
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, BETAFLIGHT_MAX_SRATE);
-        }
+    for (unsigned i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
+        switch (controlRateProfilesMutable(i)->rates_type) {
+        case RATES_TYPE_BETAFLIGHT:
+        default:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, BETAFLIGHT_MAX_SRATE);
+            }
 
-        break;
-    case RATES_TYPE_KISS:
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, KISS_MAX_SRATE);
-        }
+            break;
+        case RATES_TYPE_KISS:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, KISS_MAX_SRATE);
+            }
 
-        break;
-    case RATES_TYPE_ACTUAL:
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, ACTUAL_MAX_RATE);
-        }
+            break;
+        case RATES_TYPE_ACTUAL:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, ACTUAL_MAX_RATE);
+            }
 
-        break;
-    case RATES_TYPE_QUICK:
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, QUICK_MAX_RATE);
+            break;
+        case RATES_TYPE_QUICK:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, QUICK_MAX_RATE);
+            }
         }
     }
 }
