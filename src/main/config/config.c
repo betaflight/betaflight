@@ -91,12 +91,18 @@ static bool configIsDirty; /* someone indicated that the config is modified and 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
 
 pidProfile_t *currentPidProfile;
+controlRateConfig_t *currentRateProfile;
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
 #define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
+
+#define BETAFLIGHT_MAX_SRATE  100
+#define KISS_MAX_SRATE        100
+#define QUICK_MAX_RATE        200
+#define ACTUAL_MAX_RATE       200
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
@@ -132,6 +138,11 @@ static void loadPidProfile(void)
     currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
 }
 
+static void loadCurrentControlRateProfile(void)
+{
+    currentControlRateProfile = controlRateProfilesMutable(systemConfig()->activeRateProfile); 
+}
+
 uint8_t getCurrentControlRateProfileIndex(void)
 {
     return systemConfig()->activeRateProfile;
@@ -156,6 +167,7 @@ static void activateConfig(void)
     schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_ON || (systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_AUTO && motorConfig()->dev.useDshotTelemetry));
     loadPidProfile();
     loadControlRateProfile();
+    loadCurrentControlRateProfile();
 
     initRcProcessing();
 
@@ -555,6 +567,32 @@ static void validateAndFixConfig(void)
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
+
+    switch (currentControlRateProfile->rates_type) {
+    case RATES_TYPE_BETAFLIGHT:
+    default:
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, BETAFLIGHT_MAX_SRATE);
+        }
+
+        break;
+    case RATES_TYPE_KISS:
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, KISS_MAX_SRATE);
+        }
+
+        break;
+    case RATES_TYPE_ACTUAL:
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, ACTUAL_MAX_RATE);
+        }
+
+        break;
+    case RATES_TYPE_QUICK:
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            currentControlRateProfile->rates[axis] = constrain(currentControlRateProfile->rates[axis], 0, QUICK_MAX_RATE);
+        }
+    }
 }
 
 void validateAndFixGyroConfig(void)
