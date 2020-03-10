@@ -370,9 +370,7 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     timeDelta_t frameAgeUs;
     timeDelta_t refreshRateUs = rxGetFrameDelta(&frameAgeUs);
     if (!refreshRateUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
-        if (!rxTryGetFrameDeltaOrZero(&refreshRateUs)) {
-            refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
-        }
+        refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
     }
     lastRxTimeUs = currentTimeUs;
     currentRxRefreshRate = constrain(refreshRateUs, 1000, 30000);
@@ -727,9 +725,7 @@ FAST_CODE void processRcCommand(void)
         }
     }
 
-    if (isRxDataNew) {
-        isRxDataNew = false;
-    }
+    isRxDataNew = false;
 }
 
 FAST_CODE_NOINLINE void updateRcCommands(void)

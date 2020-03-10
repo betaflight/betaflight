@@ -305,16 +305,16 @@ static void srxl2DataReceive(uint16_t character, void *data)
 
 static void srxl2Idle()
 {
-    if(transmittingTelemetry) { // Transmitting telemetry triggers idle interrupt as well. We dont want to change buffers then
+    if (transmittingTelemetry) { // Transmitting telemetry triggers idle interrupt as well. We dont want to change buffers then
         transmittingTelemetry = false;
     }
-    else if(readBufferIdx == 0) { // Packet was invalid
+    else if (readBufferIdx == 0) { // Packet was invalid
         readBufferPtr->len = 0;
     }
     else {
         lastIdleTimestamp = microsISR();
         //Swap read and process buffer pointers
-        if(processBufferPtr == &readBuffer[0]) {
+        if (processBufferPtr == &readBuffer[0]) {
             processBufferPtr = &readBuffer[1];
             readBufferPtr = &readBuffer[0];
         } else {
@@ -425,10 +425,8 @@ static uint8_t srxl2FrameStatus(rxRuntimeState_t *rxRuntimeState)
         result |= RX_FRAME_PROCESSING_REQUIRED;
     }
 
-    if (result == RX_FRAME_COMPLETE || result == (RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED)) {
+    if (!(result & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
         lastRcFrameTimeUs = lastIdleTimestamp;
-    } else {
-        lastRcFrameTimeUs = 0;  // We received a frame but it wasn't valid new channel data
     }
 
     return result;
@@ -480,11 +478,9 @@ void srxl2RxWriteData(const void *data, int len)
     writeBufferIdx = len;
 }
 
-static timeUs_t srxl2FrameTimeUsOrZeroFn(void)
+static timeUs_t srxl2FrameTimeUsFn(void)
 {
-    const timeUs_t result = lastRcFrameTimeUs;
-    lastRcFrameTimeUs = 0;
-    return result;
+    return lastRcFrameTimeUs;
 }
 
 bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -503,7 +499,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = srxl2ReadRawRC;
     rxRuntimeState->rcFrameStatusFn = srxl2FrameStatus;
-    rxRuntimeState->rcFrameTimeUsOrZeroFn = srxl2FrameTimeUsOrZeroFn;
+    rxRuntimeState->rcFrameTimeUsFn = srxl2FrameTimeUsFn;
     rxRuntimeState->rcProcessFrameFn = srxl2ProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);

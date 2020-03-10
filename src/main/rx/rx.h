@@ -125,7 +125,6 @@ struct rxRuntimeState_s;
 typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeState_s *rxRuntimeState, uint8_t chan); // used by receiver driver to return channel data
 typedef uint8_t (*rcFrameStatusFnPtr)(struct rxRuntimeState_s *rxRuntimeState);
 typedef bool (*rcProcessFrameFnPtr)(const struct rxRuntimeState_s *rxRuntimeState);
-typedef timeUs_t (*rcGetFrameTimeUsOrZeroFnPtr)(void);  // used to retrieve the timestamp in microseconds for the last channel data frame, or 0, depending on suitablilty of the value for RC smoothing
 typedef timeUs_t rcGetFrameTimeUsFn(void);  // used to retrieve the timestamp in microseconds for the last channel data frame
 
 typedef enum {
@@ -145,7 +144,6 @@ typedef struct rxRuntimeState_s {
     rcReadRawDataFnPtr  rcReadRawFn;
     rcFrameStatusFnPtr  rcFrameStatusFn;
     rcProcessFrameFnPtr rcProcessFrameFn;
-    rcGetFrameTimeUsOrZeroFnPtr rcFrameTimeUsOrZeroFn;
     rcGetFrameTimeUsFn *rcFrameTimeUsFn;
     uint16_t            *channelData;
     void                *frameData;
@@ -212,5 +210,4 @@ void resumeRxPwmPpmSignal(void);
 
 uint16_t rxGetRefreshRate(void);
 
-bool rxTryGetFrameDeltaOrZero(timeDelta_t *deltaUs);
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
