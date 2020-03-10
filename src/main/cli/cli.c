@@ -4670,7 +4670,10 @@ static void cliStatus(char *cmdline)
     // Run status
 
     const int gyroRate = getTaskDeltaTime(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYRO)));
-    const int rxRate = currentRxRefreshRate == 0 ? 0 : (int)(1000000.0f / ((float)currentRxRefreshRate));
+    int rxRate = getCurrentRxRefreshRate();
+    if (rxRate != 0) {
+        rxRate = (int)(1000000.0f / ((float)rxRate));
+    }
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYRO), gyroRate, rxRate, systemRate);

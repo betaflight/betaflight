@@ -33,8 +33,6 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "drivers/time.h"
-
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -71,7 +69,8 @@ static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
-uint16_t currentRxRefreshRate;
+static uint16_t currentRxRefreshRate;
+static bool isRxDataNew = false;
 
 FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
 static FAST_RAM_ZERO_INIT uint32_t rcFrameNumber;
@@ -330,7 +329,7 @@ static FAST_CODE uint8_t processRcInterpolation(void)
             rxRefreshRate = rxGetRefreshRate();
         }
 
-        if (isRXDataNew && rxRefreshRate > 0) {
+        if (isRxDataNew && rxRefreshRate > 0) {
             rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
             for (int channel = 0; channel < PRIMARY_CHANNEL_COUNT; channel++) {
@@ -362,6 +361,26 @@ static FAST_CODE uint8_t processRcInterpolation(void)
 
     return updatedChannel;
 
+}
+
+void updateRcRefreshRate(timeUs_t currentTimeUs)
+{
+    static timeUs_t lastRxTimeUs;
+
+    timeDelta_t frameAgeUs;
+    timeDelta_t refreshRateUs = rxGetFrameDelta(&frameAgeUs);
+    if (!refreshRateUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
+        if (!rxTryGetFrameDeltaOrZero(&refreshRateUs)) {
+            refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
+        }
+    }
+    lastRxTimeUs = currentTimeUs;
+    currentRxRefreshRate = constrain(refreshRateUs, 1000, 30000);
+}
+
+uint16_t getCurrentRxRefreshRate(void)
+{
+    return currentRxRefreshRate;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -549,7 +568,7 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
         }
     }
 
-    if (isRXDataNew) {
+    if (isRxDataNew) {
 
         // store the new raw channel values
         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
@@ -655,16 +674,16 @@ FAST_CODE void processRcCommand(void)
 {
     uint8_t updatedChannel;
 
-    if (isRXDataNew) {
+    if (isRxDataNew) {
         rcFrameNumber++;
     }
 
-    if (isRXDataNew && pidAntiGravityEnabled()) {
+    if (isRxDataNew && pidAntiGravityEnabled()) {
         checkForThrottleErrorResetState(currentRxRefreshRate);
     }
 
 #ifdef USE_INTERPOLATED_SP
-    if (isRXDataNew) {
+    if (isRxDataNew) {
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             oldRcCommand[i] = rcCommand[i];
             const float rcCommandf = rcCommand[i] / 500.0f;
@@ -687,8 +706,8 @@ FAST_CODE void processRcCommand(void)
         break;
     }
 
-    if (isRXDataNew || updatedChannel) {
-        const uint8_t maxUpdatedAxis = isRXDataNew ? FD_YAW : MIN(updatedChannel, FD_YAW); // throttle channel doesn't require rate calculation
+    if (isRxDataNew || updatedChannel) {
+        const uint8_t maxUpdatedAxis = isRxDataNew ? FD_YAW : MIN(updatedChannel, FD_YAW); // throttle channel doesn't require rate calculation
 #if defined(SIMULATOR_BUILD)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunsafe-loop-optimizations"
@@ -708,13 +727,15 @@ FAST_CODE void processRcCommand(void)
         }
     }
 
-    if (isRXDataNew) {
-        isRXDataNew = false;
+    if (isRxDataNew) {
+        isRxDataNew = false;
     }
 }
 
 FAST_CODE_NOINLINE void updateRcCommands(void)
 {
+    isRxDataNew = true;
+
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
