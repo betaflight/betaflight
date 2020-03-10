@@ -478,6 +478,20 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.Spi6ClockSelection = RCC_SPI6CLKSOURCE_D3PCLK1;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
 
+    // Configure I2C peripheral clock sources
+    //
+    // Current source for I2C123:
+    //   D2PCLK1 (rcc_pclk1 = APB1 peripheral clock)
+    //
+    // Current source for I2C4:
+    //   D3PCLK1 (rcc_pclk4 = APB4 peripheral clock)
+    //
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C123|RCC_PERIPHCLK_I2C4;
+    RCC_PeriphClkInit.I2c123ClockSelection = RCC_I2C123CLKSOURCE_D2PCLK1;
+    RCC_PeriphClkInit.I2c4ClockSelection = RCC_I2C4CLKSOURCE_D3PCLK1;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
 #ifdef USE_SDCARD_SDIO
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
