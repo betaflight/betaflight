@@ -244,8 +244,9 @@ static void calculateSetpointRate(int axis)
     } else
 #endif
     {
+        const uint8_t deadband = axis == FD_YAW ? rcControlsConfig()->yaw_deadband : rcControlsConfig()->deadband;
         // scale rcCommandf to range [-1.0, 1.0]
-        float rcCommandf = rcCommand[axis] / 500.0f;
+        float rcCommandf = rcCommand[axis] / (500.0f - deadband);
         rcDeflection[axis] = rcCommandf;
         const float rcCommandfAbs = fabsf(rcCommandf);
         rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -684,7 +685,8 @@ FAST_CODE void processRcCommand(void)
     if (isRxDataNew) {
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             oldRcCommand[i] = rcCommand[i];
-            const float rcCommandf = rcCommand[i] / 500.0f;
+            const uint8_t deadband = i == FD_YAW ? rcControlsConfig()->yaw_deadband : rcControlsConfig()->deadband;
+            const float rcCommandf = rcCommand[i] / (500.0f - deadband);
             const float rcCommandfAbs = fabsf(rcCommandf);
             rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
             rawDeflection[i] = rcCommandf;
