@@ -98,6 +98,11 @@ pidProfile_t *currentPidProfile;
 
 #define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
+#define BETAFLIGHT_MAX_SRATE  100
+#define KISS_MAX_SRATE        100
+#define QUICK_MAX_RATE        200
+#define ACTUAL_MAX_RATE       200
+
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
@@ -555,6 +560,34 @@ static void validateAndFixConfig(void)
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
+
+    for (unsigned i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
+        switch (controlRateProfilesMutable(i)->rates_type) {
+        case RATES_TYPE_BETAFLIGHT:
+        default:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, BETAFLIGHT_MAX_SRATE);
+            }
+
+            break;
+        case RATES_TYPE_KISS:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, KISS_MAX_SRATE);
+            }
+
+            break;
+        case RATES_TYPE_ACTUAL:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, ACTUAL_MAX_RATE);
+            }
+
+            break;
+        case RATES_TYPE_QUICK:
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, QUICK_MAX_RATE);
+            }
+        }
+    }
 }
 
 void validateAndFixGyroConfig(void)
