@@ -242,6 +242,7 @@ MCU_COMMON_SRC = \
             drivers/light_ws2811strip_hal.c \
             drivers/adc_stm32h7xx.c \
             drivers/bus_i2c_hal.c \
+            drivers/bus_i2c_hal_init.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/pwm_output_dshot_shared.c \
             drivers/persistent.c \

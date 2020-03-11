@@ -486,6 +486,7 @@ void SystemClock_Config(void)
     // Current source for I2C4:
     //   D3PCLK1 (rcc_pclk4 = APB4 peripheral clock)
     //
+    // Note that peripheral clock determination in bus_i2c_hal_init.c must be modified when the sources are modified.
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C123|RCC_PERIPHCLK_I2C4;
     RCC_PeriphClkInit.I2c123ClockSelection = RCC_I2C123CLKSOURCE_D2PCLK1;

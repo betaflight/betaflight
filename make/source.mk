@@ -359,6 +359,9 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/pwm_output_dshot.c \
             drivers/pwm_output_dshot_shared.c \
             drivers/pwm_output_dshot_hal.c
+
+SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/bus_i2c_hal_init.c
 endif #!F3
 endif #!F1
 
