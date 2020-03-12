@@ -376,11 +376,9 @@ void crsfRxSendTelemetryData(void)
     }
 }
 
-static timeUs_t crsfFrameTimeUsOrZeroFn(void)
+static timeUs_t crsfFrameTimeUs(void)
 {
-    const timeUs_t result = lastRcFrameTimeUs;
-    lastRcFrameTimeUs = 0;
-    return result;
+    return lastRcFrameTimeUs;
 }
 
 bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -394,7 +392,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = crsfReadRawRC;
     rxRuntimeState->rcFrameStatusFn = crsfFrameStatus;
-    rxRuntimeState->rcFrameTimeUsOrZeroFn = crsfFrameTimeUsOrZeroFn;
+    rxRuntimeState->rcFrameTimeUsFn = crsfFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

@@ -75,6 +75,7 @@ static uint16_t crc;
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
+static timeUs_t lastFrameTimeUs = 0;
 static timeUs_t lastRcFrameTimeUs = 0;
 
 // Receive ISR callback
@@ -85,11 +86,11 @@ static void sumdDataReceive(uint16_t c, void *data)
     static timeUs_t sumdTimeLast;
     static uint8_t sumdIndex;
 
-    const timeUs_t sumdTime = microsISR();
-    if (cmpTimeUs(sumdTime, sumdTimeLast) > SUMD_TIME_NEEDED_PER_FRAME) {
+    const timeUs_t now = microsISR();
+    if (cmpTimeUs(now, sumdTimeLast) > SUMD_TIME_NEEDED_PER_FRAME) {
         sumdIndex = 0;
     }
-    sumdTimeLast = sumdTime;
+    sumdTimeLast = now;
 
     if (sumdIndex == SUMD_SYNC_BYTE_INDEX) {
         if (c != SUMD_SYNCBYTE) {
@@ -110,7 +111,7 @@ static void sumdDataReceive(uint16_t c, void *data)
     if (sumdIndex <= sumdChannelCount * SUMD_BYTES_PER_CHANNEL + SUMD_HEADER_LENGTH) {
         crc = crc16_ccitt(crc, (uint8_t)c);
     } else if (sumdIndex == sumdChannelCount * SUMD_BYTES_PER_CHANNEL + SUMD_HEADER_LENGTH + SUMD_CRC_LENGTH) {
-        lastRcFrameTimeUs = sumdTime;
+        lastFrameTimeUs = now;
         sumdIndex = 0;
         sumdFrameDone = true;
     }
@@ -154,8 +155,8 @@ static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
         }
     }
 
-    if (frameStatus != RX_FRAME_COMPLETE) {
-        lastRcFrameTimeUs = 0;  // We received a frame but it wasn't valid new channel data
+    if (!(frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
+        lastRcFrameTimeUs = lastFrameTimeUs;
     }
 
     return frameStatus;
@@ -167,11 +168,9 @@ static uint16_t sumdReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t ch
     return sumdChannels[chan] / 8;
 }
 
-static timeUs_t sumdFrameTimeUsOrZeroFn(void)
+static timeUs_t sumdFrameTimeUsFn(void)
 {
-    const timeUs_t result = lastRcFrameTimeUs;
-    lastRcFrameTimeUs = 0;
-    return result;
+    return lastRcFrameTimeUs;
 }
 
 bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -183,7 +182,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = sumdReadRawRC;
     rxRuntimeState->rcFrameStatusFn = sumdFrameStatus;
-    rxRuntimeState->rcFrameTimeUsOrZeroFn = sumdFrameTimeUsOrZeroFn;
+    rxRuntimeState->rcFrameTimeUsFn = sumdFrameTimeUsFn;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

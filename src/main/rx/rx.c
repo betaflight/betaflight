@@ -873,25 +873,6 @@ bool isRssiConfigured(void)
     return rssiSource != RSSI_SOURCE_NONE;
 }
 
-bool rxTryGetFrameDeltaOrZero(timeDelta_t *deltaUs)
-{
-    static timeUs_t previousFrameTimeUsOrZero = 0;
-    bool result = false;
-
-    *deltaUs = 0;
-    if (rxRuntimeState.rcFrameTimeUsOrZeroFn) {
-        const timeUs_t frameTimeUsOrZero = rxRuntimeState.rcFrameTimeUsOrZeroFn();
-        if (frameTimeUsOrZero) {
-            if (previousFrameTimeUsOrZero) {
-                *deltaUs = cmpTimeUs(frameTimeUsOrZero, previousFrameTimeUsOrZero);
-                result = true;
-            }
-            previousFrameTimeUsOrZero = frameTimeUsOrZero;
-        }
-    }
-    return result;  // No frame delta function available for protocol type or frames have stopped
-}
-
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs)
 {
     static timeUs_t previousFrameTimeUs = 0;
