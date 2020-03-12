@@ -25,6 +25,8 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F405"
 
+#define USE_ACCGYRO_BMI270
+
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -112,6 +114,8 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F745"
 
+#define USE_ACCGYRO_BMI270
+
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -165,10 +169,6 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
-
-#if (TARGET_FLASH_SIZE > 512)
-#define USE_ACCGYRO_BMI270
-#endif
 
 #define USE_MAG
 #define USE_MAG_DATA_READY_SIGNAL
