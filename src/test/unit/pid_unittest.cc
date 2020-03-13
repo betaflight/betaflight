@@ -255,7 +255,7 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-7.8, pidData[FD_ROLL].I, calculateTolerance(-7.8));
+    EXPECT_NEAR(-150, pidData[FD_ROLL].I, calculateTolerance(-150));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_NEAR(-198.4, pidData[FD_ROLL].D, calculateTolerance(-198.4));
@@ -270,8 +270,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-15.6, pidData[FD_ROLL].I, calculateTolerance(-15.6));
-    EXPECT_NEAR(9.8, pidData[FD_PITCH].I, calculateTolerance(9.8));
+    EXPECT_NEAR(-150, pidData[FD_ROLL].I, calculateTolerance(-150));
+    EXPECT_NEAR(150, pidData[FD_PITCH].I, calculateTolerance(150));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_NEAR(231.4, pidData[FD_PITCH].D, calculateTolerance(231.4));
@@ -285,8 +285,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_NEAR(185.8, pidData[FD_PITCH].P, calculateTolerance(185.8));
     EXPECT_NEAR(-224.2, pidData[FD_YAW].P, calculateTolerance(-224.2));
-    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-150, pidData[FD_ROLL].I, calculateTolerance(-150));
+    EXPECT_NEAR(150, pidData[FD_PITCH].I, calculateTolerance(150));
     EXPECT_NEAR(-8.7, pidData[FD_YAW].I, calculateTolerance(-8.7));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
@@ -295,8 +295,8 @@ TEST(pidControllerTest, testPidLoop) {
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-150, pidData[FD_ROLL].I, calculateTolerance(-150));
+    EXPECT_NEAR(150, pidData[FD_PITCH].I, calculateTolerance(150));
     EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
     simulatedMotorMixRange = 0;
 
@@ -312,8 +312,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-150, pidData[FD_ROLL].I, calculateTolerance(-150));
+    EXPECT_NEAR(150, pidData[FD_PITCH].I, calculateTolerance(150));
     EXPECT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
@@ -418,8 +418,8 @@ TEST(pidControllerTest, testMixerSaturation) {
     pidController(pidProfile, currentTestTime());
 
     // Expect no iterm accumulation
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(150, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(-150, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
     // Test itermWindup limit
@@ -445,7 +445,7 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_YAW, 0.1f);
     simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
+    EXPECT_LE(pidData[FD_ROLL].I, rollTestIterm);
     EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
     EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
 }
@@ -724,9 +724,9 @@ TEST(pidControllerTest, testLaunchControl) {
     pidController(pidProfile, currentTestTime());
 
     EXPECT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
-    EXPECT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
+    EXPECT_NEAR(150,   pidData[FD_ROLL].I,  calculateTolerance(150));
     EXPECT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
-    EXPECT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
+    EXPECT_NEAR(-150,  pidData[FD_PITCH].I, calculateTolerance(-150));
     EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
@@ -755,7 +755,7 @@ TEST(pidControllerTest, testLaunchControl) {
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
     EXPECT_NEAR(37.15, pidData[FD_PITCH].P, calculateTolerance(37.15));
-    EXPECT_NEAR(1.56,  pidData[FD_PITCH].I, calculateTolerance(1.56));
+    EXPECT_NEAR(150,  pidData[FD_PITCH].I, calculateTolerance(150));
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
@@ -774,9 +774,9 @@ TEST(pidControllerTest, testLaunchControl) {
     pidController(pidProfile, currentTestTime());
 
     EXPECT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
-    EXPECT_NEAR(1.56,   pidData[FD_ROLL].I,  calculateTolerance(1.56));
+    EXPECT_NEAR(150,   pidData[FD_ROLL].I,  calculateTolerance(150));
     EXPECT_NEAR(-37.15, pidData[FD_PITCH].P, calculateTolerance(-37.15));
-    EXPECT_NEAR(-1.56,  pidData[FD_PITCH].I, calculateTolerance(-1.56));
+    EXPECT_NEAR(-150,  pidData[FD_PITCH].I, calculateTolerance(-150));
     EXPECT_NEAR(44.84,  pidData[FD_YAW].P,   calculateTolerance(44.84));
     EXPECT_NEAR(1.56,   pidData[FD_YAW].I,  calculateTolerance(1.56));
 }
