@@ -233,7 +233,6 @@ float getRcCurveSlope(int axis, float deflection)
 static void calculateSetpointRate(int axis)
 {
     float angleRate;
-    float rcCommandf;
 
 #ifdef USE_GPS_RESCUE
     if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -248,6 +247,7 @@ static void calculateSetpointRate(int axis)
 #endif
     {
         // scale rcCommandf to range [-1.0, 1.0]
+        float rcCommandf;
         if (axis == FD_YAW) {
             rcCommandf = rcCommand[axis] / rcCommandYawDivider;
         } else {
@@ -690,10 +690,9 @@ FAST_CODE void processRcCommand(void)
 
 #ifdef USE_INTERPOLATED_SP
     if (isRxDataNew) {
-        float rcCommandf;
-
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             oldRcCommand[i] = rcCommand[i];
+            float rcCommandf;
             if (i == FD_YAW) {
                 rcCommandf = rcCommand[i] / rcCommandYawDivider;
             } else {
