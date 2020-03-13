@@ -164,6 +164,7 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
+#include "sensors/gyro_init.h"
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"

@@ -26,23 +26,25 @@
 
 #include "common/utils.h"
 
-#include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "config/config.h"
+#include "config/feature.h"
+
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 
-#include "sensors/sensors.h"
-#include "sensors/adcinternal.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "sensors/acceleration.h"
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
-#include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/rangefinder.h"
+#include "sensors/gyro.h"
+#include "sensors/gyro_init.h"
 #include "sensors/initialisation.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
 
 // requestedSensors is not actually used
 uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };

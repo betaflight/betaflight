@@ -80,6 +80,7 @@
 
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
+#include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
 
 #include "acceleration.h"
