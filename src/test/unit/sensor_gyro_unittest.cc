@@ -37,6 +37,7 @@ extern "C" {
     #include "pg/pg_ids.h"
     #include "scheduler/scheduler.h"
     #include "sensors/gyro.h"
+    #include "sensors/gyro_init.h"
     #include "sensors/acceleration.h"
     #include "sensors/sensors.h"
 
