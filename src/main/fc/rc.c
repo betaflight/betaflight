@@ -71,6 +71,8 @@ static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 static uint16_t currentRxRefreshRate;
 static bool isRxDataNew = false;
+static float rcCommandDivider = 500.0f;
+static float rcCommandYawDivider = 500.0f;
 
 FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
 static FAST_RAM_ZERO_INIT uint32_t rcFrameNumber;
@@ -245,7 +247,13 @@ static void calculateSetpointRate(int axis)
 #endif
     {
         // scale rcCommandf to range [-1.0, 1.0]
-        float rcCommandf = rcCommand[axis] / 500.0f;
+        float rcCommandf;
+        if (axis == FD_YAW) {
+            rcCommandf = rcCommand[axis] / rcCommandYawDivider;
+        } else {
+            rcCommandf = rcCommand[axis] / rcCommandDivider;
+        }
+        
         rcDeflection[axis] = rcCommandf;
         const float rcCommandfAbs = fabsf(rcCommandf);
         rcDeflectionAbs[axis] = rcCommandfAbs;
@@ -684,7 +692,12 @@ FAST_CODE void processRcCommand(void)
     if (isRxDataNew) {
         for (int i = FD_ROLL; i <= FD_YAW; i++) {
             oldRcCommand[i] = rcCommand[i];
-            const float rcCommandf = rcCommand[i] / 500.0f;
+            float rcCommandf;
+            if (i == FD_YAW) {
+                rcCommandf = rcCommand[i] / rcCommandYawDivider;
+            } else {
+                rcCommandf = rcCommand[i] / rcCommandDivider;
+            }
             const float rcCommandfAbs = fabsf(rcCommandf);
             rawSetpoint[i] = applyRates(i, rcCommandf, rcCommandfAbs);
             rawDeflection[i] = rcCommandf;
@@ -835,6 +848,9 @@ bool isMotorsReversed(void)
 
 void initRcProcessing(void)
 {
+    rcCommandDivider = 500.0f - rcControlsConfig()->deadband;
+    rcCommandYawDivider = 500.0f - rcControlsConfig()->yaw_deadband;
+
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
         const int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
         uint8_t y = 1;
