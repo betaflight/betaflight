@@ -962,7 +962,7 @@ static void osdElementLinkQuality(osdElementParms_t *element)
 #ifdef USE_BLACKBOX
 static void osdElementLogStatus(osdElementParms_t *element)
 {
-    if (IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+    if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) || !isModeActivationConditionPresent(BOXBLACKBOX)) {
         if (!isBlackboxDeviceWorking()) {
             tfp_sprintf(element->buff, "%c!", SYM_BBLOG);
         } else if (isBlackboxDeviceFull()) {
