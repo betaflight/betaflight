@@ -411,8 +411,12 @@ void rxSetRfMode(uint8_t rfModeValue)
 }
 #endif
 
-static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTime)
+static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTimeUs)
 {
+    static uint16_t rssiSum = 0;
+    static uint16_t rssiCount = 0;
+    static timeDelta_t resampleTimeUs = 0;
+
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (linkQualitySource != LQ_SOURCE_RX_PROTOCOL_CRSF) {
         // calculate new sample mean
@@ -421,19 +425,15 @@ static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTime)
 #endif
 
     if (rssiSource == RSSI_SOURCE_FRAME_ERRORS) {
-        static uint16_t tot_rssi = 0;
-        static uint16_t cnt_rssi = 0;
-        static timeDelta_t resample_time = 0;
+        resampleTimeUs += currentDeltaTimeUs;
+        rssiSum += validFrame ? RSSI_MAX_VALUE : 0;
+        rssiCount++;
 
-        resample_time += currentDeltaTime;
-        tot_rssi += validFrame ? RSSI_MAX_VALUE : 0;
-        cnt_rssi++;
-
-        if (resample_time >= FRAME_ERR_RESAMPLE_US) {
-            setRssi(tot_rssi / cnt_rssi, rssiSource);
-            tot_rssi = 0;
-            cnt_rssi = 0;
-            resample_time -= FRAME_ERR_RESAMPLE_US;
+        if (resampleTimeUs >= FRAME_ERR_RESAMPLE_US) {
+            setRssi(rssiSum / rssiCount, rssiSource);
+            rssiSum = 0;
+            rssiCount = 0;
+            resampleTimeUs -= FRAME_ERR_RESAMPLE_US;
         }
     }
 }
@@ -447,7 +447,7 @@ void setLinkQualityDirect(uint16_t linkqualityValue)
 #endif
 }
 
-bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
+bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
@@ -489,7 +489,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
                     needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
                 }
 
-                setLinkQuality(signalReceived, currentDeltaTime);
+                setLinkQuality(signalReceived, currentDeltaTimeUs);
             }
 
             if (frameStatus & RX_FRAME_PROCESSING_REQUIRED) {
