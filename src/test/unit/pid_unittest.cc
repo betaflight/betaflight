@@ -295,8 +295,8 @@ TEST(pidControllerTest, testPidLoop) {
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
+    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
     EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
     simulatedMotorMixRange = 0;
 
@@ -312,8 +312,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
-    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
+    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
+    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
     EXPECT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
@@ -417,12 +417,12 @@ TEST(pidControllerTest, testMixerSaturation) {
     simulatedMotorMixRange = 2.0f;
     pidController(pidProfile, currentTestTime());
 
-    // Expect no iterm accumulation
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    // Expect no iterm accumulation for yaw
+    EXPECT_FLOAT_EQ(150, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(-150, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
-    // Test itermWindup limit
+    // Test itermWindup limit (note: windup limit now only affects yaw)
     // First store values without exceeding iterm windup limit
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -445,8 +445,8 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_YAW, 0.1f);
     simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
-    EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
+    EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, rollTestIterm);
+    EXPECT_FLOAT_EQ(pidData[FD_PITCH].I, pitchTestIterm);
     EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
 }
 
