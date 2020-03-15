@@ -160,6 +160,6 @@ void beeper(beeperMode_e) {}
 uint8_t detectedSensors[] = { GYRO_NONE, ACC_NONE };
 timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
 void sensorsSet(uint32_t) {}
-void schedulerResetTaskStatistics(cfTaskId_e) {}
+void schedulerResetTaskStatistics(taskId_e) {}
 int getArmingDisableFlags(void) {return 0;}
 }

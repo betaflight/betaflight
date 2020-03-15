@@ -25,10 +25,10 @@
 
 #include "platform.h"
 
-#include "build/debug.h"
-
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_fielddefs.h"
+
+#include "build/debug.h"
 
 #include "cli/cli.h"
 
@@ -39,6 +39,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/dshot.h"
@@ -50,21 +51,20 @@
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 
-#include "config/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/stats.h"
-#include "fc/tasks.h"
 
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
+
 #if defined(USE_GYRO_DATA_ANALYSE)
 #include "flight/gyroanalyse.h"
 #endif
+
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -104,6 +104,8 @@
 #include "sensors/gyro.h"
 
 #include "telemetry/telemetry.h"
+
+#include "core.h"
 
 
 enum {
@@ -321,7 +323,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (averageSystemLoadPercent > 100) {
+        if (getAverageSystemLoadPercent() > LOAD_PERCENTAGE_ONE) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
@@ -1280,8 +1282,8 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     subTaskPidSubprocesses(currentTimeUs);
 
     if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = getTaskDeltaTime(TASK_SELF);
-        debug[1] = averageSystemLoadPercent;
+        DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));
+        DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());
     }
 }
 

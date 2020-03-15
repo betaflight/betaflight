@@ -279,7 +279,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             }
             break;
         case BST_STATUS:
-            bstWrite16(getTaskDeltaTime(TASK_PID));
+            bstWrite16(getTaskDeltaTimeUs(TASK_PID));
 #ifdef USE_I2C
             bstWrite16(i2cGetErrorCounter());
 #else
@@ -314,7 +314,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(getCurrentPidProfileIndex());
             break;
         case BST_LOOP_TIME:
-            bstWrite16(getTaskDeltaTime(TASK_PID));
+            bstWrite16(getTaskDeltaTimeUs(TASK_PID));
             break;
         case BST_RC_TUNING:
             bstWrite8(currentControlRateProfile->rcRates[FD_ROLL]);

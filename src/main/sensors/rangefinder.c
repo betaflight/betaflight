@@ -31,28 +31,28 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
-#include "common/utils.h"
 #include "common/time.h"
+#include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/io.h"
-#include "drivers/time.h"
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
+#include "drivers/time.h"
 
-#include "config/config.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
-
-#include "scheduler/scheduler.h"
 
 //#include "uav_interconnect/uav_interconnect.h"
 

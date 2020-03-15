@@ -1051,7 +1051,7 @@ extern "C" {
     bool calculateRxChannelsAndUpdateFailsafe(timeUs_t) { return true; }
     bool isMixerUsingServos(void) { return false; }
     void gyroUpdate(void) {}
-    timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 0; }
+    timeDelta_t getTaskDeltaTimeUs(taskId_e) { return 0; }
     void updateRSSI(timeUs_t) {}
     bool failsafeIsMonitoring(void) { return false; }
     void failsafeStartMonitoring(void) {}
@@ -1082,7 +1082,7 @@ extern "C" {
     void dashboardEnablePageCycling(void) {}
     void dashboardDisablePageCycling(void) {}
     bool imuQuaternionHeadfreeOffsetSet(void) { return true; }
-    void rescheduleTask(cfTaskId_e, uint32_t) {}
+    void rescheduleTask(taskId_e, timeDelta_t) {}
     bool usbCableIsInserted(void) { return false; }
     bool usbVcpIsConnected(void) { return false; }
     void pidSetAntiGravityState(bool) {}
@@ -1103,4 +1103,5 @@ extern "C" {
     void gyroFiltering(timeUs_t) {};
     timeDelta_t rxGetFrameDelta(timeDelta_t *) { return 0; }
     void updateRcRefreshRate(timeUs_t) {};
+    uint16_t getAverageSystemLoadPercent(void) { return 0; }
 }
