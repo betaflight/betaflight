@@ -1454,11 +1454,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // -----calculate I component
 #ifdef USE_LAUNCH_CONTROL
         // if launch control is active override the iterm gains
-        const float Ki = launchControlActive ? launchControlKi : pidCoefficient[axis].Ki;
+        float Ki = launchControlActive ? launchControlKi : pidCoefficient[axis].Ki;
 #else
-        const float Ki = pidCoefficient[axis].Ki;
+        float Ki = pidCoefficient[axis].Ki;
 #endif
-        pidData[axis].I = constrainf(previousIterm + (Ki * dynCi + agGain) * itermErrorRate, -itermLimit, itermLimit);
+        // iterm_windup on yaw only
+        if (axis == FD_YAW) {
+            Ki *= dynCi;
+        }
+        pidData[axis].I = constrainf(previousIterm + (Ki + agGain) * itermErrorRate, -itermLimit, itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
