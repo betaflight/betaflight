@@ -551,7 +551,7 @@ STATIC_UNIT_TESTED const void *cmsMenuBack(displayPort_t *pDisplay)
 {
     // Let onExit function decide whether to allow exit or not.
     if (currentCtx.menu->onExit) {
-        const void *result = currentCtx.menu->onExit(pageTop + currentCtx.cursorRow);
+        const void *result = currentCtx.menu->onExit(pDisplay, pageTop + currentCtx.cursorRow);
         if (result == MENU_CHAIN_BACK) {
             return result;
         }
@@ -655,7 +655,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     }
 
     if (currentCtx.menu->onDisplayUpdate) {
-        const void *result = currentCtx.menu->onDisplayUpdate(pageTop + currentCtx.cursorRow);
+        const void *result = currentCtx.menu->onDisplayUpdate(pDisplay, pageTop + currentCtx.cursorRow);
         if (result == MENU_CHAIN_BACK) {
             cmsMenuBack(pDisplay);
 
@@ -712,19 +712,21 @@ const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
     if (pMenu != currentCtx.menu) {
         saveMenuInhibited = false;
 
-        // Stack the current menu and move to a new menu.
-        if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
-            // menu stack limit reached - prevent array overflow
-            return NULL;
+        if (currentCtx.menu) {
+            // If we are opening the initial top-level menu, then currentCtx.menu will be NULL and nothing to do.
+            // Otherwise stack the current menu before moving to the selected menu.
+            if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
+                // menu stack limit reached - prevent array overflow
+                return NULL;
+            }
+            menuStack[menuStackIdx++] = currentCtx;
         }
-
-        menuStack[menuStackIdx++] = currentCtx;
 
         currentCtx.menu = pMenu;
         currentCtx.cursorRow = 0;
 
         if (pMenu->onEnter) {
-            const void *result = pMenu->onEnter();
+            const void *result = pMenu->onEnter(pDisplay);
             if (result == MENU_CHAIN_BACK) {
                 return cmsMenuBack(pDisplay);
             }
@@ -751,19 +753,22 @@ const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 
 void cmsMenuOpen(void)
 {
+    const CMS_Menu *startMenu;
     if (!cmsInMenu) {
         // New open
         pCurrentDisplay = cmsDisplayPortSelectCurrent();
         if (!pCurrentDisplay)
             return;
         cmsInMenu = true;
-        currentCtx = (cmsCtx_t){ &cmsx_menuMain, 0, 0 };
+        currentCtx = (cmsCtx_t){ NULL, 0, 0 };
+        startMenu = &cmsx_menuMain;
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
         displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
+        startMenu = currentCtx.menu;
         if (pNextDisplay != pCurrentDisplay) {
             // DisplayPort has been changed.
             // Convert cursorRow to absolute value
@@ -801,7 +806,7 @@ void cmsMenuOpen(void)
     	maxMenuItems      = pCurrentDisplay->rows;
     }
 
-    cmsMenuChange(pCurrentDisplay, currentCtx.menu);
+    cmsMenuChange(pCurrentDisplay, startMenu);
 }
 
 static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
@@ -826,14 +831,14 @@ const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
         cmsTraverseGlobalExit(&cmsx_menuMain);
 
         if (currentCtx.menu->onExit) {
-            currentCtx.menu->onExit((OSD_Entry *)NULL); // Forced exit
+            currentCtx.menu->onExit(pDisplay, (OSD_Entry *)NULL); // Forced exit
         }
 
         if ((exitType == CMS_POPUP_SAVE) || (exitType == CMS_POPUP_SAVEREBOOT)) {
             // traverse through the menu stack and call their onExit functions
             for (int i = menuStackIdx - 1; i >= 0; i--) {
                 if (menuStack[i].menu->onExit) {
-                    menuStack[i].menu->onExit((OSD_Entry *)NULL);
+                    menuStack[i].menu->onExit(pDisplay, (OSD_Entry *)NULL);
                 }
             }
         }
@@ -1321,6 +1326,15 @@ void cmsInit(void)
 void inhibitSaveMenu(void)
 {
     saveMenuInhibited = true;
+}
+
+void cmsAddMenuEntry(OSD_Entry *menuEntry, char *text, OSD_MenuElement type, CMSEntryFuncPtr func, void *data, uint8_t flags)
+{
+        menuEntry->text = text;
+        menuEntry->type = type;
+        menuEntry->func = func;
+        menuEntry->data = data;
+        menuEntry->flags = flags;
 }
 
 #endif // CMS

@@ -48,8 +48,10 @@ uint8_t failsafeConfig_failsafe_delay;
 uint8_t failsafeConfig_failsafe_off_delay;
 uint16_t failsafeConfig_failsafe_throttle;
 
-static const void *cmsx_Failsafe_onEnter(void)
+static const void *cmsx_Failsafe_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     failsafeConfig_failsafe_procedure = failsafeConfig()->failsafe_procedure;
     failsafeConfig_failsafe_delay = failsafeConfig()->failsafe_delay;
     failsafeConfig_failsafe_off_delay = failsafeConfig()->failsafe_off_delay;
@@ -58,8 +60,9 @@ static const void *cmsx_Failsafe_onEnter(void)
     return NULL;
 }
 
-static const void *cmsx_Failsafe_onExit(const OSD_Entry *self)
+static const void *cmsx_Failsafe_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     failsafeConfigMutable()->failsafe_procedure = failsafeConfig_failsafe_procedure;

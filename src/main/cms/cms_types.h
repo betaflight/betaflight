@@ -58,11 +58,11 @@ typedef const void *(*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *p
 
 typedef struct
 {
-    const char * const text;
-    const OSD_MenuElement type;
+    const char * text;
+    OSD_MenuElement type;
     CMSEntryFuncPtr func;
     void *data;
-    const uint8_t flags;
+    uint8_t flags;
 } __attribute__((packed)) OSD_Entry;
 
 // Bits in flags
@@ -82,7 +82,7 @@ typedef struct
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
-typedef const void *(*CMSMenuFuncPtr)(void);
+typedef const void *(*CMSMenuFuncPtr)(displayPort_t *pDisp);
 
 // Special return value(s) for function chaining by CMSMenuFuncPtr
 extern int menuChainBack;
@@ -95,11 +95,9 @@ onExit function is called with self:
 (2) NULL if called from menu exit (forced exit at top level).
 */
 
-typedef const void *(*CMSMenuOnExitPtr)(const OSD_Entry *self);
+typedef const void *(*CMSMenuOnExitPtr)(displayPort_t *pDisp, const OSD_Entry *self);
 
-typedef const void * (*CMSMenuCheckRedirectPtr)(void);
-
-typedef const void *(*CMSMenuOnDisplayUpdatePtr)(const OSD_Entry *selected);
+typedef const void *(*CMSMenuOnDisplayUpdatePtr)(displayPort_t *pDisp, const OSD_Entry *selected);
 
 typedef struct
 {

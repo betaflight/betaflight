@@ -178,8 +178,10 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 }
 #endif // USE_FLASHFS
 
-static const void *cmsx_Blackbox_onEnter(void)
+static const void *cmsx_Blackbox_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     cmsx_Blackbox_GetDeviceStatus();
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
@@ -188,8 +190,9 @@ static const void *cmsx_Blackbox_onEnter(void)
     return NULL;
 }
 
-static const void *cmsx_Blackbox_onExit(const OSD_Entry *self)
+static const void *cmsx_Blackbox_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     if (blackboxMayEditConfig()) {

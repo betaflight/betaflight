@@ -118,7 +118,7 @@ TEST(CMSUnittest, TestCmsMenuKey)
 // STUBS
 
 extern "C" {
-static OSD_Entry menuMainEntries[] =
+static const OSD_Entry menuMainEntries[] =
 {
     {"-- MAIN MENU --", OME_Label, NULL, NULL, 0},
     {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},

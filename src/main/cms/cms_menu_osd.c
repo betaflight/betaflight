@@ -48,14 +48,17 @@
 #ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
-static const void *menuOsdActiveElemsOnEnter(void)
+static const void *menuOsdActiveElemsOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     memcpy(&osdConfig_item_pos[0], &osdElementConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     return NULL;
 }
 
-static const void *menuOsdActiveElemsOnExit(const OSD_Entry *self)
+static const void *menuOsdActiveElemsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     memcpy(&osdElementConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
@@ -171,8 +174,10 @@ static uint16_t osdConfig_distance_alarm;
 static uint8_t batteryConfig_vbatDurationForWarning;
 static uint8_t batteryConfig_vbatDurationForCritical;
 
-static const void *menuAlarmsOnEnter(void)
+static const void *menuAlarmsOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
     osdConfig_link_quality_alarm = osdConfig()->link_quality_alarm;
     osdConfig_rssi_dbm_alarm = osdConfig()->rssi_dbm_alarm;
@@ -185,8 +190,9 @@ static const void *menuAlarmsOnEnter(void)
     return NULL;
 }
 
-static const void *menuAlarmsOnExit(const OSD_Entry *self)
+static const void *menuAlarmsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
@@ -231,8 +237,10 @@ osd_timer_source_e timerSource[OSD_TIMER_COUNT];
 osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
-static const void *menuTimersOnEnter(void)
+static const void *menuTimersOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
         timerSource[i] = OSD_TIMER_SRC(timer);
@@ -243,8 +251,9 @@ static const void *menuTimersOnEnter(void)
     return NULL;
 }
 
-static const void *menuTimersOnExit(const OSD_Entry *self)
+static const void *menuTimersOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
@@ -291,8 +300,10 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static uint8_t osdConfig_osdProfileIndex;
 #endif
 
-static const void *cmsx_menuOsdOnEnter(void)
+static const void *cmsx_menuOsdOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
 #ifdef USE_OSD_PROFILES
     osdConfig_osdProfileIndex = osdConfig()->osdProfileIndex;
 #endif
@@ -306,8 +317,9 @@ static const void *cmsx_menuOsdOnEnter(void)
     return NULL;
 }
 
-static const void *cmsx_menuOsdOnExit(const OSD_Entry *self)
+static const void *cmsx_menuOsdOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
 #ifdef USE_OSD_PROFILES

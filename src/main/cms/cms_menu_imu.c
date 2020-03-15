@@ -106,8 +106,10 @@ static void setProfileIndexString(char *profileString, int profileIndex, char *p
     profileString[charIndex] = '\0';
 }
 
-static const void *cmsx_menuImu_onEnter(void)
+static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     pidProfileIndex = getCurrentPidProfileIndex();
     tmpPidProfileIndex = pidProfileIndex + 1;
 
@@ -117,8 +119,9 @@ static const void *cmsx_menuImu_onEnter(void)
     return NULL;
 }
 
-static const void *cmsx_menuImu_onExit(const OSD_Entry *self)
+static const void *cmsx_menuImu_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     changePidProfile(pidProfileIndex);
@@ -163,16 +166,19 @@ static const void *cmsx_PidRead(void)
     return NULL;
 }
 
-static const void *cmsx_PidOnEnter(void)
+static const void *cmsx_PidOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
     cmsx_PidRead();
 
     return NULL;
 }
 
-static const void *cmsx_PidWriteback(const OSD_Entry *self)
+static const void *cmsx_PidWriteback(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     pidProfile_t *pidProfile = currentPidProfile;
@@ -232,8 +238,9 @@ static const void *cmsx_RateProfileRead(void)
     return NULL;
 }
 
-static const void *cmsx_RateProfileWriteback(const OSD_Entry *self)
+static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     memcpy(controlRateProfilesMutable(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
@@ -241,8 +248,10 @@ static const void *cmsx_RateProfileWriteback(const OSD_Entry *self)
     return NULL;
 }
 
-static const void *cmsx_RateProfileOnEnter(void)
+static const void *cmsx_RateProfileOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     setProfileIndexString(rateProfileIndexString, rateProfileIndex, controlRateProfilesMutable(rateProfileIndex)->profileName);
     cmsx_RateProfileRead();
 
@@ -295,8 +304,10 @@ static uint8_t cmsx_launchControlThrottlePercent;
 static uint8_t cmsx_launchControlAngleLimit;
 static uint8_t cmsx_launchControlGain;
 
-static const void *cmsx_launchControlOnEnter(void)
+static const void *cmsx_launchControlOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
     cmsx_launchControlMode  = pidProfile->launchControlMode;
@@ -308,8 +319,9 @@ static const void *cmsx_launchControlOnEnter(void)
     return NULL;
 }
 
-static const void *cmsx_launchControlOnExit(const OSD_Entry *self)
+static const void *cmsx_launchControlOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
@@ -375,8 +387,10 @@ static uint8_t cmsx_ff_interpolate_sp;
 static uint8_t cmsx_ff_smooth_factor;
 #endif
 
-static const void *cmsx_profileOtherOnEnter(void)
+static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
@@ -417,8 +431,9 @@ static const void *cmsx_profileOtherOnEnter(void)
     return NULL;
 }
 
-static const void *cmsx_profileOtherOnExit(const OSD_Entry *self)
+static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
@@ -521,8 +536,10 @@ static uint16_t gyroConfig_gyro_soft_notch_hz_2;
 static uint16_t gyroConfig_gyro_soft_notch_cutoff_2;
 static uint8_t  gyroConfig_gyro_to_use;
 
-static const void *cmsx_menuGyro_onEnter(void)
+static const void *cmsx_menuGyro_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     gyroConfig_gyro_lowpass_hz =  gyroConfig()->gyro_lowpass_hz;
     gyroConfig_gyro_lowpass2_hz =  gyroConfig()->gyro_lowpass2_hz;
     gyroConfig_gyro_soft_notch_hz_1 = gyroConfig()->gyro_soft_notch_hz_1;
@@ -534,8 +551,9 @@ static const void *cmsx_menuGyro_onEnter(void)
     return NULL;
 }
 
-static const void *cmsx_menuGyro_onExit(const OSD_Entry *self)
+static const void *cmsx_menuGyro_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     gyroConfigMutable()->gyro_lowpass_hz =  gyroConfig_gyro_lowpass_hz;
@@ -596,8 +614,10 @@ static uint16_t dynFiltDtermMax;
 static uint8_t dynFiltDtermExpo;
 #endif
 
-static const void *cmsx_menuDynFilt_onEnter(void)
+static const void *cmsx_menuDynFilt_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
 #ifdef USE_GYRO_DATA_ANALYSE
     dynFiltNotchMaxHz   = gyroConfig()->dyn_notch_max_hz;
     dynFiltWidthPercent = gyroConfig()->dyn_notch_width_percent;
@@ -616,8 +636,9 @@ static const void *cmsx_menuDynFilt_onEnter(void)
     return NULL;
 }
 
-static const void *cmsx_menuDynFilt_onExit(const OSD_Entry *self)
+static const void *cmsx_menuDynFilt_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -680,8 +701,10 @@ static uint16_t cmsx_dterm_notch_hz;
 static uint16_t cmsx_dterm_notch_cutoff;
 static uint16_t cmsx_yaw_lowpass_hz;
 
-static const void *cmsx_FilterPerProfileRead(void)
+static const void *cmsx_FilterPerProfileRead(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
     cmsx_dterm_lowpass_hz   = pidProfile->dterm_lowpass_hz;
@@ -693,8 +716,9 @@ static const void *cmsx_FilterPerProfileRead(void)
     return NULL;
 }
 
-static const void *cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
+static const void *cmsx_FilterPerProfileWriteback(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     pidProfile_t *pidProfile = currentPidProfile;
@@ -748,8 +772,10 @@ static const char * const cmsx_ProfileNames[] = {
 static OSD_TAB_t cmsx_PidProfileTable = { &cmsx_dstPidProfile, 3, cmsx_ProfileNames };
 static OSD_TAB_t cmsx_ControlRateProfileTable = { &cmsx_dstControlRateProfile, 3, cmsx_ProfileNames };
 
-static const void *cmsx_menuCopyProfile_onEnter(void)
+static const void *cmsx_menuCopyProfile_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     cmsx_dstPidProfile = 0;
     cmsx_dstControlRateProfile = 0;
 
