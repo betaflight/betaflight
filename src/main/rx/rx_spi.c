@@ -240,7 +240,10 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
 
     if (rxSpiExtiConfigured()) {
         rxSpiExtiInit(extiConfig.ioConfig, extiConfig.trigger);
+
+        rxRuntimeState->rcFrameTimeUsFn = rxSpiGetLastExtiTimeUs;
     }
+
     rxSpiNewPacketAvailable = false;
     rxRuntimeState->rxRefreshRate = 20000;
 
