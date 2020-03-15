@@ -1157,12 +1157,16 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 }
 
 #ifdef USE_TELEMETRY
+#define GYRO_TEMP_READ_DELAY_US 3e6    // Only read the gyro temp every 3 seconds
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
+    static timeUs_t lastGyroTempTimeUs = 0;
 
-    // Read out gyro temperature if used for telemmetry
-    gyroReadTemperature();
+    if (cmpTimeUs(currentTimeUs, lastGyroTempTimeUs) >= GYRO_TEMP_READ_DELAY_US) {
+        // Read out gyro temperature if used for telemmetry
+        gyroReadTemperature();
+        lastGyroTempTimeUs = currentTimeUs;
+    }
 }
 #endif
 
