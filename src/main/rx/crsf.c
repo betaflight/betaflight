@@ -156,17 +156,17 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
 {
     const crsfLinkStatistics_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
+    int16_t rssiDbm = -1 * (stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1);
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
-        int16_t rssiDbm = -1 * (stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1);
         const uint16_t rssiPercentScaled = scaleRange(rssiDbm, CRSF_RSSI_MIN, 0, 0, RSSI_MAX_VALUE);
         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
-#ifdef USE_RX_RSSI_DBM
-        if (rxConfig()->crsf_use_rx_snr) {
-            rssiDbm = stats.uplink_SNR;
-        }
-        setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
-#endif
     }
+#ifdef USE_RX_RSSI_DBM
+    if (rxConfig()->crsf_use_rx_snr) {
+        rssiDbm = stats.uplink_SNR;
+    }
+    setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+#endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) {
