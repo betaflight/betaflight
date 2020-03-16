@@ -747,13 +747,8 @@ static void updateRSSIPWM(void)
     // Read value of AUX channel as rssi
     int16_t pwmRssi = rcData[rxConfig()->rssi_channel - 1];
 
-    // RSSI_Invert option
-    if (rxConfig()->rssi_invert) {
-        pwmRssi = ((2000 - pwmRssi) + 1000);
-    }
-
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    setRssiDirect(constrain(((pwmRssi - 1000) / 1000.0f) * RSSI_MAX_VALUE, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
+    setRssiDirect(scaleRange(pwmRssi, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
 }
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
@@ -770,11 +765,6 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
     uint16_t rssiValue = adcRssiSample / RSSI_ADC_DIVISOR;
-
-    // RSSI_Invert option
-    if (rxConfig()->rssi_invert) {
-        rssiValue = RSSI_MAX_VALUE - rssiValue;
-    }
 
     setRssi(rssiValue, RSSI_SOURCE_ADC);
 #endif
@@ -801,7 +791,14 @@ void updateRSSI(timeUs_t currentTimeUs)
 
 uint16_t getRssi(void)
 {
-    return rxConfig()->rssi_scale / 100.0f * rssi + rxConfig()->rssi_offset * RSSI_OFFSET_SCALING;
+    uint16_t rssiValue = rssi;
+
+    // RSSI_Invert option
+    if (rxConfig()->rssi_invert) {
+        rssiValue = RSSI_MAX_VALUE - rssiValue;
+    }
+
+    return rxConfig()->rssi_scale / 100.0f * rssiValue + rxConfig()->rssi_offset * RSSI_OFFSET_SCALING;
 }
 
 uint8_t getRssiPercent(void)
