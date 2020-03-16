@@ -299,7 +299,7 @@ uint8_t __config_start = 0x00;
 uint8_t __config_end = 0x10;
 uint16_t averageSystemLoadPercent = 0;
 
-timeDelta_t getTaskDeltaTime(cfTaskId_e){ return 0; }
+timeDelta_t getTaskDeltaTimeUs(taskId_e){ return 0; }
 uint16_t currentRxRefreshRate = 9000;
 armingDisableFlags_e getArmingDisableFlags(void) { return ARMING_DISABLED_NO_GYRO; }
 
@@ -307,9 +307,9 @@ const char *armingDisableFlagNames[]= {
 "DUMMYDISABLEFLAGNAME"
 };
 
-void getTaskInfo(cfTaskId_e, cfTaskInfo_t *) {}
+void getTaskInfo(taskId_e, taskInfo_t *) {}
 void getCheckFuncInfo(cfCheckFuncInfo_t *) {}
-void schedulerResetTaskMaxExecutionTime(cfTaskId_e) {}
+void schedulerResetTaskMaxExecutionTime(taskId_e) {}
 void schedulerResetCheckFunctionMaxExecutionTime(void) {}
 
 const char * const targetName = "UNITTEST";
@@ -360,4 +360,5 @@ void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
 uint16_t getCurrentRxRefreshRate(void) { return 0; }
+uint16_t getAverageSystemLoadPercent(void) { return 0; }
 }

@@ -470,9 +470,9 @@ static void hottPrepareMessages(void) {
 static void hottTextmodeStart()
 {
     // Increase menu speed
-    cfTaskInfo_t taskInfo;
+    taskInfo_t taskInfo;
     getTaskInfo(TASK_TELEMETRY, &taskInfo);
-    telemetryTaskPeriod = taskInfo.desiredPeriod;
+    telemetryTaskPeriod = taskInfo.desiredPeriodUs;
     rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(HOTT_TEXTMODE_TASK_PERIOD));
 
     rxSchedule = HOTT_TEXTMODE_RX_SCHEDULE;
