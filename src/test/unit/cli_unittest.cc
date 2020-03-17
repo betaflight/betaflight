@@ -53,8 +53,7 @@ extern "C" {
     #include "scheduler/scheduler.h"
     #include "sensors/battery.h"
 
-    void cliSet(char *cmdline);
-    void cliGet(char *cmdline);
+    void cliSet(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
     
@@ -96,7 +95,7 @@ extern "C" {
 TEST(CLIUnittest, TestCliSetArray)
 {
     char *str = (char *)"array_unit_test    =   123,  -3  , 1";
-    cliSet(str);
+    cliSet("", str);
 
     const uint16_t index = cliGetSettingIndex(str, 15);
     EXPECT_LT(index, valueTableEntryCount);
@@ -119,7 +118,7 @@ TEST(CLIUnittest, TestCliSetArray)
 TEST(CLIUnittest, TestCliSetStringNoFlags)
 {
     char *str = (char *)"str_unit_test    =   SAMPLE"; 
-    cliSet(str);
+    cliSet("", str);
 
     const uint16_t index = cliGetSettingIndex(str, 13);
     EXPECT_LT(index, valueTableEntryCount);
@@ -147,7 +146,7 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
 {
     char *str1 = (char *)"wos_unit_test    =   SAMPLE"; 
     char *str2 = (char *)"wos_unit_test    =   ELPMAS"; 
-    cliSet(str1);
+    cliSet("", str1);
 
     const uint16_t index = cliGetSettingIndex(str1, 13);
     EXPECT_LT(index, valueTableEntryCount);
@@ -169,7 +168,7 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ('E', data[5]);
     EXPECT_EQ(0,   data[6]);
 
-    cliSet(str2);
+    cliSet("", str2);
 
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
@@ -179,7 +178,7 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ('E', data[5]);
     EXPECT_EQ(0,   data[6]);
 
-    cliSet(str1);
+    cliSet("", str1);
 
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
