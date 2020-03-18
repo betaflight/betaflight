@@ -145,9 +145,8 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define GYRO_1_ALIGN            CW180_DEG
-#define GYRO_2_ALIGN            ALIGN_CUSTOM
-#define GYRO_2_CUSTOM_ALIGN     SENSOR_ALIGNMENT(0, 0, 225)
+#define GYRO_1_ALIGN            CW0_DEG
+#define GYRO_2_ALIGN            CW90_DEG
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
