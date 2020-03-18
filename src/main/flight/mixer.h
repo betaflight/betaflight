@@ -101,6 +101,7 @@ bool areMotorsRunning(void);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void initEscEndpoints(void);
 void mixerInit(mixerMode_e mixerMode);
+void mixerInitProfile(void);
 
 void mixerConfigureOutput(void);
 
