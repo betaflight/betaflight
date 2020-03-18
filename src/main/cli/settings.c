@@ -255,7 +255,8 @@ static const char * const lookupTableRxSpi[] = {
     "KN",
     "SFHSS",
     "SPEKTRUM",
-    "FRSKY_X_LBT"
+    "FRSKY_X_LBT",
+    "REDPINE"
 };
 #endif
 
