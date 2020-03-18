@@ -143,6 +143,7 @@ typedef enum {
     OSD_RSSI_DBM_VALUE,
     OSD_RC_CHANNELS,
     OSD_CAMERA_FRAME,
+    OSD_EFFICIENCY,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
