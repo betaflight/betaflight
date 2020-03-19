@@ -160,3 +160,12 @@ bool cc2500SpiInit(void)
     return true;
 }
 #endif
+
+void cc2500ApplyRegisterConfig(const cc2500RegisterConfigElement_t *configArrayPtr, int configSize)
+{
+    const int entryCount = configSize / sizeof(cc2500RegisterConfigElement_t);
+    for (int i = 0; i < entryCount; i++) {
+        cc2500WriteReg(configArrayPtr->registerID, configArrayPtr->registerValue);
+        configArrayPtr++;
+    }
+}
