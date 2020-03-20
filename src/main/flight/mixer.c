@@ -346,6 +346,16 @@ void initEscEndpoints(void)
     rcCommandThrottleRange = PWM_RANGE_MAX - PWM_RANGE_MIN;
 }
 
+// Initialize pidProfile related mixer settings
+void mixerInitProfile(void)
+{
+#ifdef USE_DYN_IDLE
+    idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
+    idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
+    idleP = currentPidProfile->idle_p * 0.0001f;
+#endif
+}
+
 void mixerInit(mixerMode_e mixerMode)
 {
     currentMixerMode = mixerMode;
@@ -356,12 +366,12 @@ void mixerInit(mixerMode_e mixerMode)
         mixerTricopterInit();
     }
 #endif
+
 #ifdef USE_DYN_IDLE
-    idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
-    idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
-    idleP = currentPidProfile->idle_p * 0.0001f;
 #endif
+
+    mixerInitProfile();
 }
 
 #ifdef USE_LAUNCH_CONTROL
