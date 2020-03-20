@@ -232,7 +232,9 @@ void tasksInit(void)
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     // If vbat motor output compensation is used, use fast vbat samplingTime
-    rescheduleTask(TASK_BATTERY_VOLTAGE, TASK_PERIOD_HZ(getBatteryVoltageTaskFrequencyHz()));
+    if (isSagCompensationConfigured()) {
+        rescheduleTask(TASK_BATTERY_VOLTAGE, TASK_PERIOD_HZ(FAST_VOLTAGE_TASK_FREQ_HZ));
+    }
 #endif
 
     const bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;

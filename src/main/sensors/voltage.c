@@ -178,7 +178,7 @@ void voltageMeterADCRefresh(void)
         state->voltageUnfiltered = voltageAdcToVoltage(rawSample, config);
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
-        if (currentPidProfile->vbat_sag_compensation > 0) {
+        if (isSagCompensationConfigured()) {
             uint16_t filteredSagSample = pt1FilterApply(&state->sagFilter, rawSample);
             state->voltageSagFiltered = voltageAdcToVoltage(filteredSagSample, config);
         }
@@ -206,18 +206,18 @@ void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageM
 #endif
 }
 
-uint16_t getBatteryVoltageTaskFrequencyHz(void)
+bool isSagCompensationConfigured(void)
 {
-    uint16_t frequencyHz = SLOW_VOLTAGE_TASK_FREQ_HZ;
+    bool isConfigured = false;
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
         if (pidProfiles(i)->vbat_sag_compensation > 0) {
-            frequencyHz = FAST_VOLTAGE_TASK_FREQ_HZ;
+            isConfigured = true;
         }
     }
 #endif
 
-    return frequencyHz;
+    return isConfigured;
 }
 
 void voltageMeterADCInit(void)
@@ -228,10 +228,10 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        pt1FilterInit(&state->displayFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatDisplayLpfPeriod), HZ_TO_INTERVAL(getBatteryVoltageTaskFrequencyHz())));
+        pt1FilterInit(&state->displayFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatDisplayLpfPeriod), HZ_TO_INTERVAL(isSagCompensationConfigured() ? FAST_VOLTAGE_TASK_FREQ_HZ : SLOW_VOLTAGE_TASK_FREQ_HZ)));
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
-        if (currentPidProfile->vbat_sag_compensation > 0) {
-            pt1FilterInit(&state->sagFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatSagLpfPeriod), HZ_TO_INTERVAL(getBatteryVoltageTaskFrequencyHz())));
+        if (isSagCompensationConfigured()) {
+            pt1FilterInit(&state->sagFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatSagLpfPeriod), HZ_TO_INTERVAL(FAST_VOLTAGE_TASK_FREQ_HZ)));
         }
 #endif
     }
@@ -257,7 +257,7 @@ void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
     memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
-    pt1FilterInit(&voltageMeterESCState.displayFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatDisplayLpfPeriod), HZ_TO_INTERVAL(getBatteryVoltageTaskFrequencyHz())));
+    pt1FilterInit(&voltageMeterESCState.displayFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatDisplayLpfPeriod), HZ_TO_INTERVAL(isSagCompensationConfigured() ? FAST_VOLTAGE_TASK_FREQ_HZ : SLOW_VOLTAGE_TASK_FREQ_HZ)));
 #endif
 }
 

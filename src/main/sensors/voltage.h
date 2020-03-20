@@ -119,4 +119,4 @@ extern const uint8_t supportedVoltageMeterCount;
 extern const uint8_t voltageMeterIds[];
 void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *voltageMeter);
 
-uint16_t getBatteryVoltageTaskFrequencyHz(void);
+bool isSagCompensationConfigured(void);
