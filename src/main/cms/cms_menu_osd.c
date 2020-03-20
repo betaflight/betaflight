@@ -76,6 +76,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], DYNAMIC},
     {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], DYNAMIC},
     {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], DYNAMIC},
+#ifdef USE_GPS
+    {"BATTERY EFFICIENCY", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_EFFICIENCY], DYNAMIC},
+#endif // GPS
     {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], DYNAMIC},
     {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], DYNAMIC},
     {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], DYNAMIC},
@@ -149,7 +152,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"STICK OVERLAY LEFT", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_LEFT], DYNAMIC},
     {"STICK OVERLAY RIGHT",OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_RIGHT], DYNAMIC},
 #endif
-    {"DISPLAY NAME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISPLAY_NAME], 0},
+    {"DISPLAY NAME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISPLAY_NAME], DYNAMIC},
+    {"RC CHANNELS",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RC_CHANNELS], DYNAMIC},
+    {"CAMERA FRAME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CAMERA_FRAME], DYNAMIC},
     {"BACK",               OME_Back,    NULL, NULL, 0},
     {NULL,                 OME_END,     NULL, NULL, 0}
 };
