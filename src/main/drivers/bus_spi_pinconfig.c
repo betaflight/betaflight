@@ -294,6 +294,7 @@ const spiHardware_t spiHardware[] = {
         .mosiPins = {
             { DEFIO_TAG_E(PA7), GPIO_AF5_SPI1 },
             { DEFIO_TAG_E(PB5), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PD7), GPIO_AF5_SPI1 },
         },
         .rcc = RCC_APB2(SPI1),
         //.dmaIrqHandler = DMA2_ST3_HANDLER,
