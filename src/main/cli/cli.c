@@ -3803,7 +3803,7 @@ static void executeEscInfoCommand(const char *cmdName, uint8_t escIndex)
 
 static void cliDshotProg(const char *cmdName, char *cmdline)
 {
-    if (isEmpty(cmdline) || motorConfig()->dev.motorPwmProtocol < PWM_TYPE_DSHOT150) {
+    if (isEmpty(cmdline) || !isMotorProtocolDshot()) {
         cliShowParseError(cmdName);
 
         return;

@@ -342,7 +342,7 @@ void initEscEndpoints(void)
         motorOutputLimit = currentPidProfile->motor_output_limit / 100.0f;
     }
 
-    motorInitEndpoints(motorOutputLimit, &motorOutputLow, &motorOutputHigh, &disarmMotorOutput, &deadbandMotor3dHigh, &deadbandMotor3dLow);
+    motorInitEndpoints(motorConfig(), motorOutputLimit, &motorOutputLow, &motorOutputHigh, &disarmMotorOutput, &deadbandMotor3dHigh, &deadbandMotor3dLow);
 
     rcCommandThrottleRange = PWM_RANGE_MAX - PWM_RANGE_MIN;
 }

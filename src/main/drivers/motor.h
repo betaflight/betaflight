@@ -24,19 +24,20 @@
 
 #include "common/time.h"
 
+#include "pg/motor.h"
+
 typedef enum {
     PWM_TYPE_STANDARD = 0,
     PWM_TYPE_ONESHOT125,
     PWM_TYPE_ONESHOT42,
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED,
-#ifdef USE_DSHOT
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
 //    PWM_TYPE_DSHOT1200, removed
     PWM_TYPE_PROSHOT1000,
-#endif
+    PWM_TYPE_DISABLED,
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
@@ -75,14 +76,16 @@ void motorUpdateCompleteNull(void);
 void motorPostInit();
 void motorWriteAll(float *values);
 
-void motorInitEndpoints(float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
+void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3DHigh, float *deadbandMotor3DLow);
 
 float motorConvertFromExternal(uint16_t externalValue);
 uint16_t motorConvertToExternal(float motorValue);
 
 struct motorDevConfig_s; // XXX Shouldn't be needed once pwm_output* is really cleaned up.
 void motorDevInit(const struct motorDevConfig_s *motorConfig, uint16_t idlePulse, uint8_t motorCount);
+bool checkMotorProtocolEnabled(const motorDevConfig_t *motorConfig, bool *protocolIsDshot);
 bool isMotorProtocolDshot(void);
+bool isMotorProtocolEnabled(void);
 
 void motorDisable(void);
 void motorEnable(void);

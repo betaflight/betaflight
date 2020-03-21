@@ -240,7 +240,9 @@ void initActiveBoxIds(void)
     }
 
 #ifdef USE_DSHOT
-    if (isMotorProtocolDshot()) {
+    bool configuredMotorProtocolDshot;
+    checkMotorProtocolEnabled(&motorConfig()->dev, &configuredMotorProtocolDshot);
+    if (configuredMotorProtocolDshot) {
         BME(BOXFLIPOVERAFTERCRASH);
     }
 #endif

@@ -54,7 +54,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     {
         motorConfig->minthrottle = 1070;
         motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_ONESHOT125;
+        motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
     }
 #endif // BRUSHED_MOTORS
 
