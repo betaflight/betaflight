@@ -91,77 +91,92 @@ static void nextChannel();
 static bool redpineRxPacketBind(uint8_t *packet);
 static bool isRedpineFast(void);
 
+const cc2500RegisterConfigElement_t cc2500RedPineBaseConfig[] =
+{
+    { CC2500_02_IOCFG0, 0x01 },
+    { CC2500_03_FIFOTHR, 0x07 },
+    { CC2500_06_PKTLEN, REDPINE_PACKET_SIZE },
+    { CC2500_07_PKTCTRL1, 0x0C },
+    { CC2500_08_PKTCTRL0, 0x05 },
+    { CC2500_09_ADDR, 0x00 }
+};
+
+const cc2500RegisterConfigElement_t cc2500RedPineFastConfig[] =
+{
+    { CC2500_0B_FSCTRL1, 0x0A },
+    { CC2500_0C_FSCTRL0, 0x00 },
+    { CC2500_0D_FREQ2, 0x5D },
+    { CC2500_0E_FREQ1, 0x93 },
+    { CC2500_0F_FREQ0, 0xB1 },
+    { CC2500_10_MDMCFG4, 0x2D },
+    { CC2500_11_MDMCFG3, 0x3B },
+    { CC2500_12_MDMCFG2, 0x73 },
+    { CC2500_13_MDMCFG1, 0x23 },
+    { CC2500_14_MDMCFG0, 0x56 },
+    { CC2500_15_DEVIATN, 0x00 },
+    { CC2500_17_MCSM1, 0x0C },
+    { CC2500_18_MCSM0, 0x08 },
+    { CC2500_19_FOCCFG, 0x1D },
+    { CC2500_1A_BSCFG, 0x1C },
+    { CC2500_1B_AGCCTRL2, 0xC7 },
+    { CC2500_1C_AGCCTRL1, 0x00 },
+    { CC2500_1D_AGCCTRL0, 0xB0 },
+    { CC2500_21_FREND1, 0xB6 },
+    { CC2500_22_FREND0, 0x10 },
+    { CC2500_23_FSCAL3, 0xEA },
+    { CC2500_24_FSCAL2, 0x0A },
+    { CC2500_25_FSCAL1, 0x00 },
+    { CC2500_26_FSCAL0, 0x11 },
+    { CC2500_29_FSTEST, 0x59 },
+    { CC2500_2C_TEST2, 0x88 },
+    { CC2500_2D_TEST1, 0x31 },
+    { CC2500_2E_TEST0, 0x0B },
+    { CC2500_3E_PATABLE, 0xFF }
+};
+
+const cc2500RegisterConfigElement_t cc2500RedPineConfig[] =
+{
+    { CC2500_0B_FSCTRL1, 0x06 },
+    { CC2500_0C_FSCTRL0, 0x00 },
+    { CC2500_0D_FREQ2, 0x5D },
+    { CC2500_0E_FREQ1, 0x93 },
+    { CC2500_0F_FREQ0, 0xB1 },
+    { CC2500_10_MDMCFG4, 0x78 },
+    { CC2500_11_MDMCFG3, 0x93 },
+    { CC2500_12_MDMCFG2, 0x03 },
+    { CC2500_13_MDMCFG1, 0x22 },
+    { CC2500_14_MDMCFG0, 0xF8 },
+    { CC2500_15_DEVIATN, 0x44 },
+    { CC2500_17_MCSM1, 0x0C },
+    { CC2500_18_MCSM0, 0x08 },
+    { CC2500_19_FOCCFG, 0x16 },
+    { CC2500_1A_BSCFG, 0x6C },
+    { CC2500_1B_AGCCTRL2, 0x43 },
+    { CC2500_1C_AGCCTRL1, 0x40 },
+    { CC2500_1D_AGCCTRL0, 0x91 },
+    { CC2500_21_FREND1, 0x56 },
+    { CC2500_22_FREND0, 0x10 },
+    { CC2500_23_FSCAL3, 0xA9 },
+    { CC2500_24_FSCAL2, 0x0A },
+    { CC2500_25_FSCAL1, 0x00 },
+    { CC2500_26_FSCAL0, 0x11 },
+    { CC2500_29_FSTEST, 0x59 },
+    { CC2500_2C_TEST2, 0x88 },
+    { CC2500_2D_TEST1, 0x31 },
+    { CC2500_2E_TEST0, 0x0B },
+    { CC2500_3E_PATABLE, 0xFF }
+};
+
 static void initialise()
 {
     cc2500Reset();
 
-    cc2500WriteReg(CC2500_02_IOCFG0, 0x01);
-    cc2500WriteReg(CC2500_03_FIFOTHR, 0x07);
-    cc2500WriteReg(CC2500_06_PKTLEN, REDPINE_PACKET_SIZE);
-    cc2500WriteReg(CC2500_07_PKTCTRL1, 0x0C);
-    cc2500WriteReg(CC2500_08_PKTCTRL0, 0x05);
-    cc2500WriteReg(CC2500_09_ADDR, 0x00);
+    cc2500ApplyRegisterConfig(cc2500RedPineBaseConfig, sizeof(cc2500RedPineBaseConfig));
 
     if (isRedpineFast()) {
-        cc2500WriteReg(CC2500_0B_FSCTRL1, 0x0A);
-        cc2500WriteReg(CC2500_0C_FSCTRL0, 0x00);
-        cc2500WriteReg(CC2500_0D_FREQ2, 0x5D);
-        cc2500WriteReg(CC2500_0E_FREQ1, 0x93);
-        cc2500WriteReg(CC2500_0F_FREQ0, 0xB1);
-        cc2500WriteReg(CC2500_10_MDMCFG4, 0x2D);
-        cc2500WriteReg(CC2500_11_MDMCFG3, 0x3B);
-        cc2500WriteReg(CC2500_12_MDMCFG2, 0x73);
-        cc2500WriteReg(CC2500_13_MDMCFG1, 0x23);
-        cc2500WriteReg(CC2500_14_MDMCFG0, 0x56);
-        cc2500WriteReg(CC2500_15_DEVIATN, 0x00);
-        cc2500WriteReg(CC2500_17_MCSM1, 0x0C);
-        cc2500WriteReg(CC2500_18_MCSM0, 0x08);
-        cc2500WriteReg(CC2500_19_FOCCFG, 0x1D);
-        cc2500WriteReg(CC2500_1A_BSCFG, 0x1C);
-        cc2500WriteReg(CC2500_1B_AGCCTRL2, 0xC7);
-        cc2500WriteReg(CC2500_1C_AGCCTRL1, 0x00);
-        cc2500WriteReg(CC2500_1D_AGCCTRL0, 0xB0);
-        cc2500WriteReg(CC2500_21_FREND1, 0xB6);
-        cc2500WriteReg(CC2500_22_FREND0, 0x10);
-        cc2500WriteReg(CC2500_23_FSCAL3, 0xEA);
-        cc2500WriteReg(CC2500_24_FSCAL2, 0x0A);
-        cc2500WriteReg(CC2500_25_FSCAL1, 0x00);
-        cc2500WriteReg(CC2500_26_FSCAL0, 0x11);
-        cc2500WriteReg(CC2500_29_FSTEST, 0x59);
-        cc2500WriteReg(CC2500_2C_TEST2, 0x88);
-        cc2500WriteReg(CC2500_2D_TEST1, 0x31);
-        cc2500WriteReg(CC2500_2E_TEST0, 0x0B);
-        cc2500WriteReg(CC2500_3E_PATABLE, 0xFF);
+        cc2500ApplyRegisterConfig(cc2500RedPineFastConfig, sizeof(cc2500RedPineFastConfig));
     } else {
-        cc2500WriteReg(CC2500_0B_FSCTRL1, 0x06);
-        cc2500WriteReg(CC2500_0C_FSCTRL0, 0x00);
-        cc2500WriteReg(CC2500_0D_FREQ2, 0x5D);
-        cc2500WriteReg(CC2500_0E_FREQ1, 0x93);
-        cc2500WriteReg(CC2500_0F_FREQ0, 0xB1);
-        cc2500WriteReg(CC2500_10_MDMCFG4, 0x78);
-        cc2500WriteReg(CC2500_11_MDMCFG3, 0x93);
-        cc2500WriteReg(CC2500_12_MDMCFG2, 0x03);
-        cc2500WriteReg(CC2500_13_MDMCFG1, 0x22);
-        cc2500WriteReg(CC2500_14_MDMCFG0, 0xF8);
-        cc2500WriteReg(CC2500_15_DEVIATN, 0x44);
-        cc2500WriteReg(CC2500_17_MCSM1, 0x0C);
-        cc2500WriteReg(CC2500_18_MCSM0, 0x08);
-        cc2500WriteReg(CC2500_19_FOCCFG, 0x16);
-        cc2500WriteReg(CC2500_1A_BSCFG, 0x6C);
-        cc2500WriteReg(CC2500_1B_AGCCTRL2, 0x43);
-        cc2500WriteReg(CC2500_1C_AGCCTRL1, 0x40);
-        cc2500WriteReg(CC2500_1D_AGCCTRL0, 0x91);
-        cc2500WriteReg(CC2500_21_FREND1, 0x56);
-        cc2500WriteReg(CC2500_22_FREND0, 0x10);
-        cc2500WriteReg(CC2500_23_FSCAL3, 0xA9);
-        cc2500WriteReg(CC2500_24_FSCAL2, 0x0A);
-        cc2500WriteReg(CC2500_25_FSCAL1, 0x00);
-        cc2500WriteReg(CC2500_26_FSCAL0, 0x11);
-        cc2500WriteReg(CC2500_29_FSTEST, 0x59);
-        cc2500WriteReg(CC2500_2C_TEST2, 0x88);
-        cc2500WriteReg(CC2500_2D_TEST1, 0x31);
-        cc2500WriteReg(CC2500_2E_TEST0, 0x0B);
-        cc2500WriteReg(CC2500_3E_PATABLE, 0xFF);
+        cc2500ApplyRegisterConfig(cc2500RedPineConfig, sizeof(cc2500RedPineConfig));
     }
 
     for (unsigned c = 0; c < 0xFF; c++) {  // calibrate all channels
