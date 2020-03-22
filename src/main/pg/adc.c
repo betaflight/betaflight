@@ -39,7 +39,7 @@ PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
 
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
-    STATIC_ASSERT(MAX_ADC_SUPPORTED <= ADC_DEV_TO_CFG(ADCDEV_COUNT) || MAX_ADC_SUPPORTED != 4, adc_count_mismatch);
+    STATIC_ASSERT((MAX_ADC_SUPPORTED == 4) && (MAX_ADC_SUPPORTED >= ADC_DEV_TO_CFG(ADCDEV_COUNT)), adc_count_mismatch);
 
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
     adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;

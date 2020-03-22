@@ -38,12 +38,14 @@
 
 void targetBusInit(void)
 {
+#if 0
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
     sensorsPreInit();
     spiPreinit();
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);
+#endif
 #endif
 #endif
 
