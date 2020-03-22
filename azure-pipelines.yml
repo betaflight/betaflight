@@ -65,10 +65,13 @@ stages:
           $(Build.Repository.Name)
 
           ### Pull request branch:
-          $(Build.SourceBranchName) [link]($(Build.Repository.Uri)/tree/$(Build.SourceBranchName))
+          $(Build.SourceBranchName) ([link]($(Build.Repository.Uri)/tree/$(Build.SourceBranchName)))
 
           ### Author:
           $(Build.RequestedFor)
+
+          ### Latest changeset:
+          $(Build.SourceVersion) ([link]($(Build.Repository.Uri)/commit/$(Build.SourceVersion)))
 
           Build.SourceBranchName
           $(Build.SourceBranchName)
@@ -93,5 +96,5 @@ stages:
         githubReuseRelease: true
         githubReuseDraftOnly: false
         githubSkipDuplicatedAssets: false
-        githubEditRelease: false
+        githubEditRelease: true
         githubDeleteEmptyTag: false
