@@ -62,10 +62,10 @@ stages:
           $(releaseNotes)
 
           ### Repository:
-          [$(Build.Repository.Name)]($(Build.Repository.Uri)/tree/$(Build.SourceBranchName))
+          $(Build.Repository.Name)
 
           ### Pull request branch:
-          $(Build.SourceBranchName)
+          $(Build.SourceBranchName) [link]($(Build.Repository.Uri)/tree/$(Build.SourceBranchName))
 
           ### Author:
           $(Build.RequestedFor)
