@@ -62,7 +62,7 @@ stages:
           $(releaseNotes)
 
           ### Repository:
-          $(Build.Repository.Name)
+          $(Build.Repository.Name) ([link]($(Build.Repository.Uri)))
 
           ### Pull request branch:
           $(Build.SourceBranchName) ([link]($(Build.Repository.Uri)/tree/$(Build.SourceBranchName)))
