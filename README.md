@@ -85,10 +85,12 @@ https://github.com/betaflight/betaflight-configurator/releases/latest
 
 Contributions are welcome and encouraged. You can contribute in many ways:
 
+* Implement a new feature in the firmware or in configurator (see [below](#Developers)).
 * Documentation updates and corrections.
 * How-To guides - received help? Help others!
 * Bug reporting & fixes.
 * New feature ideas & suggestions.
+* Provide a new translation for configurator, or help us maintain the existing ones.
 
 The best place to start is the Betaflight Slack (registration [here](https://slack.betaflight.com/). Next place is the github issue tracker:
 
