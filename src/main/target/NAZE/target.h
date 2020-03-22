@@ -101,16 +101,18 @@
 //#define ACC_MMA8452_ALIGN       CW90_DEG
 //#define ACC_BMA280_ALIGN        CW0_DEG
 
-#define USE_BARO
-#define USE_BARO_MS5611 // needed for Flip32 board
-#define USE_BARO_BMP280
 
-/*
-#define USE_MAG
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN       CW180_DEG
-*/
+// Barometer dropped to make flash space
+//#define USE_BARO
+//#define USE_BARO_MS5611 // needed for Flip32 board
+//#define USE_BARO_BMP280
 
+// Compass dropped to make flash space
+//#define USE_MAG
+//#define USE_MAG_HMC5883
+//#define MAG_HMC5883_ALIGN       CW180_DEG
+
+// Rangefinder dropped to make flash space
 //#define USE_RANGEFINDER
 //#define USE_RANGEFINDER_HCSR04
 //#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
