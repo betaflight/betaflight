@@ -73,6 +73,10 @@ stages:
           ### Latest changeset:
           $(Build.SourceVersion) ([link]($(Build.Repository.Uri)/commit/$(Build.SourceVersion)))
 
+          ### Changes:
+          $(Build.SourceVersionMessage)
+
+          ### Debug:
           Build.SourceBranchName
           $(Build.SourceBranchName)
           Build.Repository.Name
@@ -85,9 +89,6 @@ stages:
           $(Build.RequestedFor)
           Build.QueuedBy
           $(Build.QueuedBy)
-
-          ### Changes:
-          $(Build.SourceVersionMessage)
         githubReleaseDraft: false
         githubReleasePrerelease: false
         githubIgnoreAssets: false
