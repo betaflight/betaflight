@@ -146,7 +146,11 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     
     
     if (haveGpsAlt && haveBaroAlt && positionConfig()->altSource == DEFAULT) {
-        estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
+        if (ARMING_FLAG(ARMED)) {
+            estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
+        } else {
+            estimatedAltitudeCm = gpsAlt; //absolute altitude is shown before arming, ignore baro
+        }
 #ifdef USE_VARIO
         // baro is a better source for vario, so ignore gpsVertSpeed
         estimatedVario = calculateEstimatedVario(baroAlt, dTime);
