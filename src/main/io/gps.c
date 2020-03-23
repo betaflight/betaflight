@@ -193,11 +193,6 @@ typedef struct {
     ubx_payload payload;
 } __attribute__((packed)) ubx_message;
 
-typedef union {
-    ubx_message message;
-    uint8_t bytes[58];
-} ubx_tx_buffer;
-
 #define UBLOX_SBAS_MESSAGE_LENGTH 14
 
 // Remove QZSS and add Galileo (only 3 GNSS systems supported simultaneously)
@@ -474,37 +469,37 @@ void gpsInitUblox(void)
                 switch (gpsData.ackState) {
                     case UBLOX_ACK_IDLE:
                         {
-                            ubx_tx_buffer tx_buffer;
-                            tx_buffer.message.header.preamble1 = 0xB5;
-                            tx_buffer.message.header.preamble2 = 0x62;
-                            tx_buffer.message.header.msg_class = 0x06;
-                            tx_buffer.message.header.msg_id = 0x16;
-                            tx_buffer.message.header.length = 8;
-                            tx_buffer.message.payload.sbas.mode = (gpsConfig()->sbasMode == SBAS_NONE) ? 2 : 3;
-                            tx_buffer.message.payload.sbas.usage = (gpsConfig()->sbas_integrity) ? 7 : 3;
-                            tx_buffer.message.payload.sbas.maxSBAS = 3;
-                            tx_buffer.message.payload.sbas.scanmode2 = 0;
+                            ubx_message tx_buffer;
+                            tx_buffer.header.preamble1 = 0xB5;
+                            tx_buffer.header.preamble2 = 0x62;
+                            tx_buffer.header.msg_class = 0x06;
+                            tx_buffer.header.msg_id = 0x16;
+                            tx_buffer.header.length = 8;
+                            tx_buffer.payload.sbas.mode = (gpsConfig()->sbasMode == SBAS_NONE) ? 2 : 3;
+                            tx_buffer.payload.sbas.usage = (gpsConfig()->sbas_integrity) ? 7 : 3;
+                            tx_buffer.payload.sbas.maxSBAS = 3;
+                            tx_buffer.payload.sbas.scanmode2 = 0;
                             switch (gpsConfig()->sbasMode) {
                                 case SBAS_AUTO:
-                                    tx_buffer.message.payload.sbas.scanmode1 = 0; 
+                                    tx_buffer.payload.sbas.scanmode1 = 0; 
                                     break;
                                 case SBAS_EGNOS:
-                                    tx_buffer.message.payload.sbas.scanmode1 = 0x00010048; //PRN123, PRN126, PRN136
+                                    tx_buffer.payload.sbas.scanmode1 = 0x00010048; //PRN123, PRN126, PRN136
                                     break;
                                 case SBAS_WAAS:
-                                    tx_buffer.message.payload.sbas.scanmode1 = 0x0004A800; //PRN131, PRN133, PRN135, PRN138
+                                    tx_buffer.payload.sbas.scanmode1 = 0x0004A800; //PRN131, PRN133, PRN135, PRN138
                                     break;
                                 case SBAS_MSAS:
-                                    tx_buffer.message.payload.sbas.scanmode1 = 0x00020200; //PRN129, PRN137
+                                    tx_buffer.payload.sbas.scanmode1 = 0x00020200; //PRN129, PRN137
                                     break;
                                 case SBAS_GAGAN:
-                                    tx_buffer.message.payload.sbas.scanmode1 = 0x00001180; //PRN127, PRN128, PRN132
+                                    tx_buffer.payload.sbas.scanmode1 = 0x00001180; //PRN127, PRN128, PRN132
                                     break;
                                 default:
-                                    tx_buffer.message.payload.sbas.scanmode1 = 0; 
+                                    tx_buffer.payload.sbas.scanmode1 = 0; 
                                     break;
                             }
-                            ubloxSendConfigMessage(tx_buffer.bytes, UBLOX_SBAS_MESSAGE_LENGTH);
+                            ubloxSendConfigMessage((const uint8_t *) &tx_buffer, UBLOX_SBAS_MESSAGE_LENGTH);
                         }
                         break;
                     case UBLOX_ACK_GOT_NACK: //TODO: implement a retry count, for now just ignore errors as the rest of the code is doing
