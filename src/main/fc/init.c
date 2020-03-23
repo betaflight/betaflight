@@ -993,7 +993,7 @@ void init(void)
 
     swdPinsInit();
 
-    initializeUnusedPins();
+    unusedPinsInit();
 
     fcTasksInit();
 
