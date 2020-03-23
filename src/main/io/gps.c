@@ -168,46 +168,46 @@ static const uint8_t ubloxAirborne[] = {
     #endif
 };
 
-// UBlox 6 Protocol documentation - GPS.G6-SW-10018-F
-// SBAS Configuration Settings Desciption, Page 4/210
-// 31.21 CFG-SBAS (0x06 0x16), Page 142/210
-// A.10 SBAS Configuration (UBX-CFG-SBAS), Page 198/210 - GPS.G6-SW-10018-F
+typedef struct {
+    uint8_t preamble1;
+    uint8_t preamble2;
+    uint8_t msg_class;
+    uint8_t msg_id;
+    uint16_t length;
+} ubx_header;
 
-#define UBLOX_SBAS_PREFIX_LENGTH 10
+typedef struct {
+    uint8_t mode;
+    uint8_t usage;
+    uint8_t maxSBAS;
+    uint8_t scanmode2;
+    uint32_t scanmode1;
+} ubx_sbas;
 
-static const uint8_t ubloxSbasPrefix[UBLOX_SBAS_PREFIX_LENGTH] = { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00 };
+typedef union {
+    ubx_sbas sbas;
+} ubx_payload;
 
-#define UBLOX_SBAS_MESSAGE_LENGTH 6
-typedef struct ubloxSbas_s {
-    sbasMode_e mode;
-    uint8_t message[UBLOX_SBAS_MESSAGE_LENGTH];
-} ubloxSbas_t;
+typedef struct {
+    ubx_header header;
+    ubx_payload payload;
+} __attribute__((packed)) ubx_message;
 
-
-
-// Note: these must be defined in the same order is sbasMode_e since no lookup table is used.
-static const ubloxSbas_t ubloxSbas[] = {
-    // NOTE this could be optimized to save a few bytes of flash space since the same prefix is used for each command.
-    { SBAS_AUTO,  { 0x00, 0x00, 0x00, 0x00, 0x31, 0xE5}},
-    { SBAS_EGNOS, { 0x51, 0x08, 0x00, 0x00, 0x8A, 0x41}},
-    { SBAS_WAAS,  { 0x04, 0xE0, 0x04, 0x00, 0x19, 0x9D}},
-    { SBAS_MSAS,  { 0x00, 0x02, 0x02, 0x00, 0x35, 0xEF}},
-    { SBAS_GAGAN, { 0x80, 0x01, 0x00, 0x00, 0xB2, 0xE8}}
-};
+#define UBLOX_SBAS_MESSAGE_LENGTH 14
 
 // Remove QZSS and add Galileo (only 3 GNSS systems supported simultaneously)
 // Frame captured from uCenter
 static const uint8_t ubloxGalileoInit[] = {
-        0xB5, 0x62, 0x06, 0x3E, 0x3C,                       // UBX-CGF-GNSS
-        0x00, 0x00, 0x20, 0x20, 0x07,                       // GNSS
-        0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01, 0x01,     // GPS
-        0x01, 0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0x01,     // SBAS
-        0x02, 0x04, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01,     // Galileo
-        0x03, 0x08, 0x10, 0x00, 0x00, 0x00, 0x01, 0x01,     // BeiDou
-        0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x03,     // IMES
-        0x05, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x05,     // QZSS
-        0x06, 0x08, 0x0E, 0x00, 0x01, 0x00, 0x01, 0x01,     // GLONASS
-        0x55, 0x47
+        0xB5, 0x62, 0x06, 0x3E, 0x3C, 0x00,                 // UBX-CFG-GNSS, 60 bytes length
+        0x00, 0x20, 0x20, 0x07,                             // 32 tracking channels, 7 config blocks
+        0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01, 0x01,     // GPS - [8-16] channels, GPS L1C/A
+        0x01, 0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0x01,     // SBAS - [1-3] channels, SBAS L1C/A
+        0x02, 0x04, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01,     // Galileo - [4-8] channels, Galileo E1
+        0x03, 0x08, 0x10, 0x00, 0x00, 0x00, 0x01, 0x01,     // BeiDou  - disabled
+        0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x03,     // IMES - disabled
+        0x05, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x05,     // QZSS - disabled
+        0x06, 0x08, 0x0E, 0x00, 0x01, 0x00, 0x01, 0x01,     // GLONASS - [8-14] channels, GLONASS L1
+        0x55, 0x47                                          // Checksum
 };
 #endif // USE_GPS_UBLOX
 
@@ -228,13 +228,14 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .provider = GPS_NMEA,
-    .sbasMode = SBAS_AUTO,
+    .sbasMode = SBAS_NONE,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_OFF,
     .gps_ublox_use_galileo = false,
     .gps_ublox_mode = UBLOX_AIRBORNE,
     .gps_set_home_point_once = false,
-    .gps_use_3d_speed = false
+    .gps_use_3d_speed = false,
+    .sbas_integrity = false
 );
 
 static void shiftPacketLog(void)
@@ -363,6 +364,35 @@ void gpsInitNmea(void)
 #endif // USE_GPS_NMEA
 
 #ifdef USE_GPS_UBLOX
+static void ubloxSendByteUpdateChecksum(const uint8_t data, uint8_t *checksumA, uint8_t *checksumB)
+{
+    *checksumA += data;
+    *checksumB += *checksumA;
+    serialWrite(gpsPort, data);
+}
+
+static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_t *checksumA, uint8_t *checksumB)
+{
+    while (len--) {
+        ubloxSendByteUpdateChecksum(*data, checksumA, checksumB);
+        data++;
+    }
+}
+
+static void ubloxSendConfigMessage(const uint8_t *data, uint8_t len)
+{
+    uint8_t checksumA = 0, checksumB = 0;
+    serialWrite(gpsPort, data[0]);
+    serialWrite(gpsPort, data[1]);
+    ubloxSendDataUpdateChecksum(&data[2], len-2, &checksumA, &checksumB);
+    serialWrite(gpsPort, checksumA);
+    serialWrite(gpsPort, checksumB);
+
+    // Save state for ACK waiting
+    gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
+    gpsData.ackState = UBLOX_ACK_WAITING;
+}
+
 void gpsInitUblox(void)
 {
     uint32_t now;
@@ -431,19 +461,55 @@ void gpsInitUblox(void)
                 } else {
                     gpsData.state_position = 0;
                     gpsData.messageState++;
+                    gpsData.ackState = UBLOX_ACK_IDLE;
                 }
             }
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
-                if (gpsData.state_position < UBLOX_SBAS_PREFIX_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbasPrefix[gpsData.state_position]);
-                    gpsData.state_position++;
-                } else if (gpsData.state_position < UBLOX_SBAS_PREFIX_LENGTH + UBLOX_SBAS_MESSAGE_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbas[gpsConfig()->sbasMode].message[gpsData.state_position - UBLOX_SBAS_PREFIX_LENGTH]);
-                    gpsData.state_position++;
-                } else {
-                    gpsData.state_position = 0;
-                    gpsData.messageState++;
+                switch (gpsData.ackState) {
+                    case UBLOX_ACK_IDLE:
+                        {
+                            ubx_message tx_buffer;
+                            tx_buffer.header.preamble1 = 0xB5;
+                            tx_buffer.header.preamble2 = 0x62;
+                            tx_buffer.header.msg_class = 0x06;
+                            tx_buffer.header.msg_id = 0x16;
+                            tx_buffer.header.length = 8;
+                            tx_buffer.payload.sbas.mode = (gpsConfig()->sbasMode == SBAS_NONE) ? 2 : 3;
+                            tx_buffer.payload.sbas.usage = (gpsConfig()->sbas_integrity) ? 7 : 3;
+                            tx_buffer.payload.sbas.maxSBAS = 3;
+                            tx_buffer.payload.sbas.scanmode2 = 0;
+                            switch (gpsConfig()->sbasMode) {
+                                case SBAS_AUTO:
+                                    tx_buffer.payload.sbas.scanmode1 = 0; 
+                                    break;
+                                case SBAS_EGNOS:
+                                    tx_buffer.payload.sbas.scanmode1 = 0x00010048; //PRN123, PRN126, PRN136
+                                    break;
+                                case SBAS_WAAS:
+                                    tx_buffer.payload.sbas.scanmode1 = 0x0004A800; //PRN131, PRN133, PRN135, PRN138
+                                    break;
+                                case SBAS_MSAS:
+                                    tx_buffer.payload.sbas.scanmode1 = 0x00020200; //PRN129, PRN137
+                                    break;
+                                case SBAS_GAGAN:
+                                    tx_buffer.payload.sbas.scanmode1 = 0x00001180; //PRN127, PRN128, PRN132
+                                    break;
+                                default:
+                                    tx_buffer.payload.sbas.scanmode1 = 0; 
+                                    break;
+                            }
+                            ubloxSendConfigMessage((const uint8_t *) &tx_buffer, UBLOX_SBAS_MESSAGE_LENGTH);
+                        }
+                        break;
+                    case UBLOX_ACK_GOT_NACK: //TODO: implement a retry count, for now just ignore errors as the rest of the code is doing
+                    case UBLOX_ACK_GOT_ACK:
+                        gpsData.state_position = 0;
+                        gpsData.ackState = UBLOX_ACK_IDLE;
+                        gpsData.messageState++;
+                        break;
+                    default:
+                        break;
                 }
             }
 
@@ -920,14 +986,6 @@ static bool gpsNewFrameNMEA(char c)
 #ifdef USE_GPS_UBLOX
 // UBX support
 typedef struct {
-    uint8_t preamble1;
-    uint8_t preamble2;
-    uint8_t msg_class;
-    uint8_t msg_id;
-    uint16_t length;
-} ubx_header;
-
-typedef struct {
     uint32_t time;              // GPS msToW
     int32_t longitude;
     int32_t latitude;
@@ -997,6 +1055,11 @@ typedef struct {
     uint16_t reserved2;         // Reserved
     ubx_nav_svinfo_channel channel[16];         // 16 satellites * 12 byte
 } ubx_nav_svinfo;
+
+typedef struct {
+    uint8_t clsId;               // Class ID of the acknowledged message 
+    uint8_t msgId;               // Message ID of the acknowledged message
+} ubx_ack;
 
 enum {
     PREAMBLE1 = 0xb5,
@@ -1076,6 +1139,7 @@ static union {
     ubx_nav_solution solution;
     ubx_nav_velned velned;
     ubx_nav_svinfo svinfo;
+    ubx_ack ack;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
@@ -1156,6 +1220,16 @@ static bool UBLOX_parse_gps(void)
             GPS_svinfo_cno[i] = 0;
         }
         GPS_svInfoReceivedCount++;
+        break;
+    case MSG_ACK_ACK:
+        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (_buffer.ack.msgId == gpsData.ackWaitingMsgId)) {
+            gpsData.ackState = UBLOX_ACK_GOT_ACK;
+        }
+        break;
+    case MSG_ACK_NACK:
+        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (_buffer.ack.msgId == gpsData.ackWaitingMsgId)) {
+            gpsData.ackState = UBLOX_ACK_GOT_NACK;
+        }
         break;
     default:
         return false;
