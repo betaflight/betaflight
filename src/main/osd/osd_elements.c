@@ -1041,6 +1041,13 @@ static void osdElementMainBatteryVoltage(osdElementParms_t *element)
     }
 }
 
+static void osdElementMahPercent(osdElementParms_t *element)
+{
+    const uint16_t mAhUsedPercent = ceilf(getMAhDrawn() / (batteryConfig()->batteryCapacity / 100.0f));
+
+    tfp_sprintf(element->buff, "%3d%%", mAhUsedPercent);
+}
+
 static void osdElementMotorDiagnostics(osdElementParms_t *element)
 {
     int i = 0;
@@ -1568,6 +1575,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_PITCH_ANGLE,
     OSD_ROLL_ANGLE,
     OSD_MAIN_BATT_USAGE,
+    OSD_MAH_PERCENT,
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
 #ifdef USE_VARIO
@@ -1721,6 +1729,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_GPS
     [OSD_EFFICIENCY]              = osdElementEfficiency,
 #endif
+    [OSD_MAH_PERCENT]             = osdElementMahPercent,
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
