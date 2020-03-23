@@ -43,7 +43,7 @@ void targetBusInit(void)
     sensorsPreInit();
     spiPreinit();
 #ifdef USE_SPI_DEVICE_2
-    spiInit(SPIDEV_2);
+    spiInit(SPIDEV_2, false); // Leading edge not required for legacy sensors
 #endif
 #endif
 
