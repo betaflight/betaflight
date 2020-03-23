@@ -149,7 +149,6 @@ typedef struct pidProfile_s {
     uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
-    uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t feedForwardTransition;          // Feed forward weight transition
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;

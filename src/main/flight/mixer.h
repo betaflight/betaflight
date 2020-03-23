@@ -106,7 +106,7 @@ void mixerInitProfile(void);
 void mixerConfigureOutput(void);
 
 void mixerResetDisarmedMotors(void);
-void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation);
+void mixTable(timeUs_t currentTimeUs);
 void stopMotors(void);
 void writeMotors(void);
 
