@@ -538,21 +538,25 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
+#ifdef USE_GPS_UBLOX
             } else {
-                if ((gpsData.messageState == GPS_MESSAGE_STATE_INITIALIZED) && STATE(GPS_FIX) && (gpsConfig()->gps_ublox_mode == UBLOX_DYNAMIC)) {
-                    gpsData.messageState = GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE;
-                    gpsData.state_position = 0;
-                }
-                if (gpsData.messageState == GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE) {
-                    if (gpsData.state_position < sizeof(ubloxAirborne)) {
-                        if (isSerialTransmitBufferEmpty(gpsPort)) {
-                            serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
-                            gpsData.state_position++;
+                if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_ON) { // Only if autoconfig is enabled
+                    if ((gpsData.messageState == GPS_MESSAGE_STATE_INITIALIZED) && STATE(GPS_FIX) && (gpsConfig()->gps_ublox_mode == UBLOX_DYNAMIC)) {
+                        gpsData.messageState = GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE;
+                        gpsData.state_position = 0;
+                    }
+                    if (gpsData.messageState == GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE) {
+                        if (gpsData.state_position < sizeof(ubloxAirborne)) {
+                            if (isSerialTransmitBufferEmpty(gpsPort)) {
+                                serialWrite(gpsPort, ubloxAirborne[gpsData.state_position]);
+                                gpsData.state_position++;
+                            }
+                        } else {
+                            gpsData.messageState = GPS_MESSAGE_STATE_ENTRY_COUNT;
                         }
-                    } else {
-                        gpsData.messageState = GPS_MESSAGE_STATE_ENTRY_COUNT;
                     }
                 }
+#endif //USE_GPS_UBLOX
             }
             break;
     }
