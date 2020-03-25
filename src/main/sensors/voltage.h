@@ -100,6 +100,8 @@ PG_DECLARE_ARRAY(voltageSensorADCConfig_t, MAX_VOLTAGE_SENSOR_ADC, voltageSensor
 //
 void voltageMeterReset(voltageMeter_t *voltageMeter);
 
+void voltageMeterGenericInit(void);
+
 void voltageMeterADCInit(void);
 void voltageMeterADCRefresh(void);
 void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageMeter);

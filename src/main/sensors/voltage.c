@@ -89,7 +89,9 @@ void voltageMeterReset(voltageMeter_t *meter)
 {
     meter->displayFiltered = 0;
     meter->unfiltered = 0;
+#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     meter->sagFiltered = 0;
+#endif
 }
 //
 // ADC
@@ -117,9 +119,9 @@ typedef struct voltageMeterADCState_s {
 #endif
 } voltageMeterADCState_t;
 
-extern voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
-
 voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
+
+static bool sagCompensationConfigured;
 
 voltageMeterADCState_t *getVoltageMeterADC(uint8_t index)
 {
@@ -208,16 +210,7 @@ void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageM
 
 bool isSagCompensationConfigured(void)
 {
-    bool isConfigured = false;
-#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
-    for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-        if (pidProfiles(i)->vbat_sag_compensation > 0) {
-            isConfigured = true;
-        }
-    }
-#endif
-
-    return isConfigured;
+    return sagCompensationConfigured;
 }
 
 void voltageMeterADCInit(void)
@@ -235,6 +228,18 @@ void voltageMeterADCInit(void)
         }
 #endif
     }
+}
+
+void voltageMeterGenericInit(void)
+{
+    sagCompensationConfigured = false;
+#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
+    for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+        if (pidProfiles(i)->vbat_sag_compensation > 0) {
+            sagCompensationConfigured = true;
+        }
+    }
+#endif
 }
 
 //

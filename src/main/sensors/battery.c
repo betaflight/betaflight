@@ -358,6 +358,8 @@ void batteryInit(void)
     lowVoltageCutoff.startTime = 0;
 
     voltageMeterReset(&voltageMeter);
+
+    voltageMeterGenericInit();
     switch (batteryConfig()->voltageMeterSource) {
         case VOLTAGE_METER_ESC:
 #ifdef USE_ESC_SENSOR
