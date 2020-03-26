@@ -375,11 +375,11 @@ const char * const lookupTableRescueAltitudeMode[] = {
 };
 #endif
 
-#ifdef USE_MAX7456
+#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
 static const char * const lookupTableVideoSystem[] = {
     "AUTO", "PAL", "NTSC"
 };
-#endif // USE_MAX7456
+#endif
 
 #if defined(USE_ITERM_RELAX)
 const char * const lookupTableItermRelax[] = {
@@ -569,9 +569,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableGyro),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableThrottleLimitType),
-#ifdef USE_MAX7456
+#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
     LOOKUP_TABLE_ENTRY(lookupTableVideoSystem),
-#endif // USE_MAX7456
+#endif
 #if defined(USE_ITERM_RELAX)
     LOOKUP_TABLE_ENTRY(lookupTableItermRelax),
     LOOKUP_TABLE_ENTRY(lookupTableItermRelaxType),
@@ -1432,7 +1432,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_VCD_CONFIG
-#ifdef USE_MAX7456
+#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VIDEO_SYSTEM }, PG_VCD_CONFIG, offsetof(vcdProfile_t, video_system) },
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -32, 31 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, h_offset) },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -15, 16 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, v_offset) },
