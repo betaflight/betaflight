@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_h7x3_2m.ld
+**  File        : stm32_ram_h743.ld
 **
 **  Abstract    : Linker script for STM32H743xI Device with
 **                512K AXI-RAM mapped onto AXI bus on D1 domain
