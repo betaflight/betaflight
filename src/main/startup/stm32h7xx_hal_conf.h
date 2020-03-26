@@ -469,6 +469,7 @@
 
 #ifdef HAL_TIM_MODULE_ENABLED
  #include "stm32h7xx_hal_tim.h"
+ #include "stm32h7xx_hal_tim_ex.h"
 #endif /* HAL_TIM_MODULE_ENABLED */
 
 #ifdef HAL_UART_MODULE_ENABLED

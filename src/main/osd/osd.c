@@ -143,6 +143,11 @@ static bool suppressStatsDisplay = false;
 
 static bool backgroundLayerSupported = false;
 
+#ifdef USE_CANVAS
+static displayCanvas_t osdCanvas;
+static bool canvasSupported = false;
+#endif
+
 #ifdef USE_ESC_SENSOR
 escSensorData_t *osdEscDataCombined;
 #endif
@@ -461,7 +466,15 @@ static void osdCompleteInitialization(void)
     setOsdProfile(osdConfig()->osdProfileIndex);
 #endif
 
+#ifdef USE_CANVAS
+    canvasSupported = displayGetCanvas(&osdCanvas, osdDisplayPort);
+    if (canvasSupported) {
+        osdCanvasInit(&osdCanvas);
+    }
+#endif
+
     osdElementsInit(backgroundLayerSupported);
+
     osdAnalyzeActiveElements();
 
     osdIsReady = true;
@@ -1215,7 +1228,10 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
-        // don't touch buffers if DMA transaction is in progress
+        showVisualBeeper = isBeeperOn();
+
+        // SPRacingPixelOSD - don't touch buffers while we're waiting for the framebuffer to be committed
+        // MAX7456/etc - don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
             break;
         }

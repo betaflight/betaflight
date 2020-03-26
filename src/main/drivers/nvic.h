@@ -23,7 +23,9 @@
 
 // can't use 0
 #define NVIC_PRIO_MAX                      NVIC_BUILD_PRIORITY(0, 1)
-#define NVIC_PRIO_TIMER                    NVIC_BUILD_PRIORITY(1, 1)
+#define NVIC_PRIO_VIDEO_DMA                NVIC_BUILD_PRIORITY(1, 1)
+#define NVIC_PRIO_VIDEO_ADC                NVIC_BUILD_PRIORITY(1, 2)
+#define NVIC_PRIO_TIMER                    NVIC_BUILD_PRIORITY(1, 3)
 #define NVIC_PRIO_BARO_EXTI                NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_SONAR_EXTI               NVIC_BUILD_PRIORITY(2, 0)  // maybe increase slightly
 #define NVIC_PRIO_DSHOT_DMA                NVIC_BUILD_PRIORITY(2, 1)
