@@ -29,6 +29,12 @@ extern uint8_t dmaram_end;
 extern uint8_t dmarwaxi_start;
 extern uint8_t dmarwaxi_end;
 
+#ifdef USE_SPRACING_PIXEL_OSD
+extern uint8_t __frame_buffer_start;
+extern uint8_t __frame_buffer_end;
+extern uint8_t __spracingpixelosd_lib_d2_start;
+extern uint8_t __spracingpixelosd_lib_d2_end;
+#endif
 mpuRegion_t mpuRegions[] = {
 #ifdef USE_ITCM_RAM
     {
@@ -66,6 +72,28 @@ mpuRegion_t mpuRegions[] = {
         .perm       = MPU_REGION_FULL_ACCESS,
         .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
         .shareable  = MPU_ACCESS_NOT_SHAREABLE,
+        .cacheable  = MPU_ACCESS_CACHEABLE,
+        .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
+    },
+#endif
+#ifdef USE_SPRACING_PIXEL_OSD
+    {
+        .start      = (uint32_t)&__spracingpixelosd_lib_d2_start,
+        .end        = (uint32_t)&__spracingpixelosd_lib_d2_end,
+        .size       = 0,  // Size determined by ".end"
+        .perm       = MPU_REGION_FULL_ACCESS,
+        .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
+        .shareable  = MPU_ACCESS_SHAREABLE,
+        .cacheable  = MPU_ACCESS_CACHEABLE,
+        .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
+    },
+    {
+        .start      = (uint32_t)&__frame_buffer_start,
+        .end        = (uint32_t)&__frame_buffer_end,
+        .size       = 0,  // Size determined by ".end"
+        .perm       = MPU_REGION_FULL_ACCESS,
+        .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
+        .shareable  = MPU_ACCESS_SHAREABLE,
         .cacheable  = MPU_ACCESS_CACHEABLE,
         .bufferable = MPU_ACCESS_NOT_BUFFERABLE,
     },
