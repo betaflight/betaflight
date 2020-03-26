@@ -119,6 +119,7 @@ typedef enum {
     DEBUG_MAG_CALIB,
     DEBUG_MAG_TASK_RATE,
     DEBUG_EZLANDING,
+    DEBUG_SPRACING_PIXEL_OSD,
     DEBUG_COUNT
 } debugType_e;
 

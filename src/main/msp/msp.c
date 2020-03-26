@@ -935,45 +935,43 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 
 #if defined(USE_OSD)
     case MSP_OSD_CONFIG: {
-#define OSD_FLAGS_OSD_FEATURE           (1 << 0)
-//#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
-#define OSD_FLAGS_RESERVED_1            (1 << 2)
-#define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
-#define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
-#define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
-#define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
+#define OSD_FLAGS_OSD_FEATURE                       (1 << 0)
+//#define OSD_FLAGS_OSD_SLAVE                         (1 << 1)
+#define OSD_FLAGS_RESERVED_1                        (1 << 2)
+#define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD             (1 << 3)
+#define OSD_FLAGS_OSD_HARDWARE_MAX_7456             (1 << 4)
+#define OSD_FLAGS_OSD_DEVICE_DETECTED               (1 << 5)
+#define OSD_FLAGS_OSD_MSP_DEVICE                    (1 << 6)
+#define OSD_FLAGS_OSD_HARDWARE_SPRACING_PIXEL_OSD   (1 << 7)
 
         uint8_t osdFlags = 0;
 
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 
-        osdDisplayPortDevice_e deviceType;
+        osdDisplayPortDevice_e deviceType = OSD_DISPLAYPORT_DEVICE_NONE;
         displayPort_t *osdDisplayPort = osdGetDisplayPort(&deviceType);
-        bool displayIsReady = osdDisplayPort && displayCheckReady(osdDisplayPort, true);
         switch (deviceType) {
-        case OSD_DISPLAYPORT_DEVICE_MAX7456:
-            osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+            case OSD_DISPLAYPORT_DEVICE_NONE:
+            case OSD_DISPLAYPORT_DEVICE_AUTO:
+                break;
+            case OSD_DISPLAYPORT_DEVICE_MAX7456:
+                osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+                break;
+            case OSD_DISPLAYPORT_DEVICE_MSP:
+                osdFlags |= OSD_FLAGS_OSD_MSP_DEVICE;
+                break;
+            case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+                osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
+                break;
+            case OSD_DISPLAYPORT_DEVICE_SPRACING_PIXEL_OSD:
+                osdFlags |= OSD_FLAGS_OSD_HARDWARE_SPRACING_PIXEL_OSD;
+                break;
+        }
+        if (osdFlags | (OSD_FLAGS_OSD_HARDWARE_MAX_7456 | OSD_FLAGS_OSD_HARDWARE_FRSKYOSD | OSD_FLAGS_OSD_MSP_DEVICE | OSD_FLAGS_OSD_HARDWARE_SPRACING_PIXEL_OSD)) {
+            bool displayIsReady = osdDisplayPort && displayCheckReady(osdDisplayPort, true);
             if (displayIsReady) {
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
-
-            break;
-        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
-            osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
-            if (displayIsReady) {
-                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
-            }
-
-            break;
-        case OSD_DISPLAYPORT_DEVICE_MSP:
-            osdFlags |= OSD_FLAGS_OSD_MSP_DEVICE;
-            if (displayIsReady) {
-                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
-            }
-
-            break;
-        default:
-            break;
         }
 
         sbufWriteU8(dst, osdFlags);

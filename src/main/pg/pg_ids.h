@@ -156,7 +156,9 @@
 #define PG_SCHEDULER_CONFIG         556
 #define PG_MSP_CONFIG               557
 #define PG_SOFTSERIAL_PIN_CONFIG    558
-#define PG_BETAFLIGHT_END           558
+#define PG_SPRACING_PIXEL_OSD_CONFIG 559
+#define PG_DISPLAY_PORT_SPRACING_PIXEL_OSD_CONFIG 560
+#define PG_BETAFLIGHT_END 560
 
 
 // OSD configuration (subject to change)
