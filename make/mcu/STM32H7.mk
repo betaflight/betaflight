@@ -187,7 +187,7 @@ FIRMWARE_SIZE      := 448
 # TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
 # and the maximum size of the data stored on the external storage device.
 MCU_FLASH_SIZE     := FIRMWARE_SIZE
-DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_exst.ld
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h750_exst.ld
 endif
 
 ifeq ($(EXST),yes)
