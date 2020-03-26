@@ -657,6 +657,9 @@ void validateAndFixGyroConfig(void)
             }
         } else {
             const float pidLooptime = samplingTime * pidConfig()->pid_process_denom;
+            if (motorConfig()->dev.useDshotTelemetry) {
+                motorUpdateRestriction *= 2;
+            }
             if (pidLooptime < motorUpdateRestriction) {
                 uint8_t minPidProcessDenom = motorUpdateRestriction / samplingTime;
                 if (motorUpdateRestriction / samplingTime > minPidProcessDenom) {
