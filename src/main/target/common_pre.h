@@ -123,6 +123,7 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_DMA_RAM
+#define USE_ADVANCED_OSD
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)

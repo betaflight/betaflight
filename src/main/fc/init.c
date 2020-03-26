@@ -70,11 +70,13 @@
 #include "drivers/sdcard.h"
 #include "drivers/sdio.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/spracingpixelosd/spracing_pixel_osd.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_io.h"
+
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -104,6 +106,7 @@
 #include "io/displayport_crsf.h"
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
+#include "io/displayport_spracing_pixel_osd.h"
 #include "io/displayport_msp.h"
 #include "io/displayport_srxl.h"
 #include "io/flashfs.h"
@@ -703,6 +706,11 @@ void init(void)
     cameraControlInit();
 #endif
 
+#ifdef USE_SPRACING_PIXEL_OSD
+    // IO pins for OSD must be reserved and initialised, even if the OSD driver is not used/enabled.
+    spracingPixelOSDIOInit();
+#endif
+
 // XXX These kind of code should goto target/config.c?
 // XXX And these no longer work properly as FEATURE_RANGEFINDER does control HCSR04 runtime configuration.
 #if defined(RANGEFINDER_HCSR04_SOFTSERIAL2_EXCLUSIVE) && defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL2)
@@ -974,6 +982,16 @@ void init(void)
             osdDisplayPort = max7456DisplayPortInit(vcdProfile());
             if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MAX7456) {
                 osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
+#if defined(USE_SPRACING_PIXEL_OSD)
+        case OSD_DISPLAYPORT_DEVICE_SPRACING_PIXEL_OSD:
+            osdDisplayPort = spracingPixelOSDDisplayPortInit(vcdProfile());
+            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_SPRACING_PIXEL_OSD) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_SPRACING_PIXEL_OSD;
                 break;
             }
             FALLTHROUGH;

@@ -875,12 +875,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     }
 
     case MSP_OSD_CONFIG: {
-#define OSD_FLAGS_OSD_FEATURE           (1 << 0)
-//#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
-#define OSD_FLAGS_RESERVED_1            (1 << 2)
-#define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
-#define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
-#define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
+#define OSD_FLAGS_OSD_FEATURE                       (1 << 0)
+//#define OSD_FLAGS_OSD_SLAVE                       (1 << 1)
+#define OSD_FLAGS_RESERVED_1                        (1 << 2)
+#define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD             (1 << 3)
+#define OSD_FLAGS_OSD_HARDWARE_MAX_7456             (1 << 4)
+#define OSD_FLAGS_OSD_DEVICE_DETECTED               (1 << 5)
+#define OSD_FLAGS_OSD_HARDWARE_SPRACING_PIXEL_OSD   (1 << 6)
 
         uint8_t osdFlags = 0;
 #if defined(USE_OSD)
@@ -900,6 +901,9 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
                     break;
                 case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
                     osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
+                    break;
+                case OSD_DISPLAYPORT_DEVICE_SPRACING_PIXEL_OSD:
+                    osdFlags |= OSD_FLAGS_OSD_HARDWARE_SPRACING_PIXEL_OSD;
                     break;
             }
             if (osdFlags | (OSD_FLAGS_OSD_HARDWARE_MAX_7456 | OSD_FLAGS_OSD_HARDWARE_FRSKYOSD)) {

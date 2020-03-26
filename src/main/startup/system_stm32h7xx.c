@@ -251,7 +251,11 @@ static void SystemClockHSE_Config(void)
     }
 #endif
 
+#ifdef USE_H7_LEGACY_CPU_REVISION_SPEED
+    pllConfig_t *pll1Config = &pll1ConfigRevY;
+#else
     pllConfig_t *pll1Config = (HAL_GetREVID() == REV_ID_V) ? &pll1ConfigRevV : &pll1ConfigRevY;
+#endif
 
     // Configure voltage scale.
     // It has been pre-configured at PWR_REGULATOR_VOLTAGE_SCALE1,
