@@ -296,7 +296,11 @@ static FAST_RAM_ZERO_INIT float idleThrottleOffset;
 static FAST_RAM_ZERO_INIT float idleMinMotorRps;
 static FAST_RAM_ZERO_INIT float idleP;
 #endif
-
+#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
+static FAST_RAM_ZERO_INIT float vbatSagCompensationFactor;
+static FAST_RAM_ZERO_INIT float vbatFull;
+static FAST_RAM_ZERO_INIT float vbatRangeToCompensate;
+#endif
 
 uint8_t getMotorCount(void)
 {
@@ -354,6 +358,18 @@ void mixerInitProfile(void)
     idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
     idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleP = currentPidProfile->idle_p * 0.0001f;
+#endif
+
+#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
+    vbatSagCompensationFactor = 0.0f;
+    if (currentPidProfile->vbat_sag_compensation > 0) {
+        //TODO: Make this voltage user configurable
+        vbatFull = CELL_VOLTAGE_FULL_CV;
+        vbatRangeToCompensate = vbatFull - batteryConfig()->vbatwarningcellvoltage;
+        if (vbatRangeToCompensate >= 0) {
+            vbatSagCompensationFactor = ((float)currentPidProfile->vbat_sag_compensation) / 100.0f;
+        }
+    }
 #endif
 }
 
@@ -623,11 +639,27 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 
         }
 #endif
+
+#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
+        float motorRangeAttenuationFactor = 0;
+        // reduce motorRangeMax when battery is full
+        if (vbatSagCompensationFactor > 0.0f) {
+            const uint16_t currentCellVoltage = getBatterySagCellVoltage();
+            // batteryGoodness = 1 when voltage is above vbatFull, and 0 when voltage is below vbatLow
+            float batteryGoodness = 1.0f - constrainf((vbatFull - currentCellVoltage) / vbatRangeToCompensate, 0.0f, 1.0f);
+            motorRangeAttenuationFactor = (vbatRangeToCompensate / vbatFull) * batteryGoodness * vbatSagCompensationFactor;
+            DEBUG_SET(DEBUG_BATTERY, 2, batteryGoodness * 100);
+            DEBUG_SET(DEBUG_BATTERY, 3, motorRangeAttenuationFactor * 1000);
+        }
+        motorRangeMax = motorOutputHigh - motorRangeAttenuationFactor * (motorOutputHigh - motorOutputLow);
+#else
+        motorRangeMax = motorOutputHigh;
+#endif
+
         currentThrottleInputRange = rcCommandThrottleRange;
         motorRangeMin = motorOutputLow + motorRangeMinIncrease * (motorOutputHigh - motorOutputLow);
-        motorRangeMax = motorOutputHigh;
         motorOutputMin = motorRangeMin;
-        motorOutputRange = motorOutputHigh - motorOutputMin;
+        motorOutputRange = motorRangeMax - motorRangeMin;
         motorOutputMixSign = 1;
     }
 

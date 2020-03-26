@@ -22,6 +22,9 @@
 
 #include "voltage_ids.h"
 
+#define SLOW_VOLTAGE_TASK_FREQ_HZ 50
+#define FAST_VOLTAGE_TASK_FREQ_HZ 200
+
 //
 // meters
 //
@@ -38,8 +41,11 @@ extern const char * const voltageMeterSourceNames[VOLTAGE_METER_COUNT];
 // WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
 
 typedef struct voltageMeter_s {
-    uint16_t filtered;                      // voltage in 0.01V steps
+    uint16_t displayFiltered;                      // voltage in 0.01V steps
     uint16_t unfiltered;                    // voltage in 0.01V steps
+#if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
+    uint16_t sagFiltered;                   // voltage in 0.01V steps
+#endif
     bool lowVoltageCutoff;
 } voltageMeter_t;
 
@@ -94,6 +100,8 @@ PG_DECLARE_ARRAY(voltageSensorADCConfig_t, MAX_VOLTAGE_SENSOR_ADC, voltageSensor
 //
 void voltageMeterReset(voltageMeter_t *voltageMeter);
 
+void voltageMeterGenericInit(void);
+
 void voltageMeterADCInit(void);
 void voltageMeterADCRefresh(void);
 void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageMeter);
@@ -112,3 +120,5 @@ extern const uint8_t voltageMeterADCtoIDMap[MAX_VOLTAGE_SENSOR_ADC];
 extern const uint8_t supportedVoltageMeterCount;
 extern const uint8_t voltageMeterIds[];
 void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *voltageMeter);
+
+bool isSagCompensationConfigured(void);
