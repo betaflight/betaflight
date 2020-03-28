@@ -923,7 +923,7 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     const float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
 
     // Calculate mAh used progress
-    const uint8_t mAhUsedProgress = ceilf((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+    const uint8_t mAhUsedProgress = (batteryConfig()->batteryCapacity) ? ceilf((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS))) : 0;
 
     // Create empty battery indicator bar
     element->buff[0] = SYM_PB_START;
