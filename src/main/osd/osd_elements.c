@@ -259,7 +259,7 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
     if (alt < 0) {
         buff[pos++] = '-';
     }
-    tfp_sprintf(buff + pos, "%01d.%01d%c", abs(alt) / 10 , abs(alt) % 10, osdGetMetersToSelectedUnitSymbol());
+    tfp_sprintf(buff + pos, "%01d%c", abs(alt) / 10 , osdGetMetersToSelectedUnitSymbol());
 }
 
 #ifdef USE_GPS
@@ -267,8 +267,8 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 {
     // latitude maximum integer width is 3 (-90).
     // longitude maximum integer width is 4 (-180).
-    // We show 7 decimals, so we need to use 12 characters:
-    // eg: s-180.1234567z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
+    // We show 5 decimals, so we need to use 10 characters:
+    // eg: s-180.12345z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
 
     int pos = 0;
     buff[pos++] = sym;
@@ -276,7 +276,7 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
         buff[pos++] = '-';
         val = -val;
     }
-    tfp_sprintf(buff + pos, "%d.%07d", val / GPS_DEGREES_DIVIDER, val % GPS_DEGREES_DIVIDER);
+    tfp_sprintf(buff + pos, "%d.%05d", val / GPS_DEGREES_DIVIDER, val % GPS_DEGREES_DIVIDER);
 }
 #endif // USE_GPS
 
@@ -713,7 +713,7 @@ static void osdBackgroundCrosshairs(osdElementParms_t *element)
 static void osdElementCurrentDraw(osdElementParms_t *element)
 {
     const int32_t amperage = getAmperage();
-    tfp_sprintf(element->buff, "%3d.%02d%c", abs(amperage) / 100, abs(amperage) % 100, SYM_AMP);
+    tfp_sprintf(element->buff, "%3d.%01d%c", abs(amperage) / 100, abs(amperage) % 100, SYM_AMP);
 }
 
 static void osdElementDebug(osdElementParms_t *element)
@@ -1035,9 +1035,9 @@ static void osdElementMainBatteryVoltage(osdElementParms_t *element)
     element->buff[0] = osdGetBatterySymbol(getBatteryAverageCellVoltage());
     if (batteryVoltage >= 1000) {
         batteryVoltage = (batteryVoltage + 5) / 10;
-        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+        tfp_sprintf(element->buff + 1, "%d.%d01%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
     } else {
-        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 100, batteryVoltage % 100, SYM_VOLT);
+        tfp_sprintf(element->buff + 1, "%d.%d01%c", batteryVoltage / 100, batteryVoltage % 100, SYM_VOLT);
     }
 }
 
