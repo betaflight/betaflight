@@ -366,7 +366,7 @@ void mixerInitProfile(void)
         //TODO: Make this voltage user configurable
         vbatFull = CELL_VOLTAGE_FULL_CV;
         vbatRangeToCompensate = vbatFull - batteryConfig()->vbatwarningcellvoltage;
-        if (vbatRangeToCompensate >= 0) {
+        if (vbatRangeToCompensate > 0) {
             vbatSagCompensationFactor = ((float)currentPidProfile->vbat_sag_compensation) / 100.0f;
         }
     }
