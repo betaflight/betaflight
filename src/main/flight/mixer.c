@@ -658,7 +658,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             signYaw = 0;
         }
 
-        float cosPhi = (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength);
+        const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
         const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
 
         if (cosPhi < cosThreshold) {
