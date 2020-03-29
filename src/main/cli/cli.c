@@ -221,6 +221,19 @@ extern char __custom_defaults_end;
 
 static bool processingCustomDefaults = false;
 static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
+
+#define CUSTOM_DEFAULTS_START_PREFIX ("# " FC_FIRMWARE_NAME)
+#define CUSTOM_DEFAULTS_MANUFACTURER_ID_PREFIX "# config: manufacturer_id: "
+#define CUSTOM_DEFAULTS_BOARD_NAME_PREFIX ", board_name: "
+#define CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX ", version: "
+#define CUSTOM_DEFAULTS_DATE_PREFIX ", date: "
+
+static bool customDefaultsHeaderParsed = false;
+static bool customDefaultsFound = false;
+static char customDefaultsManufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1] = { 0 };
+static char customDefaultsBoardName[MAX_BOARD_NAME_LENGTH + 1] = { 0 };
+static char customDefaultsChangesetId[9] = { 0 };
+static char customDefaultsDate[21] = { 0 };
 #endif
 
 #if defined(USE_CUSTOM_DEFAULTS_ADDRESS)
@@ -4237,14 +4250,62 @@ bool resetConfigToCustomDefaults(void)
     return prepareSave();
 }
 
-static bool isCustomDefaults(char *ptr)
+static bool customDefaultsHasNext(const char *customDefaultsPtr)
 {
-    return strncmp(ptr, "# " FC_FIRMWARE_NAME, 12) == 0;
+    return *customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd;
+}
+
+static const char *parseCustomDefaultsHeaderElement(char *dest, const char *customDefaultsPtr, const char *prefix, char terminator)
+{
+    char *endPtr = NULL;
+    unsigned len = strlen(prefix);
+    if (customDefaultsPtr && customDefaultsHasNext(customDefaultsPtr) && strncmp(customDefaultsPtr, prefix, len) == 0) {
+        customDefaultsPtr += len;
+        endPtr = strchr(customDefaultsPtr, terminator);
+    }
+
+    if (endPtr && customDefaultsHasNext(endPtr)) {
+        len = endPtr - customDefaultsPtr;
+        memcpy(dest, customDefaultsPtr, len);
+
+        customDefaultsPtr += len;
+
+        return customDefaultsPtr;
+    }
+
+    return NULL;
+}
+
+static void parseCustomDefaultsHeader(void)
+{
+    const char *customDefaultsPtr = customDefaultsStart;
+    if (strncmp(customDefaultsPtr, CUSTOM_DEFAULTS_START_PREFIX, strlen(CUSTOM_DEFAULTS_START_PREFIX)) == 0) {
+        customDefaultsFound = true;
+
+        customDefaultsPtr = strchr(customDefaultsPtr, '\n');
+        if (customDefaultsPtr && customDefaultsHasNext(customDefaultsPtr)) {
+            customDefaultsPtr++;
+        }
+
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsManufacturerId, customDefaultsPtr, CUSTOM_DEFAULTS_MANUFACTURER_ID_PREFIX, CUSTOM_DEFAULTS_BOARD_NAME_PREFIX[0]);
+
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsBoardName, customDefaultsPtr, CUSTOM_DEFAULTS_BOARD_NAME_PREFIX, CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX[0]);
+
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsChangesetId, customDefaultsPtr, CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX, CUSTOM_DEFAULTS_DATE_PREFIX[0]);
+
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsDate, customDefaultsPtr, CUSTOM_DEFAULTS_DATE_PREFIX, '\n');
+    }
+
+    customDefaultsHeaderParsed = true;
 }
 
 bool hasCustomDefaults(void)
 {
-    return isCustomDefaults(customDefaultsStart);
+    if (!customDefaultsHeaderParsed) {
+        parseCustomDefaultsHeader();
+    }
+
+    return customDefaultsFound;
 }
 #endif
 
@@ -4267,9 +4328,9 @@ static void cliDefaults(const char *cmdName, char *cmdline)
     } else if (strncasecmp(cmdline, "bare", 4) == 0) {
         useCustomDefaults = false;
     } else if (strncasecmp(cmdline, "show", 4) == 0) {
-        char *customDefaultsPtr = customDefaultsStart;
-        if (isCustomDefaults(customDefaultsPtr)) {
-            while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
+        if (hasCustomDefaults()) {
+            char *customDefaultsPtr = customDefaultsStart;
+            while (customDefaultsHasNext(customDefaultsPtr)) {
                 if (*customDefaultsPtr != '\n') {
                     cliPrintf("%c", *customDefaultsPtr++);
                 } else {
@@ -4778,8 +4839,11 @@ static void cliTasks(const char *cmdName, char *cmdline)
 
 static void cliVersion(const char *cmdName, char *cmdline)
 {
-    UNUSED(cmdName);
     UNUSED(cmdline);
+#if !(defined(USE_CUSTOM_DEFAULTS) && defined(USE_UNIFIED_TARGET))
+    UNUSED(cmdName);
+#endif
+
 
     cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
@@ -4798,23 +4862,32 @@ static void cliVersion(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 #endif
 
-#ifdef USE_UNIFIED_TARGET
-    cliPrint("# ");
-#ifdef USE_BOARD_INFO
-    if (strlen(getManufacturerId())) {
-        cliPrintf("manufacturer_id: %s   ", getManufacturerId());
+#if defined(USE_CUSTOM_DEFAULTS)
+    if (hasCustomDefaults()) {
+        if (strlen(customDefaultsManufacturerId) || strlen(customDefaultsBoardName) || strlen(customDefaultsChangesetId) || strlen(customDefaultsDate)) {
+            cliPrintLinef("%s%s%s%s%s%s%s%s",
+                CUSTOM_DEFAULTS_MANUFACTURER_ID_PREFIX, customDefaultsManufacturerId,
+                CUSTOM_DEFAULTS_BOARD_NAME_PREFIX, customDefaultsBoardName,
+                CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX, customDefaultsChangesetId,
+                CUSTOM_DEFAULTS_DATE_PREFIX, customDefaultsDate
+            );
+        } else {
+            cliPrintHashLine("config: YES");
+        }
+    } else {
+#if defined(USE_UNIFIED_TARGET)
+        cliPrintError(cmdName, "NO CONFIG FOUND");
+#else
+        cliPrintHashLine("NO CUSTOM DEFAULTS FOUND");
+#endif // USE_UNIFIED_TARGET
     }
-    if (strlen(getBoardName())) {
-        cliPrintf("board_name: %s   ", getBoardName());
-    }
-#endif // USE_BOARD_INFO
-
-#ifdef USE_CUSTOM_DEFAULTS
-    cliPrintf("custom defaults: %s", hasCustomDefaults() ? "YES" : "NO");
 #endif // USE_CUSTOM_DEFAULTS
 
-    cliPrintLinefeed();
-#endif // USE_UNIFIED_TARGET
+#if defined(USE_UNIFIED_TARGET) && defined(USE_BOARD_INFO)
+    if (strlen(getManufacturerId()) && strlen(getBoardName())) {
+        cliPrintf("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
+    }
+#endif
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -6592,8 +6665,7 @@ void cliProcess(void)
 #if defined(USE_CUSTOM_DEFAULTS)
 static bool cliProcessCustomDefaults(bool quiet)
 {
-    char *customDefaultsPtr = customDefaultsStart;
-    if (processingCustomDefaults || !isCustomDefaults(customDefaultsPtr)) {
+    if (processingCustomDefaults || !hasCustomDefaults()) {
         return false;
     }
 
@@ -6615,7 +6687,8 @@ static bool cliProcessCustomDefaults(bool quiet)
     bufferIndex = 0;
     processingCustomDefaults = true;
 
-    while (*customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd) {
+    char *customDefaultsPtr = customDefaultsStart;
+    while (customDefaultsHasNext(customDefaultsPtr)) {
         processCharacter(*customDefaultsPtr++);
     }
 
