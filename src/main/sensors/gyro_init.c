@@ -32,6 +32,8 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/feature.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_fake.h"
 #include "drivers/accgyro/accgyro_mpu.h"
@@ -131,7 +133,7 @@ static void gyroInitFilterDynamicNotch()
 {
     gyro.notchFilterDynApplyFn = nullFilterApply;
 
-    if (isDynamicFilterActive()) {
+    if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
         gyro.notchFilterDynApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
         
         const float notchQ = filterGetNotchQ(DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, DYNAMIC_NOTCH_DEFAULT_CUTOFF_HZ); // any defaults OK here

@@ -133,14 +133,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
 }
 
-#ifdef USE_GYRO_DATA_ANALYSE
-bool isDynamicFilterActive(void)
-{
-    return featureIsEnabled(FEATURE_DYNAMIC_FILTER);
-}
-#endif
-
-FAST_CODE bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
+bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
 {
     return gyroSensor->calibration.cyclesRemaining == 0;
 }
@@ -493,7 +486,7 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    if (isDynamicFilterActive()) {
+    if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
         gyroDataAnalyse(&gyro.gyroAnalyseState);
         dynamicGyroNotchFiltersUpdate(&gyro);
     }

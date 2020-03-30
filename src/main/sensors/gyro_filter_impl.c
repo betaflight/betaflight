@@ -50,7 +50,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 1, lrintf(gyroADCf));
 
 #ifdef USE_GYRO_DATA_ANALYSE
-        if (isDynamicFilterActive()) {
+        if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
             if (axis == gyro.gyroDebugAxis) {
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf));
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 3, lrintf(gyroADCf));
@@ -75,7 +75,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 3, lrintf(gyroADCf));
 
 #ifdef USE_GYRO_DATA_ANALYSE
-        if (isDynamicFilterActive()) {
+        if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
             if (axis == gyro.gyroDebugAxis) {
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf));
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 2, lrintf(gyroADCf));

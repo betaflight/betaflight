@@ -153,7 +153,7 @@ static void gyroDataAnalyseUpdate(gyroAnalyseState_t *state);
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
-void gyroDataAnalyse(gyroAnalyseState_t *state)
+void NOINLINE gyroDataAnalyse(gyroAnalyseState_t *state)
 {
     state->filterUpdateExecute = false; //This will be changed to true only if new data is present
 
@@ -200,7 +200,7 @@ void arm_bitreversal_32(uint32_t *pSrc, const uint16_t bitRevLen, const uint16_t
 /*
  * Analyse gyro data
  */
-static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
+static void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
 {
     enum {
         STEP_ARM_CFFT_F32,

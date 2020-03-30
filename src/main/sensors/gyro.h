@@ -215,6 +215,3 @@ void dynLpfGyroUpdate(float throttle);
 #ifdef USE_YAW_SPIN_RECOVERY
 void initYawSpinRecovery(int maxYawRate);
 #endif
-#ifdef USE_GYRO_DATA_ANALYSE
-bool isDynamicFilterActive(void);
-#endif
