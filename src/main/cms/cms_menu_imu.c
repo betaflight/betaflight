@@ -602,7 +602,6 @@ static CMS_Menu cmsx_menuFilterGlobal = {
 
 #ifdef USE_GYRO_DATA_ANALYSE
 static uint16_t dynFiltNotchMaxHz;
-static uint8_t  dynFiltWidthPercent;
 static uint16_t dynFiltNotchQ;
 static uint16_t dynFiltNotchMinHz;
 #endif
@@ -620,7 +619,6 @@ static const void *cmsx_menuDynFilt_onEnter(displayPort_t *pDisp)
 
 #ifdef USE_GYRO_DATA_ANALYSE
     dynFiltNotchMaxHz   = gyroConfig()->dyn_notch_max_hz;
-    dynFiltWidthPercent = gyroConfig()->dyn_notch_width_percent;
     dynFiltNotchQ       = gyroConfig()->dyn_notch_q;
     dynFiltNotchMinHz   = gyroConfig()->dyn_notch_min_hz;
 #endif
@@ -643,7 +641,6 @@ static const void *cmsx_menuDynFilt_onExit(displayPort_t *pDisp, const OSD_Entry
 
 #ifdef USE_GYRO_DATA_ANALYSE
     gyroConfigMutable()->dyn_notch_max_hz        = dynFiltNotchMaxHz;
-    gyroConfigMutable()->dyn_notch_width_percent = dynFiltWidthPercent;
     gyroConfigMutable()->dyn_notch_q             = dynFiltNotchQ;
     gyroConfigMutable()->dyn_notch_min_hz        = dynFiltNotchMinHz;
 #endif
@@ -664,7 +661,6 @@ static const OSD_Entry cmsx_menuDynFiltEntries[] =
     { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    { "NOTCH WIDTH %",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltWidthPercent, 0, 20, 1 }, 0 },
     { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       0, 1000, 1 }, 0 },
     { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   0, 1000, 1 }, 0 },
     { "NOTCH MAX HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMaxHz,   0, 1000, 1 }, 0 },

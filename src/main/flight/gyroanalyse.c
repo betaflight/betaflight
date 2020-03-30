@@ -89,12 +89,8 @@
 static uint16_t FAST_RAM_ZERO_INIT   fftSamplingRateHz;
 static float FAST_RAM_ZERO_INIT      fftResolution;
 static uint8_t FAST_RAM_ZERO_INIT    fftStartBin;
-static float FAST_RAM_ZERO_INIT      dynNotchQ;
-static float FAST_RAM_ZERO_INIT      dynNotch1Ctr;
-static float FAST_RAM_ZERO_INIT      dynNotch2Ctr;
 static uint16_t FAST_RAM_ZERO_INIT   dynNotchMinHz;
 static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxHz;
-static bool FAST_RAM                 dualNotch = true;
 static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxFFT;
 static float FAST_RAM_ZERO_INIT      smoothFactor;
 static uint8_t FAST_RAM_ZERO_INIT    samples;
@@ -111,15 +107,8 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     gyroAnalyseInitialized = true;
 #endif
 
-    dynNotch1Ctr = 1 - gyroConfig()->dyn_notch_width_percent / 100.0f;
-    dynNotch2Ctr = 1 + gyroConfig()->dyn_notch_width_percent / 100.0f;
-    dynNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
     dynNotchMinHz = gyroConfig()->dyn_notch_min_hz;
     dynNotchMaxHz = MAX(2 * dynNotchMinHz, gyroConfig()->dyn_notch_max_hz);
-
-    if (gyroConfig()->dyn_notch_width_percent == 0) {
-        dualNotch = false;
-    }
 
     const int gyroLoopRateHz = lrintf((1.0f / targetLooptimeUs) * 1e6f);
     samples = MAX(1, gyroLoopRateHz / (2 * dynNotchMaxHz)); //600hz, 8k looptime, 13.333
@@ -159,13 +148,15 @@ void gyroDataAnalysePush(gyroAnalyseState_t *state, const int axis, const float 
     state->oversampledGyroAccumulator[axis] += sample;
 }
 
-static void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2);
+static void gyroDataAnalyseUpdate(gyroAnalyseState_t *state);
 
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
-void gyroDataAnalyse(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2)
+void gyroDataAnalyse(gyroAnalyseState_t *state)
 {
+    state->filterUpdateExecute = false; //This will be changed to true only if new data is present
+
     // samples should have been pushed by `gyroDataAnalysePush`
     // if gyro sampling is > 1kHz, accumulate and average multiple gyro samples
     state->sampleCount++;
@@ -195,7 +186,7 @@ void gyroDataAnalyse(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, 
 
     // calculate FFT and update filters
     if (state->updateTicks > 0) {
-        gyroDataAnalyseUpdate(state, notchFilterDyn, notchFilterDyn2);
+        gyroDataAnalyseUpdate(state);
         --state->updateTicks;
     }
 }
@@ -209,7 +200,7 @@ void arm_bitreversal_32(uint32_t *pSrc, const uint16_t bitRevLen, const uint16_t
 /*
  * Analyse gyro data
  */
-static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2)
+static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
 {
     enum {
         STEP_ARM_CFFT_F32,
@@ -369,13 +360,10 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
         case STEP_UPDATE_FILTERS:
         {
             // 7us
-            // calculate cutoffFreq and notch Q, update notch filter
-            if (dualNotch) {
-                biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch1Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
-                biquadFilterUpdate(&notchFilterDyn2[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch2Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
-            } else {
-                biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis], gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
-            }
+            state->filterUpdateExecute = true;
+            state->filterUpdateAxis = state->updateAxis;
+            state->filterUpdateFrequency = state->centerFreq[state->updateAxis];
+
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 
             state->updateAxis = (state->updateAxis + 1) % XYZ_AXIS_COUNT;
