@@ -1037,7 +1037,7 @@ static void osdElementMainBatteryVoltage(osdElementParms_t *element)
         batteryVoltage = (batteryVoltage + 5) / 10;
         tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
     } else {
-        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 100, batteryVoltage % 100, SYM_VOLT);
+        tfp_sprintf(element->buff + 1, "%d.%02d%c", batteryVoltage / 100, batteryVoltage % 100, SYM_VOLT);
     }
 }
 
