@@ -46,7 +46,7 @@
 
 // Full iterm suppression in setpoint mode at high-passed setpoint rate > 40deg/sec
 #define ITERM_RELAX_SETPOINT_THRESHOLD 40.0f
-#define ITERM_RELAX_CUTOFF_DEFAULT 20
+#define ITERM_RELAX_CUTOFF_DEFAULT 15
 
 // Anti gravity I constant
 #define AG_KI 21.586988f;
