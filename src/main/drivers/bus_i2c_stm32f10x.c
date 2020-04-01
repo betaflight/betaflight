@@ -89,6 +89,10 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
             I2CPINDEF(PB11, GPIO_AF_I2C2),
             I2CPINDEF(PF0,  GPIO_AF_I2C2),
 
+#if defined(STM32F446xx)
+            I2CPINDEF(PC12,  GPIO_AF_I2C2),
+#endif
+
 #if defined(STM32F40_41xxx) || defined (STM32F411xE)
             // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
             I2CPINDEF(PB3,  GPIO_AF9_I2C2),
