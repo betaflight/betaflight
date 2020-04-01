@@ -1461,10 +1461,10 @@ static void cliSerialPassthrough(char *cmdline)
             // leave the mode unchanged. serialPassthrough() handles one-way ports.
             // Set the baud rate if specified
             if (ports[i].baud) {
-                cliPrintf("Port%d is already open, setting baud = %d.\n\r", portIndex, ports[i].baud);
+                cliPrintf("Port%d is already open, setting baud = %d.\r\n", portIndex, ports[i].baud);
                 serialSetBaudRate(*port, ports[i].baud);
             } else {
-                cliPrintf("Port%d is already open, baud = %d.\n\r", portIndex, (*port)->baudRate);
+                cliPrintf("Port%d is already open, baud = %d.\r\n", portIndex, (*port)->baudRate);
             }
 
             if (ports[i].mode && (*port)->mode != ports[i].mode) {
@@ -6518,7 +6518,7 @@ static void processCharacterInteractive(const char c)
         }
         if (!bufferIndex || pstart != pend) {
             /* Print list of ambiguous matches */
-            cliPrint("\r\033[K");
+            cliPrint("\r\n\033[K");
             for (cmd = pstart; cmd <= pend; cmd++) {
                 cliPrint(cmd->name);
                 cliWrite('\t');
