@@ -29,7 +29,7 @@
 
 #include "rx_spi_cc2500.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rxCc2500SpiConfig_t, rxCc2500SpiConfig, PG_RX_CC2500_SPI_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(rxCc2500SpiConfig_t, rxCc2500SpiConfig, PG_RX_CC2500_SPI_CONFIG, 2);
 
 #if defined(RX_CC2500_SPI_DISABLE_CHIP_DETECTION)
 #define CC2500_SPI_CHIP_DETECTION false
@@ -39,7 +39,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rxCc2500SpiConfig_t, rxCc2500SpiConfig, PG_RX_CC
 
 PG_RESET_TEMPLATE(rxCc2500SpiConfig_t, rxCc2500SpiConfig,
     .autoBind = false,
-    .bindTxId = {0, 0},
+    .bindTxId = {0, 0, 0},
     .bindOffset = 0,
     .bindHopData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

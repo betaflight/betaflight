@@ -32,7 +32,7 @@ typedef enum {
 
 typedef struct rxCc2500SpiConfig_s {
     uint8_t autoBind;
-    uint8_t bindTxId[2];
+    uint8_t bindTxId[3];
     int8_t  bindOffset;
     uint8_t bindHopData[50];
     uint8_t rxNum;

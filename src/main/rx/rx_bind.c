@@ -59,6 +59,8 @@ static bool doRxBind(bool doBind)
 #if defined(USE_RX_FRSKY_SPI_X)
         case RX_SPI_FRSKY_X:
         case RX_SPI_FRSKY_X_LBT:
+        case RX_SPI_FRSKY_X_V2:
+        case RX_SPI_FRSKY_X_LBT_V2:
 #endif
 #if defined(USE_RX_REDPINE_SPI)
         case RX_SPI_REDPINE:
