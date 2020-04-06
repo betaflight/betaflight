@@ -49,12 +49,12 @@ typedef union gyroLowpassFilter_u {
 } gyroLowpassFilter_t;
 
 typedef enum gyroDetectionFlags_e {
-    NO_GYROS_DETECTED = 0,
-    DETECTED_GYRO_1 = (1 << 0),
+    GYRO_NONE_MASK = 0,
+    GYRO_1_MASK = BIT(0),
 #if defined(USE_MULTI_GYRO)
-    DETECTED_GYRO_2 = (1 << 1),
-    DETECTED_BOTH_GYROS = (DETECTED_GYRO_1 | DETECTED_GYRO_2),
-    DETECTED_DUAL_GYROS = (1 << 7), // All gyros are of the same hardware type
+    GYRO_2_MASK = BIT(1),
+    GYRO_ALL_MASK = (GYRO_1_MASK | GYRO_2_MASK),
+    GYRO_IDENTICAL_MASK = BIT(7), // All gyros are of the same hardware type
 #endif
 } gyroDetectionFlags_t;
 
@@ -195,6 +195,8 @@ typedef struct gyroConfig_s {
     uint16_t dyn_notch_min_hz;
 
     uint8_t  gyro_filter_debug_axis;
+
+    uint8_t gyrosDetected; // What gyros should detection be attempted for on startup. Automatically set on first startup.
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

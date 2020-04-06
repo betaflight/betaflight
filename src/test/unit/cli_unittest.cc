@@ -52,6 +52,7 @@ extern "C" {
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"
     #include "sensors/battery.h"
+    #include "sensors/gyro.h"
 
     void cliSet(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
@@ -85,6 +86,7 @@ extern "C" {
     PG_REGISTER_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
     PG_REGISTER_ARRAY(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs, PG_RX_FAILSAFE_CHANNEL_CONFIG, 0);
     PG_REGISTER(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
+    PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
     PG_REGISTER_WITH_RESET_FN(int8_t, unitTestData, PG_RESERVED_FOR_TESTING_1, 0);
 }

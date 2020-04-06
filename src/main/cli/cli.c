@@ -4644,6 +4644,19 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinef("Config size: %d, Max available config: %d", getEEPROMConfigSize(), getEEPROMStorageSize());
 
     // Sensors
+    cliPrint("Gyros detected:");
+    bool found = false;
+    for (unsigned pos = 0; pos < 7; pos++) {
+        if (gyroConfig()->gyrosDetected & BIT(pos)) {
+            if (found) {
+                cliPrint(",");
+            } else {
+                found = true;
+            }
+            cliPrintf(" gyro %d", pos + 1);
+        }
+    }
+    cliPrintLinefeed();
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();

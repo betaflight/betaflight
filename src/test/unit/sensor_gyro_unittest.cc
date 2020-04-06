@@ -162,4 +162,5 @@ timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
 void sensorsSet(uint32_t) {}
 void schedulerResetTaskStatistics(taskId_e) {}
 int getArmingDisableFlags(void) {return 0;}
+void writeEEPROM(void) {}
 }
