@@ -99,6 +99,7 @@
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
+#include "flight/propwash_control.h"
 #include "flight/gps_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
@@ -1534,6 +1535,9 @@ static void osdElementWarnings(osdElementParms_t *element)
         return;
     }
 
+    if(osdWarnGetState(OSD_WARNING_PROPWASH) && isInPropwash()) {
+        tfp_sprintf(element->buff, "PROPWASH");
+    }
 }
 
 // Define the order in which the elements are drawn.
