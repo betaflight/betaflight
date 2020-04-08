@@ -77,6 +77,13 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             gyroSampleRateHz = 9000;
             accSampleRateHz = 1125;
             break;
+#ifdef USE_ACCGYRO_LSM6DSO
+        case LSM6DSO_SPI:
+            gyro->gyroRateKHz = GYRO_RATE_6664_Hz;
+            gyroSampleRateHz = 6664;   // Yes, this is correct per the datasheet. Will effectively round to 150us and 6.67KHz.
+            accSampleRateHz = 833;
+            break;
+#endif
         default:
             gyro->gyroRateKHz = GYRO_RATE_8_kHz;
             gyroSampleRateHz = 8000;

@@ -58,6 +58,7 @@ typedef enum {
     GYRO_ICM42605,
     GYRO_BMI160,
     GYRO_BMI270,
+    GYRO_LSM6DSO,
     GYRO_FAKE
 } gyroHardware_e;
 
@@ -73,6 +74,7 @@ typedef enum {
     GYRO_RATE_1100_Hz,
     GYRO_RATE_3200_Hz,
     GYRO_RATE_6400_Hz,
+    GYRO_RATE_6664_Hz,
     GYRO_RATE_8_kHz,
     GYRO_RATE_9_kHz,
     GYRO_RATE_32_kHz,
