@@ -99,13 +99,13 @@
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
-#include "flight/propwash_control.h"
 #include "flight/gps_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/propwash_control.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -1534,7 +1534,6 @@ static void osdElementWarnings(osdElementParms_t *element)
         element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
-
     if(osdWarnGetState(OSD_WARNING_PROPWASH) && isInPropwash()) {
         tfp_sprintf(element->buff, "PROPWASH");
     }
