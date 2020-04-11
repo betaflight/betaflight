@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#if defined(USE_ACC_MPU6050) || defined(USE_GYRO_MPU6050)
+
 #include "build/debug.h"
 
 #include "common/maths.h"
@@ -112,3 +114,5 @@ bool mpu6050GyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+#endif
+
