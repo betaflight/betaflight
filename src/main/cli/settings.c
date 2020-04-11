@@ -276,10 +276,9 @@ static const char * const lookupTableCameraControlMode[] = {
 #endif
 
 static const char * const lookupTablePwmProtocol[] = {
-    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
-#ifdef USE_DSHOT
-    "DSHOT150", "DSHOT300", "DSHOT600", "PROSHOT1000"
-#endif
+    "PWM", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
+    "DSHOT150", "DSHOT300", "DSHOT600", "PROSHOT1000",
+    "DISABLED"
 };
 
 static const char * const lookupTableRcInterpolation[] = {

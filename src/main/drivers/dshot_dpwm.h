@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "drivers/dshot.h"
 #include "drivers/motor.h"
 
 #define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
@@ -154,8 +155,6 @@ typedef struct motorDmaOutput_s {
 } motorDmaOutput_t;
 
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
-
-bool isMotorProtocolDshot(void);
 
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
 bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);

@@ -22,6 +22,7 @@ extern "C" {
     #include "build/debug.h"
     #include "common/maths.h"
     #include "config/feature.h"
+    #include "pg/motor.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
@@ -55,6 +56,7 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
 
     float rcCommand[4];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -1104,4 +1106,5 @@ extern "C" {
     timeDelta_t rxGetFrameDelta(timeDelta_t *) { return 0; }
     void updateRcRefreshRate(timeUs_t) {};
     uint16_t getAverageSystemLoadPercent(void) { return 0; }
+    bool isMotorProtocolEnabled(void) { return true; }
 }
