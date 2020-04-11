@@ -23,4 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-bool isInPropwash(void);
+extern bool isInPropwashZone;
+
+void checkPropwash(void);
+float computeBoostFactor();

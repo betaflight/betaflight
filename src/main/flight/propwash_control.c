@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -33,12 +35,41 @@
 
 #include "sensors/acceleration.h"
 
-bool isInPropwash(void) {
+#define GRAVITY_THRESHOLD 0.4f
+#define ROLL_MAX_ANGLE    900
+#define PITCH_MAX_ANGLE   650
+
+#define MAX_DTERM_BOOST   0.5f
+#define MAX_DLPF_BOOST    0.5f
+
+bool isInPropwashZone = false;
+
+void checkPropwash(void) {
     const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
 
-    if (zAxisAcc < 0.4f && ABS(attitude.raw[FD_ROLL]) < 900 && ABS(attitude.raw[FD_PITCH]) < 650) {
-        return true;
+    if (zAxisAcc < GRAVITY_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
+        isInPropwashZone = true;
     } else {
-        return false;
+        isInPropwashZone = false;
+    }
+    DEBUG_SET(DEBUG_PROPWASH, 0, lrintf(zAxisAcc * 100));
+    DEBUG_SET(DEBUG_PROPWASH, 1, isInPropwashZone);
+}
+
+bool canApplyBoost() {
+    //TODO check throttle, time, etc.
+    return true;
+}
+
+float computeBoostFactor() {
+    if (canApplyBoost) {
+        const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
+        const float xAxisAcc = acc.accADC[X] * acc.dev.acc_1G_rec;
+        
+        const float accel = sqrt(powf(zAxisAcc, 2) + powf(xAxisAcc, 2));
+        
+        return MIN(1 + accel * MAX_DTERM_BOOST, 1 + MAX_DTERM_BOOST);
+    } else {
+        return 1.0f;
     }
 }
