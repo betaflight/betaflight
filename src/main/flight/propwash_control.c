@@ -37,13 +37,13 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#define GRAVITY_THRESHOLD 0.4f
+#define GRAVITY_THRESHOLD 0.5f
 #define ROLL_MAX_ANGLE    900
 #define PITCH_MAX_ANGLE   650
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 10
-#define THROTTLE_THRESHOLD          20
-#define MAX_DTERM_BOOST   1.5f
+#define THROTTLE_THRESHOLD                   0.01f
+#define MAX_DTERM_BOOST                      1.5f
 //#define MAX_DLPF_BOOST    0.5f
 
 static pt1Filter_t antiPropwashThrottleLpf;
@@ -70,16 +70,18 @@ void checkPropwash(void) {
 void updateAntiPropwashThrottleFilter(float throttle) {
     antiPropwashThrottleHpf = throttle - pt1FilterApply(&antiPropwashThrottleLpf, throttle);
 
-    DEBUG_SET(DEBUG_PROPWASH, 2, lrintf(throttle * 1000));
-    DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(antiPropwashThrottleHpf * 1000));
+    DEBUG_SET(DEBUG_PROPWASH, 2, lrintf(antiPropwashThrottleHpf * 1000));
 }
 
 bool canApplyBoost(void) {
+    bool boost;
     if (isInPropwashZone && antiPropwashThrottleHpf > THROTTLE_THRESHOLD) {
-        return true;
+        boost = true;
     } else {
-        return false;
+        boost = false;
     }
+    DEBUG_SET(DEBUG_PROPWASH, 3, boost);
+    return boost;
 }
 
 //float computeBoostFactor() {
