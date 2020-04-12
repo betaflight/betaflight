@@ -205,6 +205,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     pidRuntime.ffBoostFactor = (float)pidProfile->ff_boost / 10.0f;
     pidRuntime.ffSpikeLimitInverse = pidProfile->ff_spike_limit ? 1.0f / ((float)pidProfile->ff_spike_limit / 10.0f) : 0.0f;
+
+    initAntiPropwashThrottleFilter();
 }
 
 void pidInit(const pidProfile_t *pidProfile)

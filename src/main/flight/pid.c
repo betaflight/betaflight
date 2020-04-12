@@ -47,6 +47,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/propwash_control.h"
 #include "flight/rpm_filter.h"
 #include "flight/interpolated_setpoint.h"
 
@@ -191,7 +192,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min = { 23, 25, 0 },      // roll, pitch, yaw
+        .d_min = { 20, 22, 0 },      // roll, pitch, yaw
         .d_min_gain = 37,
         .d_min_advance = 20,
         .motor_output_limit = 100,
@@ -1021,7 +1022,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 }
             }
 #endif
-            pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor;
+            checkPropwash();
+
+            float dPropwashFactor = 1.0f;
+            if (canApplyBoost()) {
+                dPropwashFactor = 1.5f;
+            }
+
+            pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor * dPropwashFactor;
         } else {
             pidData[axis].D = 0;
         }

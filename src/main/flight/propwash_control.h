@@ -26,4 +26,7 @@
 extern bool isInPropwashZone;
 
 void checkPropwash(void);
-float computeBoostFactor();
+bool canApplyBoost(void);
+//float computeBoostFactor();
+void initAntiPropwashThrottleFilter(void);
+void updateAntiPropwashThrottleFilter(float throttle);
