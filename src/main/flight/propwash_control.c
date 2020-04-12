@@ -37,7 +37,8 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#define GRAVITY_THRESHOLD 0.5f
+#define GRAVITY_IN_THRESHOLD 0.5f
+#define GRAVITY_OUT_THRESHOLD 0.8f
 #define ROLL_MAX_ANGLE    900
 #define PITCH_MAX_ANGLE   650
 
@@ -58,9 +59,9 @@ void initAntiPropwashThrottleFilter(void) {
 void checkPropwash(void) {
     const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
 
-    if (zAxisAcc < GRAVITY_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
+    if (isInPropwashZone == false && zAxisAcc < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
         isInPropwashZone = true;
-    } else {
+    } else if (zAxisAcc > GRAVITY_OUT_THRESHOLD) {
         isInPropwashZone = false;
     }
     DEBUG_SET(DEBUG_PROPWASH, 0, lrintf(zAxisAcc * 100));
