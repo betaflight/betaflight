@@ -452,7 +452,7 @@ task_t tasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_CMS
-    [TASK_CMS] = DEFINE_TASK("CMS", NULL, NULL, cmsHandler, TASK_PERIOD_HZ(60), TASK_PRIORITY_LOW),
+    [TASK_CMS] = DEFINE_TASK("CMS", NULL, NULL, cmsHandler, TASK_PERIOD_HZ(20), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_VTX_CONTROL
