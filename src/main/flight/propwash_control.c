@@ -38,9 +38,9 @@
 #include "sensors/gyro.h"
 
 #define GRAVITY_IN_THRESHOLD 0.5f
-#define GRAVITY_OUT_THRESHOLD 0.8f
+#define GRAVITY_OUT_THRESHOLD 0.7f
 #define ROLL_MAX_ANGLE    900
-#define PITCH_MAX_ANGLE   650
+#define PITCH_MAX_ANGLE   550
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 10
 #define THROTTLE_THRESHOLD                   0.01f
