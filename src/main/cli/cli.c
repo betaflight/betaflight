@@ -4850,13 +4850,12 @@ static void cliTasks(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void cliVersion(const char *cmdName, char *cmdline)
+static void printVersion(const char *cmdName, bool printBoardInfo)
 {
-    UNUSED(cmdline);
 #if !(defined(USE_CUSTOM_DEFAULTS) && defined(USE_UNIFIED_TARGET))
     UNUSED(cmdName);
+    UNUSED(printBoardInfo);
 #endif
-
 
     cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
@@ -4897,10 +4896,17 @@ static void cliVersion(const char *cmdName, char *cmdline)
 #endif // USE_CUSTOM_DEFAULTS
 
 #if defined(USE_UNIFIED_TARGET) && defined(USE_BOARD_INFO)
-    if (strlen(getManufacturerId()) && strlen(getBoardName())) {
-        cliPrintf("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
+    if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
+        cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
     }
 #endif
+}
+
+static void cliVersion(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdline);
+
+    printVersion(cmdName, true);
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -6107,7 +6113,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #endif
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
-        cliVersion(cmdName, "");
+        printVersion(cmdName, false);
 
         if (!(dumpMask & BARE)) {
 #ifdef USE_CLI_BATCH
