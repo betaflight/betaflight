@@ -167,7 +167,7 @@ uint32_t timerClock(TIM_TypeDef *tim)
     uint32_t ppre;
 
     // Implement the table:
-    // RM0433 "Table 48. Ratio between clock timer and pclk"
+    // RM0433 Rev 6 "Table 52. Ratio between clock timer and pclk"
 
     if (tim == TIM1 || tim == TIM8 || tim == TIM15 || tim == TIM16 || tim == TIM17) {
         // Timers on APB2
