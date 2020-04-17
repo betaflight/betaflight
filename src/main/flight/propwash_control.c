@@ -45,12 +45,13 @@
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 10
 #define THROTTLE_THRESHOLD                   0.01f
 #define MAX_DTERM_BOOST                      1.5f
-//#define MAX_DLPF_BOOST    0.5f
+#define MAX_DLPF_BOOST                       0.5f
 
 static pt1Filter_t antiPropwashThrottleLpf;
 static float antiPropwashThrottleHpf;
 
 bool isInPropwashZone = false;
+float gForce = 0.0f;
 
 void initAntiPropwashThrottleFilter(void) {
     pt1FilterInit(&antiPropwashThrottleLpf, pt1FilterGain(ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF, gyro.targetLooptime * 1e-6f));
@@ -59,21 +60,20 @@ void initAntiPropwashThrottleFilter(void) {
 void checkPropwash(void) {
     const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
 
-    const float gForce = (zAxisAcc > 0) ? sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec : 0.0f;
+    gForce = (zAxisAcc > 0) ? sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec : 0.0f;
 
     if (isInPropwashZone == false && gForce < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
         isInPropwashZone = true;
     } else if (gForce > GRAVITY_OUT_THRESHOLD || ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE) {
         isInPropwashZone = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 0, lrintf(gForce * 100));
-    DEBUG_SET(DEBUG_PROPWASH, 1, isInPropwashZone);
+    DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwashZone);
 }
 
 void updateAntiPropwashThrottleFilter(float throttle) {
     antiPropwashThrottleHpf = throttle - pt1FilterApply(&antiPropwashThrottleLpf, throttle);
 
-    DEBUG_SET(DEBUG_PROPWASH, 2, lrintf(antiPropwashThrottleHpf * 1000));
+    DEBUG_SET(DEBUG_PROPWASH, 1, lrintf(antiPropwashThrottleHpf * 1000));
 }
 
 bool canApplyBoost(void) {
@@ -83,10 +83,13 @@ bool canApplyBoost(void) {
     } else {
         boost = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 3, boost);
+    DEBUG_SET(DEBUG_PROPWASH, 2, boost);
     return boost;
 }
 
 float computeBoostFactor() {
-    return 1.5f;
+    const dBoostGainFactor = 1.0f * gForce / GRAVITY_OUT_THRESHOLD;
+    const float dBoostGain = MAX_DLPF_BOOST * dBoostGainFactor + 1.0f;
+
+    return dBoostGain;
 }
