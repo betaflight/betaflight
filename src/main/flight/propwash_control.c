@@ -38,7 +38,7 @@
 #include "sensors/gyro.h"
 
 #define GRAVITY_IN_THRESHOLD 0.5f
-#define GRAVITY_OUT_THRESHOLD 0.7f
+#define GRAVITY_OUT_THRESHOLD 0.9f
 #define ROLL_MAX_ANGLE    900
 #define PITCH_MAX_ANGLE   550
 
@@ -59,13 +59,16 @@ void initAntiPropwashThrottleFilter(void) {
 void checkPropwash(void) {
     const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
 
-    if (isInPropwashZone == false && zAxisAcc < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
+    const float gForce = (zAxisAcc > 0) ? sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec : 0.0f;
+
+    if (isInPropwashZone == false && gForce < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
         isInPropwashZone = true;
-    } else if (zAxisAcc > GRAVITY_OUT_THRESHOLD) {
+    } else if (gForce > GRAVITY_OUT_THRESHOLD || ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE) {
         isInPropwashZone = false;
     }
     DEBUG_SET(DEBUG_PROPWASH, 0, lrintf(zAxisAcc * 100));
     DEBUG_SET(DEBUG_PROPWASH, 1, isInPropwashZone);
+    DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(gForce * 100));
 }
 
 void updateAntiPropwashThrottleFilter(float throttle) {
@@ -81,7 +84,7 @@ bool canApplyBoost(void) {
     } else {
         boost = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 3, boost);
+    //DEBUG_SET(DEBUG_PROPWASH, 3, boost);
     return boost;
 }
 
