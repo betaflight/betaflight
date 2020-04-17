@@ -67,7 +67,7 @@ void checkPropwash(void) {
     } else if (gForce > GRAVITY_OUT_THRESHOLD || ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE) {
         isInPropwashZone = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwashZone);
+    DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwashZone * 1000);
 }
 
 void updateAntiPropwashThrottleFilter(float throttle) {
@@ -88,8 +88,8 @@ bool canApplyBoost(void) {
 }
 
 float computeBoostFactor() {
-    const dBoostGainFactor = 1.0f * gForce / GRAVITY_OUT_THRESHOLD;
+    const float dBoostGainFactor = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
     const float dBoostGain = MAX_DLPF_BOOST * dBoostGainFactor + 1.0f;
-
+    DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(dBoostGain * 1000))
     return dBoostGain;
 }
