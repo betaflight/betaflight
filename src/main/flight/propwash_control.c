@@ -42,10 +42,10 @@
 #define ROLL_MAX_ANGLE    900
 #define PITCH_MAX_ANGLE   550
 
-#define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 10
-#define THROTTLE_THRESHOLD                   0.01f
+#define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
+#define THROTTLE_THRESHOLD                   0.003f
 #define MAX_DTERM_BOOST                      1.5f
-#define MAX_DLPF_BOOST                       0.5f
+#define MAX_DLPF_BOOST                       0.25f
 
 static pt1Filter_t antiPropwashThrottleLpf;
 static float antiPropwashThrottleHpf;
@@ -90,6 +90,6 @@ bool canApplyBoost(void) {
 float computeBoostFactor() {
     const float dBoostGainFactor = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
     const float dBoostGain = MAX_DLPF_BOOST * dBoostGainFactor + 1.0f;
-    //DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(dBoostGain * 1000))
+
     return dBoostGain;
 }
