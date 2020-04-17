@@ -1026,7 +1026,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
             float dPropwashFactor = 1.0f;
             if (canApplyBoost()) {
-                dPropwashFactor = 1.5f;
+                dPropwashFactor = computeBoostFactor();
             }
 
             pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor * dPropwashFactor;

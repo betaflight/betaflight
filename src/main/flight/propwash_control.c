@@ -66,9 +66,8 @@ void checkPropwash(void) {
     } else if (gForce > GRAVITY_OUT_THRESHOLD || ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE) {
         isInPropwashZone = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 0, lrintf(zAxisAcc * 100));
+    DEBUG_SET(DEBUG_PROPWASH, 0, lrintf(gForce * 100));
     DEBUG_SET(DEBUG_PROPWASH, 1, isInPropwashZone);
-    DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(gForce * 100));
 }
 
 void updateAntiPropwashThrottleFilter(float throttle) {
@@ -84,19 +83,10 @@ bool canApplyBoost(void) {
     } else {
         boost = false;
     }
-    //DEBUG_SET(DEBUG_PROPWASH, 3, boost);
+    DEBUG_SET(DEBUG_PROPWASH, 3, boost);
     return boost;
 }
 
-//float computeBoostFactor() {
-//    if (canApplyBoost) {
-        //const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
-        //const float xAxisAcc = acc.accADC[X] * acc.dev.acc_1G_rec;
-        //const float accel = sqrt(powf(zAxisAcc, 2) + powf(xAxisAcc, 2));
-        //return MIN(1 + accel * MAX_DTERM_BOOST, 1 + MAX_DTERM_BOOST);
-//        DEBUG_SET(DEBUG_PROPWASH, 2, lrintf(MAX_DTERM_BOOST * 100));
-//        return MAX_DTERM_BOOST;
-//    } else {
-//        return 1.0f;
-//    }
-//}
+float computeBoostFactor() {
+    return 1.5f;
+}
