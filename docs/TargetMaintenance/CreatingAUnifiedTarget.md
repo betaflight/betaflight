@@ -68,4 +68,9 @@ These instructions explain how to create a Unified Target configuration for an e
 
 - edit the resulting file and identify the first line in the file starting with `# Betaflight`. This line (called the banner line) should be left untouched, and it has to be the first line in the file. Whatever content is found above this line,  delete it. Likewise, there must be no extra lines after the last line starting with `set` - delete all subsequnet lines otherwise;
 
+## 8. Test
+
+- thoroughly test your new Unified Target configuration with the actual hardware (or a prototype of it). Make sure you test all peripherals (gyro, OSD, flash, SDcard, ...) and all motor outputs (with analog and digital protocols). Ideally you want to flight test as well. Remember that Betaflight does no testing of your Unified Target configuration, and once it has been accepted it will become available to your customers through Betaflight Configurator immediately - if it does not work then this will reflect badly onto your company and its products;
+
+## 9. Get it added to Betaflight
 - open a [pull request](https://github.com/betaflight/unified-targets/pulls) to put your target configuration into `configs/default`.
