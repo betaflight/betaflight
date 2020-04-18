@@ -92,7 +92,7 @@ Contributions are welcome and encouraged. You can contribute in many ways:
 * New feature ideas & suggestions.
 * Provide a new translation for configurator, or help us maintain the existing ones.
 
-The best place to start is the Betaflight Slack (registration [here](https://slack.betaflight.com/). Next place is the github issue tracker:
+The best place to start is the Betaflight Slack (registration [here](https://slack.betaflight.com/)). Next place is the github issue tracker:
 
 https://github.com/betaflight/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
