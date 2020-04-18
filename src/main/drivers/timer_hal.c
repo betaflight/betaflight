@@ -824,14 +824,28 @@ _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
 #if USED_TIMERS & TIM_N(12)
 _TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #endif
+#if defined(STM32H7) && (USED_TIMERS & TIM_N(14))
+_TIM_IRQ_HANDLER(TIM8_TRG_COM_TIM14_IRQHandler, 14);
+#endif
 #if USED_TIMERS & TIM_N(15)
+#  if defined(STM32H7)
+_TIM_IRQ_HANDLER(TIM15_IRQHandler, 15);
+#  else
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
+#  endif
+#endif
+#if defined(STM32H7) && (USED_TIMERS & TIM_N(16))
+_TIM_IRQ_HANDLER(TIM16_IRQHandler, 16);
 #endif
 #if defined(STM32F303xC) && ((USED_TIMERS & (TIM_N(1)|TIM_N(16))) == (TIM_N(16)))
 _TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQHandler, 16);    // only timer16 is used, not timer1
 #endif
 #if USED_TIMERS & TIM_N(17)
+#  if defined(STM32H7)
+_TIM_IRQ_HANDLER(TIM17_IRQHandler, 17);
+#  else
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
+#  endif
 #endif
 
 void timerInit(void)
