@@ -34,6 +34,9 @@
 #include "flight/imu.h"
 #include "flight/propwash_control.h"
 
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
@@ -43,8 +46,13 @@
 #define PITCH_MAX_ANGLE   650
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
-#define THROTTLE_THRESHOLD                0.03f  //default 0.01f
-#define MAX_BOOST                      0.25f
+
+PG_REGISTER_WITH_RESET_TEMPLATE(propwashControlConfig_t, propwashControlConfig, PG_PROPWASH_CONTROL, 1);
+
+PG_RESET_TEMPLATE(propwashControlConfig_t, propwashControlConfig,
+    .propwash_control_sensitivity = 30,
+    .propwash_control_d_boost = 0,
+);
 
 static pt1Filter_t antiPropwashThrottleLpf;
 static float antiPropwashThrottleHpf;
@@ -77,10 +85,13 @@ void updateAntiPropwashThrottleFilter(float throttle) {
 }
 
 bool canApplyBoost(void) {
+
     checkPropwash();
-    if (isInPropwashZone && boost == false && antiPropwashThrottleHpf > THROTTLE_THRESHOLD) {
+    const float throttleTreshold = propwashControlConfig()->propwash_control_sensitivity / 1000.0f;
+
+    if (isInPropwashZone && boost == false && antiPropwashThrottleHpf > throttleTreshold) {
         boost = true;
-    } else if (antiPropwashThrottleHpf < THROTTLE_THRESHOLD / 10.0f) {
+    } else if (antiPropwashThrottleHpf < throttleTreshold / 10.0f) {
         boost = false;
     }
     DEBUG_SET(DEBUG_PROPWASH, 2, boost);
@@ -88,8 +99,11 @@ bool canApplyBoost(void) {
 }
 
 float computeBoostFactor() {
+
+    const float boostPercent = propwashControlConfig()->propwash_control_d_boost / 100.0f;
+
     const float dBoostGainFactor = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
-    const float dBoostGain = MAX_BOOST * dBoostGainFactor + 1.0f;
+    const float dBoostGain = boostPercent * dBoostGainFactor + 1.0f;
 
     return dBoostGain;
 }

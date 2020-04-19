@@ -23,6 +23,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct propwashControlConfig_s
+{
+    uint8_t propwash_control_sensitivity;
+    uint8_t propwash_control_d_boost;
+} propwashControlConfig_t;
+
+PG_DECLARE(propwashControlConfig_t, propwashControlConfig);
+
 extern bool isInPropwashZone;
 
 void checkPropwash(void);

@@ -57,6 +57,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/position.h"
+#include "flight/propwash_control.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -1624,6 +1625,9 @@ const clivalue_t valueTable[] = {
     { "box_user_3_name", VAR_UINT8 | HARDWARE_VALUE | MODE_STRING, .config.string = { 1, MAX_BOX_USER_NAME_LENGTH, STRING_FLAGS_NONE }, PG_MODE_ACTIVATION_CONFIG, offsetof(modeActivationConfig_t, box_user_3_name) },
     { "box_user_4_name", VAR_UINT8 | HARDWARE_VALUE | MODE_STRING, .config.string = { 1, MAX_BOX_USER_NAME_LENGTH, STRING_FLAGS_NONE }, PG_MODE_ACTIVATION_CONFIG, offsetof(modeActivationConfig_t, box_user_4_name) },
 #endif
+
+    { "propwash_control_sensitivity", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 100 }, PG_PROPWASH_CONTROL, offsetof(propwashControlConfig_t, propwash_control_sensitivity) },
+    { "propwash_control_d_boost",     VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 },   PG_PROPWASH_CONTROL, offsetof(propwashControlConfig_t, propwash_control_d_boost) },
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
