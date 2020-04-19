@@ -40,17 +40,17 @@
 #define GRAVITY_IN_THRESHOLD 0.5f
 #define GRAVITY_OUT_THRESHOLD 0.9f
 #define ROLL_MAX_ANGLE    900
-#define PITCH_MAX_ANGLE   550
+#define PITCH_MAX_ANGLE   650
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
-#define THROTTLE_THRESHOLD                   0.003f
-#define MAX_DTERM_BOOST                      1.5f
-#define MAX_DLPF_BOOST                       0.25f
+#define THROTTLE_THRESHOLD                0.03f  //default 0.01f
+#define MAX_BOOST                      0.25f
 
 static pt1Filter_t antiPropwashThrottleLpf;
 static float antiPropwashThrottleHpf;
 
 bool isInPropwashZone = false;
+bool boost = false;
 float gForce = 0.0f;
 
 void initAntiPropwashThrottleFilter(void) {
@@ -77,10 +77,10 @@ void updateAntiPropwashThrottleFilter(float throttle) {
 }
 
 bool canApplyBoost(void) {
-    bool boost;
-    if (isInPropwashZone && antiPropwashThrottleHpf > THROTTLE_THRESHOLD) {
+    checkPropwash();
+    if (isInPropwashZone && boost == false && antiPropwashThrottleHpf > THROTTLE_IN_THRESHOLD) {
         boost = true;
-    } else {
+    } else if (antiPropwashThrottleHpf < THROTTLE_THRESHOLD / 10.0f) {
         boost = false;
     }
     DEBUG_SET(DEBUG_PROPWASH, 2, boost);
@@ -89,7 +89,7 @@ bool canApplyBoost(void) {
 
 float computeBoostFactor() {
     const float dBoostGainFactor = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
-    const float dBoostGain = MAX_DLPF_BOOST * dBoostGainFactor + 1.0f;
+    const float dBoostGain = MAX_BOOST * dBoostGainFactor + 1.0f;
 
     return dBoostGain;
 }

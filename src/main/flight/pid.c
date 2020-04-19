@@ -1022,7 +1022,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 }
             }
 #endif
-            checkPropwash();
 
             float dPropwashFactor = 1.0f;
             if (canApplyBoost()) {
