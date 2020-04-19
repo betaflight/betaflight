@@ -917,8 +917,10 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 
     pidUpdateAntiGravityThrottleFilter(throttle);
-
-    updateAntiPropwashThrottleFilter(throttle);
+    
+    if (propwashControlConfig()->propwash_control_d_boost) {
+        updateAntiPropwashThrottleFilter(throttle);
+    }
 
 #ifdef USE_DYN_LPF
     updateDynLpfCutoffs(currentTimeUs, throttle);

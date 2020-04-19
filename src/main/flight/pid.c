@@ -1024,10 +1024,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
             float dPropwashFactor = 1.0f;
-            if (canApplyBoost()) {
-                dPropwashFactor = computeBoostFactor();
+            if (propwashControlBoostPercent) {
+                if (canApplyBoost()) {
+                    dPropwashFactor = computeBoostFactor();
+                }
+                DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(dPropwashFactor * 1000));
             }
-            DEBUG_SET(DEBUG_PROPWASH, 3, lrintf(dPropwashFactor * 1000));
 
             pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor * dPropwashFactor;
         } else {
