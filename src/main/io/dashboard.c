@@ -104,7 +104,7 @@ typedef struct pageEntry_s {
     uint8_t flags;
 } pageEntry_t;
 
-static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
+static const char tickerCharacters[] = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
 
 typedef enum {
