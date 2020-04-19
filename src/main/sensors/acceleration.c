@@ -577,4 +577,8 @@ void applyAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
     accelerometerConfigMutable()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
     accelerometerConfigMutable()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 }
+
+bool isAccelerometerEnabled() {
+    return !(accelerometerConfig()->acc_hardware == ACC_NONE);
+}
 #endif

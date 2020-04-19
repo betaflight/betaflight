@@ -63,6 +63,7 @@
 
 #include "rx/rx.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
 
@@ -917,8 +918,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     }
 
     pidUpdateAntiGravityThrottleFilter(throttle);
-    
-    if (propwashControlConfig()->propwash_control_d_boost) {
+
+    if (isAccelerometerEnabled() && propwashControlConfig()->propwash_control_d_boost) {
         updateAntiPropwashThrottleFilter(throttle);
     }
 

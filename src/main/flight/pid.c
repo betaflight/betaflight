@@ -1024,7 +1024,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
             float dPropwashFactor = 1.0f;
-            if (propwashControlBoostPercent) {
+            if (isAccelerometerEnabled() && propwashControlBoostPercent) {
                 if (canApplyBoost()) {
                     dPropwashFactor = computeBoostFactor();
                 }
