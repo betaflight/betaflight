@@ -78,7 +78,7 @@ void updateAntiPropwashThrottleFilter(float throttle) {
 
 bool canApplyBoost(void) {
     checkPropwash();
-    if (isInPropwashZone && boost == false && antiPropwashThrottleHpf > THROTTLE_IN_THRESHOLD) {
+    if (isInPropwashZone && boost == false && antiPropwashThrottleHpf > THROTTLE_THRESHOLD) {
         boost = true;
     } else if (antiPropwashThrottleHpf < THROTTLE_THRESHOLD / 10.0f) {
         boost = false;
