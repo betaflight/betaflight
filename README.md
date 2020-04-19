@@ -85,12 +85,12 @@ https://github.com/betaflight/betaflight-configurator/releases/latest
 
 Contributions are welcome and encouraged. You can contribute in many ways:
 
-* Implement a new feature in the firmware or in configurator (see [below](#Developers)).
-* Documentation updates and corrections.
+* implement a new feature in the firmware or in configurator (see [below](#Developers));
+* documentation updates and corrections;
 * How-To guides - received help? Help others!
-* Bug reporting & fixes.
-* New feature ideas & suggestions.
-* Provide a new translation for configurator, or help us maintain the existing ones.
+* bug reporting & fixes;
+* new feature ideas & suggestions;
+* provide a new translation for configurator, or help us maintain the existing ones (see [below](#Translators)).
 
 The best place to start is the Betaflight Slack (registration [here](https://slack.betaflight.com/)). Next place is the github issue tracker:
 
@@ -113,6 +113,13 @@ TravisCI is used to run automatic builds
 https://travis-ci.com/betaflight/betaflight
 
 [![Build Status](https://travis-ci.com/betaflight/betaflight.svg?branch=master)](https://travis-ci.com/betaflight/betaflight)
+
+## Translators
+
+We want to make Betaflight accessible for pilots who are not fluent in English, and for this reason we are currently maintaining translations into 18 languages for Betaflight Configurator: Català, Deutsch, Español, Euskera, Français, Galego, Hrvatski, Bahasa Indonesia, Italiano, 日本語, 한국어, Latviešu, Português, Português Brasileiro, polski, Русский язык, Svenska, 简体中文.
+We have got a team of volunteer translators who do this work, but additional translators are always welcome to share the workload, and we are keen to add additional languages. If you would like to help us with translations, you have got the following options:
+- if you help by suggesting some updates or improvements to translations in a language you are familiar with, head to [crowdin](https://crowdin.com/project/betaflight-configurator) and add your suggested translations there;
+- if you would like to start working on the translation for a new language, or take on responsibility for proof-reading the translation for a language you are very familiar with, please head to the Betaflight Slack (registration [here](https://slack.betaflight.com/)), and join the '#team\_translation' channel - the people in there can help you to get a new language added, or set you up as a proof reader.
 
 ## Betaflight Releases
 
