@@ -350,7 +350,11 @@ void initEscEndpoints(void)
 void mixerInitProfile(void)
 {
 #ifdef USE_DYN_IDLE
-    idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
+    if (motorConfig()->dev.useDshotTelemetry) {
+        idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
+    } else {
+        idleMinMotorRps = 0;
+    }
     idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleP = currentPidProfile->idle_p * 0.0001f;
 #endif
@@ -603,9 +607,10 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         }
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
+        float appliedMotorOutputLow = motorOutputLow;
 #ifdef USE_DYN_IDLE
         if (idleMinMotorRps > 0.0f) {
-            motorOutputLow = DSHOT_MIN_THROTTLE;
+            appliedMotorOutputLow = DSHOT_MIN_THROTTLE;
             const float maxIncrease = isAirmodeActivated() ? idleMaxIncrease : 0.04f;
             const float minRps = rpmMinMotorFrequency();
             const float targetRpsChangeRate = (idleMinMotorRps - minRps) * currentPidProfile->idle_adjustment_speed;
@@ -619,11 +624,13 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);
             DEBUG_SET(DEBUG_DYN_IDLE, 2, error);
             DEBUG_SET(DEBUG_DYN_IDLE, 3, minRps);
-            
+        } else {
+            motorRangeMinIncrease = 0;
+            oldMinRps = 0;
         }
 #endif
         currentThrottleInputRange = rcCommandThrottleRange;
-        motorRangeMin = motorOutputLow + motorRangeMinIncrease * (motorOutputHigh - motorOutputLow);
+        motorRangeMin = appliedMotorOutputLow + motorRangeMinIncrease * (motorOutputHigh - appliedMotorOutputLow);
         motorRangeMax = motorOutputHigh;
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorOutputHigh - motorOutputMin;
