@@ -87,13 +87,13 @@ void checkPropwash(void) {
     } else if (gForce > GRAVITY_OUT_THRESHOLD || isUpsideDown()) {
         isInPropwash = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwash * 1000);
+    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 0, isInPropwash * 1000);
 }
 
 void updateAccBasedBoostThrottleFilter(float throttle) {
     accBasedBoostThrottleHpf = throttle - pt1FilterApply(&accBasedBoostThrottleLpf, throttle);
 
-    DEBUG_SET(DEBUG_PROPWASH, 1, lrintf(accBasedBoostThrottleHpf * 1000));
+    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 1, lrintf(accBasedBoostThrottleHpf * 1000));
 }
 
 bool canApplyBoost(void) {
@@ -106,7 +106,7 @@ bool canApplyBoost(void) {
     } else if (accBasedBoostThrottleHpf < throttleTreshold / 10.0f) {
         boost = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 2, boost);
+    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 2, boost);
     return boost;
 }
 

@@ -96,5 +96,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "BLACKBOX_OUTPUT",
     "GYRO_SAMPLE",
     "RX_TIMING",
-    "PROPWASH",
+    "ACC_BASED_BOOST",
 };
