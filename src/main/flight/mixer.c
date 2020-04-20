@@ -52,13 +52,13 @@
 #include "fc/core.h"
 #include "fc/rc.h"
 
+#include "flight/acc_based_boost.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/mixer.h"
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
-#include "flight/propwash_control.h"
 #include "flight/rpm_filter.h"
 
 #include "rx/rx.h"
@@ -919,8 +919,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 
     pidUpdateAntiGravityThrottleFilter(throttle);
 
-    if (isAccelerometerEnabled() && propwashControlConfig()->propwash_control_d_boost) {
-        updateAntiPropwashThrottleFilter(throttle);
+    if (isAccelerometerEnabled() && accBasedBoostConfig()->acc_based_boost_percent) {
+        updateAccBasedBoostThrottleFilter(throttle);
     }
 
 #ifdef USE_DYN_LPF

@@ -99,13 +99,13 @@
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
 
+#include "flight/acc_based_boost.h"
 #include "flight/gps_rescue.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/propwash_control.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"

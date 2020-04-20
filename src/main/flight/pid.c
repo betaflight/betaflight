@@ -44,10 +44,10 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/acc_based_boost.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/propwash_control.h"
 #include "flight/rpm_filter.h"
 #include "flight/interpolated_setpoint.h"
 
@@ -1024,7 +1024,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
             float dPropwashFactor = 1.0f;
-            if (isAccelerometerEnabled() && propwashControlBoostPercent) {
+            if (isAccelerometerEnabled() && accBasedBoostPercent) {
                 if (canApplyBoost()) {
                     dPropwashFactor = computeBoost();
                 }

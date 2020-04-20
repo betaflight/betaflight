@@ -32,7 +32,7 @@
 #include "common/maths.h"
 
 #include "flight/imu.h"
-#include "flight/propwash_control.h"
+#include "flight/acc_based_boost.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -47,22 +47,22 @@
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
 
-PG_REGISTER_WITH_RESET_TEMPLATE(propwashControlConfig_t, propwashControlConfig, PG_PROPWASH_CONTROL, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(accBasedBoostConfig_t, accBasedBoostConfig, PG_ACC_BASED_BOOST, 1);
 
-PG_RESET_TEMPLATE(propwashControlConfig_t, propwashControlConfig,
-    .propwash_control_sensitivity = 30,
-    .propwash_control_d_boost = 0,
+PG_RESET_TEMPLATE(accBasedBoostConfig_t, accBasedBoostConfig,
+    .acc_based_boost_sensitivity = 30,
+    .acc_based_boost_percent = 0,
 );
 
-static pt1Filter_t antiPropwashThrottleLpf;
-static float antiPropwashThrottleHpf;
+static pt1Filter_t accBasedBoostThrottleLpf;
+static float accBasedBoostThrottleHpf;
 
 bool isInPropwash = false;
 bool boost = false;
 float gForce = 0.0f;
 
-void initAntiPropwashThrottleFilter(void) {
-    pt1FilterInit(&antiPropwashThrottleLpf, pt1FilterGain(ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF, gyro.targetLooptime * 1e-6f));
+void initAccBasedBoostThrottleFilter(void) {
+    pt1FilterInit(&accBasedBoostThrottleLpf, pt1FilterGain(ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF, gyro.targetLooptime * 1e-6f));
 }
 
 bool isNotUpsideDown() {
@@ -90,20 +90,20 @@ void checkPropwash(void) {
     DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwash * 1000);
 }
 
-void updateAntiPropwashThrottleFilter(float throttle) {
-    antiPropwashThrottleHpf = throttle - pt1FilterApply(&antiPropwashThrottleLpf, throttle);
+void updateAccBasedBoostThrottleFilter(float throttle) {
+    accBasedBoostThrottleHpf = throttle - pt1FilterApply(&accBasedBoostThrottleLpf, throttle);
 
-    DEBUG_SET(DEBUG_PROPWASH, 1, lrintf(antiPropwashThrottleHpf * 1000));
+    DEBUG_SET(DEBUG_PROPWASH, 1, lrintf(accBasedBoostThrottleHpf * 1000));
 }
 
 bool canApplyBoost(void) {
     
     checkPropwash();
-    const float throttleTreshold = propwashControlConfig()->propwash_control_sensitivity / 1000.0f;
+    const float throttleTreshold = accBasedBoostConfig()->acc_based_boost_sensitivity / 1000.0f;
 
-    if (isInPropwash && !boost && antiPropwashThrottleHpf > throttleTreshold) {
+    if (isInPropwash && !boost && accBasedBoostThrottleHpf > throttleTreshold) {
         boost = true;
-    } else if (antiPropwashThrottleHpf < throttleTreshold / 10.0f) {
+    } else if (accBasedBoostThrottleHpf < throttleTreshold / 10.0f) {
         boost = false;
     }
     DEBUG_SET(DEBUG_PROPWASH, 2, boost);
@@ -111,7 +111,7 @@ bool canApplyBoost(void) {
 }
 
 float computeBoost() {
-    const float boostPercent = propwashControlConfig()->propwash_control_d_boost / 100.0f;
+    const float boostPercent = accBasedBoostConfig()->acc_based_boost_percent / 100.0f;
     const float boostGain = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
 
     return 1.0f + boostPercent * boostGain;

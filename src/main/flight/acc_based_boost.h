@@ -23,17 +23,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct propwashControlConfig_s
+typedef struct accBasedBoostConfig_s
 {
-    uint8_t propwash_control_sensitivity;
-    uint8_t propwash_control_d_boost;
-} propwashControlConfig_t;
+    uint8_t acc_based_boost_sensitivity;
+    uint8_t acc_based_boost_percent;
+} accBasedBoostConfig_t;
 
-PG_DECLARE(propwashControlConfig_t, propwashControlConfig);
+PG_DECLARE(accBasedBoostConfig_t, accBasedBoostConfig);
 
 void checkPropwash(void);
 bool canApplyBoost(void);
 float computeBoost();
-void initAntiPropwashThrottleFilter(void);
-void updateAntiPropwashThrottleFilter(float throttle);
+void initAccBasedBoostThrottleFilter(void);
+void updateAccBasedBoostThrottleFilter(float throttle);
 bool isInPropwashZone(void);
