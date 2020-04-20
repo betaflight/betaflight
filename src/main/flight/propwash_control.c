@@ -97,7 +97,7 @@ void updateAntiPropwashThrottleFilter(float throttle) {
 }
 
 bool canApplyBoost(void) {
-
+    
     checkPropwash();
     const float throttleTreshold = propwashControlConfig()->propwash_control_sensitivity / 1000.0f;
 
@@ -111,13 +111,10 @@ bool canApplyBoost(void) {
 }
 
 float computeBoostFactor() {
-
     const float boostPercent = propwashControlConfig()->propwash_control_d_boost / 100.0f;
+    const float boostGain = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
 
-    const float dBoostGainFactor = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
-    const float dBoostGain = boostPercent * dBoostGainFactor + 1.0f;
-
-    return dBoostGain;
+    return 1.0f + boostPercent * boostGain;
 }
 
 bool isInPropwashZone(void) {
