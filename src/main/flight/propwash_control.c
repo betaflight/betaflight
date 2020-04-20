@@ -110,7 +110,7 @@ bool canApplyBoost(void) {
     return boost;
 }
 
-float computeBoostFactor() {
+float computeBoost() {
     const float boostPercent = propwashControlConfig()->propwash_control_d_boost / 100.0f;
     const float boostGain = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
 

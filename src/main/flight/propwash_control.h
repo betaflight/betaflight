@@ -33,7 +33,7 @@ PG_DECLARE(propwashControlConfig_t, propwashControlConfig);
 
 void checkPropwash(void);
 bool canApplyBoost(void);
-float computeBoostFactor();
+float computeBoost();
 void initAntiPropwashThrottleFilter(void);
 void updateAntiPropwashThrottleFilter(float throttle);
 bool isInPropwashZone(void);
