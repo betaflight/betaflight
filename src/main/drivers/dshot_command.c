@@ -151,18 +151,23 @@ static bool allMotorsAreIdle(void)
     return true;
 }
 
-bool dshotCommandsAreEnabled(void)
+bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
 {
-    if (motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS) {
-        return true;
-    } else {
-        return false;
+    bool ret = false;
+
+    if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+        ret = !motorIsEnabled();
+    } else if (commandType == DSHOT_CMD_TYPE_INLINE) {
+        if (motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS) {
+            ret = true;
+        }
     }
+    return ret;
 }
 
-void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool blocking)
+void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshotCommandType_e commandType)
 {
-    if (!isMotorProtocolDshot() || !dshotCommandsAreEnabled() || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
+    if (!isMotorProtocolDshot() || !dshotCommandsAreEnabled(commandType) || (command > DSHOT_MAX_COMMAND) || dshotCommandQueueFull()) {
         return;
     }
 
@@ -192,7 +197,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool 
         break;
     }
 
-    if (blocking) {
+    if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
         delayMicroseconds(DSHOT_INITIAL_DELAY_US - DSHOT_COMMAND_DELAY_US);
         for (; repeats; repeats--) {
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
@@ -213,7 +218,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, bool 
             dshotPwmDevice.vTable.updateComplete();
         }
         delayMicroseconds(delayAfterCommandUs);
-    } else {
+    } else if (commandType == DSHOT_CMD_TYPE_INLINE) {
         dshotCommandControl_t *commandControl = addCommand();
         if (commandControl) {
             commandControl->repeats = repeats;
