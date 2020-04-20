@@ -31,10 +31,9 @@ typedef struct propwashControlConfig_s
 
 PG_DECLARE(propwashControlConfig_t, propwashControlConfig);
 
-extern bool isInPropwashZone;
-
 void checkPropwash(void);
 bool canApplyBoost(void);
 float computeBoostFactor();
 void initAntiPropwashThrottleFilter(void);
 void updateAntiPropwashThrottleFilter(float throttle);
+bool isInPropwashZone(void);

@@ -1534,7 +1534,7 @@ static void osdElementWarnings(osdElementParms_t *element)
         element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
-    if(osdWarnGetState(OSD_WARNING_PROPWASH) && isInPropwashZone) {
+    if(osdWarnGetState(OSD_WARNING_PROPWASH) && isInPropwashZone()) {
         tfp_sprintf(element->buff, "PROPWASH");
     }
 }

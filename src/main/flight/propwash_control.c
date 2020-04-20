@@ -57,7 +57,7 @@ PG_RESET_TEMPLATE(propwashControlConfig_t, propwashControlConfig,
 static pt1Filter_t antiPropwashThrottleLpf;
 static float antiPropwashThrottleHpf;
 
-bool isInPropwashZone = false;
+bool isInPropwash = false;
 bool boost = false;
 float gForce = 0.0f;
 
@@ -70,12 +70,12 @@ void checkPropwash(void) {
 
     gForce = (zAxisAcc > 0) ? sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec : 0.0f;
 
-    if (isInPropwashZone == false && gForce < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
-        isInPropwashZone = true;
+    if (isInPropwash == false && gForce < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
+        isInPropwash = true;
     } else if (gForce > GRAVITY_OUT_THRESHOLD || ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE) {
-        isInPropwashZone = false;
+        isInPropwash = false;
     }
-    DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwashZone * 1000);
+    DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwash * 1000);
 }
 
 void updateAntiPropwashThrottleFilter(float throttle) {
@@ -89,7 +89,7 @@ bool canApplyBoost(void) {
     checkPropwash();
     const float throttleTreshold = propwashControlConfig()->propwash_control_sensitivity / 1000.0f;
 
-    if (isInPropwashZone && boost == false && antiPropwashThrottleHpf > throttleTreshold) {
+    if (isInPropwash && boost == false && antiPropwashThrottleHpf > throttleTreshold) {
         boost = true;
     } else if (antiPropwashThrottleHpf < throttleTreshold / 10.0f) {
         boost = false;
@@ -106,4 +106,8 @@ float computeBoostFactor() {
     const float dBoostGain = boostPercent * dBoostGainFactor + 1.0f;
 
     return dBoostGain;
+}
+
+bool isInPropwashZone(void) {
+    return isInPropwash;
 }
