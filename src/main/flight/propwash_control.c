@@ -43,7 +43,7 @@
 #define GRAVITY_IN_THRESHOLD 0.5f
 #define GRAVITY_OUT_THRESHOLD 0.9f
 #define ROLL_MAX_ANGLE    900
-#define PITCH_MAX_ANGLE   650
+#define PITCH_MAX_ANGLE   700
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
 
@@ -65,14 +65,26 @@ void initAntiPropwashThrottleFilter(void) {
     pt1FilterInit(&antiPropwashThrottleLpf, pt1FilterGain(ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF, gyro.targetLooptime * 1e-6f));
 }
 
+bool isNotUpsideDown() {
+    return (ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE);
+}
+
+bool isUpsideDown() {
+    return (ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE);
+}
+
+bool IsNotTooAngulated() {
+    return (ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE);
+}
+
 void checkPropwash(void) {
     const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
 
     gForce = (zAxisAcc > 0) ? sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec : 0.0f;
 
-    if (isInPropwash == false && gForce < GRAVITY_IN_THRESHOLD && ABS(attitude.raw[FD_ROLL]) < ROLL_MAX_ANGLE && ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE) {
+    if (!isInPropwash && gForce < GRAVITY_IN_THRESHOLD && isNotUpsideDown() && IsNotTooAngulated()) {
         isInPropwash = true;
-    } else if (gForce > GRAVITY_OUT_THRESHOLD || ABS(attitude.raw[FD_ROLL]) > ROLL_MAX_ANGLE) {
+    } else if (gForce > GRAVITY_OUT_THRESHOLD || isUpsideDown()) {
         isInPropwash = false;
     }
     DEBUG_SET(DEBUG_PROPWASH, 0, isInPropwash * 1000);
@@ -89,7 +101,7 @@ bool canApplyBoost(void) {
     checkPropwash();
     const float throttleTreshold = propwashControlConfig()->propwash_control_sensitivity / 1000.0f;
 
-    if (isInPropwash && boost == false && antiPropwashThrottleHpf > throttleTreshold) {
+    if (isInPropwash && !boost && antiPropwashThrottleHpf > throttleTreshold) {
         boost = true;
     } else if (antiPropwashThrottleHpf < throttleTreshold / 10.0f) {
         boost = false;
