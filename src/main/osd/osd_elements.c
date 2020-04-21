@@ -1534,8 +1534,16 @@ static void osdElementWarnings(osdElementParms_t *element)
         element->attr = DISPLAYPORT_ATTR_INFO;
         return;
     }
-    if(osdWarnGetState(OSD_WARNING_PROPWASH) && isInPropwashZone()) {
-        tfp_sprintf(element->buff, "PROPWASH");
+    if(osdWarnGetState(OSD_WARNING_PROPWASH_ZONE) && isInPropwashZone()) {
+        tfp_sprintf(element->buff, "PRPWSH ZONE");
+        element->attr = DISPLAYPORT_ATTR_INFO;
+        return;
+    }
+    
+    if(osdWarnGetState(OSD_WARNING_ACC_BASED_BOOST) && isAccBasedBoostEnabled()) {
+        tfp_sprintf(element->buff, "ACC BOOST");
+        element->attr = DISPLAYPORT_ATTR_INFO;
+        return;
     }
 }
 

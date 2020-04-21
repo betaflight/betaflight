@@ -37,3 +37,4 @@ float computeBoost();
 void initAccBasedBoostThrottleFilter(void);
 void updateAccBasedBoostThrottleFilter(float throttle);
 bool isInPropwashZone(void);
+bool isAccBasedBoostEnabled(void);

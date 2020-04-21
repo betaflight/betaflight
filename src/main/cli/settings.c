@@ -1244,6 +1244,9 @@ const clivalue_t valueTable[] = {
 #endif
     { "osd_warn_over_cap",          VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_OVER_CAP,         PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
 
+    { "osd_warn_propwash_zone",     VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_PROPWASH_ZONE,    PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
+    { "osd_warn_acc_based_boost",   VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = OSD_WARNING_ACC_BASED_BOOST,  PG_OSD_CONFIG, offsetof(osdConfig_t, enabledWarnings)},
+
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
 #ifdef USE_RX_LINK_QUALITY_INFO
     { "osd_link_quality_alarm",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, link_quality_alarm) },

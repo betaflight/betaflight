@@ -43,7 +43,7 @@
 #define GRAVITY_IN_THRESHOLD 0.5f
 #define GRAVITY_OUT_THRESHOLD 0.9f
 #define ROLL_MAX_ANGLE    900
-#define PITCH_MAX_ANGLE   700
+#define PITCH_MAX_ANGLE   750
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
 
@@ -86,6 +86,7 @@ FAST_CODE_NOINLINE void checkPropwash(void) {
         isInPropwash = true;
     } else if (gForce > GRAVITY_OUT_THRESHOLD || isUpsideDown()) {
         isInPropwash = false;
+        boost = false;
     }
     DEBUG_SET(DEBUG_ACC_BASED_BOOST, 0, isInPropwash * 1000);
 }
@@ -103,7 +104,7 @@ FAST_CODE_NOINLINE bool canApplyBoost(void) {
 
     if (isInPropwash && !boost && accBasedBoostThrottleHpf > throttleTreshold) {
         boost = true;
-    } else if (accBasedBoostThrottleHpf < throttleTreshold / 10.0f) {
+    } else if (!isInPropwash || accBasedBoostThrottleHpf < throttleTreshold / 10.0f) {
         boost = false;
     }
     DEBUG_SET(DEBUG_ACC_BASED_BOOST, 2, boost);
@@ -119,4 +120,8 @@ FAST_CODE_NOINLINE float computeBoost() {
 
 bool isInPropwashZone(void) {
     return isInPropwash;
+}
+
+bool isAccBasedBoostEnabled(void) {
+    return boost;
 }
