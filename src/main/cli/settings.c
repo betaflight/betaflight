@@ -26,6 +26,7 @@
 #include "build/debug.h"
 
 #include "blackbox/blackbox.h"
+#include "blackbox/blackbox_fielddefs.h"
 
 #include "cms/cms.h"
 
@@ -777,7 +778,18 @@ const clivalue_t valueTable[] = {
 #ifdef USE_BLACKBOX
     { "blackbox_sample_rate",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_SAMPLE_RATE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, sample_rate) },
     { "blackbox_device",            VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_DEVICE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device) },
-    { "blackbox_record_acc",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, record_acc) },
+    { "bb_log_pids",                VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_PID,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_rc",                  VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_RC_COMMANDS,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_setpoint",            VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_SETPOINT,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_bat",                 VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_BATTERY,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_mag",                 VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_MAG,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_alt",                 VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_ALTITUDE,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_rssi",                VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_RSSI,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_gyro",                VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_GYRO,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_acc",                 VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_ACC,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_debug",               VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_DEBUG,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_motors",              VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_MOTOR,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
+    { "bb_log_gps",                 VAR_UINT16 | MASTER_VALUE | MODE_BITSET, .config.bitpos = SELECT_FIELD_GPS,   PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, fields) },
     { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
 #endif
 
