@@ -88,6 +88,8 @@ FAST_RAM_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
+static float accBasedBoostFactor = 1.0f;
+
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
 #if defined(STM32F1)
@@ -1023,15 +1025,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 #endif
 
-            float dPropwashFactor = 1.0f;
+            accBasedBoostFactor = 1.0f;
             if (isAccelerometerEnabled() && accBasedBoostPercent) {
                 if (canApplyBoost()) {
-                    dPropwashFactor = computeBoost();
+                    accBasedBoostFactor = computeBoost();
                 }
-                DEBUG_SET(DEBUG_ACC_BASED_BOOST, 3, lrintf(dPropwashFactor * 1000));
+                DEBUG_SET(DEBUG_ACC_BASED_BOOST, 3, lrintf(accBasedBoostFactor * 1000));
             }
 
-            pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor * dPropwashFactor;
+            pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor * accBasedBoostFactor;
         } else {
             pidData[axis].D = 0;
         }
@@ -1160,6 +1162,10 @@ void dynLpfDTermUpdate(float throttle)
             cutoffFreq = dynDtermLpfCutoffFreq(throttle, pidRuntime.dynLpfMin, pidRuntime.dynLpfMax, pidRuntime.dynLpfCurveExpo);
         } else {
             cutoffFreq = fmax(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
+        }
+
+        if (isAccelerometerEnabled() && accBasedBoostConfig()->acc_based_boost_percent) {
+            cutoffFreq *= accBasedBoostFactor;
         }
 
          if (pidRuntime.dynLpfFilter == DYN_LPF_PT1) {
