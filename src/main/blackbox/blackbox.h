@@ -61,7 +61,7 @@ typedef enum FlightLogEvent {
 typedef struct blackboxConfig_s {
     uint8_t sample_rate; // sample rate
     uint8_t device;
-    uint16_t fields;
+    uint32_t fields_mask; // 1 to not log that field, 0 to log that field
     uint8_t mode;
 } blackboxConfig_t;
 

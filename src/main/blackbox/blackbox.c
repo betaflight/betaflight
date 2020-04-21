@@ -88,14 +88,16 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 2);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
-    .fields = 0xffff,
+    .fields_mask = 0, // default log all fields
     .mode = BLACKBOX_MODE_NORMAL
 );
+
+STATIC_ASSERT((sizeof(blackboxConfig()->fields_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
 
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 
@@ -104,6 +106,7 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
 #define PREDICT(x) CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x)
 #define ENCODING(x) CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x)
 #define CONDITION(x) CONCAT(FLIGHT_LOG_FIELD_CONDITION_, x)
+#define FIELD_SELECT(x) CONCAT(FLIGHT_LOG_FIELD_SELECT_, x)
 #define UNSIGNED FLIGHT_LOG_FIELD_UNSIGNED
 #define SIGNED FLIGHT_LOG_FIELD_SIGNED
 
@@ -407,9 +410,9 @@ static bool blackboxIsOnlyLoggingIntraframes(void)
     return blackboxPInterval == 0;
 }
 
-static bool isFieldSelected(SelectField field)
+static bool isFieldEnabled(FlightLogFieldSelect_e field)
 {
-    return (blackboxConfig()->fields & (1 << field)) != 0;
+    return (blackboxConfig()->fields_mask & (1 << field)) == 0;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -426,66 +429,66 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case CONDITION(AT_LEAST_MOTORS_6):
     case CONDITION(AT_LEAST_MOTORS_7):
     case CONDITION(AT_LEAST_MOTORS_8):
-        return (getMotorCount() >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1) && isFieldSelected(SELECT_FIELD_MOTOR);
+        return (getMotorCount() >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1) && isFieldEnabled(FIELD_SELECT(MOTOR));
 
     case CONDITION(TRICOPTER):
-        return (mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && isFieldSelected(SELECT_FIELD_MOTOR);
+        return (mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && isFieldEnabled(FIELD_SELECT(MOTOR));
 
     case CONDITION(PID):
-        return isFieldSelected(SELECT_FIELD_PID);
+        return isFieldEnabled(FIELD_SELECT(PID));
 
     case CONDITION(NONZERO_PID_D_0):
     case CONDITION(NONZERO_PID_D_1):
     case CONDITION(NONZERO_PID_D_2):
-        return (currentPidProfile->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0) && isFieldSelected(SELECT_FIELD_PID);
+        return (currentPidProfile->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0) && isFieldEnabled(FIELD_SELECT(PID));
 
     case CONDITION(RC_COMMANDS):
-        return isFieldSelected(SELECT_FIELD_RC_COMMANDS);
+        return isFieldEnabled(FIELD_SELECT(RC_COMMANDS));
 
     case CONDITION(SETPOINT):
-        return isFieldSelected(SELECT_FIELD_SETPOINT);
+        return isFieldEnabled(FIELD_SELECT(SETPOINT));
 
     case CONDITION(MAG):
 #ifdef USE_MAG
-        return sensors(SENSOR_MAG) && isFieldSelected(SELECT_FIELD_MAG);
+        return sensors(SENSOR_MAG) && isFieldEnabled(FIELD_SELECT(MAG));
 #else
         return false;
 #endif
 
     case CONDITION(BARO):
 #ifdef USE_BARO
-        return sensors(SENSOR_BARO) && isFieldSelected(SELECT_FIELD_ALTITUDE);
+        return sensors(SENSOR_BARO) && isFieldEnabled(FIELD_SELECT(ALTITUDE));
 #else
         return false;
 #endif
 
     case CONDITION(VBAT):
-        return (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) && isFieldSelected(SELECT_FIELD_BATTERY);
+        return (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) && isFieldEnabled(FIELD_SELECT(BATTERY));
 
     case CONDITION(AMPERAGE_ADC):
-        return (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_VIRTUAL) && isFieldSelected(SELECT_FIELD_BATTERY);
+        return (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_VIRTUAL) && isFieldEnabled(FIELD_SELECT(BATTERY));
 
     case CONDITION(RANGEFINDER):
 #ifdef USE_RANGEFINDER
-        return sensors(SENSOR_RANGEFINDER) && isFieldSelected(SELECT_FIELD_ALTITUDE);
+        return sensors(SENSOR_RANGEFINDER) && isFieldEnabled(FIELD_SELECT(ALTITUDE));
 #else
         return false;
 #endif
 
     case CONDITION(RSSI):
-        return isRssiConfigured() && isFieldSelected(SELECT_FIELD_RSSI);
+        return isRssiConfigured() && isFieldEnabled(FIELD_SELECT(RSSI));
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
         return blackboxPInterval != blackboxIInterval;
 
     case CONDITION(GYRO):
-        return isFieldSelected(SELECT_FIELD_GYRO);
+        return isFieldEnabled(FIELD_SELECT(GYRO));
 
     case CONDITION(ACC):
-        return sensors(SENSOR_ACC) && isFieldSelected(SELECT_FIELD_ACC);
+        return sensors(SENSOR_ACC) && isFieldEnabled(FIELD_SELECT(ACC));
 
     case CONDITION(DEBUG):
-        return (debugMode != DEBUG_NONE) && isFieldSelected(SELECT_FIELD_DEBUG);
+        return (debugMode != DEBUG_NONE) && isFieldEnabled(FIELD_SELECT(DEBUG));
 
     case CONDITION(NEVER):
         return false;
@@ -632,7 +635,7 @@ static void writeIntraframe(void)
         blackboxWriteSigned16VBArray(blackboxCurrent->debug, DEBUG16_VALUE_COUNT);
     }
 
-    if (isFieldSelected(SELECT_FIELD_MOTOR)) {
+    if (isFieldEnabled(FIELD_SELECT(MOTOR))) {
         //Motors can be below minimum output when disarmed, but that doesn't happen much
         blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorOutputLow);
 
@@ -781,7 +784,7 @@ static void writeInterframe(void)
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), DEBUG16_VALUE_COUNT);
     }
     
-    if (isFieldSelected(SELECT_FIELD_MOTOR)) {
+    if (isFieldEnabled(FIELD_SELECT(MOTOR))) {
         blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor),     getMotorCount());
 
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
@@ -1470,6 +1473,8 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_RC_SMOOTHING_FILTER
         BLACKBOX_PRINT_HEADER_LINE("rates_type", "%d",                      currentControlRateProfile->rates_type);
 
+        BLACKBOX_PRINT_HEADER_LINE("logging_fields_mask", "%d",             blackboxConfig()->fields_mask);
+
         default:
             return true;
     }
@@ -1573,7 +1578,7 @@ STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void)
 STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
 {
     if ((GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-        || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) && isFieldSelected(SELECT_FIELD_GPS)) {
+        || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) && isFieldEnabled(FIELD_SELECT(GPS))) {
         return true;
     }
     return false;
@@ -1625,7 +1630,7 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
             writeInterframe();
         }
 #ifdef USE_GPS
-        if (featureIsEnabled(FEATURE_GPS) && isFieldSelected(SELECT_FIELD_GPS)) {
+        if (featureIsEnabled(FEATURE_GPS) && isFieldEnabled(FIELD_SELECT(GPS))) {
             if (blackboxShouldLogGpsHomeFrame()) {
                 writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
@@ -1693,7 +1698,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
                 &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef USE_GPS
-            if (featureIsEnabled(FEATURE_GPS) && isFieldSelected(SELECT_FIELD_GPS)) {
+            if (featureIsEnabled(FEATURE_GPS) && isFieldEnabled(FIELD_SELECT(GPS))) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
             } else
 #endif
@@ -1705,7 +1710,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         blackboxReplenishHeaderBudget();
         //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
         if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAYLEN(blackboxGpsHFields),
-                NULL, NULL) && isFieldSelected(SELECT_FIELD_GPS)) {
+                NULL, NULL) && isFieldEnabled(FIELD_SELECT(GPS))) {
             blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
         }
         break;
@@ -1713,7 +1718,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         blackboxReplenishHeaderBudget();
         //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
         if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAYLEN(blackboxGpsGFields),
-                &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition) && isFieldSelected(SELECT_FIELD_GPS)) {
+                &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition) && isFieldEnabled(FIELD_SELECT(GPS))) {
             blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
         }
         break;
