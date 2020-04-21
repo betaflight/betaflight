@@ -77,7 +77,7 @@ bool IsNotTooAngulated() {
     return (ABS(attitude.raw[FD_PITCH]) < PITCH_MAX_ANGLE);
 }
 
-void checkPropwash(void) {
+FAST_CODE_NOINLINE void checkPropwash(void) {
     const float zAxisAcc = acc.accADC[Z] * acc.dev.acc_1G_rec;
 
     gForce = (zAxisAcc > 0) ? sqrtf(sq(acc.accADC[Z]) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec : 0.0f;
@@ -90,13 +90,13 @@ void checkPropwash(void) {
     DEBUG_SET(DEBUG_ACC_BASED_BOOST, 0, isInPropwash * 1000);
 }
 
-void updateAccBasedBoostThrottleFilter(float throttle) {
+FAST_CODE_NOINLINE void updateAccBasedBoostThrottleFilter(float throttle) {
     accBasedBoostThrottleHpf = throttle - pt1FilterApply(&accBasedBoostThrottleLpf, throttle);
 
     DEBUG_SET(DEBUG_ACC_BASED_BOOST, 1, lrintf(accBasedBoostThrottleHpf * 1000));
 }
 
-bool canApplyBoost(void) {
+FAST_CODE_NOINLINE bool canApplyBoost(void) {
     
     checkPropwash();
     const float throttleTreshold = accBasedBoostConfig()->acc_based_boost_sensitivity / 1000.0f;
@@ -110,7 +110,7 @@ bool canApplyBoost(void) {
     return boost;
 }
 
-float computeBoost() {
+FAST_CODE_NOINLINE float computeBoost() {
     const float boostPercent = accBasedBoostConfig()->acc_based_boost_percent / 100.0f;
     const float boostGain = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
 
