@@ -355,11 +355,7 @@ void initEscEndpoints(void)
 void mixerInitProfile(void)
 {
 #ifdef USE_DYN_IDLE
-    if (motorConfig()->dev.useDshotTelemetry) {
-        idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
-    } else {
-        idleMinMotorRps = 0;
-    }
+    idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
     idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleP = currentPidProfile->idle_p * 0.0001f;
 #endif
