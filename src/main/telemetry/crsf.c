@@ -462,10 +462,6 @@ void initCrsfTelemetry(void)
     mspReplyPending = false;
 #endif
 
-#if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY)
-    cmsDisplayPortRegister(displayPortCrsfInit());
-#endif
-
     int index = 0;
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);

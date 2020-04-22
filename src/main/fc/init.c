@@ -101,6 +101,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/displayport_crsf.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
 #include "io/displayport_srxl.h"
@@ -831,6 +832,10 @@ void init(void)
     // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
     if (!osdDisplayPort)
         cmsDisplayPortRegister(displayPortMspInit());
+#endif
+
+#if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY)
+    cmsDisplayPortRegister(displayPortCrsfInit());
 #endif
 
 #ifdef USE_DASHBOARD
