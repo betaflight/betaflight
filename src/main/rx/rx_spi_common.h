@@ -24,7 +24,6 @@
 
 #define INTERVAL_RX_LOSS_MS 1000
 #define INTERVAL_RX_BIND_MS 250
-#define RX_LOSS_COUNT 1000
 
 void rxSpiCommonIOInit(const rxSpiConfig_t *rxSpiConfig);
 
