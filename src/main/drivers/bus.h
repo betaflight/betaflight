@@ -65,9 +65,13 @@ typedef struct busDevice_s {
 void targetBusInit(void);
 #endif
 
+bool busRawWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool busWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool busRawWriteRegisterStart(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool busWriteRegisterStart(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool busRawReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 bool busReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 uint8_t busReadRegister(const busDevice_t *bus, uint8_t reg);
+bool busRawReadRegisterBufferStart(const busDevice_t *busdev, uint8_t reg, uint8_t *data, uint8_t length);
 bool busReadRegisterBufferStart(const busDevice_t *busdev, uint8_t reg, uint8_t *data, uint8_t length);
 bool busBusy(const busDevice_t *busdev, bool *error);
