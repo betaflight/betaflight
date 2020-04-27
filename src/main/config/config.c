@@ -672,10 +672,12 @@ void validateAndFixGyroConfig(void)
     }
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    // Disable dynamic filter if gyro loop is less than 2KHz
+    // Disable dynamic filter if gyro loop is less than 2KHz and enable if is higher than 2KHz
     const uint32_t configuredLooptime = (gyro.sampleRateHz > 0) ? (pidConfig()->pid_process_denom * 1e6 / gyro.sampleRateHz) : 0;
     if (configuredLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
         featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
+    } else {
+        featureEnableImmediate(FEATURE_DYNAMIC_FILTER);
     }
 #endif
 
