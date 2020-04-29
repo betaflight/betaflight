@@ -52,18 +52,6 @@
 #define CMD_PROM_RD             0xA0 // Prom read command
 #define PROM_NB                 8
 
-static void ms5611Reset(busDevice_t *busdev);
-static uint16_t ms5611Prom(busDevice_t *busdev, int8_t coef_num);
-STATIC_UNIT_TESTED int8_t ms5611CRC(uint16_t *prom);
-static void ms5611ReadAdc(busDevice_t *busdev);
-static void ms5611StartUT(baroDev_t *baro);
-static bool ms5611ReadUT(baroDev_t *baro);
-static bool ms5611GetUT(baroDev_t *baro);
-static void ms5611StartUP(baroDev_t *baro);
-static bool ms5611ReadUP(baroDev_t *baro);
-static bool ms5611GetUP(baroDev_t *baro);
-STATIC_UNIT_TESTED void ms5611Calculate(int32_t *pressure, int32_t *temperature);
-
 STATIC_UNIT_TESTED uint32_t ms5611_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
@@ -100,65 +88,9 @@ void ms5611BusDeinit(busDevice_t *busdev)
 #endif
 }
 
-bool ms5611Detect(baroDev_t *baro)
-{
-    uint8_t sig;
-    int i;
-    bool defaultAddressApplied = false;
-
-    delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
-
-    busDevice_t *busdev = &baro->busdev;
-
-    ms5611BusInit(busdev);
-
-    if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
-        // Default address for MS5611
-        busdev->busdev_u.i2c.address = MS5611_I2C_ADDR;
-        defaultAddressApplied = true;
-    }
-
-    if (!busReadRegisterBuffer(busdev, CMD_PROM_RD, &sig, 1) || sig == 0xFF) {
-        goto fail;
-    }
-
-    ms5611Reset(busdev);
-
-    // read all coefficients
-    for (i = 0; i < PROM_NB; i++)
-        ms5611_c[i] = ms5611Prom(busdev, i);
-
-    // check crc, bail out if wrong - we are probably talking to BMP085 w/o XCLR line!
-    if (ms5611CRC(ms5611_c) != 0) {
-        goto fail;
-    }
-
-    // TODO prom + CRC
-    baro->ut_delay = 10000;
-    baro->up_delay = 10000;
-    baro->start_ut = ms5611StartUT;
-    baro->read_ut = ms5611ReadUT;
-    baro->get_ut = ms5611GetUT;
-    baro->start_up = ms5611StartUP;
-    baro->read_up = ms5611ReadUP;
-    baro->get_up = ms5611GetUP;
-    baro->calculate = ms5611Calculate;
-
-    return true;
-
-fail:;
-    ms5611BusDeinit(busdev);
-
-    if (defaultAddressApplied) {
-        busdev->busdev_u.i2c.address = 0;
-    }
-
-    return false;
-}
-
 static void ms5611Reset(busDevice_t *busdev)
 {
-    busWriteRegister(busdev, CMD_RESET, 1);
+    busRawWriteRegister(busdev, CMD_RESET, 1);
 
     delayMicroseconds(2800);
 }
@@ -167,7 +99,7 @@ static uint16_t ms5611Prom(busDevice_t *busdev, int8_t coef_num)
 {
     uint8_t rxbuf[2] = { 0, 0 };
 
-    busReadRegisterBuffer(busdev, CMD_PROM_RD + coef_num * 2, rxbuf, 2); // send PROM READ command
+    busRawReadRegisterBuffer(busdev, CMD_PROM_RD + coef_num * 2, rxbuf, 2); // send PROM READ command
 
     return rxbuf[0] << 8 | rxbuf[1];
 }
@@ -204,12 +136,12 @@ STATIC_UNIT_TESTED int8_t ms5611CRC(uint16_t *prom)
 
 static void ms5611ReadAdc(busDevice_t *busdev)
 {
-    busReadRegisterBufferStart(busdev, CMD_ADC_READ, sensor_data, MS5611_DATA_FRAME_SIZE); // read ADC
+    busRawReadRegisterBufferStart(busdev, CMD_ADC_READ, sensor_data, MS5611_DATA_FRAME_SIZE); // read ADC
 }
 
 static void ms5611StartUT(baroDev_t *baro)
 {
-    busWriteRegisterStart(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
+    busRawWriteRegisterStart(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 }
 
 static bool ms5611ReadUT(baroDev_t *baro)
@@ -219,6 +151,7 @@ static bool ms5611ReadUT(baroDev_t *baro)
     }
 
     ms5611ReadAdc(&baro->busdev);
+
     return true;
 }
 
@@ -227,13 +160,15 @@ static bool ms5611GetUT(baroDev_t *baro)
     if (busBusy(&baro->busdev, NULL)) {
         return false;
     }
+
     ms5611_ut = sensor_data[0] << 16 | sensor_data[1] << 8 | sensor_data[2];
+
     return true;
 }
 
 static void ms5611StartUP(baroDev_t *baro)
 {
-    busWriteRegister(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
+    busRawWriteRegisterStart(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
 }
 
 static bool ms5611ReadUP(baroDev_t *baro)
@@ -243,6 +178,7 @@ static bool ms5611ReadUP(baroDev_t *baro)
     }
 
     ms5611ReadAdc(&baro->busdev);
+
     return true;
 }
 
@@ -251,7 +187,9 @@ static bool ms5611GetUP(baroDev_t *baro)
     if (busBusy(&baro->busdev, NULL)) {
         return false;
     }
+
     ms5611_up = sensor_data[0] << 16 | sensor_data[1] << 8 | sensor_data[2];
+
     return true;
 }
 
@@ -285,5 +223,61 @@ STATIC_UNIT_TESTED void ms5611Calculate(int32_t *pressure, int32_t *temperature)
         *pressure = press;
     if (temperature)
         *temperature = temp;
+}
+
+bool ms5611Detect(baroDev_t *baro)
+{
+    uint8_t sig;
+    int i;
+    bool defaultAddressApplied = false;
+
+    delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
+
+    busDevice_t *busdev = &baro->busdev;
+
+    ms5611BusInit(busdev);
+
+    if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
+        // Default address for MS5611
+        busdev->busdev_u.i2c.address = MS5611_I2C_ADDR;
+        defaultAddressApplied = true;
+    }
+
+    if (!busRawReadRegisterBuffer(busdev, CMD_PROM_RD, &sig, 1) || sig == 0xFF) {
+        goto fail;
+    }
+
+    ms5611Reset(busdev);
+
+    // read all coefficients
+    for (i = 0; i < PROM_NB; i++)
+        ms5611_c[i] = ms5611Prom(busdev, i);
+
+    // check crc, bail out if wrong - we are probably talking to BMP085 w/o XCLR line!
+    if (ms5611CRC(ms5611_c) != 0) {
+        goto fail;
+    }
+
+    // TODO prom + CRC
+    baro->ut_delay = 10000;
+    baro->up_delay = 10000;
+    baro->start_ut = ms5611StartUT;
+    baro->read_ut = ms5611ReadUT;
+    baro->get_ut = ms5611GetUT;
+    baro->start_up = ms5611StartUP;
+    baro->read_up = ms5611ReadUP;
+    baro->get_up = ms5611GetUP;
+    baro->calculate = ms5611Calculate;
+
+    return true;
+
+fail:;
+    ms5611BusDeinit(busdev);
+
+    if (defaultAddressApplied) {
+        busdev->busdev_u.i2c.address = 0;
+    }
+
+    return false;
 }
 #endif
