@@ -26,9 +26,14 @@
 #define CRSF_DISPLAY_PORT_COLS_MAX          32
 #define CRSF_DISPLAY_PORT_MAX_BUFFER_SIZE   (CRSF_DISPLAY_PORT_ROWS_MAX * CRSF_DISPLAY_PORT_COLS_MAX)
 
+typedef struct crsfDisplayPortEncoded_s {
+    uint8_t buffer[CRSF_DISPLAY_PORT_MAX_BUFFER_SIZE];
+    uint8_t len;
+} crsfDisplayPortEncoded_t;
+
 typedef struct crsfDisplayPortScreen_s {
     char buffer[CRSF_DISPLAY_PORT_MAX_BUFFER_SIZE];
-    bool pendingTransport[CRSF_DISPLAY_PORT_ROWS_MAX];
+    bool updated;
     uint8_t rows;
     uint8_t cols;
     bool reset;
@@ -36,8 +41,9 @@ typedef struct crsfDisplayPortScreen_s {
 
 displayPort_t *displayPortCrsfInit(void);
 crsfDisplayPortScreen_t *crsfDisplayPortScreen(void);
+crsfDisplayPortEncoded_t *crsfDisplayPortEncoded(void);
 void crsfDisplayPortMenuOpen(void);
 void crsfDisplayPortMenuExit(void);
 void crsfDisplayPortRefresh(void);
-int crsfDisplayPortNextRow(void);
+bool crsfDisplayPortIsReady(void);
 void crsfDisplayPortSetDimensions(uint8_t rows, uint8_t cols);

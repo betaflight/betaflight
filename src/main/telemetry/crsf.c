@@ -337,20 +337,53 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 }
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
+#define CRSF_DISPLAYPORT_MAX_CHUNKS         4
+#define CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH   50
+#define CRSF_DISPLAYPORT_BATCH_MAX          0x3F
+#define CRSF_DISPLAYPORT_FIRST_CHUNK_MASK   0x80
+#define CRSF_DISPLAYPORT_LAST_CHUNK_MASK    0x40
 
-static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row)
+typedef struct crsfDisplayPortChunkRef_s {
+    uint8_t *start;
+    uint8_t len;
+} crsfDisplayPortChunkRef_t;
+
+typedef struct crsfDisplayPortBatch_t {
+    crsfDisplayPortChunkRef_t refs[CRSF_DISPLAYPORT_MAX_CHUNKS];
+    uint8_t frames;
+    uint8_t id;
+} crsfDisplayPortBatch_t;
+
+static crsfDisplayPortBatch_t crsfDisplayPortBatch;
+
+static void crsfPrepareDisplayPortChunks(void)
+{
+    const crsfDisplayPortEncoded_t *encoded = crsfDisplayPortEncoded();
+    const uint8_t fullFrames = encoded->len / CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH;
+    const uint8_t remainder = encoded->len % CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH;
+    crsfDisplayPortBatch.frames = (remainder) ? fullFrames + 1 : fullFrames;
+    crsfDisplayPortBatch.id++;
+    crsfDisplayPortBatch.id = crsfDisplayPortBatch.id % CRSF_DISPLAYPORT_BATCH_MAX;
+    for (unsigned int i=0; i<crsfDisplayPortBatch.frames; i++) {
+        crsfDisplayPortChunkRef_t *ref = &crsfDisplayPortBatch.refs[i];
+        const uint8_t currentFrame = i + 1;
+        ref->start = (uint8_t*)&encoded->buffer[i*CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH];
+        ref->len = (currentFrame > fullFrames) ? remainder : CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH;
+    }
+}
+
+static void crsfFrameDisplayPortChunk(sbuf_t *dst, const uint8_t meta, const uint8_t idx)
 {
     uint8_t *lengthPtr = sbufPtr(dst);
-    uint8_t buflen = crsfDisplayPortScreen()->cols;
-    char *rowStart = &crsfDisplayPortScreen()->buffer[row * buflen];
-    const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + buflen;
-    sbufWriteU8(dst, frameLength);
+    crsfDisplayPortChunkRef_t *ref = &crsfDisplayPortBatch.refs[idx];
+    sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_UPDATE);
-    sbufWriteU8(dst, row);
-    sbufWriteData(dst, rowStart, buflen);
+    sbufWriteU8(dst, meta);
+    sbufWriteU8(dst, idx);
+    sbufWriteData(dst, ref->start, ref->len);
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
@@ -462,6 +495,11 @@ void initCrsfTelemetry(void)
     mspReplyPending = false;
 #endif
 
+#if defined(USE_CRSF_CMS_TELEMETRY)
+    crsfDisplayPortBatch.frames = 0;
+    crsfDisplayPortBatch.id = 0;
+#endif
+
     int index = 0;
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
@@ -556,14 +594,25 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs;
         return;
     }
-    const int nextRow = crsfDisplayPortNextRow();
-    if (nextRow >= 0) {
-        sbuf_t crsfDisplayPortBuf;
-        sbuf_t *dst = &crsfDisplayPortBuf;
-        crsfInitializeFrame(dst);
-        crsfFrameDisplayPortRow(dst, nextRow);
-        crsfFinalize(dst);
-        crsfDisplayPortScreen()->pendingTransport[nextRow] = false;
+    if (crsfDisplayPortIsReady() && crsfDisplayPortScreen()->updated) {
+        crsfDisplayPortScreen()->updated = false;
+        crsfPrepareDisplayPortChunks();
+        const uint8_t lastIndex = crsfDisplayPortBatch.frames - 1;
+        for(unsigned int i=0; i<crsfDisplayPortBatch.frames; i++) {
+            uint8_t meta = crsfDisplayPortBatch.id;
+            if (i == 0)  {
+                meta |= CRSF_DISPLAYPORT_FIRST_CHUNK_MASK;
+            }
+            if (i == lastIndex) {
+                meta |= CRSF_DISPLAYPORT_LAST_CHUNK_MASK;
+            }
+            sbuf_t crsfDisplayPortBuf;
+            sbuf_t *dst = &crsfDisplayPortBuf;
+            crsfInitializeFrame(dst);
+            crsfFrameDisplayPortChunk(dst, (const uint8_t)meta, (const uint8_t)i);
+            crsfFinalize(dst);
+            crsfRxSendTelemetryData();
+        }
         crsfLastCycleTime = currentTimeUs;
         return;
     }
