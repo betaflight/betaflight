@@ -277,7 +277,7 @@ void updateArmingStatus(void)
             // We also need to prevent arming until it's possible to send DSHOT commands.
             // Otherwise if the initial arming is in crash-flip the motor direction commands
             // might not be sent.
-            && dshotCommandsAreEnabled(DSHOT_CMD_TYPE_INLINE)
+            && (!isMotorProtocolDshot() || dshotCommandsAreEnabled(DSHOT_CMD_TYPE_INLINE))
 #endif
         ) {
             // If so, unset the grace time arming disable flag
