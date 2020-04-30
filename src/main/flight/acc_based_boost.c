@@ -43,7 +43,7 @@
 #define GRAVITY_IN_THRESHOLD 0.5f
 #define GRAVITY_OUT_THRESHOLD 0.9f
 #define ROLL_MAX_ANGLE    900
-#define PITCH_MAX_ANGLE   750
+#define PITCH_MAX_ANGLE   800
 
 #define ANTI_PROPWASH_THROTTLE_FILTER_CUTOFF 5
 
@@ -88,13 +88,12 @@ FAST_CODE_NOINLINE void checkPropwash(void) {
         isInPropwash = false;
         boost = false;
     }
-    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 0, isInPropwash * 1000);
+    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 0, isInPropwash);
+    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 1, lrintf(gForce * 1000));
 }
 
 FAST_CODE_NOINLINE void updateAccBasedBoostThrottleFilter(float throttle) {
     accBasedBoostThrottleHpf = throttle - pt1FilterApply(&accBasedBoostThrottleLpf, throttle);
-
-    DEBUG_SET(DEBUG_ACC_BASED_BOOST, 1, lrintf(accBasedBoostThrottleHpf * 1000));
 }
 
 FAST_CODE_NOINLINE bool canApplyBoost(void) {
@@ -113,7 +112,8 @@ FAST_CODE_NOINLINE bool canApplyBoost(void) {
 
 FAST_CODE_NOINLINE float computeBoost() {
     const float boostPercent = accBasedBoostConfig()->acc_based_boost_percent / 100.0f;
-    const float boostGain = MAX(1.0f - 1.0f * gForce / GRAVITY_OUT_THRESHOLD, 0.0f);
+    const float scaler = constrainf(gForce, GRAVITY_IN_THRESHOLD, GRAVITY_OUT_THRESHOLD);
+    const float boostGain = 1.0f - 1.0f * (scaler - GRAVITY_IN_THRESHOLD) / (GRAVITY_OUT_THRESHOLD - GRAVITY_IN_THRESHOLD);
 
     return 1.0f + boostPercent * boostGain;
 }

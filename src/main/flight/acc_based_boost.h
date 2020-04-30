@@ -31,7 +31,6 @@ typedef struct accBasedBoostConfig_s
 
 PG_DECLARE(accBasedBoostConfig_t, accBasedBoostConfig);
 
-void checkPropwash(void);
 bool canApplyBoost(void);
 float computeBoost();
 void initAccBasedBoostThrottleFilter(void);
