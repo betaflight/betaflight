@@ -370,7 +370,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(rxConfig()->rssi_channel);
             bstWrite8(0);
 
-            bstWrite16(compassConfig()->mag_declination / 10);
+            bstWrite16(0); // was mag_declination / 10
 
             bstWrite8(voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             bstWrite8((batteryConfig()->vbatmincellvoltage + 5) / 10);
@@ -518,7 +518,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             rxConfigMutable()->rssi_channel = bstRead8();
             bstRead8();
 
-            compassConfigMutable()->mag_declination = bstRead16() * 10;
+            bstRead16(); // was mag_declination / 10
 
             voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = bstRead8();  // actual vbatscale as intended
             batteryConfigMutable()->vbatmincellvoltage = bstRead8() * 10;  // vbatlevel_warn1 in MWC2.3 GUI
