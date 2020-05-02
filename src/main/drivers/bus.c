@@ -112,7 +112,7 @@ bool busRawReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t *d
 #ifdef USE_SPI
     if (busdev->bustype ==  BUSTYPE_SPI) {
 #ifdef USE_SPI_TRANSACTION
-        spiBusTransactionSetup(bus);
+        spiBusTransactionSetup(busdev);
 #endif
         return spiBusRawReadRegisterBuffer(busdev, reg, data, length);
     } else
@@ -153,7 +153,7 @@ bool busRawReadRegisterBufferStart(const busDevice_t *busdev, uint8_t reg, uint8
 #ifdef USE_SPI
     if (busdev->bustype ==  BUSTYPE_SPI) {
 #ifdef USE_SPI_TRANSACTION
-        spiBusTransactionSetup(bus);
+        spiBusTransactionSetup(busdev);
 #endif
         return spiBusRawReadRegisterBuffer(busdev, reg, data, length);
     } else
