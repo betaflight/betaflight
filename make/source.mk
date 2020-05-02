@@ -97,6 +97,7 @@ COMMON_SRC = \
             flight/mixer.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
+            flight/pid_init.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
@@ -350,7 +351,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             osd/osd.c \
             osd/osd_elements.c \
             rx/rx_bind.c \
-            sensors/gyro_init.c
+            sensors/gyro_init.c\
+            flight/pid_init.c
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
