@@ -184,29 +184,12 @@ static CMS_Menu cmsx_menuCalibration = {
 
 // Info
 
-static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
-static char infoTargetName[] = __TARGET__;
-
-static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
-{
-    UNUSED(pDisp);
-
-    unsigned i;
-    for (i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
-        infoGitRev[i] = toupper(shortGitRevision[i]);
-    }
-
-    infoGitRev[i] = 0x0; // Terminate string
-
-    return NULL;
-}
-
 static const OSD_Entry menuFirmwareEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
     { "FWID", OME_String, NULL, FC_FIRMWARE_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
-    { "GITREV", OME_String, NULL, infoGitRev, 0 },
-    { "TARGET", OME_String, NULL, infoTargetName, 0 },
+    { "GITREV", OME_String, NULL, __REVISION__, 0 },
+    { "TARGET", OME_String, NULL, __TARGET__, 0 },
     { "--- SETUP ---", OME_Label, NULL, NULL, 0 },
     { "CALIBRATE",     OME_Submenu, cmsMenuChange, &cmsx_menuCalibration, 0},
     { "BACK", OME_Back, NULL, NULL, 0 },
@@ -218,7 +201,7 @@ CMS_Menu cmsx_menuFirmware = {
     .GUARD_text = "MENUFIRMWARE",
     .GUARD_type = OME_MENU,
 #endif
-    .onEnter = cmsx_FirmwareInit,
+    .onEnter = NULL,
     .onExit = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuFirmwareEntries
