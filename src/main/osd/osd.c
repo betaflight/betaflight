@@ -53,6 +53,7 @@
 #include "config/feature.h"
 
 #include "drivers/display.h"
+#include "drivers/dshot.h"
 #include "drivers/flash.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/sdcard.h"
@@ -66,6 +67,7 @@
 #include "flight/gyroanalyse.h"
 #endif
 #include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/position.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -76,6 +78,7 @@
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
 
+#include "pg/motor.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/stats.h"
@@ -451,6 +454,28 @@ static void osdResetStats(void)
     stats.min_rssi_dbm = CRSF_SNR_MAX;
 }
 
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+static int32_t getAverageEscRpm(void)
+{
+#ifdef USE_DSHOT_TELEMETRY
+    if (motorConfig()->dev.useDshotTelemetry) {
+        uint32_t rpm = 0;
+        for (int i = 0; i < getMotorCount(); i++) {
+            rpm += getDshotTelemetry(i);
+        }
+        rpm = rpm / getMotorCount();
+        return rpm * 100 * 2 / motorConfig()->motorPoleCount;
+    }
+#endif
+#ifdef USE_ESC_SENSOR
+    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return calcEscRpm(osdEscDataCombined->rpm);
+    }
+#endif
+    return 0;
+}
+#endif
+
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
@@ -513,16 +538,20 @@ static void osdUpdateStats(void)
         }
     }
 #endif
+
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         value = osdEscDataCombined->temperature;
         if (stats.max_esc_temp < value) {
             stats.max_esc_temp = value;
         }
-        value = calcEscRpm(osdEscDataCombined->rpm);
-        if (stats.max_esc_rpm < value) {
-            stats.max_esc_rpm = value;
-        }
+    }
+#endif
+
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    int32_t rpm = getAverageEscRpm();
+    if (stats.max_esc_rpm < rpm) {
+        stats.max_esc_rpm = rpm;
     }
 #endif
 }
@@ -729,7 +758,9 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         tfp_sprintf(buff, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
         osdDisplayStatisticLabel(displayRow, "MAX ESC TEMP", buff);
         return true;
+#endif
 
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     case OSD_STAT_MAX_ESC_RPM:
         itoa(stats.max_esc_rpm, buff, 10);
         osdDisplayStatisticLabel(displayRow, "MAX ESC RPM", buff);
