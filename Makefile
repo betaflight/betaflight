@@ -460,7 +460,7 @@ all_all: $(VALID_TARGETS)
 unified: $(UNIFIED_TARGETS)
 
 ## unified_zip : build all Unified Targets as zip files (for posting on GitHub)
-unified_zip: $(addsuffix _zip,$(UNIFIED_TARGETS))
+unified_zip: $(addsuffix _clean,$(UNIFIED_TARGETS)) $(addsuffix _zip,$(UNIFIED_TARGETS))
 
 ## legacy : Build legacy targets
 legacy: $(LEGACY_TARGETS)
