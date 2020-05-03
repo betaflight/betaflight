@@ -1165,7 +1165,7 @@ void dynLpfDTermUpdate(float throttle)
         }
 
         if (isAccelerometerEnabled() && accBasedBoostConfig()->acc_based_boost_percent) {
-            cutoffFreq *= accBasedBoostFactor;
+            cutoffFreq = MIN(cutoffFreq * accBasedBoostFactor, dynLpfMax);
         }
 
          if (pidRuntime.dynLpfFilter == DYN_LPF_PT1) {
