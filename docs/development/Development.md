@@ -108,6 +108,14 @@ Later, you can get the changes from the betaflight repo into your `master` branc
  
 You can also perform the git commands using the git client inside Eclipse.  Refer to the Eclipse git manual.
 
+### Providing Test Targets for Pull Requests
+
+If you open a pull request for the betaflight repository that contains a change that can be tested by other users, please build a set of test firmware files for all Unified Targets and attach them to the pull request. The required firmware files can be built in zipped form ready for upload to GitHub with `make unified_zip`. When attaching test firmware files, you can point users to this video for instructions on how to install the test firmware: https://youtu.be/I1uN9CN30gw
+
+Example of a pull request with test firmware attached:
+
+![Pull request with test targets](assets/pull_request_test_targets.png)
+
 ### IDEs and .gitignore
 
 The projects [.gitignore](/.gitignore) already ignores certain artifacts from some IDEs, but if you'd like to use something else, you can set up git to ignore the necessary files at a global level (all git projects on the computer)
