@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#ifdef USE_GYRO_SPI_ICM20649
+
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -203,3 +205,4 @@ bool icm20649AccRead(accDev_t *acc)
 
     return true;
 }
+#endif
