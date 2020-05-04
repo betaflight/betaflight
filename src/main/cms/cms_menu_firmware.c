@@ -22,6 +22,8 @@
 // Firmware related menu contents and support functions
 //
 
+#include <ctype.h>
+
 #include <stdbool.h>
 
 #include "platform.h"
@@ -191,11 +193,7 @@ static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
 
     unsigned i;
     for (i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
-        if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f') {
-            infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
-        } else {
-            infoGitRev[i] = shortGitRevision[i];
-        }
+        infoGitRev[i] = toupper(shortGitRevision[i]);
     }
 
     infoGitRev[i] = 0x0; // Terminate string
