@@ -71,10 +71,7 @@ static long cmsx_InfoInit(void)
 {
     int i;
     for ( i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
-        if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
-            infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
-        else
-            infoGitRev[i] = shortGitRevision[i];
+        infoGitRev[i] = toupper(shortGitRevision[i]);
     }
 
     infoGitRev[i] = 0x0; // Terminate string
