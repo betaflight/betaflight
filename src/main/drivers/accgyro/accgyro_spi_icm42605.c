@@ -28,6 +28,8 @@
 
 #include "platform.h"
 
+#ifdef USE_GYRO_SPI_ICM42605
+
 #include "common/axis.h"
 #include "common/maths.h"
 #include "build/debug.h"
@@ -281,3 +283,4 @@ bool icm42605SpiGyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+#endif

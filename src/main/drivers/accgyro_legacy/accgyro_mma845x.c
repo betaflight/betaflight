@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ACC_MMA8452
+
 #include "drivers/io.h"
 #include "drivers/bus_i2c.h"
 
@@ -139,3 +141,4 @@ bool mma8452Detect(accDev_t *acc)
     device_id = sig;
     return true;
 }
+#endif

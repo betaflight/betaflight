@@ -25,6 +25,8 @@
 
 #include "platform.h"
 
+#ifdef USE_GYRO_MPU3050
+
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -110,3 +112,4 @@ bool mpu3050Detect(gyroDev_t *gyro)
 
     return true;
 }
+#endif
