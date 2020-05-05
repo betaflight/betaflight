@@ -39,6 +39,8 @@
 
 #include "config/feature.h"
 
+#include "rx/frsky_crc.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
@@ -285,7 +287,7 @@ void smartPortSendByte(uint8_t c, uint16_t *checksum, serialPort_t *port)
     }
 
     if (checksum != NULL) {
-        *checksum += c;
+        frskyCheckSumStep(checksum, c);
     }
 }
 
@@ -300,8 +302,8 @@ void smartPortWriteFrameSerial(const smartPortPayload_t *payload, serialPort_t *
     for (unsigned i = 0; i < sizeof(smartPortPayload_t); i++) {
         smartPortSendByte(*data++, &checksum, port);
     }
-    checksum = 0xff - ((checksum & 0xff) + (checksum >> 8));
-    smartPortSendByte((uint8_t)checksum, NULL, port);
+    frskyCheckSumFini(&checksum);
+    smartPortSendByte(checksum, NULL, port);
 }
 
 static void smartPortWriteFrameInternal(const smartPortPayload_t *payload)
