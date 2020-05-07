@@ -105,6 +105,7 @@ COMMON_SRC = \
             rx/jetiexbus.c \
             rx/msp.c \
             rx/pwm.c \
+            rx/frsky_crc.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/rx_spi_common.c \
@@ -253,6 +254,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
+            rx/frsky_crc.c \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
@@ -345,6 +347,7 @@ ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_i2c_hal.c \
             drivers/bus_spi_ll.c \
+            rx/frsky_crc.c \
             drivers/max7456.c \
             drivers/pwm_output_dshot.c \
             drivers/pwm_output_dshot_shared.c \
