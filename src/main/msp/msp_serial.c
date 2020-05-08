@@ -105,8 +105,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
         case MSP_IDLE:      // Waiting for '$' character
             if (c == '$') {
                 mspPort->c_state = MSP_HEADER_START;
-            }
-            else {
+            } else {
                 return false;
             }
             break;
@@ -174,12 +173,10 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                     if (hdr->size >= sizeof(mspHeaderV2_t) + 1) {
                         mspPort->mspVersion = MSP_V2_OVER_V1;
                         mspPort->c_state = MSP_HEADER_V2_OVER_V1;
-                    }
-                    else {
+                    } else {
                         mspPort->c_state = MSP_IDLE;
                     }
-                }
-                else {
+                } else {
                     mspPort->dataSize = hdr->size;
                     mspPort->cmdMSP = hdr->cmd;
                     mspPort->cmdFlags = 0;
@@ -211,11 +208,15 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
             mspPort->checksum2 = crc8_dvb_s2(mspPort->checksum2, c);
             if (mspPort->offset == (sizeof(mspHeaderV2_t) + sizeof(mspHeaderV1_t))) {
                 mspHeaderV2_t * hdrv2 = (mspHeaderV2_t *)&mspPort->inBuf[sizeof(mspHeaderV1_t)];
-                mspPort->dataSize = hdrv2->size;
-                mspPort->cmdMSP = hdrv2->cmd;
-                mspPort->cmdFlags = hdrv2->flags;
-                mspPort->offset = 0;                // re-use buffer
-                mspPort->c_state = mspPort->dataSize > 0 ? MSP_PAYLOAD_V2_OVER_V1 : MSP_CHECKSUM_V2_OVER_V1;
+                if (hdrv2->size > MSP_PORT_INBUF_SIZE) {
+                    mspPort->c_state = MSP_IDLE;
+                } else {
+                    mspPort->dataSize = hdrv2->size;
+                    mspPort->cmdMSP = hdrv2->cmd;
+                    mspPort->cmdFlags = hdrv2->flags;
+                    mspPort->offset = 0;                // re-use buffer
+                    mspPort->c_state = mspPort->dataSize > 0 ? MSP_PAYLOAD_V2_OVER_V1 : MSP_CHECKSUM_V2_OVER_V1;
+                }
             }
             break;
 
@@ -288,8 +289,9 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
     //     this allows us to transmit jumbo frames bigger than TX buffer (serialWriteBuf will block, but for jumbo frames we don't care)
     //  b) Response fits into TX buffer
     const int totalFrameLength = hdrLen + dataLen + crcLen;
-    if (!isSerialTransmitBufferEmpty(msp->port) && ((int)serialTxBytesFree(msp->port) < totalFrameLength))
+    if (!isSerialTransmitBufferEmpty(msp->port) && ((int)serialTxBytesFree(msp->port) < totalFrameLength)) {
         return 0;
+    }
 
     // Transmit frame
     serialBeginWrite(msp->port);
@@ -324,8 +326,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
 
             hdrV1->size = JUMBO_FRAME_SIZE_LIMIT;
             hdrJUMBO->size = dataLen;
-        }
-        else {
+        } else {
             hdrV1->size = dataLen;
         }
 
@@ -333,8 +334,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         checksum = mspSerialChecksumBuf(0, hdrBuf + V1_CHECKSUM_STARTPOS, hdrLen - V1_CHECKSUM_STARTPOS);
         checksum = mspSerialChecksumBuf(checksum, sbufPtr(&packet->buf), dataLen);
         crcBuf[crcLen++] = checksum;
-    }
-    else if (mspVersion == MSP_V2_OVER_V1) {
+    } else if (mspVersion == MSP_V2_OVER_V1) {
         mspHeaderV1_t * hdrV1 = (mspHeaderV1_t *)&hdrBuf[hdrLen];
 
         hdrLen += sizeof(mspHeaderV1_t);
@@ -352,8 +352,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
 
             hdrV1->size = JUMBO_FRAME_SIZE_LIMIT;
             hdrJUMBO->size = v1PayloadSize;
-        }
-        else {
+        } else {
             hdrV1->size = v1PayloadSize;
         }
 
@@ -372,8 +371,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         checksum = mspSerialChecksumBuf(checksum, sbufPtr(&packet->buf), dataLen);
         checksum = mspSerialChecksumBuf(checksum, crcBuf, crcLen);
         crcBuf[crcLen++] = checksum;
-    }
-    else if (mspVersion == MSP_V2_NATIVE) {
+    } else if (mspVersion == MSP_V2_NATIVE) {
         mspHeaderV2_t * hdrV2 = (mspHeaderV2_t *)&hdrBuf[hdrLen];
         hdrLen += sizeof(mspHeaderV2_t);
 
@@ -384,8 +382,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         checksum = crc8_dvb_s2_update(0, (uint8_t *)hdrV2, sizeof(mspHeaderV2_t));
         checksum = crc8_dvb_s2_update(checksum, sbufPtr(&packet->buf), dataLen);
         crcBuf[crcLen++] = checksum;
-    }
-    else {
+    } else {
         // Shouldn't get here
         return 0;
     }
@@ -530,8 +527,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                 waitForSerialPortToFinishTransmitting(mspPort->port);
                 mspPostProcessFn(mspPort->port);
             }
-        }
-        else {
+        } else {
             mspProcessPendingRequest(mspPort);
         }
     }
