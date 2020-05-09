@@ -43,6 +43,7 @@
 
 #include "pg/rx.h"
 
+#include "rx/frsky_crc.h"
 #include "rx/rx.h"
 #include "rx/sbus_channels.h"
 #include "rx/fport.h"
@@ -60,8 +61,6 @@
 
 #define FPORT_ESCAPE_CHAR 0x7D
 #define FPORT_ESCAPE_MASK 0x20
-
-#define FPORT_CRC_VALUE 0xFF
 
 #define FPORT_BAUDRATE 115200
 
@@ -245,18 +244,6 @@ static void smartPortWriteFrameFport(const smartPortPayload_t *payload)
 }
 #endif
 
-static bool checkChecksum(uint8_t *data, uint8_t length)
-{
-    uint16_t checksum = 0;
-    for (unsigned i = 0; i < length; i++) {
-        checksum = checksum + *(uint8_t *)(data + i);
-    }
-
-    checksum = (checksum & 0xff) + (checksum >> 8);
-
-    return checksum == FPORT_CRC_VALUE;
-}
-
 static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     static bool hasTelemetryRequest = false;
@@ -276,7 +263,7 @@ static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
         if (frameLength != bufferLength - 2) {
             reportFrameError(DEBUG_FPORT_ERROR_SIZE);
         } else {
-            if (!checkChecksum(&rxBuffer[rxBufferReadIndex].data[0], bufferLength)) {
+            if (!frskyCheckSumIsGood(&rxBuffer[rxBufferReadIndex].data[0], bufferLength)) {
                 reportFrameError(DEBUG_FPORT_ERROR_CHECKSUM);
             } else {
                 fportFrame_t *frame = (fportFrame_t *)&rxBuffer[rxBufferReadIndex].data[1];
