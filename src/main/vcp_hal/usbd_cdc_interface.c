@@ -261,12 +261,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (hcdc->TxState == 0) {
         // endpoint has finished transmitting previous block
         if (lastBuffsize) {
+            bool needZeroLengthPacket = lastBuffsize % 64 == 0;
+
             // move the ring buffer tail based on the previous succesful transmission
             UserTxBufPtrOut += lastBuffsize;
             if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
                 UserTxBufPtrOut = 0;
             }
             lastBuffsize = 0;
+
+            if (needZeroLengthPacket) {
+                USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
+                return;
+            }
         }
         if (UserTxBufPtrOut != UserTxBufPtrIn) {
             if (UserTxBufPtrOut > UserTxBufPtrIn) { /* Roll-back */
