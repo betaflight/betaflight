@@ -24,6 +24,7 @@
 
 #pragma once
 
+#ifdef USE_SPRACING_PIXEL_OSD
 #include "spracingpixelosd_api.h"
 
 #include "drivers/display.h"
@@ -39,3 +40,4 @@ void spracingPixelOSDEndRendering(void);
 bool spracingPixelOSDIsFrameRenderingComplete();
 
 uint8_t *spracingPixelOSDGetActiveFrameBuffer(void);
+#endif
