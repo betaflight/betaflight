@@ -886,27 +886,25 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 
-        osdDisplayPortDevice_e device = OSD_DISPLAYPORT_DEVICE_NONE;
-        displayPort_t *osdDisplayPort = osdGetDisplayPort(&device);
-        if (osdDisplayPort) {
-            switch (device) {
-                case OSD_DISPLAYPORT_DEVICE_NONE:
-                case OSD_DISPLAYPORT_DEVICE_AUTO:
-                    break;
-                case OSD_DISPLAYPORT_DEVICE_MAX7456:
-                    osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
-                    break;
-                case OSD_DISPLAYPORT_DEVICE_MSP:
-                    break;
-                case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
-                    osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
-                    break;
+        osdDisplayPortDevice_e deviceType;
+        displayPort_t *osdDisplayPort = osdGetDisplayPort(&deviceType);
+        switch (deviceType) {
+        case OSD_DISPLAYPORT_DEVICE_MAX7456:
+            osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+            if (osdDisplayPort && displayIsReady(osdDisplayPort)) {
+                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
-            if (osdFlags | (OSD_FLAGS_OSD_HARDWARE_MAX_7456 | OSD_FLAGS_OSD_HARDWARE_FRSKYOSD)) {
-                if (displayIsReady(osdDisplayPort)) {
-                    osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
-                }
+
+            break;
+        case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
+            osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
+            if (osdDisplayPort && displayIsReady(osdDisplayPort)) {
+                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
+
+            break;
+        default:
+            break;
         }
 #endif
         sbufWriteU8(dst, osdFlags);
