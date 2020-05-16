@@ -381,3 +381,7 @@ extern uint8_t __config_end;
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
 #define USE_RX_BIND
 #endif
+
+
+// Disable FrSky OSD as there was no payment from FrSky to have this added to Betaflight
+#undef USE_FRSKYOSD
