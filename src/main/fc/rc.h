@@ -37,6 +37,10 @@ typedef enum {
 #define RC_SMOOTHING_AUTO_FACTOR_MAX 50
 #endif
 
+typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
+
+extern applyRatesFn *applyRates;
+
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);

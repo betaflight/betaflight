@@ -68,7 +68,7 @@ static float oldRcCommand[XYZ_AXIS_COUNT];
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
-static applyRatesFn *applyRates;
+applyRatesFn *applyRates;
 static uint16_t currentRxRefreshRate;
 static bool isRxDataNew = false;
 static float rcCommandDivider = 500.0f;

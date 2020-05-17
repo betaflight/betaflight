@@ -883,7 +883,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         // ANGLE mode - control is angle based
-        currentPidSetpoint = errorAngle * levelGain;
+        float errorRate = constrainf(errorAngle / (pidProfile->levelAngleLimit), -1.0f, 1.0f);
+        currentPidSetpoint = applyRates(axis, errorRate, fabsf(errorRate)) * (levelGain / 5.0f); // levelGain default is 5.0f
     } else {
         // HORIZON mode - mix of ANGLE and ACRO modes
         // mix in errorAngle to currentPidSetpoint to add a little auto-level feel
