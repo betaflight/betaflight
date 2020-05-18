@@ -204,7 +204,7 @@ TEST(BlackboxTest, Test_8kHz)
 
 TEST(BlackboxTest, Test_zero_p_interval)
 {
-    blackboxConfigMutable()->p_ratio = 4;
+    blackboxConfigMutable()->sample_rate = 4;
     // 250Hz PIDloop
     targetPidLooptime = 4000;
     blackboxInit();
