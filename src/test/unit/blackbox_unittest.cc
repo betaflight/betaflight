@@ -202,6 +202,27 @@ TEST(BlackboxTest, Test_8kHz)
     EXPECT_TRUE(blackboxShouldLogPFrame());
 }
 
+TEST(BlackboxTest, Test_zero_p_interval)
+{
+    blackboxConfigMutable()->p_ratio = 4;
+    // 250Hz PIDloop
+    targetPidLooptime = 4000;
+    blackboxInit();
+    EXPECT_EQ(8, blackboxIInterval);
+    EXPECT_EQ(0, blackboxPInterval);
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_FALSE(blackboxShouldLogPFrame());
+
+    for (int ii = 0; ii < 7; ++ii) {
+        blackboxAdvanceIterationTimers();
+        EXPECT_FALSE(blackboxShouldLogIFrame());
+        EXPECT_FALSE(blackboxShouldLogPFrame());
+    }
+    blackboxAdvanceIterationTimers();
+    EXPECT_TRUE(blackboxShouldLogIFrame());
+    EXPECT_FALSE(blackboxShouldLogPFrame());
+}
+
 TEST(BlackboxTest, Test_CalculatePDenom)
 {
     blackboxConfigMutable()->sample_rate = 0;
