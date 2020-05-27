@@ -4741,10 +4741,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif /* USE_SENSOR_NAMES */
 
 #if defined(USE_OSD)
-    osdDisplayPortDevice_e displayPortDevice;
-    osdGetDisplayPort(&displayPortDevice);
+    osdDisplayPortDevice_e displayPortDeviceType;
+    osdGetDisplayPort(&displayPortDeviceType);
 
-    cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDevice]);
+    cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
 #endif
 
     // Uptime and wall clock

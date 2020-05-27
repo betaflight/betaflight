@@ -1003,8 +1003,9 @@ void init(void)
 
 #if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)
     // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
-    if (!osdDisplayPort)
+    if (!osdDisplayPort) {
         cmsDisplayPortRegister(displayPortMspInit());
+    }
 #endif
 
 #ifdef USE_DASHBOARD
