@@ -497,7 +497,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
 
     case OME_INT16:
         if (IS_PRINTVALUE(*flags) && p->data) {
-            OSD_UINT16_t *ptr = p->data;
+            OSD_INT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(*flags);
