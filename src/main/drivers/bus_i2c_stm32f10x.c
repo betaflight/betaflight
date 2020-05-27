@@ -435,8 +435,10 @@ void i2cInit(I2CDevice device)
 
     i2cDevice_t *pDev = &i2cDevice[device];
     const i2cHardware_t *hw = pDev->hardware;
+    const IO_t scl = pDev->scl;
+    const IO_t sda = pDev->sda;
 
-    if (!hw) {
+    if (!hw || IOGetOwner(scl) || IOGetOwner(sda)) {
         return;
     }
 
@@ -446,9 +448,6 @@ void i2cInit(I2CDevice device)
 
     NVIC_InitTypeDef nvic;
     I2C_InitTypeDef i2cInit;
-
-    IO_t scl = pDev->scl;
-    IO_t sda = pDev->sda;
 
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
     IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
