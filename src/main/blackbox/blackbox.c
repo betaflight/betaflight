@@ -42,17 +42,13 @@
 #include "common/time.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/motor.h"
-#include "pg/rx.h"
 
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#include "config/config.h"
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc.h"
@@ -69,6 +65,11 @@
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/serial.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/motor.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -281,6 +282,7 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SEND_GPS_G_HEADER,
     BLACKBOX_STATE_SEND_SLOW_HEADER,
     BLACKBOX_STATE_SEND_SYSINFO,
+    BLACKBOX_STATE_CACHE_FLUSH,
     BLACKBOX_STATE_PAUSED,
     BLACKBOX_STATE_RUNNING,
     BLACKBOX_STATE_SHUTTING_DOWN,
@@ -1607,6 +1609,8 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
  */
 void blackboxUpdate(timeUs_t currentTimeUs)
 {
+    static BlackboxState cacheFlushNextState;
+
     switch (blackboxState) {
     case BLACKBOX_STATE_STOPPED:
         if (ARMING_FLAG(ARMED)) {
@@ -1680,7 +1684,8 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
         if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
                 NULL, NULL)) {
-            blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
+            cacheFlushNextState = BLACKBOX_STATE_SEND_SYSINFO;
+            blackboxSetState(BLACKBOX_STATE_CACHE_FLUSH);
         }
         break;
     case BLACKBOX_STATE_SEND_SYSINFO:
@@ -1694,9 +1699,14 @@ void blackboxUpdate(timeUs_t currentTimeUs)
              * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
              * could wipe out the end of the header if we weren't careful)
              */
-            if (blackboxDeviceFlushForce()) {
-                blackboxSetState(BLACKBOX_STATE_RUNNING);
-            }
+            cacheFlushNextState = BLACKBOX_STATE_RUNNING;
+            blackboxSetState(BLACKBOX_STATE_CACHE_FLUSH);
+        }
+        break;
+    case BLACKBOX_STATE_CACHE_FLUSH:
+        // Flush the cache and wait until all possible entries have been written to the media
+        if (blackboxDeviceFlushForceComplete()) {
+            blackboxSetState(cacheFlushNextState);
         }
         break;
     case BLACKBOX_STATE_PAUSED:
