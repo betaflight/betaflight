@@ -705,10 +705,12 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 smartPortSendPackage(id, getMAhDrawn()); // given in mAh, unknown requested unit
                 *clearToSend = false;
                 break;
+#if defined(USE_VARIO)
             case FSSP_DATAID_VARIO      :
                 smartPortSendPackage(id, getEstimatedVario()); // unknown given unit but requested in 100 = 1m/s
                 *clearToSend = false;
                 break;
+#endif
             case FSSP_DATAID_HEADING    :
                 smartPortSendPackage(id, attitude.values.yaw * 10); // given in 10*deg, requested in 10000 = 100 deg
                 *clearToSend = false;

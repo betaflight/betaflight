@@ -188,12 +188,9 @@ int32_t getEstimatedAltitudeCm(void)
     return estimatedAltitudeCm;
 }
 
-// This should be removed or fixed, but it would require changing a lot of other things to get rid of.
+#ifdef USE_VARIO
 int16_t getEstimatedVario(void)
 {
-#ifdef USE_VARIO
     return estimatedVario;
-#else
-    return 0;
-#endif
 }
+#endif
