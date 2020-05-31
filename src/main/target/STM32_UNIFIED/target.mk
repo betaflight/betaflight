@@ -1,10 +1,6 @@
 ifeq ($(TARGET), STM32F405)
 F405_TARGETS += $(TARGET)
 
-# Use a full block (16 kB) of flash for custom defaults - with 1 MB flash we have more than we know how to use anyway
-
-CUSTOM_DEFAULTS_EXTENDED = yes
-
 else
 ifeq ($(TARGET), STM32F411)
 F411_TARGETS += $(TARGET)
@@ -19,6 +15,13 @@ F7X5XG_TARGETS += $(TARGET)
 endif
 endif
 endif
+
+ifeq ($(TARGET), $(filter $(TARGET), STM32F405 STM32F745))
+# Use a full block (16 kB) of flash for custom defaults - with 1 MB flash we have more than we know how to use anyway
+
+CUSTOM_DEFAULTS_EXTENDED = yes
+endif
+
 
 FEATURES       += VCP SDCARD_SPI SDCARD_SDIO ONBOARDFLASH
 
