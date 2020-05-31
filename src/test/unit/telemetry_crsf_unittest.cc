@@ -69,6 +69,9 @@ extern "C" {
     int32_t testmAhDrawn = 0;
 
     serialPort_t *telemetrySharedPort;
+
+    int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
+
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
