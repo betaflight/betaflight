@@ -353,11 +353,7 @@ void mavlinkSendPosition(void)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.altCm * 10,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-        (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() * 10 : gpsSol.llh.altCm * 10,
-#else
-        gpsSol.llh.altCm * 10,
-#endif
+        getEstimatedAltitudeCm() * 10,
         // Ground X Speed (Latitude), expressed as m/s * 100
         0,
         // Ground Y Speed (Longitude), expressed as m/s * 100
@@ -419,24 +415,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     }
 #endif
 
-    // select best source for altitude
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-    if (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) {
-        // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
-        mavAltitude = getEstimatedAltitudeCm() / 100.0;
-    }
-#if defined(USE_GPS)
-    else if (sensors(SENSOR_GPS)) {
-        // No sonar or baro, just display altitude above MLS
-        mavAltitude = gpsSol.llh.altCm / 100.0;
-    }
-#endif
-#elif defined(USE_GPS)
-    if (sensors(SENSOR_GPS)) {
-        // No sonar or baro, just display altitude above MLS
-        mavAltitude = gpsSol.llh.altCm / 100.0;
-    }
-#endif
+    mavAltitude = getEstimatedAltitudeCm() / 100.0;
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s
