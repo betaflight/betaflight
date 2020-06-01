@@ -338,6 +338,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
+
+    osdConfig->stat_show_cell_value = false;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -492,8 +494,9 @@ static void osdUpdateStats(void)
     }
 #endif
 
-    value = getBatteryVoltage();
-    if (stats.min_voltage > value) {
+    value = osdConfig()->stat_show_cell_value ? getBatteryAverageCellVoltage() : getBatteryVoltage();
+    if (stats.min_voltage > value)
+    {
         stats.min_voltage = value;
     }
 
@@ -687,17 +690,22 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MIN_BATTERY:
         tfp_sprintf(buff, "%d.%02d%c", stats.min_voltage / 100, stats.min_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "MIN BATTERY", buff);
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value? "MIN CELL" : "MIN BATTERY", buff);
         return true;
 
     case OSD_STAT_END_BATTERY:
         tfp_sprintf(buff, "%d.%02d%c", stats.end_voltage / 100, stats.end_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "END BATTERY", buff);
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value? "END CELL" : "END BATTERY", buff);
         return true;
 
     case OSD_STAT_BATTERY:
-        tfp_sprintf(buff, "%d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "BATTERY", buff);
+        if(osdConfig()->stat_show_cell_value){
+            tfp_sprintf(buff, "%d.%02d%c", getBatteryAverageCellVoltage() / 100, getBatteryAverageCellVoltage() % 100, SYM_VOLT);
+        }
+        else{
+            tfp_sprintf(buff, "%d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
+        }
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value? "BATT (CELL)" : "BATTERY", buff);
         return true;
 
     case OSD_STAT_MIN_RSSI:
@@ -915,7 +923,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
                        || !VISIBLE(osdElementConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
-            stats.end_voltage = getBatteryVoltage();
+            stats.end_voltage = osdConfig()->stat_show_cell_value? getBatteryAverageCellVoltage() : getBatteryVoltage();
             osdStatsRowCount = 0; // reset to 0 so it will be recalculated on the next stats refresh
         }
 
