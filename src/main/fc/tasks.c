@@ -189,6 +189,21 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
+#if defined(USE_RANGEFINDER)
+void taskUpdateRangefinder(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (!sensors(SENSOR_RANGEFINDER)) {
+        return;
+    }
+
+    rangefinderUpdate();
+
+    rangefinderProcess(getCosTiltAngle());
+}
+#endif
+
 #if defined(USE_BARO) || defined(USE_GPS)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
@@ -476,7 +491,7 @@ task_t tasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_RANGEFINDER
-    [TASK_RANGEFINDER] = DEFINE_TASK("RANGEFINDER", NULL, NULL, rangefinderUpdate, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE),
+    [TASK_RANGEFINDER] = DEFINE_TASK("RANGEFINDER", NULL, NULL, taskUpdateRangefinder, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE),
 #endif
 };
 
