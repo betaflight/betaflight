@@ -125,8 +125,10 @@ const box_t *findBoxByPermanentId(uint8_t permanentId)
 
 static bool activeBoxIdGet(boxId_e boxId)
 {
-    if (boxId > sizeof(activeBoxIds) * 8)
+    if (boxId > sizeof(activeBoxIds) * 8) {
         return false;
+    }
+
     return bitArrayGet(&activeBoxIds, boxId);
 }
 
