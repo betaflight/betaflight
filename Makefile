@@ -690,6 +690,10 @@ test junittest test-all test-representative:
 test_help:
 	$(V0) cd src/test && $(MAKE) help
 
+## test_versions         : print the compiler versions used for the test suite
+test_versions:
+	$(V0) cd src/test && $(MAKE) versions
+
 ## test_%            : run test 'test_%' from the test suite
 test_%:
 	$(V0) cd src/test && $(MAKE) $@
