@@ -242,14 +242,36 @@ bool blackboxDeviceFlushForce(void)
 
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
-        /* SD card will flush itself without us calling it, but we need to call flush manually in order to check
-         * if it's done yet or not!
-         */
+        // SD card will flush itself without us calling it, but we need to call flush manually in order to check
+        // if it's done yet or not!
+        // However the "flush" only queues one dirty sector each time and the process is asynchronous. So after
+        // the last dirty sector is queued the flush returns true even though the sector may not actually have
+        // been physically written to the SD card yet.
         return afatfs_flush();
 #endif // USE_SDCARD
 
     default:
         return false;
+    }
+}
+
+// Flush the blackbox device and only return true if sync is actually complete.
+// Primarily to ensure the async operations of SD card sector writes complete thus freeing the cache entries.
+bool blackboxDeviceFlushForceComplete(void)
+{
+    switch (blackboxConfig()->device) {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        if (afatfs_sectorCacheInSync()) {
+            return true;
+        } else {
+            blackboxDeviceFlushForce();
+            return false;
+        }
+#endif // USE_SDCARD
+
+    default:
+        return blackboxDeviceFlushForce();
     }
 }
 

@@ -44,13 +44,15 @@
 #include <stdio.h>
 #endif
 
-#include "asyncfatfs.h"
-
-#include "fat_standard.h"
-#include "drivers/sdcard.h"
 #include "common/maths.h"
 #include "common/time.h"
 #include "common/utils.h"
+
+#include "drivers/sdcard.h"
+
+#include "fat_standard.h"
+
+#include "asyncfatfs.h"
 
 #ifdef AFATFS_DEBUG
     #define ONLY_EXPOSE_FOR_TESTING
@@ -58,7 +60,7 @@
     #define ONLY_EXPOSE_FOR_TESTING static
 #endif
 
-#define AFATFS_NUM_CACHE_SECTORS 10
+#define AFATFS_NUM_CACHE_SECTORS 11
 
 // FAT filesystems are allowed to differ from these parameters, but we choose not to support those weird filesystems:
 #define AFATFS_SECTOR_SIZE  512
@@ -734,6 +736,18 @@ static void afatfs_cacheFlushSector(int cacheIndex)
         default:
             ;
     }
+}
+
+// Check whether every sector in the cache that can be flushed has been synchronized
+bool afatfs_sectorCacheInSync(void)
+{
+    for (int i = 0; i < AFATFS_NUM_CACHE_SECTORS; i++) {
+        if ((afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_WRITING) ||
+            ((afatfs.cacheDescriptor[i].state == AFATFS_CACHE_STATE_DIRTY) && !afatfs.cacheDescriptor[i].locked)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
