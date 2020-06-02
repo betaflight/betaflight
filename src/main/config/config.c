@@ -60,6 +60,8 @@
 #include "io/serial.h"
 #include "io/vtx.h"
 
+#include "msp/msp_box.h"
+
 #include "osd/osd.h"
 
 #include "pg/adc.h"
@@ -181,6 +183,8 @@ static void activateConfig(void)
 #if defined(USE_LED_STRIP_STATUS_MODE)
     reevaluateLedConfig();
 #endif
+
+    initActiveBoxIds();
 }
 
 static void adjustFilterLimit(uint16_t *parm, uint16_t resetValue)

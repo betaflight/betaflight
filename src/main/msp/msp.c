@@ -3596,5 +3596,4 @@ void mspFcProcessReply(mspPacket_t *reply)
 
 void mspInit(void)
 {
-    initActiveBoxIds();
 }
