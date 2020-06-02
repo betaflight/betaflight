@@ -437,6 +437,9 @@ COMMON_FLAGS = \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
 
+CC_VERSION = $(shell $(CC) -dumpversion)
+CXX_VERSION = $(shell $(CXX) -dumpversion)
+
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 COMMON_FLAGS += -fblocks
 ifndef CYGWIN
@@ -542,6 +545,10 @@ help what usage: Makefile
 	@echo ""
 	@echo "Any of the Unit Test programs (except for target specific unit tests) can be used as goals to build and run:"
 	@$(foreach test, $(TESTS), echo "    test_$(test)";)
+
+versions:
+	@echo "C compiler: $(CC): $(CC_VERSION)"
+	@echo "C++ compiler: $(CXX): $(CXX_VERSION)"
 
 ## clean       : Cleanup the UnitTest binaries.
 clean :
