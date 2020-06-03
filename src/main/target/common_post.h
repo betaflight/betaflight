@@ -378,6 +378,11 @@ extern uint8_t __config_end;
 #define USE_CUSTOM_DEFAULTS_ADDRESS
 #endif
 
+#if !defined(USE_EXTI)
+#undef USE_RX_SPI
+#undef USE_RANGEFINDER_HCSR04
+#endif
+
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
 #define USE_RX_BIND
 #endif

@@ -254,16 +254,11 @@ static int16_t computePseudoSnr(int32_t newReading) {
 /*
  * This is called periodically by the scheduler
  */
-// XXX Returns timeDelta_t for iNav for pseudo-RT scheduling.
-void rangefinderUpdate(timeUs_t currentTimeUs)
+void rangefinderUpdate(void)
 {
-    UNUSED(currentTimeUs);
-
     if (rangefinder.dev.update) {
         rangefinder.dev.update(&rangefinder.dev);
     }
-
-    // return rangefinder.dev.delayMs * 1000;  // to microseconds XXX iNav only
 }
 
 bool isSurfaceAltitudeValid() {
@@ -310,8 +305,7 @@ bool rangefinderProcess(float cosTiltAngle)
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = applyMedianFilter(distance);
-        }
-        else if (distance == RANGEFINDER_OUT_OF_RANGE) {
+        } else if (distance == RANGEFINDER_OUT_OF_RANGE) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
         }
