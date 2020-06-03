@@ -5204,24 +5204,27 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
     }
 }
 
-static bool strToPin(char *pch, ioTag_t *tag)
+static bool strToPin(char *ptr, ioTag_t *tag)
 {
-    if (strcasecmp(pch, "NONE") == 0) {
+    if (strcasecmp(ptr, "NONE") == 0) {
         *tag = IO_TAG_NONE;
+
         return true;
     } else {
-        unsigned pin = 0;
-        unsigned port = (*pch >= 'a') ? *pch - 'a' : *pch - 'A';
-
+        const unsigned port = (*ptr >= 'a') ? *ptr - 'a' : *ptr - 'A';
         if (port < 8) {
-            pch++;
-            pin = atoi(pch);
-            if (pin < 16) {
+            ptr++;
+
+            char *end;
+            const long pin = strtol(ptr, &end, 10);
+            if (end != ptr && pin >= 0 && pin < 16) {
                 *tag = DEFIO_TAG_MAKE(port, pin);
+
                 return true;
             }
         }
     }
+
     return false;
 }
 
