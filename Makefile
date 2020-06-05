@@ -306,14 +306,24 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
-ifeq ($(RELEASE),yes)
 TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)
+
+# Things we will distribute (variable name, includes revision by default)
+#
+ifeq ($(RELEASE),yes)
+TARGET_DISTRIBUTION_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)
 else
-TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(REVISION)
+TARGET_DISTRIBUTION_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(REVISION)
 endif
 
+TARGET_DIST_S19      = $(TARGET_DISTRIBUTION_BASENAME).s19
+TARGET_DIST_BIN      = $(TARGET_DISTRIBUTION_BASENAME).bin
+TARGET_DIST_HEX      = $(TARGET_DISTRIBUTION_BASENAME).hex
+TARGET_DIST_DFU      = $(TARGET_DISTRIBUTION_BASENAME).dfu
+TARGET_DIST_ZIP      = $(TARGET_DISTRIBUTION_BASENAME).zip
+
 #
-# Things we will build
+# Things we will build (consistent name, regardless of revision)
 #
 TARGET_BIN      = $(TARGET_BASENAME).bin
 TARGET_HEX      = $(TARGET_BASENAME).hex
@@ -329,11 +339,13 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 TARGET_EXST_HASH_SECTION_FILE = $(OBJECT_DIR)/$(TARGET)/exst_hash_section.bin
 
-CLEAN_ARTIFACTS := $(TARGET_BIN)
-CLEAN_ARTIFACTS += $(TARGET_HEX)
+CLEAN_ARTIFACTS := $(TARGET_S19) $(TARGET_DIST_S19)
+CLEAN_ARTIFACTS := $(TARGET_BIN) $(TARGET_DIST_BIN)
+CLEAN_ARTIFACTS += $(TARGET_HEX) $(TARGET_DIST_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
-CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(TARGET_DFU) $(TARGET_DIST_DFU)
+CLEAN_ARTIFACTS += $(TARGET_ZIP) $(TARGET_DIST_ZIP)
 
 # Make sure build date and revision is updated on every incremental build
 $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
@@ -458,6 +470,27 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 
+# Distribute
+$(TARGET_DIST_S19): $(TARGET_S19)
+	@echo "Creating distribution srec/S19 $(TARGET_DIST_S19)" "$(STDOUT)"
+	$(V1) cp $(TARGET_S19) $(TARGET_DIST_S19)
+
+$(TARGET_DIST_BIN): $(TARGET_BIN)
+	@echo "Creating distribution bin $(TARGET_DIST_BIN)" "$(STDOUT)"
+	$(V1) cp $(TARGET_BIN) $(TARGET_DIST_BIN)
+
+$(TARGET_DIST_HEX): $(TARGET_HEX)
+	@echo "Creating distribution hex $(TARGET_DIST_HEX)" "$(STDOUT)"
+	$(V1) cp $(TARGET_HEX) $(TARGET_DIST_HEX)
+
+$(TARGET_DIST_DFU): $(TARGET_DFU)
+	@echo "Creating distribution dfu $(TARGET_DIST_DFU)" "$(STDOUT)"
+	$(V1) cp $(TARGET_DFU) $(TARGET_DIST_DFU)
+
+$(TARGET_DIST_ZIP): $(TARGET_ZIP)
+	@echo "Creating distribution zip $(TARGET_DIST_ZIP)" "$(STDOUT)"
+	$(V1) cp $(TARGET_ZIP) $(TARGET_DIST_ZIP)
+
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
@@ -566,13 +599,16 @@ $(TARGETS_ZIP):
 	$(V0) $(MAKE) zip TARGET=$(subst _zip,,$@)
 
 zip:
-	$(V0) zip $(TARGET_ZIP) $(TARGET_HEX)
+	$(V0) zip $(TARGET_ZIP) $(TARGET_DIST_HEX)
 
 binary:
-	$(V0) $(MAKE) -j $(TARGET_BIN)
+	$(V0) $(MAKE) -j $(TARGET_DIST_BIN)
+
+srec:
+	$(V0) $(MAKE) -j $(TARGET_DIST_S19)
 
 hex:
-	$(V0) $(MAKE) -j $(TARGET_HEX)
+	$(V0) $(MAKE) -j $(TARGET_DIST_HEX)
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
