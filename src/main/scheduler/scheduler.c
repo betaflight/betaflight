@@ -286,7 +286,7 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
         float period = currentTimeUs - selectedTask->lastExecutedAtUs;
 #endif
         selectedTask->lastExecutedAtUs = currentTimeUs;
-        selectedTask->lastDesiredAt += (cmpTimeUs(currentTimeUs, selectedTask->lastDesiredAt) / selectedTask->desiredPeriodUs) * selectedTask->desiredPeriodUs;
+        selectedTask->lastDesiredAt += cmpTimeUs(currentTimeUs, selectedTask->lastDesiredAt);
         selectedTask->dynamicPriority = 0;
 
         // Execute task
