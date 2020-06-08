@@ -155,6 +155,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCU
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .angle = 32,
     .initialAltitudeM = 50,
+    .rescueAltitudeBufferM = 15,
     .descentDistanceM = 200,
     .rescueGroundspeed = 2000,
     .throttleP = 150,
@@ -606,11 +607,11 @@ void updateGPSRescueState(void)
                 newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
                 break;
             case CURRENT_ALT:
-                newAltitude = rescueState.sensor.currentAltitudeCm;
+                newAltitude = rescueState.sensor.currentAltitudeCm + gpsRescueConfig()->rescueAltitudeBufferM * 100;
                 break;
             case MAX_ALT:
             default:
-                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + gpsRescueConfig()->rescueAltitudeBufferM * 100);
                 break;
         }
 
@@ -746,4 +747,3 @@ bool gpsRescueDisableMag(void)
 }
 #endif
 #endif
-
