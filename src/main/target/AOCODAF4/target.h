@@ -20,8 +20,8 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SBF4"
-#define USBD_PRODUCT_STRING  "SpeedyBeeF4"
+#define TARGET_BOARD_IDENTIFIER "AOF4"
+#define USBD_PRODUCT_STRING  "AocodaF4"
 #define USE_TARGET_CONFIG
 
 #define LED0_PIN                PB9
