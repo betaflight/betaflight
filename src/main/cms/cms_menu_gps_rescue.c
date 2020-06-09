@@ -41,7 +41,6 @@
 
 
 static uint16_t gpsRescueConfig_angle; //degrees
-static uint16_t gpsRescueConfig_rescueAltitudeBufferM; //meters
 static uint16_t gpsRescueConfig_initialAltitudeM; //meters
 static uint16_t gpsRescueConfig_descentDistanceM; //meters
 static uint16_t gpsRescueConfig_rescueGroundspeed; // centimeters per second
@@ -129,7 +128,6 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
     UNUSED(pDisp);
 
     gpsRescueConfig_angle = gpsRescueConfig()->angle;
-    gpsRescueConfig_rescueAltitudeBufferM = gpsRescueConfig()->rescueAltitudeBufferM;
     gpsRescueConfig_initialAltitudeM = gpsRescueConfig()->initialAltitudeM;
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
     gpsRescueConfig_rescueGroundspeed = gpsRescueConfig()->rescueGroundspeed;
@@ -154,7 +152,6 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     UNUSED(self);
 
     gpsRescueConfigMutable()->angle = gpsRescueConfig_angle;
-    gpsRescueConfigMutable()->rescueAltitudeBufferM = gpsRescueConfig_rescueAltitudeBufferM;
     gpsRescueConfigMutable()->initialAltitudeM = gpsRescueConfig_initialAltitudeM;
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
     gpsRescueConfigMutable()->rescueGroundspeed = gpsRescueConfig_rescueGroundspeed;
@@ -181,7 +178,6 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     { "MIN DIST HOME   M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minRescueDth, 50, 1000 ,1 }, REBOOT_REQUIRED },
     { "INITAL ALT      M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialAltitudeM, 20, 100, 1 }, REBOOT_REQUIRED },
     { "ALTITUDE MODE"    , OME_TAB, NULL, &(OSD_TAB_t) { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode}, REBOOT_REQUIRED },
-    { "ALT BUFFER      M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_rescueAltitudeBufferM, 0, 100, 1 }, REBOOT_REQUIRED },
     { "DESCENT DIST    M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 30, 500, 1 }, REBOOT_REQUIRED },
     { "LANDING ALT     M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_targetLandingAltitudeM, 3, 10, 1 }, REBOOT_REQUIRED },
     { "LANDING DIST    M", OME_UINT16, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_targetLandingDistanceM, 5, 15, 1 }, REBOOT_REQUIRED },
