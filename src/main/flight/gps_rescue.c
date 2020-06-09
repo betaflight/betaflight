@@ -155,7 +155,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCU
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .angle = 32,
     .initialAltitudeM = 50,
-    .rescueAltitudeBufferM = 15,
     .descentDistanceM = 200,
     .rescueGroundspeed = 2000,
     .throttleP = 150,
@@ -178,6 +177,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .altitudeMode = MAX_ALT,
     .ascendRate = 500,
     .descendRate = 150,
+    .rescueAltitudeBufferM = 15,
 );
 
 static uint16_t rescueThrottle;
