@@ -30,7 +30,7 @@ For 1, just connect your inverter to a usart or software serial port.
 For 2 and 3 use the CLI command as follows:
 
 ```
-set telemetry_inversion = ON
+set tlm_inverted = ON
 ```
 
 
@@ -210,7 +210,7 @@ Smartport devices can be connected directly to STM32F3 boards such as the SPRaci
 For Smartport on F3 based boards, enable the telemetry inversion setting.
 
 ```
-set telemetry_inversion = ON
+set tlm_inverted = ON
 ```
 
 ### SmartPort on F1 and F3 targets with SoftSerial
