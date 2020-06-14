@@ -205,6 +205,18 @@
 # endif
 #endif
 
+#ifdef USE_UART9
+# if !defined(UART9_RX_PIN)
+#  define UART9_RX_PIN NONE
+# endif
+# if !defined(UART9_TX_PIN)
+#  define UART9_TX_PIN NONE
+# endif
+# if !defined(INVERTER_PIN_UART9)
+#  define INVERTER_PIN_UART9 NONE
+# endif
+#endif
+
 #ifdef USE_SOFTSERIAL1
 # if !defined(SOFTSERIAL1_RX_PIN)
 #  define SOFTSERIAL1_RX_PIN NONE
@@ -253,6 +265,9 @@ static const serialDefaultPin_t serialDefaultPin[] = {
 #endif
 #ifdef USE_UART8
     { SERIAL_PORT_USART8, IO_TAG(UART8_RX_PIN), IO_TAG(UART8_TX_PIN), IO_TAG(INVERTER_PIN_UART8) },
+#endif
+#ifdef USE_UART9
+    { SERIAL_PORT_LPUART1, IO_TAG(UART9_RX_PIN), IO_TAG(UART9_TX_PIN), IO_TAG(INVERTER_PIN_UART9) },
 #endif
 #ifdef USE_SOFTSERIAL1
     { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN), IO_TAG(NONE) },

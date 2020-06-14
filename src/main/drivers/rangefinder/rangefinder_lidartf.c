@@ -241,7 +241,7 @@ int32_t lidarTFGetDistance(rangefinderDev_t *dev)
 
 static bool lidarTFDetect(rangefinderDev_t *dev, uint8_t devtype)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
 
     if (!portConfig) {
         return false;

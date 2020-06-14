@@ -2,35 +2,27 @@
   ******************************************************************************
   * @file    usbd_req.h
   * @author  MCD Application Team
-  * @version V2.4.2
-  * @date    11-December-2015
   * @brief   Header file for the usbd_req.c file
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2015 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
-  *
-  *        http://www.st.com/software_license_agreement_liberty_v2
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                      www.st.com/SLA0044
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __USB_REQUEST_H
 #define __USB_REQUEST_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -40,18 +32,18 @@
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
   */
-  
+
 /** @defgroup USBD_REQ
   * @brief header file for the usbd_req.c file
   * @{
-  */ 
+  */
 
 /** @defgroup USBD_REQ_Exported_Defines
   * @{
-  */ 
+  */
 /**
   * @}
-  */ 
+  */
 
 
 /** @defgroup USBD_REQ_Exported_Types
@@ -59,41 +51,41 @@
   */
 /**
   * @}
-  */ 
+  */
 
 
 
 /** @defgroup USBD_REQ_Exported_Macros
   * @{
-  */ 
+  */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USBD_REQ_Exported_Variables
   * @{
-  */ 
+  */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USBD_REQ_Exported_FunctionsPrototype
   * @{
-  */ 
+  */
 
-USBD_StatusTypeDef  USBD_StdDevReq (USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef  *req);
-USBD_StatusTypeDef  USBD_StdItfReq (USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef  *req);
-USBD_StatusTypeDef  USBD_StdEPReq  (USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef  *req);
+USBD_StatusTypeDef  USBD_StdDevReq(USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef  *req);
+USBD_StatusTypeDef  USBD_StdItfReq(USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef  *req);
+USBD_StatusTypeDef  USBD_StdEPReq(USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef  *req);
 
 
-void USBD_CtlError  (USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef *req);
+void USBD_CtlError(USBD_HandleTypeDef  *pdev, USBD_SetupReqTypedef *req);
 
-void USBD_ParseSetupRequest (USBD_SetupReqTypedef *req, uint8_t *pdata);
+void USBD_ParseSetupRequest(USBD_SetupReqTypedef *req, uint8_t *pdata);
 
-void USBD_GetString         (uint8_t *desc, uint8_t *unicode, uint16_t *len);
+void USBD_GetString(uint8_t *desc, uint8_t *unicode, uint16_t *len);
 /**
   * @}
-  */ 
+  */
 
 #ifdef __cplusplus
 }
@@ -103,11 +95,11 @@ void USBD_GetString         (uint8_t *desc, uint8_t *unicode, uint16_t *len);
 
 /**
   * @}
-  */ 
+  */
 
 /**
 * @}
-*/ 
+*/
 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

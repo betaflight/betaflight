@@ -31,28 +31,28 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
-#include "common/utils.h"
 #include "common/time.h"
+#include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/io.h"
-#include "drivers/time.h"
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
+#include "drivers/time.h"
 
-#include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
-
-#include "scheduler/scheduler.h"
 
 //#include "uav_interconnect/uav_interconnect.h"
 
@@ -254,16 +254,11 @@ static int16_t computePseudoSnr(int32_t newReading) {
 /*
  * This is called periodically by the scheduler
  */
-// XXX Returns timeDelta_t for iNav for pseudo-RT scheduling.
-void rangefinderUpdate(timeUs_t currentTimeUs)
+void rangefinderUpdate(void)
 {
-    UNUSED(currentTimeUs);
-
     if (rangefinder.dev.update) {
         rangefinder.dev.update(&rangefinder.dev);
     }
-
-    // return rangefinder.dev.delayMs * 1000;  // to microseconds XXX iNav only
 }
 
 bool isSurfaceAltitudeValid() {
@@ -310,8 +305,7 @@ bool rangefinderProcess(float cosTiltAngle)
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = applyMedianFilter(distance);
-        }
-        else if (distance == RANGEFINDER_OUT_OF_RANGE) {
+        } else if (distance == RANGEFINDER_OUT_OF_RANGE) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
         }

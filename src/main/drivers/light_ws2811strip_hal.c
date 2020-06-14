@@ -37,8 +37,6 @@
 
 #include "light_ws2811strip.h"
 
-typedef DMA_Stream_TypeDef dmaStream_t;
-
 static IO_t ws2811IO = IO_NONE;
 
 static TIM_HandleTypeDef TimHandle;
@@ -57,7 +55,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
         return false;
     }
 
-    const timerHardware_t *timerHardware = timerGetByTag(ioTag);
+    const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_LED_STRIP, 0);
 
     if (timerHardware == NULL) {
         return false;
@@ -66,6 +64,8 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_TypeDef *timer = timerHardware->tim;
     timerChannel = timerHardware->channel;
 
+    dmaResource_t *dmaRef;
+
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
@@ -73,10 +73,10 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
         return false;
     }
 
-    dmaStream_t *dmaRef = dmaSpec->ref;
+    dmaRef = dmaSpec->ref;
     uint32_t dmaChannel = dmaSpec->channel;
 #else
-    dmaStream_t *dmaRef = timerHardware->dmaRef;
+    dmaRef = timerHardware->dmaRef;
     uint32_t dmaChannel = timerHardware->dmaChannel;
 #endif
 
@@ -111,7 +111,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     __DMA2_CLK_ENABLE();
 
     /* Set the parameters to be configured */
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32G4)
     hdma_tim.Init.Request = dmaChannel;
 #else
     hdma_tim.Init.Channel = dmaChannel;
@@ -123,13 +123,15 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_tim.Init.Mode = DMA_NORMAL;
     hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
+#if !defined(STM32G4)
     hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
     hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
+#endif
 
     /* Set hdma_tim instance */
-    hdma_tim.Instance = dmaRef;
+    hdma_tim.Instance = (DMA_ARCH_TYPE *)dmaRef;
 
     uint16_t dmaIndex = timerDmaIndex(timerChannel);
 

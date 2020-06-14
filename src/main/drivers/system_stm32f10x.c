@@ -37,8 +37,10 @@ void systemReset(void)
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
 
-void systemResetToBootloader(void)
+void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
+    UNUSED(requestType);
+
     // 1FFFF000 -> 20000200 -> SP
     // 1FFFF004 -> 1FFFF021 -> PC
 
@@ -46,18 +48,25 @@ void systemResetToBootloader(void)
     systemReset();
 }
 
+static void checkForBootLoaderRequest(void)
+{
+    void(*bootJump)(void);
+
+    if (*((uint32_t *)0x20004FF0) == 0xDEADBEEF) {
+
+        *((uint32_t *)0x20004FF0) = 0x0;
+
+        __enable_irq();
+        __set_MSP(*((uint32_t *)0x1FFFF000));
+
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFF004));
+        bootJump();
+        while (1);
+    }
+}
+
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC, ENABLE);
-
-    GPIO_InitTypeDef GPIO_InitStructure = {
-        .GPIO_Mode = GPIO_Mode_AIN,
-        .GPIO_Pin = GPIO_Pin_All
-    };
-
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 bool isMPUSoftReset(void)
@@ -112,21 +121,4 @@ void systemInit(void)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-}
-
-static void checkForBootLoaderRequest(void)
-{
-    void(*bootJump)(void);
-
-    if (*((uint32_t *)0x20004FF0) == 0xDEADBEEF) {
-
-        *((uint32_t *)0x20004FF0) = 0x0;
-
-        __enable_irq();
-        __set_MSP(*((uint32_t *)0x1FFFF000));
-
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFF004));
-        bootJump();
-        while (1);
-    }
 }

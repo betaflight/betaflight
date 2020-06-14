@@ -31,10 +31,19 @@
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"
 
+#include "stm32h7xx_ll_spi.h"
+#include "stm32h7xx_ll_gpio.h"
+#include "stm32h7xx_ll_dma.h"
+#include "stm32h7xx_ll_rcc.h"
+#include "stm32h7xx_ll_bus.h"
+#include "stm32h7xx_ll_tim.h"
+#include "stm32h7xx_ll_system.h"
+#include "drivers/stm32h7xx_ll_ex.h"
+
 // Chip Unique ID on H7
-#define U_ID_0 (*(uint32_t*)0x1FF1E800)
-#define U_ID_1 (*(uint32_t*)0x1FF1E804)
-#define U_ID_2 (*(uint32_t*)0x1FF1E808)
+#define U_ID_0 (*(uint32_t*)UID_BASE)
+#define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
+#define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
 #ifndef STM32H7
 #define STM32H7
@@ -55,15 +64,9 @@
 #include "drivers/stm32f7xx_ll_ex.h"
 
 // Chip Unique ID on F7
-#if defined(STM32F722xx)
-#define U_ID_0 (*(uint32_t*)0x1ff07a10)
-#define U_ID_1 (*(uint32_t*)0x1ff07a14)
-#define U_ID_2 (*(uint32_t*)0x1ff07a18)
-#else
-#define U_ID_0 (*(uint32_t*)0x1ff0f420)
-#define U_ID_1 (*(uint32_t*)0x1ff0f424)
-#define U_ID_2 (*(uint32_t*)0x1ff0f428)
-#endif
+#define U_ID_0 (*(uint32_t*)UID_BASE)
+#define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
+#define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
 #ifndef STM32F7
 #define STM32F7
@@ -118,50 +121,6 @@
 
 #else // STM32F10X
 #error "Invalid chipset specified. Update platform.h"
-#endif
-
-// MCU type names and IDs.
-// IDs are permanent as it has dependency to configurator through MSP reporting
-
-#if defined(SIMULATOR_BUILD)
-#define MCU_TYPE_ID   0
-#define MCU_TYPE_NAME "SIMULATOR"
-#elif defined(STM32F1)
-#define MCU_TYPE_ID   1
-#define MCU_TYPE_NAME "F103"
-#elif defined(STM32F3)
-#define MCU_TYPE_ID   2
-#define MCU_TYPE_NAME "F303"
-#elif defined(STM32F40_41xxx)
-#define MCU_TYPE_ID   3
-#define MCU_TYPE_NAME "F40X"
-#elif defined(STM32F411xE)
-#define MCU_TYPE_ID   4
-#define MCU_TYPE_NAME "F411"
-#elif defined(STM32F446xx)
-#define MCU_TYPE_ID   5
-#define MCU_TYPE_NAME "F446"
-#elif defined(STM32F722xx)
-#define MCU_TYPE_ID   6
-#define MCU_TYPE_NAME "F722"
-#elif defined(STM32F745xx)
-#define MCU_TYPE_ID   7
-#define MCU_TYPE_NAME "F745"
-#elif defined(STM32F746xx)
-#define MCU_TYPE_ID   8
-#define MCU_TYPE_NAME "F746"
-#elif defined(STM32F765xx)
-#define MCU_TYPE_ID   9
-#define MCU_TYPE_NAME "F765"
-#elif defined(STM32H750xx)
-#define MCU_TYPE_ID   10
-#define MCU_TYPE_NAME "H750"
-#elif defined(STM32H743xx)
-#define MCU_TYPE_ID   11
-#define MCU_TYPE_NAME "H743"
-#else
-#define MCU_TYPE_ID   255
-#define MCU_TYPE_NAME "Unknown MCU"
 #endif
 
 #include "target/common_pre.h"

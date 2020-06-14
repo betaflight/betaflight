@@ -32,11 +32,9 @@
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
 
-#define ENABLE_DSHOT_DMAR         false // Motors 3 / 4 conflict with LED_STRIP if enabled
+#define ENABLE_DSHOT_DMAR         DSHOT_DMAR_OFF // Motors 3 / 4 conflict with LED_STRIP if enabled
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
-
-#define CAMERA_CONTROL_PIN        PB9    // define dedicated camera_osd_control pin
 
 
 #define USE_EXTI

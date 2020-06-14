@@ -45,7 +45,7 @@
 #include "drivers/serial.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -74,7 +74,7 @@
 #include "frsky_hub.h"
 
 static serialPort_t *frSkyHubPort = NULL;
-static serialPortConfig_t *portConfig = NULL;
+static const serialPortConfig_t *portConfig = NULL;
 
 #define FRSKY_HUB_BAUDRATE 9600
 #define FRSKY_HUB_INITIAL_PORT_MODE MODE_TX
@@ -494,7 +494,7 @@ static void configureFrSkyHubTelemetryPort(void)
 void checkFrSkyHubTelemetryState(void)
 {
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL) {
-        if (telemetryCheckRxPortShared(portConfig)) {
+        if (telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
             if (frSkyHubPort == NULL && telemetrySharedPort != NULL) {
                 frSkyHubPort = telemetrySharedPort;
             }

@@ -89,7 +89,10 @@
 #define FLASH_SPI_INSTANCE   SPI2
 
 #define USE_FLASHFS
+#define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G
+#define USE_FLASH_W25M02G
 
 #define USE_VCP
 

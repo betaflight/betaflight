@@ -42,6 +42,9 @@
 
 #define USE_SPI
 
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_AUTO
+#define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_OFF
+
 // *************** SPI1 Gyro & ACC **********************
 #define USE_SPI_DEVICE_1
 #define SPI1_SCK_PIN            PA5
@@ -92,7 +95,7 @@
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE         SPI3
 
-#define BINDPLUG_PIN            PB2
+#define RX_SPI_BIND_PIN         PB2
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 
@@ -106,12 +109,12 @@
 #define RX_SPI_LED_PIN          PB9
 
 #elif defined(CRAZYBEEF4FR)
-#define RX_CC2500_SPI_DISABLE_CHIP_DETECTION
 #define RX_SPI_EXTI_PIN             PC14
 #define RX_SPI_LED_PIN              PB9
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
+#define USE_RX_REDPINE_SPI
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define USE_RX_FRSKY_SPI_TELEMETRY
 
@@ -131,6 +134,7 @@
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
+#define USE_RX_REDPINE_SPI
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
 #define USE_RX_FRSKY_SPI_TELEMETRY
 #endif

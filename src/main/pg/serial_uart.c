@@ -68,6 +68,9 @@ static uartDmaopt_t uartDmaopt[] = {
 #ifdef USE_UART8
     { UARTDEV_8, UART8_TX_DMA_OPT, UART8_RX_DMA_OPT },
 #endif
+#ifdef USE_UART9
+    { UARTDEV_9, UART9_TX_DMA_OPT, UART9_RX_DMA_OPT },
+#endif
 };
 
 void pgResetFn_serialUartConfig(serialUartConfig_t *config)

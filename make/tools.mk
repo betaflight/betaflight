@@ -14,9 +14,9 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR ?= $(TOOLS_DIR)/gcc-arm-none-eabi-7-2018-q2-update
+ARM_SDK_DIR ?= $(TOOLS_DIR)/gcc-arm-none-eabi-9-2019-q4-major
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
-GCC_REQUIRED_VERSION ?= 7.3.1
+GCC_REQUIRED_VERSION ?= 9.2.1
 
 .PHONY: arm_sdk_version
 
@@ -26,11 +26,11 @@ arm_sdk_version:
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
-ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/7-2018q2/gcc-arm-none-eabi-7-2018-q2-update
+ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4/RC2.1/gcc-arm-none-eabi-9-2019-q4-major
 
 # source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 ifdef LINUX
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-linux.tar.bz2
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-x86_64-linux.tar.bz2
 endif
 
 ifdef MACOSX
@@ -38,7 +38,7 @@ ifdef MACOSX
 endif
 
 ifdef WINDOWS
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip.bz2
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))

@@ -62,7 +62,7 @@
 #define BEEPER_INVERTED
 
 #if defined(OMNIBUSF4SD) || defined(DYSF4PRO)
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 #endif
 
 #ifdef OMNIBUSF4SD
@@ -113,7 +113,6 @@
 // Dummy defines
 #define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
 #define GYRO_2_CS_PIN           NONE
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
 
 #if !defined(SYNERGYF4) //No mag sensor on SYNERGYF4

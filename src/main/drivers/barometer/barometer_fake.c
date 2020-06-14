@@ -35,9 +35,16 @@ static int32_t fakePressure;
 static int32_t fakeTemperature;
 
 
-static void fakeBaroStartGet(baroDev_t *baro)
+static void fakeBaroStart(baroDev_t *baro)
 {
     UNUSED(baro);
+}
+
+static bool fakeBaroReadGet(baroDev_t *baro)
+{
+    UNUSED(baro);
+
+    return true;
 }
 
 static void fakeBaroCalculate(int32_t *pressure, int32_t *temperature)
@@ -60,14 +67,17 @@ bool fakeBaroDetect(baroDev_t *baro)
     fakeTemperature = 2500;   // temperature in 0.01 C = 25 deg
 
     // these are dummy as temperature is measured as part of pressure
+    baro->combined_read = true;
     baro->ut_delay = 10000;
-    baro->get_ut = fakeBaroStartGet;
-    baro->start_ut = fakeBaroStartGet;
+    baro->get_ut = fakeBaroReadGet;
+    baro->read_ut = fakeBaroReadGet;
+    baro->start_ut = fakeBaroStart;
 
     // only _up part is executed, and gets both temperature and pressure
     baro->up_delay = 10000;
-    baro->start_up = fakeBaroStartGet;
-    baro->get_up = fakeBaroStartGet;
+    baro->start_up = fakeBaroStart;
+    baro->read_up = fakeBaroReadGet;
+    baro->get_up = fakeBaroReadGet;
     baro->calculate = fakeBaroCalculate;
 
     return true;

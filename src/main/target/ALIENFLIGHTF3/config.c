@@ -90,8 +90,7 @@ void targetConfiguration(void)
         statusLedConfigMutable()->ioTags[2] = IO_TAG(LED2_A);
 #endif
     } else {
-        gyroConfigMutable()->gyro_sync_denom = 2;
-        pidConfigMutable()->pid_process_denom = 2;
+        pidConfigMutable()->pid_process_denom = 4;
     }
 
     if (!haveFrSkyRX) {
@@ -104,7 +103,7 @@ void targetConfiguration(void)
         rxConfigMutable()->serialrx_inverted = true;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_RX_SERIAL;
         telemetryConfigMutable()->telemetry_inverted = false;
-        featureEnable(FEATURE_TELEMETRY);
+        featureConfigSet(FEATURE_TELEMETRY);
         beeperDevConfigMutable()->isOpenDrain = false;
         beeperDevConfigMutable()->isInverted = true;
         parseRcChannels("AETR1234", rxConfigMutable());

@@ -1,0 +1,6 @@
+This library is used to support the Bosch BMI270 gyro sensor (see drivers/accgyro/accgyro_spi_bmi270.c).
+
+Library download location:
+    https://github.com/BoschSensortec/BMI270-Sensor-API
+
+The only file that is compiled as part of Betaflight is bmi270.c. This file contains the device microcode that must be uploaded during initialization. 

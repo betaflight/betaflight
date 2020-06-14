@@ -57,6 +57,8 @@ uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 static ioTag_t ledStripIoTag;
 static bool ws2811Initialised = false;
 volatile bool ws2811LedDataTransferInProgress = false;
+static unsigned usedLedCount = 0;
+static bool needsFullRefresh = true;
 
 uint16_t BIT_COMPARE_1 = 0;
 uint16_t BIT_COMPARE_0 = 0;
@@ -87,16 +89,25 @@ void scaleLedValue(uint16_t index, const uint8_t scalePercent)
 
 void setStripColor(const hsvColor_t *color)
 {
-    for (unsigned index = 0; index < WS2811_DATA_BUFFER_SIZE; index++) {
+    for (unsigned index = 0; index < usedLedCount; index++) {
         ledColorBuffer[index] = *color;
     }
 }
 
 void setStripColors(const hsvColor_t *colors)
 {
-    for (unsigned index = 0; index < WS2811_DATA_BUFFER_SIZE; index++) {
+    for (unsigned index = 0; index < usedLedCount; index++) {
         setLedHsv(index, colors++);
     }
+}
+
+void setUsedLedCount(unsigned ledCount)
+{
+    usedLedCount = (ledCount < WS2811_DATA_BUFFER_SIZE) ? ledCount : WS2811_DATA_BUFFER_SIZE;
+
+     // Update all possible positions on the next update in case the count
+     // decreased otherwise LEDs on the end could be left in their previous state
+    needsFullRefresh = true;
 }
 
 void ws2811LedStripInit(ioTag_t ioTag)
@@ -129,6 +140,7 @@ bool isWS2811LedStripReady(void)
 
 STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex)
 {
+
     uint32_t packed_colour;
 
     switch (ledFormat) {
@@ -163,11 +175,14 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
 
     // fill transmit buffer with correct compare values to achieve
     // correct pulse widths according to color values
-    while (ledIndex < WS2811_DATA_BUFFER_SIZE) {
-        rgbColor24bpp_t *rgb24 = hsvToRgb24(&ledColorBuffer[ledIndex]);
+    const unsigned ledUpdateCount = needsFullRefresh ? WS2811_DATA_BUFFER_SIZE : usedLedCount;
+    const hsvColor_t hsvBlack = { 0, 0, 0 };
+    while (ledIndex < ledUpdateCount) {
+        rgbColor24bpp_t *rgb24 = hsvToRgb24(ledIndex < usedLedCount ? &ledColorBuffer[ledIndex] : &hsvBlack);
 
         updateLEDDMABuffer(ledFormat, rgb24, ledIndex++);
     }
+    needsFullRefresh = false;
 
     ws2811LedDataTransferInProgress = true;
     ws2811LedStripDMAEnable();

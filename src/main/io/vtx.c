@@ -33,7 +33,7 @@
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
@@ -47,16 +47,24 @@
 #include "vtx.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
 
-PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
-                  .band = VTX_TABLE_DEFAULT_BAND,
-                  .channel = VTX_TABLE_DEFAULT_CHANNEL,
-                  .power = VTX_TABLE_DEFAULT_POWER,
-                  .freq = VTX_TABLE_DEFAULT_FREQ,
-                  .pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ,
-                  .lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF,
-                 );
+void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
+{
+#ifdef USE_VTX_TABLE
+    vtxSettingsConfig->band = 0;
+    vtxSettingsConfig->channel = 0;
+    vtxSettingsConfig->power = 0;
+    vtxSettingsConfig->freq = 0;
+#else
+    vtxSettingsConfig->freq = VTX_TABLE_DEFAULT_FREQ;
+    vtxSettingsConfig->band = VTX_TABLE_DEFAULT_BAND;
+    vtxSettingsConfig->channel = VTX_TABLE_DEFAULT_CHANNEL;
+    vtxSettingsConfig->power = VTX_TABLE_DEFAULT_POWER;
+#endif
+    vtxSettingsConfig->pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ;
+    vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
+}
 
 typedef enum {
     VTX_PARAM_POWER = 0,
@@ -179,8 +187,8 @@ static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
 {
     static bool prevPmSwitchState = false;
 
-    uint8_t pitOnOff;
-    if (!ARMING_FLAG(ARMED) && vtxCommonGetPitMode(vtxDevice, &pitOnOff)) {
+    unsigned vtxStatus;
+    if (!ARMING_FLAG(ARMED) && vtxCommonGetStatus(vtxDevice, &vtxStatus)) {
         bool currPmSwitchState = IS_RC_MODE_ACTIVE(BOXVTXPITMODE);
 
         if (currPmSwitchState != prevPmSwitchState) {
@@ -192,13 +200,13 @@ static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
                     return false;
                 }
 #endif
-                if (!pitOnOff) {
+                if (!(vtxStatus & VTX_STATUS_PIT_MODE)) {
                     vtxCommonSetPitMode(vtxDevice, true);
 
                     return true;
                 }
             } else {
-                if (pitOnOff) {
+                if (vtxStatus & VTX_STATUS_PIT_MODE) {
                     vtxCommonSetPitMode(vtxDevice, false);
 
                     return true;

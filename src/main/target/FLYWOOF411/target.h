@@ -127,9 +127,10 @@
 
 #define USE_LED_STRIP
 
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON									
 #define USE_PINIO
 #define PINIO1_PIN              PB5  // VTX  switcher
-#define PINIO2_PIN              PA15 // Camera switcher
+//#define PINIO2_PIN              PA15 // Camera switcher
 #define USE_PINIOBOX
 
 #define DEFAULT_FEATURES                (FEATURE_OSD | FEATURE_TELEMETRY | FEATURE_SOFTSERIAL | FEATURE_LED_STRIP)

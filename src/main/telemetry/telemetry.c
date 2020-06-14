@@ -38,7 +38,7 @@
 
 #include "io/serial.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
@@ -133,24 +133,24 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     return enabled;
 }
 
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const SerialRXType serialrxProvider)
 {
     if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK &&
-        (rxConfig()->serialrx_provider == SERIALRX_SPEKTRUM1024 ||
-        rxConfig()->serialrx_provider == SERIALRX_SPEKTRUM2048 ||
-        rxConfig()->serialrx_provider == SERIALRX_SBUS ||
-        rxConfig()->serialrx_provider == SERIALRX_SUMD ||
-        rxConfig()->serialrx_provider == SERIALRX_SUMH ||
-        rxConfig()->serialrx_provider == SERIALRX_XBUS_MODE_B ||
-        rxConfig()->serialrx_provider == SERIALRX_XBUS_MODE_B_RJ01 ||
-        rxConfig()->serialrx_provider == SERIALRX_IBUS)) {
+        (serialrxProvider == SERIALRX_SPEKTRUM1024 ||
+        serialrxProvider == SERIALRX_SPEKTRUM2048 ||
+        serialrxProvider == SERIALRX_SBUS ||
+        serialrxProvider == SERIALRX_SUMD ||
+        serialrxProvider == SERIALRX_SUMH ||
+        serialrxProvider == SERIALRX_XBUS_MODE_B ||
+        serialrxProvider == SERIALRX_XBUS_MODE_B_RJ01 ||
+        serialrxProvider == SERIALRX_IBUS)) {
 
         return true;
     }
 #ifdef USE_TELEMETRY_IBUS
-    if (   portConfig->functionMask & FUNCTION_TELEMETRY_IBUS
+    if (portConfig->functionMask & FUNCTION_TELEMETRY_IBUS
         && portConfig->functionMask & FUNCTION_RX_SERIAL
-        && rxConfig()->serialrx_provider == SERIALRX_IBUS) {
+        && serialrxProvider == SERIALRX_IBUS) {
         // IBUS serial RX & telemetry
         return true;
     }
@@ -228,6 +228,6 @@ void telemetryProcess(uint32_t currentTime)
 
 bool telemetryIsSensorEnabled(sensor_e sensor)
 {
-    return ~(telemetryConfigMutable()->disabledSensors) & sensor;
+    return ~(telemetryConfig()->disabledSensors) & sensor;
 }
 #endif

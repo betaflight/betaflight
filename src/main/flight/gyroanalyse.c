@@ -44,31 +44,60 @@
 
 #include "gyroanalyse.h"
 
-// The FFT splits the frequency domain into an number of bins
-// A sampling frequency of 1000 and max frequency of 500 at a window size of 32 gives 16 frequency bins each 31.25Hz wide
-// Eg [0,31), [31,62), [62, 93) etc
-// for gyro loop >= 4KHz, sample rate 2000 defines FFT range to 1000Hz, 16 bins each 62.5 Hz wide
-// NB  FFT_WINDOW_SIZE is set to 32 in gyroanalyse.h
-#define FFT_BIN_COUNT             (FFT_WINDOW_SIZE / 2)
-// smoothing frequency for FFT centre frequency
-#define DYN_NOTCH_SMOOTH_FREQ_HZ  50
-// we need 4 steps for each axis
-#define DYN_NOTCH_CALC_TICKS      (XYZ_AXIS_COUNT * 4)
+// FFT_WINDOW_SIZE defaults to 32 (gyroanalyse.h)
+// We get 16 frequency bins from 32 consecutive data values
+// Bin 0 is DC and can't be used.
+// Only bins 1 to 15 are usable.
 
+// A gyro sample is collected every gyro loop
+// maxSampleCount recent gyro values are accumulated and averaged
+// to ensure that 32 samples are collected at the right rate for the required FFT bandwidth
+
+// For an 8k gyro loop, at default 600hz max, 6 sequential gyro data points are averaged, FFT runs 1333Hz.
+// Upper limit of FFT is half that frequency, eg 666Hz by default.
+// At 8k, if user sets a max of 300Hz, int(8000/600) = 13, fftSamplingRateHz = 615Hz, range 307Hz
+// Note that lower max requires more samples to be averaged, increasing precision but taking longer to get enough samples.
+// For Bosch at 3200Hz gyro, max of 600, int(3200/1200) = 2, fftSamplingRateHz = 1600, range to 800hz
+// For Bosch on XClass, better to set a max of 300, int(3200/600) = 5, fftSamplingRateHz = 640, range to 320Hz
+//
+// When sampleCount reaches maxSampleCount, the averaged gyro value is put into the circular buffer of 32 samples
+// At 8k, with 600Hz max, maxSampleCount = 6, this happens every 6 * 0.125us, or every 0.75ms
+// Hence to completely replace all 32 samples of the FFT input buffer with clean new data takes 24ms
+
+// The FFT code is split into steps.  It takes 4 gyro loops to calculate the FFT for one axis
+//   (gyroDataAnalyseUpdate has 8 steps, but only four breaks)
+// Since there are three axes, it takes 12 gyro loops to completely update all axes.
+// At 8k, any one axis gets updated at 8000 / 12 or 666hz or every 1.5ms
+// In this time, 2 points in the FFT buffer will have changed.
+// At 4k, it takes twice as long to update an axis, i.e. each axis updates only every 3ms
+// Four points in the buffer will have changed in that time, and each point will be the average of three samples.
+// Hence output jitter at 4k is about four times worse than at 8k.  At 2k output jitter is quite bad.
+
+// The Hanning window step loads gyro data (32 data points) for one axis from the circular buffer into fftData[i]
+//   and applies the hanning window to the edge values
+// Calculation steps 1 and 2 then calculate the fft output (32 data points) and put that back into the same fftData[i] array.
+// We then use fftData[i] array for frequency centre calculations for that axis
+
+// Each FFT output bin has width fftSamplingRateHz/32, ie 41.65Hz per bin at 1333Hz
+// Usable bandwidth is half this, ie 666Hz if fftSamplingRateHz is 1333Hz, i.e. bin 1 is 41.65hz, bin 2 83.3hz etc
+
+#define DYN_NOTCH_SMOOTH_HZ       4
+#define FFT_BIN_COUNT             (FFT_WINDOW_SIZE / 2) // 16
+#define DYN_NOTCH_CALC_TICKS      (XYZ_AXIS_COUNT * 4) // 4 steps per axis
 #define DYN_NOTCH_OSD_MIN_THROTTLE 20
 
 static uint16_t FAST_RAM_ZERO_INIT   fftSamplingRateHz;
 static float FAST_RAM_ZERO_INIT      fftResolution;
 static uint8_t FAST_RAM_ZERO_INIT    fftStartBin;
-static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxCtrHz;
-static uint8_t dynamicFilterRange;
 static float FAST_RAM_ZERO_INIT      dynNotchQ;
 static float FAST_RAM_ZERO_INIT      dynNotch1Ctr;
 static float FAST_RAM_ZERO_INIT      dynNotch2Ctr;
 static uint16_t FAST_RAM_ZERO_INIT   dynNotchMinHz;
-static bool FAST_RAM dualNotch = true;
-static uint16_t FAST_RAM_ZERO_INIT dynNotchMaxFFT;
-
+static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxHz;
+static bool FAST_RAM                 dualNotch = true;
+static uint16_t FAST_RAM_ZERO_INIT   dynNotchMaxFFT;
+static float FAST_RAM_ZERO_INIT      smoothFactor;
+static uint8_t FAST_RAM_ZERO_INIT    samples;
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static FAST_RAM_ZERO_INIT float hanningWindow[FFT_WINDOW_SIZE];
 
@@ -82,43 +111,30 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     gyroAnalyseInitialized = true;
 #endif
 
-    dynamicFilterRange = gyroConfig()->dyn_notch_range;
-    fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_LOW;
     dynNotch1Ctr = 1 - gyroConfig()->dyn_notch_width_percent / 100.0f;
     dynNotch2Ctr = 1 + gyroConfig()->dyn_notch_width_percent / 100.0f;
     dynNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
     dynNotchMinHz = gyroConfig()->dyn_notch_min_hz;
+    dynNotchMaxHz = MAX(2 * dynNotchMinHz, gyroConfig()->dyn_notch_max_hz);
 
     if (gyroConfig()->dyn_notch_width_percent == 0) {
         dualNotch = false;
     }
 
-    if (dynamicFilterRange == DYN_NOTCH_RANGE_AUTO) {
-        if (gyroConfig()->dyn_lpf_gyro_max_hz > 333) {
-            fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_MEDIUM;
-        }
-        if (gyroConfig()->dyn_lpf_gyro_max_hz > 610) {
-            fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_HIGH;
-        }
-    } else {
-        if (dynamicFilterRange == DYN_NOTCH_RANGE_HIGH) {
-            fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_HIGH;
-        }
-        else if (dynamicFilterRange == DYN_NOTCH_RANGE_MEDIUM) {
-            fftSamplingRateHz = DYN_NOTCH_RANGE_HZ_MEDIUM;
-        }
-    }
-    // If we get at least 3 samples then use the default FFT sample frequency
-    // otherwise we need to calculate a FFT sample frequency to ensure we get 3 samples (gyro loops < 4K)
     const int gyroLoopRateHz = lrintf((1.0f / targetLooptimeUs) * 1e6f);
-    
-    fftSamplingRateHz = MIN((gyroLoopRateHz / 3), fftSamplingRateHz);
+    samples = MAX(1, gyroLoopRateHz / (2 * dynNotchMaxHz)); //600hz, 8k looptime, 13.333
 
-    fftResolution = (float)fftSamplingRateHz / FFT_WINDOW_SIZE;
+    fftSamplingRateHz = gyroLoopRateHz / samples;
+    // eg 8k, user max 600hz, int(8000/1200) = 6 (6.666), fftSamplingRateHz = 1333hz, range 666Hz
+    // eg 4k, user max 600hz, int(4000/1200) = 3 (3.333), fftSamplingRateHz = 1333hz, range 666Hz
+    // eg 2k, user max 600hz, int(2000/1200) = 1 (1.666) fftSamplingRateHz = 2000hz, range 1000Hz
+    // eg 2k, user max 400hz, int(2000/800) = 2 (2.5) fftSamplingRateHz = 1000hz, range 500Hz
+    // eg 1k, user max 600hz, int(1000/1200) = 1 (max(1,0.8333)) fftSamplingRateHz = 1000hz, range 500Hz
+    // the upper limit of DN is always going to be Nyquist
 
-    fftStartBin = dynNotchMinHz / lrintf(fftResolution);
-
-    dynNotchMaxCtrHz = fftSamplingRateHz / 2; //Nyquist
+    fftResolution = (float)fftSamplingRateHz / FFT_WINDOW_SIZE; // 41.65hz per bin for medium
+    fftStartBin = MAX(2, dynNotchMinHz / lrintf(fftResolution)); // can't use bin 0 because it is DC.
+    smoothFactor = 2 * M_PIf * DYN_NOTCH_SMOOTH_HZ / (gyroLoopRateHz / 12); // minimum PT1 k value
 
     for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
         hanningWindow[i] = (0.5f - 0.5f * cos_approx(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
@@ -128,24 +144,13 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
 void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
 {
     // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
-    // *** can this next line be removed ??? ***
     gyroDataAnalyseInit(targetLooptimeUs);
-
-    const uint16_t samplingFrequency = 1000000 / targetLooptimeUs;
-    state->maxSampleCount = samplingFrequency / fftSamplingRateHz;
-    state->maxSampleCountRcp = 1.f / state->maxSampleCount;
-
+    state->maxSampleCount = samples;
+    state->maxSampleCountRcp = 1.0f / state->maxSampleCount;
     arm_rfft_fast_init_f32(&state->fftInstance, FFT_WINDOW_SIZE);
-
-//    recalculation of filters takes 4 calls per axis => each filter gets updated every DYN_NOTCH_CALC_TICKS calls
-//    at 4khz gyro loop rate this means 4khz / 4 / 3 = 333Hz => update every 3ms
-//    for gyro rate > 16kHz, we have update frequency of 1kHz => 1ms
-    const float looptime = MAX(1000000u / fftSamplingRateHz, targetLooptimeUs * DYN_NOTCH_CALC_TICKS);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // any init value
-        state->centerFreq[axis] = dynNotchMaxCtrHz;
-        state->prevCenterFreq[axis] = dynNotchMaxCtrHz;
-        biquadFilterInitLPF(&state->detectedFrequencyFilter[axis], DYN_NOTCH_SMOOTH_FREQ_HZ, looptime);
+        state->centerFreq[axis] = dynNotchMaxHz;
     }
 }
 
@@ -162,10 +167,9 @@ static void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, biquadFilter_t *not
 void gyroDataAnalyse(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2)
 {
     // samples should have been pushed by `gyroDataAnalysePush`
-    // if gyro sampling is > 1kHz, accumulate multiple samples
+    // if gyro sampling is > 1kHz, accumulate and average multiple gyro samples
     state->sampleCount++;
 
-    // this runs at 1kHz
     if (state->sampleCount == state->maxSampleCount) {
         state->sampleCount = 0;
 
@@ -183,6 +187,9 @@ void gyroDataAnalyse(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, 
         state->circularBufferIdx = (state->circularBufferIdx + 1) % FFT_WINDOW_SIZE;
 
         // We need DYN_NOTCH_CALC_TICKS tick to update all axis with newly sampled value
+        // recalculation of filters takes 4 calls per axis => each filter gets updated every DYN_NOTCH_CALC_TICKS calls
+        // at 4kHz gyro loop rate this means 8kHz / 4 / 3 = 666Hz => update every 1.5ms
+        // at 4kHz gyro loop rate this means 4kHz / 4 / 3 = 333Hz => update every 3ms
         state->updateTicks = DYN_NOTCH_CALC_TICKS;
     }
 
@@ -200,7 +207,7 @@ void arm_radix8_butterfly_f32(float32_t *pSrc, uint16_t fftLen, const float32_t 
 void arm_bitreversal_32(uint32_t *pSrc, const uint16_t bitRevLen, const uint16_t *pBitRevTable);
 
 /*
- * Analyse last gyro data from the last FFT_WINDOW_SIZE milliseconds
+ * Analyse gyro data
  */
 static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2)
 {
@@ -241,6 +248,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
                 break;
             }
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
             break;
         }
         case STEP_BITREVERSAL:
@@ -257,6 +265,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             // this does not work in place => fftData AND rfftData needed
             stage_rfft_f32(&state->fftInstance, state->fftData, state->rfftData);
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
             break;
         }
         case STEP_ARM_CMPLX_MAG_F32:
@@ -269,62 +278,76 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
         }
         case STEP_CALC_FREQUENCIES:
         {
-            bool fftIncreased = false;
-            float dataMax = 0;
-            uint8_t binStart = 0;
+            // identify max bin and max/min heights
+            float dataMax = 0.0f;
+            float dataMin = 1.0f;
             uint8_t binMax = 0;
-            //for bins after initial decline, identify start bin and max bin 
+            float dataMinHi = 1.0f;
             for (int i = fftStartBin; i < FFT_BIN_COUNT; i++) {
-                if (fftIncreased || (state->fftData[i] > state->fftData[i - 1])) {
-                    if (!fftIncreased) {
-                        binStart = i; // first up-step bin
-                        fftIncreased = true;
-                    }
+                if (state->fftData[i] > state->fftData[i - 1]) { // bin height increased
                     if (state->fftData[i] > dataMax) {
                         dataMax = state->fftData[i];
-                        binMax = i;  // tallest bin
+                        binMax = i;  // tallest bin so far
                     }
                 }
             }
+            if (binMax == 0) { // no bin increase, hold prev max bin, dataMin = 1 dataMax = 0, ie move slow
+                binMax = lrintf(state->centerFreq[state->updateAxis] / fftResolution);
+            } else { // there was a max, find min
+                for (int i = binMax - 1; i > 1; i--) { // look for min below max
+                    dataMin = state->fftData[i];
+                    if (state->fftData[i - 1] > state->fftData[i]) { // up step below this one
+                        break;
+                    }
+                }
+                for (int i = binMax + 1; i < (FFT_BIN_COUNT - 1); i++) { // // look for min above max
+                    dataMinHi = state->fftData[i];
+                    if (state->fftData[i] < state->fftData[i + 1]) { // up step above this one
+                        break;
+                    }
+                }
+            }
+            dataMin = fminf(dataMin, dataMinHi);
+
             // accumulate fftSum and fftWeightedSum from peak bin, and shoulder bins either side of peak
-            float cubedData = state->fftData[binMax] * state->fftData[binMax] * state->fftData[binMax];
-            float fftSum = cubedData;
-            float fftWeightedSum = cubedData * (binMax + 1);
-            // accumulate upper shoulder
-            for (int i = binMax; i < FFT_BIN_COUNT - 1; i++) {
-                if (state->fftData[i] > state->fftData[i + 1]) {
-                    cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
-                    fftSum += cubedData;
-                    fftWeightedSum += cubedData * (i + 1);
-                } else {
-                break;
-                }
+            float squaredData = state->fftData[binMax] * state->fftData[binMax];
+            float fftSum = squaredData;
+            float fftWeightedSum = squaredData * binMax;
+
+            // accumulate upper shoulder unless it would be FFT_BIN_COUNT
+            uint8_t shoulderBin = binMax + 1;
+            if (shoulderBin < FFT_BIN_COUNT) {
+                squaredData = state->fftData[shoulderBin] * state->fftData[shoulderBin];
+                fftSum += squaredData;
+                fftWeightedSum += squaredData * shoulderBin;
             }
-            // accumulate lower shoulder
-            for (int i = binMax; i > binStart + 1; i--) {
-                if (state->fftData[i] > state->fftData[i - 1]) {
-                    cubedData = state->fftData[i] * state->fftData[i] * state->fftData[i];
-                    fftSum += cubedData;
-                    fftWeightedSum += cubedData * (i + 1);
-                } else {
-                break;
-                }
+
+            // accumulate lower shoulder unless lower shoulder would be bin 0 (DC)
+            if (binMax > 1) {
+                shoulderBin = binMax - 1;
+                squaredData = state->fftData[shoulderBin] * state->fftData[shoulderBin];
+                fftSum += squaredData;
+                fftWeightedSum += squaredData * shoulderBin;
             }
-            // get weighted center of relevant frequency range (this way we have a better resolution than 31.25Hz)
-            float centerFreq = dynNotchMaxCtrHz;
+
+            // get centerFreq in Hz from weighted bins
+            float centerFreq = dynNotchMaxHz;
             float fftMeanIndex = 0;
-             // idx was shifted by 1 to start at 1, not 0
             if (fftSum > 0) {
-                fftMeanIndex = (fftWeightedSum / fftSum) - 1;
-                // the index points at the center frequency of each bin so index 0 is actually 16.125Hz
+                fftMeanIndex = (fftWeightedSum / fftSum);
                 centerFreq = fftMeanIndex * fftResolution;
+                // In theory, the index points to the centre frequency of the bin.
+                // at 1333hz, bin widths are 41.65Hz, so bin 2 has the range 83,3Hz to 124,95Hz
+                // Rav feels that maybe centerFreq = (fftMeanIndex + 0.5) * fftResolution; is better
+                // empirical checking shows that not adding 0.5 works better
             } else {
-                centerFreq = state->prevCenterFreq[state->updateAxis];
+                centerFreq = state->centerFreq[state->updateAxis];
             }
-            centerFreq = fmax(centerFreq, dynNotchMinHz);
-            centerFreq = biquadFilterApply(&state->detectedFrequencyFilter[state->updateAxis], centerFreq);
-            state->prevCenterFreq[state->updateAxis] = state->centerFreq[state->updateAxis];
-            state->centerFreq[state->updateAxis] = centerFreq;
+            centerFreq = constrainf(centerFreq, dynNotchMinHz, dynNotchMaxHz);
+
+            // PT1 style dynamic smoothing moves rapidly towards big peaks and slowly away, up to 8x faster
+            float dynamicFactor = constrainf(dataMax / dataMin, 1.0f, 8.0f);
+            state->centerFreq[state->updateAxis] = state->centerFreq[state->updateAxis] + smoothFactor * dynamicFactor * (centerFreq - state->centerFreq[state->updateAxis]);
 
             if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
                 dynNotchMaxFFT = MAX(dynNotchMaxFFT, state->centerFreq[state->updateAxis]);
@@ -333,26 +356,25 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
             if (state->updateAxis == 0) {
                 DEBUG_SET(DEBUG_FFT, 3, lrintf(fftMeanIndex * 100));
                 DEBUG_SET(DEBUG_FFT_FREQ, 0, state->centerFreq[state->updateAxis]);
+                DEBUG_SET(DEBUG_FFT_FREQ, 1, lrintf(dynamicFactor * 100));
                 DEBUG_SET(DEBUG_DYN_LPF, 1, state->centerFreq[state->updateAxis]);
             }
-            if (state->updateAxis == 1) {
-                DEBUG_SET(DEBUG_FFT_FREQ, 1, state->centerFreq[state->updateAxis]);
-            }
-            // Debug FFT_Freq carries raw gyro, gyro after first filter set, FFT centre for roll and for pitch
+//            if (state->updateAxis == 1) {
+//            DEBUG_SET(DEBUG_FFT_FREQ, 1, state->centerFreq[state->updateAxis]);
+//            }
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
             break;
         }
         case STEP_UPDATE_FILTERS:
         {
             // 7us
-            // calculate cutoffFreq and notch Q, update notch filter  =1.8+((A2-150)*0.004)
-            if (state->prevCenterFreq[state->updateAxis] != state->centerFreq[state->updateAxis]) {
-                if (dualNotch) {
-                    biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch1Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
-                    biquadFilterUpdate(&notchFilterDyn2[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch2Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
-                } else {
-                    biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis], gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
-                }
+            // calculate cutoffFreq and notch Q, update notch filter
+            if (dualNotch) {
+                biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch1Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
+                biquadFilterUpdate(&notchFilterDyn2[state->updateAxis], state->centerFreq[state->updateAxis] * dynNotch2Ctr, gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
+            } else {
+                biquadFilterUpdate(&notchFilterDyn[state->updateAxis], state->centerFreq[state->updateAxis], gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
             }
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 
@@ -363,8 +385,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state, 
         case STEP_HANNING:
         {
             // 5us
-            // apply hanning window to gyro samples and store result in fftData
-            // hanning starts and ends with 0, could be skipped for minor speed improvement
+            // apply hanning window to gyro samples and store result in fftData[i] to be used in step 1 and 2 and 3
             const uint8_t ringBufIdx = FFT_WINDOW_SIZE - state->circularBufferIdx;
             arm_mult_f32(&state->downsampledGyroData[state->updateAxis][state->circularBufferIdx], &hanningWindow[0], &state->fftData[0], ringBufIdx);
             if (state->circularBufferIdx > 0) {

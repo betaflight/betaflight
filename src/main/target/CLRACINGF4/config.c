@@ -26,12 +26,12 @@
 #include "pg/piniobox.h"
 #include "rx/rx.h"
 #include "telemetry/telemetry.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "drivers/pwm_output.h"
 #include "sensors/gyro.h"
 #include "io/vtx.h"
 #include "io/ledstrip.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "pg/piniobox.h"
 #include "pg/motor.h"
 #include "common/axis.h"
@@ -46,9 +46,8 @@
 
 void targetConfiguration(void)
 {
-    pinioBoxConfigMutable()->permanentId[0] = 39;
+    pinioBoxConfigMutable()->permanentId[0] = 40;
     motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
-    gyroConfigMutable()->gyro_sync_denom = 1;  // 8kHz gyro
     pidConfigMutable()->pid_process_denom = 1; // 8kHz PID
 }
 #endif

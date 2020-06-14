@@ -27,12 +27,13 @@
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_cyrf6936.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
 #include "sensors/battery.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "config/feature.h"
 
 #include "pg/pg.h"
@@ -372,18 +373,23 @@ static void dsmReceiverStartTransfer(void)
     cyrf6936StartRecv();
 }
 
-bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
+bool spektrumSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
-    IO_t extiPin = IOGetByTag(rxConfig->extiIoTag);
-    if (!extiPin) {
+    UNUSED(extiConfig);
+
+    if (!rxSpiExtiConfigured()) {
         return false;
     }
 
     rxSpiCommonIOInit(rxConfig);
 
-    rxRuntimeConfig->channelCount = DSM_MAX_CHANNEL_COUNT;
 
-    if (!cyrf6936Init(extiPin)) {
+    rxRuntimeState->channelCount = DSM_MAX_CHANNEL_COUNT;
+
+    extiConfig->ioConfig = IOCFG_IPD;
+    extiConfig->trigger = BETAFLIGHT_EXTI_TRIGGER_FALLING;
+
+    if (!cyrf6936Init()) {
         return false;
     }
 
@@ -453,6 +459,7 @@ void spektrumSpiSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 static bool isValidPacket(const uint8_t *packet)
 {
     DEBUG_SET(DEBUG_RX_SPEKTRUM_SPI, 1, isError);
+
     if (isError) {
         if (dsmReceiver.status != DSM_RECEIVER_RECV && (cyrf6936GetRxStatus() & CYRF6936_BAD_CRC)) {
             dsmReceiver.crcSeed = ~dsmReceiver.crcSeed;

@@ -46,8 +46,13 @@
 
 // Full iterm suppression in setpoint mode at high-passed setpoint rate > 40deg/sec
 #define ITERM_RELAX_SETPOINT_THRESHOLD 40.0f
-#define ITERM_RELAX_CUTOFF_DEFAULT 20
+#define ITERM_RELAX_CUTOFF_DEFAULT 15
 
+// Anti gravity I constant
+#define AG_KI 21.586988f;
+
+#define ITERM_ACCELERATOR_GAIN_OFF 1000
+#define ITERM_ACCELERATOR_GAIN_MAX 30000
 typedef enum {
     PID_ROLL,
     PID_PITCH,
@@ -92,12 +97,14 @@ typedef enum {
     ITERM_RELAX_RP,
     ITERM_RELAX_RPY,
     ITERM_RELAX_RP_INC,
-    ITERM_RELAX_RPY_INC
+    ITERM_RELAX_RPY_INC,
+    ITERM_RELAX_COUNT,
 } itermRelax_e;
 
 typedef enum {
     ITERM_RELAX_GYRO,
-    ITERM_RELAX_SETPOINT
+    ITERM_RELAX_SETPOINT,
+    ITERM_RELAX_TYPE_COUNT,
 } itermRelaxType_e;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
@@ -170,7 +177,22 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
+    uint8_t ff_boost;                       // amount of high-pass filtered FF to add to FF, 100 means 100% added
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
+
+    uint8_t idle_min_rpm;                   // minimum motor speed enforced by integrating p controller
+    uint8_t idle_adjustment_speed;          // how quickly the integrating p controller tries to correct
+    uint8_t idle_p;                         // kP
+    uint8_t idle_pid_limit;                 // max P
+    uint8_t idle_max_increase;              // max integrated correction
+
+    uint8_t ff_interpolate_sp;              // Calculate FF from interpolated setpoint
+    uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
+    uint8_t ff_spike_limit;                 // FF stick extrapolation lookahead period in ms
+    uint8_t ff_smooth_factor;               // Amount of smoothing for interpolated FF steps
+    uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
+    uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
+    uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -245,4 +267,9 @@ float calcHorizonLevelStrength(void);
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
-
+float pidGetDT();
+float pidGetPidFrequency();
+float pidGetFfBoostFactor();
+float pidGetFfSmoothFactor();
+float pidGetSpikeLimitInverse();
+float dynDtermLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

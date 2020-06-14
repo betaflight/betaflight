@@ -46,10 +46,11 @@ extern "C" {
     void crsfDataReceive(uint16_t c);
     uint8_t crsfFrameCRC(void);
     uint8_t crsfFrameStatus(void);
-    uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+    uint16_t crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan);
 
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
+    extern crsfFrame_t crsfChannelDataFrame;
     extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
     uint32_t dummyTimeUs;
@@ -130,7 +131,7 @@ TEST(CrossFireTest, TestCrsfFrameStatus)
 
     const uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
-    EXPECT_EQ(false, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone);
 
     EXPECT_EQ(CRSF_ADDRESS_CRSF_RECEIVER, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
@@ -178,9 +179,10 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     const uint8_t crc = crsfFrameCRC();
     crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
 
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     const uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
-    EXPECT_EQ(false, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone);
 
     EXPECT_EQ(CRSF_ADDRESS_CRSF_RECEIVER, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
@@ -222,11 +224,12 @@ TEST(CrossFireTest, TestCapturedData)
     const crsfRcChannelsFrame_t *framePtr = (const crsfRcChannelsFrame_t*)capturedData;
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
-    EXPECT_EQ(false, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone);
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
-    EXPECT_EQ(false, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
@@ -244,11 +247,12 @@ TEST(CrossFireTest, TestCapturedData)
     ++framePtr;
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
-    EXPECT_EQ(false, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone);
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
-    EXPECT_EQ(false, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
@@ -268,7 +272,7 @@ TEST(CrossFireTest, TestCrsfDataReceive)
     for (unsigned int ii = 0; ii < sizeof(crsfRcChannelsFrame_t); ++ii) {
         crsfDataReceive(*pData++);
     }
-    EXPECT_EQ(true, crsfFrameDone);
+    EXPECT_FALSE(crsfFrameDone); // data is not a valid rc channels frame so don't expect crsfFrameDone to be true
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
@@ -285,8 +289,9 @@ extern "C" {
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint32_t micros(void) {return dummyTimeUs;}
+uint32_t microsISR(void) {return micros();}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};

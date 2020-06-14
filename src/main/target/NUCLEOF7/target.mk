@@ -1,5 +1,5 @@
 F7X6XG_TARGETS += $(TARGET)
-FEATURES       += SDCARD_SPI VCP
+FEATURES       += SDCARD_SPI ONBOARDFLASH VCP
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

@@ -45,6 +45,12 @@ typedef enum {
     OWNER_I2C_SCL,
     OWNER_I2C_SDA,
     OWNER_SDCARD,
+    OWNER_SDIO_CK,
+    OWNER_SDIO_CMD,
+    OWNER_SDIO_D0,
+    OWNER_SDIO_D1,
+    OWNER_SDIO_D2,
+    OWNER_SDIO_D3,
     OWNER_SDCARD_CS,
     OWNER_SDCARD_DETECT,
     OWNER_FLASH_CS,
@@ -97,8 +103,17 @@ typedef enum {
     OWNER_QUADSPI_BK2IO3,
     OWNER_QUADSPI_BK2CS,
     OWNER_BARO_XCLR,
+    OWNER_PULLUP,
+    OWNER_PULLDOWN,
+    OWNER_DSHOT_BITBANG,
+    OWNER_SWD,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
+
+typedef struct resourceOwner_s {
+    resourceOwner_e owner;
+    uint8_t resourceIndex;
+} resourceOwner_t;
 
 extern const char * const ownerNames[OWNER_TOTAL_COUNT];
 

@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/sensor_alignment.h"
 #include "drivers/io_types.h"
 #include "drivers/sensor.h"
 #include "pg/pg.h"
@@ -48,7 +49,7 @@ extern mag_t mag;
 typedef struct compassConfig_s {
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
-    sensor_align_e mag_align;               // mag alignment
+    uint8_t mag_alignment;                  // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     uint8_t mag_bustype;
     uint8_t mag_i2c_device;
@@ -57,6 +58,7 @@ typedef struct compassConfig_s {
     ioTag_t mag_spi_csn;
     ioTag_t interruptTag;
     flightDynamicsTrims_t magZero;
+    sensorAlignment_t mag_customAlignment;
 } compassConfig_t;
 
 PG_DECLARE(compassConfig_t, compassConfig);
@@ -65,3 +67,6 @@ bool compassIsHealthy(void);
 void compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
 void compassPreInit(void);
+void compassStartCalibration(void);
+bool compassIsCalibrationComplete(void);
+

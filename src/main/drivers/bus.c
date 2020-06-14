@@ -27,6 +27,21 @@
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
 
+bool busRawWriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
+{
+#ifdef USE_SPI
+    if (busdev->bustype ==  BUSTYPE_SPI) {
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionSetup(busdev);
+#endif
+        return spiBusWriteRegister(busdev, reg, data);
+    } else
+#endif
+    {
+        return busWriteRegister(busdev, reg, data);
+    }
+}
+
 bool busWriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
 {
 #if !defined(USE_SPI) && !defined(USE_I2C)
@@ -52,6 +67,61 @@ bool busWriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
     }
 }
 
+bool busRawWriteRegisterStart(const busDevice_t *busdev, uint8_t reg, uint8_t data)
+{
+#ifdef USE_SPI
+    if (busdev->bustype ==  BUSTYPE_SPI) {
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionSetup(busdev);
+#endif
+        return spiBusWriteRegister(busdev, reg, data);
+    } else
+#endif
+    {
+        return busWriteRegisterStart(busdev, reg, data);
+    }
+}
+
+bool busWriteRegisterStart(const busDevice_t *busdev, uint8_t reg, uint8_t data)
+{
+#if !defined(USE_SPI) && !defined(USE_I2C)
+    UNUSED(reg);
+    UNUSED(data);
+#endif
+    switch (busdev->bustype) {
+#ifdef USE_SPI
+    case BUSTYPE_SPI:
+#ifdef USE_SPI_TRANSACTION
+        // XXX Watch out fastpath users, if any
+        return spiBusTransactionWriteRegister(busdev, reg & 0x7f, data);
+#else
+        return spiBusWriteRegister(busdev, reg & 0x7f, data);
+#endif
+#endif
+#ifdef USE_I2C
+    case BUSTYPE_I2C:
+        return i2cBusWriteRegisterStart(busdev, reg, data);
+#endif
+    default:
+        return false;
+    }
+}
+
+bool busRawReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+#ifdef USE_SPI
+    if (busdev->bustype ==  BUSTYPE_SPI) {
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionSetup(busdev);
+#endif
+        return spiBusRawReadRegisterBuffer(busdev, reg, data, length);
+    } else
+#endif
+    {
+        return busReadRegisterBuffer(busdev, reg, data, length);
+    }
+}
+
 bool busReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t *data, uint8_t length)
 {
 #if !defined(USE_SPI) && !defined(USE_I2C)
@@ -73,6 +143,73 @@ bool busReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t *data
     case BUSTYPE_I2C:
         return i2cBusReadRegisterBuffer(busdev, reg, data, length);
 #endif
+    default:
+        return false;
+    }
+}
+
+bool busRawReadRegisterBufferStart(const busDevice_t *busdev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+#ifdef USE_SPI
+    if (busdev->bustype ==  BUSTYPE_SPI) {
+#ifdef USE_SPI_TRANSACTION
+        spiBusTransactionSetup(busdev);
+#endif
+        return spiBusRawReadRegisterBuffer(busdev, reg, data, length);
+    } else
+#endif
+    {
+        return busReadRegisterBufferStart(busdev, reg, data, length);
+    }
+}
+
+// Start the I2C read, but do not wait for completion
+bool busReadRegisterBufferStart(const busDevice_t *busdev, uint8_t reg, uint8_t *data, uint8_t length)
+{
+#if !defined(USE_SPI) && !defined(USE_I2C)
+    UNUSED(reg);
+    UNUSED(data);
+    UNUSED(length);
+#endif
+    switch (busdev->bustype) {
+#ifdef USE_SPI
+    case BUSTYPE_SPI:
+        // For SPI allow the transaction to complete
+#ifdef USE_SPI_TRANSACTION
+        // XXX Watch out fastpath users, if any
+        return spiBusTransactionReadRegisterBuffer(busdev, reg | 0x80, data, length);
+#else
+        return spiBusReadRegisterBuffer(busdev, reg | 0x80, data, length);
+#endif
+#endif
+#ifdef USE_I2C
+    case BUSTYPE_I2C:
+        // Initiate the read access
+        return i2cBusReadRegisterBufferStart(busdev, reg, data, length);
+#endif
+    default:
+        return false;
+    }
+}
+
+// Returns true if bus is still busy
+bool busBusy(const busDevice_t *busdev, bool *error)
+{
+#if !defined(USE_I2C)
+    UNUSED(error);
+#endif
+    switch (busdev->bustype) {
+#ifdef USE_SPI
+    case BUSTYPE_SPI:
+        // No waiting on SPI
+        return false;
+#endif
+
+#ifdef USE_I2C
+    case BUSTYPE_I2C:
+        return i2cBusBusy(busdev, error);
+#endif
+
     default:
         return false;
     }

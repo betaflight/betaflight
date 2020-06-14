@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 #include <ctype.h>
 
 #include "platform.h"
@@ -127,12 +128,15 @@ static smartAudioDevice_t saDevicePrev = {
 // XXX Possible compliance problem here. Need LOCK/UNLOCK menu?
 static uint8_t saLockMode = SA_MODE_SET_UNLOCK; // saCms variable?
 
-static uint8_t saSupportedNumPowerLevels = VTX_SMARTAUDIO_POWER_COUNT;
-static uint16_t saSupportedPowerValues[VTX_SMARTAUDIO_POWER_COUNT];
-#if !defined(USE_VTX_TABLE)
+#ifdef USE_VTX_TABLE
+#define VTX_SMARTAUDIO_POWER_COUNT VTX_TABLE_MAX_POWER_LEVELS
+#else // USE_VTX_TABLE
+#define VTX_SMARTAUDIO_POWER_COUNT 4
 static char saSupportedPowerLabels[VTX_SMARTAUDIO_POWER_COUNT + 1][4] = {"---", "25 ", "200", "500", "800"};
 static char *saSupportedPowerLabelPointerArray[VTX_SMARTAUDIO_POWER_COUNT + 1];
-#endif
+#endif // USE_VTX_TABLE
+static uint8_t saSupportedNumPowerLevels = VTX_SMARTAUDIO_POWER_COUNT;
+static uint16_t saSupportedPowerValues[VTX_SMARTAUDIO_POWER_COUNT];
 
 // XXX Should be configurable by user?
 bool saDeferred = true; // saCms variable?
@@ -693,7 +697,7 @@ bool vtxSmartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
         portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR_NOPULL;
 #if defined(USE_VTX_COMMON)
@@ -914,7 +918,7 @@ static void vtxSASetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 
 static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 {
-    if (!(vtxSAIsReady(vtxDevice) && (saDevice.version >= 2))) {
+    if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
         return;
     }
 
@@ -997,16 +1001,6 @@ static bool vtxSAGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
     return true;
 }
 
-static bool vtxSAGetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff)
-{
-    if (!(vtxSAIsReady(vtxDevice) && (saDevice.version >= 2))) {
-        return false;
-    }
-
-    *pOnOff = (saDevice.mode & SA_MODE_GET_PITMODE) ? 1 : 0;
-    return true;
-}
-
 static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
 {
     if (!vtxSAIsReady(vtxDevice)) {
@@ -1021,6 +1015,38 @@ static bool vtxSAGetFreq(const vtxDevice_t *vtxDevice, uint16_t *pFreq)
     return true;
 }
 
+static bool vtxSAGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
+{
+    if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
+        return false;
+    }
+
+    *status = (saDevice.mode & SA_MODE_GET_PITMODE) ? VTX_STATUS_PIT_MODE : 0;
+
+    return true;
+}
+
+static uint8_t vtxSAGetPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *levels, uint16_t *powers)
+{
+    if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
+        return 0;
+    }
+
+    for (uint8_t i = 0; i < saSupportedNumPowerLevels; i++) {
+        levels[i] = saSupportedPowerValues[i];
+        uint16_t power = (uint16_t)pow(10.0,levels[i]/10.0);
+
+        if (levels[i] > 14) {
+            // For powers greater than 25mW round up to a multiple of 50 to match expectations
+            power = 50 * ((power + 25) / 50);
+        }
+
+        powers[i] = power;
+    }
+
+    return saSupportedNumPowerLevels;
+}
+
 static const vtxVTable_t saVTable = {
     .process = vtxSAProcess,
     .getDeviceType = vtxSAGetDeviceType,
@@ -1031,8 +1057,9 @@ static const vtxVTable_t saVTable = {
     .setFrequency = vtxSASetFreq,
     .getBandAndChannel = vtxSAGetBandAndChannel,
     .getPowerIndex = vtxSAGetPowerIndex,
-    .getPitMode = vtxSAGetPitMode,
     .getFrequency = vtxSAGetFreq,
+    .getStatus = vtxSAGetStatus,
+    .getPowerLevels = vtxSAGetPowerLevels,
 };
 #endif // VTX_COMMON
 

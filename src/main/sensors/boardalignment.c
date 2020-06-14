@@ -25,8 +25,10 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/sensor_alignment.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -36,7 +38,7 @@
 #include "boardalignment.h"
 
 static bool standardBoardAlignment = true;     // board orientation correction
-static float boardRotation[3][3];              // matrix
+static fp_rotationMatrix_t boardRotation;
 
 // no template required since defaults are zero
 PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
@@ -59,21 +61,24 @@ void initBoardAlignment(const boardAlignment_t *boardAlignment)
     rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
     rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees  );
 
-    buildRotationMatrix(&rotationAngles, boardRotation);
+    buildRotationMatrix(&rotationAngles, &boardRotation);
 }
 
-static void alignBoard(float *vec)
+static FAST_CODE void alignBoard(float *vec)
 {
-    float x = vec[X];
-    float y = vec[Y];
-    float z = vec[Z];
-
-    vec[X] = (boardRotation[0][X] * x + boardRotation[1][X] * y + boardRotation[2][X] * z);
-    vec[Y] = (boardRotation[0][Y] * x + boardRotation[1][Y] * y + boardRotation[2][Y] * z);
-    vec[Z] = (boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
+    applyRotation(vec, &boardRotation);
 }
 
-FAST_CODE void alignSensors(float *dest, uint8_t rotation)
+FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
+{
+    applyRotation(dest, sensorRotationMatrix);
+
+    if (!standardBoardAlignment) {
+        alignBoard(dest);
+    }
+}
+
+FAST_CODE void alignSensorViaRotation(float *dest, uint8_t rotation)
 {
     const float x = dest[X];
     const float y = dest[Y];
@@ -123,6 +128,7 @@ FAST_CODE void alignSensors(float *dest, uint8_t rotation)
         break;
     }
 
-    if (!standardBoardAlignment)
+    if (!standardBoardAlignment) {
         alignBoard(dest);
+    }
 }

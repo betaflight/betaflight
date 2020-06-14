@@ -23,6 +23,8 @@
 #include "platform.h"
 
 #include "common/axis.h"
+#include "common/maths.h"
+#include "common/sensor_alignment.h"
 #include "drivers/exti.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
@@ -50,27 +52,24 @@ typedef enum {
     GYRO_ICM20608G,
     GYRO_ICM20649,
     GYRO_ICM20689,
+    GYRO_ICM42605,
     GYRO_BMI160,
+    GYRO_BMI270,
     GYRO_FAKE
 } gyroHardware_e;
 
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,
-    GYRO_HARDWARE_LPF_1KHZ_SAMPLE,
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     GYRO_HARDWARE_LPF_EXPERIMENTAL
 #endif
 } gyroHardwareLpf_e;
 
 typedef enum {
-    GYRO_32KHZ_HARDWARE_LPF_NORMAL,
-    GYRO_32KHZ_HARDWARE_LPF_EXPERIMENTAL
-} gyro32khzHardwareLpf;
-
-typedef enum {
     GYRO_RATE_1_kHz,
     GYRO_RATE_1100_Hz,
     GYRO_RATE_3200_Hz,
+    GYRO_RATE_6400_Hz,
     GYRO_RATE_8_kHz,
     GYRO_RATE_9_kHz,
     GYRO_RATE_32_kHz,
@@ -85,12 +84,11 @@ typedef struct gyroDev_s {
     sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
     extiCallbackRec_t exti;
     busDevice_t bus;
-    float scale;                                            // scalefactor
+    float scale;                                             // scalefactor
     float gyroZero[XYZ_AXIS_COUNT];
-    float gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
-    float gyroADCf[XYZ_AXIS_COUNT];
+    float gyroADC[XYZ_AXIS_COUNT];                           // gyro data after calibration and alignment
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];                      // raw data from sensor
     int16_t temperature;
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e gyroAlign;
@@ -103,6 +101,9 @@ typedef struct gyroDev_s {
     ioTag_t mpuIntExtiTag;
     uint8_t gyroHasOverflowProtection;
     gyroHardware_e gyroHardware;
+    fp_rotationMatrix_t rotationMatrix;
+    uint16_t gyroSampleRateHz;
+    uint16_t accSampleRateHz;
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -121,6 +122,7 @@ typedef struct accDev_s {
     bool acc_high_fsr;
     char revisionCode;                                      // a revision code for the sensor, if known
     uint8_t filler[2];
+    fp_rotationMatrix_t rotationMatrix;
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

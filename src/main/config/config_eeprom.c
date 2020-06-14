@@ -32,9 +32,9 @@
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"
 #include "pg/pg.h"
-#include "fc/config.h"
+#include "config/config.h"
 
-#ifdef EEPROM_IN_SDCARD
+#ifdef CONFIG_IN_SDCARD
 #include "io/asyncfatfs/asyncfatfs.h"
 #endif
 
@@ -83,7 +83,7 @@ typedef struct {
     uint32_t word;
 } PG_PACKED packingTest_t;
 
-#if defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH)
 bool loadEEPROMFromExternalFlash(void)
 {
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
@@ -106,7 +106,7 @@ bool loadEEPROMFromExternalFlash(void)
 
     return success;
 }
-#elif defined(EEPROM_IN_SDCARD)
+#elif defined(CONFIG_IN_SDCARD)
 
 enum {
     FILE_STATE_NONE = 0,
@@ -236,7 +236,7 @@ bool loadEEPROMFromSDCard(void)
 }
 #endif
 
-#ifdef EEPROM_IN_FILE
+#ifdef CONFIG_IN_FILE
 void loadEEPROMFromFile(void) {
     FLASH_Unlock(); // load existing config file into eepromData
 }
@@ -252,15 +252,15 @@ void initEEPROM(void)
     STATIC_ASSERT(sizeof(configFooter_t) == 2, footer_size_failed);
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 
-#if defined(EEPROM_IN_FILE)
+#if defined(CONFIG_IN_FILE)
     loadEEPROMFromFile();
-#elif defined(EEPROM_IN_EXTERNAL_FLASH)
+#elif defined(CONFIG_IN_EXTERNAL_FLASH)
     bool eepromLoaded = loadEEPROMFromExternalFlash();
     if (!eepromLoaded) {
         // Flash read failed - just die now
         failureMode(FAILURE_FLASH_READ_FAILED);
     }
-#elif defined(EEPROM_IN_SDCARD)
+#elif defined(CONFIG_IN_SDCARD)
     bool eepromLoaded = loadEEPROMFromSDCard();
     if (!eepromLoaded) {
         // SDCard read failed - just die now
@@ -335,12 +335,12 @@ uint16_t getEEPROMConfigSize(void)
 
 size_t getEEPROMStorageSize(void)
 {
-#if defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH)
 
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
     return FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGetGeometry()->sectorSize;
 #endif
-#ifdef EEPROM_IN_RAM
+#ifdef CONFIG_IN_RAM
     return EEPROM_SIZE;
 #else
     return &__config_end - &__config_start;
@@ -450,11 +450,11 @@ void writeConfigToEEPROM(void)
         if (writeSettingsToEEPROM()) {
             success = true;
 
-#ifdef EEPROM_IN_EXTERNAL_FLASH
+#ifdef CONFIG_IN_EXTERNAL_FLASH
             // copy it back from flash to the in-memory buffer.
             success = loadEEPROMFromExternalFlash();
 #endif
-#ifdef EEPROM_IN_SDCARD
+#ifdef CONFIG_IN_SDCARD
             // copy it back from flash to the in-memory buffer.
             success = loadEEPROMFromSDCard();
 #endif

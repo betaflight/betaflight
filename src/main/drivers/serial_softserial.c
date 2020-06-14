@@ -39,12 +39,10 @@
 
 #include "drivers/nvic.h"
 #include "drivers/io.h"
-#include "timer.h"
+#include "drivers/serial.h"
+#include "drivers/timer.h"
 
-#include "serial.h"
 #include "serial_softserial.h"
-
-#include "fc/config.h" //!!TODO remove this dependency
 
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10
@@ -242,8 +240,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
     ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
 
-    const timerHardware_t *timerRx = timerGetByTag(tagRx);
-    const timerHardware_t *timerTx = timerGetByTag(tagTx);
+    const timerHardware_t *timerTx = timerAllocate(tagTx, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+    const timerHardware_t *timerRx = (tagTx == tagRx) ? timerTx : timerAllocate(tagRx, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
 
     IO_t rxIO = IOGetByTag(tagRx);
     IO_t txIO = IOGetByTag(tagTx);
@@ -269,7 +267,9 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;
-            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            if (!((mode & MODE_TX) && rxIO == txIO)) {
+                IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
+            }
         }
 
         if (mode & MODE_TX) {
@@ -525,7 +525,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         }
 
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_FALLING : ICPOLARITY_RISING, 0);
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         serialEnableCC(self);
 #endif
         self->rxEdge = LEADING;
@@ -550,7 +550,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         self->rxEdge = TRAILING;
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     }
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     serialEnableCC(self);
 #endif
 }

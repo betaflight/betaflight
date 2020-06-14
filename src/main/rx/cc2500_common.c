@@ -28,9 +28,10 @@
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_cc2500.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -43,7 +44,6 @@
 
 #include "cc2500_common.h"
 
-static IO_t gdoPin;
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
 static IO_t txEnPin;
 static IO_t rxLnaEnPin;
@@ -67,11 +67,6 @@ void cc2500setRssiDbm(uint8_t value)
     }
 
     setRssi(rssiDbm << 3, RSSI_SOURCE_RX_PROTOCOL);
-}
-
-bool cc2500getGdo(void)
-{
-    return IORead(gdoPin);
 }
 
 #if defined(USE_RX_CC2500_SPI_PA_LNA) && defined(USE_RX_CC2500_SPI_DIVERSITY)
@@ -122,15 +117,10 @@ bool cc2500SpiInit(void)
         return false;
     }
 
-    // gpio init here
-    gdoPin = IOGetByTag(rxSpiConfig()->extiIoTag);
-
-    if (!gdoPin) {
+    if (!rxSpiExtiConfigured()) {
         return false;
     }
 
-    IOInit(gdoPin, OWNER_RX_SPI_EXTI, 0);
-    IOConfigGPIO(gdoPin, IOCFG_IN_FLOATING);
 #if defined(USE_RX_CC2500_SPI_PA_LNA)
     if (rxCc2500SpiConfig()->lnaEnIoTag) {
         rxLnaEnPin = IOGetByTag(rxCc2500SpiConfig()->lnaEnIoTag);
@@ -170,3 +160,12 @@ bool cc2500SpiInit(void)
     return true;
 }
 #endif
+
+void cc2500ApplyRegisterConfig(const cc2500RegisterConfigElement_t *configArrayPtr, int configSize)
+{
+    const int entryCount = configSize / sizeof(cc2500RegisterConfigElement_t);
+    for (int i = 0; i < entryCount; i++) {
+        cc2500WriteReg(configArrayPtr->registerID, configArrayPtr->registerValue);
+        configArrayPtr++;
+    }
+}

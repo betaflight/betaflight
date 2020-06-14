@@ -37,7 +37,7 @@
 #include "sensors/current.h"
 #include "sensors/voltage.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 voltageMeterSource_e batteryConfig_voltageMeterSource;
 currentMeterSource_e batteryConfig_currentMeterSource;
@@ -51,11 +51,13 @@ int16_t currentSensorADCConfig_offset;
 
 #ifdef USE_VIRTUAL_CURRENT_METER
 int16_t currentSensorVirtualConfig_scale;
-int16_t currentSensorVirtualConfig_offset;
+uint16_t currentSensorVirtualConfig_offset;
 #endif
 
-static long cmsx_Power_onEnter(void)
+static const void *cmsx_Power_onEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     batteryConfig_voltageMeterSource = batteryConfig()->voltageMeterSource;
     batteryConfig_currentMeterSource = batteryConfig()->currentMeterSource;
 
@@ -71,11 +73,12 @@ static long cmsx_Power_onEnter(void)
     currentSensorVirtualConfig_offset = currentSensorVirtualConfig()->offset;
 #endif
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_Power_onExit(const OSD_Entry *self)
+static const void *cmsx_Power_onExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     batteryConfigMutable()->voltageMeterSource = batteryConfig_voltageMeterSource;
@@ -93,26 +96,26 @@ static long cmsx_Power_onExit(const OSD_Entry *self)
     currentSensorVirtualConfigMutable()->offset = currentSensorVirtualConfig_offset;
 #endif
 
-    return 0;
+    return NULL;
 }
 
 static const OSD_Entry cmsx_menuPowerEntries[] =
 {
     { "-- POWER --", OME_Label, NULL, NULL, 0},
 
-    { "V METER", OME_TAB, NULL, &(OSD_TAB_t){ &batteryConfig_voltageMeterSource, VOLTAGE_METER_COUNT - 1, voltageMeterSourceNames }, 0 },
-    { "I METER", OME_TAB, NULL, &(OSD_TAB_t){ &batteryConfig_currentMeterSource, CURRENT_METER_COUNT - 1, currentMeterSourceNames }, 0 },
+    { "V METER", OME_TAB, NULL, &(OSD_TAB_t){ &batteryConfig_voltageMeterSource, VOLTAGE_METER_COUNT - 1, voltageMeterSourceNames }, REBOOT_REQUIRED },
+    { "I METER", OME_TAB, NULL, &(OSD_TAB_t){ &batteryConfig_currentMeterSource, CURRENT_METER_COUNT - 1, currentMeterSourceNames }, REBOOT_REQUIRED },
 
     { "VBAT CLMAX", OME_UINT16, NULL, &(OSD_UINT16_t) { &batteryConfig_vbatmaxcellvoltage, VBAT_CELL_VOTAGE_RANGE_MIN, VBAT_CELL_VOTAGE_RANGE_MAX, 1 }, 0 },
 
     { "VBAT SCALE", OME_UINT8, NULL, &(OSD_UINT8_t){ &voltageSensorADCConfig_vbatscale, VBAT_SCALE_MIN, VBAT_SCALE_MAX, 1 }, 0 },
 
     { "IBAT SCALE", OME_INT16, NULL, &(OSD_INT16_t){ &currentSensorADCConfig_scale, -16000, 16000, 5 }, 0 },
-    { "IBAT OFFSET", OME_INT16, NULL, &(OSD_INT16_t){ &currentSensorADCConfig_offset, -16000, 16000, 5 }, 0 },
+    { "IBAT OFFSET", OME_INT16, NULL, &(OSD_INT16_t){ &currentSensorADCConfig_offset, -32000, 32000, 5 }, 0 },
 
 #ifdef USE_VIRTUAL_CURRENT_METER
     { "IBAT VIRT SCALE", OME_INT16, NULL, &(OSD_INT16_t){ &currentSensorVirtualConfig_scale, -16000, 16000, 5 }, 0 },
-    { "IBAT VIRT OFFSET", OME_INT16, NULL, &(OSD_INT16_t){ &currentSensorVirtualConfig_offset, -16000, 16000, 5 }, 0 },
+    { "IBAT VIRT OFFSET", OME_UINT16, NULL, &(OSD_UINT16_t){ &currentSensorVirtualConfig_offset, 0, 16000, 5 }, 0 },
 #endif
 
     { "BACK", OME_Back, NULL, NULL, 0 },
@@ -126,6 +129,7 @@ CMS_Menu cmsx_menuPower = {
 #endif
     .onEnter = cmsx_Power_onEnter,
     .onExit = cmsx_Power_onExit,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuPowerEntries
 };
 

@@ -54,15 +54,15 @@ typedef enum
     OME_MAX = OME_MENU
 } OSD_MenuElement;
 
-typedef long (*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
+typedef const void *(*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
 
 typedef struct
 {
-    const char * const text;
-    const OSD_MenuElement type;
-    const CMSEntryFuncPtr func;
+    const char * text;
+    OSD_MenuElement type;
+    CMSEntryFuncPtr func;
     void *data;
-    const uint8_t flags;
+    uint8_t flags;
 } __attribute__((packed)) OSD_Entry;
 
 // Bits in flags
@@ -82,10 +82,11 @@ typedef struct
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
-typedef long (*CMSMenuFuncPtr)(void);
+typedef const void *(*CMSMenuFuncPtr)(displayPort_t *pDisp);
 
 // Special return value(s) for function chaining by CMSMenuFuncPtr
-#define MENU_CHAIN_BACK  (-1) // Causes automatic cmsMenuBack
+extern int menuChainBack;
+#define MENU_CHAIN_BACK  (&menuChainBack) // Causes automatic cmsMenuBack
 
 /*
 onExit function is called with self:
@@ -94,7 +95,9 @@ onExit function is called with self:
 (2) NULL if called from menu exit (forced exit at top level).
 */
 
-typedef long (*CMSMenuOnExitPtr)(const OSD_Entry *self);
+typedef const void *(*CMSMenuOnExitPtr)(displayPort_t *pDisp, const OSD_Entry *self);
+
+typedef const void *(*CMSMenuOnDisplayUpdatePtr)(displayPort_t *pDisp, const OSD_Entry *selected);
 
 typedef struct
 {
@@ -105,6 +108,7 @@ typedef struct
 #endif
     const CMSMenuFuncPtr onEnter;
     const CMSMenuOnExitPtr onExit;
+    const CMSMenuOnDisplayUpdatePtr onDisplayUpdate;
     const OSD_Entry *entries;
 } CMS_Menu;
 
@@ -160,7 +164,3 @@ typedef struct
 {
     char *val;
 } OSD_String_t;
-
-// This is a function used in the func member if the type is OME_Submenu.
-
-typedef char * (*CMSMenuOptFuncPtr)(void);

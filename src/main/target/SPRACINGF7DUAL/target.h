@@ -33,7 +33,7 @@
 
 //#define DEBUG_MODE DEBUG_DUAL_GYRO_DIFF
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PC4
 
@@ -145,7 +145,6 @@
 
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
-#define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
 #define RTC6705_SPI_MOSI_PIN                PB0  // Shared with PWM8
 #define RTC6705_CS_PIN                      PB6  // Shared with PWM5

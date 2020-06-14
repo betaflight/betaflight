@@ -49,7 +49,7 @@
 #define IOCFG_IPU            IO_CONFIG(GPIO_Mode_IPU,         GPIO_Speed_2MHz)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_2MHz)
 
-#elif defined(STM32F7) || defined(STM32H7)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 
 //speed is packed inside modebits 5 and 2,
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
@@ -98,7 +98,7 @@
 # warning "Unknown TARGET"
 #endif
 
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 // Expose these for EXTIConfig
 #define IO_CONFIG_GET_MODE(cfg) (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
@@ -122,8 +122,12 @@ bool IOIsFreeOrPreinit(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af);
 #endif
 
 void IOInitGlobal(void);
+
+typedef void (*IOTraverseFuncPtr_t)(IO_t io);
+
+void IOTraversePins(IOTraverseFuncPtr_t func);

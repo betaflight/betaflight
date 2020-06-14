@@ -41,7 +41,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/runtime_config.h"
 
     #include "flight/pid.h"
@@ -313,6 +313,7 @@ gpsSolutionData_t gpsSol;
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
 uint32_t micros(void) {return 0;}
+uint32_t microsISR(void) {return micros();}
 
 bool featureIsEnabled(uint32_t) {return true;}
 
@@ -326,10 +327,10 @@ serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, seria
 void closeSerialPort(serialPort_t *) {}
 bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
-bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
+bool telemetryCheckRxPortShared(const serialPortConfig_t *, SerialRXType) {return true;}
 bool telemetryIsSensorEnabled(sensor_e) {return true;}
 
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}

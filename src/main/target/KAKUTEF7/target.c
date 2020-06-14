@@ -28,7 +28,9 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM1, CH3, PE13, TIM_USE_PPM,   0, 1), // PPM, DMA2_ST6
+    // XXX TIM_USE_CAMERA_CONTROL is added to handle deprecated CAMERA_CONTROL_PIN def in target.h
+    // XXX Target maintainer must confirm intended operation after this change.
+    DEF_TIM(TIM1, CH3, PE13, TIM_USE_PPM|TIM_USE_CAMERA_CONTROL,   0, 1), // PPM, DMA2_ST6
 
     DEF_TIM(TIM3, CH3, PB0,  TIM_USE_MOTOR, 0, 0), // M1 , DMA1_ST7
     DEF_TIM(TIM3, CH4, PB1,  TIM_USE_MOTOR, 0, 0), // M2 , DMA1_ST2

@@ -20,10 +20,11 @@
 
 #pragma once
 
+#define USE_TARGET_CONFIG					 
 #define TARGET_BOARD_IDENTIFIER "FWF7"
 #define USBD_PRODUCT_STRING  "FLYWOOF7DUAL"
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define LED0_PIN                PC15
 
@@ -51,11 +52,8 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_ICM20689
-
-#define GYRO_1_ALIGN                CW270_DEG
-
+#define GYRO_1_ALIGN                CW180_DEG_FLIP
 #define GYRO_2_ALIGN                CW270_DEG 
-
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_2
 
 #define USE_BARO
@@ -140,6 +138,11 @@
 #define VBAT_ADC_PIN                        PC1
 #define RSSI_ADC_PIN                        PC2
 
+#define USE_PINIO
+#define PINIO1_PIN              PB0 // VTX power switcher
+#define PINIO2_PIN              PB9 // 2xCamera switcher
+#define USE_PINIOBOX
+
 #define CURRENT_METER_SCALE_DEFAULT         170
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
@@ -158,7 +161,7 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 9
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) |TIM_N(11) )
+#define USABLE_TIMER_CHANNEL_COUNT 12
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) |TIM_N(8) )
 
 

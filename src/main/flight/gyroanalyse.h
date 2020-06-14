@@ -24,9 +24,6 @@
 
 #include "common/filter.h"
 
-#include "sensors/gyro.h"
-
-// max for F3 targets
 #define FFT_WINDOW_SIZE 32
 
 typedef struct gyroAnalyseState_s {
@@ -49,15 +46,14 @@ typedef struct gyroAnalyseState_s {
     float fftData[FFT_WINDOW_SIZE];
     float rfftData[FFT_WINDOW_SIZE];
 
-    biquadFilter_t detectedFrequencyFilter[XYZ_AXIS_COUNT];
-    uint16_t centerFreq[XYZ_AXIS_COUNT];
-    uint16_t prevCenterFreq[XYZ_AXIS_COUNT];
+    float centerFreq[XYZ_AXIS_COUNT];
+
 } gyroAnalyseState_t;
 
 STATIC_ASSERT(FFT_WINDOW_SIZE <= (uint8_t) -1, window_size_greater_than_underlying_type);
 
-void gyroDataAnalyseStateInit(gyroAnalyseState_t *gyroAnalyse, uint32_t targetLooptime);
-void gyroDataAnalysePush(gyroAnalyseState_t *gyroAnalyse, int axis, float sample);
-void gyroDataAnalyse(gyroAnalyseState_t *gyroAnalyse, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2);
+void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs);
+void gyroDataAnalysePush(gyroAnalyseState_t *state, const int axis, const float sample);
+void gyroDataAnalyse(gyroAnalyseState_t *state, biquadFilter_t *notchFilterDyn, biquadFilter_t *notchFilterDyn2);
 uint16_t getMaxFFT(void);
 void resetMaxFFT(void);

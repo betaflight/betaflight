@@ -8,17 +8,17 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 by Sergey Fetisov <fsenok@gmail.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -390,8 +390,8 @@ void read_boot_sector(const emfat_t *emfat, uint8_t *sect)
     bs->volume_id[1] = 14;
     bs->volume_id[2] = 13;
     bs->volume_id[3] = 8;
-    memcpy(bs->volume_label, "NO NAME     ", 12);
-    memcpy(bs->file_system_type, "FAT32   ", 8);
+    memcpy(bs->volume_label, "NO NAME    ", VOL_LABEL_LEN);
+    memcpy(bs->file_system_type, "FAT32   ", FILE_SYS_TYPE_LENGTH);
     sect[SECT - 2] = 0x55;
     sect[SECT - 1] = 0xAA;
 }
@@ -527,8 +527,9 @@ void fill_entry(dir_entry *entry, const char *name, uint8_t attr, uint32_t clust
         l2 = l2 > FILE_NAME_EXTN_LEN ? FILE_NAME_EXTN_LEN : l2;
     }
 
-    memset(entry->name, ' ', FILE_NAME_SHRT_LEN + FILE_NAME_EXTN_LEN);
+    memset(entry->name, ' ', FILE_NAME_SHRT_LEN);
     memcpy(entry->name, name, l1);
+    memset(entry->extn, ' ', FILE_NAME_EXTN_LEN);
     memcpy(entry->extn, name + dot_pos + 1, l2);
 
     for (i = 0; i < FILE_NAME_SHRT_LEN; i++) {
@@ -728,7 +729,7 @@ uint32_t emfat_cma_time_from_unix(uint32_t tim)
 
     /* Days are what is left over (+1) from all that. */
     ymd[2] = day + 1;
-    
+
     return EMFAT_ENCODE_CMA_TIME(ymd[2], ymd[1], ymd[0], hms[0], hms[1], hms[2]);
 }
 

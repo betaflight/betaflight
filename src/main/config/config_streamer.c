@@ -27,8 +27,8 @@
 
 #include "config/config_streamer.h"
 
-#if !defined(EEPROM_IN_FLASH)
-#if defined(EEPROM_IN_RAM) && defined(PERSISTENT)
+#if !defined(CONFIG_IN_FLASH)
+#if defined(CONFIG_IN_RAM) && defined(PERSISTENT)
 PERSISTENT uint8_t eepromData[EEPROM_SIZE];
 #else
 uint8_t eepromData[EEPROM_SIZE];
@@ -36,7 +36,7 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 
 
-#if defined(STM32H750xx) && !(defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD))
+#if defined(STM32H750xx) && !(defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD))
 #error "STM32750xx only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
 #endif
 // @todo this is not strictly correct for F4/F7, where sector sizes are variable
@@ -72,6 +72,9 @@ uint8_t eepromData[EEPROM_SIZE];
 // H7
 # elif defined(STM32H743xx) || defined(STM32H750xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+// G4
+# elif defined(STM32G4)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x800) // 2K page
 // SIMULATOR
 # elif defined(SIMULATOR_BUILD)
 #  define FLASH_PAGE_SIZE                 (0x400)
@@ -91,10 +94,10 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->address = base;
     c->size = size;
     if (!c->unlocked) {
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
         // NOP
-#elif defined(EEPROM_IN_FLASH) || defined(EEPROM_IN_FILE)
-#if defined(STM32F7) || defined(STM32H7)
+#elif defined(CONFIG_IN_FLASH) || defined(CONFIG_IN_FILE)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Unlock();
 #else
         FLASH_Unlock();
@@ -103,9 +106,9 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
         c->unlocked = true;
     }
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_FILE) || defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH)
     // NOP
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 #if defined(STM32F10X)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
 #elif defined(STM32F303)
@@ -116,6 +119,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     // NOP
 #elif defined(STM32H7)
     // NOP
+#elif defined(STM32G4)
+    // NOP
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -125,9 +130,9 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(EEPROM_IN_RAM) || defined(EEPROM_IN_EXTERNAL_FLASH) || defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
 // No flash sector method required.
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
@@ -267,41 +272,42 @@ static uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx)
+#elif defined(STM32H743xx) || defined(STM32G4)
 /*
-There are two banks of 8 of 128K sectors (up to 2MB flash)
+MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
+(Devices with non-contiguous flash layout is not currently useful anyways.)
 
-Bank 1
-Sector 0    0x08000000 - 0x0801FFFF 128 Kbytes
-Sector 1    0x08020000 - 0x0803FFFF 128 Kbytes
-Sector 2    0x08040000 - 0x0805FFFF 128 Kbytes
-Sector 3    0x08060000 - 0x0807FFFF 128 Kbytes
-Sector 4    0x08080000 - 0x0809FFFF 128 Kbytes
-Sector 5    0x080A0000 - 0x080BFFFF 128 Kbytes
-Sector 6    0x080C0000 - 0x080DFFFF 128 Kbytes
-Sector 7    0x080E0000 - 0x080FFFFF 128 Kbytes
+H743
+2 bank * 8 sector/bank * 128K/sector (2MB)
+Bank 1 0x08000000 - 0x080FFFFF 128KB * 8
+Bank 2 0x08100000 - 0x081FFFFF 128KB * 8
 
-Bank 2
-Sector 0    0x08100000 - 0x0811FFFF 128 Kbytes
-Sector 1    0x08120000 - 0x0813FFFF 128 Kbytes
-Sector 2    0x08140000 - 0x0815FFFF 128 Kbytes
-Sector 3    0x08160000 - 0x0817FFFF 128 Kbytes
-Sector 4    0x08180000 - 0x0819FFFF 128 Kbytes
-Sector 5    0x081A0000 - 0x081BFFFF 128 Kbytes
-Sector 6    0x081C0000 - 0x081DFFFF 128 Kbytes
-Sector 7    0x081E0000 - 0x081FFFFF 128 Kbytes
+G473/474 in dual bank mode
+2 bank * 128 sector/bank * 2KB/sector (512KB)
+Bank 1 0x08000000 - 0x0803FFFF 2KB * 128
+Bank 2 0x08040000 - 0x0807FFFF 2KB * 128
 
+Note that FLASH_BANK_SIZE constant used in the following code changes depending on
+bank operation mode. The code assumes dual bank operation, in which case the
+FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 */
 
-static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
-{
-    uint32_t start = (uint32_t)&__config_start;
+#if defined(STM32H743xx)
+#define FLASH_PAGE_PER_BANK 8
+#elif defined(STM32G4)
+#define FLASH_PAGE_PER_BANK 128
+// These are not defined in CMSIS like H7
+#define FLASH_BANK1_BASE FLASH_BASE
+#define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
+#endif
 
-    if (start >= FLASH_BANK1_BASE && start < FLASH_BANK2_BASE) {
+static void getFLASHSectorForEEPROM(uint32_t address, uint32_t *bank, uint32_t *sector)
+{
+    if (address >= FLASH_BANK1_BASE && address < FLASH_BANK2_BASE) {
         *bank = FLASH_BANK_1;
-    } else if (start >= FLASH_BANK2_BASE && start < FLASH_BANK2_BASE + 0x100000) {
+    } else if (address >= FLASH_BANK2_BASE && address < FLASH_BANK2_BASE + FLASH_BANK_SIZE) {
         *bank = FLASH_BANK_2;
-        start -= 0x100000;
+        address -= FLASH_BANK_SIZE;
     } else {
         // Not good
         while (1) {
@@ -309,22 +315,8 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
         }
     }
 
-    if (start <= 0x0801FFFF)
-        *sector = FLASH_SECTOR_0;
-    else if (start <= 0x0803FFFF)
-        *sector = FLASH_SECTOR_1;
-    else if (start <= 0x0805FFFF)
-        *sector = FLASH_SECTOR_2;
-    else if (start <= 0x0807FFFF)
-        *sector = FLASH_SECTOR_3;
-    else if (start <= 0x0809FFFF)
-        *sector = FLASH_SECTOR_4;
-    else if (start <= 0x080BFFFF)
-        *sector = FLASH_SECTOR_5;
-    else if (start <= 0x080DFFFF)
-        *sector = FLASH_SECTOR_6;
-    else if (start <= 0x080FFFFF)
-        *sector = FLASH_SECTOR_7;
+    address -= FLASH_BANK1_BASE;
+    *sector = address / FLASH_PAGE_SIZE;
 }
 #elif defined(STM32H750xx)
 /*
@@ -352,7 +344,7 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
     }
 }
 #endif
-#endif
+#endif // CONFIG_IN_FLASH
 
 // FIXME the return values are currently magic numbers
 static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t *buffer)
@@ -360,7 +352,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (c->err != 0) {
         return c->err;
     }
-#if defined(EEPROM_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH)
 
     uint32_t dataOffset = (uint32_t)(c->address - (uintptr_t)&eepromData[0]);
 
@@ -395,7 +387,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     flashPageProgramContinue((uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE);
 
-#elif defined(EEPROM_IN_RAM) || defined(EEPROM_IN_SDCARD)
+#elif defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD)
     if (c->address == (uintptr_t)&eepromData[0]) {
         memset(eepromData, 0, sizeof(eepromData));
     }
@@ -409,7 +401,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
       *dest_addr++ = *src_addr++;
     } while (--row_index != 0);
 
-#elif defined(EEPROM_IN_FILE)
+#elif defined(CONFIG_IN_FILE)
 
     if (c->address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_ErasePage(c->address);
@@ -422,7 +414,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
         return -2;
     }
 
-#elif defined(EEPROM_IN_FLASH)
+#elif defined(CONFIG_IN_FLASH)
 
 #if defined(STM32H7)
     if (c->address % FLASH_PAGE_SIZE == 0) {
@@ -431,7 +423,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
             .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
             .NbSectors     = 1
         };
-        getFLASHSectorForEEPROM(&EraseInitStruct.Banks, &EraseInitStruct.Sector);
+        getFLASHSectorForEEPROM(c->address, &EraseInitStruct.Banks, &EraseInitStruct.Sector);
         uint32_t SECTORError;
         const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
         if (status != HAL_OK) {
@@ -466,7 +458,26 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (status != HAL_OK) {
         return -2;
     }
-#else // !STM32H7 && !STM32F7
+#elif defined(STM32G4)
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+
+        FLASH_EraseInitTypeDef EraseInitStruct = {
+            .TypeErase     = FLASH_TYPEERASE_PAGES,
+            .NbPages       = 1
+        };
+        getFLASHSectorForEEPROM(c->address, &EraseInitStruct.Banks, &EraseInitStruct.Page);
+        uint32_t SECTORError;
+        const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != HAL_OK) {
+            return -1;
+        }
+    }
+
+    const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, c->address, (uint64_t)*buffer);
+    if (status != HAL_OK) {
+        return -2;
+    }
+#else // !STM32H7 && !STM32F7 && !STM32G4
     if (c->address % FLASH_PAGE_SIZE == 0) {
 #if defined(STM32F4)
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
@@ -518,18 +529,18 @@ int config_streamer_flush(config_streamer_t *c)
 int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
-#if defined(EEPROM_IN_SDCARD)
+#if defined(CONFIG_IN_SDCARD)
         bool saveEEPROMToSDCard(void); // XXX forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToSDCard();
         // TODO overwrite the data in the file on the SD card.
-#elif defined(EEPROM_IN_EXTERNAL_FLASH)
+#elif defined(CONFIG_IN_EXTERNAL_FLASH)
         flashFlush();
-#elif defined(EEPROM_IN_RAM)
+#elif defined(CONFIG_IN_RAM)
         // NOP
-#elif defined(EEPROM_IN_FILE)
+#elif defined(CONFIG_IN_FILE)
         FLASH_Lock();
-#elif defined(EEPROM_IN_FLASH)
-#if defined(STM32F7) || defined(STM32H7)
+#elif defined(CONFIG_IN_FLASH)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Lock();
 #else
         FLASH_Lock();

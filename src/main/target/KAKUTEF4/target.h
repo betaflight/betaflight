@@ -44,8 +44,6 @@
 #define USE_BEEPER
 
 #if defined(FLYWOOF405)
-//define camera control
-#define CAMERA_CONTROL_PIN      PA9
 #define BEEPER_PIN              PC13
 #else
 #define BEEPER_PIN              PC9
@@ -149,7 +147,11 @@
 #define USE_ESCSERIAL
 
 #if defined(FLYWOOF405)
-#define ESCSERIAL_TIMER_TX_PIN  PB8 
+#define ESCSERIAL_TIMER_TX_PIN  PB8
+#define USE_PINIO
+#define PINIO1_PIN              PB12 // VTX power switcher
+#define PINIO2_PIN              PB13 // 2xCamera switcher
+#define USE_PINIOBOX
 #else
 #define ESCSERIAL_TIMER_TX_PIN  PC7  // (HARDARE=0,PPM)
 #endif	
@@ -191,7 +193,7 @@
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) |  TIM_N(8))
 #elif defined(FLYWOOF405)
 #define USABLE_TIMER_CHANNEL_COUNT 11
-#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4)|  TIM_N(8))
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3)|  TIM_N(4)|  TIM_N(8)|  TIM_N(10))
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5)  |  TIM_N(8))

@@ -294,6 +294,7 @@ const spiHardware_t spiHardware[] = {
         .mosiPins = {
             { DEFIO_TAG_E(PA7), GPIO_AF5_SPI1 },
             { DEFIO_TAG_E(PB5), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PD7), GPIO_AF5_SPI1 },
         },
         .rcc = RCC_APB2(SPI1),
         //.dmaIrqHandler = DMA2_ST3_HANDLER,
@@ -358,7 +359,21 @@ const spiHardware_t spiHardware[] = {
         .rcc = RCC_APB2(SPI4),
         //.dmaIrqHandler = DMA2_ST1_HANDLER,
     },
-    // SPI5 is not available for LPQFP-100 or 144 package
+    {
+        .device = SPIDEV_5,
+        .reg = SPI5,
+        .sckPins = {
+            { DEFIO_TAG_E(PF7), GPIO_AF5_SPI5 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PF8), GPIO_AF5_SPI5 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PF11), GPIO_AF5_SPI5 },
+        },
+        .rcc = RCC_APB2(SPI5),
+        //.dmaIrqHandler = DMA2_ST1_HANDLER,
+    },
     {
         .device = SPIDEV_6,
         .reg = SPI6,
@@ -378,6 +393,61 @@ const spiHardware_t spiHardware[] = {
         //.dmaIrqHandler = DMA2_ST1_HANDLER,
     },
 #endif
+#ifdef STM32G4
+    {
+        .device = SPIDEV_1,
+        .reg = SPI1,
+        .sckPins = {
+            { DEFIO_TAG_E(PA5), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PB3), GPIO_AF5_SPI1 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA6), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PB4), GPIO_AF5_SPI1 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA7), GPIO_AF5_SPI1 },
+            { DEFIO_TAG_E(PB5), GPIO_AF5_SPI1 },
+        },
+        .rcc = RCC_APB2(SPI1),
+        //.dmaIrqHandler = DMA2_ST3_HANDLER,
+    },
+    {
+        .device = SPIDEV_2,
+        .reg = SPI2,
+        .sckPins = {
+            { DEFIO_TAG_E(PB13), GPIO_AF5_SPI2 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PA10), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PB14), GPIO_AF5_SPI2 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PA11), GPIO_AF5_SPI2 },
+            { DEFIO_TAG_E(PB15), GPIO_AF5_SPI2 },
+        },
+        .rcc = RCC_APB11(SPI2),
+        //.dmaIrqHandler = DMA1_ST4_HANDLER,
+    },
+    {
+        .device = SPIDEV_3,
+        .reg = SPI3,
+        .sckPins = {
+            { DEFIO_TAG_E(PB3), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PC10), GPIO_AF6_SPI3 },
+        },
+        .misoPins = {
+            { DEFIO_TAG_E(PB4), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PC11), GPIO_AF6_SPI3 },
+        },
+        .mosiPins = {
+            { DEFIO_TAG_E(PB5), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PC12), GPIO_AF6_SPI3 },
+        },
+        .rcc = RCC_APB11(SPI3),
+        //.dmaIrqHandler = DMA1_ST7_HANDLER,
+    },
+#endif
 };
 
 void spiPinConfigure(const spiPinConfig_t *pConfig)
@@ -395,19 +465,19 @@ void spiPinConfigure(const spiPinConfig_t *pConfig)
         for (int pindex = 0 ; pindex < MAX_SPI_PIN_SEL ; pindex++) {
             if (pConfig[device].ioTagSck == hw->sckPins[pindex].pin) {
                 pDev->sck = hw->sckPins[pindex].pin;
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
                 pDev->sckAF = hw->sckPins[pindex].af;
 #endif
             }
             if (pConfig[device].ioTagMiso == hw->misoPins[pindex].pin) {
                 pDev->miso = hw->misoPins[pindex].pin;
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
                 pDev->misoAF = hw->misoPins[pindex].af;
 #endif
             }
             if (pConfig[device].ioTagMosi == hw->mosiPins[pindex].pin) {
                 pDev->mosi = hw->mosiPins[pindex].pin;
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
                 pDev->mosiAF = hw->mosiPins[pindex].af;
 #endif
             }
@@ -415,7 +485,7 @@ void spiPinConfigure(const spiPinConfig_t *pConfig)
 
         if (pDev->sck && pDev->miso && pDev->mosi) {
             pDev->dev = hw->reg;
-#if !(defined(STM32F7) || defined(STM32H7))
+#if !(defined(STM32F7) || defined(STM32H7) || defined(STM32G4))
             pDev->af = hw->af;
 #endif
             pDev->rcc = hw->rcc;

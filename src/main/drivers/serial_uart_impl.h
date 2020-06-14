@@ -67,6 +67,15 @@
 #ifndef UART_TX_BUFFER_SIZE
 #define UART_TX_BUFFER_SIZE     256
 #endif
+#elif defined(STM32G4)
+#define UARTDEV_COUNT_MAX 9  // UART1~5 + UART9 (Implemented with LPUART1)
+#define UARTHARDWARE_MAX_PINS 3
+#ifndef UART_RX_BUFFER_SIZE
+#define UART_RX_BUFFER_SIZE     128
+#endif
+#ifndef UART_TX_BUFFER_SIZE
+#define UART_TX_BUFFER_SIZE     256
+#endif
 #else
 #error unknown MCU family
 #endif
@@ -121,11 +130,17 @@
 #define UARTDEV_COUNT_8 0
 #endif
 
-#define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8)
+#ifdef USE_UART9
+#define UARTDEV_COUNT_9 1
+#else
+#define UARTDEV_COUNT_9 0
+#endif
+
+#define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8 + UARTDEV_COUNT_9)
 
 typedef struct uartPinDef_s {
     ioTag_t pin;
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint8_t af;
 #endif
 } uartPinDef_t;
@@ -135,38 +150,24 @@ typedef struct uartHardware_s {
     USART_TypeDef* reg;
 
 #ifdef USE_DMA
-#if defined(STM32F4) || defined(STM32F7)
-    uint32_t DMAChannel;
-    DMA_Stream_TypeDef *txDMAStream;
-    DMA_Stream_TypeDef *rxDMAStream;
-#elif defined(STM32H7)
-    // DMAMUX input from peripherals (DMA_REQUEST_xxx); RM0433 Table 110.
-    uint8_t txDMARequest;
-    uint8_t rxDMARequest;
-    DMA_Stream_TypeDef *txDMAStream;
-    DMA_Stream_TypeDef *rxDMAStream;
-#elif defined(STM32F1) || defined(STM32F3)
-    DMA_Channel_TypeDef *txDMAChannel;
-    DMA_Channel_TypeDef *rxDMAChannel;
-#endif
+    dmaResource_t *txDMAResource;
+    dmaResource_t *rxDMAResource;
+    // For H7 and G4, {tx|rx}DMAChannel are DMAMUX input index for  peripherals (DMA_REQUEST_xxx); H7:RM0433 Table 110, G4:RM0440 Table 80.
+    // For F4 and F7, these are 32-bit channel identifiers (DMA_CHANNEL_x).
+    uint32_t txDMAChannel;
+    uint32_t rxDMAChannel;
 #endif // USE_DMA
 
     uartPinDef_t rxPins[UARTHARDWARE_MAX_PINS];
     uartPinDef_t txPins[UARTHARDWARE_MAX_PINS];
 
-#if defined(STM32F7) || defined(STM32H7)
-    uint32_t rcc_ahb1;
-    rccPeriphTag_t rcc_apb2;
-    rccPeriphTag_t rcc_apb1;
-#else
     rccPeriphTag_t rcc;
-#endif
 
 #if !defined(STM32F7)
     uint8_t af;
 #endif
 
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint8_t txIrq;
     uint8_t rxIrq;
 #else
@@ -175,12 +176,10 @@ typedef struct uartHardware_s {
     uint8_t txPriority;
     uint8_t rxPriority;
 
-#ifdef STM32H7
     volatile uint8_t *txBuffer;
     volatile uint8_t *rxBuffer;
     uint16_t txBufferSize;
     uint16_t rxBufferSize;
-#endif
 } uartHardware_t;
 
 extern const uartHardware_t uartHardware[];
@@ -193,14 +192,8 @@ typedef struct uartDevice_s {
     const uartHardware_t *hardware;
     uartPinDef_t rx;
     uartPinDef_t tx;
-#ifdef STM32H7
-    // For H7, buffers with possible DMA access is placed in D2 SRAM.
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-#else
-    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
-    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
-#endif
 } uartDevice_t;
 
 extern uartDevice_t *uartDevmap[];
@@ -214,3 +207,59 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 void uartIrqHandler(uartPort_t *s);
 
 void uartReconfigure(uartPort_t *uartPort);
+
+void uartConfigureDma(uartDevice_t *uartdev);
+
+void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
+
+#if defined(STM32F3) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#define UART_REG_RXD(base) ((base)->RDR)
+#define UART_REG_TXD(base) ((base)->TDR)
+#elif defined(STM32F1) || defined(STM32F4)
+#define UART_REG_RXD(base) ((base)->DR)
+#define UART_REG_TXD(base) ((base)->DR)
+#endif
+
+#define UART_BUFFER(type, n, rxtx) type volatile uint8_t uart ## n ## rxtx ## xBuffer[UART_ ## rxtx ## X_BUFFER_SIZE]
+
+#define UART_BUFFERS_EXTERN(n) \
+    UART_BUFFER(extern, n, R); \
+    UART_BUFFER(extern, n, T); struct dummy_s
+
+#ifdef USE_UART1
+UART_BUFFERS_EXTERN(1);
+#endif
+
+#ifdef USE_UART2
+UART_BUFFERS_EXTERN(2);
+#endif
+
+#ifdef USE_UART3
+UART_BUFFERS_EXTERN(3);
+#endif
+
+#ifdef USE_UART4
+UART_BUFFERS_EXTERN(4);
+#endif
+
+#ifdef USE_UART5
+UART_BUFFERS_EXTERN(5);
+#endif
+
+#ifdef USE_UART6
+UART_BUFFERS_EXTERN(6);
+#endif
+
+#ifdef USE_UART7
+UART_BUFFERS_EXTERN(7);
+#endif
+
+#ifdef USE_UART8
+UART_BUFFERS_EXTERN(8);
+#endif
+
+#ifdef USE_UART9
+UART_BUFFERS_EXTERN(9);
+#endif
+
+#undef UART_BUFFERS_EXTERN

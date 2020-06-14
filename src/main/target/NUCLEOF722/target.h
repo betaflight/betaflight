@@ -24,6 +24,8 @@
 
 #define USBD_PRODUCT_STRING "NucleoF722"
 
+#define USE_DEBUG_PIN
+
 //#define USE_ESC_TELEMETRY
 
 #define LED0_PIN   PB7  // blue

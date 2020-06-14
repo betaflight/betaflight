@@ -64,6 +64,8 @@
 #include "stm32h7xx.h"
 #include "drivers/system.h"
 #include "platform.h"
+#include "string.h"
+#include "common/utils.h"
 
 #include "build/debug.h"
 
@@ -181,31 +183,55 @@ void HandleStuckSysTick(void)
     }
 }
 
-// HSE clock configuration taken from
+typedef struct pllConfig_s {
+    uint16_t clockMhz;
+    uint8_t m;
+    uint16_t n;
+    uint8_t p;
+    uint8_t q;
+    uint8_t r;
+    uint32_t vos;
+} pllConfig_t;
+
+/*
+   PLL1 configuration for different silicon revisions.
+
+   Note for future overclocking support.
+
+   - Rev.Y (and Rev.X), nominal max at 400MHz, runs stably overclocked to 480MHz.
+   - Rev.V, nominal max at 480MHz, runs stably at 540MHz, but not to 600MHz (VCO probably out of operating range)
+
+   - A possible frequency table would look something like this, and a revision
+     check logic would place a cap for Rev.Y and V.
+
+        400 420 440 460 (Rev.Y & V ends here) 480 500 520 540
+ */
+
+// 400MHz for Rev.Y (and Rev.X)
+pllConfig_t pll1ConfigRevY = {
+    .clockMhz = 400,
+    .m = 4,
+    .n = 400,
+    .p = 2,
+    .q = 8,
+    .r = 5,
+    .vos = PWR_REGULATOR_VOLTAGE_SCALE1
+};
+
+// 480MHz for Rev.V
+pllConfig_t pll1ConfigRevV = {
+    .clockMhz = 480,
+    .m = 4,
+    .n = 480,
+    .p = 2,
+    .q = 8,
+    .r = 5,
+    .vos = PWR_REGULATOR_VOLTAGE_SCALE0
+};
+
+// HSE clock configuration, originally taken from
 // STM32Cube_FW_H7_V1.3.0/Projects/STM32H743ZI-Nucleo/Examples/RCC/RCC_ClockConfig/Src/main.c
 
-/**
-  * @brief  Switch the PLL source from CSI to HSE , and select the PLL as SYSCLK
-  *         source.
-  *            System Clock source            = PLL (HSE BYPASS)
-  *            SYSCLK(Hz)                     = 400000000 (CPU Clock)
-  *            HCLK(Hz)                       = 200000000 (AXI and AHBs Clock)
-  *            AHB Prescaler                  = 2
-  *            D1 APB3 Prescaler              = 2 (APB3 Clock  100MHz)
-  *            D2 APB1 Prescaler              = 2 (APB1 Clock  100MHz)
-  *            D2 APB2 Prescaler              = 2 (APB2 Clock  100MHz)
-  *            D3 APB4 Prescaler              = 2 (APB4 Clock  100MHz)
-  *            HSE Frequency(Hz)              = 8000000
-  *            PLL_M                          = 4
-  *            PLL_N                          = 400
-  *            PLL_P                          = 2
-  *            PLL_Q                          = 5
-  *            PLL_R                          = 8
-  *            VDD(V)                         = 3.3
-  *            Flash Latency(WS)              = 4
-  * @param  None
-  * @retval None
-  */
 static void SystemClockHSE_Config(void)
 {
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -224,6 +250,18 @@ static void SystemClockHSE_Config(void)
         Error_Handler();
     }
 #endif
+
+    pllConfig_t *pll1Config = (HAL_GetREVID() == REV_ID_V) ? &pll1ConfigRevV : &pll1ConfigRevY;
+
+    // Configure voltage scale.
+    // It has been pre-configured at PWR_REGULATOR_VOLTAGE_SCALE1,
+    // and it may stay or overridden by PWR_REGULATOR_VOLTAGE_SCALE0 depending on the clock config.
+
+    __HAL_PWR_VOLTAGESCALING_CONFIG(pll1Config->vos);
+
+    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
+        // Empty
+    }
 
     /* -2- Enable HSE  Oscillator, select it as PLL source and finally activate the PLL */
 
@@ -252,11 +290,11 @@ static void SystemClockHSE_Config(void)
 
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLM = 4;
-    RCC_OscInitStruct.PLL.PLLN = 400; // 8M / 4 * 400 = 800 (PLL1N output)
-    RCC_OscInitStruct.PLL.PLLP = 2;  // 400
-    RCC_OscInitStruct.PLL.PLLQ = 8;  // 100, SPI123
-    RCC_OscInitStruct.PLL.PLLR = 5;  // 160, no particular usage yet. (See note on PLL2/3 below)
+    RCC_OscInitStruct.PLL.PLLM = pll1Config->m;
+    RCC_OscInitStruct.PLL.PLLN = pll1Config->n;
+    RCC_OscInitStruct.PLL.PLLP = pll1Config->p;
+    RCC_OscInitStruct.PLL.PLLQ = pll1Config->q;
+    RCC_OscInitStruct.PLL.PLLR = pll1Config->r;
 
     RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
     RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
@@ -309,6 +347,9 @@ static void SystemClockHSE_Config(void)
 
     // For HCLK=200MHz with VOS1 range, ST recommended flash latency is 2WS.
     // RM0433 (Rev.5) Table 12. FLASH recommended number of wait states and programming delay
+    //
+    // For higher HCLK frequency, VOS0 is available on RevV silicons, with FLASH wait states 4WS
+    // AN5312 (Rev.1) Section 1.2.1 Voltage scaling Table.1
 
     if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
         /* Initialization Error */
@@ -327,28 +368,31 @@ static void SystemClockHSE_Config(void)
 
 void SystemClock_Config(void)
 {
+    // Configure power supply
 
-    /**Supply configuration update enable
-    */
-    MODIFY_REG(PWR->CR3, PWR_CR3_SCUEN, 0);
+    HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
-    /**Configure the main internal regulator output voltage
-    */
+    // Pre-configure voltage scale to PWR_REGULATOR_VOLTAGE_SCALE1.
+    // SystemClockHSE_Config may configure PWR_REGULATOR_VOLTAGE_SCALE0.
+
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-    while ((PWR->D3CR & (PWR_D3CR_VOSRDY)) != PWR_D3CR_VOSRDY)
-    {
+    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
+        // Empty
     }
-
 
     SystemClockHSE_Config();
 
     /*activate CSI clock mondatory for I/O Compensation Cell*/
+
     __HAL_RCC_CSI_ENABLE() ;
 
     /* Enable SYSCFG clock mondatory for I/O Compensation Cell */
+
     __HAL_RCC_SYSCFG_CLK_ENABLE() ;
+
     /* Enables the I/O Compensation Cell */
+
     HAL_EnableCompensationCell();
 
     HandleStuckSysTick();
@@ -388,11 +432,7 @@ void SystemClock_Config(void)
     __HAL_RCC_CRS_ENABLE_IT(RCC_CRS_IT_SYNCOK|RCC_CRS_IT_SYNCWARN|RCC_CRS_IT_ESYNC|RCC_CRS_IT_ERR);
 #endif
 
-#if 0
-    // XXX This is currently done in serial_uart_hal.c, but should be done here,
-    // XXX where all clock distribution can be centrally managed.
-
-    // Configure peripheral clocks for UARTs
+    // Configure UART peripheral clock sources
     //
     // Possible sources:
     //   D2PCLK1 (pclk1 for APB1 = USART234578)
@@ -406,9 +446,8 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2;
     RCC_PeriphClkInit.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
-#endif
 
-    // Configure SPI clock sources
+    // Configure SPI peripheral clock sources
     //
     // Possible sources for SPI123:
     //   PLL (pll1_q_ck)
@@ -437,6 +476,21 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
     RCC_PeriphClkInit.Spi45ClockSelection = RCC_SPI45CLKSOURCE_D2PCLK1;
     RCC_PeriphClkInit.Spi6ClockSelection = RCC_SPI6CLKSOURCE_D3PCLK1;
+    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+
+    // Configure I2C peripheral clock sources
+    //
+    // Current source for I2C123:
+    //   D2PCLK1 (rcc_pclk1 = APB1 peripheral clock)
+    //
+    // Current source for I2C4:
+    //   D3PCLK1 (rcc_pclk4 = APB4 peripheral clock)
+    //
+    // Note that peripheral clock determination in bus_i2c_hal_init.c must be modified when the sources are modified.
+
+    RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C123|RCC_PERIPHCLK_I2C4;
+    RCC_PeriphClkInit.I2c123ClockSelection = RCC_I2C123CLKSOURCE_D2PCLK1;
+    RCC_PeriphClkInit.I2c4ClockSelection = RCC_I2C4CLKSOURCE_D3PCLK1;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
 
 #ifdef USE_SDCARD_SDIO
@@ -508,96 +562,15 @@ void CRS_IRQHandler(void)
 }
 #endif
 
-void MPU_Config()
-{
-    MPU_Region_InitTypeDef MPU_InitStruct;
+#include "build/debug.h"
 
-    HAL_MPU_Disable();
+void systemCheckResetReason(void);
 
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-
-    // XXX FIXME Entire D2 SRAM1 region is setup as non-bufferable (write-through) and non-cachable.
-    // Ideally, DMA buffer region should be prepared based on read and write activities,
-    // and DMA buffers should be assigned to different region based on read/write activity on
-    // the buffer.
-    // XXX FIXME Further more, sizes of DMA buffer regions should tracked and size set as appropriate
-    // using _<REGION>_start__ and _<REGION>_end__.
-
-    MPU_InitStruct.BaseAddress = 0x30000000;
-    MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
-
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-
-    // As described in p.10 of AN4838.
-
-    // Write through & no-cache config
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-
-    MPU_InitStruct.Number = MPU_REGION_NUMBER1;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
-
-#ifdef USE_SDCARD_SDIO
-    // The Base Address 0x24000000 is the SRAM1 accessible by the SDIO internal DMA.
-    MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-    MPU_InitStruct.BaseAddress = 0x24000000;
-#if defined(USE_EXST)
-    MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
-#else
-    MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
-#endif
-    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-    MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-    MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-    MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-    MPU_InitStruct.SubRegionDisable = 0x00;
-    MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-    HAL_MPU_ConfigRegion(&MPU_InitStruct);
-#endif
-
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-}
-
-/**
-  * @brief  Setup the microcontroller system
-  *         Initialize the FPU setting, vector table location and External memory
-  *         configuration.
-  * @param  None
-  * @retval None
-  */
-void resetMPU(void)
-{
-    MPU_Region_InitTypeDef MPU_InitStruct;
-
-    /* Disable the MPU */
-    HAL_MPU_Disable();
-
-#if !defined(USE_EXST)
-    uint8_t highestRegion = MPU_REGION_NUMBER15;
-#else
-    uint8_t highestRegion = MPU_REGION_NUMBER7;// currently 8-15 reserved by bootloader.  Bootloader may write-protect the firmware region, this firmware can examine and undo this at it's peril.
-#endif
-
-
-    // disable all existing regions
-    for (uint8_t region = MPU_REGION_NUMBER0; region <= highestRegion; region++) {
-        MPU_InitStruct.Enable = MPU_REGION_DISABLE;
-        MPU_InitStruct.Number = region;
-        HAL_MPU_ConfigRegion(&MPU_InitStruct);
-    }
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-}
+#include "drivers/memprot.h"
 
 void SystemInit (void)
 {
-    resetMPU();
+    memProtReset();
 
     initialiseMemorySections();
 
@@ -692,7 +665,7 @@ void SystemInit (void)
 
     // Configure MPU
 
-    MPU_Config();
+    memProtConfigure(mpuRegions, mpuRegionCount);
 
     // Enable CPU L1-Cache
     SCB_EnableICache();

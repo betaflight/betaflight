@@ -42,17 +42,14 @@
 #include "common/time.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/motor.h"
-#include "pg/rx.h"
 
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
@@ -62,11 +59,17 @@
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/serial.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/motor.h"
+#include "pg/rx.h"
 
 #include "rx/rx.h"
 
@@ -279,6 +282,7 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SEND_GPS_G_HEADER,
     BLACKBOX_STATE_SEND_SLOW_HEADER,
     BLACKBOX_STATE_SEND_SYSINFO,
+    BLACKBOX_STATE_CACHE_FLUSH,
     BLACKBOX_STATE_PAUSED,
     BLACKBOX_STATE_RUNNING,
     BLACKBOX_STATE_SHUTTING_DOWN,
@@ -659,7 +663,7 @@ static void writeInterframe(void)
 
     int32_t deltas[8];
     int32_t setpointDeltas[4];
-    
+
     arraySubInt32(deltas, blackboxCurrent->axisPID_P, blackboxLast->axisPID_P, XYZ_AXIS_COUNT);
     blackboxWriteSignedVBArray(deltas, XYZ_AXIS_COUNT);
 
@@ -1034,7 +1038,7 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->setpoint[i] = lrintf(pidGetPreviousSetpoint(i));
     }
     // log the final throttle value used in the mixer
-    blackboxCurrent->setpoint[3] = lrintf(mixerGetLoggingThrottle() * 1000);
+    blackboxCurrent->setpoint[3] = lrintf(mixerGetThrottle() * 1000);
 
     for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
         blackboxCurrent->debug[i] = debug[i];
@@ -1187,15 +1191,15 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
 // Buf must be at least FORMATTED_DATE_TIME_BUFSIZE
 STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 {
-    #ifdef USE_RTC_TIME
+#ifdef USE_RTC_TIME
     dateTime_t dt;
     // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
     // when time is not known.
     rtcGetDateTime(&dt);
     dateTimeFormatLocal(buf, &dt);
-    #else
+#else
     buf = "0000-01-01T00:00:00.000";
-    #endif
+#endif
 
     return buf;
 }
@@ -1235,6 +1239,9 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
+#ifdef USE_BOARD_INFO
+        BLACKBOX_PRINT_HEADER_LINE("Board information", "%s %s",            getManufacturerId(), getBoardName());
+#endif
         BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime(buf));
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
@@ -1267,9 +1274,9 @@ static bool blackboxWriteSysinfo(void)
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime", "%d",                        gyro.targetLooptime);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom", "%d",                 gyroConfig()->gyro_sync_denom);
-        BLACKBOX_PRINT_HEADER_LINE("pid_process_denom", "%d",               pidConfig()->pid_process_denom);
+        BLACKBOX_PRINT_HEADER_LINE("looptime", "%d",                        gyro.sampleLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom", "%d",                 1);
+        BLACKBOX_PRINT_HEADER_LINE("pid_process_denom", "%d",               activePidLoopDenom);
         BLACKBOX_PRINT_HEADER_LINE("thr_mid", "%d",                         currentControlRateProfile->thrMid8);
         BLACKBOX_PRINT_HEADER_LINE("thr_expo", "%d",                        currentControlRateProfile->thrExpo8);
         BLACKBOX_PRINT_HEADER_LINE("tpa_rate", "%d",                        currentControlRateProfile->dynThrPID);
@@ -1318,6 +1325,11 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",              currentPidProfile->dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("iterm_windup", "%d",                    currentPidProfile->itermWindupPointPercent);
+#if defined(USE_ITERM_RELAX)
+        BLACKBOX_PRINT_HEADER_LINE("iterm_relax", "%d",                    currentPidProfile->iterm_relax);
+        BLACKBOX_PRINT_HEADER_LINE("iterm_relax_type", "%d",               currentPidProfile->iterm_relax_type);
+        BLACKBOX_PRINT_HEADER_LINE("iterm_relax_cutoff", "%d",             currentPidProfile->iterm_relax_cutoff);
+#endif
         BLACKBOX_PRINT_HEADER_LINE("vbat_pid_gain", "%d",                   currentPidProfile->vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle", "%d",                currentPidProfile->pidAtMinThrottle);
 
@@ -1335,6 +1347,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("feedforward_weight", "%d,%d,%d",        currentPidProfile->pid[PID_ROLL].F,
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
+#ifdef USE_INTERPOLATED_SP
+        BLACKBOX_PRINT_HEADER_LINE("ff_interpolate_sp", "%d",               currentPidProfile->ff_interpolate_sp);
+        BLACKBOX_PRINT_HEADER_LINE("ff_spike_limit", "%d",                  currentPidProfile->ff_spike_limit);
+        BLACKBOX_PRINT_HEADER_LINE("ff_max_rate_limit", "%d",               currentPidProfile->ff_max_rate_limit);
+#endif
+        BLACKBOX_PRINT_HEADER_LINE("ff_boost", "%d",                        currentPidProfile->ff_boost);
 
         BLACKBOX_PRINT_HEADER_LINE("acc_limit_yaw", "%d",                   currentPidProfile->yawRateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("acc_limit", "%d",                       currentPidProfile->rateAccelLimit);
@@ -1358,6 +1376,24 @@ static bool blackboxWriteSysinfo(void)
                                                                             gyroConfig()->gyro_soft_notch_hz_2);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff", "%d,%d",            gyroConfig()->gyro_soft_notch_cutoff_1,
                                                                             gyroConfig()->gyro_soft_notch_cutoff_2);
+#ifdef USE_GYRO_DATA_ANALYSE
+        BLACKBOX_PRINT_HEADER_LINE("dyn_notch_max_hz", "%d",                gyroConfig()->dyn_notch_max_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dyn_notch_width_percent", "%d",         gyroConfig()->dyn_notch_width_percent);
+        BLACKBOX_PRINT_HEADER_LINE("dyn_notch_q", "%d",                     gyroConfig()->dyn_notch_q);
+        BLACKBOX_PRINT_HEADER_LINE("dyn_notch_min_hz", "%d",                gyroConfig()->dyn_notch_min_hz);
+#endif
+#ifdef USE_DSHOT_TELEMETRY
+        BLACKBOX_PRINT_HEADER_LINE("dshot_bidir", "%d",                     motorConfig()->dev.useDshotTelemetry);
+#endif
+#ifdef USE_RPM_FILTER
+        BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_harmonics", "%d",        rpmFilterConfig()->gyro_rpm_notch_harmonics);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_q", "%d",                rpmFilterConfig()->gyro_rpm_notch_q);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_min", "%d",              rpmFilterConfig()->gyro_rpm_notch_min);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_rpm_notch_harmonics", "%d",       rpmFilterConfig()->dterm_rpm_notch_harmonics);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_rpm_notch_q", "%d",               rpmFilterConfig()->dterm_rpm_notch_q);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_rpm_notch_min", "%d",             rpmFilterConfig()->dterm_rpm_notch_min);
+        BLACKBOX_PRINT_HEADER_LINE("rpm_notch_lpf", "%d",                   rpmFilterConfig()->rpm_lpf);
+#endif
 #if defined(USE_ACC)
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                 (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware", "%d",                    accelerometerConfig()->acc_hardware);
@@ -1382,7 +1418,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rcSmoothingData->inputFilterType);
+        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_type", "%d",               rxConfig()->rc_smoothing_type);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rcSmoothingData->debugAxis);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_cutoffs", "%d, %d",        rcSmoothingData->inputCutoffSetting,
                                                                             rcSmoothingData->derivativeCutoffSetting);
@@ -1393,7 +1429,7 @@ static bool blackboxWriteSysinfo(void)
                                                                             rcSmoothingData->derivativeCutoffFrequency);
         BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_rx_average", "%d",         rcSmoothingData->averageFrameTimeUs);
 #endif // USE_RC_SMOOTHING_FILTER
-
+        BLACKBOX_PRINT_HEADER_LINE("rates_type", "%d",                      currentControlRateProfile->rates_type);
 
         default:
             return true;
@@ -1427,6 +1463,9 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         blackboxWriteUnsignedVB(data->flightMode.flags);
         blackboxWriteUnsignedVB(data->flightMode.lastFlags);
         break;
+    case FLIGHT_LOG_EVENT_DISARM:
+        blackboxWriteUnsignedVB(data->disarm.reason);
+        break;
     case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
         if (data->inflightAdjustment.floatFlag) {
             blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
@@ -1443,6 +1482,8 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
     case FLIGHT_LOG_EVENT_LOG_END:
         blackboxWriteString("End of log");
         blackboxWrite(0);
+        break;
+    default:
         break;
     }
 }
@@ -1568,6 +1609,8 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
  */
 void blackboxUpdate(timeUs_t currentTimeUs)
 {
+    static BlackboxState cacheFlushNextState;
+
     switch (blackboxState) {
     case BLACKBOX_STATE_STOPPED:
         if (ARMING_FLAG(ARMED)) {
@@ -1641,7 +1684,8 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
         if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
                 NULL, NULL)) {
-            blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
+            cacheFlushNextState = BLACKBOX_STATE_SEND_SYSINFO;
+            blackboxSetState(BLACKBOX_STATE_CACHE_FLUSH);
         }
         break;
     case BLACKBOX_STATE_SEND_SYSINFO:
@@ -1655,9 +1699,14 @@ void blackboxUpdate(timeUs_t currentTimeUs)
              * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
              * could wipe out the end of the header if we weren't careful)
              */
-            if (blackboxDeviceFlushForce()) {
-                blackboxSetState(BLACKBOX_STATE_RUNNING);
-            }
+            cacheFlushNextState = BLACKBOX_STATE_RUNNING;
+            blackboxSetState(BLACKBOX_STATE_CACHE_FLUSH);
+        }
+        break;
+    case BLACKBOX_STATE_CACHE_FLUSH:
+        // Flush the cache and wait until all possible entries have been written to the media
+        if (blackboxDeviceFlushForceComplete()) {
+            blackboxSetState(cacheFlushNextState);
         }
         break;
     case BLACKBOX_STATE_PAUSED:
@@ -1787,13 +1836,8 @@ void blackboxInit(void)
     // an I-frame is written every 32ms
     // blackboxUpdate() is run in synchronisation with the PID loop
     // targetPidLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, targetPidLooptime is rounded for short looptimes
-    if (targetPidLooptime == 31) { // rounded from 31.25us
-        blackboxIInterval = 1024;
-    } else if (targetPidLooptime == 63) { // rounded from 62.5us
-        blackboxIInterval = 512;
-    } else {
-        blackboxIInterval = (uint16_t)(32 * 1000 / targetPidLooptime);
-    }
+    blackboxIInterval = (uint16_t)(32 * 1000 / targetPidLooptime);
+
     // by default p_ratio is 32 and a P-frame is written every 1ms
     // if p_ratio is zero then no P-frames are logged
     if (blackboxConfig()->p_ratio == 0) {

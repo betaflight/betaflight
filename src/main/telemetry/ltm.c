@@ -49,7 +49,7 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -84,7 +84,7 @@
 #define LTM_CYCLETIME   100
 
 static serialPort_t *ltmPort;
-static serialPortConfig_t *portConfig;
+static const serialPortConfig_t *portConfig;
 static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
 static uint8_t ltm_crc;
@@ -289,7 +289,7 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
         if (!ltmEnabled && telemetrySharedPort != NULL) {
             ltmPort = telemetrySharedPort;
             ltmEnabled = true;

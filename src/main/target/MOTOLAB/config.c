@@ -25,7 +25,7 @@
 
 #ifdef USE_TARGET_CONFIG
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "flight/pid.h"
 
@@ -34,7 +34,6 @@
 // Motolab target supports 2 different type of boards Tornado / Cyclone.
 void targetConfiguration(void)
 {
-    gyroConfigMutable()->gyro_sync_denom = 4;
-    pidConfigMutable()->pid_process_denom = 1;
+    pidConfigMutable()->pid_process_denom = 4;
 }
 #endif

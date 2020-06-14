@@ -76,7 +76,7 @@
 
 
 static serialPort_t *ibusSerialPort = NULL;
-static serialPortConfig_t *ibusSerialPortConfig;
+static const serialPortConfig_t *ibusSerialPortConfig;
 
 /* The sent bytes will be echoed back since Tx and Rx are wired together, this counter
  * will keep track of how many rx chars that shall be discarded */

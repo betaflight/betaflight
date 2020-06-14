@@ -41,7 +41,9 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5),  .inputIrq = TIM5_IRQn},
     { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6),  .inputIrq = 0},
     { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  .inputIrq = 0},
-#if !defined(STM32F411xE) && !defined(STM32F446xx)
+#if defined(STM32F446xx)
+    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  .inputIrq = 0},
+#elif !defined(STM32F411xE)
     { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  .inputIrq = TIM8_CC_IRQn},
 #endif
     { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9),  .inputIrq = TIM1_BRK_TIM9_IRQn},
@@ -79,11 +81,13 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM9, CH1, PA2, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM9, CH2, PA3, TIM_USE_ANY, 0, 0),
+#if !defined(STM32F411xE)
     DEF_TIM(TIM8, CH1N, PA5, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH1N, PA7, TIM_USE_ANY, 0, 0),
 
     DEF_TIM(TIM13, CH1, PA6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM14, CH1, PA7, TIM_USE_ANY, 0, 0),
+#endif
 
 //PORTB
     DEF_TIM(TIM1, CH2N, PB0, TIM_USE_ANY, 0, 0),
@@ -104,15 +108,19 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM4, CH3, PB8, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM4, CH4, PB9, TIM_USE_ANY, 0, 0),
 
+#if !defined(STM32F411xE)
     DEF_TIM(TIM8, CH2N, PB0, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH3N, PB1, TIM_USE_ANY, 0, 0),
+#endif
     DEF_TIM(TIM10, CH1, PB8, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM11, CH1, PB9, TIM_USE_ANY, 0, 0),
+#if !defined(STM32F411xE)
     DEF_TIM(TIM8, CH2N, PB14, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH3N, PB15, TIM_USE_ANY, 0, 0),
 
     DEF_TIM(TIM12, CH1, PB14, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM12, CH2, PB15, TIM_USE_ANY, 0, 0),
+#endif
 
 //PORTC
     DEF_TIM(TIM3, CH1, PC6, TIM_USE_ANY, 0, 0),
@@ -120,10 +128,12 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3, CH3, PC8, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM3, CH4, PC9, TIM_USE_ANY, 0, 0),
 
+#if !defined(STM32F411xE)
     DEF_TIM(TIM8, CH1, PC6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH2, PC7, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH3, PC8, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM8, CH4, PC9, TIM_USE_ANY, 0, 0),
+#endif
 
 //PORTD
     DEF_TIM(TIM4, CH1, PD12, TIM_USE_ANY, 0, 0),
@@ -144,29 +154,36 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM9, CH2, PE6, TIM_USE_ANY, 0, 0),
 
 //PORTF
+#if !defined(STM32F411xE)
     DEF_TIM(TIM10, CH1, PF6, TIM_USE_ANY, 0, 0),
     DEF_TIM(TIM11, CH1, PF7, TIM_USE_ANY, 0, 0),
+#endif
 
 //PORTH
-    DEF_TIM(TIM5, CH1, PH10, TIM_USE_ANY, 0, 0),
-    DEF_TIM(TIM5, CH2, PH11, TIM_USE_ANY, 0, 0),
-    DEF_TIM(TIM5, CH3, PH12, TIM_USE_ANY, 0, 0),
-
-    DEF_TIM(TIM8, CH1N, PH13, TIM_USE_ANY, 0, 0),
-    DEF_TIM(TIM8, CH2N, PH14, TIM_USE_ANY, 0, 0),
-    DEF_TIM(TIM8, CH3N, PH15, TIM_USE_ANY, 0, 0),
-
-    DEF_TIM(TIM12, CH1, PH6, TIM_USE_ANY, 0, 0),
-    DEF_TIM(TIM12, CH2, PH9, TIM_USE_ANY, 0, 0),
+// Port H is not available for LPQFP-100 or 144 package
+//    DEF_TIM(TIM5, CH1, PH10, TIM_USE_ANY, 0, 0),
+//    DEF_TIM(TIM5, CH2, PH11, TIM_USE_ANY, 0, 0),
+//    DEF_TIM(TIM5, CH3, PH12, TIM_USE_ANY, 0, 0),
+//
+//#if !defined(STM32F411xE)
+//    DEF_TIM(TIM8, CH1N, PH13, TIM_USE_ANY, 0, 0),
+//    DEF_TIM(TIM8, CH2N, PH14, TIM_USE_ANY, 0, 0),
+//    DEF_TIM(TIM8, CH3N, PH15, TIM_USE_ANY, 0, 0),
+//
+//    DEF_TIM(TIM12, CH1, PH6, TIM_USE_ANY, 0, 0),
+//    DEF_TIM(TIM12, CH2, PH9, TIM_USE_ANY, 0, 0),
+//#endif
 
 //PORTI
-// Not yet used
+// Port I is not available for LPQFP-100 or 144 package
 //    DEF_TIM(TIM5, CH4, PI0, TIM_USE_ANY, 0, 0),
 //
+//#if !defined(STM32F411xE)
 //    DEF_TIM(TIM8, CH4, PI2, TIM_USE_ANY, 0, 0),
 //    DEF_TIM(TIM8, CH1, PI5, TIM_USE_ANY, 0, 0),
 //    DEF_TIM(TIM8, CH2, PI6, TIM_USE_ANY, 0, 0),
 //    DEF_TIM(TIM8, CH3, PI7, TIM_USE_ANY, 0, 0),
+//#endif
 };
 #endif
 

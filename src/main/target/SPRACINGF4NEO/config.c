@@ -27,7 +27,7 @@
 
 #include "telemetry/telemetry.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "config_helper.h"
 

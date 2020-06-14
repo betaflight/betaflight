@@ -14,7 +14,10 @@ TARGET_SRC = \
 ifeq ($(TARGET), FURYF4OSD)
 TARGET_SRC += \
             drivers/max7456.c
-else
-TARGET_SRC += \
-            drivers/barometer/barometer_ms5611.c
 endif
+TARGET_SRC += \
+            drivers/barometer/barometer_ms5611.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/compass/compass_hmc5883l.c \
+            drivers/compass/compass_qmc5883l.c \
+            drivers/compass/compass_lis3mdl.c

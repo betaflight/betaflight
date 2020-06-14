@@ -35,122 +35,6 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
-#define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
-
-// Number of bits in I2C protocol phase
-#define LEN_ADDR 7
-#define LEN_RW 1
-#define LEN_ACK 1
-
-// Clock period in us during unstick transfer
-#define UNSTICK_CLK_US 10
-
-// Allow 500us for clock strech to complete during unstick
-#define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
-
-static void i2cUnstick(IO_t scl, IO_t sda);
-
-#define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
-#define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-
-#define GPIO_AF4_I2C GPIO_AF4_I2C1
-
-const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
-#if defined(STM32F7)
-#ifdef USE_I2C_DEVICE_1
-    {
-        .device = I2CDEV_1,
-        .reg = I2C1,
-        .sclPins = { I2CPINDEF(PB6), I2CPINDEF(PB8) },
-        .sdaPins = { I2CPINDEF(PB7), I2CPINDEF(PB9) },
-        .rcc = RCC_APB1(I2C1),
-        .ev_irq = I2C1_EV_IRQn,
-        .er_irq = I2C1_ER_IRQn,
-    },
-#endif
-#ifdef USE_I2C_DEVICE_2
-    {
-        .device = I2CDEV_2,
-        .reg = I2C2,
-        .sclPins = { I2CPINDEF(PB10), I2CPINDEF(PF1) },
-        .sdaPins = { I2CPINDEF(PB11), I2CPINDEF(PF0) },
-        .rcc = RCC_APB1(I2C2),
-        .ev_irq = I2C2_EV_IRQn,
-        .er_irq = I2C2_ER_IRQn,
-    },
-#endif
-#ifdef USE_I2C_DEVICE_3
-    {
-        .device = I2CDEV_3,
-        .reg = I2C3,
-        .sclPins = { I2CPINDEF(PA8) },
-        .sdaPins = { I2CPINDEF(PC9) },
-        .rcc = RCC_APB1(I2C3),
-        .ev_irq = I2C3_EV_IRQn,
-        .er_irq = I2C3_ER_IRQn,
-    },
-#endif
-#ifdef USE_I2C_DEVICE_4
-    {
-        .device = I2CDEV_4,
-        .reg = I2C4,
-        .sclPins = { I2CPINDEF(PD12), I2CPINDEF(PF14) },
-        .sdaPins = { I2CPINDEF(PD13), I2CPINDEF(PF15) },
-        .rcc = RCC_APB1(I2C4),
-        .ev_irq = I2C4_EV_IRQn,
-        .er_irq = I2C4_ER_IRQn,
-    },
-#endif
-#elif defined(STM32H7)
-#ifdef USE_I2C_DEVICE_1
-    {
-        .device = I2CDEV_1,
-        .reg = I2C1,
-        .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
-        .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
-        .rcc = RCC_APB1L(I2C1),
-        .ev_irq = I2C1_EV_IRQn,
-        .er_irq = I2C1_ER_IRQn,
-    },
-#endif
-#ifdef USE_I2C_DEVICE_2
-    {
-        .device = I2CDEV_2,
-        .reg = I2C2,
-        .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
-        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
-        .rcc = RCC_APB1L(I2C2),
-        .ev_irq = I2C2_EV_IRQn,
-        .er_irq = I2C2_ER_IRQn,
-    },
-#endif
-#ifdef USE_I2C_DEVICE_3
-    {
-        .device = I2CDEV_3,
-        .reg = I2C3,
-        .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
-        .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
-        .rcc = RCC_APB1L(I2C3),
-        .ev_irq = I2C3_EV_IRQn,
-        .er_irq = I2C3_ER_IRQn,
-    },
-#endif
-#ifdef USE_I2C_DEVICE_4
-    {
-        .device = I2CDEV_4,
-        .reg = I2C4,
-        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PF14, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF6_I2C4), I2CPINDEF(PB8, GPIO_AF6_I2C4) },
-        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PF15, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF6_I2C4), I2CPINDEF(PB9, GPIO_AF6_I2C4) },
-        .rcc = RCC_APB1L(I2C4),
-        .ev_irq = I2C4_EV_IRQn,
-        .er_irq = I2C4_ER_IRQn,
-    },
-#endif
-#endif
-};
-
-i2cDevice_t i2cDevice[I2CDEV_COUNT];
-
 #ifdef USE_I2C_DEVICE_1
 void I2C1_ER_IRQHandler(void)
 {
@@ -210,7 +94,13 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
     return false;
 }
 
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+uint16_t i2cGetErrorCounter(void)
+{
+    return i2cErrorCount;
+}
+
+// Blocking write
+bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
         return false;
@@ -225,9 +115,9 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     HAL_StatusTypeDef status;
 
     if (reg_ == 0xFF)
-        status = HAL_I2C_Master_Transmit(pHandle ,addr_ << 1, data, len_, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Master_Transmit(pHandle ,addr_ << 1, &data, 1, I2C_DEFAULT_TIMEOUT);
     else
-        status = HAL_I2C_Mem_Write(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Mem_Write(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT, &data, 1, I2C_DEFAULT_TIMEOUT);
 
     if (status != HAL_OK)
         return i2cHandleHardwareFailure(device);
@@ -235,11 +125,36 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     return true;
 }
 
-bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
+// Non-blocking write
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    return i2cWriteBuffer(device, addr_, reg_, 1, &data);
+    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+        return false;
+    }
+
+    I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
+
+    if (!pHandle->Instance) {
+        return false;
+    }
+
+    HAL_StatusTypeDef status;
+
+    status = HAL_I2C_Mem_Write_IT(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_);
+
+    if (status == HAL_BUSY) {
+        return false;
+    }
+
+    if (status != HAL_OK)
+    {
+        return i2cHandleHardwareFailure(device);
+    }
+
+    return true;
 }
 
+// Blocking read
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
@@ -259,128 +174,60 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     else
         status = HAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
 
-    if (status != HAL_OK)
+    if (status != HAL_OK) {
         return i2cHandleHardwareFailure(device);
+    }
 
     return true;
 }
 
-void i2cInit(I2CDevice device)
+// Non-blocking read
+bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID) {
-        return;
+    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+        return false;
     }
 
-    i2cDevice_t *pDev = &i2cDevice[device];
+    I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
 
-    const i2cHardware_t *hardware = pDev->hardware;
-
-    if (!hardware) {
-        return;
+    if (!pHandle->Instance) {
+        return false;
     }
 
-    IO_t scl = pDev->scl;
-    IO_t sda = pDev->sda;
+    HAL_StatusTypeDef status;
 
-    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
-    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
+    status = HAL_I2C_Mem_Read_IT(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len);
 
-    // Enable RCC
-    RCC_ClockCmd(hardware->rcc, ENABLE);
-
-    i2cUnstick(scl, sda);
-
-    // Init pins
-#if defined(STM32F7)
-    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
-    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
-#elif defined(STM32H7)
-    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
-    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
-#else
-    IOConfigGPIO(scl, IOCFG_AF_OD);
-    IOConfigGPIO(sda, IOCFG_AF_OD);
-#endif
-
-    // Init I2C peripheral
-
-    I2C_HandleTypeDef *pHandle = &pDev->handle;
-
-    memset(pHandle, 0, sizeof(*pHandle));
-
-    pHandle->Instance = pDev->hardware->reg;
-
-    /// TODO: HAL check if I2C timing is correct
-
-    if (pDev->overClock) {
-        // 800khz Maximum speed tested on various boards without issues
-        pHandle->Init.Timing = 0x00500D1D;
-    } else {
-        pHandle->Init.Timing = 0x00500C6F;
+    if (status == HAL_BUSY) {
+        return false;
     }
 
-    pHandle->Init.OwnAddress1 = 0x0;
-    pHandle->Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    pHandle->Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    pHandle->Init.OwnAddress2 = 0x0;
-    pHandle->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    pHandle->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    if (status != HAL_OK) {
+        return i2cHandleHardwareFailure(device);
+    }
 
-    HAL_I2C_Init(pHandle);
-
-    // Enable the Analog I2C Filter
-    HAL_I2CEx_ConfigAnalogFilter(pHandle, I2C_ANALOGFILTER_ENABLE);
-
-    // Setup interrupt handlers
-    HAL_NVIC_SetPriority(hardware->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
-    HAL_NVIC_EnableIRQ(hardware->er_irq);
-    HAL_NVIC_SetPriority(hardware->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
-    HAL_NVIC_EnableIRQ(hardware->ev_irq);
+    return true;
 }
 
-uint16_t i2cGetErrorCounter(void)
+bool i2cBusy(I2CDevice device, bool *error)
 {
-    return i2cErrorCount;
-}
+    I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
 
-static void i2cUnstick(IO_t scl, IO_t sda)
-{
-    int i;
+    if (error) {
+        *error = pHandle->ErrorCode;
+    }
 
-    IOHi(scl);
-    IOHi(sda);
-
-    IOConfigGPIO(scl, IOCFG_OUT_OD);
-    IOConfigGPIO(sda, IOCFG_OUT_OD);
-
-    // Clock out, with SDA high:
-    //   7 data bits
-    //   1 READ bit
-    //   1 cycle for the ACK
-    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
-        // Wait for any clock stretching to finish
-        int timeout = UNSTICK_CLK_STRETCH;
-        while (!IORead(scl) && timeout) {
-            delayMicroseconds(UNSTICK_CLK_US);
-            timeout--;
+    if (pHandle->State == HAL_I2C_STATE_READY)
+    {
+        if (__HAL_I2C_GET_FLAG(pHandle, I2C_FLAG_BUSY) == SET)
+        {
+            return true;
         }
 
-        // Pull low
-        IOLo(scl); // Set bus low
-        delayMicroseconds(UNSTICK_CLK_US/2);
-        IOHi(scl); // Set bus high
-        delayMicroseconds(UNSTICK_CLK_US/2);
+        return false;
     }
 
-    // Generate a stop condition in case there was none
-    IOLo(scl);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOLo(sda);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-
-    IOHi(scl); // Set bus scl high
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOHi(sda); // Set bus sda high
+    return true;
 }
 
 #endif

@@ -21,49 +21,58 @@
 #pragma once
 
 #include "common/time.h"
-#include "fc/config.h"
+#include "config/config.h"
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
+#define GYRO_TASK_GUARD_INTERVAL_US 10  // Don't run any other tasks if gyro task will be run soon
+
+#if defined(USE_TASK_STATISTICS)
+#define TASK_STATS_MOVING_SUM_COUNT 32
+#endif
+
+#define LOAD_PERCENTAGE_ONE 100
 
 typedef enum {
-    TASK_PRIORITY_IDLE = 0,     // Disables dynamic scheduling, task is executed only if no other task is active this cycle
+    TASK_PRIORITY_REALTIME = -1, // Task will be run outside the scheduler logic
+    TASK_PRIORITY_IDLE = 0,      // Disables dynamic scheduling, task is executed only if no other task is active this cycle
     TASK_PRIORITY_LOW = 1,
     TASK_PRIORITY_MEDIUM = 3,
     TASK_PRIORITY_MEDIUM_HIGH = 4,
     TASK_PRIORITY_HIGH = 5,
-    TASK_PRIORITY_REALTIME = 6,
     TASK_PRIORITY_MAX = 255
-} cfTaskPriority_e;
+} taskPriority_e;
 
 typedef struct {
-    timeUs_t     maxExecutionTime;
-    timeUs_t     totalExecutionTime;
-    timeUs_t     averageExecutionTime;
-    timeUs_t     averageDeltaTime;
+    timeUs_t     maxExecutionTimeUs;
+    timeUs_t     totalExecutionTimeUs;
+    timeUs_t     averageExecutionTimeUs;
+    timeUs_t     averageDeltaTimeUs;
 } cfCheckFuncInfo_t;
 
 typedef struct {
     const char * taskName;
     const char * subTaskName;
     bool         isEnabled;
-    uint8_t      staticPriority;
-    timeDelta_t  desiredPeriod;
-    timeDelta_t  latestDeltaTime;
-    timeUs_t     maxExecutionTime;
-    timeUs_t     totalExecutionTime;
-    timeUs_t     averageExecutionTime;
-    timeUs_t     averageDeltaTime;
-    float        movingAverageCycleTime;
-} cfTaskInfo_t;
+    int8_t       staticPriority;
+    timeDelta_t  desiredPeriodUs;
+    timeDelta_t  latestDeltaTimeUs;
+    timeUs_t     maxExecutionTimeUs;
+    timeUs_t     totalExecutionTimeUs;
+    timeUs_t     averageExecutionTimeUs;
+    timeUs_t     averageDeltaTimeUs;
+    float        movingAverageCycleTimeUs;
+} taskInfo_t;
 
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
     TASK_MAIN,
-    TASK_GYROPID,
+    TASK_GYRO,
+    TASK_FILTER,
+    TASK_PID,
     TASK_ACCEL,
     TASK_ATTITUDE,
     TASK_RX,
@@ -142,7 +151,7 @@ typedef enum {
     /* Service task IDs */
     TASK_NONE = TASK_COUNT,
     TASK_SELF
-} cfTaskId_e;
+} taskId_e;
 
 typedef struct {
     // Configuration
@@ -152,44 +161,41 @@ typedef struct {
 #endif
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
-    timeDelta_t desiredPeriod;      // target period of execution
-    const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
+    timeDelta_t desiredPeriodUs;      // target period of execution
+    const int8_t staticPriority;    // dynamicPriority grows in steps of this size
 
     // Scheduling
     uint16_t dynamicPriority;       // measurement of how old task was last executed, used to avoid task starvation
     uint16_t taskAgeCycles;
-    timeDelta_t taskLatestDeltaTime;
-    timeUs_t lastExecutedAt;        // last time of invocation
-    timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
+    timeDelta_t taskLatestDeltaTimeUs;
+    timeUs_t lastExecutedAtUs;        // last time of invocation
+    timeUs_t lastSignaledAtUs;        // time of invocation event for event-driven tasks
     timeUs_t lastDesiredAt;         // time of last desired execution
 
 #if defined(USE_TASK_STATISTICS)
     // Statistics
-    float    movingAverageCycleTime;
-    timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
-    timeUs_t movingSumDeltaTime;  // moving sum over 32 samples
-    timeUs_t maxExecutionTime;
-    timeUs_t totalExecutionTime;    // total time consumed by task since boot
+    float    movingAverageCycleTimeUs;
+    timeUs_t movingSumExecutionTimeUs;  // moving sum over 32 samples
+    timeUs_t movingSumDeltaTimeUs;  // moving sum over 32 samples
+    timeUs_t maxExecutionTimeUs;
+    timeUs_t totalExecutionTimeUs;    // total time consumed by task since boot
 #endif
-} cfTask_t;
-
-extern cfTask_t cfTasks[TASK_COUNT];
-extern uint16_t averageSystemLoadPercent;
+} task_t;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo);
-void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
-void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
-void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
-timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
+void getTaskInfo(taskId_e taskId, taskInfo_t *taskInfo);
+void rescheduleTask(taskId_e taskId, timeDelta_t newPeriodUs);
+void setTaskEnabled(taskId_e taskId, bool newEnabledState);
+timeDelta_t getTaskDeltaTimeUs(taskId_e taskId);
 void schedulerSetCalulateTaskStatistics(bool calculateTaskStatistics);
-void schedulerResetTaskStatistics(cfTaskId_e taskId);
-void schedulerResetTaskMaxExecutionTime(cfTaskId_e taskId);
+void schedulerResetTaskStatistics(taskId_e taskId);
+void schedulerResetTaskMaxExecutionTime(taskId_e taskId);
+void schedulerResetCheckFunctionMaxExecutionTime(void);
 
 void schedulerInit(void);
 void scheduler(void);
-void taskSystemLoad(timeUs_t currentTime);
+timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs);
+void taskSystemLoad(timeUs_t currentTimeUs);
 void schedulerOptimizeRate(bool optimizeRate);
-
-#define LOAD_PERCENTAGE_ONE 100
-
-#define isSystemOverloaded() (averageSystemLoadPercent >= LOAD_PERCENTAGE_ONE)
+void schedulerEnableGyro(void);
+uint16_t getAverageSystemLoadPercent(void);

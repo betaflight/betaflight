@@ -49,6 +49,7 @@ typedef enum {
     FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
     FUNCTION_RCDEVICE            = (1 << 14), // 16384
     FUNCTION_LIDAR_TF            = (1 << 15), // 32768
+    FUNCTION_FRSKY_OSD           = (1 << 16), // 65536
 } serialPortFunction_e;
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
@@ -86,14 +87,16 @@ typedef enum {
     SERIAL_PORT_USART6,
     SERIAL_PORT_USART7,
     SERIAL_PORT_USART8,
+    SERIAL_PORT_LPUART1,
     SERIAL_PORT_USB_VCP = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
-    SERIAL_PORT_SOFTSERIAL2
+    SERIAL_PORT_SOFTSERIAL2,
+    SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_SOFTSERIAL2
 } serialPortIdentifier_e;
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) < RESOURCE_SOFT_OFFSET) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
 
 #define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
 
@@ -112,7 +115,7 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 // configuration
 //
 typedef struct serialPortConfig_s {
-    uint16_t functionMask;
+    uint32_t functionMask;
     serialPortIdentifier_e identifier;
     uint8_t msp_baudrateIndex;
     uint8_t gps_baudrateIndex;
@@ -138,10 +141,11 @@ void serialRemovePort(serialPortIdentifier_e identifier);
 uint8_t serialGetAvailablePortCount(void);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
 bool isSerialConfigValid(const serialConfig_t *serialConfig);
-serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
+const serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
+serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
-serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
+const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
 bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);

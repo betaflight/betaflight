@@ -42,13 +42,15 @@ typedef enum {
     ACC_ICM20608G,
     ACC_ICM20649,
     ACC_ICM20689,
+    ACC_ICM42605,
     ACC_BMI160,
+    ACC_BMI270,
     ACC_FAKE
 } accelerationSensor_e;
 
 typedef struct acc_s {
     accDev_t dev;
-    uint32_t accSamplingInterval;
+    uint16_t sampleRateHz;
     float accADC[XYZ_AXIS_COUNT];
     bool isAccelUpdatedAtLeastOnce;
 } acc_t;
@@ -77,9 +79,10 @@ typedef struct accelerometerConfig_s {
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 #endif
 
-bool accInit(uint32_t gyroTargetLooptime);
+bool accInit(uint16_t accSampleRateHz);
 bool accIsCalibrationComplete(void);
-void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+bool accHasBeenCalibrated(void);
+void accStartCalibration(void);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);
 bool accGetAccumulationAverage(float *accumulation);

@@ -14,36 +14,24 @@ STDPERIPH_DIR   = $(ROOT)/lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
 
 EXCLUDES        = \
-                #stm32h7xx_hal.c \
-                #stm32h7xx_hal_adc.c \
-                #stm32h7xx_hal_adc_ex.c \
                 stm32h7xx_hal_cec.c \
                 stm32h7xx_hal_comp.c \
-                #stm32h7xx_hal_cortex.c \
                 stm32h7xx_hal_crc.c \
                 stm32h7xx_hal_crc_ex.c \
                 stm32h7xx_hal_cryp.c \
                 stm32h7xx_hal_cryp_ex.c \
-                stm32h7xx_hal_dac.c \
-                stm32h7xx_hal_dac_ex.c \
                 stm32h7xx_hal_dcmi.c \
                 stm32h7xx_hal_dfsdm.c \
-                #stm32h7xx_hal_dma.c \
                 stm32h7xx_hal_dma2d.c \
-                #stm32h7xx_hal_dma_ex.c \
+                stm32h7xx_hal_dsi.c \
                 stm32h7xx_hal_eth.c \
                 stm32h7xx_hal_eth_ex.c \
                 stm32h7xx_hal_fdcan.c \
-                #stm32h7xx_hal_flash.c \
-                #stm32h7xx_hal_flash_ex.c \
-                #stm32h7xx_hal_gpio.c \
                 stm32h7xx_hal_hash.c \
                 stm32h7xx_hal_hash_ex.c \
                 stm32h7xx_hal_hcd.c \
                 stm32h7xx_hal_hrtim.c \
                 stm32h7xx_hal_hsem.c \
-                #stm32h7xx_hal_i2c.c \
-                #stm32h7xx_hal_i2c_ex.c \
                 stm32h7xx_hal_i2s.c \
                 stm32h7xx_hal_i2s_ex.c \
                 stm32h7xx_hal_irda.c \
@@ -51,47 +39,57 @@ EXCLUDES        = \
                 stm32h7xx_hal_jpeg.c \
                 stm32h7xx_hal_lptim.c \
                 stm32h7xx_hal_ltdc.c \
+                stm32h7xx_hal_ltdc_ex.c \
                 stm32h7xx_hal_mdios.c \
                 stm32h7xx_hal_mdma.c \
                 stm32h7xx_hal_mmc.c \
                 stm32h7xx_hal_mmc_ex.c \
+                stm32h7xx_hal_msp_template.c \
                 stm32h7xx_hal_nand.c \
                 stm32h7xx_hal_nor.c \
                 stm32h7xx_hal_opamp.c \
                 stm32h7xx_hal_opamp_ex.c \
-                #stm32h7xx_hal_pcd.c \
-                #stm32h7xx_hal_pcd_ex.c \
-                #stm32h7xx_hal_pwr.c \
-                #stm32h7xx_hal_pwr_ex.c \
-                stm32h7xx_hal_qspi.c \
-                #stm32h7xx_hal_rcc.c \
-                #stm32h7xx_hal_rcc_ex.c \
+                stm32h7xx_hal_ramecc.c \
                 stm32h7xx_hal_rng.c \
                 stm32h7xx_hal_rtc.c \
-                stm32h7xx_hal_rtc_ex.c \
                 stm32h7xx_hal_sai.c \
                 stm32h7xx_hal_sai_ex.c \
-                stm32h7xx_hal_sd.c \
                 stm32h7xx_hal_sd_ex.c \
                 stm32h7xx_hal_sdram.c \
                 stm32h7xx_hal_smartcard.c \
                 stm32h7xx_hal_smartcard_ex.c \
                 stm32h7xx_hal_smbus.c \
                 stm32h7xx_hal_spdifrx.c \
-                #stm32h7xx_hal_spi.c \
-                #stm32h7xx_hal_spi_ex.c \
                 stm32h7xx_hal_sram.c \
                 stm32h7xx_hal_swpmi.c \
-                #stm32h7xx_hal_tim.c \
-                #stm32h7xx_hal_tim_ex.c \
-                #stm32h7xx_hal_uart.c \
-                #stm32h7xx_hal_uart_ex.c \
                 stm32h7xx_hal_usart.c \
+                stm32h7xx_hal_usart_ex.c \
                 stm32h7xx_hal_wwdg.c \
+                stm32h7xx_ll_adc.c \
+                stm32h7xx_ll_bdma.c \
+                stm32h7xx_ll_comp.c \
+                stm32h7xx_ll_crc.c \
+                stm32h7xx_ll_dac.c \
                 stm32h7xx_ll_delayblock.c \
+                stm32h7xx_ll_dma2d.c \
+                stm32h7xx_ll_exti.c \
                 stm32h7xx_ll_fmc.c \
-                stm32h7xx_ll_sdmmc.c \
-                #stm32h7xx_ll_usb.c
+                stm32h7xx_ll_gpio.c \
+                stm32h7xx_ll_hrtim.c \
+                stm32h7xx_ll_i2c.c \
+                stm32h7xx_ll_lptim.c \
+                stm32h7xx_ll_lpuart.c \
+                stm32h7xx_ll_mdma.c \
+                stm32h7xx_ll_opamp.c \
+                stm32h7xx_ll_pwr.c \
+                stm32h7xx_ll_rcc.c \
+                stm32h7xx_ll_rng.c \
+                stm32h7xx_ll_rtc.c \
+                stm32h7xx_ll_spi.c \
+                stm32h7xx_ll_swpmi.c \
+                stm32h7xx_ll_usart.c \
+                stm32h7xx_ll_utils.c
+
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
@@ -151,7 +149,8 @@ endif
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
-DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_DMA_RAM
+# Flags that are used in the STM32 libraries
+DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
 #
 # H743xI : 2M FLASH, 1M RAM (H753xI also)
@@ -162,7 +161,17 @@ ifeq ($(TARGET),$(filter $(TARGET),$(H743xI_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H743xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
 STARTUP_SRC         = startup_stm32h743xx.s
-TARGET_FLASH       := 2048
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(RAM_BASED),yes)
+FIRMWARE_SIZE      := 448
+# TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
+# and the maximum size of the data stored on the external storage device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_ram_based.ld
+endif
+
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
@@ -170,15 +179,22 @@ STARTUP_SRC         = startup_stm32h743xx.s
 DEFAULT_TARGET_FLASH := 128
 
 ifeq ($(TARGET_FLASH),)
-TARGET_FLASH := $(DEFAULT_TARGET_FLASH) 
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
 endif
 
 ifeq ($(EXST),yes)
 FIRMWARE_SIZE      := 448
 # TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
 # and the maximum size of the data stored on the external storage device.
-TARGET_FLASH       := FIRMWARE_SIZE
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_exst.ld
+endif
+
+ifeq ($(EXST),yes)
+# Upper 8 regions are reserved for a boot loader in EXST environment
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=8
+else
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 endif
 
 ifneq ($(DEBUG),GDB)
@@ -218,26 +234,30 @@ MCU_COMMON_SRC = \
             drivers/system_stm32h7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32h7xx.c \
-            drivers/serial_uart_stm32h7xx.c \
             drivers/serial_uart_hal.c \
+            drivers/serial_uart_stm32h7xx.c \
             drivers/bus_quadspi_hal.c \
             drivers/bus_spi_hal.c \
             drivers/dma_stm32h7xx.c \
             drivers/light_ws2811strip_hal.c \
             drivers/adc_stm32h7xx.c \
             drivers/bus_i2c_hal.c \
-            drivers/pwm_output_dshot_hal_hal.c \
+            drivers/bus_i2c_hal_init.c \
+            drivers/pwm_output_dshot_hal.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/persistent.c \
             drivers/transponder_ir_io_hal.c \
             drivers/audio_stm32h7xx.c \
+            drivers/memprot_hal.c \
+            drivers/memprot_stm32h7xx.c \
             #drivers/accgyro/accgyro_mpu.c \
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
-            drivers/timer.c \
-            drivers/serial_uart.c
+            drivers/timer.c
 
 #MSC_SRC = \
+#            drivers/usb_msc_common.c \
 #            drivers/usb_msc_h7xx.c \
 #            msc/usbd_storage.c
 

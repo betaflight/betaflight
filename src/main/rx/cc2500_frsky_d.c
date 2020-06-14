@@ -36,12 +36,13 @@
 #include "config/feature.h"
 
 #include "drivers/adc.h"
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -117,14 +118,15 @@ static void buildTelemetryFrame(uint8_t *packet)
 {
     uint8_t a1Value;
     switch (rxCc2500SpiConfig()->a1Source) {
-    case FRSKY_SPI_A1_SOURCE_VBAT:
-        a1Value = (getBatteryVoltage() / 5) & 0xff;
-        break;
     case FRSKY_SPI_A1_SOURCE_EXTADC:
         a1Value = (adcGetChannel(ADC_EXTERNAL1) & 0xff0) >> 4;
         break;
     case FRSKY_SPI_A1_SOURCE_CONST:
         a1Value = A1_CONST_D & 0xff;
+        break;
+    case FRSKY_SPI_A1_SOURCE_VBAT:
+    default:
+        a1Value = (getBatteryVoltage() / 5) & 0xff;
         break;
     }
     const uint8_t a2Value = (adcGetChannel(ADC_RSSI)) >> 4;
@@ -194,7 +196,7 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
     switch (*protocolState) {
     case STATE_STARTING:
         listLength = 47;
-        initialiseData(0);
+        initialiseData(false);
         *protocolState = STATE_UPDATE;
         nextChannel(1);
         cc2500Strobe(CC2500_SRX);
@@ -216,11 +218,13 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
         FALLTHROUGH; //!!TODO -check this fall through is correct
     // here FS code could be
     case STATE_DATA:
-        if (cc2500getGdo()) {
+        if (rxSpiGetExtiState()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
+            bool packetOk = false;
             if (ccLen >= 20) {
                 cc2500ReadFifo(packet, 20);
                 if (packet[19] & 0x80) {
+                    packetOk = true;
                     missingPackets = 0;
                     timeoutUs = 1;
                     if (packet[0] == 0x11) {
@@ -245,6 +249,9 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                         }
                     }
                 }
+            }
+            if (!packetOk) {
+                cc2500Strobe(CC2500_SFRX);
             }
         }
 
@@ -290,7 +297,6 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
             cc2500Strobe(CC2500_SIDLE);
             cc2500WriteFifo(frame, frame[0] + 1);
             *protocolState = STATE_DATA;
-            ret = RX_SPI_RECEIVED_DATA;
             lastPacketReceivedTime = currentPacketReceivedTime;
         }
 

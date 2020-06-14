@@ -50,7 +50,7 @@ typedef enum {
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_RX_SPI = 1 << 25,
-    FEATURE_SOFTSPI = 1 << 26,
+    //FEATURE_SOFTSPI = 1 << 26, (removed)
     FEATURE_ESC_SENSOR = 1 << 27,
     FEATURE_ANTI_GRAVITY = 1 << 28,
     FEATURE_DYNAMIC_FILTER = 1 << 29,
@@ -62,11 +62,11 @@ typedef struct featureConfig_s {
 
 PG_DECLARE(featureConfig_t, featureConfig);
 
+void featureInit(void);
 bool featureIsEnabled(const uint32_t mask);
-void featureEnable(const uint32_t mask);
-void featureDisable(const uint32_t mask);
-void featureDisableAll(void);
-uint32_t featureMask(void);
-
-void featureSet(const uint32_t mask, uint32_t *features);
-void featureClear(const uint32_t mask, uint32_t *features);
+bool featureIsConfigured(const uint32_t mask);
+void featureEnableImmediate(const uint32_t mask);
+void featureDisableImmediate(const uint32_t mask);
+void featureConfigSet(const uint32_t mask);
+void featureConfigClear(const uint32_t mask);
+void featureConfigReplace(const uint32_t mask);

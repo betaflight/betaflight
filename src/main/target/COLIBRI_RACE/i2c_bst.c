@@ -25,7 +25,7 @@
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_adjustments.h"
@@ -279,7 +279,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             }
             break;
         case BST_STATUS:
-            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
+            bstWrite16(getTaskDeltaTimeUs(TASK_PID));
 #ifdef USE_I2C
             bstWrite16(i2cGetErrorCounter());
 #else
@@ -314,7 +314,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(getCurrentPidProfileIndex());
             break;
         case BST_LOOP_TIME:
-            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
+            bstWrite16(getTaskDeltaTimeUs(TASK_PID));
             break;
         case BST_RC_TUNING:
             bstWrite8(currentControlRateProfile->rcRates[FD_ROLL]);
@@ -420,14 +420,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(rcControlsConfig()->yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            switch (gyroConfig()->gyro_hardware_lpf) { // Extra safety to prevent OSD setting corrupt values
-                case GYRO_HARDWARE_LPF_1KHZ_SAMPLE:
-                    bstWrite16(1);
-                    break;
-                default:
-                    bstWrite16(0);
-                    break;
-            }
+            bstWrite16(0);
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -536,12 +529,17 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 #if defined(USE_ACC)
         case BST_ACC_CALIBRATION:
            if (!ARMING_FLAG(ARMED))
-               accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
+               accStartCalibration();
            break;
 #endif
+
+#if defined(USE_MAG)
         case BST_MAG_CALIBRATION:
-           if (!ARMING_FLAG(ARMED))
-               ENABLE_STATE(CALIBRATE_MAG);
+           if (!ARMING_FLAG(ARMED)) {
+               compassStartCalibration();
+           }
+#endif
+
            break;
         case BST_EEPROM_WRITE:
             if (ARMING_FLAG(ARMED)) {
@@ -553,8 +551,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             readEEPROM();
             break;
         case BST_SET_FEATURE:
-            featureDisableAll();
-            featureEnable(bstRead32()); // features bitmap
+            featureConfigReplace(bstRead32()); // features bitmap
 #ifdef SERIALRX_UART
             if (featureIsEnabled(FEATURE_RX_SERIAL)) {
                 serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
@@ -610,7 +607,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_DISARM:
             if (ARMING_FLAG(ARMED)) {
-                    disarm();
+                disarm(DISARM_REASON_SERIAL_COMMAND);
             }
             setArmingDisabled(ARMING_DISABLED_BST);
             break;
@@ -624,14 +621,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             rcControlsConfigMutable()->yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            switch (bstRead16()) {
-                case 1:
-                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_1KHZ_SAMPLE;
-                    break;
-                default:
-                    gyroConfigMutable()->gyro_hardware_lpf = GYRO_HARDWARE_LPF_NORMAL;
-                    break;
-            }
+            bstRead16(); // 1KHz sampling no longer supported
             break;
 
         default:
@@ -786,8 +776,8 @@ static void bstMasterWrite16(uint16_t data)
 #ifdef USE_GPS
 static void bstMasterWrite32(uint32_t data)
 {
-    bstMasterWrite16((uint8_t)(data >> 16));
-    bstMasterWrite16((uint8_t)(data >> 0));
+    bstMasterWrite16((uint16_t)(data >> 16));
+    bstMasterWrite16((uint16_t)(data >> 0));
 }
 
 static int32_t lat = 0;

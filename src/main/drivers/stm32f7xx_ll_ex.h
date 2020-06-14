@@ -20,10 +20,6 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "stm32f7xx.h"
 #include "common/utils.h"
 
@@ -67,12 +63,12 @@ __STATIC_INLINE void LL_EX_DMA_SetChannelSelection(DMA_Stream_TypeDef *DMAx_Stre
 	MODIFY_REG(DMAx_Streamy->CR, DMA_SxCR_CHSEL, Channel);
 }
 
-__STATIC_INLINE void LL_EX_DMA_EnableStream(DMA_Stream_TypeDef *DMAx_Streamy)
+__STATIC_INLINE void LL_EX_DMA_EnableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
 	SET_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
 }
 
-__STATIC_INLINE void LL_EX_DMA_DisableStream(DMA_Stream_TypeDef *DMAx_Streamy)
+__STATIC_INLINE void LL_EX_DMA_DisableResource(DMA_Stream_TypeDef *DMAx_Streamy)
 {
 	CLEAR_BIT(DMAx_Streamy->CR, DMA_SxCR_EN);
 }
@@ -108,7 +104,3 @@ __STATIC_INLINE void LL_EX_TIM_CC_EnableNChannel(TIM_TypeDef *TIMx, uint32_t Cha
 {
 	LL_TIM_CC_EnableChannel(TIMx, 4 * Channel);
 }
-
-#ifdef __cplusplus
-}
-#endif

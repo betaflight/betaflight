@@ -28,7 +28,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_modes.h"
 #include "fc/rc_controls.h"
@@ -81,8 +81,7 @@ void targetConfiguration(void)
 
     motorConfigMutable()->dev.motorPwmRate = 17000;
 
-    gyroConfigMutable()->gyro_sync_denom = 4;
-    pidConfigMutable()->pid_process_denom = 1;
+    pidConfigMutable()->pid_process_denom = 4;
 
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);

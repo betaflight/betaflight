@@ -31,6 +31,12 @@ mcu.mak
 mcu.mak.old
 stm32.mak
 
+# eclipse launch configurations
+/support/eclipse
+
+# ozone launch configurations
+/support/ozone
+
 # artefacts for Visual Studio Code
 /.vscode/
 

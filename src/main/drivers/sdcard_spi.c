@@ -389,10 +389,10 @@ static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrit
         init.DMA_BufferSize = SDCARD_BLOCK_SIZE;
         init.DMA_Mode = DMA_Mode_Normal;
 
-        DMA_DeInit(sdcard.dma->ref);
-        DMA_Init(sdcard.dma->ref, &init);
+        xDMA_DeInit(sdcard.dma->ref);
+        xDMA_Init(sdcard.dma->ref, &init);
 
-        DMA_Cmd(sdcard.dma->ref, ENABLE);
+        xDMA_Cmd(sdcard.dma->ref, ENABLE);
 
         SPI_I2S_DMACmd(sdcard.busdev.busdev_u.spi.instance, SPI_I2S_DMAReq_Tx, ENABLE);
 #endif
@@ -541,14 +541,6 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
         chipSelectIO = IO_NONE;
     }
     sdcard.busdev.busdev_u.spi.csnPin = chipSelectIO;
-
-    if (config->cardDetectTag) {
-        sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
-        sdcard.detectionInverted = config->cardDetectInverted;
-    } else {
-        sdcard.cardDetectPin = IO_NONE;
-        sdcard.detectionInverted = false;
-    }
 
     // Max frequency is initially 400kHz
 
@@ -757,14 +749,14 @@ static bool sdcardSpi_poll(void)
             }
 #else
 #ifdef STM32F4
-            if (sdcard.useDMAForTx && DMA_GetFlagStatus(sdcard.dma->ref, sdcard.dma->completeFlag) == SET) {
-                DMA_ClearFlag(sdcard.dma->ref, sdcard.dma->completeFlag);
+            if (sdcard.useDMAForTx && xDMA_GetFlagStatus(sdcard.dma->ref, sdcard.dma->completeFlag) == SET) {
+                xDMA_ClearFlag(sdcard.dma->ref, sdcard.dma->completeFlag);
 #else
             if (sdcard.useDMAForTx && DMA_GetFlagStatus(sdcard.dma->completeFlag) == SET) {
                 DMA_ClearFlag(sdcard.dma->completeFlag);
 #endif
 
-                DMA_Cmd(sdcard.dma->ref, DISABLE);
+                xDMA_Cmd(sdcard.dma->ref, DISABLE);
 
                 // Drain anything left in the Rx FIFO (we didn't read it during the write)
                 while (SPI_I2S_GetFlagStatus(sdcard.busdev.busdev_u.spi.instance, SPI_I2S_FLAG_RXNE) == SET) {

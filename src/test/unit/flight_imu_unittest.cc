@@ -59,6 +59,7 @@ extern "C" {
 
     extern quaternion q;
     extern float rMat[3][3];
+    extern bool attitudeIsEstablished;
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
@@ -164,15 +165,17 @@ TEST(FlightImuTest, TestSmallAngle)
 
     // given
     imuConfigMutable()->small_angle = 25;
+    imuConfigure(0, 0);
+    attitudeIsEstablished = true;
 
     // and
     memset(rMat, 0.0, sizeof(float) * 9);
 
     // when
-    imuUpdateEulerAngles();
+    imuComputeRotationMatrix();
 
     // expect
-    EXPECT_EQ(0, STATE(SMALL_ANGLE));
+    EXPECT_FALSE(isUpright());
 
     // given
     rMat[0][0] = r1;
@@ -181,19 +184,19 @@ TEST(FlightImuTest, TestSmallAngle)
     rMat[2][2] = r1;
 
     // when
-    imuUpdateEulerAngles();
+    imuComputeRotationMatrix();
 
     // expect
-    EXPECT_EQ(SMALL_ANGLE, STATE(SMALL_ANGLE));
+    EXPECT_FALSE(isUpright());
 
     // given
     memset(rMat, 0.0, sizeof(float) * 9);
 
     // when
-    imuUpdateEulerAngles();
+    imuComputeRotationMatrix();
 
     // expect
-    EXPECT_EQ(0, STATE(SMALL_ANGLE));
+    EXPECT_FALSE(isUpright());
 }
 
 // STUBS
@@ -231,19 +234,19 @@ uint16_t disableFlightMode(flightModeFlags_e mask)
 
 bool sensors(uint32_t mask)
 {
-    UNUSED(mask);
-    return false;
+    return mask & SENSOR_ACC;
 };
 
 uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }
 
 bool compassIsHealthy(void) { return true; }
-bool isBaroCalibrationComplete(void) { return true; }
+bool baroIsCalibrationComplete(void) { return true; }
 void performBaroCalibrationCycle(void) {}
 int32_t baroCalculateAltitude(void) { return 0; }
 bool gyroGetAccumulationAverage(float *) { return false; }
 bool accGetAccumulationAverage(float *) { return false; }
 void mixerSetThrottleAngleCorrection(int) {};
 bool gpsRescueIsRunning(void) { return false; }
+bool isFixedWing(void) { return false; }
 }

@@ -135,3 +135,19 @@
 #error "The USE_SERIAL_4WAY_BLHELI_INTERFACE define should not be part of the target definition"
 #endif
 
+#if defined(USE_DMA_SPEC) && (defined(ADC1_DMA_STREAM) || defined(ADC2_DMA_STREAM) || defined(ADC3_DMA_STREAM))
+#error "ADCx_DMA_STREAM defines cannot be used when USE_DMA_OPT is used."
+#endif
+
+#define DMARXCAT(s) DMARCAT(s)
+#define DMARCAT(s) DMAR_##s
+#define DMAR_true  1
+#define DMAR_false 1
+
+#if DMARXCAT(ENABLE_DSHOT_DMAR) == 1 || DMARXCAT(ENABLE_DSHOT_DMAR) == 1
+#error "Use DSHOT_DMAR_ON or DSHOT_DMAR_OFF instead of boolean values for ENABLE_DSHOT_DMAR"
+#endif
+
+#ifdef CAMERA_CONTROL_PIN
+#error "The CAMERA_CONTROL_PIN define in target.h is deprecated. Use timerHardware[] array entry with TIM_USE_CAMERA_CONTROL"
+#endif

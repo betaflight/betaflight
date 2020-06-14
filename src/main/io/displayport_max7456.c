@@ -29,32 +29,19 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456.h"
+#include "drivers/osd.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "io/displayport_max7456.h"
 
 #include "osd/osd.h"
 
+#include "pg/displayport_profiles.h"
 #include "pg/max7456.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 #include "pg/vcd.h"
 
 displayPort_t max7456DisplayPort;
-
-PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
-
-void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfile)
-{
-    displayPortProfile->colAdjust = 0;
-    displayPortProfile->rowAdjust = 0;
-
-    // Set defaults as per MAX7456 datasheet
-    displayPortProfile->invert = false;
-    displayPortProfile->blackBrightness = 0;
-    displayPortProfile->whiteBrightness = 2;
-}
 
 static int grab(displayPort_t *displayPort)
 {
@@ -100,17 +87,21 @@ static int screenSize(const displayPort_t *displayPort)
     return maxScreenSize;
 }
 
-static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, const char *s)
 {
     UNUSED(displayPort);
+    UNUSED(attr);
+
     max7456Write(x, y, s);
 
     return 0;
 }
 
-static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
+static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, uint8_t c)
 {
     UNUSED(displayPort);
+    UNUSED(attr);
+
     max7456WriteChar(x, y, c);
 
     return 0;
@@ -148,6 +139,38 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
+static bool layerSupported(displayPort_t *displayPort, displayPortLayer_e layer)
+{
+    UNUSED(displayPort);
+    return max7456LayerSupported(layer);
+}
+
+static bool layerSelect(displayPort_t *displayPort, displayPortLayer_e layer)
+{
+    UNUSED(displayPort);
+    return max7456LayerSelect(layer);
+}
+
+static bool layerCopy(displayPort_t *displayPort, displayPortLayer_e destLayer, displayPortLayer_e sourceLayer)
+{
+    UNUSED(displayPort);
+    return max7456LayerCopy(destLayer, sourceLayer);
+}
+
+static bool writeFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr)
+{
+    UNUSED(instance);
+
+    return max7456WriteNvm(addr, (const uint8_t *)chr);
+}
+
+static bool isReady(displayPort_t *instance)
+{
+    UNUSED(instance);
+
+    return max7456IsDeviceDetected();
+}
+
 static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
@@ -161,6 +184,11 @@ static const displayPortVTable_t max7456VTable = {
     .resync = resync,
     .isSynced = isSynced,
     .txBytesFree = txBytesFree,
+    .layerSupported = layerSupported,
+    .layerSelect = layerSelect,
+    .layerCopy = layerCopy,
+    .writeFontCharacter = writeFontCharacter,
+    .isReady = isReady,
 };
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)

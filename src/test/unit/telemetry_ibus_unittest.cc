@@ -26,7 +26,7 @@ extern "C" {
 #include "io/serial.h"
 #include "io/gps.h"
 #include "flight/imu.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
@@ -154,15 +154,15 @@ static bool portIsShared = false;
 static bool openSerial_called = false;
 static bool telemetryDetermineEnabledState_stub_retval;
 
-void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
+void rescheduleTask(taskId_e taskId, timeDelta_t newPeriodUs)
 {
     EXPECT_EQ(TASK_TELEMETRY, taskId);
-    EXPECT_EQ(1000, newPeriodMicros);
+    EXPECT_EQ(1000, newPeriodUs);
 }
 
 
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
     return findSerialPortConfig_stub_retval;

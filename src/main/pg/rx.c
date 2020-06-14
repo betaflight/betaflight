@@ -67,8 +67,12 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rc_smoothing_derivative_cutoff = 0, // automatically calculate the cutoff by default
         .rc_smoothing_debug_axis = ROLL,     // default to debug logging for the roll axis
         .rc_smoothing_input_type = RC_SMOOTHING_INPUT_BIQUAD,
-        .rc_smoothing_derivative_type = RC_SMOOTHING_DERIVATIVE_BIQUAD,
+        .rc_smoothing_derivative_type = RC_SMOOTHING_DERIVATIVE_AUTO, // automatically choose type based on feedforward method
         .rc_smoothing_auto_factor = 10,
+        .srxl2_unit_id = 1,
+        .srxl2_baud_fast = true,
+        .sbus_baud_fast = false,
+        .crsf_use_rx_snr = false,
     );
 
 #ifdef RX_CHANNELS_TAER

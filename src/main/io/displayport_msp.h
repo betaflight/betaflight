@@ -20,10 +20,13 @@
 
 #pragma once
 
-#include "pg/pg.h"
 #include "drivers/display.h"
 
-PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
+#include "pg/displayport_profiles.h"
 
-struct displayPort_s;
+// MSP displayport V2 attribute byte bit functions
+#define DISPLAYPORT_MSP_ATTR_VERSION BIT(7) // Format indicator; must be zero for V2 (and V1)
+#define DISPLAYPORT_MSP_ATTR_BLINK   BIT(6) // Device local blink
+#define DISPLAYPORT_MSP_ATTR_MASK    (~(DISPLAYPORT_MSP_ATTR_VERSION|DISPLAYPORT_MSP_ATTR_BLINK))
+
 struct displayPort_s *displayPortMspInit(void);

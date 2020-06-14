@@ -47,22 +47,6 @@
 
 #include "build/debug.h"
 
-
-/* Define(s) --------------------------------------------------------------------------------------------------------*/
-
-//#define DMA_CHANNEL_4                   ((uint32_t)0x08000000)
-#define DMA_MEMORY_TO_PERIPH            ((uint32_t)DMA_SxCR_DIR_0)
-//#define DMA_PERIPH_TO_MEMORY            ((uint32_t)0x00)
-#define DMA_MINC_ENABLE                 ((uint32_t)DMA_SxCR_MINC)
-#define DMA_MDATAALIGN_WORD             ((uint32_t)DMA_SxCR_MSIZE_1)
-#define DMA_PDATAALIGN_WORD             ((uint32_t)DMA_SxCR_PSIZE_1)
-#define DMA_PRIORITY_LOW                ((uint32_t)0x00000000U)
-#define DMA_PRIORITY_MEDIUM             ((uint32_t)DMA_SxCR_PL_0)
-#define DMA_PRIORITY_HIGH               ((uint32_t)DMA_SxCR_PL_1)
-#define DMA_PRIORITY_VERY_HIGH          ((uint32_t)DMA_SxCR_PL)
-#define DMA_MBURST_INC4                 ((uint32_t)DMA_SxCR_MBURST_0)
-#define DMA_PBURST_INC4                 ((uint32_t)DMA_SxCR_PBURST_0)
-
 #define BLOCK_SIZE                      ((uint32_t)(512))
 
 #define IFCR_CLEAR_MASK_STREAM3         (DMA_LIFCR_CTCIF3 | DMA_LIFCR_CHTIF3 | DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 | DMA_LIFCR_CFEIF3)
@@ -332,7 +316,7 @@ static SD_Error_t SD_CmdResponse(uint8_t SD_CMD, int8_t ResponseType)
 
     if(ResponseType <= 0)
     {
-        if(TimeOut == 0){
+        if (TimeOut == 0) {
             return SD_CMD_RSP_TIMEOUT;
         } else {
             return SD_OK;
@@ -906,7 +890,7 @@ SD_Error_t SD_GetCardInfo(void)
         SD_CardInfo.CardCapacity  = (SD_CardInfo.SD_csd.DeviceSize + 1) ;
         SD_CardInfo.CardCapacity *= (1 << (SD_CardInfo.SD_csd.DeviceSizeMul + 2));
         SD_CardInfo.CardBlockSize = 1 << (SD_CardInfo.SD_csd.RdBlockLen);
-        SD_CardInfo.CardCapacity *= SD_CardInfo.CardBlockSize;
+        SD_CardInfo.CardCapacity = SD_CardInfo.CardCapacity * SD_CardInfo.CardBlockSize / 512; // In 512 byte blocks
     }
     else if(SD_CardType == SD_HIGH_CAPACITY)
     {
@@ -1624,8 +1608,8 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
                               DMA_MBURST_INC4      | DMA_PBURST_INC4        |
                               DMA_MEMORY_TO_PERIPH);
         DMA2_Stream3->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier(DMA2_Stream3), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier(DMA2_Stream3), SDMMC_DMA_ST3_IRQHandler, 1, 0);
+        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), OWNER_SDCARD, 0);
+        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), SDMMC_DMA_ST3_IRQHandler, 1, 0);
     } else {
         // Initialize DMA2 channel 6
         DMA2_Stream6->CR   = 0;                                                 // Reset DMA Stream control register
@@ -1637,8 +1621,8 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
                               DMA_MBURST_INC4      | DMA_PBURST_INC4        |
                               DMA_MEMORY_TO_PERIPH);
         DMA2_Stream6->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier(DMA2_Stream6), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier(DMA2_Stream6), SDMMC_DMA_ST6_IRQHandler, 1, 0);
+        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), OWNER_SDCARD, 0);
+        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), SDMMC_DMA_ST6_IRQHandler, 1, 0);
     }
 }
 
@@ -1656,6 +1640,8 @@ bool SD_GetState(void)
 bool SD_Init(void)
 {
     SD_Error_t ErrorState;
+
+    __HAL_RCC_SDMMC1_CLK_ENABLE();
 
     // Initialize SDMMC1 peripheral interface with default configuration for SD card initialization
     MODIFY_REG(SDMMC1->CLKCR, CLKCR_CLEAR_MASK, (uint32_t) SDMMC_INIT_CLK_DIV);

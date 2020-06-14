@@ -34,7 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/pwm_esc_detect.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_modes.h"
 #include "fc/rc_controls.h"
@@ -114,45 +114,45 @@ void targetConfiguration(void)
     strcpy(pilotConfigMutable()->name, "BeeBrain V2");
 #endif
     osdConfigMutable()->cap_alarm  = 250;
-    osdConfigMutable()->item_pos[OSD_CRAFT_NAME]        = OSD_POS(9, 11)  | OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(2, 10)  | OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_FLYMODE]           = OSD_POS(17, 10) | OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_VTX_CHANNEL]       = OSD_POS(10, 10) | OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]         &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]       &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_THROTTLE_POS]       &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_CROSSHAIRS]         &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_HORIZON_SIDEBARS]   &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ARTIFICIAL_HORIZON] &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW]       &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAH_DRAWN]          &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_SPEED]          &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_LON]            &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_LAT]            &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_GPS_SATS]           &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_HOME_DIR]           &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_HOME_DIST]          &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_COMPASS_BAR]        &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]           &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ROLL_PIDS]          &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_PITCH_PIDS]         &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_YAW_PIDS]           &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_DEBUG]              &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_POWER]              &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_PIDRATE_PROFILE]    &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_WARNINGS]           &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE]   &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_PITCH_ANGLE]        &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ROLL_ANGLE]         &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE]    &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_DISARMED]           &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_NUMERICAL_HEADING]  &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_NUMERICAL_VARIO]    &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_G_FORCE]            &= ~OSD_PROFILE_1_FLAG;
-    osdConfigMutable()->item_pos[OSD_FLIP_ARROW]         &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_CRAFT_NAME]        = OSD_POS(9, 11)  | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(2, 10)  | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_FLYMODE]           = OSD_POS(17, 10) | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_VTX_CHANNEL]       = OSD_POS(10, 10) | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_RSSI_VALUE]         &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ITEM_TIMER_1]       &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_THROTTLE_POS]       &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_CROSSHAIRS]         &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_HORIZON_SIDEBARS]   &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ARTIFICIAL_HORIZON] &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_CURRENT_DRAW]       &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_MAH_DRAWN]          &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_GPS_SPEED]          &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_GPS_LON]            &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_GPS_LAT]            &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_GPS_SATS]           &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_HOME_DIR]           &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_HOME_DIST]          &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_COMPASS_BAR]        &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ALTITUDE]           &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ROLL_PIDS]          &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_PITCH_PIDS]         &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_YAW_PIDS]           &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_DEBUG]              &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_POWER]              &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_PIDRATE_PROFILE]    &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_WARNINGS]           &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE]   &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_PITCH_ANGLE]        &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ROLL_ANGLE]         &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE]    &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_DISARMED]           &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_NUMERICAL_HEADING]  &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_NUMERICAL_VARIO]    &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_G_FORCE]            &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_FLIP_ARROW]         &= ~OSD_PROFILE_1_FLAG;
 
     modeActivationConditionsMutable(0)->modeId           = BOXANGLE;
     modeActivationConditionsMutable(0)->auxChannelIndex  = AUX2 - NON_AUX_CHANNEL_COUNT;
@@ -176,7 +176,7 @@ void targetConfiguration(void)
     rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigsMutable(BBV2_FRSKY_RSSI_CH_IDX - 1);
     channelFailsafeConfig->mode = RX_FAILSAFE_MODE_SET;
     channelFailsafeConfig->step = CHANNEL_VALUE_TO_RXFAIL_STEP(1000);
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(2, 11)  | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(2, 11)  | OSD_PROFILE_1_FLAG;
 #endif
 }
 #endif

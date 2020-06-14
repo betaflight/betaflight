@@ -69,6 +69,9 @@ uint8_t mpu6500SpiDetect(const busDevice_t *bus)
     case ICM20608G_WHO_AM_I_CONST:
         mpuDetected = ICM_20608_SPI;
         break;
+    case ICM42605_WHO_AM_I_CONST:
+        mpuDetected = ICM_42605_SPI;
+        break;
     default:
         mpuDetected = MPU_NONE;
     }

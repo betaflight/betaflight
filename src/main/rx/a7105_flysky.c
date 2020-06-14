@@ -32,10 +32,11 @@
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_a7105.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -310,7 +311,7 @@ static rx_spi_received_e flySky2AReadAndProcess(uint8_t *payload, const uint32_t
         break;
     }
 
-    if (!waitTx){
+    if (!waitTx) {
         A7105Strobe(A7105_RX);
     }
     return result;
@@ -354,10 +355,9 @@ static rx_spi_received_e flySkyReadAndProcess(uint8_t *payload, const uint32_t t
     return result;
 }
 
-bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRuntimeConfig)
+bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
-    IO_t extiPin = IOGetByTag(rxSpiConfig->extiIoTag);
-    if (!extiPin) {
+    if (!rxSpiExtiConfigured()) {
         return false;
     }
 
@@ -365,20 +365,23 @@ bool flySkyInit(const rxSpiConfig_t *rxSpiConfig, struct rxRuntimeConfig_s *rxRu
 
     rxSpiCommonIOInit(rxSpiConfig);
 
+    extiConfig->ioConfig = IOCFG_IPD;
+    extiConfig->trigger = BETAFLIGHT_EXTI_TRIGGER_RISING;
+
     uint8_t startRxChannel;
 
     if (protocol == RX_SPI_A7105_FLYSKY_2A) {
-        rxRuntimeConfig->channelCount = FLYSKY_2A_CHANNEL_COUNT;
+        rxRuntimeState->channelCount = FLYSKY_2A_CHANNEL_COUNT;
         timings = &flySky2ATimings;
         rxId = U_ID_0 ^ U_ID_1 ^ U_ID_2;
         startRxChannel = flySky2ABindChannels[0];
-        A7105Init(0x5475c52A, extiPin, IO_NONE);
+        A7105Init(0x5475c52A, IO_NONE);
         A7105Config(flySky2ARegs, sizeof(flySky2ARegs));
     } else {
-        rxRuntimeConfig->channelCount = FLYSKY_CHANNEL_COUNT;
+        rxRuntimeState->channelCount = FLYSKY_CHANNEL_COUNT;
         timings = &flySkyTimings;
         startRxChannel = 0;
-        A7105Init(0x5475c52A, extiPin, IO_NONE);
+        A7105Init(0x5475c52A, IO_NONE);
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 

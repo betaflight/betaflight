@@ -39,7 +39,9 @@
 #define BARO_I2C_INSTANCE       (I2CDEV_1)
 #define DEFAULT_BARO_QMP6988
 
-#define CAMERA_CONTROL_PIN PA5
+// XXX CAMERA_CONTROL_PIN is deprecated.
+// XXX Target maintainer must create a valid timerHardware[] array entry for PA5 with TIM_USE_CAMERA_CONTROL
+//#define CAMERA_CONTROL_PIN PA5
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -139,7 +141,7 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN PA3

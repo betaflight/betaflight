@@ -46,12 +46,15 @@
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     ADCDEV_2,
     ADCDEV_3,
 #endif
-#if defined(STM32F3)
+#if defined(STM32F3) || defined(STM32G4)
     ADCDEV_4,
+#endif
+#if defined(STM32G4)
+    ADCDEV_5,
 #endif
     ADCDEV_COUNT
 } ADCDevice;
@@ -64,8 +67,8 @@ typedef enum {
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
     ADC_RSSI = 3,
-#ifdef STM32H7
-    // On STM32H7, internal sensors are treated in the similar fashion as regular ADC inputs
+#if defined(STM32H7) || defined(STM32G4)
+    // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
     ADC_CHANNEL_INTERNAL = 4,
     ADC_TEMPSENSOR = 4,
     ADC_VREFINT = 5,
@@ -75,10 +78,12 @@ typedef enum {
 
 typedef struct adcOperatingConfig_s {
     ioTag_t tag;
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32G4)
     ADCDevice adcDevice;        // ADCDEV_x for this input
+    uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
+#else
+    uint8_t adcChannel;         // ADCy_INxx channel number for this input (XXX May be consolidated with uint32_t case)
 #endif
-    uint8_t adcChannel;         // ADCy_INxx channel number for this input
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;
@@ -89,15 +94,12 @@ void adcInit(const struct adcConfig_s *config);
 uint16_t adcGetChannel(uint8_t channel);
 
 #ifdef USE_ADC_INTERNAL
-extern uint16_t adcVREFINTCAL;
-extern uint16_t adcTSCAL1;
-extern uint16_t adcTSCAL2;
-extern int16_t  adcTSSlopeK;
-
 bool adcInternalIsBusy(void);
 void adcInternalStartConversion(void);
 uint16_t adcInternalReadVrefint(void);
 uint16_t adcInternalReadTempsensor(void);
+uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue);
+int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue);
 #endif
 
 #if !defined(SIMULATOR_BUILD)

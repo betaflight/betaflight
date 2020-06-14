@@ -37,22 +37,6 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
-//#define FLASH_W25N01G_DPRINTF
-
-#ifdef FLASH_W25N01G_DPRINTF
-#include "common/printf.h"
-#include "common/utils.h"
-#include "io/serial.h"
-serialPort_t *debugSerialPort = NULL;
-#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
-#define DPRINTF(x) tfp_printf x
-#else
-#define DPRINTF(x)
-#endif
-
-// JEDEC ID
-#define JEDEC_ID_WINBOND_W25N01GV    0xEFAA21
-
 // Device size parameters
 #define W25N01G_PAGE_SIZE         2048
 #define W25N01G_PAGES_PER_BLOCK   64
@@ -88,10 +72,21 @@ serialPort_t *debugSerialPort = NULL;
 #define W25N01G_INSTRUCTION_FAST_READ        0x1B
 #define W25N01G_INSTRUCTION_FAST_READ_QUAD_OUTPUT 0x6B
 
-// Configu/status register addresses
+// Config/status register addresses
 #define W25N01G_PROT_REG 0xA0
 #define W25N01G_CONF_REG 0xB0
 #define W25N01G_STAT_REG 0xC0
+
+// Bits in config/status register 1 (W25N01G_PROT_REG)
+#define W25N01G_PROT_CLEAR                (0)
+#define W25N01G_PROT_SRP1_ENABLE          (1 << 0)
+#define W25N01G_PROT_WP_E_ENABLE          (1 << 1)
+#define W25N01G_PROT_TB_ENABLE            (1 << 2)
+#define W25N01G_PROT_PB0_ENABLE           (1 << 3)
+#define W25N01G_PROT_PB1_ENABLE           (1 << 4)
+#define W25N01G_PROT_PB2_ENABLE           (1 << 5)
+#define W25N01G_PROT_PB3_ENABLE           (1 << 6)
+#define W25N01G_PROT_SRP2_ENABLE          (1 << 7)
 
 // Bits in config/status register 2 (W25N01G_CONF_REG)
 #define W25N01G_CONFIG_ECC_ENABLE         (1 << 4)
@@ -253,20 +248,10 @@ static void w25n01g_deviceReset(flashDevice_t *fdevice)
 
     // Protection for upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on; to protect bad block replacement area
     // DON'T DO THIS. This will prevent writes through the bblut as well.
-    // w25n01g_writeRegister(busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
+    // w25n01g_writeRegister(busdev, W25N01G_PROT_REG, W25N01G_PROT_PB0_ENABLE|W25N01G_PROT_PB2_ENABLE|W25N01G_PROT_WP_E_ENABLE);
 
-    uint8_t value = (0 << 3)|(0 << 2); // No protection
-
-    if (io->mode == FLASHIO_SPI) {
-        value |= (1 << 1); // WP-E on
-    }
-#ifdef USE_QUADSPI
-    else if (io->mode == FLASHIO_QUADSPI) {
-        value |= (0 << 1); // WP-E off, WP-E prevents use of IO2
-    }
-#endif
-
-    w25n01g_writeRegister(io, W25N01G_PROT_REG, value);
+    // No protection, WP-E off, WP-E prevents use of IO2
+    w25n01g_writeRegister(io, W25N01G_PROT_REG, W25N01G_PROT_CLEAR);
 
     // Buffered read mode (BUF = 1), ECC enabled (ECC = 1)
     w25n01g_writeRegister(io, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE|W25N01G_CONFIG_BUFFER_READ_MODE);
@@ -274,31 +259,9 @@ static void w25n01g_deviceReset(flashDevice_t *fdevice)
 
 bool w25n01g_isReady(flashDevice_t *fdevice)
 {
-    // XXX Study device busy behavior and reinstate couldBeBusy facility.
-
-#if 0
-    // If couldBeBusy is false, don't bother to poll the flash chip for its status
-    fdevice->couldBeBusy = fdevice->couldBeBusy && ((w25n01g_readRegister(fdevice->handle.busdev, W25N01G_STAT_REG) & W25N01G_STATUS_FLAG_BUSY) != 0);
-
-    return !couldBeBusy;
-#else
     uint8_t status = w25n01g_readRegister(&fdevice->io, W25N01G_STAT_REG);
 
-    if (status & W25N01G_STATUS_PROGRAM_FAIL) {
-        DPRINTF(("*** PROGRAM_FAIL\r\n"));
-    }
-
-    if (status & W25N01G_STATUS_ERASE_FAIL) {
-        DPRINTF(("*** ERASE_FAIL\r\n"));
-    }
-
-    uint8_t eccCode;
-    if ((eccCode = W25N01G_STATUS_FLAG_ECC(status))) {
-        DPRINTF(("*** ECC %x\r\n", eccCode));
-    }
-
     return ((status & W25N01G_STATUS_FLAG_BUSY) == 0);
-#endif
 }
 
 static bool w25n01g_waitForReady(flashDevice_t *fdevice)
@@ -306,7 +269,6 @@ static bool w25n01g_waitForReady(flashDevice_t *fdevice)
     while (!w25n01g_isReady(fdevice)) {
         uint32_t now = millis();
         if (cmp32(now, fdevice->timeoutAt) >= 0) {
-            DPRINTF(("*** TIMEOUT %d\r\n", timeoutMillis));
             return false;
         }
     }
@@ -338,16 +300,6 @@ static void w25n01g_deviceInit(flashDevice_t *flashdev);
 
 bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
-#ifdef FLASH_W25N01G_DPRINTF
-    // Setup debugSerialPort
-    debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, NULL, 115200, MODE_RXTX, 0);
-
-    if (debugSerialPort) {
-        setPrintfSerialPort(debugSerialPort);
-        DPRINTF(("debug print init: OK\r\n"));
-    }
-#endif
-
     switch (chipID) {
     case JEDEC_ID_WINBOND_W25N01GV:
         fdevice->geometry.sectors = 1024;      // Blocks
@@ -391,31 +343,6 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
     // There will be a least chance of running out of replacement blocks.
     // If it ever run out, the device becomes unusable.
 
-#if 0
-    // Protection to upper 1/32 (BP[3:0] = 0101, TB=0), WP-E on
-    //w25n01g_writeRegister(fdevice->handle.busdev, W25N01G_PROT_REG, (5 << 3)|(0 << 2)|(1 << 1));
-
-    // No protection, WP-E on
-    w25n01g_writeRegister(fdevice->handle, W25N01G_PROT_REG, (0 << 3)|(0 << 2)|(1 << 1));
-
-    // Continuous mode (BUF = 0), ECC enabled (ECC = 1)
-    w25n01g_writeRegister(fdevice->handle, W25N01G_CONF_REG, W25N01G_CONFIG_ECC_ENABLE);
-#endif
-
-#if 0
-    // XXX Should be gone in production
-    uint8_t sr1, sr2, sr3;
-    sr1 = w25n01g_readRegister(fdevice->handle.busdev, W25N01G_PROT_REG);
-    sr2 = w25n01g_readRegister(fdevice->handle.busdev, W25N01G_CONF_REG);
-    sr3 = w25n01g_readRegister(fdevice->handle.busdev, W25N01G_STAT_REG);
-
-    debug[1] = sr1;
-    debug[2] = sr2;
-    debug[3] = sr3;
-
-    DPRINTF(("Detect: PROT 0x%x CONF 0x%x STAT 0x%x\r\n", sr1 & 0xff, sr2 & 0xff, sr3 & 0xff));
-#endif
-
     w25n01g_deviceInit(fdevice);
 
     fdevice->vTable = &w25n01g_vTable;
@@ -452,10 +379,7 @@ void w25n01g_eraseCompletely(flashDevice_t *fdevice)
 static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddress, const uint8_t *data, int length)
 {
 
-    //DPRINTF(("    load WaitForReady\r\n"));
     w25n01g_waitForReady(fdevice);
-
-    //DPRINTF(("    load Issuing command\r\n"));
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         busDevice_t *busdev = fdevice->io.handle.busdev;
@@ -473,7 +397,6 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
        quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
     }
 #endif
-    //DPRINTF(("    load Done\r\n"));
 
     w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 }
@@ -482,10 +405,8 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
 {
     const uint8_t cmd[] = { W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
 
-    //DPRINTF(("    random WaitForReady\r\n"));
     w25n01g_waitForReady(fdevice);
 
-    //DPRINTF(("    random Issuing command\r\n"));
     if (fdevice->io.mode == FLASHIO_SPI) {
         busDevice_t *busdev = fdevice->io.handle.busdev;
 
@@ -503,22 +424,16 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
      }
 #endif
 
-    //DPRINTF(("    random Done\r\n"));
-
     w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 
 }
 
 static void w25n01g_programExecute(flashDevice_t *fdevice, uint32_t pageAddress)
 {
-    //DPRINTF(("    execute WaitForReady\r\n"));
     w25n01g_waitForReady(fdevice);
-
-    //DPRINTF(("    execute Issuing command\r\n"));
 
     w25n01g_performCommandWithPageAddress(&fdevice->io, W25N01G_INSTRUCTION_PROGRAM_EXECUTE, pageAddress);
 
-    //DPRINTF(("    execute Done\r\n"));
     w25n01g_setTimeout(fdevice, W25N01G_TIMEOUT_PAGE_PROGRAM_MS);
 }
 
@@ -561,63 +476,39 @@ static uint32_t programLoadAddress;
 bool bufferDirty = false;
 bool isProgramming = false;
 
-#define DEBUG_PAGE_PROGRAM
-
-//#define PAGEPROG_DPRINTF(x) DPRINTF(x)
-#define PAGEPROG_DPRINTF(x)
-
 void w25n01g_pageProgramBegin(flashDevice_t *fdevice, uint32_t address)
 {
-    PAGEPROG_DPRINTF(("pageProgramBegin: address 0x%x\r\n", address));
-
     if (bufferDirty) {
         if (address != programLoadAddress) {
-            PAGEPROG_DPRINTF(("    Buffer dirty and address != programLoadAddress (0x%x), flushing\r\n", programLoadAddress));
-            PAGEPROG_DPRINTF(("    Wait for ready\r\n"));
             w25n01g_waitForReady(fdevice);
 
             isProgramming = false;
 
-            PAGEPROG_DPRINTF(("    Write enable\r\n"));
             w25n01g_writeEnable(fdevice);
 
-            PAGEPROG_DPRINTF(("    PROGRAM_EXECUTE PA 0x%x\r\n", W25N01G_LINEAR_TO_PAGE(programStartAddress)));
             w25n01g_programExecute(fdevice, W25N01G_LINEAR_TO_PAGE(programStartAddress));
 
             bufferDirty = false;
             isProgramming = true;
-        } else {
-            PAGEPROG_DPRINTF(("    Continuation\r\n"));
         }
     } else {
-        PAGEPROG_DPRINTF(("    Fresh page\r\n"));
         programStartAddress = programLoadAddress = address;
     }
 }
 
 void w25n01g_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
-    PAGEPROG_DPRINTF(("pageProgramContinue: length 0x%x (programLoadAddress 0x%x)\r\n", length, programLoadAddress));
-
     // Check for page boundary overrun
 
-    if (W25N01G_LINEAR_TO_PAGE(programLoadAddress + length - 1) != W25N01G_LINEAR_TO_PAGE(programStartAddress)) {
-        PAGEPROG_DPRINTF(("    **** PAGE BOUNDARY OVERRUN **** (page 0x%x)\r\n", W25N01G_LINEAR_TO_PAGE(programLoadAddress)));
-    }
-
-    PAGEPROG_DPRINTF(("    Wait for ready\r\n"));
     w25n01g_waitForReady(fdevice);
 
-    PAGEPROG_DPRINTF(("    Write enable\r\n"));
     w25n01g_writeEnable(fdevice);
 
     isProgramming = false;
 
     if (!bufferDirty) {
-        PAGEPROG_DPRINTF(("    DATA_LOAD CA 0x%x length 0x%x\r\n", W25N01G_LINEAR_TO_COLUMN(programLoadAddress), length));
         w25n01g_programDataLoad(fdevice, W25N01G_LINEAR_TO_COLUMN(programLoadAddress), data, length);
     } else {
-        PAGEPROG_DPRINTF(("    RANDOM_DATA_LOAD CA 0x%x length 0x%x\r\n", W25N01G_LINEAR_TO_COLUMN(programLoadAddress), length));
         w25n01g_randomProgramDataLoad(fdevice, W25N01G_LINEAR_TO_COLUMN(programLoadAddress), data, length);
     }
 
@@ -631,21 +522,16 @@ static uint32_t currentPage = UINT32_MAX;
 
 void w25n01g_pageProgramFinish(flashDevice_t *fdevice)
 {
-    PAGEPROG_DPRINTF(("pageProgramFinish: (loaded 0x%x bytes)\r\n", programLoadAddress - programStartAddress));
-
     if (bufferDirty && W25N01G_LINEAR_TO_COLUMN(programLoadAddress) == 0) {
-        
+
         currentPage = W25N01G_LINEAR_TO_PAGE(programStartAddress); // reset page to the page being written
-        
-        PAGEPROG_DPRINTF(("    PROGRAM_EXECUTE PA 0x%x\r\n", W25N01G_LINEAR_TO_PAGE(programStartAddress)));
+
         w25n01g_programExecute(fdevice, W25N01G_LINEAR_TO_PAGE(programStartAddress));
 
         bufferDirty = false;
         isProgramming = true;
 
         programStartAddress = programLoadAddress;
-    } else {
-        PAGEPROG_DPRINTF(("    Ignoring\r\n"));
     }
 }
 
@@ -674,12 +560,7 @@ void w25n01g_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t
 
 void w25n01g_flush(flashDevice_t *fdevice)
 {
-    PAGEPROG_DPRINTF(("close:\r\n"));
-
     if (bufferDirty) {
-        PAGEPROG_DPRINTF(("    Buffer is partially loaded (0x%x bytes)\r\n", programLoadAddress - programStartAddress));
-        PAGEPROG_DPRINTF(("    PROGRAM_EXECUTE PA 0x%x\r\n", W25N01G_LINEAR_TO_PAGE(programStartAddress)));
-
         currentPage = W25N01G_LINEAR_TO_PAGE(programStartAddress); // reset page to the page being written
 
         w25n01g_programExecute(fdevice, W25N01G_LINEAR_TO_PAGE(programStartAddress));
@@ -687,7 +568,6 @@ void w25n01g_flush(flashDevice_t *fdevice)
         bufferDirty = false;
         isProgramming = true;
     } else {
-        PAGEPROG_DPRINTF(("    Buffer is clean\r\n"));
         isProgramming = false;
     }
 }
@@ -696,7 +576,6 @@ void w25n01g_addError(uint32_t address, uint8_t code)
 {
     UNUSED(address);
     UNUSED(code);
-    DPRINTF(("addError: PA %x BA %x code %d\r\n", W25N01G_LINEAR_TO_PAGE(address), W25N01G_LINEAR_TO_BLOCK(address), code));
 }
 
 /**
@@ -719,19 +598,11 @@ void w25n01g_addError(uint32_t address, uint8_t code)
 // (3) Issue READ_DATA on column address.
 // (4) Return transferLength.
 
-//#define READBYTES_DPRINTF DPRINTF
-#define READBYTES_DPRINTF(x)
-
 int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
 {
-    READBYTES_DPRINTF(("readBytes: address 0x%x length %d\r\n", address, length));
-
     uint32_t targetPage = W25N01G_LINEAR_TO_PAGE(address);
 
     if (currentPage != targetPage) {
-        READBYTES_DPRINTF(("readBytes: PAGE_DATA_READ page 0x%x\r\n", targetPage));
-
-
         if (!w25n01g_waitForReady(fdevice)) {
             return 0;
         }
@@ -756,8 +627,6 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
     } else {
         transferLength = length;
     }
-
-    READBYTES_DPRINTF(("readBytes: READ_DATA column 0x%x transferLength 0x%x\r\n", column, transferLength));
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         busDevice_t *busdev = fdevice->io.handle.busdev;
@@ -804,8 +673,6 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
         w25n01g_deviceReset(fdevice);
         break;
     }
-
-    READBYTES_DPRINTF(("readBytes: transfered 0x%x bytes\r\n", transferLength));
 
     return transferLength;
 }

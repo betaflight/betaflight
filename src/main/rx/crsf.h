@@ -28,6 +28,19 @@
 
 #define CRSF_MAX_CHANNEL        16
 
+#define CRSF_RSSI_MIN (-130)
+#define CRSF_RSSI_MAX 0
+#define CRSF_SNR_MIN (-30)
+#define CRSF_SNR_MAX 20
+
+/* For documentation purposes
+typedef enum {
+    CRSF_RF_MODE_4_FPS = 0,
+    CRSF_RF_MODE_50_FPS,
+    CRSF_RF_MODE_150_FPS,
+} crsfRfMode_e;
+*/
+
 typedef struct crsfFrameDef_s {
     uint8_t deviceAddress;
     uint8_t frameLength;
@@ -44,6 +57,6 @@ void crsfRxWriteTelemetryData(const void *data, int len);
 void crsfRxSendTelemetryData(void);
 
 struct rxConfig_s;
-struct rxRuntimeConfig_s;
-bool crsfRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+struct rxRuntimeState_s;
+bool crsfRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);
 bool crsfRxIsActive(void);

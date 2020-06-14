@@ -21,7 +21,7 @@
 /*
  * Winbond W25M series stacked die flash driver.
  * Handles homogeneous stack of identical dies by calling die drivers.
- * 
+ *
  * Author: jflyper
  */
 
@@ -43,12 +43,14 @@
 
 #include "flash_m25p16.h"
 #include "flash_w25m.h"
+#include "flash_w25n01g.h"
 
 #include "pg/flash.h"
 
 #define W25M_INSTRUCTION_SOFTWARE_DIE_SELECT         0xC2
 
 #define JEDEC_ID_WINBOND_W25M512                     0xEF7119 // W25Q256 x 2
+#define JEDEC_ID_WINBOND_W25M02G                     0xEFAB21 // W25N01G x 2
 
 static const flashVTable_t w25m_vTable;
 
@@ -108,6 +110,7 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
 
     switch (chipID) {
+#ifdef USE_FLASH_W25M512
     case JEDEC_ID_WINBOND_W25M512:
         // W25Q256 x 2
         dieCount = 2;
@@ -121,6 +124,23 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
 
         fdevice->geometry.flashType = FLASH_TYPE_NOR;
         break;
+#endif
+
+#ifdef USE_FLASH_W25M02G
+    case JEDEC_ID_WINBOND_W25M02G:
+        // W25N01G x 2
+        dieCount = 2;
+
+        for (int die = 0 ; die < dieCount ; die++) {
+            w25m_dieSelect(fdevice->io.handle.busdev, die);
+            dieDevice[die].io.handle.busdev = fdevice->io.handle.busdev;
+            dieDevice[die].io.mode = fdevice->io.mode;
+            w25n01g_detect(&dieDevice[die], JEDEC_ID_WINBOND_W25N01GV);
+        }
+
+        fdevice->geometry.flashType = FLASH_TYPE_NAND;
+        break;
+#endif
 
     default:
         // Not a valid W25M series device
@@ -131,7 +151,7 @@ bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
         return false;
     }
 
-    fdevice->geometry.sectors = dieDevice[0].geometry.sectors;
+    fdevice->geometry.sectors = dieDevice[0].geometry.sectors * dieCount;
     fdevice->geometry.sectorSize = dieDevice[0].geometry.sectorSize;
     fdevice->geometry.pagesPerSector = dieDevice[0].geometry.pagesPerSector;
     fdevice->geometry.pageSize = dieDevice[0].geometry.pageSize;

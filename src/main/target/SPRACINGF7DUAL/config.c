@@ -49,7 +49,7 @@
 
 #include "config/feature.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #ifdef USE_TARGET_CONFIG
 

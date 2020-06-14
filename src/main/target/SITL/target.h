@@ -42,7 +42,7 @@
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
-#define EEPROM_IN_FILE
+#define CONFIG_IN_FILE
 #define EEPROM_SIZE     32768
 
 #define U_ID_0 0
@@ -131,7 +131,7 @@
 #undef USE_I2C
 #undef USE_SPI
 
-#define FLASH_SIZE 2048
+#define TARGET_FLASH_SIZE 2048
 
 
 #define LED_STRIP_TIMER 1

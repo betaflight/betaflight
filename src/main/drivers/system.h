@@ -64,9 +64,12 @@ void systemReset(void);
 void systemResetToBootloader(bootloaderRequestType_e requestType);
 bool isMPUSoftReset(void);
 void cycleCounterInit(void);
-#if defined(STM32H7)
+uint32_t clockCyclesToMicros(uint32_t clockCycles);
+uint32_t getCycleCounter(void);
+#if defined(STM32H7) || defined(STM32G4)
 void systemCheckResetReason(void);
 #endif
+
 
 void initialiseMemorySections(void);
 
@@ -80,3 +83,4 @@ typedef void extiCallbackHandlerFunc(void);
 
 void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
 
+void unusedPinsInit(void);

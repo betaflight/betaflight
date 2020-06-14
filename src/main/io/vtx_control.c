@@ -35,7 +35,7 @@
 #include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/spektrum_vtx_control.h"
@@ -180,7 +180,7 @@ void vtxCyclePower(const uint8_t powerStep)
 
         int newPower = power + powerStep;
         if (newPower >= vtxTablePowerLevels) {
-            newPower = 0;
+            newPower = 1;
         } else if (newPower < 0) {
             newPower = vtxTablePowerLevels;
         }

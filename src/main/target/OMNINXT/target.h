@@ -37,7 +37,7 @@
 #define BEEPER_PIN              PC13
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 #ifdef OMNINXT4
 #define USE_INVERTER

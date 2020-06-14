@@ -44,7 +44,7 @@
 
 #include "drivers/nvic.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
@@ -460,10 +460,6 @@ void initCrsfTelemetry(void)
     deviceInfoReplyPending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
-#endif
-
-#if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY)
-    cmsDisplayPortRegister(displayPortCrsfInit());
 #endif
 
     int index = 0;

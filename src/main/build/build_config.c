@@ -24,3 +24,55 @@
 #include "platform.h"
 
 #include "build_config.h"
+
+#ifdef STM32F1
+#warning STM32F1 based targets are unsupported as of Betaflight 3.3.
+#endif
+
+#ifdef STM32F3
+#warning STM32F3 based targets are unsupported as of Betaflight 4.1.
+#endif
+
+#ifdef USE_CLI_DEBUG_PRINT
+#warning Do not use USE_CLI_DEBUG_PRINT for production builds.
+#endif
+
+mcuTypeId_e getMcuTypeId(void)
+{
+#if defined(SIMULATOR_BUILD)
+    return MCU_TYPE_SIMULATOR;
+#elif defined(STM32F1)
+    return MCU_TYPE_F103;
+#elif defined(STM32F3)
+    return MCU_TYPE_F303;
+#elif defined(STM32F40_41xxx)
+    return MCU_TYPE_F40X;
+#elif defined(STM32F411xE)
+    return MCU_TYPE_F411;
+#elif defined(STM32F446xx)
+    return MCU_TYPE_F446;
+#elif defined(STM32F722xx)
+    return MCU_TYPE_F722;
+#elif defined(STM32F745xx)
+    return MCU_TYPE_F745;
+#elif defined(STM32F746xx)
+    return MCU_TYPE_F746;
+#elif defined(STM32F765xx)
+    return MCU_TYPE_F765;
+#elif defined(STM32H750xx)
+    return MCU_TYPE_H750;
+#elif defined(STM32H743xx)
+    switch (HAL_GetREVID()) {
+    case REV_ID_Y:
+        return MCU_TYPE_H743_REV_Y;
+    case REV_ID_X:
+        return MCU_TYPE_H743_REV_X;
+    case REV_ID_V:
+        return MCU_TYPE_H743_REV_V;
+    default:
+        return MCU_TYPE_H743_REV_UNKNOWN;
+    }
+#else
+    return MCU_TYPE_UNKNOWN;
+#endif
+}

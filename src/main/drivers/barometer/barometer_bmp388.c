@@ -99,7 +99,7 @@
 #define BMP388_TEMP_LSB_15_8_REG                        BMP388_DATA_4_REG
 #define BMP388_TEMP_XLSB_7_0_REG                        BMP388_DATA_3_REG
 
-#define BMP388_DATA_FRAME_LENGTH                        ((BMP388_DATA_5_REG - BMP388_DATA_0_REG) + 1) // +1 for inclusive
+#define BMP388_DATA_FRAME_SIZE                          ((BMP388_DATA_5_REG - BMP388_DATA_0_REG) + 1) // +1 for inclusive
 
 // from Datasheet 3.3
 #define BMP388_MODE_SLEEP                               (0x00)
@@ -112,8 +112,6 @@
 #define BMP388_CALIRATION_UPPER_REG                     (0x57)
 
 #define BMP388_TRIMMING_DATA_LENGTH                     ((BMP388_TRIMMING_NVM_PAR_P11_REG - BMP388_TRIMMING_NVM_PAR_T1_LSB_REG) + 1) // +1 for inclusive
-
-#define BMP388_DATA_FRAME_SIZE               (6)
 
 #define BMP388_OVERSAMP_1X               (0x00)
 #define BMP388_OVERSAMP_2X               (0x01)
@@ -167,15 +165,20 @@ STATIC_UNIT_TESTED bmp388_calib_param_t bmp388_cal;
 // uncompensated pressure and temperature
 uint32_t bmp388_up = 0;
 uint32_t bmp388_ut = 0;
+static uint8_t sensor_data[BMP388_DATA_FRAME_SIZE];
+
 STATIC_UNIT_TESTED int64_t t_lin = 0;
 
 static void bmp388StartUT(baroDev_t *baro);
-static void bmp388GetUT(baroDev_t *baro);
+static bool bmp388GetUT(baroDev_t *baro);
+static bool bmp388ReadUT(baroDev_t *baro);
 static void bmp388StartUP(baroDev_t *baro);
-static void bmp388GetUP(baroDev_t *baro);
+static bool bmp388GetUP(baroDev_t *baro);
+static bool bmp388ReadUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp388Calculate(int32_t *pressure, int32_t *temperature);
 
+#ifdef USE_EXTI
 void bmp388_extiHandler(extiCallbackRec_t* cb)
 {
 #ifdef DEBUG
@@ -189,6 +192,7 @@ void bmp388_extiHandler(extiCallbackRec_t* cb)
     uint8_t intStatus = 0;
     busReadRegisterBuffer(&baro->busdev, BMP388_INT_STATUS_REG, &intStatus, 1);
 }
+#endif
 
 void bmp388BusInit(busDevice_t *busdev)
 {
@@ -218,20 +222,20 @@ void bmp388BusDeinit(busDevice_t *busdev)
 void bmp388BeginForcedMeasurement(busDevice_t *busdev)
 {
     // enable pressure measurement, temperature measurement, set power mode and start sampling
-    uint8_t mode = (BMP388_MODE_FORCED << 4) | (1 << 1) | (1 << 0);
-    busWriteRegister(busdev, BMP388_PWR_CTRL_REG, mode);
+    uint8_t mode = BMP388_MODE_FORCED << 4 | 1 << 1 | 1 << 0;
+    busWriteRegisterStart(busdev, BMP388_PWR_CTRL_REG, mode);
 }
 
 bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 {
     delay(20);
 
-#if defined(USE_EXTI)
+#ifdef USE_EXTI
     IO_t baroIntIO = IOGetByTag(config->eocTag);
     if (baroIntIO) {
         IOInit(baroIntIO, OWNER_BARO_EOC, 0);
         EXTIHandlerInit(&baro->exti, bmp388_extiHandler);
-        EXTIConfig(baroIntIO, &baro->exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING);
+        EXTIConfig(baroIntIO, &baro->exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
         EXTIEnable(baroIntIO, true);
     }
 #else
@@ -259,10 +263,17 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
         return false;
     }
 
+#ifdef USE_EXTI
     if (baroIntIO) {
-        uint8_t intCtrlValue = (1 << BMP388_INT_DRDY_EN_BIT) | (0 << BMP388_INT_FFULL_EN_BIT) | (0 << BMP388_INT_FWTM_EN_BIT) | (0 << BMP388_INT_LATCH_BIT) | (1 << BMP388_INT_LEVEL_BIT) | (0 << BMP388_INT_OD_BIT);
+        uint8_t intCtrlValue = 1 << BMP388_INT_DRDY_EN_BIT |
+                               0 << BMP388_INT_FFULL_EN_BIT |
+                               0 << BMP388_INT_FWTM_EN_BIT |
+                               0 << BMP388_INT_LATCH_BIT |
+                               1 << BMP388_INT_LEVEL_BIT |
+                               0 << BMP388_INT_OD_BIT;
         busWriteRegister(busdev, BMP388_INT_CTRL_REG, intCtrlValue);
     }
+#endif
 
     // read calibration
     busReadRegisterBuffer(busdev, BMP388_TRIMMING_NVM_PAR_T1_LSB_REG, (uint8_t *)&bmp388_cal, sizeof(bmp388_calib_param_t));
@@ -278,11 +289,13 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 0;
-    baro->get_ut = bmp388GetUT;
     baro->start_ut = bmp388StartUT;
+    baro->get_ut = bmp388GetUT;
+    baro->read_ut = bmp388ReadUT;
     // only _up part is executed, and gets both temperature and pressure
     baro->start_up = bmp388StartUP;
     baro->get_up = bmp388GetUP;
+    baro->read_up = bmp388ReadUP;
 
     // See datasheet 3.9.2 "Measurement rate in forced mode and normal mode"
     baro->up_delay = 234 +
@@ -290,6 +303,8 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
         (313 + (powerf(2, BMP388_TEMPERATURE_OSR + 1) * 2000));
 
     baro->calculate = bmp388Calculate;
+
+    while (busBusy(&baro->busdev, NULL));
 
     return true;
 }
@@ -300,10 +315,18 @@ static void bmp388StartUT(baroDev_t *baro)
     // dummy
 }
 
-static void bmp388GetUT(baroDev_t *baro)
+static bool bmp388ReadUT(baroDev_t *baro)
 {
     UNUSED(baro);
     // dummy
+    return true;
+}
+
+static bool bmp388GetUT(baroDev_t *baro)
+{
+    UNUSED(baro);
+    // dummy
+    return true;
 }
 
 static void bmp388StartUP(baroDev_t *baro)
@@ -312,15 +335,27 @@ static void bmp388StartUP(baroDev_t *baro)
     bmp388BeginForcedMeasurement(&baro->busdev);
 }
 
-static void bmp388GetUP(baroDev_t *baro)
+static bool bmp388ReadUP(baroDev_t *baro)
 {
-    uint8_t dataFrame[BMP388_DATA_FRAME_LENGTH];
+    if (busBusy(&baro->busdev, NULL)) {
+        return false;
+    }
 
     // read data from sensor
-    busReadRegisterBuffer(&baro->busdev, BMP388_DATA_0_REG, dataFrame, BMP388_DATA_FRAME_LENGTH);
+    busReadRegisterBufferStart(&baro->busdev, BMP388_DATA_0_REG, sensor_data, BMP388_DATA_FRAME_SIZE);
 
-    bmp388_up = ((uint32_t)(dataFrame[0]) << 0) | ((uint32_t)(dataFrame[1]) << 8) | ((uint32_t)(dataFrame[2]) << 16);
-    bmp388_ut = ((uint32_t)(dataFrame[3]) << 0) | ((uint32_t)(dataFrame[4]) << 8) | ((uint32_t)(dataFrame[5]) << 16);
+    return true;
+}
+
+static bool bmp388GetUP(baroDev_t *baro)
+{
+    if (busBusy(&baro->busdev, NULL)) {
+        return false;
+    }
+
+    bmp388_up = sensor_data[0] << 0 | sensor_data[1] << 8 | sensor_data[2] << 16;
+    bmp388_ut = sensor_data[3] << 0 | sensor_data[4] << 8 | sensor_data[5] << 16;
+    return true;
 }
 
 // Returns temperature in DegC, resolution is 0.01 DegC. Output value of "5123" equals 51.23 DegC

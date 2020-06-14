@@ -32,7 +32,7 @@ extern "C" {
     #include "config/feature.h"
     #include "drivers/buf_writer.h"
     #include "drivers/vtx_common.h"
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/rc_adjustments.h"
     #include "fc/runtime_config.h"
     #include "flight/mixer.h"
@@ -52,10 +52,11 @@ extern "C" {
     #include "rx/rx.h"
     #include "scheduler/scheduler.h"
     #include "sensors/battery.h"
+    #include "sensors/gyro.h"
 
-    void cliSet(char *cmdline);
-    void cliGet(char *cmdline);
+    void cliSet(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
+    void *cliGetValuePointer(const clivalue_t *value);
     
     const clivalue_t valueTable[] = {
         { "array_unit_test",   VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config.array.length = 3,      PG_RESERVED_FOR_TESTING_1, 0 },
@@ -64,6 +65,7 @@ extern "C" {
     };
     const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
     const lookupTableEntry_t lookupTables[] = {};
+    const char * const lookupTableOsdDisplayPortDevice[] = {};
 
 
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
@@ -84,6 +86,7 @@ extern "C" {
     PG_REGISTER_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
     PG_REGISTER_ARRAY(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs, PG_RX_FAILSAFE_CHANNEL_CONFIG, 0);
     PG_REGISTER(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
+    PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
     PG_REGISTER_WITH_RESET_FN(int8_t, unitTestData, PG_RESERVED_FOR_TESTING_1, 0);
 }
@@ -94,7 +97,7 @@ extern "C" {
 TEST(CLIUnittest, TestCliSetArray)
 {
     char *str = (char *)"array_unit_test    =   123,  -3  , 1";
-    cliSet(str);
+    cliSet("", str);
 
     const uint16_t index = cliGetSettingIndex(str, 15);
     EXPECT_LT(index, valueTableEntryCount);
@@ -112,16 +115,12 @@ TEST(CLIUnittest, TestCliSetArray)
     EXPECT_EQ(123, data[0]);
     EXPECT_EQ( -3, data[1]);
     EXPECT_EQ(  1, data[2]);
-
-
-    //cliGet((char *)"osd_item_vbat");
-    //EXPECT_EQ(false, false);
 }
 
 TEST(CLIUnittest, TestCliSetStringNoFlags)
 {
     char *str = (char *)"str_unit_test    =   SAMPLE"; 
-    cliSet(str);
+    cliSet("", str);
 
     const uint16_t index = cliGetSettingIndex(str, 13);
     EXPECT_LT(index, valueTableEntryCount);
@@ -149,7 +148,7 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
 {
     char *str1 = (char *)"wos_unit_test    =   SAMPLE"; 
     char *str2 = (char *)"wos_unit_test    =   ELPMAS"; 
-    cliSet(str1);
+    cliSet("", str1);
 
     const uint16_t index = cliGetSettingIndex(str1, 13);
     EXPECT_LT(index, valueTableEntryCount);
@@ -171,7 +170,7 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ('E', data[5]);
     EXPECT_EQ(0,   data[6]);
 
-    cliSet(str2);
+    cliSet("", str2);
 
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
@@ -181,7 +180,7 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ('E', data[5]);
     EXPECT_EQ(0,   data[6]);
 
-    cliSet(str1);
+    cliSet("", str1);
 
     EXPECT_EQ('S', data[0]);
     EXPECT_EQ('A', data[1]);
@@ -264,7 +263,7 @@ void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
 bool parseColor(int, const char *) {return false; }
-void resetEEPROM(void) {}
+bool resetEEPROM(bool) { return true; }
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 void gpsEnablePassthrough(struct serialPort_s *) {}
@@ -274,14 +273,14 @@ const char rcChannelLetters[] = "AERT12345678abcdefgh";
 void parseRcChannels(const char *, rxConfig_t *){}
 void mixerLoadMix(int, motorMixer_t *) {}
 bool setModeColor(ledModeIndex_e, int, int) { return false; }
-float convertExternalToMotor(uint16_t ){ return 1.0; }
+float motorConvertFromExternal(uint16_t) { return 1.0; }
+void motorShutdown(void) { }
 uint8_t getCurrentPidProfileIndex(void){ return 1; }
 uint8_t getCurrentControlRateProfileIndex(void){ return 1; }
 void changeControlRateProfile(uint8_t) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *) {}
 void writeEEPROM() {}
-void writeEEPROMWithFeatures(uint32_t) {}
-serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e) {return NULL; }
+serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e) {return NULL; }
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
@@ -301,7 +300,7 @@ uint8_t __config_start = 0x00;
 uint8_t __config_end = 0x10;
 uint16_t averageSystemLoadPercent = 0;
 
-timeDelta_t getTaskDeltaTime(cfTaskId_e){ return 0; }
+timeDelta_t getTaskDeltaTimeUs(taskId_e){ return 0; }
 uint16_t currentRxRefreshRate = 9000;
 armingDisableFlags_e getArmingDisableFlags(void) { return ARMING_DISABLED_NO_GYRO; }
 
@@ -309,9 +308,10 @@ const char *armingDisableFlagNames[]= {
 "DUMMYDISABLEFLAGNAME"
 };
 
-void getTaskInfo(cfTaskId_e, cfTaskInfo_t *) {}
+void getTaskInfo(taskId_e, taskInfo_t *) {}
 void getCheckFuncInfo(cfCheckFuncInfo_t *) {}
-void schedulerResetTaskMaxExecutionTime(cfTaskId_e) {}
+void schedulerResetTaskMaxExecutionTime(taskId_e) {}
+void schedulerResetCheckFunctionMaxExecutionTime(void) {}
 
 const char * const targetName = "UNITTEST";
 const char* const buildDate = "Jan 01 2017";
@@ -328,10 +328,10 @@ void schedulerSetCalulateTaskStatistics(bool) {}
 void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
-void stopPwmAllMotors(void) {}
 void systemResetToBootloader(void) {}
-void resetConfigs(void) {}
+void resetConfig(void) {}
 void systemReset(void) {}
+void writeUnmodifiedConfigToEEPROM(void) {}
 
 void changePidProfile(uint8_t) {}
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
@@ -345,9 +345,9 @@ void serialSetCtrlLineState(serialPort_t *, uint16_t ) {}
 
 void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
-char *getBoardName(void) { return NULL; };
-char *getManufacturerId(void) { return NULL; };
-bool boardInformationIsSet(void) { return true; };
+char *getBoardName(void) { return NULL; }
+char *getManufacturerId(void) { return NULL; }
+bool boardInformationIsSet(void) { return true; }
 
 bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
 bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
@@ -356,4 +356,10 @@ bool persistBoardInformation(void) { return true; };
 void activeAdjustmentRangeReset(void) {}
 void analyzeModeActivationConditions(void) {}
 bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }
+
+void delay(uint32_t) {}
+displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
+mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
+uint16_t getCurrentRxRefreshRate(void) { return 0; }
+uint16_t getAverageSystemLoadPercent(void) { return 0; }
 }

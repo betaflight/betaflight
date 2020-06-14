@@ -153,7 +153,7 @@ static int32_t BMI160_Config(const busDevice_t *bus)
 
     // Verify that normal power mode was entered
     uint8_t pmu_status = spiBusReadRegister(bus, BMI160_REG_PMU_STAT);
-    if ((pmu_status & 0x3C) != 0x14){
+    if ((pmu_status & 0x3C) != 0x14) {
         return -3;
     }
 
@@ -252,7 +252,7 @@ static void bmi160IntExtiInit(gyroDev_t *gyro)
 
     IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, bmi160ExtiHandler);
-    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, EXTI_TRIGGER_RISING); // TODO - maybe pullup / pulldown ?
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING); // TODO - maybe pullup / pulldown ?
     EXTIEnable(mpuIntIO, true);
 }
 #endif

@@ -119,16 +119,11 @@ bool vtxCommonGetBandAndChannel(const vtxDevice_t *vtxDevice, uint8_t *pBand, ui
         && !vtxTableIsFactoryBand[selectedBand - 1]) {
         uint16_t freq;
         result = vtxCommonGetFrequency(vtxDevice, &freq);
-        if (!result || freq != vtxCommonLookupFrequency(vtxDevice, selectedBand, selectedChannel)) {
-            return false;
-        } else {
-            *pBand = selectedBand;
-            *pChannel = selectedChannel;
-            return true;
+        if (result) {
+            vtxCommonLookupBandChan(vtxDevice, freq, pBand, pChannel);
         }
-    } else {
-        return result;
     }
+    return result;
 }
 
 bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
@@ -136,19 +131,24 @@ bool vtxCommonGetPowerIndex(const vtxDevice_t *vtxDevice, uint8_t *pIndex)
     return vtxDevice->vTable->getPowerIndex(vtxDevice, pIndex);
 }
 
-bool vtxCommonGetPitMode(const vtxDevice_t *vtxDevice, uint8_t *pOnOff)
-{
-    return vtxDevice->vTable->getPitMode(vtxDevice, pOnOff);
-}
-
 bool vtxCommonGetFrequency(const vtxDevice_t *vtxDevice, uint16_t *pFrequency)
 {
     return vtxDevice->vTable->getFrequency(vtxDevice, pFrequency);
 }
 
+bool vtxCommonGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
+{
+    return vtxDevice->vTable->getStatus(vtxDevice, status);
+}
+
+uint8_t vtxCommonGetVTXPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *levels, uint16_t *powers)
+{
+    return vtxDevice->vTable->getPowerLevels(vtxDevice, levels, powers);
+}
+
 const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 {
-    if (vtxDevice) {
+    if (vtxDevice && band > 0 && band <= vtxTableBandCount) {
         return vtxTableBandNames[band];
     } else {
         return "?";
@@ -157,7 +157,7 @@ const char *vtxCommonLookupBandName(const vtxDevice_t *vtxDevice, int band)
 
 char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
 {
-    if (vtxDevice) {
+    if (vtxDevice && band > 0 && band <= vtxTableBandCount) {
         return vtxTableBandLetters[band];
     } else {
         return '?';
@@ -166,7 +166,7 @@ char vtxCommonLookupBandLetter(const vtxDevice_t *vtxDevice, int band)
 
 const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel)
 {
-    if (vtxDevice) {
+    if (vtxDevice && channel > 0 && channel <= vtxTableChannelCount) {
         return vtxTableChannelNames[channel];
     } else {
         return "?";
@@ -174,8 +174,11 @@ const char *vtxCommonLookupChannelName(const vtxDevice_t *vtxDevice, int channel
 }
 
 //Converts frequency (in MHz) to band and channel values.
-bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
+//If frequency not found in the vtxtable then band and channel will return 0
+void vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
 {
+    *pBand = 0;
+    *pChannel = 0;
     if (vtxDevice) {
         // Use reverse lookup order so that 5880Mhz
         // get Raceband 7 instead of Fatshark 8.
@@ -184,16 +187,11 @@ bool vtxCommonLookupBandChan(const vtxDevice_t *vtxDevice, uint16_t freq, uint8_
                 if (vtxTableFrequency[band][channel] == freq) {
                     *pBand = band + 1;
                     *pChannel = channel + 1;
-                    return true;
+                    return;
                 }
             }
         }
     }
-
-    *pBand = 0;
-    *pChannel = 0;
-
-    return false;
 }
 
 //Converts band and channel values to a frequency (in MHz) value.
@@ -214,7 +212,7 @@ uint16_t vtxCommonLookupFrequency(const vtxDevice_t *vtxDevice, int band, int ch
 
 const char *vtxCommonLookupPowerName(const vtxDevice_t *vtxDevice, int index)
 {
-    if (vtxDevice) {
+    if (vtxDevice && index > 0 && index <= vtxTablePowerLevels) {
         return vtxTablePowerLabels[index];
     } else {
         return "?";

@@ -31,3 +31,5 @@ bool mscCheckButton(void);
 void mscWaitForButton(void);
 void systemResetToMsc(int timezoneOffsetMinutes);
 void systemResetFromMsc(void);
+void mscSetActive(void);
+void mscActivityLed(void);

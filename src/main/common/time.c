@@ -1,5 +1,5 @@
 /*
- * This file is part of INAV.
+ * This file is part of Cleanflight, Betaflight and INAV.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -200,7 +200,8 @@ bool dateTimeFormatUTC(char *buf, dateTime_t *dt)
 
 bool dateTimeFormatLocal(char *buf, dateTime_t *dt)
 {
-    return dateTimeFormat(buf, dt, timeConfig()->tz_offsetMinutes, false);
+    const int16_t timezoneOffset = rtcIsDateTimeValid(dt) ? timeConfig()->tz_offsetMinutes : 0;
+    return dateTimeFormat(buf, dt, timezoneOffset, false);
 }
 
 bool dateTimeFormatLocalShort(char *buf, dateTime_t *dt)
@@ -266,6 +267,7 @@ bool rtcSetDateTime(dateTime_t *dt)
     return rtcSet(&t);
 }
 
+#if defined(USE_PERSISTENT_OBJECTS)
 void rtcPersistWrite(int16_t offsetMinutes)
 {
     rtcTime_t workTime;
@@ -292,5 +294,5 @@ bool rtcPersistRead(rtcTime_t *t)
         return false;
     }
 }
-
 #endif
+#endif // USE_RTC_TIME

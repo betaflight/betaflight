@@ -30,7 +30,7 @@
 
 #include "drivers/pwm_esc_detect.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 
 #include "flight/pid.h"
@@ -65,7 +65,7 @@ void targetConfiguration(void)
 #else
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY_HUB;
         rxConfigMutable()->serialrx_inverted = true;
-        featureEnable(FEATURE_TELEMETRY);
+        featureConfigSet(FEATURE_TELEMETRY);
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());
 

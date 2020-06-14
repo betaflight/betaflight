@@ -2,35 +2,17 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_i2c.c
   * @author  MCD Application Team
-  * @version V1.2.2
-  * @date    14-April-2017
   * @brief   I2C LL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */
@@ -102,7 +84,7 @@
   *          - SUCCESS: I2C registers are de-initialized
   *          - ERROR: I2C registers are not de-initialized
   */
-uint32_t LL_I2C_DeInit(I2C_TypeDef *I2Cx)
+ErrorStatus LL_I2C_DeInit(I2C_TypeDef *I2Cx)
 {
   ErrorStatus status = SUCCESS;
 
@@ -160,7 +142,7 @@ uint32_t LL_I2C_DeInit(I2C_TypeDef *I2Cx)
   *          - SUCCESS: I2C registers are initialized
   *          - ERROR: Not applicable
   */
-uint32_t LL_I2C_Init(I2C_TypeDef *I2Cx, LL_I2C_InitTypeDef *I2C_InitStruct)
+ErrorStatus LL_I2C_Init(I2C_TypeDef *I2Cx, LL_I2C_InitTypeDef *I2C_InitStruct)
 {
   /* Check the I2C Instance I2Cx */
   assert_param(IS_I2C_ALL_INSTANCE(I2Cx));
@@ -200,7 +182,12 @@ uint32_t LL_I2C_Init(I2C_TypeDef *I2Cx, LL_I2C_InitTypeDef *I2C_InitStruct)
    */
   LL_I2C_DisableOwnAddress1(I2Cx);
   LL_I2C_SetOwnAddress1(I2Cx, I2C_InitStruct->OwnAddress1, I2C_InitStruct->OwnAddrSize);
-  LL_I2C_EnableOwnAddress1(I2Cx);
+
+  /* OwnAdress1 == 0 is reserved for General Call address */
+  if (I2C_InitStruct->OwnAddress1 != 0U)
+  {
+    LL_I2C_EnableOwnAddress1(I2Cx);
+  }
 
   /*---------------------------- I2Cx MODE Configuration -----------------------
   * Configure I2Cx peripheral mode with parameter :

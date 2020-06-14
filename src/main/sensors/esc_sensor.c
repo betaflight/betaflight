@@ -28,6 +28,8 @@
 
 #include "build/debug.h"
 
+#include "common/time.h"
+
 #include "config/feature.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -36,13 +38,16 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/pwm_output.h"
+#include "drivers/timer.h"
+#include "drivers/motor.h"
+#include "drivers/dshot.h"
+#include "drivers/dshot_dpwm.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
 #include "esc_sensor.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "flight/mixer.h"
 
@@ -204,7 +209,7 @@ static void escSensorDataReceive(uint16_t c, void *data)
 
 bool escSensorInit(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
     if (!portConfig) {
         return false;
     }
@@ -265,8 +270,10 @@ static uint8_t decodeEscFrame(void)
 
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
 
-        DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, calcEscRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
-        DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+        if (escSensorMotor < 4) {
+            DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, calcEscRpm(escSensorData[escSensorMotor].rpm) / 10); // output actual rpm/10 to fit in 16bit signed.
+            DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
+        }
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
     }
@@ -291,11 +298,13 @@ static void selectNextMotor(void)
     }
 }
 
+// XXX Review ESC sensor under refactored motor handling
+
 void escSensorProcess(timeUs_t currentTimeUs)
 {
     const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
-    if (!escSensorPort || !pwmAreMotorsEnabled()) {
+    if (!escSensorPort || !motorIsEnabled()) {
         return;
     }
 
@@ -312,7 +321,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
             startEscDataRead(telemetryBuffer, TELEMETRY_FRAME_SIZE);
             motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
-            motor->requestTelemetry = true;
+            motor->protocolControl.requestTelemetry = true;
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
 
             DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_MOTOR_INDEX, escSensorMotor + 1);

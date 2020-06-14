@@ -27,12 +27,8 @@
 
 typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_NONE = 0,
-#ifdef USE_FLASHFS
     BLACKBOX_DEVICE_FLASH = 1,
-#endif
-#ifdef USE_SDCARD
     BLACKBOX_DEVICE_SDCARD = 2,
-#endif
     BLACKBOX_DEVICE_SERIAL = 3
 } BlackboxDevice_e;
 
@@ -44,8 +40,12 @@ typedef enum BlackboxMode {
 
 typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
+    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_START = 10,   // UNUSED
+    FLIGHT_LOG_EVENT_AUTOTUNE_CYCLE_RESULT = 11,  // UNUSED
+    FLIGHT_LOG_EVENT_AUTOTUNE_TARGETS = 12,       // UNUSED
     FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
     FLIGHT_LOG_EVENT_LOGGING_RESUME = 14,
+    FLIGHT_LOG_EVENT_DISARM = 15,
     FLIGHT_LOG_EVENT_FLIGHTMODE = 30, // Add new event type for flight mode status.
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;

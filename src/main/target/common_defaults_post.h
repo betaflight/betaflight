@@ -177,6 +177,19 @@
 
 #endif // I2C_FULL_RECONFIGURABILITY
 
+#ifndef I2C1_OVERCLOCK
+#define I2C1_OVERCLOCK false
+#endif
+#ifndef I2C2_OVERCLOCK
+#define I2C2_OVERCLOCK false
+#endif
+#ifndef I2C3_OVERCLOCK
+#define I2C3_OVERCLOCK false
+#endif
+#ifndef I2C4_OVERCLOCK
+#define I2C4_OVERCLOCK false
+#endif
+
 // Default values for internal pullup
 
 #if defined(USE_I2C_PULLUP)
@@ -301,6 +314,10 @@
 #define RX_SPI_EXTI_PIN NONE
 #endif
 
+#if !defined(RX_SPI_BIND_PIN)
+#define RX_SPI_BIND_PIN NONE
+#endif
+
 #if defined(USE_RX_CC2500)
 #if !defined(RX_CC2500_SPI_TX_EN_PIN)
 #define RX_CC2500_SPI_TX_EN_PIN NONE
@@ -316,6 +333,8 @@
 #endif
 #endif
 
+// gyro hardware
+
 #if !defined(GYRO_1_SPI_INSTANCE)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
@@ -328,15 +347,10 @@
 #define GYRO_1_EXTI_PIN         NONE
 #endif
 
-#if !defined(GYRO_1_ALIGN)
-#define GYRO_1_ALIGN            ALIGN_DEFAULT
-#endif
-
 // F4 and F7 single gyro boards
 #if defined(USE_MULTI_GYRO) && !defined(GYRO_2_SPI_INSTANCE)
-#define GYRO_2_SPI_INSTANCE     GYRO_1_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE     NULL
 #define GYRO_2_CS_PIN           NONE
-#define GYRO_2_ALIGN            ALIGN_DEFAULT
 #define GYRO_2_EXTI_PIN         NONE
 #endif
 
@@ -353,6 +367,21 @@
 #define MAX_GYRODEV_COUNT 1
 #define MAX_ACCDEV_COUNT 1
 #endif
+
+// gyro alignments
+
+#if !defined(GYRO_1_ALIGN)
+#define GYRO_1_ALIGN            CW0_DEG
+#endif
+
+#if !defined(GYRO_2_ALIGN)
+#define GYRO_2_ALIGN            CW0_DEG
+#endif
+
+// Previously there was logic here to default GYRO_1_CUSTOM_ALIGN and GYRO_2_CUSTOM_ALIGN
+// to CUSTOM_ALIGN_CW0_DEG if they weren't defined in the target. The defaulting logic
+// has been moved to pg/gyrodev.c to set the custom alignment based on the sensor alignment
+// if a custom alignment is not applied in the target.
 
 #ifdef USE_VCP
 #ifndef USB_DETECT_PIN
@@ -391,7 +420,31 @@
 #endif // USE_SDCARD_SPI
 #ifdef USE_SDCARD_SDIO
 #ifndef SDCARD_SDIO_DMA_OPT
-#define SDCARD_SDIO_DMA_OPT (-1)
+#define SDCARD_SDIO_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#ifndef SDIO_DEVICE
+#define SDIO_DEVICE SDIOINVALID
+#endif
+#ifndef SDIO_USE_4BIT
+#define SDIO_USE_4BIT false
+#endif
+#ifndef SDIO_CK_PIN
+#define SDIO_CK_PIN NONE
+#endif
+#ifndef SDIO_CMD_PIN
+#define SDIO_CMD_PIN NONE
+#endif
+#ifndef SDIO_D0_PIN
+#define SDIO_D0_PIN NONE
+#endif
+#ifndef SDIO_D1_PIN
+#define SDIO_D1_PIN NONE
+#endif
+#ifndef SDIO_D2_PIN
+#define SDIO_D2_PIN NONE
+#endif
+#ifndef SDIO_D3_PIN
+#define SDIO_D3_PIN NONE
 #endif
 #endif // USE_SDCARD_SDIO
 #endif // USE_SDCARD
@@ -461,13 +514,19 @@
 #endif
 
 #if !defined(ADC1_DMA_OPT)
-#define ADC1_DMA_OPT (-1)
+#define ADC1_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #if !defined(ADC2_DMA_OPT)
-#define ADC2_DMA_OPT (-1)
+#define ADC2_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #if !defined(ADC3_DMA_OPT)
-#define ADC3_DMA_OPT (-1)
+#define ADC3_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#if !defined(ADC4_DMA_OPT)
+#define ADC4_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#if !defined(ADC5_DMA_OPT)
+#define ADC5_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 
 #endif // USE_ADC
@@ -475,107 +534,116 @@
 #ifdef USE_SPI
 #ifdef USE_SPI_DEVICE_1
 #ifndef SPI1_TX_DMA_OPT
-#define SPI1_TX_DMA_OPT (-1)
+#define SPI1_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef SPI1_RX_DMA_OPT
-#define SPI1_RX_DMA_OPT (-1)
+#define SPI1_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 #ifdef USE_SPI_DEVICE_2
 #ifndef SPI2_TX_DMA_OPT
-#define SPI2_TX_DMA_OPT (-1)
+#define SPI2_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef SPI2_RX_DMA_OPT
-#define SPI2_RX_DMA_OPT (-1)
+#define SPI2_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 #ifdef USE_SPI_DEVICE_3
 #ifndef SPI3_TX_DMA_OPT
-#define SPI3_TX_DMA_OPT (-1)
+#define SPI3_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef SPI3_RX_DMA_OPT
-#define SPI3_RX_DMA_OPT (-1)
+#define SPI3_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 #ifdef USE_SPI_DEVICE_4
 #ifndef SPI4_TX_DMA_OPT
-#define SPI4_TX_DMA_OPT (-1)
+#define SPI4_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef SPI4_RX_DMA_OPT
-#define SPI4_RX_DMA_OPT (-1)
+#define SPI4_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 #endif
 
 #ifdef USE_UART1
 #ifndef UART1_TX_DMA_OPT
-#define UART1_TX_DMA_OPT (-1)
+#define UART1_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART1_RX_DMA_OPT
-#define UART1_RX_DMA_OPT (-1)
+#define UART1_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART2
 #ifndef UART2_TX_DMA_OPT
-#define UART2_TX_DMA_OPT (-1)
+#define UART2_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART2_RX_DMA_OPT
-#define UART2_RX_DMA_OPT (-1)
+#define UART2_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART3
 #ifndef UART3_TX_DMA_OPT
-#define UART3_TX_DMA_OPT (-1)
+#define UART3_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART3_RX_DMA_OPT
-#define UART3_RX_DMA_OPT (-1)
+#define UART3_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART4
 #ifndef UART4_TX_DMA_OPT
-#define UART4_TX_DMA_OPT (-1)
+#define UART4_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART4_RX_DMA_OPT
-#define UART4_RX_DMA_OPT (-1)
+#define UART4_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART5
 #ifndef UART5_TX_DMA_OPT
-#define UART5_TX_DMA_OPT (-1)
+#define UART5_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART5_RX_DMA_OPT
-#define UART5_RX_DMA_OPT (-1)
+#define UART5_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART6
 #ifndef UART6_TX_DMA_OPT
-#define UART6_TX_DMA_OPT (-1)
+#define UART6_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART6_RX_DMA_OPT
-#define UART6_RX_DMA_OPT (-1)
+#define UART6_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART7
 #ifndef UART7_TX_DMA_OPT
-#define UART7_TX_DMA_OPT (-1)
+#define UART7_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART7_RX_DMA_OPT
-#define UART7_RX_DMA_OPT (-1)
+#define UART7_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
 #ifdef USE_UART8
 #ifndef UART8_TX_DMA_OPT
-#define UART8_TX_DMA_OPT (-1)
+#define UART8_TX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #ifndef UART8_RX_DMA_OPT
-#define UART8_RX_DMA_OPT (-1)
+#define UART8_RX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#endif
+
+#ifdef USE_UART9
+#ifndef UART9_TX_DMA_OPT
+#define UART9_TX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#ifndef UART9_RX_DMA_OPT
+#define UART9_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 
@@ -608,3 +676,13 @@
 #endif
 #define MAX_SUPPORTED_SERVOS 8
 #endif
+
+#if defined(USE_DSHOT_BITBANG)
+#if !defined(DSHOT_BITBANG_DEFAULT)
+#define DSHOT_BITBANG_DEFAULT DSHOT_BITBANG_AUTO
+#endif
+
+#if !defined(DSHOT_BITBANGED_TIMER_DEFAULT)
+#define DSHOT_BITBANGED_TIMER_DEFAULT DSHOT_BITBANGED_TIMER_AUTO
+#endif
+#endif // USE_DSHOT_BITBANG

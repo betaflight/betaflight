@@ -46,7 +46,7 @@
 #define BEEPER_PIN                          PC15
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR                   true
+#define ENABLE_DSHOT_DMAR                   DSHOT_DMAR_ON
 
 #if (SPRACINGF4NEO_REV >= 2)
     #define INVERTER_PIN_UART2              PB2
@@ -141,7 +141,6 @@
 
 // Bus Switched Device, Device B.
 #define USE_VTX_RTC6705
-#define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
 #define RTC6705_CS_PIN                      PC4
 #define RTC6705_SPI_INSTANCE                SPI3

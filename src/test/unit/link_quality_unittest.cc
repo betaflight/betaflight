@@ -33,12 +33,12 @@ extern "C" {
     #include "common/printf.h"
     #include "common/streambuf.h"
 
-    #include "drivers/max7456_symbols.h"
+    #include "drivers/osd_symbols.h"
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
-    #include "fc/config.h"
+    #include "config/config.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
@@ -83,12 +83,12 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+    PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
     timeUs_t simulationTime = 0;
 
     void osdRefresh(timeUs_t currentTimeUs);
     uint16_t updateLinkQualitySamples(uint16_t value);
-    uint16_t scaleCrsfLq(uint16_t lqvalue);
 #define LINK_QUALITY_SAMPLE_COUNT 16
 }
 
@@ -199,7 +199,7 @@ TEST(LQTest, TestInit)
 
     // when
     // OSD is initialised
-    osdInit(&testDisplayPort);
+    osdInit(&testDisplayPort, OSD_DISPLAYPORT_DEVICE_AUTO);
 
     // then
     // display buffer should contain splash screen
@@ -229,7 +229,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_SAMPLES)
 
     linkQualitySource = LQ_SOURCE_NONE;
 
-    osdConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
     osdConfigMutable()->link_quality_alarm = 0;
 
     osdAnalyzeActiveElements();
@@ -269,7 +269,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_VALUES)
 
     linkQualitySource = LQ_SOURCE_NONE;
 
-    osdConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
     osdConfigMutable()->link_quality_alarm = 0;
 
     osdAnalyzeActiveElements();
@@ -285,7 +285,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_VALUES)
         displayPortTestPrint();
 #endif
         // then
-        if (testdigit >= 10){
+        if (testdigit >= 10) {
             displayPortTestBufferSubstring(8, 1,"%c9", SYM_LINK_QUALITY);
         }else{
             displayPortTestBufferSubstring(8, 1,"%c%1d", SYM_LINK_QUALITY, testdigit - 1);
@@ -300,7 +300,7 @@ TEST(LQTest, TestElementLQ_PROTOCOL_CRSF_VALUES)
     // given
     linkQualitySource = LQ_SOURCE_RX_PROTOCOL_CRSF;
 
-    osdConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1) | OSD_PROFILE_1_FLAG;
     osdConfigMutable()->link_quality_alarm = 0;
 
     osdAnalyzeActiveElements();
@@ -310,16 +310,19 @@ TEST(LQTest, TestElementLQ_PROTOCOL_CRSF_VALUES)
 
     // crsf setLinkQualityDirect 0-300;
 
-    for (uint16_t x = 0; x <= 300; x++) {
-        // when x scaled
-        setLinkQualityDirect(scaleCrsfLq(x));
-        // then rxGetLinkQuality Osd should be x
-        displayClearScreen(&testDisplayPort);
-        osdRefresh(simulationTime);
-        displayPortTestBufferSubstring(8, 1,"%c%3d", SYM_LINK_QUALITY, x);
-
+    for (uint8_t x = 0; x <= 99; x++) {
+        for (uint8_t m = 0; m <= 4; m++) {
+            // when x scaled
+            setLinkQualityDirect(x);
+            rxSetRfMode(m);
+            // then rxGetLinkQuality Osd should be x
+            // and RfMode should be m
+            displayClearScreen(&testDisplayPort);
+            osdRefresh(simulationTime);
+                displayPortTestBufferSubstring(8, 1, "%c%1d:%2d", SYM_LINK_QUALITY, m, x);
+            }
+        }
     }
-}
 /*
  * Tests the LQ Alarms
  *
@@ -335,7 +338,7 @@ TEST(LQTest, TestLQAlarm)
     // and
     // the following OSD elements are visible
 
-    osdConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1)  | OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_LINK_QUALITY] = OSD_POS(8, 1)  | OSD_PROFILE_1_FLAG;
 
     // and
     // this set of alarm values
@@ -405,6 +408,10 @@ extern "C" {
         return simulationTime;
     }
 
+    uint32_t microsISR() {
+        return micros();
+    }
+
     uint32_t millis() {
         return micros() / 1000;
     }
@@ -422,11 +429,11 @@ extern "C" {
     int32_t getMAhDrawn() { return 0; }
     int32_t getEstimatedAltitudeCm() { return 0; }
     int32_t getEstimatedVario() { return 0; }
-    unsigned int blackboxGetLogNumber() { return 0; }
+    int32_t blackboxGetLogNumber() { return 0; }
     bool isBlackboxDeviceWorking() { return true; }
     bool isBlackboxDeviceFull() { return false; }
     serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
-    serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
+    const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
     bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
     bool cmsDisplayPortRegister(displayPort_t *) { return false; }
     uint16_t getCoreTemperatureCelsius(void) { return 0; }
@@ -442,7 +449,7 @@ extern "C" {
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
     void failsafeOnRxSuspend(uint32_t ) {}
     void failsafeOnRxResume(void) {}
-    void featureDisable(uint32_t) { }
+    void featureDisableImmediate(uint32_t) { }
     bool rxMspFrameComplete(void) { return false; }
     bool isPPMDataBeingReceived(void) { return false; }
     bool isPWMDataBeingReceived(void) { return false; }
@@ -450,74 +457,74 @@ extern "C" {
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
 
-    void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
     }
 
-    bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(initialRxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool sumdInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool sumhInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool crsfRxInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback);
+    bool crsfRxInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback);
 
-    bool jetiExBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool jetiExBusInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool ibusInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool xBusInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
 
-    bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataFnPtr *callback)
+    bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {
         UNUSED(rxConfig);
-        UNUSED(rxRuntimeConfig);
+        UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
     }
@@ -542,4 +549,5 @@ extern "C" {
         return 0.0;
     }
 
+    bool isUpright(void) { return true; }
 }

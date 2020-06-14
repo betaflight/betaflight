@@ -32,6 +32,7 @@ VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
 alignsensor_unittest_SRC := \
 		$(USER_DIR)/sensors/boardalignment.c \
+		$(USER_DIR)/common/sensor_alignment.c \
 		$(USER_DIR)/common/maths.c
 
 arming_prevention_unittest_SRC := \
@@ -276,9 +277,11 @@ scheduler_unittest_SRC := \
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
+		$(USER_DIR)/sensors/gyro_init.c \
 		$(USER_DIR)/sensors/boardalignment.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/sensor_alignment.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
@@ -434,10 +437,15 @@ COMMON_FLAGS = \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
 
+CC_VERSION = $(shell $(CC) -dumpversion)
+CXX_VERSION = $(shell $(CXX) -dumpversion)
+
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 COMMON_FLAGS += -fblocks
 ifndef CYGWIN
+ifndef MACOSX
 LDFLAGS	     += -lBlocksRuntime
+endif
 endif
 endif
 
@@ -537,6 +545,10 @@ help what usage: Makefile
 	@echo ""
 	@echo "Any of the Unit Test programs (except for target specific unit tests) can be used as goals to build and run:"
 	@$(foreach test, $(TESTS), echo "    test_$(test)";)
+
+versions:
+	@echo "C compiler: $(CC): $(CC_VERSION)"
+	@echo "C++ compiler: $(CXX): $(CXX_VERSION)"
 
 ## clean       : Cleanup the UnitTest binaries.
 clean :

@@ -182,6 +182,7 @@ Enable with cli:
 
 It supports 16 channels with a transfer rate of 100Hz. The HS option (High Speed) is currently not supported.
 The receiver must be configured in the device manager to EX Bus and connected to a free FC serial _TX_ pin.
+For more information on the wiring and setup see [this document](resources/How.to.setup.your.RX.and.FC.for.Jeti.Ex-Bus.pdf).
 
 
 ## MultiWii serial protocol (MSP)

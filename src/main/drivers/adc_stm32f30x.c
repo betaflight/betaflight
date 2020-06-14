@@ -43,25 +43,25 @@
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Channelx = DMA1_Channel1,
+        .dmaResource = (dmaResource_t *)DMA1_Channel1,
 #endif
     },
 #ifdef ADC24_DMA_REMAP
     { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Channelx = DMA2_Channel3,
+        .dmaResource = (dmaResource_t *)DMA2_Channel3,
 #endif
     },
 #else
     { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Channelx = DMA2_Channel1,
+        .dmaResource = (dmaResource_t *)DMA2_Channel1,
 #endif
     },
 #endif
     { .ADCx = ADC3, .rccADC = RCC_AHB(ADC34),
 #if !defined(USE_DMA_SPEC)
-        .DMAy_Channelx = DMA2_Channel5,
+        .dmaResource = (dmaResource_t *)DMA2_Channel5,
 #endif
     }
 };
@@ -182,11 +182,11 @@ void adcInit(const adcConfig_t *config)
 
     dmaInit(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device));
 
-    DMA_DeInit(dmaSpec->ref);
+    DMA_DeInit((DMA_ARCH_TYPE *)dmaSpec->ref);
 #else
-    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
+    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
 
-    DMA_DeInit(adc.DMAy_Channelx);
+    xDMA_DeInit(adc.dmaResource);
 #endif
 
     DMA_StructInit(&DMA_InitStructure);
@@ -203,11 +203,11 @@ void adcInit(const adcConfig_t *config)
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
 #if defined(USE_DMA_SPEC)
-    DMA_Init(dmaSpec->ref, &DMA_InitStructure);
-    DMA_Cmd(dmaSpec->ref, ENABLE);
+    xDMA_Init(dmaSpec->ref, &DMA_InitStructure);
+    xDMA_Cmd(dmaSpec->ref, ENABLE);
 #else
-    DMA_Init(adc.DMAy_Channelx, &DMA_InitStructure);
-    DMA_Cmd(adc.DMAy_Channelx, ENABLE);
+    xDMA_Init(adc.dmaResource, &DMA_InitStructure);
+    xDMA_Cmd(adc.dmaResource, ENABLE);
 #endif
 
     // calibrate

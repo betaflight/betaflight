@@ -47,7 +47,7 @@
 #include "common/filter.h"
 #include "config/feature.h"
 #include "drivers/pwm_esc_detect.h"
-#include "fc/config.h"
+#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -105,7 +105,7 @@ void targetConfiguration(void)
 
     pidConfigMutable()->runaway_takeoff_prevention = false;
 
-    featureEnable((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
+    featureConfigSet((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
 
     /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {

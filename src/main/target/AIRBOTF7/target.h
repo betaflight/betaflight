@@ -29,7 +29,7 @@
 #define BEEPER_PIN              PB0
 #define BEEPER_INVERTED
 
-#define ENABLE_DSHOT_DMAR       true
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
 
 // *************** Gyro & ACC **********************
 #define USE_SPI
@@ -120,16 +120,13 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
 
-// *************** CAM *****************************
-
-#define CAMERA_CONTROL_PIN      PA8
-
 // *************** I2C *****************************
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C1_SCL                PB8
-#define I2C1_SDA                PB9 
+#define I2C1_SDA                PB9
+#define I2C_DEVICE              (I2CDEV_1)
 
 // *************** ADC *****************************
 #define USE_ADC

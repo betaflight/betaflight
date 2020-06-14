@@ -26,11 +26,12 @@
 
 #include "common/maths.h"
 
-#include "drivers/rx/rx_cc2500.h"
 #include "drivers/io.h"
+#include "drivers/rx/rx_cc2500.h"
+#include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
 
-#include "fc/config.h"
+#include "config/config.h"
 
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
@@ -62,77 +63,100 @@ static uint8_t bindIdx;
 static int8_t bindOffset;
 
 typedef uint8_t handlePacketFn(uint8_t * const packet, uint8_t * const protocolState);
+typedef rx_spi_received_e processFrameFn(uint8_t * const packet);
 typedef void setRcDataFn(uint16_t *rcData, const uint8_t *payload);
 
 static handlePacketFn *handlePacket;
+static processFrameFn *processFrame;
 static setRcDataFn *setRcData;
+
+const cc2500RegisterConfigElement_t cc2500FrskyBaseConfig[] =
+{
+    { CC2500_02_IOCFG0,   0x01 },
+    { CC2500_18_MCSM0,    0x18 },
+    { CC2500_07_PKTCTRL1, 0x04 },
+    { CC2500_3E_PATABLE,  0xFF },
+    { CC2500_0C_FSCTRL0,  0x00 },
+    { CC2500_0D_FREQ2,    0x5C },
+    { CC2500_13_MDMCFG1,  0x23 },
+    { CC2500_14_MDMCFG0,  0x7A },
+    { CC2500_19_FOCCFG,   0x16 },
+    { CC2500_1A_BSCFG,    0x6C },
+    { CC2500_1B_AGCCTRL2, 0x03 },
+    { CC2500_1C_AGCCTRL1, 0x40 },
+    { CC2500_1D_AGCCTRL0, 0x91 },
+    { CC2500_21_FREND1,   0x56 },
+    { CC2500_22_FREND0,   0x10 },
+    { CC2500_23_FSCAL3,   0xA9 },
+    { CC2500_24_FSCAL2,   0x0A },
+    { CC2500_25_FSCAL1,   0x00 },
+    { CC2500_26_FSCAL0,   0x11 },
+    { CC2500_29_FSTEST,   0x59 },
+    { CC2500_2C_TEST2,    0x88 },
+    { CC2500_2D_TEST1,    0x31 },
+    { CC2500_2E_TEST0,    0x0B },
+    { CC2500_03_FIFOTHR,  0x07 },
+    { CC2500_09_ADDR,     0x00 }
+};
+
+const cc2500RegisterConfigElement_t cc2500FrskyDConfig[] =
+{
+    { CC2500_17_MCSM1,    0x0C },
+    { CC2500_0E_FREQ1,    0x76 },
+    { CC2500_0F_FREQ0,    0x27 },
+    { CC2500_06_PKTLEN,   0x19 },
+    { CC2500_08_PKTCTRL0, 0x05 },
+    { CC2500_0B_FSCTRL1,  0x08 },
+    { CC2500_10_MDMCFG4,  0xAA },
+    { CC2500_11_MDMCFG3,  0x39 },
+    { CC2500_12_MDMCFG2,  0x11 },
+    { CC2500_15_DEVIATN,  0x42 }
+};
+
+const cc2500RegisterConfigElement_t cc2500FrskyXConfig[] =
+{
+    { CC2500_17_MCSM1,    0x0C },
+    { CC2500_0E_FREQ1,    0x76 },
+    { CC2500_0F_FREQ0,    0x27 },
+    { CC2500_06_PKTLEN,   0x1E },
+    { CC2500_08_PKTCTRL0, 0x01 },
+    { CC2500_0B_FSCTRL1,  0x0A },
+    { CC2500_10_MDMCFG4,  0x7B },
+    { CC2500_11_MDMCFG3,  0x61 },
+    { CC2500_12_MDMCFG2,  0x13 },
+    { CC2500_15_DEVIATN,  0x51 }
+};
+
+const cc2500RegisterConfigElement_t cc2500FrskyXLbtConfig[] =
+{
+    { CC2500_17_MCSM1,    0x0E },
+    { CC2500_0E_FREQ1,    0x80 },
+    { CC2500_0F_FREQ0,    0x00 },
+    { CC2500_06_PKTLEN,   0x23 },
+    { CC2500_08_PKTCTRL0, 0x01 },
+    { CC2500_0B_FSCTRL1,  0x08 },
+    { CC2500_10_MDMCFG4,  0x7B },
+    { CC2500_11_MDMCFG3,  0xF8 },
+    { CC2500_12_MDMCFG2,  0x03 },
+    { CC2500_15_DEVIATN,  0x53 }
+};
 
 static void initialise() {
     cc2500Reset();
-    cc2500WriteReg(CC2500_02_IOCFG0,   0x01);
-    cc2500WriteReg(CC2500_18_MCSM0,    0x18);
-    cc2500WriteReg(CC2500_07_PKTCTRL1, 0x04);
-    cc2500WriteReg(CC2500_3E_PATABLE,  0xFF);
-    cc2500WriteReg(CC2500_0C_FSCTRL0,  0x00);
-    cc2500WriteReg(CC2500_0D_FREQ2,    0x5C);
-    cc2500WriteReg(CC2500_13_MDMCFG1,  0x23);
-    cc2500WriteReg(CC2500_14_MDMCFG0,  0x7A);
-    cc2500WriteReg(CC2500_19_FOCCFG,   0x16);
-    cc2500WriteReg(CC2500_1A_BSCFG,    0x6C);
-    cc2500WriteReg(CC2500_1B_AGCCTRL2, 0x03);
-    cc2500WriteReg(CC2500_1C_AGCCTRL1, 0x40);
-    cc2500WriteReg(CC2500_1D_AGCCTRL0, 0x91);
-    cc2500WriteReg(CC2500_21_FREND1,   0x56);
-    cc2500WriteReg(CC2500_22_FREND0,   0x10);
-    cc2500WriteReg(CC2500_23_FSCAL3,   0xA9);
-    cc2500WriteReg(CC2500_24_FSCAL2,   0x0A);
-    cc2500WriteReg(CC2500_25_FSCAL1,   0x00);
-    cc2500WriteReg(CC2500_26_FSCAL0,   0x11);
-    cc2500WriteReg(CC2500_29_FSTEST,   0x59);
-    cc2500WriteReg(CC2500_2C_TEST2,    0x88);
-    cc2500WriteReg(CC2500_2D_TEST1,    0x31);
-    cc2500WriteReg(CC2500_2E_TEST0,    0x0B);
-    cc2500WriteReg(CC2500_03_FIFOTHR,  0x07);
-    cc2500WriteReg(CC2500_09_ADDR,     0x00);
+
+    cc2500ApplyRegisterConfig(cc2500FrskyBaseConfig, sizeof(cc2500FrskyBaseConfig));
 
     switch (spiProtocol) {
     case RX_SPI_FRSKY_D:
-        cc2500WriteReg(CC2500_17_MCSM1,    0x0C);
-        cc2500WriteReg(CC2500_0E_FREQ1,    0x76);
-        cc2500WriteReg(CC2500_0F_FREQ0,    0x27);
-        cc2500WriteReg(CC2500_06_PKTLEN,   0x19);
-        cc2500WriteReg(CC2500_08_PKTCTRL0, 0x05);
-        cc2500WriteReg(CC2500_0B_FSCTRL1,  0x08);
-        cc2500WriteReg(CC2500_10_MDMCFG4,  0xAA);
-        cc2500WriteReg(CC2500_11_MDMCFG3,  0x39);
-        cc2500WriteReg(CC2500_12_MDMCFG2,  0x11);
-        cc2500WriteReg(CC2500_15_DEVIATN,  0x42);
+        cc2500ApplyRegisterConfig(cc2500FrskyDConfig, sizeof(cc2500FrskyDConfig));
 
         break;
     case RX_SPI_FRSKY_X:
-        cc2500WriteReg(CC2500_17_MCSM1,    0x0C);
-        cc2500WriteReg(CC2500_0E_FREQ1,    0x76);
-        cc2500WriteReg(CC2500_0F_FREQ0,    0x27);
-        cc2500WriteReg(CC2500_06_PKTLEN,   0x1E);
-        cc2500WriteReg(CC2500_08_PKTCTRL0, 0x01);
-        cc2500WriteReg(CC2500_0B_FSCTRL1,  0x0A);
-        cc2500WriteReg(CC2500_10_MDMCFG4,  0x7B);
-        cc2500WriteReg(CC2500_11_MDMCFG3,  0x61);
-        cc2500WriteReg(CC2500_12_MDMCFG2,  0x13);
-        cc2500WriteReg(CC2500_15_DEVIATN,  0x51);
+        cc2500ApplyRegisterConfig(cc2500FrskyXConfig, sizeof(cc2500FrskyXConfig));
 
         break;
     case RX_SPI_FRSKY_X_LBT:
-        cc2500WriteReg(CC2500_17_MCSM1,    0x0E);
-        cc2500WriteReg(CC2500_0E_FREQ1,    0x80);
-        cc2500WriteReg(CC2500_0F_FREQ0,    0x00);
-        cc2500WriteReg(CC2500_06_PKTLEN,   0x23);
-        cc2500WriteReg(CC2500_08_PKTCTRL0, 0x01);
-        cc2500WriteReg(CC2500_0B_FSCTRL1,  0x08);
-        cc2500WriteReg(CC2500_10_MDMCFG4,  0x7B);
-        cc2500WriteReg(CC2500_11_MDMCFG3,  0xF8);
-        cc2500WriteReg(CC2500_12_MDMCFG2,  0x03);
-        cc2500WriteReg(CC2500_15_DEVIATN,  0x53);
+        cc2500ApplyRegisterConfig(cc2500FrskyXLbtConfig, sizeof(cc2500FrskyXLbtConfig));
 
         break;
     default:
@@ -152,13 +176,16 @@ static void initialise() {
     }
 }
 
-void initialiseData(uint8_t adr)
+void initialiseData(bool inBindState)
 {
     cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)rxCc2500SpiConfig()->bindOffset);
     cc2500WriteReg(CC2500_18_MCSM0, 0x8);
-    cc2500WriteReg(CC2500_09_ADDR, adr ? 0x03 : rxCc2500SpiConfig()->bindTxId[0]);
+    cc2500WriteReg(CC2500_09_ADDR, inBindState ? 0x03 : rxCc2500SpiConfig()->bindTxId[0]);
     cc2500WriteReg(CC2500_07_PKTCTRL1, 0x0D);
     cc2500WriteReg(CC2500_19_FOCCFG, 0x16);
+    if (!inBindState) {
+        cc2500WriteReg(CC2500_03_FIFOTHR,  0x14);
+    }
     delay(10);
 }
 
@@ -190,7 +217,7 @@ static bool tuneRx(uint8_t *packet)
         bindOffset += 5;
         cc2500WriteReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset);
     }
-    if (cc2500getGdo()) {
+    if (rxSpiGetExtiState()) {
         uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
         if (ccLen) {
             cc2500ReadFifo(packet, ccLen);
@@ -230,7 +257,7 @@ static bool getBind1(uint8_t *packet)
     // len|bind |tx
     // id|03|01|idx|h0|h1|h2|h3|h4|00|00|00|00|00|00|00|00|00|00|00|00|00|00|00|CHK1|CHK2|RSSI|LQI/CRC|
     // Start by getting bind packet 0 and the txid
-    if (cc2500getGdo()) {
+    if (rxSpiGetExtiState()) {
         uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
         if (ccLen) {
             cc2500ReadFifo(packet, ccLen);
@@ -259,7 +286,7 @@ static bool getBind1(uint8_t *packet)
 static bool getBind2(uint8_t *packet)
 {
     if (bindIdx <= 120) {
-        if (cc2500getGdo()) {
+        if (rxSpiGetExtiState()) {
             uint8_t ccLen = cc2500ReadReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
             if (ccLen) {
                 cc2500ReadFifo(packet, ccLen);
@@ -334,7 +361,7 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
     case STATE_BIND_TUNING:
        if (tuneRx(packet)) {
             initGetBind();
-            initialiseData(1);
+            initialiseData(true);
 
             protocolState = STATE_BIND_BINDING1;
         }
@@ -378,6 +405,15 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
     return ret;
 }
 
+rx_spi_received_e frSkySpiProcessFrame(uint8_t *packet)
+{
+    if (processFrame) {
+        return processFrame(packet);
+    }
+
+    return RX_SPI_RECEIVED_NONE;
+}
+
 void frSkySpiSetRcData(uint16_t *rcData, const uint8_t *payload)
 {
     setRcData(rcData, payload);
@@ -404,8 +440,10 @@ void nextChannel(uint8_t skip)
     }
 }
 
-bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig)
 {
+    UNUSED(extiConfig);
+
     rxSpiCommonIOInit(rxSpiConfig);
     if (!cc2500SpiInit()) {
         return false;
@@ -415,7 +453,7 @@ bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntime
 
     switch (spiProtocol) {
     case RX_SPI_FRSKY_D:
-        rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_D;
+        rxRuntimeState->channelCount = RC_CHANNEL_COUNT_FRSKY_D;
 
         handlePacket = frSkyDHandlePacket;
         setRcData = frSkyDSetRcData;
@@ -424,9 +462,12 @@ bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeConfig_t *rxRuntime
         break;
     case RX_SPI_FRSKY_X:
     case RX_SPI_FRSKY_X_LBT:
-        rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_FRSKY_X;
+        rxRuntimeState->channelCount = RC_CHANNEL_COUNT_FRSKY_X;
 
         handlePacket = frSkyXHandlePacket;
+#if defined(USE_RX_FRSKY_SPI_TELEMETRY) && defined(USE_TELEMETRY_SMARTPORT)
+        processFrame = frSkyXProcessFrame;
+#endif
         setRcData = frSkyXSetRcData;
         frSkyXInit(spiProtocol);
 

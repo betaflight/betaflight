@@ -78,7 +78,7 @@ static bool rcdeviceRespCtxQueuePush(rcdeviceWaitingResponseQueue *queue, rcdevi
     }
     queue->itemCount += 1;
     queue->tailPos = newTailPos;
-    
+
     return true;
 }
 
@@ -272,7 +272,7 @@ void runcamDeviceInit(runcamDevice_t *device)
 {
     device->isReady = false;
     serialPortFunction_e portID = FUNCTION_RCDEVICE;
-    serialPortConfig_t *portConfig = findSerialPortConfig(portID);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(portID);
     if (portConfig != NULL) {
         device->serialPort = openSerialPort(portConfig->identifier, portID, NULL, NULL, 115200, MODE_RXTX, SERIAL_NOT_INVERTED);
         device->info.protocolVersion = rcdeviceConfig()->protocolVersion;
@@ -358,7 +358,7 @@ static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs
     return respCtx;
 }
 
-void rcdeviceReceive(timeUs_t currentTimeUs) 
+void rcdeviceReceive(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
@@ -393,7 +393,7 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
                     uint8_t crcFromPacket = respCtx->recvBuf[3];
                     respCtx->recvBuf[3] = respCtx->recvBuf[4]; // move packet tail field to crc field, and calc crc with first 4 bytes
                     uint8_t crc = crc8HighFirst(respCtx->recvBuf, 4);
-                    
+
                     respCtx->result = crc == crcFromPacket ? RCDEVICE_RESP_SUCCESS : RCDEVICE_RESP_INCORRECT_CRC;
                 } else {
                     respCtx->result = RCDEVICE_RESP_INCORRECT_CRC;

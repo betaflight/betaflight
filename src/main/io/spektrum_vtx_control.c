@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "fc/config.h"
+#include "config/config.h"
 #include "drivers/vtx_common.h"
 #include "io/vtx.h"
 
@@ -69,12 +69,12 @@ const uint8_t vtxTrampPi[SPEKTRUM_VTX_POWER_COUNT] = {
     VTX_TRAMP_POWER_200                // Manual               -           -        -     -
 };
 #endif // USE_VTX_TRAMP
-
+//todo: enable pit mode where appropriate, for all protcols
 #ifdef USE_VTX_RTC6705
 // RTC6705 "---", 25 or 200 mW
 const uint8_t vtxRTC6705Pi[SPEKTRUM_VTX_POWER_COUNT] = {
-    VTX_6705_POWER_OFF,                // Off
-    VTX_6705_POWER_OFF,                //   1 -  14mW
+    VTX_6705_POWER_25,                // Off
+    VTX_6705_POWER_25,                //   1 -  14mW
     VTX_6705_POWER_25,                 //  15 -  25mW
     VTX_6705_POWER_25,                 //  26 -  99mW
     VTX_6705_POWER_200,                // 100 - 299mW
@@ -208,9 +208,9 @@ void spektrumVtxControl(void)
             newSettings.power   = power;
         }
         // Everyone seems to agree on what PIT ON/OFF means
-        uint8_t currentPitMode = 0;
-        if (vtxCommonGetPitMode(vtxDevice, &currentPitMode)) {
-            if (currentPitMode != vtx.pitMode) {
+        unsigned vtxCurrentStatus;
+        if (vtxCommonGetStatus(vtxDevice, &vtxCurrentStatus)) {
+            if ((vtxCurrentStatus & VTX_STATUS_PIT_MODE) != vtx.pitMode) {
                 vtxCommonSetPitMode(vtxDevice, vtx.pitMode);
             }
         }

@@ -25,8 +25,12 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-const int TEST_PID_LOOP_TIME = 650;
-const int TEST_UPDATE_ACCEL_TIME = 192;
+const int TEST_GYRO_SAMPLE_HZ = 8000;
+const int TEST_GYRO_SAMPLE_TIME = 10;
+const int TEST_FILTERING_TIME = 40;
+const int TEST_PID_LOOP_TIME = 58;
+const int TEST_UPDATE_ACCEL_TIME = 32;
+const int TEST_UPDATE_ATTITUDE_TIME = 28;
 const int TEST_HANDLE_SERIAL_TIME = 30;
 const int TEST_UPDATE_BATTERY_TIME = 1;
 const int TEST_UPDATE_RX_CHECK_TIME = 34;
@@ -38,16 +42,26 @@ const int TEST_DISPATCH_TIME = 1;
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 
 extern "C" {
-    cfTask_t * unittest_scheduler_selectedTask;
+    task_t * unittest_scheduler_selectedTask;
     uint8_t unittest_scheduler_selectedTaskDynPrio;
     uint16_t unittest_scheduler_waitingTasks;
+    timeDelta_t unittest_scheduler_taskRequiredTimeUs;
+    bool taskGyroRan = false;
+    bool taskFilterRan = false;
+    bool taskPidRan = false;
+    bool taskFilterReady = false;
+    bool taskPidReady = false;
 
     // set up micros() to simulate time
     uint32_t simulatedTime = 0;
     uint32_t micros(void) { return simulatedTime; }
 
     // set up tasks to take a simulated representative time to execute
-    void taskMainPidLoop(timeUs_t) { simulatedTime += TEST_PID_LOOP_TIME; }
+    bool gyroFilterReady(void) { return taskFilterReady; }
+    bool pidLoopReady(void) { return taskPidReady; }
+    void taskGyroSample(timeUs_t) { simulatedTime += TEST_GYRO_SAMPLE_TIME; taskGyroRan = true; }
+    void taskFiltering(timeUs_t) { simulatedTime += TEST_FILTERING_TIME; taskFilterRan = true; }
+    void taskMainPidLoop(timeUs_t) { simulatedTime += TEST_PID_LOOP_TIME; taskPidRan = true; }
     void taskUpdateAccelerometer(timeUs_t) { simulatedTime += TEST_UPDATE_ACCEL_TIME; }
     void taskHandleSerial(timeUs_t) { simulatedTime += TEST_HANDLE_SERIAL_TIME; }
     void taskUpdateBatteryVoltage(timeUs_t) { simulatedTime += TEST_UPDATE_BATTERY_TIME; }
@@ -56,77 +70,101 @@ extern "C" {
     void imuUpdateAttitude(timeUs_t) { simulatedTime += TEST_IMU_UPDATE_TIME; }
     void dispatchProcess(timeUs_t) { simulatedTime += TEST_DISPATCH_TIME; }
 
+    void resetGyroTaskTestFlags(void) {
+        taskGyroRan = false;
+        taskFilterRan = false;
+        taskPidRan = false;
+        taskFilterReady = false;
+        taskPidReady = false;
+    }
+
     extern int taskQueueSize;
-    extern cfTask_t* taskQueueArray[];
+    extern task_t* taskQueueArray[];
 
     extern void queueClear(void);
-    extern bool queueContains(cfTask_t *task);
-    extern bool queueAdd(cfTask_t *task);
-    extern bool queueRemove(cfTask_t *task);
-    extern cfTask_t *queueFirst(void);
-    extern cfTask_t *queueNext(void);
+    extern bool queueContains(task_t *task);
+    extern bool queueAdd(task_t *task);
+    extern bool queueRemove(task_t *task);
+    extern task_t *queueFirst(void);
+    extern task_t *queueNext(void);
 
-    cfTask_t cfTasks[TASK_COUNT] = {
+    task_t tasks[TASK_COUNT] = {
         [TASK_SYSTEM] = {
             .taskName = "SYSTEM",
             .taskFunc = taskSystemLoad,
-            .desiredPeriod = TASK_PERIOD_HZ(10),
+            .desiredPeriodUs = TASK_PERIOD_HZ(10),
             .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
         },
-        [TASK_GYROPID] = {
+        [TASK_GYRO] = {
+            .taskName = "GYRO",
+            .taskFunc = taskGyroSample,
+            .desiredPeriodUs = TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ),
+            .staticPriority = TASK_PRIORITY_REALTIME,
+        },
+        [TASK_FILTER] = {
+            .taskName = "FILTER",
+            .taskFunc = taskFiltering,
+            .desiredPeriodUs = TASK_PERIOD_HZ(4000),
+            .staticPriority = TASK_PRIORITY_REALTIME,
+        },
+        [TASK_PID] = {
             .taskName = "PID",
-            .subTaskName = "GYRO",
             .taskFunc = taskMainPidLoop,
-            .desiredPeriod = 1000,
+            .desiredPeriodUs = TASK_PERIOD_HZ(4000),
             .staticPriority = TASK_PRIORITY_REALTIME,
         },
         [TASK_ACCEL] = {
             .taskName = "ACCEL",
             .taskFunc = taskUpdateAccelerometer,
-            .desiredPeriod = 10000,
+            .desiredPeriodUs = TASK_PERIOD_HZ(1000),
             .staticPriority = TASK_PRIORITY_MEDIUM,
         },
         [TASK_ATTITUDE] = {
             .taskName = "ATTITUDE",
             .taskFunc = imuUpdateAttitude,
-            .desiredPeriod = TASK_PERIOD_HZ(100),
+            .desiredPeriodUs = TASK_PERIOD_HZ(100),
             .staticPriority = TASK_PRIORITY_MEDIUM,
         },
         [TASK_RX] = {
             .taskName = "RX",
             .checkFunc = rxUpdateCheck,
             .taskFunc = taskUpdateRxMain,
-            .desiredPeriod = TASK_PERIOD_HZ(50),
+            .desiredPeriodUs = TASK_PERIOD_HZ(50),
             .staticPriority = TASK_PRIORITY_HIGH,
         },
         [TASK_SERIAL] = {
             .taskName = "SERIAL",
             .taskFunc = taskHandleSerial,
-            .desiredPeriod = TASK_PERIOD_HZ(100),
+            .desiredPeriodUs = TASK_PERIOD_HZ(100),
             .staticPriority = TASK_PRIORITY_LOW,
         },
         [TASK_DISPATCH] = {
             .taskName = "DISPATCH",
             .taskFunc = dispatchProcess,
-            .desiredPeriod = TASK_PERIOD_HZ(1000),
+            .desiredPeriodUs = TASK_PERIOD_HZ(1000),
             .staticPriority = TASK_PRIORITY_HIGH,
         },
         [TASK_BATTERY_VOLTAGE] = {
             .taskName = "BATTERY_VOLTAGE",
             .taskFunc = taskUpdateBatteryVoltage,
-            .desiredPeriod = TASK_PERIOD_HZ(50),
+            .desiredPeriodUs = TASK_PERIOD_HZ(50),
             .staticPriority = TASK_PRIORITY_MEDIUM,
         }
     };
+
+    task_t *getTask(unsigned taskId)
+    {
+        return &tasks[taskId];
+    }
 }
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_LOW, cfTasks[TASK_SERIAL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_BATTERY_VOLTAGE].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].staticPriority);
 }
 
 TEST(SchedulerUnittest, TestQueueInit)
@@ -140,58 +178,47 @@ TEST(SchedulerUnittest, TestQueueInit)
     }
 }
 
-cfTask_t *deadBeefPtr = reinterpret_cast<cfTask_t*>(0xDEADBEEF);
+task_t *deadBeefPtr = reinterpret_cast<task_t*>(0xDEADBEEF);
 
 TEST(SchedulerUnittest, TestQueue)
 {
     queueClear();
     taskQueueArray[TASK_COUNT + 1] = deadBeefPtr;
 
-    queueAdd(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_MEDIUM_HIGH
+    queueAdd(&tasks[TASK_SYSTEM]); // TASK_PRIORITY_MEDIUM_HIGH
     EXPECT_EQ(1, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
+    EXPECT_EQ(&tasks[TASK_SYSTEM], queueFirst());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    queueAdd(&cfTasks[TASK_GYROPID]); // TASK_PRIORITY_REALTIME
+    queueAdd(&tasks[TASK_SERIAL]); // TASK_PRIORITY_LOW
     EXPECT_EQ(2, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
+    EXPECT_EQ(&tasks[TASK_SYSTEM], queueFirst());
+    EXPECT_EQ(&tasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    queueAdd(&cfTasks[TASK_SERIAL]); // TASK_PRIORITY_LOW
+    queueAdd(&tasks[TASK_BATTERY_VOLTAGE]); // TASK_PRIORITY_MEDIUM
     EXPECT_EQ(3, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+    EXPECT_EQ(&tasks[TASK_SYSTEM], queueFirst());
+    EXPECT_EQ(&tasks[TASK_BATTERY_VOLTAGE], queueNext());
+    EXPECT_EQ(&tasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    queueAdd(&cfTasks[TASK_BATTERY_VOLTAGE]); // TASK_PRIORITY_MEDIUM
+    queueAdd(&tasks[TASK_RX]); // TASK_PRIORITY_HIGH
     EXPECT_EQ(4, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_BATTERY_VOLTAGE], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+    EXPECT_EQ(&tasks[TASK_RX], queueFirst());
+    EXPECT_EQ(&tasks[TASK_SYSTEM], queueNext());
+    EXPECT_EQ(&tasks[TASK_BATTERY_VOLTAGE], queueNext());
+    EXPECT_EQ(&tasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    queueAdd(&cfTasks[TASK_RX]); // TASK_PRIORITY_HIGH
-    EXPECT_EQ(5, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
-    EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_BATTERY_VOLTAGE], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
-    EXPECT_EQ(NULL, queueNext());
-    EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
-
-    queueRemove(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
-    EXPECT_EQ(4, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
-    EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_BATTERY_VOLTAGE], queueNext());
-    EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
+    queueRemove(&tasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
+    EXPECT_EQ(3, taskQueueSize);
+    EXPECT_EQ(&tasks[TASK_RX], queueFirst());
+    EXPECT_EQ(&tasks[TASK_BATTERY_VOLTAGE], queueNext());
+    EXPECT_EQ(&tasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 }
@@ -203,22 +230,22 @@ TEST(SchedulerUnittest, TestQueueAddAndRemove)
 
     // fill up the queue
     for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
-        const bool added = queueAdd(&cfTasks[taskId]);
-        EXPECT_EQ(true, added);
+        const bool added = queueAdd(&tasks[taskId]);
+        EXPECT_TRUE(added);
         EXPECT_EQ(taskId + 1, taskQueueSize);
         EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
     }
 
     // double check end of queue
     EXPECT_EQ(TASK_COUNT, taskQueueSize);
-    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[TASK_COUNT - 1]); // last item was indeed added to queue
+    EXPECT_NE(static_cast<task_t*>(0), taskQueueArray[TASK_COUNT - 1]); // last item was indeed added to queue
     EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT]); // null pointer at end of queue is preserved
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]); // there hasn't been an out by one error
 
     // and empty it again
     for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
-        const bool removed = queueRemove(&cfTasks[taskId]);
-        EXPECT_EQ(true, removed);
+        const bool removed = queueRemove(&tasks[taskId]);
+        EXPECT_TRUE(removed);
         EXPECT_EQ(TASK_COUNT - taskId - 1, taskQueueSize);
         EXPECT_EQ(NULL, taskQueueArray[TASK_COUNT - taskId]);
         EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
@@ -240,16 +267,16 @@ TEST(SchedulerUnittest, TestQueueArray)
     EXPECT_EQ(enqueuedTasks, taskQueueSize);
 
     for (int taskId = 0; taskId < TASK_COUNT_UNITTEST - 1; ++taskId) {
-        if (cfTasks[taskId].taskFunc) {
-            setTaskEnabled(static_cast<cfTaskId_e>(taskId), true);
+        if (tasks[taskId].taskFunc) {
+            setTaskEnabled(static_cast<taskId_e>(taskId), true);
             enqueuedTasks++;
             EXPECT_EQ(enqueuedTasks, taskQueueSize);
             EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT_UNITTEST + 1]);
         }
     }
 
-    EXPECT_NE(static_cast<cfTask_t*>(0), taskQueueArray[enqueuedTasks - 1]);
-    const cfTask_t *lastTaskPrev = taskQueueArray[enqueuedTasks - 1];
+    EXPECT_NE(static_cast<task_t*>(0), taskQueueArray[enqueuedTasks - 1]);
+    const task_t *lastTaskPrev = taskQueueArray[enqueuedTasks - 1];
     EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks]);
     EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks + 1]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT_UNITTEST + 1]);
@@ -270,10 +297,10 @@ TEST(SchedulerUnittest, TestQueueArray)
     EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks + 1]);
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT_UNITTEST + 1]);
 
-    cfTaskInfo_t taskInfo;
-    getTaskInfo(static_cast<cfTaskId_e>(enqueuedTasks + 1), &taskInfo);
-    EXPECT_EQ(false, taskInfo.isEnabled);
-    setTaskEnabled(static_cast<cfTaskId_e>(enqueuedTasks), true);
+    taskInfo_t taskInfo;
+    getTaskInfo(static_cast<taskId_e>(enqueuedTasks + 1), &taskInfo);
+    EXPECT_FALSE(taskInfo.isEnabled);
+    setTaskEnabled(static_cast<taskId_e>(enqueuedTasks), true);
     EXPECT_EQ(enqueuedTasks, taskQueueSize);
     EXPECT_EQ(lastTaskPrev, taskQueueArray[enqueuedTasks - 1]);
     EXPECT_EQ(NULL, taskQueueArray[enqueuedTasks + 1]); // check no buffer overrun
@@ -305,7 +332,7 @@ TEST(SchedulerUnittest, TestSchedulerInit)
 {
     schedulerInit();
     EXPECT_EQ(1, taskQueueSize);
-    EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
+    EXPECT_EQ(&tasks[TASK_SYSTEM], queueFirst());
 }
 
 TEST(SchedulerUnittest, TestScheduleEmptyQueue)
@@ -320,76 +347,261 @@ TEST(SchedulerUnittest, TestScheduleEmptyQueue)
 TEST(SchedulerUnittest, TestSingleTask)
 {
     schedulerInit();
-    // disable all tasks except TASK_GYROPID
+    // disable all tasks except TASK_ACCEL
     for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
-        setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
+        setTaskEnabled(static_cast<taskId_e>(taskId), false);
     }
-    setTaskEnabled(TASK_GYROPID, true);
-    cfTasks[TASK_GYROPID].lastExecutedAt = 1000;
-    simulatedTime = 4000;
+    setTaskEnabled(TASK_ACCEL, true);
+    tasks[TASK_ACCEL].lastExecutedAtUs = 1000;
+    simulatedTime = 2050;
     // run the scheduler and check the task has executed
     scheduler();
-    EXPECT_NE(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
-    EXPECT_EQ(3000, cfTasks[TASK_GYROPID].taskLatestDeltaTime);
-    EXPECT_EQ(4000, cfTasks[TASK_GYROPID].lastExecutedAt);
-    EXPECT_EQ(TEST_PID_LOOP_TIME, cfTasks[TASK_GYROPID].totalExecutionTime);
+    EXPECT_NE(unittest_scheduler_selectedTask, static_cast<task_t*>(0));
+    EXPECT_EQ(unittest_scheduler_selectedTask, &tasks[TASK_ACCEL]);
+    EXPECT_EQ(1050, tasks[TASK_ACCEL].taskLatestDeltaTimeUs);
+    EXPECT_EQ(2050, tasks[TASK_ACCEL].lastExecutedAtUs);
+    EXPECT_EQ(TEST_UPDATE_ACCEL_TIME, tasks[TASK_ACCEL].totalExecutionTimeUs);
     // task has run, so its dynamic priority should have been set to zero
-    EXPECT_EQ(0, cfTasks[TASK_GYROPID].dynamicPriority);
+    EXPECT_EQ(0, tasks[TASK_GYRO].dynamicPriority);
 }
 
 TEST(SchedulerUnittest, TestTwoTasks)
 {
-    // disable all tasks except TASK_GYROPID  and TASK_ACCEL
+    // disable all tasks except TASK_ACCEL and TASK_ATTITUDE
     for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
-        setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
+        setTaskEnabled(static_cast<taskId_e>(taskId), false);
     }
     setTaskEnabled(TASK_ACCEL, true);
-    setTaskEnabled(TASK_GYROPID, true);
+    setTaskEnabled(TASK_ATTITUDE, true);
 
-    // set it up so that TASK_ACCEL ran just before TASK_GYROPID
+    // set it up so that TASK_ACCEL ran just before TASK_ATTITUDE
     static const uint32_t startTime = 4000;
     simulatedTime = startTime;
-    cfTasks[TASK_GYROPID].lastExecutedAt = simulatedTime;
-    cfTasks[TASK_ACCEL].lastExecutedAt = cfTasks[TASK_GYROPID].lastExecutedAt - TEST_UPDATE_ACCEL_TIME;
-    EXPECT_EQ(0, cfTasks[TASK_ACCEL].taskAgeCycles);
+    tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime;
+    tasks[TASK_ATTITUDE].lastExecutedAtUs = tasks[TASK_ACCEL].lastExecutedAtUs - TEST_UPDATE_ATTITUDE_TIME;
+    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgeCycles);
     // run the scheduler
     scheduler();
     // no tasks should have run, since neither task's desired time has elapsed
-    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
 
     // NOTE:
-    // TASK_GYROPID desiredPeriod is  1000 microseconds
-    // TASK_ACCEL   desiredPeriod is 10000 microseconds
+    // TASK_ACCEL    desiredPeriodUs is 1000 microseconds
+    // TASK_ATTITUDE desiredPeriodUs is 10000 microseconds
     // 500 microseconds later
     simulatedTime += 500;
     // no tasks should run, since neither task's desired time has elapsed
     scheduler();
-    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
     EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
-    // 500 microseconds later, TASK_GYROPID desiredPeriod has elapsed
+    // 500 microseconds later, TASK_ACCEL desiredPeriodUs has elapsed
     simulatedTime += 500;
-    // TASK_GYROPID should now run
+    // TASK_ACCEL should now run
     scheduler();
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
     EXPECT_EQ(1, unittest_scheduler_waitingTasks);
-    EXPECT_EQ(5000 + TEST_PID_LOOP_TIME, simulatedTime);
+    EXPECT_EQ(5000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
 
-    simulatedTime += 1000 - TEST_PID_LOOP_TIME;
+    simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
     scheduler();
-    // TASK_GYROPID should run again
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
+    // TASK_ACCEL should run again
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
 
     scheduler();
-    EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
+    // No task should have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
     EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
-    simulatedTime = startTime + 10500; // TASK_GYROPID and TASK_ACCEL desiredPeriods have elapsed
-    // of the two TASK_GYROPID should run first
+    simulatedTime = startTime + 10500; // TASK_ACCEL and TASK_ATTITUDE desiredPeriodUss have elapsed
+    // of the two TASK_ACCEL should run first
     scheduler();
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
-    // and finally TASK_ACCEL should now run
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    // and finally TASK_ATTITUDE should now run
     scheduler();
-    EXPECT_EQ(&cfTasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(&tasks[TASK_ATTITUDE], unittest_scheduler_selectedTask);
+}
+
+TEST(SchedulerUnittest, TestGyroTask)
+{
+    static const uint32_t startTime = 4000;
+
+    // enable the gyro
+    schedulerEnableGyro();
+
+    // disable all tasks except TASK_GYRO, TASK_FILTER and TASK_PID
+    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        setTaskEnabled(static_cast<taskId_e>(taskId), false);
+    }
+    setTaskEnabled(TASK_GYRO, true);
+    setTaskEnabled(TASK_FILTER, true);
+    setTaskEnabled(TASK_PID, true);
+
+    // First set it up so TASK_GYRO just ran
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime;
+    // reset the flags
+    resetGyroTaskTestFlags();
+
+    // run the scheduler
+    scheduler();
+    // no tasks should have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+    // also the gyro, filter and PID task indicators should be false
+    EXPECT_FALSE(taskGyroRan);
+    EXPECT_FALSE(taskFilterRan);
+    EXPECT_FALSE(taskPidRan);
+
+    /* Test the gyro task running but not triggering the filtering or PID */
+    // set the TASK_GYRO last executed time to be one period earlier
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ);
+
+    // reset the flags
+    resetGyroTaskTestFlags();
+
+    // run the scheduler
+    scheduler();
+    // the gyro task indicator should be true and the TASK_FILTER and TASK_PID indicators should be false
+    EXPECT_TRUE(taskGyroRan);
+    EXPECT_FALSE(taskFilterRan);
+    EXPECT_FALSE(taskPidRan);
+    // expect that no other tasks other than TASK_GYRO should have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+
+    /* Test the gyro task running and triggering the filtering task */
+    // set the TASK_GYRO last executed time to be one period earlier
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ);
+
+    // reset the flags
+    resetGyroTaskTestFlags();
+    taskFilterReady = true;
+
+    // run the scheduler
+    scheduler();
+    // the gyro and filter task indicators should be true and TASK_PID indicator should be false
+    EXPECT_TRUE(taskGyroRan);
+    EXPECT_TRUE(taskFilterRan);
+    EXPECT_FALSE(taskPidRan);
+    // expect that no other tasks other tasks should have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+
+    /* Test the gyro task running and triggering the PID task */
+    // set the TASK_GYRO last executed time to be one period earlier
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ);
+
+    // reset the flags
+    resetGyroTaskTestFlags();
+    taskPidReady = true;
+
+    // run the scheduler
+    scheduler();
+    // the gyro and PID task indicators should be true and TASK_FILTER indicator should be false
+    EXPECT_TRUE(taskGyroRan);
+    EXPECT_FALSE(taskFilterRan);
+    EXPECT_TRUE(taskPidRan);
+    // expect that no other tasks other tasks should have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+}
+
+// Test the scheduling logic that prevents other tasks from running if they
+// might interfere with the timing of the next gyro task.
+TEST(SchedulerUnittest, TestGyroLookahead)
+{
+    static const uint32_t startTime = 4000;
+
+    // enable task statistics
+    schedulerSetCalulateTaskStatistics(true);
+
+    // disable scheduler optimize rate
+    schedulerOptimizeRate(false);
+
+    // enable the gyro
+    schedulerEnableGyro();
+
+    // disable all tasks except TASK_GYRO, TASK_ACCEL
+    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        setTaskEnabled(static_cast<taskId_e>(taskId), false);
+    }
+    setTaskEnabled(TASK_GYRO, true);
+    setTaskEnabled(TASK_ACCEL, true);
+
+#if defined(USE_TASK_STATISTICS)
+    // set the average run time for TASK_ACCEL
+    tasks[TASK_ACCEL].movingSumExecutionTimeUs = TEST_UPDATE_ACCEL_TIME * TASK_STATS_MOVING_SUM_COUNT;
+#endif
+
+    /* Test that another task will run if there's plenty of time till the next gyro sample time */
+    // set it up so TASK_GYRO just ran and TASK_ACCEL is ready to run
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime;
+    tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(1000);
+    // reset the flags
+    resetGyroTaskTestFlags();
+
+    // run the scheduler
+    scheduler();
+    // the gyro, filter and PID task indicators should be false
+    EXPECT_FALSE(taskGyroRan);
+    EXPECT_FALSE(taskFilterRan);
+    EXPECT_FALSE(taskPidRan);
+    // TASK_ACCEL should have run
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+
+    /* Test that another task won't run if the time till the gyro task is less than the guard interval */
+    // set it up so TASK_GYRO will run soon and TASK_ACCEL is ready to run
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ) + GYRO_TASK_GUARD_INTERVAL_US / 2;
+    tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(1000);
+    // reset the flags
+    resetGyroTaskTestFlags();
+
+    // run the scheduler
+    scheduler();
+    // the gyro, filter and PID task indicators should be false
+    EXPECT_FALSE(taskGyroRan);
+    EXPECT_FALSE(taskFilterRan);
+    EXPECT_FALSE(taskPidRan);
+    // TASK_ACCEL should not have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+
+    /* Test that another task won't run if the time till the gyro task is less than the average task interval */
+    // set it up so TASK_GYRO will run soon and TASK_ACCEL is ready to run
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ) + TEST_UPDATE_ACCEL_TIME / 2;
+    tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(1000);
+    // reset the flags
+    resetGyroTaskTestFlags();
+
+    // run the scheduler
+    scheduler();
+    // the gyro, filter and PID task indicators should be false
+    EXPECT_FALSE(taskGyroRan);
+    EXPECT_FALSE(taskFilterRan);
+    EXPECT_FALSE(taskPidRan);
+    // TASK_ACCEL should not have run
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+
+    /* Test that another task will run if the gyro task gets executed */
+    // set it up so TASK_GYRO will run now and TASK_ACCEL is ready to run
+    simulatedTime = startTime;
+    tasks[TASK_GYRO].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(TEST_GYRO_SAMPLE_HZ);
+    tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime - TASK_PERIOD_HZ(1000);
+    // reset the flags
+    resetGyroTaskTestFlags();
+
+    // make the TASK_FILTER and TASK_PID ready to run
+    taskFilterReady = true;
+    taskPidReady = true;
+
+    // run the scheduler
+    scheduler();
+    // TASK_GYRO, TASK_FILTER, and TASK_PID should all run
+    EXPECT_TRUE(taskGyroRan);
+    EXPECT_TRUE(taskFilterRan);
+    EXPECT_TRUE(taskPidRan);
+    // TASK_ACCEL should have run
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
 }

@@ -62,13 +62,13 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   42 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   43 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
 #define MULTIWII_IDENTIFIER "MWII";
 #define BASEFLIGHT_IDENTIFIER "BAFL";
-#define BETAFLIGHT_IDENTIFIER "BTFL"
+//#define BETAFLIGHT_IDENTIFIER "BTFL" Actual value stored in FC_FIRMWARE_IDENTIFIER in build/version.h
 #define CLEANFLIGHT_IDENTIFIER "CLFL"
 #define INAV_IDENTIFIER "INAV"
 #define RACEFLIGHT_IDENTIFIER "RCFL"
@@ -281,6 +281,9 @@
 #define MSP_ESC_SENSOR_DATA      134    //out message         Extra ESC data from 32-Bit ESCs (Temperature, RPM)
 #define MSP_GPS_RESCUE           135    //out message         GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed, sanityChecks and minSats
 #define MSP_GPS_RESCUE_PIDS      136    //out message         GPS Rescues's throttleP and velocity PIDS + yaw P
+#define MSP_VTXTABLE_BAND        137    //out message         vtxTable band/channel data
+#define MSP_VTXTABLE_POWERLEVEL  138    //out message         vtxTable powerLevel data
+#define MSP_MOTOR_TELEMETRY      139    //out message         Per-motor telemetry data (RPM, packet stats, ESC temp, etc.)
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -309,6 +312,8 @@
 #define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
 #define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed, sanityChecks and minSats
 #define MSP_SET_GPS_RESCUE_PIDS  226    //in message          GPS Rescues's throttleP and velocity PIDS + yaw P
+#define MSP_SET_VTXTABLE_BAND    227    //in message          set vtxTable band/channel data (one band at a time)
+#define MSP_SET_VTXTABLE_POWERLEVEL 228 //in message          set vtxTable powerLevel data (one powerLevel at a time)
 
 // #define MSP_BIND                 240    //in message          no param
 // #define MSP_ALARMS               242
@@ -331,7 +336,7 @@
 #define MSP_SET_ACC_TRIM         239    //in message          set acc angle trim values
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
-#define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
+#define MSP_SET_PASSTHROUGH      245    //in message          Sets up passthrough to different peripherals (4way interface, uart, etc...)
 #define MSP_SET_RTC              246    //in message          Sets the RTC clock
 #define MSP_RTC                  247    //out message         Gets the RTC clock
 #define MSP_SET_BOARD_INFO       248    //in message          Sets the board information for this board

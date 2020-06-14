@@ -48,19 +48,22 @@
 #ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
-static long menuOsdActiveElemsOnEnter(void)
+static const void *menuOsdActiveElemsOnEnter(displayPort_t *pDisp)
 {
-    memcpy(&osdConfig_item_pos[0], &osdConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
-    return 0;
+    UNUSED(pDisp);
+
+    memcpy(&osdConfig_item_pos[0], &osdElementConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    return NULL;
 }
 
-static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
+static const void *menuOsdActiveElemsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
-    memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdElementConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     osdAnalyzeActiveElements();
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry menuOsdActiveElemsEntries[] =
@@ -73,6 +76,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], DYNAMIC},
     {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], DYNAMIC},
     {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], DYNAMIC},
+#ifdef USE_GPS
+    {"BATTERY EFFICIENCY", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_EFFICIENCY], DYNAMIC},
+#endif // GPS
     {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], DYNAMIC},
     {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], DYNAMIC},
     {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], DYNAMIC},
@@ -146,18 +152,21 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"STICK OVERLAY LEFT", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_LEFT], DYNAMIC},
     {"STICK OVERLAY RIGHT",OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_RIGHT], DYNAMIC},
 #endif
-    {"DISPLAY NAME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISPLAY_NAME], 0},
+    {"DISPLAY NAME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISPLAY_NAME], DYNAMIC},
+    {"RC CHANNELS",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RC_CHANNELS], DYNAMIC},
+    {"CAMERA FRAME",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CAMERA_FRAME], DYNAMIC},
     {"BACK",               OME_Back,    NULL, NULL, 0},
     {NULL,                 OME_END,     NULL, NULL, 0}
 };
 
-CMS_Menu menuOsdActiveElems = {
+static CMS_Menu menuOsdActiveElems = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUOSDACT",
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = menuOsdActiveElemsOnEnter,
     .onExit = menuOsdActiveElemsOnExit,
+    .onDisplayUpdate = NULL,
     .entries = menuOsdActiveElemsEntries
 };
 
@@ -166,24 +175,29 @@ static uint16_t osdConfig_link_quality_alarm;
 static uint8_t osdConfig_rssi_dbm_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
+static uint16_t osdConfig_distance_alarm;
 static uint8_t batteryConfig_vbatDurationForWarning;
 static uint8_t batteryConfig_vbatDurationForCritical;
 
-static long menuAlarmsOnEnter(void)
+static const void *menuAlarmsOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
     osdConfig_link_quality_alarm = osdConfig()->link_quality_alarm;
     osdConfig_rssi_dbm_alarm = osdConfig()->rssi_dbm_alarm;
     osdConfig_cap_alarm = osdConfig()->cap_alarm;
     osdConfig_alt_alarm = osdConfig()->alt_alarm;
+    osdConfig_distance_alarm = osdConfig()->distance_alarm;
     batteryConfig_vbatDurationForWarning = batteryConfig()->vbatDurationForWarning;
     batteryConfig_vbatDurationForCritical = batteryConfig()->vbatDurationForCritical;
 
-    return 0;
+    return NULL;
 }
 
-static long menuAlarmsOnExit(const OSD_Entry *self)
+static const void *menuAlarmsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
@@ -191,10 +205,11 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
     osdConfigMutable()->rssi_dbm_alarm = osdConfig_rssi_dbm_alarm;
     osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
     osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
+    osdConfigMutable()->distance_alarm = osdConfig_distance_alarm;
     batteryConfigMutable()->vbatDurationForWarning = batteryConfig_vbatDurationForWarning;
     batteryConfigMutable()->vbatDurationForCritical = batteryConfig_vbatDurationForCritical;
 
-    return 0;
+    return NULL;
 }
 
 const OSD_Entry menuAlarmsEntries[] =
@@ -205,19 +220,21 @@ const OSD_Entry menuAlarmsEntries[] =
     {"RSSI DBM", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_dbm_alarm, 5, 130, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+    {"MAX DISTANCE", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_distance_alarm, 0, UINT16_MAX, 10}, 0},
     {"VBAT WARN DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForWarning, 0, 200, 1 }, 0 },
     {"VBAT CRIT DUR", OME_UINT8, NULL, &(OSD_UINT8_t){ &batteryConfig_vbatDurationForCritical, 0, 200, 1 }, 0 },
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu menuAlarms = {
+static CMS_Menu menuAlarms = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUALARMS",
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = menuAlarmsOnEnter,
     .onExit = menuAlarmsOnExit,
+    .onDisplayUpdate = NULL,
     .entries = menuAlarmsEntries,
 };
 
@@ -225,8 +242,10 @@ osd_timer_source_e timerSource[OSD_TIMER_COUNT];
 osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
-static long menuTimersOnEnter(void)
+static const void *menuTimersOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
         timerSource[i] = OSD_TIMER_SRC(timer);
@@ -234,18 +253,19 @@ static long menuTimersOnEnter(void)
         timerAlarm[i] = OSD_TIMER_ALARM(timer);
     }
 
-    return 0;
+    return NULL;
 }
 
-static long menuTimersOnExit(const OSD_Entry *self)
+static const void *menuTimersOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         osdConfigMutable()->timers[i] = OSD_TIMER(timerSource[i], timerPrecision[i], timerAlarm[i]);
     }
 
-    return 0;
+    return NULL;
 }
 
 static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH"};
@@ -263,13 +283,14 @@ const OSD_Entry menuTimersEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu menuTimers = {
+static CMS_Menu menuTimers = {
 #ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUTIMERS",
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = menuTimersOnEnter,
     .onExit = menuTimersOnExit,
+    .onDisplayUpdate = NULL,
     .entries = menuTimersEntries,
 };
 #endif /* USE_EXTENDED_CMS_MENUS */
@@ -284,8 +305,10 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static uint8_t osdConfig_osdProfileIndex;
 #endif
 
-static long cmsx_menuOsdOnEnter(void)
+static const void *cmsx_menuOsdOnEnter(displayPort_t *pDisp)
 {
+    UNUSED(pDisp);
+
 #ifdef USE_OSD_PROFILES
     osdConfig_osdProfileIndex = osdConfig()->osdProfileIndex;
 #endif
@@ -296,25 +319,35 @@ static long cmsx_menuOsdOnEnter(void)
     displayPortProfileMax7456_whiteBrightness = displayPortProfileMax7456()->whiteBrightness;
 #endif
 
-    return 0;
+    return NULL;
 }
 
-static long cmsx_menuOsdOnExit(const OSD_Entry *self)
+static const void *cmsx_menuOsdOnExit(displayPort_t *pDisp, const OSD_Entry *self)
 {
+    UNUSED(pDisp);
     UNUSED(self);
 
 #ifdef USE_OSD_PROFILES
     changeOsdProfileIndex(osdConfig_osdProfileIndex);
 #endif
 
+    return NULL;
+}
+
 #ifdef USE_MAX7456
+static const void *cmsx_max7456Update(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+
     displayPortProfileMax7456Mutable()->invert = displayPortProfileMax7456_invert;
     displayPortProfileMax7456Mutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
     displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
-#endif
 
-    return 0;
+    displayClearScreen(pDisp);
+
+    return NULL;
 }
+#endif // USE_MAX7456
 
 const OSD_Entry cmsx_menuOsdEntries[] =
 {
@@ -328,9 +361,9 @@ const OSD_Entry cmsx_menuOsdEntries[] =
     {"ALARMS",      OME_Submenu, cmsMenuChange, &menuAlarms,         0},
 #endif
 #ifdef USE_MAX7456
-    {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
-    {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
-    {"BRT WHITE", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
+    {"INVERT",    OME_Bool,  cmsx_max7456Update, &displayPortProfileMax7456_invert,                                   0},
+    {"BRT BLACK", OME_UINT8, cmsx_max7456Update, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
+    {"BRT WHITE", OME_UINT8, cmsx_max7456Update, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
 #endif
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL,   OME_END,  NULL, NULL, 0}
@@ -343,6 +376,7 @@ CMS_Menu cmsx_menuOsd = {
 #endif
     .onEnter = cmsx_menuOsdOnEnter,
     .onExit = cmsx_menuOsdOnExit,
+    .onDisplayUpdate = NULL,
     .entries = cmsx_menuOsdEntries
 };
 #endif // CMS

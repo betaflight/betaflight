@@ -124,7 +124,7 @@ static uint8_t hottMsgCrc;
 #define HOTT_PORT_MODE MODE_RXTX // must be opened in RXTX so that TX and RX pins are allocated.
 
 static serialPort_t *hottPort = NULL;
-static serialPortConfig_t *portConfig;
+static const serialPortConfig_t *portConfig;
 
 static bool hottTelemetryEnabled =  false;
 static portSharing_e hottPortSharing;
@@ -470,9 +470,9 @@ static void hottPrepareMessages(void) {
 static void hottTextmodeStart()
 {
     // Increase menu speed
-    cfTaskInfo_t taskInfo;
+    taskInfo_t taskInfo;
     getTaskInfo(TASK_TELEMETRY, &taskInfo);
-    telemetryTaskPeriod = taskInfo.desiredPeriod;
+    telemetryTaskPeriod = taskInfo.desiredPeriodUs;
     rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(HOTT_TEXTMODE_TASK_PERIOD));
 
     rxSchedule = HOTT_TEXTMODE_RX_SCHEDULE;

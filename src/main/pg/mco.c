@@ -30,10 +30,5 @@
 #include "pg/pg_ids.h"
 #include "pg/mco.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(mcoConfig_t, mcoConfig, PG_MCO_CONFIG, 0);
-
-PG_RESET_TEMPLATE(mcoConfig_t, mcoConfig,
-    .enabled[0] = 0,
-    .enabled[1] = 0,
-);
+PG_REGISTER_ARRAY(mcoConfig_t, 2, mcoConfig, PG_MCO_CONFIG, 0);
 #endif // USE_MCO

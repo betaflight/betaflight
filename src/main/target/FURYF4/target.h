@@ -21,11 +21,11 @@
 #pragma once
 
 #ifdef FURYF4OSD
-    #define TARGET_BOARD_IDENTIFIER "FY4O"
-    #define USBD_PRODUCT_STRING     "FuryF4OSD"
+#define TARGET_BOARD_IDENTIFIER "FY4O"
+#define USBD_PRODUCT_STRING     "FuryF4OSD"
 #else
-    #define TARGET_BOARD_IDENTIFIER "FYF4"
-    #define USBD_PRODUCT_STRING     "FuryF4"
+#define TARGET_BOARD_IDENTIFIER "FYF4"
+#define USBD_PRODUCT_STRING     "FuryF4"
 #endif
 
 #define LED0_PIN                PB5
@@ -57,30 +57,36 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
 
+#define USE_BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP280
+#define MS5611_I2C_INSTANCE     I2CDEV_1
+
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
+
 #ifdef FURYF4OSD
-    #define USE_MAX7456
-    #define MAX7456_SPI_INSTANCE    SPI2
-    #define MAX7456_SPI_CS_PIN      PB12
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI2
+#define MAX7456_SPI_CS_PIN      PB12
 
-    #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-    #define DEFAULT_FEATURES        FEATURE_OSD
+#define DEFAULT_FEATURES        FEATURE_OSD
 
 #else
 
-    #define USE_BARO
-    #define USE_BARO_MS5611
-    #define MS5611_I2C_INSTANCE     I2CDEV_1
-
-    #define USE_SDCARD
-    #define USE_SDCARD_SPI
-    #define SDCARD_DETECT_INVERTED
-    #define SDCARD_DETECT_PIN                   PD2
-    #define SDCARD_SPI_INSTANCE                 SPI2
-    #define SDCARD_SPI_CS_PIN                   PB12
-    #define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
-    #define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
-    #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+#define SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_PIN                   PD2
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_PIN                   PB12
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
+#define SPI2_TX_DMA_OPT                     0     // DMA 1 Stream 4 Channel 0
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #endif
 

@@ -25,9 +25,10 @@
 
 #include "platform.h"
 
-#include "build/debug.h"
-
 #include "blackbox/blackbox.h"
+#include "blackbox/blackbox_fielddefs.h"
+
+#include "build/debug.h"
 
 #include "cli/cli.h"
 
@@ -38,17 +39,19 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/dshot.h"
+#include "drivers/dshot_command.h"
 #include "drivers/light_led.h"
+#include "drivers/motor.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 
-#include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -57,9 +60,11 @@
 
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
+
 #if defined(USE_GYRO_DATA_ANALYSE)
 #include "flight/gyroanalyse.h"
 #endif
+
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -82,6 +87,7 @@
 
 #include "osd/osd.h"
 
+#include "pg/motor.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
@@ -94,10 +100,12 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/compass.h"
 #include "sensors/gyro.h"
-#include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
+
+#include "core.h"
 
 
 enum {
@@ -137,11 +145,12 @@ enum {
 int16_t magHold;
 #endif
 
+static FAST_RAM_ZERO_INIT uint8_t pidUpdateCounter;
+
 static bool flipOverAfterCrashActive = false;
 
 static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
 static int tryingToArm = ARMING_DELAYED_DISARMED;
@@ -173,27 +182,23 @@ PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
 
 static bool isCalibrating(void)
 {
-#ifdef USE_BARO
-    if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
-        return true;
-    }
-#endif
-
-    // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
-
-    return (
+    return (sensors(SENSOR_GYRO) && !gyroIsCalibrationComplete())
 #ifdef USE_ACC
-        !accIsCalibrationComplete()
-#else
-        false
+        || (sensors(SENSOR_ACC) && !accIsCalibrationComplete())
 #endif
-            && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+#ifdef USE_BARO
+        || (sensors(SENSOR_BARO) && !baroIsCalibrationComplete())
+#endif
+#ifdef USE_MAG
+        || (sensors(SENSOR_MAG) && !compassIsCalibrationComplete())
+#endif
+        ;
 }
 
 #ifdef USE_LAUNCH_CONTROL
 bool canUseLaunchControl(void)
 {
-    if (!STATE(FIXED_WING)
+    if (!isFixedWing()
         && !isUsingSticksForArming()     // require switch arming for safety
         && IS_RC_MODE_ACTIVE(BOXLAUNCHCONTROL)
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled())  // can't use when motors are stopped
@@ -210,13 +215,71 @@ void resetArmingDisabled(void)
     lastArmingDisabledReason = 0;
 }
 
+#ifdef USE_ACC
+static bool accNeedsCalibration(void)
+{
+    if (sensors(SENSOR_ACC)) {
+
+        // Check to see if the ACC has already been calibrated
+        if (accHasBeenCalibrated()) {
+            return false;
+        }
+
+        // We've determined that there's a detected ACC that has not
+        // yet been calibrated. Check to see if anything is using the
+        // ACC that would be affected by the lack of calibration.
+
+        // Check for any configured modes that use the ACC
+        if (isModeActivationConditionPresent(BOXANGLE) ||
+            isModeActivationConditionPresent(BOXHORIZON) ||
+            isModeActivationConditionPresent(BOXGPSRESCUE) ||
+            isModeActivationConditionPresent(BOXCAMSTAB) ||
+            isModeActivationConditionPresent(BOXCALIB) ||
+            isModeActivationConditionPresent(BOXACROTRAINER)) {
+
+            return true;
+        }
+
+        // Launch Control only requires the ACC if a angle limit is set
+        if (isModeActivationConditionPresent(BOXLAUNCHCONTROL) && currentPidProfile->launchControlAngleLimit) {
+            return true;
+        }
+
+#ifdef USE_OSD
+        // Check for any enabled OSD elements that need the ACC
+        if (featureIsEnabled(FEATURE_OSD)) {
+            if (osdNeedsAccelerometer()) {
+                return true;
+            }
+        }
+#endif
+
+#ifdef USE_GPS_RESCUE
+        // Check if failsafe will use GPS Rescue
+        if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+            return true;
+        }
+#endif
+    }
+
+    return false;
+}
+#endif
+
 void updateArmingStatus(void)
 {
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
         // Check if the power on arming grace time has elapsed
-        if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)) {
+        if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)
+#ifdef USE_DSHOT
+            // We also need to prevent arming until it's possible to send DSHOT commands.
+            // Otherwise if the initial arming is in crash-flip the motor direction commands
+            // might not be sent.
+            && (!isMotorProtocolDshot() || dshotCommandsAreEnabled(DSHOT_CMD_TYPE_INLINE))
+#endif
+        ) {
             // If so, unset the grace time arming disable flag
             unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
         }
@@ -254,13 +317,13 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_THROTTLE);
         }
 
-        if (!STATE(SMALL_ANGLE) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        if (!isUpright() && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
             setArmingDisabled(ARMING_DISABLED_ANGLE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (averageSystemLoadPercent > 100) {
+        if (getAverageSystemLoadPercent() > LOAD_PERCENTAGE_ONE) {
             setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_LOAD);
@@ -305,37 +368,57 @@ void updateArmingStatus(void)
         }
 #endif
 
+#ifdef USE_DSHOT_BITBANG
+        if (isDshotBitbangActive(&motorConfig()->dev) && dshotBitbangGetStatus() != DSHOT_BITBANG_STATUS_OK) {
+            setArmingDisabled(ARMING_DISABLED_DSHOT_BITBANG);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_DSHOT_BITBANG);
+        }
+#endif
+
         if (IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
             setArmingDisabled(ARMING_DISABLED_PARALYZE);
         }
 
-        if (!isUsingSticksForArming()) {
-          /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
-          bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm
-                         && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING));
-
-          /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
-          bool ignoreThrottle = featureIsEnabled(FEATURE_3D)
-                             && !IS_RC_MODE_ACTIVE(BOX3D)
-                             && !flight3DConfig()->switched_mode3d
-                             && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
-
-           if (!IS_RC_MODE_ACTIVE(BOXARM)) {
-#ifdef USE_RUNAWAY_TAKEOFF
-               unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
+#ifdef USE_ACC
+        if (accNeedsCalibration()) {
+            setArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
+        }
 #endif
-               unsetArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
-           }
 
-          // If arming is disabled and the ARM switch is on
-          if (isArmingDisabled()
-              && !ignoreGyro
-              && !ignoreThrottle
-              && IS_RC_MODE_ACTIVE(BOXARM)) {
-              setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-          } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
-              unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-          }
+        if (!isMotorProtocolEnabled()) {
+            setArmingDisabled(ARMING_DISABLED_MOTOR_PROTOCOL);
+        }
+
+        if (!isUsingSticksForArming()) {
+            if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+#ifdef USE_RUNAWAY_TAKEOFF
+                unsetArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
+#endif
+                unsetArmingDisabled(ARMING_DISABLED_CRASH_DETECTED);
+            }
+
+            /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
+            bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm
+                && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING));
+
+            /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
+            bool ignoreThrottle = featureIsEnabled(FEATURE_3D)
+                 && !IS_RC_MODE_ACTIVE(BOX3D)
+                 && !flight3DConfig()->switched_mode3d
+                 && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
+
+            // If arming is disabled and the ARM switch is on
+            if (isArmingDisabled()
+                && !ignoreGyro
+                && !ignoreThrottle
+                && IS_RC_MODE_ACTIVE(BOXARM)) {
+                setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+                unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+            }
         }
 
         if (isArmingDisabled()) {
@@ -348,9 +431,10 @@ void updateArmingStatus(void)
     }
 }
 
-void disarm(void)
+void disarm(flightLogDisarmReason_e reason)
 {
     if (ARMING_FLAG(ARMED)) {
+        ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
         DISABLE_ARMING_FLAG(ARMED);
         lastDisarmTimeUs = micros();
 
@@ -361,14 +445,20 @@ void disarm(void)
 #endif
 
 #ifdef USE_BLACKBOX
+        flightLogEvent_disarm_t eventData;
+        eventData.reason = reason;
+        blackboxLogEvent(FLIGHT_LOG_EVENT_DISARM, (flightLogEventData_t*)&eventData);
+
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
             blackboxFinish();
         }
+#else
+        UNUSED(reason);
 #endif
         BEEP_OFF;
 #ifdef USE_DSHOT
         if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
-            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
+            dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
         }
 #endif
         flipOverAfterCrashActive = false;
@@ -419,7 +509,7 @@ void tryArm(void)
             if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                 flipOverAfterCrashActive = false;
                 if (!featureIsEnabled(FEATURE_3D)) {
-                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, false);
+                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
                 }
             } else {
                 flipOverAfterCrashActive = true;
@@ -427,7 +517,7 @@ void tryArm(void)
                 runawayTakeoffCheckDisabled = false;
 #endif
                 if (!featureIsEnabled(FEATURE_3D)) {
-                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, false);
+                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, DSHOT_CMD_TYPE_INLINE);
                 }
             }
         }
@@ -445,7 +535,6 @@ void tryArm(void)
         osdSuppressStats(false);
 #endif
         ENABLE_ARMING_FLAG(ARMED);
-        ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
 
         resetTryingToArm();
 
@@ -545,7 +634,7 @@ static void updateInflightCalibrationState(void)
 }
 
 #if defined(USE_GPS) || defined(USE_MAG)
-void updateMagHold(void)
+static void updateMagHold(void)
 {
     if (fabsf(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
         int16_t dif = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHold;
@@ -554,7 +643,7 @@ void updateMagHold(void)
         if (dif >= +180)
             dif -= 360;
         dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-        if (STATE(SMALL_ANGLE)) {
+        if (isUpright()) {
             rcCommand[YAW] -= dif * currentPidProfile->pid[PID_MAG].P / 30;    // 18 deg
         }
     } else
@@ -616,7 +705,7 @@ int8_t calculateThrottlePercent(void)
     if (featureIsEnabled(FEATURE_3D)
         && !IS_RC_MODE_ACTIVE(BOX3D)
         && !flight3DConfig()->switched_mode3d) {
-        
+
         if (channelData > (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) {
             ret = ((channelData - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) * 100) / (PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle);
         } else if (channelData < (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle)) {
@@ -647,7 +736,6 @@ bool isAirmodeActivated()
 }
 
 
-
 /*
  * processRx called from taskUpdateRxMain
  */
@@ -658,14 +746,22 @@ bool processRx(timeUs_t currentTimeUs)
     static bool sharedPortTelemetryEnabled = false;
 #endif
 
+    timeDelta_t frameAgeUs;
+    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
+
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
+    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
+
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
         return false;
     }
 
+    updateRcRefreshRate(currentTimeUs);
+
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
-            disarm();
+            disarm(DISARM_REASON_SWITCH);
     }
 
     updateRSSI(currentTimeUs);
@@ -677,7 +773,7 @@ bool processRx(timeUs_t currentTimeUs)
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
-    
+
     const bool launchControlActive = isLaunchControlActive();
 
     if (airmodeIsEnabled() && ARMING_FLAG(ARMED) && !launchControlActive) {
@@ -713,7 +809,7 @@ bool processRx(timeUs_t currentTimeUs)
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashActive
         && !runawayTakeoffTemporarilyDisabled
-        && !STATE(FIXED_WING)) {
+        && !isFixedWing()) {
 
         // Determine if we're in "flight"
         //   - motors running
@@ -798,7 +894,7 @@ bool processRx(timeUs_t currentTimeUs)
     const timeUs_t autoDisarmDelayUs = armingConfig()->auto_disarm_delay * 1e6;
     if (ARMING_FLAG(ARMED)
         && featureIsEnabled(FEATURE_MOTOR_STOP)
-        && !STATE(FIXED_WING)
+        && !isFixedWing()
         && !featureIsEnabled(FEATURE_3D)
         && !airmodeIsEnabled()
         && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
@@ -807,7 +903,7 @@ bool processRx(timeUs_t currentTimeUs)
             if (throttleStatus == THROTTLE_LOW) {
                 if ((autoDisarmDelayUs > 0) && (currentTimeUs > disarmAt)) {
                     // auto-disarm configured and delay is over
-                    disarm();
+                    disarm(DISARM_REASON_THROTTLE_TIMEOUT);
                     armedBeeperOn = false;
                 } else {
                     // still armed; do warning beeps while armed
@@ -929,7 +1025,7 @@ bool processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-            if (imuQuaternionHeadfreeOffsetSet()){
+            if (imuQuaternionHeadfreeOffsetSet()) {
                beeper(BEEPER_RX_SET);
             }
         }
@@ -1000,11 +1096,12 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
     // and gyro rate for any axis is above the limit for at least the activate delay period.
     // If so, disarm for safety
     if (ARMING_FLAG(ARMED)
-        && !STATE(FIXED_WING)
+        && !isFixedWing()
         && pidConfig()->runaway_takeoff_prevention
         && !runawayTakeoffCheckDisabled
         && !flipOverAfterCrashActive
         && !runawayTakeoffTemporarilyDisabled
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable Runaway Takeoff triggering if GPS Rescue is active
         && (!featureIsEnabled(FEATURE_MOTOR_STOP) || airmodeIsEnabled() || (calculateThrottleStatus() != THROTTLE_LOW))) {
 
         if (((fabsf(pidData[FD_PITCH].Sum) >= RUNAWAY_TAKEOFF_PIDSUM_THRESHOLD)
@@ -1018,7 +1115,7 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
                 runawayTakeoffTriggerUs = currentTimeUs + RUNAWAY_TAKEOFF_ACTIVATE_DELAY;
             } else if (currentTimeUs > runawayTakeoffTriggerUs) {
                 setArmingDisabled(ARMING_DISABLED_RUNAWAY_TAKEOFF);
-                disarm();
+                disarm(DISARM_REASON_RUNAWAY_TAKEOFF);
             }
         } else {
             runawayTakeoffTriggerUs = 0;
@@ -1047,8 +1144,8 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
         startTime = micros();
     }
 
-#ifdef USE_MAG
-    if (sensors(SENSOR_MAG)) {
+#if defined(USE_GPS) || defined(USE_MAG)
+    if (sensors(SENSOR_GPS) || sensors(SENSOR_MAG)) {
         updateMagHold();
     }
 #endif
@@ -1065,12 +1162,16 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 }
 
 #ifdef USE_TELEMETRY
+#define GYRO_TEMP_READ_DELAY_US 3e6    // Only read the gyro temp every 3 seconds
 void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
+    static timeUs_t lastGyroTempTimeUs = 0;
 
-    // Read out gyro temperature if used for telemmetry
-    gyroReadTemperature();
+    if (cmpTimeUs(currentTimeUs, lastGyroTempTimeUs) >= GYRO_TEMP_READ_DELAY_US) {
+        // Read out gyro temperature if used for telemmetry
+        gyroReadTemperature();
+        lastGyroTempTimeUs = currentTimeUs;
+    }
 }
 #endif
 
@@ -1132,13 +1233,44 @@ static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
     }
 
     processRcCommand();
+}
+
+FAST_CODE void taskGyroSample(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+    gyroUpdate();
+    if (pidUpdateCounter % activePidLoopDenom == 0) {
+        pidUpdateCounter = 0;
+    }
+    pidUpdateCounter++;
+}
+
+FAST_CODE bool gyroFilterReady(void)
+{
+    if (pidUpdateCounter % activePidLoopDenom == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+FAST_CODE bool pidLoopReady(void)
+{
+    if ((pidUpdateCounter % activePidLoopDenom) == (activePidLoopDenom / 2)) {
+        return true;
+    }
+    return false;
+}
+
+FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
+{
+    gyroFiltering(currentTimeUs);
 
 }
 
 // Function for loop trigger
 FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
-    static uint32_t pidUpdateCounter = 0;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
     if (lockMainPID() != 0) return;
@@ -1149,19 +1281,16 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - subTaskPidController()
     // 2 - subTaskMotorUpdate()
     // 3 - subTaskPidSubprocesses()
-    gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
-    if (pidUpdateCounter++ % pidConfig()->pid_process_denom == 0) {
-        subTaskRcCommand(currentTimeUs);
-        subTaskPidController(currentTimeUs);
-        subTaskMotorUpdate(currentTimeUs);
-        subTaskPidSubprocesses(currentTimeUs);
-    }
+    subTaskRcCommand(currentTimeUs);
+    subTaskPidController(currentTimeUs);
+    subTaskMotorUpdate(currentTimeUs);
+    subTaskPidSubprocesses(currentTimeUs);
 
     if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = getTaskDeltaTime(TASK_SELF);
-        debug[1] = averageSystemLoadPercent;
+        DEBUG_SET(DEBUG_CYCLETIME, 0, getTaskDeltaTimeUs(TASK_SELF));
+        DEBUG_SET(DEBUG_CYCLETIME, 1, getAverageSystemLoadPercent());
     }
 }
 

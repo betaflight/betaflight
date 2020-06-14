@@ -96,7 +96,7 @@
 
 // betaflight specific parameter group ids start at 500
 #define PG_BETAFLIGHT_START 500
-#define PG_MODE_ACTIVATION_OPERATOR_CONFIG 500
+//#define PG_MODE_ACTIVATION_OPERATOR_CONFIG 500 removed
 #define PG_OSD_CONFIG 501
 #define PG_BEEPER_CONFIG 502
 #define PG_BEEPER_DEV_CONFIG 503
@@ -146,7 +146,11 @@
 #define PG_STATS_CONFIG 547
 #define PG_QUADSPI_CONFIG 548
 #define PG_TIMER_UP_CONFIG 549 // used to store dmaopt for TIMx_UP channel
-#define PG_BETAFLIGHT_END 549
+#define PG_SDIO_PIN_CONFIG 550
+#define PG_PULLUP_CONFIG 551
+#define PG_PULLDOWN_CONFIG 552
+#define PG_MODE_ACTIVATION_CONFIG 553
+#define PG_BETAFLIGHT_END 553
 
 
 // OSD configuration (subject to change)

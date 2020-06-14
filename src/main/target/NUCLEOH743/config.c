@@ -28,7 +28,8 @@
 #include "config_helper.h"
 
 #include "io/serial.h"
-#include "pg/pg.h"
+
+#include "pg/sdcard.h"
 
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
     { SERIAL_PORT_USART1, FUNCTION_MSP },
@@ -38,5 +39,9 @@ static targetSerialPortFunction_t targetSerialPortFunction[] = {
 void targetConfiguration(void)
 {
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
+#if !defined(NUCLEOH743_RAMBASED)
+    sdcardConfigMutable()->mode = SDCARD_MODE_SDIO;
+    sdcardConfigMutable()->useDma = true;
+#endif
 }
 #endif

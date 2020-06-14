@@ -87,10 +87,8 @@ void adcInternalProcess(timeUs_t currentTimeUs)
     adcVrefintValue = updateMovingAverageUint16(&adcVrefintAverageState, vrefintSample);
     adcTempsensorValue = updateMovingAverageUint16(&adcTempsensorAverageState, tempsensorSample);
 
-    vrefMv = 3300 * adcVrefintValue / adcVREFINTCAL;
-
-    int32_t adcTempsensorAdjusted = (int32_t)(adcTempsensorValue * 3300) / vrefMv;
-    coreTemperature = ((adcTempsensorAdjusted - adcTSCAL1) * adcTSSlopeK + 30 * 1000 + 500) / 1000;
+    vrefMv = adcInternalCompensateVref(adcVrefintValue);
+    coreTemperature = adcInternalComputeTemperature(adcTempsensorValue, vrefMv);
 
     DEBUG_SET(DEBUG_ADC_INTERNAL, 0, coreTemperature);
     DEBUG_SET(DEBUG_ADC_INTERNAL, 1, vrefintSample);
