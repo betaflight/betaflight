@@ -205,11 +205,7 @@ void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 
     hadc->Instance = adcdev->ADCx;
 
-    if (HAL_ADC_DeInit(hadc) != HAL_OK)
-    {
-      // ADC de-initialization Error
-      handleError();
-    }
+    // DeInit is done in adcInit().
 
     hadc->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
     hadc->Init.Resolution = ADC_RESOLUTION_12B;
@@ -228,19 +224,6 @@ void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     hadc->Init.OversamplingMode = DISABLE;
 
     if (HAL_ADC_Init(hadc) != HAL_OK) {
-        handleError();
-    }
-
-    // Configure the ADC multi-mode
-    ADC_MultiModeTypeDef multimode = { 0 };
-    multimode.Mode = ADC_MODE_INDEPENDENT;
-    if (HAL_ADCEx_MultiModeConfigChannel(hadc, &multimode) != HAL_OK) {
-        handleError();
-    }
-
-    ADC_AnalogWDGConfTypeDef AnalogWDGConfig = { 0 };
-    AnalogWDGConfig.Channel = ADC_CHANNEL_1;
-    if (HAL_ADC_AnalogWDGConfig(hadc, &AnalogWDGConfig) != HAL_OK) {
         handleError();
     }
 
@@ -355,6 +338,24 @@ void adcInit(const adcConfig_t *config)
         if (adcOperatingConfig[i].tag) {
             IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
             IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
+        }
+    }
+
+    // DeInit ADCx with inputs
+    // We have to batch call DeInit() for all devices as DeInit() initializes ADCx_COMMON register.
+
+    for (int dev = 0; dev < ADCDEV_COUNT; dev++) {
+        adcDevice_t *adc = &adcDevice[dev];
+
+        if (!(adc->ADCx && adc->channelBits)) {
+            continue;
+        }
+
+        adc->ADCHandle.Instance = adc->ADCx;
+
+        if (HAL_ADC_DeInit(&adc->ADCHandle) != HAL_OK) { 
+            // ADC de-initialization Error
+            handleError();
         }
     }
 
