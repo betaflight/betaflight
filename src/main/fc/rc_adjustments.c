@@ -38,6 +38,7 @@
 #include "config/feature.h"
 
 #include "drivers/time.h"
+#include "drivers/vtx_table.h"
 
 #include "config/config.h"
 #include "fc/controlrate_profile.h"
@@ -50,6 +51,7 @@
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/pidaudio.h"
+#include "io/vtx.h"
 
 #include "osd/osd.h"
 
@@ -224,6 +226,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_VTX_POWER_LEVEL,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 3 }
     }
 };
 
@@ -262,6 +268,7 @@ static const char * const adjustmentLabels[] = {
     "ROLL F",
     "YAW F",
     "OSD PROFILE",
+    "VTX POWER LEVEL"
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -634,6 +641,16 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
 #ifdef USE_LED_STRIP
         if (getLedProfile() != position) {
             setLedProfile(position);
+        }
+#endif
+        break;
+    case ADJUSTMENT_VTX_POWER_LEVEL:
+#ifdef USE_VTX_CONTROL
+        {
+            uint8_t newValue = constrain(position + 1, 1, vtxTablePowerLevels);
+            if (vtxSettingsConfigMutable()->power != newValue) {
+                vtxSettingsConfigMutable()->power = newValue;
+            }
         }
 #endif
         break;

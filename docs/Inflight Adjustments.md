@@ -134,6 +134,7 @@ The adjustment is made when the adjustment channel is in the high or low positio
 | 28    | YAW\_F | Step / absolute setting |
 | 29    | OSD\_PROFILE | Switch between 3 OSD profiles |
 | 30    | LED\_PROFILE | Switch between the RACE / BEACON / STATUS LED strip profiles |
+| 31    | VTX\_POWER\_LEVEL | Switch between the first 3 power levels |
 
 ## Examples
 
@@ -249,6 +250,35 @@ explained:
 * note that Center value is non-zero, so this range will use absolute mode.
 
 This assigns pots aux 1, aux 2, and aux 3 respectively to control P, I and D settings with the pots at mid-position giving the default P/I/D values and providing a range of adjustment of +/- 50%. When the aux 5 switch is in one end position then roll P/I/D will be adjusted and when the aux 5 switch is in the other end position, pitch P/I/D will be adjusted. In the aux 5 switch middle position nether will be adjusted. Thus one could center the pots, select roll on aux 5 and then adjust the P/I/D values in flight. Then land, move the aux 5 switch to center, center the pots, select pitch on the switch and then again adjust P/I/D in flight. 
+
+### Example 7 - Use a single 3 position switch to change between 3 different VTX power levels
+
+```
+adjrange 1 0 1 900 2100 31 1 0 0
+```
+explained:
+
+configure adjrange 1 so that when aux2
+(1) in the range 900-2100 then use adjustment VTX Power level(31) when aux 2
+(1) is in the appropriate position.
+
+Sample vtxtable configuration for the TBS Unify Pro32 MMCX:
+```
+vtxtable powerlevels 4
+vtxtable powervalues 14 20 26 30
+vtxtable powerlabels 25 100 400 1W
+```
+
+When the switch is low, VTX powerlevel 1 (14/25) is selected.
+When the switch is medium, VTX powerlevel 2 (20/100) is selected.
+When the switch is high, VTX powerlevel 3 (26/400) is selected.
+
+If you want to switch between 100, 400 and 1W, just sort your power levels via vtxtable:
+```
+vtxtable powerlevels 4
+vtxtable powervalues 20 26 30 14
+vtxtable powerlabels 100 400 1W 25
+```
 
 ### Configurator examples
 
