@@ -24,21 +24,25 @@
 
 #include "platform.h"
 
-#include "rc_modes.h"
-
 #include "common/bitarray.h"
 #include "common/maths.h"
+
 #include "drivers/time.h"
 
+#include "config/config.h"
 #include "config/feature.h"
+
+#include "fc/rc_controls.h"
+
+#include "io/piniobox.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 
-#include "config/config.h"
-#include "fc/rc_controls.h"
-
 #include "rx/rx.h"
+
+#include "rc_modes.h"
 
 #define STICKY_MODE_BOOT_DELAY_US 5e6
 
@@ -249,4 +253,7 @@ void analyzeModeActivationConditions(void)
             activeMacArray[activeMacCount++] = i;
         }
     }
+#ifdef USE_PINIOBOX
+    pinioBoxTaskControl();
+#endif
 }

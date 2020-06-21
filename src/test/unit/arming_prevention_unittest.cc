@@ -1107,4 +1107,5 @@ extern "C" {
     void updateRcRefreshRate(timeUs_t) {};
     uint16_t getAverageSystemLoadPercent(void) { return 0; }
     bool isMotorProtocolEnabled(void) { return true; }
+    void pinioBoxTaskControl(void) {}
 }

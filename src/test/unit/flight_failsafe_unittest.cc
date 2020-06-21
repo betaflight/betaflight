@@ -598,4 +598,5 @@ bool areSticksActive(uint8_t stickPercentLimit) {
 void beeperConfirmationBeeps(uint8_t beepCount) { UNUSED(beepCount); }
 
 bool crashRecoveryModeActive(void) { return false; }
+void pinioBoxTaskControl(void) {}
 }

@@ -351,7 +351,7 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_PINIOBOX
-    setTaskEnabled(TASK_PINIOBOX, true);
+    pinioBoxTaskControl();
 #endif
 
 #ifdef USE_CMS

@@ -26,13 +26,15 @@
 
 #include "build/debug.h"
 
-#include "common/utils.h"
 #include "common/time.h"
+#include "common/utils.h"
 
 #include "msp/msp_box.h"
 
 #include "pg/pinio.h"
 #include "pg/piniobox.h"
+
+#include "scheduler/scheduler.h"
 
 #include "piniobox.h"
 
@@ -64,4 +66,15 @@ void pinioBoxUpdate(timeUs_t currentTimeUs)
     }
 }
 
+void pinioBoxTaskControl(void)
+{
+    bool enableTask = false;
+    for (int i = 0; i < PINIO_COUNT; i++) {
+        if (pinioBoxRuntimeConfig.boxId[i] != BOXID_NONE && isModeActivationConditionPresent(pinioBoxRuntimeConfig.boxId[i])) {
+            enableTask = true;
+            break;
+        }
+    }
+    setTaskEnabled(TASK_PINIOBOX, enableTask);
+}
 #endif

@@ -249,4 +249,5 @@ bool accGetAccumulationAverage(float *) { return false; }
 void mixerSetThrottleAngleCorrection(int) {};
 bool gpsRescueIsRunning(void) { return false; }
 bool isFixedWing(void) { return false; }
+void pinioBoxTaskControl(void) {}
 }
