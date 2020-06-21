@@ -104,42 +104,6 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #endif
             break;
 
-        case RANGEFINDER_SRF10:
-#ifdef USE_RANGEFINDER_SRF10
-            if (srf10Detect(dev)) {
-                rangefinderHardware = RANGEFINDER_SRF10;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
-            }
-#endif
-            break;
-
-            case RANGEFINDER_HCSR04I2C:
-#ifdef USE_RANGEFINDER_HCSR04_I2C
-            if (hcsr04i2c0Detect(dev)) {
-                rangefinderHardware = RANGEFINDER_HCSR04I2C;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
-            }
-#endif
-            break;
-
-            case RANGEFINDER_VL53L0X:
-#if defined(USE_RANGEFINDER_VL53L0X)
-            if (vl53l0xDetect(dev)) {
-                rangefinderHardware = RANGEFINDER_VL53L0X;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
-            }
-#endif
-            break;
-
-        case RANGEFINDER_UIB:
-#if defined(USE_RANGEFINDER_UIB)
-            if (uibRangefinderDetect(dev)) {
-                rangefinderHardware = RANGEFINDER_UIB;
-                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UIB_TASK_PERIOD_MS));
-            }
-#endif
-            break;
-
         case RANGEFINDER_TFMINI:
 #if defined(USE_RANGEFINDER_TF)
             if (lidarTFminiDetect(dev)) {
