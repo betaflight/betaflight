@@ -24,6 +24,7 @@
 #include "common/time.h"
 #include "common/filter.h"
 #include "common/axis.h"
+
 #include "pg/pg.h"
 
 #define MAX_PID_PROCESS_DENOM       16
@@ -106,6 +107,14 @@ typedef enum {
     ITERM_RELAX_SETPOINT,
     ITERM_RELAX_TYPE_COUNT,
 } itermRelaxType_e;
+
+typedef enum ffInterpolationType_e {
+    FF_INTERPOLATE_OFF,
+    FF_INTERPOLATE_ON,
+    FF_INTERPOLATE_AVG2,
+    FF_INTERPOLATE_AVG3,
+    FF_INTERPOLATE_AVG4
+} ffInterpolationType_t;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
 
@@ -218,6 +227,147 @@ typedef struct pidAxisData_s {
     float Sum;
 } pidAxisData_t;
 
+typedef union dtermLowpass_u {
+    pt1Filter_t pt1Filter;
+    biquadFilter_t biquadFilter;
+} dtermLowpass_t;
+
+typedef struct pidCoefficient_s {
+    float Kp;
+    float Ki;
+    float Kd;
+    float Kf;
+} pidCoefficient_t;
+
+typedef struct pidRuntime_s {
+    float dT;
+    float pidFrequency;
+    bool pidStabilisationEnabled;
+    float previousPidSetpoint[XYZ_AXIS_COUNT];
+    filterApplyFnPtr dtermNotchApplyFn;
+    biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
+    filterApplyFnPtr dtermLowpassApplyFn;
+    dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
+    filterApplyFnPtr dtermLowpass2ApplyFn;
+    dtermLowpass_t dtermLowpass2[XYZ_AXIS_COUNT];
+    filterApplyFnPtr ptermYawLowpassApplyFn;
+    pt1Filter_t ptermYawLowpass;
+    bool antiGravityEnabled;
+    uint8_t antiGravityMode;
+    pt1Filter_t antiGravityThrottleLpf;
+    float antiGravityOsdCutoff;
+    float antiGravityThrottleHpf;
+    float ffBoostFactor;
+    float ffSpikeLimitInverse;
+    float itermAccelerator;
+    uint16_t itermAcceleratorGain;
+    float feedForwardTransition;
+    pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
+    float levelGain;
+    float horizonGain;
+    float horizonTransition;
+    float horizonCutoffDegrees;
+    float horizonFactorRatio;
+    uint8_t horizonTiltExpertMode;
+    float maxVelocity[XYZ_AXIS_COUNT];
+    float itermWindupPointInv;
+    bool inCrashRecoveryMode;
+    timeUs_t crashDetectedAtUs;
+    timeDelta_t crashTimeLimitUs;
+    timeDelta_t crashTimeDelayUs;
+    int32_t crashRecoveryAngleDeciDegrees;
+    float crashRecoveryRate;
+    float crashGyroThreshold;
+    float crashDtermThreshold;
+    float crashSetpointThreshold;
+    float crashLimitYaw;
+    float itermLimit;
+    bool itermRotation;
+    bool zeroThrottleItermReset;
+    bool levelRaceMode;
+
+#ifdef USE_ITERM_RELAX
+    pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
+    uint8_t itermRelax;
+    uint8_t itermRelaxType;
+    uint8_t itermRelaxCutoff;
+#endif
+
+#ifdef USE_ABSOLUTE_CONTROL
+    float acCutoff;
+    float acGain;
+    float acLimit;
+    float acErrorLimit;
+    pt1Filter_t acLpf[XYZ_AXIS_COUNT];
+    float oldSetpointCorrection[XYZ_AXIS_COUNT];
+#endif
+
+#ifdef USE_D_MIN
+    biquadFilter_t dMinRange[XYZ_AXIS_COUNT];
+    pt1Filter_t dMinLowpass[XYZ_AXIS_COUNT];
+    float dMinPercent[XYZ_AXIS_COUNT];
+    float dMinGyroGain;
+    float dMinSetpointGain;
+#endif
+
+#ifdef USE_AIRMODE_LPF
+    pt1Filter_t airmodeThrottleLpf1;
+    pt1Filter_t airmodeThrottleLpf2;
+#endif
+
+#ifdef USE_RC_SMOOTHING_FILTER
+    pt1Filter_t setpointDerivativePt1[XYZ_AXIS_COUNT];
+    biquadFilter_t setpointDerivativeBiquad[XYZ_AXIS_COUNT];
+    bool setpointDerivativeLpfInitialized;
+    uint8_t rcSmoothingDebugAxis;
+    uint8_t rcSmoothingFilterType;
+#endif // USE_RC_SMOOTHING_FILTER
+
+#ifdef USE_ACRO_TRAINER
+    float acroTrainerAngleLimit;
+    float acroTrainerLookaheadTime;
+    uint8_t acroTrainerDebugAxis;
+    float acroTrainerGain;
+    bool acroTrainerActive;
+    int acroTrainerAxisState[2];  // only need roll and pitch
+#endif
+
+#ifdef USE_DYN_LPF
+    uint8_t dynLpfFilter;
+    uint16_t dynLpfMin;
+    uint16_t dynLpfMax;
+    uint8_t dynLpfCurveExpo;
+#endif
+
+#ifdef USE_LAUNCH_CONTROL
+    uint8_t launchControlMode;
+    uint8_t launchControlAngleLimit;
+    float launchControlKi;
+#endif
+
+#ifdef USE_INTEGRATED_YAW_CONTROL
+    bool useIntegratedYaw;
+    uint8_t integratedYawRelax;
+#endif
+
+#ifdef USE_THRUST_LINEARIZATION
+    float thrustLinearization;
+    float thrustLinearizationReciprocal;
+    float thrustLinearizationB;
+#endif
+
+#ifdef USE_AIRMODE_LPF
+    float airmodeThrottleOffsetLimit;
+#endif
+
+#ifdef USE_INTERPOLATED_SP
+    ffInterpolationType_t ffFromInterpolatedSetpoint;
+    float ffSmoothFactor;
+#endif
+} pidRuntime_t;
+
+extern pidRuntime_t pidRuntime;
+
 extern const char pidNames[];
 
 extern pidAxisData_t pidData[3];
@@ -230,15 +380,9 @@ extern pt1Filter_t throttleLpf;
 void pidResetIterm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
-void pidInitFilters(const pidProfile_t *pidProfile);
-void pidInitConfig(const pidProfile_t *pidProfile);
-void pidInit(const pidProfile_t *pidProfile);
-void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
 bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
-void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType);
-void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);

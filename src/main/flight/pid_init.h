@@ -20,12 +20,10 @@
 
 #pragma once
 
-#include <stdint.h>
-
-#include "common/axis.h"
-#include "flight/pid.h"
-
-void interpolatedSpInit(const pidProfile_t *pidProfile);
-float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type);
-float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint);
-bool shouldApplyFfLimits(int axis);
+void pidInit(const pidProfile_t *pidProfile);
+void pidInitFilters(const pidProfile_t *pidProfile);
+void pidInitConfig(const pidProfile_t *pidProfile);
+void pidSetItermAccelerator(float newItermAccelerator);
+void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType);
+void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff);
+void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);

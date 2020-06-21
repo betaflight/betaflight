@@ -52,9 +52,10 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
 
-    #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
+    #include "flight/pid.h"
+    #include "flight/pid_init.h"
 
     #include "io/gps.h"
 

@@ -97,6 +97,7 @@ COMMON_SRC = \
             flight/mixer.c \
             flight/mixer_tricopter.c \
             flight/pid.c \
+            flight/pid_init.c \
             flight/rpm_filter.c \
             flight/servos.c \
             flight/servos_tricopter.c \
@@ -346,7 +347,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             osd/osd.c \
             osd/osd_elements.c \
             rx/rx_bind.c \
-            sensors/gyro_init.c
+            sensors/gyro_init.c\
+            flight/pid_init.c
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \

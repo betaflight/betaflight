@@ -16,6 +16,10 @@
 #include "common/color.h"
 #include "common/maths.h"
 
+#include "config/config.h"
+#include "config/config_eeprom.h"
+#include "config/feature.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
 #include "drivers/bus_i2c.h"
@@ -25,12 +29,19 @@
 #include "drivers/time.h"
 #include "drivers/timer.h"
 
-#include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+
+#include "flight/position.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/pid_init.h"
+#include "flight/servos.h"
 
 #include "io/motors.h"
 #include "io/servos.h"
@@ -59,16 +70,6 @@
 #include "sensors/rangefinder.h"
 
 #include "telemetry/telemetry.h"
-
-#include "flight/position.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/servos.h"
-
-#include "config/config_eeprom.h"
-#include "config/feature.h"
 
 #include "bus_bst.h"
 #include "i2c_bst.h"
