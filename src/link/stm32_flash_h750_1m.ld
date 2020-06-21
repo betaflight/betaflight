@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_h750_128k.ld
+**  File        : stm32_flash_h750_1m.ld
 **
 **  Abstract    : Linker script for STM32H750xB Device with
 **                512K AXI-RAM mapped onto AXI bus on D1 domain
@@ -34,7 +34,7 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 1024K
 
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
@@ -65,7 +65,7 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >D2_RAM
-
+  
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
@@ -89,6 +89,6 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
-  }
+}
 
 INCLUDE "stm32_h750_common_post.ld"

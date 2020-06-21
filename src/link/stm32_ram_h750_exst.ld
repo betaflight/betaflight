@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_h750_128k.ld
+**  File        : stm32_flash_h750_exst.ld
 **
 **  Abstract    : Linker script for STM32H750xB Device with
 **                512K AXI-RAM mapped onto AXI bus on D1 domain
@@ -20,8 +20,8 @@ ENTRY(Reset_Handler)
 
 /*
 0x00000000 to 0x0000FFFF   64K ITCM
-0x20000000 to 0x2001FFFF  128K DTCM
-0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain, main RAM
+0x20000000 to 0x2001FFFF  128K DTCM, main RAM
+0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain
 0x30000000 to 0x3001FFFF  128K SRAM1, D2 domain
 0x30020000 to 0x3003FFFF  128K SRAM2, D2 domain
 0x30040000 to 0x30047FFF   32K SRAM3, D2 domain, unused
@@ -31,14 +31,37 @@ ENTRY(Reset_Handler)
 0x08000000 to 0x0801FFFF  128K isr vector, startup code, firmware, no config! // FLASH_Sector_0
 */
 
+/* 
+
+For H7 EXST (External Storage) targets a binary is built that is placed on an external device.
+The bootloader will then copy this entire binary to RAM, at the CODE_RAM address.  The bootloader
+then executes code at the CODE_RAM address. The address of CODE_RAM is fixed to 0x24010000
+and must not be changed.
+
+Currently, this is inefficient as there are two copies of some sections in RAM.  e.g. .tcm_code.
+
+It would be technically possible to free more RAM by having a more intelligent build system
+and bootloader which creates files for each of the sections that are usually copied from flash
+to ram and one section for the main code.  e.g. one file for .tcm_code, one file for .data and
+one for the main code/data, then load each to the appropriate address and adjust the usual startup
+code which will no-longer need to duplicate code/data sections from RAM to ITCM/DTCM RAM.
+
+The initial CODE_RAM is sized at 448K to enable all firmware features and to as much RAM free as 
+possible.
+
+*/
+
+/* see .exst section below */
+_exst_hash_size = 64;
+
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
-
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 512K
+    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
+    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
+    EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
 
@@ -48,7 +71,7 @@ MEMORY
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
-REGION_ALIAS("MAIN", FLASH)
+REGION_ALIAS("MAIN", CODE_RAM)
 
 INCLUDE "stm32_h750_common.ld"
 
@@ -65,7 +88,7 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >D2_RAM
-
+  
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
@@ -89,6 +112,8 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
-  }
+}
 
 INCLUDE "stm32_h750_common_post.ld"
+INCLUDE "stm32_ram_h750_exst_post.ld"
+
