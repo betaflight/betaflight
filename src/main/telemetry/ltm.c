@@ -146,12 +146,7 @@ static void ltm_gframe(void)
     ltm_serialise_32(gpsSol.llh.lat);
     ltm_serialise_32(gpsSol.llh.lon);
     ltm_serialise_8((uint8_t)(gpsSol.groundSpeed / 100));
-
-#if defined(USE_BARO) || defined(USE_RANGEFINDER)
-    ltm_alt = (sensors(SENSOR_RANGEFINDER) || sensors(SENSOR_BARO)) ? getEstimatedAltitudeCm() : gpsSol.llh.altCm;
-#else
-    ltm_alt = gpsSol.llh.altCm;
-#endif
+    ltm_alt = getEstimatedAltitudeCm();
     ltm_serialise_32(ltm_alt);
     ltm_serialise_8((gpsSol.numSat << 2) | gps_fix_type);
     ltm_finalise();
