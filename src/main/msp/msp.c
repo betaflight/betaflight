@@ -1822,6 +1822,15 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->motor_output_limit);
         sbufWriteU8(dst, currentPidProfile->auto_profile_cell_count);
         sbufWriteU8(dst, currentPidProfile->idle_min_rpm);
+        // Added in MSP API 1.44
+#if defined(USE_INTERPOLATED_SP)
+        sbufWriteU8(dst, currentPidProfile->ff_interpolate_sp);
+        sbufWriteU8(dst, currentPidProfile->ff_smooth_factor);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
+        sbufWriteU8(dst, currentPidProfile->ff_boost);
 
         break;
     case MSP_SENSOR_CONFIG:
@@ -2676,6 +2685,17 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->motor_output_limit = sbufReadU8(src);
             currentPidProfile->auto_profile_cell_count = sbufReadU8(src);
             currentPidProfile->idle_min_rpm = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src) >= 3) {
+            // Added in MSP API 1.44
+#if defined(USE_INTERPOLATED_SP)
+            currentPidProfile->ff_interpolate_sp = sbufReadU8(src);
+            currentPidProfile->ff_smooth_factor = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+            sbufReadU8(src);
+#endif
+            currentPidProfile->ff_boost = sbufReadU8(src);
         }
         pidInitConfig(currentPidProfile);
 
