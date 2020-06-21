@@ -73,4 +73,4 @@ bool dshotCommandQueueEmpty(void);
 bool dshotCommandIsProcessing(void);
 uint8_t dshotCommandGetCurrent(uint8_t index);
 bool dshotCommandOutputIsEnabled(uint8_t motorCount);
-bool dshotCommandsAreEnabled(dshotCommandType_e commandType);
+bool dshotStreamingCommandsAreEnabled(void);
