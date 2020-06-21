@@ -337,20 +337,78 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 }
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
+#define CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH   50
+#define CRSF_DISPLAYPORT_BATCH_MAX          0x3F
+#define CRSF_DISPLAYPORT_FIRST_CHUNK_MASK   0x80
+#define CRSF_DISPLAYPORT_LAST_CHUNK_MASK    0x40
+#define CRSF_DISPLAYPORT_SANITIZE_MASK      0x60
+#define CRSF_RLE_CHAR_REPEATED_MASK         0x80
+#define CRSF_RLE_MAX_RUN_LENGTH             256
+#define CRSF_RLE_BATCH_SIZE                 2
 
-static void crsfFrameDisplayPortRow(sbuf_t *dst, uint8_t row)
+static uint16_t getRunLength(const void *start, const void *end)
+{
+    uint8_t *cursor = (uint8_t*)start;
+    uint8_t c = *cursor;
+    size_t runLength = 0;
+    for (; cursor != end; cursor++) {
+        if (*cursor == c) {
+            runLength++;
+        } else {
+            break;
+        }
+    }
+    return runLength;
+}
+
+static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
+{
+    const uint8_t *destEnd = sbufPtr(dest) + maxDestLen;
+    while (sbufBytesRemaining(source) && (sbufPtr(dest) < destEnd)) {
+        const uint8_t destRemaining = destEnd - sbufPtr(dest);
+        const uint8_t *srcPtr = sbufPtr(source);
+        const uint16_t runLength = getRunLength(srcPtr, source->end);
+        uint8_t c = *srcPtr;
+        if (runLength > 1) {
+            c |=  CRSF_RLE_CHAR_REPEATED_MASK;
+            const uint8_t fullBatches = (runLength / CRSF_RLE_MAX_RUN_LENGTH);
+            const uint8_t remainder = (runLength % CRSF_RLE_MAX_RUN_LENGTH);
+            const uint8_t totalBatches = fullBatches + (remainder) ? 1 : 0;
+            if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
+                for (unsigned int i=1; i<=totalBatches; i++) {
+                    const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;
+                    sbufWriteU8(dest, c);
+                    sbufWriteU8(dest, batchLength);
+                }
+                sbufAdvance(source, runLength);
+            } else {
+                break;
+            }
+        } else if (destRemaining >= runLength) {
+            sbufWriteU8(dest, c);
+            sbufAdvance(source, runLength);
+        }
+    }
+}
+
+static void crsfFrameDisplayPortChunk(sbuf_t *dst, sbuf_t *src, uint8_t batchId, uint8_t idx)
 {
     uint8_t *lengthPtr = sbufPtr(dst);
-    uint8_t buflen = crsfDisplayPortScreen()->cols;
-    char *rowStart = &crsfDisplayPortScreen()->buffer[row * buflen];
-    const uint8_t frameLength = CRSF_FRAME_LENGTH_EXT_TYPE_CRC + buflen;
-    sbufWriteU8(dst, frameLength);
+    sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_DISPLAYPORT_CMD);
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteU8(dst, CRSF_DISPLAYPORT_SUBCMD_UPDATE);
-    sbufWriteU8(dst, row);
-    sbufWriteData(dst, rowStart, buflen);
+    uint8_t *metaPtr = sbufPtr(dst);
+    sbufWriteU8(dst, batchId);
+    sbufWriteU8(dst, idx);
+    cRleEncodeStream(src, dst, CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH);
+    if (idx == 0)  {
+        *metaPtr |= CRSF_DISPLAYPORT_FIRST_CHUNK_MASK;
+    }
+    if (!sbufBytesRemaining(src)) {
+        *metaPtr |= CRSF_DISPLAYPORT_LAST_CHUNK_MASK;
+    }
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
@@ -556,14 +614,25 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs;
         return;
     }
-    const int nextRow = crsfDisplayPortNextRow();
-    if (nextRow >= 0) {
+    static uint8_t displayPortBatchId = 0;
+    if (crsfDisplayPortIsReady() && crsfDisplayPortScreen()->updated) {
+        crsfDisplayPortScreen()->updated = false;
+        uint16_t screenSize = crsfDisplayPortScreen()->rows * crsfDisplayPortScreen()->cols;
+        uint8_t *srcStart = (uint8_t*)crsfDisplayPortScreen()->buffer;
+        uint8_t *srcEnd = (uint8_t*)(crsfDisplayPortScreen()->buffer + screenSize);
+        sbuf_t displayPortSbuf;
+        sbuf_t *src = sbufInit(&displayPortSbuf, srcStart, srcEnd);
         sbuf_t crsfDisplayPortBuf;
         sbuf_t *dst = &crsfDisplayPortBuf;
-        crsfInitializeFrame(dst);
-        crsfFrameDisplayPortRow(dst, nextRow);
-        crsfFinalize(dst);
-        crsfDisplayPortScreen()->pendingTransport[nextRow] = false;
+        displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
+        uint8_t i = 0;
+        while(sbufBytesRemaining(src)) {
+            crsfInitializeFrame(dst);
+            crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, i);
+            crsfFinalize(dst);
+            crsfRxSendTelemetryData();
+            i++;
+        }
         crsfLastCycleTime = currentTimeUs;
         return;
     }
