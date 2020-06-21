@@ -19,7 +19,7 @@ All telemetry systems use serial ports, configure serial ports to use the teleme
 
 FrSky telemetry is transmit only and just requires a single connection from the TX pin of a serial port to the RX pin on an FrSky telemetry receiver.
 
-FrSky telemetry signals are inverted.  To connect a cleanflight capable board to an FrSKy receiver you have some options.
+FrSky telemetry signals are inverted.  To connect a Betaflight capable board to an FrSKy receiver you have some options.
 
 1. A hardware inverter - Built in to some flight controllers.
 2. Use software serial and enable frsky_inversion.
@@ -30,7 +30,7 @@ For 1, just connect your inverter to a usart or software serial port.
 For 2 and 3 use the CLI command as follows:
 
 ```
-set telemetry_inversion = ON
+set tlm_inverted = ON
 ```
 
 
@@ -55,7 +55,7 @@ The following sensors are transmitted :
 | GAlt     | GPS altitude, sea level is zero.                                                                       |
 | Tmp2     | number of sats. Every second, a number > 100 is sent to represent GPS signal quality.                  |
 | Cels     | average cell value, vbat divided by cell number.                                                       |
-> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with:
+> Betaflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with:
 > ```
 > set telemetry_send_cells = OFF
 > ```
@@ -72,7 +72,7 @@ The following sensors are transmitted :
 
 ### Precision setting for VFAS
 
-Cleanflight can send VFAS (FrSky Ampere Sensor Voltage) in two ways:
+Betaflight can send VFAS (FrSky Ampere Sensor Voltage) in two ways:
 
 ```
 set frsky_vfas_precision  = 0
@@ -127,13 +127,13 @@ Note: The SoftSerial ports may not be 5V tolerant on your board.  Verify if you 
 LTM is a lightweight streaming telemetry protocol supported by a
 number of OSDs, ground stations and antenna trackers.
 
-The Cleanflight implementation of LTM implements the following frames:
+The Betaflight implementation of LTM implements the following frames:
 
 * G-FRAME: GPS information (lat, long, ground speed, altitude, sat
   info)
 * A-FRAME: Attitude (pitch, roll, heading)
 * S-FRAME: Status (voltage, current+, RSSI, airspeed+, status). Item
-  suffixed '+' not implemented in Cleanflight.
+  suffixed '+' not implemented in Betaflight.
 * O-FRAME: Origin (home position, lat, long, altitude, fix)
 
 In addition, in the inav (navigation-rewrite) fork:
@@ -141,7 +141,7 @@ In addition, in the inav (navigation-rewrite) fork:
   Waypoint number, Nav Error, Nav Flags).
 
 LTM is transmit only, and can work at any supported baud rate. It is
-designed to operate over 2400 baud (9600 in Cleanflight) and does not
+designed to operate over 2400 baud (9600 in Betaflight) and does not
 benefit from higher rates. It is thus usable on soft serial.
 
 More information about the fields, encoding and enumerations may be
@@ -151,10 +151,10 @@ https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
 ## MAVLink telemetry
 
 MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles.
-Cleanflight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
+Betafight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
 for PX4, PIXHAWK, APM and Parrot AR.Drone platforms.
 
-MAVLink implementation in Cleanflight is transmit-only and usable on low baud rates and can be used over soft serial.
+MAVLink implementation in Betaflight is transmit-only and usable on low baud rates and can be used over soft serial.
 
 ## SmartPort (S.Port)
 
@@ -182,9 +182,9 @@ The following sensors are transmitted :
 | 420 | GPS distance to home |
 | Cels | average cell value, vbat divided by cell number. |
 
-> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with:
+> Betaflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with:
 > ```
-> set telemetry_send_cells = OFF
+> set report_cell_voltage = OFF
 > ```
 >
 > Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ. It is recommeded that you chain the flight controllers telemetry with a real Frsky FLVSS s.port sensor.
@@ -197,9 +197,9 @@ The following sensors are transmitted :
 > - Cell Sensor: Cels _(pack total voltage, sum of all cells)_
 > - Cell Index: Lowest
 
-### Integrate Cleanflight telemetry with FrSky Smartport sensors
+### Integrate Betaflight telemetry with FrSky Smartport sensors
 
-While Cleanflight telemetry brings a lot of valuable data to the radio, there are additional sensors, like Lipo cells sensor FLVSS, that can be a great addition for many aircrafts. Smartport sensors are designed to be daisy chained, and CF telemetry is no exception to that. To add an external sensor, just connect the "S" port of the FC and sensor(s) together, and ensure the sensor(s) are getting connected to GND and VCC either from the controler or the receiver
+While Betaflight telemetry brings a lot of valuable data to the radio, there are additional sensors, like Lipo cells sensor FLVSS, that can be a great addition for many aircrafts. Smartport sensors are designed to be daisy chained, and CF telemetry is no exception to that. To add an external sensor, just connect the "S" port of the FC and sensor(s) together, and ensure the sensor(s) are getting connected to GND and VCC either from the controler or the receiver
 
 ![Smartport diagram](assets/images/integrate_smartport.png)
 
@@ -210,7 +210,7 @@ Smartport devices can be connected directly to STM32F3 boards such as the SPRaci
 For Smartport on F3 based boards, enable the telemetry inversion setting.
 
 ```
-set telemetry_inversion = ON
+set tlm_inverted = ON
 ```
 
 ### SmartPort on F1 and F3 targets with SoftSerial
@@ -220,7 +220,7 @@ Since F1 targets like Naze32 or Flip32 are not equipped with hardware inverters,
 1. Enable SoftSerial ```feature SOFTSERIAL```
 2. In Configurator assign _Telemetry_ > _Smartport_ > _Auto_ to SoftSerial port of your choice
 3. Enable Telemetry ```feature TELEMETRY```
-4. Confirm telemetry invesion ```set telemetry_inversion = ON```
+4. Confirm telemetry invesion ```set tlm_inverted = ON```
 5. You have to bridge TX and RX lines of SoftSerial and connect them together to S.Port signal line in receiver
 
 Notes:
