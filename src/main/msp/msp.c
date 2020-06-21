@@ -1321,12 +1321,6 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #endif
         break;
 
-#ifdef USE_MAG
-    case MSP_COMPASS_CONFIG:
-        sbufWriteU16(dst, compassConfig()->mag_declination / 10);
-        break;
-#endif
-
 #if defined(USE_ESC_SENSOR)
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
     case MSP_ESC_SENSOR_DATA:
@@ -2373,12 +2367,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->yawP = sbufReadU16(src);
         break;
 #endif
-#endif
-
-#ifdef USE_MAG
-    case MSP_SET_COMPASS_CONFIG:
-        compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
-        break;
 #endif
 
     case MSP_SET_MOTOR:

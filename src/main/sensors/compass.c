@@ -63,13 +63,12 @@ static flightDynamicsTrims_t magZeroTempMax;
 magDev_t magDev;
 mag_t mag;                   // mag access functions
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 3);
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
     compassConfig->mag_alignment = ALIGN_DEFAULT;
     memset(&compassConfig->mag_customAlignment, 0x00, sizeof(compassConfig->mag_customAlignment));
-    compassConfig->mag_declination = 0;
     compassConfig->mag_hardware = MAG_DEFAULT;
 
 // Generate a reasonable default for backward compatibility
@@ -289,8 +288,6 @@ bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
-    // calculate magnetic declination
-    mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 
     sensor_align_e alignment;
 
@@ -298,9 +295,6 @@ bool compassInit(void)
         return false;
     }
 
-    const int16_t deg = compassConfig()->mag_declination / 100;
-    const int16_t min = compassConfig()->mag_declination % 100;
-    mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     LED1_ON;
     magDev.init(&magDev);
     LED1_OFF;
