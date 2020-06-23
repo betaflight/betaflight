@@ -174,11 +174,15 @@ ledstrip_unittest_SRC := \
 		$(USER_DIR)/io/ledstrip.c
 
 ledstrip_unittest_DEFINES := \
-        USE_LED_STRIP=
-       
-       
+		USE_LED_STRIP=
+
+
 maths_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
+
+
+motor_output_unittest_SRC := \
+		$(USER_DIR)/drivers/dshot.c
 
 
 osd_unittest_SRC := \

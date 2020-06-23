@@ -233,7 +233,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     dmaResource_t *dmaRef = NULL;
     uint32_t dmaChannel;
@@ -285,7 +285,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 
-    IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+    IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     // Configure time base
@@ -373,7 +373,7 @@ P    -    High -     High -
     } else
 #endif
     {
-        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
         dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motorIndex);
     }
 

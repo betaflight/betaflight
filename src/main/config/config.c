@@ -89,6 +89,8 @@
 
 #include "config.h"
 
+#include "drivers/dshot.h"
+
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
@@ -596,6 +598,7 @@ static void validateAndFixConfig(void)
             }
         }
     }
+
 #if defined(USE_RX_MSP_OVERRIDE)
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = modeActivationConditions(i);
@@ -604,6 +607,8 @@ static void validateAndFixConfig(void)
         }
     }
 #endif
+
+    validateAndfixMotorOutputReordering(motorConfigMutable()->dev.motorOutputReordering, MAX_SUPPORTED_MOTORS);
 }
 
 void validateAndFixGyroConfig(void)

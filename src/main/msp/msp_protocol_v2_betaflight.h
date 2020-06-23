@@ -18,4 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MSP2_BETAFLIGHT_BIND            0x3000
+#define MSP2_BETAFLIGHT_BIND                0x3000
+#define MSP2_MOTOR_OUTPUT_REORDERING        0x3001
+#define MSP2_SET_MOTOR_OUTPUT_REORDERING    0x3002
