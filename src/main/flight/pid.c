@@ -194,7 +194,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min = { 20, 22, 0 },      // roll, pitch, yaw
+        .d_min = { 23, 25, 0 },      // roll, pitch, yaw
         .d_min_gain = 37,
         .d_min_advance = 20,
         .motor_output_limit = 100,
