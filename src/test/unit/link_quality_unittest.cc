@@ -44,6 +44,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/acc_based_boost.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
@@ -457,6 +458,8 @@ extern "C" {
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
     void pinioBoxTaskControl(void) { }
+    bool isInPropwashZone(void) { return true; }
+    bool isAccBasedBoostEnabled(void) { return true; }
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {

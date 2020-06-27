@@ -52,6 +52,7 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/acc_based_boost.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -66,6 +67,7 @@ extern "C" {
     attitudeEulerAngles_t attitude;
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+    PG_REGISTER(accBasedBoostConfig_t, accBasedBoostConfig, PG_ACC_BASED_BOOST, 1);
 
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
@@ -87,6 +89,11 @@ extern "C" {
         UNUSED(currentPidSetpoint);
         return value;
     }
+    bool canApplyBoost(void) { return false; }
+    bool isAccBasedBoostEnabled(void) { return false; }
+    bool isAccelerometerEnabled(void) { return false; }
+    float computeBoost() { return 1.0f; }
+    void initAccBasedBoostThrottleFilter(void) { }
 }
 
 pidProfile_t *pidProfile;

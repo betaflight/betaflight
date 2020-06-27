@@ -46,6 +46,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/acc_based_boost.h"
     #include "flight/gps_rescue.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
@@ -1244,4 +1245,6 @@ extern "C" {
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
     bool isUpright(void) { return true; }
+    bool isInPropwashZone(void) { return false; }
+    bool isAccBasedBoostEnabled(void) { return false; }
 }
