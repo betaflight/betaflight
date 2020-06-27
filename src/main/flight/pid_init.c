@@ -37,10 +37,12 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/acc_based_boost.h"
 #include "flight/interpolated_setpoint.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
@@ -206,7 +208,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pidRuntime.ffBoostFactor = (float)pidProfile->ff_boost / 10.0f;
     pidRuntime.ffSpikeLimitInverse = pidProfile->ff_spike_limit ? 1.0f / ((float)pidProfile->ff_spike_limit / 10.0f) : 0.0f;
 
-    initAntiPropwashThrottleFilter();
+    if (isAccelerometerEnabled() && accBasedBoostConfig()->acc_based_boost_percent) {
+        initAccBasedBoostThrottleFilter();
+    }
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -405,6 +409,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
+
+    pidRuntime.accBasedBoostPercent = accBasedBoostConfig()->acc_based_boost_percent;
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

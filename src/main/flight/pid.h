@@ -364,6 +364,8 @@ typedef struct pidRuntime_s {
     ffInterpolationType_t ffFromInterpolatedSetpoint;
     float ffSmoothFactor;
 #endif
+    uint8_t accBasedBoostPercent;
+    float accBasedBoostFactor;
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;

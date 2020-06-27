@@ -1025,8 +1025,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 #endif
 
-            accBasedBoostFactor = 1.0f;
-            if (isAccelerometerEnabled() && accBasedBoostPercent) {
+            pidRuntime.accBasedBoostFactor = 1.0f;
+            if (isAccelerometerEnabled() && pidRuntime.accBasedBoostPercent) {
                 if (canApplyBoost()) {
                     accBasedBoostFactor = computeBoost();
                 }
@@ -1165,7 +1165,7 @@ void dynLpfDTermUpdate(float throttle)
         }
 
         if (isAccelerometerEnabled() && accBasedBoostConfig()->acc_based_boost_percent) {
-            cutoffFreq = MIN(cutoffFreq * accBasedBoostFactor, dynLpfMax);
+            cutoffFreq = MIN(cutoffFreq * accBasedBoostFactor, pidRuntime.dynLpfMax);
         }
 
          if (pidRuntime.dynLpfFilter == DYN_LPF_PT1) {
