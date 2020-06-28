@@ -428,14 +428,18 @@ uint32_t baroUpdate(void)
     return sleepTime;
 }
 
+static float pressureToAltitude(const float pressure)
+{
+    return (1.0f - powf(pressure / 101325.0f, 0.190295f)) * 4433000.0f;
+}
+
 int32_t baroCalculateAltitude(void)
 {
     int32_t BaroAlt_tmp;
 
     // calculates height from ground via baro readings
-    // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
     if (baroIsCalibrationComplete()) {
-        BaroAlt_tmp = lrintf((1.0f - pow_approx((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190259f)) * 4433000.0f); // in cm
+        BaroAlt_tmp = lrintf(pressureToAltitude((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT)));
         BaroAlt_tmp -= baroGroundAltitude;
         baro.BaroAlt = lrintf((float)baro.BaroAlt * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf) + (float)BaroAlt_tmp * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf))); // additional LPF to reduce baro noise
     }
