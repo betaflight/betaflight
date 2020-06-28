@@ -168,7 +168,15 @@ static bool isReady(displayPort_t *instance)
 {
     UNUSED(instance);
 
-    return max7456IsDeviceDetected();
+    if (!max7456IsDeviceDetected()) {
+        // Try to initialize the device
+        if (max7456Init(max7456Config(), vcdProfile(), systemConfig()->cpu_overclock) != MAX7456_INIT_OK) {
+            return false;
+        }
+        // At this point the device has been initialized and detected
+        resync(&max7456DisplayPort);
+    }
+    return true;
 }
 
 static const displayPortVTable_t max7456VTable = {
@@ -193,15 +201,24 @@ static const displayPortVTable_t max7456VTable = {
 
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
-    if (
-        !max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)
-    ) {
+    switch (max7456Init(max7456Config(), vcdProfile, systemConfig()->cpu_overclock)) {
+    case MAX7456_INIT_NOT_FOUND:
+        // MAX7456 IO pins are defined, but we could not get a reply
+        // from it at this time. Delay full initialization to
+        // isReady()
+        displayInit(&max7456DisplayPort, &max7456VTable);
+        break;
+    case MAX7456_INIT_OK:
+        // MAX7456 configured and detected
+        displayInit(&max7456DisplayPort, &max7456VTable);
+        resync(&max7456DisplayPort);
+        break;
+    case MAX7456_INIT_NOT_CONFIGURED:
+        // MAX7456 IO pins are not defined. We either don't have
+        // it on board or either the configuration for it has
+        // not been set.
         return NULL;
     }
-
-    displayInit(&max7456DisplayPort, &max7456VTable);
-
-    resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }
 #endif // USE_MAX7456
