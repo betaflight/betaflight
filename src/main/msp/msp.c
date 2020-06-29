@@ -1590,13 +1590,15 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, blackboxConfig()->device);
         sbufWriteU8(dst, 1); // Rate numerator, not used anymore
         sbufWriteU8(dst, blackboxGetRateDenom());
-        sbufWriteU16(dst, blackboxConfig()->p_ratio);
+        sbufWriteU16(dst, blackboxGetPRatio());
+        sbufWriteU8(dst, blackboxConfig()->sample_rate);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU16(dst, 0);
+        sbufWriteU8(dst, 0);
 #endif
         break;
 
@@ -2763,12 +2765,21 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             blackboxConfigMutable()->device = sbufReadU8(src);
             const int rateNum = sbufReadU8(src); // was rate_num
             const int rateDenom = sbufReadU8(src); // was rate_denom
+            uint16_t pRatio = 0;
             if (sbufBytesRemaining(src) >= 2) {
                 // p_ratio specified, so use it directly
-                blackboxConfigMutable()->p_ratio = sbufReadU16(src);
+                pRatio = sbufReadU16(src);
             } else {
                 // p_ratio not specified in MSP, so calculate it from old rateNum and rateDenom
-                blackboxConfigMutable()->p_ratio = blackboxCalculatePDenom(rateNum, rateDenom);
+                pRatio = blackboxCalculatePDenom(rateNum, rateDenom);
+            }
+
+            if (sbufBytesRemaining(src) >= 1) {
+                // sample_rate specified, so use it directly
+                blackboxConfigMutable()->sample_rate = sbufReadU8(src);
+            } else {
+                // sample_rate not specified in MSP, so calculate it from old p_ratio
+                blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
             }
         }
         break;
