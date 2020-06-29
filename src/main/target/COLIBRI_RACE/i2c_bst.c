@@ -43,7 +43,6 @@
 #include "flight/pid_init.h"
 #include "flight/servos.h"
 
-#include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
 #include "io/gimbal.h"

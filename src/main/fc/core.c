@@ -74,7 +74,6 @@
 
 #include "io/beeper.h"
 #include "io/gps.h"
-#include "io/motors.h"
 #include "io/pidaudio.h"
 #include "io/serial.h"
 #include "io/servos.h"

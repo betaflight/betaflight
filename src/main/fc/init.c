@@ -111,7 +111,6 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
 #include "io/rcdevice_cam.h"
