@@ -1,3 +1,5 @@
+# Betaflight 4.2 Release Notes
+
 **Just in time for summer...**
 
 ...for most of us, and in time for the end of COVID-19 related lockdowns in a lot of places, we are proud to announce the release of Betaflight 4.2.0!
