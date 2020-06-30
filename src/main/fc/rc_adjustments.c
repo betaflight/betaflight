@@ -49,7 +49,6 @@
 
 #include "io/beeper.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/pidaudio.h"
 
 #include "osd/osd.h"

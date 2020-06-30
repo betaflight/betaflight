@@ -93,7 +93,6 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/servos.h"

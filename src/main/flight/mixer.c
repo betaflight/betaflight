@@ -42,8 +42,6 @@
 #include "drivers/time.h"
 #include "drivers/io.h"
 
-#include "io/motors.h"
-
 #include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
