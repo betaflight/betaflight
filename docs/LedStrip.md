@@ -445,7 +445,7 @@ Mode Colors can be configured using the cli `mode_color` command.
 - No arguments: lists all mode colors
 - arguments: mode, function, color
 
-First 6 groups of ModeIndexes are :
+First 7 groups of ModeIndexes are :
 
 | mode | name        |
 |------|-------------|
