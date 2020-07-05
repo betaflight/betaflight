@@ -306,6 +306,8 @@ static const char *mcuTypeNames[] = {
     "H743 (Rev.V)",
 };
 
+static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
+
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
     DUMP_PROFILE = (1 << 1),
@@ -4702,7 +4704,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("Config size: %d, Max available config: %d", getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinef("Configuration: %s, size: %d, max available: %d", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
 
     // Sensors
     cliPrint("Gyros detected:");
