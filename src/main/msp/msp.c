@@ -3260,6 +3260,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
             pilotConfigMutable()->name[i] = sbufReadU8(src);
         }
+#ifdef USE_OSD
+        osdAnalyzeActiveElements();
+#endif
         break;
 
 #ifdef USE_RTC_TIME
