@@ -445,7 +445,7 @@ Mode Colors can be configured using the cli `mode_color` command.
 - No arguments: lists all mode colors
 - arguments: mode, function, color
 
-First 6 groups of ModeIndexes are :
+First 7 groups of ModeIndexes are :
 
 | mode | name        |
 |------|-------------|
@@ -552,7 +552,7 @@ LEDs 0,3,6 and 9 should be placed underneath the quad, facing downwards.
 LEDs 1-2, 4-5, 7-8 and 10-11 should be positioned so the face east/north/west/south, respectively.
 LEDs 12-13 should be placed facing down, in the middle
 LEDs 14-15 should be placed facing up, in the middle
-LEDs 16-17 should be placed in a ring and positioned at the rear facing south.
+LEDs 16-27 should be placed in a ring and positioned at the rear facing south.
 
 This is the default so that if you don't want to place LEDs top and bottom in the middle just connect the first 12 LEDs.
 
