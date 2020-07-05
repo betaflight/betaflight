@@ -33,12 +33,16 @@
 
 #define MAX_MISSING_PKT 100
 
+#define FRSKY_RX_D16FCC_LENGTH 0x1d + 3
+#define FRSKY_RX_D16LBT_LENGTH 0x20 + 3
+#define FRSKY_RX_D16v2_LENGTH  0x1d + 3
+
 enum {
     STATE_INIT = 0,
     STATE_BIND,
-    STATE_BIND_TUNING,
-    STATE_BIND_BINDING1,
-    STATE_BIND_BINDING2,
+    STATE_BIND_TUNING_LOW,
+    STATE_BIND_TUNING_HIGH,
+    STATE_BIND_BINDING,
     STATE_BIND_COMPLETE,
     STATE_STARTING,
     STATE_UPDATE,
@@ -47,6 +51,7 @@ enum {
     STATE_RESUME,
 };
 
+extern rx_spi_protocol_e spiProtocol;
 extern uint8_t listLength;
 extern uint32_t missingPackets;
 extern timeDelta_t timeoutUs;
