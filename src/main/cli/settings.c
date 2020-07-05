@@ -1635,6 +1635,4 @@ const clivalue_t valueTable[] = {
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
 
-void settingsBuildCheck() {
-    STATIC_ASSERT(LOOKUP_TABLE_COUNT == ARRAYLEN(lookupTables), LOOKUP_TABLE_COUNT_incorrect);
-}
+STATIC_ASSERT(LOOKUP_TABLE_COUNT == ARRAYLEN(lookupTables), LOOKUP_TABLE_COUNT_incorrect);
