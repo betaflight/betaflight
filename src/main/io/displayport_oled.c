@@ -95,7 +95,7 @@ static int oledHeartbeat(displayPort_t *displayPort)
     return 0;
 }
 
-static void oledResync(displayPort_t *displayPort)
+static void oledRedraw(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
 }
@@ -116,7 +116,7 @@ static const displayPortVTable_t oledVTable = {
     .writeChar = oledWriteChar,
     .isTransferInProgress = oledIsTransferInProgress,
     .heartbeat = oledHeartbeat,
-    .resync = oledResync,
+    .redraw = oledRedraw,
     .isSynced = oledIsSynced,
     .txBytesFree = oledTxBytesFree,
     .layerSupported = NULL,

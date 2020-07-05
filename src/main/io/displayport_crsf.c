@@ -115,7 +115,7 @@ static int crsfHeartbeat(displayPort_t *displayPort)
     return 0;
 }
 
-static void crsfResync(displayPort_t *displayPort)
+static void crsfRedraw(displayPort_t *displayPort)
 {
     displayPort->rows = crsfScreen.rows;
     displayPort->cols = crsfScreen.cols;
@@ -137,7 +137,7 @@ static const displayPortVTable_t crsfDisplayPortVTable = {
     .writeChar = crsfWriteChar,
     .isTransferInProgress = crsfIsTransferInProgress,
     .heartbeat = crsfHeartbeat,
-    .resync = crsfResync,
+    .redraw = crsfRedraw,
     .isSynced = crsfIsSynced,
     .txBytesFree = crsfTxBytesFree,
     .layerSupported = NULL,
@@ -174,7 +174,7 @@ void crsfDisplayPortSetDimensions(uint8_t rows, uint8_t cols)
 {
     crsfScreen.rows = MIN(rows, CRSF_DISPLAY_PORT_ROWS_MAX);
     crsfScreen.cols = MIN(cols, CRSF_DISPLAY_PORT_COLS_MAX);
-    crsfResync(&crsfDisplayPort);
+    crsfRedraw(&crsfDisplayPort);
 }
 
 void crsfDisplayPortRefresh(void)

@@ -797,6 +797,10 @@ void cmsMenuOpen(void)
         }
     }
     displayGrab(pCurrentDisplay); // grab the display for use by the CMS
+    // FIXME this should probably not have a dependency on the OSD or OSD slave code
+#ifdef USE_OSD
+    resumeRefreshAt = 0;
+#endif
 
     if ( pCurrentDisplay->cols < NORMAL_SCREEN_MIN_COLS) {
       smallScreen       = true;
@@ -875,7 +879,8 @@ const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
         displayClearScreen(pDisplay);
         displayWrite(pDisplay, 5, 3, DISPLAYPORT_ATTR_NONE, "REBOOTING...");
 
-        displayResync(pDisplay); // Was max7456RefreshAll(); why at this timing?
+        // Flush display
+        displayRedraw(pDisplay);
 
         stopMotors();
         motorShutdown();

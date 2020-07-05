@@ -428,14 +428,9 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
 
-    if (displayIsReady(osdDisplayPort)) {
+    if (displayCheckReady(osdDisplayPort, true)) {
         osdCompleteInitialization();
     }
-}
-
-bool osdInitialized(void)
-{
-    return osdDisplayPort;
 }
 
 static void osdResetStats(void)
@@ -894,14 +889,6 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     static bool osdStatsVisible = false;
     static timeUs_t osdStatsRefreshTimeUs;
 
-    if (!osdIsReady) {
-        if (!displayIsReady(osdDisplayPort)) {
-            displayResync(osdDisplayPort);
-            return;
-        }
-        osdCompleteInitialization();
-    }
-
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED)) {
@@ -1004,6 +991,14 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
+
+    if (!osdIsReady) {
+        if (!displayCheckReady(osdDisplayPort, false)) {
+            return;
+        }
+
+        osdCompleteInitialization();
+    }
 
     if (isBeeperOn()) {
         showVisualBeeper = true;
