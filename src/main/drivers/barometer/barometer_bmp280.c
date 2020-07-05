@@ -42,6 +42,7 @@
 
 #define BMP280_I2C_ADDR                      (0x76)
 #define BMP280_DEFAULT_CHIP_ID               (0x58)
+#define BME280_DEFAULT_CHIP_ID               (0x60)
 
 #define BMP280_CHIP_ID_REG                   (0xD0)  /* Chip ID Register */
 #define BMP280_RST_REG                       (0xE0)  /* Softreset Register */
@@ -162,7 +163,7 @@ bool bmp280Detect(baroDev_t *baro)
 
     busReadRegisterBuffer(busdev, BMP280_CHIP_ID_REG, &bmp280_chip_id, 1);  /* read Chip Id */
 
-    if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {
+    if ((bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) || (bmp280_chip_id != BME280_DEFAULT_CHIP_ID)) {
         bmp280BusDeinit(busdev);
         if (defaultAddressApplied) {
             busdev->busdev_u.i2c.address = 0;
