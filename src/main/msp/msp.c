@@ -50,6 +50,7 @@
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
@@ -685,6 +686,18 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         }
 
         sbufWriteU32(dst, configurationProblems);
+
+        // Added in MSP API 1.44
+#if defined(USE_SPI)
+        sbufWriteU8(dst, spiGetRegisteredDeviceCount());
+#else
+        sbufWriteU8(dst, 0);
+#endif
+#if defined(USE_I2C)
+        sbufWriteU8(dst, i2cGetRegisteredDeviceCount());
+#else
+        sbufWriteU8(dst, 0);
+#endif
 
         break;
     }

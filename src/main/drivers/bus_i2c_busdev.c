@@ -29,6 +29,8 @@
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 
+static uint8_t i2cRegisteredDeviceCount = 0;
+
 bool i2cBusWriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
 {
     return i2cWrite(busdev->busdev_u.i2c.device, busdev->busdev_u.i2c.address, reg, data);
@@ -66,4 +68,15 @@ bool i2cBusBusy(const busDevice_t *busdev, bool *error)
     return i2cBusy(busdev->busdev_u.i2c.device, error);
 }
 
+void i2cBusDeviceRegister(const busDevice_t *busdev)
+{
+    UNUSED(busdev);
+
+    i2cRegisteredDeviceCount++;
+}
+
+uint8_t i2cGetRegisteredDeviceCount(void)
+{
+    return i2cRegisteredDeviceCount;
+}
 #endif

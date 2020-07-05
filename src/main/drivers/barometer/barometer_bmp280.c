@@ -171,6 +171,8 @@ bool bmp280Detect(baroDev_t *baro)
         return false;
     }
 
+    busDeviceRegister(busdev);
+
     // read calibration
     busReadRegisterBuffer(busdev, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, (uint8_t *)&bmp280_cal, sizeof(bmp280_calib_param_t));
 

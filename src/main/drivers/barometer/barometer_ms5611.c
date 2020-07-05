@@ -258,6 +258,8 @@ bool ms5611Detect(baroDev_t *baro)
         goto fail;
     }
 
+    busDeviceRegister(busdev);
+
     // TODO prom + CRC
     baro->ut_delay = 10000;
     baro->up_delay = 10000;

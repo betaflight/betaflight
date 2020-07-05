@@ -255,6 +255,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
         sensor = (gyroSpiDetectFnTable[index])(&gyro->bus);
         if (sensor != MPU_NONE) {
             gyro->mpuDetectionResult.sensor = sensor;
+            busDeviceRegister(&gyro->bus);
 
             return true;
         }
@@ -301,6 +302,7 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
         bool ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I, &sig, 1);
 
         if (ack) {
+            busDeviceRegister(&gyro->bus);
             // If an MPU3050 is connected sig will contain 0.
             uint8_t inquiryResult;
             ack = busReadRegisterBuffer(&gyro->bus, MPU_RA_WHO_AM_I_LEGACY, &inquiryResult, 1);

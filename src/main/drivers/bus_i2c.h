@@ -65,3 +65,4 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
 bool i2cBusy(I2CDevice device, bool *error);
 
 uint16_t i2cGetErrorCounter(void);
+uint8_t i2cGetRegisteredDeviceCount(void);
