@@ -93,11 +93,11 @@ PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CO
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
-    .fields_mask = 0, // default log all fields
+    .fields_disabled_mask = 0, // default log all fields
     .mode = BLACKBOX_MODE_NORMAL
 );
 
-STATIC_ASSERT((sizeof(blackboxConfig()->fields_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
+STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
 
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 
@@ -412,7 +412,7 @@ static bool blackboxIsOnlyLoggingIntraframes(void)
 
 static bool isFieldEnabled(FlightLogFieldSelect_e field)
 {
-    return (blackboxConfig()->fields_mask & (1 << field)) == 0;
+    return (blackboxConfig()->fields_disabled_mask & (1 << field)) == 0;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -1473,7 +1473,7 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_RC_SMOOTHING_FILTER
         BLACKBOX_PRINT_HEADER_LINE("rates_type", "%d",                      currentControlRateProfile->rates_type);
 
-        BLACKBOX_PRINT_HEADER_LINE("logging_fields_mask", "%d",             blackboxConfig()->fields_mask);
+        BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",             blackboxConfig()->fields_disabled_mask);
 
         default:
             return true;
