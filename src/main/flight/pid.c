@@ -225,6 +225,10 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
     }
 }
 
+// Scale factors to make best use of range with D_LPF debugging, aiming for max +/-16K as debug values are 16 bit
+#define D_LPF_RAW_SCALE 25
+#define D_LPF_FILT_SCALE 22
+
 
 void pidSetItermAccelerator(float newItermAccelerator)
 {
@@ -772,6 +776,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_INTERPOLATED_SP
     static FAST_RAM_ZERO_INIT uint32_t lastFrameNumber;
 #endif
+    static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
 #if defined(USE_ACC)
     static timeUs_t levelModeStartTimeUs = 0;
@@ -844,6 +849,24 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     float gyroRateDterm[XYZ_AXIS_COUNT];
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         gyroRateDterm[axis] = gyro.gyroADCf[axis];
+        // -----calculate raw, unfiltered D component
+
+        // Divide rate change by dT to get differential (ie dr/dt).
+        // dT is fixed and calculated from the target PID loop time
+        // This is done to avoid DTerm spikes that occur with dynamically
+        // calculated deltaT whenever another task causes the PID
+        // loop execution to be delayed.
+        const float delta =
+            - (gyroRateDterm[axis] - previousRawGyroRateDterm[axis]) * pidRuntime.pidFrequency / D_LPF_RAW_SCALE;
+        previousRawGyroRateDterm[axis] = gyroRateDterm[axis];
+
+        // Log the unfiltered D
+        if (axis == FD_ROLL) {
+            DEBUG_SET(DEBUG_D_LPF, 0, lrintf(delta));
+        } else if (axis == FD_PITCH) {
+            DEBUG_SET(DEBUG_D_LPF, 1, lrintf(delta));
+        }
+
 #ifdef USE_RPM_FILTER
         gyroRateDterm[axis] = rpmFilterDterm(axis,gyroRateDterm[axis]);
 #endif
@@ -960,7 +983,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (launchControlActive) {
             Ki = pidRuntime.launchControlKi;
             axisDynCi = dynCi;
-        } else 
+        } else
 #endif
         {
             Ki = pidRuntime.pidCoefficient[axis].Ki;
@@ -998,6 +1021,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // loop execution to be delayed.
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
+            float preTpaData = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #if defined(USE_ACC)
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
@@ -1005,8 +1029,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 #endif
 
-            float dMinFactor = 1.0f;
 #if defined(USE_D_MIN)
+            float dMinFactor = 1.0f;
             if (pidRuntime.dMinPercent[axis] > 0) {
                 float dMinGyroFactor = biquadFilterApply(&pidRuntime.dMinRange[axis], delta);
                 dMinGyroFactor = fabsf(dMinGyroFactor) * pidRuntime.dMinGyroGain;
@@ -1023,11 +1047,30 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                     DEBUG_SET(DEBUG_D_MIN, 3, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMinFactor * 10 / DTERM_SCALE));
                 }
             }
+
+            // Apply the dMinFactor
+            preTpaData *= dMinFactor;
 #endif
-            pidData[axis].D = pidRuntime.pidCoefficient[axis].Kd * delta * tpaFactor * dMinFactor;
+            pidData[axis].D = preTpaData * tpaFactor;
+
+            // Log the value of D pre application of TPA
+            preTpaData *= D_LPF_FILT_SCALE;
+
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_D_LPF, 2, lrintf(preTpaData));
+            } else if (axis == FD_PITCH) {
+                DEBUG_SET(DEBUG_D_LPF, 3, lrintf(preTpaData));
+            }
         } else {
             pidData[axis].D = 0;
+
+            if (axis == FD_ROLL) {
+                DEBUG_SET(DEBUG_D_LPF, 2, 0);
+            } else if (axis == FD_PITCH) {
+                DEBUG_SET(DEBUG_D_LPF, 3, 0);
+            }
         }
+
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
