@@ -65,6 +65,50 @@ The `serial` CLI command takes 6 arguments.
 1. Telemetry baud rate (auto baud allowed)
 1. Blackbox baud rate
 
+### Serial Port Identifier
+
+ | Identifier | Value |
+ | --- | ---: |
+ | SERIAL_PORT_NONE | -1 |
+ | SERIAL_PORT_USART1 | 0 |
+ | SERIAL_PORT_USART2 | 1 |
+ | SERIAL_PORT_USART3 | 2 |
+ | SERIAL_PORT_UART4 | 3 |
+ | SERIAL_PORT_UART5 | 4 |
+ | SERIAL_PORT_USART6 | 5 |
+ | SERIAL_PORT_USART7 | 6 |
+ | SERIAL_PORT_USART8 | 7 |
+ | SERIAL_PORT_LPUART1 | 8 |
+ | SERIAL_PORT_USB_VCP | 20 |
+ | SERIAL_PORT_SOFTSERIAL1 | 30 |
+ | SERIAL_PORT_SOFTSERIAL2 | 31 |
+ | SERIAL_PORT_IDENTIFIER_MAX | 31 |
+
+
+
+### Serial Port Function
+
+ | Function | Value |
+ | --- | ---: |
+ | FUNCTION_NONE | 0 |
+ | FUNCTION_MSP | 1 |
+ | FUNCTION_GPS | 2 |
+ | FUNCTION_TELEMETRY_FRSKY_HUB | 4 |
+ | FUNCTION_TELEMETRY_HOTT | 8 |
+ | FUNCTION_TELEMETRY_LTM | 16 |
+ | FUNCTION_TELEMETRY_SMARTPORT | 32 |
+ | FUNCTION_RX_SERIAL | 64 |
+ | FUNCTION_BLACKBOX | 128 |
+ | FUNCTION_TELEMETRY_MAVLINK | 512 |
+ | FUNCTION_ESC_SENSOR | 1024 |
+ | FUNCTION_VTX_SMARTAUDIO | 2048 |
+ | FUNCTION_TELEMETRY_IBUS | 4096 |
+ | FUNCTION_VTX_TRAMP | 8192 |
+ | FUNCTION_RCDEVICE | 16384 |
+ | FUNCTION_LIDAR_TF | 32768 |
+ | FUNCTION_FRSKY_OSD | 65536 |
+
+
 
 ### Baud Rates
 
