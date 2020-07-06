@@ -460,15 +460,6 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
     }
 }
 
-float calculateVbatPidCompensation(void) {
-    float batteryScaler =  1.0f;
-    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && batteryCellCount > 0) {
-        // Up to 33% PID gain. Should be fine for 4,2to 3,3 difference
-        batteryScaler =  constrainf((( (float)batteryConfig()->vbatmaxcellvoltage * batteryCellCount ) / (float) voltageMeter.displayFiltered), 1.0f, 1.33f);
-    }
-    return batteryScaler;
-}
-
 uint8_t calculateBatteryPercentageRemaining(void)
 {
     uint8_t batteryPercentage = 0;
