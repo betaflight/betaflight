@@ -47,7 +47,6 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/rpm_filter.h"
 #include "flight/interpolated_setpoint.h"
 
 #include "io/gps.h"
@@ -866,18 +865,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             DEBUG_SET(DEBUG_D_LPF, 1, lrintf(delta));
         }
 
-#ifdef USE_RPM_FILTER
-        gyroRateDterm[axis] = rpmFilterDterm(axis,gyroRateDterm[axis]);
-#endif
         gyroRateDterm[axis] = pidRuntime.dtermNotchApplyFn((filter_t *) &pidRuntime.dtermNotch[axis], gyroRateDterm[axis]);
         gyroRateDterm[axis] = pidRuntime.dtermLowpassApplyFn((filter_t *) &pidRuntime.dtermLowpass[axis], gyroRateDterm[axis]);
         gyroRateDterm[axis] = pidRuntime.dtermLowpass2ApplyFn((filter_t *) &pidRuntime.dtermLowpass2[axis], gyroRateDterm[axis]);
     }
 
     rotateItermAndAxisError();
-#ifdef USE_RPM_FILTER
-    rpmFilterUpdate();
-#endif
 
 #ifdef USE_INTERPOLATED_SP
     bool newRcFrame = false;
