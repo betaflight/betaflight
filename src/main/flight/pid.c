@@ -294,9 +294,8 @@ float pidCompensateThrustLinearization(float throttle)
 {
     if (pidRuntime.thrustLinearization != 0.0f) {
         // for whoops where a lot of TL is needed, allow more throttle boost
-        const float throttleCompensateAmount = (1.0f - 0.5f * pidRuntime.thrustLinearization);
         const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + throttleCompensateAmount * powerf(throttleReversed, 2) * pidRuntime.thrustLinearization;
+        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * powerf(throttleReversed, 2) * pidRuntime.thrustLinearization;
     }
     return throttle;
 }
