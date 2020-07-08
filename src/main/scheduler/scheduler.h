@@ -111,7 +111,7 @@ typedef enum {
 #ifdef USE_TRANSPONDER
     TASK_TRANSPONDER,
 #endif
-#ifdef STACK_CHECK
+#ifdef USE_STACK_CHECK
     TASK_STACK_CHECK,
 #endif
 #ifdef USE_OSD

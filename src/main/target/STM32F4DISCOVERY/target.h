@@ -23,7 +23,10 @@
 #define TARGET_BOARD_IDENTIFIER "SDF4"
 #define USBD_PRODUCT_STRING     "STM32F4DISCOVERY"
 
+// These features are in here to get coverage in CI builds
+
 #define USE_SPI_TRANSACTION
+#define USE_STACK_CHECK
 
 //LEDs
 #define LED0_PIN                PD12

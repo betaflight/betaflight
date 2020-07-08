@@ -4699,7 +4699,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
     // Stack and config sizes and usages
 
     cliPrintf("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
-#ifdef STACK_CHECK
+#ifdef USE_STACK_CHECK
     cliPrintf(", Stack used: %d", stackUsedSize());
 #endif
     cliPrintLinefeed();

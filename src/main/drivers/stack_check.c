@@ -58,7 +58,7 @@ extern char _Min_Stack_Size; // declared in .LD file
  * See the linker scripts for actual stack configuration.
  */
 
-#ifdef STACK_CHECK
+#ifdef USE_STACK_CHECK
 
 static uint32_t usedStackSize;
 
