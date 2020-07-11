@@ -47,6 +47,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/rpm_filter.h"
 #include "flight/interpolated_setpoint.h"
 
 #include "io/gps.h"
@@ -870,6 +871,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
     rotateItermAndAxisError();
+
+#ifdef USE_RPM_FILTER
+    rpmFilterUpdate();
+#endif
 
 #ifdef USE_INTERPOLATED_SP
     bool newRcFrame = false;
