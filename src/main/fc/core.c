@@ -433,7 +433,9 @@ void updateArmingStatus(void)
 void disarm(flightLogDisarmReason_e reason)
 {
     if (ARMING_FLAG(ARMED)) {
-        ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+        if (!flipOverAfterCrashActive) {
+            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+        }
         DISABLE_ARMING_FLAG(ARMED);
         lastDisarmTimeUs = micros();
 
