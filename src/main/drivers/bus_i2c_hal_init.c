@@ -287,15 +287,12 @@ void i2cInit(I2CDevice device)
     i2cDevice_t *pDev = &i2cDevice[device];
 
     const i2cHardware_t *hardware = pDev->hardware;
+    const IO_t scl = pDev->scl;
+    const IO_t sda = pDev->sda;
 
-    if (!hardware) {
+    if (!hardware || IOGetOwner(scl) || IOGetOwner(sda)) {
         return;
     }
-
-    IO_t scl = pDev->scl;
-    IO_t sda = pDev->sda;
-
-    RCC_ClockCmd(hardware->rcc, ENABLE);
 
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
     IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));

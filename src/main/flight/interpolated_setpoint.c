@@ -24,9 +24,14 @@
 #ifdef USE_INTERPOLATED_SP
 
 #include "build/debug.h"
+
 #include "common/maths.h"
+
 #include "fc/rc.h"
-#include "flight/interpolated_setpoint.h"
+
+#include "flight/pid.h"
+
+#include "interpolated_setpoint.h"
 
 static float setpointDeltaImpl[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];

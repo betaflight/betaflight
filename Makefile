@@ -307,7 +307,6 @@ TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(REVISION)
 #
 # Things we will build
 #
-TARGET_S19      = $(TARGET_BASENAME).s19
 TARGET_BIN      = $(TARGET_BASENAME).bin
 TARGET_HEX      = $(TARGET_BASENAME).hex
 TARGET_DFU      = $(TARGET_BASENAME).dfu
@@ -336,11 +335,6 @@ $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 
 $(TARGET_LST): $(TARGET_ELF)
 	$(V0) $(OBJDUMP) -S --disassemble $< > $@
-
-
-$(TARGET_S19): $(TARGET_ELF)
-	@echo "Creating srec/S19 $(TARGET_S19)" "$(STDOUT)"
-	$(V1) $(OBJCOPY) --output-target=srec $(TARGET_S19)
 
 ifeq ($(EXST),no)
 $(TARGET_BIN): $(TARGET_ELF)
@@ -460,7 +454,7 @@ all_all: $(VALID_TARGETS)
 unified: $(UNIFIED_TARGETS)
 
 ## unified_zip : build all Unified Targets as zip files (for posting on GitHub)
-unified_zip: $(addsuffix _zip,$(UNIFIED_TARGETS))
+unified_zip: $(addsuffix _clean,$(UNIFIED_TARGETS)) $(addsuffix _zip,$(UNIFIED_TARGETS))
 
 ## legacy : Build legacy targets
 legacy: $(LEGACY_TARGETS)
@@ -562,9 +556,6 @@ zip:
 
 binary:
 	$(V0) $(MAKE) -j $(TARGET_BIN)
-
-srec:
-	$(V0) $(MAKE) -j $(TARGET_S19)
 
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
@@ -689,6 +680,10 @@ test junittest test-all test-representative:
 ## test_help         : print the help message for the test suite (including a list of the available tests)
 test_help:
 	$(V0) cd src/test && $(MAKE) help
+
+## test_versions         : print the compiler versions used for the test suite
+test_versions:
+	$(V0) cd src/test && $(MAKE) versions
 
 ## test_%            : run test 'test_%' from the test suite
 test_%:

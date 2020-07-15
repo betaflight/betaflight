@@ -177,6 +177,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .altitudeMode = MAX_ALT,
     .ascendRate = 500,
     .descendRate = 150,
+    .rescueAltitudeBufferM = 15,
 );
 
 static uint16_t rescueThrottle;
@@ -606,11 +607,11 @@ void updateGPSRescueState(void)
                 newAltitude = gpsRescueConfig()->initialAltitudeM * 100;
                 break;
             case CURRENT_ALT:
-                newAltitude = rescueState.sensor.currentAltitudeCm;
+                newAltitude = rescueState.sensor.currentAltitudeCm + gpsRescueConfig()->rescueAltitudeBufferM * 100;
                 break;
             case MAX_ALT:
             default:
-                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + 1500);
+                newAltitude = MAX(gpsRescueConfig()->initialAltitudeM * 100, rescueState.sensor.maxAltitudeCm + gpsRescueConfig()->rescueAltitudeBufferM * 100);
                 break;
         }
 
@@ -746,4 +747,3 @@ bool gpsRescueDisableMag(void)
 }
 #endif
 #endif
-

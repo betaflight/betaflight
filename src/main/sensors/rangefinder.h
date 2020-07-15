@@ -31,11 +31,6 @@ typedef enum {
     RANGEFINDER_HCSR04      = 1,
     RANGEFINDER_TFMINI      = 2,
     RANGEFINDER_TF02        = 3,
-    // Following sensors are to be ported from iNav
-    RANGEFINDER_SRF10       = 4,
-    RANGEFINDER_HCSR04I2C   = 5,
-    RANGEFINDER_VL53L0X     = 6,
-    RANGEFINDER_UIB         = 7,
 } rangefinderType_e;
 
 typedef struct rangefinderConfig_s {
@@ -56,14 +51,12 @@ typedef struct rangefinder_s {
     int16_t snr;
 } rangefinder_t;
 
-extern rangefinder_t rangefinder;
-
 void rangefinderResetDynamicThreshold(void);
 bool rangefinderInit(void);
 
 int32_t rangefinderGetLatestAltitude(void);
 int32_t rangefinderGetLatestRawAltitude(void);
 
-void rangefinderUpdate(timeUs_t currentTimeUs);
+void rangefinderUpdate(void);
 bool rangefinderProcess(float cosTiltAngle);
 bool rangefinderIsHealthy(void);

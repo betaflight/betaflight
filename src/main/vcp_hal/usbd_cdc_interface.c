@@ -261,12 +261,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (hcdc->TxState == 0) {
         // endpoint has finished transmitting previous block
         if (lastBuffsize) {
+            bool needZeroLengthPacket = lastBuffsize % 64 == 0;
+
             // move the ring buffer tail based on the previous succesful transmission
             UserTxBufPtrOut += lastBuffsize;
             if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
                 UserTxBufPtrOut = 0;
             }
             lastBuffsize = 0;
+
+            if (needZeroLengthPacket) {
+                USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
+                return;
+            }
         }
         if (UserTxBufPtrOut != UserTxBufPtrIn) {
             if (UserTxBufPtrOut > UserTxBufPtrIn) { /* Roll-back */
@@ -299,6 +306,12 @@ static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
 {
     rxAvailable = *Len;
     rxBuffPtr = Buf;
+    if (!rxAvailable) {
+        // Received an empty packet, trigger receiving the next packet.
+        // This will happen after a packet that's exactly 64 bytes is received.
+        // The USB protocol requires that an empty (0 byte) packet immediately follow.
+        USBD_CDC_ReceivePacket(&USBD_Device);
+    }
     return (USBD_OK);
 }
 

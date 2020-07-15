@@ -169,6 +169,7 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
+#define USE_ACCGYRO_LSM6DSO
 
 #define USE_MAG
 #define USE_MAG_DATA_READY_SIGNAL
@@ -190,6 +191,8 @@
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
+#define USE_BARO_DPS310
+#define USE_BARO_SPI_DPS310
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
@@ -210,7 +213,6 @@
 
 #define USE_TRANSPONDER
 
-//TODO: Make this actually work by making the pins configurable
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
@@ -246,5 +248,8 @@
 
 #define USE_RX_FLYSKY
 #define USE_RX_FLYSKY_SPI_LED
+
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
 
 #define USE_CUSTOM_DEFAULTS

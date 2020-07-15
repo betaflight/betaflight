@@ -254,4 +254,6 @@ extern "C" {
         UNUSED(input);
         return 0.0;
     }
+
+    void pinioBoxTaskControl(void) {}
 }

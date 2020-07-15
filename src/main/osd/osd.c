@@ -53,6 +53,7 @@
 #include "config/feature.h"
 
 #include "drivers/display.h"
+#include "drivers/dshot.h"
 #include "drivers/flash.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/sdcard.h"
@@ -66,6 +67,7 @@
 #include "flight/gyroanalyse.h"
 #endif
 #include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/position.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -76,6 +78,7 @@
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
 
+#include "pg/motor.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/stats.h"
@@ -127,7 +130,7 @@ static uint8_t armState;
 static uint8_t osdProfile = 1;
 #endif
 static displayPort_t *osdDisplayPort;
-static osdDisplayPortDevice_e osdDisplayPortDevice;
+static osdDisplayPortDevice_e osdDisplayPortDeviceType;
 static bool osdIsReady;
 
 static bool suppressStatsDisplay = false;
@@ -412,14 +415,15 @@ static void osdCompleteInitialization(void)
     osdIsReady = true;
 }
 
-void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayPortDeviceToUse)
+void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayPortDeviceType)
 {
+    osdDisplayPortDeviceType = displayPortDeviceType;
+
     if (!osdDisplayPortToUse) {
         return;
     }
 
     osdDisplayPort = osdDisplayPortToUse;
-    osdDisplayPortDevice = displayPortDeviceToUse;
 #ifdef USE_CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
@@ -447,9 +451,31 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 300 : 99; // CRSF  : percent
+    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 100 : 99; // percent
     stats.min_rssi_dbm = CRSF_SNR_MAX;
 }
+
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+static int32_t getAverageEscRpm(void)
+{
+#ifdef USE_DSHOT_TELEMETRY
+    if (motorConfig()->dev.useDshotTelemetry) {
+        uint32_t rpm = 0;
+        for (int i = 0; i < getMotorCount(); i++) {
+            rpm += getDshotTelemetry(i);
+        }
+        rpm = rpm / getMotorCount();
+        return rpm * 100 * 2 / motorConfig()->motorPoleCount;
+    }
+#endif
+#ifdef USE_ESC_SENSOR
+    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+        return calcEscRpm(osdEscDataCombined->rpm);
+    }
+#endif
+    return 0;
+}
+#endif
 
 static void osdUpdateStats(void)
 {
@@ -513,16 +539,20 @@ static void osdUpdateStats(void)
         }
     }
 #endif
+
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         value = osdEscDataCombined->temperature;
         if (stats.max_esc_temp < value) {
             stats.max_esc_temp = value;
         }
-        value = calcEscRpm(osdEscDataCombined->rpm);
-        if (stats.max_esc_rpm < value) {
-            stats.max_esc_rpm = value;
-        }
+    }
+#endif
+
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    int32_t rpm = getAverageEscRpm();
+    if (stats.max_esc_rpm < rpm) {
+        stats.max_esc_rpm = rpm;
     }
 #endif
 }
@@ -729,7 +759,9 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         tfp_sprintf(buff, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
         osdDisplayStatisticLabel(displayRow, "MAX ESC TEMP", buff);
         return true;
+#endif
 
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     case OSD_STAT_MAX_ESC_RPM:
         itoa(stats.max_esc_rpm, buff, 10);
         osdDisplayStatisticLabel(displayRow, "MAX ESC RPM", buff);
@@ -1047,10 +1079,10 @@ bool osdNeedsAccelerometer(void)
 }
 #endif // USE_ACC
 
-displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *displayPortDevice)
+displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *displayPortDeviceType)
 {
-    if (displayPortDevice) {
-        *displayPortDevice = osdDisplayPortDevice;
+    if (displayPortDeviceType) {
+        *displayPortDeviceType = osdDisplayPortDeviceType;
     }
     return osdDisplayPort;
 }

@@ -44,12 +44,13 @@ extern "C" {
     #define IS_DSMX(x) (!IS_DSM2(x))
 
     typedef enum {
-        DSM_RECEIVER_BIND = 0x0,
-        DSM_RECEIVER_SYNC_A = 0x1,
-        DSM_RECEIVER_SYNC_B = 0x2,
-        DSM_RECEIVER_RECV = 0x3,
+        DSM_RECEIVER_BIND = 0,
+        DSM_RECEIVER_BIND2,
+        DSM_RECEIVER_SYNC_A,
+        DSM_RECEIVER_SYNC_B,
+        DSM_RECEIVER_RECV,
     #ifdef USE_RX_SPEKTRUM_TELEMETRY
-        DSM_RECEIVER_TLM = 0x4,
+        DSM_RECEIVER_TLM,
     #endif
     } dsm_receiver_status_e;
 
@@ -74,6 +75,8 @@ extern "C" {
 
         uint32_t timeout;
         uint32_t timeLastPacket;
+
+        uint16_t bindPackets;
 
     #ifdef USE_RX_SPEKTRUM_TELEMETRY
         uint32_t timeLastTelemetry;
@@ -375,6 +378,7 @@ extern "C" {
     void cyrf6936SetSopCode(const uint8_t ) {}
     void cyrf6936SetDataCode(const uint8_t ) {}
     void cyrf6936StartRecv(void) {}
+    void cyrf6936SendLen(uint8_t *, const uint8_t ) {}
     void cyrf6936RecvLen(uint8_t *data, const uint8_t length)
     {
         if (length == packetLen) {

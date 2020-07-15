@@ -45,10 +45,10 @@
 #include "fc/rc.h"
 
 #include "flight/pid.h"
+#include "flight/pid_init.h"
 
 #include "io/beeper.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/pidaudio.h"
 
 #include "osd/osd.h"

@@ -994,4 +994,5 @@ extern "C" {
     bool cmsInMenu;
     uint32_t resumeRefreshAt = 0;
     int getArmingDisableFlags(void) {return 0;}
+    void pinioBoxTaskControl(void) {}
 }

@@ -72,7 +72,7 @@ Then, calculate the offset and scale values using the following formula:
 
 ```
 rssi_offset = 1000-(rssi_nosig) / 10
-rssi_scale = 100 * 1000 * (rssi_fullsig - rssi_nosig)
+rssi_scale = 100 * 1000 / (rssi_fullsig - rssi_nosig)
 ```
 
 Examples are:

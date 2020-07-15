@@ -42,8 +42,6 @@
 #include "drivers/time.h"
 #include "drivers/io.h"
 
-#include "io/motors.h"
-
 #include "config/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
@@ -620,9 +618,10 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         }
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
+        float appliedMotorOutputLow = motorOutputLow;
 #ifdef USE_DYN_IDLE
         if (idleMinMotorRps > 0.0f) {
-            motorOutputLow = DSHOT_MIN_THROTTLE;
+            appliedMotorOutputLow = DSHOT_MIN_THROTTLE;
             const float maxIncrease = isAirmodeActivated() ? idleMaxIncrease : 0.04f;
             const float minRps = rpmMinMotorFrequency();
             const float targetRpsChangeRate = (idleMinMotorRps - minRps) * currentPidProfile->idle_adjustment_speed;
@@ -636,7 +635,9 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);
             DEBUG_SET(DEBUG_DYN_IDLE, 2, error);
             DEBUG_SET(DEBUG_DYN_IDLE, 3, minRps);
-
+        } else {
+            motorRangeMinIncrease = 0;
+            oldMinRps = 0;
         }
 #endif
 
@@ -657,7 +658,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #endif
 
         currentThrottleInputRange = rcCommandThrottleRange;
-        motorRangeMin = motorOutputLow + motorRangeMinIncrease * (motorOutputHigh - motorOutputLow);
+        motorRangeMin = appliedMotorOutputLow + motorRangeMinIncrease * (motorOutputHigh - appliedMotorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
         motorOutputMixSign = 1;
@@ -824,7 +825,7 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 }
 #endif
 
-FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
+FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 {
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
@@ -866,9 +867,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
 
-    // Calculate voltage compensation
-    const float vbatCompensationFactor = vbatPidCompensation ? calculateVbatPidCompensation() : 1.0f;
-
     // Apply the throttle_limit_percent to scale or limit the throttle based on throttle_limit_type
     if (currentControlRateProfile->throttle_limit_type != THROTTLE_LIMIT_TYPE_OFF) {
         throttle = applyThrottleLimit(throttle);
@@ -901,8 +899,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
             scaledAxisPidRoll  * activeMixer[i].roll +
             scaledAxisPidPitch * activeMixer[i].pitch +
             scaledAxisPidYaw   * activeMixer[i].yaw;
-
-        mix *= vbatCompensationFactor;  // Add voltage compensation
 
         if (mix > motorMixMax) {
             motorMixMax = mix;

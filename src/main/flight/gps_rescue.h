@@ -42,6 +42,7 @@ typedef struct gpsRescue_s {
     uint8_t altitudeMode;
     uint16_t ascendRate;
     uint16_t descendRate;
+    uint16_t rescueAltitudeBufferM; //meters
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);

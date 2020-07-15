@@ -281,8 +281,7 @@ This mode blinks the current LED, alternatively from black to the current active
 #### Larson Scanner (Cylon Effect)
 
 The Larson Scanner replicates the scanning "eye" effect seen on the mechanical Cylons and on Kitt from Knight Rider.
-
-This overlay merely varies the brightness of each LED's current color.
+This overlay dims all of the LEDs it is assigned to and brightens certain ones at certain times in accordance with the animation. The animation is active regardless of arm state. 
 
 #### Flight Mode & Orientation
 
@@ -359,11 +358,11 @@ This mode fades the LED current LED color to the previous/next color in the HSB 
 
 #### Thrust ring state
 
-This mode is allows you to use one or multiple led rings (e.g. NeoPixel ring) for an afterburner effect.  The light pattern rotates clockwise as throttle increases. 
+This mode is allows you to use one or multiple led rings (e.g. NeoPixel ring) for an afterburner effect. LEDs with this mode will light up with their assigned color in a repeating sequence. Assigning the color black to an LED with the ring mode will prevent the LED from lighting up.
 
 A better effect is acheived when LEDs configured for thrust ring have no other functions.
 
-LED direction and X/Y positions are irrelevant for thrust ring LED state.  The order of the LEDs that have the state determines how the LED behaves.
+LED direction and X/Y positions are irrelevant for thrust ring LED state.  The order of the LEDs that have the state determines how the LED behaves, and the throttle value determines the animation rate. The animation is only active while armed.
 
 Each LED of the ring can be a different color. The color can be selected between the 16 colors availables.
 
@@ -446,7 +445,7 @@ Mode Colors can be configured using the cli `mode_color` command.
 - No arguments: lists all mode colors
 - arguments: mode, function, color
 
-First 6 groups of ModeIndexes are :
+First 7 groups of ModeIndexes are :
 
 | mode | name        |
 |------|-------------|
@@ -553,7 +552,7 @@ LEDs 0,3,6 and 9 should be placed underneath the quad, facing downwards.
 LEDs 1-2, 4-5, 7-8 and 10-11 should be positioned so the face east/north/west/south, respectively.
 LEDs 12-13 should be placed facing down, in the middle
 LEDs 14-15 should be placed facing up, in the middle
-LEDs 16-17 should be placed in a ring and positioned at the rear facing south.
+LEDs 16-27 should be placed in a ring and positioned at the rear facing south.
 
 This is the default so that if you don't want to place LEDs top and bottom in the middle just connect the first 12 LEDs.
 

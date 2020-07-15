@@ -456,6 +456,7 @@ extern "C" {
     void resetPPMDataReceivedState(void){ }
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
+    void pinioBoxTaskControl(void) { }
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {

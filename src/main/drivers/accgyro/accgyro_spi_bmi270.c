@@ -440,7 +440,7 @@ bool bmi270SpiGyroDetect(gyroDev_t *gyro)
 
     gyro->initFn = bmi270SpiGyroInit;
     gyro->readFn = bmi270GyroRead;
-    gyro->scale = 1.0f / 16.4f;
+    gyro->scale = GYRO_SCALE_2000DPS;
 
     return true;
 }

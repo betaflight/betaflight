@@ -34,6 +34,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
+#include "flight/pid.h"
 
 #include "sensors/sensors.h"
 
@@ -124,8 +125,10 @@ const box_t *findBoxByPermanentId(uint8_t permanentId)
 
 static bool activeBoxIdGet(boxId_e boxId)
 {
-    if (boxId > sizeof(activeBoxIds) * 8)
+    if (boxId > sizeof(activeBoxIds) * 8) {
         return false;
+    }
+
     return bitArrayGet(&activeBoxIds, boxId);
 }
 
@@ -184,7 +187,13 @@ void initActiveBoxIds(void)
         BME(BOXAIRMODE);
     }
 
-    if (!featureIsEnabled(FEATURE_ANTI_GRAVITY)) {
+    bool acceleratorGainsEnabled = false;
+    for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+        if (pidProfiles(i)->itermAcceleratorGain != ITERM_ACCELERATOR_GAIN_OFF) {
+            acceleratorGainsEnabled = true;
+        }
+    }
+    if (acceleratorGainsEnabled && !featureIsEnabled(FEATURE_ANTI_GRAVITY)) {
         BME(BOXANTIGRAVITY);
     }
 

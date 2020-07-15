@@ -51,6 +51,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/pid_init.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 
@@ -59,6 +60,8 @@
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/vtx.h"
+
+#include "msp/msp_box.h"
 
 #include "osd/osd.h"
 
@@ -181,6 +184,8 @@ static void activateConfig(void)
 #if defined(USE_LED_STRIP_STATUS_MODE)
     reevaluateLedConfig();
 #endif
+
+    initActiveBoxIds();
 }
 
 static void adjustFilterLimit(uint16_t *parm, uint16_t resetValue)
@@ -522,6 +527,14 @@ static void validateAndFixConfig(void)
         && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
+
+#if defined(USE_DYN_IDLE)
+    if (!isRpmFilterEnabled()) {
+        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
+            pidProfilesMutable(i)->idle_min_rpm = 0;
+        }
+    }
+#endif // USE_DYN_IDLE
 #endif // USE_DSHOT_TELEMETRY
 #endif // USE_DSHOT
 

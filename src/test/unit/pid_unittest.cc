@@ -52,9 +52,10 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
 
-    #include "flight/pid.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
+    #include "flight/pid.h"
+    #include "flight/pid_init.h"
 
     #include "io/gps.h"
 
@@ -113,7 +114,6 @@ void setDefaultTestSettings(void) {
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->itermWindupPointPercent = 50;
-    pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->levelAngleLimit = 55;
     pidProfile->feedForwardTransition = 100;

@@ -25,14 +25,6 @@
 #include "common/axis.h"
 #include "flight/pid.h"
 
-typedef enum ffInterpolationType_e {
-    FF_INTERPOLATE_OFF,
-    FF_INTERPOLATE_ON,
-    FF_INTERPOLATE_AVG2,
-    FF_INTERPOLATE_AVG3,
-    FF_INTERPOLATE_AVG4
-} ffInterpolationType_t;
-
 void interpolatedSpInit(const pidProfile_t *pidProfile);
 float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type);
 float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint);

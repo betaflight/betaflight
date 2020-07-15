@@ -46,6 +46,7 @@
 #include "drivers/dshot.h"
 #include "drivers/dshot_dpwm.h"
 #include "drivers/dshot_command.h"
+#include "drivers/motor.h"
 
 #include "pwm_output_dshot_shared.h"
 
@@ -264,12 +265,16 @@ bool isDshotMotorTelemetryActive(uint8_t motorIndex)
 
 bool isDshotTelemetryActive(void)
 {
-    for (unsigned i = 0; i < dshotPwmDevice.count; i++) {
-        if (!isDshotMotorTelemetryActive(i)) {
-            return false;
+    const unsigned motorCount = motorDeviceCount();
+    if (motorCount) {
+        for (unsigned i = 0; i < motorCount; i++) {
+            if (!isDshotMotorTelemetryActive(i)) {
+                return false;
+            }
         }
+        return true;
     }
-    return true;
+    return false;
 }
 
 #ifdef USE_DSHOT_TELEMETRY_STATS

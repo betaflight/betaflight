@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_h7x3_2m.ld
+**  File        : stm32_ram_h743.ld
 **
 **  Abstract    : Linker script for STM32H743xI Device with
 **                512K AXI-RAM mapped onto AXI bus on D1 domain
@@ -22,8 +22,8 @@ ENTRY(Reset_Handler)
 0x00000000 to 0x0000FFFF   64K ITCM
 0x20000000 to 0x2001FFFF  128K DTCM
 0x24000000 to 0x2407FFFF  512K AXI SRAM, D1 domain, main RAM
-0x30000000 to 0x3001FFFF  128K SRAM1, D2 domain, unused
-0x30020000 to 0x3003FFFF  128K SRAM2, D2 domain, unused
+0x30000000 to 0x3001FFFF  128K SRAM1, D2 domain
+0x30020000 to 0x3003FFFF  128K SRAM2, D2 domain
 0x30040000 to 0x30047FFF   32K SRAM3, D2 domain, unused
 0x38000000 to 0x3800FFFF   64K SRAM4, D3 domain, unused
 0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain, unused

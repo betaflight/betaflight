@@ -107,8 +107,7 @@ bool mpu6050GyroDetect(gyroDev_t *gyro)
     gyro->initFn = mpu6050GyroInit;
     gyro->readFn = mpuGyroRead;
 
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
+    gyro->scale = GYRO_SCALE_2000DPS;
 
     return true;
 }

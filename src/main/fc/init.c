@@ -38,6 +38,7 @@
 #include "common/maths.h"
 #include "common/printf_serial.h"
 
+#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
@@ -83,7 +84,6 @@
 #include "drivers/vtx_table.h"
 
 #include "fc/board_info.h"
-#include "config/config.h"
 #include "fc/dispatch.h"
 #include "fc/init.h"
 #include "fc/rc_controls.h"
@@ -95,12 +95,13 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/rpm_filter.h"
+#include "flight/pid_init.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/displayport_crsf.h"
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
@@ -109,7 +110,6 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
 #include "io/rcdevice_cam.h"
@@ -702,20 +702,6 @@ void init(void)
     cameraControlInit();
 #endif
 
-// XXX These kind of code should goto target/config.c?
-// XXX And these no longer work properly as FEATURE_RANGEFINDER does control HCSR04 runtime configuration.
-#if defined(RANGEFINDER_HCSR04_SOFTSERIAL2_EXCLUSIVE) && defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL2)
-    if (featureIsEnabled(FEATURE_RANGEFINDER) && featureIsEnabled(FEATURE_SOFTSERIAL)) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    }
-#endif
-
-#if defined(RANGEFINDER_HCSR04_SOFTSERIAL1_EXCLUSIVE) && defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL1)
-    if (featureIsEnabled(FEATURE_RANGEFINDER) && featureIsEnabled(FEATURE_SOFTSERIAL)) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
-    }
-#endif
-
 #ifdef USE_ADC
     adcInit(adcConfig());
 #endif
@@ -997,13 +983,18 @@ void init(void)
 
         // osdInit will register with CMS by itself.
         osdInit(osdDisplayPort, osdDisplayPortDevice);
+
+        if (osdDisplayPortDevice == OSD_DISPLAYPORT_DEVICE_NONE) {
+            featureDisableImmediate(FEATURE_OSD);
+        }
     }
 #endif // USE_OSD
 
 #if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)
     // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
-    if (!osdDisplayPort)
+    if (!osdDisplayPort) {
         cmsDisplayPortRegister(displayPortMspInit());
+    }
 #endif
 
 #ifdef USE_DASHBOARD
@@ -1022,6 +1013,10 @@ void init(void)
 #if defined(USE_CMS) && defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_TELEMETRY_SRXL)
     // Register the srxl Textgen telemetry sensor as a displayport device
     cmsDisplayPortRegister(displayPortSrxlInit());
+#endif
+
+#if defined(USE_CMS) && defined(USE_CRSF_CMS_TELEMETRY)
+    cmsDisplayPortRegister(displayPortCrsfInit());
 #endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);

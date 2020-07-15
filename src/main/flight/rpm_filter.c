@@ -72,7 +72,6 @@ FAST_RAM_ZERO_INIT static uint8_t filterUpdatesPerIteration;
 FAST_RAM_ZERO_INIT static float   pidLooptime;
 FAST_RAM_ZERO_INIT static rpmNotchFilter_t filters[2];
 FAST_RAM_ZERO_INIT static rpmNotchFilter_t* gyroFilter;
-FAST_RAM_ZERO_INIT static rpmNotchFilter_t* dtermFilter;
 
 FAST_RAM_ZERO_INIT static uint8_t currentMotor;
 FAST_RAM_ZERO_INIT static uint8_t currentHarmonic;
@@ -81,17 +80,13 @@ FAST_RAM static rpmNotchFilter_t* currentFilter = &filters[0];
 
 
 
-PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 4);
 
 void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
 {
     config->gyro_rpm_notch_harmonics = 3;
     config->gyro_rpm_notch_min = 100;
     config->gyro_rpm_notch_q = 500;
-
-    config->dterm_rpm_notch_harmonics = 0;
-    config->dterm_rpm_notch_min = 100;
-    config->dterm_rpm_notch_q = 500;
 
     config->rpm_lpf = 150;
 }
@@ -120,7 +115,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
 
     numberRpmNotchFilters = 0;
     if (!motorConfig()->dev.useDshotTelemetry) {
-        gyroFilter = dtermFilter = NULL;
+        gyroFilter = NULL;
         return;
     }
 
@@ -133,15 +128,6 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
         gyroFilter->maxHz = 0.48f / (gyro.targetLooptime * 1e-6f);
     } else {
         gyroFilter = NULL;
-    }
-    if (config->dterm_rpm_notch_harmonics) {
-        dtermFilter = &filters[numberRpmNotchFilters++];
-        rpmNotchFilterInit(dtermFilter, config->dterm_rpm_notch_harmonics,
-                           config->dterm_rpm_notch_min, config->dterm_rpm_notch_q, pidLooptime);
-        // don't go quite to nyquist to avoid oscillations
-        dtermFilter->maxHz = 0.48f / (pidLooptime * 1e-6f);
-    } else {
-        dtermFilter = NULL;
     }
 
     for (int i = 0; i < getMotorCount(); i++) {
@@ -174,16 +160,11 @@ float rpmFilterGyro(int axis, float value)
     return applyFilter(gyroFilter, axis, value);
 }
 
-float rpmFilterDterm(int axis, float value)
-{
-    return applyFilter(dtermFilter, axis, value);
-}
-
 FAST_RAM_ZERO_INIT static float motorFrequency[MAX_SUPPORTED_MOTORS];
 
 FAST_CODE_NOINLINE void rpmFilterUpdate()
 {
-    if (gyroFilter == NULL && dtermFilter == NULL) {
+    if (gyroFilter == NULL) {
         return;
     }
 
@@ -232,7 +213,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate()
 
 bool isRpmFilterEnabled(void)
 {
-    return (motorConfig()->dev.useDshotTelemetry && (rpmFilterConfig()->gyro_rpm_notch_harmonics || rpmFilterConfig()->dterm_rpm_notch_harmonics));
+    return (motorConfig()->dev.useDshotTelemetry && rpmFilterConfig()->gyro_rpm_notch_harmonics);
 }
 
 float rpmMinMotorFrequency()

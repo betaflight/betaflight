@@ -77,7 +77,8 @@ typedef enum {
     UBLOX_ACK_IDLE = 0,
     UBLOX_ACK_WAITING,
     UBLOX_ACK_GOT_ACK,
-    UBLOX_ACK_GOT_NACK
+    UBLOX_ACK_GOT_NACK,
+    UBLOX_ACK_GOT_TIMEOUT
 } ubloxAckState_e;
 
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
@@ -140,6 +141,7 @@ typedef struct gpsData_s {
     gpsMessageState_e messageState;
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
+    uint8_t ackTimeoutCounter;      // Ack timeout counter
     ubloxAckState_e ackState;
 } gpsData_t;
 

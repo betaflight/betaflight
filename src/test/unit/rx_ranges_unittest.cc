@@ -243,4 +243,6 @@ float pt1FilterApply(pt1Filter_t *filter, float input)
     return 0.0;
 }
 
+void pinioBoxTaskControl(void) {}
+
 }

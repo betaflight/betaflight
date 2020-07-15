@@ -228,12 +228,15 @@ static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
 #define CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX ", version: "
 #define CUSTOM_DEFAULTS_DATE_PREFIX ", date: "
 
+#define MAX_CHANGESET_ID_LENGTH 8
+#define MAX_DATE_LENGTH 20
+
 static bool customDefaultsHeaderParsed = false;
 static bool customDefaultsFound = false;
 static char customDefaultsManufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1] = { 0 };
 static char customDefaultsBoardName[MAX_BOARD_NAME_LENGTH + 1] = { 0 };
-static char customDefaultsChangesetId[9] = { 0 };
-static char customDefaultsDate[21] = { 0 };
+static char customDefaultsChangesetId[MAX_CHANGESET_ID_LENGTH + 1] = { 0 };
+static char customDefaultsDate[MAX_DATE_LENGTH + 1] = { 0 };
 #endif
 
 #if defined(USE_CUSTOM_DEFAULTS_ADDRESS)
@@ -302,6 +305,8 @@ static const char *mcuTypeNames[] = {
     "H743 (Rev.X)",
     "H743 (Rev.V)",
 };
+
+static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
 
 typedef enum dumpFlags_e {
     DUMP_MASTER = (1 << 0),
@@ -449,7 +454,7 @@ void cliPrintLinef(const char *format, ...)
 static void cliPrintErrorVa(const char *cmdName, const char *format, va_list va)
 {
     if (cliErrorWriter) {
-        cliPrintInternal(cliErrorWriter, "###ERROR: ");
+        cliPrintInternal(cliErrorWriter, "###ERROR IN ");
         cliPrintInternal(cliErrorWriter, cmdName);
         cliPrintInternal(cliErrorWriter, ": ");
 
@@ -3803,16 +3808,13 @@ static void executeEscInfoCommand(const char *cmdName, uint8_t escIndex)
 
     startEscDataRead(escInfoBuffer, ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE);
 
-    dshotCommandWrite(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO, true);
+    dshotCommandWrite(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO, DSHOT_CMD_TYPE_BLOCKING);
 
     delay(10);
 
     printEscInfo(cmdName, escInfoBuffer, getNumberEscBytesRead());
 }
 #endif // USE_ESC_SENSOR && USE_ESC_SENSOR_INFO
-
-
-// XXX Review dshotprog command under refactored motor handling
 
 static void cliDshotProg(const char *cmdName, char *cmdline)
 {
@@ -3854,7 +3856,7 @@ static void cliDshotProg(const char *cmdName, char *cmdline)
                     }
 
                     if (command != DSHOT_CMD_ESC_INFO) {
-                        dshotCommandWrite(escIndex, getMotorCount(), command, true);
+                        dshotCommandWrite(escIndex, getMotorCount(), command, DSHOT_CMD_TYPE_BLOCKING);
                     } else {
 #if defined(USE_ESC_SENSOR) && defined(USE_ESC_SENSOR_INFO)
                         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
@@ -4255,7 +4257,7 @@ static bool customDefaultsHasNext(const char *customDefaultsPtr)
     return *customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd;
 }
 
-static const char *parseCustomDefaultsHeaderElement(char *dest, const char *customDefaultsPtr, const char *prefix, char terminator)
+static const char *parseCustomDefaultsHeaderElement(char *dest, const char *customDefaultsPtr, const char *prefix, const char terminator, const unsigned maxLength)
 {
     char *endPtr = NULL;
     unsigned len = strlen(prefix);
@@ -4266,7 +4268,7 @@ static const char *parseCustomDefaultsHeaderElement(char *dest, const char *cust
 
     if (endPtr && customDefaultsHasNext(endPtr)) {
         len = endPtr - customDefaultsPtr;
-        memcpy(dest, customDefaultsPtr, len);
+        memcpy(dest, customDefaultsPtr, MIN(len, maxLength));
 
         customDefaultsPtr += len;
 
@@ -4287,13 +4289,13 @@ static void parseCustomDefaultsHeader(void)
             customDefaultsPtr++;
         }
 
-        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsManufacturerId, customDefaultsPtr, CUSTOM_DEFAULTS_MANUFACTURER_ID_PREFIX, CUSTOM_DEFAULTS_BOARD_NAME_PREFIX[0]);
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsManufacturerId, customDefaultsPtr, CUSTOM_DEFAULTS_MANUFACTURER_ID_PREFIX, CUSTOM_DEFAULTS_BOARD_NAME_PREFIX[0], MAX_MANUFACTURER_ID_LENGTH);
 
-        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsBoardName, customDefaultsPtr, CUSTOM_DEFAULTS_BOARD_NAME_PREFIX, CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX[0]);
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsBoardName, customDefaultsPtr, CUSTOM_DEFAULTS_BOARD_NAME_PREFIX, CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX[0], MAX_BOARD_NAME_LENGTH);
 
-        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsChangesetId, customDefaultsPtr, CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX, CUSTOM_DEFAULTS_DATE_PREFIX[0]);
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsChangesetId, customDefaultsPtr, CUSTOM_DEFAULTS_CHANGESET_ID_PREFIX, CUSTOM_DEFAULTS_DATE_PREFIX[0], MAX_CHANGESET_ID_LENGTH);
 
-        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsDate, customDefaultsPtr, CUSTOM_DEFAULTS_DATE_PREFIX, '\n');
+        customDefaultsPtr = parseCustomDefaultsHeaderElement(customDefaultsDate, customDefaultsPtr, CUSTOM_DEFAULTS_DATE_PREFIX, '\n', MAX_DATE_LENGTH);
     }
 
     customDefaultsHeaderParsed = true;
@@ -4702,7 +4704,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef("Config size: %d, Max available config: %d", getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinef("Configuration: %s, size: %d, max available: %d", configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
 
     // Sensors
     cliPrint("Gyros detected:");
@@ -4744,10 +4746,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif /* USE_SENSOR_NAMES */
 
 #if defined(USE_OSD)
-    osdDisplayPortDevice_e displayPortDevice;
-    osdGetDisplayPort(&displayPortDevice);
+    osdDisplayPortDevice_e displayPortDeviceType;
+    osdGetDisplayPort(&displayPortDeviceType);
 
-    cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDevice]);
+    cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
 #endif
 
     // Uptime and wall clock
@@ -4850,13 +4852,12 @@ static void cliTasks(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void cliVersion(const char *cmdName, char *cmdline)
+static void printVersion(const char *cmdName, bool printBoardInfo)
 {
-    UNUSED(cmdline);
 #if !(defined(USE_CUSTOM_DEFAULTS) && defined(USE_UNIFIED_TARGET))
     UNUSED(cmdName);
+    UNUSED(printBoardInfo);
 #endif
-
 
     cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
@@ -4897,10 +4898,17 @@ static void cliVersion(const char *cmdName, char *cmdline)
 #endif // USE_CUSTOM_DEFAULTS
 
 #if defined(USE_UNIFIED_TARGET) && defined(USE_BOARD_INFO)
-    if (strlen(getManufacturerId()) && strlen(getBoardName())) {
-        cliPrintf("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
+    if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
+        cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
     }
 #endif
+}
+
+static void cliVersion(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdline);
+
+    printVersion(cmdName, true);
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -5198,24 +5206,27 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
     }
 }
 
-static bool strToPin(char *pch, ioTag_t *tag)
+static bool strToPin(char *ptr, ioTag_t *tag)
 {
-    if (strcasecmp(pch, "NONE") == 0) {
+    if (strcasecmp(ptr, "NONE") == 0) {
         *tag = IO_TAG_NONE;
+
         return true;
     } else {
-        unsigned pin = 0;
-        unsigned port = (*pch >= 'a') ? *pch - 'a' : *pch - 'A';
-
+        const unsigned port = (*ptr >= 'a') ? *ptr - 'a' : *ptr - 'A';
         if (port < 8) {
-            pch++;
-            pin = atoi(pch);
-            if (pin < 16) {
+            ptr++;
+
+            char *end;
+            const long pin = strtol(ptr, &end, 10);
+            if (end != ptr && pin >= 0 && pin < 16) {
                 *tag = DEFIO_TAG_MAKE(port, pin);
+
                 return true;
             }
         }
     }
+
     return false;
 }
 
@@ -6107,7 +6118,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #endif
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
-        cliVersion(cmdName, "");
+        printVersion(cmdName, false);
 
         if (!(dumpMask & BARE)) {
 #ifdef USE_CLI_BATCH
@@ -6149,6 +6160,10 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #endif
 #endif
 
+        printFeature(dumpMask, featureConfig_Copy.enabledFeatures, featureConfig()->enabledFeatures, "feature");
+
+        printSerial(dumpMask, &serialConfig_Copy, serialConfig(), "serial");
+
         if (!(dumpMask & HARDWARE_ONLY)) {
 #ifndef USE_QUAD_MIXER_ONLY
             const char *mixerHeadingStr = "mixer";
@@ -6175,8 +6190,6 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #endif
 #endif
 
-            printFeature(dumpMask, featureConfig_Copy.enabledFeatures, featureConfig()->enabledFeatures, "feature");
-
 #if defined(USE_BEEPER)
             printBeeper(dumpMask, beeperConfig_Copy.beeper_off_flags, beeperConfig()->beeper_off_flags, "beeper", BEEPER_ALLOWED_MODES, "beeper");
 
@@ -6186,8 +6199,6 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #endif // USE_BEEPER
 
             printMap(dumpMask, &rxConfig_Copy, rxConfig(), "map");
-
-            printSerial(dumpMask, &serialConfig_Copy, serialConfig(), "serial");
 
 #ifdef USE_LED_STRIP_STATUS_MODE
             printLed(dumpMask, ledStripStatusModeConfig_Copy.ledConfigs, ledStripStatusModeConfig()->ledConfigs, "led");
@@ -6466,7 +6477,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
 #if defined(USE_PINIO)
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode>1] [none|<dtr pinio>|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode1>] [none|<dtr pinio>|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),
 #else
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data from port 1 to VCP / port 2", "<id1> [<baud1>] [<mode1>] [none|reset] [<id2>] [<baud2>] [<mode2>]", cliSerialPassthrough),
 #endif

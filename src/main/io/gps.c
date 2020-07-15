@@ -100,6 +100,8 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal St
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
+// Timeout for waiting ACK/NAK in GPS task cycles (0.1s at 100Hz)
+#define UBLOX_ACK_TIMEOUT_MAX_COUNT (10)
 
 static serialPort_t *gpsPort;
 
@@ -404,6 +406,7 @@ static void ubloxSendConfigMessage(const uint8_t *data, uint8_t len)
 
     // Save state for ACK waiting
     gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
+    gpsData.ackTimeoutCounter = 0;
     gpsData.ackState = UBLOX_ACK_WAITING;
 }
 
@@ -527,7 +530,13 @@ void gpsInitUblox(void)
                             ubloxSendConfigMessage((const uint8_t *) &tx_buffer, UBLOX_SBAS_MESSAGE_LENGTH);
                         }
                         break;
-                    case UBLOX_ACK_GOT_NACK: //TODO: implement a retry count, for now just ignore errors as the rest of the code is doing
+                    case UBLOX_ACK_WAITING:
+                        if ((++gpsData.ackTimeoutCounter) == UBLOX_ACK_TIMEOUT_MAX_COUNT) {
+                            gpsData.ackState = UBLOX_ACK_GOT_TIMEOUT;
+                        }
+                        break;
+                    case UBLOX_ACK_GOT_TIMEOUT:
+                    case UBLOX_ACK_GOT_NACK:
                     case UBLOX_ACK_GOT_ACK:
                         gpsData.state_position = 0;
                         gpsData.ackState = UBLOX_ACK_IDLE;
@@ -608,7 +617,13 @@ void gpsInitUblox(void)
                             ubloxSendConfigMessage((const uint8_t *) &tx_buffer, UBLOX_GNSS_MESSAGE_LENGTH);
                         }
                         break;
-                    case UBLOX_ACK_GOT_NACK: //TODO: implement a retry count, for now just ignore errors as the rest of the code is doing
+                    case UBLOX_ACK_WAITING:
+                        if ((++gpsData.ackTimeoutCounter) == UBLOX_ACK_TIMEOUT_MAX_COUNT) {
+                            gpsData.ackState = UBLOX_ACK_GOT_TIMEOUT;
+                        }
+                        break;
+                    case UBLOX_ACK_GOT_TIMEOUT:
+                    case UBLOX_ACK_GOT_NACK:
                     case UBLOX_ACK_GOT_ACK:
                         gpsData.state_position = 0;
                         gpsData.ackState = UBLOX_ACK_IDLE;

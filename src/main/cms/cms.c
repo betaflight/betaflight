@@ -48,25 +48,26 @@
 #include "common/maths.h"
 #include "common/typeconversion.h"
 
+#include "config/config.h"
+#include "config/feature.h"
+
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/motor.h"
 
-// For rcData, stopAllMotors, stopPwmAllMotors
-#include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-#include "pg/rx.h"
-
-// For 'ARM' related
-#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
 
-// For VISIBLE*
 #include "io/rcdevice_cam.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/rx.h"
+#ifdef USE_USB_CDC_HID
+#include "pg/usb.h"
+#endif
 
 #include "osd/osd.h"
 
@@ -74,7 +75,6 @@
 
 #ifdef USE_USB_CDC_HID
 #include "sensors/battery.h"
-#include "pg/usb.h"
 #endif
 
 // DisplayPort management
@@ -88,7 +88,7 @@
 displayPort_t *pCurrentDisplay;
 
 static displayPort_t *cmsDisplayPorts[CMS_MAX_DEVICE];
-static int cmsDeviceCount;
+static unsigned cmsDeviceCount;
 static int cmsCurrentDevice = -1;
 #ifdef USE_OSD
 static unsigned int osdProfileCursor = 1;
@@ -98,8 +98,9 @@ int menuChainBack;
 
 bool cmsDisplayPortRegister(displayPort_t *pDisplay)
 {
-    if (cmsDeviceCount == CMS_MAX_DEVICE)
+    if (cmsDeviceCount >= CMS_MAX_DEVICE) {
         return false;
+    }
 
     cmsDisplayPorts[cmsDeviceCount++] = pDisplay;
 
@@ -108,19 +109,22 @@ bool cmsDisplayPortRegister(displayPort_t *pDisplay)
 
 static displayPort_t *cmsDisplayPortSelectCurrent(void)
 {
-    if (cmsDeviceCount == 0)
+    if (cmsDeviceCount == 0) {
         return NULL;
+    }
 
-    if (cmsCurrentDevice < 0)
+    if (cmsCurrentDevice < 0) {
         cmsCurrentDevice = 0;
+    }
 
     return cmsDisplayPorts[cmsCurrentDevice];
 }
 
 static displayPort_t *cmsDisplayPortSelectNext(void)
 {
-    if (cmsDeviceCount == 0)
+    if (cmsDeviceCount == 0) {
         return NULL;
+    }
 
     cmsCurrentDevice = (cmsCurrentDevice + 1) % cmsDeviceCount; // -1 Okay
 
@@ -129,10 +133,7 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 
 bool cmsDisplayPortSelect(displayPort_t *instance)
 {
-    if (cmsDeviceCount == 0) {
-        return false;
-    }
-    for (int i = 0; i < cmsDeviceCount; i++) {
+    for (unsigned i = 0; i < cmsDeviceCount; i++) {
         if (cmsDisplayPortSelectNext() == instance) {
             return true;
         }
@@ -140,7 +141,6 @@ bool cmsDisplayPortSelect(displayPort_t *instance)
     return false;
 }
 
-#define CMS_UPDATE_INTERVAL_US  50000   // Interval of key scans (microsec)
 #define CMS_POLL_INTERVAL_US   100000   // Interval of polling dynamic values (microsec)
 
 // XXX LEFT_MENU_COLUMN and RIGHT_MENU_COLUMN must be adjusted
@@ -289,15 +289,18 @@ static void cmsFormatFloat(int32_t value, char *floatString)
     // 03.450
     // usuwam koncowe zera i kropke
     // Keep the first decimal place
-    for (k = 5; k > 3; k--)
-        if (floatString[k] == '0' || floatString[k] == '.')
+    for (k = 5; k > 3; k--) {
+        if (floatString[k] == '0' || floatString[k] == '.') {
             floatString[k] = 0;
-        else
+        } else {
             break;
+        }
+    }
 
     // oraz zero wiodonce
-    if (floatString[0] == '0')
+    if (floatString[0] == '0') {
         floatString[0] = ' ';
+    }
 }
 
 // CMS on OSD legacy was to use LEFT aligned values, not the RIGHT way ;-)
@@ -311,8 +314,9 @@ static void cmsPadRightToSize(char *buf, int size)
     int i;
 
     for (i = 0 ; i < size ; i++) {
-        if (buf[i] == 0)
+        if (buf[i] == 0) {
             break;
+        }
     }
 
     for ( ; i < size ; i++) {
@@ -352,6 +356,17 @@ static void cmsPadToSize(char *buf, int size)
 #endif
 }
 
+static int cmsDisplayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *s)
+{
+    uint8_t *c = (uint8_t*)s;
+    const uint8_t *cEnd = c + strlen(s);
+    for (; c != cEnd; c++) {
+        *c = toupper(*c);  // uppercase only
+        *c = (*c < 0x20 || *c > 0x5F) ? ' ' : *c; // limit to alphanumeric and punctuation 
+    }
+    return displayWrite(instance, x, y, attr, s);
+}
+
 static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row, uint8_t maxSize)
 {
     int colpos;
@@ -363,7 +378,7 @@ static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row
 #else
     colpos = smallScreen ? rightMenuColumn - maxSize : rightMenuColumn;
 #endif
-    cnt = displayWrite(pDisplay, colpos, row, DISPLAYPORT_ATTR_NONE, buff);
+    cnt = cmsDisplayWrite(pDisplay, colpos, row, DISPLAYPORT_ATTR_NONE, buff);
     return cnt;
 }
 
@@ -493,7 +508,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
 
     case OME_INT16:
         if (IS_PRINTVALUE(*flags) && p->data) {
-            OSD_UINT16_t *ptr = p->data;
+            OSD_INT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(*flags);
@@ -512,7 +527,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
     case OME_Label:
         if (IS_PRINTVALUE(*flags) && p->data) {
             // A label with optional string, immediately following text
-            cnt = displayWrite(pDisplay, leftMenuColumn + 1 + (uint8_t)strlen(p->text), row, DISPLAYPORT_ATTR_NONE, p->data);
+            cnt = cmsDisplayWrite(pDisplay, leftMenuColumn + 1 + (uint8_t)strlen(p->text), row, DISPLAYPORT_ATTR_NONE, p->data);
             CLR_PRINTVALUE(*flags);
         }
         break;
@@ -668,7 +683,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         if (IS_PRINTLABEL(runtimeEntryFlags[i])) {
             uint8_t coloff = leftMenuColumn;
             coloff += (p->type == OME_Label) ? 0 : 1;
-            room -= displayWrite(pDisplay, coloff, top + i * linesPerMenuItem, DISPLAYPORT_ATTR_NONE, p->text);
+            room -= cmsDisplayWrite(pDisplay, coloff, top + i * linesPerMenuItem, DISPLAYPORT_ATTR_NONE, p->text);
             CLR_PRINTLABEL(runtimeEntryFlags[i]);
             if (room < 30) {
                 return;
@@ -683,8 +698,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         if (IS_PRINTVALUE(runtimeEntryFlags[i])) {
             bool selectedRow = i == currentCtx.cursorRow;
             room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow, &runtimeEntryFlags[i]);
-            if (room < 30)
+            if (room < 30) {
                 return;
+            }
         }
     }
 }
@@ -757,8 +773,9 @@ void cmsMenuOpen(void)
     if (!cmsInMenu) {
         // New open
         pCurrentDisplay = cmsDisplayPortSelectCurrent();
-        if (!pCurrentDisplay)
+        if (!pCurrentDisplay) {
             return;
+        }
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ NULL, 0, 0 };
         startMenu = &cmsx_menuMain;
@@ -799,8 +816,7 @@ void cmsMenuOpen(void)
       maxMenuItems      = pCurrentDisplay->rows - 2;
     }
 
-    if (pCurrentDisplay->useFullscreen)
-    {
+    if (pCurrentDisplay->useFullscreen) {
     	leftMenuColumn = 0;
     	rightMenuColumn   = pCurrentDisplay->cols;
     	maxMenuItems      = pCurrentDisplay->rows;
@@ -1033,8 +1049,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
                     if (*ptr->val < ptr->max) {
                         *ptr->val += ptr->step;
                     }
-                }
-                else {
+                } else {
                     if (*ptr->val > ptr->min) {
                         *ptr->val -= ptr->step;
                     }
@@ -1215,25 +1230,17 @@ static void cmsUpdate(uint32_t currentTimeUs)
         } else {
             if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
                 key = CMS_KEY_MENU;
-            }
-            else if (IS_HI(PITCH)) {
+            } else if (IS_HI(PITCH)) {
                 key = CMS_KEY_UP;
-            }
-            else if (IS_LO(PITCH)) {
+            } else if (IS_LO(PITCH)) {
                 key = CMS_KEY_DOWN;
-            }
-            else if (IS_LO(ROLL)) {
+            } else if (IS_LO(ROLL)) {
                 key = CMS_KEY_LEFT;
-            }
-            else if (IS_HI(ROLL)) {
+            } else if (IS_HI(ROLL)) {
                 key = CMS_KEY_RIGHT;
-            }
-            else if (IS_LO(YAW))
-            {
+            } else if (IS_LO(YAW)) {
                 key = CMS_KEY_ESC;
-            }
-            else if (IS_HI(YAW))
-            {
+            } else if (IS_HI(YAW)) {
                 key = CMS_KEY_SAVEMENU;
             }
 
@@ -1274,8 +1281,9 @@ static void cmsUpdate(uint32_t currentTimeUs)
 
                         // start calling handler multiple times.
 
-                        if (repeatBase == 0)
+                        if (repeatBase == 0) {
                             repeatBase = holdCount;
+                        }
 
                         repeatCount = repeatCount + (holdCount - repeatBase) / 5;
 
@@ -1305,14 +1313,7 @@ static void cmsUpdate(uint32_t currentTimeUs)
 
 void cmsHandler(timeUs_t currentTimeUs)
 {
-    if (cmsDeviceCount < 0) {
-        return;
-    }
-
-    static timeUs_t lastCalledUs = 0;
-
-    if (currentTimeUs >= lastCalledUs + CMS_UPDATE_INTERVAL_US) {
-        lastCalledUs = currentTimeUs;
+    if (cmsDeviceCount > 0) {
         cmsUpdate(currentTimeUs);
     }
 }

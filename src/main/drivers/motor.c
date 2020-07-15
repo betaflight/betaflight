@@ -73,7 +73,7 @@ void motorWriteAll(float *values)
 #endif
 }
 
-int motorCount(void)
+int motorDeviceCount(void)
 {
     return motorDevice->count;
 }
