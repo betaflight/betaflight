@@ -766,6 +766,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 
     updateRSSI(currentTimeUs);
+    updateLQ();
 
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();

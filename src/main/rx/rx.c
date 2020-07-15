@@ -72,6 +72,7 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
+static uint16_t lq = 0;
 static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,20]
 static timeUs_t lastMspRssiUpdateUs = 0;
 
@@ -350,6 +351,9 @@ void rxInit(void)
 #endif
     if (rxConfig()->rssi_channel > 0) {
         rssiSource = RSSI_SOURCE_RX_CHANNEL;
+    }
+    if (rxConfig()->lq_channel > 0) {
+        linkQualitySource = LQ_SOURCE_RX_CHANNEL;
     }
 
     // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
@@ -701,6 +705,15 @@ void setRssiDirect(uint16_t newRssi, rssiSource_e source)
     rssi = newRssi;
 }
 
+void setLQDirect(uint16_t newLQ, linkQualitySource_e source)
+{
+
+    if (source != linkQualitySource) {
+        return;
+    }
+    lq = newLQ;
+}
+
 #define RSSI_SAMPLE_COUNT 16
 
 static uint16_t updateRssiSamples(uint16_t value)
@@ -751,6 +764,15 @@ static void updateRSSIPWM(void)
     setRssiDirect(scaleRange(pwmRssi, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
 }
 
+static void updateLQPWM(void)
+{
+    // Read value of AUX channel as lq
+    int16_t pwmLQ = rcData[rxConfig()->lq_channel - 1];
+
+    // Range of rawLQis [1000;2000]. lq should be in [0;1023];
+    setLQDirect(scaleRange(pwmLQ, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, LINK_QUALITY_MAX_VALUE), LQ_SOURCE_RX_CHANNEL);
+}
+
 static void updateRSSIADC(timeUs_t currentTimeUs)
 {
 #ifndef USE_ADC
@@ -789,6 +811,11 @@ void updateRSSI(timeUs_t currentTimeUs)
     }
 }
 
+void updateLQ()
+{
+    updateLQPWM();
+}
+
 uint16_t getRssi(void)
 {
     uint16_t rssiValue = rssi;
@@ -809,6 +836,18 @@ uint8_t getRssiPercent(void)
 int16_t getRssiDbm(void)
 {
     return rssiDbm;
+}
+
+static uint16_t getLQ(void)
+{
+    uint16_t lqValue = lq;
+
+    return rxConfig()->lq_scale / 100.0f * lqValue + rxConfig()->lq_offset * 10.24f;
+}
+
+uint8_t getLQPercent(void)
+{
+    return scaleRange(getLQ(), 0, LINK_QUALITY_MAX_VALUE, 0, 100);
 }
 
 #define RSSI_SAMPLE_COUNT_DBM 16

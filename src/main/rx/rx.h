@@ -164,6 +164,7 @@ extern rssiSource_e rssiSource;
 typedef enum {
     LQ_SOURCE_NONE = 0,
     LQ_SOURCE_RX_PROTOCOL_CRSF,
+    LQ_SOURCE_RX_CHANNEL
 } linkQualitySource_e;
 
 extern linkQualitySource_e linkQualitySource;
@@ -211,3 +212,6 @@ void resumeRxPwmPpmSignal(void);
 uint16_t rxGetRefreshRate(void);
 
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
+
+void updateLQ();
+uint8_t getLQPercent(void);

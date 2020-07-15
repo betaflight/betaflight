@@ -73,6 +73,9 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .srxl2_baud_fast = true,
         .sbus_baud_fast = false,
         .crsf_use_rx_snr = false,
+        .lq_channel = 0,
+        .lq_offset = 0,
+        .lq_scale = 100
     );
 
 #ifdef RX_CHANNELS_TAER

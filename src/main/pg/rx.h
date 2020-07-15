@@ -66,6 +66,10 @@ typedef struct rxConfig_s {
     uint8_t srxl2_baud_fast; // Select Spektrum SRXL2 fast baud rate
     uint8_t sbus_baud_fast; // Select SBus fast baud rate
     uint8_t crsf_use_rx_snr; // Use RX SNR (in dB) instead of RSSI dBm for CRSF
+
+    uint8_t lq_channel;                     // RX chanel for receive VFR - Link Quality info Frsky ACCESS telemetry data see https://github.com/opentx/opentx/pull/7661/commits/fea8d6952052ff70513878d6078332c69343d27a
+    int8_t lq_offset;                       // offset applied to the LQ value before it is returned
+    uint8_t lq_scale;
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
