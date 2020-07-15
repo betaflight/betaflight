@@ -147,6 +147,7 @@ extern "C" {
     void gyroUpdate() {}
     timeDelta_t getTaskDeltaTimeUs(taskId_e) { return 0; }
     void updateRSSI(timeUs_t) {}
+    void updateLQ(void) {}
     bool failsafeIsMonitoring(void) { return false; }
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}

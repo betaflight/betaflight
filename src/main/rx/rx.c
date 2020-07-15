@@ -811,7 +811,7 @@ void updateRSSI(timeUs_t currentTimeUs)
     }
 }
 
-void updateLQ()
+void updateLQ(void)
 {
     updateLQPWM();
 }
