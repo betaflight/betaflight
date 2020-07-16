@@ -885,6 +885,8 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
 #ifdef USE_RX_LINK_QUALITY_INFO
 uint16_t rxGetLinkQuality(void)
 {
+    if (linkQualitySource == LQ_SOURCE_RX_CHANNEL)
+        return getLQPercent();
     return linkQuality;
 }
 
@@ -895,7 +897,12 @@ uint8_t rxGetRfMode(void)
 
 uint16_t rxGetLinkQualityPercent(void)
 {
-    return (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ?  linkQuality : scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100);
+    if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF)
+        return linkQuality;
+    else if (linkQualitySource == LQ_SOURCE_RX_CHANNEL)
+        return getLQPercent();
+    else
+        return scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100);
 }
 #endif
 
