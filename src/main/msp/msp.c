@@ -758,7 +758,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
             voltageMeterRead(id, &meter);
 
             sbufWriteU8(dst, id);
-            sbufWriteU8(dst, (uint8_t)constrain((meter.displayFiltered + 5) / 10, 0, 255));
+            sbufWriteU16(dst, (uint16_t)constrain((meter.displayFiltered + 5) / 10, 0, 0xFFFF));
         }
         break;
     }
