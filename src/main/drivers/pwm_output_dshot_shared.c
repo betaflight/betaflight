@@ -248,8 +248,8 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                 }
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 updateDshotTelemetryQuality(&dshotTelemetryQuality[i], validTelemetryPacket, currentTimeMs);
-            }
 #endif
+            }
         }
         pwmDshotSetDirectionOutput(&dmaMotors[i]);
     }
