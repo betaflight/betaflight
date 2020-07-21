@@ -35,7 +35,6 @@
 #include "pg/stats.h"
 
 
-#define MIN_FLIGHT_TIME_TO_RECORD_STATS_S 10 // Prevent recording stats for that short "flights" [s]
 #define STATS_SAVE_DELAY_US 500000 // Let disarming complete and save stats after this time
 
 static timeMs_t arm_millis;
@@ -85,12 +84,13 @@ void statsOnArm(void)
 
 void statsOnDisarm(void)
 {
-    if (statsConfig()->stats_enabled) {
-        uint32_t dt = (millis() - arm_millis) / 1000;
-        if (dt >= MIN_FLIGHT_TIME_TO_RECORD_STATS_S) {
-            statsConfigMutable()->stats_total_flights += 1;    //arm/flight counter
-            statsConfigMutable()->stats_total_time_s += dt;   //[s]
-            statsConfigMutable()->stats_total_dist_m += (DISTANCE_FLOWN_CM - arm_distance_cm) / 100;   //[m]
+    int8_t minArmedTimeS = statsConfig()->stats_min_armed_time_s;
+    if (minArmedTimeS >= 0) {
+        uint32_t dtS = (millis() - arm_millis) / 1000;
+        if (dtS >= (uint8_t)minArmedTimeS) {
+            statsConfigMutable()->stats_total_flights += 1;    // arm / flight counter
+            statsConfigMutable()->stats_total_time_s += dtS;
+            statsConfigMutable()->stats_total_dist_m += (DISTANCE_FLOWN_CM - arm_distance_cm) / 100;
 
             saveRequired = true;
         }
