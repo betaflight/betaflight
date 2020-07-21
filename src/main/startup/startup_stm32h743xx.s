@@ -133,6 +133,19 @@ LoopFillZerofastram_bss:
   bcc  FillZerofastram_bss
 /*-----*/
 
+/* Mark the heap and stack */
+  ldr r2, =_heap_stack_begin
+  b   LoopMarkHeapStack
+
+MarkHeapStack:
+  movs    r3, 0xa5a5a5a5
+  str r3, [r2], #4
+
+LoopMarkHeapStack:
+  ldr r3, = _heap_stack_end
+  cmp r2, r3
+  bcc MarkHeapStack
+
 /* Call the clock system intitialization function.*/
   bl  SystemInit   
 /* Call static constructors */

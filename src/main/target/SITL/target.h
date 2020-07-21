@@ -90,7 +90,7 @@
 
 #define USE_PARAMETER_GROUPS
 
-#undef STACK_CHECK // I think SITL don't need this
+#undef USE_STACK_CHECK // I think SITL don't need this
 #undef USE_DASHBOARD
 #undef USE_TELEMETRY_LTM
 #undef USE_ADC
