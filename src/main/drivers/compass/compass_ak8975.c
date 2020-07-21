@@ -79,6 +79,8 @@
 
 static bool ak8975Init(magDev_t *mag)
 {
+    busDeviceRegister(busdev);
+
     uint8_t asa[3];
     uint8_t status;
 
@@ -163,8 +165,9 @@ bool ak8975Detect(magDev_t *mag)
 
     bool ack = busReadRegisterBuffer(busdev, AK8975_MAG_REG_WIA, &sig, 1);
 
-    if (!ack || sig != AK8975_DEVICE_ID) // 0x48 / 01001000 / 'H'
+    if (!ack || sig != AK8975_DEVICE_ID) { // 0x48 / 01001000 / 'H'
         return false;
+    }
 
     mag->init = ak8975Init;
     mag->read = ak8975Read;

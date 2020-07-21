@@ -373,6 +373,8 @@ bool baroDPS310Detect(baroDev_t *baro)
         return false;
     }
 
+    busDeviceRegister(busdev);
+
     const uint32_t baroDelay = 1000000 / 32 / 2;      // twice the sample rate to capture all new data
 
     baro->ut_delay = 0;

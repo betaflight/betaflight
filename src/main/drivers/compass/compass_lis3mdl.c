@@ -124,6 +124,8 @@ static bool lis3mdlInit(magDev_t *mag)
 {
     busDevice_t *busdev = &mag->busdev;
 
+    busDeviceRegister(busdev);
+
     busWriteRegister(busdev, LIS3MDL_REG_CTRL_REG2, LIS3MDL_FS_4GAUSS);
     busWriteRegister(busdev, LIS3MDL_REG_CTRL_REG1, LIS3MDL_TEMP_EN | LIS3MDL_OM_ULTRA_HI_PROF | LIS3MDL_DO_80);
     busWriteRegister(busdev, LIS3MDL_REG_CTRL_REG5, LIS3MDL_BDU);

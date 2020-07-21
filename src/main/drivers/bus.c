@@ -227,3 +227,27 @@ uint8_t busReadRegister(const busDevice_t *busdev, uint8_t reg)
     return data;
 #endif
 }
+
+void busDeviceRegister(const busDevice_t *busdev)
+{
+#if !defined(USE_SPI) && !defined(USE_I2C)
+    UNUSED(busdev);
+#endif
+
+    switch (busdev->bustype) {
+#if defined(USE_SPI)
+    case BUSTYPE_SPI:
+        spiBusDeviceRegister(busdev);
+
+        break;
+#endif
+#if defined(USE_I2C)
+    case BUSTYPE_I2C:
+        i2cBusDeviceRegister(busdev);
+
+        break;
+#endif
+    default:
+        break;
+    }
+}

@@ -263,6 +263,8 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
         return false;
     }
 
+    busDeviceRegister(busdev);
+
 #ifdef USE_EXTI
     if (baroIntIO) {
         uint8_t intCtrlValue = 1 << BMP388_INT_DRDY_EN_BIT |

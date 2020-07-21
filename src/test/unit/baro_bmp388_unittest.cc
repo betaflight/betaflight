@@ -148,6 +148,7 @@ bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {retu
 bool busReadRegisterBufferStart(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
 bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
 bool busWriteRegisterStart(const busDevice_t*, uint8_t, uint8_t) {return true;}
+void busDeviceRegister(const busDevice_t*) {}
 
 void spiBusSetDivisor() {
 }

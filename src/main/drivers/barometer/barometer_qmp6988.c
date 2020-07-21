@@ -173,6 +173,8 @@ bool qmp6988Detect(baroDev_t *baro)
         return false;
     }
 
+    busDeviceRegister(busdev);
+
     // SetIIR
     busWriteRegister(busdev, QMP6988_SET_IIR_REG, 0x05);
 

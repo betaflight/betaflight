@@ -185,6 +185,8 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
 #ifdef USE_MAG_SPI_HMC5883
 static void hmc5883SpiInit(busDevice_t *busdev)
 {
+    busDeviceRegister(busdev);
+
     IOHi(busdev->busdev_u.spi.csnPin); // Disable
 
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);
@@ -221,7 +223,6 @@ static bool hmc5883lInit(magDev_t *mag)
 {
 
     busDevice_t *busdev = &mag->busdev;
-
 
     // leave test mode
     busWriteRegister(busdev, HMC58X3_REG_CONFA, HMC_CONFA_8_SAMLES | HMC_CONFA_DOR_15HZ | HMC_CONFA_NORMAL);    // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
