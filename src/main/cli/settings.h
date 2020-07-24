@@ -142,6 +142,8 @@ typedef enum {
     TABLE_OSD_LOGO_ON_ARMING,
 #endif
 
+    TABLE_TRI_SERVO_FDBK,
+
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

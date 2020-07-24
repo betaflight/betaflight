@@ -27,6 +27,8 @@ typedef struct filter_s filter_t;
 typedef struct pt1Filter_s {
     float state;
     float k;
+	float RC;
+	float dT;
 } pt1Filter_t;
 
 typedef struct slewFilter_s {
@@ -80,6 +82,7 @@ float pt1FilterGain(float f_cut, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
 float pt1FilterApply(pt1Filter_t *filter, float input);
+float pt1FilterApply4(pt1Filter_t *filter, float input, float f_cut, float dt);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);

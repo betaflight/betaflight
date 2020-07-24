@@ -378,12 +378,6 @@ SLOW_CODE void mixerInit(mixerMode_e mixerMode)
     currentMixerMode = mixerMode;
 
     initEscEndpoints();
-#ifdef USE_SERVOS
-    if (mixerIsTricopter()) {
-        mixerTricopterInit();
-    }
-#endif
-
 #ifdef USE_DYN_IDLE
     idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
 #endif
@@ -756,8 +750,8 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
         motorOutput = motorOutputMin + motorOutputRange * motorOutput;
 
 #ifdef USE_SERVOS
-        if (mixerIsTricopter()) {
-            motorOutput += mixerTricopterMotorCorrection(i);
+        if (mixerIsTricopter() && featureIsEnabled(FEATURE_TRIFLIGHT)) {
+            motorOutput += triGetMotorCorrection(i);
         }
 #endif
         if (failsafeIsActive()) {
@@ -1009,4 +1003,14 @@ bool mixerModeIsFixedWing(mixerMode_e mixerMode)
 bool isFixedWing(void)
 {
     return mixerModeIsFixedWing(currentMixerMode);
+}
+
+float getMotorOutputLow(void)
+{
+	return motorOutputLow;
+}
+
+float getMotorOutputHigh(void)
+{
+	return motorOutputHigh;
 }

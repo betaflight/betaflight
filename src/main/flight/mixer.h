@@ -117,3 +117,7 @@ float mixerGetThrottle(void);
 mixerMode_e getMixerMode(void);
 bool mixerModeIsFixedWing(mixerMode_e mixerMode);
 bool isFixedWing(void);
+
+float getMotorOutputLow(void);
+
+float getMotorOutputHigh(void);

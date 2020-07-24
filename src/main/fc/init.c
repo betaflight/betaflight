@@ -94,6 +94,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/servos.h"
@@ -703,6 +704,22 @@ SLOW_CODE void init(void)
 #endif
 
 #ifdef USE_ADC
+    if (mixerIsTricopter() && featureIsEnabled(FEATURE_TRIFLIGHT)) {
+        if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_RSSI) &&
+            !featureIsEnabled(FEATURE_RSSI_ADC)) {
+            adcConfigMutable()->rssi.enabled = true;
+        }
+        if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_CURRENT) &&
+            (batteryConfig()->currentMeterSource != CURRENT_METER_ADC)) {
+            adcConfigMutable()->current.enabled = true;
+        }
+#ifdef EXTERNAL1_ADC_PIN
+        if (triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
+            adcConfigMutable()->external1.enabled = true;
+        }
+#endif
+    }
+
     adcInit(adcConfig());
 #endif
 
