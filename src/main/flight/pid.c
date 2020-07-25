@@ -966,7 +966,7 @@ void FAST_CODE(cpTASK_PID_CORE) pidController(const pidProfile_t *pidProfile, ti
         // b = 1 and only c (feedforward weight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate P component
-        pidData[axis].P = pidRuntime.pidCoefficient[axis].Kp * errorRate * tpaFactorKp;
+        pidData[axis].P = pidRuntime.pidCoefficient[axis].Kp * (errorRate + pidRuntime.expectedGyroError[axis]) * tpaFactorKp;
         if (axis == FD_YAW) {
             pidData[axis].P = pidRuntime.ptermYawLowpassApplyFn((filter_t *) &pidRuntime.ptermYawLowpass, pidData[axis].P);
         }
@@ -1232,4 +1232,9 @@ float pidGetDT()
 float pidGetPidFrequency()
 {
     return pidRuntime.pidFrequency;
+}
+
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error)
+{
+    pidRuntime.expectedGyroError[axis] = error;
 }

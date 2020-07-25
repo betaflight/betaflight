@@ -284,7 +284,7 @@ typedef struct pidRuntime_s {
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
-
+    float expectedGyroError[XYZ_AXIS_COUNT];
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
     uint8_t itermRelax;
@@ -415,3 +415,5 @@ float pidGetFfBoostFactor();
 float pidGetFfSmoothFactor();
 float pidGetSpikeLimitInverse();
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
+
+void pidSetExpectedGyroError(flight_dynamics_index_t axis, float error);

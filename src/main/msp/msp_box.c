@@ -331,7 +331,7 @@ void initActiveBoxIds(void)
     BME(BOXLAUNCHCONTROL);
 #endif
 
-   BME(BOXTAILTUNE);
+    BME(BOXTAILTUNE);
 
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)

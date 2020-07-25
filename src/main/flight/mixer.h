@@ -118,6 +118,5 @@ mixerMode_e getMixerMode(void);
 bool mixerModeIsFixedWing(mixerMode_e mixerMode);
 bool isFixedWing(void);
 
-float getMotorOutputLow(void);
-
-float getMotorOutputHigh(void);
+uint16_t mixGetMotorOutputLow(void);
+uint16_t mixGetMotorOutputHigh(void);

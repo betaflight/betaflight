@@ -400,6 +400,10 @@ SLOW_CODE void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+      pidRuntime.expectedGyroError[axis] = 0.0f;
+    }
 }
 
 SLOW_CODE void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

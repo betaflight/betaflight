@@ -144,6 +144,3 @@ void servoConfigureOutput(void);
 void servosInit(void);
 void servosFilterInit(void);
 void servoMixer(void);
-// tricopter specific
-void servosTricopterInit(void);
-bool servosTricopterIsEnabledServoUnarmed(void);

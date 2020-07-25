@@ -233,7 +233,7 @@ SLOW_CODE void servosInit(void)
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 
-    if (featureIsEnabled(FEATURE_TRIFLIGHT) && mixerIsTricopter()) {
+    if (mixerIsTricopter()) {
         triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
     }
 }
@@ -330,16 +330,11 @@ void writeServos(void)
     switch (getMixerMode()) {
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
-        if (triIsEnabledServoUnarmed()) {
-            // if unarmed flag set, we always move servo
-            pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-        } else {
-            // otherwise, only move servo when copter is armed
-            if (ARMING_FLAG(ARMED))
-                pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-            else
-                pwmWriteServo(servoIndex++, 0); // kill servo signal completely.
+        // We move servo if unarmed flag set or armed
+         if (!(triIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
+            servo[SERVO_RUDDER] = 0; // kill servo signal completely.
         }
+        writeServoWithTracking(servoIndex++, SERVO_RUDDER);
         break;
 
     case MIXER_FLYING_WING:
@@ -409,12 +404,9 @@ void servoMixer(void)
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
 
-    if (featureIsEnabled(FEATURE_TRIFLIGHT) && mixerIsTricopter())
-    {
-        triServoMixer(pidData[FD_YAW].Sum);
-    }
-    else
-    {
+    if (mixerIsTricopter()) {
+        triServoMixer(pidData[FD_YAW].Sum, (float)currentPidProfile->pidSumLimitYaw, pidGetDT());
+    } else {
         if (FLIGHT_MODE(PASSTHRU_MODE)) {
             // Direct passthru from RX
             input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
@@ -485,7 +477,7 @@ void servoMixer(void)
             servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
             servo[i] += determineServoMiddleOrForwardFromChannel(i);
         }
-    }
+	}
 }
 
 

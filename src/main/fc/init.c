@@ -704,7 +704,7 @@ SLOW_CODE void init(void)
 #endif
 
 #ifdef USE_ADC
-    if (mixerIsTricopter() && featureIsEnabled(FEATURE_TRIFLIGHT)) {
+    if (mixerIsTricopter()) {
         if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_RSSI) &&
             !featureIsEnabled(FEATURE_RSSI_ADC)) {
             adcConfigMutable()->rssi.enabled = true;
@@ -799,6 +799,11 @@ SLOW_CODE void init(void)
     }
     LED0_OFF;
     LED1_OFF;
+
+    if (mixerIsTricopter())
+    {
+        triInitFilters();
+    }
 
     imuInit();
 

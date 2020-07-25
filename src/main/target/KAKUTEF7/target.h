@@ -89,7 +89,7 @@
 #define UART6_RX_PIN            PC7
 
 #define USE_UART7
-#define UART7_TX_PIN            NONE
+#define UART7_TX_PIN            PE8
 #define UART7_RX_PIN            PE7
 
 
