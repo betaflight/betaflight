@@ -517,7 +517,7 @@ static void predictGyroOnDeceleration(void)
 
         DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_YAW_ERROR, 1000 + error);
 
-        pidSetExpectedGyroError(FD_YAW, error);
+        pidSetPredictedError(FD_YAW, error);
     }
 }
 
