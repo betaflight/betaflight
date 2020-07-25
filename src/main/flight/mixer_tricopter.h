@@ -22,39 +22,6 @@
 #include "drivers/adc.h"
 #include "flight/servos.h"
 
-#define LINEAR_MIN_OUTPUT_MIN        (5)
-#define LINEAR_MIN_OUTPUT_MAX        (50)
-
-#define MOTOR_ACC_YAW_CORRECTION_MIN (0)
-#define MOTOR_ACC_YAW_CORRECTION_MAX (200)
-
-#define MOTOR_ACCELERATION_MIN       (1)
-#define MOTOR_ACCELERATION_MAX       (100)
-
-#define TAIL_SERVO_ANGLE_MAX_MIN     (0)
-#define TAIL_SERVO_ANGLE_MAX_MAX     (400)
-
-#define TAIL_SERVO_FDBK_MIN         (0)
-#define TAIL_SERVO_FDBK_MAX         (2)
-
-#define TAIL_SERVO_MAX_ADC_MIN      (0)
-#define TAIL_SERVO_MAX_ADC_MAX      (65535)
-
-#define TAIL_SERVO_MID_ADC_MIN      (0)
-#define TAIL_SERVO_MID_ADC_MAX      (65535)
-
-#define TAIL_SERVO_MIN_ADC_MIN      (0)
-#define TAIL_SERVO_MIN_ADC_MAX      (65535)
-
-#define TAIL_THRUST_FACTOR_MIN      (10)
-#define TAIL_THRUST_FACTOR_MAX      (400)
-
-#define TAIL_SERVO_SPEED_MIN        (0)
-#define TAIL_SERVO_SPEED_MAX        (1000)
-
-#define YAW_BOOST_MIN               (10)
-#define YAW_BOOST_MAX               (700)
-
 #define TRI_TAIL_SERVO_ANGLE_MID                (90.0f)
 #define TRI_TAIL_SERVO_MAX_ANGLE                (40.0f)
 
