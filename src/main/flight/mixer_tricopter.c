@@ -361,30 +361,69 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
   }
 }
 
-// ======== Static Only Code ========
+// ======== Public Interface ========
 
 void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServoOutput)
 {
-    tailServo.pConf         = pTailServoConfig;
-    tailServo.pOutput       = pTailServoOutput;
-    tailServo.thrustFactor  = triflightConfig()->tri_tail_motor_thrustfactor / 10.0f;
-    tailServo.maxDeflection = triflightConfig()->tri_servo_angle_at_max / 10.0f;
-    tailServo.angleAtMin    = TRI_TAIL_SERVO_ANGLE_MID - tailServo.maxDeflection;
-    tailServo.angleAtMax    = TRI_TAIL_SERVO_ANGLE_MID + tailServo.maxDeflection;
-    tailServo.speed         = triflightConfig()->tri_tail_servo_speed / 10.0f;
-    tailServo.ADCChannel    = getServoFeedbackADCChannel(triflightConfig()->tri_servo_feedback);
+  tailServo.pConf         = pTailServoConfig;
+  tailServo.pOutput       = pTailServoOutput;
+  tailServo.thrustFactor  = triflightConfig()->tri_tail_motor_thrustfactor / 10.0f;
+  tailServo.maxDeflection = triflightConfig()->tri_servo_angle_at_max / 10.0f;
+  tailServo.angleAtMin    = TRI_TAIL_SERVO_ANGLE_MID - tailServo.maxDeflection;
+  tailServo.angleAtMax    = TRI_TAIL_SERVO_ANGLE_MID + tailServo.maxDeflection;
+  tailServo.speed         = triflightConfig()->tri_tail_servo_speed / 10.0f;
+  tailServo.ADCChannel    = getServoFeedbackADCChannel(triflightConfig()->tri_servo_feedback);
 
-    tailMotor.outputRange         = mixGetMotorOutputHigh() - mixGetMotorOutputLow();
-    tailMotor.minOutput           = mixGetMotorOutputLow();
-    tailMotor.linearMinOutput     = tailMotor.outputRange * 0.05;
-    tailMotor.pitchCorrectionGain = triflightConfig()->tri_yaw_boost / 100.0f;
-    tailMotor.acceleration        = (float) tailMotor.outputRange / triflightConfig()->tri_motor_acceleration;
+  tailMotor.outputRange         = mixGetMotorOutputHigh() - mixGetMotorOutputLow();
+  tailMotor.minOutput           = mixGetMotorOutputLow();
+  tailMotor.linearMinOutput     = tailMotor.outputRange * 0.05;
+  tailMotor.pitchCorrectionGain = triflightConfig()->tri_yaw_boost / 100.0f;
+  tailMotor.acceleration        = (float) tailMotor.outputRange / triflightConfig()->tri_motor_acceleration;
 
-    initYawForceCurve();
+  initYawForceCurve();
 
-    triServoDirection = triGetServoDirection();
- }
+  triServoDirection = triGetServoDirection();
+}
 
+#ifndef UNIT_TEST
+
+void triInitFilters(void)
+{
+  const float dT = pidGetDT();
+  pt1FilterInit(&tailMotor.feedbackFilter, pt1FilterGain(TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ, dT));
+  pt1FilterInit(&tailServo.feedbackFilter, pt1FilterGain(TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ, dT));
+}
+
+bool triIsEnabledServoUnarmed(void)
+{
+  const bool isEnabledServoUnarmed = (servoConfig()->tri_unarmed_servo != 0) || FLIGHT_MODE(TAILTUNE_MODE);
+
+  return isEnabledServoUnarmed;
+}
+
+void triServoMixer(float scaledYawPid, float pidSumLimit, float dT)
+{
+  // Update the tail motor speed from feedback
+  tailMotorStep(motor[triflightConfig()->tri_tail_motor_index], dT);
+
+  // Update the servo angle from feedback
+  updateServoAngle(dT);
+
+  // Correct the servo output to produce linear yaw output
+  *tailServo.pOutput = getLinearServoValue(tailServo.pConf, scaledYawPid, pidSumLimit);
+
+  // Run tail tune mode
+  triTailTuneStep(tailServo.pConf, tailServo.pOutput, dT);
+
+  // Check for tail motor deceleration and determine expected produced yaw error
+  predictGyroOnDeceleration();
+
+  checkArmingPrevent();
+}
+
+#endif
+
+// ======== Static Code ========
 
 
 static void initYawForceCurve(void)
@@ -567,7 +606,7 @@ static bool isRcAxisWithinDeadband(int32_t axis, uint8_t minDeadband)
 
 
 
-// ======== Non-Unit Testable Code ========
+// ======== Static Non-Unit Testable Code ========
 
 #ifndef UNIT_TEST
 
@@ -612,40 +651,6 @@ static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal, float 
             break;
         }
     }
-}
-
-void triInitFilters(void)
-{
-    const float dT = pidGetDT();
-    pt1FilterInit(&tailMotor.feedbackFilter, pt1FilterGain(TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ, dT));
-    pt1FilterInit(&tailServo.feedbackFilter, pt1FilterGain(TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ, dT));
-}
-
-bool triIsEnabledServoUnarmed(void)
-{
-    const bool isEnabledServoUnarmed = (servoConfig()->tri_unarmed_servo != 0) || FLIGHT_MODE(TAILTUNE_MODE);
-
-    return isEnabledServoUnarmed;
-}
-
-void triServoMixer(float scaledYawPid, float pidSumLimit, float dT)
-{
-    // Update the tail motor speed from feedback
-    tailMotorStep(motor[triflightConfig()->tri_tail_motor_index], dT);
-
-    // Update the servo angle from feedback
-    updateServoAngle(dT);
-
-    // Correct the servo output to produce linear yaw output
-    *tailServo.pOutput = getLinearServoValue(tailServo.pConf, scaledYawPid, pidSumLimit);
-
-    // Run tail tune mode
-    triTailTuneStep(tailServo.pConf, tailServo.pOutput, dT);
-
-    // Check for tail motor deceleration and determine expected produced yaw error
-    predictGyroOnDeceleration();
-
-    checkArmingPrevent();
 }
 
 static void predictGyroOnDeceleration(void)

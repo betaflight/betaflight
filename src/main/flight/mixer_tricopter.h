@@ -59,10 +59,10 @@ typedef enum {
     TRI_SERVO_FB_EXT1,         // Feedback signal from EXT1 ADC
 } triServoFeedbackSource_e;
 
+void    triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
+void    triInitFilters(void);
 float   triGetCurrentServoAngle(void);
 int16_t triGetMotorCorrection(uint8_t motorIndex);
-void    triInitFilters(void);
-void    triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
 bool    triIsEnabledServoUnarmed(void);
 bool    triIsServoSaturated(float rateError);
 void    triServoMixer(float scaledYawPid, float pidSumLimit, float dT);
