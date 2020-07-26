@@ -72,6 +72,7 @@ class ThrustFactorCalculationTest: public ::testing::Test {
 protected:
     virtual void SetUp() {
         memset(&tailServo, 0, sizeof(tailServo));
+        tailServo.pConf = static_cast<servoParam_t *>(malloc(sizeof(*(tailServo.pConf))));
         memset(tailServo.pConf, 0, sizeof(*(tailServo.pConf)));
         tailServo.pConf->min = DEFAULT_SERVO_MIN;
         tailServo.pConf->max = DEFAULT_SERVO_MAX;
@@ -90,11 +91,16 @@ protected:
         tailTune.tt.state = TT_WAIT_FOR_DISARM;
         tailTune.tt.servoAvgAngle.numOf = 300;
     }
+
+    virtual void TearDown() {
+      free(tailServo.pConf);
+    }
 };
 
 TEST_F(ThrustFactorCalculationTest, 139) {
     // given
     tailTune.tt.servoAvgAngle.sum = 1234.5 + 27000.0;
+    EXPECT_EQ(1,1);
     // and
     tailTuneModeThrustTorque(&tailTune.tt, true);
     // then
@@ -160,6 +166,8 @@ protected:
         test_motorHigh = 2000;
         test_motorRange = test_motorHigh - test_motorLow;
         memset(&tailServo, 0, sizeof(tailServo));
+        tailServo.pConf = static_cast<servoParam_t *>(malloc(sizeof(*(tailServo.pConf))));
+        memset(tailServo.pConf, 0, sizeof(*(tailServo.pConf)));
         tailServo.pConf->min = DEFAULT_SERVO_MIN;
         tailServo.pConf->max = DEFAULT_SERVO_MAX;
         tailServo.pConf->middle = DEFAULT_SERVO_MIDDLE;
@@ -178,6 +186,10 @@ protected:
         tailTune.mode = TT_MODE_THRUST_TORQUE;
         tailTune.tt.state = TT_WAIT_FOR_DISARM;
         tailTune.tt.servoAvgAngle.numOf = 300;
+    }
+
+    virtual void TearDown(){
+      free(tailServo.pConf);
     }
 
     virtual float getYaw0Angle(float thrustFactor) {
