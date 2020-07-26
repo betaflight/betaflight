@@ -48,7 +48,6 @@ int16_t test_motorRange;
 void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
 uint16_t getLinearServoValue(servoParam_t *pServo, float scaledPIDOutput, float pidSumLimit);
 float getAngleForYawOutput(float yawOutput);
-float binarySearchOutput(float yawOutput, float gain);
 uint16_t getServoValueAtAngle(servoParam_t *pServo, float angle);
 float getServoAngle(servoParam_t *pServo, uint16_t servoValue);
 }
