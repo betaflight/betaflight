@@ -335,7 +335,7 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_OSD
-    setTaskEnabled(TASK_OSD, featureIsEnabled(FEATURE_OSD) && osdInitialized());
+    setTaskEnabled(TASK_OSD, featureIsEnabled(FEATURE_OSD) && osdGetDisplayPort(NULL));
 #endif
 
 #ifdef USE_BST

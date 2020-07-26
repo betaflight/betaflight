@@ -97,7 +97,7 @@ static int displayPortTestHeartbeat(displayPort_t *displayPort)
     return 0;
 }
 
-static void displayPortTestResync(displayPort_t *displayPort)
+static void displayPortTestRedraw(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
 }
@@ -118,7 +118,7 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .writeChar = displayPortTestWriteChar,
     .isTransferInProgress = displayPortTestIsTransferInProgress,
     .heartbeat = displayPortTestHeartbeat,
-    .resync = displayPortTestResync,
+    .redraw = displayPortTestRedraw,
     .txBytesFree = displayPortTestTxBytesFree
 };
 

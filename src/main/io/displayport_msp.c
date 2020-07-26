@@ -139,7 +139,7 @@ static bool isSynced(const displayPort_t *displayPort)
     return true;
 }
 
-static void resync(displayPort_t *displayPort)
+static void redraw(displayPort_t *displayPort)
 {
     displayPort->rows = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
     displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
@@ -162,7 +162,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,
-    .resync = resync,
+    .redraw = redraw,
     .isSynced = isSynced,
     .txBytesFree = txBytesFree,
     .layerSupported = NULL,
@@ -178,7 +178,7 @@ displayPort_t *displayPortMspInit(void)
         mspDisplayPort.useDeviceBlink = true;
     }
 
-    resync(&mspDisplayPort);
+    redraw(&mspDisplayPort);
     return &mspDisplayPort;
 }
 #endif // USE_MSP_DISPLAYPORT

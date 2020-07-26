@@ -171,16 +171,17 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 
     displayClearScreen(pDisplay);
     displayWrite(pDisplay, 5, 3, DISPLAYPORT_ATTR_INFO, "ERASING FLASH...");
-    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
+    displayRedraw(pDisplay);
 
     flashfsEraseCompletely();
     while (!flashfsIsReady()) {
+        //TODO: Make this non-blocking!
         delay(100);
     }
 
     beeper(BEEPER_BLACKBOX_ERASE);
     displayClearScreen(pDisplay);
-    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+    displayRedraw(pDisplay);
 
     // Update storage device status to show new used space amount
     cmsx_Blackbox_GetDeviceStatus();

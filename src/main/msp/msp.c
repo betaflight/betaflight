@@ -901,17 +901,18 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 
         osdDisplayPortDevice_e deviceType;
         displayPort_t *osdDisplayPort = osdGetDisplayPort(&deviceType);
+        bool displayIsReady = osdDisplayPort && displayCheckReady(osdDisplayPort, true);
         switch (deviceType) {
         case OSD_DISPLAYPORT_DEVICE_MAX7456:
             osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
-            if (osdDisplayPort && displayIsReady(osdDisplayPort)) {
+            if (displayIsReady) {
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
 
             break;
         case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
             osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
-            if (osdDisplayPort && displayIsReady(osdDisplayPort)) {
+            if (displayIsReady) {
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
 
