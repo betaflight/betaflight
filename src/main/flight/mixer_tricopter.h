@@ -61,7 +61,7 @@ typedef enum {
 
 float   triGetCurrentServoAngle(void);
 int16_t triGetMotorCorrection(uint8_t motorIndex);
-void    triInitFilters();
+void    triInitFilters(void);
 void    triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
 bool    triIsEnabledServoUnarmed(void);
 bool    triIsServoSaturated(float rateError);

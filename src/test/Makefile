@@ -180,6 +180,9 @@ ledstrip_unittest_DEFINES := \
 maths_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
+mixer_tricopter_unittest_SRC := \
+		$(USER_DIR)/flight/mixer_tricopter.c \
+		$(USER_DIR)/common/maths.c
 
 motor_output_unittest_SRC := \
 		$(USER_DIR)/drivers/dshot.c
