@@ -182,7 +182,9 @@ maths_unittest_SRC := \
 
 mixer_tricopter_unittest_SRC := \
 		$(USER_DIR)/flight/mixer_tricopter.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/pg/pg.c
+		
 
 motor_output_unittest_SRC := \
 		$(USER_DIR)/drivers/dshot.c

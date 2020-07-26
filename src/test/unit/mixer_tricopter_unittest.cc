@@ -71,6 +71,7 @@ class ThrustFactorCalculationTest: public ::testing::Test {
     // Due to possible rounding effects we add a tolerance to the test
 protected:
     virtual void SetUp() {
+        PG_RESET(triflightConfig);
         memset(&tailServo, 0, sizeof(tailServo));
         tailServo.pConf = static_cast<servoParam_t *>(malloc(sizeof(*(tailServo.pConf))));
         memset(tailServo.pConf, 0, sizeof(*(tailServo.pConf)));
@@ -413,22 +414,9 @@ float pt1FilterApply(pt1Filter_t *filter, float input) {
 void saveConfigAndNotify(void) {
 }
 
-uint16_t getCurrentMaxthrottle(void) {
-    return 2000;
-}
-
-void pidResetErrorGyroAxis(flight_dynamics_index_t axis) {
-    UNUSED(axis);
-}
-
 void pidSetPredictedError(flight_dynamics_index_t axis, float error) {
     UNUSED(axis);
     UNUSED(error);
-}
-
-float getdT()
-{
-    return 0.001;
 }
 
 void pt1FilterInit(pt1Filter_t *filter, float k)

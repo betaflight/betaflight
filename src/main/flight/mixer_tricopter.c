@@ -280,7 +280,6 @@ STATIC_UNIT_TESTED uint16_t getServoValueAtAngle(servoParam_t *servoConf, float 
 {
     const float servoMid = servoConf->middle;
     uint16_t servoValue;
-
     if (angle == TRI_TAIL_SERVO_ANGLE_MID)
     {
         servoValue = servoMid;
@@ -834,7 +833,7 @@ STATIC_UNIT_TESTED void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoPa
                         pSS->cal.avg.pCalibConfig = &triflightConfigMutable()->tri_servo_mid_adc;
                         break;
                     case SS_C_MID:
-                        if (ABS(triflightConfigMutable()->tri_servo_min_adc - triflightConfigMutable()->tri_servo_mid_adc) < 100) {
+                        if (ABS(triflightConfig()->tri_servo_min_adc - triflightConfig()->tri_servo_mid_adc) < 100) {
                             // Not enough difference between min and mid feedback values.
                             // Most likely the feedback signal is not connected.
                             pSS->state = SS_IDLE;
@@ -881,7 +880,7 @@ STATIC_UNIT_TESTED void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoPa
             switch (pSS->cal.subState) {
             case SS_C_MIN:
                 // Wait for the servo to reach min position
-                if (tailServo.ADCRaw < (triflightConfigMutable()->tri_servo_min_adc + 10)) {
+                if (tailServo.ADCRaw < (triflightConfig()->tri_servo_min_adc + 10)) {
                     if (!pSS->cal.waitingServoToStop) {
                         pSS->cal.avg.sum += GetCurrentDelay_ms(pSS->cal.timestamp_ms);
                         pSS->cal.avg.numOf++;
