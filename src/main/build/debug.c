@@ -97,4 +97,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GYRO_SAMPLE",
     "RX_TIMING",
     "D_LPF",
+    "VTX_TRAMP",
 };
