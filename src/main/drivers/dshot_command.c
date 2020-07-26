@@ -151,17 +151,29 @@ static bool allMotorsAreIdle(void)
     return true;
 }
 
-bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
+bool dshotStreamingCommandsAreEnabled(void)
+{
+    return motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS;
+}
+
+static bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
 {
     bool ret = false;
 
-    if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+    switch (commandType) {
+    case DSHOT_CMD_TYPE_BLOCKING:
         ret = !motorIsEnabled();
-    } else if (commandType == DSHOT_CMD_TYPE_INLINE) {
-        if (motorIsEnabled() && motorGetMotorEnableTimeMs() && millis() > motorGetMotorEnableTimeMs() + DSHOT_PROTOCOL_DETECTION_DELAY_MS) {
-            ret = true;
-        }
+
+        break;
+    case DSHOT_CMD_TYPE_INLINE:
+        ret = dshotStreamingCommandsAreEnabled();
+
+        break;
+    default:
+
+        break;
     }
+
     return ret;
 }
 
