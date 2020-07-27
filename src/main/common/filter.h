@@ -27,8 +27,8 @@ typedef struct filter_s filter_t;
 typedef struct pt1Filter_s {
     float state;
     float k;
-	float RC;
-	float dT;
+    float RC;
+    float dT;
 } pt1Filter_t;
 
 typedef struct slewFilter_s {

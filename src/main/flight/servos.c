@@ -327,7 +327,7 @@ void writeServos(void)
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
         // We move servo if unarmed flag set or armed
-         if (!(triIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
+        if (!(triIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
             servo[SERVO_RUDDER] = 0; // kill servo signal completely.
         }
         writeServoWithTracking(servoIndex++, SERVO_RUDDER);
