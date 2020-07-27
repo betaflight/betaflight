@@ -66,10 +66,10 @@ void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
 void triInitFilters(void);
 void triInitADCs(void);
 float triGetCurrentServoAngle(void);
-int16_t triGetMotorCorrection(uint8_t motorIndex);
+int16_t triGetMotorCorrection(const uint8_t motorIndex);
 bool triIsEnabledServoUnarmed(void);
-bool triIsServoSaturated(float rateError);
-void triServoMixer(float scaledYawPid, float pidSumLimit, float dT);
+bool triIsServoSaturated(const float rateError);
+void triServoMixer(const float scaledYawPid, const float pidSumLimit, const float dT);
 
 typedef enum {
     TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE = 0x01,
