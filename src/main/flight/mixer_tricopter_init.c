@@ -133,6 +133,8 @@ void initYawForceCurve(void) {
     tailServo.angleAtLinearMax = maxLinearAngle;
 }
 
+#ifndef UNIT_TEST
+
 void triInitFilters(void) {
     const float dT = pidGetDT();
     pt1FilterInit(&tailMotor.feedbackFilter, pt1FilterGain(TRI_MOTOR_FEEDBACK_LPF_CUTOFF_HZ, dT));
@@ -154,6 +156,8 @@ void triInitADCs(void){
         }
 #endif
 }
+
+#endif
 
 static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback) {
     AdcChannel channel;

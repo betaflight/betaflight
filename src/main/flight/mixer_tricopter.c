@@ -160,7 +160,7 @@ STATIC_UNIT_TESTED uint16_t getServoValueAtAngle(const servoParam_t *const servo
         }
         else {
             const float servoMax = servoConf->max;
-            servoValue = lroundf(servoMid + angleDiff * (servoMax - servoMid) / angleRange);
+            servoValue = ROUND(servoMid + angleDiff * (servoMax - servoMid) / angleRange);
         }
     }
 

@@ -106,6 +106,10 @@ float acos_approx(float x)
 }
 #endif
 
+int32_t ROUND(const float x){
+    return (x >= 0.0f ? (int32_t) (x + 0.5f) : (int32_t)(x - 0.5f));
+}
+
 int gcd(int num, int denom)
 {
     if (denom == 0) {
