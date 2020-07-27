@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-#include <float.h>
+
 #include <fc/core.h>
 
 #include "build/debug.h"
@@ -42,7 +42,6 @@
 #include "flight/mixer.h"
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
-#include "flight/servos.h"
 
 #include "io/beeper.h"
 
@@ -267,11 +266,14 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                 pTT->timestamp_ms = GetCurrentTime_ms(); // sticks are NOT good
                 DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1100);
             }
+#ifndef UNIT_TEST
             if (fabsf(gyro.gyroADCf[FD_YAW]) > pTT->tailTuneGyroLimit) {
                 pTT->timestamp2_ms = GetCurrentTime_ms(); // gyro is NOT stable
                 DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1200);
             }
+#endif
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 200)) {
+                DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1300);
                 DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1300);
                 // RC commands have been within deadbands for 250 ms
                 if (IsDelayElapsed_ms(pTT->timestamp2_ms, 200)) {

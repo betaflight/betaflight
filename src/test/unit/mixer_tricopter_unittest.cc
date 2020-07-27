@@ -22,6 +22,7 @@
 #include <math.h>
 
 extern "C" {
+#include "common/maths.h"
 #include "build/debug.h"
 #include "platform.h"
 
