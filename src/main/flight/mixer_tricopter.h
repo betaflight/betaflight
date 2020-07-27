@@ -38,15 +38,15 @@
 typedef struct triflightConfig_s {
     uint16_t tri_motor_acc_yaw_correction;
     uint16_t tri_motor_acceleration;
-    int16_t  tri_servo_angle_at_max;
-    uint8_t  tri_servo_feedback;
+    int16_t tri_servo_angle_at_max;
+    uint8_t tri_servo_feedback;
     uint16_t tri_servo_max_adc;
     uint16_t tri_servo_mid_adc;
     uint16_t tri_servo_min_adc;
-    int16_t  tri_tail_motor_thrustfactor;
-    int16_t  tri_tail_servo_speed;
+    int16_t tri_tail_motor_thrustfactor;
+    int16_t tri_tail_servo_speed;
     uint16_t tri_yaw_boost;
-    uint8_t  tri_tail_motor_index;
+    uint8_t tri_tail_motor_index;
 } triflightConfig_t;
 
 PG_DECLARE(triflightConfig_t, triflightConfig);
@@ -59,17 +59,17 @@ typedef enum {
     TRI_SERVO_FB_EXT1,         // Feedback signal from EXT1 ADC
 } triServoFeedbackSource_e;
 
-void    triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
-void    triInitFilters(void);
-float   triGetCurrentServoAngle(void);
+void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
+void triInitFilters(void);
+float triGetCurrentServoAngle(void);
 int16_t triGetMotorCorrection(uint8_t motorIndex);
-bool    triIsEnabledServoUnarmed(void);
-bool    triIsServoSaturated(float rateError);
-void    triServoMixer(float scaledYawPid, float pidSumLimit, float dT);
+bool triIsEnabledServoUnarmed(void);
+bool triIsServoSaturated(float rateError);
+void triServoMixer(float scaledYawPid, float pidSumLimit, float dT);
 
 typedef enum {
     TRI_ARMING_PREVENT_FLAG_INVALID_SERVO_ANGLE = 0x01,
-    TRI_ARMING_PREVENT_FLAG_UNARMED_TAIL_TUNE   = 0x02
+    TRI_ARMING_PREVENT_FLAG_UNARMED_TAIL_TUNE = 0x02
 } triArmingPreventFlag_e;
 
 typedef enum {

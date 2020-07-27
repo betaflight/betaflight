@@ -31,8 +31,6 @@ extern "C" {
 #include "common/filter.h"
 #include "drivers/sensor.h"
 
-#include "sensors/gyro.h"
-
 #include "flight/mixer.h"
 #include "flight/mixer_tricopter.h"
 
@@ -50,7 +48,8 @@ uint16_t getLinearServoValue(servoParam_t *pServo, float scaledPIDOutput, float 
 float getAngleForYawOutput(float yawOutput);
 uint16_t getServoValueAtAngle(servoParam_t *pServo, float angle);
 float getServoAngle(servoParam_t *pServo, uint16_t servoValue);
-}
+
+} // extern "C"
 
 extern tailServo_t tailServo;
 extern tailMotor_t tailMotor;
@@ -60,15 +59,15 @@ extern tailTune_t tailTune;
 #include "gtest/gtest.h"
 
 class ThrustFactorCalculationTest: public ::testing::Test {
-    // We expect factor = 1 / tan(angle) (but adjusted for formats)
-    // Say we want triflightConfig()->tri_tail_motor_thrustfactor to be 139, i.e. the factor should be 13.9
-    // angle = 1 / atan(factor), according to #25
-    // adjust to decidegrees and multiply by servoAvgAngle.numOf
-    // i.e. multiply by 3000, then round to integer
-    // so even if 12345 looks like an arbitrarily chosen number, it is the result of this calculation and corresponds to 4.115 degrees.
-    // after that, add 270000 (90 deg) since the angles actually start at horisontal left
-    // Due to possible rounding effects we add a tolerance to the test
-protected:
+// We expect factor = 1 / tan(angle) (but adjusted for formats)
+// Say we want triflightConfig()->tri_tail_motor_thrustfactor to be 139, i.e. the factor should be 13.9
+// angle = 1 / atan(factor), according to #25
+// adjust to decidegrees and multiply by servoAvgAngle.numOf
+// i.e. multiply by 3000, then round to integer
+// so even if 12345 looks like an arbitrarily chosen number, it is the result of this calculation and corresponds to 4.115 degrees.
+// after that, add 270000 (90 deg) since the angles actually start at horizontal left
+// Due to possible rounding effects we add a tolerance to the test
+  protected:
     virtual void SetUp() {
         PG_RESET(triflightConfig);
         memset(&tailServo, 0, sizeof(tailServo));
@@ -159,7 +158,7 @@ TEST_F(ThrustFactorCalculationTest, err130) {
 }
 
 class LinearOutputTest: public ::testing::Test {
-protected:
+  protected:
     virtual void SetUp() {
 
         test_motorLow = 48;
@@ -357,10 +356,6 @@ float rcCommand[4];
 uint32_t rcModeActivationMask;
 uint16_t flightModeFlags = 0;
 int16_t debug[DEBUG16_VALUE_COUNT];
-gyro_t gyro;
-//master_t masterConfig;
-int32_t gyroADC[XYZ_AXIS_COUNT];
-//master_t masterConfig;
 bool airModeActive = true;
 uint8_t debugMode = DEBUG_TRIFLIGHT;
 
@@ -375,11 +370,6 @@ uint16_t getCurrentMinthrottle(void) {
 void beeper(beeperMode_e mode) {
     UNUSED(mode);
 }
-
-//bool isRcAxisWithinDeadband(int32_t axis) {
-//    UNUSED(axis);
-//    return true;
-//}
 
 uint16_t disableFlightMode(flightModeFlags_e mask) {
     UNUSED(mask);
@@ -450,4 +440,4 @@ void triInitFilters(void){
 
 }
 
-}
+} // extern "C"
