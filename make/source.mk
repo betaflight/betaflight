@@ -95,7 +95,8 @@ COMMON_SRC = \
             flight/imu.c \
             flight/interpolated_setpoint.c \
             flight/mixer.c \
-            flight/mixer_tricopter.c \
+			flight/mixer_tricopter.c \
+			flight/mixer_tricopter_init.c \
             flight/pid.c \
             flight/pid_init.c \
             flight/rpm_filter.c \
@@ -252,6 +253,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/gyroanalyse.c \
             flight/imu.c \
             flight/mixer.c \
+			flight/mixer_tricopter.c \
             flight/pid.c \
             flight/rpm_filter.c \
             rx/ibus.c \
@@ -353,8 +355,9 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             osd/osd.c \
             osd/osd_elements.c \
             rx/rx_bind.c \
-            sensors/gyro_init.c\
-            flight/pid_init.c
+            sensors/gyro_init.c \
+            flight/pid_init.c \
+			flight/mixer_tricopter_init.c
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
