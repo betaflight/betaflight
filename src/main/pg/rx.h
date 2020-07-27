@@ -66,6 +66,8 @@ typedef struct rxConfig_s {
     uint8_t srxl2_baud_fast; // Select Spektrum SRXL2 fast baud rate
     uint8_t sbus_baud_fast; // Select SBus fast baud rate
     uint8_t crsf_use_rx_snr; // Use RX SNR (in dB) instead of RSSI dBm for CRSF
+
+    uint32_t msp_override_channels_mask; // Channels to override when the MSP override mode is enabled
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

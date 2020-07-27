@@ -18,10 +18,27 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-struct rxConfig_s;
-struct rxRuntimeState_s;
-uint16_t rxMspReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan);
-void rxMspInit(const struct rxConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState);
-void rxMspFrameReceive(uint16_t *frame, int channelCount);
+#if defined(USE_RX_MSP_OVERRIDE)
+
+#include "rx/msp_override.h"
+#include "rx/msp.h"
+#include "fc/rc_modes.h"
+#include "common/maths.h"
+
+
+uint16_t rxMspOverrideReadRawRc(const rxRuntimeState_t *rxRuntimeState, const rxConfig_t *rxConfig, uint8_t chan)
+{
+    uint16_t rxSample = (rxRuntimeState->rcReadRawFn)(rxRuntimeState, chan);
+
+    uint16_t overrideSample = rxMspReadRawRC(rxRuntimeState, chan);
+    bool override = (1 << chan) & rxConfig->msp_override_channels_mask;
+
+    if (IS_RC_MODE_ACTIVE(BOXMSPOVERRIDE) && override) {
+        return overrideSample;
+    } else {
+        return rxSample;
+    }
+}
+#endif

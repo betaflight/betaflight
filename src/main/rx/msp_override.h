@@ -20,8 +20,8 @@
 
 #pragma once
 
-struct rxConfig_s;
-struct rxRuntimeState_s;
-uint16_t rxMspReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan);
-void rxMspInit(const struct rxConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState);
-void rxMspFrameReceive(uint16_t *frame, int channelCount);
+#include "rx/rx.h"
+#include "pg/rx.h"
+
+uint16_t rxMspOverrideReadRawRc(const rxRuntimeState_t *rxRuntimeState, const rxConfig_t *rxConfig, uint8_t chan);
+
