@@ -802,6 +802,7 @@ SLOW_CODE void init(void)
 
     if (mixerIsTricopter())
     {
+        triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
         triInitFilters();
     }
 

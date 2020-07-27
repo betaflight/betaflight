@@ -232,10 +232,6 @@ SLOW_CODE void servosInit(void)
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = DEFAULT_SERVO_MIDDLE;
     }
-
-    if (mixerIsTricopter()) {
-        triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
-    }
 }
 
 SLOW_CODE void loadCustomServoMixer(void)
