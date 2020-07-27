@@ -18,20 +18,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+#ifdef UNIT_TEST
 #include <math.h>
+#endif
 
-#include <fc/core.h>
+#include "platform.h"
+
+#include "fc/core.h"
 
 #include "build/debug.h"
-
-#include "common/axis.h"
-#include "common/filter.h"
-#include "common/maths.h"
-
 #include "pg/pg_ids.h"
-
 #include "drivers/time.h"
 
 #include "config/config.h"
