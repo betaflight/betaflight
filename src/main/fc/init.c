@@ -705,19 +705,7 @@ SLOW_CODE void init(void)
 
 #ifdef USE_ADC
     if (mixerIsTricopter()) {
-        if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_RSSI) &&
-            !featureIsEnabled(FEATURE_RSSI_ADC)) {
-            adcConfigMutable()->rssi.enabled = true;
-        }
-        if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_CURRENT) &&
-            (batteryConfig()->currentMeterSource != CURRENT_METER_ADC)) {
-            adcConfigMutable()->current.enabled = true;
-        }
-#ifdef EXTERNAL1_ADC_PIN
-        if (triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
-            adcConfigMutable()->external1.enabled = true;
-        }
-#endif
+        triInitADCs();
     }
 
     adcInit(adcConfig());

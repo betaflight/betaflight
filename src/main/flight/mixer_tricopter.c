@@ -18,22 +18,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef UNIT_TEST
-#include <math.h>
-#endif
 
 #include "platform.h"
 
 #include "fc/core.h"
-
-#include "build/debug.h"
-#include "pg/pg_ids.h"
-#include "drivers/time.h"
-
-#include "config/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+
+#include "build/debug.h"
+#include "pg/pg_ids.h"
+#include "pg/adc.h"
+
+#include "config/config.h"
+#include "config/feature.h"
 
 #include "flight/mixer.h"
 #include "flight/mixer_tricopter.h"
@@ -42,6 +40,7 @@
 #include "io/beeper.h"
 
 #include "sensors/gyro.h"
+#include "sensors/battery.h"
 
 #define GetCurrentDelay_ms(timestamp_ms) (now_ms - timestamp_ms)
 #define GetCurrentTime_ms() (now_ms)
@@ -215,7 +214,7 @@ STATIC_UNIT_TESTED float getServoAngle(servoParam_t *servoConf, uint16_t servoVa
     return servoAngle;
 }
 
-STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh) {
+CCM_CODE STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh) {
     InitDelayMeasurement_ms();
     switch (pTT->state) {
         case TT_IDLE:
@@ -263,7 +262,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool
                 DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1100);
             }
 #ifndef UNIT_TEST
-            if (fabsf(gyro.gyroADCf[FD_YAW]) > pTT->tailTuneGyroLimit) {
+            if (ABS(gyro.gyroADCf[FD_YAW]) > pTT->tailTuneGyroLimit) {
                 pTT->timestamp2_ms = GetCurrentTime_ms(); // gyro is NOT stable
                 DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1200);
             }
@@ -376,6 +375,22 @@ void triInitFilters(void) {
     pt1FilterInit(&tailServo.feedbackFilter, pt1FilterGain(TRI_SERVO_FEEDBACK_LPF_CUTOFF_HZ, dT));
 }
 
+void triInitADCs(void){
+    if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_RSSI) &&
+        !featureIsEnabled(FEATURE_RSSI_ADC)) {
+        adcConfigMutable()->rssi.enabled = true;
+    }
+    if ((triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_CURRENT) &&
+        (batteryConfig()->currentMeterSource != CURRENT_METER_ADC)) {
+        adcConfigMutable()->current.enabled = true;
+    }
+#ifdef EXTERNAL1_ADC_PIN
+    if (triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_EXT1) {
+            adcConfigMutable()->external1.enabled = true;
+        }
+#endif
+}
+
 bool triIsEnabledServoUnarmed(void) {
     const bool isEnabledServoUnarmed = (servoConfig()->tri_unarmed_servo != 0) || FLIGHT_MODE(TAILTUNE_MODE);
 
@@ -420,7 +435,7 @@ static void initYawForceCurve(void) {
     for (int32_t i = 0; i < TRI_YAW_FORCE_CURVE_SIZE; i++) {
         const float angleRad = DEGREES_TO_RADIANS(angle);
 
-        yawOutputGainCurve[i] = -tailServo.thrustFactor * cosf(angleRad) - sinf(angleRad);
+        yawOutputGainCurve[i] = -tailServo.thrustFactor * cos_approx(angleRad) - sin_approx(angleRad);
 
         motorPitchCorrectionCurve[i] = tailMotor.pitchCorrectionGain * getPitchCorrectionAtTailAngle(angleRad, tailServo.thrustFactor);
 
@@ -486,7 +501,7 @@ int16_t triGetMotorCorrection(uint8_t motorIndex) {
 }
 
 bool triIsServoSaturated(float rateError) {
-    if (fabsf(rateError) > TRI_SERVO_SATURATED_GYRO_ERROR) {
+    if (ABS(rateError) > TRI_SERVO_SATURATED_GYRO_ERROR) {
         return true;
     }
     else {

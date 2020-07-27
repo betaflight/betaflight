@@ -64,6 +64,7 @@ typedef enum {
 
 void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServo);
 void triInitFilters(void);
+void triInitADCs(void);
 float triGetCurrentServoAngle(void);
 int16_t triGetMotorCorrection(uint8_t motorIndex);
 bool triIsEnabledServoUnarmed(void);
