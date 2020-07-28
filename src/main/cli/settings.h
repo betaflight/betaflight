@@ -142,7 +142,9 @@ typedef enum {
     TABLE_OSD_LOGO_ON_ARMING,
 #endif
 
+#ifdef USE_TRIFLIGHT
     TABLE_TRI_SERVO_FDBK,
+#endif // USE_TRIFLIGHT
 
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;

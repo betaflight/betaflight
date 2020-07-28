@@ -185,7 +185,9 @@ mixer_tricopter_unittest_SRC := \
 		$(USER_DIR)/flight/mixer_tricopter_init.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/pg/pg.c
-		
+
+mixer_tricopter_unittest_DEFINES := \
+		USE_TRIFLIGHT=
 
 motor_output_unittest_SRC := \
 		$(USER_DIR)/drivers/dshot.c

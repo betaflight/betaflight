@@ -750,13 +750,12 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
 #endif
         motorOutput = motorOutputMin + motorOutputRange * motorOutput;
 
-#ifdef USE_SERVOS
-        if (mixerIsTricopter()) {
 #ifdef USE_TRIFLIGHT
+        if (mixerIsTricopter()) {
             motorOutput += triGetMotorCorrection(i);
-#endif // USE_TRIFLGIHT
         }
-#endif
+#endif // USE_TRIFLIGHT
+
         if (failsafeIsActive()) {
 #ifdef USE_DSHOT
             if (isMotorProtocolDshot()) {

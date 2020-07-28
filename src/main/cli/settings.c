@@ -495,9 +495,11 @@ const char * const lookupTableOsdDisplayPortDevice[] = {
     "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD"
 };
 
+#ifdef USE_TRIFLIGHT
 static const char * const lookupServoFeedback[] = {
     "VIRTUAL", "RSSI", "CURRENT"
 };
+#endif // USE_TRIFLIGHT
 
 #ifdef USE_OSD
 static const char * const lookupTableOsdLogoOnArming[] = {
@@ -627,7 +629,10 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableOsdLogoOnArming),
 #endif
 
+#ifdef USE_TRIFLIGHT
     LOOKUP_TABLE_ENTRY(lookupServoFeedback),
+#endif // USE_TRIFLIGHT
+
 };
 
 #undef LOOKUP_TABLE_ENTRY

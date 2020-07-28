@@ -29,6 +29,7 @@
 #include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
+#include "fc/runtime_config.h"
 #include "pg/adc.h"
 #include "build/debug.h"
 #include "pg/pg_ids.h"

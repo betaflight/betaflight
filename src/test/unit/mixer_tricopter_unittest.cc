@@ -22,6 +22,7 @@
 #include <math.h>
 
 extern "C" {
+
 #include "common/maths.h"
 #include "build/debug.h"
 #include "platform.h"
@@ -44,17 +45,19 @@ int16_t test_motorLow;
 int16_t test_motorHigh;
 int16_t test_motorRange;
 
-void tailTuneModeThrustTorque(thrustTorque_t *pTT, const bool isThrottleHigh);
-uint16_t getLinearServoValue(servoParam_t *pServo, float scaledPIDOutput, float pidSumLimit);
-float getAngleForYawOutput(float yawOutput);
-uint16_t getServoValueAtAngle(servoParam_t *pServo, float angle);
-float getServoAngle(servoParam_t *pServo, uint16_t servoValue);
-
-} // extern "C"
+extern float getAngleForYawOutput(const float yawOutput);
+extern uint16_t getLinearServoValue(const servoParam_t *const servoConf, const float scaledPIDOutput, const float pidSumLimit);
+extern float getServoAngle(const servoParam_t * const servoConf, const uint16_t servoValue);
+extern uint16_t getServoValueAtAngle(const servoParam_t *const servoConf, const float angle);
+extern void tailTuneModeThrustTorque(thrustTorque_t *const pTT, const bool isThrottleHigh);
+extern void triInitMixer(servoParam_t *const pTailServoConfig, int16_t *const pTailServoOutput);
 
 extern tailServo_t tailServo;
 extern tailMotor_t tailMotor;
 extern tailTune_t tailTune;
+
+} // extern "C"
+
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"

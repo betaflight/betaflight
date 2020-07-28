@@ -61,7 +61,7 @@ static void initYawForceCurve(void);
 #define InitDelayMeasurement_ms() const uint32_t now_ms = millis()
 #define IsDelayElapsed_ms(timestamp_ms, delay_ms) ((uint32_t) (now_ms - timestamp_ms) >= delay_ms)
 
-void triInitMixer(servoParam_t *pTailServoConfig, int16_t *pTailServoOutput) {
+void triInitMixer(servoParam_t *const pTailServoConfig, int16_t *const pTailServoOutput) {
     tailServo.pConf = pTailServoConfig;
     tailServo.pOutput = pTailServoOutput;
     tailServo.thrustFactor = triflightConfig()->tri_tail_motor_thrustfactor / 10.0f;
@@ -157,7 +157,7 @@ void triInitADCs(void){
 #endif
 }
 
-#endif
+#endif // UNIT_TEST
 
 static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback) {
     AdcChannel channel;
