@@ -705,7 +705,9 @@ SLOW_CODE void init(void)
 
 #ifdef USE_ADC
     if (mixerIsTricopter()) {
+#ifdef USE_TRIFLIGHT
         triInitADCs();
+#endif // USE_TRIFLIGHT
     }
 
     adcInit(adcConfig());
@@ -790,8 +792,10 @@ SLOW_CODE void init(void)
 
     if (mixerIsTricopter())
     {
+#ifdef USE_TRIFLIGHT
         triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
         triInitFilters();
+#endif // USE_TRIFLIGHT
     }
 
     imuInit();

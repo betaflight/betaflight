@@ -18,8 +18,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MIXER_TRICOPTER_H_
-#define MIXER_TRICOPTER_H_
+#pragma once
+
+#include "platform.h"
+
+bool triIsEnabledServoUnarmed(void);
+
+#ifdef USE_TRIFLIGHT
 
 #include "common/filter.h"
 #include "drivers/adc.h"
@@ -67,7 +72,6 @@ void triInitFilters(void);
 void triInitADCs(void);
 float triGetCurrentServoAngle(void);
 int16_t triGetMotorCorrection(const uint8_t motorIndex);
-bool triIsEnabledServoUnarmed(void);
 bool triIsServoSaturated(const float rateError);
 void triServoMixer(const float scaledYawPid, const float pidSumLimit, const float dT);
 
@@ -175,4 +179,4 @@ typedef struct tailTune_s {
     } ss;
 } tailTune_t;
 
-#endif // MIXER_TRICOPTER_H_ 
+#endif // USE_TRIFLIGHT

@@ -18,26 +18,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "platform.h"
+
+#include "flight/mixer.h"
+#include "flight/mixer_tricopter.h"
+#include "flight/servos.h"
+
+#ifdef USE_TRIFLIGHT
 
 #include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
-#include "fc/runtime_config.h"
-
+#include "pg/adc.h"
 #include "build/debug.h"
 #include "pg/pg_ids.h"
-#include "pg/adc.h"
-
-#include "config/config.h"
-
-#include "flight/mixer.h"
-#include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
-
+#include "config/config.h"
 #include "io/beeper.h"
-
 #include "sensors/gyro.h"
 
 #define GetCurrentDelay_ms(timestamp_ms) (now_ms - timestamp_ms)
@@ -92,11 +89,11 @@ float getPitchCorrectionAtTailAngle(const float angle, const float thrustFactor)
 static uint32_t preventArmingFlags = 0;
 
 static void checkArmingPrevent(void);
-static void updateServoAngle(float dT);
+static void updateServoAngle(const float dT);
 static void predictGyroOnDeceleration(void);
 static void tailMotorStep(const int16_t setpoint, const float dT);
 static void triTailTuneStep(servoParam_t *pServoConf, int16_t *pServoVal, float dT);
-static float feedbackServoStep(uint16_t tailServoADC);
+static float feedbackServoStep(const uint16_t tailServoADC);
 static void preventArming(const triArmingPreventFlag_e flag, const bool enable);
 static float virtualServoStep(float currentAngle, int16_t servoSpeed,
                               float dT, servoParam_t *servoConf,
@@ -369,9 +366,7 @@ void triServoMixer(const float scaledYawPid, const float pidSumLimit, const floa
 
 #endif
 
-// ======== Static Code ========
-
-
+// ======== Internal Code Shared with Init ========
 
 float triGetCurrentServoAngle(void) {
     return tailServo.angle;
@@ -409,7 +404,6 @@ bool triIsServoSaturated(const float rateError) {
         return false;
     }
 }
-
 
 float getPitchCorrectionAtTailAngle(const float angle, const float thrustFactor) {
     const float pitchCorrection = 1.0f / (sin_approx(angle) - cos_approx(angle) / thrustFactor);
@@ -461,8 +455,6 @@ bool isRcAxisWithinDeadband(const int32_t axis, const uint8_t minDeadband) {
 
     return ret;
 }
-
-
 
 // ======== Static Non-Unit Testable Code ========
 
@@ -573,7 +565,7 @@ static void tailMotorStep(const int16_t setpoint, const float dT) {
 }
 
 
-static void updateServoAngle(float dT) {
+static void updateServoAngle(const float dT) {
     if (triflightConfig()->tri_servo_feedback == TRI_SERVO_FB_VIRTUAL) {
         tailServo.angle = virtualServoStep(tailServo.angle, tailServo.speed, dT, tailServo.pConf, *tailServo.pOutput);
     }
@@ -614,7 +606,7 @@ static float virtualServoStep(float currentAngle, int16_t servoSpeed, float dT, 
     return currentAngle;
 }
 
-static float feedbackServoStep(uint16_t tailServoADC) {
+static float feedbackServoStep(const uint16_t tailServoADC) {
     // Feedback servo
     const int32_t ADCFeedback = tailServoADC;
     const int16_t midValue = triflightConfig()->tri_servo_mid_adc;
@@ -629,4 +621,13 @@ static float feedbackServoStep(uint16_t tailServoADC) {
     return currentAngle;
 }
 
-#endif
+#endif // ifndef UNIT_TEST
+
+#else // !USE_TRIFLIGHT
+
+bool triIsEnabledServoUnarmed(void) {
+    const bool isEnabledServoUnarmed = (servoConfig()->tri_unarmed_servo != 0);
+    return isEnabledServoUnarmed;
+}
+
+#endif // USE_TRIFLIGHT

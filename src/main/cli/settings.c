@@ -1661,6 +1661,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // TRIFLIGHT
+#ifdef USE_TRIFLIGHT
     { "tri_motor_acc_yaw_correction",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = {  0,    20 }, PG_TRIFLIGHT_CONFIG, offsetof(triflightConfig_t, tri_motor_acc_yaw_correction) },
     { "tri_servo_angle_at_max",        VAR_INT16  | MASTER_VALUE, .config.minmax         = {  0,   400 }, PG_TRIFLIGHT_CONFIG, offsetof(triflightConfig_t, tri_servo_angle_at_max) },
     { "tri_motor_acceleration",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = {  1,   100 }, PG_TRIFLIGHT_CONFIG, offsetof(triflightConfig_t, tri_motor_acceleration) },
@@ -1671,6 +1672,8 @@ const clivalue_t valueTable[] = {
     { "tri_tail_motor_thrustfactor",   VAR_INT16  | MASTER_VALUE, .config.minmax         = { 10,   400 }, PG_TRIFLIGHT_CONFIG, offsetof(triflightConfig_t, tri_tail_motor_thrustfactor) },
     { "tri_yaw_boost",                 VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10,   700 }, PG_TRIFLIGHT_CONFIG, offsetof(triflightConfig_t, tri_yaw_boost) },
     { "tri_tail_servo_speed",          VAR_INT16  | MASTER_VALUE, .config.minmax         = {  0,  1000 }, PG_TRIFLIGHT_CONFIG, offsetof(triflightConfig_t, tri_tail_servo_speed) },
+#endif // USE_TRIFLIGHT
+
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);

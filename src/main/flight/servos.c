@@ -401,7 +401,9 @@ void servoMixer(void)
     static int16_t currentOutput[MAX_SERVO_RULES];
 
     if (mixerIsTricopter()) {
+#ifdef USE_TRIFLIGHT
         triServoMixer(pidData[FD_YAW].Sum, (float)currentPidProfile->pidSumLimitYaw, pidGetDT());
+#endif
     } else {
         if (FLIGHT_MODE(PASSTHRU_MODE)) {
             // Direct passthru from RX
@@ -473,7 +475,7 @@ void servoMixer(void)
             servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
             servo[i] += determineServoMiddleOrForwardFromChannel(i);
         }
-	}
+    }
 }
 
 

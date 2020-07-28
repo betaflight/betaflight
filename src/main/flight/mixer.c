@@ -752,7 +752,9 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
 
 #ifdef USE_SERVOS
         if (mixerIsTricopter()) {
+#ifdef USE_TRIFLIGHT
             motorOutput += triGetMotorCorrection(i);
+#endif // USE_TRIFLGIHT
         }
 #endif
         if (failsafeIsActive()) {

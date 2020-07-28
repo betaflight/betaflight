@@ -18,9 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #include "platform.h"
+
+#ifdef USE_TRIFLIGHT
 
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -349,3 +349,4 @@ void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServoConf, 
     *pServoVal = pSS->servoVal;
 }
 
+#endif // USE_TRIFLIGHT
