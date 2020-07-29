@@ -44,7 +44,7 @@
 #define MINIMAL_CLI
 #define USE_DSHOT
 #define USE_GYRO_DATA_ANALYSE
-#define USE_CCM_CODE
+#define USE_CCM
 #endif
 
 #ifdef STM32F4
@@ -81,7 +81,7 @@
 
 #ifdef STM32F7
 #define USE_SRAM2
-#define USE_ITCM_RAM
+#define USE_ITCM
 #define USE_FAST_RAM
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -107,7 +107,7 @@
 #endif // STM32F7
 
 #ifdef STM32H7
-#define USE_ITCM_RAM
+#define USE_ITCM
 #define USE_FAST_RAM
 #define USE_DSHOT
 #define USE_DSHOT_TELEMETRY
@@ -147,19 +147,19 @@
 #define DEFAULT_CPU_OVERCLOCK 0
 #endif
 
+#if defined(USE_ITCM) && defined(USE_CCM)
+#error ITCM and CCM are mutually exclusive. F3/4 has CCM, F7 has ITCM (most likely).
+#endif
 
-#ifdef USE_ITCM_RAM
+#if defined(USE_ITCM)
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#define FAST_CODE_NOINLINE          NOINLINE
+#elif defined(USE_CCM)
+#define FAST_CODE                    __attribute__((section(".ccm_code")))
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
 #define FAST_CODE_NOINLINE
-#endif // USE_ITCM_RAM
-
-#ifdef USE_CCM_CODE
-#define CCM_CODE              __attribute__((section(".ccm_code")))
-#else
-#define CCM_CODE
 #endif
 
 #ifdef USE_FAST_RAM
