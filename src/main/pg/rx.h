@@ -36,6 +36,7 @@ typedef struct rxConfig_s {
     ioTag_t spektrum_bind_plug_ioTag;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
+    uint8_t spektrum_rssi_from_aux;
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_invert;

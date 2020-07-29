@@ -70,6 +70,7 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static rxRuntimeState_t *rxRuntimeStatePtr;
 static serialPort_t *serialPort;
+static const rxConfig_t *rxConfigPtr;
 
 #if defined(USE_TELEMETRY_SRXL)
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
@@ -124,6 +125,7 @@ static uint8_t spektrumFrameStatus(rxRuntimeState_t *rxRuntimeState)
         rcFrameComplete = false;
 
 #if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
+    if (rxConfigPtr->spektrum_rssi_from_aux == false)
         spektrumHandleRSSI(spekFrame);
 #endif
 
@@ -149,8 +151,13 @@ static uint8_t spektrumFrameStatus(rxRuntimeState_t *rxRuntimeState)
         for (int b = 3; b < spektrumRcDataSize; b += 2) {
             const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
             if (spekChannel < rxRuntimeStatePtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-                if (rssi_channel == 0 || spekChannel != rssi_channel) {
+                if(rxConfigPtr->spektrum_rssi_from_aux) {
                     spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+                }
+                else {
+                    if (rssi_channel == 0 || spekChannel != rssi_channel) {
+                        spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+                    }
                 }
             }
         }
@@ -351,7 +358,8 @@ static timeUs_t spektrumFrameTimeUsFn(void)
 bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     rxRuntimeStatePtr = rxRuntimeState;
-
+    rxConfigPtr = rxConfig;
+    
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;

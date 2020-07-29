@@ -45,6 +45,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
         .spektrum_sat_bind = 0,
         .spektrum_sat_bind_autoreset = 1,
+        .spektrum_rssi_from_aux = 0,                   // rssi source(0 = calculate from fades, 1 = aux channel
         .midrc = RX_MID_USEC,
         .mincheck = 1050,
         .maxcheck = 1900,
