@@ -371,7 +371,7 @@ static void validateAndFixConfig(void)
 #endif
 
     if (
-        featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS)
+        featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
         || true
 #endif

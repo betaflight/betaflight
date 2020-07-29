@@ -999,10 +999,9 @@ mixerMode_e getMixerMode(void)
     return currentMixerMode;
 }
 
-
-bool isFixedWing(void)
+bool mixerModeIsFixedWing(mixerMode_e mixerMode)
 {
-    switch (currentMixerMode) {
+    switch (mixerMode) {
     case MIXER_FLYING_WING:
     case MIXER_AIRPLANE:
     case MIXER_CUSTOM_AIRPLANE:
@@ -1014,4 +1013,9 @@ bool isFixedWing(void)
 
         break;
     }
+}
+
+bool isFixedWing(void)
+{
+    return mixerModeIsFixedWing(currentMixerMode);
 }
