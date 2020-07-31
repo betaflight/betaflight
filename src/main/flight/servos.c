@@ -400,13 +400,6 @@ void servoMixer(void)
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
 
-#ifdef USE_TRIFLIGHT
-    if (mixerIsTricopter()) {
-        triServoMixer(pidData[FD_YAW].Sum, (float)currentPidProfile->pidSumLimitYaw, pidGetDT());
-        return;
-    }
-#endif // USE_TRIFLIGHT
-
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
         input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
@@ -486,6 +479,10 @@ static void servoTable(void)
     switch (getMixerMode()) {
     case MIXER_CUSTOM_TRI:
     case MIXER_TRI:
+#ifdef USE_TRIFLIGHT
+        triServoMixer(pidData[FD_YAW].Sum, (float)currentPidProfile->pidSumLimitYaw, pidGetDT());
+        break;
+#endif // USE_TRIFLIGHT
     case MIXER_CUSTOM_AIRPLANE:
     case MIXER_FLYING_WING:
     case MIXER_AIRPLANE:

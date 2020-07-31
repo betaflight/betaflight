@@ -253,7 +253,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/gyroanalyse.c \
             flight/imu.c \
             flight/mixer.c \
-			flight/mixer_tricopter.c \
             flight/pid.c \
             flight/rpm_filter.c \
             rx/ibus.c \

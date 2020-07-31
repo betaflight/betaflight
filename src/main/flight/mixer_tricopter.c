@@ -626,7 +626,7 @@ static float feedbackServoStep(const uint16_t tailServoADC) {
 
 #else // !USE_TRIFLIGHT
 
-bool triIsEnabledServoUnarmed(void) {
+NOINLINE bool triIsEnabledServoUnarmed(void) {
     const bool isEnabledServoUnarmed = (servoConfig()->tri_unarmed_servo != 0);
     return isEnabledServoUnarmed;
 }

@@ -67,18 +67,6 @@ FAST_CODE(cpFILTERS) float pt1FilterApply(pt1Filter_t *filter, float input)
     return filter->state;
 }
 
-FAST_CODE float pt1FilterApply4(pt1Filter_t *filter, float input, float f_cut, float dT)
-{
-    // Pre calculate and store RC
-    if (!filter->RC) {
-        filter->RC = 1.0f / ( 2.0f * M_PIf * f_cut );
-    }
-
-    filter->dT = dT;    // cache latest dT for possible use in pt1FilterApply
-    filter->state = filter->state + dT / (filter->RC + dT) * (input - filter->state);
-    return filter->state;
-}
-
 // Slew filter with limit
 
 SLOW_CODE void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)

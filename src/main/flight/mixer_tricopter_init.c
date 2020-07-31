@@ -159,7 +159,7 @@ void triInitADCs(void){
 
 #endif // UNIT_TEST
 
-static AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback) {
+static NOINLINE AdcChannel getServoFeedbackADCChannel(uint8_t tri_servo_feedback) {
     AdcChannel channel;
     switch (tri_servo_feedback) {
         case TRI_SERVO_FB_RSSI:

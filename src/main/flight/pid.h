@@ -284,7 +284,11 @@ typedef struct pidRuntime_s {
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
+
+#ifdef USE_TRIFLIGHT
     float predictedError[XYZ_AXIS_COUNT];
+#endif
+
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
     uint8_t itermRelax;

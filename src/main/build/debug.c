@@ -98,5 +98,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "RX_TIMING",
     "D_LPF",
     "VTX_TRAMP",
+ #ifdef USE_TRIFLIGHT
     "TRIFLIGHT",
+ #endif
 };

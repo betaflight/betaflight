@@ -118,5 +118,7 @@ mixerMode_e getMixerMode(void);
 bool mixerModeIsFixedWing(mixerMode_e mixerMode);
 bool isFixedWing(void);
 
+#ifdef USE_TRIFLIGHT
 uint16_t mixGetMotorOutputLow(void);
 uint16_t mixGetMotorOutputHigh(void);
+#endif

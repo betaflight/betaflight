@@ -377,6 +377,12 @@ SLOW_CODE void mixerInit(mixerMode_e mixerMode)
 {
     currentMixerMode = mixerMode;
 
+#ifdef USE_TRIFLIGHT \
+    if (mixerIsTricopter()) {
+        triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
+    }
+#endif // USE_TRIFLIGHT
+
     initEscEndpoints();
 
 #ifdef USE_DYN_IDLE
@@ -1007,6 +1013,8 @@ bool isFixedWing(void)
     return mixerModeIsFixedWing(currentMixerMode);
 }
 
+#ifdef USE_TRIFLIGHT
+
 uint16_t mixGetMotorOutputLow(void)
 {
     uint16_t motorOutputLow;
@@ -1041,3 +1049,5 @@ uint16_t mixGetMotorOutputHigh(void)
 
     return motorOutputHigh;
 }
+
+#endif
