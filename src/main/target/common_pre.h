@@ -147,6 +147,8 @@
 #define DEFAULT_CPU_OVERCLOCK 0
 #endif
 
+//#define USE_TRIFLIGHT
+
 // Macros for perfoming by-function optimisation
 #define O_FAST __attribute__((optimize("Ofast")))
 #define O_SIZE __attribute__((optimize("Os")))

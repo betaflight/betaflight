@@ -114,9 +114,7 @@ typedef enum {
     DEBUG_RX_TIMING,
     DEBUG_D_LPF,
     DEBUG_VTX_TRAMP,
- #ifdef USE_TRIFLIGHT
     DEBUG_TRIFLIGHT,
- #endif
     DEBUG_COUNT
 } debugType_e;
 

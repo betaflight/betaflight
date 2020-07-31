@@ -395,7 +395,7 @@ void writeServos(void)
     }
 }
 
-void servoMixer(void)
+void NOINLINE servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];

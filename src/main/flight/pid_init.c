@@ -401,11 +401,9 @@ SLOW_CODE void pidInitConfig(const pidProfile_t *pidProfile)
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
 
-#ifdef USE_TRIFLIGHT
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
       pidRuntime.predictedError[axis] = 0.0f;
     }
-#endif
 
 }
 

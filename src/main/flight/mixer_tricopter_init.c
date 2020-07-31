@@ -252,7 +252,7 @@ void tailTuneModeServoSetup(struct servoSetup_t *pSS, servoParam_t *pServoConf, 
                                     // Most likely the feedback signal is not connected.
                                     pSS->state = SS_IDLE;
                                     pSS->cal.subState = SS_C_MIN;
-                                    beeper(BEEPER_ACTION_FAIL);
+                                    beeper(BEEPER_ACC_CALIBRATION_FAIL);
                                     // Save configuration even after speed calibration failed.
                                     // Speed calibration should be done as final step so this saves the min, mid and max values.
                                     saveConfigAndNotify();

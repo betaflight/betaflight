@@ -791,9 +791,7 @@ SLOW_CODE void init(void)
     LED1_OFF;
 
 #ifdef USE_TRIFLIGHT
-    if (mixerIsTricopter())
-    {
-        triInitMixer(servoParamsMutable(SERVO_RUDDER), &servo[SERVO_RUDDER]);
+    if (mixerIsTricopter()) {
         triInitFilters();
     }
 #endif // USE_TRIFLIGHT

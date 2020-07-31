@@ -330,7 +330,7 @@ STATIC_UNIT_TESTED void tailTuneModeThrustTorque(thrustTorque_t *const pTT, cons
             break;
         case TT_FAIL: DEBUG_SET(DEBUG_TRIFLIGHT, DEBUG_TRI_SERVO_OUTPUT_ANGLE_OR_TAIL_TUNE_STATE, 1850);
             if (IsDelayElapsed_ms(pTT->timestamp_ms, 2000)) {
-                beeper(BEEPER_ACTION_FAIL);
+                beeper(BEEPER_ACC_CALIBRATION_FAIL);
                 pTT->timestamp_ms = GetCurrentTime_ms();
             }
             break;
@@ -626,9 +626,8 @@ static float feedbackServoStep(const uint16_t tailServoADC) {
 
 #else // !USE_TRIFLIGHT
 
-NOINLINE bool triIsEnabledServoUnarmed(void) {
-    const bool isEnabledServoUnarmed = (servoConfig()->tri_unarmed_servo != 0);
-    return isEnabledServoUnarmed;
+bool triIsEnabledServoUnarmed(void) {
+    return (servoConfig()->tri_unarmed_servo != 0);
 }
 
 #endif // USE_TRIFLIGHT
