@@ -55,7 +55,7 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-static void mpu3050Init(gyroDev_t *gyro)
+static void SLOW_CODE mpu3050Init(gyroDev_t *gyro)
 {
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
 

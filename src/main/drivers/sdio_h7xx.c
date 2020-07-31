@@ -115,7 +115,7 @@ static const sdioHardware_t sdioPinHardware[SDIODEV_COUNT] = {
 static const sdioHardware_t *sdioHardware;
 static sdioPin_t sdioPin[SDIO_PIN_COUNT];
 
-static const sdioPin_t *sdioFindPinDef(const sdioPin_t *pindefs, ioTag_t pin)
+static SLOW_CODE const sdioPin_t *sdioFindPinDef(const sdioPin_t *pindefs, ioTag_t pin)
 {
     for (unsigned index = 0; index < SDIO_MAX_PINDEFS; index++) {
         if (pindefs[index].pin == pin) {
@@ -134,7 +134,7 @@ static const sdioPin_t *sdioFindPinDef(const sdioPin_t *pindefs, ioTag_t pin)
         }                                                                                            \
     } struct dummy
 
-void sdioPinConfigure(void)
+SLOW_CODE void sdioPinConfigure(void)
 {
     SDIODevice device = SDIO_CFG_TO_DEV(sdioConfig()->device);
 
@@ -159,7 +159,7 @@ void sdioPinConfigure(void)
 
 #define IOCFG_SDMMC       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 
-void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
+SLOW_CODE void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
 {
     UNUSED(hsd);
 
@@ -196,7 +196,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     HAL_NVIC_EnableIRQ(sdioHardware->irqn);
 }
 
-void SDIO_GPIO_Init(void)
+SLOW_CODE void SDIO_GPIO_Init(void)
 {
     if (!sdioHardware) {
         return;
@@ -242,7 +242,7 @@ void SDIO_GPIO_Init(void)
     IOConfigGPIO(cmd, IOCFG_OUT_PP);
 }
 
-void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+SLOW_CODE void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 {
     UNUSED(dma);
 }
@@ -259,7 +259,7 @@ bool SD_GetState(void)
  * The F4/F7 code actually returns an SD_Error_t if the card is detected
  * SD_OK == 0, SD_* are non-zero and indicate errors.  e.g. SD_ERROR = 42
  */
-bool SD_Init(void)
+SLOW_CODE bool SD_Init(void)
 {
     bool failureResult = SD_ERROR; // FIXME fix the calling code, this false for success is bad.
     bool successResult = false;
@@ -317,7 +317,7 @@ bool SD_Init(void)
     return successResult;
 }
 
-SD_Error_t SD_GetCardInfo(void)
+SLOW_CODE SD_Error_t SD_GetCardInfo(void)
 {
     SD_Error_t ErrorState = SD_OK;
 

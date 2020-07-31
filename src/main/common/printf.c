@@ -153,7 +153,7 @@ abort:
     return written;
 }
 
-void init_printf(void *putp, void (*putf) (void *, char))
+SLOW_CODE void init_printf(void *putp, void (*putf) (void *, char))
 {
     stdout_putf = putf;
     stdout_putp = putp;

@@ -144,7 +144,7 @@ static void bmi270RegisterWrite(const busDevice_t *bus, bmi270Register_e registe
 
 // Toggle the CS to switch the device into SPI mode.
 // Device switches initializes as I2C and switches to SPI on a low to high CS transition
-static void bmi270EnableSPI(const busDevice_t *bus)
+static SLOW_CODE void bmi270EnableSPI(const busDevice_t *bus)
 {
     IOLo(bus->busdev_u.spi.csnPin);
     delay(1);
@@ -152,7 +152,7 @@ static void bmi270EnableSPI(const busDevice_t *bus)
     delay(10);
 }
 
-uint8_t bmi270Detect(const busDevice_t *bus)
+SLOW_CODE uint8_t bmi270Detect(const busDevice_t *bus)
 {
     spiSetDivisor(bus->busdev_u.spi.instance, BMI270_SPI_DIVISOR);
     bmi270EnableSPI(bus);
@@ -164,7 +164,7 @@ uint8_t bmi270Detect(const busDevice_t *bus)
     return MPU_NONE;
 }
 
-static void bmi270UploadConfig(const busDevice_t *bus)
+static SLOW_CODE void bmi270UploadConfig(const busDevice_t *bus)
 {
     bmi270RegisterWrite(bus, BMI270_REG_PWR_CONF, 0, 1);
     bmi270RegisterWrite(bus, BMI270_REG_INIT_CTRL, 0, 1);
@@ -179,7 +179,7 @@ static void bmi270UploadConfig(const busDevice_t *bus)
     bmi270RegisterWrite(bus, BMI270_REG_INIT_CTRL, 1, 1);
 }
 
-static void bmi270Config(const gyroDev_t *gyro)
+static void SLOW_CODE bmi270Config(const gyroDev_t *gyro)
 {
     const busDevice_t *bus = &gyro->bus;
 
@@ -254,7 +254,7 @@ void bmi270ExtiHandler(extiCallbackRec_t *cb)
     gyro->dataReady = true;
 }
 
-static void bmi270IntExtiInit(gyroDev_t *gyro)
+static SLOW_CODE void bmi270IntExtiInit(gyroDev_t *gyro)
 {
     if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
         return;
@@ -404,7 +404,7 @@ static bool bmi270GyroRead(gyroDev_t *gyro)
     }
 }
 
-static void bmi270SpiGyroInit(gyroDev_t *gyro)
+static SLOW_CODE void bmi270SpiGyroInit(gyroDev_t *gyro)
 {
     bmi270Config(gyro);
 
@@ -413,13 +413,13 @@ static void bmi270SpiGyroInit(gyroDev_t *gyro)
 #endif
 }
 
-static void bmi270SpiAccInit(accDev_t *acc)
+static SLOW_CODE void bmi270SpiAccInit(accDev_t *acc)
 {
     // sensor is configured during gyro init
     acc->acc_1G = 512 * 4;   // 16G sensor scale
 }
 
-bool bmi270SpiAccDetect(accDev_t *acc)
+SLOW_CODE bool bmi270SpiAccDetect(accDev_t *acc)
 {
     if (acc->mpuDetectionResult.sensor != BMI_270_SPI) {
         return false;
@@ -432,7 +432,7 @@ bool bmi270SpiAccDetect(accDev_t *acc)
 }
 
 
-bool bmi270SpiGyroDetect(gyroDev_t *gyro)
+SLOW_CODE bool bmi270SpiGyroDetect(gyroDev_t *gyro)
 {
     if (gyro->mpuDetectionResult.sensor != BMI_270_SPI) {
         return false;

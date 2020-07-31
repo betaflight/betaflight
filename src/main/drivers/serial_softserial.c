@@ -197,7 +197,7 @@ static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
     return timerPeriod > 0xFFFF;
 }
 
-static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr, uint32_t baud)
+static SLOW_CODE void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr, uint32_t baud)
 {
     uint32_t baseClock = timerClock(timerHardwarePtr->tim);
     uint32_t clock = baseClock;
@@ -218,7 +218,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
     timerConfigure(timerHardwarePtr, timerPeriod, baseClock);
 }
 
-static void resetBuffers(softSerial_t *softSerial)
+static SLOW_CODE void resetBuffers(softSerial_t *softSerial)
 {
     softSerial->port.rxBufferSize = SOFTSERIAL_BUFFER_SIZE;
     softSerial->port.rxBuffer = softSerial->rxBuffer;
@@ -231,7 +231,7 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
+SLOW_CODE serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baud, portMode_e mode, portOptions_e options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 

@@ -62,27 +62,27 @@
 #define USE_GYRO_SLEW_LIMITER
 #endif
 
-FAST_RAM_ZERO_INIT gyro_t gyro;
+FAST_DATA_ZERO_INIT gyro_t gyro;
 
-static FAST_RAM_ZERO_INIT bool overflowDetected;
+static FAST_DATA_ZERO_INIT bool overflowDetected;
 #ifdef USE_GYRO_OVERFLOW_CHECK
-static FAST_RAM_ZERO_INIT timeUs_t overflowTimeUs;
+static FAST_DATA_ZERO_INIT timeUs_t overflowTimeUs;
 #endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
-static FAST_RAM_ZERO_INIT bool yawSpinRecoveryEnabled;
-static FAST_RAM_ZERO_INIT int yawSpinRecoveryThreshold;
-static FAST_RAM_ZERO_INIT bool yawSpinDetected;
-static FAST_RAM_ZERO_INIT timeUs_t yawSpinTimeUs;
+static FAST_DATA_ZERO_INIT bool yawSpinRecoveryEnabled;
+static FAST_DATA_ZERO_INIT int yawSpinRecoveryThreshold;
+static FAST_DATA_ZERO_INIT bool yawSpinDetected;
+static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 #endif
 
-static FAST_RAM_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT float gyroPrevious[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT int accumulatedMeasurementCount;
+static FAST_DATA_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT float gyroPrevious[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT int accumulatedMeasurementCount;
 
-static FAST_RAM_ZERO_INIT int16_t gyroSensorTemperature;
+static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
 
-FAST_RAM uint8_t activePidLoopDenom = 1;
+FAST_DATA uint8_t activePidLoopDenom = 1;
 
 static bool firstArmingCalibrationWasStarted = false;
 
@@ -278,7 +278,7 @@ FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 #endif
 
 #ifdef USE_GYRO_OVERFLOW_CHECK
-static FAST_CODE_NOINLINE void handleOverflow(timeUs_t currentTimeUs)
+static O_FAST FLASH_CODE void handleOverflow(timeUs_t currentTimeUs)
 {
     // This will need to be revised if we ever allow different sensor types to be
     // used simultaneously. In that case the scale might be different between sensors.
@@ -341,7 +341,7 @@ static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
 #endif // USE_GYRO_OVERFLOW_CHECK
 
 #ifdef USE_YAW_SPIN_RECOVERY
-static FAST_CODE_NOINLINE void handleYawSpin(timeUs_t currentTimeUs)
+static O_FAST FLASH_CODE void handleYawSpin(timeUs_t currentTimeUs)
 {
     const float yawSpinResetRate = yawSpinRecoveryThreshold - 100.0f;
     if (fabsf(gyro.gyroADCf[Z]) < yawSpinResetRate) {
@@ -379,7 +379,7 @@ static FAST_CODE void checkForYawSpin(timeUs_t currentTimeUs)
 }
 #endif // USE_YAW_SPIN_RECOVERY
 
-static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSensor)
+static O_FAST FLASH_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
         return;

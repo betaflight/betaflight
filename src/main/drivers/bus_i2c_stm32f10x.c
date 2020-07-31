@@ -428,7 +428,7 @@ void i2c_ev_handler(I2CDevice device) {
     }
 }
 
-void i2cInit(I2CDevice device)
+SLOW_CODE void i2cInit(I2CDevice device)
 {
     if (device == I2CINVALID)
         return;

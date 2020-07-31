@@ -74,16 +74,16 @@ const char pidNames[] =
     "LEVEL;"
     "MAG;";
 
-FAST_RAM_ZERO_INIT uint32_t targetPidLooptime;
-FAST_RAM_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
-FAST_RAM_ZERO_INIT pidRuntime_t pidRuntime;
+FAST_DATA_ZERO_INIT uint32_t targetPidLooptime;
+FAST_DATA_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
+FAST_DATA_ZERO_INIT pidRuntime_t pidRuntime;
 
 #if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
+STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
 #endif
 
 #if defined(USE_THROTTLE_BOOST)
-FAST_RAM_ZERO_INIT float throttleBoost;
+FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
@@ -372,7 +372,7 @@ STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 // Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM to avoid overflow.
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
-STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+STATIC_UNIT_TESTED O_FAST FLASH_CODE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
     float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
@@ -486,7 +486,7 @@ int acroTrainerSign(float x)
 // Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM. We accept the
 // performance decrease when Acro Trainer mode is active under the assumption that user is unlikely to be
 // expecting ultimate flight performance at very high loop rates when in this mode.
-static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTrims_t *angleTrim, float setPoint)
+static O_FAST FLASH_CODE float applyAcroTrainer(int axis, const rollAndPitchTrims_t *angleTrim, float setPoint)
 {
     float ret = setPoint;
 
@@ -731,7 +731,7 @@ float pidGetAirmodeThrottleOffset()
 // Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM to avoid overflow.
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
-static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
+static O_FAST FLASH_CODE float applyLaunchControl(int axis, const rollAndPitchTrims_t *angleTrim)
 {
     float ret = 0.0f;
 
@@ -772,7 +772,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
 #ifdef USE_INTERPOLATED_SP
-    static FAST_RAM_ZERO_INIT uint32_t lastFrameNumber;
+    static FAST_DATA_ZERO_INIT uint32_t lastFrameNumber;
 #endif
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 

@@ -246,7 +246,7 @@ void failureMode(failureMode_e mode)
 #endif
 }
 
-void initialiseMemorySections(void)
+SLOW_CODE void initialiseMemorySections(void)
 {
 #ifdef USE_ITCM
     /* Load functions into ITCM RAM */
@@ -264,8 +264,8 @@ void initialiseMemorySections(void)
     memcpy(&ccm_code_start, &ccm_code, (size_t) (&ccm_code_end - &ccm_code_start));
 #endif
 
-#ifdef USE_FAST_RAM
-    /* Load FAST_RAM variable intializers into DTCM RAM */
+#ifdef USE_FAST_DATA
+    /* Load FAST_DATA variable intializers into DTCM RAM */
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;
@@ -273,14 +273,14 @@ void initialiseMemorySections(void)
 #endif
 }
 
-static void unusedPinInit(IO_t io)
+static SLOW_CODE void unusedPinInit(IO_t io)
 {
     if (IOGetOwner(io) == OWNER_FREE) {
         IOConfigGPIO(io, IOCFG_IPU);
     }
 }
 
-void unusedPinsInit(void)
+SLOW_CODE void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }

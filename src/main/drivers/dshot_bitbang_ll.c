@@ -46,7 +46,7 @@
 
 // Setup GPIO_MODER and GPIO_ODR register manipulation values
 
-void bbGpioSetup(bbMotor_t *bbMotor)
+SLOW_CODE void bbGpioSetup(bbMotor_t *bbMotor)
 {
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
@@ -80,7 +80,7 @@ void bbGpioSetup(bbMotor_t *bbMotor)
 #endif
 }
 
-void bbTimerChannelInit(bbPort_t *bbPort)
+SLOW_CODE void bbTimerChannelInit(bbPort_t *bbPort)
 {
     const timerHardware_t *timhw = bbPort->timhw;
 
@@ -217,7 +217,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 }
 #endif
 
-void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
+SLOW_CODE void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 {
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
 
@@ -264,7 +264,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     }
 }
 
-void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
+SLOW_CODE void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
 {
     LL_TIM_InitTypeDef *init = &bbPort->timeBaseInit;
 

@@ -36,7 +36,7 @@
 #include "nvic.h"
 #include "rcc.h"
 
-void spiInitDevice(SPIDevice device, bool leadingEdge)
+SLOW_CODE void spiInitDevice(SPIDevice device, bool leadingEdge)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
@@ -162,7 +162,7 @@ static uint32_t baudRatePrescaler[8] = {
     SPI_BAUDRATEPRESCALER_256,
 };
 
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+SLOW_CODE void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
     SPIDevice device = spiDeviceByInstance(instance);
 

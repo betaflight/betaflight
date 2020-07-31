@@ -74,8 +74,8 @@ static bool isRxDataNew = false;
 static float rcCommandDivider = 500.0f;
 static float rcCommandYawDivider = 500.0f;
 
-FAST_RAM_ZERO_INIT uint8_t interpolationChannels;
-static FAST_RAM_ZERO_INIT uint32_t rcFrameNumber;
+FAST_DATA_ZERO_INIT uint8_t interpolationChannels;
+static FAST_DATA_ZERO_INIT uint32_t rcFrameNumber;
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -96,7 +96,7 @@ enum {
 #define RC_SMOOTHING_RX_RATE_MAX_US             50000 // 50ms or 20hz
 #define RC_SMOOTHING_INTERPOLATED_FEEDFORWARD_DERIVATIVE_PT1_HZ 100 // The value to use for "auto" when interpolated feedforward is enabled
 
-static FAST_RAM_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
+static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 #endif // USE_RC_SMOOTHING_FILTER
 
 uint32_t getRcFrameNumber()
@@ -315,9 +315,9 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
 
 static FAST_CODE uint8_t processRcInterpolation(void)
 {
-    static FAST_RAM_ZERO_INIT float rcCommandInterp[4];
-    static FAST_RAM_ZERO_INIT float rcStepSize[4];
-    static FAST_RAM_ZERO_INIT int16_t rcInterpolationStepCount;
+    static FAST_DATA_ZERO_INIT float rcCommandInterp[4];
+    static FAST_DATA_ZERO_INIT float rcStepSize[4];
+    static FAST_DATA_ZERO_INIT int16_t rcInterpolationStepCount;
 
     uint16_t rxRefreshRate;
     uint8_t updatedChannel = 0;
@@ -392,7 +392,7 @@ uint16_t getCurrentRxRefreshRate(void)
 #ifdef USE_RC_SMOOTHING_FILTER
 // Determine a cutoff frequency based on filter type and the calculated
 // average rx frame time
-FAST_CODE_NOINLINE int calcRcSmoothingCutoff(int avgRxFrameTimeUs, bool pt1, uint8_t autoSmoothnessFactor)
+O_FAST FLASH_CODE int calcRcSmoothingCutoff(int avgRxFrameTimeUs, bool pt1, uint8_t autoSmoothnessFactor)
 {
     if (avgRxFrameTimeUs > 0) {
         const float cutoffFactor = (100 - autoSmoothnessFactor) / 100.0f;
@@ -417,7 +417,7 @@ static FAST_CODE bool rcSmoothingRxRateValid(int currentRxRefreshRate)
 
 // Initialize or update the filters base on either the manually selected cutoff, or
 // the auto-calculated cutoff frequency based on detected rx frame rate.
-FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
+O_FAST FLASH_CODE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
 {
     const float dT = targetPidLooptime * 1e-6f;
     uint16_t oldCutoff = smoothingData->inputCutoffFrequency;
@@ -469,7 +469,7 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
     }
 }
 
-FAST_CODE_NOINLINE void rcSmoothingResetAccumulation(rcSmoothingFilter_t *smoothingData)
+O_FAST FLASH_CODE void rcSmoothingResetAccumulation(rcSmoothingFilter_t *smoothingData)
 {
     smoothingData->training.sum = 0;
     smoothingData->training.count = 0;
@@ -499,7 +499,7 @@ static FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothing
 
 // Determine if we need to caclulate filter cutoffs. If not then we can avoid
 // examining the rx frame times completely
-FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
+O_FAST FLASH_CODE bool rcSmoothingAutoCalculate(void)
 {
     // if the input cutoff is 0 (auto) then we need to calculate cutoffs
     if (rcSmoothingData.inputCutoffSetting == 0) {
@@ -518,10 +518,10 @@ FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
 static FAST_CODE uint8_t processRcSmoothingFilter(void)
 {
     uint8_t updatedChannel = 0;
-    static FAST_RAM_ZERO_INIT float lastRxData[4];
-    static FAST_RAM_ZERO_INIT bool initialized;
-    static FAST_RAM_ZERO_INIT timeMs_t validRxFrameTimeMs;
-    static FAST_RAM_ZERO_INIT bool calculateCutoffs;
+    static FAST_DATA_ZERO_INIT float lastRxData[4];
+    static FAST_DATA_ZERO_INIT bool initialized;
+    static FAST_DATA_ZERO_INIT timeMs_t validRxFrameTimeMs;
+    static FAST_DATA_ZERO_INIT bool calculateCutoffs;
 
     // first call initialization
     if (!initialized) {
@@ -741,7 +741,7 @@ FAST_CODE void processRcCommand(void)
     isRxDataNew = false;
 }
 
-FAST_CODE_NOINLINE void updateRcCommands(void)
+O_FAST FLASH_CODE void updateRcCommands(void)
 {
     isRxDataNew = true;
 

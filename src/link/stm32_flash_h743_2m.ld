@@ -197,7 +197,7 @@ SECTIONS
   /* used during startup to initialized fastram_data */
   _sfastram_idata = LOADADDR(.fastram_data);
 
-  /* Initialized FAST_RAM section for unsuspecting developers */
+  /* Initialized FAST_DATA section for unsuspecting developers */
   .fastram_data :
   {
     . = ALIGN(4);

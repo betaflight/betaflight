@@ -64,7 +64,7 @@ void pidAudioSetMode(pidAudioModes_e mode)
     pidAudioMode = mode;
 }
 
-void FAST_CODE_NOINLINE pidAudioUpdate(void)
+void O_FAST FLASH_CODE pidAudioUpdate(void)
 {
     bool newState = IS_RC_MODE_ACTIVE(BOXPIDAUDIO);
 

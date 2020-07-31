@@ -65,7 +65,7 @@ void interpolatedSpInit(const pidProfile_t *pidProfile) {
     }
 }
 
-FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type) {
+O_FAST FLASH_CODE float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type) {
 
     if (newRcFrame) {
         float rawSetpoint = getRawSetpoint(axis);
@@ -193,7 +193,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
     return setpointDelta[axis];
 }
 
-FAST_CODE_NOINLINE float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint) {
+O_FAST FLASH_CODE float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint) {
     switch (axis) {
     case FD_ROLL:
         DEBUG_SET(DEBUG_FF_LIMIT, 0, value);

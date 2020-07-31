@@ -102,7 +102,7 @@ const resourceOwner_t *timerGetOwner(int8_t timerNumber, uint16_t timerChannel)
     return timerOwner;
 }
 
-const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)
+const SLOW_CODE timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)
 {
     if (!ioTag) {
         return NULL;

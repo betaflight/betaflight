@@ -73,7 +73,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-bool ws2811LedStripHardwareInit(ioTag_t ioTag)
+SLOW_CODE bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 {
     if (!ioTag) {
         return false;

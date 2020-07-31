@@ -67,7 +67,7 @@ sdcard_t sdcard;
 
 STATIC_ASSERT(sizeof(sdcardCSD_t) == 16, sdcard_csd_bitfields_didnt_pack_properly);
 
-static void sdcardInsertionDetectInit(const sdcardConfig_t *config)
+static SLOW_CODE void sdcardInsertionDetectInit(const sdcardConfig_t *config)
 {
     if (config->cardDetectTag) {
         sdcard.cardDetectPin = IOGetByTag(config->cardDetectTag);
@@ -103,7 +103,7 @@ bool sdcard_isInserted(void)
  */
 sdcardVTable_t *sdcardVTable;
 
-void sdcard_preInit(const sdcardConfig_t *config)
+void SLOW_CODE sdcard_preInit(const sdcardConfig_t *config)
 {
 #ifdef USE_SDCARD_SPI
     sdcardSpiVTable.sdcard_preInit(config);
@@ -112,7 +112,7 @@ void sdcard_preInit(const sdcardConfig_t *config)
 #endif
 }
 
-void sdcard_init(const sdcardConfig_t *config)
+void SLOW_CODE sdcard_init(const sdcardConfig_t *config)
 {
     sdcardInsertionDetectInit(config);
 

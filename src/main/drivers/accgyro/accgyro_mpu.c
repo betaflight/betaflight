@@ -123,7 +123,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 #endif
 }
 
-static void mpuIntExtiInit(gyroDev_t *gyro)
+static SLOW_CODE void mpuIntExtiInit(gyroDev_t *gyro)
 {
     if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
         return;
@@ -269,7 +269,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
 }
 #endif
 
-void mpuPreInit(const struct gyroDeviceConfig_s *config)
+SLOW_CODE void mpuPreInit(const struct gyroDeviceConfig_s *config)
 {
 #ifdef USE_SPI_GYRO
     spiPreinitRegister(config->csnTag, IOCFG_IPU, 1);
@@ -333,7 +333,7 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 #endif
 }
 
-void mpuGyroInit(gyroDev_t *gyro)
+SLOW_CODE void mpuGyroInit(gyroDev_t *gyro)
 {
 #ifdef USE_GYRO_EXTI
     mpuIntExtiInit(gyro);
@@ -342,7 +342,7 @@ void mpuGyroInit(gyroDev_t *gyro)
 #endif
 }
 
-uint8_t mpuGyroDLPF(gyroDev_t *gyro)
+SLOW_CODE uint8_t mpuGyroDLPF(gyroDev_t *gyro)
 {
     uint8_t ret = 0;
 

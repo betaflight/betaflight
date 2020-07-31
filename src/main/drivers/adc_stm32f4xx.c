@@ -129,7 +129,7 @@ const adcTagMap_t adcTagMap[] = {
 #define TS_CAL1_ADDR      0x1FFF7A2C
 #define TS_CAL2_ADDR      0x1FFF7A2E
 
-void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
+SLOW_CODE void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 {
     ADC_InitTypeDef ADC_InitStructure;
 
@@ -153,7 +153,7 @@ void adcInitDevice(ADC_TypeDef *adcdev, int channelCount)
 }
 
 #ifdef USE_ADC_INTERNAL
-void adcInitInternalInjected(const adcConfig_t *config)
+SLOW_CODE void adcInitInternalInjected(const adcConfig_t *config)
 {
     ADC_TempSensorVrefintCmd(ENABLE);
     ADC_InjectedDiscModeCmd(ADC1, DISABLE);
@@ -208,7 +208,7 @@ uint16_t adcInternalReadTempsensor(void)
 }
 #endif
 
-void adcInit(const adcConfig_t *config)
+SLOW_CODE void adcInit(const adcConfig_t *config)
 {
     uint8_t i;
     uint8_t configuredAdcChannels = 0;

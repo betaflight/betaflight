@@ -264,7 +264,7 @@ uint8_t dshotCommandGetCurrent(uint8_t index)
 // allows the motor output to be sent, "false" means delay until next loop. So take
 // the example of a dshot command that needs to repeat 10 times at 1ms intervals.
 // If we have a 8KHz PID loop we'll end up sending the dshot command every 8th motor output.
-FAST_CODE_NOINLINE bool dshotCommandOutputIsEnabled(uint8_t motorCount)
+O_FAST FLASH_CODE bool dshotCommandOutputIsEnabled(uint8_t motorCount)
 {
     UNUSED(motorCount);
 

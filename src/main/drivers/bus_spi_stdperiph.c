@@ -44,7 +44,7 @@ static SPI_InitTypeDef defaultInit = {
     .SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8,
 };
 
-void spiInitDevice(SPIDevice device, bool leadingEdge)
+SLOW_CODE void spiInitDevice(SPIDevice device, bool leadingEdge)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
@@ -195,7 +195,7 @@ static uint16_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
     return (ffs(divisor) - 2) << 3; // SPI_CR1_BR_Pos
 }
 
-static void spiSetDivisorBRreg(SPI_TypeDef *instance, uint16_t divisor)
+SLOW_CODE static void spiSetDivisorBRreg(SPI_TypeDef *instance, uint16_t divisor)
 {
 #define BR_BITS ((BIT(5) | BIT(4) | BIT(3)))
     const uint16_t tempRegister = (instance->CR1 & ~BR_BITS);
@@ -203,7 +203,7 @@ static void spiSetDivisorBRreg(SPI_TypeDef *instance, uint16_t divisor)
 #undef BR_BITS
 }
 
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+SLOW_CODE void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
     SPI_Cmd(instance, DISABLE);
     spiSetDivisorBRreg(instance, divisor);
@@ -212,7 +212,7 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 
 #ifdef USE_SPI_TRANSACTION
 
-void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider)
+SLOW_CODE void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divider)
 {
     switch (mode) {
     case SPI_MODE0_POL_LOW_EDGE_1ST:

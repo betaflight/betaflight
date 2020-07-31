@@ -106,7 +106,7 @@ static bool w25m_waitForReady(flashDevice_t *fdevice)
     return true;
 }
 
-bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
+SLOW_CODE bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
 
     switch (chipID) {

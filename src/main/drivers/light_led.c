@@ -44,7 +44,7 @@ static uint8_t ledInversion = 0;
 #define LED2_PIN NONE
 #endif
 
-void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
+SLOW_CODE void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 {
     statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
     statusLedConfig->ioTags[1] = IO_TAG(LED1_PIN);
@@ -63,7 +63,7 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
-void ledInit(const statusLedConfig_t *statusLedConfig)
+SLOW_CODE void ledInit(const statusLedConfig_t *statusLedConfig)
 {
     ledInversion = statusLedConfig->inversion;
     for (int i = 0; i < STATUS_LED_NUMBER; i++) {

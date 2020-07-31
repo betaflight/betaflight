@@ -53,7 +53,7 @@
 
 PG_REGISTER_WITH_RESET_FN(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);
 
-void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
+SLOW_CODE void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
 {
     cameraControlConfig->mode = CAMERA_CONTROL_MODE_HARDWARE_PWM;
     cameraControlConfig->refVoltage = 330;
@@ -112,7 +112,7 @@ void TIM7_IRQHandler(void)
 }
 #endif
 
-void cameraControlInit(void)
+SLOW_CODE void cameraControlInit(void)
 {
     if (cameraControlConfig()->ioTag == IO_TAG_NONE)
         return;

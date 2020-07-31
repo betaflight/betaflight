@@ -109,7 +109,7 @@ void persistentObjectRTCEnable(void)
 }
 #endif
 
-void persistentObjectInit(void)
+SLOW_CODE void persistentObjectInit(void)
 {
     // Configure and enable RTC for backup register access
 

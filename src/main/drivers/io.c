@@ -274,7 +274,7 @@ void IOToggle(IO_t io)
 }
 
 // claim IO pin, set owner and resources
-void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
+SLOW_CODE void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
 {
     if (!io) {
         return;
@@ -446,7 +446,7 @@ ioRec_t ioRecs[1];
 
 // initialize all ioRec_t structures from ROM
 // currently only bitmask is used, this may change in future
-void IOInitGlobal(void)
+SLOW_CODE void IOInitGlobal(void)
 {
     ioRec_t *ioRec = ioRecs;
 

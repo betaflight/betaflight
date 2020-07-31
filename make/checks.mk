@@ -14,16 +14,16 @@ check-target-independence:
 	done
 
 check-fastram-usage-correctness:
-	$(V1) NON_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM_ZERO_INIT\W.*=.*" src/main/ | grep -Ev "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
+	$(V1) NON_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_DATA_ZERO_INIT\W.*=.*" src/main/ | grep -Ev "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
 	if [ "$${NON_TRIVIALLY_INITIALIZED}" != "" ]; then \
-		echo "Non-trivially initialized FAST_RAM_ZERO_INIT variables found, use FAST_RAM instead:"; \
+		echo "Non-trivially initialized FAST_DATA_ZERO_INIT variables found, use FAST_DATA instead:"; \
 		echo "$${NON_TRIVIALLY_INITIALIZED}"; \
 		exit 1; \
 	fi; \
-	TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -v "="); \
-	EXPLICITLY_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_RAM\W.*;" src/main/ | grep -E "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
+	TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_DATA\W.*;" src/main/ | grep -v "="); \
+	EXPLICITLY_TRIVIALLY_INITIALIZED=$$(grep -Ern "\W?FAST_DATA\W.*;" src/main/ | grep -E "=\s*(false|NULL|0(\.0*f?)?)\s*[,;]"); \
 	if [ "$${TRIVIALLY_INITIALIZED}$${EXPLICITLY_TRIVIALLY_INITIALIZED}" != "" ]; then \
-		echo "Trivially initialized FAST_RAM variables found, use FAST_RAM_ZERO_INIT instead to save FLASH:"; \
+		echo "Trivially initialized FAST_DATA variables found, use FAST_DATA_ZERO_INIT instead to save FLASH:"; \
 		echo "$${TRIVIALLY_INITIALIZED}\n$${EXPLICITLY_TRIVIALLY_INITIALIZED}"; \
 		exit 1; \
 	fi

@@ -144,7 +144,7 @@ enum {
 int16_t magHold;
 #endif
 
-static FAST_RAM_ZERO_INIT uint8_t pidUpdateCounter;
+static FAST_DATA_ZERO_INIT uint8_t pidUpdateCounter;
 
 static bool flipOverAfterCrashActive = false;
 
@@ -1138,7 +1138,7 @@ static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
 #endif
 }
 
-static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
+static O_FAST FLASH_CODE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
@@ -1213,7 +1213,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
-static FAST_CODE_NOINLINE void subTaskRcCommand(timeUs_t currentTimeUs)
+static O_FAST FLASH_CODE void subTaskRcCommand(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 

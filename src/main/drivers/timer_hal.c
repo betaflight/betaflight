@@ -323,7 +323,7 @@ uint8_t timerInputIrq(TIM_TypeDef *tim)
     return 0;
 }
 
-void timerNVICConfigure(uint8_t irq)
+SLOW_CODE void timerNVICConfigure(uint8_t irq)
 {
     HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
     HAL_NVIC_EnableIRQ(irq);
@@ -338,7 +338,7 @@ TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim)
     return &timerHandle[timerIndex].Handle;
 }
 
-void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
+SLOW_CODE void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     uint8_t timerIndex = lookupTimerIndex(tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -383,7 +383,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 }
 
 // old interface for PWM inputs. It should be replaced
-void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint32_t hz)
+SLOW_CODE void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint32_t hz)
 {
     uint8_t timerIndex = lookupTimerIndex(timerHardwarePtr->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -421,7 +421,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
+SLOW_CODE void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -447,12 +447,12 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
     }
 }
 
-void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn)
+SLOW_CODE void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn)
 {
     self->fn = fn;
 }
 
-void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn)
+SLOW_CODE void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn)
 {
     self->fn = fn;
     self->next = NULL;
@@ -594,7 +594,7 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 }
 
 // configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
+SLOW_CODE void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
     IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
@@ -621,7 +621,7 @@ static unsigned getFilter(unsigned ticks)
 }
 
 // Configure input captupre
-void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
+SLOW_CODE void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     unsigned timer = lookupTimerIndex(timHw->tim);
     if (timer >= USED_TIMER_COUNT)
@@ -638,7 +638,7 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
 
 // configure dual channel input channel for capture
 // polarity is for Low channel (capture order is always Lo - Hi)
-void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
+SLOW_CODE void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     unsigned timer = lookupTimerIndex(timHw->tim);
     if (timer >= USED_TIMER_COUNT)
@@ -683,7 +683,7 @@ volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + timHw->channel);
 }
 
-void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
+SLOW_CODE void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
 {
     unsigned timer = lookupTimerIndex(timHw->tim);
     if (timer >= USED_TIMER_COUNT)

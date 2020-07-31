@@ -68,14 +68,14 @@ bool i2cBusBusy(const busDevice_t *busdev, bool *error)
     return i2cBusy(busdev->busdev_u.i2c.device, error);
 }
 
-void i2cBusDeviceRegister(const busDevice_t *busdev)
+SLOW_CODE void i2cBusDeviceRegister(const busDevice_t *busdev)
 {
     UNUSED(busdev);
 
     i2cRegisteredDeviceCount++;
 }
 
-uint8_t i2cGetRegisteredDeviceCount(void)
+SLOW_CODE uint8_t i2cGetRegisteredDeviceCount(void)
 {
     return i2cRegisteredDeviceCount;
 }

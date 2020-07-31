@@ -66,7 +66,7 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     transponderIrDataTransferInProgress = 0;
 }
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
+SLOW_CODE void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 {
     if (!ioTag) {
         return;
@@ -194,7 +194,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     transponderInitialised = true;
 }
 
-bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
+SLOW_CODE bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
 {
     if (!ioTag) {
         return false;

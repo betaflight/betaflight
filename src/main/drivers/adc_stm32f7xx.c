@@ -95,7 +95,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA7, ADC_DEVICES_12,  ADC_CHANNEL_7  },
 };
 
-void adcInitDevice(adcDevice_t *adcdev, int channelCount)
+SLOW_CODE void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
     adcdev->ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
     adcdev->ADCHandle.Init.ContinuousConvMode    = ENABLE;
@@ -130,7 +130,7 @@ static adcDevice_t adc;
 static adcDevice_t adcInternal;
 static ADC_HandleTypeDef *adcInternalHandle;
 
-void adcInitInternalInjected(adcDevice_t *adcdev)
+SLOW_CODE void adcInitInternalInjected(adcDevice_t *adcdev)
 {
     adcInternalHandle = &adcdev->ADCHandle;
 
@@ -202,7 +202,7 @@ uint16_t adcInternalReadTempsensor(void)
 }
 #endif
 
-void adcInit(const adcConfig_t *config)
+SLOW_CODE void adcInit(const adcConfig_t *config)
 {
     uint8_t i;
     uint8_t configuredAdcChannels = 0;

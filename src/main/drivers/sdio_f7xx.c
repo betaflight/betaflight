@@ -458,7 +458,7 @@ static void SD_DMA_Complete(DMA_Stream_TypeDef* pDMA_Stream)
   *         into standby state.
   * @retval SD Card error state
   */
-static SD_Error_t SD_InitializeCard(void)
+static SLOW_CODE SD_Error_t SD_InitializeCard(void)
 {
     SD_Error_t ErrorState = SD_OK;
 
@@ -822,7 +822,7 @@ SD_Error_t SD_Erase(uint64_t StartAddress, uint64_t EndAddress)
   *         contains all SD cardinformation
   * @retval SD Card error state
   */
-SD_Error_t SD_GetCardInfo(void)
+SLOW_CODE SD_Error_t SD_GetCardInfo(void)
 {
     SD_Error_t ErrorState = SD_OK;
     uint32_t Temp = 0;
@@ -1363,7 +1363,7 @@ SD_Error_t SD_GetCardStatus(SD_CardStatus_t* pCardStatus)
   *         in the SD handle.
   * @retval SD Card error state
   */
-static SD_Error_t SD_PowerON(void)
+static SLOW_CODE SD_Error_t SD_PowerON(void)
 {
     SD_Error_t ErrorState;
     uint32_t   Response;
@@ -1541,7 +1541,7 @@ static SD_Error_t SD_IsCardProgramming(uint8_t *pStatus)
 /**
   * @brief  Initialize the SDMMC1 module, DMA, and IO
   */
-void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+SLOW_CODE void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 {
      // Reset SDMMC1 Module
     RCC->APB2RSTR |=  RCC_APB2RSTR_SDMMC1RST;
@@ -1637,7 +1637,7 @@ bool SD_GetState(void)
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
-bool SD_Init(void)
+SLOW_CODE bool SD_Init(void)
 {
     SD_Error_t ErrorState;
 

@@ -24,7 +24,7 @@
 
 #include "buf_writer.h"
 
-bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)
+SLOW_CODE bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)
 {
     bufWriter_t *buf = (bufWriter_t *)b;
     buf->writer = writer;

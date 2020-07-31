@@ -48,7 +48,7 @@ static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
     return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
 }
 
-void initBoardAlignment(const boardAlignment_t *boardAlignment)
+SLOW_CODE void initBoardAlignment(const boardAlignment_t *boardAlignment)
 {
     if (isBoardAlignmentStandard(boardAlignment)) {
         return;
@@ -69,7 +69,7 @@ static FAST_CODE void alignBoard(float *vec)
     applyRotation(vec, &boardRotation);
 }
 
-FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
+O_FAST FLASH_CODE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* sensorRotationMatrix)
 {
     applyRotation(dest, sensorRotationMatrix);
 

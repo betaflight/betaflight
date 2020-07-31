@@ -42,12 +42,12 @@
 
 #include "motor.h"
 
-static FAST_RAM_ZERO_INIT motorDevice_t *motorDevice;
+static FAST_DATA_ZERO_INIT motorDevice_t *motorDevice;
 
 static bool motorProtocolEnabled = false;
 static bool motorProtocolDshot = false;
 
-void motorShutdown(void)
+SLOW_CODE void motorShutdown(void)
 {
     motorDevice->vTable.shutdown();
     motorDevice->enabled = false;
@@ -79,7 +79,7 @@ int motorDeviceCount(void)
 }
 
 // This is not motor generic anymore; should be moved to analog pwm module
-static void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow) {
+static SLOW_CODE void analogInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow) {
     if (featureIsEnabled(FEATURE_3D)) {
         float outputLimitOffset = (flight3DConfig()->limit3d_high - flight3DConfig()->limit3d_low) * (1 - outputLimit) / 2;
         *disarm = flight3DConfig()->neutral3d;
@@ -137,7 +137,7 @@ static void checkMotorProtocol(const motorDevConfig_t *motorDevConfig)
 }
 
 // End point initialization is called from mixerInit before motorDevInit; can't use vtable...
-void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
+SLOW_CODE void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, float *outputLow, float *outputHigh, float *disarm, float *deadbandMotor3dHigh, float *deadbandMotor3dLow)
 {
     checkMotorProtocol(&motorConfig->dev);
 
@@ -163,7 +163,7 @@ uint16_t motorConvertToExternal(float motorValue)
     return motorDevice->vTable.convertMotorToExternal(motorValue);
 }
 
-void motorPostInit()
+SLOW_CODE void motorPostInit()
 {
     motorDevice->vTable.postInit();
 }
@@ -254,7 +254,7 @@ bool isMotorProtocolDshot(void)
     return motorProtocolDshot;
 }
 
-void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount) {
+SLOW_CODE void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount) {
     memset(motors, 0, sizeof(motors));
 
     bool useUnsyncedPwm = motorDevConfig->useUnsyncedPwm;

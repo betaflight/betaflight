@@ -303,7 +303,7 @@ uint8_t timerInputIrq(TIM_TypeDef *tim)
     return 0;
 }
 
-void timerNVICConfigure(uint8_t irq)
+SLOW_CODE void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
@@ -314,7 +314,7 @@ void timerNVICConfigure(uint8_t irq)
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
+SLOW_CODE void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 
@@ -331,7 +331,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 }
 
 // old interface for PWM inputs. It should be replaced
-void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint32_t hz)
+SLOW_CODE void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint32_t hz)
 {
     configTimeBase(timerHardwarePtr->tim, period, hz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
@@ -369,7 +369,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
+SLOW_CODE void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     unsigned channel = timHw - TIMER_HARDWARE;
     if (channel >= TIMER_CHANNEL_COUNT) {
@@ -397,12 +397,12 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
     }
 }
 
-void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn)
+SLOW_CODE void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn)
 {
     self->fn = fn;
 }
 
-void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn)
+SLOW_CODE void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn)
 {
     self->fn = fn;
     self->next = NULL;
@@ -526,7 +526,7 @@ static unsigned getFilter(unsigned ticks)
 }
 
 // Configure input captupre
-void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
+SLOW_CODE void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
 
@@ -542,7 +542,7 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
 
 // configure dual channel input channel for capture
 // polarity is for Low channel (capture order is always Lo - Hi)
-void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
+SLOW_CODE void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
     bool directRising = (timHw->channel & TIM_Channel_2) ? !polarityRising : polarityRising;
@@ -585,7 +585,7 @@ volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + timHw->channel);
 }
 
-void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
+SLOW_CODE void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
 {
     TIM_OCInitTypeDef  TIM_OCInitStructure;
 
@@ -779,7 +779,7 @@ _TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQHandler, 16);    // only timer16 is used, not 
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
 #endif
 
-void timerInit(void)
+SLOW_CODE void timerInit(void)
 {
     memset(timerConfig, 0, sizeof (timerConfig));
 
@@ -805,7 +805,7 @@ void timerInit(void)
 // finish configuring timers after allocation phase
 // start timers
 // TODO - Work in progress - initialization routine must be modified/verified to start correctly without timers
-void timerStart(void)
+SLOW_CODE void timerStart(void)
 {
 #if 0
     for (unsigned timer = 0; timer < USED_TIMER_COUNT; timer++) {
@@ -852,7 +852,7 @@ void timerForceOverflow(TIM_TypeDef *tim)
 }
 
 #if !defined(USE_HAL_DRIVER)
-void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init)
+SLOW_CODE void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init)
 {
     switch (channel) {
     case TIM_Channel_1:

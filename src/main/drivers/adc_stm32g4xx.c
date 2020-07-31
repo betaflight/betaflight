@@ -199,7 +199,7 @@ static void handleError(void)
 // Temperature sensor has minimum sample time of 9us.
 // With prescaler = 4 at 200MHz (AHB1), fADC = 50MHz (tcycle = 0.02us), 9us = 450cycles < 810
 
-void adcInitDevice(adcDevice_t *adcdev, int channelCount)
+SLOW_CODE void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 {
     ADC_HandleTypeDef *hadc = &adcdev->ADCHandle; // For clarity
 
@@ -259,7 +259,7 @@ int adcFindTagMapEntry(ioTag_t tag)
     return -1;
 }
 
-void adcInitCalibrationValues(void)
+SLOW_CODE void adcInitCalibrationValues(void)
 {
     adcVREFINTCAL = *(uint16_t *)VREFINT_CAL_ADDR;
     adcTSCAL1 = *TEMPSENSOR_CAL1_ADDR;
@@ -273,7 +273,7 @@ void adcInitCalibrationValues(void)
 
 volatile DMA_RAM_R uint16_t adcConversionBuffer[ADC_CHANNEL_COUNT] __attribute__((aligned(32)));
 
-void adcInit(const adcConfig_t *config)
+SLOW_CODE void adcInit(const adcConfig_t *config)
 {
     memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
     memcpy(adcDevice, adcHardware, sizeof(adcDevice));

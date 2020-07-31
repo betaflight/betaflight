@@ -54,15 +54,15 @@
 #define dbgPinLo(x)
 #endif
 
-FAST_RAM_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
-FAST_RAM_ZERO_INIT int usedMotorPacers = 0;
+FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
+FAST_DATA_ZERO_INIT int usedMotorPacers = 0;
 
-FAST_RAM_ZERO_INIT bbPort_t bbPorts[MAX_SUPPORTED_MOTOR_PORTS];
-FAST_RAM_ZERO_INIT int usedMotorPorts;
+FAST_DATA_ZERO_INIT bbPort_t bbPorts[MAX_SUPPORTED_MOTOR_PORTS];
+FAST_DATA_ZERO_INIT int usedMotorPorts;
 
-FAST_RAM_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT bbMotor_t bbMotors[MAX_SUPPORTED_MOTORS];
 
-static FAST_RAM_ZERO_INIT int motorCount;
+static FAST_DATA_ZERO_INIT int motorCount;
 dshotBitbangStatus_e bbStatus;
 
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
@@ -74,8 +74,8 @@ dshotBitbangStatus_e bbStatus;
 #define BB_OUTPUT_BUFFER_ATTRIBUTE
 #define BB_INPUT_BUFFER_ATTRIBUTE
 #elif defined(STM32F7)
-#define BB_OUTPUT_BUFFER_ATTRIBUTE FAST_RAM_ZERO_INIT
-#define BB_INPUT_BUFFER_ATTRIBUTE  FAST_RAM_ZERO_INIT
+#define BB_OUTPUT_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
+#define BB_INPUT_BUFFER_ATTRIBUTE  FAST_DATA_ZERO_INIT
 #elif defined(STM32H7)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
 #define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
@@ -85,7 +85,7 @@ BB_OUTPUT_BUFFER_ATTRIBUTE uint32_t bbOutputBuffer[MOTOR_DSHOT_BUFFER_SIZE * MAX
 BB_INPUT_BUFFER_ATTRIBUTE uint16_t bbInputBuffer[DSHOT_BITBANG_PORT_INPUT_BUFFER_LENGTH * MAX_SUPPORTED_MOTOR_PORTS];
 
 uint8_t bbPuPdMode;
-FAST_RAM_ZERO_INIT timeUs_t dshotFrameUs;
+FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
 
 const timerHardware_t bbTimerHardware[] = {
@@ -104,14 +104,14 @@ const timerHardware_t bbTimerHardware[] = {
 #endif
 };
 
-static FAST_RAM_ZERO_INIT motorDevice_t bbDevice;
-static FAST_RAM_ZERO_INIT timeUs_t lastSendUs;
+static FAST_DATA_ZERO_INIT motorDevice_t bbDevice;
+static FAST_DATA_ZERO_INIT timeUs_t lastSendUs;
 
 static motorPwmProtocolTypes_e motorPwmProtocol;
 
 // DMA GPIO output buffer formatting
 
-static void bbOutputDataInit(uint32_t *buffer, uint16_t portMask, bool inverted)
+static SLOW_CODE void bbOutputDataInit(uint32_t *buffer, uint16_t portMask, bool inverted)
 {
     uint32_t resetMask;
     uint32_t setMask;
@@ -596,7 +596,7 @@ static bool bbIsMotorEnabled(uint8_t index)
     return bbMotors[index].enabled;
 }
 
-static void bbPostInit()
+static SLOW_CODE void bbPostInit()
 {
     bbFindPacerTimer();
 
@@ -634,7 +634,7 @@ dshotBitbangStatus_e dshotBitbangGetStatus()
     return bbStatus;
 }
 
-motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
+SLOW_CODE motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
 {
     dbgPinInit();
     dbgPinLo(0);

@@ -79,7 +79,7 @@ uint16_t       vtxTablePowerValues[VTX_TABLE_MAX_POWER_LEVELS];
 const char *   vtxTablePowerLabels[VTX_TABLE_MAX_POWER_LEVELS + 1];
 #endif
 
-void vtxTableInit(void)
+SLOW_CODE void vtxTableInit(void)
 {
 #if defined(USE_VTX_TABLE)
     const vtxTableConfig_t *config = vtxTableConfig();

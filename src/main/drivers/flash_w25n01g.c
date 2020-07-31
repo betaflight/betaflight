@@ -298,7 +298,7 @@ const flashVTable_t w25n01g_vTable;
 
 static void w25n01g_deviceInit(flashDevice_t *flashdev);
 
-bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
+SLOW_CODE bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
     switch (chipID) {
     case JEDEC_ID_WINBOND_W25N01GV:

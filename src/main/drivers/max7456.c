@@ -384,7 +384,7 @@ static void max7456ClearLayer(displayPortLayer_e layer)
 
 
 
-void max7456ReInit(void)
+SLOW_CODE void max7456ReInit(void)
 {
     uint8_t srdata = 0;
     static bool firstInit = true;
@@ -442,7 +442,7 @@ void max7456ReInit(void)
     }
 }
 
-void max7456PreInit(const max7456Config_t *max7456Config)
+SLOW_CODE void max7456PreInit(const max7456Config_t *max7456Config)
 {
     spiPreinitRegister(max7456Config->csTag, max7456Config->preInitOPU ? IOCFG_OUT_PP : IOCFG_IPU, 1);
 }
@@ -450,7 +450,7 @@ void max7456PreInit(const max7456Config_t *max7456Config)
 // Here we init only CS and try to init MAX for first time.
 // Also detect device type (MAX v.s. AT)
 
-max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdProfile, bool cpuOverclock)
+SLOW_CODE max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdProfile, bool cpuOverclock)
 {
     max7456DeviceDetected = false;
 
@@ -868,7 +868,7 @@ bool max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
 static IO_t max7456ResetPin        = IO_NONE;
 #endif
 
-void max7456HardwareReset(void)
+SLOW_CODE void max7456HardwareReset(void)
 {
 #ifdef MAX7456_NRST_PIN
 #define IO_RESET_CFG      IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_2MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)

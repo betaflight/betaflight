@@ -450,7 +450,7 @@ const spiHardware_t spiHardware[] = {
 #endif
 };
 
-void spiPinConfigure(const spiPinConfig_t *pConfig)
+SLOW_CODE void spiPinConfigure(const spiPinConfig_t *pConfig)
 {
     for (size_t hwindex = 0 ; hwindex < ARRAYLEN(spiHardware) ; hwindex++) {
         const spiHardware_t *hw = &spiHardware[hwindex];

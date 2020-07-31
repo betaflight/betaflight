@@ -36,7 +36,7 @@
 
 static uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
-void detectBrushedESC(ioTag_t motorIoTag)
+SLOW_CODE void detectBrushedESC(ioTag_t motorIoTag)
 {
     IO_t motorDetectPin = IOGetByTag(motorIoTag);
     IOInit(motorDetectPin, OWNER_SYSTEM, 0);

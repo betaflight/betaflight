@@ -47,7 +47,7 @@
 #if defined(STM32F1) || defined(STM32F3)
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #elif defined(STM32F7)
-FAST_RAM_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+FAST_DATA_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #elif defined(STM32H7)
 DMA_RAM uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
@@ -110,7 +110,7 @@ void setUsedLedCount(unsigned ledCount)
     needsFullRefresh = true;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag)
+SLOW_CODE void ws2811LedStripInit(ioTag_t ioTag)
 {
     memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
 

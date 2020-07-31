@@ -108,7 +108,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PF4,  ADC_DEVICES_1,  ADC_Channel_5  }, // ADC1
 };
 
-void adcInit(const adcConfig_t *config)
+SLOW_CODE void adcInit(const adcConfig_t *config)
 {
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;

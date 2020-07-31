@@ -89,7 +89,7 @@ static volatile bool BMI160Detected = false;
 static int32_t BMI160_Config(const busDevice_t *bus);
 static int32_t BMI160_do_foc(const busDevice_t *bus);
 
-uint8_t bmi160Detect(const busDevice_t *bus)
+SLOW_CODE uint8_t bmi160Detect(const busDevice_t *bus)
 {
     if (BMI160Detected) {
         return BMI_160_SPI;
@@ -116,7 +116,7 @@ uint8_t bmi160Detect(const busDevice_t *bus)
  * @brief Initialize the BMI160 6-axis sensor.
  * @return 0 for success, -1 for failure to allocate, -10 for failure to get irq
  */
-static void BMI160_Init(const busDevice_t *bus)
+static SLOW_CODE void BMI160_Init(const busDevice_t *bus)
 {
     if (BMI160InitDone || !BMI160Detected) {
         return;
@@ -141,7 +141,7 @@ static void BMI160_Init(const busDevice_t *bus)
 /**
  * @brief Configure the sensor
  */
-static int32_t BMI160_Config(const busDevice_t *bus)
+static SLOW_CODE int32_t BMI160_Config(const busDevice_t *bus)
 {
 
     // Set normal power mode for gyro and accelerometer
@@ -191,7 +191,7 @@ static int32_t BMI160_Config(const busDevice_t *bus)
     return 0;
 }
 
-static int32_t BMI160_do_foc(const busDevice_t *bus)
+static SLOW_CODE int32_t BMI160_do_foc(const busDevice_t *bus)
 {
     // assume sensor is mounted on top
     uint8_t val = 0x7D;;
@@ -242,7 +242,7 @@ void bmi160ExtiHandler(extiCallbackRec_t *cb)
     gyro->dataReady = true;
 }
 
-static void bmi160IntExtiInit(gyroDev_t *gyro)
+static SLOW_CODE void bmi160IntExtiInit(gyroDev_t *gyro)
 {
     if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
         return;
@@ -313,7 +313,7 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 }
 
 
-void bmi160SpiGyroInit(gyroDev_t *gyro)
+SLOW_CODE void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     BMI160_Init(&gyro->bus);
 #if defined(USE_MPU_DATA_READY_SIGNAL)
@@ -321,7 +321,7 @@ void bmi160SpiGyroInit(gyroDev_t *gyro)
 #endif
 }
 
-void bmi160SpiAccInit(accDev_t *acc)
+SLOW_CODE void bmi160SpiAccInit(accDev_t *acc)
 {
     BMI160_Init(&acc->bus);
 
@@ -329,7 +329,7 @@ void bmi160SpiAccInit(accDev_t *acc)
 }
 
 
-bool bmi160SpiAccDetect(accDev_t *acc)
+SLOW_CODE bool bmi160SpiAccDetect(accDev_t *acc)
 {
     if (bmi160Detect(&acc->bus) == MPU_NONE) {
         return false;
@@ -342,7 +342,7 @@ bool bmi160SpiAccDetect(accDev_t *acc)
 }
 
 
-bool bmi160SpiGyroDetect(gyroDev_t *gyro)
+SLOW_CODE bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 {
     if (bmi160Detect(&gyro->bus) == MPU_NONE) {
         return false;

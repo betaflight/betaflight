@@ -33,7 +33,7 @@
 static uint16_t dmaBufferOffset;
 extern const struct transponderVTable erltTansponderVTable;
 
-void transponderIrInitERLT(transponder_t *transponder){
+SLOW_CODE void transponderIrInitERLT(transponder_t *transponder){
     transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE_ERLT;
     transponder->vTable             = &erltTansponderVTable;
     transponder->timer_hz           = TRANSPONDER_TIMER_MHZ_ERLT;
