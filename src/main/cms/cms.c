@@ -358,13 +358,14 @@ static void cmsPadToSize(char *buf, int size)
 
 static int cmsDisplayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *s)
 {
-    char buffer[40];
-    unsigned index = 0;
-    for (; index < strlen(s); index++) {
-        buffer[index] = toupper(s[index]);  // uppercase only
-        buffer[index] = (buffer[index] < 0x20 || buffer[index] > 0x5F) ? ' ' : buffer[index]; // limit to alphanumeric and punctuation
+    char buffer[strlen(s) + 1];
+    char* b = buffer;
+    while (*s) {
+        char c = toupper(*s++);
+        *b++ = (c < 0x20 || c > 0x5F) ? ' ' : c; // limit to alphanumeric and punctuation
     }
-    buffer[index] = 0;
+    *b++ = '\0';
+
     return displayWrite(instance, x, y, attr, buffer);
 }
 
