@@ -41,7 +41,10 @@
 
 #include "drivers/system.h"
 
+#include "fc/board_info.h"
 #include "fc/runtime_config.h"
+
+#include "pg/board.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -184,12 +187,27 @@ static CMS_Menu cmsx_menuCalibration = {
 
 // Info
 
+static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
+static char boardName[MAX_BOARD_NAME_LENGTH + 1];
+
+static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    strncpy(manufacturerId, getManufacturerId(), MAX_MANUFACTURER_ID_LENGTH + 1);
+    strncpy(boardName, getBoardName(), MAX_BOARD_NAME_LENGTH + 1);
+
+    return NULL;
+}
+
 static const OSD_Entry menuFirmwareEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
     { "FWID", OME_String, NULL, FC_FIRMWARE_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
     { "GITREV", OME_String, NULL, __REVISION__, 0 },
     { "TARGET", OME_String, NULL, __TARGET__, 0 },
+    { "MFR", OME_String, NULL, manufacturerId, 0 },
+    { "BOARD", OME_String, NULL, boardName, 0 },
     { "--- SETUP ---", OME_Label, NULL, NULL, 0 },
     { "CALIBRATE",     OME_Submenu, cmsMenuChange, &cmsx_menuCalibration, 0},
     { "BACK", OME_Back, NULL, NULL, 0 },
@@ -201,7 +219,7 @@ CMS_Menu cmsx_menuFirmware = {
     .GUARD_text = "MENUFIRMWARE",
     .GUARD_type = OME_MENU,
 #endif
-    .onEnter = NULL,
+    .onEnter = cmsx_FirmwareInit,
     .onExit = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuFirmwareEntries
