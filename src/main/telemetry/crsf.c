@@ -337,17 +337,10 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 
 static uint16_t getRunLength(const void *start, const void *end)
 {
-    uint8_t *cursor = (uint8_t*)start;
-    uint8_t c = *cursor;
-    size_t runLength = 0;
-    for (; cursor != end; cursor++) {
-        if (*cursor == c) {
-            runLength++;
-        } else {
-            break;
-        }
-    }
-    return runLength;
+    const uint8_t *p = start;
+
+    while ((void *) start == (void *) p && p != end) p++;
+    return p - (uint8_t *) start; 
 }
 
 static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)

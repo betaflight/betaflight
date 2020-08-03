@@ -192,7 +192,7 @@ bool crsfDisplayPortIsReady(void)
 {
     const timeMs_t currentTimeMs = millis();
     const bool delayExpired = (currentTimeMs > delayTransportUntilMs);
-    const bool cmsReady = (cmsInMenu && (pCurrentDisplay = &crsfDisplayPort));
+    const bool cmsReady = (cmsInMenu && ((pCurrentDisplay == &crsfDisplayPort) != NULL));
     return (bool)(delayExpired && cmsReady);
 }
 
