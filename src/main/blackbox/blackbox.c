@@ -1469,7 +1469,11 @@ static bool blackboxWriteSysinfo(void)
 #endif // USE_RC_SMOOTHING_FILTER
         BLACKBOX_PRINT_HEADER_LINE("rates_type", "%d",                      currentControlRateProfile->rates_type);
 
-        BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",             blackboxConfig()->fields_disabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",            blackboxConfig()->fields_disabled_mask);
+
+#ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
+        BLACKBOX_PRINT_HEADER_LINE("vbat_sag_compensation", "%d",           currentPidProfile->vbat_sag_compensation);
+#endif
 
         default:
             return true;
