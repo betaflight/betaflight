@@ -49,6 +49,7 @@
 #include "common/printf.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
+#include "common/unit.h"
 
 #include "config/feature.h"
 
@@ -144,7 +145,7 @@ escSensorData_t *osdEscDataCombined;
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 8);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 9);
 
 PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 0);
 
@@ -288,7 +289,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, true);
     osdStatSetState(OSD_STAT_TIMER_2, true);
 
-    osdConfig->units = OSD_UNIT_METRIC;
+    osdConfig->units = UNIT_METRIC;
 
     // Enable all warnings by default
     for (int i=0; i < OSD_WARNING_COUNT; i++) {
@@ -809,7 +810,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_TOTAL_DIST:
         #define METERS_PER_KILOMETER 1000
         #define METERS_PER_MILE      1609
-        if (osdConfig()->units == OSD_UNIT_IMPERIAL) {
+        if (osdConfig()->units == UNIT_IMPERIAL) {
             tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_MILE, SYM_MILES);
         } else {
             tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER, SYM_KM);

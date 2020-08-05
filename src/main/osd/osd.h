@@ -21,6 +21,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "common/unit.h"
 
 #include "drivers/display.h"
 
@@ -190,11 +191,6 @@ typedef enum {
 STATIC_ASSERT(OSD_STAT_COUNT <= 32, osdstats_overflow);
 
 typedef enum {
-    OSD_UNIT_IMPERIAL,
-    OSD_UNIT_METRIC
-} osd_unit_e;
-
-typedef enum {
     OSD_TIMER_1,
     OSD_TIMER_2,
     OSD_TIMER_COUNT
@@ -262,7 +258,7 @@ typedef struct osdConfig_s {
     uint16_t alt_alarm;
     uint8_t rssi_alarm;
 
-    osd_unit_e units;
+    uint8_t units;
 
     uint16_t timers[OSD_TIMER_COUNT];
     uint32_t enabledWarnings;
