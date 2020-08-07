@@ -625,7 +625,7 @@ float dynThrottle(float throttle) {
 void dynLpfGyroUpdate(float throttle)
 {
     if (gyro.dynLpfFilter != DYN_LPF_NONE) {
-        const unsigned int cutoffFreq = fmax(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
+        const unsigned int cutoffFreq = (gyro.dynLpfMax - gyro.dynLpfMin) * dynThrottle(throttle) + gyro.dynLpfMin;
 
         if (gyro.dynLpfFilter == DYN_LPF_PT1) {
             DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
