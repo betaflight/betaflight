@@ -132,6 +132,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
+    gyroConfig->dyn_lpf_curve_expo = 0;
 }
 
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -625,8 +626,12 @@ float dynThrottle(float throttle) {
 void dynLpfGyroUpdate(float throttle)
 {
     if (gyro.dynLpfFilter != DYN_LPF_NONE) {
-        const unsigned int cutoffFreq = (gyro.dynLpfMax - gyro.dynLpfMin) * dynThrottle(throttle) + gyro.dynLpfMin;
-
+        static unsigned int cutoffFreq;
+        if (gyro.dynLpfCurveExpo > 0) {
+            cutoffFreq = dynLpfCutoffFreq(throttle, gyro.dynLpfMin, gyro.dynLpfMax, gyro.dynLpfCurveExpo);
+        } else {
+            cutoffFreq = fmax(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
+        }
         if (gyro.dynLpfFilter == DYN_LPF_PT1) {
             DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
             const float gyroDt = gyro.targetLooptime * 1e-6f;

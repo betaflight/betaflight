@@ -1189,7 +1189,7 @@ void dynLpfDTermUpdate(float throttle)
     static unsigned int cutoffFreq;
     if (pidRuntime.dynLpfFilter != DYN_LPF_NONE) {
         if (pidRuntime.dynLpfCurveExpo > 0) {
-            cutoffFreq = dynDtermLpfCutoffFreq(throttle, pidRuntime.dynLpfMin, pidRuntime.dynLpfMax, pidRuntime.dynLpfCurveExpo);
+            cutoffFreq = dynLpfCutoffFreq(throttle, pidRuntime.dynLpfMin, pidRuntime.dynLpfMax, pidRuntime.dynLpfCurveExpo);
         } else {
             cutoffFreq = fmax(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
         }
@@ -1207,7 +1207,7 @@ void dynLpfDTermUpdate(float throttle)
 }
 #endif
 
-float dynDtermLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo) {
+float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo) {
     const float expof = expo / 10.0f;
     static float curve;
     curve = throttle * (1 - throttle) * expof + throttle;

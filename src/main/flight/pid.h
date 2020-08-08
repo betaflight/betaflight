@@ -414,4 +414,4 @@ float pidGetPidFrequency();
 float pidGetFfBoostFactor();
 float pidGetFfSmoothFactor();
 float pidGetSpikeLimitInverse();
-float dynDtermLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
+float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
