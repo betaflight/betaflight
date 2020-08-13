@@ -1,8 +1,8 @@
 # Serial
 
-Cleanflight has enhanced serial port flexibility but configuration is slightly more complex as a result.
+Betaflight has enhanced serial port flexibility but configuration is slightly more complex as a result.
 
-Cleanflight has the concept of a function (MSP, GPS, Serial RX, etc) and a port (VCP, UARTx, SoftSerial x).
+Betaflight has the concept of a function (MSP, GPS, Serial RX, etc) and a port (VCP, UARTx, SoftSerial x).
 Not all functions can be used on all ports due to hardware pin mapping, conflicting features, hardware, and software
 constraints.
 
@@ -33,7 +33,7 @@ Both SoftSerial and UART ports can be connected to your computer via USB to UART
 
 Serial port configuration is best done via the configurator.
 
-Configure serial ports first, then enable/disable features that use the ports.  To configure SoftSerial ports the SOFTSERIAL feature must be also be enabled. 
+Configure serial ports first, then enable/disable features that use the ports.  To configure SoftSerial ports the SOFTSERIAL feature must be enabled. 
 
 ### Constraints
 
@@ -56,86 +56,153 @@ e.g. after configuring a port for GPS enable the GPS feature.
 
 You can use the CLI for configuration but the commands are reserved for developers and advanced users.
 
-The `serial` CLI command takes 6 arguments.
+The `serial` CLI command takes 6 arguments:
+```
+serial <port identifier> <port function> <msp baudrate> <gps baudrate> <telemetry baudrate> <blackbox baudrate>
+```
 
-1. Identifier (see serialPortIdentifier_e in the source)
-1. Function bitmask (see serialPortFunction_e in the source)
-1. MSP baud rate
-1. GPS baud rate
-1. Telemetry baud rate (auto baud allowed)
-1. Blackbox baud rate
+| Serial cli command arguments |
+| ---------------------------- |
+| 1. Serial Port Identifier    |
+| 2. Serial Port Function      |
+| 3. MSP baud rate             |
+| 4. GPS baud rate             |
+| 5. Telemetry baud rate       |
+| 6. Blackbox baudrate         |
 
-### Serial Port Identifier
+Note: for Identifier see serialPortIdentifier_e in the source; for Function bitmask see serialPortFunction_e in the source code.
 
- | Identifier | Value |
- | --- | ---: |
- | SERIAL_PORT_NONE | -1 |
- | SERIAL_PORT_USART1 | 0 |
- | SERIAL_PORT_USART2 | 1 |
- | SERIAL_PORT_USART3 | 2 |
- | SERIAL_PORT_UART4 | 3 |
- | SERIAL_PORT_UART5 | 4 |
- | SERIAL_PORT_USART6 | 5 |
- | SERIAL_PORT_USART7 | 6 |
- | SERIAL_PORT_USART8 | 7 |
- | SERIAL_PORT_LPUART1 | 8 |
- | SERIAL_PORT_USB_VCP | 20 |
- | SERIAL_PORT_SOFTSERIAL1 | 30 |
- | SERIAL_PORT_SOFTSERIAL2 | 31 |
- | SERIAL_PORT_IDENTIFIER_MAX | 31 |
+### 1. Serial Port Identifier
 
+| Identifier                 | Value |
+| -------------------------- | ----- |
+| SERIAL_PORT_NONE           | -1    |
+| SERIAL_PORT_USART1         | 0     |
+| SERIAL_PORT_USART2         | 1     |
+| SERIAL_PORT_USART3         | 2     |
+| SERIAL_PORT_UART4          | 3     |
+| SERIAL_PORT_UART5          | 4     |
+| SERIAL_PORT_USART6         | 5     |
+| SERIAL_PORT_USART7         | 6     |
+| SERIAL_PORT_USART8         | 7     |
+| SERIAL_PORT_LPUART1        | 8     |
+| SERIAL_PORT_USB_VCP        | 20    |
+| SERIAL_PORT_SOFTSERIAL1    | 30    |
+| SERIAL_PORT_SOFTSERIAL2    | 31    |
 
+### 2. Serial Port Function
 
-### Serial Port Function
+| Function                     | Value |
+| ---------------------------- | ----- |
+| FUNCTION_NONE                | 0     |
+| FUNCTION_MSP                 | 1     |
+| FUNCTION_GPS                 | 2     |
+| FUNCTION_TELEMETRY_FRSKY_HUB | 4     |
+| FUNCTION_TELEMETRY_HOTT      | 8     |
+| FUNCTION_TELEMETRY_LTM       | 16    |
+| FUNCTION_TELEMETRY_SMARTPORT | 32    |
+| FUNCTION_RX_SERIAL           | 64    |
+| FUNCTION_BLACKBOX            | 128   |
+| FUNCTION_TELEMETRY_MAVLINK   | 512   |
+| FUNCTION_ESC_SENSOR          | 1024  |
+| FUNCTION_VTX_SMARTAUDIO      | 2048  |
+| FUNCTION_TELEMETRY_IBUS      | 4096  |
+| FUNCTION_VTX_TRAMP           | 8192  |
+| FUNCTION_RCDEVICE            | 16384 |
+| FUNCTION_LIDAR_TF            | 32768 |
+| FUNCTION_FRSKY_OSD           | 65536 |
 
- | Function | Value |
- | --- | ---: |
- | FUNCTION_NONE | 0 |
- | FUNCTION_MSP | 1 |
- | FUNCTION_GPS | 2 |
- | FUNCTION_TELEMETRY_FRSKY_HUB | 4 |
- | FUNCTION_TELEMETRY_HOTT | 8 |
- | FUNCTION_TELEMETRY_LTM | 16 |
- | FUNCTION_TELEMETRY_SMARTPORT | 32 |
- | FUNCTION_RX_SERIAL | 64 |
- | FUNCTION_BLACKBOX | 128 |
- | FUNCTION_TELEMETRY_MAVLINK | 512 |
- | FUNCTION_ESC_SENSOR | 1024 |
- | FUNCTION_VTX_SMARTAUDIO | 2048 |
- | FUNCTION_TELEMETRY_IBUS | 4096 |
- | FUNCTION_VTX_TRAMP | 8192 |
- | FUNCTION_RCDEVICE | 16384 |
- | FUNCTION_LIDAR_TF | 32768 |
- | FUNCTION_FRSKY_OSD | 65536 |
+Note: `FUNCTION_FRSKY_OSD` = `(1<<16)` requires 17 bits.
 
+### 3. MSP Baudrates
 
+| Baudrate |
+| -------- |
+| 9600     |
+| 19200    |
+| 38400    |
+| 57600    |
+| 115200   |
+| 230400   |
+| 250000   |
+| 500000   |
+| 1000000  |
 
-### Baud Rates
+### 4 GPS Baudrates
 
-The allowable baud rates are as follows:
+| Baudrate |
+| -------- |
+| 9600     |
+| 19200    |
+| 38400    |
+| 57600    |
+| 115200   |
 
-| Identifier | Baud rate |
-| ---------- | --------- |
-| 0          | Auto      |
-| 1          | 9600      |
-| 2          | 19200     |
-| 3          | 38400     |
-| 4          | 57600     |
-| 5          | 115200    |
-| 6          | 230400    |
-| 7          | 250000    |
+Note: Also has a boolean AUTOBAUD. It is recommended to use a fixed baudrate. Configure GPS baudrate according to device documentation.
 
+### 5. Telemetry Baudrates
+
+| Baudrate |
+| -------- |
+| AUTO     |
+| 9600     |
+| 19200    |
+| 38400    |
+| 57600    |
+| 115200   |
+
+### 6. Blackbox Baudrates
+
+| Baudrate |
+| -------- |
+| 19200    |
+| 38400    |
+| 57600    |
+| 115200   |
+| 230400   |
+| 250000   |
+| 400000   |
+| 460800   |
+| 500000   |
+| 921600   |
+| 1000000  |
+| 1500000  |
+| 2000000  |
+| 2470000  |
+
+### Serial Port Baud Rates
+
+The Serial Port baudrates are defined as follows:
+
+| ID | Baudrate  |
+| -- | --------- |
+| 0  | Auto      |
+| 1  | 9600      |
+| 2  | 19200     |
+| 3  | 38400     |
+| 4  | 57600     |
+| 5  | 115200    |
+| 6  | 230400    |
+| 7  | 250000    |
+| 8  | 400000    |
+| 9  | 460800    |
+| 10 | 500000    |
+| 11 | 921600    |
+| 12 | 1000000   |
+| 13 | 1500000   |
+| 14 | 2000000   |
+| 15 | 2470000   |
 
 
 ### Passthrough
 
-Cleanflight can enter a special passthrough mode whereby it passes serial data through to a device connected to a UART/SoftSerial port. This is useful to change the configuration of a Cleanflight peripheral such as an OSD, bluetooth dongle, serial RX etc.
+Betaflight can enter a special passthrough mode whereby it passes serial data through to a device connected to a UART/SoftSerial port. This is useful to change the configuration of a Betaflight peripheral such as an OSD, bluetooth dongle, serial RX etc.
 
 To initiate passthrough mode, use the CLI command `serialpassthrough` This command takes four arguments.
 
     serialpassthrough <port1 id> [port1 baud] [port1 mode] [port1 DTR PINIO] [port2 id] [port2 baud] [port2 mode]
 
-`PortX ID` is the internal identifier of the serial port from Cleanflight source code (see serialPortIdentifier_e in the source). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively. PortX Baud is the desired baud rate, and portX mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port. `port1 DTR PINIO` identifies the PINIO resource which is optionally connected to a DTR line of the attached device.
+`PortX ID` is the internal identifier of the serial port from Betaflight source code (see serialPortIdentifier_e in the source). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively. PortX Baud is the desired baud rate, and portX mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port. `port1 DTR PINIO` identifies the PINIO resource which is optionally connected to a DTR line of the attached device.
 
 If port2 config(the last three arguments) is not specified, the passthrough will run between port1 and VCP. The last three arguments are used for `Passthrough between UARTs`, see that section to get detail.
 
@@ -145,7 +212,7 @@ For example. If you have your MWOSD connected to UART 2, you could enable commun
 
 If a baud rate is not specified, or is set to 0, then `serialpassthrough` supports changing of the baud rate over USB. This allows tools such as the MWOSD GUI to dynamically set the baud rate to, for example 57600 for reflashing the MWOSD firmware and then 115200 for adjusting settings without having to powercycle your flight control board between the two.
 
-_To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Cleanflight configurator._
+_To use a tool such as the MWOSD GUI, it is necessary to disconnect or exit Betaflight configurator._
 
 **To exit serial passthrough mode, power cycle your flight control board.**
 
@@ -201,4 +268,4 @@ For example. If you using a filght controller built-in BLE chip, and the BLE chi
 ```
 serialpassthrough 0 115200 rxtx none 4 19200
 ```
-the command will run a serial passthrough between UART1 and UART5, UART1 baud is 115200, mode is MODE_RXTX, DTR is none, UART5 baud is 19200, mode is not specifie, it will take default value MODE_RXTX.
+the command will run a serial passthrough between UART1 and UART5, UART1 baud is 115200, mode is MODE_RXTX, DTR is none, UART5 baud is 19200, mode is not specific, it will take default value MODE_RXTX.
