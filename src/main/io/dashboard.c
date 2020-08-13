@@ -421,7 +421,7 @@ static void showGpsPage(void)
     i2c_OLED_set_line(bus, rowIndex);
     i2c_OLED_send_string(bus, lineBuffer);
 
-    tfp_sprintf(lineBuffer, "ERRs: %d", gpsData.errors, gpsData.timeouts);
+    tfp_sprintf(lineBuffer, "ERRs: %d", gpsData.errors);
     padHalfLineBuffer();
     i2c_OLED_set_xy(bus, HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(bus, lineBuffer);
