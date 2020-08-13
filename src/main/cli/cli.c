@@ -978,7 +978,7 @@ static void cliShowInvalidArgumentCountError(const char *cmdName)
 static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, int max)
 {
     if (name) {
-        cliPrintErrorLinef(cmdName, "%s: %s NOT BETWEEN %d AND %d", name, min, max);
+        cliPrintErrorLinef(cmdName, "%s NOT BETWEEN %d AND %d", name, min, max);
     } else {
         cliPrintErrorLinef(cmdName, "ARGUMENT OUT OF RANGE");
     }
