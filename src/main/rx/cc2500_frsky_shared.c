@@ -184,7 +184,7 @@ void initialiseData(bool inBindState)
     cc2500WriteReg(CC2500_07_PKTCTRL1, 0x0D);
     cc2500WriteReg(CC2500_19_FOCCFG, 0x16);
     if (!inBindState) {
-        cc2500WriteReg(CC2500_03_FIFOTHR,  0x14);
+        cc2500WriteReg(CC2500_03_FIFOTHR,  0x0E);
     }
     delay(10);
 }
