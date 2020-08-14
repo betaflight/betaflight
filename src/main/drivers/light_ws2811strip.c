@@ -181,7 +181,7 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
 {
     // don't wait - risk of infinite block, just get an update next time round
     if (!ws2811Initialised || ws2811LedDataTransferInProgress) {
-        ignoreTaskStateTime();
+        schedulerIgnoreTaskStateTime();
         return;
     }
 

@@ -397,5 +397,7 @@ void ws2811LedStripEnable(void) { }
 
 void setUsedLedCount(unsigned) { }
 void pinioBoxTaskControl(void) {}
-void ignoreTaskExecTime(void) {}
+void schedulerIgnoreTaskExecTime(void) {}
+bool schedulerGetIgnoreTaskExecTime() { return false; }
+void schedulerSetNextStateTime(timeDelta_t) {}
 }

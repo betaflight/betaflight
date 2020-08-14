@@ -96,7 +96,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     const uint32_t dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
-        ignoreTaskExecTime();
+        schedulerIgnoreTaskExecTime();
         return;
     }
     previousTimeUs = currentTimeUs;

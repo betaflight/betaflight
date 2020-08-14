@@ -195,6 +195,10 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
 // Allow a margin by which a group render can exceed that of the sum of the elements before declaring insane
 // This will most likely be violated by a USB interrupt whilst using the CLI
 #define OSD_ELEMENT_RENDER_GROUP_MARGIN 5
+// Safe margin when rendering elements
+#define OSD_ELEMENT_RENDER_MARGIN 5
+// Safe margin in other states
+#define OSD_MARGIN 2
 
 // Format a float to the specified number of decimal places with optional rounding.
 // OSD symbols can optionally be placed before and after the formatted number (use SYM_NONE for no symbol).
@@ -1073,7 +1077,7 @@ void osdUpdate(timeUs_t currentTimeUs)
     osdState_e osdCurState = osdState;
 
     if (osdState != OSD_STATE_UPDATE_CANVAS) {
-        ignoreTaskExecRate();
+        schedulerIgnoreTaskExecRate();
     }
 
     switch (osdState) {
@@ -1083,7 +1087,7 @@ void osdUpdate(timeUs_t currentTimeUs)
             if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
                 displayRedraw(osdDisplayPort);
             } else {
-                ignoreTaskExecTime();
+                schedulerIgnoreTaskExecTime();
             }
             return;
         }
@@ -1309,14 +1313,14 @@ void osdUpdate(timeUs_t currentTimeUs)
     }
 
     if (osdState == OSD_STATE_UPDATE_ELEMENTS) {
-        schedulerSetNextStateTime(osdElementGroupDurationUs[osdElementGroup]);
+        schedulerSetNextStateTime(osdElementGroupDurationUs[osdElementGroup] + OSD_ELEMENT_RENDER_MARGIN);
     } else {
         if (osdState == OSD_STATE_IDLE) {
-            schedulerSetNextStateTime(osdStateDurationUs[OSD_STATE_CHECK]);
+            schedulerSetNextStateTime(osdStateDurationUs[OSD_STATE_CHECK] + OSD_MARGIN);
         } else {
-            schedulerSetNextStateTime(osdStateDurationUs[osdState]);
+            schedulerSetNextStateTime(osdStateDurationUs[osdState] + OSD_MARGIN);
         }
-        ignoreTaskExecTime();
+        schedulerIgnoreTaskExecTime();
     }
 }
 

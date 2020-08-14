@@ -109,7 +109,7 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .displayName = { 0 },
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
@@ -122,7 +122,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Only used for F4 and G4 targets
     .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
-    .schedulerOptimizeRate = SCHEDULER_OPTIMIZE_RATE_AUTO,
     .enableStickArming = false,
 );
 
@@ -157,7 +156,6 @@ void resetConfig(void)
 
 static void activateConfig(void)
 {
-    schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_ON || (systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_AUTO && motorConfig()->dev.useDshotTelemetry));
     loadPidProfile();
     loadControlRateProfile();
 
@@ -513,7 +511,7 @@ static void validateAndFixConfig(void)
         }
     }
 
-    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && (motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON || nChannelTimerUsed)) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF) && motorConfig()->dev.useDshotTelemetry) {
+    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && (motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON || nChannelTimerUsed))) && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
 #endif // USE_DSHOT_TELEMETRY

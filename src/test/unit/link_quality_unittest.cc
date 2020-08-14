@@ -510,9 +510,9 @@ extern "C" {
     void failsafeOnValidDataFailed(void) { }
     void pinioBoxTaskControl(void) { }
     bool taskUpdateRxMainInProgress() { return true; }
-    void ignoreTaskStateTime(void) { }
-    void ignoreTaskExecRate(void) { }
-    void ignoreTaskExecTime(void) { }
+    void schedulerIgnoreTaskStateTime(void) { }
+    void schedulerIgnoreTaskExecRate(void) { }
+    void schedulerIgnoreTaskExecTime(void) { }
     void schedulerSetNextStateTime(timeDelta_t) {}
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)

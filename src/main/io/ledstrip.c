@@ -1066,8 +1066,8 @@ static void applyStatusProfile(timeUs_t now) {
     }
 
     if (!timActive) {
-        // Call ignoreTaskExecTime() unless data is being processed
-        ignoreTaskExecTime();
+        // Call schedulerIgnoreTaskExecTime() unless data is being processed
+        schedulerIgnoreTaskExecTime();
         return;          // no change this update, keep old state
     }
 
@@ -1248,13 +1248,11 @@ static void applySimpleProfile(timeUs_t currentTimeUs)
 
 void ledStripUpdate(timeUs_t currentTimeUs)
 {
-#ifndef USE_LED_STRIP_STATUS_MODE
     UNUSED(currentTimeUs);
-#endif
 
     if (!isWS2811LedStripReady()) {
-        // Call ignoreTaskExecTime() unless data is being processed
-        ignoreTaskExecTime();
+        // Call schedulerIgnoreTaskExecTime() unless data is being processed
+        schedulerIgnoreTaskExecTime();
         return;
     }
 
@@ -1282,8 +1280,8 @@ void ledStripUpdate(timeUs_t currentTimeUs)
                 break;
         }
     } else {
-        // Call ignoreTaskExecTime() unless data is being processed
-        ignoreTaskExecTime();
+        // Call schedulerIgnoreTaskExecTime() unless data is being processed
+        schedulerIgnoreTaskExecTime();
     }
 }
 

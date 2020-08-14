@@ -27,7 +27,7 @@
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
-#define TASK_STATS_MOVING_SUM_COUNT 32
+#define TASK_STATS_MOVING_SUM_COUNT 64
 
 #define LOAD_PERCENTAGE_ONE 100
 
@@ -36,12 +36,16 @@
 #define SCHED_START_LOOP_DOWN_STEP      50  // Fraction of a us to reduce start loop wait
 #define SCHED_START_LOOP_UP_STEP        1   // Fraction of a us to increase start loop wait
 
-#define TASK_GUARD_MARGIN_MIN_US        3   // Add an amount to the estimate of a task duration
-#define TASK_GUARD_MARGIN_MAX_US        5
+#define TASK_GUARD_MARGIN_MIN_US        4   // Add an amount to the estimate of a task duration
+#define TASK_GUARD_MARGIN_MAX_US        6
 #define TASK_GUARD_MARGIN_DOWN_STEP     50  // Fraction of a us to reduce task guard margin
 #define TASK_GUARD_MARGIN_UP_STEP       1   // Fraction of a us to increase task guard margin
 
 #define CHECK_GUARD_MARGIN_US           2   // Add a margin to the amount of time allowed for a check function to run
+
+// Some tasks have occasional peaks in execution time so normal moving average duration estimation doesn't work
+// Decay the estimated max task duration by 1/(1 << TASK_EXEC_TIME_SHIFT) on every invocation
+#define TASK_EXEC_TIME_SHIFT            7
 
 #define TASK_AGE_EXPEDITE_COUNT         1   // Make aged tasks more schedulable
 #define TASK_AGE_EXPEDITE_SCALE         0.9 // By scaling their expected execution time
@@ -196,7 +200,7 @@ typedef struct {
 
     // Statistics
     float    movingAverageCycleTimeUs;
-    timeUs_t anticipatedExecutionTimeUs;  // moving sum over 32 samples
+    timeUs_t anticipatedExecutionTime;  // Fixed point expectation of next execution time
     timeUs_t movingSumDeltaTimeUs;      // moving sum over 32 samples
     timeUs_t maxExecutionTimeUs;
     timeUs_t totalExecutionTimeUs;      // total time consumed by task since boot
@@ -213,21 +217,18 @@ void getTaskInfo(taskId_e taskId, taskInfo_t *taskInfo);
 void rescheduleTask(taskId_e taskId, timeDelta_t newPeriodUs);
 void setTaskEnabled(taskId_e taskId, bool newEnabledState);
 timeDelta_t getTaskDeltaTimeUs(taskId_e taskId);
-void ignoreTaskStateTime();
-void ignoreTaskExecRate();
-void ignoreTaskExecTime();
-bool getIgnoreTaskExecTime();
+void schedulerIgnoreTaskStateTime();
+void schedulerIgnoreTaskExecRate();
+void schedulerIgnoreTaskExecTime();
+bool schedulerGetIgnoreTaskExecTime();
 void schedulerResetTaskStatistics(taskId_e taskId);
 void schedulerResetTaskMaxExecutionTime(taskId_e taskId);
 void schedulerResetCheckFunctionMaxExecutionTime(void);
-
 void schedulerSetNextStateTime(timeDelta_t nextStateTime);
-
 void schedulerInit(void);
 void scheduler(void);
 timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs);
 void taskSystemLoad(timeUs_t currentTimeUs);
-void schedulerOptimizeRate(bool optimizeRate);
 void schedulerEnableGyro(void);
 uint16_t getAverageSystemLoadPercent(void);
 float schedulerGetCycleTimeMultiplier(void);
