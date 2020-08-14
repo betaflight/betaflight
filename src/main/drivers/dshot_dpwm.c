@@ -53,7 +53,7 @@ FAST_DATA_ZERO_INIT bool useDshotTelemetry = false;
 
 FAST_DATA_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 
-FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
+FAST_CODE_NOINLINE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     int i;
     for (i = 0; i < 16; i++) {
@@ -66,7 +66,7 @@ FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t p
     return DSHOT_DMA_BUFFER_SIZE;
 }
 
-FAST_CODE uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
+FAST_CODE_NOINLINE uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     int i;
     for (i = 0; i < 4; i++) {

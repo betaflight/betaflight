@@ -543,7 +543,6 @@ static void showSensorsPage(void)
 
 }
 
-#if defined(USE_TASK_STATISTICS)
 static void showTasksPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
@@ -568,7 +567,6 @@ static void showTasksPage(void)
         }
     }
 }
-#endif
 
 #ifdef USE_BLACKBOX
 static void showBBPage(void)
@@ -624,9 +622,7 @@ static const pageEntry_t pages[PAGE_COUNT] = {
     { PAGE_RX,      "RX",              showRxPage,         PAGE_FLAGS_NONE },
     { PAGE_BATTERY, "BATTERY",         showBatteryPage,    PAGE_FLAGS_NONE },
     { PAGE_SENSORS, "SENSORS",         showSensorsPage,    PAGE_FLAGS_NONE },
-#if defined(USE_TASK_STATISTICS)
     { PAGE_TASKS,   "TASKS",           showTasksPage,      PAGE_FLAGS_NONE },
-#endif
 #ifdef USE_BLACKBOX
     { PAGE_BB,      "BLACK BOX",       showBBPage,         PAGE_FLAGS_NONE },
 #endif

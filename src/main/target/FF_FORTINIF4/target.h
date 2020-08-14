@@ -54,7 +54,6 @@
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -110,7 +109,7 @@
 #define UART1_RX_PIN            PB7
 #else 
 #define UART1_RX_PIN            PA10
-#endif	
+#endif  
 #define UART1_TX_PIN            PA9
 
 #define USE_UART4

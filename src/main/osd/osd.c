@@ -87,6 +87,8 @@
 #include "rx/crsf.h"
 #include "rx/rx.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
@@ -1049,6 +1051,8 @@ void osdUpdate(timeUs_t currentTimeUs)
             // Frsky osd need a display redraw after search for MAX7456 devices
             if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
                 displayRedraw(osdDisplayPort);
+            } else {
+                ignoreTaskShortExecTime();
             }
             return;
         }
@@ -1062,6 +1066,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     // don't touch buffers if DMA transaction is in progress
     if (displayIsTransferInProgress(osdDisplayPort)) {
+        ignoreTaskShortExecTime();
         return;
     }
 
@@ -1069,6 +1074,7 @@ void osdUpdate(timeUs_t currentTimeUs)
     static uint32_t idlecounter = 0;
     if (!ARMING_FLAG(ARMED)) {
         if (idlecounter++ % 4 != 0) {
+            ignoreTaskShortExecTime();
             return;
         }
     }
@@ -1091,6 +1097,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         if (doDrawScreen) {
             displayDrawScreen(osdDisplayPort);
         }
+        ignoreTaskShortExecTime();
     }
     ++counter;
 }

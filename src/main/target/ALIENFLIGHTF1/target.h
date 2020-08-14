@@ -32,7 +32,6 @@
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
 #define USE_MPU_DATA_READY_SIGNAL
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #define USE_GYRO
 #define USE_GYRO_MPU6050
