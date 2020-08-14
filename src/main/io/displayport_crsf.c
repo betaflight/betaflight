@@ -65,7 +65,7 @@ static int crsfRelease(displayPort_t *displayPort)
     return crsfClearScreen(displayPort);
 }
 
-static int crsfDrawScreen(displayPort_t *displayPort)
+static bool crsfDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;

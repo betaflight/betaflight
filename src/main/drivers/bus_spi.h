@@ -170,6 +170,7 @@ bool spiReadWriteBufRB(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData,
 struct spiPinConfig_s;
 void spiPinConfigure(const struct spiPinConfig_s *pConfig);
 bool spiUseDMA(const extDevice_t *dev);
+bool spiUseMOSI_DMA(const extDevice_t *dev);
 void spiBusDeviceRegister(const extDevice_t *dev);
 uint8_t spiGetRegisteredDeviceCount(void);
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev);

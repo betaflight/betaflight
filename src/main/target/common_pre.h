@@ -45,6 +45,7 @@
 #ifdef STM32F4
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA
+#define USE_LATE_TASK_STATISTICS
 #endif
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -66,7 +67,6 @@
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
 #endif
-
 #endif // STM32F4
 
 #ifdef STM32F7
@@ -164,9 +164,16 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
+// Handle case where we'd prefer code to be in ITCM, but it won't fit on the F745
+#ifdef STM32F745xx
+#define FAST_CODE_PREF
+#else
+#define FAST_CODE_PREF                  __attribute__((section(".tcm_code")))
+#endif
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
+#define FAST_CODE_PREF
 #define FAST_CODE_NOINLINE
 #endif // USE_ITCM_RAM
 
