@@ -219,8 +219,9 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
     motorPwmDevice.vTable.updateComplete = useUnsyncedPwm ? motorUpdateCompleteNull : pwmCompleteOneshotMotorUpdate;
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        const ioTag_t tag = motorConfig->ioTags[motorIndex];
-        const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
+        const ioTag_t tag = motorConfig->ioTags[reorderedMotorIndex];
+        const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
         if (timerHardware == NULL) {
             /* not enough motors initialised for the mixer or a break in the motors */
@@ -231,7 +232,7 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
-        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
 #if defined(STM32F1)
         IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);

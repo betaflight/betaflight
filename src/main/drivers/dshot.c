@@ -164,3 +164,39 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 #endif // USE_DSHOT_TELEMETRY_STATS
 
 #endif // USE_DSHOT
+
+// temporarly here, needs to be moved during refactoring
+void validateAndfixMotorOutputReordering(uint8_t *array, const unsigned size)
+{
+    bool invalid = false;
+
+    for (unsigned i = 0; i < size; i++) {
+        if (array[i] >= size) {
+            invalid = true;
+            break;
+        }
+    }
+
+    int valuesAsIndexes[size];
+
+    for (unsigned i = 0; i < size; i++) {
+        valuesAsIndexes[i] = -1;
+    }
+
+    if (!invalid) {
+        for (unsigned i = 0; i < size; i++) {
+            if (-1 != valuesAsIndexes[array[i]]) {
+                invalid = true;
+                break;
+            }
+
+            valuesAsIndexes[array[i]] = array[i];
+        }
+    }
+
+    if (invalid) {
+        for (unsigned i = 0; i < size; i++) {
+            array[i] = i;
+        }
+    }
+}

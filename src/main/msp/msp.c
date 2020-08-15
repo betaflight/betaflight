@@ -1190,6 +1190,16 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         }
         break;
 
+    case MSP2_MOTOR_OUTPUT_REORDERING:
+        {
+            sbufWriteU8(dst, MAX_SUPPORTED_MOTORS);
+
+            for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+                sbufWriteU8(dst, motorConfig()->dev.motorOutputReordering[i]);
+            }
+        }
+        break;
+
     case MSP_RC:
         for (int i = 0; i < rxRuntimeState.channelCount; i++) {
             sbufWriteU16(dst, rcData[i]);
@@ -2965,6 +2975,22 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         break;
 #endif
+
+    case MSP2_SET_MOTOR_OUTPUT_REORDERING:
+        {
+            const uint8_t arraySize = sbufReadU8(src);
+
+            for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+                uint8_t value = i;
+
+                if (i < arraySize) {
+                    value = sbufReadU8(src);
+                }
+
+                motorConfigMutable()->dev.motorOutputReordering[i] = value;
+            }
+        }
+        break;
 
 #ifdef USE_CAMERA_CONTROL
     case MSP_CAMERA_CONTROL:

@@ -74,6 +74,10 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
     motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
 
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        motorConfig->dev.motorOutputReordering[i] = i;
+    }
+
 #ifdef USE_DSHOT_BITBANG
     motorConfig->dev.useDshotBitbang = DSHOT_BITBANG_DEFAULT;
     motorConfig->dev.useDshotBitbangedTimer = DSHOT_BITBANGED_TIMER_DEFAULT;
