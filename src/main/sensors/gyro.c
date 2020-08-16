@@ -626,7 +626,7 @@ float dynThrottle(float throttle) {
 void dynLpfGyroUpdate(float throttle)
 {
     if (gyro.dynLpfFilter != DYN_LPF_NONE) {
-        static unsigned int cutoffFreq;
+        unsigned int cutoffFreq;
         if (gyro.dynLpfCurveExpo > 0) {
             cutoffFreq = dynLpfCutoffFreq(throttle, gyro.dynLpfMin, gyro.dynLpfMax, gyro.dynLpfCurveExpo);
         } else {
