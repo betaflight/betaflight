@@ -187,6 +187,7 @@ static CMS_Menu cmsx_menuCalibration = {
 
 // Info
 
+#if defined(USE_BOARD_INFO)
 static char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
 static char boardName[MAX_BOARD_NAME_LENGTH + 1];
 
@@ -199,6 +200,7 @@ static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
 
     return NULL;
 }
+#endif
 
 static const OSD_Entry menuFirmwareEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
@@ -206,8 +208,10 @@ static const OSD_Entry menuFirmwareEntries[] = {
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
     { "GITREV", OME_String, NULL, __REVISION__, 0 },
     { "TARGET", OME_String, NULL, __TARGET__, 0 },
+#if defined(USE_BOARD_INFO)
     { "MFR", OME_String, NULL, manufacturerId, 0 },
     { "BOARD", OME_String, NULL, boardName, 0 },
+#endif
     { "--- SETUP ---", OME_Label, NULL, NULL, 0 },
     { "CALIBRATE",     OME_Submenu, cmsMenuChange, &cmsx_menuCalibration, 0},
     { "BACK", OME_Back, NULL, NULL, 0 },
@@ -219,7 +223,11 @@ CMS_Menu cmsx_menuFirmware = {
     .GUARD_text = "MENUFIRMWARE",
     .GUARD_type = OME_MENU,
 #endif
+#if defined(USE_BOARD_INFO)
     .onEnter = cmsx_FirmwareInit,
+#else
+    .onEnter = NULL,
+#endif
     .onExit = NULL,
     .onDisplayUpdate = NULL,
     .entries = menuFirmwareEntries
