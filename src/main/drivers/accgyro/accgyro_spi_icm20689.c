@@ -57,37 +57,35 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed
 
+    // reset the device configuration
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
+    delay(100);
 
-    uint8_t icmDetected = MPU_NONE;
-    uint8_t attemptsRemaining = 20;
-    do {
-        delay(150);
-        const uint8_t whoAmI = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
-        switch (whoAmI) {
-        case ICM20601_WHO_AM_I_CONST:
-            icmDetected = ICM_20601_SPI;
-            break;
-        case ICM20602_WHO_AM_I_CONST:
-            icmDetected = ICM_20602_SPI;
-            break;
-        case ICM20608G_WHO_AM_I_CONST:
-            icmDetected = ICM_20608_SPI;
-            break;
-        case ICM20689_WHO_AM_I_CONST:
-            icmDetected = ICM_20689_SPI;
-            break;
-        default:
-            icmDetected = MPU_NONE;
-            break;
-        }
-        if (icmDetected != MPU_NONE) {
-            break;
-        }
-        if (!attemptsRemaining) {
-            return MPU_NONE;
-        }
-    } while (attemptsRemaining--);
+    // reset the device signal paths
+    spiBusWriteRegister(bus, MPU_RA_SIGNAL_PATH_RESET, 0x03);
+    delay(100);
+
+    uint8_t icmDetected;
+
+    const uint8_t whoAmI = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
+
+    switch (whoAmI) {
+    case ICM20601_WHO_AM_I_CONST:
+        icmDetected = ICM_20601_SPI;
+        break;
+    case ICM20602_WHO_AM_I_CONST:
+        icmDetected = ICM_20602_SPI;
+        break;
+    case ICM20608G_WHO_AM_I_CONST:
+        icmDetected = ICM_20608_SPI;
+        break;
+    case ICM20689_WHO_AM_I_CONST:
+        icmDetected = ICM_20689_SPI;
+        break;
+    default:
+        icmDetected = MPU_NONE;
+        break;
+    }
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
@@ -121,12 +119,8 @@ void icm20689GyroInit(gyroDev_t *gyro)
 
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
 
-    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
-    delay(100);
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SIGNAL_PATH_RESET, 0x03);
-    delay(100);
-//    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, 0);
-//    delay(100);
+    // Device was already reset during detection so proceed with configuration
+
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
     spiBusWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);

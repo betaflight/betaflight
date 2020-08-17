@@ -129,55 +129,50 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus)
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
 
+    // reset the device configuration
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
+    delay(100);  // datasheet specifies a 100ms delay after reset
 
-    uint8_t attemptsRemaining = 5;
-    do {
-        delay(150);
+    // reset the device signal paths
+    spiBusWriteRegister(bus, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
+    delay(100);  // datasheet specifies a 100ms delay after signal path reset
 
-        const uint8_t whoAmI = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
-        if (whoAmI == MPU6000_WHO_AM_I_CONST) {
-            break;
+
+    const uint8_t whoAmI = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
+    uint8_t detectedSensor = MPU_NONE;
+
+    if (whoAmI == MPU6000_WHO_AM_I_CONST) {
+        const uint8_t productID = spiBusReadRegister(bus, MPU_RA_PRODUCT_ID);
+
+        /* look for a product ID we recognise */
+
+        // verify product revision
+        switch (productID) {
+        case MPU6000ES_REV_C4:
+        case MPU6000ES_REV_C5:
+        case MPU6000_REV_C4:
+        case MPU6000_REV_C5:
+        case MPU6000ES_REV_D6:
+        case MPU6000ES_REV_D7:
+        case MPU6000ES_REV_D8:
+        case MPU6000_REV_D6:
+        case MPU6000_REV_D7:
+        case MPU6000_REV_D8:
+        case MPU6000_REV_D9:
+        case MPU6000_REV_D10:
+            detectedSensor = MPU_60x0_SPI;
         }
-        if (!attemptsRemaining) {
-            return MPU_NONE;
-        }
-    } while (attemptsRemaining--);
-
-    const uint8_t productID = spiBusReadRegister(bus, MPU_RA_PRODUCT_ID);
-
-    /* look for a product ID we recognise */
-
-    // verify product revision
-    switch (productID) {
-    case MPU6000ES_REV_C4:
-    case MPU6000ES_REV_C5:
-    case MPU6000_REV_C4:
-    case MPU6000_REV_C5:
-    case MPU6000ES_REV_D6:
-    case MPU6000ES_REV_D7:
-    case MPU6000ES_REV_D8:
-    case MPU6000_REV_D6:
-    case MPU6000_REV_D7:
-    case MPU6000_REV_D8:
-    case MPU6000_REV_D9:
-    case MPU6000_REV_D10:
-        return MPU_60x0_SPI;
     }
 
-    return MPU_NONE;
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    return detectedSensor;
 }
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 {
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
 
-    // Device Reset
-    spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
-    delay(150);
-
-    spiBusWriteRegister(&gyro->bus, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
-    delay(150);
+    // Device was already reset during detection so proceed with configuration
 
     // Clock Source PPL with Z axis gyro reference
     spiBusWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ);
