@@ -637,7 +637,7 @@ static void writeIntraframe(void)
 
     if (isFieldEnabled(FIELD_SELECT(MOTOR))) {
         //Motors can be below minimum output when disarmed, but that doesn't happen much
-        blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorOutputLow);
+        blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - getMotorOutputLow());
 
         //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
         const int motorCount = getMotorCount();
@@ -1262,8 +1262,8 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
 static bool blackboxWriteSysinfo(void)
 {
 #ifndef UNIT_TEST
-    const uint16_t motorOutputLowInt = lrintf(motorOutputLow);
-    const uint16_t motorOutputHighInt = lrintf(motorOutputHigh);
+    const uint16_t motorOutputLowInt = lrintf(getMotorOutputLow());
+    const uint16_t motorOutputHighInt = lrintf(getMotorOutputHigh());
 
     // Make sure we have enough room in the buffer for our longest line (as of this writing, the "Firmware date" line)
     if (blackboxDeviceReserveBufferSpace(64) != BLACKBOX_RESERVE_SUCCESS) {
@@ -1292,7 +1292,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
-        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt,motorOutputHighInt);
+        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt, motorOutputHighInt);
 #if defined(USE_ACC)
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", "%u",                          acc.dev.acc_1G);
 #endif

@@ -73,8 +73,6 @@ extern "C" {
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
     float motor[8];
-    float motorOutputHigh = 2047;
-    float motorOutputLow = 1000;
     acc_t acc;
     float accAverage[XYZ_AXIS_COUNT];
 
@@ -551,4 +549,8 @@ extern "C" {
     }
 
     bool isUpright(void) { return true; }
+
+    float getMotorOutputLow(void) { return 1000.0; }
+
+    float getMotorOutputHigh(void) { return 2047.0; }
 }
