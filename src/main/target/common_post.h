@@ -202,6 +202,11 @@
 #undef USE_USB_MSC
 #endif
 
+#if !defined(USE_SDCARD)
+#undef USE_SDCARD_SDIO
+#undef USE_SDCARD_SPI
+#endif
+
 #if !defined(USE_VCP)
 #undef USE_USB_CDC_HID
 #undef USE_USB_MSC
