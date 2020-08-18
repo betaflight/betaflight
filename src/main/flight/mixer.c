@@ -293,6 +293,7 @@ static FAST_RAM_ZERO_INIT float idleMaxIncrease;
 static FAST_RAM_ZERO_INIT float idleThrottleOffset;
 static FAST_RAM_ZERO_INIT float idleMinMotorRps;
 static FAST_RAM_ZERO_INIT float idleP;
+static FAST_RAM_ZERO_INIT float oldMinRps;
 #endif
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
 static FAST_RAM_ZERO_INIT float vbatSagCompensationFactor;
@@ -356,6 +357,7 @@ void mixerInitProfile(void)
     idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
     idleMaxIncrease = currentPidProfile->idle_max_increase * 0.001f;
     idleP = currentPidProfile->idle_p * 0.0001f;
+    oldMinRps = 0;
 #endif
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
@@ -510,9 +512,6 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
     static float motorRangeMinIncrease = 0;
-#ifdef USE_DYN_IDLE
-    static float oldMinRps;
-#endif
     float currentThrottleInputRange = 0;
 
     if (featureIsEnabled(FEATURE_3D)) {
@@ -637,7 +636,6 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_DYN_IDLE, 3, minRps);
         } else {
             motorRangeMinIncrease = 0;
-            oldMinRps = 0;
         }
 #endif
 
