@@ -156,10 +156,12 @@ static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
         uint32_t rxDMAHead = xDMA_GetCurrDataCounter(s->rxDMAResource);
 #endif
 
-        if (rxDMAHead >= s->rxDMAPos) {
-            return rxDMAHead - s->rxDMAPos;
+        // s->rxDMAPos and rxDMAHead represent distances from the end
+        // of the buffer.  They count DOWN as they advance.
+        if (s->rxDMAPos >= rxDMAHead) {
+            return s->rxDMAPos - rxDMAHead;
         } else {
-            return s->port.rxBufferSize + rxDMAHead - s->rxDMAPos;
+            return s->port.rxBufferSize + s->rxDMAPos - rxDMAHead;
         }
     }
 #endif
