@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
+static GYRO_FILTER_OPTIMISATION void GYRO_FILTER_FUNCTION_NAME(void)
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // DEBUG_GYRO_RAW records the raw value read from the sensor (not zero offset, not scaled)

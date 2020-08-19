@@ -338,7 +338,7 @@ bool mixerIsTricopter(void)
 
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
 // DSHOT scaling is done to the actual dshot range
-void initEscEndpoints(void)
+SLOW_CODE void initEscEndpoints(void)
 {
     float motorOutputLimit = 1.0f;
     if (currentPidProfile->motor_output_limit < 100) {
@@ -351,7 +351,7 @@ void initEscEndpoints(void)
 }
 
 // Initialize pidProfile related mixer settings
-void mixerInitProfile(void)
+SLOW_CODE void mixerInitProfile(void)
 {
 #ifdef USE_DYN_IDLE
     idleMinMotorRps = currentPidProfile->idle_min_rpm * 100.0f / 60.0f;
@@ -373,7 +373,7 @@ void mixerInitProfile(void)
 #endif
 }
 
-void mixerInit(mixerMode_e mixerMode)
+SLOW_CODE void mixerInit(mixerMode_e mixerMode)
 {
     currentMixerMode = mixerMode;
 

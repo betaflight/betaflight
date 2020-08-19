@@ -123,7 +123,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 15);
 
-void resetPidProfile(pidProfile_t *pidProfile)
+SLOW_CODE void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
@@ -217,7 +217,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
 #endif
 }
 
-void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
+SLOW_CODE void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 {
     for (int i = 0; i < PID_PROFILE_COUNT; i++) {
         resetPidProfile(&pidProfiles[i]);
@@ -282,7 +282,7 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
 }
 
 #ifdef USE_ACRO_TRAINER
-void pidAcroTrainerInit(void)
+SLOW_CODE void pidAcroTrainerInit(void)
 {
     pidRuntime.acroTrainerAxisState[FD_ROLL] = 0;
     pidRuntime.acroTrainerAxisState[FD_PITCH] = 0;
@@ -599,7 +599,7 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError()
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-float FAST_CODE applyRcSmoothingDerivativeFilter(int axis, float pidSetpointDelta)
+float FAST_CODE(cpTASK_PID_CORE) applyRcSmoothingDerivativeFilter(int axis, float pidSetpointDelta)
 {
     float ret = pidSetpointDelta;
     if (axis == pidRuntime.rcSmoothingDebugAxis) {
@@ -768,7 +768,7 @@ static O_FAST FLASH_CODE float applyLaunchControl(int axis, const rollAndPitchTr
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
+void FAST_CODE(cpTASK_PID_CORE) pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
 #ifdef USE_INTERPOLATED_SP

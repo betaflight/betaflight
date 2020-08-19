@@ -103,7 +103,7 @@ uint16_t dshotConvertToExternal(float motorValue)
     return externalValue;
 }
 
-FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
+FAST_CODE(cpSUBTASK_xSHOT_CORE) uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
 {
     uint16_t packet;
 

@@ -64,7 +64,7 @@ SLOW_CODE void initBoardAlignment(const boardAlignment_t *boardAlignment)
     buildRotationMatrix(&rotationAngles, &boardRotation);
 }
 
-static FAST_CODE void alignBoard(float *vec)
+static FAST_CODE(cpTASK_GYRO_CORE) void alignBoard(float *vec)
 {
     applyRotation(vec, &boardRotation);
 }
@@ -78,7 +78,7 @@ O_FAST FLASH_CODE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* se
     }
 }
 
-FAST_CODE void alignSensorViaRotation(float *dest, uint8_t rotation)
+FAST_CODE(cpTASK_GYRO_CORE) void alignSensorViaRotation(float *dest, uint8_t rotation)
 {
     const float x = dest[X];
     const float y = dest[Y];

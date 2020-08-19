@@ -215,7 +215,7 @@ static void rescueStop()
 }
 
 // Things that need to run regardless of GPS rescue mode being enabled or not
-static void idleTasks()
+static SLOW_CODE void idleTasks()
 {
     // Do not calculate any of the idle task values when we are not flying
     if (!ARMING_FLAG(ARMED)) {

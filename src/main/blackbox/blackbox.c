@@ -897,7 +897,7 @@ static void blackboxResetIterationTimers(void)
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
-static void blackboxStart(void)
+static SLOW_CODE void blackboxStart(void)
 {
     blackboxValidateConfig();
 
@@ -940,7 +940,7 @@ static void blackboxStart(void)
 /**
  * Begin Blackbox shutdown.
  */
-void blackboxFinish(void)
+SLOW_CODE void blackboxFinish(void)
 {
     switch (blackboxState) {
     case BLACKBOX_STATE_DISABLED:
@@ -1259,7 +1259,7 @@ STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
  * Transmit a portion of the system information headers. Call the first time with xmitState.headerIndex == 0. Returns
  * true iff transmission is complete, otherwise call again later to continue transmission.
  */
-static bool blackboxWriteSysinfo(void)
+static SLOW_CODE bool blackboxWriteSysinfo(void)
 {
 #ifndef UNIT_TEST
     const uint16_t motorOutputLowInt = lrintf(motorOutputLow);
@@ -1881,7 +1881,7 @@ uint8_t blackboxCalculateSampleRate(uint16_t pRatio) {
 /**
  * Call during system startup to initialize the blackbox.
  */
-void blackboxInit(void)
+SLOW_CODE void blackboxInit(void)
 {
     blackboxResetIterationTimers();
 

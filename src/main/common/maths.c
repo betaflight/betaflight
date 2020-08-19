@@ -227,7 +227,7 @@ void buildRotationMatrix(fp_angles_t *delta, fp_rotationMatrix_t *rotation)
     rotation->m[2][Z] = cosy * cosx;
 }
 
-FAST_CODE void applyRotation(float *v, fp_rotationMatrix_t *rotationMatrix)
+FAST_CODE(cpFILTERS) void applyRotation(float *v, fp_rotationMatrix_t *rotationMatrix)
 {
     struct fp_vector *vDest = (struct fp_vector *)v;
     struct fp_vector vTmp = *vDest;

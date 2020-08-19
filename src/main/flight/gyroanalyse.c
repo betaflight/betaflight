@@ -101,7 +101,7 @@ static uint8_t FAST_DATA_ZERO_INIT    samples;
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static FAST_DATA_ZERO_INIT float hanningWindow[FFT_WINDOW_SIZE];
 
-void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
+SLOW_CODE void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
 {
 #ifdef USE_MULTI_GYRO
     static bool gyroAnalyseInitialized;
@@ -141,7 +141,7 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs)
     }
 }
 
-void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
+SLOW_CODE void gyroDataAnalyseStateInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
 {
     // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
     gyroDataAnalyseInit(targetLooptimeUs);

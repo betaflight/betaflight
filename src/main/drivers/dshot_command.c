@@ -76,22 +76,22 @@ void dshotSetPidLoopTime(uint32_t pidLoopTime)
     dshotCommandPidLoopTimeUs = pidLoopTime;
 }
 
-static FAST_CODE bool dshotCommandQueueFull()
+static FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) bool dshotCommandQueueFull()
 {
     return (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueTail;
 }
 
-FAST_CODE bool dshotCommandQueueEmpty(void)
+FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) bool dshotCommandQueueEmpty(void)
 {
     return commandQueueHead == commandQueueTail;
 }
 
-static FAST_CODE bool isLastDshotCommand(void)
+static FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) bool isLastDshotCommand(void)
 {
     return ((commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueHead);
 }
 
-FAST_CODE bool dshotCommandIsProcessing(void)
+FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) bool dshotCommandIsProcessing(void)
 {
     if (dshotCommandQueueEmpty()) {
         return false;
@@ -103,7 +103,7 @@ FAST_CODE bool dshotCommandIsProcessing(void)
     return commandIsProcessing;
 }
 
-static FAST_CODE bool dshotCommandQueueUpdate(void)
+static FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) bool dshotCommandQueueUpdate(void)
 {
     if (!dshotCommandQueueEmpty()) {
         commandQueueTail = (commandQueueTail + 1) % (DSHOT_MAX_COMMANDS + 1);
@@ -120,7 +120,7 @@ static FAST_CODE bool dshotCommandQueueUpdate(void)
     return false;
 }
 
-static FAST_CODE uint32_t dshotCommandCyclesFromTime(timeUs_t delayUs)
+static FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) uint32_t dshotCommandCyclesFromTime(timeUs_t delayUs)
 {
     // Find the minimum number of motor output cycles needed to
     // provide at least delayUs time delay

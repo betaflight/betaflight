@@ -93,7 +93,7 @@ static struct {
 
 #endif // USE_SDCARD
 
-void blackboxOpen(void)
+SLOW_CODE void blackboxOpen(void)
 {
     serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
     if (sharedBlackboxAndMspPort) {
@@ -460,7 +460,7 @@ static void blackboxLogFileCreated(afatfsFilePtr_t file)
     }
 }
 
-static void blackboxCreateLogFile(void)
+static SLOW_CODE void blackboxCreateLogFile(void)
 {
     int32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
@@ -481,7 +481,7 @@ static void blackboxCreateLogFile(void)
  *
  * Keep calling until the function returns true (open is complete).
  */
-static bool blackboxSDCardBeginLog(void)
+static SLOW_CODE bool blackboxSDCardBeginLog(void)
 {
     fatDirectoryEntry_t *directoryEntry;
 
@@ -553,7 +553,7 @@ static bool blackboxSDCardBeginLog(void)
  *
  * Keep calling until the function returns true (open is complete).
  */
-bool blackboxDeviceBeginLog(void)
+SLOW_CODE bool blackboxDeviceBeginLog(void)
 {
     switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
@@ -573,7 +573,7 @@ bool blackboxDeviceBeginLog(void)
  *
  * Keep calling until this returns true
  */
-bool blackboxDeviceEndLog(bool retainLog)
+SLOW_CODE bool blackboxDeviceEndLog(bool retainLog)
 {
 #ifndef USE_SDCARD
     UNUSED(retainLog);

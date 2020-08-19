@@ -201,7 +201,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     return decode_bb_value(value, buffer, count, bit);
 }
 
-FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
+FAST_CODE(cpSUBTASK_xSHOT_COREPLUS) uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));

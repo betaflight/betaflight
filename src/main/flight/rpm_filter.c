@@ -82,7 +82,7 @@ FAST_DATA static rpmNotchFilter_t* currentFilter = &filters[0];
 
 PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 4);
 
-void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
+SLOW_CODE void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
 {
     config->gyro_rpm_notch_harmonics = 3;
     config->gyro_rpm_notch_min = 100;
@@ -91,7 +91,7 @@ void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
     config->rpm_lpf = 150;
 }
 
-static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minHz, int q, float looptime)
+SLOW_CODE static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minHz, int q, float looptime)
 {
     filter->harmonics = harmonics;
     filter->minHz = minHz;
@@ -108,7 +108,7 @@ static void rpmNotchFilterInit(rpmNotchFilter_t* filter, int harmonics, int minH
     }
 }
 
-void rpmFilterInit(const rpmFilterConfig_t *config)
+SLOW_CODE void rpmFilterInit(const rpmFilterConfig_t *config)
 {
     currentFilter = &filters[0];
     currentMotor = currentHarmonic = currentFilterNumber = 0;
@@ -162,7 +162,7 @@ float rpmFilterGyro(int axis, float value)
 
 FAST_DATA_ZERO_INIT static float motorFrequency[MAX_SUPPORTED_MOTORS];
 
-FAST_CODE_NOINLINE void rpmFilterUpdate()
+FAST_CODE(cpTASK_PID_CORE) NOINLINE void rpmFilterUpdate()
 {
     if (gyroFilter == NULL) {
         return;

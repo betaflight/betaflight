@@ -245,7 +245,7 @@ bool requiresSpiLeadingEdge(SPIDevice device)
     return false;
 }
 
-static void configureSPIAndQuadSPI(void)
+static SLOW_CODE void configureSPIAndQuadSPI(void)
 {
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
@@ -286,14 +286,14 @@ static void configureSPIAndQuadSPI(void)
 }
 
 #ifdef USE_SDCARD
-static void sdCardAndFSInit()
+static SLOW_CODE void sdCardAndFSInit()
 {
     sdcard_init(sdcardConfig());
     afatfs_init();
 }
 #endif
 
-static void swdPinsInit(void)
+static SLOW_CODE void swdPinsInit(void)
 {
     IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
     if (IOGetOwner(io) == OWNER_FREE) {
@@ -305,7 +305,7 @@ static void swdPinsInit(void)
     }
 }
 
-void init(void)
+SLOW_CODE void init(void)
 {
 #ifdef SERIAL_PORT_COUNT
     printfSerialInit();

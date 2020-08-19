@@ -98,7 +98,7 @@ void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
 }
 
-void failsafeInit(void)
+SLOW_CODE void failsafeInit(void)
 {
     failsafeState.events = 0;
     failsafeState.monitoring = false;

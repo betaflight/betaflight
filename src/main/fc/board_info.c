@@ -34,7 +34,7 @@ static bool boardInformationWasUpdated = false;
 static bool signatureSet = false;
 static uint8_t signature[SIGNATURE_LENGTH];
 
-void initBoardInformation(void)
+SLOW_CODE void initBoardInformation(void)
 {
     boardInformationSet = boardConfig()->boardInformationSet;
     if (boardInformationSet) {

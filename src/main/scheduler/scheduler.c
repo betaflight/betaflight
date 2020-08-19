@@ -115,7 +115,7 @@ bool queueRemove(task_t *task)
 /*
  * Returns first item queue or NULL if queue empty
  */
-FAST_CODE task_t *queueFirst(void)
+FAST_CODE(cpTASK_PID_CORE) task_t *queueFirst(void)
 {
     taskQueuePos = 0;
     return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
@@ -124,7 +124,7 @@ FAST_CODE task_t *queueFirst(void)
 /*
  * Returns next item in queue or NULL if at end of queue
  */
-FAST_CODE task_t *queueNext(void)
+FAST_CODE(cpTASK_PID_CORE) task_t *queueNext(void)
 {
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
@@ -275,7 +275,7 @@ inline static timeUs_t getPeriodCalculationBasis(const task_t* task)
     }
 }
 
-FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs)
+FAST_CODE(cpTASK_PID_CORE) timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs)
 {
     timeUs_t taskExecutionTimeUs = 0;
 
@@ -323,7 +323,7 @@ static void readSchedulerLocals(task_t *selectedTask, uint8_t selectedTaskDynami
 }
 #endif
 
-FAST_CODE void scheduler(void)
+FAST_CODE(cpTASK_PID_CORE) void scheduler(void)
 {
     // Cache currentTime
     const timeUs_t schedulerStartTimeUs = micros();

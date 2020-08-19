@@ -103,7 +103,7 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 8);
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 #endif
 
-void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
+SLOW_CODE void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 {
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;
@@ -142,12 +142,12 @@ bool isDynamicFilterActive(void)
 }
 #endif
 
-FAST_CODE bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
+FAST_CODE(cpTASK_GYRO_CORE) bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
 {
     return gyroSensor->calibration.cyclesRemaining == 0;
 }
 
-FAST_CODE bool gyroIsCalibrationComplete(void)
+FAST_CODE(cpTASK_GYRO_CORE) bool gyroIsCalibrationComplete(void)
 {
     switch (gyro.gyroToUse) {
         default:
@@ -260,7 +260,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)
-FAST_CODE int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
+FAST_CODE(cpTASK_GYRO_CORE) int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 {
     int32_t ret = (int32_t)gyroSensor->gyroDev.gyroADCRaw[axis];
     if (gyroConfig()->checkOverflow || gyro.gyroHasOverflowProtection) {
@@ -300,7 +300,7 @@ static O_FAST FLASH_CODE void handleOverflow(timeUs_t currentTimeUs)
     }
 }
 
-static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
+static FAST_CODE(cpTASK_GYRO_CORE) void checkForOverflow(timeUs_t currentTimeUs)
 {
     // check for overflow to handle Yaw Spin To The Moon (YSTTM)
     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
@@ -355,7 +355,7 @@ static O_FAST FLASH_CODE void handleYawSpin(timeUs_t currentTimeUs)
     }
 }
 
-static FAST_CODE void checkForYawSpin(timeUs_t currentTimeUs)
+static FAST_CODE(cpTASK_GYRO_CORE) void checkForYawSpin(timeUs_t currentTimeUs)
 {
     // if not in overflow mode, handle yaw spins above threshold
 #ifdef USE_GYRO_OVERFLOW_CHECK
@@ -409,7 +409,7 @@ static O_FAST FLASH_CODE void gyroUpdateSensor(gyroSensor_t *gyroSensor)
     }
 }
 
-FAST_CODE void gyroUpdate(void)
+FAST_CODE(cpTASK_GYRO_CORE) NOINLINE void gyroUpdate(void)
 {
     switch (gyro.gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
@@ -456,22 +456,28 @@ FAST_CODE void gyroUpdate(void)
 }
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyro
+#define GYRO_FILTER_OPTIMISATION FAST_CODE(cpTASK_GYRO_CORE) NOINLINE
 #define GYRO_FILTER_DEBUG_SET(mode, index, value) do { UNUSED(mode); UNUSED(index); UNUSED(value); } while (0)
 #define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) do { UNUSED(axis); UNUSED(mode); UNUSED(index); UNUSED(value); } while (0)
 #include "gyro_filter_impl.c"
 #undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_OPTIMISATION
 #undef GYRO_FILTER_DEBUG_SET
 #undef GYRO_FILTER_AXIS_DEBUG_SET
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
+#define GYRO_FILTER_OPTIMISATION O_FAST FLASH_CODE NOINLINE
 #define GYRO_FILTER_DEBUG_SET DEBUG_SET
 #define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) if (axis == (int)gyro.gyroDebugAxis) DEBUG_SET(mode, index, value)
 #include "gyro_filter_impl.c"
 #undef GYRO_FILTER_FUNCTION_NAME
+#undef GYRO_FILTER_OPTIMISATION
 #undef GYRO_FILTER_DEBUG_SET
 #undef GYRO_FILTER_AXIS_DEBUG_SET
 
-FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
+
+
+FAST_CODE(cpTASK_GYRO_CORE) NOINLINE void gyroFiltering(timeUs_t currentTimeUs)
 {
     if (gyro.gyroDebugMode == DEBUG_NONE) {
         filterGyro();

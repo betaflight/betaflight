@@ -84,7 +84,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 }
 
 
-FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
+FAST_CODE(cpTASK_PID_CORE) void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
 

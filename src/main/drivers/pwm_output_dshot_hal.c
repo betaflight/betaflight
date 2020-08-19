@@ -98,7 +98,7 @@ void pwmDshotSetDirectionOutput(
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-FAST_CODE static void pwmDshotSetDirectionInput(
+static FAST_CODE(cpTASK_PID_CORE) void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
 )
 {
@@ -132,7 +132,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 #endif
 
 
-FAST_CODE void pwmCompleteDshotMotorUpdate(void)
+FAST_CODE(cpTASK_PID_CORE) void pwmCompleteDshotMotorUpdate(void)
 {
     /* If there is a dshot command loaded up, time it correctly with motor update*/
     if (!dshotCommandQueueEmpty() && !dshotCommandOutputIsEnabled(dshotPwmDevice.count)) {
@@ -164,7 +164,7 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
     }
 }
 
-FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+static FAST_CODE(cpTASK_PID_CORE) void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];

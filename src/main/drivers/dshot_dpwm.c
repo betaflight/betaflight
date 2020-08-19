@@ -53,7 +53,7 @@ FAST_DATA_ZERO_INIT bool useDshotTelemetry = false;
 
 FAST_DATA_ZERO_INIT loadDmaBufferFn *loadDmaBuffer;
 
-FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
+FAST_CODE(cpSUBTASK_xSHOT_CORE) uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     int i;
     for (i = 0; i < 16; i++) {
@@ -66,7 +66,7 @@ FAST_CODE uint8_t loadDmaBufferDshot(uint32_t *dmaBuffer, int stride, uint16_t p
     return DSHOT_DMA_BUFFER_SIZE;
 }
 
-FAST_CODE uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
+FAST_CODE(cpSUBTASK_xSHOT_CORE) uint8_t loadDmaBufferProshot(uint32_t *dmaBuffer, int stride, uint16_t packet)
 {
     int i;
     for (i = 0; i < 4; i++) {
@@ -125,12 +125,12 @@ static bool dshotPwmIsMotorEnabled(uint8_t index)
     return motors[index].enabled;
 }
 
-static FAST_CODE void dshotWriteInt(uint8_t index, uint16_t value)
+static FAST_CODE(cpSUBTASK_xSHOT_CORE) void dshotWriteInt(uint8_t index, uint16_t value)
 {
     pwmWriteDshotInt(index, value);
 }
 
-static FAST_CODE void dshotWrite(uint8_t index, float value)
+static FAST_CODE(cpSUBTASK_xSHOT_CORE) void dshotWrite(uint8_t index, float value)
 {
     pwmWriteDshotInt(index, lrintf(value));
 }

@@ -64,7 +64,7 @@ void dshotEnableChannels(uint8_t motorCount)
 
 #endif
 
-FAST_CODE void pwmDshotSetDirectionOutput(
+FAST_CODE(cpSUBTASK_xSHOT_CORE) void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
 #ifndef USE_DSHOT_TELEMETRY
     ,TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
@@ -118,14 +118,9 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     xDMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
 }
 
-
 #ifdef USE_DSHOT_TELEMETRY
-#if defined(STM32F3)
-CCM_CODE
-#else
-FAST_CODE
-#endif
-static void pwmDshotSetDirectionInput(
+static FAST_CODE(cpSUBTASK_xSHOT_CORE) void pwmDshotSetDirectionInput(
+
     motorDmaOutput_t * const motor
 )
 {
@@ -189,7 +184,7 @@ void pwmCompleteDshotMotorUpdate(void)
 }
 
 
-static FAST_CODE void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
+static FAST_CODE(cpTASK_PID_CORE) void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];

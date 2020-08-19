@@ -215,7 +215,7 @@ void resetArmingDisabled(void)
 }
 
 #ifdef USE_ACC
-static bool accNeedsCalibration(void)
+static SLOW_CODE bool accNeedsCalibration(void)
 {
     if (sensors(SENSOR_ACC)) {
 
@@ -1084,7 +1084,7 @@ bool processRx(timeUs_t currentTimeUs)
     return true;
 }
 
-static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
+static O_FAST FLASH_CODE void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
@@ -1176,7 +1176,7 @@ void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
 }
 #endif
 
-static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
+static FAST_CODE(cpTASK_PID_CORE) void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
@@ -1236,7 +1236,7 @@ static O_FAST FLASH_CODE void subTaskRcCommand(timeUs_t currentTimeUs)
     processRcCommand();
 }
 
-FAST_CODE void taskGyroSample(timeUs_t currentTimeUs)
+O_FAST FLASH_CODE void taskGyroSample(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     gyroUpdate();
@@ -1246,7 +1246,7 @@ FAST_CODE void taskGyroSample(timeUs_t currentTimeUs)
     pidUpdateCounter++;
 }
 
-FAST_CODE bool gyroFilterReady(void)
+FAST_CODE(cpTASK_GYRO_CORE) bool gyroFilterReady(void)
 {
     if (pidUpdateCounter % activePidLoopDenom == 0) {
         return true;
@@ -1255,7 +1255,7 @@ FAST_CODE bool gyroFilterReady(void)
     }
 }
 
-FAST_CODE bool pidLoopReady(void)
+FAST_CODE(cpTASK_GYRO_CORE) bool pidLoopReady(void)
 {
     if ((pidUpdateCounter % activePidLoopDenom) == (activePidLoopDenom / 2)) {
         return true;
@@ -1263,14 +1263,13 @@ FAST_CODE bool pidLoopReady(void)
     return false;
 }
 
-FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
+O_FAST FLASH_CODE void taskFiltering(timeUs_t currentTimeUs)
 {
     gyroFiltering(currentTimeUs);
-
 }
 
 // Function for loop trigger
-FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
+O_FAST FLASH_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
