@@ -169,7 +169,7 @@ static bool sdcard_fetchCSD(void)
  *
  * Returns true if the card has finished its init process.
  */
-static SLOW_COD bool sdcard_checkInitDone(void)
+static SLOW_CODE bool sdcard_checkInitDone(void)
 {
     if (SD_GetState()) {
         SD_CardType_t *sdtype = &SD_CardType;
