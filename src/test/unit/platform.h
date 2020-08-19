@@ -27,10 +27,14 @@
 #define U_ID_2 2
 
 #define NOINLINE
-#define FAST_CODE
-#define FAST_CODE_NOINLINE
+#define FAST_CODE(priority)
 #define FAST_DATA_ZERO_INIT
 #define FAST_DATA
+#define SLOW_CODE
+#define FLASH_CODE
+#define O_FAST
+#define O_SIZE
+
 
 #define PID_PROFILE_COUNT 3
 #define CONTROL_RATE_PROFILE_COUNT  6
