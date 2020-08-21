@@ -245,9 +245,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial_uart.c \
             drivers/system.c \
             drivers/timer.c \
-            drivers/persistent.c \
-            drivers/pin_pull_up_down.c \
-            drivers/pwm_esc_detect.c \
             fc/core.c \
             fc/tasks.c \
             fc/rc.c \
@@ -293,6 +290,9 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
             drivers/camera_control.c \
+			drivers/persistent.c \
+            drivers/pin_pull_up_down.c \
+            drivers/pwm_esc_detect.c \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
             drivers/compass/compass_fake.c \
