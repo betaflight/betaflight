@@ -91,7 +91,7 @@ static const dbm_table_t dbmTable[] = {
 
 // Convert dBm to Range %
 static int8_t dBm2range (int8_t dBm) {
-    int8_t  retval = dbmTable[0].reportAs;
+    int8_t  retval = 0;
 
     for ( uint8_t i = 1; i < ARRAYLEN(dbmTable); i++ ) {
         if (dBm >= dbmTable[i].dBm) {
