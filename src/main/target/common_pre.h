@@ -147,12 +147,12 @@
 #define DEFAULT_CPU_OVERCLOCK 0
 #endif
 
+// Macros for perfoming by-function optimisation
 #define O_FAST __attribute__((optimize("Ofast")))
 #define O_SIZE __attribute__((optimize("Os")))
 
-#if defined(USE_ITCM) && defined(USE_CCM)
-#error "ITCM and CCM are mutually exclusive. F3/4 has CCM, F7 has ITCM (most likely)."
-#endif
+// Definitions for code-priorities used for determining if/which cache memory
+// a fast code section should end up in
 
 #define cpTASK_PID_CORE 0
 #define cpTASK_PID_COREPLUS 1
@@ -164,8 +164,11 @@
 #define cpSUBTASK_xSHOT_COREPLUS 1
 
 #define cpFILTERS 0
-
 #define cpTASK_RC 1
+
+#if defined(USE_ITCM) && defined(USE_CCM)
+#error "ITCM and CCM are mutually exclusive. F3/4 has CCM, F7 has ITCM (most likely)."
+#endif
 
 #if defined(USE_ITCM)
 #define TCM_CODE                __attribute__((section(".tcm_code")))
