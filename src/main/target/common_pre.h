@@ -167,7 +167,7 @@
 #define cpTASK_RC 1
 
 #if defined(USE_ITCM) && defined(USE_CCM)
-#error "ITCM and CCM are mutually exclusive. F3/4 has CCM, F7 has ITCM (most likely)."
+#error "ITCM and CCM are mutually exclusive. F3 has Instruction CCM, F7 has ITCM."
 #endif
 
 #if defined(USE_ITCM)
@@ -189,7 +189,7 @@
 #endif
 
 #define FLASH_CODE              __attribute__((section(".text")))
-#define SLOW_CODE               O_SIZE FLASH_CODE NOINLINE
+#define SLOW_CODE               O_SIZE FLASH_CODE
 
 #ifdef USE_FAST_DATA
 #define FAST_DATA_ZERO_INIT      __attribute__ ((section(".fastram_bss"), aligned(4)))
