@@ -32,7 +32,7 @@ SECTIONS
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH AT >AXIM_FLASH
+  } >FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
