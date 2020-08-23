@@ -30,7 +30,7 @@ extern uint8_t dmarwaxi_start;
 extern uint8_t dmarwaxi_end;
 
 mpuRegion_t mpuRegions[] = {
-#ifdef USE_ITCM_RAM
+#ifdef USE_ITCM
     {
         //  Mark ITCM-RAM as read-only
         // "For Cortex®-M7, TCMs memories always behave as Non-cacheable, Non-shared normal memories, irrespective of the memory type attributes defined in the MPU for a memory region containing addresses held in the TCM"

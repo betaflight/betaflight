@@ -199,8 +199,8 @@ typedef enum {
     .owner.resourceIndex = 0 \
     }
 
-#if defined(USE_CCM_CODE) && defined(STM32F3)
-#define DMA_HANDLER_CODE CCM_CODE
+#if defined(USE_CCM) && defined(STM32F3)
+#define DMA_HANDLER_CODE FAST_CODE
 #else
 #define DMA_HANDLER_CODE
 #endif

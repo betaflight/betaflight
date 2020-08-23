@@ -248,7 +248,7 @@ void failureMode(failureMode_e mode)
 
 void initialiseMemorySections(void)
 {
-#ifdef USE_ITCM_RAM
+#ifdef USE_ITCM
     /* Load functions into ITCM RAM */
     extern uint8_t tcm_code_start;
     extern uint8_t tcm_code_end;
@@ -256,7 +256,7 @@ void initialiseMemorySections(void)
     memcpy(&tcm_code_start, &tcm_code, (size_t) (&tcm_code_end - &tcm_code_start));
 #endif
 
-#ifdef USE_CCM_CODE
+#ifdef USE_CCM
     /* Load functions into RAM */
     extern uint8_t ccm_code_start;
     extern uint8_t ccm_code_end;
