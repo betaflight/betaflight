@@ -30,7 +30,7 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 | OCTOFLATP        | Octocopter-FlatPlus       | M1-M8          | None             |
 | OCTOFLATX        | Octocopter-FlatX          | M1-M8          | None             |
 | AIRPLANE         | Fixed wing; Ax2, R, E     | M1             | S1, S2, S3, S4   |
-| HELI_120_CCPM    |                           |                |                  |
+| HELI_120_CCPM    | 3D-capible Helicopter     | M1             | S1, S2, S3, S4   |
 | HELI_90_DEG      |                           |                |                  |
 | VTAIL4           | Quadcopter with V-Tail    | M1-M4          | N/A              |
 | HEX6H            | Hexacopter-H              | M1-M6          | None             |
