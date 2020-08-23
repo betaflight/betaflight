@@ -144,7 +144,7 @@ enum {
 int16_t magHold;
 #endif
 
-static FAST_RAM_ZERO_INIT uint8_t pidUpdateCounter;
+static FAST_DATA_ZERO_INIT uint8_t pidUpdateCounter;
 
 static bool flipOverAfterCrashActive = false;
 

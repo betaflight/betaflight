@@ -25,10 +25,10 @@
 #include <string.h>
 #endif
 
-extern FAST_RAM_ZERO_INIT uint8_t dmaMotorTimerCount;
+extern FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount;
 #if defined(STM32F7) || defined(STM32H7)
-extern FAST_RAM_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
-extern FAST_RAM_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
+extern FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
+extern FAST_DATA_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 #else
 extern motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 extern motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
@@ -38,14 +38,14 @@ extern motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 extern uint32_t readDoneCount;
 
 // TODO remove once debugging no longer needed
-FAST_RAM_ZERO_INIT extern uint32_t inputStampUs;
+FAST_DATA_ZERO_INIT extern uint32_t inputStampUs;
 
 typedef struct dshotDMAHandlerCycleCounters_s {
     uint32_t irqAt;
     uint32_t changeDirectionCompletedAt;
 } dshotDMAHandlerCycleCounters_t;
 
-FAST_RAM_ZERO_INIT extern dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
+FAST_DATA_ZERO_INIT extern dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
 
 #endif
 
