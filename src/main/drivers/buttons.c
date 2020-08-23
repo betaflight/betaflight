@@ -50,7 +50,7 @@ static IO_t buttonBPin = IO_NONE;
 #define BUTTON_B_PIN_GPIO_MODE IOCFG_IPU
 #endif
 
-void buttonsInit(void)
+SLOW_CODE void buttonsInit(void)
 {
 #ifdef BUTTON_A_PIN
     buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
@@ -66,7 +66,7 @@ void buttonsInit(void)
 }
 
 #ifdef BUTTON_A_PIN
-bool buttonAPressed(void)
+SLOW_CODE bool buttonAPressed(void)
 {
 #ifdef BUTTON_A_PIN_INVERTED
     return IORead(buttonAPin);
@@ -77,7 +77,7 @@ bool buttonAPressed(void)
 #endif
 
 #ifdef BUTTON_B_PIN
-bool buttonBPressed(void)
+SLOW_CODE bool buttonBPressed(void)
 {
 #ifdef BUTTON_B_PIN_INVERTED
     return IORead(buttonBPin);

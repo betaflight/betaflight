@@ -38,7 +38,7 @@ static vtxDevice_t *vtxDevice = NULL;
 static uint8_t selectedBand = 0;
 static uint8_t selectedChannel = 0;
 
-void vtxCommonInit(void)
+SLOW_CODE void vtxCommonInit(void)
 {
 }
 

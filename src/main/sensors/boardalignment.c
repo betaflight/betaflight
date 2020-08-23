@@ -48,7 +48,7 @@ static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
     return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
 }
 
-void initBoardAlignment(const boardAlignment_t *boardAlignment)
+SLOW_CODE void initBoardAlignment(const boardAlignment_t *boardAlignment)
 {
     if (isBoardAlignmentStandard(boardAlignment)) {
         return;

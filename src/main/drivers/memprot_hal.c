@@ -29,7 +29,7 @@ static void memProtConfigError(void)
     for (;;) {}
 }
 
-void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
+SLOW_CODE void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
 {
     MPU_Region_InitTypeDef MPU_InitStruct;
 
@@ -88,7 +88,7 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
     HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-void memProtReset(void)
+SLOW_CODE void memProtReset(void)
 {
     MPU_Region_InitTypeDef MPU_InitStruct;
 

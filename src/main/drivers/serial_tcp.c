@@ -114,7 +114,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
     return s;
 }
 
-serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+SLOW_CODE serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     tcpPort_t *s = NULL;
 

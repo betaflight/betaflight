@@ -48,7 +48,7 @@ static int flashPartitions = 0;
 #define FLASH_INSTRUCTION_RDID 0x9F
 
 #ifdef USE_QUADSPI
-static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
+static SLOW_CODE bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 {
     QUADSPI_TypeDef *quadSpiInstance = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
     quadSpiSetDivisor(quadSpiInstance, QUADSPI_CLOCK_INITIALISATION);
@@ -88,12 +88,12 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_SPI
 
-void flashPreInit(const flashConfig_t *flashConfig)
+SLOW_CODE void flashPreInit(const flashConfig_t *flashConfig)
 {
     spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
 }
 
-static bool flashSpiInit(const flashConfig_t *flashConfig)
+static SLOW_CODE bool flashSpiInit(const flashConfig_t *flashConfig)
 {
     // Read chip identification and send it to device detect
 
@@ -189,7 +189,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 }
 #endif // USE_SPI
 
-bool flashDeviceInit(const flashConfig_t *flashConfig)
+bool SLOW_CODE flashDeviceInit(const flashConfig_t *flashConfig)
 {
 #ifdef USE_SPI
     bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
@@ -396,7 +396,7 @@ const char *flashPartitionGetTypeName(flashPartitionType_e type)
     return NULL;
 }
 
-bool flashInit(const flashConfig_t *flashConfig)
+bool SLOW_CODE flashInit(const flashConfig_t *flashConfig)
 {
     memset(&flashPartitionTable, 0x00, sizeof(flashPartitionTable));
 

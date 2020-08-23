@@ -37,7 +37,7 @@ static uint8_t spiRegisteredDeviceCount = 0;
 
 spiDevice_t spiDevice[SPIDEV_COUNT];
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
+SLOW_CODE SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
 #ifdef USE_SPI_DEVICE_1
     if (instance == SPI1)
@@ -62,7 +62,7 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
     return SPIINVALID;
 }
 
-SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+SLOW_CODE SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
 {
     if (device == SPIINVALID || device >= SPIDEV_COUNT) {
         return NULL;
@@ -71,7 +71,7 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
     return spiDevice[device].dev;
 }
 
-bool spiInit(SPIDevice device, bool leadingEdge)
+SLOW_CODE bool spiInit(SPIDevice device, bool leadingEdge)
 {
     switch (device) {
     case SPIINVALID:
@@ -234,13 +234,13 @@ uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg)
     return spiBusRawReadRegister(bus, reg | 0x80);
 }
 
-void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
+SLOW_CODE void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
 {
     bus->bustype = BUSTYPE_SPI;
     bus->busdev_u.spi.instance = instance;
 }
 
-void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
+SLOW_CODE void spiBusSetDivisor(busDevice_t *bus, uint16_t divisor)
 {
     spiSetDivisor(bus->busdev_u.spi.instance, divisor);
     // bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
@@ -285,14 +285,14 @@ bool spiBusTransactionReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, ui
 }
 #endif // USE_SPI_TRANSACTION
 
-void spiBusDeviceRegister(const busDevice_t *bus)
+SLOW_CODE void spiBusDeviceRegister(const busDevice_t *bus)
 {
     UNUSED(bus);
 
     spiRegisteredDeviceCount++;
 }
 
-uint8_t spiGetRegisteredDeviceCount(void)
+SLOW_CODE uint8_t spiGetRegisteredDeviceCount(void)
 {
     return spiRegisteredDeviceCount;
 }

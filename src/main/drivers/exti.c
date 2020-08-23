@@ -113,12 +113,12 @@ void EXTIInit(void)
     memset(extiGroupPriority, 0xff, sizeof(extiGroupPriority));
 }
 
-void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
+SLOW_CODE void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
 {
     self->fn = fn;
 }
 
-void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config, extiTrigger_t trigger)
+SLOW_CODE void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config, extiTrigger_t trigger)
 {
     int chIdx = IO_GPIOPinIdx(io);
 
@@ -183,7 +183,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 #endif
 }
 
-void EXTIRelease(IO_t io)
+SLOW_CODE void EXTIRelease(IO_t io)
 {
     // don't forget to match cleanup with config
     EXTIEnable(io, false);

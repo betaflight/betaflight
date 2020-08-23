@@ -174,7 +174,7 @@ static void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
     }
 }
 
-static void escSerialGPIOConfig(const timerHardware_t *timhw, ioConfig_t cfg)
+static SLOW_CODE void escSerialGPIOConfig(const timerHardware_t *timhw, ioConfig_t cfg)
 {
     ioTag_t tag = timhw->tag;
 
@@ -190,7 +190,7 @@ static void escSerialGPIOConfig(const timerHardware_t *timhw, ioConfig_t cfg)
 #endif
 }
 
-static void escSerialInputPortConfig(const timerHardware_t *timerHardwarePtr)
+static SLOW_CODE void escSerialInputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
 #ifdef STM32F10X
     escSerialGPIOConfig(timerHardwarePtr, IOCFG_IPU);
@@ -635,7 +635,7 @@ static void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t 
 
 }
 
-static void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference)
+static SLOW_CODE void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference)
 {
     // start bit is usually a FALLING signal
     TIM_DeInit(timerHardwarePtr->tim);
@@ -646,7 +646,7 @@ static void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint
 }
 #endif
 
-static void resetBuffers(escSerial_t *escSerial)
+static SLOW_CODE void resetBuffers(escSerial_t *escSerial)
 {
     escSerial->port.rxBufferSize = ESCSERIAL_BUFFER_SIZE;
     escSerial->port.rxBuffer = escSerial->rxBuffer;
@@ -659,7 +659,7 @@ static void resetBuffers(escSerial_t *escSerial)
     escSerial->port.txBufferHead = 0;
 }
 
-static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_e options, uint8_t mode)
+static SLOW_CODE serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_e options, uint8_t mode)
 {
     escSerial_t *escSerial = &(escSerialPorts[portIndex]);
 
@@ -777,7 +777,7 @@ static void escSerialInputPortDeConfig(const timerHardware_t *timerHardwarePtr)
 }
 
 
-static void closeEscSerial(escSerialPortIndex_e portIndex, uint8_t mode)
+static SLOW_CODE void closeEscSerial(escSerialPortIndex_e portIndex, uint8_t mode)
 {
     escSerial_t *escSerial = &(escSerialPorts[portIndex]);
 
@@ -940,7 +940,7 @@ static bool processExitCommand(uint8_t c)
 }
 
 
-bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode)
+SLOW_CODE bool escEnablePassthrough(serialPort_t *escPassthroughPort, const motorDevConfig_t *motorConfig, uint16_t escIndex, uint8_t mode)
 {
     bool exitEsc = false;
     uint8_t motor_output = escIndex;

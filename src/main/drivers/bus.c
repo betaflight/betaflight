@@ -228,7 +228,7 @@ uint8_t busReadRegister(const busDevice_t *busdev, uint8_t reg)
 #endif
 }
 
-void busDeviceRegister(const busDevice_t *busdev)
+SLOW_CODE void busDeviceRegister(const busDevice_t *busdev)
 {
 #if !defined(USE_SPI) && !defined(USE_I2C)
     UNUSED(busdev);

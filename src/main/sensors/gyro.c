@@ -103,7 +103,7 @@ PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 8);
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 #endif
 
-void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
+SLOW_CODE void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
 {
     gyroConfig->gyroCalibrationDuration = 125;        // 1.25 seconds
     gyroConfig->gyroMovementCalibrationThreshold = 48;

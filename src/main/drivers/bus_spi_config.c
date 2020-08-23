@@ -48,7 +48,7 @@ typedef struct spiPreinit_s {
 static spiPreinit_t spiPreinitArray[SPI_PREINIT_COUNT];
 static int spiPreinitCount = 0;
 
-void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init)
+SLOW_CODE void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init)
 {
     if (!iotag) {
         return;
@@ -65,7 +65,7 @@ void spiPreinitRegister(ioTag_t iotag, uint8_t iocfg, bool init)
     ++spiPreinitCount;
 }
 
-static void spiPreinitPin(spiPreinit_t *preinit, int index)
+SLOW_CODE static void spiPreinitPin(spiPreinit_t *preinit, int index)
 {
     IO_t io = IOGetByTag(preinit->iotag);
     IOInit(io, OWNER_PREINIT, RESOURCE_INDEX(index));
@@ -77,7 +77,7 @@ static void spiPreinitPin(spiPreinit_t *preinit, int index)
     }
 }
 
-void spiPreinit(void)
+SLOW_CODE void spiPreinit(void)
 {
 #ifdef USE_SDCARD_SPI
     sdcard_preInit(sdcardConfig());
@@ -104,7 +104,7 @@ void spiPreinit(void)
     }
 }
 
-void spiPreinitByIO(IO_t io)
+SLOW_CODE void spiPreinitByIO(IO_t io)
 {
     for (int i = 0; i < spiPreinitCount; i++) {
         if (io == IOGetByTag(spiPreinitArray[i].iotag)) {
@@ -114,7 +114,7 @@ void spiPreinitByIO(IO_t io)
     }
 }
 
-void spiPreinitByTag(ioTag_t tag)
+SLOW_CODE void spiPreinitByTag(ioTag_t tag)
 {
     spiPreinitByIO(IOGetByTag(tag));
 }

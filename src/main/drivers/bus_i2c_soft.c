@@ -168,7 +168,7 @@ static uint8_t I2C_ReceiveByte(void)
     return byte;
 }
 
-void i2cInit(I2CDevice device)
+SLOW_CODE void i2cInit(I2CDevice device)
 {
     UNUSED(device);
 

@@ -182,7 +182,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     throttleAngleValue = throttle_correction_value;
 }
 
-void imuInit(void)
+SLOW_CODE void imuInit(void)
 {
 #ifdef USE_GPS
     canUseGPSHeading = true;

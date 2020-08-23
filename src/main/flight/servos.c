@@ -218,7 +218,7 @@ int servoDirection(int servoIndex, int inputSource)
     }
 }
 
-void servosInit(void)
+SLOW_CODE void servosInit(void)
 {
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[getMixerMode()].useServo;
@@ -237,7 +237,7 @@ void servosInit(void)
     }
 }
 
-void loadCustomServoMixer(void)
+SLOW_CODE void loadCustomServoMixer(void)
 {
     // reset settings
     servoRuleCount = 0;
@@ -276,7 +276,7 @@ void servoConfigureOutput(void)
 }
 
 
-void servoMixerLoadMix(int index)
+SLOW_CODE void servoMixerLoadMix(int index)
 {
     // we're 1-based
     index++;

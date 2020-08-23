@@ -162,6 +162,9 @@
 #define CCM_CODE
 #endif
 
+#define FLASH_CODE              __attribute__((section(".text")))
+#define SLOW_CODE               FLASH_CODE
+
 #ifdef USE_FAST_RAM
 #define FAST_RAM_ZERO_INIT             __attribute__ ((section(".fastram_bss"), aligned(4)))
 #define FAST_RAM                    __attribute__ ((section(".fastram_data"), aligned(4)))

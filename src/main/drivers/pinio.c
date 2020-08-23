@@ -38,7 +38,7 @@ typedef struct pinioRuntime_s {
 
 static pinioRuntime_t pinioRuntime[PINIO_COUNT];
 
-void pinioInit(const pinioConfig_t *pinioConfig)
+SLOW_CODE void pinioInit(const pinioConfig_t *pinioConfig)
 {
     for (int i = 0; i < PINIO_COUNT; i++) {
         IO_t io = IOGetByTag(pinioConfig->ioTag[i]);

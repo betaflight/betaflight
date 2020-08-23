@@ -177,7 +177,7 @@ static bool m25p16_waitForReady(flashDevice_t *fdevice)
  * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
  */
 
-bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
+SLOW_CODE bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
     switch (chipID) {
     case JEDEC_ID_WINBOND_W25Q16:

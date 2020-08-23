@@ -59,7 +59,7 @@ static void pwmToggleBeeper(void)
     pwmWriteBeeper(!beeperPwm.enabled);
 }
 
-static void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
+static SLOW_CODE void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
     const timerHardware_t *timer = timerAllocate(tag, OWNER_BEEPER, 0);
     IO_t beeperIO = IOGetByTag(tag);
@@ -112,7 +112,7 @@ void systemBeepToggle(void)
 #endif
 }
 
-void beeperInit(const beeperDevConfig_t *config)
+SLOW_CODE void beeperInit(const beeperDevConfig_t *config)
 {
 #ifdef USE_BEEPER
     beeperFrequency = config->frequency;

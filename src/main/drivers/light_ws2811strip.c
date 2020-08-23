@@ -110,7 +110,7 @@ void setUsedLedCount(unsigned ledCount)
     needsFullRefresh = true;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag)
+SLOW_CODE void ws2811LedStripInit(ioTag_t ioTag)
 {
     memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
 

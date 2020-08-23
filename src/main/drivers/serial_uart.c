@@ -103,7 +103,7 @@ UART_BUFFERS(9);
 
 #undef UART_BUFFERS
 
-serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
+SLOW_CODE serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     uartPort_t *s = serialUART(device, baudRate, mode, options);
 
@@ -129,14 +129,14 @@ serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback,
     return (serialPort_t *)s;
 }
 
-static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
+static SLOW_CODE void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.baudRate = baudRate;
     uartReconfigure(uartPort);
 }
 
-static void uartSetMode(serialPort_t *instance, portMode_e mode)
+static SLOW_CODE void uartSetMode(serialPort_t *instance, portMode_e mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.mode = mode;
@@ -295,7 +295,7 @@ const struct serialPortVTable uartVTable[] = {
 };
 
 #ifdef USE_DMA
-void uartConfigureDma(uartDevice_t *uartdev)
+SLOW_CODE void uartConfigureDma(uartDevice_t *uartdev)
 {
     uartPort_t *s = &(uartdev->port);
     const uartHardware_t *hardware = uartdev->hardware;

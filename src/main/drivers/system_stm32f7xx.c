@@ -69,7 +69,7 @@ bool isMPUSoftReset(void)
         return false;
 }
 
-static void checkForBootLoaderRequest(void)
+static SLOW_CODE void checkForBootLoaderRequest(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
@@ -88,7 +88,7 @@ static void checkForBootLoaderRequest(void)
     while (1);
 }
 
-void systemInit(void)
+SLOW_CODE void systemInit(void)
 {
     checkForBootLoaderRequest();
 

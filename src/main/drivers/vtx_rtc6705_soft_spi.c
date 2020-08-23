@@ -55,7 +55,7 @@ static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
 
-bool rtc6705SoftSpiIOInit(const vtxIOConfig_t *vtxIOConfig, const IO_t csnPin)
+SLOW_CODE bool rtc6705SoftSpiIOInit(const vtxIOConfig_t *vtxIOConfig, const IO_t csnPin)
 {
     rtc6705CsnPin  = csnPin;
 

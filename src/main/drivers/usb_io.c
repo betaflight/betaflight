@@ -34,7 +34,7 @@
 static IO_t usbDetectPin;
 #endif
 
-void usbCableDetectDeinit(void)
+SLOW_CODE void usbCableDetectDeinit(void)
 {
 #ifdef USE_USB_DETECT
     IOInit(usbDetectPin, OWNER_FREE, 0);
@@ -43,7 +43,7 @@ void usbCableDetectDeinit(void)
 #endif
 }
 
-void usbCableDetectInit(void)
+SLOW_CODE void usbCableDetectInit(void)
 {
 #ifdef USE_USB_DETECT
     usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));

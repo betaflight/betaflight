@@ -65,7 +65,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
 #endif
 }
 
-void pidInitFilters(const pidProfile_t *pidProfile)
+SLOW_CODE void pidInitFilters(const pidProfile_t *pidProfile)
 {
     STATIC_ASSERT(FD_YAW == 2, FD_YAW_incorrect); // ensure yaw axis is 2
 
@@ -207,7 +207,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pidRuntime.ffSpikeLimitInverse = pidProfile->ff_spike_limit ? 1.0f / ((float)pidProfile->ff_spike_limit / 10.0f) : 0.0f;
 }
 
-void pidInit(const pidProfile_t *pidProfile)
+SLOW_CODE void pidInit(const pidProfile_t *pidProfile)
 {
     pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
     pidInitFilters(pidProfile);
@@ -254,7 +254,7 @@ void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff)
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
-void pidInitConfig(const pidProfile_t *pidProfile)
+SLOW_CODE void pidInitConfig(const pidProfile_t *pidProfile)
 {
     if (pidProfile->feedForwardTransition == 0) {
         pidRuntime.feedForwardTransition = 0;
@@ -402,7 +402,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
 }
 
-void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
+SLOW_CODE void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
 {
     if (dstPidProfileIndex < PID_PROFILE_COUNT && srcPidProfileIndex < PID_PROFILE_COUNT
         && dstPidProfileIndex != srcPidProfileIndex) {

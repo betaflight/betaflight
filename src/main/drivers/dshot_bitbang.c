@@ -111,7 +111,7 @@ static motorPwmProtocolTypes_e motorPwmProtocol;
 
 // DMA GPIO output buffer formatting
 
-static void bbOutputDataInit(uint32_t *buffer, uint16_t portMask, bool inverted)
+static SLOW_CODE void bbOutputDataInit(uint32_t *buffer, uint16_t portMask, bool inverted)
 {
     uint32_t resetMask;
     uint32_t setMask;
@@ -596,7 +596,7 @@ static bool bbIsMotorEnabled(uint8_t index)
     return bbMotors[index].enabled;
 }
 
-static void bbPostInit()
+static SLOW_CODE void bbPostInit()
 {
     bbFindPacerTimer();
 
@@ -634,7 +634,7 @@ dshotBitbangStatus_e dshotBitbangGetStatus()
     return bbStatus;
 }
 
-motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
+SLOW_CODE motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
 {
     dbgPinInit();
     dbgPinLo(0);

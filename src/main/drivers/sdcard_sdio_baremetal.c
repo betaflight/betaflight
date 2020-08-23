@@ -83,7 +83,7 @@ static bool sdcardSdio_isFunctional(void)
  * Increments the failure counter, and when the failure threshold is reached, disables the card until
  * the next call to sdcard_init().
  */
-static void sdcard_reset(void)
+static SLOW_CODE void sdcard_reset(void)
 {
     if (SD_Init() != 0) {
         sdcard.failureCount++;
@@ -169,7 +169,7 @@ static bool sdcard_fetchCSD(void)
  *
  * Returns true if the card has finished its init process.
  */
-static bool sdcard_checkInitDone(void)
+static SLOW_CODE bool sdcard_checkInitDone(void)
 {
     if (SD_GetState()) {
         SD_CardType_t *sdtype = &SD_CardType;
@@ -190,7 +190,7 @@ static bool sdcard_checkInitDone(void)
 /**
  * Begin the initialization process for the SD card. This must be called first before any other sdcard_ routine.
  */
-static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig)
+static SLOW_CODE void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig)
 {
     UNUSED(spiConfig);
 

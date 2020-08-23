@@ -89,7 +89,7 @@ static uint32_t reverse32(uint32_t in)
 /**
  * Start chip if available
  */
-bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
+SLOW_CODE bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
 {
     static busDevice_t busInstance;
 

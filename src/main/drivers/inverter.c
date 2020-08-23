@@ -42,7 +42,7 @@ static void inverterSet(int identifier, bool on)
     }
 }
 
-static void initInverter(int identifier)
+static SLOW_CODE void initInverter(int identifier)
 {
     int uartIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier);
     IO_t pin = IOGetByTag(pSerialPinConfig->ioTagInverter[uartIndex]);
@@ -55,7 +55,7 @@ static void initInverter(int identifier)
     }
 }
 
-void initInverters(const serialPinConfig_t *serialPinConfigToUse)
+SLOW_CODE void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 {
     pSerialPinConfig = serialPinConfigToUse;
 

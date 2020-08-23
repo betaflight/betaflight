@@ -39,7 +39,7 @@
 
 static void Error_Handler(void) { while (1) { } }
 
-void quadSpiInitDevice(QUADSPIDevice device)
+SLOW_CODE void quadSpiInitDevice(QUADSPIDevice device)
 {
     quadSpiDevice_t *quadSpi = &(quadSpiDevice[device]);
 
@@ -478,7 +478,7 @@ bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
     return true;
 }
 
-void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
+SLOW_CODE void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
 {
     QUADSPIDevice device = quadSpiDeviceByInstance(instance);
     if (HAL_QSPI_DeInit(&quadSpiDevice[device].hquadSpi) != HAL_OK)

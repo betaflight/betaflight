@@ -473,7 +473,7 @@ static bool sdcard_fetchCSD(void)
  *
  * Returns true if the card has finished its init process.
  */
-static bool sdcard_checkInitDone(void)
+static SLOW_CODE bool sdcard_checkInitDone(void)
 {
     sdcard_select();
 
@@ -485,7 +485,7 @@ static bool sdcard_checkInitDone(void)
     return status == 0x00;
 }
 
-void sdcardSpi_preInit(const sdcardConfig_t *config)
+SLOW_CODE void sdcardSpi_preInit(const sdcardConfig_t *config)
 {
     spiPreinitRegister(config->chipSelectTag, IOCFG_IPU, 1);
 }
@@ -493,7 +493,7 @@ void sdcardSpi_preInit(const sdcardConfig_t *config)
 /**
  * Begin the initialization process for the SD card. This must be called first before any other sdcard_ routine.
  */
-static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig)
+static SLOW_CODE void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *spiConfig)
 {
 #ifndef USE_DMA_SPEC
     UNUSED(spiConfig);

@@ -53,7 +53,7 @@
 static IO_t mscButton;
 static timeMs_t lastActiveTimeMs = 0;
 
-void mscInit(void)
+SLOW_CODE void mscInit(void)
 {
     if (usbDevConfig()->mscButtonPin) {
         mscButton = IOGetByTag(usbDevConfig()->mscButtonPin);

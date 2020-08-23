@@ -29,6 +29,8 @@
 #define NOINLINE
 #define FAST_CODE
 #define FAST_CODE_NOINLINE
+#define FLASH_CODE
+#define SLOW_CODE
 #define FAST_RAM_ZERO_INIT
 #define FAST_RAM
 

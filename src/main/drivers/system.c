@@ -246,7 +246,7 @@ void failureMode(failureMode_e mode)
 #endif
 }
 
-void initialiseMemorySections(void)
+SLOW_CODE void initialiseMemorySections(void)
 {
 #ifdef USE_ITCM_RAM
     /* Load functions into ITCM RAM */
@@ -273,14 +273,14 @@ void initialiseMemorySections(void)
 #endif
 }
 
-static void unusedPinInit(IO_t io)
+static SLOW_CODE void unusedPinInit(IO_t io)
 {
     if (IOGetOwner(io) == OWNER_FREE) {
         IOConfigGPIO(io, IOCFG_IPU);
     }
 }
 
-void unusedPinsInit(void)
+SLOW_CODE void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }

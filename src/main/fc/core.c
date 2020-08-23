@@ -215,7 +215,7 @@ void resetArmingDisabled(void)
 }
 
 #ifdef USE_ACC
-static bool accNeedsCalibration(void)
+static SLOW_CODE bool accNeedsCalibration(void)
 {
     if (sensors(SENSOR_ACC)) {
 

@@ -61,7 +61,7 @@ static void _putc(void *p, char c)
 }
 
 
-void printfSerialInit(void)
+SLOW_CODE void printfSerialInit(void)
 {
     init_printf(NULL, _putc);
 }

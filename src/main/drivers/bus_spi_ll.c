@@ -85,7 +85,7 @@ static LL_SPI_InitTypeDef defaultInit =
     .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
 };
 
-void spiInitDevice(SPIDevice device, bool leadingEdge)
+SLOW_CODE void spiInitDevice(SPIDevice device, bool leadingEdge)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
@@ -239,7 +239,7 @@ static uint16_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
     return (ffs(divisor) - 2) << SPI_CR1_BR_Pos;
 }
 
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+SLOW_CODE void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
     LL_SPI_Disable(instance);
     LL_SPI_SetBaudRatePrescaler(instance, spiDivisorToBRbits(instance, divisor));

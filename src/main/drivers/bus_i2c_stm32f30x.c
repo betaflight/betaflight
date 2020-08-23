@@ -81,7 +81,7 @@ uint32_t i2cTimeoutUserCallback(void)
     return false;
 }
 
-void i2cInit(I2CDevice device)
+SLOW_CODE void i2cInit(I2CDevice device)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
         return;

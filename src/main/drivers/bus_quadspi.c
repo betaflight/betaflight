@@ -58,7 +58,7 @@ QUADSPI_TypeDef *quadSpiInstanceByDevice(QUADSPIDevice device)
     return quadSpiDevice[device].dev;
 }
 
-bool quadSpiInit(QUADSPIDevice device)
+SLOW_CODE bool quadSpiInit(QUADSPIDevice device)
 {
     switch (device) {
     case QUADSPIINVALID:

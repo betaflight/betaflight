@@ -50,7 +50,7 @@ float pt1FilterGain(float f_cut, float dT)
     return dT / (RC + dT);
 }
 
-void pt1FilterInit(pt1Filter_t *filter, float k)
+SLOW_CODE void pt1FilterInit(pt1Filter_t *filter, float k)
 {
     filter->state = 0.0f;
     filter->k = k;
@@ -69,7 +69,7 @@ FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
 
 // Slew filter with limit
 
-void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
+SLOW_CODE void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
 {
     filter->state = 0.0f;
     filter->slewLimit = slewLimit;
@@ -104,7 +104,7 @@ void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refr
     biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
 }
 
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+SLOW_CODE void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
 {
     // setup variables
     const float omega = 2.0f * M_PI_FLOAT * filterFreq * refreshRate * 0.000001f;
@@ -203,7 +203,7 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
+SLOW_CODE void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
 {
     filter->movingWindowIndex = 0;
     filter->windowSize = windowSize;

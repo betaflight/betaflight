@@ -36,7 +36,7 @@ dbgPin_t dbgPins[] = {
     { .tag = IO_TAG(NONE) },
 };
 
-void dbgPinInit(void)
+SLOW_CODE void dbgPinInit(void)
 {
     for (unsigned i = 0; i < ARRAYLEN(dbgPins); i++) {
         dbgPin_t *dbgPin = &dbgPins[i];
