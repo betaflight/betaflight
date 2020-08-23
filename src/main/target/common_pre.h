@@ -153,11 +153,11 @@
 
 #if defined(USE_ITCM)
 #define TCM_CODE                    __attribute__((section(".tcm_code")))
-#define FAST_CODE 					TCM_CODE 
+#define FAST_CODE                   TCM_CODE 
 #define FAST_CODE_NOINLINE          NOINLINE
 #elif defined(USE_CCM)
 #define CCM_CODE                    __attribute__((section(".ccm_code")))
-#define FAST_CODE					CCM_CODE
+#define FAST_CODE                   CCM_CODE
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
