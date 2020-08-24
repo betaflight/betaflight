@@ -81,6 +81,7 @@
 #include "common/printf.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
+#include "common/unit.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -242,7 +243,7 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
 int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
         return lrintf(((tempInDegreesCelcius * 9.0f) / 5) + 32);
     default:
         return tempInDegreesCelcius;
@@ -291,7 +292,7 @@ void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
         *ptr++ = leadingSymbol;
     }
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
         unitTransition = 5280;
         unitSymbol = SYM_FT;
         unitSymbolExtended = SYM_MILES;
@@ -453,7 +454,7 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
 int32_t osdGetMetersToSelectedUnit(int32_t meters)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
         return (meters * 328) / 100; // Convert to feet / 100
     default:
         return meters;               // Already in metre / 100
@@ -466,7 +467,7 @@ int32_t osdGetMetersToSelectedUnit(int32_t meters)
 char osdGetMetersToSelectedUnitSymbol(void)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
         return SYM_FT;
     default:
         return SYM_M;
@@ -480,7 +481,8 @@ char osdGetMetersToSelectedUnitSymbol(void)
 int32_t osdGetSpeedToSelectedUnit(int32_t value)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
+    case UNIT_BRITISH:
         return CM_S_TO_MPH(value);
     default:
         return CM_S_TO_KM_H(value);
@@ -493,7 +495,8 @@ int32_t osdGetSpeedToSelectedUnit(int32_t value)
 char osdGetSpeedToSelectedUnitSymbol(void)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
+    case UNIT_BRITISH:
         return SYM_MPH;
     default:
         return SYM_KPH;
@@ -503,7 +506,7 @@ char osdGetSpeedToSelectedUnitSymbol(void)
 char osdGetVarioToSelectedUnitSymbol(void)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
         return SYM_FTPS;
     default:
         return SYM_MPS;
@@ -514,7 +517,7 @@ char osdGetVarioToSelectedUnitSymbol(void)
 char osdGetTemperatureSymbolForSelectedUnit(void)
 {
     switch (osdConfig()->units) {
-    case OSD_UNIT_IMPERIAL:
+    case UNIT_IMPERIAL:
         return SYM_F;
     default:
         return SYM_C;
@@ -936,7 +939,7 @@ static void osdElementEfficiency(osdElementParms_t *element)
         }
     }
 
-    const char unitSymbol = osdConfig()->units == OSD_UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
+    const char unitSymbol = osdConfig()->units == UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
     if (efficiency > 0 && efficiency <= 9999) {
         tfp_sprintf(element->buff, "%4d%c/%c", efficiency, SYM_MAH, unitSymbol);
     } else {
