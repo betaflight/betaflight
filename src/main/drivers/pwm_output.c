@@ -35,7 +35,7 @@
 
 #include "pg/motor.h"
 
-FAST_RAM_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -108,7 +108,7 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
     *channel->ccr = 0;
 }
 
-static FAST_RAM_ZERO_INIT motorDevice_t motorPwmDevice;
+static FAST_DATA_ZERO_INIT motorDevice_t motorPwmDevice;
 
 static void pwmWriteUnused(uint8_t index, float value)
 {

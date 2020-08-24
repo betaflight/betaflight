@@ -62,27 +62,27 @@
 #define USE_GYRO_SLEW_LIMITER
 #endif
 
-FAST_RAM_ZERO_INIT gyro_t gyro;
+FAST_DATA_ZERO_INIT gyro_t gyro;
 
-static FAST_RAM_ZERO_INIT bool overflowDetected;
+static FAST_DATA_ZERO_INIT bool overflowDetected;
 #ifdef USE_GYRO_OVERFLOW_CHECK
-static FAST_RAM_ZERO_INIT timeUs_t overflowTimeUs;
+static FAST_DATA_ZERO_INIT timeUs_t overflowTimeUs;
 #endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
-static FAST_RAM_ZERO_INIT bool yawSpinRecoveryEnabled;
-static FAST_RAM_ZERO_INIT int yawSpinRecoveryThreshold;
-static FAST_RAM_ZERO_INIT bool yawSpinDetected;
-static FAST_RAM_ZERO_INIT timeUs_t yawSpinTimeUs;
+static FAST_DATA_ZERO_INIT bool yawSpinRecoveryEnabled;
+static FAST_DATA_ZERO_INIT int yawSpinRecoveryThreshold;
+static FAST_DATA_ZERO_INIT bool yawSpinDetected;
+static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 #endif
 
-static FAST_RAM_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT float gyroPrevious[XYZ_AXIS_COUNT];
-static FAST_RAM_ZERO_INIT int accumulatedMeasurementCount;
+static FAST_DATA_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT float gyroPrevious[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT int accumulatedMeasurementCount;
 
-static FAST_RAM_ZERO_INIT int16_t gyroSensorTemperature;
+static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
 
-FAST_RAM uint8_t activePidLoopDenom = 1;
+FAST_DATA uint8_t activePidLoopDenom = 1;
 
 static bool firstArmingCalibrationWasStarted = false;
 

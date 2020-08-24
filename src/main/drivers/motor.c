@@ -42,7 +42,7 @@
 
 #include "motor.h"
 
-static FAST_RAM_ZERO_INIT motorDevice_t *motorDevice;
+static FAST_DATA_ZERO_INIT motorDevice_t *motorDevice;
 
 static bool motorProtocolEnabled = false;
 static bool motorProtocolDshot = false;

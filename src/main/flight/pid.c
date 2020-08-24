@@ -74,16 +74,16 @@ const char pidNames[] =
     "LEVEL;"
     "MAG;";
 
-FAST_RAM_ZERO_INIT uint32_t targetPidLooptime;
-FAST_RAM_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
-FAST_RAM_ZERO_INIT pidRuntime_t pidRuntime;
+FAST_DATA_ZERO_INIT uint32_t targetPidLooptime;
+FAST_DATA_ZERO_INIT pidAxisData_t pidData[XYZ_AXIS_COUNT];
+FAST_DATA_ZERO_INIT pidRuntime_t pidRuntime;
 
 #if defined(USE_ABSOLUTE_CONTROL)
-STATIC_UNIT_TESTED FAST_RAM_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
+STATIC_UNIT_TESTED FAST_DATA_ZERO_INIT float axisError[XYZ_AXIS_COUNT];
 #endif
 
 #if defined(USE_THROTTLE_BOOST)
-FAST_RAM_ZERO_INIT float throttleBoost;
+FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
@@ -772,7 +772,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
 #ifdef USE_INTERPOLATED_SP
-    static FAST_RAM_ZERO_INIT uint32_t lastFrameNumber;
+    static FAST_DATA_ZERO_INIT uint32_t lastFrameNumber;
 #endif
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
