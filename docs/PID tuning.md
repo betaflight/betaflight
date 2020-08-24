@@ -2,7 +2,7 @@
 
 Every aspect of flight dynamics is controlled by the selected "PID controller". This is an algorithm which is responsible for reacting to your stick inputs and keeping the craft stable in the air by using the gyroscopes and/or accelerometers (depending on your flight mode).
 
-The "PIDs" is a set of tuning parameters that control the operation of the PID controller. The optimal PID settings are different on every craft, so if you can't find someone with your exact setup who will share their settings with you, some trial and error are required to find the best performing PID settings.
+The "PIDs" are a set of tuning parameters that control the operation of the PID controller. The optimal PID settings are different on every craft, so if you can't find someone with your exact setup who will share their settings with you, some trial and error is required to find the best performing PID settings.
 
 A video on how to recognise and correct different flight problems caused by PID settings is [available here](https://www.youtube.com/watch?v=YNzqTGEl2xQ).
 
