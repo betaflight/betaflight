@@ -289,13 +289,13 @@ static void sendSatalliteSignalQualityAsTemperature2(uint8_t cycleNum)
         satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
     }
     int16_t data;
-    if (telemetryConfig()->frsky_unit == FRSKY_UNIT_METRICS) {
-        data = satellite;
-    } else {
+    if (telemetryConfig()->frsky_unit == UNIT_IMPERIAL) {
         float tmp = (satellite - 32) / 1.8f;
         // Round the value
         tmp += (tmp < 0) ? -0.5f : 0.5f;
         data = tmp;
+    } else {
+        data = satellite;
     }
     frSkyHubWriteFrame(ID_TEMPRATURE2, data);
 }

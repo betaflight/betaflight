@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include "common/unit.h"
+
 #include "io/serial.h"
 
 #include "pg/pg.h"
@@ -39,11 +41,6 @@ typedef enum {
     FRSKY_FORMAT_DMS = 0,
     FRSKY_FORMAT_NMEA
 } frskyGpsCoordFormat_e;
-
-typedef enum {
-    FRSKY_UNIT_METRICS = 0,
-    FRSKY_UNIT_IMPERIALS
-} frskyUnit_e;
 
 typedef enum {
     SENSOR_VOLTAGE         = 1 << 0,
@@ -78,8 +75,8 @@ typedef struct telemetryConfig_s {
     int16_t gpsNoFixLongitude;
     uint8_t telemetry_inverted;
     uint8_t halfDuplex;
-    frskyGpsCoordFormat_e frsky_coordinate_format;
-    frskyUnit_e frsky_unit;
+    uint8_t frsky_coordinate_format;
+    uint8_t frsky_unit;
     uint8_t frsky_vfas_precision;
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;

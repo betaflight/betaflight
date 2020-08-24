@@ -79,10 +79,10 @@ PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR
 
 #define PWM_RANGE_MID 1500
 
-static FAST_RAM_ZERO_INIT uint8_t motorCount;
-static FAST_RAM_ZERO_INIT float motorMixRange;
+static FAST_DATA_ZERO_INIT uint8_t motorCount;
+static FAST_DATA_ZERO_INIT float motorMixRange;
 
-float FAST_RAM_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
+float FAST_DATA_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 mixerMode_e currentMixerMode;
@@ -92,7 +92,7 @@ static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 static motorMixer_t launchControlMixer[MAX_SUPPORTED_MOTORS];
 #endif
 
-static FAST_RAM_ZERO_INIT int throttleAngleCorrection;
+static FAST_DATA_ZERO_INIT int throttleAngleCorrection;
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -284,21 +284,21 @@ const mixer_t mixers[] = {
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
-FAST_RAM_ZERO_INIT float motorOutputHigh, motorOutputLow;
+FAST_DATA_ZERO_INIT float motorOutputHigh, motorOutputLow;
 
-static FAST_RAM_ZERO_INIT float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
-static FAST_RAM_ZERO_INIT float rcCommandThrottleRange;
+static FAST_DATA_ZERO_INIT float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
+static FAST_DATA_ZERO_INIT float rcCommandThrottleRange;
 #ifdef USE_DYN_IDLE
-static FAST_RAM_ZERO_INIT float idleMaxIncrease;
-static FAST_RAM_ZERO_INIT float idleThrottleOffset;
-static FAST_RAM_ZERO_INIT float idleMinMotorRps;
-static FAST_RAM_ZERO_INIT float idleP;
-static FAST_RAM_ZERO_INIT float oldMinRps;
+static FAST_DATA_ZERO_INIT float idleMaxIncrease;
+static FAST_DATA_ZERO_INIT float idleThrottleOffset;
+static FAST_DATA_ZERO_INIT float idleMinMotorRps;
+static FAST_DATA_ZERO_INIT float idleP;
+static FAST_DATA_ZERO_INIT float oldMinRps;
 #endif
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
-static FAST_RAM_ZERO_INIT float vbatSagCompensationFactor;
-static FAST_RAM_ZERO_INIT float vbatFull;
-static FAST_RAM_ZERO_INIT float vbatRangeToCompensate;
+static FAST_DATA_ZERO_INIT float vbatSagCompensationFactor;
+static FAST_DATA_ZERO_INIT float vbatFull;
+static FAST_DATA_ZERO_INIT float vbatRangeToCompensate;
 #endif
 
 uint8_t getMotorCount(void)
@@ -498,13 +498,13 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
-static FAST_RAM_ZERO_INIT float throttle = 0;
-static FAST_RAM_ZERO_INIT float mixerThrottle = 0;
-static FAST_RAM_ZERO_INIT float motorOutputMin;
-static FAST_RAM_ZERO_INIT float motorRangeMin;
-static FAST_RAM_ZERO_INIT float motorRangeMax;
-static FAST_RAM_ZERO_INIT float motorOutputRange;
-static FAST_RAM_ZERO_INIT int8_t motorOutputMixSign;
+static FAST_DATA_ZERO_INIT float throttle = 0;
+static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
+static FAST_DATA_ZERO_INIT float motorOutputMin;
+static FAST_DATA_ZERO_INIT float motorRangeMin;
+static FAST_DATA_ZERO_INIT float motorRangeMax;
+static FAST_DATA_ZERO_INIT float motorOutputRange;
+static FAST_DATA_ZERO_INIT int8_t motorOutputMixSign;
 
 
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)

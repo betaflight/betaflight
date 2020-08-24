@@ -167,7 +167,7 @@ static const char * const lookupTableCrashRecovery[] = {
 };
 
 static const char * const lookupTableUnit[] = {
-    "IMPERIAL", "METRIC"
+    "IMPERIAL", "METRIC", "BRITISH"
 };
 
 static const char * const lookupTableAlignment[] = {

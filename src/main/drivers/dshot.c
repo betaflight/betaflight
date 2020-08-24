@@ -132,7 +132,7 @@ FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
 }
 
 #ifdef USE_DSHOT_TELEMETRY
-FAST_RAM_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
+FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 
 uint16_t getDshotTelemetry(uint8_t index)
 {
@@ -142,7 +142,7 @@ uint16_t getDshotTelemetry(uint8_t index)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
-FAST_RAM_ZERO_INIT dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
 
 void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool packetValid, timeMs_t currentTimeMs)
 {

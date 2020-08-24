@@ -63,20 +63,20 @@ typedef struct rpmNotchFilter_s
     biquadFilter_t notch[XYZ_AXIS_COUNT][MAX_SUPPORTED_MOTORS][RPM_FILTER_MAXHARMONICS];
 } rpmNotchFilter_t;
 
-FAST_RAM_ZERO_INIT static float   erpmToHz;
-FAST_RAM_ZERO_INIT static float   filteredMotorErpm[MAX_SUPPORTED_MOTORS];
-FAST_RAM_ZERO_INIT static float   minMotorFrequency;
-FAST_RAM_ZERO_INIT static uint8_t numberFilters;
-FAST_RAM_ZERO_INIT static uint8_t numberRpmNotchFilters;
-FAST_RAM_ZERO_INIT static uint8_t filterUpdatesPerIteration;
-FAST_RAM_ZERO_INIT static float   pidLooptime;
-FAST_RAM_ZERO_INIT static rpmNotchFilter_t filters[2];
-FAST_RAM_ZERO_INIT static rpmNotchFilter_t* gyroFilter;
+FAST_DATA_ZERO_INIT static float   erpmToHz;
+FAST_DATA_ZERO_INIT static float   filteredMotorErpm[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT static float   minMotorFrequency;
+FAST_DATA_ZERO_INIT static uint8_t numberFilters;
+FAST_DATA_ZERO_INIT static uint8_t numberRpmNotchFilters;
+FAST_DATA_ZERO_INIT static uint8_t filterUpdatesPerIteration;
+FAST_DATA_ZERO_INIT static float   pidLooptime;
+FAST_DATA_ZERO_INIT static rpmNotchFilter_t filters[2];
+FAST_DATA_ZERO_INIT static rpmNotchFilter_t* gyroFilter;
 
-FAST_RAM_ZERO_INIT static uint8_t currentMotor;
-FAST_RAM_ZERO_INIT static uint8_t currentHarmonic;
-FAST_RAM_ZERO_INIT static uint8_t currentFilterNumber;
-FAST_RAM static rpmNotchFilter_t* currentFilter = &filters[0];
+FAST_DATA_ZERO_INIT static uint8_t currentMotor;
+FAST_DATA_ZERO_INIT static uint8_t currentHarmonic;
+FAST_DATA_ZERO_INIT static uint8_t currentFilterNumber;
+FAST_DATA static rpmNotchFilter_t* currentFilter = &filters[0];
 
 
 
@@ -160,7 +160,7 @@ float rpmFilterGyro(int axis, float value)
     return applyFilter(gyroFilter, axis, value);
 }
 
-FAST_RAM_ZERO_INIT static float motorFrequency[MAX_SUPPORTED_MOTORS];
+FAST_DATA_ZERO_INIT static float motorFrequency[MAX_SUPPORTED_MOTORS];
 
 FAST_CODE_NOINLINE void rpmFilterUpdate()
 {
