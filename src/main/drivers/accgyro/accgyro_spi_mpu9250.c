@@ -47,6 +47,11 @@
 #include "drivers/system.h"
 
 
+// 1 MHz max SPI frequency for initialisation
+#define MPU9250_MAX_SPI_INIT_CLK_HZ 1000000
+// 20 MHz max SPI frequency
+#define MPU9250_MAX_SPI_CLK_HZ 20000000
+
 static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 
 
@@ -82,7 +87,7 @@ void mpu9250SpiGyroInit(gyroDev_t *gyro)
 
     spiResetErrorCounter(gyro->bus.busdev_u.spi.instance);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST); //high speed now that we don't need to write to the slow registers
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU9250_MAX_SPI_CLK_HZ)); //high speed now that we don't need to write to the slow registers
 
     mpuGyroRead(gyro);
 
@@ -119,7 +124,7 @@ bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t 
 
 static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed for writing to slow registers
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU9250_MAX_SPI_INIT_CLK_HZ)); //low speed for writing to slow registers
 
     mpu9250SpiWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(50);
@@ -139,13 +144,13 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
 #endif
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU9250_MAX_SPI_CLK_HZ));
 }
 
 uint8_t mpu9250SpiDetect(const busDevice_t *bus)
 {
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(MPU9250_MAX_SPI_INIT_CLK_HZ)); //low speed
     mpu9250SpiWriteRegister(bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 
     uint8_t attemptsRemaining = 20;
@@ -160,7 +165,7 @@ uint8_t mpu9250SpiDetect(const busDevice_t *bus)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(MPU9250_MAX_SPI_CLK_HZ));
 
     return MPU_9250_SPI;
 }

@@ -49,6 +49,9 @@
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
+// 10 MHz max SPI frequency
+#define HMC5883_MAX_SPI_CLK_HZ 10000000
+
 // HMC5883L, default address 0x1E
 // NAZE Target connections
 // PB12 connected to MAG_DRDY on rev4 hardware
@@ -193,9 +196,9 @@ static void hmc5883SpiInit(busDevice_t *busdev)
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
 
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD);
+    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, spiCalculateDivider(HMC5883_MAX_SPI_CLK_HZ));
 #else
-    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+    spiBusSetDivisor(busdev, spiCalculateDivider(HMC5883_MAX_SPI_CLK_HZ));
 #endif
 }
 #endif

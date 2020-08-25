@@ -37,6 +37,9 @@
 
 #if defined(USE_BARO) && (defined(USE_BARO_QMP6988) || defined(USE_BARO_SPI_QMP6988))
 
+// 10 MHz max SPI frequency
+#define QMP6988_MAX_SPI_CLK_HZ 10000000
+
 #define QMP6988_I2C_ADDR                0x70
 #define QMP6988_DEFAULT_CHIP_ID         0x5c
 #define QMP6988_CHIP_ID_REG             0xD1  /* Chip ID Register */
@@ -110,9 +113,9 @@ void qmp6988BusInit(busDevice_t *busdev)
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
 #ifdef USE_SPI_TRANSACTION
-        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD);
+        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, spiCalculateDivider(QMP6988_MAX_SPI_CLK_HZ));
 #else
-        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+        spiBusSetDivisor(busdev, spiCalculateDivider(QMP6988_MAX_SPI_CLK_HZ));
 #endif
     }
 #else

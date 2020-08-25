@@ -43,6 +43,9 @@
 
 #include "rx_spi.h"
 
+// 10 MHz max SPI frequency
+#define RX_MAX_SPI_CLK_HZ 10000000
+
 #define ENABLE_RX() IOLo(busdev->busdev_u.spi.csnPin)
 #define DISABLE_RX() IOHi(busdev->busdev_u.spi.csnPin)
 
@@ -90,9 +93,9 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 
     IOHi(rxCsPin);
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionInit(busdev, SPI_MODE0_POL_LOW_EDGE_1ST, SPI_CLOCK_STANDARD);
+    spiBusTransactionInit(busdev, SPI_MODE0_POL_LOW_EDGE_1ST, spiCalculateDivider(RX_MAX_SPI_CLK_HZ));
 #else
-    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+    spiBusSetDivisor(busdev, spiCalculateDivider(RX_MAX_SPI_CLK_HZ));
 #endif
 
     extiPin = IOGetByTag(rxSpiConfig->extiIoTag);

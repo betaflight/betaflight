@@ -42,6 +42,9 @@
 
 #include "vtx_rtc6705.h"
 
+// 1 MHz max SPI frequency - datasheet says 10MHz, but this is lower for some reason
+#define RTC6705_MAX_SPI_CLK_HZ 1000000
+
 #define RTC6705_SET_HEAD 0x3210 //fosc=8mhz r=400
 #define RTC6705_SET_R  400     //Reference clock
 #define RTC6705_SET_FDIV 1024  //128*(fosc/1000000)
@@ -178,7 +181,7 @@ void rtc6705SetFrequency(uint16_t frequency)
     val_hex |= (val_a << 5);
     val_hex |= (val_n << 12);
 
-    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_SLOW);
+    spiSetDivisor(busdev->busdev_u.spi.instance, spiCalculateDivider(RTC6705_MAX_SPI_CLK_HZ));
 
     rtc6705Transfer(RTC6705_SET_HEAD);
     delayMicroseconds(10);
@@ -201,7 +204,7 @@ void rtc6705SetRFPower(uint8_t rf_power)
     const uint32_t data = rf_power > 1 ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK));
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
-    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_SLOW);
+    spiSetDivisor(busdev->busdev_u.spi.instance, spiCalculateDivider(RTC6705_MAX_SPI_CLK_HZ));
 
     rtc6705Transfer(val_hex);
 }

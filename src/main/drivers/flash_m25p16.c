@@ -52,21 +52,62 @@
 
 #define W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE 0xB7
 
-// Format is manufacturer, memory type, then capacity
-// See also flash_m25p16.h for additional JEDEC IDs.
-#define JEDEC_ID_MACRONIX_MX25L3206E   0xC22016
-#define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
-#define JEDEC_ID_MACRONIX_MX25L25635E  0xC22019
-#define JEDEC_ID_MICRON_M25P16         0x202015
-#define JEDEC_ID_MICRON_N25Q064        0x20BA17
-#define JEDEC_ID_MICRON_N25Q128        0x20ba18
-#define JEDEC_ID_WINBOND_W25Q16        0xEF4015
-#define JEDEC_ID_WINBOND_W25Q32        0xEF4016
-#define JEDEC_ID_WINBOND_W25Q64        0xEF4017
-#define JEDEC_ID_WINBOND_W25Q128       0xEF4018
-#define JEDEC_ID_WINBOND_W25Q128_DTR   0xEF7018
-#define JEDEC_ID_CYPRESS_S25FL128L     0x016018
-#define JEDEC_ID_BERGMICRO_W25Q32      0xE04016
+static uint32_t maxClkSPIHz;
+static uint32_t maxReadClkSPIHz;
+
+// Table of recognised FLASH devices
+struct {
+    uint32_t        jedecID;
+    uint16_t        maxClkSPIMHz;
+    uint16_t        maxReadClkSPIMHz;
+    flashSector_t   sectors;
+    uint16_t        pagesPerSector;
+} m25p16FlashConfig[] = {
+    // Macronix MX25L3206E
+    // Datasheet: https://docs.rs-online.com/5c85/0900766b814ac6f9.pdf
+    { 0xC22016, 86, 33, 64, 256 },
+    // Macronix MX25L6406E
+    // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7370/MX25L6406E,%203V,%2064Mb,%20v1.9.pdf
+    { 0xC22017, 86, 33, 128, 256 },
+    // Macronix MX25L25635E
+    // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7331/MX25L25635E,%203V,%20256Mb,%20v1.3.pdf
+    { 0xC22019, 80, 50, 512, 256 },
+    // Micron M25P16
+    // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/m25p/m25p16.pdf
+    { 0x202015, 25, 20, 32, 256 },
+    // Micron N25Q064
+    // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_64a_3v_65nm.pdf
+    { 0x20BA17, 108, 54, 128, 256 },
+    // Micron N25Q128
+    // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_1_8v_65nm.pdf
+    { 0x20ba18, 108, 54, 256, 256 },
+    // Winbond W25Q16
+    // Datasheet: https://www.winbond.com/resource-files/w25q16dv_revi_nov1714_web.pdf
+    { 0xEF4015, 104, 50, 32, 256 },
+    // Winbond W25Q32
+    // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
+    { 0xEF4016, 133, 50, 64, 256 },
+    // Winbond W25Q64
+    // Datasheet: https://www.winbond.com/resource-files/w25q64jv%20spi%20%20%20revc%2006032016%20kms.pdf
+    { 0xEF4017, 133, 50, 128, 256 },
+    // Winbond W25Q128
+    // Datasheet: https://www.winbond.com/resource-files/w25q128fv%20rev.l%2008242015.pdf
+    { 0xEF4018, 104, 50, 256, 256 },
+    // Winbond W25Q128_DTR
+    // Datasheet: https://www.winbond.com/resource-files/w25q128jv%20dtr%20revb%2011042016.pdf
+    { 0xEF7018, 66, 50, 256, 256 },
+    // Winbond W25Q256
+    // Datasheet: https://www.winbond.com/resource-files/w25q256jv%20spi%20revb%2009202016.pdf
+    { 0xEF4019, 133, 50, 512, 256 },
+    // Cypress S25FL128L
+    // Datasheet: https://www.cypress.com/file/316171/download
+    { 0x016018, 133, 50, 256, 256 },
+    // BergMicro W25Q32
+    // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
+    { 0xE04016, 133, 50, 1024, 16 },
+    // End of list
+    { 0x000000, 0, 0, 0, 0 }
+};
 
 // IMPORTANT: Timeout values are currently required to be set to the highest value required by any of the supported flash chips by this driver.
 
@@ -179,52 +220,37 @@ static bool m25p16_waitForReady(flashDevice_t *fdevice)
 
 bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
-    switch (chipID) {
-    case JEDEC_ID_WINBOND_W25Q16:
-    case JEDEC_ID_MICRON_M25P16:
-        fdevice->geometry.sectors = 32;
-        fdevice->geometry.pagesPerSector = 256;
-        break;
-    case JEDEC_ID_BERGMICRO_W25Q32:
-        fdevice->geometry.sectors = 1024;
-        fdevice->geometry.pagesPerSector = 16;
-        break;
-    case JEDEC_ID_WINBOND_W25Q32:
-    case JEDEC_ID_MACRONIX_MX25L3206E:
-        fdevice->geometry.sectors = 64;
-        fdevice->geometry.pagesPerSector = 256;
-        break;
-    case JEDEC_ID_MICRON_N25Q064:
-    case JEDEC_ID_WINBOND_W25Q64:
-    case JEDEC_ID_MACRONIX_MX25L6406E:
-        fdevice->geometry.sectors = 128;
-        fdevice->geometry.pagesPerSector = 256;
-        break;
-    case JEDEC_ID_MICRON_N25Q128:
-    case JEDEC_ID_WINBOND_W25Q128:
-    case JEDEC_ID_WINBOND_W25Q128_DTR:
-    case JEDEC_ID_CYPRESS_S25FL128L:
-        fdevice->geometry.sectors = 256;
-        fdevice->geometry.pagesPerSector = 256;
-        break;
-    case JEDEC_ID_WINBOND_W25Q256:
-    case JEDEC_ID_MACRONIX_MX25L25635E:
-        fdevice->geometry.sectors = 512;
-        fdevice->geometry.pagesPerSector = 256;
-        break;
-    default:
+    flashGeometry_t *geometry = &fdevice->geometry;
+    uint8_t index;
+
+    for (index = 0; m25p16FlashConfig[index].jedecID; index++) {
+        if (m25p16FlashConfig[index].jedecID == chipID) {
+            maxClkSPIHz = m25p16FlashConfig[index].maxClkSPIMHz * 1000000;
+            maxReadClkSPIHz = m25p16FlashConfig[index].maxReadClkSPIMHz * 1000000;
+            geometry->sectors = m25p16FlashConfig[index].sectors;
+            geometry->pagesPerSector = m25p16FlashConfig[index].pagesPerSector;
+            break;
+        }
+    }
+
+    if (m25p16FlashConfig[index].jedecID == 0) {
         // Unsupported chip or not an SPI NOR flash
-        fdevice->geometry.sectors = 0;
-        fdevice->geometry.pagesPerSector = 0;
-        fdevice->geometry.sectorSize = 0;
-        fdevice->geometry.totalSize = 0;
+        geometry->sectors = 0;
+        geometry->pagesPerSector = 0;
+        geometry->sectorSize = 0;
+        geometry->totalSize = 0;
         return false;
     }
 
-    fdevice->geometry.flashType = FLASH_TYPE_NOR;
-    fdevice->geometry.pageSize = M25P16_PAGESIZE;
-    fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
-    fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
+    geometry->flashType = FLASH_TYPE_NOR;
+    geometry->pageSize = M25P16_PAGESIZE;
+    geometry->sectorSize = geometry->pagesPerSector * geometry->pageSize;
+    geometry->totalSize = geometry->sectorSize * geometry->sectors;
+
+    // Adjust the SPI bus clock frequency
+#ifndef FLASH_SPI_SHARED
+    spiSetDivisor(fdevice->io.handle.busdev->busdev_u.spi.instance, spiCalculateDivider(maxReadClkSPIHz));
+#endif
 
     if (fdevice->geometry.totalSize > 16 * 1024 * 1024) {
         fdevice->isLargeFlash = true;
@@ -357,6 +383,10 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
         return 0;
     }
 
+#ifndef FLASH_SPI_SHARED
+    spiSetDivisor(fdevice->io.handle.busdev->busdev_u.spi.instance, spiCalculateDivider(maxReadClkSPIHz));
+#endif
+
 #ifdef USE_SPI_TRANSACTION
     spiBusTransactionBegin(fdevice->io.handle.busdev);
 #else
@@ -370,6 +400,10 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
     spiBusTransactionEnd(fdevice->io.handle.busdev);
 #else
     m25p16_disable(fdevice->io.handle.busdev);
+#endif
+
+#ifndef FLASH_SPI_SHARED
+    spiSetDivisor(fdevice->io.handle.busdev->busdev_u.spi.instance, spiCalculateDivider(maxClkSPIHz));
 #endif
 
     m25p16_setTimeout(fdevice, DEFAULT_TIMEOUT_MILLIS);

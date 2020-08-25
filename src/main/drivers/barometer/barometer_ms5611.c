@@ -36,6 +36,9 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
+// 10 MHz max SPI frequency
+#define MS5611_MAX_SPI_CLK_HZ 10000000
+
 // MS5611, Standard address 0x77
 #define MS5611_I2C_ADDR                 0x77
 
@@ -67,9 +70,9 @@ void ms5611BusInit(busDevice_t *busdev)
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
 #ifdef USE_SPI_TRANSACTION
-        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD);
+        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, spiCalculateDivider(MS5611_MAX_SPI_CLK_HZ));
 #else
-        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD); // XXX
+        spiBusSetDivisor(busdev, spiCalculateDivider(MS5611_MAX_SPI_CLK_HZ)); // XXX
 #endif
     }
 #else

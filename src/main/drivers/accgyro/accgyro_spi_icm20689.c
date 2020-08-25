@@ -37,6 +37,12 @@
 #include "drivers/time.h"
 
 
+// 10 MHz max SPI frequency
+#define ICM20689_MAX_SPI_CLK_HZ 10000000
+
+// 10 MHz max SPI frequency for intialisation
+#define ICM20689_MAX_SPI_INIT_CLK_HZ 1000000
+
 static void icm20689SpiInit(const busDevice_t *bus)
 {
     static bool hardwareInitialised = false;
@@ -46,7 +52,7 @@ static void icm20689SpiInit(const busDevice_t *bus)
     }
 
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 
     hardwareInitialised = true;
 }
@@ -55,7 +61,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 {
     icm20689SpiInit(bus);
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(ICM20689_MAX_SPI_INIT_CLK_HZ));
 
     // reset the device configuration
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
@@ -87,7 +93,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
         break;
     }
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 
     return icmDetected;
 }
@@ -117,7 +123,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(ICM20689_MAX_SPI_INIT_CLK_HZ));
 
     // Device was already reset during detection so proceed with configuration
 
@@ -142,7 +148,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
     spiBusWriteRegister(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 }
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)

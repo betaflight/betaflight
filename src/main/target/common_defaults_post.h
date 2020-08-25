@@ -29,14 +29,6 @@
 #define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
 #endif
 
-#ifndef MAX7456_SPI_CLK
-#define MAX7456_SPI_CLK                 (SPI_CLOCK_STANDARD)
-#endif
-
-#ifndef MAX7456_RESTORE_CLK
-#define MAX7456_RESTORE_CLK             (SPI_CLOCK_FAST)
-#endif
-
 #ifndef MAX7456_SPI_CS_PIN
 #define MAX7456_SPI_CS_PIN              NONE
 #endif
