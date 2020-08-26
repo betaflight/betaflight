@@ -91,7 +91,7 @@ static const dbm_table_t dbmTable[] = {
 
 // Convert dBm to Range %
 static int8_t dBm2range (int8_t dBm) {
-    int8_t  retval = 0;
+    int8_t  retval = dbmTable[0].reportAs;
 
     for ( uint8_t i = 1; i < ARRAYLEN(dbmTable); i++ ) {
         if (dBm >= dbmTable[i].dBm) {
@@ -144,7 +144,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
 #ifdef USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
             // Do an dBm to percent conversion with an approxatelly linear distance
             // and map the percentage to RSSI RC channel range
-            spekChannelData[rssi_channel] = (uint16_t)(map(dBm2range (rssi),
+            spekChannelData[rssi_channel] = (uint16_t)(map(dBm2range (constrain(rssi, SPEKTRUM_RSSI_MIN, SPEKTRUM_RSSI_MAX)),
                                                        0, 100,
                                                        0,resolution));
 #else
