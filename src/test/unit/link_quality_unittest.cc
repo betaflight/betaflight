@@ -350,7 +350,7 @@ TEST(LQTest, TestLQAlarm)
 
     // and
     // using the metric unit system
-    osdConfigMutable()->units = OSD_UNIT_METRIC;
+    osdConfigMutable()->units = UNIT_METRIC;
 
     // when
     // the craft is armed
