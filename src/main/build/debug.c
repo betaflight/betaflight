@@ -31,7 +31,7 @@ uint8_t debugMode;
 uint32_t sectionTimes[2][4];
 #endif
 
-// Please ensure that these names are aligned with the enum values defined in 'debug.h'
+// Please ensure that these names are aligned with the enum values defined in 'debug.h' - for OSD be sure the name is unique with 12 chars.
 const char * const debugModeNames[DEBUG_COUNT] = {
     "NONE",
     "CYCLETIME",
@@ -61,7 +61,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "SBUS",
     "FPORT",
     "RANGEFINDER",
-    "RANGEFINDER_QUALITY",
+    "RNGFNDR_QUALITY",
     "LIDAR_TF",
     "ADC_INTERNAL",
     "RUNAWAY_TAKEOFF",
@@ -74,7 +74,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ACRO_TRAINER",
     "RC_SMOOTHING",
     "RX_SIGNAL_LOSS",
-    "RC_SMOOTHING_RATE",
+    "RC_SMOOTH_RATE",
     "ANTI_GRAVITY",
     "DYN_LPF",
     "RX_SPEKTRUM_SPI",
@@ -85,9 +85,9 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "AC_ERROR",
     "DUAL_GYRO_SCALED",
     "DSHOT_RPM_ERRORS",
-    "CRSF_LINK_STATISTICS_UPLINK",
-    "CRSF_LINK_STATISTICS_PWR",
-    "CRSF_LINK_STATISTICS_DOWN",
+    "CRSF_LS_UPLINK",
+    "CRSF_LS_PWR",
+    "CRSF_LS_DOWN",
     "BARO",
     "GPS_RESCUE_THROTTLE_PID",
     "DYN_IDLE",
