@@ -81,6 +81,7 @@
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
+#define TELEMETRY_MAVLINK_DEFAULT_RATE  2 // default rate fall all the streams
 
 extern uint16_t rssi; // FIXME dependency on mw.c
 
@@ -91,12 +92,12 @@ static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 
 /* MAVLink datastream rates in Hz */
-static const uint8_t mavRates[] = {
-    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
-    [MAV_DATA_STREAM_POSITION] = 2, //2Hz
-    [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10 //2Hz
+static uint8_t mavRates[] = {
+    [MAV_DATA_STREAM_EXTENDED_STATUS] = TELEMETRY_MAVLINK_DEFAULT_RATE,
+    [MAV_DATA_STREAM_RC_CHANNELS] = TELEMETRY_MAVLINK_DEFAULT_RATE,
+    [MAV_DATA_STREAM_POSITION] = TELEMETRY_MAVLINK_DEFAULT_RATE,
+    [MAV_DATA_STREAM_EXTRA1] = TELEMETRY_MAVLINK_DEFAULT_RATE,
+    [MAV_DATA_STREAM_EXTRA2] = TELEMETRY_MAVLINK_DEFAULT_RATE,
 };
 
 #define MAXSTREAMS (sizeof(mavRates) / sizeof(mavRates[0]))
@@ -157,6 +158,12 @@ void initMAVLinkTelemetry(void)
 {
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
     mavlinkPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_MAVLINK);
+    // setup mavlink streams rates based on user's choice 
+    mavRates[MAV_DATA_STREAM_EXTENDED_STATUS] = telemetryConfig()->mavlink_rate_stream_extended_status;
+    mavRates[MAV_DATA_STREAM_RC_CHANNELS] = telemetryConfig()->mavlink_rate_stream_rc_channels;
+    mavRates[MAV_DATA_STREAM_POSITION] = telemetryConfig()->mavlink_rate_stream_position;
+    mavRates[MAV_DATA_STREAM_EXTRA1] = telemetryConfig()->mavlink_rate_stream_extra1;
+    mavRates[MAV_DATA_STREAM_EXTRA2] = telemetryConfig()->mavlink_rate_stream_extra2; 
 }
 
 void configureMAVLinkTelemetryPort(void)

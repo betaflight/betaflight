@@ -79,6 +79,11 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     },
     .disabledSensors = ESC_SENSOR_ALL,
     .mavlink_mah_as_heading_divisor = 0,
+    .mavlink_rate_stream_extended_status = 2,   // 2Hz
+    .mavlink_rate_stream_rc_channels = 5,       // 5Hz
+    .mavlink_rate_stream_position = 2,          // 2Hz
+    .mavlink_rate_stream_extra1 = 10,           // 10Hz
+    .mavlink_rate_stream_extra2 = 10,           // 10Hz
 );
 
 void telemetryInit(void)

@@ -84,6 +84,11 @@ typedef struct telemetryConfig_s {
     uint8_t flysky_sensors[IBUS_SENSOR_COUNT];
     uint16_t mavlink_mah_as_heading_divisor;
     uint32_t disabledSensors; // bit flags
+    uint8_t mavlink_rate_stream_extended_status;
+    uint8_t mavlink_rate_stream_rc_channels;
+    uint8_t mavlink_rate_stream_position;
+    uint8_t mavlink_rate_stream_extra1;
+    uint8_t mavlink_rate_stream_extra2;
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
