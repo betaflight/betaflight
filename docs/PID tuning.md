@@ -2,13 +2,11 @@
 
 Every aspect of flight dynamics is controlled by the selected "PID controller". This is an algorithm which is responsible for reacting to your stick inputs and keeping the craft stable in the air by using the gyroscopes and/or accelerometers (depending on your flight mode).
 
-The "PIDs" are a set of tuning parameters which control the operation of the PID controller. The optimal PID settings are different on every craft, so if you can't find someone with your exact setup who will share their settings with you, some trial and error is required to find the best performing PID settings.
+The "PIDs" are a set of tuning parameters that control the operation of the PID controller. The optimal PID settings are different on every craft, so if you can't find someone with your exact setup who will share their settings with you, some trial and error is required to find the best performing PID settings.
 
-A video on how to recognise and correct different flight problems caused by PID settings is available here:
+A video on how to recognise and correct different flight problems caused by PID settings is [available here](https://www.youtube.com/watch?v=YNzqTGEl2xQ).
 
-https://www.youtube.com/watch?v=YNzqTGEl2xQ
-
-Basically, the goal of the PID controller is to bring the craft's rotation rate in all three axes to the rate that you're commanding with your sticks. An error is computed which is the difference between your target rotation rate and the actual one measured by the gyroscopes, and the controller tries to bring this error to zero.
+Basically, the goal of the PID controller is to bring the craft's rotation rate in all three axes to the rate that you're commanding with your sticks. An error is computed, which is the difference between your target rotation rate and the actual one measured by the gyroscopes, and the controller tries to bring this error to zero.
 
 ## PIDs
 
@@ -27,7 +25,7 @@ Basically, the goal of the PID controller is to bring the craft's rotation rate 
 
 Note that TPA is set via CLI or on the PID TUNING tab of the GUI.  `tpa_breakpoint` is set via CLI
 
-Also note that TPA and `tpa_breakpoint` may not be used with certain PID controllers.  Check the description on the individual controller.
+Also, note that TPA and `tpa_breakpoint` may not be used with certain PID controllers.  Check the description on the individual controller.
 
 TPA applies a PID value reduction in relation to full throttle. It is used to apply dampening of PID values as full throttle is reached.
 
