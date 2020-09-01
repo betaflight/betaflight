@@ -352,7 +352,6 @@ int32_t GPS_home[2];
 
 gyro_t gyro;
 
-float motorOutputHigh, motorOutputLow;
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct pidProfile_s;
 struct pidProfile_s *currentPidProfile;
@@ -383,5 +382,6 @@ failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}
 bool rxAreFlightChannelsValid(void) {return false;}
 bool rxIsReceivingSignal(void) {return false;}
 bool isRssiConfigured(void) {return false;}
-
+float getMotorOutputLow(void) {return 0.0;}
+float getMotorOutputHigh(void) {return 0.0;}
 }

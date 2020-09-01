@@ -284,7 +284,9 @@ const mixer_t mixers[] = {
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
-FAST_DATA_ZERO_INIT float motorOutputHigh, motorOutputLow;
+static FAST_DATA_ZERO_INIT bool feature3dEnabled;
+static FAST_DATA_ZERO_INIT float motorOutputLow;
+static FAST_DATA_ZERO_INIT float motorOutputHigh;
 
 static FAST_DATA_ZERO_INIT float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
 static FAST_DATA_ZERO_INIT float rcCommandThrottleRange;
@@ -346,6 +348,9 @@ void initEscEndpoints(void)
     }
 
     motorInitEndpoints(motorConfig(), motorOutputLimit, &motorOutputLow, &motorOutputHigh, &disarmMotorOutput, &deadbandMotor3dHigh, &deadbandMotor3dLow);
+    if (!feature3dEnabled && currentPidProfile->idle_min_rpm) {
+        motorOutputLow = DSHOT_MIN_THROTTLE;
+    }
 
     rcCommandThrottleRange = PWM_RANGE_MAX - PWM_RANGE_MIN;
 }
@@ -376,6 +381,8 @@ void mixerInitProfile(void)
 void mixerInit(mixerMode_e mixerMode)
 {
     currentMixerMode = mixerMode;
+
+    feature3dEnabled = featureIsEnabled(FEATURE_3D);
 
     initEscEndpoints();
 #ifdef USE_SERVOS
@@ -512,9 +519,9 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
     static float motorRangeMinIncrease = 0;
-    float currentThrottleInputRange = 0;
 
-    if (featureIsEnabled(FEATURE_3D)) {
+    float currentThrottleInputRange = 0;
+    if (feature3dEnabled) {
         uint16_t rcCommand3dDeadBandLow;
         uint16_t rcCommand3dDeadBandHigh;
 
@@ -617,10 +624,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         }
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
-        float appliedMotorOutputLow = motorOutputLow;
 #ifdef USE_DYN_IDLE
         if (idleMinMotorRps > 0.0f) {
-            appliedMotorOutputLow = DSHOT_MIN_THROTTLE;
             const float maxIncrease = isAirmodeActivated() ? idleMaxIncrease : 0.04f;
             const float minRps = rpmMinMotorFrequency();
             const float targetRpsChangeRate = (idleMinMotorRps - minRps) * currentPidProfile->idle_adjustment_speed;
@@ -656,7 +661,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #endif
 
         currentThrottleInputRange = rcCommandThrottleRange;
-        motorRangeMin = appliedMotorOutputLow + motorRangeMinIncrease * (motorOutputHigh - appliedMotorOutputLow);
+        motorRangeMin = motorOutputLow + motorRangeMinIncrease * (motorOutputHigh - motorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
         motorOutputMixSign = 1;
@@ -963,7 +968,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
-        && !featureIsEnabled(FEATURE_3D)
+        && !feature3dEnabled
         && !airmodeEnabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable motor_stop while GPS Rescue is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
@@ -1009,4 +1014,14 @@ bool mixerModeIsFixedWing(mixerMode_e mixerMode)
 bool isFixedWing(void)
 {
     return mixerModeIsFixedWing(currentMixerMode);
+}
+
+float getMotorOutputLow(void)
+{
+    return motorOutputLow;
+}
+
+float getMotorOutputHigh(void)
+{
+    return motorOutputHigh;
 }
