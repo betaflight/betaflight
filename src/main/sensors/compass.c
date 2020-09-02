@@ -38,8 +38,10 @@
 #include "drivers/compass/compass_ak8963.h"
 #include "drivers/compass/compass_fake.h"
 #include "drivers/compass/compass_hmc5883l.h"
-#include "drivers/compass/compass_qmc5883l.h"
 #include "drivers/compass/compass_lis3mdl.h"
+#include "drivers/compass/compass_mpu925x_ak8963.h"
+#include "drivers/compass/compass_qmc5883l.h"
+
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/time.h"
@@ -266,6 +268,18 @@ bool compassDetect(magDev_t *dev, uint8_t *alignment)
         magHardware = MAG_NONE;
         break;
     }
+
+    // MAG_MPU925X_AK8963 is an MPU925x configured as I2C passthrough to the built-in AK8963 magnetometer
+    // Passthrough mode disables the gyro/acc part of the MPU, so we only want to detect this sensor if mag_hardware was explicitly set to MAG_MPU925X_AK8963
+#ifdef USE_MAG_MPU925X_AK8963
+    if(compassConfig()->mag_hardware == MAG_MPU925X_AK8963){
+        if (mpu925Xak8963CompassDetect(dev)) {
+            magHardware = MAG_MPU925X_AK8963;
+        } else {
+            return false;
+        }
+    }
+#endif
 
     if (magHardware == MAG_NONE) {
         return false;
