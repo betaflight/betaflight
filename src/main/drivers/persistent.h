@@ -29,10 +29,18 @@ typedef enum {
     PERSISTENT_OBJECT_MAGIC = 0,
     PERSISTENT_OBJECT_HSE_VALUE,
     PERSISTENT_OBJECT_OVERCLOCK_LEVEL,
+#ifdef STM32H7
+    // SPRACING H7 firmware always leaves this value reset
+    PERSISTENT_OBJECT_RESET_REASON_FWONLY,
+#else // STM32H7
     PERSISTENT_OBJECT_RESET_REASON,
+#endif // STM32H7
     PERSISTENT_OBJECT_RTC_HIGH,           // high 32 bits of rtcTime_t
     PERSISTENT_OBJECT_RTC_LOW,            // low 32 bits of rtcTime_t
     PERSISTENT_OBJECT_COUNT,
+#ifdef STM32H7
+    PERSISTENT_OBJECT_RESET_REASON,
+#endif // STM32H7
 } persistentObjectId_e;
 
 // Values for PERSISTENT_OBJECT_RESET_REASON

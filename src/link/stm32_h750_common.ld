@@ -21,13 +21,13 @@ SECTIONS
     . = ALIGN(512);
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
-    . = ALIGN(4);
+    . = ALIGN(32);
   } >MAIN
 
   /* The program code and other data goes into MAIN */
   .text :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
@@ -39,7 +39,7 @@ SECTIONS
     KEEP (*(.init))
     KEEP (*(.fini))
 
-    . = ALIGN(4);
+    . = ALIGN(32);
     _etext = .;        /* define a global symbols at end of code */
   } >MAIN
 
@@ -48,11 +48,11 @@ SECTIONS
   tcm_code = LOADADDR(.tcm_code); 
   .tcm_code :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     tcm_code_start = .; 
     *(.tcm_code)
     *(.tcm_code*)
-    . = ALIGN(4);
+    . = ALIGN(32);
     tcm_code_end = .; 
   } >ITCM_RAM AT >MAIN
 
@@ -88,17 +88,17 @@ SECTIONS
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
-    . = ALIGN(4);
+    . = ALIGN(32);
     _edata = .;        /* define a global symbol at data end */
   } >DTCM_RAM AT >MAIN
 
   /* Uninitialized data section */
-  . = ALIGN(4);
+  . = ALIGN(32);
   .bss (NOLOAD) :
   {
     /* This is used by the startup in order to initialize the .bss secion */
@@ -108,13 +108,13 @@ SECTIONS
     *(SORT_BY_ALIGNMENT(.bss*))
     *(COMMON)
 
-    . = ALIGN(4);
+    . = ALIGN(32);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >RAM
+  } >DTCM_RAM
 
   /* Uninitialized data section */
-  . = ALIGN(4);
+  . = ALIGN(32);
   .sram2 (NOLOAD) :
   {
     /* This is used by the startup in order to initialize the .sram2 secion */
@@ -123,7 +123,7 @@ SECTIONS
     *(.sram2)
     *(SORT_BY_ALIGNMENT(.sram2*))
 
-    . = ALIGN(4);
+    . = ALIGN(32);
     _esram2 = .;         /* define a global symbol at sram2 end */
     __sram2_end__ = _esram2;
   } >RAM
@@ -134,16 +134,16 @@ SECTIONS
   /* Initialized FAST_DATA section for unsuspecting developers */
   .fastram_data :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     _sfastram_data = .;        /* create a global symbol at data start */
     *(.fastram_data)           /* .data sections */
     *(.fastram_data*)          /* .data* sections */
 
-    . = ALIGN(4);
+    . = ALIGN(32);
     _efastram_data = .;        /* define a global symbol at data end */
   } >FASTRAM AT >MAIN
 
-  . = ALIGN(4);
+  . = ALIGN(32);
   .fastram_bss (NOLOAD) :
   {
     _sfastram_bss = .;
@@ -151,7 +151,7 @@ SECTIONS
     *(.fastram_bss)
     *(SORT_BY_ALIGNMENT(.fastram_bss*))
 
-    . = ALIGN(4);
+    . = ALIGN(32);
     _efastram_bss = .;
     __fastram_bss_end__ = _efastram_bss;
   } >FASTRAM

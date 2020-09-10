@@ -337,7 +337,6 @@ void init(void)
     };
     uint8_t initFlags = 0;
 
-
 #ifdef CONFIG_IN_SDCARD
 
     //
@@ -366,6 +365,8 @@ void init(void)
     pgResetAll();
 
 #if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    sdcardConfigMutable()->mode = SDCARD_MODE_SDIO;
+    sdcardConfigMutable()->useDma = true;
     sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
@@ -444,6 +445,18 @@ void init(void)
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
+
+#ifdef USE_SDCARD
+    // Ensure the SD card is initialised before the USB MSC starts to avoid a race condition
+#if !defined(CONFIG_IN_SDCARD) && defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
+    sdcardConfigMutable()->mode = SDCARD_MODE_SDIO;
+    sdcardConfigMutable()->useDma = true;
+    sdioPinConfigure();
+    SDIO_GPIO_Init();
+#endif
+    initFlags |= SD_INIT_ATTEMPTED;
+    sdCardAndFSInit();
+#endif
 
 #ifdef USE_BRUSHED_ESC_AUTODETECT
     // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
@@ -839,16 +852,6 @@ void init(void)
 #endif
 
 #ifdef USE_BLACKBOX
-#ifdef USE_SDCARD
-    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-        if (sdcardConfig()->mode) {
-            if (!(initFlags & SD_INIT_ATTEMPTED)) {
-                initFlags |= SD_INIT_ATTEMPTED;
-                sdCardAndFSInit();
-            }
-        }
-    }
-#endif
     blackboxInit();
 #endif
 

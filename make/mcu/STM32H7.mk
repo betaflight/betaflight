@@ -109,7 +109,7 @@ USBHID_SRC = $(notdir $(wildcard $(USBHID_DIR)/Src/*.c))
 
 USBMSC_DIR = $(ROOT)/lib/main/STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/MSC
 USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
-EXCLUDES   = usbd_msc_storage_template.c usbd_msc_scsi.c
+EXCLUDES   = usbd_msc_storage_template.c
 USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
 
 VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src
@@ -259,10 +259,10 @@ MCU_EXCLUDES = \
             drivers/bus_i2c.c \
             drivers/timer.c
 
-#MSC_SRC = \
-#            drivers/usb_msc_common.c \
-#            drivers/usb_msc_h7xx.c \
-#            msc/usbd_storage.c
+MSC_SRC = \
+            drivers/usb_msc_common.c \
+            drivers/usb_msc_h7xx.c \
+            msc/usbd_storage.c
 
 ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
 MCU_COMMON_SRC += \
@@ -271,17 +271,17 @@ MSC_SRC += \
             msc/usbd_storage_sdio.c
 endif
 
-#ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-#MSC_SRC += \
-#            msc/usbd_storage_sd_spi.c
-#endif
+ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_sd_spi.c
+endif
 
-#ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-#MSC_SRC += \
-#            msc/usbd_storage_emfat.c \
-#            msc/emfat.c \
-#            msc/emfat_file.c
-#endif
+ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
+MSC_SRC += \
+            msc/usbd_storage_emfat.c \
+            msc/emfat.c \
+            msc/emfat_file.c
+endif
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

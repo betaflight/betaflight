@@ -121,6 +121,10 @@ typedef struct __SD_HandleTypeDef
 typedef struct
 #endif /* USE_HAL_SD_REGISTER_CALLBACKS */
 {
+  uint32_t                     CSD[4];           /*!< SD card specific data table         */
+
+  uint32_t                     CID[4];           /*!< SD card identification number table */
+
   SD_TypeDef                   *Instance;        /*!< SD registers base address           */
 
   SD_InitTypeDef               Init;             /*!< SD required parameters              */
@@ -142,10 +146,6 @@ typedef struct
   __IO uint32_t                ErrorCode;        /*!< SD Card Error codes                 */
 
   HAL_SD_CardInfoTypeDef       SdCard;           /*!< SD Card information                 */
-
-  uint32_t                     CSD[4];           /*!< SD card specific data table         */
-
-  uint32_t                     CID[4];           /*!< SD card identification number table */
 
 #if defined (USE_HAL_SD_REGISTER_CALLBACKS) && (USE_HAL_SD_REGISTER_CALLBACKS == 1U)
   void (* TxCpltCallback)                 (struct __SD_HandleTypeDef *hsd);

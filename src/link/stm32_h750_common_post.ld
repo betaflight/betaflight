@@ -4,7 +4,7 @@ SECTIONS
   {
     __persistent_data_start__ = .;
     *(.persistent_data)
-    . = ALIGN(4);
+    . = ALIGN(32);
     __persistent_data_end__ = .;
   } >RAM
 
@@ -14,12 +14,12 @@ SECTIONS
   . = _heap_stack_begin;
   ._user_heap_stack :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
-    . = ALIGN(4);
+    . = ALIGN(32);
   } >STACKRAM = 0xa5
 
   /* MEMORY_bank1 section, code must be located here explicitly            */

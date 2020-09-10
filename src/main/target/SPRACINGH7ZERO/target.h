@@ -58,14 +58,6 @@
 #define QUADSPI1_MODE QUADSPI_MODE_BK1_ONLY
 #define QUADSPI1_CS_FLAGS (QUADSPI_BK1_CS_HARDWARE | QUADSPI_BK2_CS_NONE | QUADSPI_CS_MODE_LINKED)
 
-#define USE_FLASH_CHIP
-#define CONFIG_IN_EXTERNAL_FLASH
-//#define CONFIG_IN_SDCARD
-//#define CONFIG_IN_RAM
-#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
-#error "EEPROM storage location not defined"
-#endif
-
 #define USE_UART
 
 #define USE_UART1
@@ -166,11 +158,18 @@
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 #define USE_FLASHFS
+#ifdef USE_FLASHFS
+#define USE_FLASH_CHIP
 #define USE_FLASH_TOOLS
 #define USE_FLASH_W25N01G
 #define FLASH_QUADSPI_INSTANCE    QUADSPI
 
+#define CONFIG_IN_EXTERNAL_FLASH
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#endif
+
 #define USE_SDCARD
+#ifdef USE_SDCARD
 #define USE_SDCARD_SDIO
 #define SDCARD_DETECT_PIN PD10
 #define SDCARD_DETECT_INVERTED
@@ -183,8 +182,16 @@
 #define SDIO_D2_PIN             PC10
 #define SDIO_D3_PIN             PC11
 
+#ifndef USE_FLASHFS
+#define CONFIG_IN_SDCARD
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#endif
+#endif
 
+//#define CONFIG_IN_RAM
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
+#error "EEPROM storage location not defined"
+#endif
 
 #define USE_TRANSPONDER
 

@@ -58,14 +58,6 @@
 #define QUADSPI1_MODE QUADSPI_MODE_BK1_ONLY
 #define QUADSPI1_CS_FLAGS (QUADSPI_BK1_CS_HARDWARE | QUADSPI_BK2_CS_NONE | QUADSPI_CS_MODE_LINKED)
 
-#define USE_FLASH_CHIP
-#define CONFIG_IN_EXTERNAL_FLASH
-//#define CONFIG_IN_SDCARD
-//#define CONFIG_IN_RAM
-#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
-#error "EEPROM storage location not defined"
-#endif
-
 #define USE_UART
 
 #define USE_UART1
@@ -161,17 +153,7 @@
 
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
-#define USE_FLASHFS
-#define USE_FLASH_TOOLS
-#define USE_FLASH_W25N01G
-#define FLASH_QUADSPI_INSTANCE    QUADSPI
-
 #define USE_PID_AUDIO
-
-#define USE_TRANSPONDER
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI4
-#define MAX7456_SPI_CS_PIN      SPI4_NSS_PIN
 
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
@@ -181,6 +163,48 @@
 #define RTC6705_CS_PIN                      PB0  // J14-5
 #define RTC6705_SPICLK_PIN                  PA7  // J14-4
 #define RTC6705_SPI_MOSI_PIN                PA6  // J14-3
+
+#define USE_FLASHFS
+#ifdef USE_FLASHFS
+#define USE_FLASH_CHIP
+#define USE_FLASH_TOOLS
+#define USE_FLASH_W25N01G
+#define FLASH_QUADSPI_INSTANCE    QUADSPI
+
+#define CONFIG_IN_EXTERNAL_FLASH
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#endif
+
+#define USE_SDCARD
+#ifdef USE_SDCARD
+#define USE_SDCARD_SDIO
+#define SDCARD_DETECT_PIN PD10
+#define SDCARD_DETECT_INVERTED
+#define SDIO_DEVICE             SDIODEV_1
+#define SDIO_USE_4BIT           true
+#define SDIO_CK_PIN             PC12
+#define SDIO_CMD_PIN            PD2
+#define SDIO_D0_PIN             PC8
+#define SDIO_D1_PIN             PC9
+#define SDIO_D2_PIN             PC10
+#define SDIO_D3_PIN             PC11
+
+#ifndef USE_FLASHFS
+#define CONFIG_IN_SDCARD
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#endif
+#endif
+
+//#define CONFIG_IN_RAM
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
+#error "EEPROM storage location not defined"
+#endif
+
+#define USE_TRANSPONDER
+
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI4
+#define MAX7456_SPI_CS_PIN      SPI4_NSS_PIN
 
 #ifdef USE_DMA_SPEC
 //#define UART1_TX_DMA_OPT        0
@@ -199,21 +223,6 @@
 #define ADC3_DMA_STREAM DMA2_Stream1
 //#define ADC2_DMA_STREAM DMA2_Stream2  // ADC2 not used.
 #endif
-
-#define USE_SDCARD
-#define USE_SDCARD_SDIO
-#define SDCARD_DETECT_PIN PD10
-#define SDCARD_DETECT_INVERTED
-#define SDIO_DEVICE             SDIODEV_1
-#define SDIO_USE_4BIT           true
-#define SDIO_CK_PIN             PC12
-#define SDIO_CMD_PIN            PD2
-#define SDIO_D0_PIN             PC8
-#define SDIO_D1_PIN             PC9
-#define SDIO_D2_PIN             PC10
-#define SDIO_D3_PIN             PC11
-
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define USE_ADC
 #define USE_ADC_INTERNAL // ADC3
