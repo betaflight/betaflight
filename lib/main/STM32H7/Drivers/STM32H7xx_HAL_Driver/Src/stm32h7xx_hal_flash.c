@@ -144,6 +144,10 @@ FLASH_ProcessTypeDef pFlash;
   */
 HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress, uint32_t DataAddress)
 {
+#if !defined(FLASH_OPTCR_PG_OTP)
+  UNUSED(TypeProgram);
+#endif
+
   HAL_StatusTypeDef status;
   __IO uint32_t *dest_addr = (__IO uint32_t *)FlashAddress;
   __IO uint32_t *src_addr = (__IO uint32_t*)DataAddress;
@@ -302,6 +306,10 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
   */
 HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddress, uint32_t DataAddress)
 {
+#if !defined(FLASH_OPTCR_PG_OTP)
+  UNUSED(TypeProgram);
+#endif
+
   HAL_StatusTypeDef status;
   __IO uint32_t *dest_addr = (__IO uint32_t*)FlashAddress;
   __IO uint32_t *src_addr = (__IO uint32_t*)DataAddress;
