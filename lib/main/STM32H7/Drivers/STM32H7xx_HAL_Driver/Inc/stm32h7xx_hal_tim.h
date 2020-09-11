@@ -2348,6 +2348,7 @@ void TIM_OC2_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config);
 void TIM_ETR_SetConfig(TIM_TypeDef *TIMx, uint32_t TIM_ExtTRGPrescaler,
                        uint32_t TIM_ExtTRGPolarity, uint32_t ExtTRGFilter);
 
+void TIM_DMADelayPulseCplt(DMA_HandleTypeDef *hdma);
 void TIM_DMADelayPulseHalfCplt(DMA_HandleTypeDef *hdma);
 void TIM_DMAError(DMA_HandleTypeDef *hdma);
 void TIM_DMACaptureCplt(DMA_HandleTypeDef *hdma);

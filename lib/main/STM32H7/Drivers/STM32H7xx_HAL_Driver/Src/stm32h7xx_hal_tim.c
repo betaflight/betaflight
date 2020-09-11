@@ -221,7 +221,7 @@ static void TIM_TI4_SetConfig(TIM_TypeDef *TIMx, uint32_t TIM_ICPolarity, uint32
 static void TIM_ITRx_SetConfig(TIM_TypeDef *TIMx, uint32_t InputTriggerSource);
 static void TIM_DMAPeriodElapsedCplt(DMA_HandleTypeDef *hdma);
 static void TIM_DMAPeriodElapsedHalfCplt(DMA_HandleTypeDef *hdma);
-static void TIM_DMADelayPulseCplt(DMA_HandleTypeDef *hdma);
+void TIM_DMADelayPulseCplt(DMA_HandleTypeDef *hdma);
 static void TIM_DMATriggerCplt(DMA_HandleTypeDef *hdma);
 static void TIM_DMATriggerHalfCplt(DMA_HandleTypeDef *hdma);
 static HAL_StatusTypeDef TIM_SlaveTimer_SetConfig(TIM_HandleTypeDef *htim,
