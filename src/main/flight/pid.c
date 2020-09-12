@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 15);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 1);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -202,8 +202,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .idle_p = 50,
         .idle_pid_limit = 200,
         .idle_max_increase = 150,
-        .ff_interpolate_sp = FF_INTERPOLATE_AVG2,
-        .ff_spike_limit = 60,
+        .ff_interpolate_sp = FF_INTERPOLATE_ON,
         .ff_max_rate_limit = 100,
         .ff_smooth_factor = 37,
         .ff_boost = 15,
@@ -245,12 +244,6 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
-
-float pidGetSpikeLimitInverse()
-{
-    return pidRuntime.ffSpikeLimitInverse;
-}
-
 
 float pidGetFfBoostFactor()
 {
