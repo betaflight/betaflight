@@ -39,6 +39,7 @@
 #endif
 
 #define USB_CDC_HID_NUM_AXES 8
+#define USB_CDC_HID_NUM_BUTTONS 8
 
 #define USB_CDC_HID_RANGE_MIN -127
 #define USB_CDC_HID_RANGE_MAX 127
@@ -48,23 +49,42 @@
 const uint8_t hidChannelMapping[] = {
     ROLL,     // X
     PITCH,    // Y
-    AUX3,
+    AUX3,     // Z
     YAW,      // X Rotation
     AUX1,     // Z Rotation
     THROTTLE, // Y Rotation
-    AUX4,
-    AUX2,     // Wheel
+    AUX4,     // Slider
+    AUX2,     // Dial
+    AUX5,     // Button 1
+    AUX6,     // Button 2
+    AUX7,     // Button 3
+    AUX8,     // Button 4
+    AUX9,     // Button 5
+    AUX10,    // Button 6
+    AUX11,    // Button 7
+    AUX12     // Button 8
 };
 
 void sendRcDataToHid(void)
 {
-    int8_t report[8];
+    int8_t report[9];
+     // Axes
     for (unsigned i = 0; i < USB_CDC_HID_NUM_AXES; i++) {
         const uint8_t channel = hidChannelMapping[i];
         report[i] = scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX);
-        if (i == 1) {
-            // For some reason ROLL is inverted in Windows
+        if (channel == PITCH) {
+            // PITCH is inverted in Windows
             report[i] = -report[i];
+        }
+    }
+
+    // Buttons
+    // Each bit in one byte represents one button so we have 8 buttons in one-byte-data
+    report[8] = 0;
+    for (unsigned i = 0; i < USB_CDC_HID_NUM_BUTTONS; i++) {
+        const uint8_t channel = hidChannelMapping[i + USB_CDC_HID_NUM_AXES];
+        if (scaleRange(constrain(rcData[channel], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, USB_CDC_HID_RANGE_MIN, USB_CDC_HID_RANGE_MAX) > 0) {
+            report[8] |= (1 << i);
         }
     }
 #if defined(STM32F4)
