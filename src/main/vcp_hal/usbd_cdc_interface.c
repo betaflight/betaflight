@@ -104,6 +104,13 @@ static int8_t CDC_Itf_DeInit(void);
 static int8_t CDC_Itf_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t CDC_Itf_Receive(uint8_t* pbuf, uint32_t *Len);
 
+// The CDC_Itf_TransmitCplt field was introduced in MiddleWare that comes with
+// H7 V1.8.0.
+// Other MCU can be add here as the MiddleWare version advances.
+#ifdef STM32H7
+static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum);
+#endif
+
 static void TIM_Config(void);
 static void Error_Handler(void);
 
@@ -112,7 +119,10 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
   CDC_Itf_Init,
   CDC_Itf_DeInit,
   CDC_Itf_Control,
-  CDC_Itf_Receive
+  CDC_Itf_Receive,
+#ifdef STM32H7
+  CDC_Itf_TransmitCplt
+#endif
 };
 
 
@@ -314,6 +324,17 @@ static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
     }
     return (USBD_OK);
 }
+
+#ifdef STM32H7
+static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
+{
+    UNUSED(Buf);
+    UNUSED(Len);
+    UNUSED(epnum);
+
+    return (USBD_OK);
+}
+#endif
 
 /**
   * @brief  TIM_Config: Configure TIMusb timer
