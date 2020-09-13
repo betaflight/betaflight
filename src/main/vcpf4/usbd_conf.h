@@ -41,7 +41,7 @@
 #define CDC_CMD_EP                      0x82  /* EP2 for CDC commands */
 
 #define HID_IN_EP                       0x83
-#define HID_IN_PACKET                   8
+#define HID_IN_PACKET                   9
 
 /* CDC Endpoints parameters: you can fine tune these values depending on the needed baudrates and performance. */
 #ifdef USE_USB_OTG_HS
