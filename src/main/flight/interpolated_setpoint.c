@@ -102,19 +102,21 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
             }
         } else {
             // we have movement; let's consider what happened on previous packets, using ffStatus
-            if (ffStatus[axis] == 1) {
-                // was interpolated forward after previous dropped packet after small step
-                // this step is likely twice as tall as it should be
-                setpointSpeed = setpointSpeed / 2.0f;
-            } else if (ffStatus[axis] == 2) {
-                // we are doing nothing for these to avoid exaggerating the FrSky early packet problem
-            } else if (ffStatus[axis] == 3) {
-                // movement after nothing on previous two packets
-                // reduce boost when higher averaging is used to improve slow stick smoothness
-                setpointAccelerationModifier /= (averagingCount + 1);
+            if (ffStatus[axis] != 0) {
+                if (ffStatus[axis] == 1) {
+                    // was interpolated forward after previous dropped packet after small step
+                    // this step is likely twice as tall as it should be
+                    setpointSpeed = setpointSpeed / 2.0f;
+                } else if (ffStatus[axis] == 2) {
+                    // we are doing nothing for these to avoid exaggerating the FrSky early packet problem
+                } else if (ffStatus[axis] == 3) {
+                    // movement after nothing on previous two packets
+                    // reduce boost when higher averaging is used to improve slow stick smoothness
+                    setpointAccelerationModifier /= (averagingCount + 1);
+                }
+                ffStatus[axis] = 0;
+                // all is normal
             }
-            ffStatus[axis] = 0;
-            // all is normal
         }
 
         float setpointAcceleration = setpointSpeed - prevSetpointSpeed[axis];
