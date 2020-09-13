@@ -1195,6 +1195,16 @@
 
 // AF table
 
+//NONE
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH1     D(6, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH2     D(6, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH3     D(6, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM1_CH4     D(6, 1)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH1     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH2     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH3     D(3, 8)
+#define DEF_TIM_AF__NONE__TCH_TIM8_CH4     D(3, 8)
+
 //PORTA
 #define DEF_TIM_AF__PA0__TCH_TIM2_CH1     D(1, 2)
 #define DEF_TIM_AF__PA1__TCH_TIM2_CH2     D(1, 2)
