@@ -1149,10 +1149,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         agBoostAttenuator = MAX(agBoostAttenuator, 1.0f);
         const float agBoost = 1.0f + (pidRuntime.antiGravityPBoost / agBoostAttenuator);
         pidData[axis].P *= agBoost;
-        if (axis == FD_ROLL){
+        if (axis == FD_ROLL) {
             DEBUG_SET(DEBUG_ANTI_GRAVITY, 2, lrintf(agBoost * 1000));
         }
-        if (axis == FD_PITCH){
+        if (axis == FD_PITCH) {
             DEBUG_SET(DEBUG_ANTI_GRAVITY, 3, lrintf(agBoost * 1000));
         }
 
