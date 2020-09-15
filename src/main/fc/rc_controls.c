@@ -205,7 +205,7 @@ void processRcStickPositions()
             }
         }
         return;
-    } else if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
+    } else if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE && !IS_RC_MODE_ACTIVE(BOXSTICKCOMMANDDISABLE)) { // disable stick arming if STICK COMMAND DISABLE SW is active
         if (rcDelayMs >= ARM_DELAY_MS && !doNotRepeat) {
             doNotRepeat = true;
             if (!ARMING_FLAG(ARMED)) {
@@ -231,7 +231,7 @@ void processRcStickPositions()
 
     #ifdef USE_USB_CDC_HID
     // If this target is used as a joystick, we should leave here.
-    if (cdcDeviceIsMayBeActive()) {
+    if (cdcDeviceIsMayBeActive() || IS_RC_MODE_ACTIVE(BOXSTICKCOMMANDDISABLE)) {
         return;
     }
     #endif
