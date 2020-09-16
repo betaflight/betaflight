@@ -118,7 +118,7 @@ PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT,
 
 #if defined(USE_CUSTOM_BOX_NAMES)
 
-#define MAX_BOX_USER_NAME_LENGTH 16
+#define MAX_BOX_USER_NAME_LENGTH 18
 
 typedef struct modeActivationConfig_s {
     char box_user_1_name[MAX_BOX_USER_NAME_LENGTH];
