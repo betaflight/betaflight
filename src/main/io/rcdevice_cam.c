@@ -55,7 +55,7 @@ bool isButtonPressed = false;
 bool waitingDeviceResponse = false;
 
 
-static bool isFeatureSupported(uint8_t feature)
+static bool isFeatureSupported(uint16_t feature)
 {
     if (camDevice->info.features & feature || rcdeviceConfig()->feature & feature) {
         return true;
@@ -284,6 +284,15 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
     }
 }
 
+static void rcdeviceProcessDeviceRequest(runcamDeviceRequest_t *request)
+{
+    switch (request->command) {
+        case RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE:
+            runcamDeviceSendAttitude(camDevice);
+            break;
+    }
+}
+
 void rcdeviceUpdate(timeUs_t currentTimeUs)
 {
     rcdeviceReceive(currentTimeUs);
@@ -291,6 +300,13 @@ void rcdeviceUpdate(timeUs_t currentTimeUs)
     rcdeviceCameraControlProcess();
 
     rcdevice5KeySimulationProcess(currentTimeUs);
+
+    if (isFeatureSupported(RCDEVICE_PROTOCOL_FEATURE_FC_ATTITUDE)) {
+        runcamDeviceRequest_t *request = rcdeviceGetRequest();
+        if (request) {
+            rcdeviceProcessDeviceRequest(request);
+        }
+    }
 }
 
 void rcdeviceInit(void)
