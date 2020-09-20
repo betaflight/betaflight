@@ -155,6 +155,61 @@ const quadSpiHardware_t quadSpiHardware[] = {
         .rcc = RCC_AHB3(QSPI),
     },
 #endif
+
+#ifdef STM32F745
+    {
+        .device = QUADSPIDEV_1,
+        .reg = QUADSPI,
+        .clkPins = {
+            { DEFIO_TAG_E(PB2),  GPIO_AF9_QUADSPI },
+        },
+        .bk1IO0Pins = {
+            { DEFIO_TAG_E(PC9),  GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PD11), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF8),  GPIO_AF10_QUADSPI },
+        },
+        .bk1IO1Pins = {
+            { DEFIO_TAG_E(PC10), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PD12), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF9),  GPIO_AF10_QUADSPI },
+        },
+        .bk1IO2Pins = {
+            { DEFIO_TAG_E(PE2),  GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF7),  GPIO_AF9_QUADSPI },
+        },
+        .bk1IO3Pins = {
+            { DEFIO_TAG_E(PA1),  GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PD13), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PF6),  GPIO_AF9_QUADSPI },
+        },
+        .bk1CSPins = {
+            { DEFIO_TAG_E(PB6),  GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PB10), GPIO_AF9_QUADSPI },
+            { DEFIO_TAG_E(PG6),  GPIO_AF10_QUADSPI },
+        },
+
+        .bk2IO0Pins = {
+            { DEFIO_TAG_E(PE7),  GPIO_AF10_QUADSPI },
+            //{ DEFIO_TAG_E(PH7),  GPIO_AF9_QUADSPI }, // FIXME regenerate io_def_generated with support for GPIO 'H'
+        },
+        .bk2IO1Pins = {
+            { DEFIO_TAG_E(PE8),  GPIO_AF10_QUADSPI },
+            //{ DEFIO_TAG_E(PH3),  GPIO_AF9_QUADSPI }, // FIXME regenerate io_def_generated with support for GPIO 'H'
+        },
+        .bk2IO2Pins = {
+            { DEFIO_TAG_E(PE9),  GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PG9),  GPIO_AF9_QUADSPI },
+        },
+        .bk2IO3Pins = {
+            { DEFIO_TAG_E(PE10),  GPIO_AF10_QUADSPI },
+            { DEFIO_TAG_E(PG14),  GPIO_AF9_QUADSPI },
+        },
+        .bk2CSPins = {
+            { DEFIO_TAG_E(PC11),  GPIO_AF9_QUADSPI },
+        },
+        .rcc = RCC_AHB3(QSPI),
+    },
+#endif
 };
 
 void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)

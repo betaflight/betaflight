@@ -60,7 +60,7 @@ void quadSpiInitDevice(QUADSPIDevice device)
     IOInit(IOGetByTag(quadSpi->bk2IO3), OWNER_QUADSPI_BK2IO3, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(quadSpi->bk2CS), OWNER_QUADSPI_BK2CS, RESOURCE_INDEX(device));
 
-#if defined(STM32H7)
+#if defined(STM32F745) || defined(STM32H7)
     // clock is only on AF9
     // IO and CS lines are on AF9 and AF10
     IOConfigGPIOAF(IOGetByTag(quadSpi->clk), QUADSPI_IO_AF_CLK_CFG, GPIO_AF9_QUADSPI);
