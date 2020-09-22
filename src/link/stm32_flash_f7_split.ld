@@ -32,7 +32,7 @@ SECTIONS
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -51,7 +51,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH1
+  } >FLASH1 AT >AXIM_FLASH1
 
   /* Critical program code goes into ITCM RAM */
   /* Copy specific fast-executing code to ITCM RAM */ 
@@ -64,7 +64,7 @@ SECTIONS
     *(.tcm_code*)
     . = ALIGN(4);
     tcm_code_end = .; 
-  } >ITCM_RAM AT >FLASH1
+  } >ITCM_RAM AT >AXIM_FLASH1
 
   .ARM.extab   : 
   { 
@@ -75,7 +75,7 @@ SECTIONS
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
 
   .pg_registry :
   {
@@ -83,14 +83,14 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
   
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH
+  } >FLASH AT >AXIM_FLASH
 
   /* Storage for the address for the configuration section so we can grab it out of the hex file */
   .custom_defaults :
@@ -120,13 +120,13 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+  } >RAM AT >AXIM_FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss (NOLOAD) :
   {
-    /* This is used by the startup in order to initialize the .bss section */
+    /* This is used by the startup in order to initialize the .bss secion */
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
@@ -142,7 +142,7 @@ SECTIONS
   . = ALIGN(4);
   .sram2 (NOLOAD) :
   {
-    /* This is used by the startup in order to initialize the .sram2 section */
+    /* This is used by the startup in order to initialize the .sram2 secion */
     _ssram2 = .;         /* define a global symbol at sram2 start */
     __sram2_start__ = _ssram2;
     *(.sram2)
@@ -166,7 +166,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH
+  } >FASTRAM AT >AXIM_FLASH
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
