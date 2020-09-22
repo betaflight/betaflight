@@ -29,10 +29,13 @@
 
 // Undefine this for use libc sinf/cosf. Keep this defined to use fast sin/cos approximations
 #define FAST_MATH             // order 9 approximation
-#define VERY_FAST_MATH      // order 7 approximation
+#define VERY_FAST_MATH        // order 7 approximation
 
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
+#define M_EULERf    2.71828182845904523536f
+#define M_SQRT2f    1.41421356237309504880f
+#define M_LN2f      0.69314718055994530942f
 
 #define RAD    (M_PIf / 180.0f)
 #define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
@@ -137,8 +140,8 @@ float exp_approx(float val);
 float log_approx(float val);
 float pow_approx(float a, float b);
 #else
-#define sin_approx(x)   sinf(x)
-#define cos_approx(x)   cosf(x)
+#define sin_approx(x)       sinf(x)
+#define cos_approx(x)       cosf(x)
 #define atan2_approx(y,x)   atan2f(y,x)
 #define acos_approx(x)      acosf(x)
 #define tan_approx(x)       tanf(x)

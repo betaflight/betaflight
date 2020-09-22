@@ -25,6 +25,7 @@
 #include <ctype.h>
 
 #include <stdbool.h>
+#include <string.h>
 
 #include "platform.h"
 
