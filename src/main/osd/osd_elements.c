@@ -139,6 +139,8 @@
 #define FULL_CIRCLE 360
 #define EFFICIENCY_MINIMUM_SPEED_CM_S 100
 
+#define MOTOR_STOPPED_THRESHOLD_RPM 1000
+
 #ifdef USE_OSD_STICK_OVERLAY
 typedef struct radioControls_s {
     uint8_t left_vertical;
@@ -1051,6 +1053,12 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
     for (; i < getMotorCount(); i++) {
         if (motorsRunning) {
             element->buff[i] =  0x88 - scaleRange(motor[i], getMotorOutputLow(), getMotorOutputHigh(), 0, 8);
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+            if (getEscRpm(i) < MOTOR_STOPPED_THRESHOLD_RPM) {
+                // Motor is not spinning properly. Mark as Stopped
+                element->buff[i] = 'S';
+            }
+#endif
         } else {
             element->buff[i] =  0x88;
         }
