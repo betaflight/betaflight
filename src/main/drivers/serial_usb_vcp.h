@@ -29,7 +29,7 @@
 
 extern USBD_HandleTypeDef  USBD_Device;
 
-#elif defined(STM32H7)
+#elif defined(STM32H7) || defined(STM32G4)
 #include "usbd_cdc.h"
 
 extern USBD_HandleTypeDef  USBD_Device;
