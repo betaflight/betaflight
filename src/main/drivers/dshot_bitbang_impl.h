@@ -80,6 +80,11 @@ typedef struct dmaRegCache_s {
     uint32_t NDTR;
     uint32_t PAR;
     uint32_t M0AR;
+#elif defined(STM32G4)
+    uint32_t CCR;
+    uint32_t CNDTR;
+    uint32_t CPAR;
+    uint32_t CMAR;
 #else
 #error No MCU dependent code here
 #endif
