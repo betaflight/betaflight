@@ -197,7 +197,7 @@ STATIC_UNIT_TESTED uint16_t ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState
     // max  1024     1811   2012us   
     //
 
-    return (5 * (rxRuntimeState->channelData[chan]+1) / 8) + 880;
+    return (5 * (ghstChannelData[chan]+1) / 8) + 880;
 }
 
 // called from telemetry/ghst.c
