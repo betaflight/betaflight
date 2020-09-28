@@ -32,6 +32,7 @@ extern "C" {
 
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
+    #include "fc/imu.h"
 
     #include "drivers/serial.h"
 
