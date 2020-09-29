@@ -90,17 +90,6 @@ static void ghstFinalize(sbuf_t *dst)
     ghstRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
 }
 
-static int ghstFinalizeBuf(sbuf_t *dst, uint8_t *frame)
-{
-    crc8_dvb_s2_sbuf_append(dst, &ghstFrame[2]); // start at byte 2, since CRC does not include device address and frame length
-    sbufSwitchToReader(dst, ghstFrame);
-    const int frameSize = sbufBytesRemaining(dst);
-    for (int ii = 0; sbufBytesRemaining(dst); ++ii) {
-        frame[ii] = sbufReadU8(dst);
-    }
-    return frameSize;
-}
-
 // Battery (Pack) status
 void ghstFramePackTelemetry(sbuf_t *dst)
 {
