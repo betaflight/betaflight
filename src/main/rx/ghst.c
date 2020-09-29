@@ -50,7 +50,7 @@
 
 // NOTE: SERIAL_BIDIR appears to use OD drive on telemetry data from FC to Rx (slow rise times)
 // SERIAL_BIDIR_PP would appear to be the correct way to do this, but this mode kills incoming control data
-#define GHST_PORT_OPTIONS               (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO | SERIAL_BIDIR)		
+#define GHST_PORT_OPTIONS               (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO | SERIAL_BIDIR)
 #define GHST_PORT_MODE                  MODE_RXTX   // bidirectional on single pin
 
 #define GHST_MAX_FRAME_TIME_US          500         // 14 bytes @ 420k = ~450us
@@ -58,7 +58,7 @@
 
 #define GHST_PAYLOAD_OFFSET offsetof(ghstFrameDef_t, type)
 
-STATIC_UNIT_TESTED bool ghstFrameDone = false;
+STATIC_UNIT_TESTED volatile bool ghstFrameDone = false;
 STATIC_UNIT_TESTED ghstFrame_t ghstFrame;
 STATIC_UNIT_TESTED ghstFrame_t ghstChannelDataFrame;
 STATIC_UNIT_TESTED uint32_t ghstChannelData[GHST_MAX_NUM_CHANNELS];
@@ -131,8 +131,7 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
             ghstFrameIdx = 0;
             const uint8_t crc = ghstFrameCRC();
             if (crc == ghstFrame.bytes[fullFrameLength - 1]) {
-                switch (ghstFrame.frame.type)
-                {
+                switch (ghstFrame.frame.type) {
                     case GHST_UL_RC_CHANS_HS4_5TO8:
                     case GHST_UL_RC_CHANS_HS4_9TO12:
                     case GHST_UL_RC_CHANS_HS4_13TO16:
@@ -153,7 +152,7 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
 STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
-    int iStartIdx = 4;
+    int startIdx = 4;
 
     if (ghstFrameDone) {
         ghstFrameDone = false;
@@ -167,17 +166,16 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
         ghstChannelData[3] = rcChannels->ch4 >> 1;
 
         // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
-        switch(ghstChannelDataFrame.frame.type)
-        {
-            case GHST_UL_RC_CHANS_HS4_5TO8:		iStartIdx = 4;	break;
-            case GHST_UL_RC_CHANS_HS4_9TO12:	iStartIdx = 8;	break;
-            case GHST_UL_RC_CHANS_HS4_13TO16:   iStartIdx = 12;	break;
+        switch(ghstChannelDataFrame.frame.type) {
+            case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
+            case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
+            case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
         } 
 
-        ghstChannelData[iStartIdx++] = rcChannels->cha << 3;
-        ghstChannelData[iStartIdx++] = rcChannels->chb << 3;
-        ghstChannelData[iStartIdx++] = rcChannels->chc << 3;
-        ghstChannelData[iStartIdx++] = rcChannels->chd << 3;
+        ghstChannelData[startIdx++] = rcChannels->cha << 3;
+        ghstChannelData[startIdx++] = rcChannels->chb << 3;
+        ghstChannelData[startIdx++] = rcChannels->chc << 3;
+        ghstChannelData[startIdx++] = rcChannels->chd << 3;
 
         return RX_FRAME_COMPLETE;
     }

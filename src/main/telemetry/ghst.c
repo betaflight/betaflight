@@ -65,10 +65,10 @@
 
 #include "telemetry/ghst.h"
 
-#define GHST_CYCLETIME_US                   100000 		// 10x/sec
-#define GHST_FRAME_PACK_PAYLOAD_SIZE			10
-#define GHST_FRAME_LENGTH_CRC					1
-#define GHST_FRAME_LENGTH_TYPE					1
+#define GHST_CYCLETIME_US                   100000      // 10x/sec
+#define GHST_FRAME_PACK_PAYLOAD_SIZE        10
+#define GHST_FRAME_LENGTH_CRC               1
+#define GHST_FRAME_LENGTH_TYPE              1
 
 static bool ghstTelemetryEnabled;
 static bool deviceInfoReplyPending;
@@ -106,30 +106,28 @@ void ghstFramePackTelemetry(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, GHST_FRAME_PACK_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
-    sbufWriteU8(dst, 0x23);						// GHST_DL_PACK_STAT
+    sbufWriteU8(dst, 0x23);                     // GHST_DL_PACK_STAT
 
     if (telemetryConfig()->report_cell_voltage) {
-    	sbufWriteU16(dst, getBatteryAverageCellVoltage());		// units of 10mV
+        sbufWriteU16(dst, getBatteryAverageCellVoltage());      // units of 10mV
     } else {
-    	sbufWriteU16(dst, getBatteryVoltage());
+        sbufWriteU16(dst, getBatteryVoltage());
     }
-    sbufWriteU16(dst, getAmperage());							// units of 10mA
+    sbufWriteU16(dst, getAmperage());                           // units of 10mA
 
-    sbufWriteU16(dst, getMAhDrawn());							// units of 10mAh
+    sbufWriteU16(dst, getMAhDrawn());                           // units of 10mAh
 
-    sbufWriteU8(dst, 0x00);						// Rx Voltage, units of 100mV (not passed from BF, added in Ghost Rx)
+    sbufWriteU8(dst, 0x00);                     // Rx Voltage, units of 100mV (not passed from BF, added in Ghost Rx)
 
-    sbufWriteU8(dst, 0x00);			            // tbd1
-    sbufWriteU8(dst, 0x00);						// tbd2
-    sbufWriteU8(dst, 0x00);						// tbd3
+    sbufWriteU8(dst, 0x00);                     // tbd1
+    sbufWriteU8(dst, 0x00);                     // tbd2
+    sbufWriteU8(dst, 0x00);                     // tbd3
 }
-
-#define BV(x)  (1 << (x))                       // bit value
 
 // schedule array to decide how often each type of frame is sent
 typedef enum {
     GHST_FRAME_START_INDEX = 0,
-    GHST_FRAME_PACK_INDEX = GHST_FRAME_START_INDEX,			// Battery (Pack) data
+    GHST_FRAME_PACK_INDEX = GHST_FRAME_START_INDEX, // Battery (Pack) data
     GHST_SCHEDULE_COUNT_MAX
 } ghstFrameTypeIndex_e;
 
@@ -145,7 +143,7 @@ static void processGhst(void)
     sbuf_t ghstPayloadBuf;
     sbuf_t *dst = &ghstPayloadBuf;
 
-    if (currentSchedule & BV(GHST_FRAME_PACK_INDEX)) {
+    if (currentSchedule & BIT(GHST_FRAME_PACK_INDEX)) {
         ghstInitializeFrame(dst);
         ghstFramePackTelemetry(dst);
         ghstFinalize(dst);
@@ -172,7 +170,7 @@ void initGhstTelemetry(void)
     int index = 0;
     if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
         || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
-        ghstSchedule[index++] = BV(GHST_FRAME_PACK_INDEX);
+        ghstSchedule[index++] = BIT(GHST_FRAME_PACK_INDEX);
     }
     ghstScheduleCount = (uint8_t)index;
  }
@@ -202,25 +200,6 @@ bool checkGhstTelemetryState(void)
         processGhst();
     }
 
-}
-
-// only used for unit testing
-int getGhstFrame(uint8_t *frame, ghstDl_e dlPacketId)
-{
-    sbuf_t ghstFrameBuf;
-    sbuf_t *sbuf = &ghstFrameBuf;
-
-    ghstInitializeFrame(sbuf);
-    switch (dlPacketId) {
-    default:
-    case GHST_DL_PACK_STAT:
-        ghstFramePackTelemetry(sbuf);
-        break;
-    }
-    const int frameSize = ghstFinalizeBuf(sbuf, frame);
-    return frameSize;
-
-    return 0;
 }
 
 #endif

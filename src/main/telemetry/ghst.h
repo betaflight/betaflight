@@ -32,4 +32,3 @@ bool checkGhstTelemetryState(void);
 void handleGhstTelemetry(timeUs_t currentTimeUs);
 void ghstScheduleDeviceInfoResponse(void);
 void ghstScheduleMspResponse(void);
-int getGhstFrame(uint8_t *frame, ghstDl_e frameType);
