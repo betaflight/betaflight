@@ -72,6 +72,8 @@ uint8_t eepromData[EEPROM_SIZE];
 // H7
 # elif defined(STM32H743xx) || defined(STM32H750xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+# elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x2000) // 8K sectors
 // G4
 # elif defined(STM32G4)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x800) // 2K page
@@ -272,7 +274,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx) || defined(STM32G4)
+#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 /*
 MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
 (Devices with non-contiguous flash layout is not currently useful anyways.)
@@ -281,6 +283,11 @@ H743
 2 bank * 8 sector/bank * 128K/sector (2MB)
 Bank 1 0x08000000 - 0x080FFFFF 128KB * 8
 Bank 2 0x08100000 - 0x081FFFFF 128KB * 8
+
+H7A3
+2 bank * 128 sector/bank * 8KB/sector (2MB)
+Bank 1 0x08000000 - 0x080FFFFF 8KB * 128
+Bank 2 0x08100000 - 0x081FFFFF 8KB * 128
 
 G473/474 in dual bank mode
 2 bank * 128 sector/bank * 2KB/sector (512KB)
@@ -294,6 +301,8 @@ FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 
 #if defined(STM32H743xx)
 #define FLASH_PAGE_PER_BANK 8
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#define FLASH_PAGE_PER_BANK 128
 #elif defined(STM32G4)
 #define FLASH_PAGE_PER_BANK 128
 // These are not defined in CMSIS like H7
@@ -420,7 +429,9 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (c->address % FLASH_PAGE_SIZE == 0) {
         FLASH_EraseInitTypeDef EraseInitStruct = {
             .TypeErase     = FLASH_TYPEERASE_SECTORS,
+#if !(defined(STM32H7A3xx) || defined(STM32H7A3xxQ))
             .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
+#endif
             .NbSectors     = 1
         };
         getFLASHSectorForEEPROM(c->address, &EraseInitStruct.Banks, &EraseInitStruct.Sector);

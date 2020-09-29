@@ -153,8 +153,9 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
 #
-# H743xI : 2M FLASH, 1M RAM (H753xI also)
-# H743xG : 1M FLASH, 1M RAM (H753xG also)
+# H743xI : 2M FLASH, 512KB AXI SRAM + 512KB D2 & D3 SRAM (H753xI also)
+# H743xG : 1M FLASH, 512KB AXI SRAM + 512KB D2 & D3 SRAM (H753xG also)
+# H7A3xI : 2M FLASH, 1MB   AXI SRAM + 160KB AHB & SRD SRAM
 # H750xB : 128K FLASH, 1M RAM
 #
 ifeq ($(TARGET),$(filter $(TARGET),$(H743xI_TARGETS)))
@@ -170,6 +171,36 @@ FIRMWARE_SIZE      := 448
 # and the maximum size of the data stored on the external storage device.
 MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h743.ld
+endif
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(H7A3xIQ_TARGETS)))
+DEVICE_FLAGS       += -DSTM32H7A3xxQ
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_2m.ld
+STARTUP_SRC         = startup_stm32h7a3xx.s
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(RAM_BASED),yes)
+FIRMWARE_SIZE      := 448
+# TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
+# and the maximum size of the data stored on the external storage device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_ram_based.ld
+endif
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(H7A3xI_TARGETS)))
+DEVICE_FLAGS       += -DSTM32H7A3xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_2m.ld
+STARTUP_SRC         = startup_stm32h7a3xx.s
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(RAM_BASED),yes)
+FIRMWARE_SIZE      := 448
+# TARGET_FLASH now becomes the amount of RAM memory that is occupied by the firmware
+# and the maximum size of the data stored on the external storage device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_ram_based.ld
 endif
 
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))

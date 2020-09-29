@@ -235,12 +235,21 @@ dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 // HAL library has a macro for this, but it is extremely inefficient in that it compares
 // the address against all possible values.
 // Here, we just compare the address against regions of memory.
-// If it's not in D3 peripheral area, then it's DMA1/2 and it's stream based.
+#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+// For H7A3, if it's lower than CD_AHB2PERIPH_BASE, then it's DMA1/2 and it's stream based.
+// If not, it's BDMA and it's channel based.
+#define IS_DMA_ENABLED(reg) \
+    ((uint32_t)(reg) < CD_AHB2PERIPH_BASE) ? \
+        (((DMA_Stream_TypeDef *)(reg))->CR & DMA_SxCR_EN) : \
+        (((BDMA_Channel_TypeDef *)(reg))->CCR & BDMA_CCR_EN)
+#else
+// For H743 and H750, if it's not in D3 peripheral area, then it's DMA1/2 and it's stream based.
 // If not, it's BDMA and it's channel based.
 #define IS_DMA_ENABLED(reg) \
     ((uint32_t)(reg) < D3_AHB1PERIPH_BASE) ? \
         (((DMA_Stream_TypeDef *)(reg))->CR & DMA_SxCR_EN) : \
         (((BDMA_Channel_TypeDef *)(reg))->CCR & BDMA_CCR_EN)
+#endif
 #elif defined(STM32G4)
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 // Missing __HAL_DMA_SET_COUNTER in FW library V1.0.0
