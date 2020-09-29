@@ -203,6 +203,20 @@ MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_ram_based.ld
 endif
 
+else ifeq ($(TARGET),$(filter $(TARGET),$(H723xG_TARGETS)))
+DEVICE_FLAGS       += -DSTM32H723xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
+STARTUP_SRC         = startup_stm32h723xx.s
+MCU_FLASH_SIZE     := 1024
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(H725xG_TARGETS)))
+DEVICE_FLAGS       += -DSTM32H725xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
+STARTUP_SRC         = startup_stm32h723xx.s
+MCU_FLASH_SIZE     := 1024
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld

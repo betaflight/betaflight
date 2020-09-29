@@ -282,6 +282,29 @@ pllConfig_t pll1Config7A3 = {
 // Source for CRS input
 #define MCU_RCC_CRS_SYNC_SOURCE RCC_CRS_SYNC_SOURCE_USB1
 
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+
+// Nominal max 550MHz
+
+pllConfig_t pll1Config72x = {
+    .clockMhz = 550,
+    .m = 4,
+    .n = 275,
+    .p = 1,
+    .q = 2,
+    .r = 2,
+    .vos = PWR_REGULATOR_VOLTAGE_SCALE0,
+    .vciRange = RCC_PLL1VCIRANGE_1,
+};
+
+#define MCU_HCLK_DIVIDER RCC_HCLK_DIV2
+
+// RM0468 (Rev.2) Table 16. 
+// 550MHz (AXI Interface clock) at VOS0 is 3WS
+#define MCU_FLASH_LATENCY FLASH_LATENCY_3
+
+#define MCU_RCC_CRS_SYNC_SOURCE RCC_CRS_SYNC_SOURCE_USB1
+
 #else
 #error Unknown MCU type
 #endif
@@ -313,6 +336,8 @@ static void SystemClockHSE_Config(void)
     pll1Config = (HAL_GetREVID() == REV_ID_V) ? &pll1ConfigRevV : &pll1ConfigRevY;
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     pll1Config = &pll1Config7A3;
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+    pll1Config = &pll1Config72x;
 #else
 #error Unknown MCU type
 #endif
@@ -425,7 +450,7 @@ void SystemClock_Config(void)
 {
     // Configure power supply
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx)
 
     HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
@@ -434,10 +459,14 @@ void SystemClock_Config(void)
 
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-#elif defined(STM32H7A3xxQ)
+#elif defined(STM32H7A3xxQ) || defined(STM32H725xx)
 
-    // Nucleo-H7A3ZI-Q is preconfigured for power supply configuration 2 (Direct SMPS)
-    // Here we assume that all boards with SMPS equipped devices use this mode.
+    // We assume all SMPS equipped devices use this mode (Direct SMPS).
+    // - All STM32H7A3xxQ devices.
+    // - All STM32H725xx devices (Note STM32H725RG is Direct SMPS only - no LDO).
+    //
+    // - Nucleo-H7A3ZI-Q is preconfigured for power supply configuration 2 (Direct SMPS).
+    // - Nucleo-H723ZI-Q transplanted with STM32H725ZG is the same as above.
 
     HAL_PWREx_ConfigSupply(PWR_DIRECT_SMPS_SUPPLY);
 

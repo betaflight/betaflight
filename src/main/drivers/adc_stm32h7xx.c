@@ -95,7 +95,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
 
 adcDevice_t adcDevice[ADCDEV_COUNT];
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_3
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_2
@@ -110,8 +110,14 @@ const adcTagMap_t adcTagMap[] = {
     // Keep these at the beginning for easy indexing by ADC_TAG_MAP_{VREFINT,TEMPSENSOR}
 #define ADC_TAG_MAP_VREFINT    0
 #define ADC_TAG_MAP_TEMPSENSOR 1
+
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 },
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 17 },
+#elif defined(STM32H723xx) || defined(STM32H725xx)
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 },
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 19 },
+#endif
 #endif
     // Inputs available for all packages
     { DEFIO_TAG_E__PC0,  ADC_DEVICES_123, ADC_CHANNEL_10, 10 },
@@ -198,7 +204,19 @@ void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     hadc->Init.NbrOfDiscConversion      = 1;                             // Don't care
     hadc->Init.ExternalTrigConv         = ADC_SOFTWARE_START;
     hadc->Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE; // Don't care
-    hadc->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
+
+    // Enable circular DMA.
+    // ADC3 of H72X and H73X has a special way of doing this.
+#if defined(STM32H723xx) || defined(STM32H725xx)
+    if (adcdev->ADCx == ADC3) {
+        hadc->Init.DMAContinuousRequests = ENABLE;
+    } else
+#else
+    {
+        hadc->Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
+    }
+#endif
+
     hadc->Init.Overrun                  = ADC_OVR_DATA_OVERWRITTEN;
     hadc->Init.OversamplingMode         = DISABLE;
 
@@ -225,11 +243,21 @@ int adcFindTagMapEntry(ioTag_t tag)
     return -1;
 }
 
+// H743, H750 and H7A3 seems to use 16-bit precision value,
+// while H723 and H725 seems to use 12-bit precision value.
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#define VREFINT_CAL_SHIFT 4
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+#define VREFINT_CAL_SHIFT 0
+#else
+#error Unknown MCU
+#endif
+
 void adcInitCalibrationValues(void)
 {
-    adcVREFINTCAL = *VREFINT_CAL_ADDR >> 4;
-    adcTSCAL1 = *TEMPSENSOR_CAL1_ADDR >> 4;
-    adcTSCAL2 = *TEMPSENSOR_CAL2_ADDR >> 4;
+    adcVREFINTCAL = *VREFINT_CAL_ADDR >> VREFINT_CAL_SHIFT;
+    adcTSCAL1 = *TEMPSENSOR_CAL1_ADDR >> VREFINT_CAL_SHIFT;
+    adcTSCAL2 = *TEMPSENSOR_CAL2_ADDR >> VREFINT_CAL_SHIFT;
     adcTSSlopeK = (TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP) * 1000 / (adcTSCAL2 - adcTSCAL1);
 }
 

@@ -84,6 +84,9 @@ void systemInit(void)
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     __HAL_RCC_AHBSRAM1_CLK_ENABLE();
     __HAL_RCC_AHBSRAM2_CLK_ENABLE();
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+    __HAL_RCC_D2SRAM1_CLK_ENABLE();
+    __HAL_RCC_D2SRAM2_CLK_ENABLE();
 #else
 #error Unknown MCU
 #endif
@@ -136,7 +139,7 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 }
 
 
-#if defined(STM32H743xx) || defined(STM32H750xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
 #define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1ff09800)
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1ff0a000)

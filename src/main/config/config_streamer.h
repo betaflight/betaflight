@@ -29,7 +29,7 @@
 #ifdef CONFIG_IN_EXTERNAL_FLASH
 #define CONFIG_STREAMER_BUFFER_SIZE 8 // Must not be greater than the smallest flash page size of all compiled-in flash devices.
 typedef uint32_t config_streamer_buffer_align_type_t;
-#elif defined(STM32H743xx) || defined(STM32H750xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
 #define CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits
 typedef uint64_t config_streamer_buffer_align_type_t;
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
