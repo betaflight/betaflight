@@ -243,6 +243,16 @@ static uint8_t cmsCursorAbsolute(displayPort_t *instance)
 
 uint8_t runtimeEntryFlags[CMS_MAX_ROWS] = { 0 };
 
+#define LOOKUP_TABLE_TICKER_START_CYCLES 20   // Task loops for start/end of ticker (1 second delay)
+#define LOOKUP_TABLE_TICKER_SCROLL_CYCLES 3   // Task loops for each scrolling step of the ticker (150ms delay)
+
+typedef struct cmsTableTicker_s {
+    uint8_t loopCounter;
+    uint8_t state;
+} cmsTableTicker_t;
+
+cmsTableTicker_t runtimeTableTicker[CMS_MAX_ROWS];
+
 static void cmsPageSelect(displayPort_t *instance, int8_t newpage)
 {
     currentCtx.page = (newpage + pageCount) % pageCount;
@@ -378,13 +388,15 @@ static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row
     return cnt;
 }
 
-static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t row, bool selectedRow, uint8_t *flags)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t row, bool selectedRow, uint8_t *flags, cmsTableTicker_t *ticker)
 {
     #define CMS_DRAW_BUFFER_LEN 12
+    #define CMS_TABLE_VALUE_MAX_LEN 30
     #define CMS_NUM_FIELD_LEN 5
     #define CMS_CURSOR_BLINK_DELAY_MS 500
 
     char buff[CMS_DRAW_BUFFER_LEN +1]; // Make room for null terminator.
+    char tableBuff[CMS_TABLE_VALUE_MAX_LEN +1];
     int cnt = 0;
 
 #ifndef USE_OSD
@@ -440,11 +452,43 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
         break;
 
     case OME_TAB:
-        if (IS_PRINTVALUE(*flags)) {
+        if (IS_PRINTVALUE(*flags) || IS_SCROLLINGTICKER(*flags)) {
+            bool drawText = false;
             OSD_TAB_t *ptr = p->data;
-            char * str = (char *)ptr->names[*ptr->val];
-            strncpy(buff, str, CMS_DRAW_BUFFER_LEN);
-            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_DRAW_BUFFER_LEN);
+            const int labelLength = strlen(p->text) + 1; // account for the space between label and display data
+            char *str = (char *)ptr->names[*ptr->val];   // lookup table display text
+            const int displayLength = strlen(str);
+
+            // Calculate the available space to display the lookup table entry based on the
+            // screen size and the length of the label. Always display at least CMS_DRAW_BUFFER_LEN
+            // characters to prevent really long labels from overriding the data display.
+            const int availableSpace = MAX(CMS_DRAW_BUFFER_LEN, rightMenuColumn - labelLength - leftMenuColumn - 1);
+
+            if (IS_PRINTVALUE(*flags)) {
+                drawText = true;
+                ticker->state = 0;
+                ticker->loopCounter = 0;
+                if (displayLength > availableSpace) {  // table entry text is longer than the available space so start the ticker
+                    SET_SCROLLINGTICKER(*flags);
+                } else {
+                    CLR_SCROLLINGTICKER(*flags);
+                }
+            } else if (IS_SCROLLINGTICKER(*flags)) {
+                ticker->loopCounter++;
+                const uint8_t loopLimit = (ticker->state == 0 || ticker->state == (displayLength - availableSpace)) ? LOOKUP_TABLE_TICKER_START_CYCLES : LOOKUP_TABLE_TICKER_SCROLL_CYCLES;
+                if (ticker->loopCounter >= loopLimit) {
+                    ticker->loopCounter = 0;
+                    drawText = true;
+                    ticker->state++;
+                    if (ticker->state > (displayLength - availableSpace)) {
+                        ticker->state = 0;
+                    }
+                }
+            }
+            if (drawText) {
+                strncpy(tableBuff, (char *)(str + ticker->state), CMS_TABLE_VALUE_MAX_LEN);
+                cnt = cmsDrawMenuItemValue(pDisplay, tableBuff, row, availableSpace);
+            }
             CLR_PRINTVALUE(*flags);
         }
         break;
@@ -691,9 +735,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // XXX Polled values at latter positions in the list may not be
     // XXX printed if not enough room in the middle of the list.
 
-        if (IS_PRINTVALUE(runtimeEntryFlags[i])) {
+        if (IS_PRINTVALUE(runtimeEntryFlags[i]) || IS_SCROLLINGTICKER(runtimeEntryFlags[i])) {
             bool selectedRow = i == currentCtx.cursorRow;
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow, &runtimeEntryFlags[i]);
+            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem, selectedRow, &runtimeEntryFlags[i], &runtimeTableTicker[i]);
             if (room < 30) {
                 return;
             }

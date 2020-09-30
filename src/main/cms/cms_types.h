@@ -71,6 +71,7 @@ typedef struct
 #define DYNAMIC        0x04  // Value should be updated dynamically
 #define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
 #define REBOOT_REQUIRED 0x10 // Reboot is required if the value is changed
+#define SCROLLING_TICKER 0x20// Long values are displayed as horizontally scrolling tickers (OME_TAB only)
 
 #define IS_PRINTVALUE(x) ((x) & PRINT_VALUE)
 #define SET_PRINTVALUE(x) do { (x) |= PRINT_VALUE; } while (0)
@@ -81,6 +82,10 @@ typedef struct
 #define CLR_PRINTLABEL(x) do { (x) &= ~PRINT_LABEL; } while (0)
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
+
+#define IS_SCROLLINGTICKER(x) ((x) & SCROLLING_TICKER)
+#define SET_SCROLLINGTICKER(x) do { (x) |= SCROLLING_TICKER; } while (0)
+#define CLR_SCROLLINGTICKER(x) do { (x) &= ~SCROLLING_TICKER; } while (0)
 
 typedef const void *(*CMSMenuFuncPtr)(displayPort_t *pDisp);
 
