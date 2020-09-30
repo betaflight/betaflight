@@ -104,7 +104,7 @@ void ghstFramePackTelemetry(sbuf_t *dst)
     }
     sbufWriteU16(dst, getAmperage());                           // units of 10mA
 
-    sbufWriteU16(dst, getMAhDrawn());                           // units of 10mAh
+    sbufWriteU16(dst, getMAhDrawn() / 10);                      // units of 10mAh (range of 0-655.36Ah)
 
     sbufWriteU8(dst, 0x00);                     // Rx Voltage, units of 100mV (not passed from BF, added in Ghost Rx)
 

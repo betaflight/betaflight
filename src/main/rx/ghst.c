@@ -58,9 +58,9 @@
 
 #define GHST_PAYLOAD_OFFSET offsetof(ghstFrameDef_t, type)
 
-STATIC_UNIT_TESTED volatile bool ghstFrameDone = false;
-STATIC_UNIT_TESTED ghstFrame_t ghstFrame;
-STATIC_UNIT_TESTED ghstFrame_t ghstChannelDataFrame;
+STATIC_UNIT_TESTED volatile bool ghstFrameAvailable = false;
+STATIC_UNIT_TESTED ghstFrame_t ghstIncomingFrame;   // incoming frame, raw, not CRC checked, destination address not checked
+STATIC_UNIT_TESTED ghstFrame_t ghstValidatedFrame;  // validated frame, CRC is ok, destination address is ok, ready for decode
 STATIC_UNIT_TESTED uint32_t ghstChannelData[GHST_MAX_NUM_CHANNELS];
 
 static serialPort_t *serialPort;
@@ -93,12 +93,12 @@ static timeUs_t lastRcFrameTimeUs = 0;
 #define GHST_FRAME_LENGTH_FRAMELENGTH   1
 #define GHST_FRAME_LENGTH_TYPE_CRC      1
 
-STATIC_UNIT_TESTED uint8_t ghstFrameCRC(void)
+STATIC_UNIT_TESTED uint8_t ghstFrameCRC(ghstFrame_t *pGhstFrame)
 {
     // CRC includes type and payload
-    uint8_t crc = crc8_dvb_s2(0, ghstFrame.frame.type);
-    for (int i = 0; i < ghstFrame.frame.len - GHST_FRAME_LENGTH_TYPE_CRC - 1; ++i) {
-        crc = crc8_dvb_s2(crc, ghstFrame.frame.payload[i]);
+    uint8_t crc = crc8_dvb_s2(0, pGhstFrame->frame.type);
+    for (int i = 0; i < pGhstFrame->frame.len - GHST_FRAME_LENGTH_TYPE_CRC - 1; ++i) {
+        crc = crc8_dvb_s2(crc, pGhstFrame->frame.payload[i]);
     }
     return crc;
 }
@@ -123,63 +123,77 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
 
     // assume frame is 5 bytes long until we have received the frame length
     // full frame length includes the length of the address and framelength fields
-    const int fullFrameLength = ghstFrameIdx < 3 ? 5 : ghstFrame.frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
+    const int fullFrameLength = ghstFrameIdx < 3 ? 5 : ghstIncomingFrame.frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
 
     if (ghstFrameIdx < fullFrameLength) {
-        ghstFrame.bytes[ghstFrameIdx++] = (uint8_t)c;
-        if (ghstFrameIdx >= fullFrameLength) {                  // buffer is full?
+        ghstIncomingFrame.bytes[ghstFrameIdx++] = (uint8_t)c;
+        if (ghstFrameIdx >= fullFrameLength) {
             ghstFrameIdx = 0;
-            const uint8_t crc = ghstFrameCRC();
-            if (crc == ghstFrame.bytes[fullFrameLength - 1]) {
-                switch (ghstFrame.frame.type) {
-                    case GHST_UL_RC_CHANS_HS4_5TO8:
-                    case GHST_UL_RC_CHANS_HS4_9TO12:
-                    case GHST_UL_RC_CHANS_HS4_13TO16:
-                        if (ghstFrame.frame.addr == GHST_ADDR_FC) {
-                            lastRcFrameTimeUs = currentTimeUs;
-                            ghstFrameDone = true;
-                            memcpy(&ghstChannelDataFrame, &ghstFrame, sizeof(ghstFrame));
-                        }
-                        break;
 
-                    default:
-                        break;
-                }
-            }
+            // NOTE: this data is not yet CRC checked, nor do we know whether we are the correct recipient, this is
+            // handled in ghstFrameStatus
+            memcpy(&ghstValidatedFrame, &ghstIncomingFrame, sizeof(ghstIncomingFrame));
+            ghstFrameAvailable = true;
         }
     }
 }
 STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
-    int startIdx = 4;
 
-    if (ghstFrameDone) {
-        ghstFrameDone = false;
+    if (ghstFrameAvailable) {
+        ghstFrameAvailable = false;
 
-        const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstChannelDataFrame.frame.payload;
-
-        // all uplink frames contain CH1..4 data (12 bit)
-        ghstChannelData[0] = rcChannels->ch1 >> 1;
-        ghstChannelData[1] = rcChannels->ch2 >> 1;
-        ghstChannelData[2] = rcChannels->ch3 >> 1;
-        ghstChannelData[3] = rcChannels->ch4 >> 1;
-
-        // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
-        switch(ghstChannelDataFrame.frame.type) {
-            case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
-            case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
-            case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
-        } 
-
-        ghstChannelData[startIdx++] = rcChannels->cha << 3;
-        ghstChannelData[startIdx++] = rcChannels->chb << 3;
-        ghstChannelData[startIdx++] = rcChannels->chc << 3;
-        ghstChannelData[startIdx++] = rcChannels->chd << 3;
-
-        return RX_FRAME_COMPLETE;
+        const uint8_t crc = ghstFrameCRC(&ghstValidatedFrame);
+        const int fullFrameLength = ghstValidatedFrame.frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
+        if (crc == ghstValidatedFrame.bytes[fullFrameLength - 1] && ghstValidatedFrame.frame.addr == GHST_ADDR_FC) 
+            return RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;            // request callback through ghstProcessFrame to do the decoding  work
+        
+        return RX_FRAME_DROPPED;                            // frame was invalid
     }
     return RX_FRAME_PENDING;
+}
+
+static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
+{
+    // Assume that the only way we get here is if ghstFrameStatus returned RX_FRAME_PROCESSING_REQUIRED, which indicates that the CRC
+    // is correct, and the message was actually for us. 
+    int startIdx = 4;
+
+    UNUSED(rxRuntimeState);
+
+     switch (ghstValidatedFrame.frame.type) {
+        case GHST_UL_RC_CHANS_HS4_5TO8:
+        case GHST_UL_RC_CHANS_HS4_9TO12:
+        case GHST_UL_RC_CHANS_HS4_13TO16: {
+                const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame.frame.payload;
+
+                // all uplink frames contain CH1..4 data (12 bit)
+                ghstChannelData[0] = rcChannels->ch1 >> 1;
+                ghstChannelData[1] = rcChannels->ch2 >> 1;
+                ghstChannelData[2] = rcChannels->ch3 >> 1;
+                ghstChannelData[3] = rcChannels->ch4 >> 1;
+
+                // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
+                switch(ghstValidatedFrame.frame.type) {
+                    case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
+                    case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
+                    case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
+                } 
+
+                ghstChannelData[startIdx++] = rcChannels->cha << 3;
+                ghstChannelData[startIdx++] = rcChannels->chb << 3;
+                ghstChannelData[startIdx++] = rcChannels->chc << 3;
+                ghstChannelData[startIdx++] = rcChannels->chd << 3;
+                return true;
+            }
+            break;
+
+        default:
+            break;
+     }
+
+    return false;
 }
 
 STATIC_UNIT_TESTED uint16_t ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
@@ -232,6 +246,7 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rcReadRawFn = ghstReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ghstFrameStatus;
     rxRuntimeState->rcFrameTimeUsFn = ghstFrameTimeUs;
+    rxRuntimeState->rcProcessFrameFn = ghstProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
