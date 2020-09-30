@@ -154,7 +154,7 @@ typedef struct {
 
 typedef struct {
     uint8_t command;
-    uint8_t data[255];
+    uint8_t data[RCDEVICE_PROTOCOL_MAX_DATA_SIZE - 1];
     uint8_t dataLength;
 } runcamDeviceRequest_t;
 
