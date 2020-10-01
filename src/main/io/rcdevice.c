@@ -30,6 +30,8 @@
 
 #include "drivers/time.h"
 
+#include "flight/imu.h"
+
 #include "io/serial.h"
 
 #include "pg/rcdevice.h"
@@ -37,6 +39,24 @@
 #include "rcdevice.h"
 
 #ifdef USE_RCDEVICE
+
+typedef enum {
+    RCDEVICE_STATE_WAITING_HEADER = 0,
+    RCDEVICE_STATE_WAITING_COMMAND,
+    RCDEVICE_STATE_WAITING_DATA_LENGTH,
+    RCDEVICE_STATE_WAITING_DATA,
+    RCDEVICE_STATE_WAITING_CRC,
+} RCDEVICE_PARSER_STATE;
+
+
+typedef struct {
+    uint8_t state;
+    uint8_t expectedDataLength;
+    runcamDeviceRequest_t request;
+    timeUs_t lastRecvDataTimestamp;
+    uint8_t crc;
+    uint8_t isParseDone;
+} runcamDeviceRequestParseContext_t;
 
 typedef struct runcamDeviceExpectedResponseLength_s {
     uint8_t command;
@@ -52,6 +72,8 @@ static runcamDeviceExpectedResponseLength_t expectedResponsesLength[] = {
 
 rcdeviceWaitingResponseQueue waitingResponseQueue;
 static uint8_t recvBuf[RCDEVICE_PROTOCOL_MAX_PACKET_SIZE]; // all the response contexts using same recv buffer
+static runcamDeviceRequestParseContext_t requestParserContext;
+static runcamDevice_t *currentDevice;
 
 static uint8_t runcamDeviceGetRespLen(uint8_t command)
 {
@@ -280,6 +302,8 @@ void runcamDeviceInit(runcamDevice_t *device)
             runcamDeviceGetDeviceInfo(device);
         }
     }
+
+    currentDevice = device;
 }
 
 bool runcamDeviceSimulateCameraButton(runcamDevice_t *device, uint8_t operation)
@@ -358,10 +382,22 @@ static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs
     return respCtx;
 }
 
+runcamDeviceRequest_t* rcdeviceGetRequest()
+{
+    if (requestParserContext.isParseDone) {
+        // reset the parse done state, then we can handle next request from rcdevice
+        requestParserContext.isParseDone = 0;
+        return &requestParserContext.request;
+    }
+
+    return NULL;
+}
+
 void rcdeviceReceive(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
+    // process the requests trigger by FC
     rcdeviceResponseParseContext_t *respCtx = NULL;
     while ((respCtx = getWaitingResponse(millis())) != NULL) {
         if (!serialRxBytesWaiting(respCtx->device->serialPort)) {
@@ -409,6 +445,85 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
             }
         }
     }
+
+    // process the requests trigger by device
+    while (currentDevice != NULL) {
+        if (!serialRxBytesWaiting(currentDevice->serialPort)) {
+            break;
+        }
+
+        // if lastest packet still not handled, do parse next bytes.
+        if (requestParserContext.isParseDone) {
+            break;
+        }
+
+        // if it is during the packet receiving progress, check if it is already timeout(200 ms), 
+        // if timeout, then reset the state, else the later requests can't  be accept
+        if (requestParserContext.state != RCDEVICE_STATE_WAITING_HEADER && millis() - requestParserContext.lastRecvDataTimestamp > 200) {
+            memset(&requestParserContext, 0, sizeof(runcamDeviceRequestParseContext_t));
+            requestParserContext.state = RCDEVICE_STATE_WAITING_COMMAND; // reset state to waiting header
+        }
+
+        const uint8_t c = serialRead(currentDevice->serialPort);
+        switch (requestParserContext.state) {
+            case RCDEVICE_STATE_WAITING_HEADER:
+                if (c == RCDEVICE_PROTOCOL_HEADER) {
+                    memset(&requestParserContext, 0, sizeof(runcamDeviceRequestParseContext_t));
+                    requestParserContext.state = RCDEVICE_STATE_WAITING_COMMAND;
+                }
+                break;
+            case RCDEVICE_STATE_WAITING_COMMAND:
+                requestParserContext.request.command = c;
+                // there is no payload for RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE, skip to waiting crc step
+                if (requestParserContext.request.command == RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE) { 
+                    requestParserContext.state = RCDEVICE_STATE_WAITING_CRC;
+                } else {
+                    // for now, only RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE support, so reset the state to waiting header.
+                    requestParserContext.state = RCDEVICE_PROTOCOL_HEADER;
+                }
+                break;
+            case RCDEVICE_STATE_WAITING_DATA_LENGTH:
+                requestParserContext.expectedDataLength = c;
+                requestParserContext.state = RCDEVICE_STATE_WAITING_DATA;
+                break;
+            case RCDEVICE_STATE_WAITING_DATA:
+                if (requestParserContext.request.dataLength < requestParserContext.expectedDataLength) {
+                    requestParserContext.request.data[requestParserContext.request.dataLength] = c;
+                    requestParserContext.request.dataLength++;
+                }
+
+                if (requestParserContext.request.dataLength == requestParserContext.expectedDataLength) {
+                    requestParserContext.state = RCDEVICE_STATE_WAITING_CRC; // data received done
+                }
+                break;
+            case RCDEVICE_STATE_WAITING_CRC: {
+                // verify crc
+                uint8_t crc = 0;
+                uint8_t header = RCDEVICE_PROTOCOL_HEADER;
+                crc = crc8_dvb_s2_update(crc, &header, 1);
+                crc = crc8_dvb_s2_update(crc, &requestParserContext.request.command, 1);
+                crc = crc8_dvb_s2_update(crc, &requestParserContext.request.data, requestParserContext.request.dataLength);
+
+                if (crc == c) {
+                    requestParserContext.isParseDone = 1;
+                }
+
+                requestParserContext.state = RCDEVICE_STATE_WAITING_HEADER;
+            }
+                break;
+        }
+
+        requestParserContext.lastRecvDataTimestamp = millis();
+    }
+}
+
+void runcamDeviceSendAttitude(runcamDevice_t *device)
+{
+    uint16_t buf[3];
+    buf[0] = attitude.values.roll;
+    buf[1] = attitude.values.pitch;
+    buf[2] = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+    runcamDeviceSendPacket(device, RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE, (uint8_t *)buf, sizeof(buf));
 }
 
 #endif
