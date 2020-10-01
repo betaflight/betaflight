@@ -98,7 +98,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXVTXCONTROLDISABLE, "VTX CONTROL DISABLE", 48},
     { BOXLAUNCHCONTROL, "LAUNCH CONTROL", 49 },
     { BOXMSPOVERRIDE, "MSP OVERRIDE", 50},
-    { BOXSTICKCOMMANDDISABLE, "STICK COMMANDS DISABLE", 51}
+    { BOXSTICKCOMMANDDISABLE, "STICK COMMANDS DISABLE", 51},
+    { BOXBEEPERMUTE, "BEEPER MUTE", 52},
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -230,6 +231,7 @@ void initActiveBoxIds(void)
     }
 
     BME(BOXBEEPERON);
+    BME(BOXBEEPERMUTE);
 
 #ifdef USE_LED_STRIP
     if (featureIsEnabled(FEATURE_LED_STRIP)) {
