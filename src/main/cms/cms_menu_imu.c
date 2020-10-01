@@ -60,6 +60,8 @@
 
 #include "cli/settings.h"
 
+#define QUICKRATES_MAX_DEGREES 2000
+
 //
 // PID
 //
@@ -254,7 +256,6 @@ static const void *cmsx_RateProfileOnEnter(displayPort_t *pDisp)
     UNUSED(pDisp);
 
     setProfileIndexString(rateProfileIndexString, rateProfileIndex, controlRateProfilesMutable(rateProfileIndex)->profileName);
-    cmsx_RateProfileRead();
 
     return NULL;
 }
@@ -296,6 +297,74 @@ static CMS_Menu cmsx_menuRateProfile = {
     .onExit = cmsx_RateProfileWriteback,
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuRateProfileEntries
+};
+
+static uint16_t rates[XYZ_AXIS_COUNT];
+
+static const void *cmsx_QuickRatesWriteback(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            rateProfile.rates[axis] = rates[axis] / 10;
+    }
+
+    memcpy(controlRateProfilesMutable(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
+
+    return NULL;
+}
+
+static const void *cmsx_QuickRatesOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    setProfileIndexString(rateProfileIndexString, rateProfileIndex, controlRateProfilesMutable(rateProfileIndex)->profileName);
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        rates[axis] = rateProfile.rates[axis] * 10;
+    }
+
+    return NULL;
+}
+
+static const OSD_Entry cmsx_menuQuickRatesEntries[] = 
+{
+    { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
+
+    { "RC R RATE",       OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_ROLL],    1, CONTROL_RATE_CONFIG_RC_RATES_MAX, 1, 10 }, 0 },
+    { "RC P RATE",       OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_PITCH],    1, CONTROL_RATE_CONFIG_RC_RATES_MAX, 1, 10 }, 0 },
+    { "RC Y RATE",       OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRates[FD_YAW], 1, CONTROL_RATE_CONFIG_RC_RATES_MAX, 1, 10 }, 0 },
+
+    { "ROLL MAX DEG/S",  OME_UINT16, NULL, &(OSD_UINT16_t) { &rates[FD_ROLL],               0, QUICKRATES_MAX_DEGREES, 10}, 0 },
+    { "PITCH MAX DEG/S", OME_UINT16, NULL, &(OSD_UINT16_t) { &rates[FD_PITCH],              0, QUICKRATES_MAX_DEGREES, 10}, 0 },
+    { "YAW MAX DEG/S",   OME_UINT16, NULL, &(OSD_UINT16_t) { &rates[FD_YAW],                0, QUICKRATES_MAX_DEGREES, 10}, 0 },
+
+    { "RC R EXPO",       OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_ROLL],   0, 100, 1, 10 }, 0 },
+    { "RC P EXPO",       OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_PITCH],  0, 100, 1, 10 }, 0 },
+    { "RC Y EXPO",       OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo[FD_YAW],    0, 100, 1, 10 }, 0 },
+
+    { "THR MID",         OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1}, 0 },
+    { "THR EXPO",        OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1}, 0 },
+    { "THRPID ATT",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,         0,  100,  1, 10}, 0 },
+    { "TPA BRKPT",       OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
+
+    { "THR LIM TYPE",    OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType}, 0 },
+    { "THR LIM %",       OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1}, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuQuickRates = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "MENURATE",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_QuickRatesOnEnter,
+    .onExit = cmsx_QuickRatesWriteback,
+    .onDisplayUpdate = NULL,
+    .entries = cmsx_menuQuickRatesEntries
 };
 
 #ifdef USE_LAUNCH_CONTROL
@@ -849,8 +918,7 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 
     {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, CONTROL_RATE_PROFILE_COUNT, 1}, 0},
-    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
-
+    {"RATE",      OME_Funcall, cmsSelectRatesSystem,           NULL,                                                          0},
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 #if  (defined(USE_GYRO_DATA_ANALYSE) || defined(USE_DYN_LPF)) && defined(USE_EXTENDED_CMS_MENUS)
     {"DYN FILT",  OME_Submenu, cmsMenuChange,                 &cmsx_menuDynFilt,                                             0},
@@ -874,5 +942,29 @@ CMS_Menu cmsx_menuImu = {
     .onDisplayUpdate = NULL,
     .entries = cmsx_menuImuEntries,
 };
+
+const void *cmsSelectRatesSystem(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    cmsx_RateProfileRead();
+
+    switch (rateProfile.rates_type) {
+
+        case RATES_TYPE_BETAFLIGHT:
+            cmsMenuChange(pDisplay, &cmsx_menuRateProfile);
+            break;
+
+        case RATES_TYPE_QUICK:
+            cmsMenuChange(pDisplay, &cmsx_menuQuickRates);
+            break;
+
+        default:
+            cmsMenuChange(pDisplay, &cmsx_menuRateProfile);
+            break;
+        }
+
+    return NULL;
+}
 
 #endif // CMS

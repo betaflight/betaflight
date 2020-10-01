@@ -21,3 +21,5 @@
 #pragma once
 
 extern CMS_Menu cmsx_menuImu;
+
+const void *cmsSelectRatesSystem(displayPort_t *pDisplay, const void *ptr);
