@@ -97,6 +97,7 @@ enum {
 #define RC_SMOOTHING_INTERPOLATED_FEEDFORWARD_DERIVATIVE_PT1_HZ 100 // The value to use for "auto" when interpolated feedforward is enabled
 
 static FAST_RAM_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
+static FAST_RAM_ZERO_INIT rcDuplicationDetector_t rcDuplicationData;
 #endif // USE_RC_SMOOTHING_FILTER
 
 uint32_t getRcFrameNumber()
@@ -417,13 +418,13 @@ static FAST_CODE bool rcSmoothingRxRateValid(int currentRxRefreshRate)
 
 // Initialize or update the filters base on either the manually selected cutoff, or
 // the auto-calculated cutoff frequency based on detected rx frame rate.
-FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
+FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData, rcDuplicationDetector_t *duplicationData)
 {
     const float dT = targetPidLooptime * 1e-6f;
     uint16_t oldCutoff = smoothingData->inputCutoffFrequency;
 
     if (smoothingData->inputCutoffSetting == 0) {
-        smoothingData->inputCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs, (smoothingData->inputFilterType == RC_SMOOTHING_INPUT_PT1), smoothingData->autoSmoothnessFactor);
+        smoothingData->inputCutoffFrequency = calcRcSmoothingCutoff(smoothingData->averageFrameTimeUs * duplicationData->framerateDivider, (smoothingData->inputFilterType == RC_SMOOTHING_INPUT_PT1), smoothingData->autoSmoothnessFactor);
     }
 
     // initialize or update the input filter
@@ -497,6 +498,27 @@ static FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothing
     return false;
 }
 
+// Try to detect duplicated rc frames (D16 protocol). Look for exactly two consecutive
+// rc input values before change
+static FAST_CODE bool detectRcFrameDuplication(rcDuplicationDetector_t *duplicationData, float nextRxData)
+{
+    if (nextRxData == duplicationData->lastRxData) {
+        duplicationData->currentStepLength++;
+    } else {
+        // End of consecutive values
+        if (duplicationData->currentStepLength == 2) {
+            duplicationData->detectedStepCount++; // we've seen exactly two matching input values on the roll axis
+        }
+        duplicationData->currentStepLength = 1;
+        duplicationData->lastRxData = nextRxData;
+    }
+    if (duplicationData->detectedStepCount > 30 && duplicationData->framerateDivider == 1) {
+        duplicationData->framerateDivider = 2; // turn on frame rate division
+        return true;
+    }
+    return false;
+}
+
 // Determine if we need to caclulate filter cutoffs. If not then we can avoid
 // examining the rx frame times completely
 FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
@@ -526,6 +548,11 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
     // first call initialization
     if (!initialized) {
         initialized = true;
+        rcDuplicationData.framerateDivider = 1;
+        rcDuplicationData.currentStepLength = 0;
+        rcDuplicationData.detectedStepCount = 0;
+        rcDuplicationData.lastRxData = 0;
+
         rcSmoothingData.filterInitialized = false;
         rcSmoothingData.averageFrameTimeUs = 0;
         rcSmoothingData.autoSmoothnessFactor = rxConfig()->rc_smoothing_auto_factor;
@@ -569,7 +596,7 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
 
         // if we don't need to calculate cutoffs dynamically then the filters can be initialized now
         if (!calculateCutoffs) {
-            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+            rcSmoothingSetFilterCutoffs(&rcSmoothingData, &rcDuplicationData);
             rcSmoothingData.filterInitialized = true;
         }
     }
@@ -587,6 +614,10 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
         if (calculateCutoffs) {
             const timeMs_t currentTimeMs = millis();
             int sampleState = 0;
+
+            if (detectRcFrameDuplication(&rcDuplicationData, lastRxData[ROLL])) {
+                rcSmoothingSetFilterCutoffs(&rcSmoothingData, &rcDuplicationData);
+            }
 
             // If the filter cutoffs are set to auto and we have good rx data, then determine the average rx frame rate
             // and use that to calculate the filter cutoff frequencies
@@ -621,7 +652,7 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
                         if (accumulateSample) {
                             if (rcSmoothingAccumulateSample(&rcSmoothingData, currentRxRefreshRate)) {
                                 // the required number of samples were collected so set the filter cutoffs
-                                rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+                                rcSmoothingSetFilterCutoffs(&rcSmoothingData, &rcDuplicationData);
                                 rcSmoothingData.filterInitialized = true;
                                 validRxFrameTimeMs = 0;
                             }

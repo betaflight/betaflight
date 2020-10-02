@@ -137,6 +137,13 @@ typedef struct rcSmoothingFilter_s {
     uint8_t autoSmoothnessFactor;
 } rcSmoothingFilter_t;
 
+typedef struct rcDuplicationDetector_s {
+    uint8_t framerateDivider;   // how many rc frames should count as one logical frame
+    float lastRxData;           // the last raw RX value on the channel we are testing for duplicated frames
+    uint8_t currentStepLength;  // length of the current streak in number of frames
+    uint8_t detectedStepCount;  // how many times did we detect 2 frame long streaks
+} rcDuplicationDetector_t;
+
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
     uint8_t yaw_deadband;                   // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
