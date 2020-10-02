@@ -77,9 +77,6 @@ void SystemInit(void)
 
     SystemClock_Config();
     SystemCoreClockUpdate();
-
-    // Enable BOOT0 pin, which some STM32G4 board, notably Nucleo-G474RE, comes disabled.
-    systemBOOT0PinBootLoaderEnable();
 }
 
 /**

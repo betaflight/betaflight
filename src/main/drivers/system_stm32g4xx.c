@@ -84,29 +84,11 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-void forcedSystemResetWithoutDisablingCaches(void)
-{
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FORCED);
-
-    __disable_irq();
-    NVIC_SystemReset();
-}
-
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    switch (requestType) {
-#if defined(USE_FLASH_BOOT_LOADER)
-    case BOATLOADER_REQUEST_FLASH:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FLASH_BOOTLOADER_REQUEST);
+    UNUSED(requestType);
 
-        break;
-#endif
-    case BOOTLOADER_REQUEST_ROM:
-    default:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
-
-        break;
-    }
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
 
     __disable_irq();
     NVIC_SystemReset();
@@ -131,77 +113,21 @@ void systemJumpToBootloader(void)
     while (1);
 }
 
-static uint32_t bootloaderRequest;
 
 void systemCheckResetReason(void)
 {
-    bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
     switch (bootloaderRequest) {
-#if defined(USE_FLASH_BOOT_LOADER)
-    case BOATLOADER_REQUEST_FLASH:
-#endif
-    case RESET_BOOTLOADER_REQUEST_ROM:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
-        break;
-
     case RESET_MSC_REQUEST:
         // RESET_REASON will be reset by MSC
-        return;
-
-    case RESET_FORCED:
-        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-        return;
-
     case RESET_NONE:
-        if (!(RCC->CSR & RCC_CSR_SFTRSTF)) {
-            // Direct hard reset case
-            return;
-        }
-        // Soft reset; boot loader may have been active with BOOT pin pulled high.
-        FALLTHROUGH;
+        return;
 
-    case RESET_BOOTLOADER_POST:
-        // Boot loader activity magically prevents SysTick from interrupting.
-        // Issue a soft reset to prevent the condition.
-        forcedSystemResetWithoutDisablingCaches(); // observed that disabling dcache after cold boot with BOOT pin high causes segfault.
+    case RESET_BOOTLOADER_REQUEST_ROM:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+        break;;
     }
-
-    void (*SysMemBootJump)(void);
-    __SYSCFG_CLK_ENABLE();
 
     systemJumpToBootloader();
-
-#define SYSTEM_BOOTLOADER_VEC 0x1fff0000
-
-    uint32_t p =  (*((uint32_t *)SYSTEM_BOOTLOADER_VEC));
-    __set_MSP(p); //Set the main stack pointer to its defualt values
-    SysMemBootJump = (void (*)(void)) (*((uint32_t *)(SYSTEM_BOOTLOADER_VEC + 4))); // Point the PC to the System Memory reset vector (+4)
-    SysMemBootJump();
-    while (1);
-}
-
-// Nucleo-G474RE board seems to come with software BOOT0 enabled.
-// Call this function once from init() to honor PB8-BOOT0 pin status for boot loader invocation.
-void systemBOOT0PinBootLoaderEnable(void)
-{
-    FLASH_OBProgramInitTypeDef OBInit;
-
-    HAL_FLASH_Unlock();
-    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPTVERR);
-    HAL_FLASH_OB_Unlock();
-
-    HAL_FLASHEx_OBGetConfig(&OBInit);
-
-    if ((OBInit.USERConfig & (OB_BOOT0_FROM_PIN|OB_BOOT1_SYSTEM)) != (OB_BOOT0_FROM_PIN|OB_BOOT1_SYSTEM)) {
-        OBInit.OptionType = OPTIONBYTE_USER;
-        OBInit.USERType = OB_USER_nSWBOOT0|OB_USER_nBOOT1;
-        OBInit.USERConfig = OB_BOOT0_FROM_PIN|OB_BOOT1_SYSTEM;
-        HAL_FLASHEx_OBProgram(&OBInit);
-
-        HAL_FLASH_OB_Launch();
-    }
-
-    HAL_FLASH_OB_Lock();
-    HAL_FLASH_Lock();
 }
