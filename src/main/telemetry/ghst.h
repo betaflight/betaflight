@@ -30,5 +30,4 @@
 void initGhstTelemetry(void);
 bool checkGhstTelemetryState(void);
 void handleGhstTelemetry(timeUs_t currentTimeUs);
-void ghstScheduleDeviceInfoResponse(void);
-void ghstScheduleMspResponse(void);
+

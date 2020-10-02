@@ -71,7 +71,6 @@
 #define GHST_FRAME_LENGTH_TYPE              1
 
 static bool ghstTelemetryEnabled;
-static bool deviceInfoReplyPending;
 static uint8_t ghstFrame[GHST_FRAME_SIZE_MAX];
 
 static void ghstInitializeFrame(sbuf_t *dst)
@@ -140,11 +139,6 @@ static void processGhst(void)
     ghstScheduleIndex = (ghstScheduleIndex + 1) % ghstScheduleCount;
 }
 
-void ghstScheduleDeviceInfoResponse(void)
-{
-    deviceInfoReplyPending = true;
-}
-
 void initGhstTelemetry(void)
 {
     // If the GHST Rx driver is active, since tx and rx share the same pin, assume telemetry is enabled. 
@@ -153,8 +147,6 @@ void initGhstTelemetry(void)
     if (!ghstTelemetryEnabled) {
         return;
     }
-
-    deviceInfoReplyPending = false;
 
     int index = 0;
     if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
@@ -178,17 +170,13 @@ bool checkGhstTelemetryState(void)
         return;
     }
 
-    // Give the receiver a chance to send any outstanding telemetry data.
-    // This needs to be done at high frequency, to enable the RX to send the telemetry frame
-    // in between the RX frames.
-    ghstRxSendTelemetryData();
-
     // Ready to send telemetry?
     if (currentTimeUs >= ghstLastCycleTime + (GHST_CYCLETIME_US / ghstScheduleCount)) {
         ghstLastCycleTime = currentTimeUs;
         processGhst();
     }
 
+    // telemetry is sent from the Rx driver, ghstProcessFrame
 }
 
 #endif

@@ -48,23 +48,32 @@
 
 #include "telemetry/ghst.h"
 
-// NOTE: SERIAL_BIDIR appears to use OD drive on telemetry data from FC to Rx (slow rise times)
-// SERIAL_BIDIR_PP would appear to be the correct way to do this, but this mode kills incoming control data
-#define GHST_PORT_OPTIONS               (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO | SERIAL_BIDIR)
+#define GHST_PORT_OPTIONS               (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO | SERIAL_BIDIR | SERIAL_BIDIR_PP)
 #define GHST_PORT_MODE                  MODE_RXTX   // bidirectional on single pin
 
 #define GHST_MAX_FRAME_TIME_US          500         // 14 bytes @ 420k = ~450us
 #define GHST_TIME_BETWEEN_FRAMES_US     4500        // fastest frame rate = 222.22Hz, or 4500us
 
+// define the time window after the end of the last received packet where telemetry packets may be sent
+// NOTE: This allows the Rx to double-up on Rx packets to transmit data other than servo data, but
+// only if sent < 1ms after the servo data packet. 
+#define GHST_RX_TO_TELEMETRY_MIN_US     1000	        
+#define GHST_RX_TO_TELEMETRY_MAX_US     2000
+
 #define GHST_PAYLOAD_OFFSET offsetof(ghstFrameDef_t, type)
 
 STATIC_UNIT_TESTED volatile bool ghstFrameAvailable = false;
+STATIC_UNIT_TESTED volatile bool ghstValidatedFrameAvailable = false;
+STATIC_UNIT_TESTED volatile bool ghstTransmittingTelemetry = false;
+
 STATIC_UNIT_TESTED ghstFrame_t ghstIncomingFrame;   // incoming frame, raw, not CRC checked, destination address not checked
 STATIC_UNIT_TESTED ghstFrame_t ghstValidatedFrame;  // validated frame, CRC is ok, destination address is ok, ready for decode
+
 STATIC_UNIT_TESTED uint32_t ghstChannelData[GHST_MAX_NUM_CHANNELS];
 
 static serialPort_t *serialPort;
-static timeUs_t ghstFrameStartAtUs = 0;
+static timeUs_t ghstRxFrameStartAtUs = 0;
+static timeUs_t ghstRxFrameEndAtUs = 0;
 static uint8_t telemetryBuf[GHST_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
@@ -93,6 +102,23 @@ static timeUs_t lastRcFrameTimeUs = 0;
 #define GHST_FRAME_LENGTH_FRAMELENGTH   1
 #define GHST_FRAME_LENGTH_TYPE_CRC      1
 
+// called from telemetry/ghst.c
+void ghstRxWriteTelemetryData(const void *data, int len)
+{
+    len = MIN(len, (int)sizeof(telemetryBuf));
+    memcpy(telemetryBuf, data, len);
+    telemetryBufLen = len;
+}
+
+void ghstRxSendTelemetryData(void)
+{
+    // if there is telemetry data to write
+    if (telemetryBufLen > 0) {
+        serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+        telemetryBufLen = 0; // reset telemetry buffer
+    }
+}
+
 STATIC_UNIT_TESTED uint8_t ghstFrameCRC(ghstFrame_t *pGhstFrame)
 {
     // CRC includes type and payload
@@ -111,14 +137,14 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
     static uint8_t ghstFrameIdx = 0;
     const timeUs_t currentTimeUs = microsISR();
 
-    if (cmpTimeUs(currentTimeUs, ghstFrameStartAtUs) > GHST_MAX_FRAME_TIME_US) {
+    if (cmpTimeUs(currentTimeUs, ghstRxFrameStartAtUs) > GHST_MAX_FRAME_TIME_US) {
         // Character received after the max. frame time, assume that this is a new frame
         ghstFrameIdx = 0;
     }
 
     if (ghstFrameIdx == 0) {
         // timestamp the start of the frame, to allow us to detect frame sync issues
-        ghstFrameStartAtUs = currentTimeUs;
+        ghstRxFrameStartAtUs = currentTimeUs;
     }
 
     // assume frame is 5 bytes long until we have received the frame length
@@ -134,6 +160,9 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
             // handled in ghstFrameStatus
             memcpy(&ghstValidatedFrame, &ghstIncomingFrame, sizeof(ghstIncomingFrame));
             ghstFrameAvailable = true;
+
+            // remember what time the incoming (Rx) packet ended, so that we can ensure a quite bus before sending telemetry
+            ghstRxFrameEndAtUs = microsISR();               
         }
     }
 }
@@ -146,11 +175,19 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
         const uint8_t crc = ghstFrameCRC(&ghstValidatedFrame);
         const int fullFrameLength = ghstValidatedFrame.frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
-        if (crc == ghstValidatedFrame.bytes[fullFrameLength - 1] && ghstValidatedFrame.frame.addr == GHST_ADDR_FC) 
+        if (crc == ghstValidatedFrame.bytes[fullFrameLength - 1] && ghstValidatedFrame.frame.addr == GHST_ADDR_FC) {
+            ghstValidatedFrameAvailable = true;
             return RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;            // request callback through ghstProcessFrame to do the decoding  work
+        }
         
         return RX_FRAME_DROPPED;                            // frame was invalid
     }
+
+    // do we have a telemetry buffer to send?
+    if (telemetryBufLen > 0) {
+        return RX_FRAME_PROCESSING_REQUIRED;
+    }
+
     return RX_FRAME_PENDING;
 }
 
@@ -158,14 +195,23 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 {
     // Assume that the only way we get here is if ghstFrameStatus returned RX_FRAME_PROCESSING_REQUIRED, which indicates that the CRC
     // is correct, and the message was actually for us. 
-    int startIdx = 4;
 
     UNUSED(rxRuntimeState);
 
-     switch (ghstValidatedFrame.frame.type) {
-        case GHST_UL_RC_CHANS_HS4_5TO8:
-        case GHST_UL_RC_CHANS_HS4_9TO12:
-        case GHST_UL_RC_CHANS_HS4_13TO16: {
+    // if we are in the time window after receiving a packet, where we can send telemetry, send it now
+    const uint32_t now = micros();
+    const uint32_t timeSinceRxFrameEnd = cmpTimeUs(now, ghstRxFrameEndAtUs);
+    if (timeSinceRxFrameEnd > GHST_RX_TO_TELEMETRY_MIN_US && timeSinceRxFrameEnd < GHST_RX_TO_TELEMETRY_MAX_US) {
+        ghstTransmittingTelemetry = true;
+        ghstRxSendTelemetryData();
+    }
+
+    if(ghstValidatedFrameAvailable) {
+        int startIdx = 4;
+        switch (ghstValidatedFrame.frame.type) {
+            case GHST_UL_RC_CHANS_HS4_5TO8:
+            case GHST_UL_RC_CHANS_HS4_9TO12:
+            case GHST_UL_RC_CHANS_HS4_13TO16: {
                 const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame.frame.payload;
 
                 // all uplink frames contain CH1..4 data (12 bit)
@@ -189,9 +235,10 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             }
             break;
 
-        default:
-            break;
-     }
+            default:
+                break;
+        }
+    }
 
     return false;
 }
@@ -212,26 +259,17 @@ STATIC_UNIT_TESTED uint16_t ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState
     return (5 * (ghstChannelData[chan]+1) / 8) + 880;
 }
 
-// called from telemetry/ghst.c
-void ghstRxWriteTelemetryData(const void *data, int len)
-{
-    len = MIN(len, (int)sizeof(telemetryBuf));
-    memcpy(telemetryBuf, data, len);
-    telemetryBufLen = len;
-}
-
-void ghstRxSendTelemetryData(void)
-{
-    // if there is telemetry data to write
-    if (telemetryBufLen > 0) {
-        serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
-        telemetryBufLen = 0; // reset telemetry buffer
-    }
-}
-
 static timeUs_t ghstFrameTimeUs(void)
 {
     return lastRcFrameTimeUs;
+}
+
+// UART idle detected (inter-packet)
+static void ghstIdle()
+{
+    if (ghstTransmittingTelemetry) {
+        ghstTransmittingTelemetry = false;
+    }
 }
 
 bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -261,6 +299,7 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         GHST_PORT_MODE,
         GHST_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );
+    serialPort->idleCallback = ghstIdle;
 
     return serialPort != NULL;
 }
