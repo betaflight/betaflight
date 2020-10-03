@@ -507,12 +507,18 @@ static FAST_CODE bool detectRcFrameDuplication(rcDuplicationDetector_t *duplicat
     } else {
         // End of consecutive values
         if (duplicationData->currentStepLength == 2) {
-            duplicationData->detectedStepCount++; // we've seen exactly two matching input values on the roll axis
+            duplicationData->detectedStepCount++; // we've seen exactly two matching input values on the tested axis
+        } else {
+            duplicationData->detectedStepCount = 0; // a step longer or shorter than expected resets the counter
         }
         duplicationData->currentStepLength = 1;
         duplicationData->lastRxData = nextRxData;
     }
-    if (duplicationData->detectedStepCount > 30 && duplicationData->framerateDivider == 1) {
+    if (duplicationData->detectedStepCount >= DUPLICATION_MIN_STREAK_LENGTH) { // we have found a staircase pattern. Increment the streaks counter
+        duplicationData->totalStreaksFound++;
+        duplicationData->detectedStepCount = 0;
+    }
+    if (duplicationData->totalStreaksFound >= DUPLICATION_STREAKS_TO_TRIGGER && duplicationData->framerateDivider == 1) {
         duplicationData->framerateDivider = 2; // turn on frame rate division
         return true;
     }
@@ -551,6 +557,7 @@ static FAST_CODE uint8_t processRcSmoothingFilter(void)
         rcDuplicationData.framerateDivider = 1;
         rcDuplicationData.currentStepLength = 0;
         rcDuplicationData.detectedStepCount = 0;
+        rcDuplicationData.totalStreaksFound = 0;
         rcDuplicationData.lastRxData = 0;
 
         rcSmoothingData.filterInitialized = false;

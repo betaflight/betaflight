@@ -137,11 +137,14 @@ typedef struct rcSmoothingFilter_s {
     uint8_t autoSmoothnessFactor;
 } rcSmoothingFilter_t;
 
+#define DUPLICATION_MIN_STREAK_LENGTH  4
+#define DUPLICATION_STREAKS_TO_TRIGGER 10
 typedef struct rcDuplicationDetector_s {
     uint8_t framerateDivider;   // how many rc frames should count as one logical frame
     float lastRxData;           // the last raw RX value on the channel we are testing for duplicated frames
     uint8_t currentStepLength;  // length of the current streak in number of frames
-    uint8_t detectedStepCount;  // how many times did we detect 2 frame long streaks
+    uint8_t detectedStepCount;  // how many times did we detect 2 frame long consecutive steps in this streak
+    uint8_t totalStreaksFound;  // number of streaks matching being at least DUPLICATION_MIN_STREAK_LENGTH long
 } rcDuplicationDetector_t;
 
 typedef struct rcControlsConfig_s {
