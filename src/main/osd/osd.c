@@ -56,6 +56,7 @@
 #include "drivers/display.h"
 #include "drivers/dshot.h"
 #include "drivers/flash.h"
+#include "drivers/osd.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/sdcard.h"
 #include "drivers/time.h"
@@ -63,6 +64,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+#include "fc/tasks.h"
 
 #if defined(USE_GYRO_DATA_ANALYSE)
 #include "flight/gyroanalyse.h"
@@ -83,6 +85,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/stats.h"
+#include "pg/vcd.h"
 
 #include "rx/crsf.h"
 #include "rx/rx.h"
@@ -339,6 +342,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
+
+    osdConfig->high_framerate = 0;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -412,6 +417,22 @@ static void osdCompleteInitialization(void)
     osdElementsInit(backgroundLayerSupported);
     osdAnalyzeActiveElements();
     displayCommitTransaction(osdDisplayPort);
+
+#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
+    task_t *taskOsd;
+    taskOsd = getTask(TASK_OSD);
+    if (osdConfig()->high_framerate) { 
+      switch (vcdProfile()->video_system) {
+      case VIDEO_SYSTEM_PAL:
+        taskOsd->desiredPeriodUs = TASK_PERIOD_HZ(125);
+        break;
+      case VIDEO_SYSTEM_NTSC:
+      default:
+        taskOsd->desiredPeriodUs = TASK_PERIOD_HZ(150);
+        break;
+      }
+    }
+#endif
 
     osdIsReady = true;
 }
