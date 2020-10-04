@@ -51,7 +51,11 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
+#ifdef STM32H7
+    bbPort->gpioModeMask |= (GPIO_MODER_MODE0 << (pinIndex * 2)); // A minor name change in H7 CMSIS
+#else
     bbPort->gpioModeMask |= (GPIO_MODER_MODER0 << (pinIndex * 2));
+#endif
     bbPort->gpioModeInput |= (LL_GPIO_MODE_INPUT << (pinIndex * 2));
     bbPort->gpioModeOutput |= (LL_GPIO_MODE_OUTPUT << (pinIndex * 2));
 
@@ -73,7 +77,7 @@ void bbGpioSetup(bbMotor_t *bbMotor)
         IOWrite(bbMotor->io, 0);
     }
 
-#if defined(STM32F7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
     IOConfigGPIO(bbMotor->io, IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_HIGH, bbPuPdMode));
 #else
 #error MCU dependent code required
@@ -127,7 +131,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 #ifdef USE_DMA_REGISTER_CACHE
 void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
-#if defined(STM32F7)
+#if defined(STM32F7) || defined(STM32H7)
     ((DMA_ARCH_TYPE *)dmaResource)->CR = dmaRegCache->CR;
     ((DMA_ARCH_TYPE *)dmaResource)->FCR = dmaRegCache->FCR;
     ((DMA_ARCH_TYPE *)dmaResource)->NDTR = dmaRegCache->NDTR;
@@ -145,7 +149,7 @@ void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 
 static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
-#if defined(STM32F7)
+#if defined(STM32F7) || defined(STM32H7)
     dmaRegCache->CR = ((DMA_ARCH_TYPE *)dmaResource)->CR;
     dmaRegCache->FCR = ((DMA_ARCH_TYPE *)dmaResource)->FCR;
     dmaRegCache->NDTR = ((DMA_ARCH_TYPE *)dmaResource)->NDTR;
@@ -242,7 +246,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     LL_DMA_StructInit(dmainit);
 
     dmainit->Mode = LL_DMA_MODE_NORMAL;
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32H7)
     dmainit->PeriphRequest = bbPort->dmaChannel;
 #else
     dmainit->Channel = bbPort->dmaChannel;

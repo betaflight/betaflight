@@ -104,8 +104,9 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 1),
     DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 0),
-#elif defined(STM32G4)
-    // XXX TODO: STM32G4 can use any timer for pacing
+
+#elif defined(STM32G4) || defined(STM32H7)
+    // XXX TODO: STM32G4 and STM32H7 can use any timer for pacing
 
     // DMA request numbers are duplicated for TIM1 and TIM8:
     //   - Any pacer can serve a GPIO port.
@@ -121,6 +122,7 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1,  CH2, NONE,  TIM_USE_NONE, 0, 1, 0),
     DEF_TIM(TIM1,  CH3, NONE,  TIM_USE_NONE, 0, 2, 0),
     DEF_TIM(TIM1,  CH4, NONE,  TIM_USE_NONE, 0, 3, 0),
+
 #else
 #error MCU dependent code required
 #endif
@@ -703,7 +705,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         bbMotors[motorIndex].output = output;
 #if defined(STM32F4) || defined(STM32F3)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
-#elif defined(STM32F7) || defined(STM32G4)
+#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, bbPuPdMode);
 #endif
 
