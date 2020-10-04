@@ -70,7 +70,6 @@ uint32_t getCycleCounter(void);
 void systemCheckResetReason(void);
 #endif
 
-
 void initialiseMemorySections(void);
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
