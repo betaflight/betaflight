@@ -4673,8 +4673,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     cliPrintf("MCU %s Clock=%dMHz", getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
 
-#ifdef STM32F4
-    // Only F4 is capable of switching between HSE/HSI (for now)
+#if defined(STM32F4) || defined(STM32G4)
+    // Only F4 and G4 is capable of switching between HSE/HSI (for now)
     int sysclkSource = SystemSYSCLKSource();
 
     const char *SYSCLKSource[] = { "HSI", "HSE", "PLLP", "PLLR" };

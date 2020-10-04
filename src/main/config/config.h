@@ -55,8 +55,8 @@ typedef struct systemConfig_s {
     uint8_t cpu_overclock;
     uint8_t powerOnArmingGraceTime; // in seconds
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
-    uint8_t hseMhz; // Not used for non-F4 targets
-    uint8_t configurationState; // The state of the configuration (defaults / configured)
+    uint8_t hseMhz;                 // Only used for F4 and G4 targets
+    uint8_t configurationState;     // The state of the configuration (defaults / configured)
     uint8_t schedulerOptimizeRate;
     uint8_t enableStickArming; // boolean that determines whether stick arming can be used
 } systemConfig_t;
