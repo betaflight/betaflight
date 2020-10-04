@@ -82,12 +82,13 @@ typedef struct _USBD_STORAGE
 
 typedef struct
 {
+  // bot_data at start of structure to ensure cache alignment
+  uint8_t                  bot_data[MSC_MEDIA_PACKET];
   uint32_t                 max_lun;
   uint32_t                 interface;
   uint8_t                  bot_state;
   uint8_t                  bot_status;
   uint32_t                 bot_data_length;
-  uint8_t                  bot_data[MSC_MEDIA_PACKET];
   USBD_MSC_BOT_CBWTypeDef  cbw;
   USBD_MSC_BOT_CSWTypeDef  csw;
 
