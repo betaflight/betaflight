@@ -23,18 +23,18 @@ You can also use the Command Line Interface (CLI) to set the mixer type:
 | GIMBAL           | Gimbal control            | N/A            | S1, S2           |
 | Y6               | Y6-copter                 | M1-M6          | None             |
 | HEX6             | Hexacopter-Plus           | M1-M6          | None             |
-| FLYING_WING      | Fixed wing; elevons       | M1             | S1, S2           |
+| FLYING\_WING      | Fixed wing; elevons       | M1             | S1, S2           |
 | Y4               | Y4-copter                 | M1-M4          | None             |
 | HEX6X            | Hexacopter-X              | M1-M6          | None             |
 | OCTOX8           | Octocopter-X (over/under) | M1-M8          | None             |
 | OCTOFLATP        | Octocopter-FlatPlus       | M1-M8          | None             |
 | OCTOFLATX        | Octocopter-FlatX          | M1-M8          | None             |
 | AIRPLANE         | Fixed wing; Ax2, R, E     | M1             | S1, S2, S3, S4   |
-| HELI_120_CCPM    |                           |                |                  |
-| HELI_90_DEG      |                           |                |                  |
+| HELI\_120\_CCPM    | 3D-capable Helicopter     | M1             | S1, S2, S3, S4   |
+| HELI\_90\_DEG      |                           |                |                  |
 | VTAIL4           | Quadcopter with V-Tail    | M1-M4          | N/A              |
 | HEX6H            | Hexacopter-H              | M1-M6          | None             |
-| PPM_TO_SERVO     |                           |                |                  |
+| PPM\_TO\_SERVO     |                           |                |                  |
 | DUALCOPTER       | Dualcopter                | M1-M2          | S1, S2           |
 | SINGLECOPTER     | Conventional helicopter   | M1             | S1               |
 | ATAIL4           | Quadcopter with A-Tail    | M1-M4          | N/A              |
@@ -146,16 +146,16 @@ Load servo part of given configuration (`<name>` is from `mixer list`)
 |----|--------------|
 | 0  | GIMBAL PITCH |
 | 1  | GIMBAL ROLL |
-| 2  | ELEVATOR / SINGLECOPTER_4 |
-| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
-| 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
-| 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
+| 2  | ELEVATOR / SINGLECOPTER\_4 |
+| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER\_1 |
+| 4  | FLAPPERON 2 (RIGHT) / BICOPTER\_LEFT / DUALCOPTER\_LEFT / SINGLECOPTER\_2 |
+| 5  | RUDDER / BICOPTER\_RIGHT / DUALCOPTER\_RIGHT / SINGLECOPTER\_3 |
 | 6  | THROTTLE (Based ONLY on the first motor output) |
 | 7  | FLAPS |
 
 Only some `<servo>` channels are connected to output, based on mode. For custom modes:
-  - RUDDER for CUSTOM_TRI
-  - ELEVATOR ... FLAPS for CUSTOM_AIRPLANE
+  - RUDDER for CUSTOM\_TRI
+  - ELEVATOR ... FLAPS for CUSTOM\_AIRPLANE
   - no servos for CUSTOM
 
 GIMBAL handling is hard-coded, mmix rule is ignored.
