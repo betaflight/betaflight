@@ -1036,8 +1036,18 @@ void osdUpdate(timeUs_t currentTimeUs)
         osdRefresh(currentTimeUs);
         showVisualBeeper = false;
     } else {
-        // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
-        displayDrawScreen(osdDisplayPort);
+        bool doDrawScreen = true;
+#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
+        // For the MSP displayPort device only do the drawScreen once per
+        // logical OSD cycle as there is no output buffering needing to be flushed.
+        if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_MSP) {
+            doDrawScreen = (counter % DRAW_FREQ_DENOM == 1);
+        }
+#endif
+        // Redraw a portion of the chars per idle to spread out the load and SPI bus utilization
+        if (doDrawScreen) {
+            displayDrawScreen(osdDisplayPort);
+        }
     }
     ++counter;
 }
