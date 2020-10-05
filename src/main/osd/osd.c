@@ -56,7 +56,6 @@
 #include "drivers/display.h"
 #include "drivers/dshot.h"
 #include "drivers/flash.h"
-#include "drivers/osd.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/sdcard.h"
 #include "drivers/time.h"
@@ -64,7 +63,6 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
-#include "fc/tasks.h"
 
 #if defined(USE_GYRO_DATA_ANALYSE)
 #include "flight/gyroanalyse.h"
@@ -85,7 +83,6 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/stats.h"
-#include "pg/vcd.h"
 
 #include "rx/crsf.h"
 #include "rx/rx.h"
@@ -417,12 +414,6 @@ static void osdCompleteInitialization(void)
     osdElementsInit(backgroundLayerSupported);
     osdAnalyzeActiveElements();
     displayCommitTransaction(osdDisplayPort);
-
-#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
-    task_t *taskOsd;
-    taskOsd = getTask(TASK_OSD);
-    taskOsd->desiredPeriodUs = TASK_PERIOD_HZ(osdConfig()->task_frequency);
-#endif
 
     osdIsReady = true;
 }
