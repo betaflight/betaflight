@@ -343,7 +343,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
 
-    osdConfig->high_framerate = 0;
+    osdConfig->task_frequency = 60;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -421,17 +421,7 @@ static void osdCompleteInitialization(void)
 #if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
     task_t *taskOsd;
     taskOsd = getTask(TASK_OSD);
-    if (osdConfig()->high_framerate) { 
-      switch (vcdProfile()->video_system) {
-      case VIDEO_SYSTEM_PAL:
-        taskOsd->desiredPeriodUs = TASK_PERIOD_HZ(125);
-        break;
-      case VIDEO_SYSTEM_NTSC:
-      default:
-        taskOsd->desiredPeriodUs = TASK_PERIOD_HZ(150);
-        break;
-      }
-    }
+    taskOsd->desiredPeriodUs = TASK_PERIOD_HZ(osdConfig()->task_frequency);
 #endif
 
     osdIsReady = true;
