@@ -335,6 +335,7 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_OSD
+    rescheduleTask(TASK_OSD, TASK_PERIOD_HZ(osdConfig()->task_frequency));
     setTaskEnabled(TASK_OSD, featureIsEnabled(FEATURE_OSD) && osdGetDisplayPort(NULL));
 #endif
 

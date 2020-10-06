@@ -339,6 +339,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
+
+    osdConfig->task_frequency = 60;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
