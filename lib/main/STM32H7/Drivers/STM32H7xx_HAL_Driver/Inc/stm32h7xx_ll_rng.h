@@ -614,7 +614,7 @@ __STATIC_INLINE uint32_t LL_RNG_ReadRandData32(RNG_TypeDef *RNGx)
   * @}
   */
 
-#if defined (RNG_VER_3_1)
+#if defined(RNG_VER_3_2) || defined(RNG_VER_3_1) || defined(RNG_VER_3_0)
 /** @defgroup RNG_LL_EF_Health_Test_Control Health Test Control
   * @{
   */
@@ -645,7 +645,7 @@ __STATIC_INLINE uint32_t LL_RNG_GetHealthConfig(RNG_TypeDef *RNGx)
 /**
   * @}
   */
-#endif  /*RNG_VER_3_1*/
+#endif  /*End of RNG_VER_3_2, RNG_VER_3_1 or RNG_VER_3_0*/
 #if defined(USE_FULL_LL_DRIVER)
 /** @defgroup RNG_LL_EF_Init Initialization and de-initialization functions
   * @{

@@ -65,6 +65,10 @@ extern "C" {
 #define USBD_SUPPORT_USER_STRING_DESC                   0U
 #endif /* USBD_SUPPORT_USER_STRING_DESC */
 
+#ifndef USBD_CLASS_USER_STRING_DESC
+#define USBD_CLASS_USER_STRING_DESC                     0U
+#endif /* USBD_CLASS_USER_STRING_DESC */
+
 #define  USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
 #define  USB_LEN_DEV_DESC                               0x12U
 #define  USB_LEN_CFG_DESC                               0x09U
@@ -165,6 +169,28 @@ typedef  struct  usb_setup_req
   uint16_t  wLength;
 } USBD_SetupReqTypedef;
 
+typedef struct
+{
+  uint8_t   bLength;
+  uint8_t   bDescriptorType;
+  uint8_t   wDescriptorLengthLow;
+  uint8_t   wDescriptorLengthHigh;
+  uint8_t   bNumInterfaces;
+  uint8_t   bConfigurationValue;
+  uint8_t   iConfiguration;
+  uint8_t   bmAttributes;
+  uint8_t   bMaxPower;
+} USBD_ConfigDescTypedef;
+
+typedef struct
+{
+  uint8_t   bLength;
+  uint8_t   bDescriptorType;
+  uint16_t  wTotalLength;
+  uint8_t   bNumDeviceCaps;
+} USBD_BosDescTypedef;
+
+
 struct _USBD_HandleTypeDef;
 
 typedef struct _Device_cb
@@ -203,34 +229,39 @@ typedef enum
 /* Following USB Device status */
 typedef enum
 {
-  USBD_OK   = 0U,
+  USBD_OK = 0U,
   USBD_BUSY,
+  USBD_EMEM,
   USBD_FAIL,
 } USBD_StatusTypeDef;
 
 /* USB Device descriptors structure */
 typedef struct
 {
-  uint8_t  *(*GetDeviceDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-  uint8_t  *(*GetLangIDStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-  uint8_t  *(*GetManufacturerStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-  uint8_t  *(*GetProductStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-  uint8_t  *(*GetSerialStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-  uint8_t  *(*GetConfigurationStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-  uint8_t  *(*GetInterfaceStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
-#if (USBD_LPM_ENABLED == 1U)
-  uint8_t  *(*GetBOSDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetDeviceDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetLangIDStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetManufacturerStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetProductStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetSerialStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetConfigurationStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t *(*GetInterfaceStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+#if (USBD_CLASS_USER_STRING_DESC == 1)
+  uint8_t *(*GetUserStrDescriptor)(USBD_SpeedTypeDef speed, uint8_t idx, uint16_t *length);
+#endif
+#if ((USBD_LPM_ENABLED == 1U) || (USBD_CLASS_BOS_ENABLED == 1))
+  uint8_t *(*GetBOSDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
 #endif
 } USBD_DescriptorsTypeDef;
 
 /* USB Device handle structure */
 typedef struct
 {
-  uint32_t                status;
-  uint32_t                is_used;
-  uint32_t                total_length;
-  uint32_t                rem_length;
-  uint32_t                maxpacket;
+  uint32_t status;
+  uint32_t total_length;
+  uint32_t rem_length;
+  uint32_t maxpacket;
+  uint16_t is_used;
+  uint16_t bInterval;
 } USBD_EndpointTypeDef;
 
 /* USB Device handle structure */
@@ -251,10 +282,13 @@ typedef struct _USBD_HandleTypeDef
   uint8_t                 dev_connection_status;
   uint8_t                 dev_test_mode;
   uint32_t                dev_remote_wakeup;
+  uint8_t                 ConfIdx;
 
   USBD_SetupReqTypedef    request;
   USBD_DescriptorsTypeDef *pDesc;
   USBD_ClassTypeDef       *pClass;
+  void                    *pBosDesc;
+  void                    *pConfDesc;
 //WARNING: When updating this middleware add this to structure:
   void                    *pCDC_ClassData;
   void                    *pCDC_UserData;
@@ -274,8 +308,19 @@ typedef struct _USBD_HandleTypeDef
 /** @defgroup USBD_DEF_Exported_Macros
   * @{
   */
-#define  SWAPBYTE(addr)        (((uint16_t)(*((uint8_t *)(addr)))) + \
-                               (((uint16_t)(*(((uint8_t *)(addr)) + 1U))) << 8U))
+__STATIC_INLINE uint16_t SWAPBYTE(uint8_t *addr)
+{
+  uint16_t _SwapVal, _Byte1, _Byte2;
+  uint8_t *_pbuff = addr;
+
+  _Byte1 = *(uint8_t *)_pbuff;
+  _pbuff++;
+  _Byte2 = *(uint8_t *)_pbuff;
+
+  _SwapVal = (_Byte2 << 8) | _Byte1;
+
+  return _SwapVal;
+}
 
 #define LOBYTE(x)  ((uint8_t)((x) & 0x00FFU))
 #define HIBYTE(x)  ((uint8_t)(((x) & 0xFF00U) >> 8U))

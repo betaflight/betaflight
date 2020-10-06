@@ -1051,7 +1051,7 @@ uint32_t SDMMC_CmdEraseStartAdd(SDMMC_TypeDef *SDMMCx, uint32_t StartAdd);
 uint32_t SDMMC_CmdSDEraseStartAdd(SDMMC_TypeDef *SDMMCx, uint32_t StartAdd);
 uint32_t SDMMC_CmdEraseEndAdd(SDMMC_TypeDef *SDMMCx, uint32_t EndAdd);
 uint32_t SDMMC_CmdSDEraseEndAdd(SDMMC_TypeDef *SDMMCx, uint32_t EndAdd);
-uint32_t SDMMC_CmdErase(SDMMC_TypeDef *SDMMCx);
+uint32_t SDMMC_CmdErase(SDMMC_TypeDef *SDMMCx, uint32_t EraseType);
 uint32_t SDMMC_CmdStopTransfer(SDMMC_TypeDef *SDMMCx);
 uint32_t SDMMC_CmdSelDesel(SDMMC_TypeDef *SDMMCx, uint64_t Addr);
 uint32_t SDMMC_CmdGoIdleState(SDMMC_TypeDef *SDMMCx);
@@ -1073,6 +1073,7 @@ uint32_t SDMMC_CmdSendEXTCSD(SDMMC_TypeDef *SDMMCx, uint32_t Argument);
 /**
   * @}
   */
+
 
 /**
   * @}

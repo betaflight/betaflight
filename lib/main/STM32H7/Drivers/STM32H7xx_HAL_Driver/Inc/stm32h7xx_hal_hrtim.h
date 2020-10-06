@@ -654,11 +654,6 @@ typedef void (* pHRTIM_TIMxCallbackTypeDef)(HRTIM_HandleTypeDef *hhrtim,    /*!<
   * @{
   * @brief Constants defining timer high-resolution clock prescaler ratio.
   */
-#define HRTIM_PRESCALERRATIO_MUL32    (0x00000000U)  /*!< fHRCK: fHRTIM x 32U = 4.608 GHz - Resolution: 217 ps - Min PWM frequency: 70.3 kHz (fHRTIM=144MHz) */
-#define HRTIM_PRESCALERRATIO_MUL16    (0x00000001U)  /*!< fHRCK: fHRTIM x 16U = 2.304 GHz - Resolution: 434 ps - Min PWM frequency: 35.1 KHz (fHRTIM=144MHz) */
-#define HRTIM_PRESCALERRATIO_MUL8     (0x00000002U)  /*!< fHRCK: fHRTIM x 8U = 1.152 GHz - Resolution: 868 ps - Min PWM frequency: 17.6 kHz (fHRTIM=144MHz)  */
-#define HRTIM_PRESCALERRATIO_MUL4     (0x00000003U)  /*!< fHRCK: fHRTIM x 4U = 576 MHz - Resolution: 1.73 ns - Min PWM frequency: 8.8 kHz (fHRTIM=144MHz)    */
-#define HRTIM_PRESCALERRATIO_MUL2     (0x00000004U)  /*!< fHRCK: fHRTIM x 2U = 288 MHz - Resolution: 3.47 ns - Min PWM frequency: 4.4 kHz (fHRTIM=144MHz)    */
 #define HRTIM_PRESCALERRATIO_DIV1     (0x00000005U)  /*!< fHRCK: fHRTIM = 144 MHz - Resolution: 6.95 ns - Min PWM frequency: 2.2 kHz (fHRTIM=144MHz)         */
 #define HRTIM_PRESCALERRATIO_DIV2     (0x00000006U)  /*!< fHRCK: fHRTIM / 2U = 72 MHz - Resolution: 13.88 ns- Min PWM frequency: 1.1 kHz (fHRTIM=144MHz)     */
 #define HRTIM_PRESCALERRATIO_DIV4     (0x00000007U)  /*!< fHRCK: fHRTIM / 4U = 36 MHz - Resolution: 27.7 ns- Min PWM frequency: 550Hz (fHRTIM=144MHz)        */
@@ -2083,12 +2078,7 @@ typedef void (* pHRTIM_TIMxCallbackTypeDef)(HRTIM_HandleTypeDef *hhrtim,    /*!<
        ((FAULT) == HRTIM_FAULT_5))
 
 #define IS_HRTIM_PRESCALERRATIO(PRESCALERRATIO)\
-        (((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_MUL32) || \
-         ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_MUL16) || \
-         ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_MUL8)  || \
-         ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_MUL4)  || \
-         ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_MUL2)  || \
-         ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_DIV1)  || \
+        (((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_DIV1) || \
          ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_DIV2)  || \
          ((PRESCALERRATIO) == HRTIM_PRESCALERRATIO_DIV4))
 
@@ -3117,11 +3107,6 @@ typedef void (* pHRTIM_TIMxCallbackTypeDef)(HRTIM_HandleTypeDef *hhrtim,    /*!<
   *                   @arg 0x0 to 0x4 for timers A to E
   * @param  __PRESCALER__ specifies the clock prescaler new value.
   *                   This parameter can be one of the following values:
-  *                   @arg HRTIM_PRESCALERRATIO_MUL32: fHRCK: 4.608 GHz - Resolution: 217 ps - Min PWM frequency: 70.3 kHz (fHRTIM=144MHz)
-  *                   @arg HRTIM_PRESCALERRATIO_MUL16: fHRCK: 2.304 GHz - Resolution: 434 ps - Min PWM frequency: 35.1 KHz (fHRTIM=144MHz)
-  *                   @arg HRTIM_PRESCALERRATIO_MUL8: fHRCK: 1.152 GHz - Resolution: 868 ps - Min PWM frequency: 17.6 kHz (fHRTIM=144MHz)
-  *                   @arg HRTIM_PRESCALERRATIO_MUL4: fHRCK: 576 MHz - Resolution: 1.73 ns - Min PWM frequency: 8.8 kHz (fHRTIM=144MHz)
-  *                   @arg HRTIM_PRESCALERRATIO_MUL2: fHRCK: 288 MHz - Resolution: 3.47 ns - Min PWM frequency: 4.4 kHz (fHRTIM=144MHz)
   *                   @arg HRTIM_PRESCALERRATIO_DIV1: fHRCK: 144 MHz - Resolution: 6.95 ns - Min PWM frequency: 2.2 kHz (fHRTIM=144MHz)
   *                   @arg HRTIM_PRESCALERRATIO_DIV2: fHRCK: 72 MHz - Resolution: 13.88 ns- Min PWM frequency: 1.1 kHz (fHRTIM=144MHz)
   *                   @arg HRTIM_PRESCALERRATIO_DIV4: fHRCK: 36 MHz - Resolution: 27.7 ns- Min PWM frequency: 550Hz (fHRTIM=144MHz)

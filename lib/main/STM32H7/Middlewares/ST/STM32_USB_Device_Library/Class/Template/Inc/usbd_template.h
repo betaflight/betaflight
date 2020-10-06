@@ -41,10 +41,10 @@ extern "C" {
 /** @defgroup USBD_TEMPLATE_Exported_Defines
   * @{
   */
-#define TEMPLATE_EPIN_ADDR                 0x81
-#define TEMPLATE_EPIN_SIZE                 0x10
+#define TEMPLATE_EPIN_ADDR                 0x81U
+#define TEMPLATE_EPIN_SIZE                 0x10U
 
-#define USB_TEMPLATE_CONFIG_DESC_SIZ       64
+#define USB_TEMPLATE_CONFIG_DESC_SIZ       64U
 
 /**
   * @}
@@ -73,7 +73,7 @@ extern "C" {
   * @{
   */
 
-extern USBD_ClassTypeDef  USBD_TEMPLATE_ClassDriver;
+extern USBD_ClassTypeDef USBD_TEMPLATE_ClassDriver;
 /**
   * @}
   */

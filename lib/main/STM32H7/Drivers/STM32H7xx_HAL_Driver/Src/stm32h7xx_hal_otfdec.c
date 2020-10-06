@@ -577,7 +577,7 @@ HAL_StatusTypeDef HAL_OTFDEC_RegionKeyLock(OTFDEC_HandleTypeDef *hotfdec, uint32
   *         the configuration information for OTFDEC module
   * @param  RegionIndex index of region the keys of which are set
   * @param  pKey pointer at set of keys
-  * @note   The API reads the key CRC computed by the peripheral and compares it with thzt
+  * @note   The API reads the key CRC computed by the peripheral and compares it with that
   *         theoretically expected. An error is reported if they are different.
   * @retval HAL state
   */

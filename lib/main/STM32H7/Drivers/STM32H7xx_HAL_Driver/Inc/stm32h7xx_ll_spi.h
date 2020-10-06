@@ -1285,8 +1285,8 @@ __STATIC_INLINE void LL_SPI_SetTransferDirection(SPI_TypeDef *SPIx, uint32_t Tra
   */
 __STATIC_INLINE uint32_t LL_SPI_GetTransferDirection(SPI_TypeDef *SPIx)
 {
-  register uint32_t Hddir = READ_BIT(SPIx->CR1, SPI_CR1_HDDIR);
-  register uint32_t Comm = READ_BIT(SPIx->CFG2, SPI_CFG2_COMM);
+  uint32_t Hddir = READ_BIT(SPIx->CR1, SPI_CR1_HDDIR);
+  uint32_t Comm = READ_BIT(SPIx->CFG2, SPI_CFG2_COMM);
   return (Hddir | Comm);
 }
 

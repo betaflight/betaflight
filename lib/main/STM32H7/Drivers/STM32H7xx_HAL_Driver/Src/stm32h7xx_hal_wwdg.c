@@ -31,11 +31,21 @@
     (+) WWDG Counter refresh is allowed between the following limits :
         (++) min time (mS) = 1000 * (Counter - Window) / WWDG clock
         (++) max time (mS) = 1000 * (Counter - 0x40) / WWDG clock
-    (+) Typical values:
-        (++) Counter min (T[5;0] = 0x00) @56MHz (PCLK1) with zero prescaler:
-             max timeout before reset: approximately 73.14�s
-        (++) Counter max (T[5;0] = 0x3F) @56MHz (PCLK1) with prescaler dividing by 128:
-             max timeout before reset: approximately 599.18ms
+    (+) Typical values (case of STM32H74x/5x devices):
+        (++) Counter min (T[5;0] = 0x00) @100MHz (PCLK1) with zero prescaler:
+             max timeout before reset: approximately 40.96µs
+        (++) Counter max (T[5;0] = 0x3F) @100MHz (PCLK1) with prescaler dividing by 128:
+             max timeout before reset: approximately 335.54ms
+    (+) Typical values (case of STM32H7Ax/Bx devices):
+        (++) Counter min (T[5;0] = 0x00) @140MHz (PCLK1) with zero prescaler:
+             max timeout before reset: approximately 29.25µs
+        (++) Counter max (T[5;0] = 0x3F) @140MHz (PCLK1) with prescaler dividing by 128:
+             max timeout before reset: approximately 239.67ms
+    (+) Typical values (case of STM32H72x/3x devices):
+        (++) Counter min (T[5;0] = 0x00) @125MHz (PCLK1) with zero prescaler:
+             max timeout before reset: approximately 32.76µs
+        (++) Counter max (T[5;0] = 0x3F) @125MHz (PCLK1) with prescaler dividing by 128:
+             max timeout before reset: approximately 268.43ms
 
   ==============================================================================
                      ##### How to use this driver #####

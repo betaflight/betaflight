@@ -377,11 +377,8 @@ HAL_StatusTypeDef HAL_OSPI_Init (OSPI_HandleTypeDef *hospi)
 #endif
 
       /* Configure the default timeout for the OSPI memory access */
-      status = HAL_OSPI_SetTimeout(hospi, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
-    }
+      (void)HAL_OSPI_SetTimeout(hospi, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 
-    if (status == HAL_OK)
-    {
       /* Configure memory type, device size, chip select high time, clocked chip select high time, delay block bypass, free running clock, clock mode */
       MODIFY_REG(hospi->Instance->DCR1,
                  (OCTOSPI_DCR1_MTYP   | OCTOSPI_DCR1_DEVSIZE | OCTOSPI_DCR1_CSHT | OCTOSPI_DCR1_CKCSHT |
@@ -408,33 +405,33 @@ HAL_StatusTypeDef HAL_OSPI_Init (OSPI_HandleTypeDef *hospi)
 
       if (status == HAL_OK)
       {
-         /* Configure clock prescaler */
-         MODIFY_REG(hospi->Instance->DCR2, OCTOSPI_DCR2_PRESCALER, ((hospi->Init.ClockPrescaler - 1U) << OCTOSPI_DCR2_PRESCALER_Pos));
+        /* Configure clock prescaler */
+        MODIFY_REG(hospi->Instance->DCR2, OCTOSPI_DCR2_PRESCALER, ((hospi->Init.ClockPrescaler - 1U) << OCTOSPI_DCR2_PRESCALER_Pos));
 
-         /* Configure Dual Quad mode */
-         MODIFY_REG(hospi->Instance->CR, OCTOSPI_CR_DQM, hospi->Init.DualQuad);
+        /* Configure Dual Quad mode */
+        MODIFY_REG(hospi->Instance->CR, OCTOSPI_CR_DQM, hospi->Init.DualQuad);
 
-         /* Configure sample shifting and delay hold quarter cycle */
-         MODIFY_REG(hospi->Instance->TCR, (OCTOSPI_TCR_SSHIFT | OCTOSPI_TCR_DHQC), (hospi->Init.SampleShifting | hospi->Init.DelayHoldQuarterCycle));
+        /* Configure sample shifting and delay hold quarter cycle */
+        MODIFY_REG(hospi->Instance->TCR, (OCTOSPI_TCR_SSHIFT | OCTOSPI_TCR_DHQC), (hospi->Init.SampleShifting | hospi->Init.DelayHoldQuarterCycle));
 
-         /* Enable OctoSPI */
-         __HAL_OSPI_ENABLE(hospi);
-         
-         /* Enable free running clock if needed : must be done after OSPI enable */
-         if (hospi->Init.FreeRunningClock == HAL_OSPI_FREERUNCLK_ENABLE)
-         {
-           SET_BIT(hospi->Instance->DCR1, OCTOSPI_DCR1_FRCK);
-         }
+        /* Enable OctoSPI */
+        __HAL_OSPI_ENABLE(hospi);
 
-         /* Initialize the OSPI state */
-         if (hospi->Init.MemoryType == HAL_OSPI_MEMTYPE_HYPERBUS)
-         {
-            hospi->State = HAL_OSPI_STATE_HYPERBUS_INIT;
-         }
-         else
-         {
-            hospi->State = HAL_OSPI_STATE_READY;
-         }
+        /* Enable free running clock if needed : must be done after OSPI enable */
+        if (hospi->Init.FreeRunningClock == HAL_OSPI_FREERUNCLK_ENABLE)
+        {
+          SET_BIT(hospi->Instance->DCR1, OCTOSPI_DCR1_FRCK);
+        }
+
+        /* Initialize the OSPI state */
+        if (hospi->Init.MemoryType == HAL_OSPI_MEMTYPE_HYPERBUS)
+        {
+          hospi->State = HAL_OSPI_STATE_HYPERBUS_INIT;
+        }
+        else
+        {
+          hospi->State = HAL_OSPI_STATE_READY;
+        }
       }
     }
   }
@@ -2457,6 +2454,7 @@ HAL_StatusTypeDef HAL_OSPIM_Config(OSPI_HandleTypeDef *hospi, OSPIM_CfgTypeDef *
   assert_param(IS_OSPIM_PORT(cfg->NCSPort));
   assert_param(IS_OSPIM_IO_PORT(cfg->IOLowPort));
   assert_param(IS_OSPIM_IO_PORT(cfg->IOHighPort));
+  assert_param(IS_OSPIM_REQ2ACKTIME(cfg->Req2AckTime));
 
   if (hospi->Instance == OCTOSPI1)
   {
@@ -2494,13 +2492,29 @@ HAL_StatusTypeDef HAL_OSPIM_Config(OSPI_HandleTypeDef *hospi, OSPIM_CfgTypeDef *
     }
 
     /***************** Deactivation of previous configuration *****************/
-    if (IOM_cfg[instance].ClkPort != 0U)
+    CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[instance].NCSPort-1U)], OCTOSPIM_PCR_NCSEN);
+    if ((OCTOSPIM->CR & OCTOSPIM_CR_MUXEN) != 0U)
     {
-      CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[instance].ClkPort-1U)],                          OCTOSPIM_PCR_CLKEN);
-      CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[instance].DQSPort-1U)],                          OCTOSPIM_PCR_DQSEN);
-      CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[instance].NCSPort-1U)],                          OCTOSPIM_PCR_NCSEN);
-      CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[instance].IOLowPort-1U)& OSPI_IOM_PORT_MASK)],  OCTOSPIM_PCR_IOLEN);
-      CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[instance].IOHighPort-1U)& OSPI_IOM_PORT_MASK)], OCTOSPIM_PCR_IOHEN);
+      /* De-multiplexing should be performed */
+      CLEAR_BIT(OCTOSPIM->CR, OCTOSPIM_CR_MUXEN);
+
+      if (other_instance == 1U)
+      {
+        SET_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].ClkPort-1U)],                          OCTOSPIM_PCR_CLKSRC);
+        SET_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].DQSPort-1U)],                          OCTOSPIM_PCR_DQSSRC);
+        SET_BIT(OCTOSPIM->PCR[((IOM_cfg[other_instance].IOLowPort-1U)& OSPI_IOM_PORT_MASK)],  OCTOSPIM_PCR_IOLSRC_1);
+        SET_BIT(OCTOSPIM->PCR[((IOM_cfg[other_instance].IOHighPort-1U)& OSPI_IOM_PORT_MASK)], OCTOSPIM_PCR_IOHSRC_1);
+      }
+    }
+    else
+    {
+      if (IOM_cfg[instance].ClkPort != 0U)
+      {
+        CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[instance].ClkPort-1U)],                          OCTOSPIM_PCR_CLKEN);
+        CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[instance].DQSPort-1U)],                          OCTOSPIM_PCR_DQSEN);
+        CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[instance].IOLowPort-1U)& OSPI_IOM_PORT_MASK)],  OCTOSPIM_PCR_IOLEN);
+        CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[instance].IOHighPort-1U)& OSPI_IOM_PORT_MASK)], OCTOSPIM_PCR_IOHEN);
+      }
     }
 
     /********************* Deactivation of other instance *********************/
@@ -2508,38 +2522,79 @@ HAL_StatusTypeDef HAL_OSPIM_Config(OSPI_HandleTypeDef *hospi, OSPIM_CfgTypeDef *
         (cfg->NCSPort == IOM_cfg[other_instance].NCSPort) || (cfg->IOLowPort == IOM_cfg[other_instance].IOLowPort) ||
         (cfg->IOHighPort == IOM_cfg[other_instance].IOHighPort))
     {
-      CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].ClkPort-1U)],                          OCTOSPIM_PCR_CLKEN);
-      CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].DQSPort-1U)],                          OCTOSPIM_PCR_DQSEN);
-      CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].NCSPort-1U)],                          OCTOSPIM_PCR_NCSEN);
-      CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[other_instance].IOLowPort-1U)& OSPI_IOM_PORT_MASK)],  OCTOSPIM_PCR_IOLEN);
-      CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[other_instance].IOHighPort-1U)& OSPI_IOM_PORT_MASK)], OCTOSPIM_PCR_IOHEN);
+      if ((cfg->ClkPort   == IOM_cfg[other_instance].ClkPort)   && (cfg->DQSPort    == IOM_cfg[other_instance].DQSPort) &&
+          (cfg->IOLowPort == IOM_cfg[other_instance].IOLowPort) && (cfg->IOHighPort == IOM_cfg[other_instance].IOHighPort))
+      {
+        /* Multiplexing should be performed */
+        SET_BIT(OCTOSPIM->CR, OCTOSPIM_CR_MUXEN);
+      }
+      else
+      {
+        CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].ClkPort-1U)],                          OCTOSPIM_PCR_CLKEN);
+        CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].DQSPort-1U)],                          OCTOSPIM_PCR_DQSEN);
+        CLEAR_BIT(OCTOSPIM->PCR[(IOM_cfg[other_instance].NCSPort-1U)],                          OCTOSPIM_PCR_NCSEN);
+        CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[other_instance].IOLowPort-1U)& OSPI_IOM_PORT_MASK)],  OCTOSPIM_PCR_IOLEN);
+        CLEAR_BIT(OCTOSPIM->PCR[((IOM_cfg[other_instance].IOHighPort-1U)& OSPI_IOM_PORT_MASK)], OCTOSPIM_PCR_IOHEN);
+      }
     }
 
     /******************** Activation of new configuration *********************/
-    MODIFY_REG(OCTOSPIM->PCR[(cfg->ClkPort-1U)], (OCTOSPIM_PCR_CLKEN | OCTOSPIM_PCR_CLKSRC), (OCTOSPIM_PCR_CLKEN | (instance << OCTOSPIM_PCR_CLKSRC_Pos)));
-    MODIFY_REG(OCTOSPIM->PCR[(cfg->DQSPort-1U)], (OCTOSPIM_PCR_DQSEN | OCTOSPIM_PCR_DQSSRC), (OCTOSPIM_PCR_DQSEN | (instance << OCTOSPIM_PCR_DQSSRC_Pos)));
     MODIFY_REG(OCTOSPIM->PCR[(cfg->NCSPort-1U)], (OCTOSPIM_PCR_NCSEN | OCTOSPIM_PCR_NCSSRC), (OCTOSPIM_PCR_NCSEN | (instance << OCTOSPIM_PCR_NCSSRC_Pos)));
 
-    if ((cfg->IOLowPort & OCTOSPIM_PCR_IOLEN) != 0U)
+    if ((cfg->Req2AckTime - 1U) > ((OCTOSPIM->CR & OCTOSPIM_CR_REQ2ACK_TIME) >> OCTOSPIM_CR_REQ2ACK_TIME_Pos))
     {
-      MODIFY_REG(OCTOSPIM->PCR[((cfg->IOLowPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC),
-                 (OCTOSPIM_PCR_IOLEN | (instance << (OCTOSPIM_PCR_IOLSRC_Pos+1U))));
-    }
-    else
-    {
-      MODIFY_REG(OCTOSPIM->PCR[((cfg->IOLowPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC),
-                 (OCTOSPIM_PCR_IOHEN | (instance << (OCTOSPIM_PCR_IOHSRC_Pos+1U))));
+      MODIFY_REG(OCTOSPIM->CR, OCTOSPIM_CR_REQ2ACK_TIME, ((cfg->Req2AckTime - 1U) << OCTOSPIM_CR_REQ2ACK_TIME_Pos));
     }
 
-    if ((cfg->IOHighPort & OCTOSPIM_PCR_IOLEN) != 0U)
+    if ((OCTOSPIM->CR & OCTOSPIM_CR_MUXEN) != 0U)
     {
-      MODIFY_REG(OCTOSPIM->PCR[((cfg->IOHighPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC),
-                 (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC_0 | (instance << (OCTOSPIM_PCR_IOLSRC_Pos+1U))));
+      MODIFY_REG(OCTOSPIM->PCR[(cfg->ClkPort-1U)], (OCTOSPIM_PCR_CLKEN | OCTOSPIM_PCR_CLKSRC), OCTOSPIM_PCR_CLKEN);
+      MODIFY_REG(OCTOSPIM->PCR[(cfg->DQSPort-1U)], (OCTOSPIM_PCR_DQSEN | OCTOSPIM_PCR_DQSSRC), OCTOSPIM_PCR_DQSEN);
+
+      if ((cfg->IOLowPort & OCTOSPIM_PCR_IOLEN) != 0U)
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOLowPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC), OCTOSPIM_PCR_IOLEN);
+      }
+      else
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOLowPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC), OCTOSPIM_PCR_IOHEN);
+      }
+
+      if ((cfg->IOHighPort & OCTOSPIM_PCR_IOLEN) != 0U)
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOHighPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC), (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC_0));
+      }
+      else
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOHighPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC), (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC_0));
+      }
     }
     else
     {
-      MODIFY_REG(OCTOSPIM->PCR[((cfg->IOHighPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC),
-                 (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC_0 | (instance << (OCTOSPIM_PCR_IOHSRC_Pos+1U))));
+      MODIFY_REG(OCTOSPIM->PCR[(cfg->ClkPort-1U)], (OCTOSPIM_PCR_CLKEN | OCTOSPIM_PCR_CLKSRC), (OCTOSPIM_PCR_CLKEN | (instance << OCTOSPIM_PCR_CLKSRC_Pos)));
+      MODIFY_REG(OCTOSPIM->PCR[(cfg->DQSPort-1U)], (OCTOSPIM_PCR_DQSEN | OCTOSPIM_PCR_DQSSRC), (OCTOSPIM_PCR_DQSEN | (instance << OCTOSPIM_PCR_DQSSRC_Pos)));
+
+      if ((cfg->IOLowPort & OCTOSPIM_PCR_IOLEN) != 0U)
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOLowPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC),
+                   (OCTOSPIM_PCR_IOLEN | (instance << (OCTOSPIM_PCR_IOLSRC_Pos+1U))));
+      }
+      else
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOLowPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC),
+                   (OCTOSPIM_PCR_IOHEN | (instance << (OCTOSPIM_PCR_IOHSRC_Pos+1U))));
+      }
+
+      if ((cfg->IOHighPort & OCTOSPIM_PCR_IOLEN) != 0U)
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOHighPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC),
+                   (OCTOSPIM_PCR_IOLEN | OCTOSPIM_PCR_IOLSRC_0 | (instance << (OCTOSPIM_PCR_IOLSRC_Pos+1U))));
+      }
+      else
+      {
+        MODIFY_REG(OCTOSPIM->PCR[((cfg->IOHighPort-1U)& OSPI_IOM_PORT_MASK)], (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC),
+                   (OCTOSPIM_PCR_IOHEN | OCTOSPIM_PCR_IOHSRC_0 | (instance << (OCTOSPIM_PCR_IOHSRC_Pos+1U))));
+      }
     }
 
     /******* Re-enable both OctoSPI after configure OctoSPI IO Manager ********/
@@ -2905,7 +2960,14 @@ static HAL_StatusTypeDef OSPIM_GetConfig(uint8_t instance_nb, OSPIM_CfgTypeDef *
 
     if (instance_nb == 2U)
     {
-      value = (OCTOSPIM_PCR_CLKSRC | OCTOSPIM_PCR_DQSSRC | OCTOSPIM_PCR_NCSSRC | OCTOSPIM_PCR_IOLSRC_1 | OCTOSPIM_PCR_IOHSRC_1);
+      if ((OCTOSPIM->CR & OCTOSPIM_CR_MUXEN) == 0U)
+      {
+        value = (OCTOSPIM_PCR_CLKSRC | OCTOSPIM_PCR_DQSSRC | OCTOSPIM_PCR_NCSSRC | OCTOSPIM_PCR_IOLSRC_1 | OCTOSPIM_PCR_IOHSRC_1);
+      }
+      else
+      {
+        value = OCTOSPIM_PCR_NCSSRC;
+      }
     }
 
     /* Get the information about the instance */

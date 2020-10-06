@@ -37,7 +37,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-/** @defgroup RCCEx_Private_defines Private Defines
+/** @defgroup RCCEx_Private_defines RCCEx Private Defines
  * @{
  */
 #define PLL2_TIMEOUT_VALUE         PLL_TIMEOUT_VALUE    /* 2 ms */
@@ -50,12 +50,21 @@
   * @}
   */
 
+/* Private macros ------------------------------------------------------------*/
+/** @defgroup RCCEx_Private_Macros RCCEx Private Macros
+ * @{
+ */
+/**
+  * @}
+  */
+
+/* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static HAL_StatusTypeDef RCCEx_PLL2_Config(RCC_PLL2InitTypeDef *pll2, uint32_t Divider);
 static HAL_StatusTypeDef RCCEx_PLL3_Config(RCC_PLL3InitTypeDef *pll3, uint32_t Divider);
 
 /* Exported functions --------------------------------------------------------*/
-/** @defgroup RCCEx_Exported_Functions Exported Functions
+/** @defgroup RCCEx_Exported_Functions RCCEx Exported Functions
   * @{
   */
 
@@ -84,7 +93,7 @@ static HAL_StatusTypeDef RCCEx_PLL3_Config(RCC_PLL3InitTypeDef *pll3, uint32_t D
   * @param  PeriphClkInit: pointer to an RCC_PeriphCLKInitTypeDef structure that
   *         contains the configuration information for the Extended Peripherals
   *         clocks (SDMMC, CKPER, FMC, QSPI*, OSPI*, DSI, SPI45, SPDIF, DFSDM1, DFSDM2*, FDCAN, SWPMI, SAI23*,SAI2A*, SAI2B*, SAI1, SPI123,
-  *         USART234578, USART16 (USART16910*), RNG, HRTIM1*, I2C123, USB, CEC, LPTIM1, LPUART1, I2C4, LPTIM2, LPTIM345, ADC,
+  *         USART234578, USART16 (USART16910*), RNG, HRTIM1*, I2C123 (I2C1235*), USB, CEC, LPTIM1, LPUART1, I2C4, LPTIM2, LPTIM345, ADC,
   *         SAI4A*, SAI4B*, SPI6, RTC).
   * @note   Care must be taken when HAL_RCCEx_PeriphCLKConfig() is used to select
   *         the RTC clock source; in this case the Backup domain will be reset in
@@ -412,6 +421,13 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       /* HSI, HSE, or CSI oscillator is used as source of SAI2 clock */
       /* SAI1 clock source configuration done later after clock selection check */
       break;
+ 
+#if defined(RCC_VER_3_0)
+    case RCC_SAI4ACLKSOURCE_SPDIF:
+      /* SPDIF clock is used as source of SAI4A clock */
+      /* SAI4A clock source configuration done later after clock selection check */
+      break;
+#endif /* RCC_VER_3_0 */
 
     default:
       ret = HAL_ERROR;
@@ -463,6 +479,13 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       /* HSI, HSE, or CSI oscillator is used as source of SAI2 clock */
       /* SAI1 clock source configuration done later after clock selection check */
       break;
+
+#if defined(RCC_VER_3_0)
+    case RCC_SAI4BCLKSOURCE_SPDIF:
+      /* SPDIF clock is used as source of SAI4B clock */
+      /* SAI4B clock source configuration done later after clock selection check */
+      break;
+#endif /* RCC_VER_3_0 */
 
     default:
       ret = HAL_ERROR;
@@ -1247,7 +1270,25 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     }
   }
 
-  /*------------------------------ I2C1/2/3 Configuration ------------------------*/
+  /*------------------------------ I2C1/2/3/5* Configuration ------------------------*/
+#if defined(I2C5)
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_I2C1235) == RCC_PERIPHCLK_I2C1235)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_I2C1235CLKSOURCE(PeriphClkInit->I2c1235ClockSelection));
+
+    if ((PeriphClkInit->I2c1235ClockSelection )== RCC_I2C1235CLKSOURCE_PLL3 )
+    {
+        if(RCCEx_PLL3_Config(&(PeriphClkInit->PLL3),DIVIDER_R_UPDATE)!= HAL_OK)
+        {
+          status = HAL_ERROR;
+        }
+    }
+
+      __HAL_RCC_I2C1235_CONFIG(PeriphClkInit->I2c1235ClockSelection);
+
+  }
+#else
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_I2C123) == RCC_PERIPHCLK_I2C123)
   {
     /* Check the parameters */
@@ -1264,6 +1305,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       __HAL_RCC_I2C123_CONFIG(PeriphClkInit->I2c123ClockSelection);
 
   }
+#endif /* I2C5 */
 
   /*------------------------------ I2C4 Configuration ------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_I2C4) == RCC_PERIPHCLK_I2C4)
@@ -1471,7 +1513,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     /* Configure the SWPMI1 interface clock source */
     __HAL_RCC_SWPMI1_CONFIG(PeriphClkInit->Swpmi1ClockSelection);
   }
-#if defined(HRTIM)
+#if defined(HRTIM1)
   /*------------------------------ HRTIM1 clock Configuration ----------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_HRTIM1) == RCC_PERIPHCLK_HRTIM1)
   {
@@ -1481,7 +1523,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     /* Configure the HRTIM1 clock source */
     __HAL_RCC_HRTIM1_CONFIG(PeriphClkInit->Hrtim1ClockSelection);
   }
-#endif  /*HRTIM*/
+#endif  /*HRTIM1*/
   /*------------------------------ DFSDM1 Configuration ------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_DFSDM1) == RCC_PERIPHCLK_DFSDM1)
   {
@@ -1536,7 +1578,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
   * @param  PeriphClkInit: pointer to an RCC_PeriphCLKInitTypeDef structure that
   *         returns the configuration information for the Extended Peripherals clocks :
   *         (SDMMC, CKPER, FMC, QSPI*, OSPI*, DSI*, SPI45, SPDIF, DFSDM1, DFSDM2*, FDCAN, SWPMI, SAI23*, SAI1, SPI123,
-  *         USART234578, USART16, RNG, HRTIM1*, I2C123, USB, CEC, LPTIM1, LPUART1, I2C4, LPTIM2, LPTIM345, ADC.
+  *         USART234578, USART16, RNG, HRTIM1*, I2C123 (I2C1235*), USB, CEC, LPTIM1, LPUART1, I2C4, LPTIM2, LPTIM345, ADC.
   *         SAI4A*, SAI4B*, SPI6, RTC, TIM).
   * @retval None
   *
@@ -1554,14 +1596,18 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
 	         RCC_PERIPHCLK_CEC     | RCC_PERIPHCLK_FMC         | RCC_PERIPHCLK_SPDIFRX | RCC_PERIPHCLK_TIM      |
 	         RCC_PERIPHCLK_CKPER;
 
+#if defined(I2C5)
+PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_I2C1235;
+#else
 PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_I2C123;
+#endif /*I2C5*/
 #if defined(RCC_CDCCIP1R_SAI2ASEL)
   PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_SAI2A;
 #endif /* RCC_CDCCIP1R_SAI2ASEL */
-#if defined(RCC_CDCCIP1R_SAI2BSEL)
+#if defined(RCC_CDCCIP1R_SAI2BSEL)		 
   PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_SAI2B;
 #endif /* RCC_CDCCIP1R_SAI2BSEL */
-#if defined(SAI3)
+#if defined(SAI3)	 
   PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_SAI23;
 #endif /* SAI3 */
 #if defined(SAI4)
@@ -1577,9 +1623,9 @@ PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_I2C123;
 #if defined(OCTOSPI1) || defined(OCTOSPI2)
   PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_OSPI;
 #endif /* OCTOSPI1 || OCTOSPI2 */
-#if defined(HRTIM)
+#if defined(HRTIM1)
   PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_HRTIM1;
-#endif /* HRTIM */
+#endif /* HRTIM1 */
 #if defined(LTDC)
   PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_LTDC;
 #endif /* LTDC */
@@ -1611,8 +1657,13 @@ PeriphClkInit->PeriphClockSelection |= RCC_PERIPHCLK_I2C123;
   PeriphClkInit->Usart234578ClockSelection  = __HAL_RCC_GET_USART234578_SOURCE();
   /* Get the LPUART1 clock source --------------------------------------------*/
   PeriphClkInit->Lpuart1ClockSelection      = __HAL_RCC_GET_LPUART1_SOURCE();
+#if defined(I2C5)
+  /* Get the I2C1/2/3/5 clock source -----------------------------------------*/
+  PeriphClkInit->I2c1235ClockSelection       = __HAL_RCC_GET_I2C1_SOURCE();
+#else
   /* Get the I2C1/2/3 clock source -------------------------------------------*/
   PeriphClkInit->I2c123ClockSelection       = __HAL_RCC_GET_I2C1_SOURCE();
+#endif /*I2C5*/
   /* Get the LPTIM1 clock source ---------------------------------------------*/
   PeriphClkInit->Lptim1ClockSelection       = __HAL_RCC_GET_LPTIM1_SOURCE();
   /* Get the LPTIM2 clock source ---------------------------------------------*/
@@ -2635,21 +2686,37 @@ void HAL_RCCEx_GetPLL1ClockFreq(PLL1_ClocksTypeDef* PLL1_Clocks)
 }
 
 /**
-  * @brief  Returns the main Core frequency
-  * @note   Each time core clock changes, this function must be called to update the
-  *         right system core clock value. Otherwise, any configuration based on this function will be incorrect.
-  * @note   The SystemCoreClock CMSIS variable is used to store System Clock Frequency
+  * @brief  Returns the main System frequency
+  * @note   Each time System clock changes, this function must be called to update the
+  *         right core clock value. Otherwise, any configuration based on this function will be incorrect.
+  * @note   The SystemCoreClock CMSIS variable is used to store System current Core Clock Frequency
   *         and updated within this function
   * @retval HCLK frequency
   */
 uint32_t HAL_RCCEx_GetD1SysClockFreq(void)
 {
+uint32_t common_system_clock;
+
 #if defined(RCC_D1CFGR_D1CPRE)
-  SystemCoreClock = HAL_RCC_GetSysClockFreq() >> (D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_D1CPRE)>> RCC_D1CFGR_D1CPRE_Pos] & 0x1FU);
+  common_system_clock = HAL_RCC_GetSysClockFreq() >> (D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_D1CPRE)>> RCC_D1CFGR_D1CPRE_Pos] & 0x1FU);
 #else
-  SystemCoreClock = HAL_RCC_GetSysClockFreq() >> (D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_CDCPRE)>> RCC_CDCFGR1_CDCPRE_Pos] & 0x1FU);
+  common_system_clock = HAL_RCC_GetSysClockFreq() >> (D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_CDCPRE)>> RCC_CDCFGR1_CDCPRE_Pos] & 0x1FU);
 #endif
-  return SystemCoreClock;
+
+  /* Update the SystemD2Clock global variable */
+#if defined(RCC_D1CFGR_HPRE)
+  SystemD2Clock = (common_system_clock >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_HPRE)>> RCC_D1CFGR_HPRE_Pos]) & 0x1FU));
+#else
+  SystemD2Clock = (common_system_clock >> ((D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_HPRE)>> RCC_CDCFGR1_HPRE_Pos]) & 0x1FU));
+#endif
+
+#if defined(DUAL_CORE) && defined(CORE_CM4)
+  SystemCoreClock = SystemD2Clock;
+#else
+  SystemCoreClock = common_system_clock;
+#endif /* DUAL_CORE && CORE_CM4 */
+
+  return common_system_clock;
 }
 /**
   * @}
@@ -2681,6 +2748,28 @@ void HAL_RCCEx_DisableLSECSS(void)
   CLEAR_BIT(RCC->BDCR, RCC_BDCR_LSECSSON) ;
   /* Disable LSE CSS IT if any */
   __HAL_RCC_DISABLE_IT(RCC_IT_LSECSS);
+}
+
+/**
+  * @brief  Enable the LSE Clock Security System Interrupt & corresponding EXTI line.
+  * @note   LSE Clock Security System Interrupt is mapped on EXTI line 18
+  * @retval None
+  */
+void HAL_RCCEx_EnableLSECSS_IT(void)
+{
+  /* Enable LSE CSS */
+  SET_BIT(RCC->BDCR, RCC_BDCR_LSECSSON) ;
+
+  /* Enable LSE CSS IT */
+  __HAL_RCC_ENABLE_IT(RCC_IT_LSECSS);
+
+  /* Enable IT on EXTI Line 18 */
+#if defined(DUAL_CORE) && defined(CORE_CM4)
+  __HAL_RCC_C2_LSECSS_EXTI_ENABLE_IT();
+#else
+  __HAL_RCC_LSECSS_EXTI_ENABLE_IT();
+#endif /* DUAL_CORE && CORE_CM4 */
+  __HAL_RCC_LSECSS_EXTI_ENABLE_RISING_EDGE();
 }
 
 /**
@@ -3141,7 +3230,7 @@ __weak void HAL_RCCEx_CRS_ErrorCallback(uint32_t Error)
   * @}
   */
 
-/** @defgroup RCCEx_Private_functions Private Functions
+/** @defgroup RCCEx_Private_functions RCCEx Private Functions
  * @{
  */
 /**
@@ -3350,6 +3439,38 @@ static HAL_StatusTypeDef RCCEx_PLL3_Config(RCC_PLL3InitTypeDef *pll3, uint32_t D
 
   return status;
 }
+
+/**
+  * @brief Handle the RCC LSE Clock Security System interrupt request.
+  * @retval None
+  */
+void HAL_RCCEx_LSECSS_IRQHandler(void)
+{
+  /* Check RCC LSE CSSF flag  */
+  if(__HAL_RCC_GET_IT(RCC_IT_LSECSS))
+  {
+
+    /* Clear RCC LSE CSS pending bit */
+    __HAL_RCC_CLEAR_IT(RCC_IT_LSECSS);
+
+    /* RCC LSE Clock Security System interrupt user callback */
+    HAL_RCCEx_LSECSS_Callback();
+
+  }
+}
+
+/**
+  * @brief  RCCEx LSE Clock Security System interrupt callback.
+  * @retval none
+  */
+__weak void HAL_RCCEx_LSECSS_Callback(void)
+{
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the @ref HAL_RCCEx_LSECSS_Callback should be implemented in the user file
+  */
+}
+
+
 
 /**
   * @}

@@ -67,8 +67,8 @@
 
 /* Fixed timeout value for ADC calibration.                                   */
 /* Fixed timeout value for ADC calibration.                                     */
-/* Values defined to be higher than worst cases: low clock frequency,           */
-/* maximum prescalers.                                                          */
+/* Values defined to be higher than worst cases: low clock frequency,         */
+/* maximum prescalers.                                                        */
 /* Ex of profile low frequency : f_ADC at 0.125 Mhz (minimum value              */
 /* according to Data sheet), calibration_time MAX = 165010 / f_ADC              */
 /*           165010 / 125000 = 1.32s                                            */
@@ -159,7 +159,7 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef *hadc, uint32_t 
                       HAL_ADC_STATE_BUSY_INTERNAL);
 
     /* Start ADC calibration in mode single-ended or differential */
-    LL_ADC_StartCalibration(hadc->Instance , CalibrationMode, SingleDiff );
+    LL_ADC_StartCalibration(hadc->Instance, CalibrationMode, SingleDiff);
 
     /* Wait for calibration completion */
     while (LL_ADC_IsCalibrationOnGoing(hadc->Instance) != 0UL)
@@ -223,38 +223,38 @@ uint32_t HAL_ADCEx_Calibration_GetValue(ADC_HandleTypeDef *hadc, uint32_t Single
   * @param  LinearCalib_Buffer: Linear calibration factor
   * @retval HAL state
   */
-HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_GetValue(ADC_HandleTypeDef* hadc, uint32_t* LinearCalib_Buffer)
+HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_GetValue(ADC_HandleTypeDef *hadc, uint32_t *LinearCalib_Buffer)
 {
   uint32_t cnt;
   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
   uint32_t temp_REG_IsConversionOngoing = 0UL;
-  
+
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
-  
+
   /* Enable the ADC ADEN = 1 to be able to read the linear calibration factor */
-  if(LL_ADC_IsEnabled(hadc->Instance) == 0UL) 
+  if (LL_ADC_IsEnabled(hadc->Instance) == 0UL)
   {
     tmp_hal_status = ADC_Enable(hadc);
   }
-  
+
   if (tmp_hal_status == HAL_OK)
   {
-    if(LL_ADC_REG_IsConversionOngoing(hadc->Instance) != 0UL)
+    if (LL_ADC_REG_IsConversionOngoing(hadc->Instance) != 0UL)
     {
       LL_ADC_REG_StopConversion(hadc->Instance);
       temp_REG_IsConversionOngoing = 1UL;
     }
-    for(cnt = ADC_LINEAR_CALIB_REG_COUNT; cnt > 0UL; cnt--)
+    for (cnt = ADC_LINEAR_CALIB_REG_COUNT; cnt > 0UL; cnt--)
     {
-      LinearCalib_Buffer[cnt-1U]=LL_ADC_GetCalibrationLinearFactor(hadc->Instance, ADC_CR_LINCALRDYW6 >> (ADC_LINEAR_CALIB_REG_COUNT-cnt));
+      LinearCalib_Buffer[cnt - 1U] = LL_ADC_GetCalibrationLinearFactor(hadc->Instance, ADC_CR_LINCALRDYW6 >> (ADC_LINEAR_CALIB_REG_COUNT - cnt));
     }
-    if(temp_REG_IsConversionOngoing != 0UL)
+    if (temp_REG_IsConversionOngoing != 0UL)
     {
       LL_ADC_REG_StartConversion(hadc->Instance);
     }
   }
-  
+
   return tmp_hal_status;
 }
 
@@ -319,7 +319,7 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_SetValue(ADC_HandleTypeDef *hadc, uint32
   * @param  LinearCalib_Buffer: Linear calibration factor
   * @retval HAL state
   */
-HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_SetValue(ADC_HandleTypeDef *hadc, uint32_t* LinearCalib_Buffer)
+HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_SetValue(ADC_HandleTypeDef *hadc, uint32_t *LinearCalib_Buffer)
 {
   uint32_t cnt;
   __IO uint32_t wait_loop_index = 0;
@@ -341,7 +341,7 @@ HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_SetValue(ADC_HandleTypeDef *hadc, 
   }
 
 
-  if  (HAL_IS_BIT_CLR(hadc->Instance->CR, ADC_CR_ADVREGEN))
+  if (HAL_IS_BIT_CLR(hadc->Instance->CR, ADC_CR_ADVREGEN))
   {
     /* Enable ADC internal voltage regulator                                  */
     SET_BIT(hadc->Instance->CR, ADC_CR_ADVREGEN);
@@ -350,7 +350,7 @@ HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_SetValue(ADC_HandleTypeDef *hadc, 
     /* Note: Variable divided by 2 to compensate partially                    */
     /*       CPU processing cycles.                                           */
     wait_loop_index = (ADC_STAB_DELAY_US * (SystemCoreClock / (1000000UL * 2UL)));
-    while(wait_loop_index != 0UL)
+    while (wait_loop_index != 0UL)
     {
       wait_loop_index--;
     }
@@ -370,37 +370,38 @@ HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_SetValue(ADC_HandleTypeDef *hadc, 
 
     return  HAL_ERROR;
   }
-/* Enable the ADC peripheral */
-   if(LL_ADC_IsEnabled(hadc->Instance) == 0UL)  /* Enable the ADC if it is disabled */
-    {
+  /* Enable the ADC peripheral */
+  if (LL_ADC_IsEnabled(hadc->Instance) == 0UL) /* Enable the ADC if it is disabled */
+  {
     if (ADC_Enable(hadc) != HAL_OK)
     {
       return  HAL_ERROR;
     }
     else
     {
-      for(cnt = ADC_LINEAR_CALIB_REG_COUNT; cnt > 0UL ; cnt--)
+      for (cnt = ADC_LINEAR_CALIB_REG_COUNT; cnt > 0UL ; cnt--)
       {
-        LL_ADC_SetCalibrationLinearFactor(hadc->Instance, ADC_CR_LINCALRDYW6 >> (ADC_LINEAR_CALIB_REG_COUNT-cnt), LinearCalib_Buffer[cnt-1U]);
+        LL_ADC_SetCalibrationLinearFactor(hadc->Instance, ADC_CR_LINCALRDYW6 >> (ADC_LINEAR_CALIB_REG_COUNT - cnt), LinearCalib_Buffer[cnt - 1U]);
       }
       (void)ADC_Disable(hadc);
     }
-    }else /* ADC is already enabled, so no need to enable it but need to stop conversion */
+  }
+  else  /* ADC is already enabled, so no need to enable it but need to stop conversion */
+  {
+    if (LL_ADC_REG_IsConversionOngoing(hadc->Instance) != 0UL)
     {
-       if(LL_ADC_REG_IsConversionOngoing(hadc->Instance) != 0UL)
-        {
-          LL_ADC_REG_StopConversion(hadc->Instance);
-          temp_REG_IsConversionOngoing = 1UL;
-         }
-       for(cnt = ADC_LINEAR_CALIB_REG_COUNT; cnt > 0UL ; cnt--)
-         {
-           LL_ADC_SetCalibrationLinearFactor(hadc->Instance, ADC_CR_LINCALRDYW6 >> (ADC_LINEAR_CALIB_REG_COUNT-cnt), LinearCalib_Buffer[cnt-1U]);
-         }
-       if(temp_REG_IsConversionOngoing != 0UL)
-         {
-           LL_ADC_REG_StartConversion(hadc->Instance);
-         }
+      LL_ADC_REG_StopConversion(hadc->Instance);
+      temp_REG_IsConversionOngoing = 1UL;
     }
+    for (cnt = ADC_LINEAR_CALIB_REG_COUNT; cnt > 0UL ; cnt--)
+    {
+      LL_ADC_SetCalibrationLinearFactor(hadc->Instance, ADC_CR_LINCALRDYW6 >> (ADC_LINEAR_CALIB_REG_COUNT - cnt), LinearCalib_Buffer[cnt - 1U]);
+    }
+    if (temp_REG_IsConversionOngoing != 0UL)
+    {
+      LL_ADC_REG_StartConversion(hadc->Instance);
+    }
+  }
   return HAL_OK;
 }
 
@@ -414,32 +415,34 @@ HAL_StatusTypeDef HAL_ADCEx_LinearCalibration_FactorLoad(ADC_HandleTypeDef *hadc
   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
   uint32_t cnt, FactorOffset;
   uint32_t LinearCalib_Buffer[ADC_LINEAR_CALIB_REG_COUNT];
-  
+
   /* Linearity calibration is retrieved from engi bytes
      read values from registers and put them to the CALFACT2 register */
   /* If needed linearity calibration can be done in runtime using
      LL_ADC_GetCalibrationLinearFactor()                             */
-   if(hadc->Instance == ADC1)
-   {
+  if (hadc->Instance == ADC1)
+  {
     FactorOffset = 0UL;
-   }else if(hadc->Instance == ADC2)
-   {
+  }
+  else if (hadc->Instance == ADC2)
+  {
     FactorOffset = 8UL;
-   }else  /*Case ADC3*/
-    {
-     FactorOffset = 16UL;
-    } 
- 
+  }
+  else   /*Case ADC3*/
+  {
+    FactorOffset = 16UL;
+  }
+
   for (cnt = 0UL; cnt < ADC_LINEAR_CALIB_REG_COUNT; cnt++)
   {
-    LinearCalib_Buffer[cnt] = *(uint32_t*)(ADC_LINEAR_CALIB_REG_1_ADDR + FactorOffset + cnt);
+    LinearCalib_Buffer[cnt] = *(uint32_t *)(ADC_LINEAR_CALIB_REG_1_ADDR + FactorOffset + cnt);
   }
-  if (HAL_ADCEx_LinearCalibration_SetValue(hadc,(uint32_t*)LinearCalib_Buffer) != HAL_OK)
+  if (HAL_ADCEx_LinearCalibration_SetValue(hadc, (uint32_t *)LinearCalib_Buffer) != HAL_OK)
   {
     tmp_hal_status = HAL_ERROR;
   }
 
-   return tmp_hal_status;
+  return tmp_hal_status;
 }
 
 /**
@@ -1531,8 +1534,8 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop_DMA(ADC_HandleTypeDef *hadc)
     /* Clear HAL_ADC_STATE_REG_BUSY bit */
     CLEAR_BIT(hadc->State, HAL_ADC_STATE_REG_BUSY);
 
-  /* Disable ADC DMA (ADC DMA configuration ADC_CFGR_DMACFG is kept) */
-    MODIFY_REG(hadc->Instance->CFGR, ADC_CFGR_DMNGT_0 |ADC_CFGR_DMNGT_1, 0UL);
+    /* Disable ADC DMA (ADC DMA configuration ADC_CFGR_DMACFG is kept) */
+    MODIFY_REG(hadc->Instance->CFGR, ADC_CFGR_DMNGT_0 | ADC_CFGR_DMNGT_1, 0UL);
 
     /* Disable the DMA channel (in case of DMA in circular mode or stop while */
     /* while DMA transfer is on going)                                        */
@@ -1790,8 +1793,19 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
   assert_param(IS_ADC_EXTTRIGINJEC_EDGE(sConfigInjected->ExternalTrigInjecConvEdge));
   assert_param(IS_ADC_EXTTRIGINJEC(sConfigInjected->ExternalTrigInjecConv));
   assert_param(IS_ADC_OFFSET_NUMBER(sConfigInjected->InjectedOffsetNumber));
-  assert_param(IS_ADC_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset));
   assert_param(IS_FUNCTIONAL_STATE(sConfigInjected->InjecOversamplingMode));
+#if defined(ADC_VER_V5_V90)
+  assert_param(IS_FUNCTIONAL_STATE(sConfigInjected->InjectedOffsetSaturation));
+  if (hadc->Instance == ADC3)
+  {
+    assert_param(IS_ADC3_OFFSET_SIGN(sConfigInjected->InjectedOffsetSign));
+    assert_param(IS_ADC3_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset));
+  }
+  else
+#endif /* ADC_VER_V5_V90 */
+  {
+    assert_param(IS_ADC_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset));
+  }
 
   if (hadc->Init.ScanConvMode != ADC_SCAN_DISABLE)
   {
@@ -1803,13 +1817,20 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
   /* Check offset range according to oversampling setting */
   if (hadc->Init.OversamplingMode == ENABLE)
   {
-    assert_param(IS_ADC_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset/(hadc->Init.Oversampling.Ratio+1U)));
+    assert_param(IS_ADC_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset / (hadc->Init.Oversampling.Ratio + 1U)));
   }
   else
   {
     assert_param(IS_ADC_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset));
   }
-
+#if defined(ADC_VER_V5_V90)
+  /* if JOVSE is set, the value of the OFFSETy_EN bit in ADCx_OFRy register is
+     ignored (considered as reset) */
+  if (hadc->Instance == ADC3)
+  {
+    assert_param(!((sConfigInjected->InjectedOffsetNumber != ADC_OFFSET_NONE) && (sConfigInjected->InjecOversamplingMode == ENABLE)));
+  }
+#endif  /* ADC_VER_V5_V90 */
   /* JDISCEN and JAUTO bits can't be set at the same time  */
   assert_param(!((sConfigInjected->InjectedDiscontinuousConvMode == ENABLE) && (sConfigInjected->AutoInjectedConv == ENABLE)));
 
@@ -1977,8 +1998,16 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
   /*    mode is disabled.                                                     */
   if (LL_ADC_INJ_IsConversionOngoing(hadc->Instance) == 0UL)
   {
-  /* ADC channels preselection */
+#if defined(ADC_VER_V5_V90)
+    if (hadc->Instance != ADC3)
+    {
+      /* ADC channels preselection */
+      hadc->Instance->PCSEL_RES0 |= (1UL << (__LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel) & 0x1FUL));
+    }
+#else
+    /* ADC channels preselection */
     hadc->Instance->PCSEL |= (1UL << (__LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel) & 0x1FUL));
+#endif /* ADC_VER_V5_V90 */
 
     /* If auto-injected mode is disabled: no constraint                       */
     if (sConfigInjected->AutoInjectedConv == DISABLE)
@@ -2061,8 +2090,8 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
                  ADC_CFGR2_JOVSE |
                  ADC_CFGR2_OVSR  |
                  ADC_CFGR2_OVSS,
-                 ADC_CFGR2_JOVSE                                                          |
-                 ((sConfigInjected->InjecOversampling.Ratio - 1UL) << ADC_CFGR2_OVSR_Pos) |
+                 ADC_CFGR2_JOVSE                                  |
+                ((sConfigInjected->InjecOversampling.Ratio - 1UL) << ADC_CFGR2_OVSR_Pos) |
                  sConfigInjected->InjecOversampling.RightBitShift
                 );
     }
@@ -2072,47 +2101,89 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
       CLEAR_BIT(hadc->Instance->CFGR2, ADC_CFGR2_JOVSE);
     }
 
-      /* Set sampling time of the selected ADC channel */
-      LL_ADC_SetChannelSamplingTime(hadc->Instance, sConfigInjected->InjectedChannel, sConfigInjected->InjectedSamplingTime);
+    /* Set sampling time of the selected ADC channel */
+    LL_ADC_SetChannelSamplingTime(hadc->Instance, sConfigInjected->InjectedChannel, sConfigInjected->InjectedSamplingTime);
 
     /* Configure the offset: offset enable/disable, channel, offset value */
 
     /* Shift the offset with respect to the selected ADC resolution. */
     /* Offset has to be left-aligned on bit 11, the LSB (right bits) are set to 0 */
-    tmpOffsetShifted = ADC_OFFSET_SHIFT_RESOLUTION(hadc, sConfigInjected->InjectedOffset);
-
+#if defined(ADC_VER_V5_V90)
+    if (hadc->Instance == ADC3)
+    {
+      tmpOffsetShifted = ADC3_OFFSET_SHIFT_RESOLUTION(hadc, sConfigInjected->InjectedOffset);
+    }
+    else
+#endif /* ADC_VER_V5_V90 */
+    {
+      tmpOffsetShifted = ADC_OFFSET_SHIFT_RESOLUTION(hadc, sConfigInjected->InjectedOffset);
+    }
+    
     if (sConfigInjected->InjectedOffsetNumber != ADC_OFFSET_NONE)
     {
       /* Set ADC selected offset number */
-      LL_ADC_SetOffset(hadc->Instance, sConfigInjected->InjectedOffsetNumber, sConfigInjected->InjectedChannel,
-                       tmpOffsetShifted);
+      LL_ADC_SetOffset(hadc->Instance, sConfigInjected->InjectedOffsetNumber, sConfigInjected->InjectedChannel, tmpOffsetShifted);
 
-      /* Set ADC selected offset signed saturation */
-      LL_ADC_SetOffsetSignedSaturation(hadc->Instance, sConfigInjected->InjectedOffsetNumber, (sConfigInjected->InjectedOffsetSignedSaturation == ENABLE) ? LL_ADC_OFFSET_SIGNED_SATURATION_ENABLE : LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
-
-      /* Set ADC selected offset right shift */
-      LL_ADC_SetDataRightShift(hadc->Instance, sConfigInjected->InjectedOffsetNumber, (sConfigInjected->InjectedOffsetRightShift == (uint32_t)ENABLE) ? LL_ADC_OFFSET_RSHIFT_ENABLE : LL_ADC_OFFSET_RSHIFT_DISABLE);
+#if defined(ADC_VER_V5_V90)
+      if (hadc->Instance == ADC3)
+      {
+        /* Set ADC selected offset sign & saturation */
+        LL_ADC_SetOffsetSign(hadc->Instance, sConfigInjected->InjectedOffsetNumber, sConfigInjected->InjectedOffsetSign);
+        LL_ADC_SetOffsetSaturation(hadc->Instance, sConfigInjected->InjectedOffsetNumber, (sConfigInjected->InjectedOffsetSaturation == ENABLE) ? LL_ADC_OFFSET_SATURATION_ENABLE : LL_ADC_OFFSET_SATURATION_DISABLE);
+      }
+      else
+#endif /* ADC_VER_V5_V90 */
+      {
+        /* Set ADC selected offset signed saturation */
+        LL_ADC_SetOffsetSignedSaturation(hadc->Instance, sConfigInjected->InjectedOffsetNumber, (sConfigInjected->InjectedOffsetSignedSaturation == ENABLE) ? LL_ADC_OFFSET_SIGNED_SATURATION_ENABLE : LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+      }
 
     }
     else
     {
-      /* Scan each offset register to check if the selected channel is targeted. */
-      /* If this is the case, the corresponding offset number is disabled.       */
-      if(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_1)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+#if defined(ADC_VER_V5_V90)
+      if (hadc->Instance == ADC3)
       {
-        LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_1, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+        /* Scan each offset register to check if the selected channel is targeted. */
+        /* If this is the case, the corresponding offset number is disabled.       */
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_1)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffsetState(hadc->Instance, LL_ADC_OFFSET_1, LL_ADC_OFFSET_DISABLE);
+        }
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_2)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffsetState(hadc->Instance, LL_ADC_OFFSET_2, LL_ADC_OFFSET_DISABLE);
+        }
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_3)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffsetState(hadc->Instance, LL_ADC_OFFSET_3, LL_ADC_OFFSET_DISABLE);
+        }
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_4)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffsetState(hadc->Instance, LL_ADC_OFFSET_4, LL_ADC_OFFSET_DISABLE);
+        }
       }
-      if(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_2)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+      else
+#endif /* ADC_VER_V5_V90 */
       {
-        LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_2, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
-      }
-      if(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_3)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
-      {
-        LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_4, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
-      }
-      if(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_4)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
-      {
-        LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_4, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+        /* Scan each offset register to check if the selected channel is targeted. */
+        /* If this is the case, the corresponding offset number is disabled.       */
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_1)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_1, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+        }
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_2)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_2, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+        }
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_3)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_4, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+        }
+        if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_GetOffsetChannel(hadc->Instance, LL_ADC_OFFSET_4)) == __LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel))
+        {
+          LL_ADC_SetOffset(hadc->Instance, LL_ADC_OFFSET_4, sConfigInjected->InjectedChannel, LL_ADC_OFFSET_SIGNED_SATURATION_DISABLE);
+        }
       }
     }
 
@@ -2141,7 +2212,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
     /* Note: these internal measurement paths can be disabled using           */
     /* HAL_ADC_DeInit().                                                      */
 
-    if(__LL_ADC_IS_CHANNEL_INTERNAL(sConfigInjected->InjectedChannel))
+    if (__LL_ADC_IS_CHANNEL_INTERNAL(sConfigInjected->InjectedChannel))
     {
       /* Configuration of common ADC parameters (continuation)                */
       /* Software is allowed to change common parameters only when all ADCs   */
@@ -2164,7 +2235,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef *hadc, ADC_I
             /*       CPU processing cycles, scaling in us split to not          */
             /*       exceed 32 bits register capacity and handle low frequency. */
             wait_loop_index = ((LL_ADC_DELAY_TEMPSENSOR_STAB_US / 10UL) * (SystemCoreClock / (100000UL * 2UL)));
-            while(wait_loop_index != 0UL)
+            while (wait_loop_index != 0UL)
             {
               wait_loop_index--;
             }
@@ -2274,7 +2345,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef *hadc, ADC_
     /* transition from multimode to independent mode).                        */
     if (multimode->Mode != ADC_MODE_INDEPENDENT)
     {
-    MODIFY_REG(tmpADC_Common->CCR, ADC_CCR_DAMDF, multimode->DualModeData);
+      MODIFY_REG(tmpADC_Common->CCR, ADC_CCR_DAMDF, multimode->DualModeData);
 
       /* Parameters that can be updated only when ADC is disabled:              */
       /*  - Multimode mode selection                                            */

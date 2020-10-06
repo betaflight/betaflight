@@ -1170,13 +1170,14 @@ typedef  void (*pUART_CallbackTypeDef)(UART_HandleTypeDef *huart);  /*!< pointer
    ((__CLOCKPRESCALER__) == UART_PRESCALER_DIV128) ? 128U :     \
    ((__CLOCKPRESCALER__) == UART_PRESCALER_DIV256) ? 256U : 1U)
 
+
 /** @brief  BRR division operation to set BRR register with LPUART.
   * @param  __PCLK__ LPUART clock.
   * @param  __BAUD__ Baud rate set by the user.
   * @param  __CLOCKPRESCALER__ UART prescaler value.
   * @retval Division result
   */
-#define UART_DIV_LPUART(__PCLK__, __BAUD__, __CLOCKPRESCALER__)      ((uint32_t)(((((uint64_t)(__PCLK__)/UART_GET_DIV_FACTOR((__CLOCKPRESCALER__)))*256U)\
+#define UART_DIV_LPUART(__PCLK__, __BAUD__, __CLOCKPRESCALER__)      ((uint32_t)((((((uint64_t)(__PCLK__))/(UARTPrescTable[(__CLOCKPRESCALER__)]))*256U)\
                                                                       + (uint32_t)((__BAUD__)/2U)) / (__BAUD__)))
 
 /** @brief  BRR division operation to set BRR register in 8-bit oversampling mode.
@@ -1185,7 +1186,7 @@ typedef  void (*pUART_CallbackTypeDef)(UART_HandleTypeDef *huart);  /*!< pointer
   * @param  __CLOCKPRESCALER__ UART prescaler value.
   * @retval Division result
   */
-#define UART_DIV_SAMPLING8(__PCLK__, __BAUD__, __CLOCKPRESCALER__)   (((((__PCLK__)/UART_GET_DIV_FACTOR((__CLOCKPRESCALER__)))*2U)\
+#define UART_DIV_SAMPLING8(__PCLK__, __BAUD__, __CLOCKPRESCALER__)   (((((__PCLK__)/UARTPrescTable[(__CLOCKPRESCALER__)])*2U)\
                                                                        + ((__BAUD__)/2U)) / (__BAUD__))
 
 /** @brief  BRR division operation to set BRR register in 16-bit oversampling mode.
@@ -1194,7 +1195,7 @@ typedef  void (*pUART_CallbackTypeDef)(UART_HandleTypeDef *huart);  /*!< pointer
   * @param  __CLOCKPRESCALER__ UART prescaler value.
   * @retval Division result
   */
-#define UART_DIV_SAMPLING16(__PCLK__, __BAUD__, __CLOCKPRESCALER__)  ((((__PCLK__)/UART_GET_DIV_FACTOR((__CLOCKPRESCALER__)))\
+#define UART_DIV_SAMPLING16(__PCLK__, __BAUD__, __CLOCKPRESCALER__)  ((((__PCLK__)/UARTPrescTable[(__CLOCKPRESCALER__)])\
                                                                        + ((__BAUD__)/2U)) / (__BAUD__))
 
 /** @brief  Check whether or not UART instance is Low Power UART.
@@ -1512,6 +1513,11 @@ typedef  void (*pUART_CallbackTypeDef)(UART_HandleTypeDef *huart);  /*!< pointer
 
 /* Include UART HAL Extended module */
 #include "stm32h7xx_hal_uart_ex.h"
+
+
+/* Prescaler Table used in BRR computation macros.
+   Declared as extern here to allow use of private UART macros, outside of HAL UART fonctions */
+extern const uint16_t UARTPrescTable[12];
 
 
 /* Exported functions --------------------------------------------------------*/

@@ -25,9 +25,11 @@
  extern "C" {
 #endif
 
-#if defined(ETH)
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal_def.h"
+
+#if defined(ETH)
 
 /** @addtogroup STM32H7xx_HAL_Driver
   * @{
@@ -60,8 +62,8 @@ typedef struct
   __IO uint32_t DESC1;
   __IO uint32_t DESC2;
   __IO uint32_t DESC3;
-  __IO uint32_t BackupAddr0; /* used to store rx buffer 1 address */
-  __IO uint32_t BackupAddr1; /* used to store rx buffer 2 address */
+  uint32_t BackupAddr0; /* used to store rx buffer 1 address */
+  uint32_t BackupAddr1; /* used to store rx buffer 2 address */
 }ETH_DMADescTypeDef;
 /** 
   * 

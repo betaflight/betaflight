@@ -40,7 +40,7 @@
 #if defined (RNG_CR_CONDRST)
 /* Private types -------------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-/** @defgroup RNGEx_Private_Defines
+/** @defgroup RNGEx_Private_Defines RNGEx Private Defines
   * @{
   */
 /*  Health test control register information to use in CCM algorithm */
@@ -55,7 +55,7 @@
   */
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
-/** @defgroup RNGEx_Private_Constants RNG Private Constants
+/** @defgroup RNGEx_Private_Constants RNGEx Private Constants
   * @{
   */
 #define RNG_TIMEOUT_VALUE     2U

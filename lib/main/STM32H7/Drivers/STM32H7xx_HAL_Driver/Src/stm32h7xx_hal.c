@@ -47,10 +47,10 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /**
- * @brief STM32H7xx HAL Driver version number V1.7.0
+ * @brief STM32H7xx HAL Driver version number V1.9.0
    */
 #define __STM32H7xx_HAL_VERSION_MAIN   (0x01UL) /*!< [31:24] main version */
-#define __STM32H7xx_HAL_VERSION_SUB1   (0x07UL) /*!< [23:16] sub1 version */
+#define __STM32H7xx_HAL_VERSION_SUB1   (0x09UL) /*!< [23:16] sub1 version */
 #define __STM32H7xx_HAL_VERSION_SUB2   (0x00UL) /*!< [15:8]  sub2 version */
 #define __STM32H7xx_HAL_VERSION_RC     (0x00UL) /*!< [7:0]  release candidate */
 #define __STM32H7xx_HAL_VERSION         ((__STM32H7xx_HAL_VERSION_MAIN << 24)\
@@ -134,6 +134,8 @@ HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_DEFAULT;  /* 1KHz */
 HAL_StatusTypeDef HAL_Init(void)
 {
 
+uint32_t common_system_clock;
+
 #if defined(DUAL_CORE) && defined(CORE_CM4)
    /* Configure Cortex-M4 Instruction cache through ART accelerator */
    __HAL_RCC_ART_CLK_ENABLE();                   /* Enable the Cortex-M4 ART Clock */
@@ -146,17 +148,23 @@ HAL_StatusTypeDef HAL_Init(void)
 
   /* Update the SystemCoreClock global variable */
 #if defined(RCC_D1CFGR_D1CPRE)
-  SystemCoreClock = HAL_RCC_GetSysClockFreq() >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_D1CPRE)>> RCC_D1CFGR_D1CPRE_Pos]) & 0x1FU);
+  common_system_clock = HAL_RCC_GetSysClockFreq() >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_D1CPRE)>> RCC_D1CFGR_D1CPRE_Pos]) & 0x1FU);
 #else
-  SystemCoreClock = HAL_RCC_GetSysClockFreq() >> ((D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_CDCPRE)>> RCC_CDCFGR1_CDCPRE_Pos]) & 0x1FU);
+  common_system_clock = HAL_RCC_GetSysClockFreq() >> ((D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_CDCPRE)>> RCC_CDCFGR1_CDCPRE_Pos]) & 0x1FU);
 #endif
 
   /* Update the SystemD2Clock global variable */
 #if defined(RCC_D1CFGR_HPRE)
-  SystemD2Clock = (SystemCoreClock >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_HPRE)>> RCC_D1CFGR_HPRE_Pos]) & 0x1FU));
+  SystemD2Clock = (common_system_clock >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_HPRE)>> RCC_D1CFGR_HPRE_Pos]) & 0x1FU));
 #else
-  SystemD2Clock = (SystemCoreClock >> ((D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_HPRE)>> RCC_CDCFGR1_HPRE_Pos]) & 0x1FU));
+  SystemD2Clock = (common_system_clock >> ((D1CorePrescTable[(RCC->CDCFGR1 & RCC_CDCFGR1_HPRE)>> RCC_CDCFGR1_HPRE_Pos]) & 0x1FU));
 #endif
+
+#if defined(DUAL_CORE) && defined(CORE_CM4)
+  SystemCoreClock = SystemD2Clock;
+#else
+  SystemCoreClock = common_system_clock;
+#endif /* DUAL_CORE && CORE_CM4 */
 
   /* Use systick as time base source and configure 1ms tick (default clock after Reset is HSI) */
   if(HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK)
@@ -259,32 +267,11 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
     return HAL_ERROR;
   }
 
-#if defined(DUAL_CORE)
-  if (HAL_GetCurrentCPUID() == CM7_CPUID)
-  {
-    /* Cortex-M7 detected */
     /* Configure the SysTick to have interrupt in 1ms time basis*/
     if (HAL_SYSTICK_Config(SystemCoreClock / (1000UL / (uint32_t)uwTickFreq)) > 0U)
     {
       return HAL_ERROR;
     }
-  }
-  else
-  {
-    /* Cortex-M4 detected */
-    /* Configure the SysTick to have interrupt in 1ms time basis*/
-    if (HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / (1000UL / (uint32_t)uwTickFreq)) > 0U)
-    {
-      return HAL_ERROR;
-    }
-  }
-#else
-  /* Configure the SysTick to have interrupt in 1ms time basis*/
-  if (HAL_SYSTICK_Config(SystemCoreClock / (1000UL / (uint32_t)uwTickFreq)) > 0U)
-  {
-    return HAL_ERROR;
-  }
-#endif
 
   /* Configure the SysTick IRQ priority */
   if (TickPriority < (1UL << __NVIC_PRIO_BITS))
@@ -886,6 +873,42 @@ void HAL_SYSCFG_VDDMMC_CompensationCodeConfig(uint32_t SYSCFG_PMOSCode, uint32_t
   MODIFY_REG(SYSCFG->CCCR, (SYSCFG_CCCR_NCC_MMC | SYSCFG_CCCR_PCC_MMC), (((uint32_t)(SYSCFG_PMOSCode)<< 4)|(uint32_t)(SYSCFG_NMOSCode)) );
 }
 #endif /* SYSCFG_CCCR_NCC_MMC */
+
+#if defined(SYSCFG_ADC2ALT_ADC2_ROUT0)
+/** @brief  SYSCFG ADC2 internal input alternate connection macros
+  * @param Adc2AltRout0 This parameter can be a value of :
+  *     @arg @ref SYSCFG_ADC2_ROUT0_DAC1_1   DAC1_out1 connected to ADC2 VINP[16]
+  *     @arg @ref SYSCFG_ADC2_ROUT0_VBAT4    VBAT/4 connected to ADC2 VINP[16]
+  */
+void HAL_SYSCFG_ADC2ALT_Rout0Config(uint32_t Adc2AltRout0)
+{
+  /* Check the parameters */
+  assert_param(IS_SYSCFG_ADC2ALT_ROUT0(Adc2AltRout0));
+
+  MODIFY_REG(SYSCFG->ADC2ALT, SYSCFG_ADC2ALT_ADC2_ROUT0, Adc2AltRout0);
+}
+/**
+  * @}
+  */
+#endif /*SYSCFG_ADC2ALT_ADC2_ROUT0*/
+
+#if defined(SYSCFG_ADC2ALT_ADC2_ROUT1)
+/** @brief  SYSCFG ADC2 internal input alternate connection macros
+  * @param Adc2AltRout1  This parameter can be a value of :
+  *     @arg @ref SYSCFG_ADC2_ROUT1_DAC1_2   DAC1_out2 connected to ADC2 VINP[17]
+  *     @arg @ref SYSCFG_ADC2_ROUT1_VREFINT  VREFINT connected to ADC2 VINP[17]
+  */
+void HAL_SYSCFG_ADC2ALT_Rout1Config(uint32_t Adc2AltRout1)
+{
+  /* Check the parameters */
+  assert_param(IS_SYSCFG_ADC2ALT_ROUT1(Adc2AltRout1));
+
+  MODIFY_REG(SYSCFG->ADC2ALT, SYSCFG_ADC2ALT_ADC2_ROUT1, Adc2AltRout1);
+}
+/**
+  * @}
+  */
+#endif /*SYSCFG_ADC2ALT_ADC2_ROUT1*/
 
 /**
   * @brief  Enable the Debug Module during Domain1/CDomain SLEEP mode

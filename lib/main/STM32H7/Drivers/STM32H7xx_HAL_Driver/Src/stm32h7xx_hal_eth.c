@@ -791,19 +791,19 @@ HAL_StatusTypeDef HAL_ETH_Start(ETH_HandleTypeDef *heth)
   */
 HAL_StatusTypeDef HAL_ETH_Start_IT(ETH_HandleTypeDef *heth)
 {
-  uint32_t descindex = 0, counter;
-  ETH_DMADescTypeDef *dmarxdesc = (ETH_DMADescTypeDef *)heth->RxDescList.RxDesc[descindex];
+  uint32_t descindex;
+
+  ETH_DMADescTypeDef *dmarxdesc;
 
   if(heth->gState == HAL_ETH_STATE_READY)
   {
     heth->gState = HAL_ETH_STATE_BUSY;
 
     /* Set IOC bit to all Rx descriptors */
-    for(counter= 0; counter < (uint32_t)ETH_RX_DESC_CNT; counter++)
+    for(descindex = 0; descindex < (uint32_t)ETH_RX_DESC_CNT; descindex++)
     {
-      SET_BIT(dmarxdesc->DESC3, ETH_DMARXNDESCRF_IOC);
-      INCR_RX_DESC_INDEX(descindex, 1U);
       dmarxdesc = (ETH_DMADescTypeDef *)heth->RxDescList.RxDesc[descindex];
+      SET_BIT(dmarxdesc->DESC3, ETH_DMARXNDESCRF_IOC);
     }
 
     /* save IT mode to ETH Handle */
@@ -827,9 +827,6 @@ HAL_StatusTypeDef HAL_ETH_Start_IT(ETH_HandleTypeDef *heth)
     /* Clear Tx and Rx process stopped flags */
     heth->Instance->DMACSR |= (ETH_DMACSR_TPS | ETH_DMACSR_RPS);
 
-    heth->gState = HAL_ETH_STATE_READY;
-    heth->RxState = HAL_ETH_STATE_BUSY_RX;
-
     /* Enable ETH DMA interrupts:
     - Tx complete interrupt
     - Rx complete interrupt
@@ -837,6 +834,9 @@ HAL_StatusTypeDef HAL_ETH_Start_IT(ETH_HandleTypeDef *heth)
     */
     __HAL_ETH_DMA_ENABLE_IT(heth, (ETH_DMACIER_NIE | ETH_DMACIER_RIE | ETH_DMACIER_TIE  |
                                    ETH_DMACIER_FBEE | ETH_DMACIER_AIE));
+
+    heth->gState = HAL_ETH_STATE_READY;
+    heth->RxState = HAL_ETH_STATE_BUSY_RX;
 
     return HAL_OK;
   }
@@ -894,8 +894,8 @@ HAL_StatusTypeDef HAL_ETH_Stop(ETH_HandleTypeDef *heth)
   */
 HAL_StatusTypeDef HAL_ETH_Stop_IT(ETH_HandleTypeDef *heth)
 {
-  ETH_DMADescTypeDef *dmarxdesc = (ETH_DMADescTypeDef *)heth->RxDescList.RxDesc[0];
-  uint32_t index;
+  ETH_DMADescTypeDef *dmarxdesc;
+  uint32_t descindex;
 
   if(heth->gState != HAL_ETH_STATE_RESET)
   {
@@ -904,8 +904,11 @@ HAL_StatusTypeDef HAL_ETH_Stop_IT(ETH_HandleTypeDef *heth)
 
     /* Disable intrrupts:
     - Tx complete interrupt
-    - Rx complete interrupt     */
-    __HAL_ETH_DMA_DISABLE_IT(heth, (ETH_DMA_NORMAL_IT | ETH_DMA_RX_IT | ETH_DMA_TX_IT));
+    - Rx complete interrupt
+    - Fatal bus interrupt
+    */
+    __HAL_ETH_DMA_DISABLE_IT(heth, (ETH_DMACIER_NIE | ETH_DMACIER_RIE | ETH_DMACIER_TIE  |
+                                   ETH_DMACIER_FBEE | ETH_DMACIER_AIE));
 
     /* Disable the DMA transmission */
     CLEAR_BIT(heth->Instance->DMACTCR, ETH_DMACTCR_ST);
@@ -923,8 +926,9 @@ HAL_StatusTypeDef HAL_ETH_Stop_IT(ETH_HandleTypeDef *heth)
     CLEAR_BIT(heth->Instance->MACCR, ETH_MACCR_TE);
 
     /* Clear IOC bit to all Rx descriptors */
-    for(index = 0; index < (uint32_t)ETH_RX_DESC_CNT; index++)
+    for(descindex = 0; descindex < (uint32_t)ETH_RX_DESC_CNT; descindex++)
     {
+      dmarxdesc = (ETH_DMADescTypeDef *)heth->RxDescList.RxDesc[descindex];
       CLEAR_BIT(dmarxdesc->DESC3, ETH_DMARXNDESCRF_IOC);
     }
 
@@ -1001,14 +1005,11 @@ HAL_StatusTypeDef HAL_ETH_Transmit(ETH_HandleTypeDef *heth, ETH_TxPacketConfig *
         if(((HAL_GetTick() - tickstart ) > Timeout) || (Timeout == 0U))
         {
           heth->ErrorCode |= HAL_ETH_ERROR_TIMEOUT;
-          heth->gState = HAL_ETH_STATE_READY;
+          heth->gState = HAL_ETH_STATE_ERROR;
           return HAL_ERROR;
         }
       }
     }
-
-    /* Set ETH HAL State to Ready */
-    heth->gState = HAL_ETH_STATE_READY;
 
     /* Return function status */
     return HAL_OK;
@@ -1030,6 +1031,7 @@ HAL_StatusTypeDef HAL_ETH_Transmit_IT(ETH_HandleTypeDef *heth, ETH_TxPacketConfi
 {
   if(pTxConfig == NULL)
   {
+    heth->ErrorCode |= HAL_ETH_ERROR_PARAM;
     return HAL_ERROR;
   }
 
@@ -1038,7 +1040,7 @@ HAL_StatusTypeDef HAL_ETH_Transmit_IT(ETH_HandleTypeDef *heth, ETH_TxPacketConfi
     /* Config DMA Tx descriptor by Tx Packet info */
     if (ETH_Prepare_Tx_Descriptors(heth, pTxConfig, 1) != HAL_ETH_ERROR_NONE)
     {
-      heth->ErrorCode = HAL_ETH_ERROR_BUSY;
+      heth->ErrorCode |= HAL_ETH_ERROR_BUSY;
       return HAL_ERROR;
     }
 
@@ -1148,6 +1150,8 @@ uint8_t HAL_ETH_IsRxDataAvailable(ETH_HandleTypeDef *heth)
   /* Build Descriptors if an incomplete Packet is received */
   if(appdesccnt > 0U)
   {
+    dmarxdesclist->CurRxDesc = descidx;
+    dmarxdesclist->FirstAppDesc = firstappdescidx;
     descidx = firstappdescidx;
     dmarxdesc = (ETH_DMADescTypeDef *)dmarxdesclist->RxDesc[descidx];
 
@@ -1168,12 +1172,17 @@ uint8_t HAL_ETH_IsRxDataAvailable(ETH_HandleTypeDef *heth)
       {
         SET_BIT(dmarxdesc->DESC3, ETH_DMARXNDESCRF_IOC);
       }
-
-      /* Increment rx descriptor index */
-      INCR_RX_DESC_INDEX(descidx, 1U);
-      /* Get descriptor address */
-      dmarxdesc = (ETH_DMADescTypeDef *)dmarxdesclist->RxDesc[descidx];
+      if(descscancnt < (appdesccnt - 1U))
+      {
+        /* Increment rx descriptor index */
+        INCR_RX_DESC_INDEX(descidx, 1U);
+        /* Get descriptor address */
+        dmarxdesc = (ETH_DMADescTypeDef *)dmarxdesclist->RxDesc[descidx];
+      }
     }
+
+    /* Set the Tail pointer address to the last rx descriptor hold by the app */
+    WRITE_REG(heth->Instance->DMACRDTPR, (uint32_t)dmarxdesc);
   }
 
   /* Fill information to Rx descriptors list: No received Packet */
@@ -1234,7 +1243,7 @@ HAL_StatusTypeDef HAL_ETH_GetRxDataBuffer(ETH_HandleTypeDef *heth, ETH_BufferTyp
     if(dmarxdesc->BackupAddr1 != 0U)
     {
       /* Point to next buffer */
-      rxbuff = (struct __ETH_BufferTypeDef *)rxbuff->next;
+      rxbuff = rxbuff->next;
       /* Get Address and length of the second buffer address */
       rxbuff->buffer = (uint8_t *) dmarxdesc->BackupAddr1;
       rxbuff->len =  heth->Init.RxBuffLen;
@@ -1252,7 +1261,7 @@ HAL_StatusTypeDef HAL_ETH_GetRxDataBuffer(ETH_HandleTypeDef *heth, ETH_BufferTyp
     dmarxdesc = (ETH_DMADescTypeDef *)dmarxdesclist->RxDesc[descidx];
 
     /* Point to next buffer */
-    rxbuff = (struct __ETH_BufferTypeDef *)rxbuff->next;
+    rxbuff = rxbuff->next;
   }
 
   /* last descriptor data length */
@@ -1272,7 +1281,7 @@ HAL_StatusTypeDef HAL_ETH_GetRxDataBuffer(ETH_HandleTypeDef *heth, ETH_BufferTyp
     /* Get the Length of the first buffer address */
     rxbuff->len = heth->Init.RxBuffLen;
     /* Point to next buffer */
-    rxbuff = (struct __ETH_BufferTypeDef *)rxbuff->next;
+    rxbuff = rxbuff->next;
     /* Get the Address the Length of the second buffer address */
     rxbuff->buffer = (uint8_t *) dmarxdesc->BackupAddr1;
     rxbuff->len =  lastdesclen - (heth->Init.RxBuffLen);
@@ -1435,7 +1444,7 @@ HAL_StatusTypeDef HAL_ETH_BuildRxDescriptors(ETH_HandleTypeDef *heth)
       SET_BIT(dmarxdesc->DESC3, ETH_DMARXNDESCRF_IOC);
     }
 
-    if(descscan < (dmarxdesclist->AppDescNbr - 1U))
+    if(descscan < (totalappdescnbr - 1U))
     {
       /* Increment rx descriptor index */
       INCR_RX_DESC_INDEX(descindex, 1U);
@@ -1449,6 +1458,9 @@ HAL_StatusTypeDef HAL_ETH_BuildRxDescriptors(ETH_HandleTypeDef *heth)
 
   /* reset the Application desc number */
   WRITE_REG(dmarxdesclist->AppDescNbr, 0);
+
+  /*  reset the application context descriptor */
+  WRITE_REG(heth->RxDescList.AppContextDesc, 0);
 
   return HAL_OK;
 }
@@ -2390,6 +2402,10 @@ uint32_t HAL_ETH_GetMACWakeUpSource(ETH_HandleTypeDef *heth)
   * @}
   */
 
+/** @addtogroup ETH_Private_Functions   ETH Private Functions
+  * @{
+  */
+
 static void ETH_SetMACConfig(ETH_HandleTypeDef *heth,  ETH_MACConfigTypeDef *macconf)
 {
   uint32_t macregval;
@@ -2703,7 +2719,7 @@ static void ETH_DMARxDescListInit(ETH_HandleTypeDef *heth)
   WRITE_REG(heth->Instance->DMACRDLAR, (uint32_t) heth->Init.RxDesc);
 
   /* Set Receive Descriptor Tail pointer Address */
-  WRITE_REG(heth->Instance->DMACRDTPR, ((uint32_t)(heth->Init.RxDesc + (((uint32_t)(ETH_RX_DESC_CNT - 1))*sizeof(ETH_DMADescTypeDef)))));
+  WRITE_REG(heth->Instance->DMACRDTPR, ((uint32_t)(heth->Init.RxDesc + (uint32_t)(ETH_RX_DESC_CNT - 1))));
 }
 
 /**
@@ -2900,7 +2916,7 @@ static uint32_t ETH_Prepare_Tx_Descriptors(ETH_HandleTypeDef *heth, ETH_TxPacket
     descnbr += 1U;
 
     /* Get the next Tx buffer in the list */
-    txbuffer = (struct __ETH_BufferTypeDef *)txbuffer->next;
+    txbuffer = txbuffer->next;
 
     /* Set header or buffer 1 address */
     WRITE_REG(dmatxdesc->DESC0, (uint32_t)txbuffer->buffer);
@@ -2910,7 +2926,7 @@ static uint32_t ETH_Prepare_Tx_Descriptors(ETH_HandleTypeDef *heth, ETH_TxPacket
     if (txbuffer->next != NULL)
     {
       /* Get the next Tx buffer in the list */
-      txbuffer = (struct __ETH_BufferTypeDef *)txbuffer->next;
+      txbuffer = txbuffer->next;
       /* Set buffer 2 address */
       WRITE_REG(dmatxdesc->DESC1, (uint32_t)txbuffer->buffer);
       /* Set buffer 2 Length */
@@ -2982,6 +2998,9 @@ static void ETH_InitCallbacksToDefault(ETH_HandleTypeDef *heth)
 }
 #endif /* USE_HAL_ETH_REGISTER_CALLBACKS */
 
+/**
+  * @}
+  */
 
 /**
   * @}

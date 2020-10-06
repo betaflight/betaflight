@@ -103,6 +103,9 @@
   * @param  hcryp: pointer to a CRYP_HandleTypeDef structure that contains
   *         the configuration information for CRYP module
   * @param  AuthTag: Pointer to the authentication buffer
+  *         the AuthTag generated here is 128bits length, if the TAG length is 
+  *         less than 128bits, user should consider only the valid part of AuthTag
+  *         buffer which correspond exactly to TAG length.  
   * @param  Timeout: Timeout duration
   * @retval HAL status
   */
@@ -260,6 +263,9 @@ HAL_StatusTypeDef HAL_CRYPEx_AESGCM_GenerateAuthTAG(CRYP_HandleTypeDef *hcryp, u
   * @param  hcryp: pointer to a CRYP_HandleTypeDef structure that contains
   *         the configuration information for CRYP module
   * @param  AuthTag: Pointer to the authentication buffer
+  *         the AuthTag generated here is 128bits length, if the TAG length is 
+  *         less than 128bits, user should consider only the valid part of AuthTag
+  *         buffer which correspond exactly to TAG length.  
   * @param  Timeout: Timeout duration
   * @retval HAL status
   */

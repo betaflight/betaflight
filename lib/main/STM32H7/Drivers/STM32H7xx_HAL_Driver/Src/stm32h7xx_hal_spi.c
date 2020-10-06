@@ -1321,20 +1321,20 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, const uint8_t
         hspi->RxXferCount --;
         initial_RxXferCount = hspi->RxXferCount;
       }
-    }
 
-    /* Timeout management */
-    if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
-    {
-      /* Call standard close procedure with error check */
-      SPI_CloseTransfer(hspi);
-
-      /* Process Unlocked */
-      __HAL_UNLOCK(hspi);
-
-      SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_TIMEOUT);
-      hspi->State = HAL_SPI_STATE_READY;
-      return HAL_ERROR;
+      /* Timeout management */
+      if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
+      {
+        /* Call standard close procedure with error check */
+        SPI_CloseTransfer(hspi);
+      
+        /* Process Unlocked */
+        __HAL_UNLOCK(hspi);
+      
+        SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_TIMEOUT);
+        hspi->State = HAL_SPI_STATE_READY;
+        return HAL_ERROR;
+      }
     }
   }
   /* Transmit and Receive data in 16 Bit mode */

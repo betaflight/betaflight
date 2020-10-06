@@ -598,8 +598,8 @@ typedef struct __MDMA_HandleTypeDef
 
 /**
   * @brief  Checks whether the specified MDMA Channel interrupt is enabled or not.
-  * @param  __HANDLE__: DMA handle
-  * @param  __INTERRUPT__: specifies the DMA interrupt source to check.
+  * @param  __HANDLE__: MDMA handle
+  * @param  __INTERRUPT__: specifies the MDMA interrupt source to check.
   *            @arg MDMA_IT_TE   :  Transfer Error interrupt mask
   *            @arg MDMA_IT_CTC  :  Channel Transfer Complete interrupt mask
   *            @arg MDMA_IT_BRT  :  Block Repeat Transfer interrupt mask
@@ -608,6 +608,21 @@ typedef struct __MDMA_HandleTypeDef
   * @retval The state of MDMA_IT (SET or RESET).
   */
 #define __HAL_MDMA_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)  (((__HANDLE__)->Instance->CCR & (__INTERRUPT__)))
+
+/**
+  * @brief  Writes the number of data in bytes to be transferred on the MDMA Channelx.
+  * @param  __HANDLE__ : MDMA handle
+  * @param  __COUNTER__: Number of data in bytes to be transferred.
+  * @retval None
+  */
+#define __HAL_MDMA_SET_COUNTER(__HANDLE__, __COUNTER__)  ((__HANDLE__)->Instance->CBNDTR |= ((__COUNTER__) & MDMA_CBNDTR_BNDT))
+
+/**
+  * @brief  Returns the number of remaining data in bytes in the current MDMA Channelx transfer.
+  * @param  __HANDLE__ : MDMA handle
+  * @retval The number of remaining data in bytes in the current MDMA Channelx transfer.
+  */
+#define __HAL_MDMA_GET_COUNTER(__HANDLE__) ((__HANDLE__)->Instance->CBNDTR & MDMA_CBNDTR_BNDT)
 
 /**
   * @}

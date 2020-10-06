@@ -64,8 +64,8 @@ typedef struct
   uint32_t HeaderSize;                /*!< The size of header buffer in word  */
   uint32_t *B0;                       /*!< B0 is first authentication block used only  in AES CCM mode */
   uint32_t DataWidthUnit;             /*!< Data With Unit, this parameter can be value of @ref CRYP_Data_Width_Unit*/
-  uint32_t KeyIVConfigSkip;            /*!< CRYP peripheral Key and IV configuration skip, to config Key and Initialization
-                                           Vector only once and to skip configuration for consecutive processings.
+  uint32_t KeyIVConfigSkip;            /*!< CRYP peripheral Key and IV configuration skip, to configure Key and Initialization
+                                           Vector only once and to skip configuration for consecutive processing.
                                            This parameter can be a value of @ref CRYP_Configuration_Skip */
 
 } CRYP_ConfigTypeDef;
@@ -108,7 +108,7 @@ typedef struct
 
   __IO uint16_t                     CrypOutCount;     /*!< Counter of output data */
 
-  uint16_t                          Size;           /*!< length of input data in word */
+  uint16_t                          Size;           /*!< length of input data in word or in byte, according to DataWidthUnit */
 
   uint32_t                          Phase;            /*!< CRYP peripheral phase */
 

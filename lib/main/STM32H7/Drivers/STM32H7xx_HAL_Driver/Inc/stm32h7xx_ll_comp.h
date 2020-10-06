@@ -417,16 +417,12 @@ __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2 
   *         @arg @ref LL_COMP_INPUT_MINUS_IO1
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2
-#if defined (COMP_CFGRx_INMSEL_3)
   *         @arg @ref LL_COMP_INPUT_MINUS_TPSENS_DAC2CH1
   *         @arg @ref LL_COMP_INPUT_MINUS_VBAT_VDDAP
-#endif
   * @param  InputPlus This parameter can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_IO2
-#if defined (COMP_CFGRx_INP2SEL)
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC2_CH1
-#endif
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMinus, uint32_t InputPlus)
@@ -455,9 +451,7 @@ __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMin
   * @param  InputPlus This parameter can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_IO2
-#if defined (COMP_CFGRx_INP2SEL)
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC2_CH1
-#endif
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlus)
@@ -479,9 +473,7 @@ __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlu
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_IO2
-#if defined (COMP_CFGRx_INP2SEL)
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC2_CH1
-#endif
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
 {
@@ -522,10 +514,8 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
   *         @arg @ref LL_COMP_INPUT_MINUS_IO1
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2
-#if defined (COMP_CFGRx_INMSEL_3)
   *         @arg @ref LL_COMP_INPUT_MINUS_TPSENS_DAC2CH1
   *         @arg @ref LL_COMP_INPUT_MINUS_VBAT_VDDAP
-#endif
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMinus)
@@ -551,10 +541,8 @@ __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMi
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2  
   *         @arg @ref LL_COMP_INPUT_MINUS_IO1
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2
-#if defined (COMP_CFGRx_INMSEL_3)
   *         @arg @ref LL_COMP_INPUT_MINUS_TPSENS_DAC2CH1
   *         @arg @ref LL_COMP_INPUT_MINUS_VBAT_VDDAP
-#endif
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
 {

@@ -115,7 +115,7 @@ extern "C" {
 /* Other defines                                  */
 /**************************************************/
 /* Bit Detach capable = bit 3 in bmAttributes field */
-#define DFU_DETACH_MASK                (uint8_t)(1 << 4)
+#define DFU_DETACH_MASK                (1U << 4)
 #define DFU_STATUS_DEPTH               6U
 
 typedef enum
@@ -133,7 +133,7 @@ typedef  void (*pFunction)(void);
 
 
 /**********  Descriptor of DFU interface 0 Alternate setting n ****************/
-#define USBD_DFU_IF_DESC(n)            0x09,   /* bLength: Interface Descriptor size */ \
+#define USBD_DFU_IF_DESC(n)           0x09,   /* bLength: Interface Descriptor size */ \
                                       USB_DESC_TYPE_INTERFACE,   /* bDescriptorType */ \
                                       0x00,   /* bInterfaceNumber: Number of Interface */ \
                                       (n),      /* bAlternateSetting: Alternate setting */ \
@@ -162,20 +162,19 @@ typedef struct
   union
   {
     uint32_t d32[USBD_DFU_XFER_SIZE / 4U];
-    uint8_t  d8[USBD_DFU_XFER_SIZE];
+    uint8_t d8[USBD_DFU_XFER_SIZE];
   } buffer;
 
-  uint32_t             wblock_num;
-  uint32_t             wlength;
-  uint32_t             data_ptr;
-  uint32_t             alt_setting;
+  uint32_t wblock_num;
+  uint32_t wlength;
+  uint32_t data_ptr;
+  uint32_t alt_setting;
 
-  uint8_t              dev_status[DFU_STATUS_DEPTH];
-  uint8_t              ReservedForAlign[2];
-  uint8_t              dev_state;
-  uint8_t              manif_state;
-}
-USBD_DFU_HandleTypeDef;
+  uint8_t dev_status[DFU_STATUS_DEPTH];
+  uint8_t ReservedForAlign[2];
+  uint8_t dev_state;
+  uint8_t manif_state;
+} USBD_DFU_HandleTypeDef;
 
 typedef struct
 {
@@ -186,8 +185,7 @@ typedef struct
   uint16_t (* Write)(uint8_t *src, uint8_t *dest, uint32_t Len);
   uint8_t *(* Read)(uint8_t *src, uint8_t *dest, uint32_t Len);
   uint16_t (* GetStatus)(uint32_t Add, uint8_t cmd, uint8_t *buff);
-}
-USBD_DFU_MediaTypeDef;
+} USBD_DFU_MediaTypeDef;
 /**
   * @}
   */
@@ -206,8 +204,8 @@ USBD_DFU_MediaTypeDef;
   * @{
   */
 
-extern USBD_ClassTypeDef  USBD_DFU;
-#define USBD_DFU_CLASS    &USBD_DFU
+extern USBD_ClassTypeDef USBD_DFU;
+#define USBD_DFU_CLASS &USBD_DFU
 /**
   * @}
   */
@@ -215,8 +213,8 @@ extern USBD_ClassTypeDef  USBD_DFU;
 /** @defgroup USB_CORE_Exported_Functions
   * @{
   */
-uint8_t  USBD_DFU_RegisterMedia(USBD_HandleTypeDef   *pdev,
-                                USBD_DFU_MediaTypeDef *fops);
+uint8_t USBD_DFU_RegisterMedia(USBD_HandleTypeDef *pdev,
+                               USBD_DFU_MediaTypeDef *fops);
 /**
   * @}
   */

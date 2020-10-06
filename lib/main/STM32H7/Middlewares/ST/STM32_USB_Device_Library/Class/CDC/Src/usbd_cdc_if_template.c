@@ -68,13 +68,15 @@ static int8_t TEMPLATE_Init(void);
 static int8_t TEMPLATE_DeInit(void);
 static int8_t TEMPLATE_Control(uint8_t cmd, uint8_t *pbuf, uint16_t length);
 static int8_t TEMPLATE_Receive(uint8_t *pbuf, uint32_t *Len);
+static int8_t TEMPLATE_TransmitCplt(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
 USBD_CDC_ItfTypeDef USBD_CDC_Template_fops =
 {
   TEMPLATE_Init,
   TEMPLATE_DeInit,
   TEMPLATE_Control,
-  TEMPLATE_Receive
+  TEMPLATE_Receive,
+  TEMPLATE_TransmitCplt
 };
 
 USBD_CDC_LineCodingTypeDef linecoding =
@@ -192,7 +194,7 @@ static int8_t TEMPLATE_Control(uint8_t cmd, uint8_t *pbuf, uint16_t length)
   *
   *         @note
   *         This function will issue a NAK packet on any OUT packet received on
-  *         USB endpoint untill exiting this function. If you exit this function
+  *         USB endpoint until exiting this function. If you exit this function
   *         before transfer is complete on CDC interface (ie. using DMA controller)
   *         it will result in receiving more data while previous ones are still
   *         not sent.
@@ -203,6 +205,29 @@ static int8_t TEMPLATE_Control(uint8_t cmd, uint8_t *pbuf, uint16_t length)
   */
 static int8_t TEMPLATE_Receive(uint8_t *Buf, uint32_t *Len)
 {
+  UNUSED(Buf);
+  UNUSED(Len);
+
+  return (0);
+}
+
+/**
+  * @brief  TEMPLATE_TransmitCplt
+  *         Data transmited callback
+  *
+  *         @note
+  *         This function is IN transfer complete callback used to inform user that
+  *         the submitted Data is successfully sent over USB.
+  *
+  * @param  Buf: Buffer of data to be received
+  * @param  Len: Number of data received (in bytes)
+  * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
+  */
+static int8_t TEMPLATE_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
+{
+  UNUSED(Buf);
+  UNUSED(Len);
+  UNUSED(epnum);
 
   return (0);
 }

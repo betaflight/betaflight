@@ -146,6 +146,19 @@ typedef struct
 
 #define DMA_TO_BDMA_PRIORITY(__DMA_PRIORITY__) ((__DMA_PRIORITY__) >> 4U)
 
+#if defined(UART9)
+#define IS_DMA_UART_USART_REQUEST(__REQUEST__) ((((__REQUEST__) >= DMA_REQUEST_USART1_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_USART3_TX)) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_UART4_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_UART5_TX )) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_USART6_RX) &&  ((__REQUEST__) <= DMA_REQUEST_USART6_TX)) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_UART7_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_UART8_TX )) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_UART9_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_USART10_TX )))
+#else
+#define IS_DMA_UART_USART_REQUEST(__REQUEST__) ((((__REQUEST__) >= DMA_REQUEST_USART1_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_USART3_TX)) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_UART4_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_UART5_TX )) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_USART6_RX) &&  ((__REQUEST__) <= DMA_REQUEST_USART6_TX)) || \
+                                                 (((__REQUEST__) >= DMA_REQUEST_UART7_RX)  &&  ((__REQUEST__) <= DMA_REQUEST_UART8_TX )))
+
+#endif
 /**
   * @}
   */
@@ -277,6 +290,20 @@ HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma)
       /* Get memory burst and peripheral burst */
       registerValue |=  hdma->Init.MemBurst | hdma->Init.PeriphBurst;
     }
+
+    /* Work around for Errata 2.22: UART/USART- DMA transfer lock: DMA stream could be
+                                    lock when transfering data to/from USART/UART */
+#if (STM32H7_DEV_ID == 0x450UL)
+    if((DBGMCU->IDCODE & 0xFFFF0000U) >= 0x20000000U)
+    {
+#endif /* STM32H7_DEV_ID == 0x450UL */
+      if(IS_DMA_UART_USART_REQUEST(hdma->Init.Request) != 0U)
+      {
+        registerValue |= DMA_SxCR_TRBUFF;
+      }
+#if (STM32H7_DEV_ID == 0x450UL)
+    }
+#endif /* STM32H7_DEV_ID == 0x450UL */
 
     /* Write to DMA Stream CR register */
     ((DMA_Stream_TypeDef   *)hdma->Instance)->CR = registerValue;
@@ -502,7 +529,9 @@ HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
     return HAL_ERROR;
   }
 
+#if defined (BDMA1) /* No DMAMUX available for BDMA1 available on  STM32H7Ax/Bx devices only */
   if(IS_DMA_DMAMUX_ALL_INSTANCE(hdma->Instance) != 0U) /* No DMAMUX available for BDMA1 */
+#endif /* BDMA1 */
   {
     /* Initialize parameters for DMAMUX channel :
     DMAmuxChannel, DMAmuxChannelStatus and DMAmuxChannelStatusMask */

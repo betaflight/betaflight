@@ -110,7 +110,7 @@
 
 /* Private types -------------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-/** @defgroup RNG_Private_Defines
+/** @defgroup RNG_Private_Defines RNG Private Defines
   * @{
   */
 /*  Health test control register information to use in CCM algorithm */

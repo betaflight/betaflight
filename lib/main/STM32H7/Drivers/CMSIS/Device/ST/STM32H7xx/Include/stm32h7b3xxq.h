@@ -878,11 +878,7 @@ typedef struct
   __IO uint32_t B1CR;            /*!< GFXMMU buffer 1 configuration register,            Address offset: 0x24 */
   __IO uint32_t B2CR;            /*!< GFXMMU buffer 2 configuration register,            Address offset: 0x28 */
   __IO uint32_t B3CR;            /*!< GFXMMU buffer 3 configuration register,            Address offset: 0x2C */
-       uint32_t RESERVED2[1008]; /*!< Reserved2,                                         Address offset: 0x30 to 0xFEC */
-  __IO uint32_t HWCFGR;          /*!< GFXMMU hardware configuration register,            Address offset: 0xFF0 */
-  __IO uint32_t VERR;            /*!< GFXMMU version register,                           Address offset: 0xFF4 */
-  __IO uint32_t IPIDR;           /*!< GFXMMU identification register,                    Address offset: 0xFF8 */
-  __IO uint32_t SIDR;            /*!< GFXMMU size identification register,               Address offset: 0xFFC */
+       uint32_t RESERVED2[1012]; /*!< Reserved2,                                         Address offset: 0x30 to 0xFFC */
   __IO uint32_t LUT[2048];       /*!< GFXMMU LUT registers,                              Address offset: 0x1000 to 0x2FFC
                                       For LUT line i, LUTiL = LUT[2*i] and LUTiH = LUT[(2*i)+1] */
 } GFXMMU_TypeDef;
@@ -1894,7 +1890,7 @@ typedef struct
 typedef struct
 {
   __IO uint32_t CR;          /*!< OCTOSPI IO Manager Control register,                 Address offset: 0x00 */
-  __IO uint32_t PCR[8];      /*!< OCTOSPI IO Manager Port[1:8] Configuration register, Address offset: 0x04-0x20 */
+  __IO uint32_t PCR[3];      /*!< OCTOSPI IO Manager Port[1:3] Configuration register, Address offset: 0x04-0x20 */
 } OCTOSPIM_TypeDef;
 
 /**
@@ -4082,7 +4078,7 @@ typedef struct
 
 /*****************  Bit definition for FDCAN_ECR register  *********************/
 #define FDCAN_ECR_TEC_Pos         (0U)
-#define FDCAN_ECR_TEC_Msk         (0xFUL << FDCAN_ECR_TEC_Pos)                 /*!< 0x0000000F */
+#define FDCAN_ECR_TEC_Msk         (0xFFUL << FDCAN_ECR_TEC_Pos)                 /*!< 0x000000FF */
 #define FDCAN_ECR_TEC             FDCAN_ECR_TEC_Msk                            /*!<Transmit Error Counter                   */
 #define FDCAN_ECR_REC_Pos         (8U)
 #define FDCAN_ECR_REC_Msk         (0x7FUL << FDCAN_ECR_REC_Pos)                /*!< 0x00007F00 */
@@ -6752,6 +6748,9 @@ typedef struct
 #define DMA_SxCR_PBURST          DMA_SxCR_PBURST_Msk                           /*!< Peripheral burst transfer configuration */
 #define DMA_SxCR_PBURST_0        (0x1UL << DMA_SxCR_PBURST_Pos)                 /*!< 0x00200000 */
 #define DMA_SxCR_PBURST_1        (0x2UL << DMA_SxCR_PBURST_Pos)                 /*!< 0x00400000 */
+#define DMA_SxCR_TRBUFF_Pos      (20U)
+#define DMA_SxCR_TRBUFF_Msk      (0x1UL << DMA_SxCR_TRBUFF_Pos)                 /*!< 0x00100000 */
+#define DMA_SxCR_TRBUFF          DMA_SxCR_TRBUFF_Msk                            /*!< bufferable transfers enabled/disable */
 #define DMA_SxCR_CT_Pos          (19U)
 #define DMA_SxCR_CT_Msk          (0x1UL << DMA_SxCR_CT_Pos)                    /*!< 0x00080000 */
 #define DMA_SxCR_CT              DMA_SxCR_CT_Msk                               /*!< Current target (only in double buffer mode) */
@@ -9717,29 +9716,6 @@ typedef struct
 #define GFXMMU_B3CR_PBBA_Pos               (23U)
 #define GFXMMU_B3CR_PBBA_Msk               (0x1FFUL << GFXMMU_B3CR_PBBA_Pos)    /*!< 0xFF800000 */
 #define GFXMMU_B3CR_PBBA                   GFXMMU_B3CR_PBBA_Msk                /*!< PBBA[31:23] bits (Physical buffer base address) */
-
-/****************** Bits definition for GFXMMU_HWCFGR register ****************/
-#define GFXMMU_HWCFGR_TBD_Pos              (0U)
-#define GFXMMU_HWCFGR_TBD_Msk              (0xFFFFFFFFUL << GFXMMU_HWCFGR_TBD_Pos) /*!< 0xFFFFFFFF */
-#define GFXMMU_HWCFGR_TBD                  GFXMMU_HWCFGR_TBD_Msk               /*!< TBD[31:0] bits (To be defined) */
-
-/****************** Bits definition for GFXMMU_VERR register ******************/
-#define GFXMMU_VERR_MINREV_Pos             (0U)
-#define GFXMMU_VERR_MINREV_Msk             (0xFUL << GFXMMU_VERR_MINREV_Pos)    /*!< 0x0000000F */
-#define GFXMMU_VERR_MINREV                 GFXMMU_VERR_MINREV_Msk              /*!< MINREV[3:0] bits (Minor revision) */
-#define GFXMMU_VERR_MAJREV_Pos             (4U)
-#define GFXMMU_VERR_MAJREV_Msk             (0xFUL << GFXMMU_VERR_MAJREV_Pos)    /*!< 0x000000F0 */
-#define GFXMMU_VERR_MAJREV                 GFXMMU_VERR_MAJREV_Msk              /*!< MAJREV[3:0] bits (Major revision) */
-
-/****************** Bits definition for GFXMMU_IPIDR register *****************/
-#define GFXMMU_IPIDR_ID_Pos                (0U)
-#define GFXMMU_IPIDR_ID_Msk                (0xFFFFFFFFUL << GFXMMU_IPIDR_ID_Pos) /*!< 0xFFFFFFFF */
-#define GFXMMU_IPIDR_ID                    GFXMMU_IPIDR_ID_Msk                 /*!< ID[31:0] bits (Identification code) */
-
-/****************** Bits definition for GFXMMU_SIDR register ******************/
-#define GFXMMU_SIDR_SID_Pos                (0U)
-#define GFXMMU_SIDR_SID_Msk                (0xFFFFFFFFUL << GFXMMU_SIDR_SID_Pos) /*!< 0xFFFFFFFF */
-#define GFXMMU_SIDR_SID                    GFXMMU_SIDR_SID_Msk                 /*!< SID[31:0] bits (Size and id) */
 
 /****************** Bits definition for GFXMMU_LUTxL register *****************/
 #define GFXMMU_LUTxL_EN_Pos                (0U)
@@ -19430,39 +19406,48 @@ typedef struct
 /*                                  OCTOSPIM                                  */
 /*                                                                            */
 /******************************************************************************/
+
+/***************  Bit definition for OCTOSPIM_CR register  ********************/
+#define OCTOSPIM_CR_MUXEN_Pos          (0U)
+#define OCTOSPIM_CR_MUXEN_Msk          (0x1UL << OCTOSPIM_CR_MUXEN_Pos)        /*!< 0x00000001 */
+#define OCTOSPIM_CR_MUXEN              OCTOSPIM_CR_MUXEN_Msk                   /*!< Multiplexed mode enable */
+#define OCTOSPIM_CR_REQ2ACK_TIME_Pos   (16U)
+#define OCTOSPIM_CR_REQ2ACK_TIME_Msk   (0xFFUL << OCTOSPIM_CR_REQ2ACK_TIME_Pos)/*!< 0x00FF0000 */
+#define OCTOSPIM_CR_REQ2ACK_TIME       OCTOSPIM_CR_REQ2ACK_TIME_Msk            /*!< REQ to ACK time */
+
 /***************  Bit definition for OCTOSPIM_PCR register  *******************/
 #define OCTOSPIM_PCR_CLKEN_Pos         (0U)
 #define OCTOSPIM_PCR_CLKEN_Msk         (0x1UL << OCTOSPIM_PCR_CLKEN_Pos)        /*!< 0x00000001 */
-#define OCTOSPIM_PCR_CLKEN             OCTOSPIM_PCR_CLKEN_Msk                  /*!< CLK/CLKn Enable for Port n */
+#define OCTOSPIM_PCR_CLKEN             OCTOSPIM_PCR_CLKEN_Msk                   /*!< CLK/CLKn Enable for Port n */
 #define OCTOSPIM_PCR_CLKSRC_Pos        (1U)
 #define OCTOSPIM_PCR_CLKSRC_Msk        (0x1UL << OCTOSPIM_PCR_CLKSRC_Pos)       /*!< 0x00000002 */
-#define OCTOSPIM_PCR_CLKSRC            OCTOSPIM_PCR_CLKSRC_Msk                 /*!< CLK/CLKn Source for Port n */
+#define OCTOSPIM_PCR_CLKSRC            OCTOSPIM_PCR_CLKSRC_Msk                  /*!< CLK/CLKn Source for Port n */
 #define OCTOSPIM_PCR_DQSEN_Pos         (4U)
 #define OCTOSPIM_PCR_DQSEN_Msk         (0x1UL << OCTOSPIM_PCR_DQSEN_Pos)        /*!< 0x00000010 */
-#define OCTOSPIM_PCR_DQSEN             OCTOSPIM_PCR_DQSEN_Msk                  /*!< DQS Enable for Port n */
+#define OCTOSPIM_PCR_DQSEN             OCTOSPIM_PCR_DQSEN_Msk                   /*!< DQS Enable for Port n */
 #define OCTOSPIM_PCR_DQSSRC_Pos        (5U)
 #define OCTOSPIM_PCR_DQSSRC_Msk        (0x1UL << OCTOSPIM_PCR_DQSSRC_Pos)       /*!< 0x00000020 */
-#define OCTOSPIM_PCR_DQSSRC            OCTOSPIM_PCR_DQSSRC_Msk                 /*!< DQS Source for Port n */
+#define OCTOSPIM_PCR_DQSSRC            OCTOSPIM_PCR_DQSSRC_Msk                  /*!< DQS Source for Port n */
 #define OCTOSPIM_PCR_NCSEN_Pos         (8U)
 #define OCTOSPIM_PCR_NCSEN_Msk         (0x1UL << OCTOSPIM_PCR_NCSEN_Pos)        /*!< 0x00000100 */
-#define OCTOSPIM_PCR_NCSEN             OCTOSPIM_PCR_NCSEN_Msk                  /*!< nCS Enable for Port n */
+#define OCTOSPIM_PCR_NCSEN             OCTOSPIM_PCR_NCSEN_Msk                   /*!< nCS Enable for Port n */
 #define OCTOSPIM_PCR_NCSSRC_Pos        (9U)
 #define OCTOSPIM_PCR_NCSSRC_Msk        (0x1UL << OCTOSPIM_PCR_NCSSRC_Pos)       /*!< 0x00000200 */
-#define OCTOSPIM_PCR_NCSSRC            OCTOSPIM_PCR_NCSSRC_Msk                 /*!< nCS Source for Port n */
+#define OCTOSPIM_PCR_NCSSRC            OCTOSPIM_PCR_NCSSRC_Msk                  /*!< nCS Source for Port n */
 #define OCTOSPIM_PCR_IOLEN_Pos         (16U)
 #define OCTOSPIM_PCR_IOLEN_Msk         (0x1UL << OCTOSPIM_PCR_IOLEN_Pos)        /*!< 0x00010000 */
-#define OCTOSPIM_PCR_IOLEN             OCTOSPIM_PCR_IOLEN_Msk                  /*!< IO[3:0] Enable for Port n */
+#define OCTOSPIM_PCR_IOLEN             OCTOSPIM_PCR_IOLEN_Msk                   /*!< IO[3:0] Enable for Port n */
 #define OCTOSPIM_PCR_IOLSRC_Pos        (17U)
 #define OCTOSPIM_PCR_IOLSRC_Msk        (0x3UL << OCTOSPIM_PCR_IOLSRC_Pos)       /*!< 0x00060000 */
-#define OCTOSPIM_PCR_IOLSRC            OCTOSPIM_PCR_IOLSRC_Msk                 /*!< IO[3:0] Source for Port n */
+#define OCTOSPIM_PCR_IOLSRC            OCTOSPIM_PCR_IOLSRC_Msk                  /*!< IO[3:0] Source for Port n */
 #define OCTOSPIM_PCR_IOLSRC_0          (0x1UL << OCTOSPIM_PCR_IOLSRC_Pos)       /*!< 0x00020000 */
 #define OCTOSPIM_PCR_IOLSRC_1          (0x2UL << OCTOSPIM_PCR_IOLSRC_Pos)       /*!< 0x00040000 */
 #define OCTOSPIM_PCR_IOHEN_Pos         (24U)
 #define OCTOSPIM_PCR_IOHEN_Msk         (0x1UL << OCTOSPIM_PCR_IOHEN_Pos)        /*!< 0x01000000 */
-#define OCTOSPIM_PCR_IOHEN             OCTOSPIM_PCR_IOHEN_Msk                  /*!< IO[7:4] Enable for Port n */
+#define OCTOSPIM_PCR_IOHEN             OCTOSPIM_PCR_IOHEN_Msk                   /*!< IO[7:4] Enable for Port n */
 #define OCTOSPIM_PCR_IOHSRC_Pos        (25U)
 #define OCTOSPIM_PCR_IOHSRC_Msk        (0x3UL << OCTOSPIM_PCR_IOHSRC_Pos)       /*!< 0x06000000 */
-#define OCTOSPIM_PCR_IOHSRC            OCTOSPIM_PCR_IOHSRC_Msk                 /*!< IO[7:4] Source for Port n */
+#define OCTOSPIM_PCR_IOHSRC            OCTOSPIM_PCR_IOHSRC_Msk                  /*!< IO[7:4] Source for Port n */
 #define OCTOSPIM_PCR_IOHSRC_0          (0x1UL << OCTOSPIM_PCR_IOHSRC_Pos)       /*!< 0x02000000 */
 #define OCTOSPIM_PCR_IOHSRC_1          (0x2UL << OCTOSPIM_PCR_IOHSRC_Pos)       /*!< 0x04000000 */
 /******************************************************************************/
@@ -20232,6 +20217,8 @@ typedef struct
 /*                                DBG                                         */
 /*                                                                            */
 /******************************************************************************/
+/*********************************  DEVICE ID  ********************************/
+#define STM32H7_DEV_ID           0x480UL
 
 /********************  Bit definition for DBGMCU_IDCODE register  *************/
 #define DBGMCU_IDCODE_DEV_ID_Pos          (0U)
@@ -22192,14 +22179,16 @@ typedef struct
                                        ((INSTANCE) == I2C2) || \
                                        ((INSTANCE) == I2C3) || \
                                        ((INSTANCE) == I2C4))
-/************** I2C Instances : wakeup capability from stop modes *************/
-#define IS_I2C_WAKEUP_FROMSTOP_INSTANCE(INSTANCE) IS_I2C_ALL_INSTANCE(INSTANCE)
 
 /****************************** SMBUS Instances *******************************/
 #define IS_SMBUS_ALL_INSTANCE(INSTANCE) (((INSTANCE) == I2C1) || \
                                          ((INSTANCE) == I2C2) || \
                                          ((INSTANCE) == I2C3) || \
                                          ((INSTANCE) == I2C4))
+
+/************** I2C Instances : wakeup capability from stop modes *************/
+#define IS_I2C_WAKEUP_FROMSTOP_INSTANCE(INSTANCE) IS_I2C_ALL_INSTANCE(INSTANCE)
+
 /******************************** I2S Instances *******************************/
 #define IS_I2S_ALL_INSTANCE(INSTANCE)   (((INSTANCE) == SPI1) || \
                                          ((INSTANCE) == SPI2) || \
@@ -22218,9 +22207,6 @@ typedef struct
 /****************************** SDMMC Instances *********************************/
 #define IS_SDMMC_ALL_INSTANCE(_INSTANCE_) (((_INSTANCE_) == SDMMC1) || \
                                            ((_INSTANCE_) == SDMMC2))
-
-/******************************** SMBUS Instances *****************************/
-#define IS_SMBUS_INSTANCE(INSTANCE)  ((INSTANCE) == I2C1)
 
 /******************************** SPI Instances *******************************/
 #define IS_SPI_ALL_INSTANCE(INSTANCE) (((INSTANCE) == SPI1) || \

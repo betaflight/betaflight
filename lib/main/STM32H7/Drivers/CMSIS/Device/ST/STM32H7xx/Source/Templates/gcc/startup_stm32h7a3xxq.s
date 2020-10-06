@@ -61,6 +61,9 @@ defined in linker script */
 Reset_Handler:  
   ldr   sp, =_estack      /* set stack pointer */
 
+/* Call the clock system intitialization function.*/
+  bl  SystemInit
+
 /* Copy the data segment initializers from flash to SRAM */
   movs  r1, #0
   b  LoopCopyDataInit
@@ -88,9 +91,7 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
-
-/* Call the clock system intitialization function.*/
-  bl  SystemInit   
+  
 /* Call static constructors */
     bl __libc_init_array
 /* Call the application's entry point.*/

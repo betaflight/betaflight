@@ -1112,15 +1112,15 @@ HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef *hdac, DAC_ChannelConf
   /* Clear DAC_MCR_MODEx bits */
   tmpreg1 &= ~(((uint32_t)(DAC_MCR_MODE1)) << (Channel & 0x10UL));
   /* Configure for the selected DAC channel: mode, buffer output & on chip peripheral connect */
-  if ((sConfig->DAC_ConnectOnChipPeripheral & DAC_CHIPCONNECT_EXTERNAL) == DAC_CHIPCONNECT_EXTERNAL)
+  if (sConfig->DAC_ConnectOnChipPeripheral == DAC_CHIPCONNECT_EXTERNAL)
   {
     connectOnChip = 0x00000000UL;
   }
-  else if ((sConfig->DAC_ConnectOnChipPeripheral & DAC_CHIPCONNECT_INTERNAL) == DAC_CHIPCONNECT_INTERNAL)
+  else if (sConfig->DAC_ConnectOnChipPeripheral == DAC_CHIPCONNECT_INTERNAL)
   {
     connectOnChip = DAC_MCR_MODE1_0;
   }
-  else /* (sConfig->DAC_ConnectOnChipPeripheral & DAC_CHIPCONNECT_BOTH) == DAC_CHIPCONNECT_BOTH */
+  else /* (sConfig->DAC_ConnectOnChipPeripheral == DAC_CHIPCONNECT_BOTH) */
   {
     if (sConfig->DAC_OutputBuffer == DAC_OUTPUTBUFFER_ENABLE)
     {

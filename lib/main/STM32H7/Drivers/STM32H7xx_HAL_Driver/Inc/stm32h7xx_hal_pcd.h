@@ -96,16 +96,16 @@ typedef struct __PCD_HandleTypeDef
 typedef struct
 #endif /* USE_HAL_PCD_REGISTER_CALLBACKS */
 {
-  PCD_TypeDef             *Instance;   /*!< Register base address              */
-  PCD_InitTypeDef         Init;        /*!< PCD required parameters            */
-  __IO uint8_t            USB_Address; /*!< USB Address                        */
-  PCD_EPTypeDef           IN_ep[16];   /*!< IN endpoint parameters             */
-  PCD_EPTypeDef           OUT_ep[16];  /*!< OUT endpoint parameters            */
-  HAL_LockTypeDef         Lock;        /*!< PCD peripheral status              */
-  __IO PCD_StateTypeDef   State;       /*!< PCD communication state            */
-  __IO  uint32_t          ErrorCode;   /*!< PCD Error code                     */
-  uint32_t                Setup[12];   /*!< Setup packet buffer                */
-  PCD_LPM_StateTypeDef    LPM_State;   /*!< LPM State                          */
+  PCD_TypeDef             *Instance;   /*!< Register base address             */
+  PCD_InitTypeDef         Init;        /*!< PCD required parameters           */
+  __IO uint8_t            USB_Address; /*!< USB Address                       */
+  PCD_EPTypeDef           IN_ep[16];   /*!< IN endpoint parameters            */
+  PCD_EPTypeDef           OUT_ep[16];  /*!< OUT endpoint parameters           */
+  HAL_LockTypeDef         Lock;        /*!< PCD peripheral status             */
+  __IO PCD_StateTypeDef   State;       /*!< PCD communication state           */
+  __IO  uint32_t          ErrorCode;   /*!< PCD Error code                    */
+  uint32_t                Setup[12];   /*!< Setup packet buffer               */
+  PCD_LPM_StateTypeDef    LPM_State;   /*!< LPM State                         */
   uint32_t                BESL;
 
 
@@ -244,7 +244,7 @@ typedef enum
   HAL_PCD_SUSPEND_CB_ID      = 0x04,      /*!< USB PCD Suspend callback ID      */
   HAL_PCD_RESUME_CB_ID       = 0x05,      /*!< USB PCD Resume callback ID       */
   HAL_PCD_CONNECT_CB_ID      = 0x06,      /*!< USB PCD Connect callback ID      */
-  HAL_PCD_DISCONNECT_CB_ID  = 0x07,      /*!< USB PCD Disconnect callback ID   */
+  HAL_PCD_DISCONNECT_CB_ID   = 0x07,      /*!< USB PCD Disconnect callback ID   */
 
   HAL_PCD_MSPINIT_CB_ID      = 0x08,      /*!< USB PCD MspInit callback ID      */
   HAL_PCD_MSPDEINIT_CB_ID    = 0x09       /*!< USB PCD MspDeInit callback ID    */
@@ -363,14 +363,6 @@ PCD_StateTypeDef HAL_PCD_GetState(PCD_HandleTypeDef *hpcd);
   * @{
   */
 #if defined (USB_OTG_FS) || defined (USB_OTG_HS)
-#define USB_OTG_FS_WAKEUP_EXTI_RISING_EDGE                            0x08U
-#define USB_OTG_FS_WAKEUP_EXTI_FALLING_EDGE                           0x0CU
-#define USB_OTG_FS_WAKEUP_EXTI_RISING_FALLING_EDGE                    0x10U
-
-#define USB_OTG_HS_WAKEUP_EXTI_RISING_EDGE                            0x08U
-#define USB_OTG_HS_WAKEUP_EXTI_FALLING_EDGE                           0x0CU
-#define USB_OTG_HS_WAKEUP_EXTI_RISING_FALLING_EDGE                    0x10U
-
 #define USB_OTG_FS_WAKEUP_EXTI_LINE                                   (0x1U << 12)  /*!< USB FS EXTI Line WakeUp Interrupt */
 #define USB_OTG_HS_WAKEUP_EXTI_LINE                                   (0x1U << 11)  /*!< USB HS EXTI Line WakeUp Interrupt */
 #endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */

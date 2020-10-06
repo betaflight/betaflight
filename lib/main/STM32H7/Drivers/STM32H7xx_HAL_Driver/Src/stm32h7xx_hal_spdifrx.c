@@ -853,7 +853,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveCtrlFlow(SPDIFRX_HandleTypeDef *hspdif, uin
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
 {
-  register uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
+  uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
 
   const HAL_SPDIFRX_StateTypeDef tempState = hspdif->State;
 
@@ -938,7 +938,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif, 
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveCtrlFlow_IT(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
 {
-  register uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
+  uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
 
   const HAL_SPDIFRX_StateTypeDef tempState = hspdif->State;
 
@@ -1023,7 +1023,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveCtrlFlow_IT(SPDIFRX_HandleTypeDef *hspdif, 
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
 {
-  register uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
+  uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
 
   const HAL_SPDIFRX_StateTypeDef tempState = hspdif->State;
 
@@ -1124,7 +1124,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif,
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveCtrlFlow_DMA(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
 {
-  register uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
+  uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
 
   const HAL_SPDIFRX_StateTypeDef tempState = hspdif->State;
 

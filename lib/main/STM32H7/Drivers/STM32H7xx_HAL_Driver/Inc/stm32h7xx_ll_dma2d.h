@@ -783,7 +783,6 @@ __STATIC_INLINE void LL_DMA2D_SetLineOffset(DMA2D_TypeDef *DMA2Dx, uint32_t Line
   * @rmtoll OOR          LO         LL_DMA2D_GetLineOffset
   * @param  DMA2Dx DMA2D Instance
   * @retval Line offset value between Min_Data=0 and Max_Data=0xFFFF
-  @endif
   */
 __STATIC_INLINE uint32_t LL_DMA2D_GetLineOffset(DMA2D_TypeDef *DMA2Dx)
 {

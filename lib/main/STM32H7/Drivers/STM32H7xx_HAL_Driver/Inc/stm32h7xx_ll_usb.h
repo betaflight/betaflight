@@ -155,7 +155,7 @@ typedef struct
 
 typedef struct
 {
-  uint8_t   dev_addr ;          /*!< USB device address.
+  uint8_t   dev_addr;           /*!< USB device address.
                                      This parameter must be a number between Min_Data = 1 and Max_Data = 255    */
 
   uint8_t   ch_num;             /*!< Host channel number.
@@ -199,10 +199,10 @@ typedef struct
 
   uint32_t  ErrCnt;             /*!< Host channel error count.*/
 
-  USB_OTG_URBStateTypeDef  urb_state;  /*!< URB state.
+  USB_OTG_URBStateTypeDef urb_state;  /*!< URB state.
                                             This parameter can be any value of @ref USB_OTG_URBStateTypeDef */
 
-  USB_OTG_HCStateTypeDef   state;     /*!< Host Channel state.
+  USB_OTG_HCStateTypeDef state;       /*!< Host Channel state.
                                            This parameter can be any value of @ref USB_OTG_HCStateTypeDef   */
 } USB_OTG_HCTypeDef;
 #endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
@@ -237,11 +237,11 @@ typedef struct
 /** @defgroup USB_LL Device Speed
   * @{
   */
-#define USBD_HS_SPEED               0U
-#define USBD_HSINFS_SPEED           1U
-#define USBH_HS_SPEED               0U
-#define USBD_FS_SPEED               2U
-#define USBH_FS_SPEED               1U
+#define USBD_HS_SPEED                          0U
+#define USBD_HSINFS_SPEED                      1U
+#define USBH_HS_SPEED                          0U
+#define USBD_FS_SPEED                          2U
+#define USBH_FSLS_SPEED                        1U
 /**
   * @}
   */
@@ -269,11 +269,11 @@ typedef struct
   * @{
   */
 #ifndef USBD_HS_TRDT_VALUE
-#define USBD_HS_TRDT_VALUE           9U
+#define USBD_HS_TRDT_VALUE                     9U
 #endif /* USBD_HS_TRDT_VALUE */
 #ifndef USBD_FS_TRDT_VALUE
-#define USBD_FS_TRDT_VALUE           5U
-#define USBD_DEFAULT_TRDT_VALUE      9U
+#define USBD_FS_TRDT_VALUE                     5U
+#define USBD_DEFAULT_TRDT_VALUE                9U
 #endif /* USBD_HS_TRDT_VALUE */
 /**
   * @}
@@ -282,9 +282,9 @@ typedef struct
 /** @defgroup USB_LL_Core_MPS USB Low Layer Core MPS
   * @{
   */
-#define USB_OTG_HS_MAX_PACKET_SIZE             512U
-#define USB_OTG_FS_MAX_PACKET_SIZE             64U
-#define USB_OTG_MAX_EP0_SIZE                   64U
+#define USB_OTG_HS_MAX_PACKET_SIZE           512U
+#define USB_OTG_FS_MAX_PACKET_SIZE            64U
+#define USB_OTG_MAX_EP0_SIZE                  64U
 /**
   * @}
   */
@@ -402,7 +402,7 @@ typedef struct
 #define USBx_HC(i)      ((USB_OTG_HostChannelTypeDef *)(USBx_BASE + USB_OTG_HOST_CHANNEL_BASE + ((i) * USB_OTG_HOST_CHANNEL_SIZE)))
 #endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
 
-#define EP_ADDR_MSK                            0xFU
+#define EP_ADDR_MSK                          0xFU
 /**
   * @}
   */
@@ -467,13 +467,9 @@ HAL_StatusTypeDef USB_ResetPort(USB_OTG_GlobalTypeDef *USBx);
 HAL_StatusTypeDef USB_DriveVbus(USB_OTG_GlobalTypeDef *USBx, uint8_t state);
 uint32_t          USB_GetHostSpeed(USB_OTG_GlobalTypeDef *USBx);
 uint32_t          USB_GetCurrentFrame(USB_OTG_GlobalTypeDef *USBx);
-HAL_StatusTypeDef USB_HC_Init(USB_OTG_GlobalTypeDef *USBx,
-                              uint8_t ch_num,
-                              uint8_t epnum,
-                              uint8_t dev_address,
-                              uint8_t speed,
-                              uint8_t ep_type,
-                              uint16_t mps);
+HAL_StatusTypeDef USB_HC_Init(USB_OTG_GlobalTypeDef *USBx, uint8_t ch_num,
+                              uint8_t epnum, uint8_t dev_address, uint8_t speed,
+                              uint8_t ep_type, uint16_t mps);
 HAL_StatusTypeDef USB_HC_StartXfer(USB_OTG_GlobalTypeDef *USBx, USB_OTG_HCTypeDef *hc, uint8_t dma);
 uint32_t          USB_HC_ReadInterrupt(USB_OTG_GlobalTypeDef *USBx);
 HAL_StatusTypeDef USB_HC_Halt(USB_OTG_GlobalTypeDef *USBx, uint8_t hc_num);
