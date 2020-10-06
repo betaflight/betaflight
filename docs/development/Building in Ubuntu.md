@@ -8,7 +8,7 @@ This document is tested and based on the latest Ubuntu 20.04 LTS release.
 ```
 sudo apt update
 sudo apt upgrade
-sudo apt install build-essential
+sudo apt install build-essential python
 git clone https://github.com/betaflight/betaflight.git
 cd betaflight
 make arm_sdk_install
