@@ -631,6 +631,7 @@ static uint16_t dynFiltNotchMinHz;
 #ifdef USE_DYN_LPF
 static uint16_t dynFiltGyroMin;
 static uint16_t dynFiltGyroMax;
+static uint8_t dynFiltGyroExpo;
 static uint16_t dynFiltDtermMin;
 static uint16_t dynFiltDtermMax;
 static uint8_t dynFiltDtermExpo;
@@ -650,6 +651,7 @@ static const void *cmsx_menuDynFilt_onEnter(displayPort_t *pDisp)
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
     dynFiltGyroMin  = gyroConfig()->dyn_lpf_gyro_min_hz;
     dynFiltGyroMax  = gyroConfig()->dyn_lpf_gyro_max_hz;
+    dynFiltGyroExpo = gyroConfig()->dyn_lpf_curve_expo;
     dynFiltDtermMin = pidProfile->dyn_lpf_dterm_min_hz;
     dynFiltDtermMax = pidProfile->dyn_lpf_dterm_max_hz;
     dynFiltDtermExpo = pidProfile->dyn_lpf_curve_expo;
@@ -673,6 +675,7 @@ static const void *cmsx_menuDynFilt_onExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile_t *pidProfile = currentPidProfile;
     gyroConfigMutable()->dyn_lpf_gyro_min_hz = dynFiltGyroMin;
     gyroConfigMutable()->dyn_lpf_gyro_max_hz = dynFiltGyroMax;
+    gyroConfigMutable()->dyn_lpf_curve_expo  = dynFiltGyroExpo;
     pidProfile->dyn_lpf_dterm_min_hz         = dynFiltDtermMin;
     pidProfile->dyn_lpf_dterm_max_hz         = dynFiltDtermMax;
     pidProfile->dyn_lpf_curve_expo           = dynFiltDtermExpo;
@@ -695,6 +698,7 @@ static const OSD_Entry cmsx_menuDynFiltEntries[] =
 #ifdef USE_DYN_LPF
     { "LPF GYRO MIN",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltGyroMin,  0, 1000, 1 }, 0 },
     { "LPF GYRO MAX",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltGyroMax,  0, 1000, 1 }, 0 },
+    { "GYRO DLPF EXPO", OME_UINT8, NULL, &(OSD_UINT8_t) { &dynFiltGyroExpo,   0, 10, 1 }, 0 },
     { "DTERM DLPF MIN", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltDtermMin, 0, 1000, 1 }, 0 },
     { "DTERM DLPF MAX", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltDtermMax, 0, 1000, 1 }, 0 },
     { "DTERM DLPF EXPO", OME_UINT8, NULL, &(OSD_UINT8_t) { &dynFiltDtermExpo, 0, 10, 1 }, 0 },
