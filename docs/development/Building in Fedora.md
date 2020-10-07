@@ -1,16 +1,42 @@
-# Building in Fedora
+# Building in Fedora 32
 
-Assuming you already have wget and git available, you should be able to build Betaflight on a fresh install of Fedora with the following commands (tested on F18, F20 and Ubuntu 14.04):
+    $ sudo dnf check-update
+    $ sudo dnf install git clang libblocksruntime-devel
+    $ sudo dnf group install "C Development Tools and Libraries"
+    $ git clone https://github.com/betaflight/betaflight.git
+    $ cd betaflight
+    $ make arm_sdk_install
+    $ make TARGET=MATEKF411
 
-```
-wget http://distribute.atmel.no/tools/opensource/Atmel-ARM-GNU-Toolchain/4.8.4/arm-gnu-toolchain-4.8.4.371-linux.any.x86_64.tar.gz
+### Building Configurator in Fedora 32
 
-tar xf arm-gnu-toolchain-4.8.4.371-linux.any.x86_64.tar.gz
-export PATH=$PATH:$PWD/arm-none-eabi/bin
+    $ sudo dnf check-update
+    $ sudo dnf install libatomic rpm-build dpkg
+    $ sudo dnf module install nodejs:10
+    $ sudo npm install -g gulp-cli yarn
+    $ yarn install
+    $ yarn gulp debug
 
-git clone https://github.com/betaflight/betaflight.git
-cd betaflight
-TARGET=NAZE make
-```
+### Serial permissions
 
-This will create betaflight_NAZE.hex in the obj folder.
+Remove ModemManager.
+Add yourself to the dialout group:
+
+    $ sudo dnf remove ModemManager
+    $ sudo usermod -aG dialout $(whoami)
+
+Save and reboot after adding the following contents:
+
+    $ sudo nano /etc/udev/rules.d/45-stdfu-permissions.rules
+
+    # Notify ModemManager this device should be ignored
+    ACTION!="add|change|move", GOTO="mm_usb_device_blacklist_end"
+    SUBSYSTEM!="usb", GOTO="mm_usb_device_blacklist_end"
+    ENV{DEVTYPE}!="usb_device", GOTO="mm_usb_device_blacklist_end"
+   
+    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", ENV{ID_MM_DEVICE_IGNORE}="1"
+   
+    LABEL="mm_usb_device_blacklist_end"
+   
+    #STM32 DFU Access
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", TAG+="uaccess"
