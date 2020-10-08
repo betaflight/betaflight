@@ -241,7 +241,7 @@ void beeper(beeperMode_e mode)
         mode == BEEPER_SILENCE || (
             (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
             && getBatteryState() == BATTERY_NOT_PRESENT
-        )
+        ) || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE)
     ) {
         beeperSilence();
         return;
