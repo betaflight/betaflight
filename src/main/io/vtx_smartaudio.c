@@ -918,7 +918,7 @@ static void vtxSASetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 
 static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 {
-    static bool bLastOnOff = false;
+    static bool lastOnOff = false;
 
     if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
         return;
@@ -930,10 +930,10 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
     }
 
     // Only issue pit mode commands on status change
-    if (bLastOnOff == onoff) {
+    if (lastOnOff == onoff) {
         return;
     }
-    bLastOnOff = onoff;
+    lastOnOff = onoff;
 
     if (saDevice.version >= 3 && !saDevice.willBootIntoPitMode) {
         if (onoff) {
