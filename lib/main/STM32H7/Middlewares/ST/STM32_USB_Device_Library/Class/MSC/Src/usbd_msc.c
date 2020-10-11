@@ -265,6 +265,9 @@ __ALIGN_BEGIN static uint8_t USBD_MSC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   */
 
 
+// Buffer must be aligned for DMAs
+static DMA_RW_AXI USBD_MSC_BOT_HandleTypeDef ClassData __attribute__((aligned(32)));
+
 /** @defgroup MSC_CORE_Private_Functions
   * @{
   */
@@ -276,12 +279,13 @@ __ALIGN_BEGIN static uint8_t USBD_MSC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   * @param  cfgidx: configuration index
   * @retval status
   */
+
 uint8_t USBD_MSC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
   UNUSED(cfgidx);
   USBD_MSC_BOT_HandleTypeDef *hmsc;
 
-  hmsc = USBD_malloc(sizeof(USBD_MSC_BOT_HandleTypeDef));
+  hmsc = &ClassData;
 
   if (hmsc == NULL)
   {
