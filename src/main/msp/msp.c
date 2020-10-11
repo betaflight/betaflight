@@ -1862,6 +1862,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
+#if defined(USE_THRUST_LINEARIZATION)
+        sbufWriteU8(dst, currentPidProfile->thrustLinearization);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
     case MSP_SENSOR_CONFIG:
 #if defined(USE_ACC)
@@ -2714,7 +2719,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 4) {
+        if (sbufBytesRemaining(src) >= 5) {
             // Added in MSP API 1.44
 #if defined(USE_INTERPOLATED_SP)
             currentPidProfile->ff_interpolate_sp = sbufReadU8(src);
@@ -2726,6 +2731,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->ff_boost = sbufReadU8(src);
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
             currentPidProfile->vbat_sag_compensation = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+#if defined(USE_THRUST_LINEARIZATION)
+            currentPidProfile->thrustLinearization = sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif
