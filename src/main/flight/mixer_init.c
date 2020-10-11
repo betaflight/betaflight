@@ -317,24 +317,6 @@ void mixerInitProfile(void)
 #endif
 }
 
-void mixerInit(mixerMode_e mixerMode)
-{
-    currentMixerMode = mixerMode;
-
-    mixerRuntime.feature3dEnabled = featureIsEnabled(FEATURE_3D);
-
-    initEscEndpoints();
-#ifdef USE_SERVOS
-    if (mixerIsTricopter()) {
-        mixerTricopterInit();
-    }
-#endif
-
-#ifdef USE_DYN_IDLE
-    mixerRuntime.idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
-#endif
-}
-
 #ifdef USE_LAUNCH_CONTROL
 // Create a custom mixer for launch control based on the current settings
 // but disable the front motors. We don't care about roll or yaw because they
@@ -354,7 +336,7 @@ void loadLaunchControlMixer(void)
 
 #ifndef USE_QUAD_MIXER_ONLY
 
-void mixerConfigureOutput(void)
+static void mixerConfigureOutput(void)
 {
     mixerRuntime.motorCount = 0;
 
@@ -401,7 +383,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
     }
 }
 #else
-void mixerConfigureOutput(void)
+static void mixerConfigureOutput(void)
 {
     mixerRuntime.motorCount = QUAD_MOTOR_COUNT;
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
@@ -413,6 +395,26 @@ void mixerConfigureOutput(void)
     mixerResetDisarmedMotors();
 }
 #endif // USE_QUAD_MIXER_ONLY
+
+void mixerInit(mixerMode_e mixerMode)
+{
+    currentMixerMode = mixerMode;
+
+    mixerRuntime.feature3dEnabled = featureIsEnabled(FEATURE_3D);
+
+    initEscEndpoints();
+#ifdef USE_SERVOS
+    if (mixerIsTricopter()) {
+        mixerTricopterInit();
+    }
+#endif
+
+#ifdef USE_DYN_IDLE
+    mixerRuntime.idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
+#endif
+
+    mixerConfigureOutput();
+}
 
 void mixerResetDisarmedMotors(void)
 {

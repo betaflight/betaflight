@@ -218,25 +218,6 @@ int servoDirection(int servoIndex, int inputSource)
     }
 }
 
-void servosInit(void)
-{
-    // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[getMixerMode()].useServo;
-    // if we want camstab/trig, that also enables servos, even if mixer doesn't
-    if (featureIsEnabled(FEATURE_SERVO_TILT) || featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
-        useServo = 1;
-    }
-
-    // give all servos a default command
-    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = DEFAULT_SERVO_MIDDLE;
-    }
-
-    if (mixerIsTricopter()) {
-        servosTricopterInit();
-    }
-}
-
 void loadCustomServoMixer(void)
 {
     // reset settings
@@ -254,7 +235,7 @@ void loadCustomServoMixer(void)
     }
 }
 
-void servoConfigureOutput(void)
+static void servoConfigureOutput(void)
 {
     if (useServo) {
         servoRuleCount = servoMixers[getMixerMode()].servoRuleCount;
@@ -275,6 +256,27 @@ void servoConfigureOutput(void)
     }
 }
 
+
+void servosInit(void)
+{
+    // enable servos for mixes that require them. note, this shifts motor counts.
+    useServo = mixers[getMixerMode()].useServo;
+    // if we want camstab/trig, that also enables servos, even if mixer doesn't
+    if (featureIsEnabled(FEATURE_SERVO_TILT) || featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
+        useServo = 1;
+    }
+
+    // give all servos a default command
+    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = DEFAULT_SERVO_MIDDLE;
+    }
+
+    if (mixerIsTricopter()) {
+        servosTricopterInit();
+    }
+
+    servoConfigureOutput();
+}
 
 void servoMixerLoadMix(int index)
 {
