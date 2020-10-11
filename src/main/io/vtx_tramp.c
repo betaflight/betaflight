@@ -325,6 +325,7 @@ static void trampQuery(uint8_t cmd)
 static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 {
     UNUSED(vtxDevice);
+    uint8_t configUpdateRequired = 0;
 
     // Read response from device
     const char replyCode = trampReceive();
@@ -363,8 +364,6 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
         }
     case TRAMP_STATUS_ONLINE_MONITOR_FREQPWRPIT:
         {
-            uint8_t configUpdateRequired = 0;
-
             // Note after config a status update request is made, a new status
             // request is made, this request is handled above and should prevent
             // subsiquent config updates if the config is now correct
@@ -425,6 +424,7 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                     trampLastTimeUs = currentTimeUs;
                 }
             }
+
             break;
         }
     case TRAMP_STATUS_ONLINE_MONITOR_TEMP:
@@ -463,6 +463,9 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
     }
 
     DEBUG_SET(DEBUG_VTX_TRAMP, 0, trampStatus);
+    DEBUG_SET(DEBUG_VTX_TRAMP, 1, replyCode);
+    DEBUG_SET(DEBUG_VTX_TRAMP, 2, configUpdateRequired);
+    DEBUG_SET(DEBUG_VTX_TRAMP, 3, trampRetryCount);
 
 #ifdef USE_CMS
     trampCmsUpdateStatusString();
@@ -599,10 +602,8 @@ static bool vtxTrampGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
         return false;
     }
 
-    // Mirror configued pit mode state rather than use current pitmode as we
-    // should, otherwise the logic in vtxProcessPitMode may not get us to the
-    // correct state if pitmode is toggled quickly
-    *status = (trampConfPitMode ? 0 : VTX_STATUS_PIT_MODE);
+    // Return pitmode from latest query response
+    *status = (trampCurPitMode ? 0 : VTX_STATUS_PIT_MODE);
 
     // Check VTX is not locked
     *status |= ((trampCurControlMode & TRAMP_CONTROL_RACE_LOCK) ? VTX_STATUS_LOCKED : 0);
