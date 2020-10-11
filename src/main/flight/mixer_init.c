@@ -333,8 +333,6 @@ void mixerInit(mixerMode_e mixerMode)
 #ifdef USE_DYN_IDLE
     mixerRuntime.idleThrottleOffset = motorConfig()->digitalIdleOffsetValue * 0.0001f;
 #endif
-
-    mixerInitProfile();
 }
 
 #ifdef USE_LAUNCH_CONTROL
