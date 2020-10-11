@@ -423,14 +423,22 @@ rx_spi_spektrum_unittest_DEFINES := \
 GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
+
+CC  := clang-10
+CXX := clang++-10
+ifeq ($(shell which $(CC) 2>/dev/null),)
+$(info Falling back to 'clang'.)
 CC  := clang
 CXX := clang++
+endif
+
 #CC  := gcc
 #CXX := g++
 
 # These flags are needed for clang 10 (maybe even clang 9) to make test work
 #	-Wno-c99-extensions \
 #	-Wno-reorder
+
 COMMON_FLAGS = \
 	-g \
 	-Wall \
@@ -448,30 +456,35 @@ COMMON_FLAGS = \
 CC_VERSION = $(shell $(CC) -dumpversion)
 CXX_VERSION = $(shell $(CXX) -dumpversion)
 
+ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
+
 # Please revisit versions when new clang version arrive. Supported versions: { Linux: 7 - 10; OSX: 7- 12 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
-CC_VERSION_CHECK_MIN := 4
+CC_VERSION_CHECK_MIN := 7
 CC_VERSION_CHECK_MAX := 10
-ifdef MACOSX
+ifeq ($(OSFAMILY), macosx)
+# MacOS comes with Apple's own flavour of clang that does not adhere to the official versioning
 CC_VERSION_CHECK_MAX := 12
 endif
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
-    $(error $(CC) $(CC_VERSION) is not supported. On most systems the correct compiler will be available as 'clang-10' and 'clang++-10, but Betaflight invokes 'clang' and 'clang++' to accommodate some operating systems that do not have proper clang compilers available. Please modify your system so that an appropriate version of clang is invoked as 'clang' and 'clang++'.)
+$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-10'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
-ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 COMMON_FLAGS += -fblocks
 ifndef CYGWIN
-ifndef MACOSX
+ifneq ($(OSFAMILY), macosx)
 LDFLAGS	     += -lBlocksRuntime
 endif
 endif
 endif
 
+$(info CC version: $(shell $(CC) --version))
+$(info CXX version: $(shell $(CXX) --version))
+
 USE_PTHREAD = YES
 USE_COVERAGE = YES
-ifdef MACOSX
+ifeq ($(OSFAMILY), macosx)
 	USE_PTHREAD =
 endif
 ifdef CYGWIN
@@ -502,7 +515,7 @@ CXX_FLAGS += $(COVERAGE_FLAGS)
 C_FLAGS   += -D_GNU_SOURCE
 
 # Set up the parameter group linker flags according to OS
-ifdef MACOSX
+ifeq ($(OSFAMILY), macosx)
 LDFLAGS  += -Wl,-map,$(OBJECT_DIR)/$@.map
 else
 LDFLAGS  += -Wl,-T,$(TEST_DIR)/pg.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
