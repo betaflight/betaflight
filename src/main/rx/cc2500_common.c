@@ -50,7 +50,7 @@ static IO_t rxLnaEnPin;
 #if defined(USE_RX_CC2500_SPI_DIVERSITY)
 static IO_t antSelPin;
 #endif
-#endif
+
 static int16_t rssiDbm;
 
 uint16_t cc2500getRssiDbm(void)
@@ -169,3 +169,4 @@ void cc2500ApplyRegisterConfig(const cc2500RegisterConfigElement_t *configArrayP
         configArrayPtr++;
     }
 }
+#endif
