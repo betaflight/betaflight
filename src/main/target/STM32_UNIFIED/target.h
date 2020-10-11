@@ -25,7 +25,9 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F405"
 
+// Additional drivers included for targets with > 512KB of flash
 #define USE_ACCGYRO_BMI270
+#define USE_BARO_BMP085
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -114,7 +116,9 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F745"
 
+// Additional drivers included for targets with > 512KB of flash
 #define USE_ACCGYRO_BMI270
+#define USE_BARO_BMP085
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
