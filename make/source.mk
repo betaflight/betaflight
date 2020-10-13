@@ -114,6 +114,7 @@ COMMON_SRC = \
             rx/rx_spi.c \
             rx/rx_spi_common.c \
             rx/crsf.c \
+            rx/ghst.c \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
@@ -177,6 +178,7 @@ COMMON_SRC = \
             sensors/rangefinder.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
+            telemetry/ghst.c \
             telemetry/srxl.c \
             telemetry/frsky_hub.c \
             telemetry/hott.c \
