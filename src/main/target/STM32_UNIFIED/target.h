@@ -25,10 +25,6 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F405"
 
-// Additional drivers included for targets with > 512KB of flash
-#define USE_ACCGYRO_BMI270
-#define USE_BARO_BMP085
-
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -115,10 +111,6 @@
 #define TARGET_BOARD_IDENTIFIER "S745"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F745"
-
-// Additional drivers included for targets with > 512KB of flash
-#define USE_ACCGYRO_BMI270
-#define USE_BARO_BMP085
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -258,3 +250,9 @@
 #define USE_RX_SPEKTRUM_TELEMETRY
 
 #define USE_CUSTOM_DEFAULTS
+
+// Additional drivers included for targets with > 512KB of flash
+#if (TARGET_FLASH_SIZE > 512)
+#define USE_ACCGYRO_BMI270
+#define USE_BARO_BMP085
+#endif
