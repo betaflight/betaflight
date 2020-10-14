@@ -604,6 +604,10 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         uint16_t vfasVoltage;
         uint8_t cellCount;
 
+#ifdef USE_GPS
+        const bool sendSensorGPS = STATE(GPS_FIX) || (sensors(SENSOR_GPS) && featureIsEnabled(FEATURE_GPS) && !STATE(GPS_FIX_EVER));
+#endif
+
 #ifdef USE_ESC_SENSOR_TELEMETRY
         escSensorData_t *escData;
 #endif
@@ -831,43 +835,44 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 #endif
 #ifdef USE_GPS
             case FSSP_DATAID_SPEED      :
-                if (STATE(GPS_FIX)) {
+                if (sendSensorGPS) {
                     //convert to knots: 1cm/s = 0.0194384449 knots
                     //Speed should be sent in knots/1000 (GPS speed is in cm/s)
-                    uint32_t tmpui = gpsSol.groundSpeed * 1944 / 100;
+                    uint32_t tmpui = STATE(GPS_FIX) ? (gpsSol.groundSpeed * 1944 / 100) : 0;
                     smartPortSendPackage(id, tmpui);
                     *clearToSend = false;
                 }
                 break;
             case FSSP_DATAID_LATLONG    :
-                if (STATE(GPS_FIX)) {
-                    uint32_t tmpui = 0;
-                    // the same ID is sent twice, one for longitude, one for latitude
+                if (sendSensorGPS) {
+                    // the same ID is sent twice, alternating for longitude and latitude
                     // the MSB of the sent uint32_t helps FrSky keep track
-                    // the even/odd bit of our counter helps us keep track
-                    if (tableInfo->index & 1) {
-                        tmpui = abs(gpsSol.llh.lon);  // now we have unsigned value and one bit to spare
-                        tmpui = (tmpui + tmpui / 2) / 25 | 0x80000000;  // 6/100 = 1.5/25, division by power of 2 is fast
-                        if (gpsSol.llh.lon < 0) tmpui |= 0x40000000;
+                    int32_t gpsCoordinate = 0;
+                    uint32_t sensorBits = (tableInfo->index & 1) ? 0x80000000 : 0;
+                    if (STATE(GPS_FIX)) {
+                        gpsCoordinate = (tableInfo->index & 1) ? gpsSol.llh.lon : gpsSol.llh.lat;
                     }
-                    else {
-                        tmpui = abs(gpsSol.llh.lat);  // now we have unsigned value and one bit to spare
-                        tmpui = (tmpui + tmpui / 2) / 25;  // 6/100 = 1.5/25, division by power of 2 is fast
-                        if (gpsSol.llh.lat < 0) tmpui |= 0x40000000;
+                    uint32_t tmpui = ABS(gpsCoordinate);
+                    tmpui = (tmpui + tmpui / 2) / 25;  // 6/100 = 1.5/25, division by power of 2 is fast
+                    if (gpsCoordinate < 0) {
+                        tmpui |= 0x40000000;
                     }
+                    tmpui |= sensorBits;
                     smartPortSendPackage(id, tmpui);
                     *clearToSend = false;
                 }
                 break;
             case FSSP_DATAID_HOME_DIST  :
-                if (STATE(GPS_FIX)) {
-                    smartPortSendPackage(id, GPS_distanceToHome);
+                if (sendSensorGPS) {
+                    const uint16_t distanceToHome = STATE(GPS_FIX) ? GPS_distanceToHome : 0;
+                    smartPortSendPackage(id, distanceToHome);
                      *clearToSend = false;
                 }
                 break;
             case FSSP_DATAID_GPS_ALT    :
-                if (STATE(GPS_FIX)) {
-                    smartPortSendPackage(id, gpsSol.llh.altCm); // in cm according to SmartPort spec
+                if (sendSensorGPS) {
+                    const int32_t altCm = STATE(GPS_FIX) ? gpsSol.llh.altCm : 0;
+                    smartPortSendPackage(id, altCm); // in cm according to SmartPort spec
                     *clearToSend = false;
                 }
                 break;

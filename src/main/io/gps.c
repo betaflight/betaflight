@@ -950,11 +950,7 @@ static bool gpsNewFrameNMEA(char c)
                                 gps_Msg.longitude *= -1;
                             break;
                         case 6:
-                            if (string[0] > '0') {
-                                ENABLE_STATE(GPS_FIX);
-                            } else {
-                                DISABLE_STATE(GPS_FIX);
-                            }
+                            gpsSetFixState(string[0] > '0');
                             break;
                         case 7:
                             gps_Msg.numSat = grab_fields(string, 0);
@@ -1277,11 +1273,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
-        if (next_fix) {
-            ENABLE_STATE(GPS_FIX);
-        } else {
-            DISABLE_STATE(GPS_FIX);
-        }
+        gpsSetFixState(next_fix);
         _new_position = true;
         break;
     case MSG_STATUS:
@@ -1583,6 +1575,16 @@ void onGpsNewData(void)
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();
 #endif
+}
+
+void gpsSetFixState(bool state)
+{
+    if (state) {
+        ENABLE_STATE(GPS_FIX);
+        ENABLE_STATE(GPS_FIX_EVER);
+    } else {
+        DISABLE_STATE(GPS_FIX);
+    }
 }
 
 #endif
