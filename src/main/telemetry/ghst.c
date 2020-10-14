@@ -141,7 +141,7 @@ static void processGhst(void)
 
 void initGhstTelemetry(void)
 {
-    // If the GHST Rx driver is active, since tx and rx share the same pin, assume telemetry is enabled. 
+    // If the GHST Rx driver is active, since tx and rx share the same pin, assume telemetry is enabled.
     ghstTelemetryEnabled = ghstRxIsActive();
 
     if (!ghstTelemetryEnabled) {

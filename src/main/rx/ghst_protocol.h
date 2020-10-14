@@ -28,7 +28,7 @@
 #define GHST_TX_BAUDRATE_FAST           400000
 #define GHST_TX_BAUDRATE_SLOW           115200
 #define GHST_BYTE_TIME_FAST_US          ((1000000/GHST_TX_BAUDRATE_FAST)*10)      // 10 bit words (8 data, 1 start, 1 stop)
-#define GHST_BYTE_TIME_SLOW_US          ((1000000/GHST_TX_BAUDRATE_SLOW)*10)      
+#define GHST_BYTE_TIME_SLOW_US          ((1000000/GHST_TX_BAUDRATE_SLOW)*10)
 #define GHST_UART_WORDLENGTH            UART_WORDLENGTH_8B
 
 typedef enum {
@@ -41,7 +41,7 @@ typedef enum {
     GHST_ADDR_QUANTUM_TEE2      = 0x85,
     GHST_ADDR_QUANTUM_GW1       = 0x86,
     GHST_ADDR_5G_CLK            = 0x87,     // phase 3
-    GHST_ADDR_RX                = 0x89      
+    GHST_ADDR_RX                = 0x89
 } ghstAddr_e;
 
 typedef enum {
@@ -54,7 +54,7 @@ typedef enum {
 
 typedef enum {
     GHST_DL_OPENTX_SYNC         = 0x20,
-    GHST_DL_LINK_STAT           = 0x21, 
+    GHST_DL_LINK_STAT           = 0x21,
     GHST_DL_VTX_STAT            = 0x22,
     GHST_DL_PACK_STAT           = 0x23,     // Battery (Pack) Status
 } ghstDl_e;
@@ -64,9 +64,9 @@ typedef enum {
 
 #define GHST_FRAME_SIZE             14      // including addr, type, len, crc, and payload
 
-#define GHST_PAYLOAD_SIZE_MAX           14      
+#define GHST_PAYLOAD_SIZE_MAX           14
 
-#define GHST_FRAME_SIZE_MAX             24      
+#define GHST_FRAME_SIZE_MAX             24
 
 typedef struct ghstFrameDef_s {
     uint8_t addr;
@@ -88,7 +88,7 @@ typedef struct ghstPayloadPulses_s {
     unsigned int ch3: 12;
     unsigned int ch4: 12;
 
-    unsigned int cha: 8;              
+    unsigned int cha: 8;
     unsigned int chb: 8;
     unsigned int chc: 8;
     unsigned int chd: 8;

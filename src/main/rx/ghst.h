@@ -22,7 +22,7 @@
 
 #include "rx/ghst_protocol.h"
 
-#define GHST_MAX_NUM_CHANNELS           16  
+#define GHST_MAX_NUM_CHANNELS           16
 
 void ghstRxWriteTelemetryData(const void *data, int len);
 void ghstRxSendTelemetryData(void);

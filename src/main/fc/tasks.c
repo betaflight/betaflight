@@ -322,7 +322,7 @@ void tasksInit(void)
         } else if (rxRuntimeState.serialrxProvider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
-        } 
+        }
     }
 #endif
 

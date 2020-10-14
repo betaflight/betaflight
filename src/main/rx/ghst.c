@@ -56,8 +56,8 @@
 
 // define the time window after the end of the last received packet where telemetry packets may be sent
 // NOTE: This allows the Rx to double-up on Rx packets to transmit data other than servo data, but
-// only if sent < 1ms after the servo data packet. 
-#define GHST_RX_TO_TELEMETRY_MIN_US     1000	        
+// only if sent < 1ms after the servo data packet.
+#define GHST_RX_TO_TELEMETRY_MIN_US     1000
 #define GHST_RX_TO_TELEMETRY_MAX_US     2000
 
 #define GHST_PAYLOAD_OFFSET offsetof(ghstFrameDef_t, type)
@@ -82,20 +82,20 @@ static timeUs_t lastRcFrameTimeUs = 0;
 /* GHST Protocol
  * Ghost uses 420k baud single-wire, half duplex connection, connected to a FC UART 'Tx' pin
  * Each control packet is interleaved with one or more corresponding downlink packets
- * 
+ *
  * Uplink packet format (Control packets)
  * <Addr><Len><Type><Payload><CRC>
  *
  * Addr:        u8      Destination address
  * Len          u8      Length includes the packet ID, but not the CRC
  * CRC          u8
- * 
+ *
  * Ghost packets are designed to be as short as possible, for minimum latency.
- * 
- * Note that the GHST protocol does not handle, itself, failsafe conditions. Packets are passed from 
+ *
+ * Note that the GHST protocol does not handle, itself, failsafe conditions. Packets are passed from
  * the Ghost receiver to Betaflight as and when they arrive. Betaflight itself is responsible for
- * determining when a failsafe is necessary based on dropped packets. 
- * 
+ * determining when a failsafe is necessary based on dropped packets.
+ *
   */
 
 #define GHST_FRAME_LENGTH_ADDRESS       1
@@ -162,7 +162,7 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
             ghstFrameAvailable = true;
 
             // remember what time the incoming (Rx) packet ended, so that we can ensure a quite bus before sending telemetry
-            ghstRxFrameEndAtUs = microsISR();               
+            ghstRxFrameEndAtUs = microsISR();
         }
     }
 }
@@ -179,7 +179,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
             ghstValidatedFrameAvailable = true;
             return RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;            // request callback through ghstProcessFrame to do the decoding  work
         }
-        
+
         return RX_FRAME_DROPPED;                            // frame was invalid
     }
 
@@ -194,7 +194,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 {
     // Assume that the only way we get here is if ghstFrameStatus returned RX_FRAME_PROCESSING_REQUIRED, which indicates that the CRC
-    // is correct, and the message was actually for us. 
+    // is correct, and the message was actually for us.
 
     UNUSED(rxRuntimeState);
 
@@ -225,7 +225,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                     case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
                     case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
                     case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
-                } 
+                }
 
                 ghstChannelData[startIdx++] = rcChannels->cha << 3;
                 ghstChannelData[startIdx++] = rcChannels->chb << 3;
@@ -245,15 +245,15 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 
 STATIC_UNIT_TESTED uint16_t ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
-    UNUSED(rxRuntimeState); 
+    UNUSED(rxRuntimeState);
 
-    // derived from original SBus scaling, with slight correction for offset (now symmetrical 
+    // derived from original SBus scaling, with slight correction for offset (now symmetrical
     // around OpenTx 0 value)
-    // scaling is: 
+    // scaling is:
     //      OpenTx   RC     PWM
     // min  -1024    172    988us
     // ctr  0        992    1500us
-    // max  1024     1811   2012us   
+    // max  1024     1811   2012us
     //
 
     return (5 * (ghstChannelData[chan]+1) / 8) + 880;
@@ -279,7 +279,7 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->channelCount = GHST_MAX_NUM_CHANNELS;
-    rxRuntimeState->rxRefreshRate = GHST_TIME_BETWEEN_FRAMES_US;  
+    rxRuntimeState->rxRefreshRate = GHST_TIME_BETWEEN_FRAMES_US;
 
     rxRuntimeState->rcReadRawFn = ghstReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ghstFrameStatus;
