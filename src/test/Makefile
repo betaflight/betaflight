@@ -51,13 +51,11 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
-# This test is disabled due to build errors.
-# Its source code is archived in unit/baro_bmp085_unittest.cc.txt
-#
-#baro_bmp085_unittest_SRC := \
-#		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
-#		$(USER_DIR)/drivers/io.c
+baro_bmp085_unittest_SRC := \
+		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
+baro_bmp085_unittest_DEFINES := \
+                USE_BARO_BMP085=
 
 baro_bmp280_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp280.c
