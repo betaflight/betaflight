@@ -38,6 +38,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/nvic.h"
 #include "drivers/sdio.h"
 
 typedef struct SD_Handle_s
@@ -49,7 +50,6 @@ typedef struct SD_Handle_s
 } SD_Handle_t;
 
 SD_HandleTypeDef hsd1;
-
 
 SD_CardInfo_t                      SD_CardInfo;
 SD_CardType_t                      SD_CardType;
@@ -192,7 +192,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
         IOConfigGPIOAF(d3, IOCFG_SDMMC, sdioPin[SDIO_PIN_D3].af);
     }
 
-    HAL_NVIC_SetPriority(sdioHardware->irqn, 0, 0);
+    HAL_NVIC_SetPriority(sdioHardware->irqn, NVIC_PRIORITY_BASE(NVIC_PRIO_SDIO_DMA), NVIC_PRIORITY_SUB(NVIC_PRIO_SDIO_DMA));
     HAL_NVIC_EnableIRQ(sdioHardware->irqn);
 }
 
@@ -537,12 +537,12 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
         return SD_ERROR; // unsupported.
     }
 
-    /*
-     the SCB_CleanDCache_by_Addr() requires a 32-Byte aligned address
-     adjust the address and the D-Cache size to clean accordingly.
-     */
-    uint32_t alignedAddr = (uint32_t)buffer &  ~0x1F;
-    SCB_CleanDCache_by_Addr((uint32_t*)alignedAddr, NumberOfBlocks * BlockSize + ((uint32_t)buffer - alignedAddr));
+    if ((uint32_t)buffer & 0x1f) {
+        return SD_ADDR_MISALIGNED;
+    }
+
+    // Ensure the data is flushed to main memory
+    SCB_CleanDCache_by_Addr(buffer, NumberOfBlocks * BlockSize);
 
     HAL_StatusTypeDef status;
     if ((status = HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)buffer, WriteAddress, NumberOfBlocks)) != HAL_OK) {
@@ -568,12 +568,15 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
         return SD_ERROR; // unsupported.
     }
 
+    if ((uint32_t)buffer & 0x1f) {
+        return SD_ADDR_MISALIGNED;
+    }
+
     SD_Handle.RXCplt = 1;
 
     sdReadParameters.buffer = buffer;
     sdReadParameters.BlockSize = BlockSize;
     sdReadParameters.NumberOfBlocks = NumberOfBlocks;
-
 
     HAL_StatusTypeDef status;
     if ((status = HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)buffer, ReadAddress, NumberOfBlocks)) != HAL_OK) {

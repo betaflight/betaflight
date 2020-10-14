@@ -111,7 +111,7 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >RAM
+  } >D2_RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);

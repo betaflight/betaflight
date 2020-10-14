@@ -25,6 +25,8 @@
 
 #define USE_TARGET_CONFIG
 
+#define USE_SPRACING_PERSISTENT_RTC_WORKAROUND
+
 #define LED0_PIN                PE3
 
 #define USE_BEEPER

@@ -29,10 +29,19 @@ typedef enum {
     PERSISTENT_OBJECT_MAGIC = 0,
     PERSISTENT_OBJECT_HSE_VALUE,
     PERSISTENT_OBJECT_OVERCLOCK_LEVEL,
+#ifdef USE_SPRACING_PERSISTENT_RTC_WORKAROUND
+    // SPRACING H7 firmware always leaves this value reset so only use this location to invoke DFU
+    PERSISTENT_OBJECT_RESET_REASON_FWONLY,
+#else
     PERSISTENT_OBJECT_RESET_REASON,
+#endif
     PERSISTENT_OBJECT_RTC_HIGH,           // high 32 bits of rtcTime_t
     PERSISTENT_OBJECT_RTC_LOW,            // low 32 bits of rtcTime_t
     PERSISTENT_OBJECT_COUNT,
+#ifdef USE_SPRACING_PERSISTENT_RTC_WORKAROUND
+    // On SPRACING H7 firmware use this alternate location for all reset reasons interpreted by this firmware
+    PERSISTENT_OBJECT_RESET_REASON,
+#endif
 } persistentObjectId_e;
 
 // Values for PERSISTENT_OBJECT_RESET_REASON

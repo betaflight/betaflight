@@ -102,7 +102,7 @@ void systemReset(void)
 
 void forcedSystemResetWithoutDisablingCaches(void)
 {
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FORCED);
+    // Don't overwrite the PERSISTENT_OBJECT_RESET_REASON; just make another attempt
 
     __disable_irq();
     NVIC_SystemReset();

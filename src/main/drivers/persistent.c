@@ -47,6 +47,17 @@ void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
     RTC_HandleTypeDef rtcHandle = { .Instance = RTC };
 
     HAL_RTCEx_BKUPWrite(&rtcHandle, id, value);
+
+#ifdef USE_SPRACING_PERSISTENT_RTC_WORKAROUND
+    // Also write the persistent location used by the bootloader to support DFU etc.
+    if (id == PERSISTENT_OBJECT_RESET_REASON) {
+        // SPRACING firmware sometimes enters DFU mode when MSC mode is requested
+        if (value == RESET_MSC_REQUEST) {
+            value = RESET_NONE;
+        }
+        HAL_RTCEx_BKUPWrite(&rtcHandle, PERSISTENT_OBJECT_RESET_REASON_FWONLY, value);
+    }
+#endif
 }
 
 void persistentObjectRTCEnable(void)
