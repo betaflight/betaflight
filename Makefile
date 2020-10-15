@@ -148,9 +148,15 @@ ifeq ($(DEBUG),INFO)
 DEBUG_FLAGS            = -ggdb3
 endif
 OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math
+ifeq ($(OPTIMISE_DEFAULT),)
 OPTIMISE_DEFAULT      := -O2
+endif
+ifeq ($(OPTIMISE_SPEED),)
 OPTIMISE_SPEED        := -Ofast
+endif
+ifeq ($(OPTIMISE_SIZE),)
 OPTIMISE_SIZE         := -Os
+endif
 
 LTO_FLAGS             := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
