@@ -18,9 +18,14 @@
 
 extern "C" {
 
-    void bmp085_calculate(int32_t *pressure, int32_t *temperature);
-    extern uint32_t bmp085_up;
-    extern uint16_t bmp085_ut;
+#include "platform.h"
+#include "target.h"
+#include "drivers/barometer/barometer.h"
+#include "drivers/bus.h"
+
+void bmp085Calculate(int32_t *pressure, int32_t *temperature);
+extern uint32_t bmp085_up;
+extern uint16_t bmp085_ut;
 
 typedef struct {
     int16_t ac1;
@@ -45,7 +50,7 @@ typedef struct {
     int16_t oversampling_setting;
 } bmp085_t;
 
-    bmp085_t bmp085;
+bmp085_t bmp085;
 
 }
 
@@ -77,7 +82,7 @@ TEST(baroBmp085Test, TestBmp085CalculateOss0)
     bmp085.oversampling_setting = 0;
 
     // when
-    bmp085_calculate(&pressure, &temperature);
+    bmp085Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(69964, pressure); // Datasheet says 69965
@@ -108,7 +113,7 @@ TEST(baroBmp085Test, TestBmp085CalculateOss3)
     bmp085.oversampling_setting = 3;
 
     // when
-    bmp085_calculate(&pressure, &temperature);
+    bmp085Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(99998, pressure);
@@ -139,7 +144,7 @@ TEST(baroBmp085Test, TestBmp085CalculateOss3Cold)
     bmp085.oversampling_setting = 3;
 
     // when
-    bmp085_calculate(&pressure, &temperature);
+    bmp085Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(92251, pressure);
@@ -170,7 +175,7 @@ TEST(baroBmp085Test, TestBmp085CalculateOss3Hot)
     bmp085.oversampling_setting = 3;
 
     // when
-    bmp085_calculate(&pressure, &temperature);
+    bmp085Calculate(&pressure, &temperature);
 
     // then
     EXPECT_EQ(108922, pressure);
@@ -188,5 +193,13 @@ extern "C" {
     void delayMicroseconds(uint32_t) {}
     bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
     bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
-
+    void IOConfigGPIO() {}
+    void IOHi() {}
+    void IOLo() {}
+    void IOInit() {}
+    void IOGetByTag() {}
+    bool busBusy(const busDevice_t*, bool*) {return false;}
+    void busDeviceRegister(const busDevice_t*) {}
+    bool busReadRegisterBufferStart(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
+    bool busWriteRegisterStart(const busDevice_t*, uint8_t, uint8_t) {return true;}
 }
