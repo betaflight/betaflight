@@ -581,7 +581,6 @@ void init(void)
 #endif
 
     mixerInit(mixerConfig()->mixerMode);
-    mixerConfigureOutput();
 
     uint16_t idlePulse = motorConfig()->mincommand;
     if (featureIsEnabled(FEATURE_3D)) {
@@ -745,7 +744,6 @@ void init(void)
 
 #ifdef USE_SERVOS
     servosInit();
-    servoConfigureOutput();
     if (isMixerUsingServos()) {
         //pwm_params.useChannelForwarding = featureIsEnabled(FEATURE_CHANNEL_FORWARDING);
         servoDevInit(&servoConfig()->dev);
