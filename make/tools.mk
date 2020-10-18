@@ -196,38 +196,6 @@ stm32flash_clean:
 	@echo " CLEAN        $(STM32FLASH_DIR)"
 	$(V1) [ ! -d "$(STM32FLASH_DIR)" ] || $(RM) -r "$(STM32FLASH_DIR)"
 
-DFUUTIL_DIR := $(TOOLS_DIR)/dfu-util
-
-.PHONY: dfuutil_install
-dfuutil_install: DFUUTIL_URL  := http://dfu-util.sourceforge.net/releases/dfu-util-0.8.tar.gz
-dfuutil_install: DFUUTIL_FILE := $(notdir $(DFUUTIL_URL))
-dfuutil_install: | $(DL_DIR) $(TOOLS_DIR)
-dfuutil_install: dfuutil_clean
-        # download the source
-	@echo " DOWNLOAD     $(DFUUTIL_URL)"
-	$(V1) curl -L -k -o "$(DL_DIR)/$(DFUUTIL_FILE)" "$(DFUUTIL_URL)"
-
-        # extract the source
-	@echo " EXTRACT      $(DFUUTIL_FILE)"
-	$(V1) [ ! -d "$(DL_DIR)/dfuutil-build" ] || $(RM) -r "$(DL_DIR)/dfuutil-build"
-	$(V1) mkdir -p "$(DL_DIR)/dfuutil-build"
-	$(V1) tar -C $(DL_DIR)/dfuutil-build -xf "$(DL_DIR)/$(DFUUTIL_FILE)"
-
-        # build
-	@echo " BUILD        $(DFUUTIL_DIR)"
-	$(V1) mkdir -p "$(DFUUTIL_DIR)"
-	$(V1) ( \
-	  cd $(DL_DIR)/dfuutil-build/dfu-util-0.8 ; \
-	  ./configure --prefix="$(DFUUTIL_DIR)" ; \
-	  $(MAKE) ; \
-	  $(MAKE) install ; \
-	)
-
-.PHONY: dfuutil_clean
-dfuutil_clean:
-	@echo " CLEAN        $(DFUUTIL_DIR)"
-	$(V1) [ ! -d "$(DFUUTIL_DIR)" ] || $(RM) -r "$(DFUUTIL_DIR)"
-
 # Set up uncrustify tools
 UNCRUSTIFY_DIR := $(TOOLS_DIR)/uncrustify-0.61
 UNCRUSTIFY_BUILD_DIR := $(DL_DIR)/uncrustify
