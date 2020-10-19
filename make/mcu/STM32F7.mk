@@ -150,6 +150,9 @@ LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f722.ld
 endif
 STARTUP_SRC     = startup_stm32f722xx.s
 MCU_FLASH_SIZE  := 512
+# Override the OPTIMISE_SPEED compiler setting to save flash space on these 512KB targets.
+# Performance is only slightly affected but around 50 kB of flash are saved.
+OPTIMISE_SPEED = -O2
 else
 $(error Unknown MCU for F7 target)
 endif
