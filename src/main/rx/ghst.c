@@ -166,6 +166,14 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
         }
     }
 }
+
+static bool shouldSendTelemetryFrame(void)
+{
+    const timeUs_t now = micros();
+    const timeUs_t timeSinceRxFrameEndUs = cmpTimeUs(now, ghstRxFrameEndAtUs);
+    return telemetryBufLen > 0 && timeSinceRxFrameEndUs > GHST_RX_TO_TELEMETRY_MIN_US && timeSinceRxFrameEndUs < GHST_RX_TO_TELEMETRY_MAX_US;
+}
+
 STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
@@ -183,8 +191,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
         return RX_FRAME_DROPPED;                            // frame was invalid
     }
 
-    // do we have a telemetry buffer to send?
-    if (telemetryBufLen > 0) {
+    if (shouldSendTelemetryFrame()) {
         return RX_FRAME_PROCESSING_REQUIRED;
     }
 
@@ -198,15 +205,13 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 
     UNUSED(rxRuntimeState);
 
-    // if we are in the time window after receiving a packet, where we can send telemetry, send it now
-    const uint32_t now = micros();
-    const uint32_t timeSinceRxFrameEnd = cmpTimeUs(now, ghstRxFrameEndAtUs);
-    if (timeSinceRxFrameEnd > GHST_RX_TO_TELEMETRY_MIN_US && timeSinceRxFrameEnd < GHST_RX_TO_TELEMETRY_MAX_US) {
+    // do we have a telemetry buffer to send?
+    if (shouldSendTelemetryFrame()) {
         ghstTransmittingTelemetry = true;
         ghstRxSendTelemetryData();
     }
 
-    if(ghstValidatedFrameAvailable) {
+    if (ghstValidatedFrameAvailable) {
         int startIdx = 4;
         switch (ghstValidatedFrame.frame.type) {
             case GHST_UL_RC_CHANS_HS4_5TO8:
