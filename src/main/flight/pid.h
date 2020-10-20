@@ -52,7 +52,7 @@
 // Anti gravity I constant
 #define AG_KI 21.586988f;
 
-#define ITERM_ACCELERATOR_GAIN_OFF 1000
+#define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 30000
 typedef enum {
     PID_ROLL,
