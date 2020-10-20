@@ -428,6 +428,9 @@ CXX := clang++
 #CC  := gcc
 #CXX := g++
 
+# These flags are needed for clang 10 (maybe even clang 9) to make test work
+#	-Wno-c99-extensions \
+#	-Wno-reorder
 COMMON_FLAGS = \
 	-g \
 	-Wall \
@@ -438,10 +441,24 @@ COMMON_FLAGS = \
 	-O0 \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
-	-MMD -MP
+	-MMD -MP \
+	-Wno-c99-extensions \
+	-Wno-reorder
 
 CC_VERSION = $(shell $(CC) -dumpversion)
 CXX_VERSION = $(shell $(CXX) -dumpversion)
+
+# Please revisit versions when new clang version arrive. Supported versions: { Linux: 7 - 10; OSX: 7- 12 }
+# Travis reports CC_VERSION of 4.2.1
+CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
+CC_VERSION_CHECK_MIN := 4
+CC_VERSION_CHECK_MAX := 10
+ifdef MACOSX
+CC_VERSION_CHECK_MAX := 12
+endif
+ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
+    $(error $(CC) $(CC_VERSION) is not supported. On most systems the correct compiler will be available as 'clang-10' and 'clang++-10, but Betaflight invokes 'clang' and 'clang++' to accommodate some operating systems that do not have proper clang compilers available. Please modify your system so that an appropriate version of clang is invoked as 'clang' and 'clang++'.)
+endif
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 COMMON_FLAGS += -fblocks
