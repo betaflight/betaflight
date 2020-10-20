@@ -87,7 +87,6 @@
 #define UART8_TX_PIN            PE1
 
 #define USE_VCP
-#define USE_USB_ID
 
 #define SERIAL_PORT_COUNT       9
 
