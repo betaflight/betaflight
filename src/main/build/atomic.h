@@ -158,7 +158,7 @@ static inline void __do_cleanup(__cleanup_block * b) { (*b)(); }
 #define ATOMIC_BARRIER(data)                                            \
     typeof(data) *__UNIQL(__barrier) = &data;                           \
     ATOMIC_BARRIER_ENTER(__UNIQL(__barrier), #data);                    \
-    __cleanup_block __attribute__((cleanup(__do_cleanup) __unused__)) __UNIQL(__cleanup) = \
+    __cleanup_block __attribute__((cleanup(__do_cleanup), __unused__)) __UNIQL(__cleanup) = \
         ^{  ATOMIC_BARRIER_LEAVE(__UNIQL(__barrier), #data); };         \
     do {} while(0)                                                      \
 /**/
