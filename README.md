@@ -54,6 +54,10 @@ There's a dedicated Slack chat channel here:
 
 https://slack.betaflight.com/
 
+We also have a Facebook Group. Join us to get a place to talk about Betaflight, ask configuration questions, or just hang out with fellow pilots.
+
+https://www.facebook.com/groups/betaflightgroup/
+
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
 ## Configuration Tool
