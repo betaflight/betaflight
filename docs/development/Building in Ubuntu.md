@@ -43,12 +43,5 @@ In most Linux distributions the user won't have access to serial interfaces by d
 
 Please log out and log in to active the settings. You should now be able to flash your target using Betaflight Configurator.
 
-### Unit tests
-
-To be able to run unit tests clang version 8 is required.
-
-    $ sudo apt get install clang-8 libblocksruntime-dev
-    $ make junittest
-
 
 Credit goes to K.C. Budd, AKfreak for testing, and pulsar for doing the long legwork that yielded the original content of this document.
