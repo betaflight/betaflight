@@ -76,16 +76,21 @@ sudo dpkg -i gcc-arm-none-eabi_4-8-2014q2-0saucy9_amd64.deb
 
 Make sure to remove `obj/` and `make clean`, before building again.
 
-## Updating and rebuilding
+### Building Betaflight Configurator
 
-Navigate to the local betaflight repository and use the following steps to pull the latest changes and rebuild your version of betaflight:
+See [Betaflight Configurator Development](https://github.com/betaflight/betaflight-configurator#development) for how to build the Betaflight Configurator.
 
-```bash
-cd src/betaflight
-git reset --hard
-git pull
-make clean TARGET=NAZE
-make
-```
+### Flashing a target with Betaflight Configurator on Ubuntu 20.04
+
+In most Linux distributions the user won't have access to serial interfaces by default. Flashing a target requires configuration of usb for dfu mode. To add this access right type the following command in a terminal:
+
+    $ sudo usermod -a -G dialout $USER
+    $ sudo usermod -a -G plugdev $USER
+    $ sudo apt-get remove modemmanager
+    $ (echo '# DFU (Internal bootloader for STM32 MCUs)'
+     echo 'ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0664", GROUP="plugdev"') | sudo tee /etc/udev/rules.d/45-stdfu-permissions.rules > /dev/null
+
+Please log out and log in to active the settings. You should now be able to flash your target using Betaflight Configurator.
+
 
 Credit goes to K.C. Budd, AKfreak for testing, and pulsar for doing the long legwork that yielded this very short document.
