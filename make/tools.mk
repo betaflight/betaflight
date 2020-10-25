@@ -29,15 +29,15 @@ arm_sdk_version:
 ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4/RC2.1/gcc-arm-none-eabi-9-2019-q4-major
 
 # source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
-ifdef LINUX
+ifeq ($(OSFAMILY), linux)
   ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-x86_64-linux.tar.bz2
 endif
 
-ifdef MACOSX
+ifeq ($(OSFAMILY), macosx)
   ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
 endif
 
-ifdef WINDOWS
+ifeq ($(OSFAMILY), windows)
   ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip.bz2
 endif
 
