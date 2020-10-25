@@ -115,6 +115,7 @@
 #include "osd/osd_elements.h"
 
 #include "pg/motor.h"
+#include "pg/stats.h"
 
 #include "rx/rx.h"
 
@@ -749,6 +750,14 @@ static void osdBackgroundDisplayName(osdElementParms_t *element)
         element->buff[i] = '\0';
     }
 }
+
+#ifdef USE_PERSISTENT_STATS
+static void osdElementTotalFlights(osdElementParms_t *element)
+{
+    const int32_t total_flights = statsConfig()->stats_total_flights;
+    tfp_sprintf(element->buff, "#%d", total_flights);
+}
+#endif
 
 #ifdef USE_PROFILE_NAMES
 static void osdElementRateProfileName(osdElementParms_t *element)
@@ -1622,6 +1631,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #endif
     OSD_RC_CHANNELS,
     OSD_CAMERA_FRAME,
+#ifdef USE_PERSISTENT_STATS
+    OSD_TOTAL_FLIGHTS,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1732,6 +1744,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_GPS
     [OSD_EFFICIENCY]              = osdElementEfficiency,
 #endif
+#ifdef USE_PERSISTENT_STATS
+    [OSD_TOTAL_FLIGHTS]   = osdElementTotalFlights,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -1796,6 +1811,10 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);
     }
+#endif
+
+#ifdef USE_PERSISTENT_STATS
+    osdAddActiveElement(OSD_TOTAL_FLIGHTS);
 #endif
 }
 

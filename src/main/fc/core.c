@@ -462,11 +462,13 @@ void disarm(flightLogDisarmReason_e reason)
             dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
         }
 #endif
-        flipOverAfterCrashActive = false;
-
 #ifdef USE_PERSISTENT_STATS
-        statsOnDisarm();
+        if (!flipOverAfterCrashActive) {
+            statsOnDisarm();
+        }
 #endif
+
+        flipOverAfterCrashActive = false;
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead
         if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
