@@ -29,9 +29,16 @@ env:
 #  - TARGET=AIORACERF3
 #  - TARGET=...
 
+addons:
+  apt:
+    update: true
+    packages:
+    - clang-10
+    - lcov
+    - libc6-i386
+    - libblocksruntime-dev
+
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y lcov libc6-i386 libblocksruntime-dev
   - |
     echo "Target branch: $TRAVIS_BRANCH"
     echo "Commit range: $TRAVIS_COMMIT_RANGE"
@@ -53,9 +60,6 @@ install:
 
 before_script:
   - make arm_sdk_version
-  - clang --version
-  - clang++ --version
-  - gcc --version
 
 script: ./.travis.sh
 
