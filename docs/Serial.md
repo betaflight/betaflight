@@ -200,11 +200,19 @@ Betaflight can enter a special passthrough mode whereby it passes serial data th
 
 To initiate passthrough mode, use the CLI command `serialpassthrough` This command takes four arguments.
 
-    serialpassthrough <port1 id> [port1 baud] [port1 mode] [port1 DTR PINIO] [port2 id] [port2 baud] [port2 mode]
+    serialpassthrough <port1 id> [port1 baud] [port1 mode] [port1 options] [port1 DTR PINIO] [port2 id] [port2 baud] [port2 mode] [port2 options]
 
-`PortX ID` is the internal identifier of the serial port from Betaflight source code (see serialPortIdentifier_e in the source). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively. PortX Baud is the desired baud rate, and portX mode is a combination of the keywords rx and tx (rxtx is full duplex). The baud and mode parameters can be used to override the configured values for the specified port. `port1 DTR PINIO` identifies the PINIO resource which is optionally connected to a DTR line of the attached device.
+`portX id` is the internal identifier of the serial port from Betaflight source code (see serialPortIdentifier_e in the source). For instance UART1-UART4 are 0-3 and SoftSerial1/SoftSerial2 are 30/31 respectively.
+`portX baud` is the desired baud rate
+`portX mode` is a combination of the keywords `rx` and `tx` (`rxtx` is full duplex). The baud and mode parameters can be used to override the configured values for the specified port.
+`portX DTR PINIO` identifies the PINIO resource which is optionally connected to a DTR line of the attached device.
+`portX options` allows for setting a limited combination of stop bits, and parity, where the allowed values are:
+| 8N1 | No parity, one stop bit    |
+| 8N2 | No parity, two stop bits   |
+| 8E1 | Even parity, one stop bit  |
+| 8N2 | Even parity, two stop bits |
 
-If port2 config(the last three arguments) is not specified, the passthrough will run between port1 and VCP. The last three arguments are used for `Passthrough between UARTs`, see that section to get detail.
+If port2 config(the last four arguments) is not specified, the passthrough will run between port1 and VCP. The last four arguments are used for `Passthrough between UARTs`, see that section to get detail.
 
 For example. If you have your MWOSD connected to UART 2, you could enable communicaton to this device using the following command. This command does not specify the baud rate or mode, using the one configured for the port (see above).
 
@@ -261,11 +269,11 @@ Note that if DTR is left configured on a port being used with a standard build o
 
 in BetaFlight 4.1 or later, you can make a serial passthrough between UARTs.
 
-the last three arguments of `serialpassthrough` are used to the passthrough between UARTs: `[port2 id]` `[port2 baud]` `[port2 mode]`, if you don't need passthrough between UARTs, just ignore them, and use `serialpassthrough` according to above description.
+the last four arguments of `serialpassthrough` are used to the passthrough between UARTs: `[port2 id]` `[port2 baud]` `[port2 mode]` `[port2 options]`, if you don't need passthrough between UARTs, just ignore them, and use `serialpassthrough` according to above description.
 if you want passthrough between UARTs, `[port2 id]` is a required argument, the value range is same with `port1 ID` argument, it is the internal identifier of the serial port. `[port2 baud]`and`[port2 mode]` is optional argument, the default of them are `57600` and `MODE_RXTX`.
 
-For example. If you using a filght controller built-in BLE chip, and the BLE chip was inner connected to a UART, you can use the following command to let the UART to talk with other UART:
+For example. If you using a flight controller built-in BLE chip, and the BLE chip was inner connected to a UART, you can use the following command to let the UART to talk with other UART:
 ```
-serialpassthrough 0 115200 rxtx none 4 19200
+serialpassthrough 0 115200 rxtx 8N1 none 4 19200
 ```
-the command will run a serial passthrough between UART1 and UART5, UART1 baud is 115200, mode is MODE_RXTX, DTR is none, UART5 baud is 19200, mode is not specific, it will take default value MODE_RXTX.
+the command will run a serial passthrough between UART1 and UART5, UART1 baud is 115200, mode is MODE_RXTX, parity is none, stop bits is one, DTR is none, UART5 baud is 19200, mode is not specific, it will take default value MODE_RXTX.
