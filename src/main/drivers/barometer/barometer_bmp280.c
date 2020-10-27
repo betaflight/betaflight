@@ -37,6 +37,9 @@
 
 #include "barometer_bmp280.h"
 
+// 10 MHz max SPI frequency
+#define BMP280_MAX_SPI_CLK_HZ 10000000
+
 #if defined(USE_BARO) && (defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280))
 
 
@@ -123,9 +126,9 @@ void bmp280BusInit(busDevice_t *busdev)
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
 #ifdef USE_SPI_TRANSACTION
-        spiBusTransactionInit(busdev, SPI_MODE0_POL_LOW_EDGE_1ST, SPI_CLOCK_STANDARD); // BMP280 supports Mode 0 or 3
+        spiBusTransactionInit(busdev, SPI_MODE0_POL_LOW_EDGE_1ST, spiCalculateDivider(BMP280_MAX_SPI_CLK_HZ)); // BMP280 supports Mode 0 or 3
 #else
-        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+        spiBusSetDivisor(busdev, spiCalculateDivider(BMP280_MAX_SPI_CLK_HZ));
 #endif
     }
 #else

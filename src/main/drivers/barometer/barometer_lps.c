@@ -34,6 +34,8 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
+// 10 MHz max SPI frequency
+#define LPS_MAX_SPI_CLK_HZ 10000000
 //====================================Registers Addresses=========================================//
 #define LPS_REF_P_XL    0x08
 #define LPS_REF_P_L     0x09
@@ -269,9 +271,9 @@ bool lpsDetect(baroDev_t *baro)
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
     IOHi(busdev->busdev_u.spi.csnPin); // Disable
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD); // Baro can work only on up to 10Mhz SPI bus
+    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, spiCalculateDivider(LPS_MAX_SPI_CLK_HZ)); // Baro can work only on up to 10Mhz SPI bus
 #else
-    spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD); // Baro can work only on up to 10Mhz SPI bus
+    spiBusSetDivisor(busdev, spiCalculateDivider(LPS_MAX_SPI_CLK_HZ)); // Baro can work only on up to 10Mhz SPI bus
 #endif
 
     uint8_t temp = 0x00;

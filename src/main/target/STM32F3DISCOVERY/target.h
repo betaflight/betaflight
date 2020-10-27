@@ -104,9 +104,6 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU9250
 #define USE_ACCGYRO_BMI160
-#ifdef USE_ACCGYRO_BMI160
-#define BMI160_SPI_DIVISOR      16
-#endif
 
 #define USE_ACC
 

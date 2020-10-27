@@ -54,6 +54,9 @@
 
 // This sensor is also available also part of the MPU-9250 connected to the secondary I2C bus.
 
+// 10 MHz max SPI frequency
+#define AK8963_MAX_SPI_CLK_HZ 10000000
+
 // AK8963, mag sensor address
 #define AK8963_MAG_I2C_ADDRESS          0x0C
 #define AK8963_DEVICE_ID                0x48
@@ -383,9 +386,9 @@ void ak8963BusInit(busDevice_t *busdev)
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
 #ifdef USE_SPI_TRANSACTION
-        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_STANDARD);
+        spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, spiCalculateDivider(AK8963_MAX_SPI_CLK_HZ));
 #else
-        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+        spiBusSetDivisor(busdev, spiCalculateDivider(AK8963_MAX_SPI_CLK_HZ));
 #endif
         break;
 #endif

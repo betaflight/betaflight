@@ -45,6 +45,8 @@
 
 #include "barometer_bmp388.h"
 
+// 10 MHz max SPI frequency
+#define BMP388_MAX_SPI_CLK_HZ 10000000
 
 #define BMP388_I2C_ADDR                                 (0x76) // same as BMP280/BMP180
 #define BMP388_DEFAULT_CHIP_ID                          (0x50) // from https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3_defs.h#L130
@@ -201,7 +203,7 @@ void bmp388BusInit(busDevice_t *busdev)
         IOHi(busdev->busdev_u.spi.csnPin); // Disable
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        spiBusSetDivisor(busdev, SPI_CLOCK_STANDARD);
+        spiBusSetDivisor(busdev, spiCalculateDivider(BMP388_MAX_SPI_CLK_HZ));
     }
 #else
     UNUSED(busdev);

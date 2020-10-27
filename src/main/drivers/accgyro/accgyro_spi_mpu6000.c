@@ -47,7 +47,10 @@
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
-
+// 1 MHz max SPI frequency for initialisation
+#define MPU6000_MAX_SPI_INIT_CLK_HZ 1000000
+// 20 MHz max SPI frequency
+#define MPU6000_MAX_SPI_CLK_HZ 20000000
 
 // Bits
 #define BIT_SLEEP                   0x40
@@ -104,13 +107,13 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
 
     mpu6000AccAndGyroInit(gyro);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU6000_MAX_SPI_INIT_CLK_HZ));
 
     // Accel and Gyro DLPF Setting
     spiBusWriteRegister(&gyro->bus, MPU6000_CONFIG, mpuGyroDLPF(gyro));
     delayMicroseconds(1);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);  // 18 MHz SPI clock
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
 
     mpuGyroRead(gyro);
 
@@ -127,7 +130,7 @@ void mpu6000SpiAccInit(accDev_t *acc)
 uint8_t mpu6000SpiDetect(const busDevice_t *bus)
 {
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(MPU6000_MAX_SPI_INIT_CLK_HZ));
 
     // reset the device configuration
     spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
@@ -164,13 +167,13 @@ uint8_t mpu6000SpiDetect(const busDevice_t *bus)
         }
     }
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
     return detectedSensor;
 }
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 {
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU6000_MAX_SPI_INIT_CLK_HZ));
 
     // Device was already reset during detection so proceed with configuration
 
@@ -206,7 +209,7 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
     delayMicroseconds(15);
 #endif
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
     delayMicroseconds(1);
 }
 

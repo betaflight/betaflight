@@ -247,7 +247,7 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 }
 
 #ifdef USE_SPI_TRANSACTION
-void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divisor)
+void spiBusTransactionInit(busDevice_t *bus, SPIMode_e mode, uint16_t divisor)
 {
     switch (mode) {
     case SPI_MODE0_POL_LOW_EDGE_1ST:

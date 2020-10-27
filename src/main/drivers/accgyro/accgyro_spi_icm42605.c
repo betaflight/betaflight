@@ -43,6 +43,12 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
+// 24 MHz max SPI frequency
+#define ICM42605_MAX_SPI_CLK_HZ 24000000
+
+// 10 MHz max SPI frequency for intialisation
+#define ICM42605_MAX_SPI_INIT_CLK_HZ 1000000
+
 #define ICM42605_RA_PWR_MGMT0                       0x4E
 
 #define ICM42605_PWR_MGMT0_ACCEL_MODE_LN            (3 << 0)
@@ -98,7 +104,7 @@ static void icm42605SpiInit(const busDevice_t *bus)
     }
 
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(ICM42605_MAX_SPI_CLK_HZ));
 
     hardwareInitialised = true;
 }
@@ -107,7 +113,7 @@ uint8_t icm42605SpiDetect(const busDevice_t *bus)
 {
     icm42605SpiInit(bus);
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(ICM42605_MAX_SPI_INIT_CLK_HZ));
 
     spiBusWriteRegister(bus, ICM42605_RA_PWR_MGMT0, 0x00);
 
@@ -132,7 +138,7 @@ uint8_t icm42605SpiDetect(const busDevice_t *bus)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(ICM42605_MAX_SPI_CLK_HZ));
 
     return icmDetected;
 }
@@ -188,7 +194,7 @@ void icm42605GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATION);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(ICM42605_MAX_SPI_INIT_CLK_HZ));
 
     spiBusWriteRegister(&gyro->bus, ICM42605_RA_PWR_MGMT0, ICM42605_PWR_MGMT0_TEMP_DISABLE_OFF | ICM42605_PWR_MGMT0_ACCEL_MODE_LN | ICM42605_PWR_MGMT0_GYRO_MODE_LN);
     delay(15);
@@ -246,7 +252,7 @@ void icm42605GyroInit(gyroDev_t *gyro)
 #endif
     //
 
-    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, spiCalculateDivider(ICM42605_MAX_SPI_CLK_HZ));
 }
 
 bool icm42605GyroReadSPI(gyroDev_t *gyro)

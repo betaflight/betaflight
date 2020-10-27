@@ -38,6 +38,11 @@
 #include "drivers/io.h"
 #include "drivers/time.h"
 
+// 20 MHz max SPI frequency
+#define FLASH_MAX_SPI_CLK_HZ 20000000
+// 5 MHz max SPI init frequency
+#define FLASH_MAX_SPI_INIT_CLK 5000000
+
 static busDevice_t busInstance;
 static busDevice_t *busdev;
 
@@ -123,12 +128,10 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     IOHi(busdev->busdev_u.spi.csnPin);
 
 #ifdef USE_SPI_TRANSACTION
-    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, SPI_CLOCK_FAST);
+    spiBusTransactionInit(busdev, SPI_MODE3_POL_HIGH_EDGE_2ND, spiCalculateDivider(FLASH_MAX_SPI_INIT_CLK));
 #else
 #ifndef FLASH_SPI_SHARED
-    //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
-    //spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_FAST);
-    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD*2);
+    spiSetDivisor(busdev->busdev_u.spi.instance, spiCalculateDivider(FLASH_MAX_SPI_INIT_CLK));
 #endif
 #endif
 

@@ -35,7 +35,9 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-#define BMI270_SPI_DIVISOR 16
+// 10 MHz max SPI frequency
+#define BMI270_MAX_SPI_CLK_HZ 10000000
+
 #define BMI270_FIFO_FRAME_SIZE 6
 
 #define BMI270_CONFIG_SIZE 8192
@@ -154,7 +156,7 @@ static void bmi270EnableSPI(const busDevice_t *bus)
 
 uint8_t bmi270Detect(const busDevice_t *bus)
 {
-    spiSetDivisor(bus->busdev_u.spi.instance, BMI270_SPI_DIVISOR);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(BMI270_MAX_SPI_CLK_HZ));
     bmi270EnableSPI(bus);
 
     if (bmi270RegisterRead(bus, BMI270_REG_CHIP_ID) == BMI270_CHIP_ID) {

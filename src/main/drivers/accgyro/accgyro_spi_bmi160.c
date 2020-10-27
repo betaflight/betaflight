@@ -50,6 +50,9 @@
 #include "accgyro_spi_bmi160.h"
 
 
+// 10 MHz max SPI frequency
+#define BMI160_MAX_SPI_CLK_HZ 10000000
+
 /* BMI160 Registers */
 #define BMI160_REG_CHIPID 0x00
 #define BMI160_REG_PMU_STAT 0x03
@@ -95,8 +98,7 @@ uint8_t bmi160Detect(const busDevice_t *bus)
         return BMI_160_SPI;
     }
 
-
-    spiSetDivisor(bus->busdev_u.spi.instance, BMI160_SPI_DIVISOR);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(BMI160_MAX_SPI_CLK_HZ));
 
     /* Read this address to activate SPI (see p. 84) */
     spiBusReadRegister(bus, 0x7F);

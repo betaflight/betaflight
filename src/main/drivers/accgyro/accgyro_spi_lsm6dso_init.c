@@ -35,6 +35,9 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
+// 10 MHz max SPI frequency
+#define LSM6DSO_MAX_SPI_CLK_HZ 10000000
+
 #define LSM6DSO_CHIP_ID 0x6C
 
 // LSM6DSO register configuration values
@@ -78,7 +81,7 @@ typedef enum {
 uint8_t lsm6dsoDetect(const busDevice_t *bus)
 {
     uint8_t chipID = 0;
-    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, spiCalculateDivider(LSM6DSO_MAX_SPI_CLK_HZ));
 
     if (busReadRegisterBuffer(bus, LSM6DSO_REG_WHO_AM_I, &chipID, 1)) {
         if (chipID == LSM6DSO_CHIP_ID) {

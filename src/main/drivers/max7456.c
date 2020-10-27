@@ -42,6 +42,11 @@
 #include "drivers/time.h"
 
 
+// 20 MHz max SPI frequency
+#define MAX7456_MAX_SPI_CLK_HZ 10000000
+// 1 MHz restore SPI frequency for shared SPI bus
+#define MAX7456_MAX_SPI_SHARED_CLK 1000000
+
 // DEBUG_MAX7456_SIGNAL
 #define DEBUG_MAX7456_SIGNAL_MODEREG       0
 #define DEBUG_MAX7456_SIGNAL_SENSE         1
@@ -179,7 +184,7 @@
     #define __spiBusTransactionEnd(busdev)          spiBusTransactionEnd(busdev)
 #else
     #define __spiBusTransactionBegin(busdev)        {spiBusSetDivisor(busdev, max7456SpiClock);IOLo((busdev)->busdev_u.spi.csnPin);}
-    #define __spiBusTransactionEnd(busdev)       {IOHi((busdev)->busdev_u.spi.csnPin);spiSetDivisor((busdev)->busdev_u.spi.instance, MAX7456_RESTORE_CLK);}
+    #define __spiBusTransactionEnd(busdev)       {IOHi((busdev)->busdev_u.spi.csnPin);spiSetDivisor((busdev)->busdev_u.spi.instance, spiCalculateDivider(MAX7456_MAX_SPI_SHARED_CLK));}
 #endif
 
 #define MAX7456_SUPPORTED_LAYER_COUNT (DISPLAYPORT_LAYER_BACKGROUND + 1)
@@ -195,7 +200,7 @@ busDevice_t max7456BusDevice;
 busDevice_t *busdev = &max7456BusDevice;
 
 static bool max7456DeviceDetected = false;
-static uint16_t max7456SpiClock = MAX7456_SPI_CLK;
+static uint16_t max7456SpiClock;
 
 uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
 
@@ -452,6 +457,7 @@ void max7456PreInit(const max7456Config_t *max7456Config)
 
 max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdProfile, bool cpuOverclock)
 {
+    max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
     max7456DeviceDetected = false;
 
     // initialize all layers
@@ -482,7 +488,7 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
     // Detect MAX7456 and compatible device by reading OSDM (OSD Insertion MUX) register.
     // This register is not modified in this driver, therefore ensured to remain at its default value (0x1B).
 
-    spiSetDivisor(busdev->busdev_u.spi.instance, MAX7456_SPI_CLK * 2);
+    spiSetDivisor(busdev->busdev_u.spi.instance, spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ) * 2);
 
     __spiBusTransactionBegin(busdev);
 
@@ -519,15 +525,15 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
 
     switch (max7456Config->clockConfig) {
     case MAX7456_CLOCK_CONFIG_HALF:
-        max7456SpiClock = MAX7456_SPI_CLK * 2;
+        max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ) * 2;
         break;
 
     case MAX7456_CLOCK_CONFIG_OC:
-        max7456SpiClock = (cpuOverclock && (max7456DeviceType == MAX7456_DEVICE_TYPE_MAX)) ? MAX7456_SPI_CLK * 2 : MAX7456_SPI_CLK;
+        max7456SpiClock = (cpuOverclock && (max7456DeviceType == MAX7456_DEVICE_TYPE_MAX)) ? spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ) * 2 : spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
         break;
 
     case MAX7456_CLOCK_CONFIG_FULL:
-        max7456SpiClock = MAX7456_SPI_CLK;
+        max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
         break;
     }
 
