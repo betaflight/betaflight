@@ -65,8 +65,6 @@
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
-#define RC_COMMAND_THROTTLE_RANGE (PWM_RANGE_MAX - PWM_RANGE_MIN)
-
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
 float FAST_DATA_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
@@ -227,7 +225,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             const float pidSum = constrainf(mixerRuntime.idleP * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
             motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * pidGetDT(), 0.0f, maxIncrease);
             mixerRuntime.oldMinRps = minRps;
-            throttle += mixerRuntime.idleThrottleOffset * RC_COMMAND_THROTTLE_RANGE;
+            throttle += mixerRuntime.idleThrottleOffset;
 
             DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);
             DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);
@@ -254,7 +252,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
 
-        currentThrottleInputRange = RC_COMMAND_THROTTLE_RANGE;
+        currentThrottleInputRange = PWM_RANGE;
         motorRangeMin = mixerRuntime.motorOutputLow + motorRangeMinIncrease * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;

@@ -1474,6 +1474,10 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("vbat_sag_compensation", "%d",           currentPidProfile->vbat_sag_compensation);
 #endif
 
+#if defined(USE_DYN_IDLE)
+        BLACKBOX_PRINT_HEADER_LINE("dynamic_idle_offset", "%d",             currentPidProfile->idle_min_rpm ? lrintf(getDynamicIdleOffset()) : 0);
+#endif
+
         default:
             return true;
     }
