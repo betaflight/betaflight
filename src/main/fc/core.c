@@ -1019,14 +1019,14 @@ bool processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(MAG_MODE);
         }
 #endif
-        if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
+        if (IS_RC_MODE_ACTIVE(BOXHEADFREE) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
             }
         } else {
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
-        if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
+        if (IS_RC_MODE_ACTIVE(BOXHEADADJ) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
             if (imuQuaternionHeadfreeOffsetSet()) {
                beeper(BEEPER_RX_SET);
             }
