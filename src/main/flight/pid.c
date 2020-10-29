@@ -389,8 +389,22 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
 #endif
     angle = constrainf(angle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
-    const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+    float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
+    if (FLIGHT_MODE(HEADFREE_MODE)) {
+        if (axis == FD_ROLL) {
+            errorAngle = angle - ((lrintf(atan2_approx(getrMatValue(2, 1), getrMatValue(2, 2)) * (1800.0f / M_PIf)) - angleTrim->raw[axis]) / 10.0f);
+        }
+        if (axis == FD_PITCH) {
+            errorAngle = angle - ((lrintf(((0.5f * M_PIf) - acos_approx(-getrMatValue(2, 0))) * (1800.0f / M_PIf)) - angleTrim->raw[axis]) / 10.0f);
+        }
+        if (axis == FD_YAW) {
+            errorAngle = angle - ((lrintf((-atan2_approx(getrMatValue(1, 0), getrMatValue(0, 0)) * (1800.0f / M_PIf))) - angleTrim->raw[axis]) / 10.0f);
+        }
+        currentPidSetpoint = errorAngle * pidRuntime.levelGain;
+    } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        const float horizonLevelStrength = calcHorizonLevelStrength();
+        currentPidSetpoint = currentPidSetpoint + (pidRuntime.horizonGain * horizonLevelStrength);
+    } else if (FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based
         currentPidSetpoint = errorAngle * pidRuntime.levelGain;
     } else {

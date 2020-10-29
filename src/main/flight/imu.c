@@ -208,6 +208,10 @@ void imuResetAccelerationSum(void)
     accTimeSum = 0;
 }
 
+float getrMatValue(int x, int y) {
+    return rMat[x][y];
+}
+
 #if defined(USE_ACC)
 static float invSqrt(float x)
 {
