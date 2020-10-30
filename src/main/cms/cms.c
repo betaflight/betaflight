@@ -555,6 +555,24 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
         }
         break;
 
+    case OME_UINT32:
+        if (IS_PRINTVALUE(*flags) && p->data) {
+            OSD_UINT32_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
+            CLR_PRINTVALUE(*flags);
+        }
+        break;
+
+    case OME_INT32:
+        if (IS_PRINTVALUE(*flags) && p->data) {
+            OSD_INT32_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
+            CLR_PRINTVALUE(*flags);
+        }
+        break;
+
     case OME_FLOAT:
         if (IS_PRINTVALUE(*flags) && p->data) {
             OSD_FLOAT_t *ptr = p->data;
@@ -1017,6 +1035,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
                 if (retval == MENU_CHAIN_BACK) {
                     cmsMenuBack(pDisplay);
                 }
+                if ((p->flags & REBOOT_REQUIRED)) {
+                    setRebootRequired();
+                }
                 res = BUTTON_PAUSE;
             }
             break;
@@ -1183,6 +1204,52 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
             if (p->data) {
                 OSD_INT16_t *ptr = p->data;
                 const int16_t previousValue = *ptr->val;
+                if (key == CMS_KEY_RIGHT) {
+                    if (*ptr->val < ptr->max) {
+                        *ptr->val += ptr->step;
+                    }
+                } else {
+                    if (*ptr->val > ptr->min) {
+                        *ptr->val -= ptr->step;
+                    }
+                }
+                SET_PRINTVALUE(runtimeEntryFlags[currentCtx.cursorRow]);
+                if ((p->flags & REBOOT_REQUIRED) && (*ptr->val != previousValue)) {
+                    setRebootRequired();
+                }
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
+            }
+            break;
+
+        case OME_UINT32:
+            if (p->data) {
+                OSD_UINT32_t *ptr = p->data;
+                const uint32_t previousValue = *ptr->val;
+                if (key == CMS_KEY_RIGHT) {
+                    if (*ptr->val < ptr->max) {
+                        *ptr->val += ptr->step;
+                    }
+                } else {
+                    if (*ptr->val > ptr->min) {
+                        *ptr->val -= ptr->step;
+                    }
+                }
+                SET_PRINTVALUE(runtimeEntryFlags[currentCtx.cursorRow]);
+                if ((p->flags & REBOOT_REQUIRED) && (*ptr->val != previousValue)) {
+                    setRebootRequired();
+                }
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
+            }
+            break;
+
+        case OME_INT32:
+            if (p->data) {
+                OSD_INT32_t *ptr = p->data;
+                const int32_t previousValue = *ptr->val;
                 if (key == CMS_KEY_RIGHT) {
                     if (*ptr->val < ptr->max) {
                         *ptr->val += ptr->step;
