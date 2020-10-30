@@ -210,12 +210,22 @@ float applyQuickRates(const int axis, float rcCommandf, const float rcCommandfAb
 {
     const uint16_t rcRate = currentControlRateProfile->rcRates[axis] * 2;
     const uint16_t maxDPS = MAX(currentControlRateProfile->rates[axis] * 10, rcRate);
-    const float linearity = currentControlRateProfile->rcExpo[axis] / 100.0f;
+    const float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
     const float superFactorConfig = ((float)maxDPS / rcRate - 1) / ((float)maxDPS / rcRate);
 
-    float curve = power3(rcCommandfAbs) * linearity + rcCommandfAbs * (1 - linearity);
-    float superfactor = 1.0f / (constrainf(1.0f - (curve * superFactorConfig), 0.01f, 1.00f));
-    float angleRate = constrainf(rcCommandf * rcRate * superfactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+    float curve;
+    float superFactor;
+    float angleRate;
+
+    if (currentControlRateProfile->quickRatesRcExpo) {
+        curve = power3(rcCommandf) * expof + rcCommandf * (1 - expof);
+        superFactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * superFactorConfig), 0.01f, 1.00f));
+        angleRate = constrainf(curve * rcRate * superFactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+    } else {
+        curve = power3(rcCommandfAbs) * expof + rcCommandfAbs * (1 - expof);
+        superFactor = 1.0f / (constrainf(1.0f - (curve * superFactorConfig), 0.01f, 1.00f));
+        angleRate = constrainf(rcCommandf * rcRate * superFactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+    }
 
     return angleRate;
 }
