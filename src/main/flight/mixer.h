@@ -117,4 +117,3 @@ bool isFixedWing(void);
 
 float getMotorOutputLow(void);
 float getMotorOutputHigh(void);
-float getDynamicIdleOffset(void);
