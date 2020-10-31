@@ -402,6 +402,7 @@ const char *flashPartitionGetTypeName(flashPartitionType_e type)
 bool flashInit(const flashConfig_t *flashConfig)
 {
     memset(&flashPartitionTable, 0x00, sizeof(flashPartitionTable));
+    flashPartitions = 0;
 
     bool haveFlash = flashDeviceInit(flashConfig);
 

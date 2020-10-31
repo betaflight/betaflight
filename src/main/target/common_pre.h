@@ -48,7 +48,6 @@
 #endif
 
 #ifdef STM32F4
-#define USE_SRAM2
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA
 #endif
@@ -80,7 +79,6 @@
 #endif // STM32F4
 
 #ifdef STM32F7
-#define USE_SRAM2
 #define USE_ITCM_RAM
 #define USE_FAST_DATA
 #define USE_DSHOT
@@ -124,6 +122,9 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_DMA_RAM
+#define USE_USB_MSC
+#define USE_RTC_TIME
+#define USE_PERSISTENT_MSC_RTC
 #endif
 
 #ifdef STM32G4

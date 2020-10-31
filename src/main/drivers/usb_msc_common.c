@@ -66,13 +66,24 @@ void mscInit(void)
     }
 }
 
-bool mscCheckBoot(void)
+bool mscCheckBootAndReset(void)
 {
-    const uint32_t bootModeRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
-    return bootModeRequest == RESET_MSC_REQUEST;
-    // Note that we can't clear the persisent object after checking here. This is because
-    // this function is called multiple times during initialization. So we clear on a reset
-    // out of MSC mode.
+    static bool firstCheck = true;
+    static bool mscMode;
+
+    if (firstCheck) {
+        // Cache the bootup value of RESET_MSC_REQUEST
+        const uint32_t bootModeRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+        if (bootModeRequest == RESET_MSC_REQUEST) {
+            mscMode = true;
+            // Ensure the next reset is to the configurator as the H7 processor retains the RTC value so
+            // a brief interruption of power is not enough to switch out of MSC mode
+            persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+            firstCheck = false;
+        }
+    }
+
+    return mscMode;
 }
 
 void mscSetActive(void)
