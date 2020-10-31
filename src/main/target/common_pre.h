@@ -197,12 +197,6 @@
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
 
-#ifdef USE_SRAM2
-#define SRAM2                       __attribute__ ((section(".sram2"), aligned(4)))
-#else
-#define SRAM2
-#endif
-
 #ifdef USE_DMA_RAM
 #if defined(STM32H7)
 #define DMA_RAM __attribute__((section(".DMA_RAM")))
