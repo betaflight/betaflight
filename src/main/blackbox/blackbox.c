@@ -1476,7 +1476,7 @@ static bool blackboxWriteSysinfo(void)
 #endif
 
 #if defined(USE_DYN_IDLE)
-        BLACKBOX_PRINT_HEADER_LINE("dynamic_idle_offset", "%d",             currentPidProfile->idle_min_rpm ? lrintf(getDynamicIdleOffset()) : 0);
+        BLACKBOX_PRINT_HEADER_LINE("dynamic_idle_min_rpm", "%d",            currentPidProfile->idle_min_rpm);
 #endif
 
         default:

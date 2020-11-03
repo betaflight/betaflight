@@ -100,3 +100,5 @@ struct motorDevConfig_s;
 typedef struct motorDevConfig_s motorDevConfig_t;
 bool isDshotBitbangActive(const motorDevConfig_t *motorConfig);
 #endif
+
+float getDigitalIdleOffset(const motorConfig_t *motorConfig);
