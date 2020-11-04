@@ -57,6 +57,7 @@ typedef enum {
     MCU_TYPE_H743_REV_Y,
     MCU_TYPE_H743_REV_X,
     MCU_TYPE_H743_REV_V,
+    MCU_TYPE_H7A3,
     MCU_TYPE_UNKNOWN = 255,
 } mcuTypeId_e;
 
