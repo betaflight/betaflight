@@ -224,6 +224,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_LED_PROFILE,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 3 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_PID_PROFILE,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 3 }
     }
 };
 
@@ -262,6 +266,7 @@ static const char * const adjustmentLabels[] = {
     "ROLL F",
     "YAW F",
     "OSD PROFILE",
+    "PID PROFILE",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -636,6 +641,14 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
             setLedProfile(position);
         }
 #endif
+        break;
+    case ADJUSTMENT_PID_PROFILE:
+        if (getCurrentPidProfileIndex() != position) {
+            changePidProfile(position);
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PID_PROFILE, position);
+            
+            beeps = position + 1;
+        }
         break;
 
     default:
