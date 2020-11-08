@@ -24,7 +24,6 @@
 #define USBD_PRODUCT_STRING     "STM32F4DISCOVERY"
 
 // These features are in here to get coverage in CI builds
-#define USE_SPI_TRANSACTION
 #define USE_STACK_CHECK
 
 #if defined(STM32F4DISCOVERY_DEBUG)
