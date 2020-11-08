@@ -1844,7 +1844,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->motor_output_limit);
         sbufWriteU8(dst, currentPidProfile->auto_profile_cell_count);
 #if defined(USE_DYN_IDLE)
-        sbufWriteU8(dst, currentPidProfile->idle_min_rpm);
+        sbufWriteU8(dst, currentPidProfile->dyn_idle_min_rpm);
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -2714,7 +2714,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->motor_output_limit = sbufReadU8(src);
             currentPidProfile->auto_profile_cell_count = sbufReadU8(src);
 #if defined(USE_DYN_IDLE)
-            currentPidProfile->idle_min_rpm = sbufReadU8(src);
+            currentPidProfile->dyn_idle_min_rpm = sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif

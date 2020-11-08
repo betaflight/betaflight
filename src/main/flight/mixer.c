@@ -216,22 +216,28 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         }
     } else {
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
-#ifdef USE_DYN_IDLE
-        if (mixerRuntime.idleMinMotorRps > 0.0f) {
-            const float maxIncrease = isAirmodeActivated() ? mixerRuntime.idleMaxIncrease : 0.04f;
-            const float minRps = rpmMinMotorFrequency();
-            const float targetRpsChangeRate = (mixerRuntime.idleMinMotorRps - minRps) * currentPidProfile->idle_adjustment_speed;
-            const float error = targetRpsChangeRate - (minRps - mixerRuntime.oldMinRps) * pidGetPidFrequency();
-            const float pidSum = constrainf(mixerRuntime.idleP * error, -currentPidProfile->idle_pid_limit, currentPidProfile->idle_pid_limit);
-            motorRangeMinIncrease = constrainf(motorRangeMinIncrease + pidSum * pidGetDT(), 0.0f, maxIncrease);
-            mixerRuntime.oldMinRps = minRps;
-            throttle += mixerRuntime.idleThrottleOffset;
+        currentThrottleInputRange = PWM_RANGE;
 
-            DEBUG_SET(DEBUG_DYN_IDLE, 0, motorRangeMinIncrease * 1000);
-            DEBUG_SET(DEBUG_DYN_IDLE, 1, targetRpsChangeRate);
-            DEBUG_SET(DEBUG_DYN_IDLE, 2, error);
-            DEBUG_SET(DEBUG_DYN_IDLE, 3, minRps);
-        } else {
+#ifdef USE_DYN_IDLE
+        if (mixerRuntime.dynIdleMinRps > 0.0f) {
+            const float maxIncrease = isAirmodeActivated() ? mixerRuntime.dynIdleMaxIncrease : 0.04f;
+            float minRps = rpmMinMotorFrequency();
+            DEBUG_SET(DEBUG_DYN_IDLE, 3, (minRps * 10));
+            float rpsError = mixerRuntime.dynIdleMinRps - minRps;
+            // PT1 type lowpass delay and smoothing for D
+            minRps = mixerRuntime.prevMinRps + mixerRuntime.minRpsDelayK * (minRps - mixerRuntime.prevMinRps);
+            float dynIdleD = (mixerRuntime.prevMinRps - minRps) * mixerRuntime.dynIdleDGain;
+            mixerRuntime.prevMinRps = minRps;
+            float dynIdleP = rpsError * mixerRuntime.dynIdlePGain;
+            rpsError = MAX(-0.1f, rpsError); //I rises fast, falls slowly
+            mixerRuntime.dynIdleI += rpsError * mixerRuntime.dynIdleIGain;
+            mixerRuntime.dynIdleI = constrainf(mixerRuntime.dynIdleI, 0.0f, maxIncrease);
+            motorRangeMinIncrease = constrainf((dynIdleP + mixerRuntime.dynIdleI + dynIdleD), 0.0f, maxIncrease);
+
+            DEBUG_SET(DEBUG_DYN_IDLE, 0, (MAX(-1000.0f, dynIdleP * 10000)));
+            DEBUG_SET(DEBUG_DYN_IDLE, 1, (mixerRuntime.dynIdleI * 10000));
+            DEBUG_SET(DEBUG_DYN_IDLE, 2, (dynIdleD * 10000));
+       } else {
             motorRangeMinIncrease = 0;
         }
 #endif
@@ -252,7 +258,6 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
 
-        currentThrottleInputRange = PWM_RANGE;
         motorRangeMin = mixerRuntime.motorOutputLow + motorRangeMinIncrease * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
@@ -467,25 +472,39 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         throttle = applyThrottleLimit(throttle);
     }
 
-    const bool airmodeEnabled = airmodeIsEnabled() || launchControlActive;
+    // use scaled throttle, without dynamic idle throttle offset, as the input to antigravity
+    pidUpdateAntiGravityThrottleFilter(throttle);
 
-#ifdef USE_YAW_SPIN_RECOVERY
-    // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
-    // When airmode is active the throttle setting doesn't impact recovery authority.
-    if (yawSpinDetected && !airmodeEnabled) {
-        throttle = 0.5f;   //
-    }
-#endif // USE_YAW_SPIN_RECOVERY
+#ifdef USE_DYN_LPF
+    // keep the changes to dynamic lowpass clean, without unnecessary dynamic changes
+    updateDynLpfCutoffs(currentTimeUs, throttle);
+#endif
 
-#ifdef USE_LAUNCH_CONTROL
-    // While launch control is active keep the throttle at minimum.
-    // Once the pilot triggers the launch throttle control will be reactivated.
-    if (launchControlActive) {
-        throttle = 0.0f;
+    // apply throttle boost when throttle moves quickly
+#if defined(USE_THROTTLE_BOOST)
+    if (throttleBoost > 0.0f) {
+        const float throttleHpf = throttle - pt1FilterApply(&throttleLpf, throttle);
+        throttle = constrainf(throttle + throttleBoost * throttleHpf, 0.0f, 1.0f);
     }
 #endif
 
+    // send throttle value to blackbox, including scaling and throttle boost, but not TL compensation, dyn idle or airmode 
+    mixerThrottle = throttle;
+
+#ifdef USE_DYN_IDLE
+    // Apply digital idle throttle offset when stick is at zero after all other adjustments are complete
+    if (mixerRuntime.dynIdleMinRps > 0.0f) {
+        throttle = MAX(throttle, mixerRuntime.idleThrottleOffset);
+    }
+#endif
+
+#ifdef USE_THRUST_LINEARIZATION
+    // reduce throttle to offset additional motor output
+    throttle = pidCompensateThrustLinearization(throttle);
+#endif
+
     // Find roll/pitch/yaw desired output
+    // ??? Where is the optimal location for this code?
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
@@ -503,21 +522,22 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         motorMix[i] = mix;
     }
 
-    pidUpdateAntiGravityThrottleFilter(throttle);
+    //  The following fixed throttle values will not be shown in the blackbox log
+    // ?? Should they be influenced by airmode?  If not, should go after the apply airmode code.
+    const bool airmodeEnabled = airmodeIsEnabled() || launchControlActive;
+#ifdef USE_YAW_SPIN_RECOVERY
+    // 50% throttle provides the maximum authority for yaw recovery when airmode is not active.
+    // When airmode is active the throttle setting doesn't impact recovery authority.
+    if (yawSpinDetected && !airmodeEnabled) {
+        throttle = 0.5f;
+    }
+#endif // USE_YAW_SPIN_RECOVERY
 
-#ifdef USE_DYN_LPF
-    updateDynLpfCutoffs(currentTimeUs, throttle);
-#endif
-
-#ifdef USE_THRUST_LINEARIZATION
-    // reestablish old throttle stick feel by counter compensating thrust linearization
-    throttle = pidCompensateThrustLinearization(throttle);
-#endif
-
-#if defined(USE_THROTTLE_BOOST)
-    if (throttleBoost > 0.0f) {
-        const float throttleHpf = throttle - pt1FilterApply(&throttleLpf, throttle);
-        throttle = constrainf(throttle + throttleBoost * throttleHpf, 0.0f, 1.0f);
+#ifdef USE_LAUNCH_CONTROL
+    // While launch control is active keep the throttle at minimum.
+    // Once the pilot triggers the launch throttle control will be reactivated.
+    if (launchControlActive) {
+        throttle = 0.0f;
     }
 #endif
 
@@ -534,8 +554,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     throttle += pidGetAirmodeThrottleOffset();
     float airmodeThrottleChange = 0;
 #endif
-    mixerThrottle = throttle;
 
+    // apply airmode
     motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {
         for (int i = 0; i < mixerRuntime.motorCount; i++) {
