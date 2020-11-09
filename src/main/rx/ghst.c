@@ -241,6 +241,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
             break;
 
             default:
+                return true;
                 break;
         }
     }
