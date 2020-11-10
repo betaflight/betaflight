@@ -47,7 +47,8 @@ typedef enum {
 typedef enum {
     GHST_UL_RC_CHANS_HS4_5TO8   = 0x10,     // High Speed 4 channel, plus CH5-8
     GHST_UL_RC_CHANS_HS4_9TO12  = 0x11,     // High Speed 4 channel, plus CH9-12
-    GHST_UL_RC_CHANS_HS4_13TO16 = 0x12      // High Speed 4 channel, plus CH13-16
+    GHST_UL_RC_CHANS_HS4_13TO16 = 0x12,     // High Speed 4 channel, plus CH13-16
+    GHST_UL_RC_CHANS_HS4_RSSI   = 0x13      // RSSI, LQ, RF Mode, and Tx Power
 } ghstUl_e;
 
 #define GHST_UL_RC_CHANS_SIZE       12      // 1 (type) + 10 (data) + 1 (crc)
@@ -80,16 +81,35 @@ typedef union ghstFrame_u {
     ghstFrameDef_t frame;
 } ghstFrame_t;
 
-/* Pulses payload (channel data). Includes 4x high speed control channels, plus 4 channels from CH5-CH12 */
-typedef struct ghstPayloadPulses_s {
-    // 80 bits, or 10 bytes
+
+/* Pulses payload (channel data), for 4x 12-bit channels */
+typedef struct ghstPayloadServo4_s {
+    // 48 bits, or 6 bytes
     unsigned int ch1: 12;
     unsigned int ch2: 12;
     unsigned int ch3: 12;
     unsigned int ch4: 12;
+} __attribute__ ((__packed__)) ghstPayloadServo4_t;
+
+/* Pulses payload (channel data). Includes 4x high speed control channels, plus 4 channels from CH5-CH12 */
+typedef struct ghstPayloadPulses_s {
+    // 80 bits, or 10 bytes
+    ghstPayloadServo4_t ch1to4;
 
     unsigned int cha: 8;
     unsigned int chb: 8;
     unsigned int chc: 8;
     unsigned int chd: 8;
 } __attribute__ ((__packed__)) ghstPayloadPulses_t;
+
+/* Pulses payload (channel data), with RSSI/LQ, and other related data */
+typedef struct ghstPayloadPulsesRSSI_s {
+    // 80 bits, or 10 bytes
+   ghstPayloadServo4_t ch1to4;
+
+    unsigned int lq: 8;                 // 0-100
+    unsigned int rssi: 8;               // 0 - 128 sign inverted, dBm
+    unsigned int rfProtocol: 8;         
+    signed int txPwrdBm: 8;             // tx power in dBm, use lookup table to map to published mW values
+} __attribute__ ((__packed__)) ghstPayloadPulsesRSSI_t;
+
