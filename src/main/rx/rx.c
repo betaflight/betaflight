@@ -425,7 +425,7 @@ static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTimeUs)
     static timeDelta_t resampleTimeUs = 0;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    if (linkQualitySource != LQ_SOURCE_RX_PROTOCOL_CRSF) {
+    if (linkQualitySource == LQ_SOURCE_NONE) {
         // calculate new sample mean
         linkQuality = updateLinkQualitySamples(validFrame ? LINK_QUALITY_MAX_VALUE : 0);
     }
@@ -871,7 +871,7 @@ uint8_t rxGetRfMode(void)
 
 uint16_t rxGetLinkQualityPercent(void)
 {
-    return (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ?  linkQuality : scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100);
+    return (linkQualitySource == LQ_SOURCE_NONE) ? scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100) : linkQuality;
 }
 #endif
 
