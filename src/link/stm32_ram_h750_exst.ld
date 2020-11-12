@@ -111,7 +111,7 @@ SECTIONS
     PROVIDE(dmarwaxi_end = .);
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
-  } >RAM
+  } >D2_RAM
 }
 
 INCLUDE "stm32_h750_common_post.ld"
