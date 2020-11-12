@@ -94,6 +94,7 @@ typedef enum {
     TRAMP_STATUS_ONLINE_CONFIG
 } trampStatus_e;
 
+// Module state
 static trampStatus_e trampStatus = TRAMP_STATUS_OFFLINE;
 
 // Device limits, read from device during init
@@ -105,20 +106,20 @@ static uint32_t trampRFPowerMax;
 static uint32_t trampCurFreq = 0;
 static uint16_t trampCurConfPower = 0; // Configured power
 static uint16_t trampCurActPower = 0; // Actual power
-static uint8_t trampCurPitMode = 0;
+static uint8_t trampCurPitMode = 0; // Expect to startup out of pitmode
 static int16_t trampCurTemp = 0;
 static uint8_t trampCurControlMode = 0;
 
 // Device configuration, desired state of device
 static uint32_t trampConfFreq = 0;
 static uint16_t trampConfPower = 0;
-static uint8_t trampConfPitMode = 0;
+static uint8_t trampConfPitMode = 0; // Initially configured out of pitmode
 
 // Last device configuration, last desired state of device - used to reset
 // retry count
 static uint32_t trampLastConfFreq = 0;
 static uint16_t trampLastConfPower = 0;
-static uint8_t trampLastConfPitMode = 0;
+static uint8_t trampLastConfPitMode = 0; // Mirror trampConfPitMode
 
 // Retry count
 static uint8_t trampRetryCount = TRAMP_MAX_RETRIES;
@@ -210,7 +211,13 @@ static char trampHandleResponse(void)
                 trampCurFreq = freq;
                 trampCurConfPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
                 trampCurControlMode = trampRespBuffer[6]; // Currently only used for race lock
-                trampCurPitMode = trampRespBuffer[7];
+                if (vtxConfig()->trampPitModeInverted) {
+                    // Invert pitmode (for devices which don't implement protocol correctly)
+                    trampCurPitMode = !trampRespBuffer[7];
+                } else {
+                    // Use official pitmode value
+                    trampCurPitMode = trampRespBuffer[7];
+                }
                 trampCurActPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
 
                 // Init config with current status if not set
@@ -325,7 +332,7 @@ static void trampQuery(uint8_t cmd)
 static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 {
     UNUSED(vtxDevice);
-    uint8_t configUpdateRequired = 0;
+    bool configUpdateRequired = false;
 
     // Read response from device
     const char replyCode = trampReceive();
@@ -374,19 +381,19 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
                     trampSendCommand('F', trampConfFreq);
 
                     // Set flag
-                    configUpdateRequired = 1;
+                    configUpdateRequired = true;
                 } else if (!trampVtxRaceLockEnabled() && (trampConfPower != trampCurConfPower)) {
                     // Power can be and needs to be updated, issue request
                     trampSendCommand('P', trampConfPower);
 
                     // Set flag
-                    configUpdateRequired = 1;
+                    configUpdateRequired = true;
                 } else if (trampConfPitMode != trampCurPitMode) {
                     // Pit mode needs to be updated, issue request
-                    trampSendCommand('I', trampConfPitMode);
+                    trampSendCommand('I', trampConfPitMode ? 0 : 1);
 
                     // Set flag
-                    configUpdateRequired = 1;
+                    configUpdateRequired = true;
                 }
 
                 if (configUpdateRequired) {
@@ -464,7 +471,14 @@ static void vtxTrampProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_VTX_TRAMP, 0, trampStatus);
     DEBUG_SET(DEBUG_VTX_TRAMP, 1, replyCode);
-    DEBUG_SET(DEBUG_VTX_TRAMP, 2, configUpdateRequired);
+    DEBUG_SET(DEBUG_VTX_TRAMP, 2, ((trampConfPitMode << 14) &              0xC000) |
+                                  ((trampCurPitMode << 12) &               0x3000) |
+                                  ((trampConfPower << 8) &                 0x0F00) |
+                                  ((trampCurConfPower << 4) &              0x00F0) |
+                                  ((trampConfFreq != trampCurFreq) ?       0x0008 : 0x0000) |
+                                  ((trampConfPower != trampCurConfPower) ? 0x0004 : 0x0000) |
+                                  ((trampConfPitMode != trampCurPitMode) ? 0x0002 : 0x0000) |
+                                  (configUpdateRequired ?                  0x0001 : 0x0000));
     DEBUG_SET(DEBUG_VTX_TRAMP, 3, trampRetryCount);
 
 #ifdef USE_CMS
@@ -515,7 +529,7 @@ static void vtxTrampSetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 {
     UNUSED(vtxDevice);
 
-    trampConfPitMode = onoff ? 0 : 1; // note inverted values
+    trampConfPitMode = onoff;
     if (trampConfPitMode != trampLastConfPitMode) {
         // Requested pitmode changed, reset retry count
         trampRetryCount = TRAMP_MAX_RETRIES;
@@ -602,8 +616,10 @@ static bool vtxTrampGetStatus(const vtxDevice_t *vtxDevice, unsigned *status)
         return false;
     }
 
-    // Return pitmode from latest query response
-    *status = (trampCurPitMode ? 0 : VTX_STATUS_PIT_MODE);
+    // Mirror configued pit mode state rather than use current pitmode as we
+    // should, otherwise the logic in vtxProcessPitMode may not get us to the
+    // correct state if pitmode is toggled quickly
+    *status = (trampConfPitMode ? VTX_STATUS_PIT_MODE : 0);
 
     // Check VTX is not locked
     *status |= ((trampCurControlMode & TRAMP_CONTROL_RACE_LOCK) ? VTX_STATUS_LOCKED : 0);

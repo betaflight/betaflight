@@ -185,11 +185,16 @@ static bool vtxProcessPower(vtxDevice_t *vtxDevice)
 
 static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
 {
+    static bool prevPmSwitchState = false;
+
     unsigned vtxStatus;
-    if (vtxCommonGetStatus(vtxDevice, &vtxStatus)) {
+    if (!ARMING_FLAG(ARMED) && vtxCommonGetStatus(vtxDevice, &vtxStatus)) {
         bool currPmSwitchState = IS_RC_MODE_ACTIVE(BOXVTXPITMODE);
-        if (currPmSwitchState) {
-            if (!ARMING_FLAG(ARMED)) {
+
+        if (currPmSwitchState != prevPmSwitchState) {
+            prevPmSwitchState = currPmSwitchState;
+
+            if (currPmSwitchState) {
 #if defined(VTX_SETTINGS_FREQCMD)
                 if (vtxSettingsConfig()->pitModeFreq) {
                     return false;
@@ -200,12 +205,12 @@ static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
 
                     return true;
                 }
-            }
-        } else {
-            if (vtxStatus & VTX_STATUS_PIT_MODE) {
-                vtxCommonSetPitMode(vtxDevice, false);
+            } else {
+                if (vtxStatus & VTX_STATUS_PIT_MODE) {
+                    vtxCommonSetPitMode(vtxDevice, false);
 
-                return true;
+                    return true;
+                }
             }
         }
     }

@@ -918,8 +918,6 @@ static void vtxSASetPowerByIndex(vtxDevice_t *vtxDevice, uint8_t index)
 
 static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
 {
-    static bool lastOnOff = false;
-
     if (!vtxSAIsReady(vtxDevice) || saDevice.version < 2) {
         return;
     }
@@ -928,12 +926,6 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         // Smart Audio prior to V2.1 can not turn pit mode on by software.
         return;
     }
-
-    // Only issue pit mode commands on status change
-    if (lastOnOff == onoff) {
-        return;
-    }
-    lastOnOff = onoff;
 
     if (saDevice.version >= 3 && !saDevice.willBootIntoPitMode) {
         if (onoff) {
