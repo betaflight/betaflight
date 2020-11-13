@@ -425,7 +425,7 @@ static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTimeUs)
     static timeDelta_t resampleTimeUs = 0;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    if(linkQualitySource == LQ_SOURCE_NONE) {
+    if (linkQualitySource == LQ_SOURCE_NONE) {
         // calculate new sample mean
         linkQuality = updateLinkQualitySamples(validFrame ? LINK_QUALITY_MAX_VALUE : 0);
     }
