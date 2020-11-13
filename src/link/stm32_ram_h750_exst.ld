@@ -64,6 +64,7 @@ MEMORY
     EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
+    D3_RAM (rwx)      : ORIGIN = 0x38000000, LENGTH = 64K  /* SRAM4 */
 
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
     QUADSPI (rx)      : ORIGIN = 0x90000000, LENGTH = 0K 
@@ -111,7 +112,7 @@ SECTIONS
     PROVIDE(dmarwaxi_end = .);
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
-  } >D2_RAM
+  } >D3_RAM
 }
 
 INCLUDE "stm32_h750_common_post.ld"
