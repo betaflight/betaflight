@@ -230,7 +230,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 ghstChannelData[2] = rcChannels->ch1to4.ch3 >> 1;
                 ghstChannelData[3] = rcChannels->ch1to4.ch4 >> 1;
 
-                if(ghstValidatedFrame.frame.type == GHST_UL_RC_CHANS_HS4_RSSI) {
+                if (ghstValidatedFrame.frame.type == GHST_UL_RC_CHANS_HS4_RSSI) {
                     const ghstPayloadPulsesRSSI_t* const rssiFrame = (ghstPayloadPulsesRSSI_t*)&ghstValidatedFrame.frame.payload;
 
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
