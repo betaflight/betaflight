@@ -63,8 +63,8 @@ MEMORY
     CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
     EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
-    D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
-    D3_RAM (rwx)      : ORIGIN = 0x38000000, LENGTH = 64K  /* SRAM4 */
+    D2_SRAM1 (rwx)    : ORIGIN = 0x30000000, LENGTH = 128K
+    D2_SRAM2 (rwx)    : ORIGIN = 0x30020000, LENGTH = 128K
 
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
     QUADSPI (rx)      : ORIGIN = 0x90000000, LENGTH = 0K 
@@ -73,6 +73,7 @@ MEMORY
 REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
 REGION_ALIAS("MAIN", CODE_RAM)
+REGION_ALIAS("D2_RAM", D2_SRAM1)
 
 INCLUDE "stm32_h750_common.ld"
 
@@ -112,7 +113,7 @@ SECTIONS
     PROVIDE(dmarwaxi_end = .);
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
-  } >D3_RAM
+  } >RAM
 }
 
 INCLUDE "stm32_h750_common_post.ld"
