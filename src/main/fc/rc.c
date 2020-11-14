@@ -832,9 +832,9 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         rcCommandBuff.X = rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
         rcCommandBuff.Z = rcCommand[YAW];
-        
+
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
-        
+
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
         rcCommand[YAW] = rcCommandBuff.Z;
