@@ -831,13 +831,17 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
         rcCommandBuff.X = rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
-        rcCommandBuff.Z = rcCommand[YAW];
-
+        if ((!FLIGHT_MODE(ANGLE_MODE) && (!FLIGHT_MODE(HORIZON_MODE))) {
+            rcCommandBuff.Z = rcCommand[YAW];
+        } else {
+            rcCommandBuff.Z = 0;
+        }
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
-
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
-        rcCommand[YAW] = rcCommandBuff.Z;
+        if ((!FLIGHT_MODE(ANGLE_MODE) && (!FLIGHT_MODE(HORIZON_MODE))) {
+            rcCommand[YAW] = rcCommandBuff.Z;
+        }
      }
 }
 
