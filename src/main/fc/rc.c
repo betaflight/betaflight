@@ -842,7 +842,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         if ((!FLIGHT_MODE(ANGLE_MODE) && (!FLIGHT_MODE(HORIZON_MODE)))) {
             rcCommand[YAW] = rcCommandBuff.Z;
         }
-     }
+    }
 }
 
 void resetYawAxis(void)
