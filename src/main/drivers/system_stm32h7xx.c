@@ -165,11 +165,9 @@ void systemJumpToBootloader(void)
 }
 
 
-static uint32_t bootloaderRequest;
-
 void systemCheckResetReason(void)
 {
-    bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
     switch (bootloaderRequest) {
 #if defined(USE_FLASH_BOOT_LOADER)
@@ -183,18 +181,16 @@ void systemCheckResetReason(void)
         persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
         return;
 
-    case RESET_NONE:
-        if (!(RCC->RSR & RCC_RSR_SFTRSTF)) {
-            // Direct hard reset case
-            return;
-        }
-        // Soft reset; boot loader may have been active with BOOT pin pulled high.
-        FALLTHROUGH;
-
     case RESET_BOOTLOADER_POST:
         // Boot loader activity magically prevents SysTick from interrupting.
         // Issue a soft reset to prevent the condition.
         forcedSystemResetWithoutDisablingCaches(); // observed that disabling dcache after cold boot with BOOT pin high causes segfault.
+
+    case RESET_MSC_REQUEST:
+    case RESET_NONE:
+    default:
+        return;
+
     }
 
     systemJumpToBootloader();
