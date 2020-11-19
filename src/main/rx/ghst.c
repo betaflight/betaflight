@@ -215,22 +215,20 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     }
 
     if (ghstValidatedFrameAvailable) {
-        int startIdx = 4;
-        switch (ghstValidatedFrame.frame.type) {
-            case GHST_UL_RC_CHANS_HS4_5TO8:
-            case GHST_UL_RC_CHANS_HS4_9TO12:
-            case GHST_UL_RC_CHANS_HS4_13TO16: 
-            case GHST_UL_RC_CHANS_HS4_RSSI:
-            {
-                const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame.frame.payload;
+        int startIdx = 0;
 
-                // all uplink frames contain CH1..4 data (12 bit)
-                ghstChannelData[0] = rcChannels->ch1to4.ch1 >> 1;
-                ghstChannelData[1] = rcChannels->ch1to4.ch2 >> 1;
-                ghstChannelData[2] = rcChannels->ch1to4.ch3 >> 1;
-                ghstChannelData[3] = rcChannels->ch1to4.ch4 >> 1;
+        if(ghstValidatedFrame.frame.type >= GHST_UL_RC_CHANS_HS4_FIRST && 
+           ghstValidatedFrame.frame.type <= GHST_UL_RC_CHANS_HS4_LAST) {
+            const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame.frame.payload;
 
-                if (ghstValidatedFrame.frame.type == GHST_UL_RC_CHANS_HS4_RSSI) {
+            // all uplink frames contain CH1..4 data (12 bit)
+            ghstChannelData[0] = rcChannels->ch1to4.ch1 >> 1;
+            ghstChannelData[1] = rcChannels->ch1to4.ch2 >> 1;
+            ghstChannelData[2] = rcChannels->ch1to4.ch3 >> 1;
+            ghstChannelData[3] = rcChannels->ch1to4.ch4 >> 1;
+
+            switch(ghstValidatedFrame.frame.type) {
+                case GHST_UL_RC_CHANS_HS4_RSSI: {
                     const ghstPayloadPulsesRSSI_t* const rssiFrame = (ghstPayloadPulsesRSSI_t*)&ghstValidatedFrame.frame.payload;
 
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
@@ -248,31 +246,27 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                         setLinkQualityDirect(rssiFrame->lq);
                     }
 #endif                   
+                    break;
                 }
-                else {
-                    // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
-                    switch(ghstValidatedFrame.frame.type) {
-                        case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
-                        case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
-                        case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
-                    }
 
-                    ghstChannelData[startIdx++] = rcChannels->cha << 3;
-                    ghstChannelData[startIdx++] = rcChannels->chb << 3;
-                    ghstChannelData[startIdx++] = rcChannels->chc << 3;
-                    ghstChannelData[startIdx++] = rcChannels->chd << 3;
-                }
-                return true;
+                case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
+                case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
+                case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
             }
-            break;
 
-            default:
-                return true;
-                break;
+            if(startIdx > 0)
+            {
+                // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
+
+                ghstChannelData[startIdx++] = rcChannels->cha << 3;
+                ghstChannelData[startIdx++] = rcChannels->chb << 3;
+                ghstChannelData[startIdx++] = rcChannels->chc << 3;
+                ghstChannelData[startIdx++] = rcChannels->chd << 3;
+            }
         }
     }
 
-    return false;
+    return true;
 }
 
 STATIC_UNIT_TESTED uint16_t ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
