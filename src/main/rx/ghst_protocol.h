@@ -108,7 +108,7 @@ typedef struct ghstPayloadPulses_s {
 } __attribute__ ((__packed__)) ghstPayloadPulses_t;
 
 /* Pulses payload (channel data), with RSSI/LQ, and other related data */
-typedef struct ghstPayloadPulsesRSSI_s {
+typedef struct ghstPayloadPulsesRssi_s {
     // 80 bits, or 10 bytes
    ghstPayloadServo4_t ch1to4;
 
@@ -116,5 +116,5 @@ typedef struct ghstPayloadPulsesRSSI_s {
     unsigned int rssi: 8;               // 0 - 128 sign inverted, dBm
     unsigned int rfProtocol: 8;         
     signed int txPwrdBm: 8;             // tx power in dBm, use lookup table to map to published mW values
-} __attribute__ ((__packed__)) ghstPayloadPulsesRSSI_t;
+} __attribute__ ((__packed__)) ghstPayloadPulsesRssi_t;
 

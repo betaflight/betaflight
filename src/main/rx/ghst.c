@@ -217,8 +217,8 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     if (ghstValidatedFrameAvailable) {
         int startIdx = 0;
 
-        if(ghstValidatedFrame.frame.type >= GHST_UL_RC_CHANS_HS4_FIRST && 
-           ghstValidatedFrame.frame.type <= GHST_UL_RC_CHANS_HS4_LAST) {
+        if (ghstValidatedFrame.frame.type >= GHST_UL_RC_CHANS_HS4_FIRST && 
+            ghstValidatedFrame.frame.type <= GHST_UL_RC_CHANS_HS4_LAST) {
             const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame.frame.payload;
 
             // all uplink frames contain CH1..4 data (12 bit)
@@ -229,7 +229,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 
             switch(ghstValidatedFrame.frame.type) {
                 case GHST_UL_RC_CHANS_HS4_RSSI: {
-                    const ghstPayloadPulsesRSSI_t* const rssiFrame = (ghstPayloadPulsesRSSI_t*)&ghstValidatedFrame.frame.payload;
+                    const ghstPayloadPulsesRssi_t* const rssiFrame = (ghstPayloadPulsesRssi_t*)&ghstValidatedFrame.frame.payload;
 
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
                         // rssi sent sign-inverted
@@ -254,7 +254,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
             }
 
-            if(startIdx > 0)
+            if (startIdx > 0)
             {
                 // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
 
