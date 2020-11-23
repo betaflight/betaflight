@@ -234,14 +234,14 @@ static void setLineOutlineType(displayCanvas_t *displayCanvas, displayCanvasOutl
 {
     UNUSED(displayCanvas);
 
-    frskyOsdSetLineOutlineType(outlineType);
+    frskyOsdSetLineOutlineType((frskyOsdLineOutlineType_e)outlineType);
 }
 
 static void setLineOutlineColor(displayCanvas_t *displayCanvas, displayCanvasColor_e outlineColor)
 {
     UNUSED(displayCanvas);
 
-    frskyOsdSetLineOutlineColor(outlineColor);
+    frskyOsdSetLineOutlineColor((frskyOsdColor_e)outlineColor);
 }
 
 static void clipToRect(displayCanvas_t *displayCanvas, int x, int y, int w, int h)
