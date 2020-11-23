@@ -984,6 +984,9 @@ static void osdElementLinkQuality(osdElementParms_t *element)
         osdLinkQuality = rxGetLinkQuality();
         const uint8_t osdRfMode = rxGetRfMode();
         tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
+    } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
+        osdLinkQuality = rxGetLinkQuality();
+        tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
     } else { // 0-9
         osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
         if (osdLinkQuality >= 10) {
