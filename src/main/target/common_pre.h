@@ -123,6 +123,7 @@
 #define USE_USB_MSC
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
+#define USE_DSHOT_CACHE_MGMT
 #endif
 
 #ifdef STM32G4
