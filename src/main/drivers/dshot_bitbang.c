@@ -595,7 +595,7 @@ static void bbUpdateComplete(void)
         // Only clean the buffer once. If all motors are on a common port they'll share a buffer.
         bool clean = false;
         for (int i = 0; i < motorIndex; i++) {
-            if (bbMotors[motorIndex].bbPort->portInputBuffer == bbMotors[i].bbPort->portInputBuffer) {
+            if (bbMotors[motorIndex].bbPort->portOutputBuffer == bbMotors[i].bbPort->portOutputBuffer) {
                 clean = true;
             }
         }
