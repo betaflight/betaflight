@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 1);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -197,11 +197,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .transient_throttle_limit = 0,
         .profileName = { 0 },
-        .idle_min_rpm = 0,
-        .idle_adjustment_speed = 50,
-        .idle_p = 50,
-        .idle_pid_limit = 200,
-        .idle_max_increase = 150,
+        .dyn_idle_min_rpm = 0,
+        .dyn_idle_p_gain = 50,
+        .dyn_idle_i_gain = 50,
+        .dyn_idle_d_gain = 50,
+        .dyn_idle_max_increase = 150,
         .ff_interpolate_sp = FF_INTERPOLATE_ON,
         .ff_max_rate_limit = 100,
         .ff_smooth_factor = 37,
