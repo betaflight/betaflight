@@ -55,6 +55,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dshot.h"
+#include "drivers/dshot_command.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/motor.h"
@@ -3001,6 +3002,34 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
         }
         break;
+
+#ifdef USE_DSHOT
+    case MSP2_SEND_DSHOT_COMMAND:
+        {
+            const bool armed = ARMING_FLAG(ARMED);
+
+            if (!armed) {
+                const uint8_t commandType = sbufReadU8(src);
+                const uint8_t motorIndex = sbufReadU8(src);
+                const uint8_t commandCount = sbufReadU8(src);
+
+                if (DSHOT_CMD_TYPE_BLOCKING == commandType) {
+                    motorDisable();
+                }
+
+                for (uint8_t i = 0; i < commandCount; i++) {
+                    const uint8_t commandIndex = sbufReadU8(src);
+                    dshotCommandWrite(motorIndex, getMotorCount(), commandIndex, commandType);
+                    delay(1);
+                }
+
+                if (DSHOT_CMD_TYPE_BLOCKING == commandType) {
+                    motorEnable();
+                }
+            }
+        }
+        break;
+#endif
 
 #ifdef USE_CAMERA_CONTROL
     case MSP_CAMERA_CONTROL:
