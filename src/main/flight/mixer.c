@@ -425,19 +425,23 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 }
 #endif
 
-static void applyLinearMixerAdjustment(float *motorMix, float motorMixRange, bool airmodeEnabled) {
-    float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
-    float motorMixDelta = 0.5f * motorMixRange;
+static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled) {
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
+    const float motorMixDelta = 0.5f * motorMixRange;
 
     for (int i = 0; i < mixerRuntime.motorCount; ++i) {
         if (airmodeEnabled || throttle > 0.5f) {
-            motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + motorMixDelta, motorMix[i] - motorMixDelta);
+            if (mixerConfig()->mixer_type == MIXER_LINEAR) {
+                motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + motorMixDelta, motorMix[i] - motorMixDelta);
+            } else {
+                motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + ABS(motorMix[i]), motorMix[i] - ABS(motorMix[i]));
+            }
         }
         motorMix[i] /= motorMixNormalizationFactor;
     }
 }
 
-static void applyMixerAdjustment(float *motorMix, float motorMixMin, float motorMixMax, float motorMixRange, bool airmodeEnabled) {
+static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled) {
 #ifdef USE_AIRMODE_LPF
     const float unadjustedThrottle = throttle;
     throttle += pidGetAirmodeThrottleOffset();
@@ -591,10 +595,10 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
     motorMixRange = motorMixMax - motorMixMin;
-    if (mixerConfig()->linear_mixer) {
-        applyLinearMixerAdjustment(motorMix, motorMixRange, airmodeEnabled);
+    if (mixerConfig()->mixer_type > MIXER_LEGACY) {
+        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
     } else {
-        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, motorMixRange, airmodeEnabled);
+        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
     }
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
