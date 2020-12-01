@@ -29,12 +29,15 @@
 #define LED1_PIN                PB7 // PE1 on NUCLEO-H743ZI2 (may collide with UART8_TX)
 //#define LED2_PIN                PB14 // SDMMC2_D0
 
+// Use explicit cache management as per https://github.com/betaflight/betaflight/pull/10378
+#define USE_LEDSTRIP_CACHE_MGMT
+
 // Nucleo-H743 has one button (The blue USER button).
 // Force two buttons to look at the single button so config reset on button works
 #define USE_BUTTONS
-#define	BUTTON_A_PIN            PC13
+#define BUTTON_A_PIN            PC13
 #define BUTTON_A_PIN_INVERTED // Active high
-#define	BUTTON_B_PIN            PC13
+#define BUTTON_B_PIN            PC13
 #define BUTTON_B_PIN_INVERTED // Active high
 
 #define USE_BEEPER
