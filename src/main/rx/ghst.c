@@ -187,6 +187,7 @@ static bool shouldSendTelemetryFrame(void)
 STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
+    static int16_t crcErrorCount = 0;
 
     if (ghstFrameAvailable) {
         ghstFrameAvailable = false;
@@ -199,7 +200,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
         }
 
         if(crc != ghstValidatedFrame.bytes[fullFrameLength - 1] ) {
-            DEBUG_INCR(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS);
+            DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);
         }
 
         return RX_FRAME_DROPPED;                            // frame was invalid
@@ -218,6 +219,8 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     // is correct, and the message was actually for us.
 
     UNUSED(rxRuntimeState);
+
+    static int16_t unknownFrameCount = 0;
 
     // do we have a telemetry buffer to send?
     if (shouldSendTelemetryFrame()) {
@@ -267,7 +270,7 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
                 case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
                 default:
-                    DEBUG_INCR(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES);
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);
                     break;
             }
 
