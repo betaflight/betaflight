@@ -25,6 +25,7 @@ extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
 
 #define DEBUG_SET(mode, index, value) {if (debugMode == (mode)) {debug[(index)] = (value);}}
+#define DEBUG_INCR(mode, index) {if (debugMode == (mode)) {++debug[(index)];}}
 
 #define DEBUG_SECTION_TIMES
 
@@ -114,6 +115,7 @@ typedef enum {
     DEBUG_RX_TIMING,
     DEBUG_D_LPF,
     DEBUG_VTX_TRAMP,
+    DEBUG_GHST,
     DEBUG_COUNT
 } debugType_e;
 

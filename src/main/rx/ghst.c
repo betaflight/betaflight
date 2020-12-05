@@ -74,6 +74,13 @@ STATIC_UNIT_TESTED ghstFrame_t ghstValidatedFrame;  // validated frame, CRC is o
 
 STATIC_UNIT_TESTED uint32_t ghstChannelData[GHST_MAX_NUM_CHANNELS];
 
+enum {
+    DEBUG_GHST_CRC_ERRORS = 0,
+    DEBUG_GHST_UNKNOWN_FRAMES,
+    DEBUG_GHST_RX_RSSI,
+    DEBUG_GHST_RX_LQ
+};
+
 static serialPort_t *serialPort;
 static timeUs_t ghstRxFrameStartAtUs = 0;
 static timeUs_t ghstRxFrameEndAtUs = 0;
@@ -191,6 +198,10 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
             return RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;            // request callback through ghstProcessFrame to do the decoding  work
         }
 
+        if(crc != ghstValidatedFrame.bytes[fullFrameLength - 1] ) {
+            DEBUG_INCR(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS);
+        }
+
         return RX_FRAME_DROPPED;                            // frame was invalid
     }
 
@@ -231,6 +242,9 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 case GHST_UL_RC_CHANS_HS4_RSSI: {
                     const ghstPayloadPulsesRssi_t* const rssiFrame = (ghstPayloadPulsesRssi_t*)&ghstValidatedFrame.frame.payload;
 
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_RSSI, -rssiFrame->rssi);
+                    DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_LQ, rssiFrame->lq);
+
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
                         // rssi sent sign-inverted
                         const uint16_t rssiPercentScaled = scaleRange(-rssiFrame->rssi, GHST_RSSI_DBM_MIN, 0, GHST_RSSI_DBM_MAX, RSSI_MAX_VALUE);
@@ -252,6 +266,9 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                 case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
                 case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
                 case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
+                default:
+                    DEBUG_INCR(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES);
+                    break;
             }
 
             if (startIdx > 0)
