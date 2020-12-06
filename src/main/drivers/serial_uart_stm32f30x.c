@@ -215,7 +215,7 @@ void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_e mode, portOptions_e optio
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_OType_PP : GPIO_OType_OD,
             (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
- 
+
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(index));
         IOConfigGPIOAF(txIO, ioCfg, af);
 
