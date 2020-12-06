@@ -211,13 +211,7 @@ static char trampHandleResponse(void)
                 trampCurFreq = freq;
                 trampCurConfPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
                 trampCurControlMode = trampRespBuffer[6]; // Currently only used for race lock
-                if (vtxConfig()->trampPitModeInverted) {
-                    // Invert pitmode (for devices which don't implement protocol correctly)
-                    trampCurPitMode = !trampRespBuffer[7];
-                } else {
-                    // Use official pitmode value
-                    trampCurPitMode = trampRespBuffer[7];
-                }
+                trampCurPitMode = trampRespBuffer[7];
                 trampCurActPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
 
                 // Init config with current status if not set

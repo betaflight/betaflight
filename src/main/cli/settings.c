@@ -1464,9 +1464,6 @@ const clivalue_t valueTable[] = {
 #if defined(USE_VTX_CONTROL) && defined(USE_VTX_COMMON)
     { "vtx_halfduplex",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_CONFIG, offsetof(vtxConfig_t, halfDuplex) },
 #endif
-#ifdef USE_VTX_TRAMP
-    { "vtx_tramp_pitmode_inverted", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_CONFIG, offsetof(vtxConfig_t, trampPitModeInverted) },
-#endif
 
 // PG_VTX_IO
 #ifdef USE_VTX_RTC6705
