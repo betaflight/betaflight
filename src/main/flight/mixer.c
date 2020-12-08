@@ -425,6 +425,51 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 }
 #endif
 
+static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled) {
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
+    const float motorMixDelta = 0.5f * motorMixRange;
+
+    for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+        if (airmodeEnabled || throttle > 0.5f) {
+            if (mixerConfig()->mixer_type == MIXER_LINEAR) {
+                motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + motorMixDelta, motorMix[i] - motorMixDelta);
+            } else {
+                motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + ABS(motorMix[i]), motorMix[i] - ABS(motorMix[i]));
+            }
+        }
+        motorMix[i] /= motorMixNormalizationFactor;
+    }
+}
+
+static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled) {
+#ifdef USE_AIRMODE_LPF
+    const float unadjustedThrottle = throttle;
+    throttle += pidGetAirmodeThrottleOffset();
+    float airmodeThrottleChange = 0;
+#endif
+
+    if (motorMixRange > 1.0f) {
+        for (int i = 0; i < mixerRuntime.motorCount; i++) {
+            motorMix[i] /= motorMixRange;
+        }
+        // Get the maximum correction by setting offset to center when airmode enabled
+        if (airmodeEnabled) {
+            throttle = 0.5f;
+        }
+    } else {
+        if (airmodeEnabled || throttle > 0.5f) {
+            throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
+#ifdef USE_AIRMODE_LPF
+            airmodeThrottleChange = constrainf(unadjustedThrottle, -motorMixMin, 1.0f - motorMixMax) - unadjustedThrottle;
+#endif
+        }
+    }
+
+#ifdef USE_AIRMODE_LPF
+    pidUpdateAirmodeLpf(airmodeThrottleChange);
+#endif
+}
+
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 {
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
@@ -549,34 +594,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_AIRMODE_LPF
-    const float unadjustedThrottle = throttle;
-    throttle += pidGetAirmodeThrottleOffset();
-    float airmodeThrottleChange = 0;
-#endif
-
-    // apply airmode
     motorMixRange = motorMixMax - motorMixMin;
-    if (motorMixRange > 1.0f) {
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motorMix[i] /= motorMixRange;
-        }
-        // Get the maximum correction by setting offset to center when airmode enabled
-        if (airmodeEnabled) {
-            throttle = 0.5f;
-        }
+    if (mixerConfig()->mixer_type > MIXER_LEGACY) {
+        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
     } else {
-        if (airmodeEnabled || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
-            throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
-#ifdef USE_AIRMODE_LPF
-            airmodeThrottleChange = constrainf(unadjustedThrottle, -motorMixMin, 1.0f - motorMixMax) - unadjustedThrottle;
-#endif
-        }
+        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
     }
-
-#ifdef USE_AIRMODE_LPF
-    pidUpdateAirmodeLpf(airmodeThrottleChange);
-#endif
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
