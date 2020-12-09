@@ -117,13 +117,24 @@ FAST_CODE static void pwmDshotSetDirectionInput(
     timer->ARR = 0xffffffff;
 
 #ifdef STM32H7
-    IOConfigGPIO(motor->io, GPIO_MODE_OUTPUT_PP);
+    // Configure pin as GPIO output to avoid glitch during timer configuration
+    uint32_t pin = IO_Pin(motor->io);
+    LL_GPIO_SetPinMode(IO_GPIO(motor->io), pin, LL_GPIO_MODE_OUTPUT);
+    LL_GPIO_SetPinSpeed(IO_GPIO(motor->io), pin, LL_GPIO_SPEED_FREQ_LOW); // Needs to be low
+    LL_GPIO_SetPinPull(IO_GPIO(motor->io), pin, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinOutputType(IO_GPIO(motor->io), pin, LL_GPIO_OUTPUT_PUSHPULL);
 #endif
 
     LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
 
 #ifdef STM32H7
-    IOConfigGPIOAF(motor->io, motor->iocfg, timerHardware->alternateFunction);
+    // Configure pin back to timer
+    LL_GPIO_SetPinMode(IO_GPIO(motor->io), IO_Pin(motor->io), LL_GPIO_MODE_ALTERNATE);
+    if (IO_Pin(motor->io) & 0xFF) {
+        LL_GPIO_SetAFPin_0_7(IO_GPIO(motor->io), IO_Pin(motor->io), timerHardware->alternateFunction);
+    } else {
+        LL_GPIO_SetAFPin_8_15(IO_GPIO(motor->io), IO_Pin(motor->io), timerHardware->alternateFunction);
+    }
 #endif
 
     motor->dmaInitStruct.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
