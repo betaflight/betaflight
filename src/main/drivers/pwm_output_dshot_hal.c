@@ -132,8 +132,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
     LL_GPIO_SetPinMode(IO_GPIO(motor->io), IO_Pin(motor->io), LL_GPIO_MODE_ALTERNATE);
     if (IO_Pin(motor->io) & 0xFF) {
         LL_GPIO_SetAFPin_0_7(IO_GPIO(motor->io), IO_Pin(motor->io), timerHardware->alternateFunction);
-    }
-    else {
+    } else {
         LL_GPIO_SetAFPin_8_15(IO_GPIO(motor->io), IO_Pin(motor->io), timerHardware->alternateFunction);
     }
 #endif
