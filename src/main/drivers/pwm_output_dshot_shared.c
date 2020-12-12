@@ -95,13 +95,6 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
     /*If there is a command ready to go overwrite the value and send that instead*/
     if (dshotCommandIsProcessing()) {
         value = dshotCommandGetCurrent(index);
-#ifdef USE_DSHOT_TELEMETRY
-        // reset telemetry debug statistics every time telemetry is enabled
-        if (value == DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY) {
-            dshotTelemetryState.invalidPacketCount = 0;
-            dshotTelemetryState.readCount = 0;
-        }
-#endif
         if (value) {
             motor->protocolControl.requestTelemetry = true;
         }

@@ -194,8 +194,6 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     case DSHOT_CMD_SAVE_SETTINGS:
     case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
     case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
-    case DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE:
-    case DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY:
         repeats = 10;
         break;
     case DSHOT_CMD_BEACON1:
