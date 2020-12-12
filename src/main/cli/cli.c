@@ -989,8 +989,12 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
     }
 }
 
-static const char *nextArg(const char *currentArg)
+STATIC_UNIT_TESTED const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        // if currentArg is null or empty, return to avoid segfault
+        return currentArg;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;

@@ -57,6 +57,8 @@ extern "C" {
     void cliSet(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
+
+    char *nextArg(const char *currentArg);
     
     const clivalue_t valueTable[] = {
         { "array_unit_test",   VAR_INT8  | MODE_ARRAY  | MASTER_VALUE, .config.array.length = 3,      PG_RESERVED_FOR_TESTING_1, 0 },
@@ -191,6 +193,24 @@ TEST(CLIUnittest, TestCliSetStringWriteOnce)
     EXPECT_EQ(0,   data[6]);
 
     printf("\n");
+}
+
+TEST(CLIUnittest, TestNextArgShouldNotSegfault)
+{
+    char *cmdLine = (char *)"1 2 3";
+    ASSERT_EQ('1', *cmdLine);
+
+    const char *ptr;
+    ptr = nextArg(cmdLine);
+    ASSERT_EQ('2', *ptr);
+    ptr = nextArg(ptr);
+    ASSERT_EQ('3', *ptr);
+    ptr = nextArg(ptr);
+    ASSERT_EQ(NULL, ptr);
+
+    // ptr is now null, this call should NOT cause segfaul
+    ptr = nextArg(ptr);
+    ASSERT_EQ(NULL, ptr);
 }
 
 // STUBS
