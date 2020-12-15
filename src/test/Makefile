@@ -435,9 +435,9 @@ endif
 #CC  := gcc
 #CXX := g++
 
-# These flags are needed for clang 10 (maybe even clang 9) to make test work
-#	-Wno-c99-extensions \
-#	-Wno-reorder
+# These flags are needed for clang 10 (linux / MacOS) to make test work:
+# -Wno-c99-extensions
+# -Wno-reorder
 
 COMMON_FLAGS = \
 	-g \
@@ -458,11 +458,24 @@ CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux: 7 - 10; OSX: 7- 12 }
+# Please revisit versions when new clang version arrive. Supported versions: { Linux: 7 - 11; OSX: 7- 12 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 10
+CC_VERSION_CHECK_MAX := 11
+
+# Added flags for clang 11 (linux) are not backwards compatible:
+# -fcommon
+# -Wno-void-pointer-to-int-cast
+
+ifneq ($(OSFAMILY), macosx)
+ifeq ($(CC_VERSION_MAJOR), 11)
+COMMON_FLAGS += \
+	-fcommon \
+	-Wno-void-pointer-to-int-cast
+endif
+endif
+
 ifeq ($(OSFAMILY), macosx)
 # MacOS comes with Apple's own flavour of clang that does not adhere to the official versioning
 CC_VERSION_CHECK_MAX := 12
