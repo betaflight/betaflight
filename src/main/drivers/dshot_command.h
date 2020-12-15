@@ -57,8 +57,6 @@ typedef enum {
     DSHOT_CMD_LED3_OFF, // BLHeli32 only
     DSHOT_CMD_AUDIO_STREAM_MODE_ON_OFF = 30, // KISS audio Stream mode on/Off
     DSHOT_CMD_SILENT_MODE_ON_OFF = 31, // KISS silent Mode on/Off
-    DSHOT_CMD_SIGNAL_LINE_TELEMETRY_DISABLE = 32,
-    DSHOT_CMD_SIGNAL_LINE_CONTINUOUS_ERPM_TELEMETRY = 33,
     DSHOT_CMD_MAX = 47
 } dshotCommands_e;
 
