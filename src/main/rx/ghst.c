@@ -78,7 +78,7 @@ enum {
     DEBUG_GHST_CRC_ERRORS = 0,
     DEBUG_GHST_UNKNOWN_FRAMES,
     DEBUG_GHST_RX_RSSI,
-    DEBUG_GHST_RX_LQ
+    DEBUG_GHST_RX_LQ,
 };
 
 static serialPort_t *serialPort;
@@ -199,7 +199,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
             return RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;            // request callback through ghstProcessFrame to do the decoding  work
         }
 
-        if(crc != ghstValidatedFrame.bytes[fullFrameLength - 1] ) {
+        if (crc != ghstValidatedFrame.bytes[fullFrameLength - 1]) {
             DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);
         }
 
