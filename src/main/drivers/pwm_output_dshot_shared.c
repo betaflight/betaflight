@@ -19,9 +19,10 @@
  */
 
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -60,8 +61,6 @@ motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
-
-// TODO remove once debugging no longer needed
 FAST_DATA_ZERO_INIT uint32_t inputStampUs;
 
 FAST_DATA_ZERO_INIT dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCounters;
@@ -236,7 +235,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                 } else {
                     dshotTelemetryState.invalidPacketCount++;
                     if (i == 0) {
-                        memcpy(dshotTelemetryState.inputBuffer,dmaMotors[i].dmaBuffer,sizeof(dshotTelemetryState.inputBuffer));
+                        memcpy(dshotTelemetryState.inputBuffer, dmaMotors[i].dmaBuffer, sizeof(dshotTelemetryState.inputBuffer));
                     }
                 }
 #ifdef USE_DSHOT_TELEMETRY_STATS

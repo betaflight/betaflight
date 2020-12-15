@@ -20,11 +20,6 @@
 
 #ifdef USE_DSHOT
 
-// TODO remove once debugging no longer needed
-#ifdef USE_DSHOT_TELEMETRY
-#include <string.h>
-#endif
-
 extern FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount;
 #if defined(STM32F7) || defined(STM32H7)
 extern FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
@@ -37,7 +32,6 @@ extern motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 #ifdef USE_DSHOT_TELEMETRY
 extern uint32_t readDoneCount;
 
-// TODO remove once debugging no longer needed
 FAST_DATA_ZERO_INIT extern uint32_t inputStampUs;
 
 typedef struct dshotDMAHandlerCycleCounters_s {
