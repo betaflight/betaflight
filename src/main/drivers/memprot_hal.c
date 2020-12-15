@@ -68,7 +68,7 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
 
             int msbpos = flsl(length) - 1;
 
-            if (length == (1U << msbpos)) {
+            if (length != (1U << msbpos)) {
                 msbpos += 1;
             }
 
