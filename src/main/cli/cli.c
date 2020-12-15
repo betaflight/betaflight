@@ -3850,12 +3850,6 @@ static void cliDshotProg(const char *cmdName, char *cmdline)
                         // pwmDisableMotors();
                         motorDisable();
 
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(5); // Wait for potential ESC telemetry transmission to finish
-                        } else {
-                            delay(1);
-                        }
-
                         firstCommand = false;
                     }
 

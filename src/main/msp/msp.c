@@ -3020,7 +3020,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 for (uint8_t i = 0; i < commandCount; i++) {
                     const uint8_t commandIndex = sbufReadU8(src);
                     dshotCommandWrite(motorIndex, getMotorCount(), commandIndex, commandType);
-                    delay(1);
                 }
 
                 if (DSHOT_CMD_TYPE_BLOCKING == commandType) {
