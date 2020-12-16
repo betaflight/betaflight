@@ -114,6 +114,7 @@ typedef enum {
     DEBUG_RX_TIMING,
     DEBUG_D_LPF,
     DEBUG_VTX_TRAMP,
+    DEBUG_GHST,
     DEBUG_COUNT
 } debugType_e;
 
