@@ -39,8 +39,7 @@ MEMORY
 {
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
-    CODE_RAM (rwx)    : ORIGIN = 0x24010000, LENGTH = 448K
+    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 512K
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
 
@@ -81,7 +80,7 @@ SECTIONS
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >CODE_RAM
+  } >RAM
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -100,7 +99,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >CODE_RAM
+  } >RAM
 
   /* Critical program code goes into ITCM RAM */
   /* Copy specific fast-executing code to ITCM RAM */ 
@@ -118,13 +117,13 @@ SECTIONS
   .ARM.extab   : 
   { 
     *(.ARM.extab* .gnu.linkonce.armextab.*) 
-  } >CODE_RAM
+  } >RAM
   
   .ARM : 
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >CODE_RAM
+  } >RAM
 
   .pg_registry :
   {
@@ -132,14 +131,14 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >CODE_RAM
+  } >RAM
   
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >CODE_RAM
+  } >RAM
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -154,7 +153,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM
+  } >DTCM_RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -170,7 +169,7 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >RAM
+  } >DTCM_RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -185,7 +184,7 @@ SECTIONS
     . = ALIGN(4);
     _esram2 = .;         /* define a global symbol at sram2 end */
     __sram2_end__ = _esram2;
-  } >RAM
+  } >DTCM_RAM
 
   /* used during startup to initialized fastram_data */
   _sfastram_idata = LOADADDR(.fastram_data);
