@@ -312,6 +312,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
     uint8_t checksum;
     int hdrLen = 3;
     int crcLen = 0;
+    int ret = 0;
 
     #define V1_CHECKSUM_STARTPOS 3
     if (mspVersion == MSP_V1) {
@@ -388,7 +389,10 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
     }
 
     // Send the frame
-    return mspSerialSendFrame(msp, hdrBuf, hdrLen, sbufPtr(&packet->buf), dataLen, crcBuf, crcLen);
+	// If it fails, resend until success
+    while (ret==0)
+        ret = mspSerialSendFrame(msp, hdrBuf, hdrLen, sbufPtr(&packet->buf), dataLen, crcBuf, crcLen);
+    return ret;
 }
 
 static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
