@@ -40,6 +40,8 @@
 
 #include "msp_serial.h"
 
+#include "drivers/time.h"
+
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
@@ -289,8 +291,10 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
     //     this allows us to transmit jumbo frames bigger than TX buffer (serialWriteBuf will block, but for jumbo frames we don't care)
     //  b) Response fits into TX buffer
     const int totalFrameLength = hdrLen + dataLen + crcLen;
+    const int perByteCostUs = (1000000 / (msp->port->baudRate / 10));
     if (!isSerialTransmitBufferEmpty(msp->port) && ((int)serialTxBytesFree(msp->port) < totalFrameLength)) {
-        return 0;
+        //Currently TxBuffer free space is not enough, Wait for TxBuffer empty
+        delayMicroseconds((int)serialTxBytesFree(msp->port) * perByteCostUs);
     }
 
     // Transmit frame
@@ -312,7 +316,6 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
     uint8_t checksum;
     int hdrLen = 3;
     int crcLen = 0;
-    int ret = 0;
 
     #define V1_CHECKSUM_STARTPOS 3
     if (mspVersion == MSP_V1) {
@@ -389,10 +392,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
     }
 
     // Send the frame
-	// If it fails, resend until success
-    while (ret==0)
-        ret = mspSerialSendFrame(msp, hdrBuf, hdrLen, sbufPtr(&packet->buf), dataLen, crcBuf, crcLen);
-    return ret;
+    return mspSerialSendFrame(msp, hdrBuf, hdrLen, sbufPtr(&packet->buf), dataLen, crcBuf, crcLen);
 }
 
 static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
