@@ -19,7 +19,19 @@ variables:
 
 name: $(Build.RequestedFor)_$(Build.SourceBranchName)_$(BuildID)
 
-trigger: none
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - "*-maintenance"
+
+pr:
+  drafts: false
+  branches:
+    include:
+    - master
+    - "*-maintenance"
 
 stages:
 - stage: Build
