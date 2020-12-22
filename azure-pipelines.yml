@@ -42,7 +42,7 @@ stages:
     steps:
     - script: make arm_sdk_install
       displayName: 'Install the build toolchain'
-    - script: make unified
+    - script: make all
       displayName: 'Build the Unified Targets'
     - script: mkdir release; cp obj/*.hex release/
       displayName: 'Copy artefacts'
