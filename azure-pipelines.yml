@@ -19,7 +19,19 @@ variables:
 
 name: $(Build.RequestedFor)_$(Build.SourceBranchName)_$(BuildID)
 
-trigger: none
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - "*-maintenance"
+
+pr:
+  drafts: false
+  branches:
+    include:
+    - master
+    - "*-maintenance"
 
 stages:
 - stage: Build
@@ -30,7 +42,7 @@ stages:
     steps:
     - script: make arm_sdk_install
       displayName: 'Install the build toolchain'
-    - script: make unified
+    - script: make all
       displayName: 'Build the Unified Targets'
     - script: mkdir release; cp obj/*.hex release/
       displayName: 'Copy artefacts'
