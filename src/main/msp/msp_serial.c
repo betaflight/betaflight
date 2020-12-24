@@ -40,8 +40,6 @@
 
 #include "msp_serial.h"
 
-#include "drivers/time.h"
-
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
@@ -292,13 +290,7 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
     //  b) Response fits into TX buffer
     const int totalFrameLength = hdrLen + dataLen + crcLen;
     if (!isSerialTransmitBufferEmpty(msp->port) && ((int)serialTxBytesFree(msp->port) < totalFrameLength)) {
-#ifdef USE_MSP_DISPLAYPORT
-        //Currently TxBuffer free space is not enough, Wait for TxBuffer empty
-        const int perByteCostUs = (1000000 / (msp->port->baudRate / 10));
-        delayMicroseconds((int)serialTxBytesFree(msp->port) * perByteCostUs);
-#else
         return 0;
-#endif
     }
 
     // Transmit frame
