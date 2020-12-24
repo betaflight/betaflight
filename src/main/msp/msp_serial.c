@@ -291,10 +291,13 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
     //     this allows us to transmit jumbo frames bigger than TX buffer (serialWriteBuf will block, but for jumbo frames we don't care)
     //  b) Response fits into TX buffer
     const int totalFrameLength = hdrLen + dataLen + crcLen;
-    const int perByteCostUs = (1000000 / (msp->port->baudRate / 10));
     if (!isSerialTransmitBufferEmpty(msp->port) && ((int)serialTxBytesFree(msp->port) < totalFrameLength)) {
+#ifdef USE_MSP_DISPLAYPORT
         //Currently TxBuffer free space is not enough, Wait for TxBuffer empty
+        const int perByteCostUs = (1000000 / (msp->port->baudRate / 10));
         delayMicroseconds((int)serialTxBytesFree(msp->port) * perByteCostUs);
+#else
+        return 0;
     }
 
     // Transmit frame
