@@ -298,6 +298,7 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
         delayMicroseconds((int)serialTxBytesFree(msp->port) * perByteCostUs);
 #else
         return 0;
+#endif
     }
 
     // Transmit frame
