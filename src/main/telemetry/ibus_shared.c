@@ -210,11 +210,7 @@ static void setIbusSensorType(ibusAddress_t address)
 
 static uint16_t getVoltage()
 {
-    uint16_t voltage = getBatteryVoltage();
-    if (telemetryConfig()->report_cell_voltage) {
-        voltage /= getBatteryCellCount();
-    }
-    return voltage;
+    return (telemetryConfig()->report_cell_voltage ? getBatteryAverageCellVoltage() : getBatteryVoltage());
 }
 
 static uint16_t getTemperature()
