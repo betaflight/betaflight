@@ -270,6 +270,24 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #define CRASH_FLIP_DEADBAND 20
 #define CRASH_FLIP_STICK_MINF 0.15f
 
+float getCrashFlipOutputRange(void)
+{
+    if (mixerConfig()->crashflip_output_percent > 0) {
+
+        const float factor = MIN(1.0f, (float)mixerConfig()->crashflip_output_percent / 100.0f);
+
+        if (!isMotorProtocolDshot()) {
+            return (motorConfig()->maxthrottle - motorRangeMin) * factor;
+        }
+#ifdef USE_DSHOT
+        else {
+            return (DSHOT_MAX_THROTTLE - motorRangeMin) * factor;
+        }
+#endif
+    }
+    return motorOutputRange;
+}
+
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -316,6 +334,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
         const float crashFlipStickMinExpo = flipPowerFactor * CRASH_FLIP_STICK_MINF + power3(CRASH_FLIP_STICK_MINF) * (1 - flipPowerFactor);
         const float flipStickRange = 1.0f - crashFlipStickMinExpo;
         const float flipPower = MAX(0.0f, stickDeflectionExpoLength - crashFlipStickMinExpo) / flipStickRange;
+        const float outputRange = getCrashFlipOutputRange();
 
         for (int i = 0; i < mixerRuntime.motorCount; ++i) {
             float motorOutputNormalised =
@@ -331,7 +350,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 }
             }
             motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
-            float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
+            float motorOutput = motorOutputMin + motorOutputNormalised * outputRange;
 
             // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
             motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
