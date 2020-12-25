@@ -19,10 +19,10 @@ and complete all of them -->
 <!-- Create a diff and post it here in a code block. Put (three backticks) at the start and end of the diff block (instructions  on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/)
 Use resource show all to create a resource allocation list and post it here in a code block. Put (three backticks) at the start and end of the output block. -->
 ```
-PASTE diff HERE
+PASTE THE OUTPUT OF 'diff' HERE
 ```
 ```
-PASTE resource show all HERE
+PASTE THE OUTPUT OF 'resource show all' HERE
 ```
 
 ### Setup / Versions
@@ -33,5 +33,5 @@ PASTE resource show all HERE
  <!-- Details about how all is wired -->
  - How are the different components wired up:
 
-### Additional context
-<!-- Add any other context about the problem here. -->
+
+<!-- Add any other context about the problem that you think might be relevant here. -->
