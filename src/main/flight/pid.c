@@ -211,15 +211,15 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
         .simplified_pids_mode = PID_SIMPLIFIED_TUNING_OFF,
-        .simplified_master_multiplier = 100,
-        .simplified_roll_pitch_ratio = 100,
-        .simplified_i_gain = 100,
-        .simplified_pd_ratio = 100,
-        .simplified_pd_gain = 100,
-        .simplified_dmin_ratio = 100,
-        .simplified_ff_gain = 100,
+        .simplified_master_multiplier = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_roll_pitch_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_i_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_pd_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_pd_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_ff_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dterm_filter = true,
-        .simplified_dterm_filter_multiplier = 100,
+        .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
