@@ -22,14 +22,14 @@
 
 #include "flight/pid.h"
 
-#define SLIDER_MIN 50
-#define SLIDER_MAX 200
+#define SIMPLIFIED_TUNING_MIN 50
+#define SIMPLIFIED_TUNING_MAX 200
 
 typedef enum {
-    PID_TUNING_SLIDERS_OFF = 0,
-    PID_TUNING_SLIDERS_RP,
-    PID_TUNING_SLIDERS_RPY,
-    PID_TUNING_SLIDERS_MODE_COUNT,
-} pidTuningSlidersMode_e;
+    PID_SIMPLIFIED_TUNING_OFF = 0,
+    PID_SIMPLIFIED_TUNING_RP,
+    PID_SIMPLIFIED_TUNING_RPY,
+    PID_SIMPLIFIED_TUNING_MODE_COUNT,
+} pidSimplifiedTuningMode_e;
 
-void applyTuningSliders(pidProfile_t *pidProfile);
+void applySimplifiedTuning(pidProfile_t *pidProfile);

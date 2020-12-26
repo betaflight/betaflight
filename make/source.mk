@@ -320,7 +320,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \
-            config/tuning_sliders.c \
+            config/simplified_tuning.c \
             i2c_bst.c \
             io/dashboard.c \
             io/serial.c \

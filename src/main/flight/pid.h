@@ -214,17 +214,17 @@ typedef struct pidProfile_s {
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
 
-    uint8_t slider_pids_mode;
-    uint8_t slider_master_multiplier;
-    uint8_t slider_roll_pitch_ratio;
-    uint8_t slider_i_gain;
-    uint8_t slider_pd_ratio;
-    uint8_t slider_pd_gain;
-    uint8_t slider_dmin_ratio;
-    uint8_t slider_ff_gain;
+    uint8_t simplified_pids_mode;
+    uint8_t simplified_master_multiplier;
+    uint8_t simplified_roll_pitch_ratio;
+    uint8_t simplified_i_gain;
+    uint8_t simplified_pd_ratio;
+    uint8_t simplified_pd_gain;
+    uint8_t simplified_dmin_ratio;
+    uint8_t simplified_ff_gain;
 
-    uint8_t slider_dterm_filter;
-    uint8_t slider_dterm_filter_multiplier;
+    uint8_t simplified_dterm_filter;
+    uint8_t simplified_dterm_filter_multiplier;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

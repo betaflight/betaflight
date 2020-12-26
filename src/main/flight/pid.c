@@ -33,7 +33,7 @@
 #include "common/maths.h"
 
 #include "config/config_reset.h"
-#include "config/tuning_sliders.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
@@ -210,16 +210,16 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
-        .slider_pids_mode = PID_TUNING_SLIDERS_OFF,
-        .slider_master_multiplier = 100,
-        .slider_roll_pitch_ratio = 100,
-        .slider_i_gain = 100,
-        .slider_pd_ratio = 100,
-        .slider_pd_gain = 100,
-        .slider_dmin_ratio = 100,
-        .slider_ff_gain = 100,
-        .slider_dterm_filter = true,
-        .slider_dterm_filter_multiplier = 100,
+        .simplified_pids_mode = PID_SIMPLIFIED_TUNING_OFF,
+        .simplified_master_multiplier = 100,
+        .simplified_roll_pitch_ratio = 100,
+        .simplified_i_gain = 100,
+        .simplified_pd_ratio = 100,
+        .simplified_pd_gain = 100,
+        .simplified_dmin_ratio = 100,
+        .simplified_ff_gain = 100,
+        .simplified_dterm_filter = true,
+        .simplified_dterm_filter_multiplier = 100,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;

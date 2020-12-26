@@ -285,8 +285,8 @@
 #define MSP_VTXTABLE_POWERLEVEL  138    //out message         vtxTable powerLevel data
 #define MSP_MOTOR_TELEMETRY      139    //out message         Per-motor telemetry data (RPM, packet stats, ESC temp, etc.)
 
-#define MSP_TUNING_SLIDERS       140    //out message         Tuning slider poisitons and enabled state
-#define MSP_SET_TUNING_SLIDERS   141    //in message          Set tuning slider positions and apply tuning slider calculation
+#define MSP_SIMPLIFIED_TUNING       140    //out message         Simplified tuning values and enabled state
+#define MSP_SET_SIMPLIFIED_TUNING   141    //in message          Set simplified tuning positions and apply the calculated tuning
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed

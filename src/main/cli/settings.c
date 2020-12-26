@@ -33,7 +33,7 @@
 #include "common/utils.h"
 #include "common/time.h"
 
-#include "config/tuning_sliders.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
@@ -502,7 +502,7 @@ static const char * const lookupTableOsdLogoOnArming[] = {
     "OFF", "ON", "FIRST_ARMING",
 };
 #endif
-const char * const lookupTableSliderPidsMode[] = {
+const char * const lookupTableSimplifiedTuningPidsMode[] = {
     "OFF", "RP", "RPY",
 };
 
@@ -632,7 +632,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableOsdLogoOnArming),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableMixerType),
-    LOOKUP_TABLE_ENTRY(lookupTableSliderPidsMode),
+    LOOKUP_TABLE_ENTRY(lookupTableSimplifiedTuningPidsMode),
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -1175,21 +1175,21 @@ const clivalue_t valueTable[] = {
 #endif
     { "level_race_mode",            VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, level_race_mode) },
 
-#ifdef USE_TUNING_SLIDERS
-    { "slider_pids_mode",               VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SLIDER_PIDS_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_pids_mode) },
-    { "slider_master_multiplier",       VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_master_multiplier) },
-    { "slider_roll_pitch_ratio",        VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_roll_pitch_ratio) },
-    { "slider_i_gain",                  VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_i_gain) },
-    { "slider_pd_ratio",                VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_pd_ratio) },
-    { "slider_pd_gain",                 VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_pd_gain) },
-    { "slider_dmin_ratio",              VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_dmin_ratio) },
-    { "slider_ff_gain",                 VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_ff_gain) },
+#ifdef USE_SIMPLIFIED_TUNING
+    { "simplified_pids_mode",               VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SIMPLIFIED_TUNING_PIDS_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_pids_mode) },
+    { "simplified_master_multiplier",       VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_master_multiplier) },
+    { "simplified_roll_pitch_ratio",        VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_roll_pitch_ratio) },
+    { "simplified_i_gain",                  VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_i_gain) },
+    { "simplified_pd_ratio",                VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_pd_ratio) },
+    { "simplified_pd_gain",                 VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_pd_gain) },
+    { "simplified_dmin_ratio",              VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_dmin_ratio) },
+    { "simplified_ff_gain",                 VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_ff_gain) },
 
-    { "slider_dterm_filter",            VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_dterm_filter) },
-    { "slider_dterm_filter_multiplier", VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, slider_dterm_filter_multiplier) },
+    { "simplified_dterm_filter",            VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_dterm_filter) },
+    { "simplified_dterm_filter_multiplier", VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, simplified_dterm_filter_multiplier) },
 
-    { "slider_gyro_filter",             VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, slider_gyro_filter) },
-    { "slider_gyro_filter_multiplier",  VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SLIDER_MIN, SLIDER_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, slider_gyro_filter_multiplier) },
+    { "simplified_gyro_filter",             VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, simplified_gyro_filter) },
+    { "simplified_gyro_filter_multiplier",  VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, simplified_gyro_filter_multiplier) },
 #endif
 
 // PG_TELEMETRY_CONFIG
