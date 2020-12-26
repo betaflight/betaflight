@@ -34,8 +34,9 @@
 
 #include "drivers/dshot.h"
 #include "drivers/dshot_dpwm.h"
-#include "drivers/dshot_command.h"
 #include "drivers/pwm_output.h"
+
+#include "dshot_command.h"
 
 #define DSHOT_PROTOCOL_DETECTION_DELAY_MS 3000
 #define DSHOT_INITIAL_DELAY_US 10000
@@ -141,7 +142,7 @@ static dshotCommandControl_t* addCommand()
 
 static bool allMotorsAreIdle(void)
 {
-    for (unsigned i = 0; i < dshotPwmDevice.count; i++) {
+    for (unsigned i = 0; i < motorDeviceCount(); i++) {
         const motorDmaOutput_t *motor = getMotorDmaOutput(i);
         if (motor->protocolControl.value) {
             return false;
@@ -204,18 +205,18 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
 #ifdef USE_DSHOT_TELEMETRY
             timeUs_t timeoutUs = micros() + 1000;
-            while (!pwmStartDshotMotorUpdate() &&
+            while (!motorGetVTable().updateStart() &&
                    cmpTimeUs(timeoutUs, micros()) > 0);
 #endif
-            for (uint8_t i = 0; i < dshotPwmDevice.count; i++) {
+            for (uint8_t i = 0; i < motorDeviceCount(); i++) {
                 if ((i == index) || (index == ALL_MOTORS)) {
                     motorDmaOutput_t *const motor = getMotorDmaOutput(i);
                     motor->protocolControl.requestTelemetry = true;
-                    dshotPwmDevice.vTable.writeInt(i, command);
+                    motorGetVTable().writeInt(i, command);
                 }
             }
 
-            dshotPwmDevice.vTable.updateComplete();
+            motorGetVTable().updateComplete();
         }
         delayMicroseconds(delayAfterCommandUs);
     } else if (commandType == DSHOT_CMD_TYPE_INLINE) {
