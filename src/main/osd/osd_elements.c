@@ -1879,6 +1879,8 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
 
 void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs)
 {
+    static int blinkLoopCounter = 0;
+
 #ifdef USE_GPS
     static bool lastGpsSensorState;
     // Handle the case that the GPS_SENSOR may be delayed in activation
@@ -1890,7 +1892,16 @@ void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs
     }
 #endif // USE_GPS
 
-    blinkState = (currentTimeUs / 200000) % 2;
+    if (osdConfig()->task_frequency == OSD_TASK_FREQUENCY_DEFAULT) {
+        // synchronize the blinking with the OSD task loop
+        if (++blinkLoopCounter >= 2) {
+            blinkState = !blinkState;
+            blinkLoopCounter = 0;
+        }
+    } else {
+        // OSD task frequency is non-standard so revert to time-based blink intervals
+        blinkState = (currentTimeUs / 200000) % 2;
+    }
 
     for (unsigned i = 0; i < activeOsdElementCount; i++) {
         if (!backgroundLayerSupported) {
