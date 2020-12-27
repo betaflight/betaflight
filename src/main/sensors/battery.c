@@ -511,13 +511,13 @@ uint8_t getBatteryCellCount(void)
 
 uint16_t getBatteryAverageCellVoltage(void)
 {
-    return voltageMeter.displayFiltered / batteryCellCount;
+    return (batteryCellCount ? voltageMeter.displayFiltered / batteryCellCount : 0);
 }
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
 uint16_t getBatterySagCellVoltage(void)
 {
-    return voltageMeter.sagFiltered / batteryCellCount;
+    return (batteryCellCount ? voltageMeter.sagFiltered / batteryCellCount : 0);
 }
 #endif
 

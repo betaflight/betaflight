@@ -602,7 +602,6 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         int32_t tmpi;
         uint32_t tmp2 = 0;
         uint16_t vfasVoltage;
-        uint8_t cellCount;
 
 #ifdef USE_ESC_SENSOR_TELEMETRY
         escSensorData_t *escData;
@@ -610,11 +609,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 
         switch (id) {
             case FSSP_DATAID_VFAS       :
-                vfasVoltage = getBatteryVoltage();
-                if (telemetryConfig()->report_cell_voltage) {
-                    cellCount = getBatteryCellCount();
-                    vfasVoltage = cellCount ? getBatteryVoltage() / cellCount : 0;
-                }
+                vfasVoltage = telemetryConfig()->report_cell_voltage ? getBatteryAverageCellVoltage() : getBatteryVoltage();
                 smartPortSendPackage(id, vfasVoltage); // in 0.01V according to SmartPort spec
                 *clearToSend = false;
                 break;
@@ -873,8 +868,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                cellCount = getBatteryCellCount();
-                vfasVoltage = cellCount ? (getBatteryVoltage() / cellCount) : 0; // in 0.01V according to SmartPort spec
+                vfasVoltage = getBatteryAverageCellVoltage(); // in 0.01V according to SmartPort spec
                 smartPortSendPackage(id, vfasVoltage);
                 *clearToSend = false;
                 break;
