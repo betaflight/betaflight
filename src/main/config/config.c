@@ -101,7 +101,7 @@ pidProfile_t *currentPidProfile;
 #define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
 #define BETAFLIGHT_MAX_SRATE  100
-#define KISS_MAX_SRATE        100
+#define KISS_MAX_SRATE        99
 #define QUICK_MAX_RATE        200
 #define ACTUAL_MAX_RATE       200
 
@@ -577,6 +577,8 @@ static void validateAndFixConfig(void)
             }
 
             break;
+        case RATES_TYPE_RACEFLIGHT:
+            break;   // no range constraint is necessary - allows 0 - 255
         case RATES_TYPE_KISS:
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                 controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, KISS_MAX_SRATE);
@@ -593,6 +595,8 @@ static void validateAndFixConfig(void)
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                 controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, QUICK_MAX_RATE);
             }
+
+            break;
         }
     }
 }
