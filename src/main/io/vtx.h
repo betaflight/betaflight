@@ -32,6 +32,14 @@ typedef enum {
     VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM, // Set low power until arming for the first time
 } vtxLowerPowerDisarm_e;
 
+#ifdef USE_VTX_SMARTAUDIO
+typedef enum {
+    VTX_TX805_PIT_MODE_OFF = 0,
+    VTX_TX805_PIT_MODE_PIR,
+    VTX_TX805_PIT_MODE_POR,
+} vtxTx805PitMode_e;
+#endif
+
 typedef struct vtxSettingsConfig_s {
     uint8_t band;           // 1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
     uint8_t channel;        // 1-8
@@ -39,6 +47,9 @@ typedef struct vtxSettingsConfig_s {
     uint16_t freq;          // sets freq in MHz if band=0
     uint16_t pitModeFreq;   // sets out-of-range pitmode frequency
     uint8_t lowPowerDisarm; // min power while disarmed, from vtxLowerPowerDisarm_e
+#ifdef USE_VTX_SMARTAUDIO
+    uint8_t tx805PitMode;   // support non-standard Eachine TX805 pit mode behavior, from vtxTx805PitMode_e
+#endif
 } vtxSettingsConfig_t;
 
 PG_DECLARE(vtxSettingsConfig_t, vtxSettingsConfig);

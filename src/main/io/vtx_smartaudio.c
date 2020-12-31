@@ -922,6 +922,20 @@ static void vtxSASetPitMode(vtxDevice_t *vtxDevice, uint8_t onoff)
         return;
     }
 
+    uint8_t tx805PitMode = vtxSettingsConfig()->tx805PitMode;
+
+    if (tx805PitMode) {
+        // The TX805 is a SmartAudio 2.0 VTX but it interprets the pit mode flags incorrectly.
+        uint8_t newMode = 0;
+
+        if (onoff) {
+            newMode = (tx805PitMode == VTX_TX805_PIT_MODE_PIR) ? SA_MODE_SET_IN_RANGE_PITMODE : SA_MODE_SET_OUT_RANGE_PITMODE;
+        }
+
+        saSetMode(newMode);
+        return;
+    }
+
     if (onoff && saDevice.version < 3) {
         // Smart Audio prior to V2.1 can not turn pit mode on by software.
         return;

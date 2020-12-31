@@ -64,6 +64,9 @@ void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
 #endif
     vtxSettingsConfig->pitModeFreq = VTX_TABLE_DEFAULT_PITMODE_FREQ;
     vtxSettingsConfig->lowPowerDisarm = VTX_LOW_POWER_DISARM_OFF;
+#ifdef USE_VTX_SMARTAUDIO
+    vtxSettingsConfig->tx805PitMode = VTX_TX805_PIT_MODE_OFF;
+#endif
 }
 
 typedef enum {
@@ -118,6 +121,9 @@ STATIC_UNIT_TESTED vtxSettingsConfig_t vtxGetSettings(void)
         .freq = vtxSettingsConfig()->freq,
         .pitModeFreq = vtxSettingsConfig()->pitModeFreq,
         .lowPowerDisarm = vtxSettingsConfig()->lowPowerDisarm,
+#ifdef USE_VTX_SMARTAUDIO
+        .tx805PitMode = vtxSettingsConfig()->tx805PitMode,
+#endif
     };
 
 #if defined(VTX_SETTINGS_FREQCMD)

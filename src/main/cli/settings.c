@@ -424,6 +424,12 @@ static const char * const lookupTableVtxLowPowerDisarm[] = {
 };
 #endif
 
+#ifdef USE_VTX_SMARTAUDIO
+static const char * const lookupTableVtxTx805PitMode[] = {
+    "OFF", "PIR", "POR"
+};
+#endif
+
 #ifdef USE_SDCARD
 static const char * const lookupTableSdcardMode[] = {
     "OFF", "SPI", "SDIO"
@@ -599,6 +605,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif // USE_RC_SMOOTHING_FILTER
 #ifdef USE_VTX_COMMON
     LOOKUP_TABLE_ENTRY(lookupTableVtxLowPowerDisarm),
+#endif
+#ifdef USE_VTX_SMARTAUDIO
+    LOOKUP_TABLE_ENTRY(lookupTableVtxTx805PitMode),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardware),
 #ifdef USE_SDCARD
@@ -1479,6 +1488,10 @@ const clivalue_t valueTable[] = {
 // PG_VTX_IO
 #ifdef USE_VTX_RTC6705
     { "vtx_spi_bus",                VAR_UINT8  | HARDWARE_VALUE | MASTER_VALUE, .config.minmaxUnsigned = { 0, SPIDEV_COUNT }, PG_VTX_IO_CONFIG, offsetof(vtxIOConfig_t, spiDevice) },
+#endif
+
+#ifdef USE_VTX_SMARTAUDIO
+    { "vtx_tx805_pit_mode",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_TX805_PIT_MODE }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, tx805PitMode) },
 #endif
 
 // PG_VCD_CONFIG
