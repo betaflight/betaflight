@@ -103,11 +103,6 @@ pidProfile_t *currentPidProfile;
 
 #define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
-#define BETAFLIGHT_MAX_SRATE  100
-#define KISS_MAX_SRATE        99
-#define QUICK_MAX_RATE        200
-#define ACTUAL_MAX_RATE       200
-
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
@@ -194,6 +189,18 @@ static void adjustFilterLimit(uint16_t *parm, uint16_t resetValue)
 {
     if (*parm > FILTER_FREQUENCY_MAX) {
         *parm = resetValue;
+    }
+}
+
+static void validateAndFixRatesSettings(void)
+{
+    for (unsigned profileIndex = 0; profileIndex < CONTROL_RATE_PROFILE_COUNT; profileIndex++) {
+        const ratesType_e ratesType = controlRateProfilesMutable(profileIndex)->rates_type;
+        for (unsigned axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            controlRateProfilesMutable(profileIndex)->rcRates[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcRates[axis], 0, ratesSettingLimits[ratesType].rc_rate_limit);
+            controlRateProfilesMutable(profileIndex)->rates[axis] = constrain(controlRateProfilesMutable(profileIndex)->rates[axis], 0, ratesSettingLimits[ratesType].srate_limit);
+            controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
+        }
     }
 }
 
@@ -571,37 +578,7 @@ static void validateAndFixConfig(void)
     targetValidateConfiguration();
 #endif
 
-    for (unsigned i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
-        switch (controlRateProfilesMutable(i)->rates_type) {
-        case RATES_TYPE_BETAFLIGHT:
-        default:
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, BETAFLIGHT_MAX_SRATE);
-            }
-
-            break;
-        case RATES_TYPE_RACEFLIGHT:
-            break;   // no range constraint is necessary - allows 0 - 255
-        case RATES_TYPE_KISS:
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, KISS_MAX_SRATE);
-            }
-
-            break;
-        case RATES_TYPE_ACTUAL:
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, ACTUAL_MAX_RATE);
-            }
-
-            break;
-        case RATES_TYPE_QUICK:
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                controlRateProfilesMutable(i)->rates[axis] = constrain(controlRateProfilesMutable(i)->rates[axis], 0, QUICK_MAX_RATE);
-            }
-
-            break;
-        }
-    }
+    validateAndFixRatesSettings();  // constrain the various rates settings to limits imposed by the rates type
 
 #if defined(USE_RX_MSP_OVERRIDE)
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {

@@ -69,6 +69,14 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
     }
 }
 
+const ratesSettingsLimits_t ratesSettingLimits[RATES_TYPE_COUNT] = {
+    [RATES_TYPE_BETAFLIGHT] = { 255, 100, 100 },
+    [RATES_TYPE_RACEFLIGHT] = { 200, 255, 100 },
+    [RATES_TYPE_KISS]       = { 255,  99, 100 },
+    [RATES_TYPE_ACTUAL]     = { 200, 200, 100 },
+    [RATES_TYPE_QUICK]      = { 255, 200, 100 },
+};
+
 void loadControlRateProfile(void)
 {
     currentControlRateProfile = controlRateProfilesMutable(systemConfig()->activeRateProfile);
