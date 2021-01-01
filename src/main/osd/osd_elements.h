@@ -47,7 +47,7 @@ int32_t osdGetSpeedToSelectedUnit(int32_t value);
 char osdGetSpeedToSelectedUnitSymbol(void);
 char osdGetTemperatureSymbolForSelectedUnit(void);
 void osdAddActiveElements(void);
-void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs);
+void osdDrawActiveElements(displayPort_t *osdDisplayPort);
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort);
 void osdElementsInit(bool backgroundLayerFlag);
 void osdResetAlarms(void);
