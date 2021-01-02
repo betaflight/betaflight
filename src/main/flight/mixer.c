@@ -253,7 +253,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BATTERY, 2, batteryGoodness * 100);
             DEBUG_SET(DEBUG_BATTERY, 3, motorRangeAttenuationFactor * 1000);
         }
-        motorRangeMax = mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
+        motorRangeMax = isFlipOverAfterCrashActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
