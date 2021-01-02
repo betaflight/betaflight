@@ -341,6 +341,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->camera_frame_height = 11;
 
     osdConfig->task_frequency = OSD_TASK_FREQUENCY_DEFAULT;
+    osdConfig->cms_background_type = DISPLAY_BACKGROUND_TRANSPARENT;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)

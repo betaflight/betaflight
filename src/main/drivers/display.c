@@ -153,6 +153,13 @@ bool displayWriteFontCharacter(displayPort_t *instance, uint16_t addr, const osd
     return false;
 }
 
+void displaySetBackgroundType(displayPort_t *instance, displayPortBackground_e backgroundType)
+{
+    if (instance->vTable->setBackgroundType) {
+        instance->vTable->setBackgroundType(instance, backgroundType);
+    }
+}
+
 bool displayCheckReady(displayPort_t *instance, bool rescan)
 {
     if (instance->vTable->checkReady) {

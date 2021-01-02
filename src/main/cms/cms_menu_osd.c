@@ -29,6 +29,8 @@
 
 #include "build/version.h"
 
+#include "cli/settings.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_osd.h"
@@ -36,13 +38,17 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+
+#include "drivers/display.h"
 
 #include "io/displayport_max7456.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
+
 #include "sensors/battery.h"
 
 #ifdef USE_EXTENDED_CMS_MENUS
@@ -306,6 +312,8 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static uint8_t osdConfig_osdProfileIndex;
 #endif
 
+static displayPortBackground_e osdMenuBackgroundType;
+
 static const void *cmsx_menuOsdOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
@@ -318,6 +326,7 @@ static const void *cmsx_menuOsdOnEnter(displayPort_t *pDisp)
     displayPortProfileMax7456_invert = displayPortProfileMax7456()->invert;
     displayPortProfileMax7456_blackBrightness = displayPortProfileMax7456()->blackBrightness;
     displayPortProfileMax7456_whiteBrightness = displayPortProfileMax7456()->whiteBrightness;
+    osdMenuBackgroundType = osdConfig()->cms_background_type;
 #endif
 
     return NULL;
@@ -350,6 +359,14 @@ static const void *cmsx_max7456Update(displayPort_t *pDisp, const void *self)
 }
 #endif // USE_MAX7456
 
+static const void *cmsx_osdBackgroundUpdate(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+    osdConfigMutable()->cms_background_type = osdMenuBackgroundType;
+    displaySetBackgroundType(pDisp, osdMenuBackgroundType);
+    return NULL;
+}
+
 const OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
@@ -366,6 +383,7 @@ const OSD_Entry cmsx_menuOsdEntries[] =
     {"BRT BLACK", OME_UINT8, cmsx_max7456Update, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
     {"BRT WHITE", OME_UINT8, cmsx_max7456Update, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
 #endif
+    {"BACKGROUND",OME_TAB,   cmsx_osdBackgroundUpdate, &(OSD_TAB_t){&osdMenuBackgroundType, DISPLAY_BACKGROUND_COUNT - 1, lookupTableCMSMenuBackgroundType}, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL,   OME_END,  NULL, NULL, 0}
 };
