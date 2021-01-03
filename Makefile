@@ -86,7 +86,6 @@ include $(ROOT)/make/checks.mk
 ifndef TOOLS_DIR
 TOOLS_DIR := $(ROOT)/tools
 endif
-BUILD_DIR := $(ROOT)/build
 DL_DIR    := $(ROOT)/downloads
 
 export RM := rm
@@ -579,9 +578,6 @@ $(DL_DIR):
 	mkdir -p $@
 
 $(TOOLS_DIR):
-	mkdir -p $@
-
-$(BUILD_DIR):
 	mkdir -p $@
 
 ## version           : print firmware version
