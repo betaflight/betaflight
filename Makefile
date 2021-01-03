@@ -83,9 +83,7 @@ include $(ROOT)/make/system-id.mk
 include $(ROOT)/make/checks.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
-ifndef TOOLS_DIR
-TOOLS_DIR := $(ROOT)/tools
-endif
+TOOLS_DIR ?= $(ROOT)/tools
 DL_DIR    := $(ROOT)/downloads
 
 export RM := rm
