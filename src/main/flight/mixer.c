@@ -654,7 +654,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BATTERY, 2, batteryGoodness * 100);
             DEBUG_SET(DEBUG_BATTERY, 3, motorRangeAttenuationFactor * 1000);
         }
-        motorRangeMax = motorOutputHigh - motorRangeAttenuationFactor * (motorOutputHigh - motorOutputLow);
+        motorRangeMax = isFlipOverAfterCrashActive() ? motorOutputHigh : motorOutputHigh - motorRangeAttenuationFactor * (motorOutputHigh - motorOutputLow);
 #else
         motorRangeMax = motorOutputHigh;
 #endif
