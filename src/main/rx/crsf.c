@@ -275,12 +275,12 @@ static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsP
 {
     const crsfLinkStatisticsTx_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
-    int16_t rssiDbm = -1 * stats.uplink_RSSI;
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
         const uint16_t rssiPercentScaled = scaleRange(stats.uplink_RSSI_percentage, 0, 100, 0, RSSI_MAX_VALUE);
         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 #ifdef USE_RX_RSSI_DBM
+    int16_t rssiDbm = -1 * stats.uplink_RSSI;
     if (rxConfig()->crsf_use_rx_snr) {
         rssiDbm = stats.uplink_SNR;
     }

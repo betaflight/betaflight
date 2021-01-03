@@ -32,6 +32,7 @@ struct rxSpiConfig_s;
 
 void rxSpiDevicePreInit(const struct rxSpiConfig_s *rxSpiConfig);
 bool rxSpiDeviceInit(const struct rxSpiConfig_s *rxSpiConfig);
+void rxSpiSetNormalSpeedMhz(uint32_t mhz);
 void rxSpiNormalSpeed();
 void rxSpiStartupSpeed();
 void rxSpiDmaEnable(bool enable);
@@ -47,3 +48,5 @@ bool rxSpiGetExtiState(void);
 bool rxSpiPollExti(void);
 void rxSpiResetExti(void);
 timeUs_t rxSpiGetLastExtiTimeUs(void);
+void rxSpiTransferCommandMulti(uint8_t *data, uint8_t length);
+bool rxSpiIsBusy(void);

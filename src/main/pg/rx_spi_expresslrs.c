@@ -18,18 +18,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#define MSP_TLM_INBUF_SIZE 128
-#define MSP_TLM_OUTBUF_SIZE 128
+#if defined(USE_RX_EXPRESSLRS)
 
-// type of function to send MSP response chunk over telemetry.
-typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
+#include "drivers/io.h"
 
-void initSharedMsp(void);
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-// receives telemetry payload with msp and handles it.
-bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);
+#include "rx_spi_expresslrs.h"
 
-// sends MSP reply from previously handled msp-request over telemetry
-bool sendMspReply(const uint8_t payloadSize_max, mspResponseFnPtr responseFn);
+PG_REGISTER_WITH_RESET_TEMPLATE(rxExpressLrsSpiConfig_t, rxExpressLrsSpiConfig, PG_RX_EXPRESSLRS_SPI_CONFIG, 0);
+
+PG_RESET_TEMPLATE(rxExpressLrsSpiConfig_t, rxExpressLrsSpiConfig,
+    .resetIoTag = IO_TAG(RX_EXPRESSLRS_SPI_RESET_PIN),
+    .busyIoTag = IO_TAG(RX_EXPRESSLRS_SPI_BUSY_PIN),
+    .UID = {0, 0, 0, 0, 0, 0},
+    .switchMode = 0,
+    .domain = 0,
+    .rateIndex = 0,
+    .modelId = 0xFF,
+);
+#endif

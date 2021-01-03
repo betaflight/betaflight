@@ -138,14 +138,12 @@ bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength)
     }
 }
 
-static void crsfSendMspResponse(uint8_t *payload, const uint8_t payloadSize);
-
-static bool handleCrsfMspFrameBuffer()
+bool handleCrsfMspFrameBuffer(mspResponseFnPtr responseFn)
 {
     static bool replyPending = false;
     if (replyPending) {
         if (crsfRxIsTelemetryBufEmpty()) {
-            replyPending = sendMspReply(CRSF_FRAME_TX_MSP_FRAME_SIZE, &crsfSendMspResponse);
+            replyPending = sendMspReply(CRSF_FRAME_TX_MSP_FRAME_SIZE, responseFn);
         }
         return replyPending;
     }
@@ -157,7 +155,7 @@ static bool handleCrsfMspFrameBuffer()
         const uint8_t mspFrameLength = mspRxBuffer.bytes[pos];
         if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
             if (crsfRxIsTelemetryBufEmpty()) {
-                replyPending = sendMspReply(CRSF_FRAME_TX_MSP_FRAME_SIZE, &crsfSendMspResponse);
+                replyPending = sendMspReply(CRSF_FRAME_TX_MSP_FRAME_SIZE, responseFn);
             } else {
                 replyPending = true;
             }
@@ -740,7 +738,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // Send ad-hoc response frames as soon as possible
 #if defined(USE_MSP_OVER_TELEMETRY)
     if (mspReplyPending) {
-        mspReplyPending = handleCrsfMspFrameBuffer();
+        mspReplyPending = handleCrsfMspFrameBuffer(&crsfSendMspResponse);
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
@@ -800,7 +798,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     }
 }
 
-#if defined(UNIT_TEST)
+#if defined(UNIT_TEST) || defined(USE_RX_EXPRESSLRS)
 static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
 {
     crc8_dvb_s2_sbuf_append(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
@@ -812,7 +810,7 @@ static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
     return frameSize;
 }
 
-STATIC_UNIT_TESTED int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
+int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
 {
     sbuf_t crsfFrameBuf;
     sbuf_t *sbuf = &crsfFrameBuf;
@@ -834,9 +832,31 @@ STATIC_UNIT_TESTED int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
         crsfFrameGps(sbuf);
         break;
 #endif
+#if defined(USE_MSP_OVER_TELEMETRY)
+    case CRSF_FRAMETYPE_DEVICE_INFO:
+        crsfFrameDeviceInfo(sbuf);
+        break;
+#endif
     }
     const int frameSize = crsfFinalizeBuf(sbuf, frame);
     return frameSize;
 }
+
+#if defined(USE_MSP_OVER_TELEMETRY)
+int getCrsfMspFrame(uint8_t *frame, uint8_t *payload, const uint8_t payloadSize)
+{
+    sbuf_t crsfFrameBuf;
+    sbuf_t *sbuf = &crsfFrameBuf;
+
+    crsfInitializeFrame(sbuf);
+    sbufWriteU8(sbuf, payloadSize + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
+    sbufWriteU8(sbuf, CRSF_FRAMETYPE_MSP_RESP);
+    sbufWriteU8(sbuf, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(sbuf, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteData(sbuf, payload, payloadSize);
+    const int frameSize = crsfFinalizeBuf(sbuf, frame);
+    return frameSize;
+}
+#endif
 #endif
 #endif

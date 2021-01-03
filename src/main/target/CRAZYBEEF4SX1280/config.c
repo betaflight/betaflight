@@ -18,18 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#define MSP_TLM_INBUF_SIZE 128
-#define MSP_TLM_OUTBUF_SIZE 128
+#include "platform.h"
+#include "io/serial.h"
+#include "pg/piniobox.h"
+#include "target.h"
 
-// type of function to send MSP response chunk over telemetry.
-typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
+#define USE_TARGET_CONFIG
 
-void initSharedMsp(void);
+void targetConfiguration(void)
+{
+    pinioBoxConfigMutable()->permanentId[0] = 40;
+    pinioBoxConfigMutable()->permanentId[1] = 41;
+    
+}
 
-// receives telemetry payload with msp and handles it.
-bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);
-
-// sends MSP reply from previously handled msp-request over telemetry
-bool sendMspReply(const uint8_t payloadSize_max, mspResponseFnPtr responseFn);

@@ -18,18 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Based on https://github.com/ExpressLRS/ExpressLRS
+ * Thanks to AlessandroAU, original creator of the ExpressLRS project.
+ */
+
 #pragma once
 
-#define MSP_TLM_INBUF_SIZE 128
-#define MSP_TLM_OUTBUF_SIZE 128
+#include <stdbool.h>
+#include <stdint.h>
 
-// type of function to send MSP response chunk over telemetry.
-typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
+#include "drivers/timer.h"
+#include "rx/expresslrs_common.h"
 
-void initSharedMsp(void);
-
-// receives telemetry payload with msp and handles it.
-bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);
-
-// sends MSP reply from previously handled msp-request over telemetry
-bool sendMspReply(const uint8_t payloadSize_max, mspResponseFnPtr responseFn);
+bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
+void expressLrsSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
+rx_spi_received_e expressLrsDataReceived(uint8_t *payload);

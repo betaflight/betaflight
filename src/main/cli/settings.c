@@ -96,6 +96,7 @@
 #include "pg/rx_pwm.h"
 #include "pg/rx_spi.h"
 #include "pg/rx_spi_cc2500.h"
+#include "pg/rx_spi_expresslrs.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 #include "pg/vtx_io.h"
@@ -269,6 +270,7 @@ static const char * const lookupTableRxSpi[] = {
     "REDPINE",
     "FRSKY_X_V2",
     "FRSKY_X_LBT_V2",
+    "EXPRESSLRS",
 };
 #endif
 
@@ -505,6 +507,24 @@ const char * const lookupTableCMSMenuBackgroundType[] = {
 };
 #endif
 
+#ifdef USE_RX_EXPRESSLRS
+static const char* const lookupTableFreqDomain[] = {
+#ifdef USE_RX_SX127X
+    "AU433", "AU915", "EU433", "EU868", "IN866", "FCC915",
+#endif
+#ifdef USE_RX_SX1280
+    "ISM2400",
+#endif
+#if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
+    "NONE",
+#endif
+};
+
+static const char* const lookupTableSwitchMode[] = {
+    "HYBRID", "WIDE",
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -625,6 +645,10 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableSimplifiedTuningPidsMode),
 #ifdef USE_OSD
     LOOKUP_TABLE_ENTRY(lookupTableCMSMenuBackgroundType),
+#endif
+#ifdef USE_RX_EXPRESSLRS
+    LOOKUP_TABLE_ENTRY(lookupTableFreqDomain),
+    LOOKUP_TABLE_ENTRY(lookupTableSwitchMode),
 #endif
 };
 
@@ -1648,6 +1672,13 @@ const clivalue_t valueTable[] = {
     { "spektrum_spi_protocol",     VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, protocol) },
     { "spektrum_spi_mfg_id",       VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, mfgId) },
     { "spektrum_spi_num_channels", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, DSM_MAX_CHANNEL_COUNT }, PG_RX_SPEKTRUM_SPI_CONFIG, offsetof(spektrumConfig_t, numChannels) },
+#endif
+#ifdef USE_RX_EXPRESSLRS
+    { "expresslrs_uid",         VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 6, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, UID) },
+    { "expresslrs_domain",      VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FREQ_DOMAIN }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, domain) },
+    { "expresslrs_rate_index",  VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 3 }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, rateIndex) },
+    { "expresslrs_switch_mode", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SWITCH_MODE }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, switchMode) },
+    { "expresslrs_model_id",    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, modelId) },
 #endif
 
 // PG_TIMECONFIG
