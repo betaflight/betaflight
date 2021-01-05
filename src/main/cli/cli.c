@@ -57,6 +57,7 @@ bool cliMode = false;
 #include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/adc.h"
@@ -3092,6 +3093,17 @@ static void cliVtxInfo(const char *cmdName, char *cmdline)
     }
 }
 #endif // USE_VTX_TABLE
+
+#ifdef USE_SIMPLIFIED_TUNING
+static void cliApplySimplifiedTuning(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    applySimplifiedTuning(currentPidProfile);
+    cliPrintLine("Applied tuning based on simplified tuning settings.");
+}
+#endif
 
 static void printName(dumpFlags_t dumpMask, const pilotConfig_t *pilotConfig)
 {
@@ -6385,6 +6397,9 @@ static void cliHelp(const char *cmdName, char *cmdline);
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", "<index> <unused> <range channel> <start> <end> <function> <select channel> [<center> <scale>]", cliAdjustmentRange),
+#ifdef USE_SIMPLIFIED_TUNING
+    CLI_COMMAND_DEF("apply_simplified_tuning", "applies tuning based on simplified tuning settings", NULL, cliApplySimplifiedTuning),
+#endif
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef USE_CLI_BATCH
     CLI_COMMAND_DEF("batch", "start or end a batch of commands", "start | end", cliBatch),
