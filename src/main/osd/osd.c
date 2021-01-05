@@ -250,7 +250,7 @@ void osdAnalyzeActiveElements(void)
     osdDrawActiveElementsBackground(osdDisplayPort);
 }
 
-static void osdDrawElements(timeUs_t currentTimeUs)
+static void osdDrawElements(void)
 {
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
@@ -268,7 +268,7 @@ static void osdDrawElements(timeUs_t currentTimeUs)
         displayClearScreen(osdDisplayPort);
     }
 
-    osdDrawActiveElements(osdDisplayPort, currentTimeUs);
+    osdDrawActiveElements(osdDisplayPort);
 }
 
 const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
@@ -982,7 +982,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 #endif
     {
         osdUpdateAlarms();
-        osdDrawElements(currentTimeUs);
+        osdDrawElements();
         displayHeartbeat(osdDisplayPort);
     }
     displayCommitTransaction(osdDisplayPort);
@@ -1024,13 +1024,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 #endif
 
     // redraw values in buffer
-#ifdef USE_MAX7456
-#define DRAW_FREQ_DENOM 5
-#else
-#define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud (
-#endif
-
-    if (counter % DRAW_FREQ_DENOM == 0) {
+    if (counter % OSD_DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);
         showVisualBeeper = false;
     } else {
@@ -1039,7 +1033,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         // For the MSP displayPort device only do the drawScreen once per
         // logical OSD cycle as there is no output buffering needing to be flushed.
         if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_MSP) {
-            doDrawScreen = (counter % DRAW_FREQ_DENOM == 1);
+            doDrawScreen = (counter % OSD_DRAW_FREQ_DENOM == 1);
         }
 #endif
         // Redraw a portion of the chars per idle to spread out the load and SPI bus utilization

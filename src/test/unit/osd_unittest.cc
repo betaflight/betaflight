@@ -673,7 +673,7 @@ TEST_F(OsdTest, TestAlarms)
         printf("%d\n", i);
         displayPortTestPrint();
 #endif
-        if (i % 2 == 0) {
+        if (i % 2 == 1) {
             displayPortTestBufferSubstring(8,  1, "%c12", SYM_RSSI);
             displayPortTestBufferSubstring(12, 1, "%c13.5%c", SYM_MAIN_BATT, SYM_VOLT);
             displayPortTestBufferSubstring(1,  1, "%c02:", SYM_FLY_M); // only test the minute part of the timer
@@ -1043,6 +1043,7 @@ TEST_F(OsdTest, TestElementWarningsBattery)
 
     // when
     displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
     osdRefresh(simulationTime);
 
     // then
