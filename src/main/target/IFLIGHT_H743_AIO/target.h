@@ -91,14 +91,26 @@
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
+#define I2C_DEVICE_1            (I2CDEV_1)
 #define I2C1_SCL                PB8
 #define I2C1_SDA                PB9
-#define I2C_DEVICE              (I2CDEV_1)
 
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE_2            (I2CDEV_2)
+#define I2C2_SCL                PB10
+#define I2C2_SDA                PB11
+
+#define MAG_I2C_INSTANCE        (I2CDEV_1)
 #define USE_MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
 
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
 #define USE_BARO
+#define DEFAULT_BARO_DPS310
+#define USE_BARO_MS5611
+#define USE_BARO_BMP280
 #define USE_BARO_DPS310
 
 #define USE_GYRO
@@ -106,17 +118,24 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC_SPI_MPU6000
 #define USE_ACCGYRO_BMI270
+#define USE_ACCGYRO_LSM6DSO
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PD0
+#define GYRO_2_EXTI_PIN         PD8
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO_1_CS_PIN           SPI1_NSS_PIN
 #define GYRO_1_SPI_INSTANCE     SPI1
-
 #define GYRO_1_ALIGN            CW0_DEG 
+
+#define GYRO_2_CS_PIN           SPI2_NSS_PIN
+#define GYRO_2_SPI_INSTANCE     SPI2
+#define GYRO_2_ALIGN            CW0_DEG
+
+#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_BOTH
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
@@ -159,6 +178,7 @@
 #define RSSI_ADC_PIN                PC5
 #define VBAT_ADC_PIN                PC3
 #define CURRENT_METER_ADC_PIN       PC2
+#define EXTERNAL1_ADC_PIN           PC1
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
@@ -176,6 +196,6 @@
 #define TARGET_IO_PORTF 0xffff
 #define TARGET_IO_PORTG 0xffff
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USABLE_TIMER_CHANNEL_COUNT 11
 
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
