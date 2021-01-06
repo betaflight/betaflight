@@ -29,11 +29,7 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
 #define UART_TX_BUFFER_SIZE     256
-#endif
 #endif
 #elif defined(STM32F3)
 #define UARTDEV_COUNT_MAX 5
@@ -42,11 +38,7 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
-#ifdef USE_MSP_DISPLAYPORT
-#define UART_TX_BUFFER_SIZE     1280
-#else
 #define UART_TX_BUFFER_SIZE     256
-#endif
 #endif
 #elif defined(STM32F4)
 #define UARTDEV_COUNT_MAX 6
