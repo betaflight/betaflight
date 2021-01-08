@@ -450,7 +450,8 @@ void SystemClock_Config(void)
 {
     // Configure power supply
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx)
+    // Legacy H7 devices (H743, H750) and newer but SMPS-less devices(H7A3, H723)
 
     HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
@@ -465,19 +466,13 @@ void SystemClock_Config(void)
     // - All STM32H7A3xxQ devices.
     // - All STM32H725xx devices (Note STM32H725RG is Direct SMPS only - no LDO).
     //
+    // Note that:
     // - Nucleo-H7A3ZI-Q is preconfigured for power supply configuration 2 (Direct SMPS).
     // - Nucleo-H723ZI-Q transplanted with STM32H725ZG is the same as above.
 
     HAL_PWREx_ConfigSupply(PWR_DIRECT_SMPS_SUPPLY);
 
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
-
-#elif defined(STM32H7A3xx)
-
-    // H7A3 line LDO only devices
-    // Can probably be treated like STM32H743xx or STM32H750xx (can even be a part of the first conditional)
-
-#error LDO only chip is not supported yet
 
 #else
 #error Unknown MCU
