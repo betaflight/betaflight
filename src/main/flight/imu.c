@@ -85,11 +85,8 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
 #define GPS_COG_MIN_GROUNDSPEED 500        // 500cm/s minimum groundspeed for a gps heading to be considered valid
 
-int32_t accSum[XYZ_AXIS_COUNT];
 float accAverage[XYZ_AXIS_COUNT];
 
-uint32_t accTimeSum = 0;        // keep track for integration of acc
-int accSumCount = 0;
 bool canUseGPSHeading = true;
 
 static float throttleAngleScale;
@@ -197,15 +194,6 @@ void imuInit(void)
         printf("Create imuUpdateLock error!\n");
     }
 #endif
-}
-
-void imuResetAccelerationSum(void)
-{
-    accSum[0] = 0;
-    accSum[1] = 0;
-    accSum[2] = 0;
-    accSumCount = 0;
-    accTimeSum = 0;
 }
 
 #if defined(USE_ACC)
