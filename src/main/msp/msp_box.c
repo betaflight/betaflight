@@ -333,6 +333,12 @@ void initActiveBoxIds(void)
     BME(BOXLAUNCHCONTROL);
 #endif
 
+#if defined(USE_RX_MSP_OVERRIDE)
+    if (rxConfig()->msp_override_channels_mask) {
+        BME(BOXMSPOVERRIDE);
+    }
+#endif
+
     BME(BOXSTICKCOMMANDDISABLE);
 
 #undef BME
