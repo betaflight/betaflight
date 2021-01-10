@@ -1202,6 +1202,15 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         }
         break;
 
+#ifdef USE_VTX_COMMON
+    case MSP2_GET_VTX_DEVICE_STATUS:
+        {
+            const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            vtxCommonSerializeDeviceStatus(vtxDevice, dst);
+        }
+        break;
+#endif
+
     case MSP_RC:
         for (int i = 0; i < rxRuntimeState.channelCount; i++) {
             sbufWriteU16(dst, rcData[i]);

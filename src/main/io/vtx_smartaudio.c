@@ -1047,6 +1047,20 @@ static uint8_t vtxSAGetPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *level
     return saSupportedNumPowerLevels;
 }
 
+#define VTX_CUSTOM_DEVICE_STATUS_SIZE 5
+
+static void vtxSASerializeCustomDeviceStatus(const vtxDevice_t *vtxDevice, sbuf_t *dst)
+{
+    UNUSED(vtxDevice);
+    sbufWriteU8(dst, VTX_CUSTOM_DEVICE_STATUS_SIZE);
+    sbufWriteU8(dst, saDevice.version);
+    sbufWriteU8(dst, saDevice.mode);
+    sbufWriteU16(dst, saDevice.orfreq); // pit frequency
+    sbufWriteU8(dst, saDevice.willBootIntoPitMode);
+}
+
+#undef VTX_CUSTOM_DEVICE_STATUS_SIZE
+
 static const vtxVTable_t saVTable = {
     .process = vtxSAProcess,
     .getDeviceType = vtxSAGetDeviceType,
@@ -1060,6 +1074,7 @@ static const vtxVTable_t saVTable = {
     .getFrequency = vtxSAGetFreq,
     .getStatus = vtxSAGetStatus,
     .getPowerLevels = vtxSAGetPowerLevels,
+    .serializeCustomDeviceStatus = vtxSASerializeCustomDeviceStatus,
 };
 #endif // VTX_COMMON
 
