@@ -26,9 +26,6 @@
 #include "pg/pg.h"
 
 // Exported symbols
-extern uint32_t accTimeSum;
-extern int accSumCount;
-extern int32_t accSum[XYZ_AXIS_COUNT];
 extern bool canUseGPSHeading;
 extern float accAverage[XYZ_AXIS_COUNT];
 
@@ -74,7 +71,6 @@ float getCosTiltAngle(void);
 void getQuaternion(quaternion * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
-void imuResetAccelerationSum(void);
 void imuInit(void);
 
 #ifdef SIMULATOR_BUILD
