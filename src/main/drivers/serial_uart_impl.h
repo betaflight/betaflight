@@ -47,7 +47,11 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
+#ifdef USE_MSP_DISPLAYPORT
+#define UART_TX_BUFFER_SIZE     1280
+#else
 #define UART_TX_BUFFER_SIZE     256
+#endif
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
@@ -56,7 +60,11 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
+#ifdef USE_MSP_DISPLAYPORT
+#define UART_TX_BUFFER_SIZE     1280
+#else
 #define UART_TX_BUFFER_SIZE     256
+#endif
 #endif
 #elif defined(STM32H7)
 #define UARTDEV_COUNT_MAX 8
@@ -65,7 +73,11 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
+#ifdef USE_MSP_DISPLAYPORT
+#define UART_TX_BUFFER_SIZE     1280
+#else
 #define UART_TX_BUFFER_SIZE     256
+#endif
 #endif
 #elif defined(STM32G4)
 #define UARTDEV_COUNT_MAX 9  // UART1~5 + UART9 (Implemented with LPUART1)
@@ -74,7 +86,11 @@
 #define UART_RX_BUFFER_SIZE     128
 #endif
 #ifndef UART_TX_BUFFER_SIZE
+#ifdef USE_MSP_DISPLAYPORT
+#define UART_TX_BUFFER_SIZE     1280
+#else
 #define UART_TX_BUFFER_SIZE     256
+#endif
 #endif
 #else
 #error unknown MCU family
