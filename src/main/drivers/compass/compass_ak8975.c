@@ -82,7 +82,9 @@ static bool ak8975Init(magDev_t *mag)
     uint8_t asa[3];
     uint8_t status;
 
-    busDevice_t *busdev = &mag->busdev;
+    const busDevice_t *busdev = &mag->busdev;
+
+    busDeviceRegister(busdev);
 
     busWriteRegister(busdev, AK8975_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down before entering fuse mode
     delay(20);
@@ -120,7 +122,7 @@ static bool ak8975Read(magDev_t *mag, int16_t *magData)
     uint8_t status;
     uint8_t buf[6];
 
-    busDevice_t *busdev = &mag->busdev;
+    const busDevice_t *busdev = &mag->busdev;
 
     ack = busReadRegisterBuffer(busdev, AK8975_MAG_REG_ST1, &status, 1);
     if (!ack || (status & ST1_REG_DATA_READY) == 0) {
