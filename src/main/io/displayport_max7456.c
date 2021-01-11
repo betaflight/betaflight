@@ -186,6 +186,12 @@ static bool checkReady(displayPort_t *displayPort, bool rescan)
     return true;
 }
 
+void setBackgroundType(displayPort_t *displayPort, displayPortBackground_e backgroundType)
+{
+    UNUSED(displayPort);
+    max7456SetBackgroundType(backgroundType);
+}
+
 static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
@@ -204,6 +210,7 @@ static const displayPortVTable_t max7456VTable = {
     .layerCopy = layerCopy,
     .writeFontCharacter = writeFontCharacter,
     .checkReady = checkReady,
+    .setBackgroundType = setBackgroundType,
 };
 
 bool max7456DisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **displayPort)

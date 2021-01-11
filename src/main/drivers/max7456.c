@@ -100,7 +100,7 @@
 #define BACKGROUND_BRIGHTNESS_42 0x06
 #define BACKGROUND_BRIGHTNESS_49 0x07
 
-#define BACKGROUND_MODE_GRAY 0x40
+#define BACKGROUND_MODE_GRAY 0x80
 
 // STAT register bits
 
@@ -229,6 +229,8 @@ static uint8_t  vosRegValue; // VOS (Vertical offset register) value
 static bool fontIsLoading       = false;
 
 static uint8_t max7456DeviceType;
+
+static displayPortBackground_e deviceBackgroundType = DISPLAY_BACKGROUND_TRANSPARENT;
 
 // previous states initialized outside the valid range to force update on first call
 #define INVALID_PREVIOUS_REGISTER_STATE 255
@@ -369,6 +371,29 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
 
 #endif
 
+static void max7456SetRegisterVM1(void)
+{
+    uint8_t backgroundGray = BACKGROUND_BRIGHTNESS_28; // this is the device default background gray level
+    uint8_t vm1Register = BLINK_TIME_1 | BLINK_DUTY_CYCLE_75_25; // device defaults
+    if (deviceBackgroundType != DISPLAY_BACKGROUND_TRANSPARENT) {
+        vm1Register |= BACKGROUND_MODE_GRAY;
+        switch (deviceBackgroundType) {
+        case DISPLAY_BACKGROUND_BLACK:
+            backgroundGray = BACKGROUND_BRIGHTNESS_0;
+            break;
+        case DISPLAY_BACKGROUND_LTGRAY:
+            backgroundGray = BACKGROUND_BRIGHTNESS_49;
+            break;
+        case DISPLAY_BACKGROUND_GRAY:
+        default:
+            backgroundGray = BACKGROUND_BRIGHTNESS_28;
+            break;
+        }
+    }
+    vm1Register |= (backgroundGray << 4);
+    max7456Send(MAX7456ADD_VM1, vm1Register);
+}
+
 uint8_t max7456GetRowsCount(void)
 {
     return (videoSignalReg & VIDEO_MODE_PAL) ? VIDEO_LINES_PAL : VIDEO_LINES_NTSC;
@@ -435,6 +460,7 @@ void max7456ReInit(void)
     max7456Send(MAX7456ADD_VM0, videoSignalReg);
     max7456Send(MAX7456ADD_HOS, hosRegValue);
     max7456Send(MAX7456ADD_VOS, vosRegValue);
+    max7456SetRegisterVM1();
 
     max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | CLEAR_DISPLAY);
     __spiBusTransactionEnd(busdev);
@@ -459,6 +485,7 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
 {
     max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
     max7456DeviceDetected = false;
+    deviceBackgroundType = DISPLAY_BACKGROUND_TRANSPARENT;
 
     // initialize all layers
     for (unsigned i = 0; i < MAX7456_SUPPORTED_LAYER_COUNT; i++) {
@@ -895,4 +922,14 @@ bool max7456IsDeviceDetected(void)
 {
     return max7456DeviceDetected;
 }
+
+void max7456SetBackgroundType(displayPortBackground_e backgroundType)
+{
+    deviceBackgroundType = backgroundType;
+
+    __spiBusTransactionBegin(busdev);
+    max7456SetRegisterVM1();
+    __spiBusTransactionEnd(busdev);
+}
+
 #endif // USE_MAX7456

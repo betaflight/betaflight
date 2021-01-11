@@ -32,6 +32,11 @@ extern "C" {
     #include "cms/cms_types.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+    #include "osd/osd.h"
+    #include "pg/pg_ids.h"
+
+    PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
+
     void cmsMenuOpen(void);
     const void *cmsMenuBack(displayPort_t *pDisplay);
     uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
