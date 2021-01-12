@@ -116,7 +116,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
 
     int32_t millivolts = ((uint32_t)src * getVrefMv()) / 4096;
     // y=x/m+b m is scale in (mV/10A) and b is offset in (mA)
-    int32_t centiAmps = (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10;
+    int32_t centiAmps = config->scale ? (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10 : 0;
 
     DEBUG_SET(DEBUG_CURRENT_SENSOR, 0, millivolts);
     DEBUG_SET(DEBUG_CURRENT_SENSOR, 1, centiAmps);
