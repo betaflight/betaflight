@@ -182,6 +182,7 @@
 #define USE_MAG_LIS3MDL
 #define USE_MAG_AK8963
 #define USE_MAG_SPI_AK8963
+#define USE_MAG_AK8975
 
 #define USE_BARO
 #define USE_BARO_MS5611
