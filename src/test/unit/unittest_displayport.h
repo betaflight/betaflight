@@ -124,7 +124,7 @@ static const displayPortVTable_t testDisplayPortVTable = {
 
 displayPort_t *displayPortTestInit(void)
 {
-    displayInit(&testDisplayPort, &testDisplayPortVTable);
+    displayInit(&testDisplayPort, &testDisplayPortVTable, DISPLAYPORT_DEVICE_TYPE_MAX7456);
     testDisplayPort.rows = UNITTEST_DISPLAYPORT_ROWS;
     testDisplayPort.cols = UNITTEST_DISPLAYPORT_COLS;
     return &testDisplayPort;

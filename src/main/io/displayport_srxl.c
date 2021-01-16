@@ -150,7 +150,7 @@ displayPort_t *displayPortSrxlInit()
         && ((rxConfig()->serialrx_provider == SERIALRX_SRXL) || (rxConfig()->serialrx_provider == SERIALRX_SRXL2))) {
 
         srxlDisplayPort.device = NULL;
-        displayInit(&srxlDisplayPort, &srxlVTable);
+        displayInit(&srxlDisplayPort, &srxlVTable, DISPLAYPORT_DEVICE_TYPE_SRXL);
         srxlDisplayPort.rows = SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS;
         srxlDisplayPort.cols = SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS;
         return &srxlDisplayPort;
