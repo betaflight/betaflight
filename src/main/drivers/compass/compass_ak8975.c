@@ -84,8 +84,6 @@ static bool ak8975Init(magDev_t *mag)
 
     const busDevice_t *busdev = &mag->busdev;
 
-    busDeviceRegister(busdev);
-
     busWriteRegister(busdev, AK8975_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down before entering fuse mode
     delay(20);
 
