@@ -26,12 +26,19 @@
 #if defined(USE_CRSF_CMS_TELEMETRY)
 
 #include "cms/cms.h"
+
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/time.h"
+
+#include "config/feature.h"
+
 #include "drivers/display.h"
 #include "drivers/time.h"
+
 #include "io/displayport_crsf.h"
+
+#include "rx/rx.h"
 
 #define CRSF_DISPLAY_PORT_OPEN_DELAY_MS     400
 #define CRSF_DISPLAY_PORT_CLEAR_DELAY_MS    45
@@ -204,9 +211,16 @@ int crsfDisplayPortNextRow(void)
 
 displayPort_t *displayPortCrsfInit()
 {
-    crsfDisplayPortSetDimensions(CRSF_DISPLAY_PORT_ROWS_MAX, CRSF_DISPLAY_PORT_COLS_MAX);
-    displayInit(&crsfDisplayPort, &crsfDisplayPortVTable);
-    return &crsfDisplayPort;
+    if (featureIsEnabled(FEATURE_TELEMETRY)
+        && featureIsEnabled(FEATURE_RX_SERIAL)
+        && (rxConfig()->serialrx_provider == SERIALRX_CRSF)) {
+
+        crsfDisplayPortSetDimensions(CRSF_DISPLAY_PORT_ROWS_MAX, CRSF_DISPLAY_PORT_COLS_MAX);
+        displayInit(&crsfDisplayPort, &crsfDisplayPortVTable);
+        return &crsfDisplayPort;
+    } else {
+        return NULL;
+    }
 }
 
 #endif

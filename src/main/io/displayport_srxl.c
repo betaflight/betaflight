@@ -25,10 +25,15 @@
 #include "platform.h"
 #if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS) && defined(USE_TELEMETRY_SRXL)
 
+#include "cms/cms.h"
+
 #include "common/utils.h"
 
+#include "config/feature.h"
+
 #include "drivers/display.h"
-#include "cms/cms.h"
+
+#include "rx/rx.h"
 
 #include "telemetry/srxl.h"
 
@@ -140,11 +145,18 @@ static const displayPortVTable_t srxlVTable = {
 
 displayPort_t *displayPortSrxlInit()
 {
-    srxlDisplayPort.device = NULL;
-    displayInit(&srxlDisplayPort, &srxlVTable);
-    srxlDisplayPort.rows = SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS;
-    srxlDisplayPort.cols = SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS;
-    return &srxlDisplayPort;
+    if (featureIsEnabled(FEATURE_TELEMETRY)
+        && featureIsEnabled(FEATURE_RX_SERIAL)
+        && ((rxConfig()->serialrx_provider == SERIALRX_SRXL) || (rxConfig()->serialrx_provider == SERIALRX_SRXL2))) {
+
+        srxlDisplayPort.device = NULL;
+        displayInit(&srxlDisplayPort, &srxlVTable);
+        srxlDisplayPort.rows = SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS;
+        srxlDisplayPort.cols = SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS;
+        return &srxlDisplayPort;
+    } else {
+        return NULL;
+    }
 }
 
 #endif
