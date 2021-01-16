@@ -53,7 +53,7 @@ typedef enum {
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     PAGE_DEBUG,
 #endif
-
+    PAGE_BB,
     PAGE_COUNT
 } pageId_e;
 

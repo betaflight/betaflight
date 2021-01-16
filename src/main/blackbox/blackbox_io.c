@@ -745,4 +745,13 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
         return BLACKBOX_RESERVE_PERMANENT_FAILURE;
     }
 }
+int8_t blackboxGetLogFileNo(void)
+{   
+    // return current file number or -1 
+    if (blackboxSDCard.state == BLACKBOX_SDCARD_READY_TO_LOG){
+        return blackboxSDCard.largestLogFileNumber;
+    }else {
+        return -1;
+    }
+}
 #endif // BLACKBOX
