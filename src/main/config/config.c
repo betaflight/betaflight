@@ -599,6 +599,13 @@ static void validateAndFixConfig(void)
             break;
         }
     }
+
+    // validate that the minimum battery cell voltage is less than the maximum cell voltage
+    // reset to defaults if not
+    if (batteryConfig()->vbatmincellvoltage >=  batteryConfig()->vbatmaxcellvoltage) {
+        batteryConfigMutable()->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
+        batteryConfigMutable()->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
+    }
 }
 
 void validateAndFixGyroConfig(void)

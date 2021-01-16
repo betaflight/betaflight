@@ -96,8 +96,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFI
 
 PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     // voltage
-    .vbatmaxcellvoltage = 430,
-    .vbatmincellvoltage = 330,
+    .vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX,
+    .vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN,
     .vbatwarningcellvoltage = 350,
     .vbatnotpresentcellvoltage = 300, //A cell below 3 will be ignored
     .voltageMeterSource = DEFAULT_VOLTAGE_METER_SOURCE,
