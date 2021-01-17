@@ -574,10 +574,6 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(TARGET_VALIDATECONFIG)
-    targetValidateConfiguration();
-#endif
-
     validateAndFixRatesSettings();  // constrain the various rates settings to limits imposed by the rates type
 
 #if defined(USE_RX_MSP_OVERRIDE)
@@ -601,6 +597,11 @@ static void validateAndFixConfig(void)
         batteryConfigMutable()->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
         batteryConfigMutable()->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
     }
+
+#if defined(TARGET_VALIDATECONFIG)
+    // This should be done at the end of the validation
+    targetValidateConfiguration();
+#endif
 }
 
 void validateAndFixGyroConfig(void)
