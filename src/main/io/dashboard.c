@@ -570,6 +570,35 @@ static void showTasksPage(void)
 }
 #endif
 
+#ifdef USE_BLACKBOX
+static void showBBPage(void)
+{
+    uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
+    int8_t fileNo;
+    if (isBlackboxDeviceWorking()) {
+        switch (blackboxConfig()->device) {
+        case BLACKBOX_DEVICE_SDCARD:
+            fileNo = blackboxGetLogFileNo();
+            if( fileNo > 0) {
+                tfp_sprintf(lineBuffer, "File no: %d", fileNo);
+            } else {
+                tfp_sprintf(lineBuffer, "Not ready yet");
+            }
+            break;
+        default:
+            tfp_sprintf(lineBuffer, "Not supp. dev.");
+            break;
+        }
+    } else {
+        tfp_sprintf(lineBuffer, "BB not working");
+    }
+
+    padLineBuffer();
+    i2c_OLED_set_line(bus, rowIndex++);
+    i2c_OLED_send_string(bus, lineBuffer);
+}
+#endif
+
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
 
 static void showDebugPage(void)
@@ -624,7 +653,9 @@ static const pageEntry_t pages[PAGE_COUNT] = {
 #if defined(USE_TASK_STATISTICS)
     { PAGE_TASKS,   "TASKS",           showTasksPage,      PAGE_FLAGS_NONE },
 #endif
+#ifdef USE_BLACKBOX
     { PAGE_BB,      "BLACK BOX",       showBBPage,         PAGE_FLAGS_NONE },
+#endif
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     { PAGE_DEBUG,   "DEBUG",           showDebugPage,      PAGE_FLAGS_NONE },
 #endif
