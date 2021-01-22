@@ -39,7 +39,6 @@ int function(int x)
 }
 ```
 
-### Non-function blocks
 All non-function statement blocks (i.e. `if`, ` switch`, `for`, as well as any others) shall have the opening brace last on the same line, with the following statement on the next line.
 
 Closing braces shall be but on the line after the last statement in the block.
