@@ -31,7 +31,7 @@ Note2: The Astyle settings have been tested and will produce a nice result. Many
 
 ## Curly Braces
 
-Functions shall have the opening brace at the beginning of the next line.
+Functions shall have the opening and closing braces at the beginning of the next line, and followed by a line break.
 ```
 int function(int x)
 {
@@ -39,7 +39,8 @@ int function(int x)
 }
 ```
 
-All non-function statement blocks (if, switch, for) shall have the opening brace last on the same line, with the following statement on the next line.
+### Non-function blocks
+All non-function statement blocks (i.e. `if`, ` switch`, `for`, as well as any others) shall have the opening brace last on the same line, with the following statement on the next line.
 
 Closing braces shall be but on the line after the last statement in the block.
 ```
@@ -62,7 +63,7 @@ default:
 }
 ```
 
-If it is followed by an `else` or `else if` that shall be on the same line, again with the opening brace on the same line.
+If the closing brace is followed by an `else` or `else if` that shall be on the same line, again with the opening brace on the same line.
 ```
 if (x is true) {
     we do y
@@ -72,7 +73,7 @@ if (x is true) {
     ...
 }
 ```
-
+###Braces are required
 Omission of "unnecessary" braces in cases where an `if` or `else` block consists only of a single statement is not permissible in any case. These "single statement blocks" are future bugs waiting to happen when more statements are added without enclosing the block in braces.
 
 ## Spaces
