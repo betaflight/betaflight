@@ -132,11 +132,11 @@ Feed Forward is great to increase
 responsiveness but makes the craft controll less direct (more variables will affect the rotation rate) hence harder for the pilot to pridict how the quad will behave especially on RC link with low frequency frame rate (e.g. Crossfire).
 
 
-#### Suggested setting: off or low
+#### Suggested setting: low or off
 
-**Unless the quadcopter suffers from severe lag (setpoint tracking
-latency) requiring too high P gains it is advised to turn off Feed
-Forward for freestyle quads.**
+**Unless the quadcopter suffers from lag (setpoint tracking
+latency) or feels too slopy  it is advised to turn Feed
+Forward down or even off.**
 
 Latency per se is not a major problem, if kept under a reasonable amount
 the human brain is very good at handling it. If the latency is
