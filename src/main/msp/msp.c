@@ -2098,7 +2098,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 #endif // USE_VTX_TABLE
 
 #ifdef USE_SIMPLIFIED_TUNING
-    // Added in MSP API 1.43
+    // Added in MSP API 1.44
     case MSP_SIMPLIFIED_TUNING:
         {
             sbufWriteU8(dst, currentPidProfile->simplified_pids_mode);
@@ -3063,7 +3063,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
 #ifdef USE_SIMPLIFIED_TUNING
-    // Added in MSP API 1.43
+    // Added in MSP API 1.44
     case MSP_SET_SIMPLIFIED_TUNING:
         currentPidProfile->simplified_pids_mode = sbufReadU8(src);
         currentPidProfile->simplified_master_multiplier = sbufReadU8(src);
