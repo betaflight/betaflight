@@ -37,6 +37,7 @@ addons:
     - lcov
     - libc6-i386
     - libblocksruntime-dev
+    - astyle
 
 before_install:
   - |
@@ -52,6 +53,7 @@ before_install:
       echo "Only files not used in the build process were updated, aborting."
       exit
     }
+    for f in "${FILE_LIST[@]}"; do src/utils/check_cstyle.sh "${f}"; done
   - pip install --user cpp-coveralls
   - gem install coveralls-lcov
 
