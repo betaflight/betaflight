@@ -68,6 +68,7 @@ typedef struct controlRateConfig_s {
     uint8_t tpaMode;                        // Controls which PID terms TPA effects
     char profileName[MAX_RATE_PROFILE_NAME_LENGTH + 1]; // Descriptive name for rate profile
     uint8_t quickRatesRcExpo;               // Sets expo on rc command for quick rates
+    uint8_t levelExpo[2];                   // roll/pitch level mode expo
 } controlRateConfig_t;
 
 PG_DECLARE_ARRAY(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);

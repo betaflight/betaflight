@@ -34,18 +34,21 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
 
 extern "C" {
+    #include "platform.h"
+
     #include "build/debug.h"
+
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/filter.h"
 
+    #include "config/config.h"
     #include "config/config_reset.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
 
     #include "drivers/sound_beeper.h"
     #include "drivers/time.h"
 
+    #include "fc/controlrate_profile.h"
     #include "fc/core.h"
     #include "fc/rc.h"
 
@@ -59,6 +62,9 @@ extern "C" {
 
     #include "io/gps.h"
 
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+
     #include "sensors/gyro.h"
     #include "sensors/acceleration.h"
 
@@ -66,6 +72,7 @@ extern "C" {
     attitudeEulerAngles_t attitude;
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
@@ -87,6 +94,7 @@ extern "C" {
         UNUSED(currentPidSetpoint);
         return value;
     }
+    void initRcProcessing(void) { }
 }
 
 pidProfile_t *pidProfile;
@@ -179,6 +187,10 @@ void resetTest(void) {
     unitLaunchControlActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
+    loadControlRateProfile();
+
+    currentControlRateProfile->levelExpo[FD_ROLL] = 0;
+    currentControlRateProfile->levelExpo[FD_PITCH] = 0;
 
     // Run pidloop for a while after reset
     for (int loop = 0; loop < 20; loop++) {
@@ -379,6 +391,19 @@ TEST(pidControllerTest, testPidLevel) {
     EXPECT_FLOAT_EQ(0, currentPidSetpoint);
     currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
     EXPECT_FLOAT_EQ(0, currentPidSetpoint);
+
+    // Test level mode expo
+    enableFlightMode(ANGLE_MODE);
+    attitude.values.roll = 0;
+    attitude.values.pitch = 0;
+    setStickPosition(FD_ROLL, 0.5f);
+    setStickPosition(FD_PITCH, -0.5f);
+    currentControlRateProfile->levelExpo[FD_ROLL] = 50;
+    currentControlRateProfile->levelExpo[FD_PITCH] = 26;
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
+    EXPECT_FLOAT_EQ(85.9375, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
+    EXPECT_FLOAT_EQ(-110.6875, currentPidSetpoint);
 }
 
 

@@ -392,6 +392,9 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType}, 0 },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1}, 0 },
 
+    { "ROLL LVL EXPO",  OME_FLOAT, NULL, &(OSD_FLOAT_t) { &rateProfile.levelExpo[FD_ROLL],  0, 100, 1, 10 }, 0 },
+    { "PITCH LVL EXPO", OME_FLOAT, NULL, &(OSD_FLOAT_t) { &rateProfile.levelExpo[FD_PITCH], 0, 100, 1, 10 }, 0 },
+
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
