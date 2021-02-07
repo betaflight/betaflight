@@ -20,8 +20,13 @@
 
 #pragma once
 
+#ifdef NEUTRONRC_H743
+#define TARGET_BOARD_IDENTIFIER "NTH7"
+#define USBD_PRODUCT_STRING     "NEUTRONRC_H743"
+#else
 #define TARGET_BOARD_IDENTIFIER "IF7A"
 #define USBD_PRODUCT_STRING     "IFLIGHT_H743_AIO"
+#endif
 
 #define LED0_PIN                PC13
 
