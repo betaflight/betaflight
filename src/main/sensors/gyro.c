@@ -133,7 +133,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
-    gyroConfig->dyn_lpf_curve_expo = 0;
+    gyroConfig->dyn_lpf_curve_expo = 5;
 	gyroConfig->simplified_gyro_filter = false;
 	gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
 }
