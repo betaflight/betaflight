@@ -88,6 +88,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], DYNAMIC},
     {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], DYNAMIC},
     {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], DYNAMIC},
+    {"UP/DOWN REFERENCE",  OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_UP_DOWN_REFERENCE], DYNAMIC},
     {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], DYNAMIC},
     {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], DYNAMIC},
     {"REMAINING TIME ESTIMATE",       OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_REMAINING_TIME_ESTIMATE], DYNAMIC},

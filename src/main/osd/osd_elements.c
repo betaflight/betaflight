@@ -126,6 +126,7 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
+#include "common/maths.h"
 
 #define AH_SYMBOL_COUNT 9
 #define AH_SIDEBAR_WIDTH_POS 7
@@ -141,6 +142,8 @@
 #define EFFICIENCY_MINIMUM_SPEED_CM_S 100
 
 #define MOTOR_STOPPED_THRESHOLD_RPM 1000
+
+#define SINE_25_DEG 0.422618261740699f
 
 #ifdef USE_OSD_STICK_OVERLAY
 typedef struct radioControls_s {
@@ -184,6 +187,8 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 #define CLR_BLINK(item) (blinkBits[(item) / 32] &= ~(1 << ((item) % 32)))
 #define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
 #define BLINK(item) (IS_BLINK(item) && blinkState)
+
+enum {UP, DOWN};
 
 static int osdDisplayWrite(osdElementParms_t *element, uint8_t x, uint8_t y, uint8_t attr, const char *s)
 {
@@ -577,6 +582,7 @@ static void osdElementAntiGravity(osdElementParms_t *element)
 }
 
 #ifdef USE_ACC
+
 static void osdElementArtificialHorizon(osdElementParms_t *element)
 {
     // Get pitch and roll limits in tenths of degrees
@@ -599,6 +605,34 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
         }
     }
 
+    element->drawElement = false;  // element already drawn
+}
+
+static void osdElementUpDownReference(osdElementParms_t *element)
+{
+// Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
+    const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
+
+    if (ABS(earthUpinBodyFrame[2]) < SINE_25_DEG && ABS(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
+        float thetaB; // pitch from body frame to zenith/nadir
+        float psiB; // psi from body frame to zenith/nadir
+        char *symbol[2] = {"U", "D"}; // character buffer
+        int direction;
+
+        if(attitude.values.pitch>0.0){ //nose down
+            thetaB = -earthUpinBodyFrame[2]; // get pitch w/re to nadir (use small angle approx for sine)
+            psiB = -earthUpinBodyFrame[1]; // calculate the yaw w/re to nadir (use small angle approx for sine)
+            direction = DOWN;
+        } else { // nose up
+            thetaB = earthUpinBodyFrame[2]; // get pitch w/re to zenith (use small angle approx for sine)
+            psiB = earthUpinBodyFrame[1]; // calculate the yaw w/re to zenith (use small angle approx for sine)
+            direction = UP;
+        }
+        int posX = element->elemPosX + round(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
+        int posY = element->elemPosY + round(scaleRangef(thetaB, -M_PIf / 4, M_PIf / 4, -8, 8));
+
+        osdDisplayWrite(element, posX, posY, DISPLAYPORT_ATTR_NONE, symbol[direction]);
+    }
     element->drawElement = false;  // element already drawn
 }
 #endif // USE_ACC
@@ -1570,6 +1604,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_RSSI_VALUE,
     OSD_CROSSHAIRS,
     OSD_HORIZON_SIDEBARS,
+    OSD_UP_DOWN_REFERENCE,
     OSD_ITEM_TIMER_1,
     OSD_ITEM_TIMER_2,
     OSD_REMAINING_TIME_ESTIMATE,
@@ -1648,6 +1683,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_CROSSHAIRS]              = osdElementCrosshairs,  // only has background, but needs to be over other elements (like artificial horizon)
 #ifdef USE_ACC
     [OSD_ARTIFICIAL_HORIZON]      = osdElementArtificialHorizon,
+    [OSD_UP_DOWN_REFERENCE]       = osdElementUpDownReference,
 #endif
     [OSD_HORIZON_SIDEBARS]        = NULL,  // only has background
     [OSD_ITEM_TIMER_1]            = osdElementTimer,
@@ -1784,6 +1820,7 @@ void osdAddActiveElements(void)
     if (sensors(SENSOR_ACC)) {
         osdAddActiveElement(OSD_ARTIFICIAL_HORIZON);
         osdAddActiveElement(OSD_G_FORCE);
+        osdAddActiveElement(OSD_UP_DOWN_REFERENCE);
     }
 #endif
 
@@ -2042,7 +2079,8 @@ bool osdElementsNeedAccelerometer(void)
            osdElementIsActive(OSD_PITCH_ANGLE) ||
            osdElementIsActive(OSD_ROLL_ANGLE) ||
            osdElementIsActive(OSD_G_FORCE) ||
-           osdElementIsActive(OSD_FLIP_ARROW);
+           osdElementIsActive(OSD_FLIP_ARROW) ||
+           osdElementIsActive(OSD_UP_DOWN_REFERENCE);
 }
 
 #endif // USE_ACC
