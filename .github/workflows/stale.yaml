@@ -20,12 +20,13 @@ jobs:
           has not had recent activity. It will be closed if no further activity occurs
           within a week.
         close-issue-message: 'Issue closed automatically as inactive.'        
-        exempt-issue-labels: 'BUG,Feature Request,Pinned,Has Milestone'
+        exempt-issue-labels: 'BUG,Feature Request,Pinned'
         stale-issue-label: 'Inactive'
         stale-pr-message: >
           This pull request has been automatically marked as stale because it
           has not had recent activity. It will be closed if no further activity occurs
           within a week.
         close-pr-message: 'Pull request closed automatically as inactive.'
-        exempt-pr-labels: 'Pinned,Has Milestone'
+        exempt-pr-labels: 'Pinned'
         stale-pr-label: 'Inactive'
+        exempt-all-milestones: true
