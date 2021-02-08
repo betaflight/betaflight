@@ -1,0 +1,31 @@
+name: 'Close stale issues'
+
+on:
+  schedule:
+  - cron: "30 4 * * *"
+
+jobs:
+  stale:
+    name: 'Check and close stale issues'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/stale@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        operations-per-run: 30
+        days-before-stale: 30
+        days-before-close: 7
+        stale-issue-message: >
+          This issue has been automatically marked as stale because it
+          has not had recent activity. It will be closed if no further activity occurs
+          within a week.
+        close-issue-message: 'Issue closed automatically as inactive.'        
+        exempt-issue-labels: 'BUG,Feature Request,Pinned,Has Milestone'
+        stale-issue-label: 'Inactive'
+        stale-pr-message: >
+          This pull request has been automatically marked as stale because it
+          has not had recent activity. It will be closed if no further activity occurs
+          within a week.
+        close-pr-message: 'Pull request closed automatically as inactive.'
+        exempt-pr-labels: 'Pinned,Has Milestone'
+        stale-pr-label: 'Inactive'
