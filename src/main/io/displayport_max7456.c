@@ -231,7 +231,7 @@ bool max7456DisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **disp
         // MAX7456 IO pins are defined, but we could not get a reply
         // from it at this time. Delay full initialization to
         // checkReady() with 'rescan' enabled
-        displayInit(&max7456DisplayPort, &max7456VTable);
+        displayInit(&max7456DisplayPort, &max7456VTable, DISPLAYPORT_DEVICE_TYPE_MAX7456);
         *displayPort = &max7456DisplayPort;
 
         return false;
@@ -239,7 +239,7 @@ bool max7456DisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **disp
         break;
     case MAX7456_INIT_OK:
         // MAX7456 configured and detected
-        displayInit(&max7456DisplayPort, &max7456VTable);
+        displayInit(&max7456DisplayPort, &max7456VTable, DISPLAYPORT_DEVICE_TYPE_MAX7456);
         redraw(&max7456DisplayPort);
         *displayPort = &max7456DisplayPort;
 

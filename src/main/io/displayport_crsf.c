@@ -210,7 +210,7 @@ displayPort_t *displayPortCrsfInit()
         && (rxConfig()->serialrx_provider == SERIALRX_CRSF)) {
 
         crsfDisplayPortSetDimensions(CRSF_DISPLAY_PORT_ROWS_MAX, CRSF_DISPLAY_PORT_COLS_MAX);
-        displayInit(&crsfDisplayPort, &crsfDisplayPortVTable);
+        displayInit(&crsfDisplayPort, &crsfDisplayPortVTable, DISPLAYPORT_DEVICE_TYPE_CRSF);
         return &crsfDisplayPort;
     } else {
         return NULL;

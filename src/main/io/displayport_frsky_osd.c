@@ -494,7 +494,7 @@ static const displayPortVTable_t frskyOsdVTable = {
 displayPort_t *frskyOsdDisplayPortInit(const videoSystem_e videoSystem)
 {
     if (frskyOsdInit(videoSystem)) {
-        displayInit(&frskyOsdDisplayPort, &frskyOsdVTable);
+        displayInit(&frskyOsdDisplayPort, &frskyOsdVTable, DISPLAYPORT_DEVICE_TYPE_FRSKYOSD);
         redraw(&frskyOsdDisplayPort);
         return &frskyOsdDisplayPort;
     }
