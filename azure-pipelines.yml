@@ -19,11 +19,13 @@ variables:
 
 name: $(Build.RequestedFor)_$(Build.SourceBranchName)_$(BuildID)
 
+# For some reason the trigger does not pick up on "*-maintenance" - manually adding the current maintenance branch for now
 trigger:
   batch: true
   branches:
     include:
     - master
+    - 4.2-maintenance
     - "*-maintenance"
 
 pr:
@@ -31,6 +33,7 @@ pr:
   branches:
     include:
     - master
+    - 4.2-maintenance
     - "*-maintenance"
 
 stages:
