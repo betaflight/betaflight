@@ -53,7 +53,9 @@ typedef enum {
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     PAGE_DEBUG,
 #endif
-
+#ifdef USE_BLACKBOX
+    PAGE_BB,
+#endif
     PAGE_COUNT
 } pageId_e;
 
