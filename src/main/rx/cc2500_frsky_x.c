@@ -177,15 +177,11 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[0] = 0x0E;//length
     frame[1] = rxCc2500SpiConfig()->bindTxId[0];
     frame[2] = rxCc2500SpiConfig()->bindTxId[1];
-    switch(spiProtocol) {
-    case RX_SPI_FRSKY_X:
-    case RX_SPI_FRSKY_X_LBT:
-        frame[3] = packet[3];
-        break;
-    case RX_SPI_FRSKY_X_V2:
-    case RX_SPI_FRSKY_X_LBT_V2:
+
+    if (spiProtocol == RX_SPI_FRSKY_X_V2 || spiProtocol == RX_SPI_FRSKY_X_LBT_V2) {
         frame[3] = rxCc2500SpiConfig()->bindTxId[2];
-        break;
+    } else {
+        frame[3] = packet[3];
     }
 
     if (evenRun) {
@@ -300,23 +296,16 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 
 bool isValidPacket(const uint8_t *packet)
 {
+    bool useBindTxId2 = false;
+
     if (spiProtocol == RX_SPI_FRSKY_X_V2 || spiProtocol == RX_SPI_FRSKY_X_LBT_V2) {
+        useBindTxId2 = true;
         if (!(packet[packetLength - 1] & 0x80)) {
             return false;
         }
     }
-    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7));
-    bool useBindTxId2;
-    switch(spiProtocol) {
-    case RX_SPI_FRSKY_X:
-    case RX_SPI_FRSKY_X_LBT:
-        useBindTxId2 = false;
-        break;
-    case RX_SPI_FRSKY_X_V2:
-    case RX_SPI_FRSKY_X_LBT_V2:
-        useBindTxId2 = true;
-        break;
-    }
+
+    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7)); 
 
     if ((lcrc >> 8) == packet[packetLength - 4] && (lcrc & 0x00FF) == packet[packetLength - 3] &&
         (packet[0] == packetLength - 3) &&
