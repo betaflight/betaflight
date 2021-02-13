@@ -186,6 +186,7 @@ motor_output_unittest_SRC := \
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
+		$(USER_DIR)/osd/osd_warnings.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
@@ -202,6 +203,7 @@ osd_unittest_DEFINES := \
 link_quality_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
+		$(USER_DIR)/osd/osd_warnings.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/drivers/serial.c \

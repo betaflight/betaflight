@@ -112,6 +112,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "osd/osd_warnings.h"
 
 #include "pg/beeper.h"
 #include "pg/board.h"
@@ -1209,6 +1210,28 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             vtxCommonSerializeDeviceStatus(vtxDevice, dst);
         }
         break;
+#endif
+
+#ifdef USE_OSD
+    case MSP2_GET_OSD_WARNINGS:
+        {
+            bool isBlinking;
+            uint8_t displayAttr;
+            char warningsBuffer[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+
+            renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
+            const uint8_t warningsLen = strlen(warningsBuffer);
+
+            if (isBlinking) {
+                displayAttr |= DISPLAYPORT_ATTR_BLINK;
+            }
+            sbufWriteU8(dst, displayAttr);  // see displayPortAttr_e
+            sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
+            for (unsigned i = 0; i < warningsLen; i++) {
+                sbufWriteU8(dst, warningsBuffer[i]);
+            }
+            break;
+        }
 #endif
 
     case MSP_RC:

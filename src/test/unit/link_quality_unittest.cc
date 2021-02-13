@@ -27,26 +27,27 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_io.h"
 
-    #include "common/time.h"
     #include "common/crc.h"
-    #include "common/utils.h"
     #include "common/printf.h"
     #include "common/streambuf.h"
+    #include "common/time.h"
+    #include "common/utils.h"
+
+    #include "config/config.h"
 
     #include "drivers/osd_symbols.h"
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
-    #include "config/config.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
-    #include "flight/imu.h"
 
     #include "io/beeper.h"
     #include "io/gps.h"
@@ -54,6 +55,7 @@ extern "C" {
 
     #include "osd/osd.h"
     #include "osd/osd_elements.h"
+    #include "osd/osd_warnings.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
