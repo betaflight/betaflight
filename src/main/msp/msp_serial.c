@@ -562,7 +562,8 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
         mspPort_t * const mspPort = &mspPorts[portIndex];
 
         // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
-        if (!mspPort->port || mspPort->port->identifier == SERIAL_PORT_USB_VCP || (port != SERIAL_PORT_NONE && mspPort->port->identifier != port)) {
+        if (!mspPort->port || mspPort->port->identifier == SERIAL_PORT_USB_VCP
+            || (port != SERIAL_PORT_ALL && mspPort->port->identifier != port)) {
             continue;
         }
 
