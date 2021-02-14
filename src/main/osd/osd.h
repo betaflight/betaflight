@@ -73,11 +73,11 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 // Character coordinate
 #define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
 #define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
-#define OSD_POSITION_TYPE_MASK 0xC000   // bits 14-15
+#define OSD_TYPE_MASK 0xC000   // bits 14-15
 #define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
 #define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
-#define OSD_TYPE(x)   ((x & OSD_POSITION_TYPE_MASK) >> 14)
+#define OSD_TYPE(x)   ((x & OSD_TYPE_MASK) >> 14)
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
