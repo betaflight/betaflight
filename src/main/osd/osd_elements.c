@@ -1061,22 +1061,51 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     // Set length of indicator bar
     #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
 
-    // Calculate constrained value
-    const float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
+    const int usedCapacity = getMAhDrawn();
+    int displayBasis = usedCapacity;
 
-    // Calculate mAh used progress
-    const uint8_t mAhUsedProgress = (batteryConfig()->batteryCapacity) ? ceilf((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS))) : 0;
+    switch (element->type) {
+    case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
+        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+        FALLTHROUGH;
 
-    // Create empty battery indicator bar
-    element->buff[0] = SYM_PB_START;
-    for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
-        element->buff[i] = i <= mAhUsedProgress ? SYM_PB_FULL : SYM_PB_EMPTY;
+    case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
+        {
+            int displayPercent = 0;
+            if (batteryConfig()->batteryCapacity) {
+                displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
+            }
+            tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
+            break;
+        }
+
+    case OSD_ELEMENT_TYPE_2:  // mAh used graphical progress bar (grows as battery is used)
+        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+        FALLTHROUGH;
+
+    case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
+    default:
+        {
+            uint8_t remainingCapacityBars = 0;
+
+            if (batteryConfig()->batteryCapacity) {
+                const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
+                remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            }
+
+            // Create empty battery indicator bar
+            element->buff[0] = SYM_PB_START;
+            for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
+                element->buff[i] = i <= remainingCapacityBars ? SYM_PB_FULL : SYM_PB_EMPTY;
+            }
+            element->buff[MAIN_BATT_USAGE_STEPS + 1] = SYM_PB_CLOSE;
+            if (remainingCapacityBars > 0 && remainingCapacityBars < MAIN_BATT_USAGE_STEPS) {
+                element->buff[1 + remainingCapacityBars] = SYM_PB_END;
+            }
+            element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
+            break;
+        }
     }
-    element->buff[MAIN_BATT_USAGE_STEPS + 1] = SYM_PB_CLOSE;
-    if (mAhUsedProgress > 0 && mAhUsedProgress < MAIN_BATT_USAGE_STEPS) {
-        element->buff[1 + mAhUsedProgress] = SYM_PB_END;
-    }
-    element->buff[MAIN_BATT_USAGE_STEPS+2] = '\0';
 }
 
 static void osdElementMainBatteryVoltage(osdElementParms_t *element)
@@ -1876,6 +1905,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.item = item;
     element.elemPosX = elemPosX;
     element.elemPosY = elemPosY;
+    element.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
     element.buff = (char *)&buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
@@ -1903,6 +1933,7 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     element.item = item;
     element.elemPosX = elemPosX;
     element.elemPosY = elemPosY;
+    element.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
     element.buff = (char *)&buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
