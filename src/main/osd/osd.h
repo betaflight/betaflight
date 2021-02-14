@@ -354,3 +354,4 @@ bool osdElementVisible(uint16_t value);
 bool osdGetVisualBeeperState(void);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
+int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatString, unsigned decimalPlaces, bool round, char trailingSymbol);

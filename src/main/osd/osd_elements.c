@@ -257,23 +257,19 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 
 static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
-    const int alt = ABS(osdGetMetersToSelectedUnit(altitudeCm) / 10);
     const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
-
-    *buff++ = SYM_ALTITUDE;
-    if (altitudeCm < 0) {
-        *buff++ = '-';
-    }
+    unsigned decimalPlaces;
 
     switch (variantType) {
     case OSD_ELEMENT_TYPE_2:  // whole number altitude (no decimal places)
-        tfp_sprintf(buff, "%d%c", alt / 10, unitSymbol);
+        decimalPlaces = 0;
         break;
     case OSD_ELEMENT_TYPE_1:  // one decimal place (default)
     default:
-        tfp_sprintf(buff, "%01d.%01d%c", alt / 10 , alt % 10, unitSymbol);
+        decimalPlaces = 1;
         break;
     }
+    osdPrintFloat(buff, SYM_ALTITUDE, osdGetMetersToSelectedUnit(altitudeCm) / 100.0f, "", decimalPlaces, true, unitSymbol);
 }
 
 #ifdef USE_GPS
@@ -283,6 +279,8 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
     // longitude maximum integer width is 4 (-180).
     // We show 7 decimals, so we need to use 12 characters:
     // eg: s-180.1234567z   s=symbol, z=zero terminator, decimal separator  between 0 and 1
+
+    // NOTE: Don't use osdPrintFloat() for this. There are too many decimal places and float math doesn't have enough precision
 
     int pos = 0;
     buff[pos++] = sym;
@@ -296,14 +294,11 @@ static void osdFormatCoordinate(char *buff, char sym, int32_t val)
 
 void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
 {
-    const int convertedDistance = osdGetMetersToSelectedUnit(distance);
+    const float convertedDistance = osdGetMetersToSelectedUnit(distance);
     char unitSymbol;
     char unitSymbolExtended;
     int unitTransition;
 
-    if (leadingSymbol != SYM_NONE) {
-        *ptr++ = leadingSymbol;
-    }
     switch (osdConfig()->units) {
     case UNIT_IMPERIAL:
         unitTransition = 5280;
@@ -317,16 +312,23 @@ void osdFormatDistanceString(char *ptr, int distance, char leadingSymbol)
         break;
     }
 
+    unsigned decimalPlaces;
+    float displayDistance;
+    char displaySymbol;
     if (convertedDistance < unitTransition) {
-        tfp_sprintf(ptr, "%d%c", convertedDistance, unitSymbol);
+        decimalPlaces = 0;
+        displayDistance = convertedDistance;
+        displaySymbol = unitSymbol;
     } else {
-        const int displayDistance = convertedDistance * 100 / unitTransition;
-        if (displayDistance >= 1000) { // >= 10 miles or km - 1 decimal place
-            tfp_sprintf(ptr, "%d.%d%c", displayDistance / 100, (displayDistance / 10) % 10, unitSymbolExtended);
+        displayDistance = convertedDistance / unitTransition;
+        displaySymbol = unitSymbolExtended;
+        if (displayDistance >= 10) { // >= 10 miles or km - 1 decimal place
+            decimalPlaces = 1;
         } else {                     // < 10 miles or km - 2 decimal places
-            tfp_sprintf(ptr, "%d.%02d%c", displayDistance / 100, displayDistance % 100, unitSymbolExtended);
+            decimalPlaces = 2;
         }
     }
+    osdPrintFloat(ptr, leadingSymbol, displayDistance, "", decimalPlaces, false, displaySymbol);
 }
 
 static void osdFormatPID(char * buff, const char * label, const pidf_t * pid)
@@ -464,13 +466,13 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
  * Converts altitude based on the current unit system.
  * @param meters Value in meters to convert
  */
-int32_t osdGetMetersToSelectedUnit(int32_t meters)
+float osdGetMetersToSelectedUnit(int32_t meters)
 {
     switch (osdConfig()->units) {
     case UNIT_IMPERIAL:
-        return (meters * 328) / 100; // Convert to feet / 100
+        return meters * 3.28084f;       // Convert to feet
     default:
-        return meters;               // Already in metre / 100
+        return meters;                  // Already in meters
     }
 }
 
@@ -574,8 +576,8 @@ static void osdElementAltitude(osdElementParms_t *element)
 #ifdef USE_ACC
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
-    const int angle = (element->item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
-    tfp_sprintf(element->buff, "%c%c%02d.%01d", (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL , angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
+    const float angle = ((element->item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll) / 10.0f;
+    osdPrintFloat(element->buff, (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL, fabsf(angle), ((angle < 0) ? "-%02u" : " %02u"), 1, true, SYM_NONE);
 }
 #endif
 
@@ -645,8 +647,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 static void osdElementAverageCellVoltage(osdElementParms_t *element)
 {
     const int cellV = getBatteryAverageCellVoltage();
-    element->buff[0] = osdGetBatterySymbol(cellV);
-    tfp_sprintf(element->buff + 1, "%d.%02d%c", cellV / 100, cellV % 100, SYM_VOLT);
+    osdPrintFloat(element->buff, osdGetBatterySymbol(cellV), cellV / 100.0f, "", 2, false, SYM_VOLT);
 }
 
 static void osdElementCompassBar(osdElementParms_t *element)
@@ -757,8 +758,8 @@ static void osdElementCrosshairs(osdElementParms_t *element)
 
 static void osdElementCurrentDraw(osdElementParms_t *element)
 {
-    const int32_t amperage = getAmperage();
-    tfp_sprintf(element->buff, "%3d.%02d%c", abs(amperage) / 100, abs(amperage) % 100, SYM_AMP);
+    const float amperage = fabsf(getAmperage() / 100.0f);
+    osdPrintFloat(element->buff, SYM_NONE, amperage, "%3u", 2, false, SYM_AMP);
 }
 
 static void osdElementDebug(osdElementParms_t *element)
@@ -907,8 +908,7 @@ static void osdElementFlymode(osdElementParms_t *element)
 #ifdef USE_ACC
 static void osdElementGForce(osdElementParms_t *element)
 {
-    const int gForce = lrintf(osdGForce * 10);
-    tfp_sprintf(element->buff, "%01d.%01dG", gForce / 10, gForce % 10);
+    osdPrintFloat(element->buff, SYM_NONE, osdGForce, "", 1, true, 'G');
 }
 #endif // USE_ACC
 
@@ -965,10 +965,10 @@ static void osdElementGpsLongitude(osdElementParms_t *element)
 
 static void osdElementGpsSats(osdElementParms_t *element)
 {
-    if (osdConfig()->gps_sats_show_hdop) {
-        tfp_sprintf(element->buff, "%c%c%2d %d.%d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat, gpsSol.hdop / 100, (gpsSol.hdop / 10) % 10);
-    } else {
-        tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
+    int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
+    if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
+        element->buff[pos++] = ' ';
+        osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.hdop / 100.0f, "", 1, true, SYM_NONE);
     }
 }
 
@@ -1115,15 +1115,15 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
 static void osdElementMainBatteryVoltage(osdElementParms_t *element)
 {
-    int batteryVoltage = getBatteryVoltage();
+    unsigned decimalPlaces;
+    const float batteryVoltage = getBatteryVoltage() / 100.0f;
 
-    element->buff[0] = osdGetBatterySymbol(getBatteryAverageCellVoltage());
-    if (batteryVoltage >= 1000) {
-        batteryVoltage = (batteryVoltage + 5) / 10;
-        tfp_sprintf(element->buff + 1, "%d.%d%c", batteryVoltage / 10, batteryVoltage % 10, SYM_VOLT);
+    if (batteryVoltage >= 10) { // if voltage is 10v or more then display only 1 decimal place
+        decimalPlaces = 1;
     } else {
-        tfp_sprintf(element->buff + 1, "%d.%02d%c", batteryVoltage / 100, batteryVoltage % 100, SYM_VOLT);
+        decimalPlaces = 2;
     }
+    osdPrintFloat(element->buff, osdGetBatterySymbol(getBatteryAverageCellVoltage()), batteryVoltage, "", decimalPlaces, true, SYM_VOLT);
 }
 
 static void osdElementMotorDiagnostics(osdElementParms_t *element)
@@ -1164,9 +1164,9 @@ static void osdElementNumericalVario(osdElementParms_t *element)
     haveGps = sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #endif // USE_GPS
     if (haveBaro || haveGps) {
-        const int verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario());
+        const float verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario()) / 100.0f;
         const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SMALL_DOWN : SYM_ARROW_SMALL_UP;
-        tfp_sprintf(element->buff, "%c%01d.%01d%c", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10), osdGetVarioToSelectedUnitSymbol());
+        osdPrintFloat(element->buff, directionSymbol, fabsf(verticalSpeed), "", 1, true, osdGetVarioToSelectedUnitSymbol());
     } else {
         // We use this symbol when we don't have a valid measure
         element->buff[0] = SYM_HYPHEN;
