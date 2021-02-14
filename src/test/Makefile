@@ -376,6 +376,7 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/fc/controlrate_profile.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/pid.c \
 		$(USER_DIR)/flight/pid_init.c \

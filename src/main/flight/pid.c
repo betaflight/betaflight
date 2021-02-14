@@ -333,11 +333,23 @@ float pidApplyThrustLinearization(float motorOutput)
 #endif
 
 #if defined(USE_ACC)
+// calculate the stick deflection while applying level mode expo
+static float getLevelModeRcDeflection(uint8_t axis)
+{
+    const float stickDeflection = getRcDeflection(axis);
+    if (axis < FD_YAW) {
+        const float expof = currentControlRateProfile->levelExpo[axis] / 100.0f;
+        return power3(stickDeflection) * expof + stickDeflection * (1 - expof);
+    } else {
+        return stickDeflection;
+    }
+}
+
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
 STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 {
     // start with 1.0 at center stick, 0.0 at max stick deflection:
-    float horizonLevelStrength = 1.0f - MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
+    float horizonLevelStrength = 1.0f - MAX(fabsf(getLevelModeRcDeflection(FD_ROLL)), fabsf(getLevelModeRcDeflection(FD_PITCH)));
 
     // 0 at level, 90 at vertical, 180 at inverted (degrees):
     const float currentInclination = MAX(ABS(attitude.values.roll), ABS(attitude.values.pitch)) / 10.0f;
@@ -395,7 +407,7 @@ STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
-    float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
+    float angle = pidProfile->levelAngleLimit * getLevelModeRcDeflection(axis);
 #ifdef USE_GPS_RESCUE
     angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
 #endif
