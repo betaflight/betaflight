@@ -566,7 +566,7 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
 #ifndef USE_MSP_PUSH_OVER_VCP
             || mspPort->port->identifier == SERIAL_PORT_USB_VCP
 #endif
-            || (port != SERIAL_PORT_NONE && mspPort->port->identifier != port)) {
+            || (port != SERIAL_PORT_ALL && mspPort->port->identifier != port)) {
             continue;
         }
 
