@@ -117,7 +117,7 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 //
 typedef struct serialPortConfig_s {
     uint32_t functionMask;
-    serialPortIdentifier_e identifier;
+    int8_t identifier;
     uint8_t msp_baudrateIndex;
     uint8_t gps_baudrateIndex;
     uint8_t blackbox_baudrateIndex;

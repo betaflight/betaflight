@@ -139,7 +139,7 @@ uint8_t getBatteryCellCount(void) {
 static serialPortStub_t serialWriteStub;
 static serialPortStub_t serialReadStub;
 
-#define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
+#define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
 serialPort_t serialTestInstance;
 serialPortConfig_t serialTestInstanceConfig = {
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
