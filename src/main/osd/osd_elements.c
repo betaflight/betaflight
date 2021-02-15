@@ -1451,7 +1451,7 @@ static void osdElementWarnings(osdElementParms_t *element)
         return;
     }
 
-    if (osdWarnGetState(OSD_WARNING_LEVEL_RECOVERY) && imuIsLevelRecoveryActive()) {
+    if (osdWarnGetState(OSD_WARNING_RECOVERY) && crashRecoveryModeActive()) {
         tfp_sprintf(element->buff, "RECOVERY");
         element->attr = DISPLAYPORT_ATTR_WARNING;
         SET_BLINK(OSD_WARNINGS);

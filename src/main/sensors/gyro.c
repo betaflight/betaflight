@@ -48,7 +48,6 @@
 #include "flight/gyroanalyse.h"
 #endif
 #include "flight/rpm_filter.h"
-#include "flight/imu.h"
 
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -332,9 +331,6 @@ static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
         if (overflowCheck & gyro.overflowAxisMask) {
             overflowDetected = true;
             overflowTimeUs = currentTimeUs;
-            if ((imuConfig()->level_recovery) && (FLIGHT_MODE(ANGLE_MODE) || (FLIGHT_MODE(HORIZON_MODE)))) {
-              imuActivateLevelRecovery(currentTimeUs);
-            }
 #ifdef USE_YAW_SPIN_RECOVERY
             yawSpinDetected = false;
 #endif // USE_YAW_SPIN_RECOVERY
@@ -524,7 +520,7 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GYRO_OVERFLOW_CHECK
-    if ((gyroConfig()->checkOverflow && !gyro.gyroHasOverflowProtection) || (imuConfig()->level_recovery)) {
+    if (gyroConfig()->checkOverflow && !gyro.gyroHasOverflowProtection) {
         checkForOverflow(currentTimeUs);
     }
 #endif

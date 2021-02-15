@@ -30,7 +30,8 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/time.h"
+
+#include "config/config.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -93,9 +94,6 @@ uint32_t accTimeSum = 0;        // keep track for integration of acc
 int accSumCount = 0;
 bool canUseGPSHeading = true;
 
-bool levelRecoveryActive = false;
-timeUs_t levelRecoveryTimeEnd = 0;
-
 static float throttleAngleScale;
 static int throttleAngleValue;
 static float fc_acc;
@@ -123,9 +121,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .dcm_kp = 2500,                // 1.0 * 10000
     .dcm_ki = 0,                   // 0.003 * 10000
     .small_angle = 25,
-    .level_recovery = 0,
-    .level_recovery_time = 2500,
-    .level_recovery_coef = 5,
+    .recovery_coef = 5,
 );
 
 static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
@@ -180,12 +176,9 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 {
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
+    imuRuntimeConfig.recovery_coef = imuConfig()->recovery_coef;
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
-
-    imuRuntimeConfig.level_recovery = imuConfig()->level_recovery;
-    imuRuntimeConfig.level_recovery_time = imuConfig()->level_recovery_time;
-    imuRuntimeConfig.level_recovery_coef = imuConfig()->level_recovery_coef;
 
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
@@ -436,8 +429,6 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
             attitudeResetTimeEnd = currentTimeUs + ATTITUDE_RESET_ACTIVE_TIME;
             gyroQuietPeriodTimeEnd = 0;
         }
-        levelRecoveryActive = false;
-        levelRecoveryTimeEnd = 0;
     }
     lastArmState = armState;
 
@@ -450,31 +441,14 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
        }
     }
 
-    if (levelRecoveryActive) {
-        if (currentTimeUs < levelRecoveryTimeEnd) {
-            ret = imuRuntimeConfig.dcm_kp * imuRuntimeConfig.level_recovery_coef;
-            DEBUG_SET(DEBUG_LEVEL_RECOVERY, 2, cmpTimeUs(levelRecoveryTimeEnd, currentTimeUs) / 1000);
-        } else {
-            levelRecoveryActive = false;
-            levelRecoveryTimeEnd = 0;
-            DEBUG_SET(DEBUG_LEVEL_RECOVERY, 2, 0);
-        }        
+    if ((crashRecoveryModeActive()) && (currentPidProfile->crash_recovery == PID_CRASH_RECOVERY_LEVEL)) {
+      ret = imuRuntimeConfig.dcm_kp * imuRuntimeConfig.recovery_coef;
     }
-    DEBUG_SET(DEBUG_LEVEL_RECOVERY, 0, levelRecoveryActive);
-    DEBUG_SET(DEBUG_LEVEL_RECOVERY, 1, lrintf(ret*100.0f));
+
+    DEBUG_SET(DEBUG_RECOVERY, 0, crashRecoveryModeActive());
+    DEBUG_SET(DEBUG_RECOVERY, 1, lrintf(ret*100.0f));
 
     return ret;
-}
-
-bool imuIsLevelRecoveryActive(void)
-{
-    return levelRecoveryActive;
-}
-
-void imuActivateLevelRecovery(timeUs_t currentTimeUs)
-{
-    levelRecoveryActive = true;
-    levelRecoveryTimeEnd = currentTimeUs + imuRuntimeConfig.level_recovery_time * 1000;
 }
 
 #if defined(USE_GPS)
