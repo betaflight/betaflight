@@ -1,5 +1,5 @@
 /*
- * This file is part of Cleanflight, Betaflight and INAV.
+ * This file is part of Cleanflight and Betaflight.
  *
  * Cleanflight and Betaflight are free software. You can redistribute
  * this software and/or modify this software under the terms of the
@@ -7,7 +7,7 @@
  * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
- * Cleanflight, Betaflight and INAV are distributed in the hope that they
+ * Cleanflight and Betaflight are distributed in the hope that they
  * will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -18,9 +18,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MSP2_BETAFLIGHT_BIND                0x3000
-#define MSP2_MOTOR_OUTPUT_REORDERING        0x3001
-#define MSP2_SET_MOTOR_OUTPUT_REORDERING    0x3002
-#define MSP2_SEND_DSHOT_COMMAND             0x3003
-#define MSP2_GET_VTX_DEVICE_STATUS          0x3004
-#define MSP2_GET_OSD_WARNINGS               0x3005  // returns active OSD warning message text
+#pragma once
+
+#define OSD_WARNINGS_MAX_SIZE 12
+#define OSD_FORMAT_MESSAGE_BUFFER_SIZE (OSD_WARNINGS_MAX_SIZE + 1)
+
+STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= OSD_ELEMENT_BUFFER_LENGTH, osd_warnings_size_exceeds_buffer_size);
+
+void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr);

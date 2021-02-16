@@ -28,39 +28,40 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_io.h"
 
-    #include "config/feature.h"
-
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
-
     #include "common/time.h"
+
+    #include "config/config.h"
+    #include "config/feature.h"
 
     #include "drivers/osd_symbols.h"
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
 
-    #include "config/config.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
     #include "flight/gps_rescue.h"
-    #include "flight/pid.h"
     #include "flight/imu.h"
+    #include "flight/mixer.h"
+    #include "flight/pid.h"
 
     #include "io/beeper.h"
     #include "io/gps.h"
 
     #include "osd/osd.h"
     #include "osd/osd_elements.h"
+    #include "osd/osd_warnings.h"
+
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/rx.h"
 
     #include "sensors/acceleration.h"
     #include "sensors/battery.h"
 
     #include "rx/rx.h"
-    #include "flight/mixer.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
