@@ -255,16 +255,25 @@ int osdConvertTemperatureToSelectedUnit(int tempInDegreesCelcius)
 }
 #endif
 
-static void osdFormatAltitudeString(char * buff, int32_t altitudeCm)
+static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementType_e variantType)
 {
-    const int alt = osdGetMetersToSelectedUnit(altitudeCm) / 10;
+    const int alt = ABS(osdGetMetersToSelectedUnit(altitudeCm) / 10);
+    const char unitSymbol = osdGetMetersToSelectedUnitSymbol();
 
-    int pos = 0;
-    buff[pos++] = SYM_ALTITUDE;
-    if (alt < 0) {
-        buff[pos++] = '-';
+    *buff++ = SYM_ALTITUDE;
+    if (altitudeCm < 0) {
+        *buff++ = '-';
     }
-    tfp_sprintf(buff + pos, "%01d.%01d%c", abs(alt) / 10 , abs(alt) % 10, osdGetMetersToSelectedUnitSymbol());
+
+    switch (variantType) {
+    case OSD_ELEMENT_TYPE_2:  // whole number altitude (no decimal places)
+        tfp_sprintf(buff, "%d%c", alt / 10, unitSymbol);
+        break;
+    case OSD_ELEMENT_TYPE_1:  // one decimal place (default)
+    default:
+        tfp_sprintf(buff, "%01d.%01d%c", alt / 10 , alt % 10, unitSymbol);
+        break;
+    }
 }
 
 #ifdef USE_GPS
@@ -554,7 +563,7 @@ static void osdElementAltitude(osdElementParms_t *element)
     haveGps = sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #endif // USE_GPS
     if (haveBaro || haveGps) {
-        osdFormatAltitudeString(element->buff, getEstimatedAltitudeCm());
+        osdFormatAltitudeString(element->buff, getEstimatedAltitudeCm(), element->type);
     } else {
         element->buff[0] = SYM_ALTITUDE;
         element->buff[1] = SYM_HYPHEN; // We use this symbol when we don't have a valid measure
