@@ -957,7 +957,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (!cliMode && !IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
+    if (!cliMode && !(IS_RC_MODE_ACTIVE(BOXPARALYZE) && !ARMING_FLAG(ARMED))) {
         processRcAdjustments(currentControlRateProfile);
     }
 
