@@ -96,8 +96,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFI
 
 PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     // voltage
-    .vbatmaxcellvoltage = 430,
-    .vbatmincellvoltage = 330,
+    .vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX,
+    .vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN,
     .vbatwarningcellvoltage = 350,
     .vbatnotpresentcellvoltage = 300, //A cell below 3 will be ignored
     .voltageMeterSource = DEFAULT_VOLTAGE_METER_SOURCE,
@@ -511,13 +511,13 @@ uint8_t getBatteryCellCount(void)
 
 uint16_t getBatteryAverageCellVoltage(void)
 {
-    return voltageMeter.displayFiltered / batteryCellCount;
+    return (batteryCellCount ? voltageMeter.displayFiltered / batteryCellCount : 0);
 }
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
 uint16_t getBatterySagCellVoltage(void)
 {
-    return voltageMeter.sagFiltered / batteryCellCount;
+    return (batteryCellCount ? voltageMeter.sagFiltered / batteryCellCount : 0);
 }
 #endif
 

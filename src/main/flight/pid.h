@@ -36,6 +36,10 @@
 #define PIDSUM_LIMIT_MIN            100
 #define PIDSUM_LIMIT_MAX            1000
 
+#define PID_GAIN_MAX 200
+#define F_GAIN_MAX 2000
+#define D_MIN_GAIN_MAX 100
+
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
 #define ITERM_SCALE 0.244381f
@@ -54,6 +58,15 @@
 
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 30000
+#define PID_ROLL_DEFAULT  { 42, 85, 35, 90 }
+#define PID_PITCH_DEFAULT { 46, 90, 38, 95 }
+#define PID_YAW_DEFAULT   { 45, 90,  0, 90 }
+#define D_MIN_DEFAULT     { 23, 25, 0 }
+
+#define DYN_LPF_DTERM_MIN_HZ_DEFAULT 70
+#define DYN_LPF_DTERM_MAX_HZ_DEFAULT 170
+#define DTERM_LOWPASS_2_HZ_DEFAULT 150
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,
@@ -189,11 +202,11 @@ typedef struct pidProfile_s {
     uint8_t ff_boost;                       // amount of high-pass filtered FF to add to FF, 100 means 100% added
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 
-    uint8_t idle_min_rpm;                   // minimum motor speed enforced by integrating p controller
-    uint8_t idle_adjustment_speed;          // how quickly the integrating p controller tries to correct
-    uint8_t idle_p;                         // kP
-    uint8_t idle_pid_limit;                 // max P
-    uint8_t idle_max_increase;              // max integrated correction
+    uint8_t dyn_idle_min_rpm;                   // minimum motor speed enforced by the dynamic idle controller
+    uint8_t dyn_idle_p_gain;                // P gain during active control of rpm
+    uint8_t dyn_idle_i_gain;                // I gain during active control of rpm
+    uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
+    uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
 
     uint8_t ff_interpolate_sp;              // Calculate FF from interpolated setpoint
     uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
@@ -201,6 +214,18 @@ typedef struct pidProfile_s {
     uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
+
+    uint8_t simplified_pids_mode;
+    uint8_t simplified_master_multiplier;
+    uint8_t simplified_roll_pitch_ratio;
+    uint8_t simplified_i_gain;
+    uint8_t simplified_pd_ratio;
+    uint8_t simplified_pd_gain;
+    uint8_t simplified_dmin_ratio;
+    uint8_t simplified_ff_gain;
+
+    uint8_t simplified_dterm_filter;
+    uint8_t simplified_dterm_filter_multiplier;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -387,10 +412,12 @@ bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
+
 #ifdef USE_THRUST_LINEARIZATION
 float pidApplyThrustLinearization(float motorValue);
 float pidCompensateThrustLinearization(float throttle);
 #endif
+
 #ifdef USE_AIRMODE_LPF
 void pidUpdateAirmodeLpf(float currentOffset);
 float pidGetAirmodeThrottleOffset();

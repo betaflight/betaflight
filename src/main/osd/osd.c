@@ -250,7 +250,7 @@ void osdAnalyzeActiveElements(void)
     osdDrawActiveElementsBackground(osdDisplayPort);
 }
 
-static void osdDrawElements(timeUs_t currentTimeUs)
+static void osdDrawElements(void)
 {
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
@@ -268,7 +268,7 @@ static void osdDrawElements(timeUs_t currentTimeUs)
         displayClearScreen(osdDisplayPort);
     }
 
-    osdDrawActiveElements(osdDisplayPort, currentTimeUs);
+    osdDrawActiveElements(osdDisplayPort);
 }
 
 const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
@@ -340,7 +340,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
 
-    osdConfig->task_frequency = 60;
+    osdConfig->stat_show_cell_value = false;
+    osdConfig->task_frequency = OSD_TASK_FREQUENCY_DEFAULT;
+    osdConfig->cms_background_type = DISPLAY_BACKGROUND_TRANSPARENT;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -362,6 +364,7 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     osdElementConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
     osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
     osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS(3, 1);
+    osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS(13, 6);
 }
 
 static void osdDrawLogo(int x, int y)
@@ -449,7 +452,7 @@ static void osdResetStats(void)
     stats.max_g_force  = 0;
     stats.max_esc_temp = 0;
     stats.max_esc_rpm  = 0;
-    stats.min_link_quality =  (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) ? 100 : 99; // percent
+    stats.min_link_quality = (linkQualitySource == LQ_SOURCE_NONE) ? 99 : 100; // percent
     stats.min_rssi_dbm = CRSF_SNR_MAX;
 }
 
@@ -475,6 +478,11 @@ static int32_t getAverageEscRpm(void)
 }
 #endif
 
+static uint16_t getStatsVoltage(void)
+{
+    return osdConfig()->stat_show_cell_value ? getBatteryAverageCellVoltage() : getBatteryVoltage();
+}
+
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
@@ -490,7 +498,7 @@ static void osdUpdateStats(void)
     }
 #endif
 
-    value = getBatteryVoltage();
+    value = getStatsVoltage();
     if (stats.min_voltage > value) {
         stats.min_voltage = value;
     }
@@ -685,19 +693,23 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MIN_BATTERY:
         tfp_sprintf(buff, "%d.%02d%c", stats.min_voltage / 100, stats.min_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "MIN BATTERY", buff);
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value? "MIN AVG CELL" : "MIN BATTERY", buff);
         return true;
 
     case OSD_STAT_END_BATTERY:
         tfp_sprintf(buff, "%d.%02d%c", stats.end_voltage / 100, stats.end_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "END BATTERY", buff);
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value ? "END AVG CELL" : "END BATTERY", buff);
         return true;
 
-    case OSD_STAT_BATTERY:
-        tfp_sprintf(buff, "%d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "BATTERY", buff);
-        return true;
-
+    case OSD_STAT_BATTERY: 
+        {
+            const uint16_t statsVoltage = getStatsVoltage();
+            tfp_sprintf(buff, "%d.%02d%c", statsVoltage / 100, statsVoltage % 100, SYM_VOLT);
+            osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value ? "AVG BATT CELL" : "BATTERY", buff);
+            return true;
+        }
+        break;
+        
     case OSD_STAT_MIN_RSSI:
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
@@ -905,7 +917,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
                        || !VISIBLE(osdElementConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
-            stats.end_voltage = getBatteryVoltage();
+            stats.end_voltage = getStatsVoltage();
             osdStatsRowCount = 0; // reset to 0 so it will be recalculated on the next stats refresh
         }
 
@@ -982,7 +994,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 #endif
     {
         osdUpdateAlarms();
-        osdDrawElements(currentTimeUs);
+        osdDrawElements();
         displayHeartbeat(osdDisplayPort);
     }
     displayCommitTransaction(osdDisplayPort);
@@ -1024,13 +1036,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 #endif
 
     // redraw values in buffer
-#ifdef USE_MAX7456
-#define DRAW_FREQ_DENOM 5
-#else
-#define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud (
-#endif
-
-    if (counter % DRAW_FREQ_DENOM == 0) {
+    if (counter % OSD_DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);
         showVisualBeeper = false;
     } else {
@@ -1039,7 +1045,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         // For the MSP displayPort device only do the drawScreen once per
         // logical OSD cycle as there is no output buffering needing to be flushed.
         if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_MSP) {
-            doDrawScreen = (counter % DRAW_FREQ_DENOM == 1);
+            doDrawScreen = (counter % OSD_DRAW_FREQ_DENOM == 1);
         }
 #endif
         // Redraw a portion of the chars per idle to spread out the load and SPI bus utilization

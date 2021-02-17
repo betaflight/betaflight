@@ -1,0 +1,22 @@
+name: Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  auto_close_issues:
+    name: Check if issues follow the templates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout templates
+        uses: actions/checkout@v2.3.4
+      - name: Automatically close issues that don't follow the templates
+        uses: ergo720/auto-close-issues@v1.0.4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-close-message: >
+            @${issue.user.login}: This issue is being automatically closed because it does not follow the template.\n\n
+            **When you open an issue or feature request you are presented with a template. Follow the guidelines**.\n\n
+            You can edit your message to fix this and the issue will be automatically reopened.
+          closed-issues-label: Not following template

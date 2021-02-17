@@ -127,7 +127,7 @@ static const displayPortVTable_t oledVTable = {
 displayPort_t *displayPortOledInit(void *device)
 {
     oledDisplayPort.device = device;
-    displayInit(&oledDisplayPort, &oledVTable);
+    displayInit(&oledDisplayPort, &oledVTable, DISPLAYPORT_DEVICE_TYPE_OLED);
     oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
     oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
     return &oledDisplayPort;

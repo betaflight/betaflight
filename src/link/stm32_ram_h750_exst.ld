@@ -73,8 +73,6 @@ REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
 REGION_ALIAS("MAIN", CODE_RAM)
 
-INCLUDE "stm32_h750_common.ld"
-
 SECTIONS
 {
   .DMA_RAM (NOLOAD) :
@@ -114,6 +112,7 @@ SECTIONS
   } >RAM
 }
 
+INCLUDE "stm32_h750_common.ld"
 INCLUDE "stm32_h750_common_post.ld"
 INCLUDE "stm32_ram_h750_exst_post.ld"
 

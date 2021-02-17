@@ -186,6 +186,7 @@ motor_output_unittest_SRC := \
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
+		$(USER_DIR)/osd/osd_warnings.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
@@ -202,6 +203,7 @@ osd_unittest_DEFINES := \
 link_quality_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
+		$(USER_DIR)/osd/osd_warnings.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/drivers/serial.c \
@@ -376,6 +378,7 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
+		$(USER_DIR)/fc/controlrate_profile.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/pid.c \
 		$(USER_DIR)/flight/pid_init.c \
@@ -435,9 +438,9 @@ endif
 #CC  := gcc
 #CXX := g++
 
-# These flags are needed for clang 10 (maybe even clang 9) to make test work
-#	-Wno-c99-extensions \
-#	-Wno-reorder
+# These flags are needed for clang 10 (linux / MacOS) to make test work:
+# -Wno-c99-extensions
+# -Wno-reorder
 
 COMMON_FLAGS = \
 	-g \
@@ -458,11 +461,24 @@ CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux: 7 - 10; OSX: 7- 12 }
+# Please revisit versions when new clang version arrive. Supported versions: { Linux: 7 - 11; OSX: 7- 12 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 10
+CC_VERSION_CHECK_MAX := 11
+
+# Added flags for clang 11 (linux) are not backwards compatible:
+# -fcommon
+# -Wno-void-pointer-to-int-cast
+
+ifneq ($(OSFAMILY), macosx)
+ifeq ($(CC_VERSION_MAJOR), 11)
+COMMON_FLAGS += \
+	-fcommon \
+	-Wno-void-pointer-to-int-cast
+endif
+endif
+
 ifeq ($(OSFAMILY), macosx)
 # MacOS comes with Apple's own flavour of clang that does not adhere to the official versioning
 CC_VERSION_CHECK_MAX := 12

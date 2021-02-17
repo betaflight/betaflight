@@ -177,6 +177,7 @@ COMMON_SRC = \
             io/pidaudio.c \
             osd/osd.c \
             osd/osd_elements.c \
+            osd/osd_warnings.c \
             sensors/barometer.c \
             sensors/rangefinder.c \
             telemetry/telemetry.c \
@@ -320,6 +321,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/config_eeprom.c \
             config/feature.c \
             config/config_streamer.c \
+            config/simplified_tuning.c \
             i2c_bst.c \
             io/dashboard.c \
             io/serial.c \
@@ -354,6 +356,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/spektrum_vtx_control.c \
             osd/osd.c \
             osd/osd_elements.c \
+            osd/osd_warnings.c \
             rx/rx_bind.c
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code

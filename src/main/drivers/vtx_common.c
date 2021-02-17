@@ -228,4 +228,71 @@ bool vtxCommonLookupPowerValue(const vtxDevice_t *vtxDevice, int index, uint16_t
         return false;
     }
 }
+
+static void vtxCommonSerializeCustomDeviceStatus(const vtxDevice_t *vtxDevice, sbuf_t *dst)
+{
+    const bool customDeviceStatusAvailable = vtxDevice && vtxDevice->vTable->serializeCustomDeviceStatus;
+
+    if (customDeviceStatusAvailable) {
+        vtxDevice->vTable->serializeCustomDeviceStatus(vtxDevice, dst);
+    } else {
+        sbufWriteU8(dst, 0);
+    }
+}
+
+static void vtxCommonSerializePowerLevels(const vtxDevice_t *vtxDevice, sbuf_t *dst)
+{
+    uint16_t levels[VTX_TABLE_MAX_POWER_LEVELS];
+    uint16_t powers[VTX_TABLE_MAX_POWER_LEVELS];
+
+    const uint8_t powerLevelCount = vtxCommonGetVTXPowerLevels(vtxDevice, levels, powers);
+
+    sbufWriteU8(dst, powerLevelCount);
+
+    for (int i = 0; i < powerLevelCount; i++) {
+        sbufWriteU16(dst, levels[i]);
+        sbufWriteU16(dst, powers[i]);
+    }
+}
+
+void vtxCommonSerializeDeviceStatus(const vtxDevice_t *vtxDevice, sbuf_t *dst)
+{
+    if (vtxDevice) {
+        const vtxDevType_e vtxType = vtxCommonGetDeviceType(vtxDevice);
+        const bool deviceReady = vtxCommonDeviceIsReady(vtxDevice);
+
+        uint8_t band = 0;
+        uint8_t channel = 0;
+        const bool bandAndChannelAvailable = vtxCommonGetBandAndChannel(vtxDevice, &band, &channel);
+
+        uint8_t powerIndex = 0;
+        const bool powerIndexAvailable = vtxCommonGetPowerIndex(vtxDevice, &powerIndex);
+
+        uint16_t frequency = 0;
+        const bool frequencyAvailable = vtxCommonGetFrequency(vtxDevice, &frequency);
+
+        unsigned vtxStatus = 0; // pitmode and/or locked
+        const bool vtxStatusAvailable = vtxCommonGetStatus(vtxDevice, &vtxStatus);
+
+        sbufWriteU8(dst, vtxType);
+        sbufWriteU8(dst, deviceReady);
+
+        sbufWriteU8(dst, bandAndChannelAvailable);
+        sbufWriteU8(dst, band);
+        sbufWriteU8(dst, channel);
+
+        sbufWriteU8(dst, powerIndexAvailable);
+        sbufWriteU8(dst, powerIndex);
+
+        sbufWriteU8(dst, frequencyAvailable);
+        sbufWriteU16(dst, frequency);
+
+        sbufWriteU8(dst, vtxStatusAvailable);
+        sbufWriteU32(dst, vtxStatus);
+
+        vtxCommonSerializePowerLevels(vtxDevice, dst);
+        vtxCommonSerializeCustomDeviceStatus(vtxDevice, dst);
+    }
+}
+
 #endif

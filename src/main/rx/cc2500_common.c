@@ -103,8 +103,11 @@ void cc2500TxDisable(void)
 
 static bool cc2500SpiDetect(void)
 {
+    cc2500Reset(); // Reset the chip and give it time to wake up
+
     const uint8_t chipPartNum = cc2500ReadReg(CC2500_30_PARTNUM | CC2500_READ_BURST); //CC2500 read registers chip part num
     const uint8_t chipVersion = cc2500ReadReg(CC2500_31_VERSION | CC2500_READ_BURST); //CC2500 read registers chip version
+
     if (chipPartNum == 0x80 && chipVersion == 0x03) {
         return true;
     }

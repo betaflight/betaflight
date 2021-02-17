@@ -44,6 +44,16 @@
 
 #include "light_ws2811strip.h"
 
+#ifdef USE_LEDSTRIP_CACHE_MGMT
+// WS2811_DMA_BUFFER_SIZE is multiples of uint32_t
+// Number of bytes required for buffer
+#define WS2811_DMA_BUF_BYTES              (WS2811_DMA_BUFFER_SIZE * sizeof (uint32_t))
+// Number of bytes required to cache align buffer
+#define WS2811_DMA_BUF_CACHE_ALIGN_BYTES  ((WS2811_DMA_BUF_BYTES + 0x20) & ~0x1f)
+// Size of array to create a cache aligned buffer
+#define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof (uint32_t))
+__attribute__((aligned(32))) uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
+#else
 #if defined(STM32F1) || defined(STM32F3)
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #elif defined(STM32F7)
@@ -52,6 +62,7 @@ FAST_DATA_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 DMA_RAM uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
 uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#endif
 #endif
 
 static ioTag_t ledStripIoTag;
@@ -183,6 +194,10 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
         updateLEDDMABuffer(ledFormat, rgb24, ledIndex++);
     }
     needsFullRefresh = false;
+
+#ifdef USE_LEDSTRIP_CACHE_MGMT
+    SCB_CleanDCache_by_Addr(ledStripDMABuffer, WS2811_DMA_BUF_CACHE_ALIGN_BYTES);
+#endif
 
     ws2811LedDataTransferInProgress = true;
     ws2811LedStripDMAEnable();

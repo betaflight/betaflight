@@ -131,7 +131,7 @@ static const displayPortVTable_t hottVTable = {
 displayPort_t *displayPortHottInit()
 {
     hottDisplayPort.device = NULL;
-    displayInit(&hottDisplayPort, &hottVTable);
+    displayInit(&hottDisplayPort, &hottVTable, DISPLAYPORT_DEVICE_TYPE_HOTT);
     hottDisplayPort.useFullscreen = true;
     hottDisplayPort.rows = HOTT_TEXTMODE_DISPLAY_ROWS;
     hottDisplayPort.cols = HOTT_TEXTMODE_DISPLAY_COLUMNS;

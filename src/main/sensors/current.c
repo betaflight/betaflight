@@ -116,7 +116,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
 
     int32_t millivolts = ((uint32_t)src * getVrefMv()) / 4096;
     // y=x/m+b m is scale in (mV/10A) and b is offset in (mA)
-    int32_t centiAmps = (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10;
+    int32_t centiAmps = config->scale ? (millivolts * 10000 / (int32_t)config->scale + (int32_t)config->offset) / 10 : 0;
 
     DEBUG_SET(DEBUG_CURRENT_SENSOR, 0, millivolts);
     DEBUG_SET(DEBUG_CURRENT_SENSOR, 1, centiAmps);
@@ -279,7 +279,7 @@ void currentMeterMSPRefresh(timeUs_t currentTimeUs)
     if (cmp32(currentTimeUs, streamRequestAt) > 0) {
         streamRequestAt = currentTimeUs + ((1000 * 1000) / 10); // 10hz
 
-        mspSerialPush(SERIAL_PORT_NONE, MSP_ANALOG, NULL, 0, MSP_DIRECTION_REQUEST);
+        mspSerialPush(SERIAL_PORT_ALL, MSP_ANALOG, NULL, 0, MSP_DIRECTION_REQUEST);
     }
 }
 

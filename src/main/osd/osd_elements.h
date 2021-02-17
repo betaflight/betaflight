@@ -24,10 +24,18 @@
 
 #include "osd/osd.h"
 
+typedef enum {
+    OSD_ELEMENT_TYPE_1 = 0,
+    OSD_ELEMENT_TYPE_2,
+    OSD_ELEMENT_TYPE_3,
+    OSD_ELEMENT_TYPE_4
+} osdElementType_e;
+
 typedef struct osdElementParms_s {
     uint8_t item;
     uint8_t elemPosX;
     uint8_t elemPosY;
+    osdElementType_e type;
     char *buff;
     displayPort_t *osdDisplayPort;
     bool drawElement;
@@ -47,7 +55,7 @@ int32_t osdGetSpeedToSelectedUnit(int32_t value);
 char osdGetSpeedToSelectedUnitSymbol(void);
 char osdGetTemperatureSymbolForSelectedUnit(void);
 void osdAddActiveElements(void);
-void osdDrawActiveElements(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs);
+void osdDrawActiveElements(displayPort_t *osdDisplayPort);
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort);
 void osdElementsInit(bool backgroundLayerFlag);
 void osdResetAlarms(void);

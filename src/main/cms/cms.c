@@ -51,9 +51,10 @@
 #include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/motor.h"
+#include "drivers/osd_symbols.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
-#include "drivers/motor.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -92,7 +93,7 @@ int menuChainBack;
 
 bool cmsDisplayPortRegister(displayPort_t *pDisplay)
 {
-    if (cmsDeviceCount >= CMS_MAX_DEVICE) {
+    if (!pDisplay || cmsDeviceCount >= CMS_MAX_DEVICE) {
         return false;
     }
 
@@ -671,9 +672,12 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         return;
     }
 
+    const bool displayWasCleared = pDisplay->cleared;
     uint8_t i;
     const OSD_Entry *p;
     uint8_t top = smallScreen ? 1 : (pDisplay->rows - pageMaxRow)/2;
+
+    pDisplay->cleared = false;
 
     // Polled (dynamic) value display denominator.
 
@@ -687,12 +691,11 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     uint32_t room = displayTxBytesFree(pDisplay);
 
-    if (pDisplay->cleared) {
+    if (displayWasCleared) {
         for (p = pageTop, i= 0; (p <= pageTop + pageMaxRow); p++, i++) {
             SET_PRINTLABEL(runtimeEntryFlags[i]);
             SET_PRINTVALUE(runtimeEntryFlags[i]);
         }
-        pDisplay->cleared = false;
     } else if (drawPolled) {
         for (p = pageTop, i = 0; (p <= pageTop + pageMaxRow); p++, i++) {
             if (IS_DYNAMIC(p))
@@ -761,6 +764,22 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
             }
         }
     }
+
+    // Draw the up/down page indicators if the display has space.
+    // Only draw the symbols when necessary after the screen has been cleared. Otherwise they're static.
+    // If the device supports OSD symbols then use the up/down arrows. Otherwise assume it's a
+    // simple text device and use the '^' (carat) and 'V' for arrow approximations.
+    if (displayWasCleared && leftMenuColumn > 0) {      // make sure there's room to draw the symbol
+        if (currentCtx.page > 0) {
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_NORTH : '^';
+            displayWriteChar(pDisplay, leftMenuColumn - 1, top, DISPLAYPORT_ATTR_NONE, symbol);
+        }
+         if (currentCtx.page < pageCount - 1) {
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SOUTH : 'V';
+            displayWriteChar(pDisplay, leftMenuColumn - 1, top + pageMaxRow, DISPLAYPORT_ATTR_NONE, symbol);
+        }
+    }
+
 }
 
 const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
@@ -840,6 +859,9 @@ void cmsMenuOpen(void)
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
         displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
+        if (osdConfig()->cms_background_type != DISPLAY_BACKGROUND_TRANSPARENT) {
+            displaySetBackgroundType(pCurrentDisplay, (displayPortBackground_e)osdConfig()->cms_background_type); // set the background type if not transparent
+        }
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
@@ -848,8 +870,10 @@ void cmsMenuOpen(void)
             // DisplayPort has been changed.
             // Convert cursorRow to absolute value
             currentCtx.cursorRow = cmsCursorAbsolute(pCurrentDisplay);
+            displaySetBackgroundType(pCurrentDisplay, DISPLAY_BACKGROUND_TRANSPARENT); // reset previous displayPort to transparent
             displayRelease(pCurrentDisplay);
             pCurrentDisplay = pNextDisplay;
+            displaySetBackgroundType(pCurrentDisplay, (displayPortBackground_e)osdConfig()->cms_background_type); // set the background type if not transparent
         } else {
             return;
         }
@@ -929,6 +953,8 @@ const void *cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     }
 
     cmsInMenu = false;
+
+    displaySetBackgroundType(pCurrentDisplay, DISPLAY_BACKGROUND_TRANSPARENT); // reset the background to transparent
 
     displayRelease(pDisplay);
     currentCtx.menu = NULL;

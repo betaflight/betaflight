@@ -32,12 +32,15 @@
 #include "common/utils.h"
 
 #include "drivers/display.h"
+#include "drivers/osd.h"
 
 #include "io/displayport_msp.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
+
+#include "pg/vcd.h"
 
 static displayPort_t mspDisplayPort;
 
@@ -141,7 +144,8 @@ static bool isSynced(const displayPort_t *displayPort)
 
 static void redraw(displayPort_t *displayPort)
 {
-    displayPort->rows = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
+    const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? 16 : 13;
+    displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
     displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
     drawScreen(displayPort);
 }
@@ -172,7 +176,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
 
 displayPort_t *displayPortMspInit(void)
 {
-    displayInit(&mspDisplayPort, &mspDisplayPortVTable);
+    displayInit(&mspDisplayPort, &mspDisplayPortVTable, DISPLAYPORT_DEVICE_TYPE_MSP);
 
     if (displayPortProfileMsp()->useDeviceBlink) {
         mspDisplayPort.useDeviceBlink = true;

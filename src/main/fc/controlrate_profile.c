@@ -37,7 +37,7 @@
 
 controlRateConfig_t *currentControlRateProfile;
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 3);
+PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 4);
 
 void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
 {
@@ -65,9 +65,19 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .tpaMode = TPA_MODE_D,
             .profileName = { 0 },
             .quickRatesRcExpo = 0,
+            .levelExpo[FD_ROLL] = 0,
+            .levelExpo[FD_PITCH] = 0,
         );
     }
 }
+
+const ratesSettingsLimits_t ratesSettingLimits[RATES_TYPE_COUNT] = {
+    [RATES_TYPE_BETAFLIGHT] = { 255, 100, 100 },
+    [RATES_TYPE_RACEFLIGHT] = { 200, 255, 100 },
+    [RATES_TYPE_KISS]       = { 255,  99, 100 },
+    [RATES_TYPE_ACTUAL]     = { 200, 200, 100 },
+    [RATES_TYPE_QUICK]      = { 255, 200, 100 },
+};
 
 void loadControlRateProfile(void)
 {

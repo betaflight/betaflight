@@ -73,9 +73,14 @@ void motorWriteAll(float *values)
 #endif
 }
 
-int motorDeviceCount(void)
+unsigned motorDeviceCount(void)
 {
     return motorDevice->count;
+}
+
+motorVTable_t motorGetVTable(void)
+{
+    return motorDevice->vTable;
 }
 
 // This is not motor generic anymore; should be moved to analog pwm module
@@ -330,6 +335,6 @@ bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 
 float getDigitalIdleOffset(const motorConfig_t *motorConfig)
 {
-	return CONVERT_PARAMETER_TO_PERCENT(motorConfig->digitalIdleOffsetValue * 0.01f);
+    return CONVERT_PARAMETER_TO_PERCENT(motorConfig->digitalIdleOffsetValue * 0.01f);
 }
 #endif // USE_MOTOR

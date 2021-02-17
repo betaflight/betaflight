@@ -3,7 +3,6 @@
 FC_VER=$(make version)
 REVISION=$(git rev-parse --short HEAD)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-REVISION=$(git rev-parse --short HEAD)
 LAST_COMMIT_DATE=$(git log -1 --date=short --format="%cd")
 TARGET_FILE=obj/betaflight_${FC_VER}_${TARGET}
 TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}

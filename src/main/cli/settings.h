@@ -141,7 +141,11 @@ typedef enum {
 #ifdef USE_OSD
     TABLE_OSD_LOGO_ON_ARMING,
 #endif
-
+    TABLE_MIXER_TYPE,
+    TABLE_SIMPLIFIED_TUNING_PIDS_MODE,
+#ifdef USE_OSD
+    TABLE_CMS_BACKGROUND,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -259,3 +263,9 @@ extern const char * const lookupTableItermRelaxType[];
 extern const char * const lookupTableOsdDisplayPortDevice[];
 
 extern const char * const lookupTableInterpolatedSetpoint[];
+
+extern const char * const lookupTableOffOn[];
+
+extern const char * const lookupTableSimplifiedTuningPidsMode[];
+
+extern const char * const lookupTableCMSMenuBackgroundType[];

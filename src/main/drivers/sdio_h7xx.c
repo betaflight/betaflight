@@ -254,16 +254,8 @@ bool SD_GetState(void)
     return (cardState == HAL_SD_CARD_TRANSFER);
 }
 
-/*
- * return FALSE for OK!
- * The F4/F7 code actually returns an SD_Error_t if the card is detected
- * SD_OK == 0, SD_* are non-zero and indicate errors.  e.g. SD_ERROR = 42
- */
-bool SD_Init(void)
+SD_Error_t SD_Init(void)
 {
-    bool failureResult = SD_ERROR; // FIXME fix the calling code, this false for success is bad.
-    bool successResult = false;
-
     HAL_StatusTypeDef status;
 
     memset(&hsd1, 0, sizeof(hsd1));
@@ -283,7 +275,7 @@ bool SD_Init(void)
     status = HAL_SD_Init(&hsd1); // Will call HAL_SD_MspInit
 
     if (status != HAL_OK) {
-        return failureResult;
+        return SD_ERROR;
     }
 
     switch(hsd1.SdCard.CardType) {
@@ -296,7 +288,7 @@ bool SD_Init(void)
             SD_CardType = SD_STD_CAPACITY_V2_0;
             break;
         default:
-            return failureResult;
+            return SD_ERROR;
         }
         break;
 
@@ -305,7 +297,7 @@ bool SD_Init(void)
         break;
 
     default:
-        return failureResult;
+        return SD_ERROR;
     }
 
     STATIC_ASSERT(sizeof(SD_Handle.CSD) == sizeof(hsd1.CSD), hal-csd-size-error);
@@ -314,7 +306,7 @@ bool SD_Init(void)
     STATIC_ASSERT(sizeof(SD_Handle.CID) == sizeof(hsd1.CID), hal-cid-size-error);
     memcpy(&SD_Handle.CID, &hsd1.CID, sizeof(SD_Handle.CID));
 
-    return successResult;
+    return SD_OK;
 }
 
 SD_Error_t SD_GetCardInfo(void)
