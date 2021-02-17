@@ -301,6 +301,7 @@ typedef struct osdConfig_s {
     uint8_t camera_frame_height;              // The height of the box for the camera frame element
     uint16_t task_frequency;
     uint8_t cms_background_type;              // For supporting devices, determines whether the CMS background is transparent or opaque
+    uint8_t stat_show_cell_value;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
