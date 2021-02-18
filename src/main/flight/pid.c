@@ -218,7 +218,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_pd_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_ff_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dterm_filter = true,
+        .simplified_dterm_filter = false,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
 #ifndef USE_D_MIN
