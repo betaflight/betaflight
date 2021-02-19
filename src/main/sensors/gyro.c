@@ -133,9 +133,16 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_q = 120;
     gyroConfig->dyn_notch_min_hz = 150;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
+    gyroConfig->gyrosDetected = 0;
     gyroConfig->dyn_lpf_curve_expo = 5;
 	gyroConfig->simplified_gyro_filter = false;
 	gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
+
+    gyroConfig->gyro_cal_manual = 0;
+    gyroConfig->gyroCalibrated = 0;
+    gyroConfig->gyroZeroX = 0.0f;
+    gyroConfig->gyroZeroY = 0.0f;
+    gyroConfig->gyroZeroZ = 0.0f;
 }
 
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -210,6 +217,33 @@ void gyroStartCalibration(bool isFirstArmingCalibration)
     }
 }
 
+static void gyroSetSensorCalibration(gyroSensor_t *gyroSensor)
+{
+    if (!gyroConfig()->gyroCalibrated) {
+        return;
+    }
+
+    gyroSensor->gyroDev.gyroZero[X] = gyroConfig()->gyroZeroX;
+    gyroSensor->gyroDev.gyroZero[Y] = gyroConfig()->gyroZeroY;
+    gyroSensor->gyroDev.gyroZero[Z] = gyroConfig()->gyroZeroZ;
+}
+
+void gyroSetCalibration(void)
+{
+    switch (gyro.gyroToUse) {
+    case GYRO_CONFIG_USE_GYRO_1:
+        gyroSetSensorCalibration(&gyro.gyroSensor1);
+        break;
+#ifdef USE_MULTI_GYRO
+    case GYRO_CONFIG_USE_GYRO_2:
+        gyroSetSensorCalibration(&gyro.gyroSensor2);
+        break;
+    // TODO: support GYRO_CONFIG_USE_GYRO_BOTH
+    //case GYRO_CONFIG_USE_GYRO_BOTH:
+#endif
+    }
+}
+
 bool isFirstArmingGyroCalibrationRunning(void)
 {
     return firstArmingCalibrationWasStarted && !gyroIsCalibrationComplete();
@@ -253,6 +287,14 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
     }
 
     if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
+        if (gyroConfig()->gyro_cal_manual) {
+            gyroConfigMutable()->gyroZeroX = gyroSensor->gyroDev.gyroZero[X];
+            gyroConfigMutable()->gyroZeroY = gyroSensor->gyroDev.gyroZero[Y];
+            gyroConfigMutable()->gyroZeroZ = gyroSensor->gyroDev.gyroZero[Z];
+            gyroConfigMutable()->gyroCalibrated = 1;
+            saveConfigAndNotify();
+        }
+
         schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
         if (!firstArmingCalibrationWasStarted || (getArmingDisableFlags() & ~ARMING_DISABLED_CALIBRATING) == 0) {
             beeper(BEEPER_GYRO_CALIBRATED);
@@ -592,6 +634,23 @@ void gyroReadTemperature(void)
         break;
 #endif // USE_MULTI_GYRO
     }
+}
+
+bool gyroHasTemperatureSensor(void)
+{
+    switch (gyro.gyroToUse) {
+    case GYRO_CONFIG_USE_GYRO_1:
+        return gyro.gyroSensor1.gyroDev.temperatureFn != NULL;
+
+#ifdef USE_MULTI_GYRO
+    case GYRO_CONFIG_USE_GYRO_2:
+        return gyro.gyroSensor2.gyroDev.temperatureFn != NULL;
+
+    case GYRO_CONFIG_USE_GYRO_BOTH:
+        return gyro.gyroSensor1.gyroDev.temperatureFn != NULL || gyro.gyroSensor2.gyroDev.temperatureFn != NULL;
+#endif // USE_MULTI_GYRO
+    }
+    return false;
 }
 
 int16_t gyroGetTemperature(void)

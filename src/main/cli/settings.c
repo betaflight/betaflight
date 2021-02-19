@@ -690,6 +690,7 @@ const clivalue_t valueTable[] = {
     { "dyn_lpf_gyro_curve_expo",    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_curve_expo) },
 #endif
     { "gyro_filter_debug_axis",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_FILTER_DEBUG }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_debug_axis) },
+    { "gyro_cal_manual",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_cal_manual) },
 
 // PG_ACCELEROMETER_CONFIG
 #if defined(USE_ACC)

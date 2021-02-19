@@ -858,7 +858,13 @@ void init(void)
         accStartCalibration();
     }
 #endif
-    gyroStartCalibration(false);
+    if (gyroConfig()->gyro_cal_manual
+    &&  gyroConfig()->gyroCalibrated) {
+        gyroSetCalibration();
+    } else {
+        gyroStartCalibration(false);
+    }
+
 #ifdef USE_BARO
     baroStartCalibration();
 #endif

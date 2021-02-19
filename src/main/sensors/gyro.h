@@ -206,6 +206,12 @@ typedef struct gyroConfig_s {
     uint8_t dyn_lpf_curve_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t  simplified_gyro_filter;
     uint8_t  simplified_gyro_filter_multiplier;
+
+    uint8_t gyro_cal_manual;
+    uint8_t gyroCalibrated;
+    float gyroZeroX;
+    float gyroZeroY;
+    float gyroZeroZ;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -214,8 +220,10 @@ void gyroUpdate(void);
 void gyroFiltering(timeUs_t currentTimeUs);
 bool gyroGetAccumulationAverage(float *accumulation);
 void gyroStartCalibration(bool isFirstArmingCalibration);
+void gyroSetCalibration(void);
 bool isFirstArmingGyroCalibrationRunning(void);
 bool gyroIsCalibrationComplete(void);
+bool gyroHasTemperatureSensor(void);
 void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);
 bool gyroOverflowDetected(void);
