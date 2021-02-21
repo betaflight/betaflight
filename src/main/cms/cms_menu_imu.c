@@ -296,6 +296,22 @@ static const void *cmsx_applySimplifiedTuning(displayPort_t *pDisp, const void *
     UNUSED(pDisp);
     UNUSED(self);
 
+    pidProfile_t *pidProfile = currentPidProfile;
+
+    pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
+    pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
+    pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
+    pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
+    pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
+    pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
+    pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
+    pidProfile->simplified_ff_gain = cmsx_simplified_ff_gain;
+
+    pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
+    pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
+    gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
+    gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
+
     applySimplifiedTuning(currentPidProfile);
 
     return MENU_CHAIN_BACK;
