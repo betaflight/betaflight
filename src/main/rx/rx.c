@@ -84,6 +84,10 @@ static uint16_t linkQuality = 0;
 static uint8_t rfMode = 0;
 #endif
 
+#ifdef USE_RX_LINK_UPLINK_POWER
+static uint16_t uplinkTxPwrMw = 0;  //Uplink Tx power in mW
+#endif
+
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
 
 #define RSSI_ADC_DIVISOR (4096 / 1024)
@@ -453,6 +457,13 @@ void setLinkQualityDirect(uint16_t linkqualityValue)
     UNUSED(linkqualityValue);
 #endif
 }
+
+#ifdef USE_RX_LINK_UPLINK_POWER
+void rxSetUplinkTxPwrMw(uint16_t uplinkTxPwrMwValue)
+{
+    uplinkTxPwrMw = uplinkTxPwrMwValue;
+}
+#endif
 
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
@@ -872,6 +883,13 @@ uint8_t rxGetRfMode(void)
 uint16_t rxGetLinkQualityPercent(void)
 {
     return (linkQualitySource == LQ_SOURCE_NONE) ? scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100) : linkQuality;
+}
+#endif
+
+#ifdef USE_RX_LINK_UPLINK_POWER
+uint16_t rxGetUplinkTxPwrMw(void)
+{
+    return uplinkTxPwrMw;
 }
 #endif
 
