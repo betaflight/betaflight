@@ -163,4 +163,6 @@ void sensorsSet(uint32_t) {}
 void schedulerResetTaskStatistics(taskId_e) {}
 int getArmingDisableFlags(void) {return 0;}
 void writeEEPROM(void) {}
+void saveConfigAndNotify(void) {}
+void resetFlightDynamicsTrims(flightDynamicsTrims_t) {}
 }

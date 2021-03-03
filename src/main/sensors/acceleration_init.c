@@ -113,12 +113,12 @@ void accResetRollAndPitchTrims(void)
     resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
 }
 
-static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
+void resetFlightDynamicsTrims(flightDynamicsTrims_t *trims)
 {
-    accZero->values.roll = 0;
-    accZero->values.pitch = 0;
-    accZero->values.yaw = 0;
-    accZero->values.calibrationCompleted = 0;
+    trims->values.roll = 0;
+    trims->values.pitch = 0;
+    trims->values.yaw = 0;
+    trims->values.calibrationCompleted = 0;
 }
 
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)

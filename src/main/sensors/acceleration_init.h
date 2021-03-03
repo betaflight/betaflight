@@ -38,3 +38,4 @@ extern accelerationRuntime_t accelerationRuntime;
 
 void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims);
 void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims);
+void resetFlightDynamicsTrims(flightDynamicsTrims_t *trims);
