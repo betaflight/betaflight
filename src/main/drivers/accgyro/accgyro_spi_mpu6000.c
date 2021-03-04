@@ -234,7 +234,11 @@ bool mpu6000ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
         return false;
     }
 
-    *tempData = 36 + (180 + (int16_t)((uint16_t)buf[0] << 8 | buf[1]) + 170) / 340;
+    // tempData = 36.53 + TEMP_OUT / 340
+    // tempData = 36 + (TEMP_OUT + 180) / 340
+    int16_t t = (int16_t)((uint16_t)buf[0] << 8 | buf[1]) + 180;
+    t += t >= 0 ? 170 : - 170; // round to the nearest integer even for the negative values
+    *tempData = 36 + t / 340;
 
     return true;
 }
