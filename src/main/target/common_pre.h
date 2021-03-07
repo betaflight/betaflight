@@ -124,6 +124,7 @@
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
 #define USE_DSHOT_CACHE_MGMT
+#define USE_LATE_TASK_STATISTICS
 #endif
 
 #ifdef STM32G4
@@ -184,7 +185,7 @@
 #endif
 
 #ifdef USE_FAST_DATA
-#define FAST_DATA_ZERO_INIT             __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA_ZERO_INIT          __attribute__ ((section(".fastram_bss"), aligned(4)))
 #define FAST_DATA                    __attribute__ ((section(".fastram_data"), aligned(4)))
 #else
 #define FAST_DATA_ZERO_INIT

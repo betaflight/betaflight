@@ -4839,7 +4839,11 @@ static void cliTasks(const char *cmdName, char *cmdline)
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
+#if defined(USE_LATE_TASK_STATISTICS)
+        cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload  total/ms   late    run reqd/us");
+#else
         cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload  total/ms");
+#endif
     } else {
         cliPrintLine("Task list");
     }
@@ -4857,9 +4861,18 @@ static void cliTasks(const char *cmdName, char *cmdline)
                 averageLoadSum += averageLoad;
             }
             if (systemConfig()->task_statistics) {
+#if defined(USE_LATE_TASK_STATISTICS)
+                cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
+                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                        taskInfo.totalExecutionTimeUs / 1000,
+                        taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
+#else
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
                         taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTimeUs / 1000);
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                        taskInfo.totalExecutionTimeUs / 1000);
+#endif
             } else {
                 cliPrintLinef("%6d", taskFrequency);
             }
