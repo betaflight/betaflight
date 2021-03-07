@@ -459,6 +459,7 @@ extern "C" {
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
     void pinioBoxTaskControl(void) { }
+    bool taskUpdateRxMainInProgress() { return true; }
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {

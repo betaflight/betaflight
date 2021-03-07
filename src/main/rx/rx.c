@@ -43,6 +43,7 @@
 
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
+#include "fc/tasks.h"
 
 #include "flight/failsafe.h"
 
@@ -458,6 +459,11 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
+
+    if (taskUpdateRxMainInProgress()) {
+        // There are more states to process
+        return true;
+    }
 
     switch (rxRuntimeState.rxProvider) {
     default:
