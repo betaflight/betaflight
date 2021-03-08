@@ -120,12 +120,12 @@ void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
     sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
     sbufWriteU8(dst, GHST_DL_GPS_PRIMARY);
 
-	sbufWriteU32(dst, gpsSol.llh.lat);
-	sbufWriteU32(dst, gpsSol.llh.lon);
+    sbufWriteU32(dst, gpsSol.llh.lat);
+    sbufWriteU32(dst, gpsSol.llh.lon);
 
     // constrain alt. from -1 km to +10 km, send in units of meters
     const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), -1000 * 100, 10000 * 100) / 100) + 1000;
-	sbufWriteU16(dst, altitude);
+    sbufWriteU16(dst, altitude);
 }
 
 // GPS data, secondary, auxiliary data
