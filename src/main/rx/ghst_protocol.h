@@ -63,6 +63,8 @@ typedef enum {
     GHST_DL_LINK_STAT           = 0x21,
     GHST_DL_VTX_STAT            = 0x22,
     GHST_DL_PACK_STAT           = 0x23,     // Battery (Pack) Status
+    GHST_DL_GPS_PRIMARY         = 0x25,     // Primary GPS data (position)
+    GHST_DL_GPS_SECONDARY       = 0x26
 } ghstDl_e;
 
 #define GHST_RC_CTR_VAL_12BIT       0x7C0   // servo center for 12 bit values (0x3e0 << 1)

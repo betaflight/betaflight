@@ -67,6 +67,7 @@
 
 #define GHST_CYCLETIME_US                   100000      // 10x/sec
 #define GHST_FRAME_PACK_PAYLOAD_SIZE        10
+#define GHST_FRAME_GPS_PAYLOAD_SIZE         10
 #define GHST_FRAME_LENGTH_CRC               1
 #define GHST_FRAME_LENGTH_TYPE              1
 
@@ -112,10 +113,42 @@ void ghstFramePackTelemetry(sbuf_t *dst)
     sbufWriteU8(dst, 0x00);                     // tbd3
 }
 
+// GPS data, primary, positional data
+void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
+{
+    // use sbufWrite since CRC does not include frame length
+    sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
+    sbufWriteU8(dst, GHST_DL_GPS_PRIMARY);
+
+	sbufWriteU32(dst, gpsSol.llh.lat);
+	sbufWriteU32(dst, gpsSol.llh.lon);
+
+    // constrain alt. from -1 km to +10 km, send in units of meters
+    const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), -1000 * 100, 10000 * 100) / 100) + 1000;
+	sbufWriteU16(dst, altitude);
+}
+
+// GPS data, secondary, auxiliary data
+void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
+{
+    // use sbufWrite since CRC does not include frame length
+    sbufWriteU8(dst, GHST_FRAME_GPS_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);
+    sbufWriteU8(dst, GHST_DL_GPS_SECONDARY);
+
+    sbufWriteU16(dst, gpsSol.groundSpeed);      // speed in 0.1m/s
+    sbufWriteU16(dst, gpsSol.groundCourse);     // degrees * 10
+    sbufWriteU8(dst, gpsSol.numSat);
+	
+    for(int i = 0; i < 5; ++i)
+       sbufWriteU8(dst, 0x00);
+}
+
 // schedule array to decide how often each type of frame is sent
 typedef enum {
     GHST_FRAME_START_INDEX = 0,
     GHST_FRAME_PACK_INDEX = GHST_FRAME_START_INDEX, // Battery (Pack) data
+    GHST_FRAME_GPS_PRIMARY_INDEX,                   // GPS, primary values (Lat, Long, Alt)
+    GHST_FRAME_GPS_SECONDARY_INDEX,                 // GPS, secondary values (Sat Count, HDOP, etc.)
     GHST_SCHEDULE_COUNT_MAX
 } ghstFrameTypeIndex_e;
 
@@ -136,6 +169,19 @@ static void processGhst(void)
         ghstFramePackTelemetry(dst);
         ghstFinalize(dst);
     }
+
+    if (currentSchedule & BIT(GHST_FRAME_GPS_PRIMARY_INDEX)) {
+        ghstInitializeFrame(dst);
+        ghstFrameGpsPrimaryTelemetry(dst);
+        ghstFinalize(dst);
+    }
+
+   if (currentSchedule & BIT(GHST_FRAME_GPS_SECONDARY_INDEX)) {
+        ghstInitializeFrame(dst);
+        ghstFrameGpsSecondaryTelemetry(dst);
+        ghstFinalize(dst);
+    }
+
     ghstScheduleIndex = (ghstScheduleIndex + 1) % ghstScheduleCount;
 }
 
@@ -153,6 +199,19 @@ void initGhstTelemetry(void)
         || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
         ghstSchedule[index++] = BIT(GHST_FRAME_PACK_INDEX);
     }
+
+ #ifdef USE_GPS
+    if (featureIsEnabled(FEATURE_GPS)
+       && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG)) {
+        ghstSchedule[index++] = BIT(GHST_FRAME_GPS_PRIMARY_INDEX);
+    }
+
+    if (featureIsEnabled(FEATURE_GPS)
+       && telemetryIsSensorEnabled(SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
+        ghstSchedule[index++] = BIT(GHST_FRAME_GPS_SECONDARY_INDEX);
+    }
+#endif
+
     ghstScheduleCount = (uint8_t)index;
  }
 
