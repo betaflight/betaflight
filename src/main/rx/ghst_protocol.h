@@ -72,9 +72,12 @@ typedef enum {
 
 #define GHST_FRAME_SIZE             14      // including addr, type, len, crc, and payload
 
-#define GHST_PAYLOAD_SIZE_MAX           14
+#define GHST_PAYLOAD_SIZE_MAX       14
 
-#define GHST_FRAME_SIZE_MAX             24
+#define GHST_FRAME_SIZE_MAX         24
+
+#define GPS_FLAGS_FIX               0x01
+#define GPS_FLAGS_FIX_HOME          0x02
 
 typedef struct ghstFrameDef_s {
     uint8_t addr;
