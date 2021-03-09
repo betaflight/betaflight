@@ -123,8 +123,8 @@ void ghstFrameGpsPrimaryTelemetry(sbuf_t *dst)
     sbufWriteU32(dst, gpsSol.llh.lat);
     sbufWriteU32(dst, gpsSol.llh.lon);
 
-    // constrain alt. from -1 km to +10 km, send in units of meters
-    const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), -1000 * 100, 10000 * 100) / 100) + 1000;
+    // constrain alt. from -32,000m to +32,000m, units of meters
+    const int16_t altitude = (constrain(getEstimatedAltitudeCm(), -32000 * 100, 32000 * 100) / 100);
     sbufWriteU16(dst, altitude);
 }
 
@@ -139,8 +139,15 @@ void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
     sbufWriteU16(dst, gpsSol.groundCourse);     // degrees * 10
     sbufWriteU8(dst, gpsSol.numSat);
 	
-    for(int i = 0; i < 5; ++i)
-       sbufWriteU8(dst, 0x00);
+    sbufWriteU16(dst, (uint16_t) (GPS_distanceToHome / 10));    // use units of 10m to increase range of U16 to 655.36km
+    sbufWriteU16(dst, GPS_directionToHome);
+
+    uint8_t gpsFlags = 0;
+    if(STATE(GPS_FIX))
+        gpsFlags |= GPS_FLAGS_FIX;
+    if(STATE(GPS_FIX_HOME))
+        gpsFlags |= GPS_FLAGS_FIX_HOME;
+    sbufWriteU8(dst, gpsFlags);
 }
 
 // schedule array to decide how often each type of frame is sent
