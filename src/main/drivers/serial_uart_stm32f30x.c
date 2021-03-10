@@ -212,7 +212,7 @@ void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_e mode, portOptions_e optio
 {
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
-            ((options & SERIAL_INVERTED) || ((options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ) ? GPIO_OType_PP : GPIO_OType_OD,
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_OType_PP : GPIO_OType_OD,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP_PD)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
