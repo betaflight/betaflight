@@ -53,11 +53,11 @@ Configure min/max cell voltages using the following CLI setting:
 
 `vbat_scale` - Adjust this to match actual measured battery voltage to reported value (which may be displayed via the `status` command)
 
-`vbat_max_cell_voltage` - Maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, i.e. 43 = 4.3V
+`vbat_max_cell_voltage` - Maximum voltage per cell, used for auto-detecting battery voltage in 0.01V units, i.e. 430 = 4.3V
 
-`vbat_min_cell_voltage` - Minimum voltage per cell; this triggers battery-critical alarms, in 0.1V units, i.e. 33 = 3.3V
+`vbat_min_cell_voltage` - Minimum voltage per cell; this triggers battery-critical alarms, in 0.01V units, i.e. 330 = 3.3V
 
-`vbat_warning_cell_voltage` - Warning voltage per cell; this triggers battery-warning alarms, in 0.1V units, i.e. 34 = 3.4V
+`vbat_warning_cell_voltage` - Warning voltage per cell; this triggers battery-warning alarms, in 0.01V units, i.e. 340 = 3.4V
 
 `vbat_hysteresis` - Sets the hysteresis value for low-battery alarms, in 0.01V units, i.e. 10 = 0.10V
 
@@ -68,9 +68,9 @@ Configure min/max cell voltages using the following CLI setting:
 e.g.
 ```
 set vbat_scale = 110
-set vbat_max_cell_voltage = 43
-set vbat_min_cell_voltage = 33
-set vbat_warning_cell_voltage = 34
+set vbat_max_cell_voltage = 430
+set vbat_min_cell_voltage = 330
+set vbat_warning_cell_voltage = 340
 set vbat_hysteresis = 1
 set vbat_duration_for_warning = 60
 set vbat_duration_for_critical = 20
