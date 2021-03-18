@@ -203,19 +203,20 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 // Values from I2C-SMBus specification
-static uint16_t trmax;      // Raise time (max)
+static uint16_t trmax;      // Rise time (max)
 static uint16_t tfmax;      // Fall time (max)
 static uint8_t  tsuDATmin;  // SDA setup time (min)
 static uint8_t  thdDATmin;  // SDA hold time (min)
+static uint16_t tHIGHmin;   // High period of SCL clock (min)
+static uint16_t tLOWmin;    // Low period of SCL clock (min)
 
 // Silicon specific values, from datasheet
 static uint8_t  tAFmin;     // Analog filter delay (min)
-static uint8_t  tAFmax;     // Analog filter delay (max)
+static uint16_t tAFmax;     // Analog filter delay (max)
 
 // Actual (estimated) values
-static uint16_t tr = 100;   // Raise time
-static uint16_t tf = 100;   // Fall time
-static uint8_t  tAF = 70;   // Analog filter delay
+static uint16_t tr = 100;   // Rise time
+static uint16_t tf = 10;    // Fall time
 
 /*
  * Compute SCLDEL, SDADEL, SCLH and SCLL for TIMINGR register according to reference manuals.
@@ -229,12 +230,16 @@ static void i2cClockComputeRaw(uint32_t pclkFreq, int i2cFreqKhz, int presc, int
         tfmax = 120;
         tsuDATmin = 50;
         thdDATmin = 0;
+        tHIGHmin = 260;
+        tLOWmin = 500;
     } else {
         // Fm (Fast mode)
         trmax = 300;
         tfmax = 300;
         tsuDATmin = 100;
         thdDATmin = 0;
+        tHIGHmin = 600;
+        tLOWmin = 1300;
     }
     tAFmin = 50;
     tAFmax = 90;
@@ -249,19 +254,23 @@ static void i2cClockComputeRaw(uint32_t pclkFreq, int i2cFreqKhz, int presc, int
 
     uint32_t SDADELmin = (tfmax + thdDATmin - tAFmin - ((dfcoeff + 3) * tI2cclk)) / ((presc + 1) * tI2cclk);
 
-    float tsync1 = tf + tAF + dfcoeff * tI2cclk + 3 * tI2cclk;
-    float tsync2 = tr + tAF + dfcoeff * tI2cclk + 3 * tI2cclk;
+    float tsync1 = tf + tAFmin + dfcoeff * tI2cclk + 2 * tI2cclk;
+    float tsync2 = tr + tAFmin + dfcoeff * tI2cclk + 2 * tI2cclk;
 
-    float tSCLHL = tSCL - tsync1 - tsync2;
-    float SCLHL = tSCLHL / ((presc + 1) * tI2cclk) - 1;
+    float tSCLH = tHIGHmin * tSCL / (tHIGHmin + tLOWmin) - tsync2;
+    float tSCLL = tSCL - tSCLH - tsync1 - tsync2;
 
-    uint32_t SCLH = SCLHL / 4.75;  // STM32CubeMX seems to use a value like this
-    uint32_t SCLL = (uint32_t)(SCLHL + 0.5f) - SCLH;
+    uint32_t SCLH = tSCLH / ((presc + 1) * tI2cclk) - 1;
+    uint32_t SCLL = tSCLL / ((presc + 1) * tI2cclk) - 1;
+
+    while (tsync1 + tsync2 + ((SCLH + 1) + (SCLL + 1)) * ((presc + 1) * tI2cclk) < tSCL) {
+        SCLH++;
+    }
 
     *scldel = SCLDELmin;
     *sdadel = SDADELmin;
-    *sclh = SCLH - 1;
-    *scll = SCLL - 1;
+    *sclh = SCLH;
+    *scll = SCLL;
 }
 
 static uint32_t i2cClockTIMINGR(uint32_t pclkFreq, int i2cFreqKhz, int dfcoeff)
@@ -274,7 +283,7 @@ static uint32_t i2cClockTIMINGR(uint32_t pclkFreq, int i2cFreqKhz, int dfcoeff)
     uint16_t sclh;
     uint16_t scll;
 
-    for (int presc = 1; presc < 15; presc++) {
+    for (int presc = 0; presc < 15; presc++) {
         i2cClockComputeRaw(pclkFreq, i2cFreqKhz, presc, dfcoeff, &scldel, &sdadel, &sclh, &scll);
 
         // If all fields are not overflowing, return TIMINGR.
