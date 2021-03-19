@@ -79,8 +79,8 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .channel = DMA_REQUEST_ADC2,
 #endif
     },
-#if !(defined(STM32H7A3xx) || defined(STM32H7A3xxQ))
-    // ADC3 is not available on H7A3
+#if defined(ADC3)
+    // ADC3 is not available on all H7 MCUs, e.g. H7A3
     // On H743 and H750, ADC3 can be serviced by BDMA also, but we settle for DMA1 or 2 (for now).
     {
         .ADCx = ADC3_INSTANCE,
@@ -90,7 +90,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .channel = DMA_REQUEST_ADC3,
 #endif
     }
-#endif // !STM32H7A3
+#endif // ADC3
 };
 
 adcDevice_t adcDevice[ADCDEV_COUNT];
@@ -119,11 +119,18 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 19 },
 #endif
 #endif
-    // Inputs available for all packages
+#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+    // See DS13195 Rev 6 Page 51/52
+    { DEFIO_TAG_E__PC0,  ADC_DEVICES_12,  ADC_CHANNEL_10, 10 },
+    { DEFIO_TAG_E__PC1,  ADC_DEVICES_12,  ADC_CHANNEL_11, 11 },
+    { DEFIO_TAG_E__PC2,  ADC_DEVICES_12,  ADC_CHANNEL_12,  0 },
+    { DEFIO_TAG_E__PC3,  ADC_DEVICES_12,  ADC_CHANNEL_13,  1 },
+#else
     { DEFIO_TAG_E__PC0,  ADC_DEVICES_123, ADC_CHANNEL_10, 10 },
     { DEFIO_TAG_E__PC1,  ADC_DEVICES_123, ADC_CHANNEL_11, 11 },
     { DEFIO_TAG_E__PC2,  ADC_DEVICES_3,   ADC_CHANNEL_0,   0 },
     { DEFIO_TAG_E__PC3,  ADC_DEVICES_3,   ADC_CHANNEL_1,   1 },
+#endif
     { DEFIO_TAG_E__PC4,  ADC_DEVICES_12,  ADC_CHANNEL_4,   4 },
     { DEFIO_TAG_E__PC5,  ADC_DEVICES_12,  ADC_CHANNEL_8,   8 },
     { DEFIO_TAG_E__PB0,  ADC_DEVICES_12,  ADC_CHANNEL_9,   9 },
