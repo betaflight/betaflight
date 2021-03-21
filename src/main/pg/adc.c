@@ -43,12 +43,18 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 
     adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
     adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
-#ifndef STM32F1
+// These conditionals need to match the ones used in 'src/main/drivers/adc.h'.
+#if defined(ADC2)
     adcConfig->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;
+#endif
+#if defined(ADC3)
     adcConfig->dmaopt[ADCDEV_3] = ADC3_DMA_OPT;
 #endif
-#ifdef STM32F3
+#if defined(ADC4)
     adcConfig->dmaopt[ADCDEV_4] = ADC4_DMA_OPT;
+#endif
+#if defined(ADC5)
+    adcConfig->dmaopt[ADCDEV_5] = ADC5_DMA_OPT;
 #endif
 
 #ifdef VBAT_ADC_PIN
