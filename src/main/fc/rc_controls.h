@@ -79,7 +79,6 @@ typedef enum {
     RC_SMOOTHING_DERIVATIVE_OFF,
     RC_SMOOTHING_DERIVATIVE_PT1,
     RC_SMOOTHING_DERIVATIVE_BIQUAD,
-    RC_SMOOTHING_DERIVATIVE_AUTO,
 } rcSmoothingDerivativeFilter_e;
 
 #define ROL_LO (1 << (2 * ROLL))

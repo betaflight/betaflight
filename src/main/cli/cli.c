@@ -4962,11 +4962,6 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
             cliPrintLine("(manual)");
         }
         cliPrintf("# Derivative filter type: %s", lookupTables[TABLE_RC_SMOOTHING_DERIVATIVE_TYPE].values[rcSmoothingData->derivativeFilterType]);
-        if (rcSmoothingData->derivativeFilterTypeSetting == RC_SMOOTHING_DERIVATIVE_AUTO) {
-            cliPrintLine(" (auto)");
-        } else {
-            cliPrintLinefeed();
-        }
         cliPrintf("# Active derivative cutoff: %dhz (", rcSmoothingData->derivativeCutoffFrequency);
         if (rcSmoothingData->derivativeFilterType == RC_SMOOTHING_DERIVATIVE_OFF) {
             cliPrintLine("off)");
