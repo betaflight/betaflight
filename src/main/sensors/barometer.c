@@ -349,7 +349,7 @@ static uint32_t recalculateBarometerTotal(uint32_t pressureTotal, int32_t newPre
         nextSampleIndex = 0;
         baroReady = true;
     } else {
-	    nextSampleIndex = (currentSampleIndex + 1);
+        nextSampleIndex = (currentSampleIndex + 1);
     }
     barometerSamples[currentSampleIndex] = applyBarometerMedianFilter(newPressureReading);
 
@@ -439,7 +439,7 @@ uint32_t baroUpdate(void)
             }
 
             sleepTime = baro.dev.ut_delay;
-        break;
+            break;
     }
 
     return sleepTime;
