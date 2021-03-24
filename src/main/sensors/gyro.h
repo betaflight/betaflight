@@ -107,12 +107,11 @@ typedef struct gyro_s {
     filterApplyFnPtr notchFilter2ApplyFn;
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
-    filterApplyFnPtr notchFilterDynApplyFn;
-    filterApplyFnPtr notchFilterDynApplyFn2;
-    biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT];
-    biquadFilter_t notchFilterDyn2[XYZ_AXIS_COUNT];
-
 #ifdef USE_GYRO_DATA_ANALYSE
+    filterApplyFnPtr notchFilterDynApplyFn;
+    biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
+    uint8_t notchFilterDynCount;
+
     gyroAnalyseState_t gyroAnalyseState;
 #endif
 
@@ -196,8 +195,8 @@ typedef struct gyroConfig_s {
     uint16_t dyn_lpf_gyro_max_hz;
 
     uint16_t dyn_notch_max_hz;
-    uint8_t  dyn_notch_width_percent;
-    uint16_t dyn_notch_q;
+    uint8_t  dyn_notch_count;
+    uint16_t dyn_notch_bandwidth_hz;
     uint16_t dyn_notch_min_hz;
 
     uint8_t  gyro_filter_debug_axis;
