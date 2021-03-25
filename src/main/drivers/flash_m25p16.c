@@ -99,6 +99,9 @@ struct {
     // Winbond W25Q256
     // Datasheet: https://www.winbond.com/resource-files/w25q256jv%20spi%20revb%2009202016.pdf
     { 0xEF4019, 133, 50, 512, 256 },
+    // Cypress S25FL064L
+    // Datasheet: https://www.cypress.com/file/316661/download
+    { 0x016017, 133, 50, 128, 256 },
     // Cypress S25FL128L
     // Datasheet: https://www.cypress.com/file/316171/download
     { 0x016018, 133, 50, 256, 256 },
