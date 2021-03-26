@@ -27,6 +27,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus.h"
 #include "drivers/sensor.h"
+#include "sensors/sensors.h"
 
 #ifdef USE_GYRO_DATA_ANALYSE
 #include "flight/gyroanalyse.h"
@@ -160,6 +161,12 @@ typedef enum {
 #define GYRO_CONFIG_USE_GYRO_2      1
 #define GYRO_CONFIG_USE_GYRO_BOTH   2
 
+#ifdef USE_MULTI_GYRO
+#define GYRO_CNT_MAX 2
+#else
+#define GYRO_CNT_MAX 1
+#endif
+
 enum {
     FILTER_LOWPASS = 0,
     FILTER_LOWPASS2
@@ -205,6 +212,9 @@ typedef struct gyroConfig_s {
     uint8_t dyn_lpf_curve_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t  simplified_gyro_filter;
     uint8_t  simplified_gyro_filter_multiplier;
+
+    uint8_t gyro_cal_manual;
+    flightDynamicsTrims_t gyroTrims[GYRO_CNT_MAX];
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
@@ -213,8 +223,11 @@ void gyroUpdate(void);
 void gyroFiltering(timeUs_t currentTimeUs);
 bool gyroGetAccumulationAverage(float *accumulation);
 void gyroStartCalibration(bool isFirstArmingCalibration);
+void gyroSetCalibration(void);
 bool isFirstArmingGyroCalibrationRunning(void);
+bool gyroIsCalibrationConfigValid(void);
 bool gyroIsCalibrationComplete(void);
+bool gyroHasTemperatureSensor(void);
 void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);
 bool gyroOverflowDetected(void);

@@ -401,6 +401,7 @@ void updateArmingStatus(void)
 
             /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
             bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm
+                && !gyroConfig()->gyro_cal_manual // gyro_cal_manual overrides gyro_cal_on_first_arm
                 && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING));
 
             /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
@@ -479,7 +480,8 @@ void disarm(flightLogDisarmReason_e reason)
 
 void tryArm(void)
 {
-    if (armingConfig()->gyro_cal_on_first_arm) {
+    if (armingConfig()->gyro_cal_on_first_arm
+    && !gyroConfig()->gyro_cal_manual) { // gyro_cal_manual overrides gyro_cal_on_first_arm
         gyroStartCalibration(true);
     }
 

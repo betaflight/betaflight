@@ -58,6 +58,7 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
+#include "sensors/acceleration_init.h"
 
 #if ((TARGET_FLASH_SIZE > 128) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6500)))
 #define USE_GYRO_SLEW_LIMITER
@@ -133,9 +134,16 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_notch_bandwidth_hz = 45;
     gyroConfig->dyn_notch_min_hz = 150;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
+    gyroConfig->gyrosDetected = 0;
     gyroConfig->dyn_lpf_curve_expo = 5;
 	gyroConfig->simplified_gyro_filter = false;
 	gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
+
+    gyroConfig->gyro_cal_manual = 0;
+    resetFlightDynamicsTrims(&gyroConfig->gyroTrims[0]);
+#ifdef USE_MULTI_GYRO
+    resetFlightDynamicsTrims(&gyroConfig->gyroTrims[1]);
+#endif
 }
 
 #ifdef USE_GYRO_DATA_ANALYSE
@@ -208,6 +216,59 @@ void gyroStartCalibration(bool isFirstArmingCalibration)
     if (isFirstArmingCalibration) {
         firstArmingCalibrationWasStarted = true;
     }
+}
+
+bool gyroIsCalibrationConfigValid(void)
+{
+    switch (gyro.gyroToUse) {
+    case GYRO_CONFIG_USE_GYRO_1:
+        return gyroConfig()->gyroTrims[0].values.calibrationCompleted;
+
+#ifdef USE_MULTI_GYRO
+    case GYRO_CONFIG_USE_GYRO_2:
+        return gyroConfig()->gyroTrims[1].values.calibrationCompleted;
+
+    case GYRO_CONFIG_USE_GYRO_BOTH:
+        return gyroConfig()->gyroTrims[0].values.calibrationCompleted
+            && gyroConfig()->gyroTrims[1].values.calibrationCompleted;
+#endif
+    }
+    return false;
+}
+
+void gyroSetTrims(float gyroZero[XYZ_AXIS_COUNT], const flightDynamicsTrims_t *gyroTrims)
+{
+    if (gyroTrims->values.calibrationCompleted) {
+        gyroZero[X] = gyroTrims->raw[X];
+        gyroZero[Y] = gyroTrims->raw[Y];
+        gyroZero[Z] = gyroTrims->raw[Z];
+    }
+}
+
+void gyroSetCalibration(void)
+{
+    switch (gyro.gyroToUse) {
+    case GYRO_CONFIG_USE_GYRO_1:
+        gyroSetTrims(gyro.gyroSensor1.gyroDev.gyroZero, &gyroConfig()->gyroTrims[0]);
+        break;
+#ifdef USE_MULTI_GYRO
+    case GYRO_CONFIG_USE_GYRO_2:
+        gyroSetTrims(gyro.gyroSensor2.gyroDev.gyroZero, &gyroConfig()->gyroTrims[1]);
+        break;
+    case GYRO_CONFIG_USE_GYRO_BOTH:
+        gyroSetTrims(gyro.gyroSensor1.gyroDev.gyroZero, &gyroConfig()->gyroTrims[0]);
+        gyroSetTrims(gyro.gyroSensor2.gyroDev.gyroZero, &gyroConfig()->gyroTrims[1]);
+        break;
+#endif
+    }
+}
+
+void gyroGetTrims(flightDynamicsTrims_t *gyroTrims, const float gyroZero[XYZ_AXIS_COUNT])
+{
+    gyroTrims->raw[X] = (int16_t)lrintf(gyroZero[X]);
+    gyroTrims->raw[Y] = (int16_t)lrintf(gyroZero[Y]);
+    gyroTrims->raw[Z] = (int16_t)lrintf(gyroZero[Z]);
+    gyroTrims->values.calibrationCompleted = 1;
 }
 
 bool isFirstArmingGyroCalibrationRunning(void)
@@ -412,11 +473,29 @@ static FAST_CODE FAST_CODE_NOINLINE void gyroUpdateSensor(gyroSensor_t *gyroSens
     }
 }
 
+// Update gyro and if the calibration is complete then update the gyro config and save it if allowed
+void gyroUpdateSensorAndCalibration(gyroSensor_t *gyroSensor, flightDynamicsTrims_t *gyroTrims, bool saveConfig)
+{
+    if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration) && gyroConfig()->gyro_cal_manual) {
+        gyroUpdateSensor(gyroSensor);
+        if (isGyroSensorCalibrationComplete(gyroSensor)) {
+            gyroGetTrims(gyroTrims, gyroSensor->gyroDev.gyroZero);
+            if (saveConfig) {
+                saveConfigAndNotify();
+            }
+        }
+        return;
+    }
+
+    gyroUpdateSensor(gyroSensor);
+}
+
 FAST_CODE void gyroUpdate(void)
 {
     switch (gyro.gyroToUse) {
     case GYRO_CONFIG_USE_GYRO_1:
-        gyroUpdateSensor(&gyro.gyroSensor1);
+        gyroUpdateSensorAndCalibration(&gyro.gyroSensor1, &gyroConfigMutable()->gyroTrims[0], true);
+
         if (isGyroSensorCalibrationComplete(&gyro.gyroSensor1)) {
             gyro.gyroADC[X] = gyro.gyroSensor1.gyroDev.gyroADC[X] * gyro.gyroSensor1.gyroDev.scale;
             gyro.gyroADC[Y] = gyro.gyroSensor1.gyroDev.gyroADC[Y] * gyro.gyroSensor1.gyroDev.scale;
@@ -425,7 +504,8 @@ FAST_CODE void gyroUpdate(void)
         break;
 #ifdef USE_MULTI_GYRO
     case GYRO_CONFIG_USE_GYRO_2:
-        gyroUpdateSensor(&gyro.gyroSensor2);
+        gyroUpdateSensorAndCalibration(&gyro.gyroSensor2, &gyroConfigMutable()->gyroTrims[1], true);
+
         if (isGyroSensorCalibrationComplete(&gyro.gyroSensor2)) {
             gyro.gyroADC[X] = gyro.gyroSensor2.gyroDev.gyroADC[X] * gyro.gyroSensor2.gyroDev.scale;
             gyro.gyroADC[Y] = gyro.gyroSensor2.gyroDev.gyroADC[Y] * gyro.gyroSensor2.gyroDev.scale;
@@ -433,8 +513,10 @@ FAST_CODE void gyroUpdate(void)
         }
         break;
     case GYRO_CONFIG_USE_GYRO_BOTH:
-        gyroUpdateSensor(&gyro.gyroSensor1);
-        gyroUpdateSensor(&gyro.gyroSensor2);
+        // Use calibrationCompleted of the other gyro as saveConfig parameter to save both gyro configs only at once
+        gyroUpdateSensorAndCalibration(&gyro.gyroSensor1, &gyroConfigMutable()->gyroTrims[0], gyroConfig()->gyroTrims[1].values.calibrationCompleted);
+        gyroUpdateSensorAndCalibration(&gyro.gyroSensor2, &gyroConfigMutable()->gyroTrims[1], gyroConfig()->gyroTrims[0].values.calibrationCompleted);
+
         if (isGyroSensorCalibrationComplete(&gyro.gyroSensor1) && isGyroSensorCalibrationComplete(&gyro.gyroSensor2)) {
             gyro.gyroADC[X] = ((gyro.gyroSensor1.gyroDev.gyroADC[X] * gyro.gyroSensor1.gyroDev.scale) + (gyro.gyroSensor2.gyroDev.gyroADC[X] * gyro.gyroSensor2.gyroDev.scale)) / 2.0f;
             gyro.gyroADC[Y] = ((gyro.gyroSensor1.gyroDev.gyroADC[Y] * gyro.gyroSensor1.gyroDev.scale) + (gyro.gyroSensor2.gyroDev.gyroADC[Y] * gyro.gyroSensor2.gyroDev.scale)) / 2.0f;

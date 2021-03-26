@@ -664,6 +664,9 @@ const clivalue_t valueTable[] = {
     { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, FILTER_FREQUENCY_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_2) },
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, FILTER_FREQUENCY_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2) },
 
+    // 4 elements are output for the GYRO calibration - The 3 axis values and the 4th representing whether calibration has been performed
+    { "gyro_calibration",           VAR_INT16  | MASTER_VALUE | MODE_ARRAY, .config.array.length = GYRO_CNT_MAX * 4, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroTrims[0].raw) },
+
     { "gyro_calib_duration",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50,  3000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroCalibrationDuration) },
     { "gyro_calib_noise_limit",     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0,  200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold) },
     { "gyro_offset_yaw",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -1000, 1000 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_offset_yaw) },
@@ -690,6 +693,7 @@ const clivalue_t valueTable[] = {
     { "dyn_lpf_gyro_curve_expo",    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, dyn_lpf_curve_expo) },
 #endif
     { "gyro_filter_debug_axis",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_FILTER_DEBUG }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_filter_debug_axis) },
+    { "gyro_cal_manual",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_cal_manual) },
 
 // PG_ACCELEROMETER_CONFIG
 #if defined(USE_ACC)
