@@ -76,6 +76,7 @@ void disarm(flightLogDisarmReason_e reason);
 void tryArm(void);
 
 bool processRx(timeUs_t currentTimeUs);
+void processRxModes(timeUs_t currentTimeUs);
 void updateArmingStatus(void);
 
 void taskGyroSample(timeUs_t currentTimeUs);

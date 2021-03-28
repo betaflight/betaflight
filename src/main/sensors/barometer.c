@@ -51,6 +51,8 @@
 
 #include "sensors/sensors.h"
 
+#include "scheduler/scheduler.h"
+
 #include "barometer.h"
 
 baro_t baro;                        // barometer access functions
@@ -385,6 +387,12 @@ uint32_t baroUpdate(void)
         debug[0] = state;
     }
 
+    // Tell the scheduler to ignore how long this task takes unless the pressure is being read
+    // as that takes the longest
+    if (state != BAROMETER_NEEDS_PRESSURE_READ) {
+           ignoreTaskTime();
+    }
+
     switch (state) {
         default:
         case BAROMETER_NEEDS_TEMPERATURE_START:
@@ -414,6 +422,8 @@ uint32_t baroUpdate(void)
         case BAROMETER_NEEDS_PRESSURE_READ:
             if (baro.dev.read_up(&baro.dev)) {
                 state = BAROMETER_NEEDS_PRESSURE_SAMPLE;
+            } else {
+                ignoreTaskTime();
             }
         break;
 
