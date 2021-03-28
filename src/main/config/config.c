@@ -608,6 +608,7 @@ static void validateAndFixConfig(void)
         batteryConfigMutable()->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
     }
 
+#ifdef USE_MSP_DISPLAYPORT
     // validate that displayport_msp_serial is referencing a valid UART that actually has MSP enabled
     if (displayPortProfileMsp()->displayPortSerial != SERIAL_PORT_NONE) {
         const serialPortConfig_t *portConfig = serialFindPortConfiguration(displayPortProfileMsp()->displayPortSerial);
@@ -619,6 +620,7 @@ static void validateAndFixConfig(void)
             displayPortProfileMspMutable()->displayPortSerial = SERIAL_PORT_NONE;
         }
     }
+#endif
 }
 
 void validateAndFixGyroConfig(void)
