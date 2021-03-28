@@ -64,6 +64,11 @@ typedef struct {
     timeUs_t     averageExecutionTimeUs;
     timeUs_t     averageDeltaTimeUs;
     float        movingAverageCycleTimeUs;
+#if defined(USE_LATE_TASK_STATISTICS)
+    uint32_t     runCount;
+    uint32_t     lateCount;
+    timeUs_t     execTime;
+#endif
 } taskInfo_t;
 
 typedef enum {
@@ -179,6 +184,11 @@ typedef struct {
     timeUs_t movingSumDeltaTimeUs;  // moving sum over 32 samples
     timeUs_t maxExecutionTimeUs;
     timeUs_t totalExecutionTimeUs;    // total time consumed by task since boot
+#if defined(USE_LATE_TASK_STATISTICS)
+    uint32_t runCount;
+    uint32_t lateCount;
+    timeUs_t execTime;
+#endif
 #endif
 } task_t;
 
