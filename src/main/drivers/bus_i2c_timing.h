@@ -20,20 +20,4 @@
 
 #pragma once
 
-#include "drivers/bus_i2c.h"
-#include "drivers/io_types.h"
-#include "drivers/rcc_types.h"
-
-#include "pg/pg.h"
-
-#define I2C_CLOCKSPEED_MIN_KHZ      100
-#define I2C_CLOCKSPEED_MAX_KHZ      1300
-
-typedef struct i2cConfig_s {
-    ioTag_t ioTagScl;
-    ioTag_t ioTagSda;
-    bool pullUp;
-    uint16_t clockSpeed;
-} i2cConfig_t;
-
-PG_DECLARE_ARRAY(i2cConfig_t, I2CDEV_COUNT, i2cConfig);
+uint32_t i2cClockTIMINGR(uint32_t pclkFreq, int i2cFreqKhz, int dfcoeff);
