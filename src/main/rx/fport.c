@@ -53,6 +53,7 @@
 #define FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US 2000
 #define FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 #define FPORT_MAX_TELEMETRY_AGE_MS 500
+#define FPORT_MAX_TELEMETRY_RESPONSE_INTERVAL_US 100000
 
 #define FPORT_TELEMETRY_MAX_CONSECUTIVE_TELEMETRY_FRAMES 2
 
@@ -138,6 +139,7 @@ static volatile uint8_t rxBufferWriteIndex = 0;
 static volatile uint8_t rxBufferReadIndex = 0;
 
 static volatile timeUs_t lastTelemetryFrameReceivedUs;
+static volatile timeUs_t lastTelemetryFrameSentUs;
 static volatile bool clearToSend = false;
 
 static volatile uint8_t framePosition = 0;
@@ -304,7 +306,11 @@ static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
                             break;
                         case FPORT_FRAME_ID_NULL:
-                            if (!rxDrivenFrameRate) {
+                            if (rxDrivenFrameRate) {
+                                if (cmpTimeUs(micros(), lastTelemetryFrameSentUs) >= FPORT_MAX_TELEMETRY_RESPONSE_INTERVAL_US) {
+                                    rxDrivenFrameRate = false;
+                                }
+                            } else {
                                 if (consecutiveTelemetryFrameCount >= FPORT_TELEMETRY_MAX_CONSECUTIVE_TELEMETRY_FRAMES && !(mspPayload && smartPortPayloadContainsMSP(mspPayload))) {
                                     consecutiveTelemetryFrameCount = 0;
                                 } else {
@@ -360,8 +366,6 @@ static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     UNUSED(rxRuntimeState);
 
 #if defined(USE_TELEMETRY_SMARTPORT)
-    static timeUs_t lastTelemetryFrameSentUs;
-
     timeUs_t currentTimeUs = micros();
     if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
        clearToSend = false;
