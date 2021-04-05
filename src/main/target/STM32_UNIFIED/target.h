@@ -78,6 +78,33 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
+#elif defined(STM32F411_BMI270)
+#define TARGET_BOARD_IDENTIFIER "411B"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411_BMI270"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART6
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
+
+#define USE_INVERTER
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+
 #elif defined(STM32F7X2)
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
@@ -155,6 +182,21 @@
 #define USE_ACC
 #define USE_GYRO
 
+#if defined(STM32F411_BMI270)
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACCGYRO_BMI270
+#define USE_ACCGYRO_LSM6DSO
+
+#define USE_BARO_BMP280
+#define USE_BARO_SPI_BMP280
+#define USE_BARO_BMP388
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_DPS310
+#define USE_BARO_SPI_DPS310
+
+#else
+
 #define USE_ACC_MPU6500
 #define USE_GYRO_MPU6500
 #define USE_ACC_SPI_MPU6000
@@ -193,6 +235,8 @@
 #define USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
+
+#endif
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
