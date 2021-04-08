@@ -239,10 +239,10 @@ TEST(CrossFireTest, TestCapturedData)
     EXPECT_EQ(983, crsfChannelData[3]);
     uint8_t crc = crsfFrameCRC();
     EXPECT_EQ(crc, crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]);
-    EXPECT_EQ(999, crsfReadRawRC(NULL, 0));
-    EXPECT_EQ(1501, crsfReadRawRC(NULL, 1));
-    EXPECT_EQ(1492, crsfReadRawRC(NULL, 2));
-    EXPECT_EQ(1495, crsfReadRawRC(NULL, 3));
+    EXPECT_EQ(998, crsfReadRawRC(NULL, 0));
+    EXPECT_EQ(1500, crsfReadRawRC(NULL, 1));
+    EXPECT_EQ(1491, crsfReadRawRC(NULL, 2));
+    EXPECT_EQ(1494, crsfReadRawRC(NULL, 3));
 
     ++framePtr;
     crsfFrame = *(const crsfFrame_t*)framePtr;

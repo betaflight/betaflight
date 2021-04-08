@@ -629,6 +629,7 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
 
 #endif
 
+#if defined(USE_CRSF_V3)
 void crsfProcessCommand(uint8_t *frameStart) {
     uint8_t cmd = *frameStart;
     uint8_t subCmd = frameStart[1];
@@ -649,6 +650,7 @@ void crsfProcessCommand(uint8_t *frameStart) {
             break;
     }
 }
+#endif
 
 /*
  * Called periodically by the scheduler

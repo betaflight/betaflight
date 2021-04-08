@@ -412,12 +412,14 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                     }
 #endif
 #endif
+#if defined(USE_CRSF_V3)
                     case CRSF_FRAMETYPE_COMMAND:
                         if ((crsfFrame.bytes[fullFrameLength - 2] == crsfFrameCmdCRC()) && 
                             (crsfFrame.bytes[3] == CRSF_ADDRESS_FLIGHT_CONTROLLER)) {
                             crsfProcessCommand(crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE);
                         }
                         break;
+#endif
                     default:
                         break;
                 }
