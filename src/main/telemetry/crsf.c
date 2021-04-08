@@ -86,6 +86,42 @@ typedef struct mspBuffer_s {
 
 static mspBuffer_t mspRxBuffer;
 
+bool isCrsfV3Running = false;
+#if defined(USE_CRSF_V3)
+typedef struct {
+    uint8_t hasPendingReply:1;
+    uint8_t isNewSpeedValid:1;
+    uint8_t portID:3;
+    uint8_t index;
+    uint32_t confirmationTime;
+} crsfSpeedControl_s;
+crsfSpeedControl_s crsfSpeed = {0};
+
+bool checkCrsfV3Running(void)
+{
+    return isCrsfV3Running;
+}
+
+bool checkCrsfCustomizedSpeed(void)
+{
+    return crsfSpeed.index < BAUD_COUNT ? true : false;
+}
+
+uint32_t getCrsfDesireSpeed(void)
+{
+    return checkCrsfCustomizedSpeed() ? baudRates[crsfSpeed.index] : CRSF_BAUDRATE;
+}
+
+void setCrsfDefaultSpeed(void)
+{
+    crsfSpeed.hasPendingReply = false;
+    crsfSpeed.isNewSpeedValid = true;
+    crsfSpeed.confirmationTime = 0;
+    crsfSpeed.index = BAUD_COUNT;
+    isCrsfV3Running = false;
+}
+#endif
+
 void initCrsfMspBuffer(void)
 {
     mspRxBuffer.len = 0;
@@ -325,6 +361,42 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
+
+#if defined(USE_CRSF_V3)
+void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply) {
+
+    uint8_t *lengthPtr = sbufPtr(dst);
+    sbufWriteU8(dst, 0);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_COMMAND);
+    sbufWriteU8(dst, CRSF_ADDRESS_CRSF_RECEIVER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    sbufWriteU8(dst, CRSF_COMMAND_SUBCMD_GENERAL);
+    sbufWriteU8(dst, CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_RESPONSE);
+    sbufWriteU8(dst, crsfSpeed.portID);
+    sbufWriteU8(dst, reply);
+    crc8_poly_0xba_sbuf_append(dst, &lengthPtr[1]);
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
+}
+
+static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart) {
+    
+    uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
+    uint8_t ii = 0;
+    for (ii = 0; ii < BAUD_COUNT; ++ii) {
+        if(newBaudrate == baudRates[ii]) {
+            break;
+        }
+    }
+    crsfSpeed.portID = frameStart[1];
+    crsfSpeed.index = ii;
+}
+
+void crsfScheduleSpeedNegotiationResponse(void) {
+    crsfSpeed.hasPendingReply = true;
+    crsfSpeed.isNewSpeedValid = false;   
+}
+#endif
+
 #if defined(USE_CRSF_CMS_TELEMETRY)
 #define CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH   50
 #define CRSF_DISPLAYPORT_BATCH_MAX          0x3F
@@ -557,6 +629,27 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
 
 #endif
 
+void crsfProcessCommand(uint8_t *frameStart) {
+    uint8_t cmd = *frameStart;
+    uint8_t subCmd = frameStart[1];
+    switch (cmd) {
+        case CRSF_COMMAND_SUBCMD_GENERAL:
+            switch (subCmd) {
+                case CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_PROPOSAL:
+#if defined(USE_CRSF_V3)
+                    crsfProcessSpeedNegotiationCmd(&frameStart[1]);
+                    crsfScheduleSpeedNegotiationResponse();
+#endif
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 /*
  * Called periodically by the scheduler
  */
@@ -624,6 +717,31 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         }
         crsfLastCycleTime = currentTimeUs;
         return;
+    }
+#endif
+
+#if defined(USE_CRSF_V3)
+    if (crsfSpeed.hasPendingReply) {
+        bool found = crsfSpeed.index < BAUD_COUNT ? true : false;
+        sbuf_t crsfSpeedNegotiationBuf;
+        sbuf_t *dst = &crsfSpeedNegotiationBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameSpeedNegotiationResponse(dst, found);
+        crsfFinalize(dst);
+        crsfSpeed.hasPendingReply = false;
+        crsfSpeed.isNewSpeedValid = true;    
+        crsfSpeed.confirmationTime = currentTimeUs;
+        crsfLastCycleTime = currentTimeUs;
+        return;
+    }
+    else if (crsfSpeed.isNewSpeedValid) {
+        if (currentTimeUs - crsfSpeed.confirmationTime >= 10000) {
+            // delay 10ms before applying the new baudrate
+            crsfRxUpdateBaudrate(getCrsfDesireSpeed());
+            crsfSpeed.isNewSpeedValid = false;
+            isCrsfV3Running = true;       
+            return;
+        }
     }
 #endif
 

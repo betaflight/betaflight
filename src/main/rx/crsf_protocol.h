@@ -39,6 +39,9 @@ typedef enum {
     CRSF_FRAMETYPE_BATTERY_SENSOR = 0x08,
     CRSF_FRAMETYPE_LINK_STATISTICS = 0x14,
     CRSF_FRAMETYPE_RC_CHANNELS_PACKED = 0x16,
+    CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED = 0x17,
+    CRSF_FRAMETYPE_LINK_STATISTICS_RX = 0x1C,
+    CRSF_FRAMETYPE_LINK_STATISTICS_TX = 0x1D,
     CRSF_FRAMETYPE_ATTITUDE = 0x1E,
     CRSF_FRAMETYPE_FLIGHT_MODE = 0x21,
     // Extended Header Frames, range: 0x28 to 0x96
@@ -54,6 +57,15 @@ typedef enum {
     CRSF_FRAMETYPE_MSP_WRITE = 0x7C,  // write with 8 byte chunked binary (OpenTX outbound telemetry buffer limit)
     CRSF_FRAMETYPE_DISPLAYPORT_CMD = 0x7D, // displayport control command
 } crsfFrameType_e;
+
+enum {
+    CRSF_COMMAND_SUBCMD_GENERAL = 0x0A,    // general command
+};
+
+enum {
+    CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_PROPOSAL = 0x70,    // proposed new CRSF port speed
+    CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_RESPONSE = 0x71,    // response to the proposed CRSF port speed
+};
 
 enum {
     CRSF_DISPLAYPORT_SUBCMD_UPDATE = 0x01, // transmit displayport buffer to remote
