@@ -127,7 +127,7 @@ typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 #define CRSF_SUBSET_RC_CHANNELS_PACKED_MASK                        0x07FF
 #define CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION 5
 #define CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_MASK       0x1F
-#define CRSF_SUBSET_RC_CHANNELS_PACKED_SIZE                        45  // 5 + 11 * 24 = 269 bits = 34 bytes
+#define CRSF_SUBSET_RC_CHANNELS_PACKED_SIZE                        34  // 5 + 11 * 24 = 269 bits = 34 bytes
 
 #if defined(USE_CRSF_LINK_STATISTICS)
 /*
