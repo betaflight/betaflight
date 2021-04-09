@@ -174,24 +174,27 @@ Note: Also has a boolean AUTOBAUD. It is recommended to use a fixed baudrate. Co
 
 The Serial Port baudrates are defined as follows:
 
-| ID | Baudrate  |
-| -- | --------- |
-| 0  | Auto      |
-| 1  | 9600      |
-| 2  | 19200     |
-| 3  | 38400     |
-| 4  | 57600     |
-| 5  | 115200    |
-| 6  | 230400    |
-| 7  | 250000    |
-| 8  | 400000    |
-| 9  | 460800    |
-| 10 | 500000    |
-| 11 | 921600    |
-| 12 | 1000000   |
-| 13 | 1500000   |
-| 14 | 2000000   |
-| 15 | 2470000   |
+| ID | Baudrate   |
+| -- | ---------- |
+| 0  | Auto       |
+| 1  | 9600       |
+| 2  | 19200      |
+| 3  | 38400      |
+| 4  | 57600      |
+| 5  | 115200     |
+| 6  | 230400     |
+| 7  | 250000     |
+| 8  | 400000     |
+| 9  | 460800     |
+| 10 | 500000     |
+| 11 | 921600     |
+| 12 | 1000000    |
+| 13 | 1500000    |
+| 14 | 2000000    |
+| 15 | 2470000    |
+| 16 | BAUD_COUNT |
+
+BAUD_COUNT represents the number of supported baud rate settings used in TBS CRSF v3.
 
 
 ### Passthrough
