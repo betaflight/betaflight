@@ -1451,6 +1451,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->descendRate);
         sbufWriteU8(dst, gpsRescueConfig()->allowArmingWithoutFix);
         sbufWriteU8(dst, gpsRescueConfig()->altitudeMode);
+        // Added in API version 1.44
+        sbufWriteU16(dst, gpsRescueConfig()->minRescueDth);
         break;
 
     case MSP_GPS_RESCUE_PIDS:
@@ -2450,6 +2452,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gpsRescueConfigMutable()->descendRate = sbufReadU16(src);
             gpsRescueConfigMutable()->allowArmingWithoutFix = sbufReadU8(src);
             gpsRescueConfigMutable()->altitudeMode = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            // Added in API version 1.44
+            gpsRescueConfigMutable()->minRescueDth = sbufReadU16(src);
         }
         break;
 
