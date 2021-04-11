@@ -54,6 +54,8 @@
 #include "flight/pid.h"
 #include "flight/gps_rescue.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/sensors.h"
 
 #define LOG_ERROR        '?'
@@ -673,10 +675,16 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
 
 void gpsUpdate(timeUs_t currentTimeUs)
 {
+    pinioSet(0, 1);
+    static timeUs_t maxTimeUs = 0;
+    timeUs_t endTimeUs;
+
+    pinioSet(1, 1);
     // read out available GPS bytes
     if (gpsPort) {
-        while (serialRxBytesWaiting(gpsPort))
+        while (serialRxBytesWaiting(gpsPort)) {
             gpsNewData(serialRead(gpsPort));
+        }
     } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
         gpsSetState(GPS_RECEIVING_DATA);
         gpsData.lastMessage = millis();
@@ -684,7 +692,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
         onGpsNewData();
         GPS_update &= ~GPS_MSP_UPDATE;
     }
+    pinioSet(1, 0);
 
+    pinioSet(2, 1);
     switch (gpsData.state) {
         case GPS_UNKNOWN:
         case GPS_INITIALIZED:
@@ -737,6 +747,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
             break;
     }
+    pinioSet(2, 0);
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
@@ -748,6 +759,18 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGPSRescueState();
     }
 #endif
+    // Call ignoreTaskTime() unless this took appreciable time
+    // Note that this will mess up the rate/Hz display under tasks, but the code
+    // takes widely varying time to complete
+    endTimeUs = micros();
+    if ((endTimeUs - currentTimeUs) > maxTimeUs) {
+        maxTimeUs = endTimeUs - currentTimeUs;
+    } else {
+        ignoreTaskTime();
+        // Decay max time
+        maxTimeUs--;
+    }
+    pinioSet(0, 0);
 }
 
 static void gpsNewData(uint16_t c)
