@@ -675,11 +675,9 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
 
 void gpsUpdate(timeUs_t currentTimeUs)
 {
-    pinioSet(0, 1);
     static timeUs_t maxTimeUs = 0;
     timeUs_t endTimeUs;
 
-    pinioSet(1, 1);
     // read out available GPS bytes
     if (gpsPort) {
         while (serialRxBytesWaiting(gpsPort)) {
@@ -692,9 +690,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         onGpsNewData();
         GPS_update &= ~GPS_MSP_UPDATE;
     }
-    pinioSet(1, 0);
 
-    pinioSet(2, 1);
     switch (gpsData.state) {
         case GPS_UNKNOWN:
         case GPS_INITIALIZED:
@@ -747,7 +743,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
             break;
     }
-    pinioSet(2, 0);
+
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
@@ -770,7 +766,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
         // Decay max time
         maxTimeUs--;
     }
-    pinioSet(0, 0);
 }
 
 static void gpsNewData(uint16_t c)
