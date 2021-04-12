@@ -387,13 +387,13 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 #if defined(USE_CRSF_LINK_STATISTICS)
 
                     case CRSF_FRAMETYPE_LINK_STATISTICS: {
-                         // if to FC and 10 bytes + CRSF_FRAME_ORIGIN_DEST_SIZE
-                         if ((rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) &&
-                             (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) &&
-                             (crsfFrame.frame.frameLength == CRSF_FRAME_ORIGIN_DEST_SIZE + CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE)) {
-                             const crsfLinkStatistics_t* statsFrame = (const crsfLinkStatistics_t*)&crsfFrame.frame.payload;
-                             handleCrsfLinkStatisticsFrame(statsFrame, currentTimeUs);
-                         }
+                        // if to FC and 10 bytes + CRSF_FRAME_ORIGIN_DEST_SIZE
+                        if ((rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) &&
+                            (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) &&
+                            (crsfFrame.frame.frameLength == CRSF_FRAME_ORIGIN_DEST_SIZE + CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE)) {
+                            const crsfLinkStatistics_t* statsFrame = (const crsfLinkStatistics_t*)&crsfFrame.frame.payload;
+                            handleCrsfLinkStatisticsFrame(statsFrame, currentTimeUs);
+                        }
                         break;
                     }
 #if defined(USE_CRSF_V3)
@@ -401,12 +401,12 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                         break;
                     }
                     case CRSF_FRAMETYPE_LINK_STATISTICS_TX: {
-                         if ((rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) &&
-                             (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) &&
-                             (crsfFrame.frame.frameLength == CRSF_FRAME_ORIGIN_DEST_SIZE + CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE)) {
-                             const crsfLinkStatisticsTx_t* statsFrame = (const crsfLinkStatisticsTx_t*)&crsfFrame.frame.payload;
-                             handleCrsfLinkStatisticsTxFrame(statsFrame, currentTimeUs);
-                         }
+                        if ((rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) &&
+                            (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) &&
+                            (crsfFrame.frame.frameLength == CRSF_FRAME_ORIGIN_DEST_SIZE + CRSF_FRAME_LINK_STATISTICS_TX_PAYLOAD_SIZE)) {
+                            const crsfLinkStatisticsTx_t* statsFrame = (const crsfLinkStatisticsTx_t*)&crsfFrame.frame.payload;
+                            handleCrsfLinkStatisticsTxFrame(statsFrame, currentTimeUs);
+                        }
                         break;
                     }
 #endif
