@@ -165,7 +165,7 @@ typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
  * uint8_t Uplink RSSI ( % )
  * uint8_t Uplink Package success rate / Link quality ( % )
  * int8_t Uplink SNR ( db )
- * uint8_t Downlink RF Power ( db, not used in betaflight)
+ * uint8_t Downlink RF Power ( db )
  * uint8_t Uplink FPS ( FPS / 10 )
  */
 
@@ -189,15 +189,15 @@ typedef struct crsfPayloadLinkstatisticsRx_s {
     uint8_t downlink_Link_quality;
     int8_t downlink_SNR;
     uint8_t uplink_power;
-} crsfLinkStatisticsRx_t;
+} crsfLinkStatisticsRx_t; // this struct is currently not used
 
 typedef struct crsfPayloadLinkstatisticsTx_s {
     uint8_t uplink_RSSI;
     uint8_t uplink_RSSI_percentage;
     uint8_t uplink_Link_quality;
     int8_t uplink_SNR;
-    /* uint8_t downlink_power; */ // not used
-    uint8_t uplink_FPS;
+    uint8_t downlink_power; // currently not used
+    uint8_t uplink_FPS; // currently not used
 } crsfLinkStatisticsTx_t;
 #endif
 
