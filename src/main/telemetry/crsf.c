@@ -379,7 +379,7 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply) {
 }
 
 static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart) {
-    
+
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
     uint8_t ii = 0;
     for (ii = 0; ii < BAUD_COUNT; ++ii) {
@@ -393,7 +393,7 @@ static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart) {
 
 void crsfScheduleSpeedNegotiationResponse(void) {
     crsfSpeed.hasPendingReply = true;
-    crsfSpeed.isNewSpeedValid = false;   
+    crsfSpeed.isNewSpeedValid = false;
 }
 #endif
 
@@ -731,7 +731,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfFrameSpeedNegotiationResponse(dst, found);
         crsfFinalize(dst);
         crsfSpeed.hasPendingReply = false;
-        crsfSpeed.isNewSpeedValid = true;    
+        crsfSpeed.isNewSpeedValid = true;
         crsfSpeed.confirmationTime = currentTimeUs;
         crsfLastCycleTime = currentTimeUs;
         return;
@@ -741,7 +741,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
             // delay 10ms before applying the new baudrate
             crsfRxUpdateBaudrate(getCrsfDesireSpeed());
             crsfSpeed.isNewSpeedValid = false;
-            isCrsfV3Running = true;       
+            isCrsfV3Running = true;
             return;
         }
     }
