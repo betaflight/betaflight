@@ -32,6 +32,8 @@
 
 #include "common/utils.h"
 
+#include "build/debug.h"
+
 #include "drivers/display.h"
 #include "drivers/display_canvas.h"
 #include "drivers/spracingpixelosd/spracing_pixel_osd.h"
@@ -303,6 +305,13 @@ static void commitTransaction(displayPort_t *instance)
     spracingPixelOSDLibraryVTable->frameBufferCommit(frameBuffer);
 
     spracingPixelOSDEndRendering();
+
+    if (debugMode == DEBUG_SPRACING_PIXEL_OSD) {
+      debug[0] = syncVoltages->minimumLevelForLineThreshold;
+      debug[1] = syncVoltages->minimumLevelForValidFrameMv;
+      debug[2] = syncVoltages->maximumLevelForValidFrameMv;
+      debug[3] = syncVoltages->syncThresholdMv;
+    }
 }
 
 static const displayPortVTable_t spracingPixelOSDVTable = {
