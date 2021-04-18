@@ -112,7 +112,7 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >RAM
-  
+
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
