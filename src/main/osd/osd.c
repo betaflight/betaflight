@@ -41,6 +41,7 @@
 
 #include "build/build_config.h"
 #include "build/version.h"
+#include "build/debug.h"
 
 #include "cms/cms.h"
 
@@ -52,6 +53,8 @@
 #include "common/unit.h"
 
 #include "config/feature.h"
+
+#include "drivers/spracingpixelosd/framebuffer.h"
 
 #include "drivers/display.h"
 #include "drivers/dshot.h"
@@ -158,6 +161,8 @@ escSensorData_t *osdEscDataCombined;
 #endif
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
+
+#define DEBUG_FRAMEBUFFER_ERASE_WAIT
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 12);
 
@@ -1415,6 +1420,16 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
+
+#if defined(USE_SPRACING_PIXEL_OSD)
+        if (frameBuffer_eraseInProgress()) {
+#ifdef DEBUG_FRAMEBUFFER_ERASE_WAIT
+            debug[1]++;
+#endif
+            return;
+        }
+#endif
+
         // SPRacingPixelOSD - don't touch buffers while we're waiting for the framebuffer to be committed
         // MAX7456/etc - don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
