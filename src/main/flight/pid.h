@@ -121,13 +121,13 @@ typedef enum {
     ITERM_RELAX_TYPE_COUNT,
 } itermRelaxType_e;
 
-typedef enum ffInterpolationType_e {
-    FF_INTERPOLATE_OFF,
-    FF_INTERPOLATE_ON,
-    FF_INTERPOLATE_AVG2,
-    FF_INTERPOLATE_AVG3,
-    FF_INTERPOLATE_AVG4
-} ffInterpolationType_t;
+typedef enum ffModeType_e {
+    FF_LEGACY,
+    FF_NORMAL,
+    FF_AVERAGE_2,
+    FF_AVERAGE_3,
+    FF_AVERAGE_4,
+} ffModeType_t;
 
 #define MAX_PROFILE_NAME_LENGTH 8u
 
@@ -207,9 +207,9 @@ typedef struct pidProfile_s {
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
     uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
 
-    uint8_t ff_interpolate_sp;              // Calculate FF from interpolated setpoint
+    uint8_t ff_mode;                        // Calculate FF as a step change when each new RC packet arrives
     uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
-    uint8_t ff_smooth_factor;               // Amount of smoothing for interpolated FF steps
+    uint8_t ff_smooth_factor;               // Amount of lowpass type smoothing for FF steps
     uint8_t ff_jitter_factor;               // Number of RC steps below which to attenuate FF
     uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
@@ -341,8 +341,8 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
-    pt3Filter_t setpointDerivativePt3[XYZ_AXIS_COUNT];
-    bool setpointDerivativeLpfInitialized;
+    pt3Filter_t ffPt3[XYZ_AXIS_COUNT];
+    bool ffLpfInitialized;
     uint8_t rcSmoothingDebugAxis;
     uint8_t rcSmoothingFilterType;
 #endif // USE_RC_SMOOTHING_FILTER
@@ -383,8 +383,8 @@ typedef struct pidRuntime_s {
     float airmodeThrottleOffsetLimit;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    ffInterpolationType_t ffFromInterpolatedSetpoint;
+#ifdef USE_FEEDFORWARD
+    ffModeType_t ffMode;
     float ffSmoothFactor;
     float ffJitterFactor;
 #endif

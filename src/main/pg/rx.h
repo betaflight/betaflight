@@ -43,7 +43,7 @@ typedef struct rxConfig_s {
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
     uint8_t rcInterpolation;
-    uint8_t rcInterpolationChannels;
+    uint8_t rcSmoothingChannels;
     uint8_t rcInterpolationInterval;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
     uint8_t airModeActivateThreshold;       // Throttle setpoint percent where airmode gets activated
@@ -54,11 +54,9 @@ typedef struct rxConfig_s {
     uint8_t rssi_src_frame_errors;          // true to use frame drop flags in the rx protocol
     int8_t rssi_offset;                     // offset applied to the RSSI value before it is returned
     uint8_t rc_smoothing_type;              // Determines the smoothing algorithm to use: INTERPOLATION or FILTER
-    uint8_t rc_smoothing_input_cutoff;      // Filter cutoff frequency for the input filter (0 = auto)
-    uint8_t rc_smoothing_derivative_cutoff; // Filter cutoff frequency for the setpoint weight derivative filter (0 = auto)
+    uint8_t rc_smoothing_setpoint_cutoff;   // Filter cutoff frequency for the setpoint filter (0 = auto)
+    uint8_t rc_smoothing_ff_cutoff;         // Filter cutoff frequency for the FF filter (0 = auto)
     uint8_t rc_smoothing_debug_axis;        // Axis to log as debug values when debug_mode = RC_SMOOTHING
-    uint8_t rc_smoothing_input_type;        // Input filter type (0 = PT1, 1 = BIQUAD)
-    uint8_t rc_smoothing_derivative_type;   // Derivative filter type (0 = OFF, 1 = PT1, 2 = BIQUAD)
     uint8_t rc_smoothing_auto_factor;       // Used to adjust the "smoothness" determined by the auto cutoff calculations
     uint8_t rssi_src_frame_lpf_period;      // Period of the cutoff frequency for the source frame RSSI filter (in 0.1 s)
 

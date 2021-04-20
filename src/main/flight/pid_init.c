@@ -37,7 +37,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/interpolated_setpoint.h"
+#include "flight/feedforward.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
@@ -222,22 +222,22 @@ void pidInit(const pidProfile_t *pidProfile)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis)
+void pidInitFfLpf(uint16_t filterCutoff, uint8_t debugAxis)
 {
     pidRuntime.rcSmoothingDebugAxis = debugAxis;
     if (filterCutoff > 0) {
-        pidRuntime.setpointDerivativeLpfInitialized = true;
+        pidRuntime.ffLpfInitialized = true;
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            pt3FilterInit(&pidRuntime.setpointDerivativePt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
+            pt3FilterInit(&pidRuntime.ffPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
 
-void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff)
+void pidUpdateFfLpf(uint16_t filterCutoff)
 {
     if (filterCutoff > 0) {
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            pt3FilterUpdateCutoff(&pidRuntime.setpointDerivativePt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
+            pt3FilterUpdateCutoff(&pidRuntime.ffPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
@@ -384,8 +384,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.airmodeThrottleOffsetLimit = pidProfile->transient_throttle_limit / 100.0f;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    pidRuntime.ffFromInterpolatedSetpoint = pidProfile->ff_interpolate_sp;
+#ifdef USE_FEEDFORWARD
+    pidRuntime.ffMode = pidProfile->ff_mode;
     if (pidProfile->ff_smooth_factor) {
         pidRuntime.ffSmoothFactor = 1.0f - ((float)pidProfile->ff_smooth_factor) / 100.0f;
     } else {
@@ -393,7 +393,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.ffSmoothFactor = MAX(0.5f, 1.0f - ((float)pidProfile->ff_boost) * 2.0f / 100.0f);
     }
     pidRuntime.ffJitterFactor = pidProfile->ff_jitter_factor;
-    interpolatedSpInit(pidProfile);
+    ffInit(pidProfile);
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;

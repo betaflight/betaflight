@@ -1500,13 +1500,13 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
 #endif
         sbufWriteU8(dst, rxConfig()->fpvCamAngleDegrees);
-        sbufWriteU8(dst, rxConfig()->rcInterpolationChannels);
+        sbufWriteU8(dst, rxConfig()->rcSmoothingChannels);
 #if defined(USE_RC_SMOOTHING_FILTER)
         sbufWriteU8(dst, rxConfig()->rc_smoothing_type);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_input_cutoff);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_derivative_cutoff);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_input_type);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_derivative_type);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_setpoint_cutoff);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_ff_cutoff);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_auto_factor);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_debug_axis);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -1892,8 +1892,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
 #endif
         // Added in MSP API 1.44
-#if defined(USE_INTERPOLATED_SP)
-        sbufWriteU8(dst, currentPidProfile->ff_interpolate_sp);
+#if defined(USE_FEEDFORWARD)
+        sbufWriteU8(dst, currentPidProfile->ff_mode);
         sbufWriteU8(dst, currentPidProfile->ff_smooth_factor);
 #else
         sbufWriteU8(dst, 0);
@@ -2797,8 +2797,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         if (sbufBytesRemaining(src) >= 5) {
             // Added in MSP API 1.44
-#if defined(USE_INTERPOLATED_SP)
-            currentPidProfile->ff_interpolate_sp = sbufReadU8(src);
+#if defined(USE_FEEDFORWARD)
+            currentPidProfile->ff_mode = sbufReadU8(src);
             currentPidProfile->ff_smooth_factor = sbufReadU8(src);
 #else
             sbufReadU8(src);
@@ -3254,13 +3254,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         if (sbufBytesRemaining(src) >= 6) {
             // Added in MSP API 1.40
-            rxConfigMutable()->rcInterpolationChannels = sbufReadU8(src);
+            rxConfigMutable()->rcSmoothingChannels = sbufReadU8(src);
 #if defined(USE_RC_SMOOTHING_FILTER)
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_type, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_cutoff, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_cutoff, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_type, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_type, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_setpoint_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_ff_cutoff, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_debug_axis, sbufReadU8(src));
 #else
             sbufReadU8(src);
             sbufReadU8(src);

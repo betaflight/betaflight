@@ -4967,14 +4967,14 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
                 cliPrintLinef("%d.%03dms", avgRxFrameUs / 1000, avgRxFrameUs % 1000);
             }
         }
-        cliPrintf("# Active input cutoff: %dhz ", rcSmoothingData->inputCutoffFrequency);
-        if (rcSmoothingData->inputCutoffSetting == 0) {
+        cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
+        if (rcSmoothingData->setpointCutoffSetting == 0) {
             cliPrintLine("(auto)");
         } else {
             cliPrintLine("(manual)");
         }
-        cliPrintf("# Active derivative cutoff: %dhz (", rcSmoothingData->derivativeCutoffFrequency);
-        if (rcSmoothingData->derivativeCutoffSetting == 0) {
+        cliPrintf("# Active FF cutoff: %dhz (", rcSmoothingData->ffCutoffFrequency);
+        if (rcSmoothingData->ffCutoffSetting == 0) {
             cliPrintLine("auto)");
         } else {
             cliPrintLine("manual)");

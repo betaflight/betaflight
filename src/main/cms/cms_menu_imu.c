@@ -516,8 +516,8 @@ static uint8_t cmsx_iterm_relax_type;
 static uint8_t cmsx_iterm_relax_cutoff;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-static uint8_t cmsx_ff_interpolate_sp;
+#ifdef USE_FEEDFORWARD
+static uint8_t cmsx_ff_mode;
 static uint8_t cmsx_ff_smooth_factor;
 static uint8_t cmsx_ff_jitter_factor;
 #endif
@@ -559,8 +559,8 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_iterm_relax_cutoff = pidProfile->iterm_relax_cutoff;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    cmsx_ff_interpolate_sp = pidProfile->ff_interpolate_sp;
+#ifdef USE_FEEDFORWARD
+    cmsx_ff_mode = pidProfile->ff_mode;
     cmsx_ff_smooth_factor = pidProfile->ff_smooth_factor;
     cmsx_ff_jitter_factor = pidProfile->ff_jitter_factor;
 #endif
@@ -607,8 +607,8 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->iterm_relax_cutoff = cmsx_iterm_relax_cutoff;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    pidProfile->ff_interpolate_sp = cmsx_ff_interpolate_sp;
+#ifdef USE_FEEDFORWARD
+    pidProfile->ff_mode = cmsx_ff_mode;
     pidProfile->ff_smooth_factor = cmsx_ff_smooth_factor;
     pidProfile->ff_jitter_factor = cmsx_ff_jitter_factor;
 #endif
@@ -625,8 +625,8 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "FF TRANS",      OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
-#ifdef USE_INTERPOLATED_SP
-    { "FF MODE",       OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_ff_interpolate_sp,  4, lookupTableInterpolatedSetpoint}, 0 },
+#ifdef USE_FEEDFORWARD
+    { "FF MODE",       OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_ff_mode,              4, lookupTableInterpolatedSetpoint}, 0 },
     { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_smooth_factor,     0,     75,   1  }   , 0 },
     { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_jitter_factor,     0,     20,   1  }   , 0 },
 #endif

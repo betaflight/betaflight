@@ -21,7 +21,7 @@
 #include <math.h>
 #include "platform.h"
 
-#ifdef USE_INTERPOLATED_SP
+#ifdef USE_FEEDFORWARD
 
 #include "build/debug.h"
 
@@ -31,7 +31,7 @@
 
 #include "flight/pid.h"
 
-#include "interpolated_setpoint.h"
+#include "feedforward.h"
 
 static float setpointDeltaImpl[XYZ_AXIS_COUNT];
 static float setpointDelta[XYZ_AXIS_COUNT];
@@ -54,9 +54,9 @@ static uint8_t averagingCount;
 static float ffMaxRateLimit[XYZ_AXIS_COUNT];
 static float ffMaxRate[XYZ_AXIS_COUNT];
 
-void interpolatedSpInit(const pidProfile_t *pidProfile) {
+void ffInit(const pidProfile_t *pidProfile) {
     const float ffMaxRateScale = pidProfile->ff_max_rate_limit * 0.01f;
-    averagingCount = pidProfile->ff_interpolate_sp;
+    averagingCount = pidProfile->ff_mode;
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         ffMaxRate[i] = applyCurve(i, 1.0f);
         ffMaxRateLimit[i] = ffMaxRate[i] * ffMaxRateScale;
@@ -64,7 +64,7 @@ void interpolatedSpInit(const pidProfile_t *pidProfile) {
     }
 }
 
-FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type) {
+FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t type) {
 
     if (newRcFrame) {
         float rcCommandDelta = getRcCommandDelta(axis);
@@ -148,7 +148,7 @@ FAST_CODE_NOINLINE float interpolatedSpApply(int axis, bool newRcFrame, ffInterp
         setpointDeltaImpl[axis] += boostAmount;
 
         // apply averaging
-        if (type == FF_INTERPOLATE_ON) {
+        if (type == FF_NORMAL) {
             setpointDelta[axis] = setpointDeltaImpl[axis];
         } else {
             setpointDelta[axis] = laggedMovingAverageUpdate(&setpointDeltaAvg[axis].filter, setpointDeltaImpl[axis]);
