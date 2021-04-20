@@ -83,7 +83,7 @@
 #define UART1_TX_PIN            NONE
 
 #define USE_UART2
-#define UART2_RX_PIN            PD4 // J8:8
+#define UART2_RX_PIN            PD6 // J8:8
 #define UART2_TX_PIN            PD5 // J8:7
 
 #define USE_UART3
