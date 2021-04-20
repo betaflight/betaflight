@@ -165,10 +165,11 @@
 #define USE_MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define MAG_I2C_INSTANCE        (I2CDEV_1)
 
 #define USE_BARO
 #define USE_BARO_BMP388
-#define BARO_I2C_INSTANCE           (I2CDEV_2)
+#define BARO_I2C_INSTANCE       (I2CDEV_2)
 
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM42605
@@ -222,27 +223,31 @@
 
 #define USE_ADC
 
-#define ADC_INSTANCE ADC3 // Use ADC3 by default, for as many pins as possible.
+#define ADC_INSTANCE                  ADC3 // Use ADC3 by default, for as many pins as possible.
 
-#define ADC1_INSTANCE ADC1 // ADC1 reserved for VIDEO
-//#define ADC2_INSTANCE ADC2 // ADC2 not used
-#define ADC3_INSTANCE ADC3 // ADC3 for monitoring, core temp and vrefint
+#define ADC1_INSTANCE                 ADC1 // ADC1 reserved for VIDEO
+//#define ADC2_INSTANCE               ADC2 // ADC2 not used
+#define ADC3_INSTANCE                 ADC3 // ADC3 for monitoring, core temp and vrefint
 
 // 2 Current meter ADC inputs, one on each 4in1ESC connector. NO RSSI input due to on-board SX1280 RF chip.
 #define CURRENT_METER_1_ADC_PIN       PC0 // ADC3_INP10
 #define CURRENT_METER_1_ADC_INSTANCE  ADC3
 #define CURRENT_METER_2_ADC_PIN       PC1 // ADC3_INP10
 #define CURRENT_METER_2_ADC_INSTANCE  ADC3
-#define EXTERNAL1_ADC_PIN           PC2 // ADC3_INP0 - NOT CONNECTED
-#define EXTERNAL1_ADC_INSTANCE      ADC3
-#define VBAT_ADC_PIN                PC3 // ADC3_INP1
-#define VBAT_ADC_INSTANCE           ADC3
+#define EXTERNAL1_ADC_PIN             PC2 // ADC3_INP0 - NOT CONNECTED
+#define EXTERNAL1_ADC_INSTANCE        ADC3
+#define VBAT_ADC_PIN                  PC3 // ADC3_INP1
+#define VBAT_ADC_INSTANCE             ADC3
 
 // ADC mapping from actual intended use to BF inputs
-#define RSSI_ADC_PIN            CURRENT_METER_2_ADC_PIN
-#define CURRENT_METER_ADC_PIN   CURRENT_METER_1_ADC_PIN
-//#define VBAT_ADC_PIN            VBAT_ADC_PIN
-//#define EXTERNAL1_ADC_PIN       EXTERNAL1_ADC_PIN
+#define RSSI_ADC_PIN                  CURRENT_METER_2_ADC_PIN
+#define RSSI_ADC_INSTANCE             CURRENT_METER_2_ADC_PIN
+#define CURRENT_METER_ADC_PIN         CURRENT_METER_1_ADC_PIN
+#define CURRENT_METER_ADC_INSTANCE    CURRENT_METER_1_ADC_INSTANCE
+//#define VBAT_ADC_PIN                VBAT_ADC_PIN
+//#define VBAT_ADC_INSTANCE           VBAT_ADC_INSTANCE
+//#define EXTERNAL1_ADC_PIN           EXTERNAL1_ADC_PIN
+#define EXTERNAL1_ADC_INSTANCE        EXTERNAL1_ADC_INSTANCE
 
 
 #define VIDEO_IN_ADC_PIN        PC5 // ADC1_INP4 - Reserved for video
