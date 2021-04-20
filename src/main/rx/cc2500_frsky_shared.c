@@ -155,6 +155,8 @@ const cc2500RegisterConfigElement_t cc2500FrskyXLbtV2Config[] =
 };
 
 static void initialise() {
+    rxSpiStartupSpeed();
+
     cc2500Reset();
 
     cc2500ApplyRegisterConfig(cc2500FrskyBaseConfig, sizeof(cc2500FrskyBaseConfig));
@@ -197,6 +199,8 @@ static void initialise() {
         calData[c][1] = cc2500ReadReg(CC2500_24_FSCAL2);
         calData[c][2] = cc2500ReadReg(CC2500_25_FSCAL1);
     }
+
+    rxSpiNormalSpeed();
 }
 
 void initialiseData(bool inBindState)
