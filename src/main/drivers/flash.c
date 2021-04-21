@@ -346,7 +346,7 @@ static void flashConfigurePartitions(void)
         endSector = badBlockPartition->startSector - 1;
     }
 
-#if defined(FIRMWARE_SIZE)
+#if defined(FIRMWARE_SIZE) && defined(USE_FIRMWARE_PARTITION)
     const uint32_t firmwareSize = (FIRMWARE_SIZE * 1024);
     flashSector_t firmwareSectors = (firmwareSize / flashGeometry->sectorSize);
 

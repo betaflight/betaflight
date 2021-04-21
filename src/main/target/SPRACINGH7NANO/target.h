@@ -171,6 +171,8 @@
 #define USE_FLASH_W25N01G
 #define FLASH_QUADSPI_INSTANCE    QUADSPI
 
+#define USE_FIRMWARE_PARTITION
+
 // SD card not present on hardware, but pins are reserved.
 //#define USE_SDCARD
 #ifdef USE_SDCARD
