@@ -356,7 +356,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
     return RX_FRAME_PENDING;
 }
 
-STATIC_UNIT_TESTED uint16_t crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
+STATIC_UNIT_TESTED float crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
     UNUSED(rxRuntimeState);
     /* conversion from RC value to PWM
@@ -367,7 +367,7 @@ STATIC_UNIT_TESTED uint16_t crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState
      * scale factor = (2012-988) / (1811-172) = 0.62477120195241
      * offset = 988 - 172 * 0.62477120195241 = 880.53935326418548
      */
-    return (0.62477120195241f * crsfChannelData[chan]) + 881;
+    return (0.62477120195241f * (float)crsfChannelData[chan]) + 881;
 }
 
 void crsfRxWriteTelemetryData(const void *data, int len)

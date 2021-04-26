@@ -705,7 +705,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
 
-        int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
+        float tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
         if (axis == ROLL || axis == PITCH) {
             if (tmp > rcControlsConfig()->deadband) {
                 tmp -= rcControlsConfig()->deadband;
