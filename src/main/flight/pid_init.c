@@ -392,6 +392,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         // set automatically according to boost amount, limit to 0.5 for auto
         pidRuntime.ffSmoothFactor = MAX(0.5f, 1.0f - ((float)pidProfile->ff_boost) * 2.0f / 100.0f);
     }
+    pidRuntime.ffJitterFactor = pidProfile->ff_jitter_factor;
     interpolatedSpInit(pidProfile);
 #endif
 
