@@ -340,8 +340,7 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
-    pt1Filter_t setpointDerivativePt1[XYZ_AXIS_COUNT];
-    biquadFilter_t setpointDerivativeBiquad[XYZ_AXIS_COUNT];
+    pt3Filter_t setpointDerivativePt3[XYZ_AXIS_COUNT];
     bool setpointDerivativeLpfInitialized;
     uint8_t rcSmoothingDebugAxis;
     uint8_t rcSmoothingFilterType;
