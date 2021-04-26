@@ -457,7 +457,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
         crsfFrameDone = false;
 
         // unpack the RC channels
-        if( crsfChannelDataFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED ) {
+        if (crsfChannelDataFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
             // use ordinary RC frame structure (0x16)
             const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfChannelDataFrame.frame.payload;
             crsfChannelData[0] = rcChannels->chan0;
@@ -489,16 +489,15 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
             const uint8_t *payload = crsfChannelDataFrame.frame.payload;
             uint8_t numOfChannels = ((crsfChannelDataFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC) * 8 - CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION) / CRSF_SUBSET_RC_CHANNELS_PACKED_RESOLUTION;
             for (n = 0; n < numOfChannels; n++) {
-                while(bitsMerged < CRSF_SUBSET_RC_CHANNELS_PACKED_RESOLUTION) {
+                while (bitsMerged < CRSF_SUBSET_RC_CHANNELS_PACKED_RESOLUTION) {
                     readByte = payload[readByteIndex++];
-                    if(startChannel == 0xFF) {
+                    if (startChannel == 0xFF) {
                         // get the startChannel
                         startChannel = readByte & CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_MASK;
                         readByte >>= CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION;
                         readValue |= ((uint32_t) readByte) << bitsMerged;
                         bitsMerged += 8 - CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION;
-                    }
-                    else {
+                    } else {
                         readValue |= ((uint32_t) readByte) << bitsMerged;
                         bitsMerged += 8;
                     }

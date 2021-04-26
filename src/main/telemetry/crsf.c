@@ -86,8 +86,8 @@ typedef struct mspBuffer_s {
 
 static mspBuffer_t mspRxBuffer;
 
-bool isCrsfV3Running = false;
 #if defined(USE_CRSF_V3)
+static bool isCrsfV3Running = false;
 typedef struct {
     uint8_t hasPendingReply:1;
     uint8_t isNewSpeedValid:1;
@@ -634,20 +634,20 @@ void crsfProcessCommand(uint8_t *frameStart) {
     uint8_t cmd = *frameStart;
     uint8_t subCmd = frameStart[1];
     switch (cmd) {
-        case CRSF_COMMAND_SUBCMD_GENERAL:
-            switch (subCmd) {
-                case CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_PROPOSAL:
+    case CRSF_COMMAND_SUBCMD_GENERAL:
+        switch (subCmd) {
+        case CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_PROPOSAL:
 #if defined(USE_CRSF_V3)
-                    crsfProcessSpeedNegotiationCmd(&frameStart[1]);
-                    crsfScheduleSpeedNegotiationResponse();
+            crsfProcessSpeedNegotiationCmd(&frameStart[1]);
+            crsfScheduleSpeedNegotiationResponse();
 #endif
-                    break;
-                default:
-                    break;
-            }
             break;
         default:
             break;
+        }
+        break;
+    default:
+        break;
     }
 }
 #endif
@@ -735,8 +735,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfSpeed.confirmationTime = currentTimeUs;
         crsfLastCycleTime = currentTimeUs;
         return;
-    }
-    else if (crsfSpeed.isNewSpeedValid) {
+    } else if (crsfSpeed.isNewSpeedValid) {
         if (currentTimeUs - crsfSpeed.confirmationTime >= 10000) {
             // delay 10ms before applying the new baudrate
             crsfRxUpdateBaudrate(getCrsfDesireSpeed());
