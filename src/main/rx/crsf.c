@@ -127,6 +127,7 @@ typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 #define CRSF_SUBSET_RC_CHANNELS_PACKED_MASK                        0x07FF
 #define CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION 5
 #define CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_MASK       0x1F
+#define CRSF_SUBSET_RC_CHANNELS_PACKED_DIGITAL_SWITCH_RESOLUTION   1
 
 #if defined(USE_CRSF_LINK_STATISTICS)
 /*
@@ -494,9 +495,9 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
                     if (startChannel == 0xFF) {
                         // get the startChannel
                         startChannel = readByte & CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_MASK;
-                        readByte >>= CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION;
+                        readByte >>= (CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION + CRSF_SUBSET_RC_CHANNELS_PACKED_DIGITAL_SWITCH_RESOLUTION);
                         readValue |= ((uint32_t) readByte) << bitsMerged;
-                        bitsMerged += 8 - CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION;
+                        bitsMerged += 8 - CRSF_SUBSET_RC_CHANNELS_PACKED_STARTING_CHANNEL_RESOLUTION - CRSF_SUBSET_RC_CHANNELS_PACKED_DIGITAL_SWITCH_RESOLUTION;
                     } else {
                         readValue |= ((uint32_t) readByte) << bitsMerged;
                         bitsMerged += 8;
