@@ -222,37 +222,22 @@ void pidInit(const pidProfile_t *pidProfile)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis, uint8_t filterType)
+void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis)
 {
     pidRuntime.rcSmoothingDebugAxis = debugAxis;
-    pidRuntime.rcSmoothingFilterType = filterType;
-    if ((filterCutoff > 0) && (pidRuntime.rcSmoothingFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+    if (filterCutoff > 0) {
         pidRuntime.setpointDerivativeLpfInitialized = true;
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            switch (pidRuntime.rcSmoothingFilterType) {
-                case RC_SMOOTHING_DERIVATIVE_PT1:
-                    pt1FilterInit(&pidRuntime.setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, pidRuntime.dT));
-                    break;
-                case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                    biquadFilterInitLPF(&pidRuntime.setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
-                    break;
-            }
+            pt3FilterInit(&pidRuntime.setpointDerivativePt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
 
 void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff)
 {
-    if ((filterCutoff > 0) && (pidRuntime.rcSmoothingFilterType != RC_SMOOTHING_DERIVATIVE_OFF)) {
+    if (filterCutoff > 0) {
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            switch (pidRuntime.rcSmoothingFilterType) {
-                case RC_SMOOTHING_DERIVATIVE_PT1:
-                    pt1FilterUpdateCutoff(&pidRuntime.setpointDerivativePt1[axis], pt1FilterGain(filterCutoff, pidRuntime.dT));
-                    break;
-                case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                    biquadFilterUpdateLPF(&pidRuntime.setpointDerivativeBiquad[axis], filterCutoff, targetPidLooptime);
-                    break;
-            }
+            pt3FilterUpdateCutoff(&pidRuntime.setpointDerivativePt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
@@ -401,7 +386,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_INTERPOLATED_SP
     pidRuntime.ffFromInterpolatedSetpoint = pidProfile->ff_interpolate_sp;
-    pidRuntime.ffSmoothFactor = 1.0f - ((float)pidProfile->ff_smooth_factor) / 100.0f;
+    if (pidProfile->ff_smooth_factor) {
+        pidRuntime.ffSmoothFactor = 1.0f - ((float)pidProfile->ff_smooth_factor) / 100.0f;
+    } else {
+        // set automatically according to boost amount, limit to 0.5 for auto
+        pidRuntime.ffSmoothFactor = MAX(0.5f, 1.0f - ((float)pidProfile->ff_boost) * 2.0f / 100.0f);
+    }
     interpolatedSpInit(pidProfile);
 #endif
 
