@@ -43,6 +43,9 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+
+#include "rx/crsf.h"
+
 #include "sensors/battery.h"
 
 #ifdef USE_EXTENDED_CMS_MENUS
@@ -172,7 +175,7 @@ static CMS_Menu menuOsdActiveElems = {
 
 static uint8_t osdConfig_rssi_alarm;
 static uint16_t osdConfig_link_quality_alarm;
-static uint8_t osdConfig_rssi_dbm_alarm;
+static int16_t osdConfig_rssi_dbm_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
 static uint16_t osdConfig_distance_alarm;
@@ -217,7 +220,7 @@ const OSD_Entry menuAlarmsEntries[] =
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
     {"LINK QUALITY", OME_UINT16,  NULL, &(OSD_UINT16_t){&osdConfig_link_quality_alarm, 5, 300, 5}, 0},
-    {"RSSI DBM", OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_dbm_alarm, 5, 130, 5}, 0},
+    {"RSSI DBM", OME_INT16,  NULL, &(OSD_INT16_t){&osdConfig_rssi_dbm_alarm, CRSF_RSSI_MIN, CRSF_SNR_MAX, 5}, 0},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
     {"MAX DISTANCE", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_distance_alarm, 0, UINT16_MAX, 10}, 0},
