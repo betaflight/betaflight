@@ -2666,7 +2666,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 1) {
+        if (sbufBytesRemaining(src) >= 2) {
 #if defined(USE_GYRO_DATA_ANALYSE)
             // Added in MSP API 1.43
             gyroConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
