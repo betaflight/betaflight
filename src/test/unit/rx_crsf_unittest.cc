@@ -45,6 +45,7 @@ extern "C" {
 
     void crsfDataReceive(uint16_t c);
     uint8_t crsfFrameCRC(void);
+    uint8_t crsfFrameCmdCRC(void);
     uint8_t crsfFrameStatus(void);
     uint16_t crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan);
 
@@ -138,6 +139,20 @@ TEST(CrossFireTest, TestCrsfFrameStatus)
     for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
         EXPECT_EQ(0, crsfChannelData[ii]);
     }
+}
+
+const uint8_t buadrateNegotiationFrame[] = {
+    0xC8,0x0C,0x32,0xC8,0xEC,0x0A,0x70,0x01,0x00,0x1E,0x84,0x80,0x22,0x72
+};
+
+TEST(CrossFireTest, TestCrsfCmdFrameCrc)
+{
+    crsfFrame = *(const crsfFrame_t*)buadrateNegotiationFrame;
+    crsfFrameDone = true;
+    const uint8_t crsfCmdFrameCrc = crsfFrameCmdCRC();
+    const uint8_t crsfFrameCrc = crsfFrameCRC();
+    EXPECT_EQ(crsfCmdFrameCrc, crsfFrame.frame.payload[crsfFrame.frame.frameLength - CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH - 1]);
+    EXPECT_EQ(crsfFrameCrc, crsfFrame.frame.payload[crsfFrame.frame.frameLength - CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH]);
 }
 
 /*
