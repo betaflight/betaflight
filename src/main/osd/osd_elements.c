@@ -1036,6 +1036,18 @@ static void osdElementLinkQuality(osdElementParms_t *element)
 }
 #endif // USE_RX_LINK_QUALITY_INFO
 
+#ifdef USE_RX_LINK_UPLINK_POWER
+static void osdElementTxUplinkPower(osdElementParms_t *element)
+{
+    const uint16_t osdUplinkTxPowerMw = rxGetUplinkTxPwrMw();
+    if (osdUplinkTxPowerMw < 1000) {
+        tfp_sprintf(element->buff, "%c%3dMW", SYM_RSSI, osdUplinkTxPowerMw);
+    } else {
+        osdPrintFloat(element->buff, SYM_RSSI, osdUplinkTxPowerMw / 1000.0f, "", 1, false, 'W');
+    }
+}
+#endif // USE_RX_LINK_UPLINK_POWER
+
 #ifdef USE_BLACKBOX
 static void osdElementLogStatus(osdElementParms_t *element)
 {
@@ -1422,6 +1434,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RX_LINK_QUALITY_INFO
     OSD_LINK_QUALITY,
 #endif
+#ifdef USE_RX_LINK_UPLINK_POWER
+    OSD_TX_UPLINK_POWER,
+#endif
 #ifdef USE_RX_RSSI_DBM
     OSD_RSSI_DBM_VALUE,
 #endif
@@ -1526,6 +1541,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_RX_LINK_QUALITY_INFO
     [OSD_LINK_QUALITY]            = osdElementLinkQuality,
+#endif
+#ifdef USE_RX_LINK_UPLINK_POWER
+    [OSD_TX_UPLINK_POWER]         = osdElementTxUplinkPower,
 #endif
 #ifdef USE_GPS
     [OSD_FLIGHT_DIST]             = osdElementGpsFlightDistance,
