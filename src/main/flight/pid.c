@@ -205,7 +205,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_idle_max_increase = 150,
         .ff_interpolate_sp = FF_INTERPOLATE_ON,
         .ff_max_rate_limit = 100,
-        .ff_smooth_factor = 0,
+        .ff_smooth_factor = 37,
+        .ff_jitter_factor = 7,
         .ff_boost = 15,
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
@@ -265,6 +266,11 @@ float pidGetFfBoostFactor()
 float pidGetFfSmoothFactor()
 {
     return pidRuntime.ffSmoothFactor;
+}
+
+float pidGetFfJitterFactor()
+{
+    return pidRuntime.ffJitterFactor;
 }
 #endif
 
