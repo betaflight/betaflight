@@ -33,6 +33,7 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/rcc.h"
+#include "drivers/time.h"
 
 static SPI_InitTypeDef defaultInit = {
     .SPI_Mode = SPI_Mode_Master,
@@ -104,23 +105,27 @@ void spiInitDevice(SPIDevice device, bool leadingEdge)
 // return uint8_t value or -1 when failure
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
-    uint16_t spiTimeout = 1000;
+    timeUs_t timeoutStartUs = microsISR();
 
     DISCARD(instance->DR);
 
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
-        if ((spiTimeout--) == 0)
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= SPI_TIMEOUT_US) {
             return spiTimeoutUserCallback(instance);
+        }
+    }
 
 #ifdef STM32F303xC
     SPI_SendData8(instance, txByte);
 #else
     SPI_I2S_SendData(instance, txByte);
 #endif
-    spiTimeout = 1000;
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
-        if ((spiTimeout--) == 0)
+    timeoutStartUs = microsISR();
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= SPI_TIMEOUT_US) {
             return spiTimeoutUserCallback(instance);
+        }
+    }
 
 #ifdef STM32F303xC
     return ((uint8_t)SPI_ReceiveData8(instance));
@@ -144,15 +149,17 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
-    uint16_t spiTimeout = 1000;
+    timeUs_t timeoutStartUs;
 
     uint8_t b;
     DISCARD(instance->DR);
     while (len--) {
         b = txData ? *(txData++) : 0xFF;
+        timeoutStartUs = microsISR();
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
-            if ((spiTimeout--) == 0)
+            if (cmpTimeUs(microsISR(), timeoutStartUs) >= SPI_TIMEOUT_US) {
                 return spiTimeoutUserCallback(instance);
+            }
         }
 #ifdef STM32F303xC
         SPI_SendData8(instance, b);
@@ -160,19 +167,21 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
         SPI_I2S_SendData(instance, b);
 #endif
 
-        spiTimeout = 1000;
+        timeoutStartUs = microsISR();
 
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET) {
-            if ((spiTimeout--) == 0)
+            if (cmpTimeUs(microsISR(), timeoutStartUs) >= SPI_TIMEOUT_US) {
                 return spiTimeoutUserCallback(instance);
+            }
         }
 #ifdef STM32F303xC
         b = SPI_ReceiveData8(instance);
 #else
         b = SPI_I2S_ReceiveData(instance);
 #endif
-        if (rxData)
+        if (rxData) {
             *(rxData++) = b;
+        }
     }
 
     return true;
