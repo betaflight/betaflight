@@ -1505,8 +1505,10 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, rxConfig()->rc_smoothing_type);
         sbufWriteU8(dst, rxConfig()->rc_smoothing_input_cutoff);
         sbufWriteU8(dst, rxConfig()->rc_smoothing_derivative_cutoff);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_input_type);
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_derivative_type);
+        // was used for rc_smoothing_input_type, not required in 4.3
+        sbufWriteU8(dst, 0);
+        // was used for rc_smoothing_derivative_type, not required in 4.3
+        sbufWriteU8(dst, 0);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -3259,8 +3261,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_type, sbufReadU8(src));
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_cutoff, sbufReadU8(src));
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_cutoff, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_input_type, sbufReadU8(src));
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_derivative_type, sbufReadU8(src));
+            // was used for rc_smoothing_input_type, not required in 4.3
+            sbufReadU8(src);
+            // was used for rc_smoothing_derivative_type, not required in 4.3
+            sbufReadU8(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
