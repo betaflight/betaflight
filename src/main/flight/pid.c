@@ -1107,7 +1107,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate feedforward component
 #ifdef USE_ABSOLUTE_CONTROL
-        // include abs control correction in FF
+        // include abs control correction in feedforward
         pidSetpointDelta += setpointCorrection - pidRuntime.oldSetpointCorrection[axis];
         pidRuntime.oldSetpointCorrection[axis] = setpointCorrection;
 #endif

@@ -55,7 +55,7 @@ typedef struct rxConfig_s {
     int8_t rssi_offset;                     // offset applied to the RSSI value before it is returned
     uint8_t rc_smoothing_type;              // Determines the smoothing algorithm to use: INTERPOLATION or FILTER
     uint8_t rc_smoothing_setpoint_cutoff;   // Filter cutoff frequency for the setpoint filter (0 = auto)
-    uint8_t rc_smoothing_ff_cutoff;         // Filter cutoff frequency for the FF filter (0 = auto)
+    uint8_t rc_smoothing_ff_cutoff;         // Filter cutoff frequency for the feedforward filter (0 = auto)
     uint8_t rc_smoothing_debug_axis;        // Axis to log as debug values when debug_mode = RC_SMOOTHING
     uint8_t rc_smoothing_auto_factor;       // Used to adjust the "smoothness" determined by the auto cutoff calculations
     uint8_t rssi_src_frame_lpf_period;      // Period of the cutoff frequency for the source frame RSSI filter (in 0.1 s)

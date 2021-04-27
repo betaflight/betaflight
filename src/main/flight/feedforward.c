@@ -99,7 +99,7 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t type) {
         } else {
             // movement!
             if (prevDuplicatePacket[axis] == true) {
-                // don't boost the packet after a duplicate, the FF alone is enough, usually
+                // don't boost the packet after a duplicate, the feedforward alone is enough, usually
                 // in part because after a duplicate, the raw up-step is large, so the jitter attenuator is less active
                 ffAttenuator = 0.0f;
             }
@@ -138,7 +138,7 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t type) {
         }
 
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, lrintf(setpointDeltaImpl[axis] * 100.0f)); // base FF
+            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, lrintf(setpointDeltaImpl[axis] * 100.0f)); // base feedforward
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, lrintf(boostAmount * 100.0f)); // boost amount
             // debug 2 is interpolated setpoint, above
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, lrintf(rcCommandDelta * 100.0f)); // rcCommand packet difference

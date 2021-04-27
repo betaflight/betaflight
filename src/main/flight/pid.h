@@ -198,7 +198,7 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
-    uint8_t ff_boost;                       // amount of high-pass filtered FF to add to FF, 100 means 100% added
+    uint8_t ff_boost;                       // amount of setpoint acceleration to add to feedforward, 10 means 100% added
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 
     uint8_t dyn_idle_min_rpm;                   // minimum motor speed enforced by the dynamic idle controller
@@ -207,10 +207,10 @@ typedef struct pidProfile_s {
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
     uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
 
-    uint8_t ff_mode;                        // Calculate FF as a step change when each new RC packet arrives
-    uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for FF
-    uint8_t ff_smooth_factor;               // Amount of lowpass type smoothing for FF steps
-    uint8_t ff_jitter_factor;               // Number of RC steps below which to attenuate FF
+    uint8_t ff_mode;                        // Calculate feedforward as a step change when each new RC packet arrives
+    uint8_t ff_max_rate_limit;              // Maximum setpoint rate percentage for feedforward
+    uint8_t ff_smooth_factor;               // Amount of lowpass type smoothing for feedforward steps
+    uint8_t ff_jitter_factor;               // Number of RC steps below which to attenuate feedforward
     uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
