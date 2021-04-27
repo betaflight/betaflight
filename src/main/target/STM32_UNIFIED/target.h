@@ -246,8 +246,12 @@
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
 
-#if !defined(STM32G4)
+#if defined(STM32G4)
 // To make it fit RAM
+#undef USE_DASHBOARD
+#undef USE_ESCSERIAL_SIMONK
+#undef USE_SERIAL_4WAY_SK_BOOTLOADER
+#else
 #define USE_TRANSPONDER
 
 #define USE_RANGEFINDER
