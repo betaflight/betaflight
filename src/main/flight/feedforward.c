@@ -144,7 +144,7 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t type) {
             DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, lrintf(rcCommandDelta * 100.0f)); // rcCommand packet difference
         }
 
-        // add boost to base feed forward
+        // add boost to base feedforward
         setpointDeltaImpl[axis] += boostAmount;
 
         // apply averaging

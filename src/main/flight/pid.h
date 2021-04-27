@@ -162,7 +162,7 @@ typedef struct pidProfile_s {
     uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
-    uint8_t feedForwardTransition;          // Feed forward weight transition
+    uint8_t feedForwardTransition;          // Feedforward attenuation around centre sticks
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
     uint16_t dterm_lowpass2_hz;             // Extra PT1 Filter on D in hz
