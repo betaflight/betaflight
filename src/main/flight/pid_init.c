@@ -30,7 +30,6 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
-#include "common/maths.h"
 
 #include "drivers/dshot_command.h"
 
@@ -363,7 +362,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;
-    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * powerf(pidRuntime.thrustLinearization, 2);
+    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * powf(pidRuntime.thrustLinearization, 2);
 #endif
 
 #if defined(USE_D_MIN)
