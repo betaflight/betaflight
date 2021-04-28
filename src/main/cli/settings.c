@@ -479,7 +479,7 @@ static const char * const lookupTableOffOnAuto[] = {
     "OFF", "ON", "AUTO"
 };
 
-const char* const lookupTableInterpolatedSetpoint[] = {
+const char* const lookupTableFeedforward[] = {
     "LEGACY", "NORMAL", "AVERAGED_2", "AVERAGED_3", "AVERAGED_4"
 };
 
@@ -622,7 +622,7 @@ const lookupTableEntry_t lookupTables[] = {
 
     LOOKUP_TABLE_ENTRY(lookupTablePositionAltSource),
     LOOKUP_TABLE_ENTRY(lookupTableOffOnAuto),
-    LOOKUP_TABLE_ENTRY(lookupTableInterpolatedSetpoint),
+    LOOKUP_TABLE_ENTRY(lookupTableFeedforward),
     LOOKUP_TABLE_ENTRY(lookupTableDshotBitbangedTimer),
     LOOKUP_TABLE_ENTRY(lookupTableOsdDisplayPortDevice),
 

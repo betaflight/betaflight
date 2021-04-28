@@ -260,7 +260,7 @@ extern const char * const lookupTableItermRelaxType[];
 
 extern const char * const lookupTableOsdDisplayPortDevice[];
 
-extern const char * const lookupTableInterpolatedSetpoint[];
+extern const char * const lookupTableFeedforward[];
 
 extern const char * const lookupTableOffOn[];
 

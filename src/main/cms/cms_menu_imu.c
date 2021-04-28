@@ -626,7 +626,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 
     { "FF TRANS",      OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
 #ifdef USE_FEEDFORWARD
-    { "FF MODE",       OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_ff_mode,              4, lookupTableInterpolatedSetpoint}, 0 },
+    { "FF MODE",       OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_ff_mode,              4, lookupTableFeedforward}, 0 },
     { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_smooth_factor,     0,     75,   1  }   , 0 },
     { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_jitter_factor,     0,     20,   1  }   , 0 },
 #endif
