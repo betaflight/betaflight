@@ -220,6 +220,7 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     EXPECT_EQ(0, crsfChannelData[15]);
 }
 
+// example of 0x16 RC frame
 const uint8_t capturedData[] = {
     0x00,0x18,0x16,0xBD,0x08,0x9F,0xF4,0xAE,0xF7,0xBD,0xEF,0x7D,0xEF,0xFB,0xAD,0xFD,0x45,0x2B,0x5A,0x01,0x00,0x00,0x00,0x00,0x00,0x6C,
     0x00,0x18,0x16,0xBD,0x08,0x9F,0xF4,0xAA,0xF7,0xBD,0xEF,0x7D,0xEF,0xFB,0xAD,0xFD,0x45,0x2B,0x5A,0x01,0x00,0x00,0x00,0x00,0x00,0x94,
@@ -279,6 +280,52 @@ TEST(CrossFireTest, TestCapturedData)
     EXPECT_EQ(crc, crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]);
 }
 
+// example of 0x17 Subset RC frame
+/* Notes of Frame Contents
+*    frame type = 0x17 Subset RC Frame
+*    first channel packed = 4, bits 0-4
+*    channel resolution = 0x01 = 11-bit, bits 5-6
+*    reserved configuration = 0, bit 7
+*    first channel packed  (Ch4) = 0    = 0x000, 000 0000 0000, bits 8 - 18
+*    second channel packed (Ch5) = 820  = 0x334, 011 0011 0100, bits 19 - 29
+*    third channel packed  (Ch6) = 1959 = 0x7A7, 111 1010 0111, bits 30 - 40
+*    fourth channel packed (Ch7) = 2047 = 0x7FF, 111 1111 1111, bits 41 - 51
+*/
+const uint8_t capturedSubsetData[] = {
+    0xC8,0x09,0x17,0x24,0x00,0xA0,0xD9,0xE9,0xFF,0x0F,0xD1
+};
+
+TEST(CrossFireTest, TestCapturedSubsetData)
+{
+    crsfFrame = *(const crsfFrame_t*)capturedSubsetData;
+    crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
+
+    uint8_t status = crsfFrameStatus();
+    EXPECT_EQ(RX_FRAME_COMPLETE, status);
+    EXPECT_FALSE(crsfFrameDone);
+    EXPECT_EQ(CRSF_SYNC_BYTE, crsfFrame.frame.deviceAddress);
+    EXPECT_EQ(CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED, crsfFrame.frame.type);
+
+    uint8_t crc = crsfFrameCRC();
+    uint8_t startChannel = crsfFrame.frame.payload[0] & CRSF_SUBSET_RC_STARTING_CHANNEL_MASK;
+    uint8_t channelRes = (crsfFrame.frame.payload[0] >> CRSF_SUBSET_RC_STARTING_CHANNEL_BITS) & CRSF_SUBSET_RC_RES_CONFIGURATION_MASK;
+    uint8_t reservedBit = (crsfFrame.frame.payload[0] >> (CRSF_SUBSET_RC_STARTING_CHANNEL_BITS + CRSF_SUBSET_RC_RES_CONFIGURATION_MASK)) & CRSF_SUBSET_RC_RESERVED_CONFIGURATION_BITS;
+    EXPECT_EQ(crc, crsfFrame.frame.payload[crsfFrame.frame.frameLength - 2]);
+    EXPECT_EQ(4, startChannel);
+    EXPECT_EQ(1, channelRes);
+    EXPECT_EQ(0, reservedBit);
+
+    EXPECT_EQ(0, crsfChannelData[4]);
+    EXPECT_EQ(820, crsfChannelData[5]);
+    EXPECT_EQ(1959, crsfChannelData[6]);
+    EXPECT_EQ(2047, crsfChannelData[7]);
+
+    EXPECT_EQ(988, (uint16_t)crsfReadRawRC(NULL, 4));
+    EXPECT_EQ(1398, (uint16_t)crsfReadRawRC(NULL, 5));
+    EXPECT_EQ(1967, (uint16_t)crsfReadRawRC(NULL, 6));
+    EXPECT_EQ(2011, (uint16_t)crsfReadRawRC(NULL, 7));
+}
 
 TEST(CrossFireTest, TestCrsfDataReceive)
 {
