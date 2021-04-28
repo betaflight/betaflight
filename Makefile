@@ -378,7 +378,7 @@ $(TARGET_BIN): $(TARGET_UNPATCHED_BIN)
 # a) regeneration of $(TARGET_BIN), and
 # b) the results of $(TARGET_BIN) will not be as expected.
 	@echo "Extracting HASH section from unpatched EXST elf $(TARGET_ELF)" "$(STDOUT)"
-	$(OBJCOPY) $(TARGET_ELF) $(TARGET_EXST_ELF).tmp --dump-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE)
+	$(OBJCOPY) $(TARGET_ELF) $(TARGET_EXST_ELF).tmp --dump-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE) -j .exst_hash
 	rm $(TARGET_EXST_ELF).tmp
 	
 	@echo "Patching MD5 hash into HASH section" "$(STDOUT)"
