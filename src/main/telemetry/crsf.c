@@ -642,10 +642,8 @@ void crsfProcessCommand(uint8_t *frameStart) {
     case CRSF_COMMAND_SUBCMD_GENERAL:
         switch (subCmd) {
         case CRSF_COMMAND_SUBCMD_GENERAL_CRSF_SPEED_PROPOSAL:
-#if defined(USE_CRSF_V3)
             crsfProcessSpeedNegotiationCmd(&frameStart[1]);
             crsfScheduleSpeedNegotiationResponse();
-#endif
             break;
         default:
             break;
