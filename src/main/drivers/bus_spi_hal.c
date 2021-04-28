@@ -36,6 +36,8 @@
 #include "nvic.h"
 #include "rcc.h"
 
+#define SPI_TIMEOUT_SYS_TICKS   (SPI_TIMEOUT_US / 1000)
+
 void spiInitDevice(SPIDevice device, bool leadingEdge)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -93,8 +95,7 @@ void spiInitDevice(SPIDevice device, bool leadingEdge)
     if (spi->leadingEdge) {
         spi->hspi.Init.CLKPolarity = SPI_POLARITY_LOW;
         spi->hspi.Init.CLKPhase = SPI_PHASE_1EDGE;
-    }
-    else {
+    } else {
         spi->hspi.Init.CLKPolarity = SPI_POLARITY_HIGH;
         spi->hspi.Init.CLKPhase = SPI_PHASE_2EDGE;
     }
@@ -118,10 +119,11 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t out)
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
     SPIDevice device = spiDeviceByInstance(instance);
-    if(spiDevice[device].hspi.State == HAL_SPI_STATE_BUSY)
+    if (spiDevice[device].hspi.State == HAL_SPI_STATE_BUSY) {
         return true;
-    else
+    } else {
         return false;
+    }
 }
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *out, uint8_t *in, int len)
@@ -129,20 +131,18 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *out, uint8_t *in, int len
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
-#define SPI_DEFAULT_TIMEOUT 10
-
     if (!in) {
         // Tx only
-        status = HAL_SPI_Transmit(&spiDevice[device].hspi, out, len, SPI_DEFAULT_TIMEOUT);
-    } else if(!out) {
+        status = HAL_SPI_Transmit(&spiDevice[device].hspi, out, len, SPI_TIMEOUT_SYS_TICKS);
+    } else if (!out) {
         // Rx only
-        status = HAL_SPI_Receive(&spiDevice[device].hspi, in, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_Receive(&spiDevice[device].hspi, in, len, SPI_TIMEOUT_SYS_TICKS);
     } else {
         // Tx and Rx
-        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, out, in, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, out, in, len, SPI_TIMEOUT_SYS_TICKS);
     }
 
-    if(status != HAL_OK) {
+    if (status != HAL_OK) {
         spiTimeoutUserCallback(instance);
     }
 
@@ -210,8 +210,9 @@ void SPI4_IRQHandler(void)
 void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     SPIDevice device = descriptor->userParam;
-    if (device != SPIINVALID)
+    if (device != SPIINVALID) {
         HAL_DMA_IRQHandler(&spiDevice[device].hdma);
+    }
 }
 #endif // USE_DMA
 #endif
