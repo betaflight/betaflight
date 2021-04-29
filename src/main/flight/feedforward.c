@@ -64,7 +64,7 @@ void ffInit(const pidProfile_t *pidProfile) {
     }
 }
 
-FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t type) {
+FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t ffMode) {
 
     if (newRcFrame) {
         float rcCommandDelta = getRcCommandDelta(axis);
@@ -148,7 +148,7 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t type) {
         setpointDeltaImpl[axis] += boostAmount;
 
         // apply averaging
-        if (type == FF_NORMAL) {
+        if (ffMode == FF_NORMAL) {
             setpointDelta[axis] = setpointDeltaImpl[axis];
         } else {
             setpointDelta[axis] = laggedMovingAverageUpdate(&setpointDeltaAvg[axis].filter, setpointDeltaImpl[axis]);

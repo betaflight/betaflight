@@ -26,6 +26,6 @@
 #include "flight/pid.h"
 
 void ffInit(const pidProfile_t *pidProfile);
-float ffApply(int axis, bool newRcFrame, ffModeType_t type);
+float ffApply(int axis, bool newRcFrame, ffModeType_t ffMode);
 float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint);
 bool shouldApplyFfLimits(int axis);
