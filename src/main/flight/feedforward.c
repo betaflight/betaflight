@@ -160,11 +160,11 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t ffMode)
 FAST_CODE_NOINLINE float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint) {
     switch (axis) {
     case FD_ROLL:
-        DEBUG_SET(DEBUG_FF_LIMIT, 0, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, value);
 
         break;
     case FD_PITCH:
-        DEBUG_SET(DEBUG_FF_LIMIT, 1, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, value);
 
         break;
     }
@@ -176,7 +176,7 @@ FAST_CODE_NOINLINE float applyFfLimit(int axis, float value, float Kp, float cur
     }
 
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FF_LIMIT, 2, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, value);
     }
 
     return value;

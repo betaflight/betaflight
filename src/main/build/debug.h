@@ -1,4 +1,4 @@
-/*
+w/*
  * This file is part of Cleanflight and Betaflight.
  *
  * Cleanflight and Betaflight are free software. You can redistribute
@@ -107,7 +107,7 @@ typedef enum {
     DEBUG_BARO,
     DEBUG_GPS_RESCUE_THROTTLE_PID,
     DEBUG_DYN_IDLE,
-    DEBUG_FF_LIMIT,
+    DEBUG_FEEDFORWARD_LIMIT,
     DEBUG_FEEDFORWARD,
     DEBUG_BLACKBOX_OUTPUT,
     DEBUG_GYRO_SAMPLE,
