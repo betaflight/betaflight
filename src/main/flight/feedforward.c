@@ -108,7 +108,7 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t ffMode)
         prevSetpoint[axis] = setpoint;
 
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 2, lrintf(setpoint)); // setpoint after interpolations
+            DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpoint)); // setpoint after interpolations
         }
 
         float absSetpointSpeed = fabsf(setpointSpeed); // unsmoothed for kick prevention
@@ -138,10 +138,10 @@ FAST_CODE_NOINLINE float ffApply(int axis, bool newRcFrame, ffModeType_t ffMode)
         }
 
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 0, lrintf(setpointDeltaImpl[axis] * 100.0f)); // base feedforward
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 1, lrintf(boostAmount * 100.0f)); // boost amount
+            DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpointDeltaImpl[axis] * 100.0f)); // base feedforward
+            DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(boostAmount * 100.0f)); // boost amount
             // debug 2 is interpolated setpoint, above
-            DEBUG_SET(DEBUG_FF_INTERPOLATED, 3, lrintf(rcCommandDelta * 100.0f)); // rcCommand packet difference
+            DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 100.0f)); // rcCommand packet difference
         }
 
         // add boost to base feedforward
