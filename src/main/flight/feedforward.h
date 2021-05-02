@@ -25,7 +25,7 @@
 #include "common/axis.h"
 #include "flight/pid.h"
 
-void interpolatedSpInit(const pidProfile_t *pidProfile);
-float interpolatedSpApply(int axis, bool newRcFrame, ffInterpolationType_t type);
-float applyFfLimit(int axis, float value, float Kp, float currentPidSetpoint);
-bool shouldApplyFfLimits(int axis);
+void feedforwardInit(const pidProfile_t *pidProfile);
+float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging);
+float applyFeedforwardLimit(int axis, float value, float Kp, float currentPidSetpoint);
+bool shouldApplyFeedforwardLimits(int axis);

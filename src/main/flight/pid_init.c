@@ -36,7 +36,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/interpolated_setpoint.h"
+#include "flight/feedforward.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
@@ -207,7 +207,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     pt1FilterInit(&pidRuntime.antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.antiGravitySmoothLpf, pt1FilterGain(ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF, pidRuntime.dT));
 
-    pidRuntime.ffBoostFactor = (float)pidProfile->ff_boost / 10.0f;
+    pidRuntime.ffBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -221,22 +221,22 @@ void pidInit(const pidProfile_t *pidProfile)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-void pidInitSetpointDerivativeLpf(uint16_t filterCutoff, uint8_t debugAxis)
+void pidInitFeedforwardLpf(uint16_t filterCutoff, uint8_t debugAxis)
 {
     pidRuntime.rcSmoothingDebugAxis = debugAxis;
     if (filterCutoff > 0) {
-        pidRuntime.setpointDerivativeLpfInitialized = true;
+        pidRuntime.feedforwardLpfInitialized = true;
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            pt3FilterInit(&pidRuntime.setpointDerivativePt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
+            pt3FilterInit(&pidRuntime.feedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
 
-void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff)
+void pidUpdateFeedforwardLpf(uint16_t filterCutoff)
 {
     if (filterCutoff > 0) {
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            pt3FilterUpdateCutoff(&pidRuntime.setpointDerivativePt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
+            pt3FilterUpdateCutoff(&pidRuntime.feedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
@@ -244,10 +244,10 @@ void pidUpdateSetpointDerivativeLpf(uint16_t filterCutoff)
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
-    if (pidProfile->feedForwardTransition == 0) {
-        pidRuntime.feedForwardTransition = 0;
+    if (pidProfile->feedforwardTransition == 0) {
+        pidRuntime.feedforwardTransition = 0;
     } else {
-        pidRuntime.feedForwardTransition = 100.0f / pidProfile->feedForwardTransition;
+        pidRuntime.feedforwardTransition = 100.0f / pidProfile->feedforwardTransition;
     }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pidRuntime.pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
@@ -383,16 +383,16 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.airmodeThrottleOffsetLimit = pidProfile->transient_throttle_limit / 100.0f;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    pidRuntime.ffFromInterpolatedSetpoint = pidProfile->ff_interpolate_sp;
-    if (pidProfile->ff_smooth_factor) {
-        pidRuntime.ffSmoothFactor = 1.0f - ((float)pidProfile->ff_smooth_factor) / 100.0f;
+#ifdef USE_FEEDFORWARD
+    pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
+    if (pidProfile->feedforward_smooth_factor) {
+        pidRuntime.ffSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) / 100.0f;
     } else {
         // set automatically according to boost amount, limit to 0.5 for auto
-        pidRuntime.ffSmoothFactor = MAX(0.5f, 1.0f - ((float)pidProfile->ff_boost) * 2.0f / 100.0f);
+        pidRuntime.ffSmoothFactor = MAX(0.5f, 1.0f - ((float)pidProfile->feedforward_boost) * 2.0f / 100.0f);
     }
-    pidRuntime.ffJitterFactor = pidProfile->ff_jitter_factor;
-    interpolatedSpInit(pidProfile);
+    pidRuntime.ffJitterFactor = pidProfile->feedforward_jitter_factor;
+    feedforwardInit(pidProfile);
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
