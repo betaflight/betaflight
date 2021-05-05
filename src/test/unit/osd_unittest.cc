@@ -1242,6 +1242,7 @@ extern "C" {
     bool pidOsdAntiGravityActive(void) { return false; }
     bool failsafeIsActive(void) { return false; }
     bool gpsRescueIsConfigured(void) { return false; }
+    bool gpsIsHealthy(void) { return true; }
     int8_t calculateThrottlePercent(void) { return 0; }
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}

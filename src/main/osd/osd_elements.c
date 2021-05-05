@@ -1058,7 +1058,7 @@ static void osdElementGpsCoordinate(osdElementParms_t *element)
 static void osdElementGpsSats(osdElementParms_t *element)
 {
     if (!gpsIsHealthy()) {
-        tfp_sprintf(element->buff, "%c%c%c", SYM_SAT_L, SYM_SAT_R, SYM_HYPHEN);
+        tfp_sprintf(element->buff, "%c%cNC", SYM_SAT_L, SYM_SAT_R);
     } else {
         int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
