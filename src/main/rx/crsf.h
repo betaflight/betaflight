@@ -35,6 +35,7 @@
 #define CRSF_SUBSET_RC_RES_CONFIGURATION_MASK       0x03
 #define CRSF_SUBSET_RC_RESERVED_CONFIGURATION_BITS  1
 
+#define CRSF_RC_RES_CONF_LEGACY                     0xFF
 #define CRSF_SUBSET_RC_RES_CONF_10B                 0
 #define CRSF_SUBSET_RC_RES_BITS_10B                 10
 #define CRSF_SUBSET_RC_RES_MASK_10B                 0x03FF
