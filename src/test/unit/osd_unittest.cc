@@ -1152,7 +1152,18 @@ TEST_F(OsdTest, TestGpsElements)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(2, 4, "%c%cNC", SYM_SAT_L, SYM_SAT_R);
+    // Sat indicator should blink and show "NC"
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
+        osdRefresh(simulationTime);
+
+        if (i % 2 == 0) {
+            displayPortTestBufferSubstring(2, 4, "%c%cNC", SYM_SAT_L, SYM_SAT_R);
+        } else {
+            displayPortTestBufferIsEmpty();
+        }
+    }
 
     // when
     simulationGpsHealthy = true;
@@ -1162,7 +1173,18 @@ TEST_F(OsdTest, TestGpsElements)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(2, 4, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, 0);
+    // Sat indicator should blink and show "0"
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
+        osdRefresh(simulationTime);
+
+        if (i % 2 == 0) {
+            displayPortTestBufferSubstring(2, 4, "%c%c 0", SYM_SAT_L, SYM_SAT_R);
+        } else {
+            displayPortTestBufferIsEmpty();
+        }
+    }
 
     // when
     simulationGpsHealthy = true;
@@ -1172,8 +1194,14 @@ TEST_F(OsdTest, TestGpsElements)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(2, 4, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, 10);
+    // Sat indicator should show "10" without flashing
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
+        osdRefresh(simulationTime);
 
+        displayPortTestBufferSubstring(2, 4, "%c%c10", SYM_SAT_L, SYM_SAT_R);
+    }
 }
 
 // STUBS
