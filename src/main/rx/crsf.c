@@ -275,6 +275,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                 switch (crsfFrame.frame.type)
                 {
                     case CRSF_FRAMETYPE_RC_CHANNELS_PACKED:
+                    case CRSF_FRAMETYPE_RC_CHANNELS_PACKED_FULL_RANGE:
                         if (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) {
                             lastRcFrameTimeUs = currentTimeUs;
                             crsfFrameDone = true;
@@ -359,7 +360,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
 STATIC_UNIT_TESTED float crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
     UNUSED(rxRuntimeState);
-    /* conversion from RC value to PWM
+    /* conversion from RC value to PWM for standard frame data 
      *       RC     PWM
      * min  172 ->  988us
      * mid  992 -> 1500us
@@ -367,7 +368,21 @@ STATIC_UNIT_TESTED float crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, u
      * scale factor = (2012-988) / (1811-172) = 0.62477120195241
      * offset = 988 - 172 * 0.62477120195241 = 880.53935326418548
      */
-    return (0.62477120195241f * (float)crsfChannelData[chan]) + 881;
+
+    /*    * new conversion from RC value to PWM for full range data
+     *       RC     PWM
+     * min  0    -> 988us
+     *      24   -> 1000us
+     * mid  1024 -> 1500us
+     *      2024 -> 2000us
+     * max  2048 -> 2012us
+     */
+
+    if (crsfFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED_FULL_RANGE) {
+        return (0.5f * (float)crsfChannelData[chan]) + 988;
+    } else {
+        return (0.62477120195241f * (float)crsfChannelData[chan]) + 881;
+    }
 }
 
 void crsfRxWriteTelemetryData(const void *data, int len)
