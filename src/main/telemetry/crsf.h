@@ -47,3 +47,6 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart);
 void initCrsfMspBuffer(void);
 bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength);
 #endif
+#if defined(USE_CRSF_V3)
+void speedNegotiationProcess(uint32_t currentTime);
+#endif

@@ -116,10 +116,11 @@ uint32_t getCrsfDesireSpeed(void)
 void setCrsfDefaultSpeed(void)
 {
     crsfSpeed.hasPendingReply = false;
-    crsfSpeed.isNewSpeedValid = true;
+    crsfSpeed.isNewSpeedValid = false;
     crsfSpeed.confirmationTime = 0;
     crsfSpeed.index = BAUD_COUNT;
     isCrsfV3Running = false;
+    crsfRxUpdateBaudrate(getCrsfDesireSpeed());
 }
 #endif
 
@@ -395,6 +396,40 @@ static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart) {
 void crsfScheduleSpeedNegotiationResponse(void) {
     crsfSpeed.hasPendingReply = true;
     crsfSpeed.isNewSpeedValid = false;
+}
+
+void speedNegotiationProcess(uint32_t currentTime) {
+    if (crsfSpeed.hasPendingReply) {
+        bool found = crsfSpeed.index < BAUD_COUNT ? true : false;
+        sbuf_t crsfSpeedNegotiationBuf;
+        sbuf_t *dst = &crsfSpeedNegotiationBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameSpeedNegotiationResponse(dst, found);
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
+        crsfSpeed.hasPendingReply = false;
+        crsfSpeed.isNewSpeedValid = true;
+        crsfSpeed.confirmationTime = currentTime;
+        return;
+    } else if (crsfSpeed.isNewSpeedValid) {
+        if (currentTime - crsfSpeed.confirmationTime >= 4000) {
+            // delay 4ms before applying the new baudrate
+            crsfRxUpdateBaudrate(getCrsfDesireSpeed());
+            crsfSpeed.isNewSpeedValid = false;
+            isCrsfV3Running = true;
+            return;
+        }
+    }
+
+    // to notify the RX to fall back by sedning device info frame if telemetry is disabled
+    if (!featureIsEnabled(FEATURE_TELEMETRY) && getCrsfDesireSpeed() == CRSF_BAUDRATE) {
+        sbuf_t crsfPayloadBuf;
+        sbuf_t *dst = &crsfPayloadBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameDeviceInfo(dst);
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
+    }
 }
 #endif
 
@@ -722,30 +757,6 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         }
         crsfLastCycleTime = currentTimeUs;
         return;
-    }
-#endif
-
-#if defined(USE_CRSF_V3)
-    if (crsfSpeed.hasPendingReply) {
-        bool found = crsfSpeed.index < BAUD_COUNT ? true : false;
-        sbuf_t crsfSpeedNegotiationBuf;
-        sbuf_t *dst = &crsfSpeedNegotiationBuf;
-        crsfInitializeFrame(dst);
-        crsfFrameSpeedNegotiationResponse(dst, found);
-        crsfFinalize(dst);
-        crsfSpeed.hasPendingReply = false;
-        crsfSpeed.isNewSpeedValid = true;
-        crsfSpeed.confirmationTime = currentTimeUs;
-        crsfLastCycleTime = currentTimeUs;
-        return;
-    } else if (crsfSpeed.isNewSpeedValid) {
-        if (currentTimeUs - crsfSpeed.confirmationTime >= 10000) {
-            // delay 10ms before applying the new baudrate
-            crsfRxUpdateBaudrate(getCrsfDesireSpeed());
-            crsfSpeed.isNewSpeedValid = false;
-            isCrsfV3Running = true;
-            return;
-        }
     }
 #endif
 

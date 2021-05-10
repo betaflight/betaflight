@@ -347,7 +347,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 
     static uint8_t crsfFramePosition = 0;
 #if defined(USE_CRSF_V3)
-    static uint32_t crsfFrameErrorCnt = 0;
+    static uint8_t crsfFrameErrorCnt = 0;
 #endif
     const timeUs_t currentTimeUs = microsISR();
 

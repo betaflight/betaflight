@@ -94,6 +94,7 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/crsf.h"
 
 #ifdef USE_BST
 #include "i2c_bst.h"
@@ -266,6 +267,13 @@ static void taskCameraControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_CRSF_V3
+static void taskSpeedNegotiation(uint32_t currentTime)
+{
+    speedNegotiationProcess(currentTime);
+}
+#endif
+
 void tasksInit(void)
 {
     schedulerInit();
@@ -409,6 +417,10 @@ void tasksInit(void)
 #ifdef USE_RCDEVICE
     setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
 #endif
+
+#ifdef USE_CRSF_V3
+    setTaskEnabled(TASK_SPEED_NEGOTIATION, true);
+#endif
 }
 
 #if defined(USE_TASK_STATISTICS)
@@ -526,6 +538,10 @@ task_t tasks[TASK_COUNT] = {
 
 #ifdef USE_RANGEFINDER
     [TASK_RANGEFINDER] = DEFINE_TASK("RANGEFINDER", NULL, NULL, taskUpdateRangefinder, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE),
+#endif
+
+#ifdef USE_CRSF_V3
+    [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, taskSpeedNegotiation, TASK_PERIOD_HZ(100), TASK_PRIORITY_IDLE),
 #endif
 };
 
