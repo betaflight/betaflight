@@ -380,8 +380,9 @@ static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
 {
 
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
-    for (uint8_t ii = 0; ii < BAUD_COUNT; ++ii) {
-        if(newBaudrate == baudRates[ii]) {
+    uint8_t ii = 0;
+    for (ii = 0; ii < BAUD_COUNT; ++ii) {
+        if (newBaudrate == baudRates[ii]) {
             break;
         }
     }
