@@ -98,11 +98,6 @@ typedef struct {
 } crsfSpeedControl_s;
 crsfSpeedControl_s crsfSpeed = {0};
 
-bool checkCrsfV3Running(void)
-{
-    return isCrsfV3Running;
-}
-
 bool checkCrsfCustomizedSpeed(void)
 {
     return crsfSpeed.index < BAUD_COUNT ? true : false;
@@ -365,7 +360,8 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 
 
 #if defined(USE_CRSF_V3)
-void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply) {
+void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
+{
 
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
@@ -380,11 +376,11 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply) {
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
-static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart) {
+static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
+{
 
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
-    uint8_t ii = 0;
-    for (ii = 0; ii < BAUD_COUNT; ++ii) {
+    for (uint8_t ii = 0; ii < BAUD_COUNT; ++ii) {
         if(newBaudrate == baudRates[ii]) {
             break;
         }
@@ -393,12 +389,14 @@ static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart) {
     crsfSpeed.index = ii;
 }
 
-void crsfScheduleSpeedNegotiationResponse(void) {
+void crsfScheduleSpeedNegotiationResponse(void)
+{
     crsfSpeed.hasPendingReply = true;
     crsfSpeed.isNewSpeedValid = false;
 }
 
-void speedNegotiationProcess(uint32_t currentTime) {
+void speedNegotiationProcess(uint32_t currentTime)
+{
     if (crsfSpeed.hasPendingReply) {
         bool found = crsfSpeed.index < BAUD_COUNT ? true : false;
         sbuf_t crsfSpeedNegotiationBuf;
@@ -670,7 +668,8 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
 #endif
 
 #if defined(USE_CRSF_V3)
-void crsfProcessCommand(uint8_t *frameStart) {
+void crsfProcessCommand(uint8_t *frameStart)
+{
     uint8_t cmd = *frameStart;
     uint8_t subCmd = frameStart[1];
     switch (cmd) {

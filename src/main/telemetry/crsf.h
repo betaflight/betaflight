@@ -31,7 +31,6 @@
 #define CRSF_MSP_TX_BUF_SIZE 128
 
 void initCrsfTelemetry(void);
-bool checkCrsfV3Running(void);
 uint32_t getCrsfDesireSpeed(void);
 void setCrsfDefaultSpeed(void);
 bool checkCrsfTelemetryState(void);
