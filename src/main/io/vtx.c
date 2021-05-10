@@ -67,9 +67,9 @@ void pgResetFn_vtxSettingsConfig(vtxSettingsConfig_t *vtxSettingsConfig)
 }
 
 typedef enum {
-    VTX_PARAM_POWER = 0,
+    VTX_PARAM_PITMODE = 0,
     VTX_PARAM_BANDCHAN,
-    VTX_PARAM_PITMODE,
+    VTX_PARAM_POWER,
     VTX_PARAM_CONFIRM,
     VTX_PARAM_COUNT
 } vtxScheduleParams_e;
