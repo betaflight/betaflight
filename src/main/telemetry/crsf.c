@@ -96,7 +96,8 @@ typedef struct {
     uint8_t index;
     uint32_t confirmationTime;
 } crsfSpeedControl_s;
-crsfSpeedControl_s crsfSpeed = {0};
+
+static crsfSpeedControl_s crsfSpeed = {0};
 
 bool checkCrsfCustomizedSpeed(void)
 {
