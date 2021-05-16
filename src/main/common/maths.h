@@ -34,8 +34,6 @@
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
 #define M_EULERf    2.71828182845904523536f
-#define M_SQRT2f    1.41421356237309504880f
-#define M_LN2f      0.69314718055994530942f
 
 #define RAD    (M_PIf / 180.0f)
 #define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
