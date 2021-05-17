@@ -1847,7 +1847,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #else
 
 #if defined(USE_TURN_THROTTLE_BOOST)
-    sbufWriteU8(dst, currentPidProfile->turn_throttle_boost_factor);
+        sbufWriteU8(dst, currentPidProfile->turn_throttle_boost_factor);
 #endif
         sbufWriteU8(dst, 0);
 #endif

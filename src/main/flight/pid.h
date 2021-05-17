@@ -400,7 +400,6 @@ extern pidAxisData_t pidData[3];
 extern uint32_t targetPidLooptime;
 
 extern float throttleBoost;
-// extern float turn_throttle_boost_factor;
 extern pt1Filter_t throttleLpf;
 
 void pidResetIterm(void);
