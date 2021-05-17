@@ -308,6 +308,7 @@ static const char *mcuTypeNames[] = {
     "H743 (Rev.V)",
     "H7A3",
     "H723/H725",
+    "G474",
 };
 
 static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
@@ -4664,7 +4665,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
-const char *getMcuTypeById(mcuTypeId_e id)
+static const char *getMcuTypeById(mcuTypeId_e id)
 {
     if (id < MCU_TYPE_UNKNOWN) {
         return mcuTypeNames[id];
