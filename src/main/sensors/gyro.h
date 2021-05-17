@@ -166,11 +166,11 @@ enum {
 };
 
 typedef struct gyroConfig_s {
-    uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
-    uint8_t  gyro_hardware_lpf;                // gyro DLPF setting
+    uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t gyro_hardware_lpf;                // gyro DLPF setting
 
-    uint8_t  gyro_high_fsr;
-    uint8_t  gyro_to_use;
+    uint8_t gyro_high_fsr;
+    uint8_t gyro_to_use;
 
     uint16_t gyro_lowpass_hz;
     uint16_t gyro_lowpass2_hz;
@@ -179,15 +179,15 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
-    int16_t  gyro_offset_yaw;
-    uint8_t  checkOverflow;
+    int16_t gyro_offset_yaw;
+    uint8_t checkOverflow;
 
     // Lowpass primary/secondary
-    uint8_t  gyro_lowpass_type;
-    uint8_t  gyro_lowpass2_type;
+    uint8_t gyro_lowpass_type;
+    uint8_t gyro_lowpass2_type;
 
-    uint8_t  yaw_spin_recovery;
-    int16_t  yaw_spin_threshold;
+    uint8_t yaw_spin_recovery;
+    int16_t yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;   // Gyro calibration duration in 1/100 second
 
@@ -195,16 +195,16 @@ typedef struct gyroConfig_s {
     uint16_t dyn_lpf_gyro_max_hz;
 
     uint16_t dyn_notch_max_hz;
-    uint8_t  dyn_notch_count;
+    uint8_t dyn_notch_count;
     uint16_t dyn_notch_bandwidth_hz;
     uint16_t dyn_notch_min_hz;
 
-    uint8_t  gyro_filter_debug_axis;
+    uint8_t gyro_filter_debug_axis;
 
     uint8_t gyrosDetected; // What gyros should detection be attempted for on startup. Automatically set on first startup.
     uint8_t dyn_lpf_curve_expo; // set the curve for dynamic gyro lowpass filter
-    uint8_t  simplified_gyro_filter;
-    uint8_t  simplified_gyro_filter_multiplier;
+    uint8_t simplified_gyro_filter;
+    uint8_t simplified_gyro_filter_multiplier;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

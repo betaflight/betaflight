@@ -40,10 +40,10 @@
 
 #define BMI270_FIFO_FRAME_SIZE 6
 
-#define BMI270_CONFIG_SIZE 8192
+#define BMI270_CONFIG_SIZE 328
 
 // Declaration for the device config (microcode) that must be uploaded to the sensor
-extern const uint8_t bmi270_config_file[BMI270_CONFIG_SIZE];
+extern const uint8_t bmi270_maximum_fifo_config_file[BMI270_CONFIG_SIZE];
 
 #define BMI270_CHIP_ID 0x24
 
@@ -174,7 +174,7 @@ static void bmi270UploadConfig(const busDevice_t *bus)
     // Transfer the config file
     IOLo(bus->busdev_u.spi.csnPin);
     spiTransferByte(bus->busdev_u.spi.instance, BMI270_REG_INIT_DATA);
-    spiTransfer(bus->busdev_u.spi.instance, bmi270_config_file, NULL, sizeof(bmi270_config_file));
+    spiTransfer(bus->busdev_u.spi.instance, bmi270_maximum_fifo_config_file, NULL, sizeof(bmi270_maximum_fifo_config_file));
     IOHi(bus->busdev_u.spi.csnPin);
 
     delay(10);
