@@ -548,11 +548,11 @@ TEST(pidControllerTest, testFeedForward) {
     EXPECT_NEAR(515.26, pidData[FD_PITCH].F, calculateTolerance(515.26));
     EXPECT_NEAR(515.26, pidData[FD_YAW].F, calculateTolerance(515.26));
 
-     setStickPosition(FD_ROLL, 0.0f);
-     setStickPosition(FD_PITCH, 0.0f);
-     setStickPosition(FD_YAW, 0.0f);
+    setStickPosition(FD_ROLL, 0.0f);
+    setStickPosition(FD_PITCH, 0.0f);
+    setStickPosition(FD_YAW, 0.0f);
 
-     for (int loop = 0; loop <= 15; loop++) {
+    for (int loop = 0; loop <= 15; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         pidController(pidProfile, currentTestTime());
     }

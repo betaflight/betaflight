@@ -1231,15 +1231,27 @@ void dynLpfDTermUpdate(float throttle)
         } else {
             cutoffFreq = fmax(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
         }
-
-         if (pidRuntime.dynLpfFilter == DYN_LPF_PT1) {
+        switch (pidRuntime.dynLpfFilter) {
+        case DYN_LPF_PT1:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
-        } else if (pidRuntime.dynLpfFilter == DYN_LPF_BIQUAD) {
+            break;
+        case DYN_LPF_BIQUAD:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
             }
+            break;
+        case DYN_LPF_PT2:
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pt2FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));
+            }
+            break;
+        case DYN_LPF_PT3:
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pt3FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
+            }
+            break;
         }
     }
 }

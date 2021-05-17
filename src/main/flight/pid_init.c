@@ -110,7 +110,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 
-    if (dterm_lowpass_hz > 0 && dterm_lowpass_hz < pidFrequencyNyquist) {
+    if (dterm_lowpass_hz > 0) {
         switch (pidProfile->dterm_filter_type) {
         case FILTER_PT1:
             pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
@@ -119,13 +119,29 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_BIQUAD:
+            if (pidProfile->dterm_lowpass_hz < pidFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
+                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
 #else
-            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApply;
+                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApply;
 #endif
+                for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                    biquadFilterInitLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, dterm_lowpass_hz, targetPidLooptime);
+                }
+            } else {
+                pidRuntime.dtermLowpassApplyFn = nullFilterApply;
+            }
+            break;
+        case FILTER_PT2:
+            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt2FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                biquadFilterInitLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, dterm_lowpass_hz, targetPidLooptime);
+                pt2FilterInit(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(dterm_lowpass_hz, pidRuntime.dT));
+            }
+            break;
+        case FILTER_PT3:
+            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt3FilterApply;
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                pt3FilterInit(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(dterm_lowpass_hz, pidRuntime.dT));
             }
             break;
         default:
@@ -137,9 +153,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     //2nd Dterm Lowpass Filter
-    if (pidProfile->dterm_lowpass2_hz == 0 || pidProfile->dterm_lowpass2_hz > pidFrequencyNyquist) {
-        pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
-    } else {
+    if (pidProfile->dterm_lowpass2_hz > 0) {
         switch (pidProfile->dterm_filter2_type) {
         case FILTER_PT1:
             pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
@@ -148,18 +162,36 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_BIQUAD:
-            pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+            if (pidProfile->dterm_lowpass2_hz < pidFrequencyNyquist) {
+                pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
+                for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                    biquadFilterInitLPF(&pidRuntime.dtermLowpass2[axis].biquadFilter, pidProfile->dterm_lowpass2_hz, targetPidLooptime);
+                }
+            } else {
+                pidRuntime.dtermLowpassApplyFn = nullFilterApply;
+            }
+            break;
+        case FILTER_PT2:
+            pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt2FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                biquadFilterInitLPF(&pidRuntime.dtermLowpass2[axis].biquadFilter, pidProfile->dterm_lowpass2_hz, targetPidLooptime);
+                pt2FilterInit(&pidRuntime.dtermLowpass2[axis].pt2Filter, pt2FilterGain(pidProfile->dterm_lowpass2_hz, pidRuntime.dT));
+            }
+            break;
+        case FILTER_PT3:
+            pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt3FilterApply;
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                pt3FilterInit(&pidRuntime.dtermLowpass2[axis].pt3Filter, pt3FilterGain(pidProfile->dterm_lowpass2_hz, pidRuntime.dT));
             }
             break;
         default:
             pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
             break;
         }
+    } else {
+        pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
     }
 
-    if (pidProfile->yaw_lowpass_hz == 0 || pidProfile->yaw_lowpass_hz > pidFrequencyNyquist) {
+    if (pidProfile->yaw_lowpass_hz == 0) {
         pidRuntime.ptermYawLowpassApplyFn = nullFilterApply;
     } else {
         pidRuntime.ptermYawLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
@@ -332,6 +364,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
             break;
         case FILTER_BIQUAD:
             pidRuntime.dynLpfFilter = DYN_LPF_BIQUAD;
+            break;
+        case FILTER_PT2:
+            pidRuntime.dynLpfFilter = DYN_LPF_PT2;
+            break;
+        case FILTER_PT3:
+            pidRuntime.dynLpfFilter = DYN_LPF_PT3;
             break;
         default:
             pidRuntime.dynLpfFilter = DYN_LPF_NONE;

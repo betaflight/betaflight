@@ -253,6 +253,8 @@ typedef struct pidAxisData_s {
 typedef union dtermLowpass_u {
     pt1Filter_t pt1Filter;
     biquadFilter_t biquadFilter;
+    pt2Filter_t pt2Filter;
+    pt3Filter_t pt3Filter;
 } dtermLowpass_t;
 
 typedef struct pidCoefficient_s {
