@@ -112,6 +112,8 @@ static baroState_t  baroState;
 #define busReadBuf busReadRegisterBuffer
 #define busWrite   busWriteRegister
 
+static uint8_t buf[6];
+
 // Helper functions
 static uint8_t registerRead(busDevice_t * busDev, uint8_t reg)
 {
@@ -165,8 +167,16 @@ static bool deviceConfigure(busDevice_t * busDev)
 
     // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21) from the Calibration Coefficient register.
     //   Note: The coefficients read from the coefficient register are 2's complement numbers.
-    uint8_t coef[18];
-    if (!busReadBuf(busDev, DPS310_REG_COEF, coef, sizeof(coef))) {
+
+    // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
+#define COEFFICIENT_LENGTH 18
+#define READ_LENGTH (COEFFICIENT_LENGTH / 2)
+
+    uint8_t coef[COEFFICIENT_LENGTH];
+    if (!busReadBuf(busDev, DPS310_REG_COEF, coef, READ_LENGTH)) {
+        return false;
+    }
+     if (!busReadBuf(busDev, DPS310_REG_COEF + READ_LENGTH, coef + READ_LENGTH, COEFFICIENT_LENGTH - READ_LENGTH)) {
         return false;
     }
 
@@ -213,13 +223,23 @@ static bool deviceConfigure(busDevice_t * busDev)
     return true;
 }
 
-static bool deviceReadMeasurement(baroDev_t *baro)
+static bool dps310ReadUP(baroDev_t *baro)
 {
-    // 1. Check if pressure is ready
-    bool pressure_ready = registerRead(&baro->busdev, DPS310_REG_MEAS_CFG) & DPS310_MEAS_CFG_PRS_RDY;
-    if (!pressure_ready) {
+    if (busBusy(&baro->busdev, NULL)) {
         return false;
     }
+
+    // 1. Kick off read
+    // No need to poll for data ready as the conversion rate is 32Hz and this is sampling at 20Hz
+    // Read PSR_B2, PSR_B1, PSR_B0, TMP_B2, TMP_B1, TMP_B0
+     busReadRegisterBufferStart(&baro->busdev, DPS310_REG_PSR_B2, buf, 6);
+
+    return true;
+}
+
+static bool dps310GetUP(baroDev_t *baro)
+{
+    UNUSED(baro);
 
     // 2. Choose scaling factors kT (for temperature) and kP (for pressure) based on the chosen precision rate.
     // The scaling factors are listed in Table 9.
@@ -227,11 +247,6 @@ static bool deviceReadMeasurement(baroDev_t *baro)
     static float kP = 253952; // 16 times (Standard)
 
     // 3. Read the pressure and temperature result from the registers
-    // Read PSR_B2, PSR_B1, PSR_B0, TMP_B2, TMP_B1, TMP_B0
-    uint8_t buf[6];
-    if (!busReadBuf(&baro->busdev, DPS310_REG_PSR_B2, buf, 6)) {
-        return false;
-    }
 
     const int32_t Praw = getTwosComplement((buf[0] << 16) + (buf[1] << 8) + buf[2], 24);
     const int32_t Traw = getTwosComplement((buf[3] << 16) + (buf[4] << 8) + buf[5], 24);
@@ -313,13 +328,6 @@ static void dps310StartUP(baroDev_t *baro)
     UNUSED(baro);
 }
 
-static bool dps310ReadUP(baroDev_t *baro)
-{
-    UNUSED(baro);
-
-    return true;
-}
-
 static void busDeviceInit(busDevice_t *busdev, resourceOwner_e owner)
 {
 #ifdef USE_BARO_SPI_DPS310
@@ -378,17 +386,15 @@ bool baroDPS310Detect(baroDev_t *baro)
 
     busDeviceRegister(busdev);
 
-    const uint32_t baroDelay = 1000000 / 32 / 2;      // twice the sample rate to capture all new data
-
     baro->ut_delay = 0;
     baro->start_ut = dps310StartUT;
     baro->read_ut = dps310ReadUT;
     baro->get_ut = dps310GetUT;
 
-    baro->up_delay = baroDelay;
+    baro->up_delay = 45000; // 45ms delay plus 5 1ms cycles 50ms
     baro->start_up = dps310StartUP;
     baro->read_up = dps310ReadUP;
-    baro->get_up = deviceReadMeasurement;
+    baro->get_up = dps310GetUP;
 
     baro->calculate = deviceCalculate;
 

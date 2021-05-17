@@ -158,22 +158,55 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 }
 #endif
 
+static enum {
+    CHECK, PROCESS, MODES, UPDATE
+} rxState = CHECK;
+
+bool taskUpdateRxMainInProgress()
+{
+    return (rxState != CHECK);
+}
+
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    if (!processRx(currentTimeUs)) {
-        return;
-    }
+    switch (rxState) {
+    default:
+    case CHECK:
+        ignoreTaskTime();
+        rxState = PROCESS;
+        break;
 
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-    updateArmingStatus();
+    case PROCESS:
+        ignoreTaskTime();
+        if (!processRx(currentTimeUs)) {
+            rxState = CHECK;
+            
+            break;
+        }
+        rxState = MODES;
+        break;
+
+    case MODES:
+        processRxModes(currentTimeUs);
+        rxState = UPDATE;
+        break;
+
+    case UPDATE:
+        ignoreTaskTime();
+        // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+        updateRcCommands();
+        updateArmingStatus();
 
 #ifdef USE_USB_CDC_HID
-    if (!ARMING_FLAG(ARMED)) {
-        sendRcDataToHid();
-    }
+        if (!ARMING_FLAG(ARMED)) {
+            sendRcDataToHid();
+        }
 #endif
+        rxState = CHECK;
+        break;
+    }
 }
+
 
 #ifdef USE_BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)

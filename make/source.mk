@@ -226,6 +226,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
+            common/sdft.c \
             common/typeconversion.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu3050.c \
@@ -397,16 +398,6 @@ ifneq ($(DSP_LIB),)
 
 INCLUDE_DIRS += $(DSP_LIB)/Include
 
-SRC += $(DSP_LIB)/Source/BasicMathFunctions/arm_mult_f32.c
-SRC += $(DSP_LIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
-SRC += $(DSP_LIB)/Source/TransformFunctions/arm_cfft_f32.c
-SRC += $(DSP_LIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
-SRC += $(DSP_LIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c
-SRC += $(DSP_LIB)/Source/CommonTables/arm_common_tables.c
-
-SRC += $(DSP_LIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
-SRC += $(DSP_LIB)/Source/StatisticsFunctions/arm_max_f32.c
-
 SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
 endif
 
@@ -456,3 +447,12 @@ endif
 
 # Search path and source files for the ST stdperiph library
 VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
+
+# Search path and source files for the Open Location Code library
+OLC_DIR = $(ROOT)/lib/main/google/olc
+
+ifneq ($(OLC_DIR),)
+INCLUDE_DIRS += $(OLC_DIR)
+SRC += $(OLC_DIR)/olc.c
+SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
+endif
