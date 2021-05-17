@@ -264,7 +264,7 @@ void gyroInitFilters(void)
     dynLpfFilterInit();
 #endif
 #ifdef USE_GYRO_DATA_ANALYSE
-    gyroDataAnalyseStateInit(&gyro.gyroAnalyseState, gyro.targetLooptime);
+    gyroDataAnalyseInit(&gyro.gyroAnalyseState, gyro.targetLooptime);
 #endif
 }
 
