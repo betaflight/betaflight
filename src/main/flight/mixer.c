@@ -594,6 +594,11 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_TURN_THROTTLE_BOOST
+    //Should do throttle * getRcDeflectinAbs...
+    throttle = constrainf(throttle + getRcDeflectionAbs(FD_ROLL) * 50 * 0.01, 0.0, 1.0);
+#endif
+
     motorMixRange = motorMixMax - motorMixMin;
     if (mixerConfig()->mixer_type > MIXER_LEGACY) {
         applyMixerAdjustmentLinear(motorMix, airmodeEnabled);

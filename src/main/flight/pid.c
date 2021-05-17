@@ -88,6 +88,10 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
+#if defined(USE_TURN_THROTTLE_BOOST)
+FAST_DATA_ZERO_INIT float turn_throttle_boost_factor;
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
 #if defined(STM32F1)
@@ -161,6 +165,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermLimit = 400,
         .throttle_boost = 5,
         .throttle_boost_cutoff = 15,
+        .turn_throttle_boost_factor = 0,
         .iterm_rotation = false,
         .iterm_relax = ITERM_RELAX_RP,
         .iterm_relax_cutoff = ITERM_RELAX_CUTOFF_DEFAULT,
@@ -803,6 +808,9 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
+#ifdef USE_INTERPOLATED_SP
+    static FAST_DATA_ZERO_INIT uint32_t lastFrameNumber;
+#endif
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
 #if defined(USE_ACC)

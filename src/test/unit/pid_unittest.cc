@@ -144,6 +144,7 @@ void setDefaultTestSettings(void) {
     pidProfile->itermLimit = 150;
     pidProfile->throttle_boost = 0;
     pidProfile->throttle_boost_cutoff = 15;
+    pidProfile->turn_throttle_boost_factor = 0;
     pidProfile->iterm_rotation = false;
     pidProfile->iterm_relax = ITERM_RELAX_OFF,
     pidProfile->iterm_relax_cutoff = 11,
