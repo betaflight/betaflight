@@ -88,9 +88,9 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-#if defined(USE_TURN_THROTTLE_BOOST)
-FAST_DATA_ZERO_INIT float turn_throttle_boost_factor;
-#endif
+// #if defined(USE_TURN_THROTTLE_BOOST)
+// uint8_t turn_throttle_boost_factor;
+// #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
 
@@ -165,7 +165,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermLimit = 400,
         .throttle_boost = 5,
         .throttle_boost_cutoff = 15,
-        .turn_throttle_boost_factor = 0,
         .iterm_rotation = false,
         .iterm_relax = ITERM_RELAX_RP,
         .iterm_relax_cutoff = ITERM_RELAX_CUTOFF_DEFAULT,

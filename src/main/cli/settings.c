@@ -1101,9 +1101,8 @@ const clivalue_t valueTable[] = {
     { "throttle_boost",             VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, throttle_boost) },
     { "throttle_boost_cutoff",      VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 5, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, throttle_boost_cutoff) },
 #endif
-
 #if defined(USE_TURN_THROTTLE_BOOST)
-    { "turn_throttle_boost",             VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, turn_throttle_boost_factor) },
+    { "turn_throttle_boost",        VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 70 }, PG_PID_PROFILE, offsetof(pidProfile_t, turn_throttle_boost_factor) },
 #endif
 
 #ifdef USE_ACRO_TRAINER
