@@ -599,10 +599,11 @@ void SystemClock_Config(void)
 #ifdef USE_SDCARD_SDIO
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
 
-#if (HSE_VALUE != 8000000)
-#error Unsupported external oscillator speed.  The calculations below are based on 8Mhz resonators
+#  if (HSE_VALUE != 8000000)
+#    error Unsupported external oscillator speed.  The calculations below are based on 8Mhz resonators
 // if you are seeing this, then calculate the PLL2 settings for your resonator and add support as required.
-#else
+#  else
+#    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx)
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
     RCC_PeriphClkInit.PLL2.PLL2N = 500;
     RCC_PeriphClkInit.PLL2.PLL2P = 2; // 500Mhz
@@ -613,8 +614,10 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.PLL2.PLL2FRACN = 0;
     RCC_PeriphClkInit.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL2;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
-#endif // 8Mhz HSE_VALUE
-
+#    else
+#      error Unknown MCU type
+#    endif
+#  endif
 #endif
 
     // Configure MCO clocks for clock test/verification
