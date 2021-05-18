@@ -663,7 +663,7 @@ void SystemClock_Config(void)
 #    endif
     RCC_PeriphClkInit.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL2;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
-#  endif
+#  endif // 8Mhz HSE_VALUE
 #endif
 
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
