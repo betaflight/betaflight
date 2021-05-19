@@ -36,3 +36,7 @@ TARGET_SRC += \
             drivers/compass/compass_hmc5883l.c \
             drivers/compass/compass_qmc5883l.c \
             drivers/barometer/barometer_bmp388.c \
+            drivers/rx/rx_sx1280.c \
+            drivers/rx/rx_sx127x.c \
+            rx/expresslrs_common.c \
+            rx/expresslrs.c \

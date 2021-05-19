@@ -129,18 +129,18 @@
 // SX1280 on SPI2
 
 #define USE_SPI_DEVICE_2
-#define SPI2_SCK_PIN            PB13
+#define SPI2_SCK_PIN            PD3
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 #define SPI2_NSS_PIN            PB12
 
-#define SX1280_BUSY             PC7 // TIM8_CH2
-#define SX1280_DIO1             PC6 // TIM8_CH1
-#define SX1280_DIO2             PD4 // EXTI4
-#define SX1280_DIO3             NONE
+#define SX1280_BUSY_PIN         PC7 // TIM8_CH2
+#define SX1280_DIO1_PIN         PC6 // TIM8_CH1
+#define SX1280_DIO2_PIN         PD4 // EXTI4
+#define SX1280_DIO3_PIN         NONE
 // RevA has 0ohm jumper on R26.  Delete schematic connection and support if SX1280 doesn't need NRESET to free a pin.
-// The idea is that NRESET should not be needed at all.
-#define SX1280_NRESET           PD10
+// The idea is that NRESET should not be needed at all.  Production boards probably won't have jumper installed.
+#define SX1280_NRESET_PIN       PD10
 
 // ICM42605/ICM42688P/LSM6DSO/LSM6DSO32/BMI270/LSM6DSRX on SPI3
 
@@ -288,6 +288,25 @@
 #define SPRACING_PIXEL_OSD_PIXEL_DEBUG_2_PIN            PE6  // TIM15_CH2 - Spare
 #define SPRACING_PIXEL_OSD_PIXEL_GATING_DEBUG_PIN       PB0 // TIM1_CH2N // actual gating is on CH4
 #define SPRACING_PIXEL_OSD_PIXEL_BLANKING_DEBUG_PIN     PB1 // TIM1_CH3N // actual blanking is on CH5
+
+#define USE_RX_SPI
+#define USE_RX_EXPRESSLRS
+#define USE_RX_SX1280
+
+#define RX_SPI_INSTANCE                                 SPI2
+#define RX_NSS_PIN                                      SPI2_NSS_PIN
+#define RX_SPI_EXTI_PIN                                 SX1280_DIO1_PIN // ?
+//#define RX_SPI_BIND_PIN                                 ?
+//#define RX_SPI_LED_PIN                                  ?
+
+#define RX_EXPRESSLRS_SPI_RESET_PIN                     SX1280_NRESET_PIN
+#define RX_EXPRESSLRS_SPI_BUSY_PIN                      SX1280_BUSY_PIN
+
+// These are connected, DIO1 is on a timer with a spare Capture Compare channel.  DIO2 is on a free EXTI capable pin.
+// These defines are not currently used anywhere in the code.
+//#define RX_EXPRESSLRS_SPI_DIO1_PIN                      SX1280_DIO1_PIN
+//#define RX_EXPRESSLRS_SPI_DIO2_PIN                      SX1280_DIO2_PIN
+
 
 // Disable OCTOSPI pins PB2/CLK, PB6/NCS, PD11/IO0, PD12/IO1, PD13/IO3, PE2/IO2
 // PE7/IO4, PE8/IO5, PE9/IO6, PE10/IO7
