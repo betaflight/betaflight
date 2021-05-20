@@ -47,6 +47,7 @@
 #include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
@@ -111,6 +112,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "osd/osd_warnings.h"
 
 #include "pg/beeper.h"
 #include "pg/board.h"
@@ -1201,6 +1203,37 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         }
         break;
 
+#ifdef USE_VTX_COMMON
+    case MSP2_GET_VTX_DEVICE_STATUS:
+        {
+            const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            vtxCommonSerializeDeviceStatus(vtxDevice, dst);
+        }
+        break;
+#endif
+
+#ifdef USE_OSD
+    case MSP2_GET_OSD_WARNINGS:
+        {
+            bool isBlinking;
+            uint8_t displayAttr;
+            char warningsBuffer[OSD_FORMAT_MESSAGE_BUFFER_SIZE];
+
+            renderOsdWarning(warningsBuffer, &isBlinking, &displayAttr);
+            const uint8_t warningsLen = strlen(warningsBuffer);
+
+            if (isBlinking) {
+                displayAttr |= DISPLAYPORT_ATTR_BLINK;
+            }
+            sbufWriteU8(dst, displayAttr);  // see displayPortAttr_e
+            sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
+            for (unsigned i = 0; i < warningsLen; i++) {
+                sbufWriteU8(dst, warningsBuffer[i]);
+            }
+            break;
+        }
+#endif
+
     case MSP_RC:
         for (int i = 0; i < rxRuntimeState.channelCount; i++) {
             sbufWriteU16(dst, rcData[i]);
@@ -1418,6 +1451,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->descendRate);
         sbufWriteU8(dst, gpsRescueConfig()->allowArmingWithoutFix);
         sbufWriteU8(dst, gpsRescueConfig()->altitudeMode);
+        // Added in API version 1.44
+        sbufWriteU16(dst, gpsRescueConfig()->minRescueDth);
         break;
 
     case MSP_GPS_RESCUE_PIDS:
@@ -1737,9 +1772,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #endif
         // Added in MSP API 1.42
 #if defined(USE_GYRO_DATA_ANALYSE)
-        sbufWriteU8(dst, 0); // DEPRECATED 1.43: dyn_notch_range
-        sbufWriteU8(dst, gyroConfig()->dyn_notch_width_percent);
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_q);
+        sbufWriteU8(dst, 0);  // DEPRECATED 1.43: dyn_notch_range
+        sbufWriteU8(dst, 0);  // DEPRECATED 1.44: dyn_notch_width_percent
+        sbufWriteU16(dst, 0); // DEPRECATED 1.44: dyn_notch_q
         sbufWriteU16(dst, gyroConfig()->dyn_notch_min_hz);
 #else
         sbufWriteU8(dst, 0);
@@ -1765,6 +1800,13 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->dyn_lpf_curve_expo);
 #else
         sbufWriteU8(dst, 0);
+#endif
+#if defined(USE_GYRO_DATA_ANALYSE)
+        sbufWriteU8(dst, gyroConfig()->dyn_notch_count);
+        sbufWriteU16(dst, gyroConfig()->dyn_notch_bandwidth_hz);
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
 #endif
 
         break;
@@ -2087,6 +2129,28 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         break;
 #endif // USE_VTX_TABLE
 
+#ifdef USE_SIMPLIFIED_TUNING
+    // Added in MSP API 1.44
+    case MSP_SIMPLIFIED_TUNING:
+        {
+            sbufWriteU8(dst, currentPidProfile->simplified_pids_mode);
+            sbufWriteU8(dst, currentPidProfile->simplified_master_multiplier);
+            sbufWriteU8(dst, currentPidProfile->simplified_roll_pitch_ratio);
+            sbufWriteU8(dst, currentPidProfile->simplified_i_gain);
+            sbufWriteU8(dst, currentPidProfile->simplified_pd_ratio);
+            sbufWriteU8(dst, currentPidProfile->simplified_pd_gain);
+            sbufWriteU8(dst, currentPidProfile->simplified_dmin_ratio);
+            sbufWriteU8(dst, currentPidProfile->simplified_ff_gain);
+
+            sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter);
+            sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter_multiplier);
+
+            sbufWriteU8(dst, gyroConfig()->simplified_gyro_filter);
+            sbufWriteU8(dst, gyroConfig()->simplified_gyro_filter_multiplier);
+        }
+        break;
+#endif
+
     case MSP_RESET_CONF:
         {
 #if defined(USE_CUSTOM_DEFAULTS)
@@ -2389,6 +2453,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gpsRescueConfigMutable()->allowArmingWithoutFix = sbufReadU8(src);
             gpsRescueConfigMutable()->altitudeMode = sbufReadU8(src);
         }
+        if (sbufBytesRemaining(src) >= 2) {
+            // Added in API version 1.44
+            gpsRescueConfigMutable()->minRescueDth = sbufReadU16(src);
+        }
         break;
 
     case MSP_SET_GPS_RESCUE_PIDS:
@@ -2580,9 +2648,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 8) {
             // Added in MSP API 1.42
 #if defined(USE_GYRO_DATA_ANALYSE)
-            sbufReadU8(src); // DEPRECATED: dyn_notch_range
-            gyroConfigMutable()->dyn_notch_width_percent = sbufReadU8(src);
-            gyroConfigMutable()->dyn_notch_q = sbufReadU16(src);
+            sbufReadU8(src); // DEPRECATED 1.43: dyn_notch_range
+            sbufReadU8(src); // DEPRECATED 1.44: dyn_notch_width_percent
+            sbufReadU16(src); // DEPRECATED 1.44: dyn_notch_q
             gyroConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
 #else
             sbufReadU8(src);
@@ -2598,7 +2666,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 1) {
+        if (sbufBytesRemaining(src) >= 2) {
 #if defined(USE_GYRO_DATA_ANALYSE)
             // Added in MSP API 1.43
             gyroConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
@@ -2606,12 +2674,19 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 1) {
+        if (sbufBytesRemaining(src) >= 4) {
             // Added in MSP API 1.44
 #if defined(USE_DYN_LPF)
             currentPidProfile->dyn_lpf_curve_expo = sbufReadU8(src);
 #else
             sbufReadU8(src);
+#endif
+#if defined(USE_GYRO_DATA_ANALYSE)
+            gyroConfigMutable()->dyn_notch_count = sbufReadU8(src);
+            gyroConfigMutable()->dyn_notch_bandwidth_hz = sbufReadU16(src);
+#else
+            sbufReadU8(src);
+            sbufReadU16(src);
 #endif
         }
 
@@ -3020,7 +3095,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 for (uint8_t i = 0; i < commandCount; i++) {
                     const uint8_t commandIndex = sbufReadU8(src);
                     dshotCommandWrite(motorIndex, getMotorCount(), commandIndex, commandType);
-                    delay(1);
                 }
 
                 if (DSHOT_CMD_TYPE_BLOCKING == commandType) {
@@ -3028,6 +3102,29 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 }
             }
         }
+        break;
+#endif
+
+#ifdef USE_SIMPLIFIED_TUNING
+    // Added in MSP API 1.44
+    case MSP_SET_SIMPLIFIED_TUNING:
+        currentPidProfile->simplified_pids_mode = sbufReadU8(src);
+        currentPidProfile->simplified_master_multiplier = sbufReadU8(src);
+        currentPidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
+        currentPidProfile->simplified_i_gain = sbufReadU8(src);
+        currentPidProfile->simplified_pd_ratio = sbufReadU8(src);
+        currentPidProfile->simplified_pd_gain = sbufReadU8(src);
+        currentPidProfile->simplified_dmin_ratio = sbufReadU8(src);
+        currentPidProfile->simplified_ff_gain = sbufReadU8(src);
+
+        currentPidProfile->simplified_dterm_filter = sbufReadU8(src);
+        currentPidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
+
+        gyroConfigMutable()->simplified_gyro_filter = sbufReadU8(src);
+        gyroConfigMutable()->simplified_gyro_filter_multiplier = sbufReadU8(src);
+
+        applySimplifiedTuning(currentPidProfile);
+
         break;
 #endif
 
@@ -3084,11 +3181,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
 #ifdef USE_GPS
     case MSP_SET_RAW_GPS:
-        if (sbufReadU8(src)) {
-            ENABLE_STATE(GPS_FIX);
-        } else {
-            DISABLE_STATE(GPS_FIX);
-        }
+        gpsSetFixState(sbufReadU8(src));
         gpsSol.numSat = sbufReadU8(src);
         gpsSol.llh.lat = sbufReadU32(src);
         gpsSol.llh.lon = sbufReadU32(src);

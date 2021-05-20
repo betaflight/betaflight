@@ -27,26 +27,27 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "blackbox/blackbox_io.h"
 
-    #include "common/time.h"
     #include "common/crc.h"
-    #include "common/utils.h"
     #include "common/printf.h"
     #include "common/streambuf.h"
+    #include "common/time.h"
+    #include "common/utils.h"
+
+    #include "config/config.h"
 
     #include "drivers/osd_symbols.h"
     #include "drivers/persistent.h"
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
-    #include "config/config.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
-    #include "flight/imu.h"
 
     #include "io/beeper.h"
     #include "io/gps.h"
@@ -54,6 +55,7 @@ extern "C" {
 
     #include "osd/osd.h"
     #include "osd/osd_elements.h"
+    #include "osd/osd_warnings.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -64,8 +66,10 @@ extern "C" {
     #include "sensors/battery.h"
 
     attitudeEulerAngles_t attitude;
+    float rMat[3][3];
+
     pidProfile_t *currentPidProfile;
-    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint8_t GPS_numSat;
     uint16_t GPS_distanceToHome;
     int16_t GPS_directionToHome;
@@ -441,6 +445,7 @@ extern "C" {
     bool areMotorsRunning(void){ return true; }
     bool pidOsdAntiGravityActive(void) { return false; }
     bool failsafeIsActive(void) { return false; }
+    bool gpsIsHealthy(void) { return true; }
     bool gpsRescueIsConfigured(void) { return false; }
     int8_t calculateThrottlePercent(void) { return 0; }
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
@@ -455,6 +460,7 @@ extern "C" {
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
     void pinioBoxTaskControl(void) { }
+    bool taskUpdateRxMainInProgress() { return true; }
 
     void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
     {

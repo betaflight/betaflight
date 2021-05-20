@@ -30,9 +30,9 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
-#include "common/maths.h"
 
 #include "config/config_reset.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/sound_beeper.h"
@@ -127,9 +127,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(pidProfile_t, pidProfile,
         .pid = {
-            [PID_ROLL] =  { 42, 85, 35, 90 },
-            [PID_PITCH] = { 46, 90, 38, 95 },
-            [PID_YAW] =   { 45, 90, 0, 90 },
+            [PID_ROLL] =  PID_ROLL_DEFAULT,
+            [PID_PITCH] = PID_PITCH_DEFAULT,
+            [PID_YAW] =   PID_YAW_DEFAULT,
             [PID_LEVEL] = { 50, 50, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0 },
         },
@@ -177,11 +177,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
                                     // overridden and the static lowpass 1 is disabled. We can't set this
                                     // value to 0 otherwise Configurator versions 10.4 and earlier will also
                                     // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
-        .dterm_lowpass2_hz = 150,   // second Dterm LPF ON by default
+        .dterm_lowpass2_hz = DTERM_LOWPASS_2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_filter_type = FILTER_PT1,
         .dterm_filter2_type = FILTER_PT1,
-        .dyn_lpf_dterm_min_hz = 70,
-        .dyn_lpf_dterm_max_hz = 170,
+        .dyn_lpf_dterm_min_hz = DYN_LPF_DTERM_MIN_HZ_DEFAULT,
+        .dyn_lpf_dterm_max_hz = DYN_LPF_DTERM_MAX_HZ_DEFAULT,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
         .launchControlThrottlePercent = 20,
         .launchControlAngleLimit = 0,
@@ -190,7 +190,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .use_integrated_yaw = false,
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
-        .d_min = { 23, 25, 0 },      // roll, pitch, yaw
+        .d_min = D_MIN_DEFAULT,
         .d_min_gain = 37,
         .d_min_advance = 20,
         .motor_output_limit = 100,
@@ -205,10 +205,21 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .ff_interpolate_sp = FF_INTERPOLATE_ON,
         .ff_max_rate_limit = 100,
         .ff_smooth_factor = 37,
+        .ff_jitter_factor = 7,
         .ff_boost = 15,
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
+        .simplified_pids_mode = PID_SIMPLIFIED_TUNING_OFF,
+        .simplified_master_multiplier = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_roll_pitch_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_i_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_pd_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_pd_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_ff_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_dterm_filter = false,
+        .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
@@ -254,6 +265,11 @@ float pidGetFfBoostFactor()
 float pidGetFfSmoothFactor()
 {
     return pidRuntime.ffSmoothFactor;
+}
+
+float pidGetFfJitterFactor()
+{
+    return pidRuntime.ffJitterFactor;
 }
 #endif
 
@@ -304,7 +320,7 @@ float pidCompensateThrustLinearization(float throttle)
     if (pidRuntime.thrustLinearization != 0.0f) {
         // for whoops where a lot of TL is needed, allow more throttle boost
         const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * powerf(throttleReversed, 2);
+        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * powf(throttleReversed, 2);
     }
     return throttle;
 }
@@ -314,7 +330,7 @@ float pidApplyThrustLinearization(float motorOutput)
     if (pidRuntime.thrustLinearization != 0.0f) {
         if (motorOutput > 0.0f) {
             const float motorOutputReversed = (1.0f - motorOutput);
-            motorOutput *= 1.0f + powerf(motorOutputReversed, 2) * pidRuntime.thrustLinearization;
+            motorOutput *= 1.0f + powf(motorOutputReversed, 2) * pidRuntime.thrustLinearization;
         }
     }
     return motorOutput;
@@ -322,11 +338,23 @@ float pidApplyThrustLinearization(float motorOutput)
 #endif
 
 #if defined(USE_ACC)
+// calculate the stick deflection while applying level mode expo
+static float getLevelModeRcDeflection(uint8_t axis)
+{
+    const float stickDeflection = getRcDeflection(axis);
+    if (axis < FD_YAW) {
+        const float expof = currentControlRateProfile->levelExpo[axis] / 100.0f;
+        return power3(stickDeflection) * expof + stickDeflection * (1 - expof);
+    } else {
+        return stickDeflection;
+    }
+}
+
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
 STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 {
     // start with 1.0 at center stick, 0.0 at max stick deflection:
-    float horizonLevelStrength = 1.0f - MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
+    float horizonLevelStrength = 1.0f - MAX(fabsf(getLevelModeRcDeflection(FD_ROLL)), fabsf(getLevelModeRcDeflection(FD_PITCH)));
 
     // 0 at level, 90 at vertical, 180 at inverted (degrees):
     const float currentInclination = MAX(ABS(attitude.values.roll), ABS(attitude.values.pitch)) / 10.0f;
@@ -384,7 +412,7 @@ STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
-    float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
+    float angle = pidProfile->levelAngleLimit * getLevelModeRcDeflection(axis);
 #ifdef USE_GPS_RESCUE
     angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
 #endif
@@ -615,14 +643,7 @@ float FAST_CODE applyRcSmoothingDerivativeFilter(int axis, float pidSetpointDelt
         DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(pidSetpointDelta * 100.0f));
     }
     if (pidRuntime.setpointDerivativeLpfInitialized) {
-        switch (pidRuntime.rcSmoothingFilterType) {
-            case RC_SMOOTHING_DERIVATIVE_PT1:
-                ret = pt1FilterApply(&pidRuntime.setpointDerivativePt1[axis], pidSetpointDelta);
-                break;
-            case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                ret = biquadFilterApplyDF1(&pidRuntime.setpointDerivativeBiquad[axis], pidSetpointDelta);
-                break;
-        }
+        ret = pt3FilterApply(&pidRuntime.setpointDerivativePt3[axis], pidSetpointDelta);
         if (axis == pidRuntime.rcSmoothingDebugAxis) {
             DEBUG_SET(DEBUG_RC_SMOOTHING, 2, lrintf(ret * 100.0f));
         }
@@ -780,9 +801,6 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
-#ifdef USE_INTERPOLATED_SP
-    static FAST_DATA_ZERO_INIT uint32_t lastFrameNumber;
-#endif
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
 #if defined(USE_ACC)
@@ -896,8 +914,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_INTERPOLATED_SP
     bool newRcFrame = false;
-    if (lastFrameNumber != getRcFrameNumber()) {
-        lastFrameNumber = getRcFrameNumber();
+    if (getShouldUpdateFf()) {
         newRcFrame = true;
     }
 #endif
@@ -1148,12 +1165,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         float agBoostAttenuator = fabsf(currentPidSetpoint) / 50.0f;
         agBoostAttenuator = MAX(agBoostAttenuator, 1.0f);
         const float agBoost = 1.0f + (pidRuntime.antiGravityPBoost / agBoostAttenuator);
-        pidData[axis].P *= agBoost;
-        if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_ANTI_GRAVITY, 2, lrintf(agBoost * 1000));
-        }
-        if (axis == FD_PITCH) {
-            DEBUG_SET(DEBUG_ANTI_GRAVITY, 3, lrintf(agBoost * 1000));
+        if (axis != FD_YAW) {
+            pidData[axis].P *= agBoost;
+            DEBUG_SET(DEBUG_ANTI_GRAVITY, axis + 2, lrintf(agBoost * 1000));
         }
 
         const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;

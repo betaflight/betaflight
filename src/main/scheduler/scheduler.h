@@ -64,6 +64,11 @@ typedef struct {
     timeUs_t     averageExecutionTimeUs;
     timeUs_t     averageDeltaTimeUs;
     float        movingAverageCycleTimeUs;
+#if defined(USE_LATE_TASK_STATISTICS)
+    uint32_t     runCount;
+    uint32_t     lateCount;
+    timeUs_t     execTime;
+#endif
 } taskInfo_t;
 
 typedef enum {
@@ -145,6 +150,10 @@ typedef enum {
     TASK_PINIOBOX,
 #endif
 
+#ifdef USE_CRSF_V3
+    TASK_SPEED_NEGOTIATION,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 
@@ -179,6 +188,11 @@ typedef struct {
     timeUs_t movingSumDeltaTimeUs;  // moving sum over 32 samples
     timeUs_t maxExecutionTimeUs;
     timeUs_t totalExecutionTimeUs;    // total time consumed by task since boot
+#if defined(USE_LATE_TASK_STATISTICS)
+    uint32_t runCount;
+    uint32_t lateCount;
+    timeUs_t execTime;
+#endif
 #endif
 } task_t;
 
@@ -187,6 +201,7 @@ void getTaskInfo(taskId_e taskId, taskInfo_t *taskInfo);
 void rescheduleTask(taskId_e taskId, timeDelta_t newPeriodUs);
 void setTaskEnabled(taskId_e taskId, bool newEnabledState);
 timeDelta_t getTaskDeltaTimeUs(taskId_e taskId);
+void ignoreTaskTime();
 void schedulerSetCalulateTaskStatistics(bool calculateTaskStatistics);
 void schedulerResetTaskStatistics(taskId_e taskId);
 void schedulerResetTaskMaxExecutionTime(taskId_e taskId);

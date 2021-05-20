@@ -32,25 +32,18 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
-#include "drivers/motor.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_dpwm.h"
 #include "drivers/dshot_command.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
+#include "drivers/motor.h"
+#include "drivers/pwm_output.h"
+#include "drivers/pwm_output_dshot_shared.h"
 #include "drivers/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/system.h"
-
-#include "pwm_output.h"
-
-// TODO remove once debugging no longer needed
-#ifdef USE_DSHOT_TELEMETRY
-#include <string.h>
-#endif
-
-#include "pwm_output_dshot_shared.h"
 
 #ifdef USE_DSHOT_TELEMETRY
 

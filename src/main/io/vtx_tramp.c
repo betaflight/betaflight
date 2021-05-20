@@ -643,6 +643,7 @@ static const vtxVTable_t trampVTable = {
     .getFrequency = vtxTrampGetFreq,
     .getStatus = vtxTrampGetStatus,
     .getPowerLevels = vtxTrampGetPowerLevels,
+    .serializeCustomDeviceStatus = NULL,
 };
 #endif
 

@@ -51,6 +51,8 @@
 
 #include "sensors/sensors.h"
 
+#include "scheduler/scheduler.h"
+
 #include "barometer.h"
 
 baro_t baro;                        // barometer access functions
@@ -338,24 +340,22 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
         return newPressureReading;
 }
 
-#define PRESSURE_SAMPLE_COUNT (barometerConfig()->baro_sample_count - 1)
-
-static uint32_t recalculateBarometerTotal(uint8_t baroSampleCount, uint32_t pressureTotal, int32_t newPressureReading)
+static uint32_t recalculateBarometerTotal(uint32_t pressureTotal, int32_t newPressureReading)
 {
-    static int32_t barometerSamples[BARO_SAMPLE_COUNT_MAX];
+    static int32_t barometerSamples[BARO_SAMPLE_COUNT_MAX + 1];
     static int currentSampleIndex = 0;
     int nextSampleIndex;
 
     // store current pressure in barometerSamples
-    nextSampleIndex = (currentSampleIndex + 1);
-    if (nextSampleIndex == baroSampleCount) {
+    if (currentSampleIndex >= barometerConfig()->baro_sample_count) {
         nextSampleIndex = 0;
         baroReady = true;
+    } else {
+        nextSampleIndex = (currentSampleIndex + 1);
     }
     barometerSamples[currentSampleIndex] = applyBarometerMedianFilter(newPressureReading);
 
     // recalculate pressure total
-    // Note, the pressure total is made up of baroSampleCount - 1 samples - See PRESSURE_SAMPLE_COUNT
     pressureTotal += barometerSamples[currentSampleIndex];
     pressureTotal -= barometerSamples[nextSampleIndex];
 
@@ -387,6 +387,12 @@ uint32_t baroUpdate(void)
         debug[0] = state;
     }
 
+    // Tell the scheduler to ignore how long this task takes unless the pressure is being read
+    // as that takes the longest
+    if (state != BAROMETER_NEEDS_PRESSURE_READ) {
+           ignoreTaskTime();
+    }
+
     switch (state) {
         default:
         case BAROMETER_NEEDS_TEMPERATURE_START:
@@ -416,6 +422,8 @@ uint32_t baroUpdate(void)
         case BAROMETER_NEEDS_PRESSURE_READ:
             if (baro.dev.read_up(&baro.dev)) {
                 state = BAROMETER_NEEDS_PRESSURE_SAMPLE;
+            } else {
+                ignoreTaskTime();
             }
         break;
 
@@ -427,7 +435,7 @@ uint32_t baroUpdate(void)
             baro.dev.calculate(&baroPressure, &baroTemperature);
             baro.baroPressure = baroPressure;
             baro.baroTemperature = baroTemperature;
-            baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
+            baroPressureSum = recalculateBarometerTotal(baroPressureSum, baroPressure);
             if (baro.dev.combined_read) {
                 state = BAROMETER_NEEDS_PRESSURE_START;
             } else {
@@ -441,7 +449,7 @@ uint32_t baroUpdate(void)
             }
 
             sleepTime = baro.dev.ut_delay;
-        break;
+            break;
     }
 
     return sleepTime;
@@ -458,7 +466,7 @@ int32_t baroCalculateAltitude(void)
 
     // calculates height from ground via baro readings
     if (baroIsCalibrationComplete()) {
-        BaroAlt_tmp = lrintf(pressureToAltitude((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT)));
+        BaroAlt_tmp = lrintf(pressureToAltitude((float)(baroPressureSum / barometerConfig()->baro_sample_count)));
         BaroAlt_tmp -= baroGroundAltitude;
         baro.BaroAlt = lrintf((float)baro.BaroAlt * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf) + (float)BaroAlt_tmp * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf))); // additional LPF to reduce baro noise
     }
@@ -473,7 +481,7 @@ void performBaroCalibrationCycle(void)
     static int32_t savedGroundPressure = 0;
 
     baroGroundPressure -= baroGroundPressure / 8;
-    baroGroundPressure += baroPressureSum / PRESSURE_SAMPLE_COUNT;
+    baroGroundPressure += baroPressureSum / barometerConfig()->baro_sample_count;
     baroGroundAltitude = (1.0f - pow_approx((baroGroundPressure / 8) / 101325.0f, 0.190259f)) * 4433000.0f;
 
     if (baroGroundPressure == savedGroundPressure) {

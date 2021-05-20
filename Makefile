@@ -83,10 +83,7 @@ include $(ROOT)/make/system-id.mk
 include $(ROOT)/make/checks.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
-ifndef TOOLS_DIR
-TOOLS_DIR := $(ROOT)/tools
-endif
-BUILD_DIR := $(ROOT)/build
+TOOLS_DIR ?= $(ROOT)/tools
 DL_DIR    := $(ROOT)/downloads
 
 export RM := rm
@@ -108,7 +105,7 @@ FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
 
 # The list of targets to build for 'pre-push'
-PRE_PUSH_TARGET_LIST ?= STM32F405 STM32F411 STM32F7X2 STM32F745 NUCLEOH743 SITL STM32F4DISCOVERY_DEBUG test-representative
+PRE_PUSH_TARGET_LIST ?= $(UNIFIED_TARGETS) NUCLEOH743 SITL STM32F4DISCOVERY_DEBUG test-representative
 
 include $(ROOT)/make/targets.mk
 
@@ -581,9 +578,6 @@ $(DL_DIR):
 	mkdir -p $@
 
 $(TOOLS_DIR):
-	mkdir -p $@
-
-$(BUILD_DIR):
 	mkdir -p $@
 
 ## version           : print firmware version

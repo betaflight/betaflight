@@ -177,7 +177,12 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[0] = 0x0E;//length
     frame[1] = rxCc2500SpiConfig()->bindTxId[0];
     frame[2] = rxCc2500SpiConfig()->bindTxId[1];
-    frame[3] = rxCc2500SpiConfig()->bindTxId[2];
+
+    if (spiProtocol == RX_SPI_FRSKY_X_V2 || spiProtocol == RX_SPI_FRSKY_X_LBT_V2) {
+        frame[3] = rxCc2500SpiConfig()->bindTxId[2];
+    } else {
+        frame[3] = packet[3];
+    }
 
     if (evenRun) {
         frame[4] = (uint8_t)cc2500getRssiDbm() | 0x80;
@@ -291,17 +296,22 @@ void frSkyXSetRcData(uint16_t *rcData, const uint8_t *packet)
 
 bool isValidPacket(const uint8_t *packet)
 {
+    bool useBindTxId2 = false;
+
     if (spiProtocol == RX_SPI_FRSKY_X_V2 || spiProtocol == RX_SPI_FRSKY_X_LBT_V2) {
+        useBindTxId2 = true;
         if (!(packet[packetLength - 1] & 0x80)) {
             return false;
         }
     }
-    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7));
+
+    uint16_t lcrc = calculateCrc(&packet[3], (packetLength - 7)); 
+
     if ((lcrc >> 8) == packet[packetLength - 4] && (lcrc & 0x00FF) == packet[packetLength - 3] &&
         (packet[0] == packetLength - 3) &&
         (packet[1] == rxCc2500SpiConfig()->bindTxId[0]) &&
         (packet[2] == rxCc2500SpiConfig()->bindTxId[1]) &&
-        (packet[3] == rxCc2500SpiConfig()->bindTxId[2]) &&
+        (!useBindTxId2 || (packet[3] == rxCc2500SpiConfig()->bindTxId[2])) &&
         (rxCc2500SpiConfig()->rxNum == 0 || packet[6] == 0 || packet[6] == rxCc2500SpiConfig()->rxNum)) {
         return true;
     }

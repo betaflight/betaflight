@@ -32,6 +32,8 @@
 
 #define VBAT_CELL_VOTAGE_RANGE_MIN 100
 #define VBAT_CELL_VOTAGE_RANGE_MAX 500
+#define VBAT_CELL_VOLTAGE_DEFAULT_MIN 330
+#define VBAT_CELL_VOLTAGE_DEFAULT_MAX 430
 
 #define MAX_AUTO_DETECT_CELL_COUNT 8
 
@@ -59,7 +61,7 @@ typedef struct batteryConfig_s {
     bool useVBatAlerts;                     // Issue alerts based on VBat readings
     bool useConsumptionAlerts;              // Issue alerts based on total power consumption
     uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
-    uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
+    uint8_t vbathysteresis;                 // hysteresis for alarm in 0.01V units, default 1 = 0.01V
 
     uint16_t vbatfullcellvoltage;           // Cell voltage at which the battery is deemed to be "full" 0.01V units, default is 410 (4.1V)
 

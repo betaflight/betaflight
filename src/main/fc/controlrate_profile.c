@@ -37,7 +37,7 @@
 
 controlRateConfig_t *currentControlRateProfile;
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 3);
+PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 4);
 
 void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
 {
@@ -47,16 +47,16 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .thrExpo8 = 0,
             .dynThrPID = 65,
             .tpa_breakpoint = 1350,
-            .rates_type = RATES_TYPE_BETAFLIGHT,
-            .rcRates[FD_ROLL] = 100,
-            .rcRates[FD_PITCH] = 100,
-            .rcRates[FD_YAW] = 100,
+            .rates_type = RATES_TYPE_ACTUAL,
+            .rcRates[FD_ROLL] = 7,
+            .rcRates[FD_PITCH] = 7,
+            .rcRates[FD_YAW] = 7,
             .rcExpo[FD_ROLL] = 0,
             .rcExpo[FD_PITCH] = 0,
             .rcExpo[FD_YAW] = 0,
-            .rates[FD_ROLL] = 70,
-            .rates[FD_PITCH] = 70,
-            .rates[FD_YAW] = 70,
+            .rates[FD_ROLL] = 67,
+            .rates[FD_PITCH] = 67,
+            .rates[FD_YAW] = 67,
             .throttle_limit_type = THROTTLE_LIMIT_TYPE_OFF,
             .throttle_limit_percent = 100,
             .rate_limit[FD_ROLL] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
@@ -65,9 +65,19 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .tpaMode = TPA_MODE_D,
             .profileName = { 0 },
             .quickRatesRcExpo = 0,
+            .levelExpo[FD_ROLL] = 0,
+            .levelExpo[FD_PITCH] = 0,
         );
     }
 }
+
+const ratesSettingsLimits_t ratesSettingLimits[RATES_TYPE_COUNT] = {
+    [RATES_TYPE_BETAFLIGHT] = { 255, 100, 100 },
+    [RATES_TYPE_RACEFLIGHT] = { 200, 255, 100 },
+    [RATES_TYPE_KISS]       = { 255,  99, 100 },
+    [RATES_TYPE_ACTUAL]     = { 200, 200, 100 },
+    [RATES_TYPE_QUICK]      = { 255, 200, 100 },
+};
 
 void loadControlRateProfile(void)
 {

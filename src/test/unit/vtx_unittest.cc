@@ -21,6 +21,7 @@ extern "C" {
     #include "blackbox/blackbox.h"
     #include "build/debug.h"
     #include "common/maths.h"
+    #include "common/streambuf.h"
     #include "config/feature.h"
     #include "config/config.h"
     #include "fc/controlrate_profile.h"
@@ -61,7 +62,7 @@ extern "C" {
     PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
 
     float rcCommand[4];
-    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint16_t averageSystemLoadPercent = 0;
     uint8_t cliMode = 0;
     uint8_t debugMode = 0;
@@ -193,4 +194,8 @@ extern "C" {
     uint16_t getAverageSystemLoadPercent(void) { return 0; }
     bool isMotorProtocolEnabled(void) { return false; }
     void pinioBoxTaskControl(void) {}
+    void sbufWriteU8(sbuf_t *, uint8_t) {}
+    void sbufWriteU16(sbuf_t *, uint16_t) {}
+    void sbufWriteU32(sbuf_t *, uint32_t) {}
+
 }

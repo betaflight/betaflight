@@ -26,9 +26,6 @@
 #include "pg/pg.h"
 
 // Exported symbols
-extern uint32_t accTimeSum;
-extern int accSumCount;
-extern int32_t accSum[XYZ_AXIS_COUNT];
 extern bool canUseGPSHeading;
 extern float accAverage[XYZ_AXIS_COUNT];
 
@@ -54,6 +51,7 @@ typedef union {
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
 extern attitudeEulerAngles_t attitude;
+extern float rMat[3][3];
 
 typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
@@ -74,7 +72,6 @@ float getCosTiltAngle(void);
 void getQuaternion(quaternion * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
-void imuResetAccelerationSum(void);
 void imuInit(void);
 
 #ifdef SIMULATOR_BUILD

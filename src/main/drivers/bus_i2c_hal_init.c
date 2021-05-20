@@ -34,6 +34,7 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
+#include "drivers/bus_i2c_timing.h"
 
 // Number of bits in I2C protocol phase
 #define LEN_ADDR 7
@@ -202,90 +203,6 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
-// Values from I2C-SMBus specification
-static uint16_t trmax;      // Raise time (max)
-static uint16_t tfmax;      // Fall time (max)
-static uint8_t  tsuDATmin;  // SDA setup time (min)
-static uint8_t  thdDATmin;  // SDA hold time (min)
-
-// Silicon specific values, from datasheet
-static uint8_t  tAFmin;     // Analog filter delay (min)
-static uint8_t  tAFmax;     // Analog filter delay (max)
-
-// Actual (estimated) values
-static uint16_t tr = 100;   // Raise time
-static uint16_t tf = 100;   // Fall time
-static uint8_t  tAF = 70;   // Analog filter delay
-
-/*
- * Compute SCLDEL, SDADEL, SCLH and SCLL for TIMINGR register according to reference manuals.
- */
-static void i2cClockComputeRaw(uint32_t pclkFreq, int i2cFreqKhz, int presc, int dfcoeff,
-                       uint8_t *scldel, uint8_t *sdadel, uint16_t *sclh, uint16_t *scll)
-{
-    if (i2cFreqKhz > 400) {
-        // Fm+ (Fast mode plus)
-        trmax = 120;
-        tfmax = 120;
-        tsuDATmin = 50;
-        thdDATmin = 0;
-    } else {
-        // Fm (Fast mode)
-        trmax = 300;
-        tfmax = 300;
-        tsuDATmin = 100;
-        thdDATmin = 0;
-    }
-    tAFmin = 50;
-    tAFmax = 90;
-
-    // Convert pclkFreq into nsec
-    float tI2cclk = 1000000000.0f / pclkFreq;
-
-    // Convert target i2cFreq into cycle time (nsec)
-    float tSCL = 1000000.0f / i2cFreqKhz;
-
-    uint32_t SCLDELmin = (trmax + tsuDATmin)/((presc + 1) * tI2cclk) - 1;
-
-    uint32_t SDADELmin = (tfmax + thdDATmin - tAFmin - ((dfcoeff + 3) * tI2cclk)) / ((presc + 1) * tI2cclk);
-
-    float tsync1 = tf + tAF + dfcoeff * tI2cclk + 3 * tI2cclk;
-    float tsync2 = tr + tAF + dfcoeff * tI2cclk + 3 * tI2cclk;
-
-    float tSCLHL = tSCL - tsync1 - tsync2;
-    float SCLHL = tSCLHL / ((presc + 1) * tI2cclk) - 1;
-
-    uint32_t SCLH = SCLHL / 4.75;  // STM32CubeMX seems to use a value like this
-    uint32_t SCLL = (uint32_t)(SCLHL + 0.5f) - SCLH;
-
-    *scldel = SCLDELmin;
-    *sdadel = SDADELmin;
-    *sclh = SCLH - 1;
-    *scll = SCLL - 1;
-}
-
-static uint32_t i2cClockTIMINGR(uint32_t pclkFreq, int i2cFreqKhz, int dfcoeff)
-{
-#define TIMINGR(presc, scldel, sdadel, sclh, scll) \
-    ((presc << 28)|(scldel << 20)|(sdadel << 16)|(sclh << 8)|(scll << 0))
-
-    uint8_t scldel;
-    uint8_t sdadel;
-    uint16_t sclh;
-    uint16_t scll;
-
-    for (int presc = 1; presc < 15; presc++) {
-        i2cClockComputeRaw(pclkFreq, i2cFreqKhz, presc, dfcoeff, &scldel, &sdadel, &sclh, &scll);
-
-        // If all fields are not overflowing, return TIMINGR.
-        // Otherwise, increase prescaler and try again.
-        if ((scldel < 16) && (sdadel < 16) && (sclh < 256) && (scll < 256)) {
-            return TIMINGR(presc, scldel, sdadel, sclh, scll);
-        }
-    }
-    return 0; // Shouldn't reach here
-}
-
 void i2cInit(I2CDevice device)
 {
     if (device == I2CINVALID) {
@@ -349,7 +266,7 @@ void i2cInit(I2CDevice device)
 #error Unknown MCU type
 #endif
 
-    pHandle->Init.Timing = i2cClockTIMINGR(i2cPclk, pDev->overClock ? 800 : 400, 0);
+    pHandle->Init.Timing = i2cClockTIMINGR(i2cPclk, pDev->clockSpeed, 0);
 
     pHandle->Init.OwnAddress1 = 0x0;
     pHandle->Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;

@@ -744,11 +744,6 @@ bool isAirmodeActivated()
  */
 bool processRx(timeUs_t currentTimeUs)
 {
-    static bool armedBeeperOn = false;
-#ifdef USE_TELEMETRY
-    static bool sharedPortTelemetryEnabled = false;
-#endif
-
     timeDelta_t frameAgeUs;
     timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
 
@@ -891,6 +886,17 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
+    return true;
+}
+
+void processRxModes(timeUs_t currentTimeUs)
+{
+    static bool armedBeeperOn = false;
+#ifdef USE_TELEMETRY
+    static bool sharedPortTelemetryEnabled = false;
+#endif
+    const throttleStatus_e throttleStatus = calculateThrottleStatus();
+
     // When armed and motors aren't spinning, do beeps and then disarm
     // board after delay so users without buzzer won't lose fingers.
     // mixTable constrains motor commands, so checking  throttleStatus is enough
@@ -936,7 +942,7 @@ bool processRx(timeUs_t currentTimeUs)
         disarmAt = currentTimeUs + autoDisarmDelayUs;  // extend auto-disarm timer
     }
 
-    if (!IS_RC_MODE_ACTIVE(BOXPARALYZE)
+    if (!(IS_RC_MODE_ACTIVE(BOXPARALYZE) && !ARMING_FLAG(ARMED))
 #ifdef USE_CMS
         && !cmsInMenu
 #endif
@@ -957,7 +963,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (!cliMode && !IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
+    if (!cliMode && !(IS_RC_MODE_ACTIVE(BOXPARALYZE) && !ARMING_FLAG(ARMED))) {
         processRcAdjustments(currentControlRateProfile);
     }
 
@@ -1082,8 +1088,6 @@ bool processRx(timeUs_t currentTimeUs)
 #endif
 
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
-
-    return true;
 }
 
 static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)

@@ -32,19 +32,16 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/rcc.h"
+#include "drivers/time.h"
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
+#include "drivers/bus_i2c_timing.h"
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 
-#define I2C_HIGHSPEED_TIMING  0x00500E30  // 1000 Khz, 72Mhz Clock, Analog Filter Delay ON, Setup 40, Hold 4.
-#define I2C_STANDARD_TIMING   0x00E0257A  // 400 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
-
 #define I2C_GPIO_AF         GPIO_AF_4
-
-static uint32_t i2cTimeout;
 
 static volatile uint16_t i2cErrorCount = 0;
 
@@ -115,7 +112,7 @@ void i2cInit(I2CDevice device)
         .I2C_OwnAddress1 = 0x00,
         .I2C_Ack = I2C_Ack_Enable,
         .I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit,
-        .I2C_Timing = (pDev->overClock ? I2C_HIGHSPEED_TIMING : I2C_STANDARD_TIMING)
+        .I2C_Timing = i2cClockTIMINGR(SystemCoreClock, pDev->clockSpeed, 0)
     };
 
     I2C_Init(I2Cx, &i2cInit);
@@ -144,10 +141,12 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 
     addr_ <<= 1;
 
+    timeUs_t timeoutStartUs;
+
     /* Test on BUSY Flag */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -156,9 +155,9 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     I2C_TransferHandling(I2Cx, addr_, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
 
     /* Wait until TXIS flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -167,10 +166,9 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     I2C_SendData(I2Cx, (uint8_t) reg);
 
     /* Wait until TCR flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) == RESET)
-    {
-        if ((i2cTimeout--) == 0) {
+    timeoutStartUs = microsISR();
+    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) == RESET) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -179,9 +177,9 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     I2C_TransferHandling(I2Cx, addr_, 1, I2C_AutoEnd_Mode, I2C_No_StartStop);
 
     /* Wait until TXIS flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -190,9 +188,9 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     I2C_SendData(I2Cx, data);
 
     /* Wait until STOPF flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_STOPF) == RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -217,10 +215,12 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
 
     addr_ <<= 1;
 
+    timeUs_t timeoutStartUs;
+
     /* Test on BUSY Flag */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -229,9 +229,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     I2C_TransferHandling(I2Cx, addr_, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
     /* Wait until TXIS flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -240,9 +240,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     I2C_SendData(I2Cx, (uint8_t) reg);
 
     /* Wait until TC flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TC) == RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }
@@ -253,9 +253,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     /* Wait until all data are received */
     while (len) {
         /* Wait until RXNE flag is set */
-        i2cTimeout = I2C_LONG_TIMEOUT;
+        timeoutStartUs = microsISR();
         while (I2C_GetFlagStatus(I2Cx, I2C_ISR_RXNE) == RESET) {
-            if ((i2cTimeout--) == 0) {
+            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
                 return i2cTimeoutUserCallback();
             }
         }
@@ -270,9 +270,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     }
 
     /* Wait until STOPF flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
+    timeoutStartUs = microsISR();
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_STOPF) == RESET) {
-        if ((i2cTimeout--) == 0) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cTimeoutUserCallback();
         }
     }

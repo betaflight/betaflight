@@ -186,6 +186,45 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_TOTAL_DIST,
 };
 
+// Format a float to the specified number of decimal places with optional rounding.
+// OSD symbols can optionally be placed before and after the formatted number (use SYM_NONE for no symbol).
+// The formatString can be used for customized formatting of the integer part. Follow the printf style.
+// Pass an empty formatString for default.
+int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatString, unsigned decimalPlaces, bool round, char trailingSymbol)
+{
+    char mask[7];
+    int pos = 0;
+    int multiplier = 1;
+    for (unsigned i = 0; i < decimalPlaces; i++) {
+        multiplier *= 10;
+    }
+
+    value *= multiplier;
+    const int scaledValueAbs = ABS(round ? lrintf(value) : value);
+    const int integerPart = scaledValueAbs / multiplier;
+    const int fractionalPart = scaledValueAbs % multiplier;
+
+    if (leadingSymbol != SYM_NONE) {
+        buffer[pos++] = leadingSymbol;
+    }
+    if (value < 0 && (integerPart || fractionalPart)) {
+        buffer[pos++] = '-';
+    }
+
+    pos += tfp_sprintf(buffer + pos, (strlen(formatString) ? formatString : "%01u"), integerPart);
+    if (decimalPlaces) {
+        tfp_sprintf((char *)&mask, ".%%0%uu", decimalPlaces); // builds up the format string to be like ".%03u" for decimalPlaces == 3 as an example
+        pos += tfp_sprintf(buffer + pos, mask, fractionalPart);
+    }
+
+    if (trailingSymbol != SYM_NONE) {
+        buffer[pos++] = trailingSymbol;
+    }
+    buffer[pos] = '\0';
+
+    return pos;
+}
+
 void osdStatSetState(uint8_t statIndex, bool enabled)
 {
     if (enabled) {
@@ -250,7 +289,7 @@ void osdAnalyzeActiveElements(void)
     osdDrawActiveElementsBackground(osdDisplayPort);
 }
 
-static void osdDrawElements(timeUs_t currentTimeUs)
+static void osdDrawElements(void)
 {
     // Hide OSD when OSDSW mode is active
     if (IS_RC_MODE_ACTIVE(BOXOSD)) {
@@ -268,7 +307,7 @@ static void osdDrawElements(timeUs_t currentTimeUs)
         displayClearScreen(osdDisplayPort);
     }
 
-    osdDrawActiveElements(osdDisplayPort, currentTimeUs);
+    osdDrawActiveElements(osdDisplayPort);
 }
 
 const uint16_t osdTimerDefault[OSD_TIMER_COUNT] = {
@@ -340,7 +379,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
 
-    osdConfig->task_frequency = 60;
+    osdConfig->stat_show_cell_value = false;
+    osdConfig->task_frequency = OSD_TASK_FREQUENCY_DEFAULT;
+    osdConfig->cms_background_type = DISPLAY_BACKGROUND_TRANSPARENT;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -362,6 +403,7 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     osdElementConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
     osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
     osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS(3, 1);
+    osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS(13, 6);
 }
 
 static void osdDrawLogo(int x, int y)
@@ -475,6 +517,11 @@ static int32_t getAverageEscRpm(void)
 }
 #endif
 
+static uint16_t getStatsVoltage(void)
+{
+    return osdConfig()->stat_show_cell_value ? getBatteryAverageCellVoltage() : getBatteryVoltage();
+}
+
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
@@ -490,7 +537,7 @@ static void osdUpdateStats(void)
     }
 #endif
 
-    value = getBatteryVoltage();
+    value = getStatsVoltage();
     if (stats.min_voltage > value) {
         stats.min_voltage = value;
     }
@@ -650,8 +697,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         return true;
 
     case OSD_STAT_MAX_ALTITUDE: {
-        const int alt = osdGetMetersToSelectedUnit(stats.max_altitude) / 10;
-        tfp_sprintf(buff, "%d.%d%c", alt / 10, alt % 10, osdGetMetersToSelectedUnitSymbol());
+        osdPrintFloat(buff, SYM_NONE, osdGetMetersToSelectedUnit(stats.max_altitude) / 100.0f, "", 1, true, osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(displayRow, "MAX ALTITUDE", buff);
         return true;
     }
@@ -684,20 +730,24 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #endif
 
     case OSD_STAT_MIN_BATTERY:
-        tfp_sprintf(buff, "%d.%02d%c", stats.min_voltage / 100, stats.min_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "MIN BATTERY", buff);
+        osdPrintFloat(buff, SYM_NONE, stats.min_voltage / 100.0f, "", 2, true, SYM_VOLT);
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value? "MIN AVG CELL" : "MIN BATTERY", buff);
         return true;
 
     case OSD_STAT_END_BATTERY:
-        tfp_sprintf(buff, "%d.%02d%c", stats.end_voltage / 100, stats.end_voltage % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "END BATTERY", buff);
+        osdPrintFloat(buff, SYM_NONE, stats.end_voltage / 100.0f, "", 2, true, SYM_VOLT);
+        osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value ? "END AVG CELL" : "END BATTERY", buff);
         return true;
 
-    case OSD_STAT_BATTERY:
-        tfp_sprintf(buff, "%d.%02d%c", getBatteryVoltage() / 100, getBatteryVoltage() % 100, SYM_VOLT);
-        osdDisplayStatisticLabel(displayRow, "BATTERY", buff);
-        return true;
-
+    case OSD_STAT_BATTERY: 
+        {
+            const uint16_t statsVoltage = getStatsVoltage();
+            osdPrintFloat(buff, SYM_NONE, statsVoltage / 100.0f, "", 2, true, SYM_VOLT);
+            osdDisplayStatisticLabel(displayRow, osdConfig()->stat_show_cell_value ? "AVG BATT CELL" : "BATTERY", buff);
+            return true;
+        }
+        break;
+        
     case OSD_STAT_MIN_RSSI:
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
@@ -744,8 +794,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #if defined(USE_ACC)
     case OSD_STAT_MAX_G_FORCE:
         if (sensors(SENSOR_ACC)) {
-            const int gForce = lrintf(stats.max_g_force * 10);
-            tfp_sprintf(buff, "%01d.%01dG", gForce / 10, gForce % 10);
+            osdPrintFloat(buff, SYM_NONE, stats.max_g_force, "", 1, true, 'G');
             osdDisplayStatisticLabel(displayRow, "MAX G-FORCE", buff);
             return true;
         }
@@ -905,7 +954,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
                        || !VISIBLE(osdElementConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
-            stats.end_voltage = getBatteryVoltage();
+            stats.end_voltage = getStatsVoltage();
             osdStatsRowCount = 0; // reset to 0 so it will be recalculated on the next stats refresh
         }
 
@@ -982,7 +1031,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 #endif
     {
         osdUpdateAlarms();
-        osdDrawElements(currentTimeUs);
+        osdDrawElements();
         displayHeartbeat(osdDisplayPort);
     }
     displayCommitTransaction(osdDisplayPort);
@@ -1024,13 +1073,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 #endif
 
     // redraw values in buffer
-#ifdef USE_MAX7456
-#define DRAW_FREQ_DENOM 5
-#else
-#define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud (
-#endif
-
-    if (counter % DRAW_FREQ_DENOM == 0) {
+    if (counter % OSD_DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);
         showVisualBeeper = false;
     } else {
@@ -1039,7 +1082,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         // For the MSP displayPort device only do the drawScreen once per
         // logical OSD cycle as there is no output buffering needing to be flushed.
         if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_MSP) {
-            doDrawScreen = (counter % DRAW_FREQ_DENOM == 1);
+            doDrawScreen = (counter % OSD_DRAW_FREQ_DENOM == 1);
         }
 #endif
         // Redraw a portion of the chars per idle to spread out the load and SPI bus utilization

@@ -57,6 +57,7 @@ bool cliMode = false;
 #include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/feature.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/adc.h"
@@ -307,6 +308,7 @@ static const char *mcuTypeNames[] = {
     "H743 (Rev.V)",
     "H7A3",
     "H723/H725",
+    "G474",
 };
 
 static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
@@ -3093,6 +3095,17 @@ static void cliVtxInfo(const char *cmdName, char *cmdline)
 }
 #endif // USE_VTX_TABLE
 
+#ifdef USE_SIMPLIFIED_TUNING
+static void cliApplySimplifiedTuning(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    applySimplifiedTuning(currentPidProfile);
+    cliPrintLine("Applied tuning based on simplified tuning settings.");
+}
+#endif
+
 static void printName(dumpFlags_t dumpMask, const pilotConfig_t *pilotConfig)
 {
     const bool equalsDefault = strlen(pilotConfig->name) == 0;
@@ -3849,12 +3862,6 @@ static void cliDshotProg(const char *cmdName, char *cmdline)
                     if (firstCommand) {
                         // pwmDisableMotors();
                         motorDisable();
-
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(5); // Wait for potential ESC telemetry transmission to finish
-                        } else {
-                            delay(1);
-                        }
 
                         firstCommand = false;
                     }
@@ -4658,7 +4665,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
-const char *getMcuTypeById(mcuTypeId_e id)
+static const char *getMcuTypeById(mcuTypeId_e id)
 {
     if (id < MCU_TYPE_UNKNOWN) {
         return mcuTypeNames[id];
@@ -4833,7 +4840,11 @@ static void cliTasks(const char *cmdName, char *cmdline)
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
+#if defined(USE_LATE_TASK_STATISTICS)
+        cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload  total/ms   late    run reqd/us");
+#else
         cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload  total/ms");
+#endif
     } else {
         cliPrintLine("Task list");
     }
@@ -4851,9 +4862,18 @@ static void cliTasks(const char *cmdName, char *cmdline)
                 averageLoadSum += averageLoad;
             }
             if (systemConfig()->task_statistics) {
+#if defined(USE_LATE_TASK_STATISTICS)
+                cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
+                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                        taskInfo.totalExecutionTimeUs / 1000,
+                        taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
+#else
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
                         taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
-                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTimeUs / 1000);
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
+                        taskInfo.totalExecutionTimeUs / 1000);
+#endif
             } else {
                 cliPrintLinef("%6d", taskFrequency);
             }
@@ -4948,28 +4968,17 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
                 cliPrintLinef("%d.%03dms", avgRxFrameUs / 1000, avgRxFrameUs % 1000);
             }
         }
-        cliPrintLinef("# Input filter type: %s", lookupTables[TABLE_RC_SMOOTHING_INPUT_TYPE].values[rcSmoothingData->inputFilterType]);
         cliPrintf("# Active input cutoff: %dhz ", rcSmoothingData->inputCutoffFrequency);
         if (rcSmoothingData->inputCutoffSetting == 0) {
             cliPrintLine("(auto)");
         } else {
             cliPrintLine("(manual)");
         }
-        cliPrintf("# Derivative filter type: %s", lookupTables[TABLE_RC_SMOOTHING_DERIVATIVE_TYPE].values[rcSmoothingData->derivativeFilterType]);
-        if (rcSmoothingData->derivativeFilterTypeSetting == RC_SMOOTHING_DERIVATIVE_AUTO) {
-            cliPrintLine(" (auto)");
-        } else {
-            cliPrintLinefeed();
-        }
         cliPrintf("# Active derivative cutoff: %dhz (", rcSmoothingData->derivativeCutoffFrequency);
-        if (rcSmoothingData->derivativeFilterType == RC_SMOOTHING_DERIVATIVE_OFF) {
-            cliPrintLine("off)");
+        if (rcSmoothingData->derivativeCutoffSetting == 0) {
+            cliPrintLine("auto)");
         } else {
-            if (rcSmoothingData->derivativeCutoffSetting == 0) {
-                cliPrintLine("auto)");
-            } else {
-                cliPrintLine("manual)");
-            }
+            cliPrintLine("manual)");
         }
     } else {
         cliPrintLine("INTERPOLATION");
@@ -6391,6 +6400,9 @@ static void cliHelp(const char *cmdName, char *cmdline);
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", "<index> <unused> <range channel> <start> <end> <function> <select channel> [<center> <scale>]", cliAdjustmentRange),
+#ifdef USE_SIMPLIFIED_TUNING
+    CLI_COMMAND_DEF("apply_simplified_tuning", "applies tuning based on simplified tuning settings", NULL, cliApplySimplifiedTuning),
+#endif
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef USE_CLI_BATCH
     CLI_COMMAND_DEF("batch", "start or end a batch of commands", "start | end", cliBatch),

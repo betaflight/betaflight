@@ -153,6 +153,13 @@ bool displayWriteFontCharacter(displayPort_t *instance, uint16_t addr, const osd
     return false;
 }
 
+void displaySetBackgroundType(displayPort_t *instance, displayPortBackground_e backgroundType)
+{
+    if (instance->vTable->setBackgroundType) {
+        instance->vTable->setBackgroundType(instance, backgroundType);
+    }
+}
+
 bool displayCheckReady(displayPort_t *instance, bool rescan)
 {
     if (instance->vTable->checkReady) {
@@ -193,7 +200,19 @@ bool displayGetCanvas(displayCanvas_t *canvas, const displayPort_t *instance)
     return false;
 }
 
-void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable)
+bool displaySupportsOsdSymbols(displayPort_t *instance)
+{
+    // Assume device types that support OSD display will support the OSD symbols (since the OSD logic will use them)
+    if ((instance->deviceType == DISPLAYPORT_DEVICE_TYPE_MAX7456)
+        || (instance->deviceType == DISPLAYPORT_DEVICE_TYPE_MSP)
+        || (instance->deviceType == DISPLAYPORT_DEVICE_TYPE_FRSKYOSD)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable, displayPortDeviceType_e deviceType)
 {
     instance->vTable = vTable;
     instance->vTable->clearScreen(instance);
@@ -201,4 +220,5 @@ void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable)
     instance->cleared = true;
     instance->grabCount = 0;
     instance->cursorRow = -1;
+    instance->deviceType = deviceType;
 }

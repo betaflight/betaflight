@@ -89,7 +89,8 @@ struct {
     { 0xEF4016, 133, 50, 64, 256 },
     // Winbond W25Q64
     // Datasheet: https://www.winbond.com/resource-files/w25q64jv%20spi%20%20%20revc%2006032016%20kms.pdf
-    { 0xEF4017, 133, 50, 128, 256 },
+    { 0xEF4017, 133, 50, 128, 256 }, // W25Q64JV-IQ/JQ 
+    { 0xEF7017, 133, 50, 128, 256 }, // W25Q64JV-IM/JM*
     // Winbond W25Q128
     // Datasheet: https://www.winbond.com/resource-files/w25q128fv%20rev.l%2008242015.pdf
     { 0xEF4018, 104, 50, 256, 256 },
@@ -99,6 +100,9 @@ struct {
     // Winbond W25Q256
     // Datasheet: https://www.winbond.com/resource-files/w25q256jv%20spi%20revb%2009202016.pdf
     { 0xEF4019, 133, 50, 512, 256 },
+    // Cypress S25FL064L
+    // Datasheet: https://www.cypress.com/file/316661/download
+    { 0x016017, 133, 50, 128, 256 },
     // Cypress S25FL128L
     // Datasheet: https://www.cypress.com/file/316171/download
     { 0x016018, 133, 50, 256, 256 },

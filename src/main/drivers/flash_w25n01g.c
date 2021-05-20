@@ -25,8 +25,6 @@
 
 #include "platform.h"
 
-#include "build/debug.h"
-
 #ifdef USE_FLASH_W25N01G
 
 #include "flash.h"

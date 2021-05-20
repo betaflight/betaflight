@@ -697,11 +697,13 @@ bool vtxSmartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
+    // Note, for SA, which uses bidirectional mode, would normally require pullups. 
+    // the SA protocol instead requires pulldowns, and therefore uses SERIAL_BIDIR_PP_PD instead of SERIAL_BIDIR_PP
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
         portOptions_e portOptions = SERIAL_STOPBITS_2 | SERIAL_BIDIR_NOPULL;
 #if defined(USE_VTX_COMMON)
-        portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR | SERIAL_BIDIR_PP : SERIAL_UNIDIR);
+        portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR | SERIAL_BIDIR_PP_PD : SERIAL_UNIDIR);
 #else
         portOptions = SERIAL_BIDIR;
 #endif
@@ -1047,6 +1049,20 @@ static uint8_t vtxSAGetPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *level
     return saSupportedNumPowerLevels;
 }
 
+#define VTX_CUSTOM_DEVICE_STATUS_SIZE 5
+
+static void vtxSASerializeCustomDeviceStatus(const vtxDevice_t *vtxDevice, sbuf_t *dst)
+{
+    UNUSED(vtxDevice);
+    sbufWriteU8(dst, VTX_CUSTOM_DEVICE_STATUS_SIZE);
+    sbufWriteU8(dst, saDevice.version);
+    sbufWriteU8(dst, saDevice.mode);
+    sbufWriteU16(dst, saDevice.orfreq); // pit frequency
+    sbufWriteU8(dst, saDevice.willBootIntoPitMode);
+}
+
+#undef VTX_CUSTOM_DEVICE_STATUS_SIZE
+
 static const vtxVTable_t saVTable = {
     .process = vtxSAProcess,
     .getDeviceType = vtxSAGetDeviceType,
@@ -1060,6 +1076,7 @@ static const vtxVTable_t saVTable = {
     .getFrequency = vtxSAGetFreq,
     .getStatus = vtxSAGetStatus,
     .getPowerLevels = vtxSAGetPowerLevels,
+    .serializeCustomDeviceStatus = vtxSASerializeCustomDeviceStatus,
 };
 #endif // VTX_COMMON
 

@@ -23,14 +23,18 @@
 #include <string.h>
 
 #include "platform.h"
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS) && defined(USE_TELEMETRY_SRXL)
+
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY)
+
+#include "cms/cms.h"
 
 #include "common/utils.h"
 
 #include "drivers/display.h"
-#include "cms/cms.h"
 
 #include "telemetry/srxl.h"
+
+#include "displayport_srxl.h"
 
 displayPort_t srxlDisplayPort;
 
@@ -138,13 +142,18 @@ static const displayPortVTable_t srxlVTable = {
     .layerCopy = NULL,
 };
 
-displayPort_t *displayPortSrxlInit()
+static displayPort_t *displayPortSrxlInit()
 {
     srxlDisplayPort.device = NULL;
-    displayInit(&srxlDisplayPort, &srxlVTable);
+    displayInit(&srxlDisplayPort, &srxlVTable, DISPLAYPORT_DEVICE_TYPE_SRXL);
     srxlDisplayPort.rows = SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS;
     srxlDisplayPort.cols = SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS;
+
     return &srxlDisplayPort;
 }
 
+void srxlDisplayportRegister(void)
+{
+    cmsDisplayPortRegister(displayPortSrxlInit());
+}
 #endif

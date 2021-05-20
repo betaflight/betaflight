@@ -245,7 +245,9 @@ static vtxVTable_t rtc6705VTable = {
     .getFrequency = vtxRTC6705GetFreq,
     .getStatus = vtxRTC6705GetStatus,
     .getPowerLevels = vtxRTC6705GetPowerLevels,
+    .serializeCustomDeviceStatus = NULL,
 };
+
 #endif // VTX_COMMON
 
 #endif // VTX_RTC6705

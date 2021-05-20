@@ -72,11 +72,10 @@ extern "C" {
 static int32_t amperage = 100;
 static int32_t estimatedVario = 0;
 static uint8_t batteryRemaining = 0;
-static uint16_t avgCellVoltage = vbat/testBatteryCellCount;
 static throttleStatus_e throttleStatus = THROTTLE_HIGH;
 static uint32_t definedFeatures = 0;
 static uint32_t definedSensors = SENSOR_GYRO | SENSOR_ACC | SENSOR_MAG | SENSOR_SONAR | SENSOR_GPS | SENSOR_GPSMAG;
-
+static uint16_t testBatteryVoltage = 1000;
 
 int32_t getAmperage(void)
 {
@@ -95,7 +94,7 @@ uint8_t calculateBatteryPercentageRemaining(void)
 
 uint16_t getBatteryAverageCellVoltage(void)
 {
-    return avgCellVoltage;
+    return testBatteryVoltage / testBatteryCellCount;
 }
 
 int32_t getMAhDrawn(void)
@@ -128,7 +127,6 @@ typedef struct serialPortStub_s {
 } serialPortStub_t;
 
 
-static uint16_t testBatteryVoltage = 1000;
 uint16_t getBatteryVoltage(void)
 {
     return testBatteryVoltage;
@@ -141,7 +139,7 @@ uint8_t getBatteryCellCount(void) {
 static serialPortStub_t serialWriteStub;
 static serialPortStub_t serialReadStub;
 
-#define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
+#define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x12
 serialPort_t serialTestInstance;
 serialPortConfig_t serialTestInstanceConfig = {
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
