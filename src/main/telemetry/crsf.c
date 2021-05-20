@@ -625,7 +625,9 @@ void initCrsfTelemetry(void)
         || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
         crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     }
-    crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
+    if (telemetryIsSensorEnabled(SENSOR_MODE)) {
+        crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
+    }
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)
        && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
