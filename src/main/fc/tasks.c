@@ -267,13 +267,6 @@ static void taskCameraControl(uint32_t currentTime)
 }
 #endif
 
-#ifdef USE_CRSF_V3
-static void taskSpeedNegotiation(uint32_t currentTime)
-{
-    speedNegotiationProcess(currentTime);
-}
-#endif
-
 void tasksInit(void)
 {
     schedulerInit();
@@ -419,7 +412,8 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_CRSF_V3
-    setTaskEnabled(TASK_SPEED_NEGOTIATION, true);
+    const bool useCRSF = rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
+    setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
 #endif
 }
 
@@ -541,7 +535,7 @@ task_t tasks[TASK_COUNT] = {
 #endif
 
 #ifdef USE_CRSF_V3
-    [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, taskSpeedNegotiation, TASK_PERIOD_HZ(100), TASK_PRIORITY_IDLE),
+    [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_IDLE),
 #endif
 };
 
