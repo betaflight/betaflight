@@ -353,6 +353,7 @@ TEST(SchedulerUnittest, TestSingleTask)
     }
     setTaskEnabled(TASK_ACCEL, true);
     tasks[TASK_ACCEL].lastExecutedAtUs = 1000;
+    tasks[TASK_ACCEL].lastStatsAtUs = 1000;
     simulatedTime = 2050;
     // run the scheduler and check the task has executed
     scheduler();

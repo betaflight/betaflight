@@ -299,7 +299,6 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
     if (selectedTask) {
         currentTask = selectedTask;
         ignoreCurrentTaskTime = false;
-        selectedTask->taskLatestDeltaTimeUs = cmpTimeUs(currentTimeUs, selectedTask->lastExecutedAtUs);
 #if defined(USE_TASK_STATISTICS)
         float period = currentTimeUs - selectedTask->lastExecutedAtUs;
 #endif
@@ -314,6 +313,8 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
             selectedTask->taskFunc(currentTimeBeforeTaskCallUs);
             taskExecutionTimeUs = micros() - currentTimeBeforeTaskCallUs;
             if (!ignoreCurrentTaskTime) {
+                selectedTask->taskLatestDeltaTimeUs = cmpTimeUs(currentTimeUs, selectedTask->lastStatsAtUs);
+                selectedTask->lastStatsAtUs = currentTimeUs;
                 selectedTask->movingSumExecutionTimeUs += taskExecutionTimeUs - selectedTask->movingSumExecutionTimeUs / TASK_STATS_MOVING_SUM_COUNT;
                 selectedTask->movingSumDeltaTimeUs += selectedTask->taskLatestDeltaTimeUs - selectedTask->movingSumDeltaTimeUs / TASK_STATS_MOVING_SUM_COUNT;
                 selectedTask->maxExecutionTimeUs = MAX(selectedTask->maxExecutionTimeUs, taskExecutionTimeUs);
@@ -326,6 +327,7 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
         } else
 #endif
         {
+            selectedTask->taskLatestDeltaTimeUs = cmpTimeUs(currentTimeUs, selectedTask->lastExecutedAtUs);
             selectedTask->taskFunc(currentTimeUs);
         }
     }

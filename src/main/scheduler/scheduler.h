@@ -170,24 +170,25 @@ typedef struct {
 #endif
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
-    timeDelta_t desiredPeriodUs;      // target period of execution
-    const int8_t staticPriority;    // dynamicPriority grows in steps of this size
+    timeDelta_t desiredPeriodUs;        // target period of execution
+    const int8_t staticPriority;        // dynamicPriority grows in steps of this size
 
     // Scheduling
-    uint16_t dynamicPriority;       // measurement of how old task was last executed, used to avoid task starvation
+    uint16_t dynamicPriority;           // measurement of how old task was last executed, used to avoid task starvation
     uint16_t taskAgeCycles;
     timeDelta_t taskLatestDeltaTimeUs;
-    timeUs_t lastExecutedAtUs;        // last time of invocation
-    timeUs_t lastSignaledAtUs;        // time of invocation event for event-driven tasks
-    timeUs_t lastDesiredAt;         // time of last desired execution
+    timeUs_t lastExecutedAtUs;          // last time of invocation
+    timeUs_t lastSignaledAtUs;          // time of invocation event for event-driven tasks
+    timeUs_t lastDesiredAt;             // time of last desired execution
 
 #if defined(USE_TASK_STATISTICS)
     // Statistics
     float    movingAverageCycleTimeUs;
     timeUs_t movingSumExecutionTimeUs;  // moving sum over 32 samples
-    timeUs_t movingSumDeltaTimeUs;  // moving sum over 32 samples
+    timeUs_t movingSumDeltaTimeUs;      // moving sum over 32 samples
     timeUs_t maxExecutionTimeUs;
-    timeUs_t totalExecutionTimeUs;    // total time consumed by task since boot
+    timeUs_t totalExecutionTimeUs;      // total time consumed by task since boot
+    timeUs_t lastStatsAtUs;             // time of last stats gathering for rate calculation
 #if defined(USE_LATE_TASK_STATISTICS)
     uint32_t runCount;
     uint32_t lateCount;
