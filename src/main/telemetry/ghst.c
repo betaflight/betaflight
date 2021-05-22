@@ -147,10 +147,12 @@ void ghstFrameGpsSecondaryTelemetry(sbuf_t *dst)
     sbufWriteU16(dst, GPS_directionToHome);
 
     uint8_t gpsFlags = 0;
-    if(STATE(GPS_FIX))
+    if (STATE(GPS_FIX)) {
         gpsFlags |= GPS_FLAGS_FIX;
-    if(STATE(GPS_FIX_HOME))
+    }
+    if (STATE(GPS_FIX_HOME)) {
         gpsFlags |= GPS_FLAGS_FIX_HOME;
+    }
     sbufWriteU8(dst, gpsFlags);
 }
 
