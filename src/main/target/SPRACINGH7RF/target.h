@@ -307,6 +307,12 @@
 //#define RX_EXPRESSLRS_SPI_DIO1_PIN                      SX1280_DIO1_PIN
 //#define RX_EXPRESSLRS_SPI_DIO2_PIN                      SX1280_DIO2_PIN
 
+#define VTX_ENABLE_PIN          PC15
+
+#define USE_PINIO
+#define PINIO1_PIN              VTX_ENABLE_PIN
+#define USE_PINIOBOX
+
 
 // Disable OCTOSPI pins PB2/CLK, PB6/NCS, PD11/IO0, PD12/IO1, PD13/IO3, PE2/IO2
 // PE7/IO4, PE8/IO5, PE9/IO6, PE10/IO7
