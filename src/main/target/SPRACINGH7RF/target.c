@@ -33,8 +33,8 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // On 4in1ESC_1 (Top, CPU side)
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               0,  7,  0 ), // M1
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0,  6,  0 ), // ..
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0,  6,  0 ), // M1
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               0,  7,  0 ), // ..
     DEF_TIM(TIM3,  CH1, PA6,  TIM_USE_MOTOR,               0,  4,  0 ), // ..
     DEF_TIM(TIM3,  CH2, PA7,  TIM_USE_MOTOR,               0,  5,  0 ), // M4
 
