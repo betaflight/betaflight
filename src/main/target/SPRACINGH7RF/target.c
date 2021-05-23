@@ -33,16 +33,16 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // On 4in1ESC_1 (Top, CPU side)
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0,  6,  0 ), // M1
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               0,  7,  0 ), // ..
-    DEF_TIM(TIM3,  CH1, PA6,  TIM_USE_MOTOR,               0,  4,  0 ), // ..
-    DEF_TIM(TIM3,  CH2, PA7,  TIM_USE_MOTOR,               0,  5,  0 ), // M4
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0,  0,  0 ), // M1
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               0,  1,  0 ), // ..
+    DEF_TIM(TIM3,  CH1, PA6,  TIM_USE_MOTOR,               0,  2,  0 ), // ..
+    DEF_TIM(TIM3,  CH2, PA7,  TIM_USE_MOTOR,               0,  3,  0 ), // M4
 
     // On 4in1ESC_2 (Bottom)
-    DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_MOTOR,               0,  0,  0 ), // M5
-    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               0,  1,  0 ), // ..
-    DEF_TIM(TIM5,  CH3, PA2,  TIM_USE_MOTOR,               0,  2,  0 ), // ..
-    DEF_TIM(TIM5,  CH4, PA3,  TIM_USE_MOTOR,               0,  3,  0 ), // M8
+    DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_MOTOR,               0,  4,  0 ), // M5
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               0,  5,  0 ), // ..
+    DEF_TIM(TIM5,  CH3, PA2,  TIM_USE_MOTOR,               0,  6,  0 ), // ..
+    DEF_TIM(TIM5,  CH4, PA3,  TIM_USE_MOTOR,               0,  7,  0 ), // M8
 
 
     // On SX1280
