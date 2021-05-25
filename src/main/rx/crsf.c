@@ -551,7 +551,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
             configByte >>= CRSF_SUBSET_RC_RESERVED_CONFIGURATION_BITS;
 
             // calculate the number of channels packed
-            uint8_t numOfChannels = ((crsfChannelDataFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC) * 8 - CRSF_SUBSET_RC_STARTING_CHANNEL_BITS) / channelBits;
+            uint8_t numOfChannels = ((crsfChannelDataFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1) * 8) / channelBits;
 
             // unpack the channel data
             uint8_t bitsMerged = 0;
