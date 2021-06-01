@@ -133,17 +133,16 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz)
 static void gyroInitFilterDynamicNotch()
 {
     gyro.notchFilterDynApplyFn = nullFilterApply;
-    gyro.notchFilterDynApplyFn2 = nullFilterApply;
 
     if (isDynamicFilterActive()) {
         gyro.notchFilterDynApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
-        if(gyroConfig()->dyn_notch_width_percent != 0) {
-            gyro.notchFilterDynApplyFn2 = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
-        }
+        gyro.notchFilterDynCount = gyroConfig()->dyn_notch_count;
+
         const float notchQ = filterGetNotchQ(DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, DYNAMIC_NOTCH_DEFAULT_CUTOFF_HZ); // any defaults OK here
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInit(&gyro.notchFilterDyn[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
-            biquadFilterInit(&gyro.notchFilterDyn2[axis], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+        for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+                biquadFilterInit(&gyro.notchFilterDyn[axis][p], DYNAMIC_NOTCH_DEFAULT_CENTER_HZ, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+            }
         }
     }
 }
@@ -182,8 +181,8 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
     // type. It will be overridden for positive cases.
     *lowpassFilterApplyFn = nullFilterApply;
 
-    // If lowpass cutoff has been specified and is less than the Nyquist frequency
-    if (lpfHz && lpfHz <= gyroFrequencyNyquist) {
+    // If lowpass cutoff has been specified
+    if (lpfHz) {
         switch (type) {
         case FILTER_PT1:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApply;
@@ -193,13 +192,29 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
             ret = true;
             break;
         case FILTER_BIQUAD:
+            if (lpfHz <= gyroFrequencyNyquist) {
 #ifdef USE_DYN_LPF
-            *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApplyDF1;
+                *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApplyDF1;
 #else
-            *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
+                *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
 #endif
+                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
+                }
+                ret = true;
+            }
+            break;
+        case FILTER_PT2:
+            *lowpassFilterApplyFn = (filterApplyFnPtr) pt2FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
+                pt2FilterInit(&lowpassFilter[axis].pt2FilterState, gain);
+            }
+            ret = true;
+            break;
+        case FILTER_PT3:
+            *lowpassFilterApplyFn = (filterApplyFnPtr) pt3FilterApply;
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pt3FilterInit(&lowpassFilter[axis].pt3FilterState, gain);
             }
             ret = true;
             break;
@@ -218,6 +233,12 @@ static void dynLpfFilterInit()
             break;
         case FILTER_BIQUAD:
             gyro.dynLpfFilter = DYN_LPF_BIQUAD;
+            break;
+        case FILTER_PT2:
+            gyro.dynLpfFilter = DYN_LPF_PT2;
+            break;
+        case FILTER_PT3:
+            gyro.dynLpfFilter = DYN_LPF_PT3;
             break;
         default:
             gyro.dynLpfFilter = DYN_LPF_NONE;
@@ -265,7 +286,7 @@ void gyroInitFilters(void)
     dynLpfFilterInit();
 #endif
 #ifdef USE_GYRO_DATA_ANALYSE
-    gyroDataAnalyseStateInit(&gyro.gyroAnalyseState, gyro.targetLooptime);
+    gyroDataAnalyseInit(&gyro.gyroAnalyseState, gyro.targetLooptime);
 #endif
 }
 
@@ -506,7 +527,7 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 {
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
  || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) \
- || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSO)
+ || defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_GYRO_SPI_ICM42605)
 
     bool gyroFound = mpuDetect(&gyroSensor->gyroDev, config);
 

@@ -176,7 +176,7 @@ extern const timerHardware_t timerHardware[];
 
 #elif defined(STM32G4)
 
-#define FULL_TIMER_CHANNEL_COUNT 91 // XXX Need review
+#define FULL_TIMER_CHANNEL_COUNT 93 // XXX Need review
 
 #endif
 

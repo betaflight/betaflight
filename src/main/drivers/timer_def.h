@@ -1288,6 +1288,8 @@
 
 #define DEF_TIM_AF__PA7__TCH_TIM8_CH1N    D(4, 8)
 
+#define DEF_TIM_AF__PA14__TCH_TIM8_CH2     D(5, 8)
+
 #define DEF_TIM_AF__PA7__TCH_TIM1_CH1N    D(6, 1)
 #define DEF_TIM_AF__PA8__TCH_TIM1_CH1     D(6, 1)
 #define DEF_TIM_AF__PA9__TCH_TIM1_CH2     D(6, 1)
@@ -1339,8 +1341,10 @@
 #define DEF_TIM_AF__PB4__TCH_TIM8_CH2N    D(4, 8)
 #define DEF_TIM_AF__PB15__TCH_TIM1_CH3N   D(4, 1)
 
+#define DEF_TIM_AF__PB6__TCH_TIM8_CH1     D(5, 8)
+
 #define DEF_TIM_AF__PB0__TCH_TIM1_CH2N    D(6, 1)
-#define DEF_TIM_AF__PB0__TCH_TIM1_CH3N    D(6, 1)
+#define DEF_TIM_AF__PB1__TCH_TIM1_CH3N    D(6, 1)
 #define DEF_TIM_AF__PB13__TCH_TIM1_CH1N   D(6, 1)
 #define DEF_TIM_AF__PB14__TCH_TIM1_CH2N   D(6, 1)
 

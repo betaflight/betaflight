@@ -64,9 +64,11 @@
 #define LVC_AFFECT_TIME 10000000 //10 secs for the LVC to slowly kick in
 
 // Battery monitoring stuff
-uint8_t batteryCellCount; // Note: this can be 0 when no battery is detected or when the battery voltage sensor is missing or disabled.
-uint16_t batteryWarningVoltage;
-uint16_t batteryCriticalVoltage;
+static uint8_t batteryCellCount; // Note: this can be 0 when no battery is detected or when the battery voltage sensor is missing or disabled.
+static uint16_t batteryWarningVoltage;
+static uint16_t batteryCriticalVoltage;
+static uint16_t batteryWarningHysteresisVoltage;
+static uint16_t batteryCriticalHysteresisVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
 //
 static currentMeter_t currentMeter;
@@ -114,7 +116,7 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .useVBatAlerts = true,
     .useConsumptionAlerts = false,
     .consumptionWarningPercentage = 10,
-    .vbathysteresis = 1,
+    .vbathysteresis = 1, // 0.01V
 
     .vbatfullcellvoltage = 410,
 
@@ -191,9 +193,7 @@ void batteryUpdatePresence(void)
 {
 
 
-    if (
-        (voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()
-    ) {
+    if ((voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()) {
         // Battery has just been connected - calculate cells, warning voltages and reset state
 
         consumptionState = voltageState = BATTERY_OK;
@@ -213,11 +213,11 @@ void batteryUpdatePresence(void)
         }
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
+        batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;
+        batteryCriticalHysteresisVoltage = (batteryCriticalVoltage > batteryConfig()->vbathysteresis) ? batteryCriticalVoltage - batteryConfig()->vbathysteresis : 0;
         lowVoltageCutoff.percentage = 100;
         lowVoltageCutoff.startTime = 0;
-    } else if (
-        voltageState != BATTERY_NOT_PRESENT && isVoltageStable() && !isVoltageFromBat()
-    ) {
+    } else if (voltageState != BATTERY_NOT_PRESENT && isVoltageStable() && !isVoltageFromBat()) {
         /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig()->vbatnotpresentcellvoltage */
 
         consumptionState = voltageState = BATTERY_NOT_PRESENT;
@@ -225,6 +225,8 @@ void batteryUpdatePresence(void)
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
+        batteryWarningHysteresisVoltage = 0;
+        batteryCriticalHysteresisVoltage = 0;
     }
 }
 
@@ -234,7 +236,7 @@ static void batteryUpdateVoltageState(void)
     static uint32_t lastVoltageChangeMs;
     switch (voltageState) {
         case BATTERY_OK:
-            if (voltageMeter.displayFiltered <= (batteryWarningVoltage - batteryConfig()->vbathysteresis)) {
+            if (voltageMeter.displayFiltered <= batteryWarningHysteresisVoltage) {
                 if (cmp32(millis(), lastVoltageChangeMs) >= batteryConfig()->vbatDurationForWarning * 100) {
                     voltageState = BATTERY_WARNING;
                 }
@@ -244,7 +246,7 @@ static void batteryUpdateVoltageState(void)
             break;
 
         case BATTERY_WARNING:
-            if (voltageMeter.displayFiltered <= (batteryCriticalVoltage - batteryConfig()->vbathysteresis)) {
+            if (voltageMeter.displayFiltered <= batteryCriticalHysteresisVoltage) {
                 if (cmp32(millis(), lastVoltageChangeMs) >= batteryConfig()->vbatDurationForCritical * 100) {
                     voltageState = BATTERY_CRITICAL;
                 }
@@ -353,6 +355,8 @@ void batteryInit(void)
     voltageState = BATTERY_INIT;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
+    batteryWarningHysteresisVoltage = 0;
+    batteryCriticalHysteresisVoltage = 0;
     lowVoltageCutoff.enabled = false;
     lowVoltageCutoff.percentage = 100;
     lowVoltageCutoff.startTime = 0;

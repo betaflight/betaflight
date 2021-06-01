@@ -94,6 +94,7 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/crsf.h"
 
 #ifdef USE_BST
 #include "i2c_bst.h"
@@ -158,22 +159,56 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 }
 #endif
 
+static enum {
+    CHECK, PROCESS, MODES, UPDATE
+} rxState = CHECK;
+
+bool taskUpdateRxMainInProgress()
+{
+    return (rxState != CHECK);
+}
+
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    if (!processRx(currentTimeUs)) {
-        return;
+    // Where we are using a state machine call ignoreTaskTime() for all states bar one
+    if (rxState != MODES) {
+        ignoreTaskTime();
     }
 
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-    updateArmingStatus();
+    switch (rxState) {
+    default:
+    case CHECK:
+        rxState = PROCESS;
+        break;
+
+    case PROCESS:
+        if (!processRx(currentTimeUs)) {
+            rxState = CHECK;
+            break;
+        }
+        rxState = MODES;
+        break;
+
+    case MODES:
+        processRxModes(currentTimeUs);
+        rxState = UPDATE;
+        break;
+
+    case UPDATE:
+        // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+        updateRcCommands();
+        updateArmingStatus();
 
 #ifdef USE_USB_CDC_HID
-    if (!ARMING_FLAG(ARMED)) {
-        sendRcDataToHid();
-    }
+        if (!ARMING_FLAG(ARMED)) {
+            sendRcDataToHid();
+        }
 #endif
+        rxState = CHECK;
+        break;
+    }
 }
+
 
 #ifdef USE_BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)
@@ -376,6 +411,11 @@ void tasksInit(void)
 #ifdef USE_RCDEVICE
     setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
 #endif
+
+#ifdef USE_CRSF_V3
+    const bool useCRSF = rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
+    setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
+#endif
 }
 
 #if defined(USE_TASK_STATISTICS)
@@ -493,6 +533,10 @@ task_t tasks[TASK_COUNT] = {
 
 #ifdef USE_RANGEFINDER
     [TASK_RANGEFINDER] = DEFINE_TASK("RANGEFINDER", NULL, NULL, taskUpdateRangefinder, TASK_PERIOD_HZ(10), TASK_PRIORITY_IDLE),
+#endif
+
+#ifdef USE_CRSF_V3
+    [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_IDLE),
 #endif
 };
 

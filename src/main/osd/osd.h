@@ -160,6 +160,7 @@ typedef enum {
     OSD_EFFICIENCY,
     OSD_TOTAL_FLIGHTS,
     OSD_UP_DOWN_REFERENCE,
+    OSD_TX_UPLINK_POWER,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -355,3 +356,4 @@ bool osdElementVisible(uint16_t value);
 bool osdGetVisualBeeperState(void);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
+int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatString, unsigned decimalPlaces, bool round, char trailingSymbol);

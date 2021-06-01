@@ -30,7 +30,6 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
-#include "common/maths.h"
 
 #include "config/config_reset.h"
 #include "config/simplified_tuning.h"
@@ -49,7 +48,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
-#include "flight/interpolated_setpoint.h"
+#include "flight/feedforward.h"
 
 #include "io/gps.h"
 
@@ -142,7 +141,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermWindupPointPercent = 100,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
-        .feedForwardTransition = 0,
+        .feedforwardTransition = 0,
         .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 250,
@@ -203,10 +202,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_idle_i_gain = 50,
         .dyn_idle_d_gain = 50,
         .dyn_idle_max_increase = 150,
-        .ff_interpolate_sp = FF_INTERPOLATE_ON,
-        .ff_max_rate_limit = 100,
-        .ff_smooth_factor = 37,
-        .ff_boost = 15,
+        .feedforward_averaging = FEEDFORWARD_AVERAGING_OFF,
+        .feedforward_max_rate_limit = 100,
+        .feedforward_smooth_factor = 37,
+        .feedforward_jitter_factor = 7,
+        .feedforward_boost = 15,
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
@@ -217,8 +217,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_pd_ratio = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_pd_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_ff_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dterm_filter = true,
+        .simplified_feedforward_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_dterm_filter = false,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
 #ifndef USE_D_MIN
@@ -261,10 +261,15 @@ float pidGetFfBoostFactor()
     return pidRuntime.ffBoostFactor;
 }
 
-#ifdef USE_INTERPOLATED_SP
+#ifdef USE_FEEDFORWARD
 float pidGetFfSmoothFactor()
 {
     return pidRuntime.ffSmoothFactor;
+}
+
+float pidGetFfJitterFactor()
+{
+    return pidRuntime.ffJitterFactor;
 }
 #endif
 
@@ -315,7 +320,7 @@ float pidCompensateThrustLinearization(float throttle)
     if (pidRuntime.thrustLinearization != 0.0f) {
         // for whoops where a lot of TL is needed, allow more throttle boost
         const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * powerf(throttleReversed, 2);
+        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * powf(throttleReversed, 2);
     }
     return throttle;
 }
@@ -325,7 +330,7 @@ float pidApplyThrustLinearization(float motorOutput)
     if (pidRuntime.thrustLinearization != 0.0f) {
         if (motorOutput > 0.0f) {
             const float motorOutputReversed = (1.0f - motorOutput);
-            motorOutput *= 1.0f + powerf(motorOutputReversed, 2) * pidRuntime.thrustLinearization;
+            motorOutput *= 1.0f + powf(motorOutputReversed, 2) * pidRuntime.thrustLinearization;
         }
     }
     return motorOutput;
@@ -634,21 +639,14 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError()
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-float FAST_CODE applyRcSmoothingDerivativeFilter(int axis, float pidSetpointDelta)
+float FAST_CODE applyRcSmoothingFeedforwardFilter(int axis, float pidSetpointDelta)
 {
     float ret = pidSetpointDelta;
     if (axis == pidRuntime.rcSmoothingDebugAxis) {
         DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(pidSetpointDelta * 100.0f));
     }
-    if (pidRuntime.setpointDerivativeLpfInitialized) {
-        switch (pidRuntime.rcSmoothingFilterType) {
-            case RC_SMOOTHING_DERIVATIVE_PT1:
-                ret = pt1FilterApply(&pidRuntime.setpointDerivativePt1[axis], pidSetpointDelta);
-                break;
-            case RC_SMOOTHING_DERIVATIVE_BIQUAD:
-                ret = biquadFilterApplyDF1(&pidRuntime.setpointDerivativeBiquad[axis], pidSetpointDelta);
-                break;
-        }
+    if (pidRuntime.feedforwardLpfInitialized) {
+        ret = pt3FilterApply(&pidRuntime.feedforwardPt3[axis], pidSetpointDelta);
         if (axis == pidRuntime.rcSmoothingDebugAxis) {
             DEBUG_SET(DEBUG_RC_SMOOTHING, 2, lrintf(ret * 100.0f));
         }
@@ -806,9 +804,6 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTimeUs)
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
-#ifdef USE_INTERPOLATED_SP
-    static FAST_DATA_ZERO_INIT uint32_t lastFrameNumber;
-#endif
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
 #if defined(USE_ACC)
@@ -920,10 +915,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
-#ifdef USE_INTERPOLATED_SP
+#ifdef USE_FEEDFORWARD
     bool newRcFrame = false;
-    if (lastFrameNumber != getRcFrameNumber()) {
-        lastFrameNumber = getRcFrameNumber();
+    if (getShouldUpdateFeedforward()) {
         newRcFrame = true;
     }
 #endif
@@ -1034,21 +1028,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
-#ifdef USE_INTERPOLATED_SP
-        if (pidRuntime.ffFromInterpolatedSetpoint) {
-            pidSetpointDelta = interpolatedSpApply(axis, newRcFrame, pidRuntime.ffFromInterpolatedSetpoint);
-        } else {
-            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
-        }
-#else
-        pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
+#ifdef USE_FEEDFORWARD
+        pidSetpointDelta = feedforwardApply(axis, newRcFrame, pidRuntime.feedforwardAveraging);
 #endif
         pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint;
-
-
-#ifdef USE_RC_SMOOTHING_FILTER
-        pidSetpointDelta = applyRcSmoothingDerivativeFilter(axis, pidSetpointDelta);
-#endif // USE_RC_SMOOTHING_FILTER
 
         // -----calculate D component
         // disable D if launch control is active
@@ -1115,7 +1098,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate feedforward component
 #ifdef USE_ABSOLUTE_CONTROL
-        // include abs control correction in FF
+        // include abs control correction in feedforward
         pidSetpointDelta += setpointCorrection - pidRuntime.oldSetpointCorrection[axis];
         pidRuntime.oldSetpointCorrection[axis] = setpointCorrection;
 #endif
@@ -1123,16 +1106,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // Only enable feedforward for rate mode and if launch control is inactive
         const float feedforwardGain = (flightModeFlags || launchControlActive) ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         if (feedforwardGain > 0) {
-            // no transition if feedForwardTransition == 0
-            float transition = pidRuntime.feedForwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * pidRuntime.feedForwardTransition) : 1;
+            // no transition if feedforwardTransition == 0
+            float transition = pidRuntime.feedforwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * pidRuntime.feedforwardTransition) : 1;
             float feedForward = feedforwardGain * transition * pidSetpointDelta * pidRuntime.pidFrequency;
 
-#ifdef USE_INTERPOLATED_SP
-            pidData[axis].F = shouldApplyFfLimits(axis) ?
-                applyFfLimit(axis, feedForward, pidRuntime.pidCoefficient[axis].Kp, currentPidSetpoint) : feedForward;
+#ifdef USE_FEEDFORWARD
+            pidData[axis].F = shouldApplyFeedforwardLimits(axis) ?
+                applyFeedforwardLimit(axis, feedForward, pidRuntime.pidCoefficient[axis].Kp, currentPidSetpoint) : feedForward;
 #else
             pidData[axis].F = feedForward;
 #endif
+#ifdef USE_RC_SMOOTHING_FILTER
+            pidData[axis].F = applyRcSmoothingFeedforwardFilter(axis, pidData[axis].F);
+#endif // USE_RC_SMOOTHING_FILTER
         } else {
             pidData[axis].F = 0;
         }
@@ -1248,15 +1234,27 @@ void dynLpfDTermUpdate(float throttle)
         } else {
             cutoffFreq = fmax(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
         }
-
-         if (pidRuntime.dynLpfFilter == DYN_LPF_PT1) {
+        switch (pidRuntime.dynLpfFilter) {
+        case DYN_LPF_PT1:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
-        } else if (pidRuntime.dynLpfFilter == DYN_LPF_BIQUAD) {
+            break;
+        case DYN_LPF_BIQUAD:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
             }
+            break;
+        case DYN_LPF_PT2:
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pt2FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(cutoffFreq, pidRuntime.dT));
+            }
+            break;
+        case DYN_LPF_PT3:
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pt3FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
+            }
+            break;
         }
     }
 }

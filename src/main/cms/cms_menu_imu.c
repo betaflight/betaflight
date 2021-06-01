@@ -237,7 +237,7 @@ static uint8_t cmsx_simplified_i_gain;
 static uint8_t cmsx_simplified_pd_ratio;
 static uint8_t cmsx_simplified_pd_gain;
 static uint8_t cmsx_simplified_dmin_ratio;
-static uint8_t cmsx_simplified_ff_gain;
+static uint8_t cmsx_simplified_feedforward_gain;
 
 static uint8_t cmsx_simplified_dterm_filter;
 static uint8_t cmsx_simplified_dterm_filter_multiplier;
@@ -257,7 +257,7 @@ static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
     cmsx_simplified_pd_ratio = pidProfile->simplified_pd_ratio;
     cmsx_simplified_pd_gain = pidProfile->simplified_pd_gain;
     cmsx_simplified_dmin_ratio = pidProfile->simplified_dmin_ratio;
-    cmsx_simplified_ff_gain = pidProfile->simplified_ff_gain;
+    cmsx_simplified_feedforward_gain = pidProfile->simplified_feedforward_gain;
 
     cmsx_simplified_dterm_filter = pidProfile->simplified_dterm_filter;
     cmsx_simplified_dterm_filter_multiplier = pidProfile->simplified_dterm_filter_multiplier;
@@ -281,7 +281,7 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
     pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
     pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
     pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
-    pidProfile->simplified_ff_gain = cmsx_simplified_ff_gain;
+    pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
 
     pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
     pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
@@ -296,6 +296,22 @@ static const void *cmsx_applySimplifiedTuning(displayPort_t *pDisp, const void *
     UNUSED(pDisp);
     UNUSED(self);
 
+    pidProfile_t *pidProfile = currentPidProfile;
+
+    pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
+    pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
+    pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
+    pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
+    pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
+    pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
+    pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
+    pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
+
+    pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
+    pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
+    gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
+    gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
+
     applySimplifiedTuning(currentPidProfile);
 
     return MENU_CHAIN_BACK;
@@ -305,19 +321,19 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
 {
     { "-- SIMPLIFIED PID --", OME_Label, NULL, NULL, 0},
     { "PID TUNING",    OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_pids_mode, PID_SIMPLIFIED_TUNING_MODE_COUNT - 1, lookupTableSimplifiedTuningPidsMode }, 0 },
-    { "MASTER MULT",    OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
-    { "R/P RATIO",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
-    { "I GAIN",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
-    { "PD RATIO",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pd_ratio,          SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
-    { "PD GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pd_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
-    { "DMIN RATIO",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
-    { "FF GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_ff_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
+    { "MASTER MULT",    OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "R/P RATIO",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "I GAIN",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "PD RATIO",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pd_ratio,          SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "PD GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pd_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "DMIN RATIO",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "FF GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
 
     { "-- SIMPLIFIED FILTER --", OME_Label, NULL, NULL, 0},
     { "GYRO TUNING",    OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_gyro_filter,  1, lookupTableOffOn }, 0 },
-    { "GYRO MULT",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
+    { "GYRO MULT",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
     { "DTERM TUNING",   OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_dterm_filter, 1, lookupTableOffOn }, 0 },
-    { "DTERM MULT",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 1, 10 }, 0 },
+    { "DTERM MULT",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
 
     { "-- GENERAL --", OME_Label, NULL, NULL, 0},
     { "APPLY TUNING",  OME_Funcall, cmsx_applySimplifiedTuning, NULL, 0 },
@@ -473,8 +489,8 @@ static CMS_Menu cmsx_menuLaunchControl = {
 };
 #endif
 
-static uint8_t  cmsx_feedForwardTransition;
-static uint8_t  cmsx_ff_boost;
+static uint8_t  cmsx_feedforwardTransition;
+static uint8_t  cmsx_feedforward_boost;
 static uint8_t  cmsx_angleStrength;
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonTransition;
@@ -500,9 +516,10 @@ static uint8_t cmsx_iterm_relax_type;
 static uint8_t cmsx_iterm_relax_cutoff;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-static uint8_t cmsx_ff_interpolate_sp;
-static uint8_t cmsx_ff_smooth_factor;
+#ifdef USE_FEEDFORWARD
+static uint8_t cmsx_feedforward_averaging;
+static uint8_t cmsx_feedforward_smooth_factor;
+static uint8_t cmsx_feedforward_jitter_factor;
 #endif
 
 static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
@@ -513,8 +530,8 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
-    cmsx_feedForwardTransition  = pidProfile->feedForwardTransition;
-    cmsx_ff_boost = pidProfile->ff_boost;
+    cmsx_feedforwardTransition  = pidProfile->feedforwardTransition;
+    cmsx_feedforward_boost = pidProfile->feedforward_boost;
 
     cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
     cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
@@ -542,9 +559,10 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_iterm_relax_cutoff = pidProfile->iterm_relax_cutoff;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    cmsx_ff_interpolate_sp = pidProfile->ff_interpolate_sp;
-    cmsx_ff_smooth_factor = pidProfile->ff_smooth_factor;
+#ifdef USE_FEEDFORWARD
+    cmsx_feedforward_averaging = pidProfile->feedforward_averaging;
+    cmsx_feedforward_smooth_factor = pidProfile->feedforward_smooth_factor;
+    cmsx_feedforward_jitter_factor = pidProfile->feedforward_jitter_factor;
 #endif
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
@@ -559,9 +577,9 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     UNUSED(self);
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
-    pidProfile->feedForwardTransition = cmsx_feedForwardTransition;
+    pidProfile->feedforwardTransition = cmsx_feedforwardTransition;
     pidInitConfig(currentPidProfile);
-    pidProfile->ff_boost = cmsx_ff_boost;
+    pidProfile->feedforward_boost = cmsx_feedforward_boost;
 
     pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
     pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
@@ -589,9 +607,10 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->iterm_relax_cutoff = cmsx_iterm_relax_cutoff;
 #endif
 
-#ifdef USE_INTERPOLATED_SP
-    pidProfile->ff_interpolate_sp = cmsx_ff_interpolate_sp;
-    pidProfile->ff_smooth_factor = cmsx_ff_smooth_factor;
+#ifdef USE_FEEDFORWARD
+    pidProfile->feedforward_averaging = cmsx_feedforward_averaging;
+    pidProfile->feedforward_smooth_factor = cmsx_feedforward_smooth_factor;
+    pidProfile->feedforward_jitter_factor = cmsx_feedforward_jitter_factor;
 #endif
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
@@ -605,12 +624,13 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
-    { "FF TRANS",      OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedForwardTransition,  0,    100,   1, 10 }, 0 },
-#ifdef USE_INTERPOLATED_SP
-    { "FF MODE",       OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_ff_interpolate_sp,  4, lookupTableInterpolatedSetpoint}, 0 },
-    { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_smooth_factor,     0,     75,   1  }   , 0 },
+    { "FF TRANSITION", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedforwardTransition,  0,    100,   1, 10 }, 0 },
+#ifdef USE_FEEDFORWARD
+    { "FF AVERAGING",  OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_feedforward_averaging,         4, lookupTableFeedforwardAveraging}, 0 },
+    { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_smooth_factor,     0,     75,   1  }   , 0 },
+    { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     20,   1  }   , 0 },
 #endif
-    { "FF BOOST",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_ff_boost,               0,     50,   1  }   , 0 },
+    { "FF BOOST",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,               0,     50,   1  }   , 0 },
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }   , 0 },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }   , 0 },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }   , 0 },
@@ -736,8 +756,8 @@ static CMS_Menu cmsx_menuFilterGlobal = {
 
 #ifdef USE_GYRO_DATA_ANALYSE
 static uint16_t dynFiltNotchMaxHz;
-static uint8_t  dynFiltWidthPercent;
-static uint16_t dynFiltNotchQ;
+static uint8_t  dynFiltCount;
+static uint16_t dynFiltBandwidthHz;
 static uint16_t dynFiltNotchMinHz;
 #endif
 #ifdef USE_DYN_LPF
@@ -755,8 +775,8 @@ static const void *cmsx_menuDynFilt_onEnter(displayPort_t *pDisp)
 
 #ifdef USE_GYRO_DATA_ANALYSE
     dynFiltNotchMaxHz   = gyroConfig()->dyn_notch_max_hz;
-    dynFiltWidthPercent = gyroConfig()->dyn_notch_width_percent;
-    dynFiltNotchQ       = gyroConfig()->dyn_notch_q;
+    dynFiltCount        = gyroConfig()->dyn_notch_count;
+    dynFiltBandwidthHz  = gyroConfig()->dyn_notch_bandwidth_hz;
     dynFiltNotchMinHz   = gyroConfig()->dyn_notch_min_hz;
 #endif
 #ifdef USE_DYN_LPF
@@ -779,8 +799,8 @@ static const void *cmsx_menuDynFilt_onExit(displayPort_t *pDisp, const OSD_Entry
 
 #ifdef USE_GYRO_DATA_ANALYSE
     gyroConfigMutable()->dyn_notch_max_hz        = dynFiltNotchMaxHz;
-    gyroConfigMutable()->dyn_notch_width_percent = dynFiltWidthPercent;
-    gyroConfigMutable()->dyn_notch_q             = dynFiltNotchQ;
+    gyroConfigMutable()->dyn_notch_count         = dynFiltCount;
+    gyroConfigMutable()->dyn_notch_bandwidth_hz  = dynFiltBandwidthHz;
     gyroConfigMutable()->dyn_notch_min_hz        = dynFiltNotchMinHz;
 #endif
 #ifdef USE_DYN_LPF
@@ -801,8 +821,8 @@ static const OSD_Entry cmsx_menuDynFiltEntries[] =
     { "-- DYN FILT --", OME_Label, NULL, NULL, 0 },
 
 #ifdef USE_GYRO_DATA_ANALYSE
-    { "NOTCH WIDTH %",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltWidthPercent, 0, 20, 1 }, 0 },
-    { "NOTCH Q",        OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchQ,       0, 1000, 1 }, 0 },
+    { "NOTCH COUNT",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &dynFiltCount,        1, DYN_NOTCH_COUNT_MAX, 1 }, 0 },
+    { "NOTCH WIDTH HZ", OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltBandwidthHz,  1, 1000, 1 }, 0 },
     { "NOTCH MIN HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMinHz,   0, 1000, 1 }, 0 },
     { "NOTCH MAX HZ",   OME_UINT16, NULL, &(OSD_UINT16_t) { &dynFiltNotchMaxHz,   0, 1000, 1 }, 0 },
 #endif

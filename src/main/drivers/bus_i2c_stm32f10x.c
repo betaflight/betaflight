@@ -35,8 +35,6 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
-#define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
-
 // Number of bits in I2C protocol phase
 #define LEN_ADDR 7
 #define LEN_RW 1
@@ -182,7 +180,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
         return false;
     }
 
-    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+    timeUs_t timeoutStartUs = microsISR();
 
     state->addr = addr_ << 1;
     state->reg = reg_;
@@ -196,9 +194,11 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
 
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
         if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
-            while (I2Cx->CR1 & I2C_CR1_STOP && --timeout > 0) {; }     // wait for any stop to finish sending
-            if (timeout == 0)
-                return i2cHandleHardwareFailure(device);
+            while (I2Cx->CR1 & I2C_CR1_STOP) {                          // wait for any stop to finish sending
+                if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                    return i2cHandleHardwareFailure(device);
+                }
+            }
             I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
         }
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
@@ -220,11 +220,13 @@ bool i2cBusy(I2CDevice device, bool *error)
 bool i2cWait(I2CDevice device)
 {
     i2cState_t *state = &i2cDevice[device].state;
-    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+    timeUs_t timeoutStartUs = microsISR();
 
-    while (state->busy && --timeout > 0) {; }
-    if (timeout == 0)
-        return i2cHandleHardwareFailure(device) && i2cWait(device);
+    while (state->busy) {
+        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+            return i2cHandleHardwareFailure(device) && i2cWait(device);
+        }
+    }
 
     return !(state->error);
 }
@@ -250,7 +252,7 @@ bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, u
         return false;
     }
 
-    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+    timeUs_t timeoutStartUs = microsISR();
 
     state->addr = addr_ << 1;
     state->reg = reg_;
@@ -264,9 +266,11 @@ bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, u
 
     if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
         if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
-            while (I2Cx->CR1 & I2C_CR1_STOP && --timeout > 0) {; }     // wait for any stop to finish sending
-            if (timeout == 0)
-                return i2cHandleHardwareFailure(device);
+            while (I2Cx->CR1 & I2C_CR1_STOP) {                          // wait for any stop to finish sending
+                if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+                    return i2cHandleHardwareFailure(device);
+                }
+            }
             I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
         }
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
@@ -477,12 +481,7 @@ void i2cInit(I2CDevice device)
     i2cInit.I2C_OwnAddress1 = 0;
     i2cInit.I2C_Ack = I2C_Ack_Enable;
     i2cInit.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-
-    if (pDev->overClock) {
-        i2cInit.I2C_ClockSpeed = 800000; // 800khz Maximum speed tested on various boards without issues
-    } else {
-        i2cInit.I2C_ClockSpeed = 400000; // 400khz Operation according specs
-    }
+    i2cInit.I2C_ClockSpeed = pDev->clockSpeed * 1000;
 
     I2C_Cmd(I2Cx, ENABLE);
     I2C_Init(I2Cx, &i2cInit);

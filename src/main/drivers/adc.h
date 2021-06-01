@@ -46,14 +46,16 @@
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(ADC2)
     ADCDEV_2,
+#endif
+#if defined(ADC3)
     ADCDEV_3,
 #endif
-#if defined(STM32F3) || defined(STM32G4)
+#if defined(ADC4)
     ADCDEV_4,
 #endif
-#if defined(STM32G4)
+#if defined(ADC5)
     ADCDEV_5,
 #endif
     ADCDEV_COUNT

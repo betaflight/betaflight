@@ -73,7 +73,7 @@ extern "C" {
 
     pidProfile_t *currentPidProfile;
     int16_t debug[DEBUG16_VALUE_COUNT];
-    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint8_t GPS_numSat;
     uint16_t GPS_distanceToHome;
     int16_t GPS_directionToHome;
@@ -104,6 +104,7 @@ extern "C" {
     int32_t simulationAltitude;
     int32_t simulationVerticalSpeed;
     uint16_t simulationCoreTemperature;
+    bool simulationGpsHealthy;
 }
 
 uint32_t simulationFeatureFlags = FEATURE_GPS;
@@ -130,6 +131,7 @@ void setDefaultSimulationState()
     simulationAltitude = 0;
     simulationVerticalSpeed = 0;
     simulationCoreTemperature = 0;
+    simulationGpsHealthy = false;
 
     rcData[PITCH] = 1500;
 
@@ -263,7 +265,7 @@ void simulateFlight(void)
     GPS_distanceToHome = 100;
     GPS_distanceFlownInCm = 10000;
     simulationBatteryVoltage = 1470;
-    simulationAltitude = 200;
+    simulationAltitude = 200; // converts to 6.56168 feet which rounds to 6.6 in imperial units stats test
     simulationTime += 1e6;
     osdRefresh(simulationTime);
 
@@ -501,7 +503,7 @@ TEST_F(OsdTest, TestStatsImperial)
     // then
     // statistics screen should display the following
     int row = 5;
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 6.5%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 6.6%c", SYM_FT);
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 17");
     displayPortTestBufferSubstring(2, row++, "MAX DISTANCE      : 3772%c", SYM_FT);
     displayPortTestBufferSubstring(2, row++, "FLIGHT DISTANCE   : 6.52%c", SYM_MILES);
@@ -905,28 +907,28 @@ TEST_F(OsdTest, TestElementAltitude)
     displayPortTestBufferSubstring(23, 7, "%c0.0%c", SYM_ALTITUDE, SYM_M);
 
     // when
-    simulationAltitude = 247;
+    simulationAltitude = 247;  // rounds to 2.5m
     displayClearScreen(&testDisplayPort);
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, "%c2.4%c", SYM_ALTITUDE, SYM_M);
+    displayPortTestBufferSubstring(23, 7, "%c2.5%c", SYM_ALTITUDE, SYM_M);
 
     // when
-    simulationAltitude = 4247;
+    simulationAltitude = 4247;  // rounds to 42.5m
     displayClearScreen(&testDisplayPort);
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, "%c42.4%c", SYM_ALTITUDE, SYM_M);
+    displayPortTestBufferSubstring(23, 7, "%c42.5%c", SYM_ALTITUDE, SYM_M);
 
     // when
-    simulationAltitude = -247;
+    simulationAltitude = -247;  // rounds to -2.5m
     displayClearScreen(&testDisplayPort);
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, "%c-2.4%c", SYM_ALTITUDE, SYM_M);
+    displayPortTestBufferSubstring(23, 7, "%c-2.5%c", SYM_ALTITUDE, SYM_M);
 
     // when
     simulationAltitude = -70;
@@ -1134,6 +1136,74 @@ TEST_F(OsdTest, TestConvertTemperatureUnits)
     EXPECT_EQ(osdConvertTemperatureToSelectedUnit(41), 106);
 }
 
+TEST_F(OsdTest, TestGpsElements)
+{
+    // given
+    osdElementConfigMutable()->item_pos[OSD_GPS_SATS] = OSD_POS(2, 4) | OSD_PROFILE_1_FLAG;
+
+    sensorsSet(SENSOR_GPS);
+    osdAnalyzeActiveElements();
+    
+    // when
+    simulationGpsHealthy = false;
+    gpsSol.numSat = 0;
+
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    // Sat indicator should blink and show "NC"
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
+        osdRefresh(simulationTime);
+
+        if (i % 2 == 0) {
+            displayPortTestBufferSubstring(2, 4, "%c%cNC", SYM_SAT_L, SYM_SAT_R);
+        } else {
+            displayPortTestBufferIsEmpty();
+        }
+    }
+
+    // when
+    simulationGpsHealthy = true;
+    gpsSol.numSat = 0;
+
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    // Sat indicator should blink and show "0"
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
+        osdRefresh(simulationTime);
+
+        if (i % 2 == 0) {
+            displayPortTestBufferSubstring(2, 4, "%c%c 0", SYM_SAT_L, SYM_SAT_R);
+        } else {
+            displayPortTestBufferIsEmpty();
+        }
+    }
+
+    // when
+    simulationGpsHealthy = true;
+    gpsSol.numSat = 10;
+
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    // Sat indicator should show "10" without flashing
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
+        osdRefresh(simulationTime);
+
+        displayPortTestBufferSubstring(2, 4, "%c%c10", SYM_SAT_L, SYM_SAT_R);
+    }
+}
+
 // STUBS
 extern "C" {
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
@@ -1242,6 +1312,7 @@ extern "C" {
     bool pidOsdAntiGravityActive(void) { return false; }
     bool failsafeIsActive(void) { return false; }
     bool gpsRescueIsConfigured(void) { return false; }
+    bool gpsIsHealthy(void) { return simulationGpsHealthy; }
     int8_t calculateThrottlePercent(void) { return 0; }
     uint32_t persistentObjectRead(persistentObjectId_e) { return 0; }
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}

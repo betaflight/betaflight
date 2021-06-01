@@ -54,6 +54,8 @@
 #include "flight/pid.h"
 #include "flight/gps_rescue.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/sensors.h"
 
 #define LOG_ERROR        '?'
@@ -673,10 +675,14 @@ static void updateGpsIndicator(timeUs_t currentTimeUs)
 
 void gpsUpdate(timeUs_t currentTimeUs)
 {
+    static timeUs_t maxTimeUs = 0;
+    timeUs_t endTimeUs;
+
     // read out available GPS bytes
     if (gpsPort) {
-        while (serialRxBytesWaiting(gpsPort))
+        while (serialRxBytesWaiting(gpsPort)) {
             gpsNewData(serialRead(gpsPort));
+        }
     } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
         gpsSetState(GPS_RECEIVING_DATA);
         gpsData.lastMessage = millis();
@@ -737,6 +743,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             }
             break;
     }
+
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
@@ -748,6 +755,17 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGPSRescueState();
     }
 #endif
+    // Call ignoreTaskTime() unless this took appreciable time
+    // Note that this will mess up the rate/Hz display under tasks, but the code
+    // takes widely varying time to complete
+    endTimeUs = micros();
+    if ((endTimeUs - currentTimeUs) > maxTimeUs) {
+        maxTimeUs = endTimeUs - currentTimeUs;
+    } else {
+        ignoreTaskTime();
+        // Decay max time
+        maxTimeUs--;
+    }
 }
 
 static void gpsNewData(uint16_t c)
@@ -950,11 +968,7 @@ static bool gpsNewFrameNMEA(char c)
                                 gps_Msg.longitude *= -1;
                             break;
                         case 6:
-                            if (string[0] > '0') {
-                                ENABLE_STATE(GPS_FIX);
-                            } else {
-                                DISABLE_STATE(GPS_FIX);
-                            }
+                            gpsSetFixState(string[0] > '0');
                             break;
                         case 7:
                             gps_Msg.numSat = grab_fields(string, 0);
@@ -1277,11 +1291,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lon = _buffer.posllh.longitude;
         gpsSol.llh.lat = _buffer.posllh.latitude;
         gpsSol.llh.altCm = _buffer.posllh.altitudeMslMm / 10;  //alt in cm
-        if (next_fix) {
-            ENABLE_STATE(GPS_FIX);
-        } else {
-            DISABLE_STATE(GPS_FIX);
-        }
+        gpsSetFixState(next_fix);
         _new_position = true;
         break;
     case MSG_STATUS:
@@ -1499,7 +1509,7 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
             if (speed > GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S) {
                 uint32_t dist;
                 int32_t dir;
-                GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[LAT], &lastCoord[LON], &dist, &dir);
+                GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[GPS_LATITUDE], &lastCoord[GPS_LONGITUDE], &dist, &dir);
                 if (gpsConfig()->gps_use_3d_speed) {
                     dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
                 }
@@ -1509,8 +1519,8 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
         GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
         GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500, 1500);
     }
-    lastCoord[LON] = gpsSol.llh.lon;
-    lastCoord[LAT] = gpsSol.llh.lat;
+    lastCoord[GPS_LONGITUDE] = gpsSol.llh.lon;
+    lastCoord[GPS_LATITUDE] = gpsSol.llh.lat;
     lastAlt = gpsSol.llh.altCm;
     lastMillis = currentMillis;
 }
@@ -1519,8 +1529,8 @@ void GPS_reset_home_position(void)
 {
     if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
         if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-            GPS_home[LAT] = gpsSol.llh.lat;
-            GPS_home[LON] = gpsSol.llh.lon;
+            GPS_home[GPS_LATITUDE] = gpsSol.llh.lat;
+            GPS_home[GPS_LONGITUDE] = gpsSol.llh.lon;
             GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
             // Set ground altitude
             ENABLE_STATE(GPS_FIX_HOME);
@@ -1550,7 +1560,7 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     if (STATE(GPS_FIX_HOME)) {      // If we don't have home set, do not display anything
         uint32_t dist;
         int32_t dir;
-        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
+        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[GPS_LATITUDE], &GPS_home[GPS_LONGITUDE], &dist, &dir);
         GPS_distanceToHome = dist / 100;
         GPS_directionToHome = dir / 100;
     } else {
@@ -1585,4 +1595,13 @@ void onGpsNewData(void)
 #endif
 }
 
+void gpsSetFixState(bool state)
+{
+    if (state) {
+        ENABLE_STATE(GPS_FIX);
+        ENABLE_STATE(GPS_FIX_EVER);
+    } else {
+        DISABLE_STATE(GPS_FIX);
+    }
+}
 #endif

@@ -354,33 +354,6 @@ static void validateAndFixConfig(void)
         rxConfigMutable()->rssi_src_frame_errors = false;
     }
 
-    if (!rcSmoothingIsEnabled() || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T) {
-        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->pid[PID_ROLL].F = 0;
-            pidProfilesMutable(i)->pid[PID_PITCH].F = 0;
-        }
-    }
-
-    if (!rcSmoothingIsEnabled() ||
-        (rxConfig()->rcInterpolationChannels != INTERPOLATION_CHANNELS_RPY &&
-         rxConfig()->rcInterpolationChannels != INTERPOLATION_CHANNELS_RPYT)) {
-
-        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->pid[PID_YAW].F = 0;
-        }
-    }
-
-#if defined(USE_THROTTLE_BOOST)
-    if (!rcSmoothingIsEnabled() ||
-        !(rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPYT
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_T
-        || rxConfig()->rcInterpolationChannels == INTERPOLATION_CHANNELS_RPT)) {
-        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->throttle_boost = 0;
-        }
-    }
-#endif
-
     if (
         featureIsConfigured(FEATURE_3D) || !featureIsConfigured(FEATURE_GPS) || mixerModeIsFixedWing(mixerConfig()->mixerMode)
 #if !defined(USE_GPS) || !defined(USE_GPS_RESCUE)
@@ -599,6 +572,7 @@ static void validateAndFixConfig(void)
         batteryConfigMutable()->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
     }
 
+#ifdef USE_MSP_DISPLAYPORT
     // validate that displayport_msp_serial is referencing a valid UART that actually has MSP enabled
     if (displayPortProfileMsp()->displayPortSerial != SERIAL_PORT_NONE) {
         const serialPortConfig_t *portConfig = serialFindPortConfiguration(displayPortProfileMsp()->displayPortSerial);
@@ -610,6 +584,7 @@ static void validateAndFixConfig(void)
             displayPortProfileMspMutable()->displayPortSerial = SERIAL_PORT_NONE;
         }
     }
+#endif
 
 #if defined(TARGET_VALIDATECONFIG)
     // This should be done at the end of the validation
