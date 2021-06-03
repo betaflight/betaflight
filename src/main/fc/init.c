@@ -378,6 +378,10 @@ void init(void)
     sdCardAndFSInit();
     initFlags |= SD_INIT_ATTEMPTED;
 
+    if (!sdcard_isInserted()) {
+        failureMode(FAILURE_SDCARD_REQUIRED);
+    }
+
     while (afatfs_getFilesystemState() != AFATFS_FILESYSTEM_STATE_READY) {
         afatfs_poll();
 
