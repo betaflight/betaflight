@@ -430,7 +430,7 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
     }
 
     if ((crashRecoveryModeActive()) && (currentPidProfile->crash_recovery == PID_CRASH_RECOVERY_LEVEL)) {
-      ret = imuRuntimeConfig.dcm_kp * imuRuntimeConfig.recovery_coef;
+        ret = imuRuntimeConfig.dcm_kp * imuRuntimeConfig.recovery_coef;
     }
 
     DEBUG_SET(DEBUG_RECOVERY, 0, crashRecoveryModeActive());

@@ -99,5 +99,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "D_LPF",
     "VTX_TRAMP",
     "GHST",
-    "RECOVERY",
+    "LEVEL_RECOVERY",
 };
