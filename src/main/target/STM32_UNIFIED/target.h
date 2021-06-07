@@ -198,6 +198,8 @@
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
+#if !defined(STM32G4)
+// G4 support needs fixing
 #define USE_SDCARD_SDIO
 
 #define USE_FLASHFS
