@@ -4778,6 +4778,17 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
 #endif
 
+#if defined(USE_ESC_SENSOR)
+    uint8_t motorCount = getMotorCount();
+    cliPrintLinef("ESC Temperature(s): Motor Count=%d", motorCount);
+    for (uint8_t i = 0; i < motorCount; i++)
+    {
+        const escSensorData_t *escData = getEscSensorData(i); 
+        cliPrintf("ESC %d: %d\260C, ", i, escData->temperature);
+    }
+    cliPrintLinefeed();
+#endif
+
     // Uptime and wall clock
 
     cliPrintf("System Uptime: %d seconds", millis() / 1000);
