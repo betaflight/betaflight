@@ -111,17 +111,17 @@ static float FAST_DATA_ZERO_INIT      sdftResolutionHz;
 static uint8_t FAST_DATA_ZERO_INIT    sdftStartBin;
 static uint8_t FAST_DATA_ZERO_INIT    sdftEndBin;
 static float FAST_DATA_ZERO_INIT      sdftMeanSq;
-static uint16_t FAST_DATA_ZERO_INIT   dynNotchBandwidthHz;
+static uint16_t FAST_DATA_ZERO_INIT   dynNotchQ;
 static uint16_t FAST_DATA_ZERO_INIT   dynNotchMinHz;
 static uint16_t FAST_DATA_ZERO_INIT   dynNotchMaxHz;
 static uint16_t FAST_DATA_ZERO_INIT   dynNotchMaxFFT;
-static float FAST_DATA_ZERO_INIT      smoothFactor;
+static float FAST_DATA_ZERO_INIT      gain;
 static uint8_t FAST_DATA_ZERO_INIT    numSamples;
 
 void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
 {
     // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
-    dynNotchBandwidthHz = gyroConfig()->dyn_notch_bandwidth_hz;
+    dynNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
     dynNotchMinHz = gyroConfig()->dyn_notch_min_hz;
     dynNotchMaxHz = MAX(2 * dynNotchMinHz, gyroConfig()->dyn_notch_max_hz);
 
@@ -140,7 +140,7 @@ void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
     sdftResolutionHz = (float)sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 13.3hz per bin at 8k
     sdftStartBin = MAX(2, lrintf(dynNotchMinHz / sdftResolutionHz + 0.5f)); // can't use bin 0 because it is DC.
     sdftEndBin = MIN(SDFT_BIN_COUNT - 1, lrintf(dynNotchMaxHz / sdftResolutionHz + 0.5f)); // can't use more than SDFT_BIN_COUNT bins.
-    smoothFactor = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / (float)targetLoopRateHz); // minimum PT1 k value
+    gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / (float)targetLoopRateHz); // minimum PT1 k value
 
     for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         sdftInit(&sdft[axis], sdftStartBin, sdftEndBin, numSamples);
@@ -283,45 +283,28 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
                 // Only update state->centerFreq if there is a peak (ignore void peaks) and if peak is above noise floor
                 if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
 
-                    // accumulate sdftSum and sdftWeightedSum from peak bin, and shoulder bins either side of peak
-                    float squaredData = peaks[p].value; // peak data already squared (see sdftWinSq)
-                    float sdftSum = squaredData;
-                    float sdftWeightedSum = squaredData * peaks[p].bin;
+                    float meanBin = peaks[p].bin;
 
-                    // accumulate upper shoulder unless it would be sdftEndBin
-                    uint8_t shoulderBin = peaks[p].bin + 1;
-                    if (shoulderBin < sdftEndBin) {
-                        squaredData = sdftData[shoulderBin]; // sdftData already squared (see sdftWinSq)
-                        sdftSum += squaredData;
-                        sdftWeightedSum += squaredData * shoulderBin;
+                    // Height of peak bin (y1) and shoulder bins (y0, y2)
+                    const float y0 = sdftData[peaks[p].bin - 1];
+                    const float y1 = sdftData[peaks[p].bin];
+                    const float y2 = sdftData[peaks[p].bin + 1];
+
+                    // Estimate true peak position aka. meanBin (fit parabola y(x) over y0, y1 and y2, solve dy/dx=0 for x)
+                    const float denom = 2.0f * (y0 - 2 * y1 + y2);
+                    if (denom != 0.0f) {
+                        meanBin += (y0 - y2) / denom;
                     }
 
-                    // accumulate lower shoulder unless lower shoulder would be bin 0 (DC)
-                    if (peaks[p].bin > 1) {
-                        shoulderBin = peaks[p].bin - 1;
-                        squaredData = sdftData[shoulderBin]; // sdftData already squared (see sdftWinSq)
-                        sdftSum += squaredData;
-                        sdftWeightedSum += squaredData * shoulderBin;
-                    }
+                    // Convert bin to frequency: freq = bin * binResoultion (bin 0 is 0Hz)
+                    const float centerFreq = constrainf(meanBin * sdftResolutionHz, dynNotchMinHz, dynNotchMaxHz);
 
-                    // get centerFreq in Hz from weighted bins
-                    float centerFreq = dynNotchMaxHz;
-                    float sdftMeanBin = 0;
+                    // PT1 style smoothing moves notch center freqs rapidly towards big peaks and slowly away, up to 8x faster 
+                    // DYN_NOTCH_SMOOTH_HZ = 4 & gainMultiplier = 1 .. 8  =>  PT1 -3dB cutoff frequency = 4Hz .. 41Hz
+                    const float gainMultiplier = constrainf(peaks[p].value / sdftMeanSq, 1.0f, 8.0f);
 
-                    if (sdftSum > 0) {
-                        sdftMeanBin = (sdftWeightedSum / sdftSum);
-                        centerFreq = sdftMeanBin * sdftResolutionHz;
-                        centerFreq = constrainf(centerFreq, dynNotchMinHz, dynNotchMaxHz);
-                        // In theory, the index points to the centre frequency of the bin.
-                        // at 1333hz, bin widths are 13.3Hz, so bin 2 (26.7Hz) has the range 20Hz to 33.3Hz
-                        // Rav feels that maybe centerFreq = (sdftMeanBin + 0.5) * sdftResolutionHz is better
-                        // empirical checking shows that not adding 0.5 works better
-                        
-                        // PT1 style dynamic smoothing moves rapidly towards big peaks and slowly away, up to 8x faster 
-                        // DYN_NOTCH_SMOOTH_HZ = 4 & dynamicFactor = 1 .. 8  =>  PT1 -3dB cutoff frequency = 4Hz .. 41Hz
-                        const float dynamicFactor = constrainf(peaks[p].value / sdftMeanSq, 1.0f, 8.0f);
-                        state->centerFreq[state->updateAxis][p] += smoothFactor * dynamicFactor * (centerFreq - state->centerFreq[state->updateAxis][p]);
-                    }
+                    // Finally update notch center frequency p on current axis
+                    state->centerFreq[state->updateAxis][p] += gain * gainMultiplier * (centerFreq - state->centerFreq[state->updateAxis][p]);
                 }
             }
 
@@ -347,10 +330,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
             for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
                 if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
-                    // Choose notch Q in such a way that notch bandwidth stays constant (improves prop wash handling)
-                    float dynamicQ = state->centerFreq[state->updateAxis][p] / (float)dynNotchBandwidthHz;
-                    dynamicQ = constrainf(dynamicQ, 2.0f, 10.0f);
-                    biquadFilterUpdate(&gyro.notchFilterDyn[state->updateAxis][p], state->centerFreq[state->updateAxis][p], gyro.targetLooptime, dynamicQ, FILTER_NOTCH);
+                    biquadFilterUpdate(&gyro.notchFilterDyn[state->updateAxis][p], state->centerFreq[state->updateAxis][p], gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
                 }
             }
 

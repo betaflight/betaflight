@@ -1422,7 +1422,7 @@ static bool blackboxWriteSysinfo(void)
 #ifdef USE_GYRO_DATA_ANALYSE
         BLACKBOX_PRINT_HEADER_LINE("dyn_notch_max_hz", "%d",                gyroConfig()->dyn_notch_max_hz);
         BLACKBOX_PRINT_HEADER_LINE("dyn_notch_count", "%d",                 gyroConfig()->dyn_notch_count);
-        BLACKBOX_PRINT_HEADER_LINE("dyn_notch_bandwidth_hz", "%d",          gyroConfig()->dyn_notch_bandwidth_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dyn_notch_q", "%d",                     gyroConfig()->dyn_notch_q);
         BLACKBOX_PRINT_HEADER_LINE("dyn_notch_min_hz", "%d",                gyroConfig()->dyn_notch_min_hz);
 #endif
 #ifdef USE_DSHOT_TELEMETRY

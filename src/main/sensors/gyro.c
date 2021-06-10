@@ -129,8 +129,8 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->dyn_lpf_gyro_min_hz = DYN_LPF_GYRO_MIN_HZ_DEFAULT;
     gyroConfig->dyn_lpf_gyro_max_hz = DYN_LPF_GYRO_MAX_HZ_DEFAULT;
     gyroConfig->dyn_notch_max_hz = 600;
-    gyroConfig->dyn_notch_count = 1;
-    gyroConfig->dyn_notch_bandwidth_hz = 45;
+    gyroConfig->dyn_notch_count = 3;
+    gyroConfig->dyn_notch_q = 300;
     gyroConfig->dyn_notch_min_hz = 150;
     gyroConfig->gyro_filter_debug_axis = FD_ROLL;
     gyroConfig->dyn_lpf_curve_expo = 5;
