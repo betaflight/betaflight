@@ -20,6 +20,10 @@
 
 #pragma once
 
+#include <stdint.h>
+
+#include "common/axis.h"
+
 #define DYN_NOTCH_COUNT_MAX 5
 
 typedef struct gyroAnalyseState_s {
@@ -42,8 +46,8 @@ typedef struct gyroAnalyseState_s {
 
 } gyroAnalyseState_t;
 
-void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs);
-void gyroDataAnalysePush(gyroAnalyseState_t *state, const uint8_t axis, const float sample);
+void gyroDataAnalyseInit(gyroAnalyseState_t *state, const uint32_t targetLooptimeUs);
+void gyroDataAnalysePush(gyroAnalyseState_t *state, const int axis, const float sample);
 void gyroDataAnalyse(gyroAnalyseState_t *state);
-uint16_t getMaxFFT(void);
+int getMaxFFT(void);
 void resetMaxFFT(void);

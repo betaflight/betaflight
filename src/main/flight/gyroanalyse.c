@@ -29,7 +29,6 @@
  */
 
 #include <math.h>
-#include <stdint.h>
 
 #include "platform.h"
 
@@ -98,7 +97,7 @@ typedef enum {
 
 typedef struct peak_s {
 
-    uint8_t bin;
+    int bin;
     float value;
 
 } peak_t;
@@ -106,19 +105,19 @@ typedef struct peak_s {
 static sdft_t FAST_DATA_ZERO_INIT     sdft[XYZ_AXIS_COUNT];
 static peak_t FAST_DATA_ZERO_INIT     peaks[DYN_NOTCH_COUNT_MAX];
 static float FAST_DATA_ZERO_INIT      sdftData[SDFT_BIN_COUNT];
-static uint16_t FAST_DATA_ZERO_INIT   sdftSampleRateHz;
+static float FAST_DATA_ZERO_INIT      sdftSampleRateHz;
 static float FAST_DATA_ZERO_INIT      sdftResolutionHz;
-static uint8_t FAST_DATA_ZERO_INIT    sdftStartBin;
-static uint8_t FAST_DATA_ZERO_INIT    sdftEndBin;
+static int FAST_DATA_ZERO_INIT        sdftStartBin;
+static int FAST_DATA_ZERO_INIT        sdftEndBin;
 static float FAST_DATA_ZERO_INIT      sdftMeanSq;
-static uint16_t FAST_DATA_ZERO_INIT   dynNotchQ;
-static uint16_t FAST_DATA_ZERO_INIT   dynNotchMinHz;
-static uint16_t FAST_DATA_ZERO_INIT   dynNotchMaxHz;
-static uint16_t FAST_DATA_ZERO_INIT   dynNotchMaxFFT;
+static float FAST_DATA_ZERO_INIT      dynNotchQ;
+static float FAST_DATA_ZERO_INIT      dynNotchMinHz;
+static float FAST_DATA_ZERO_INIT      dynNotchMaxHz;
+static int FAST_DATA_ZERO_INIT        dynNotchMaxFFT;
 static float FAST_DATA_ZERO_INIT      gain;
-static uint8_t FAST_DATA_ZERO_INIT    numSamples;
+static int FAST_DATA_ZERO_INIT        numSamples;
 
-void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
+void gyroDataAnalyseInit(gyroAnalyseState_t *state, const uint32_t targetLooptimeUs)
 {
     // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
     dynNotchQ = gyroConfig()->dyn_notch_q / 100.0f;
@@ -126,7 +125,7 @@ void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
     dynNotchMaxHz = MAX(2 * dynNotchMinHz, gyroConfig()->dyn_notch_max_hz);
 
     // gyroDataAnalyse() is running at targetLoopRateHz (which is PID loop rate aka. 1e6f/gyro.targetLooptimeUs)
-    const int32_t targetLoopRateHz = lrintf((1.0f / targetLooptimeUs) * 1e6f);
+    const float targetLoopRateHz = 1.0f / targetLooptimeUs * 1e6f;
     numSamples = MAX(1, targetLoopRateHz / (2 * dynNotchMaxHz)); // 600hz, 8k looptime, 6.00
 
     sdftSampleRateHz = targetLoopRateHz / numSamples;
@@ -137,20 +136,20 @@ void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
     // eg 1k, user max 600hz, int(1000/1200) = 1 (max(1,0.8333)) sdftSampleRateHz = 1000hz, range 500Hz
     // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
 
-    sdftResolutionHz = (float)sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 13.3hz per bin at 8k
-    sdftStartBin = MAX(2, lrintf(dynNotchMinHz / sdftResolutionHz + 0.5f)); // can't use bin 0 because it is DC.
-    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, lrintf(dynNotchMaxHz / sdftResolutionHz + 0.5f)); // can't use more than SDFT_BIN_COUNT bins.
-    gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / (float)targetLoopRateHz); // minimum PT1 k value
+    sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 13.3hz per bin at 8k
+    sdftStartBin = MAX(2, dynNotchMinHz / sdftResolutionHz + 0.5f); // can't use bin 0 because it is DC.
+    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynNotchMaxHz / sdftResolutionHz + 0.5f); // can't use more than SDFT_BIN_COUNT bins.
+    gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / targetLoopRateHz); // minimum PT1 k value
 
-    for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         sdftInit(&sdft[axis], sdftStartBin, sdftEndBin, numSamples);
     }
 
     state->maxSampleCount = numSamples;
     state->maxSampleCountRcp = 1.0f / state->maxSampleCount;
 
-    for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        for (int p = 0; p < gyro.notchFilterDynCount; p++) {
             // any init value is fine, but evenly spreading centerFreqs across frequency range makes notch filters stick to peaks quicker
             state->centerFreq[axis][p] = (p + 0.5f) * (dynNotchMaxHz - dynNotchMinHz) / (float)gyro.notchFilterDynCount + dynNotchMinHz;
         }
@@ -158,7 +157,7 @@ void gyroDataAnalyseInit(gyroAnalyseState_t *state, uint32_t targetLooptimeUs)
 }
 
 // Collect gyro data, to be downsampled and analysed in gyroDataAnalyse() function
-void gyroDataAnalysePush(gyroAnalyseState_t *state, const uint8_t axis, const float sample)
+void gyroDataAnalysePush(gyroAnalyseState_t *state, const int axis, const float sample)
 {
     state->oversampledGyroAccumulator[axis] += sample;
 }
@@ -174,7 +173,7 @@ FAST_CODE void gyroDataAnalyse(gyroAnalyseState_t *state)
         state->sampleCount = 0;
 
         // calculate mean value of accumulated samples
-        for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             const float sample = state->oversampledGyroAccumulator[axis] * state->maxSampleCountRcp;
             state->downsampledGyroData[axis] = sample;
             if (axis == 0) {
@@ -192,8 +191,8 @@ FAST_CODE void gyroDataAnalyse(gyroAnalyseState_t *state)
 
     // 2us @ F722
     // SDFT processing in batches to synchronize with incoming downsampled data
-    for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        sdftPushBatch(&sdft[axis], &state->downsampledGyroData[axis], &state->sampleCount);
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        sdftPushBatch(&sdft[axis], state->downsampledGyroData[axis], state->sampleCount);
     }
     state->sampleCount++;
 
@@ -222,7 +221,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
             
             // Calculate mean square over frequency range (= average power of vibrations)
             sdftMeanSq = 0.0f;
-            for (uint8_t bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {   // don't use startBin or endBin because they are not windowed properly
+            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {   // don't use startBin or endBin because they are not windowed properly
                 sdftMeanSq += sdftData[bin];                                    // sdftData is already squared (see sdftWinSq)
             }
             sdftMeanSq /= sdftEndBin - sdftStartBin - 1;
@@ -234,20 +233,20 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
         case STEP_DETECT_PEAKS: // 6us @ F722
         {
             // Get memory ready for new peak data on current axis
-            for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+            for (int p = 0; p < gyro.notchFilterDynCount; p++) {
                 peaks[p].bin = 0;
                 peaks[p].value = 0.0f;
             }
 
             // Search for N biggest peaks in frequency spectrum
-            for (uint8_t bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
+            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
                 // Check if bin is peak
                 if ((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
                     // Check if peak is big enough to be one of N biggest peaks.
                     // If so, insert peak and sort peaks in descending height order
-                    for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+                    for (int p = 0; p < gyro.notchFilterDynCount; p++) {
                         if (sdftData[bin] > peaks[p].value) {
-                            for (uint8_t k = gyro.notchFilterDynCount - 1; k > p; k--) {
+                            for (int k = gyro.notchFilterDynCount - 1; k > p; k--) {
                                 peaks[k] = peaks[k - 1];
                             }
                             peaks[p].bin = bin;
@@ -260,8 +259,8 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
             }
 
             // Sort N biggest peaks in ascending bin order (example: 3, 8, 25, 0, 0, ..., 0)
-            for (uint8_t p = gyro.notchFilterDynCount - 1; p > 0; p--) {
-                for (uint8_t k = 0; k < p; k++) {
+            for (int p = gyro.notchFilterDynCount - 1; p > 0; p--) {
+                for (int k = 0; k < p; k++) {
                     // Swap peaks but ignore swapping void peaks (bin = 0). This leaves
                     // void peaks at the end of peaks array without moving them
                     if (peaks[k].bin > peaks[k + 1].bin && peaks[k + 1].bin != 0) {
@@ -278,7 +277,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
         }
         case STEP_CALC_FREQUENCIES: // 4us @ F722
         {
-            for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+            for (int p = 0; p < gyro.notchFilterDynCount; p++) {
 
                 // Only update state->centerFreq if there is a peak (ignore void peaks) and if peak is above noise floor
                 if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
@@ -309,13 +308,13 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
             }
 
             if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
-                for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+                for (int p = 0; p < gyro.notchFilterDynCount; p++) {
                     dynNotchMaxFFT = MAX(dynNotchMaxFFT, state->centerFreq[state->updateAxis][p]);
                 }
             }
 
             if (state->updateAxis == gyro.gyroDebugAxis) {
-                for (uint8_t p = 0; p < gyro.notchFilterDynCount && p < 3; p++) {
+                for (int p = 0; p < gyro.notchFilterDynCount && p < 3; p++) {
                     DEBUG_SET(DEBUG_FFT_FREQ, p, lrintf(state->centerFreq[state->updateAxis][p]));
                 }
                 DEBUG_SET(DEBUG_DYN_LPF, 1, lrintf(state->centerFreq[state->updateAxis][0]));
@@ -327,7 +326,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
         }
         case STEP_UPDATE_FILTERS: // 7us @ F722
         {
-            for (uint8_t p = 0; p < gyro.notchFilterDynCount; p++) {
+            for (int p = 0; p < gyro.notchFilterDynCount; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
                 if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
                     biquadFilterUpdate(&gyro.notchFilterDyn[state->updateAxis][p], state->centerFreq[state->updateAxis][p], gyro.targetLooptime, dynNotchQ, FILTER_NOTCH);
@@ -344,7 +343,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
 }
 
 
-uint16_t getMaxFFT(void) {
+int getMaxFFT(void) {
     return dynNotchMaxFFT;
 }
 
