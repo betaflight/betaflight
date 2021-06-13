@@ -35,8 +35,8 @@
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/rc.h"
 
-#include "flight/feedforward.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
@@ -243,7 +243,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
         pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
+        pidRuntime.maxRcRateInv[axis] = 1.0f / getMaxRcRate(axis);
     }
+    pidRuntime.angleYawSetpoint = 0.0f;
 #endif
 
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
@@ -258,28 +260,6 @@ void pidInit(const pidProfile_t *pidProfile)
     rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
 #endif
 }
-
-#ifdef USE_RC_SMOOTHING_FILTER
-void pidInitFeedforwardLpf(uint16_t filterCutoff, uint8_t debugAxis)
-{
-    pidRuntime.rcSmoothingDebugAxis = debugAxis;
-    if (filterCutoff > 0) {
-        pidRuntime.feedforwardLpfInitialized = true;
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            pt3FilterInit(&pidRuntime.feedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
-        }
-    }
-}
-
-void pidUpdateFeedforwardLpf(uint16_t filterCutoff)
-{
-    if (filterCutoff > 0) {
-        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            pt3FilterUpdateCutoff(&pidRuntime.feedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
-        }
-    }
-}
-#endif // USE_RC_SMOOTHING_FILTER
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -432,9 +412,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.feedforwardSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) / 100.0f;
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
-
-    feedforwardInit(pidProfile);
+    pidRuntime.feedforwardBoostFactor = ((float)pidProfile->feedforward_boost) / 10.0f;
+    const float feedforwardMaxRatePercent = ((float)pidProfile->feedforward_max_rate_limit) * 0.01f;
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        pidRuntime.feedforwardMaxRate[axis] = feedforwardMaxRatePercent * getMaxRcRate(axis);
+        pidRuntime.feedforwardPidKp[axis] = pidProfile->pid[axis].P;
+    }
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
