@@ -50,7 +50,6 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
-#include "flight/feedforward.h"
 
 #include "io/gps.h"
 
@@ -283,7 +282,13 @@ float pidGetFeedforwardBoostFactor(void)
 {
     return pidRuntime.feedforwardBoostFactor;
 }
-#endif
+
+float pidGetFeedforwardAveraging(void)
+{
+    return pidRuntime.feedforwardAveraging;
+}
+
+#endif // USE_FEEDFORWARD
 
 void pidResetIterm(void)
 {
@@ -293,6 +298,11 @@ void pidResetIterm(void)
         axisError[axis] = 0.0f;
 #endif
     }
+}
+
+bool pidGetAxisInAngleMode(int axis)
+{
+    return pidRuntime.axisInAngleMode[axis];
 }
 
 void pidUpdateTpaFactor(float throttle)
@@ -366,10 +376,10 @@ float pidApplyThrustLinearization(float motorOutput)
 #endif
 
 #if defined(USE_ACC)
-// calculate the stick deflection while applying level mode expo
-static float getAngleModeStickInputRaw(uint8_t axis)
+// calculate the Angle Setpoint for use in Horizon mode from smoothed stick deflection, and apply level mode expo
+static float angleSetpointHorizon(int axis)
 {
-    const float stickDeflection = getRcDeflectionRaw(axis);
+    const float stickDeflection = getRcDeflection(axis);
     if (axis < FD_YAW) {
         const float expof = currentControlRateProfile->levelExpo[axis] / 100.0f;
         return power3(stickDeflection) * expof + stickDeflection * (1 - expof);
@@ -401,64 +411,30 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
-                                                        float rawSetpoint, float horizonLevelStrength, bool newRcFrame)
+                                                        float currentPidSetpoint, float horizonLevelStrength)
 {
     const float angleLimit = pidProfile->angle_limit;
 
-    // ** angle loop feedforward
+// Applies only to axes that are in Angle mode
+// For Angle mode axes, currentSetpoint is angle setpoint from rc.c, using angle expo, and getFeedforwardDelta provides angle feedforward from stick input
+// in Horizon mode, flight is basically acro, with a simple angle setpoint (without angle feedforward) crossfaded in
+
     float angleFeedforward = 0.0f;
+    float setpointToUse = 0.0f;
+    if (FLIGHT_MODE(ANGLE_MODE)) {
 #ifdef USE_FEEDFORWARD
-    const float rxRateHz = 1e6f / getCurrentRxRefreshRate();
-    const float rcCommandDeltaAbs = fabsf(getRcCommandDelta(axis));
-
-    if (newRcFrame){
-        // this runs at Rx link rate
-        const float angleTargetRaw = angleLimit * getAngleModeStickInputRaw(axis);
-        float angleFeedforwardInput = 0.0f;
-
-        if (rcCommandDeltaAbs) {
-            // there is movement, so calculate a Delta value to get feedforward
-            pidRuntime.angleTargetDelta[axis] = (angleTargetRaw - pidRuntime.angleTargetPrevious[axis]);
-            angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
-            pidRuntime.angleDuplicateCount[axis] = 0;
-            pidRuntime.angleTargetPrevious[axis] = angleTargetRaw;
-            // no need for averaging or PT1 smoothing because of the strong PT3 smoothing of the final value
-        } else { // it's a duplicate
-            // TO DO - interpolate duplicates in rc.c for frsky so that incoming steps don't have them
-            pidRuntime.angleDuplicateCount[axis] += 1;
-            const float rcDeflectionAbs = getRcDeflectionAbs(axis);
-            if (pidRuntime.angleDuplicateCount[axis] == 1 && rcDeflectionAbs < 0.97f) {
-                // on first duplicate, unless we just hit max deflection, reduce glitch by interpolation
-                angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
-            } else {
-                // force feedforward to zero
-                pidRuntime.angleDuplicateCount[axis] = 2;
-                pidRuntime.angleTargetDelta[axis] = 0.0f;
-                angleFeedforwardInput = 0.0f;
-            }
-        }
-
-        // jitter attenuation copied from feedforward.c
-        // TO DO move jitter algorithm to rc.c and use same code here and in feedforward.c
-        const float feedforwardJitterFactor = pidRuntime.feedforwardJitterFactor;
-        float jitterAttenuator = 1.0f;
-        if (feedforwardJitterFactor && rcCommandDeltaAbs < feedforwardJitterFactor) {
-            jitterAttenuator = 1.0f - (rcCommandDeltaAbs / feedforwardJitterFactor);
-            jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
-        }
-
-        angleFeedforwardInput *= jitterAttenuator * rxRateHz;
-        pidRuntime.angleFeedforward[axis] = angleFeedforwardInput; // feedforward element in degrees
-    }
-
-    angleFeedforward = pidRuntime.angleFeedforward[axis] * pidRuntime.angleFeedforwardGain;
-    // filter angle feedforward, heavily, at the PID loop rate, providing user control over time constant
-    angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
+        // Angle Mode axes are calculated in rc.c and a smoothed feedforwardDelta is available there
+        angleFeedforward = angleLimit * getFeedforwardDelta(axis) * pidRuntime.angleFeedforwardGain;
+        // filter angle feedforward, heavily, at the PID loop rate, providing user control over time constant
+        angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
 #endif // USE_FEEDFORWARD
+        setpointToUse = currentPidSetpoint;
+    } else if (FLIGHT_MODE(HORIZON_MODE)) {
+        // calculate a simple setpoint from rcDeflection, with no feedforward
+        setpointToUse = angleSetpointHorizon(axis);
+    }
+    float angleTarget = angleLimit * setpointToUse;
 
-    // calculate error angle and limit the angle to the max inclination
-    // stick input is from rcCommand, is smoothed, includes level expo, and is in range [-1.0, 1.0]
-    float angleTarget = angleLimit * getAngleModeStickInputRaw(axis);
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
@@ -466,7 +442,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     const float errorAngle = angleTarget - currentAngle;
     float angleRate = errorAngle * pidRuntime.angleGain + angleFeedforward;
 
-    // optionally, minimise cross-axis wobble due to faster yaw responses than roll or pitch, and make co-ordinated yaw turns
+    // minimise cross-axis wobble due to faster yaw responses than roll or pitch, and make co-ordinated yaw turns
     // by compensating for the effect of yaw on roll while pitched, and on pitch while rolled
     float axisCoordination = pidRuntime.angleYawSetpoint;
     if (pidRuntime.angleEarthRef) {
@@ -481,10 +457,10 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angleRate = pt3FilterApply(&pidRuntime.attitudeFilter[axis], angleRate);
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        rawSetpoint = angleRate;
+        currentPidSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
-        rawSetpoint = rawSetpoint * (1.0f - horizonLevelStrength) + angleRate * horizonLevelStrength;
+        currentPidSetpoint = currentPidSetpoint * (1.0f - horizonLevelStrength) + angleRate * horizonLevelStrength;
     }
 
     //logging
@@ -501,7 +477,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     }
 
     DEBUG_SET(DEBUG_CURRENT_ANGLE, axis, lrintf(currentAngle * 10.0f)); // current angle
-    return rawSetpoint;
+    return currentPidSetpoint;
 }
 
 static FAST_CODE_NOINLINE void handleCrashRecovery(
@@ -708,23 +684,6 @@ STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
         }
     }
 }
-
-#ifdef USE_RC_SMOOTHING_FILTER
-float FAST_CODE applyRcSmoothingFeedforwardFilter(int axis, float pidSetpointDelta)
-{
-    float ret = pidSetpointDelta;
-    if (axis == pidRuntime.rcSmoothingDebugAxis) {
-        DEBUG_SET(DEBUG_RC_SMOOTHING, 1, lrintf(pidSetpointDelta * 100.0f));
-    }
-    if (pidRuntime.feedforwardLpfInitialized) {
-        ret = pt3FilterApply(&pidRuntime.feedforwardPt3[axis], pidSetpointDelta);
-        if (axis == pidRuntime.rcSmoothingDebugAxis) {
-            DEBUG_SET(DEBUG_RC_SMOOTHING, 2, lrintf(ret * 100.0f));
-        }
-    }
-    return ret;
-}
-#endif // USE_RC_SMOOTHING_FILTER
 
 #if defined(USE_ITERM_RELAX)
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -979,43 +938,39 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
-const bool newRcFrame = getShouldUpdateFeedforward();
-
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
         float currentPidSetpoint = getSetpointRate(axis);
-        float rawSetpoint = getRawSetpoint(axis);
-        bool rawSetpointIsSmoothed = false;
         if (pidRuntime.maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
-        // earth reference yaw by attenuating yaw rate at higher angles
-        if (axis == FD_YAW && pidRuntime.angleEarthRef) {
-            pidRuntime.angleYawSetpoint = currentPidSetpoint;
-            if (levelMode == LEVEL_MODE_RP) {
-                float maxAngleTargetAbs = fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
-                maxAngleTargetAbs *= pidRuntime.angleEarthRef;
-                if (FLIGHT_MODE(HORIZON_MODE)) {
-                    // reduce yaw compensation when Horizon uses less levelling
-                    maxAngleTargetAbs *= horizonLevelStrength;
-                }
-                float attenuateYawSetpoint = cos_approx(DEGREES_TO_RADIANS(maxAngleTargetAbs));
-                currentPidSetpoint *= attenuateYawSetpoint;
-                rawSetpoint *= attenuateYawSetpoint;
-        DEBUG_SET(DEBUG_ANGLE_TARGET, 2, lrintf(attenuateYawSetpoint * 100.0f)); // yaw attenuation
+        pidRuntime.axisInAngleMode[axis] = false;
+        if (axis < FD_YAW) {
+            if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
+                pidRuntime.axisInAngleMode[axis] = true;
+                // replace acro setpoint from rates with the angle mode setpoint, for self-levelling axes only
+                currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
             }
-        }
-        if ((levelMode == LEVEL_MODE_R && axis == FD_ROLL)
-            || (levelMode == LEVEL_MODE_RP && (axis == FD_ROLL || axis ==  FD_PITCH)) ) {
-            rawSetpoint = pidLevel(axis, pidProfile, angleTrim, rawSetpoint, horizonLevelStrength, newRcFrame);
-            currentPidSetpoint = rawSetpoint;
-            rawSetpointIsSmoothed = true;
-            // levelled axes are already smoothed; feedforward should be calculated each PID loop
-            DEBUG_SET(DEBUG_ATTITUDE, axis - FD_ROLL + 2, currentPidSetpoint);
+        } else { // yaw axis only
+            if (levelMode == LEVEL_MODE_RP) {
+                // if earth referencing is requested, attenuate yaw axis setpoint when pitched or rolled
+                // and send yawSetpoint to Angle code to modulate pitch and roll
+                if (pidRuntime.angleEarthRef) {
+                    pidRuntime.angleYawSetpoint = currentPidSetpoint;
+                    float maxAngleTargetAbs = fmaxf( fabsf(pidRuntime.angleTarget[FD_ROLL]), fabsf(pidRuntime.angleTarget[FD_PITCH]) );
+                    maxAngleTargetAbs *= pidRuntime.angleEarthRef; // allow user control
+                    if (FLIGHT_MODE(HORIZON_MODE)) {
+                        maxAngleTargetAbs *= horizonLevelStrength; // reduce compensation while Horizon uses less levelling
+                    }
+                    float attenuateYawSetpoint = cos_approx(DEGREES_TO_RADIANS(maxAngleTargetAbs));
+                    currentPidSetpoint *= attenuateYawSetpoint;
+                    DEBUG_SET(DEBUG_ANGLE_TARGET, 2, lrintf(attenuateYawSetpoint * 100.0f)); // yaw attenuation
+                }
+            }
         }
 #endif
 
@@ -1094,14 +1049,11 @@ const bool newRcFrame = getShouldUpdateFeedforward();
         const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
-        // -----calculate pidSetpointDelta
-        float pidSetpointDelta = 0;
-#ifdef USE_FEEDFORWARD
-        pidSetpointDelta = feedforwardApply(axis, newRcFrame, pidRuntime.feedforwardAveraging, rawSetpoint, rawSetpointIsSmoothed);
-#endif
+        // -----calculate D component
+        float pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
+        // used for stick factor in Dmin, and for simple feedforward on Angle controlled axes 
         pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint;
 
-        // -----calculate D component
         // disable D if launch control is active
         if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
 
@@ -1160,6 +1112,20 @@ const bool newRcFrame = getShouldUpdateFeedforward();
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
+#ifdef USE_FEEDFORWARD
+        if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
+            // we are in Angle mode and this axis us fully under self-levelling control
+            // these axes will already have stick based feedforward in the input to their angle setpoint
+            // we can use the simple setpointDelta from Dterm to generate a pidF element to help control motor lag
+            // this will not apply in Horizon mode; it is not needed because the acro normal setpoint feedforward is present
+            pidSetpointDelta = pidSetpointDelta * pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
+        } else {
+            // the axis is under acro control; use Feedforward with boost, smoothing and duplicate detection from rc.c
+            // In Horizon we do not add any feedforward to the self-levelling element.
+            pidSetpointDelta = getFeedforwardDelta(axis);
+        }
+#endif
+
 #ifdef USE_ABSOLUTE_CONTROL
         // include abs control correction in feedforward
         pidSetpointDelta += setpointCorrection - pidRuntime.oldSetpointCorrection[axis];
@@ -1168,19 +1134,24 @@ const bool newRcFrame = getShouldUpdateFeedforward();
 
         // no feedforward in launch control
         float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
-        if (feedforwardGain > 0) {
-            // transition now calculated in feedforward.c when new RC data arrives
-            float feedForward = feedforwardGain * pidSetpointDelta * pidRuntime.pidFrequency;
 
+        if (feedforwardGain > 0) {
+            float feedForward = feedforwardGain * pidSetpointDelta;
 #ifdef USE_FEEDFORWARD
-            pidData[axis].F = shouldApplyFeedforwardLimits(axis) ?
-                applyFeedforwardLimit(axis, feedForward, pidRuntime.pidCoefficient[axis].Kp, currentPidSetpoint) : feedForward;
-#else
-            pidData[axis].F = feedForward;
+            // limit feedforward if rapidly approaching max rate limit for the RP axes
+            const float feedforwardMaxRate = pidRuntime.feedforwardMaxRate[axis];
+            const float Kp = pidRuntime.pidCoefficient[axis].Kp;
+            if (axis < FD_YAW && feedforwardMaxRate != 0.0f) {
+                if (feedForward * currentPidSetpoint > 0.0f) {
+                    if (fabsf(currentPidSetpoint) <= feedforwardMaxRate) {
+                        feedForward = constrainf(feedForward, (-feedforwardMaxRate - currentPidSetpoint) * Kp, (feedforwardMaxRate - currentPidSetpoint) * Kp);
+                    } else {
+                        feedForward = 0;
+                    }
+                }
+            }
 #endif
-#ifdef USE_RC_SMOOTHING_FILTER
-            pidData[axis].F = applyRcSmoothingFeedforwardFilter(axis, pidData[axis].F);
-#endif // USE_RC_SMOOTHING_FILTER
+            pidData[axis].F = feedForward;
         } else {
             pidData[axis].F = 0;
         }

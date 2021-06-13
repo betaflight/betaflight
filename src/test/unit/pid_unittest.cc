@@ -88,7 +88,6 @@ extern "C" {
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
-    float getRcCommandDelta(int axis) { return simulatedRcCommandDelta[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
     uint16_t getCurrentRxRefreshRate(void) { return simulatedCurrentRxRefreshRate; }
@@ -104,9 +103,8 @@ extern "C" {
         return value;
     }
     void feedforwardInit(const pidProfile_t) { }
-    float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging, const float setpoint)
+    float feedforwardApply(int axis, feedforwardAveraging_t feedforwardAveraging, const float setpoint)
     {
-        UNUSED(newRcFrame);
         UNUSED(feedforwardAveraging);
         UNUSED(setpoint);
         const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
@@ -119,7 +117,6 @@ extern "C" {
         UNUSED(axis);
         return true;
     }
-    bool getShouldUpdateFeedforward() { return true; }
     void initRcProcessing(void) { }
 }
 

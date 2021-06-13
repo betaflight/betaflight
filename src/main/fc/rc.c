@@ -42,8 +42,8 @@
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
-#include "flight/feedforward.h"
 #include "flight/gps_rescue.h"
+#include "flight/pid.h"
 #include "flight/pid_init.h"
 
 #include "pg/rx.h"
@@ -57,23 +57,16 @@
 
 
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
-
-#ifdef USE_FEEDFORWARD
-static float oldRcCommand[XYZ_AXIS_COUNT];
-static bool isDuplicate[XYZ_AXIS_COUNT];
-float rcCommandDelta[XYZ_AXIS_COUNT];
-#endif
+// note that rcCommand[] is an external float
 static float rawSetpoint[XYZ_AXIS_COUNT];
-static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
+static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
-static uint16_t currentRxRefreshRate;
+static uint16_t currentRxRefreshRate; // packet interval un microseconds
 static bool isRxDataNew = false;
 static bool isRxRateValid = false;
 static float rcCommandDivider = 500.0f;
 static float rcCommandYawDivider = 500.0f;
-
-static FAST_DATA_ZERO_INIT bool newRxDataForFF;
 
 enum {
     ROLL_FLAG = 1 << ROLL,
@@ -81,6 +74,40 @@ enum {
     YAW_FLAG = 1 << YAW,
     THROTTLE_FLAG = 1 << THROTTLE,
 };
+
+#ifdef USE_FEEDFORWARD
+static float prevRcCommand[3];
+static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
+static float prevSetpoint[3];                   // equals raw unless interpolated 
+static float prevSetpointDelta[3];              // equals raw unless interpolated
+static float prevAcceleration[3];               // for duplicate interpolation
+static float feedforwardSmoothed[3];
+static float feedforwardRaw[3];
+static bool prevDuplicatePacket[3];             // to identify multiple identical packets
+
+static uint8_t feedforwardAveraging = 0;
+typedef struct laggedMovingAverageCombined_s {
+    laggedMovingAverage_t filter;
+    float buf[4];
+} laggedMovingAverageCombined_t;
+laggedMovingAverageCombined_t  feedforwardDeltaAvg[XYZ_AXIS_COUNT];
+
+static float maxRcRate[3];
+float getMaxRcRate(int axis)
+{
+    return maxRcRate[axis];
+}
+
+float getFeedforwardDelta(int axis)
+{
+#ifdef USE_RC_SMOOTHING_FILTER
+    return feedforwardSmoothed[axis];
+#else
+    return feedforwardRaw[axis];
+#endif
+}
+
+#endif
 
 #ifdef USE_RC_SMOOTHING_FILTER
 #define RC_SMOOTHING_CUTOFF_MIN_HZ              15    // Minimum rc smoothing cutoff frequency
@@ -98,16 +125,6 @@ static float rcDeflectionSmoothed[3];
 
 #define RC_RX_RATE_MIN_US                       950   // 0.950ms to fit 1kHz without an issue
 #define RC_RX_RATE_MAX_US                       65500 // 65.5ms or 15.26hz
-
-bool getShouldUpdateFeedforward(void)
-// only used in pid.c, when feedforward is enabled, to initiate a new FF value
-{
-    const bool updateFf = newRxDataForFF;
-    if (newRxDataForFF == true){
-        newRxDataForFF = false;
-    }
-    return updateFf;
-}
 
 float getSetpointRate(int axis)
 {
@@ -136,23 +153,6 @@ float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
 }
-
-#ifdef USE_FEEDFORWARD
-float getRawSetpoint(int axis)
-{
-    return rawSetpoint[axis];
-}
-
-float getRcCommandDelta(int axis)
-{
-    return rcCommandDelta[axis];
-}
-
-bool getRxRateValid(void)
-{
-    return isRxRateValid;
-}
-#endif
 
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
@@ -247,11 +247,6 @@ float applyQuickRates(const int axis, float rcCommandf, const float rcCommandfAb
     return angleRate;
 }
 
-float applyCurve(int axis, float deflection)
-{
-    return applyRates(axis, deflection, fabsf(deflection));
-}
-
 static void scaleRawSetpointToFpvCamAngle(void)
 {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
@@ -314,7 +309,6 @@ FAST_CODE_NOINLINE int calcAutoSmoothingCutoff(int avgRxFrameTimeUs, uint8_t aut
 FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothingData)
 {
     const float dT = targetPidLooptime * 1e-6f;
-    uint16_t oldCutoff = smoothingData->setpointCutoffFrequency;
 
     if (smoothingData->setpointCutoffSetting == 0) {
         smoothingData->setpointCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorSetpoint));
@@ -322,44 +316,49 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
     if (smoothingData->throttleCutoffSetting == 0) {
         smoothingData->throttleCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorThrottle));
     }
+    if (smoothingData->feedforwardCutoffSetting == 0) {
+        smoothingData->feedforwardCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorFeedforward));
+    }
 
     // initialize or update the Setpoint filter
+    uint16_t oldCutoff = smoothingData->setpointCutoffFrequency;
     if ((smoothingData->setpointCutoffFrequency != oldCutoff) || !smoothingData->filterInitialized) {
         for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
             if (i < THROTTLE) { // Throttle handled by smoothing rcCommand
                 if (!smoothingData->filterInitialized) {
-                    pt3FilterInit(&smoothingData->filter[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
+                    pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
                 } else {
-                    pt3FilterUpdateCutoff(&smoothingData->filter[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
+                    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
                 }
             } else {
                 if (!smoothingData->filterInitialized) {
-                    pt3FilterInit(&smoothingData->filter[i], pt3FilterGain(smoothingData->throttleCutoffFrequency, dT));
+                    pt3FilterInit(&smoothingData->filterSetpoint[i], pt3FilterGain(smoothingData->throttleCutoffFrequency, dT));
                 } else {
-                    pt3FilterUpdateCutoff(&smoothingData->filter[i], pt3FilterGain(smoothingData->throttleCutoffFrequency, dT));
+                    pt3FilterUpdateCutoff(&smoothingData->filterSetpoint[i], pt3FilterGain(smoothingData->throttleCutoffFrequency, dT));
                 }
             }
         }
 
-        // initialize or update the Level filter
+        // initialize or update the RC Deflection filter
         for (int i = FD_ROLL; i < FD_YAW; i++) {
             if (!smoothingData->filterInitialized) {
-                pt3FilterInit(&smoothingData->filterDeflection[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
+                pt3FilterInit(&smoothingData->filterRcDeflection[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
             } else {
-                pt3FilterUpdateCutoff(&smoothingData->filterDeflection[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
+                pt3FilterUpdateCutoff(&smoothingData->filterRcDeflection[i], pt3FilterGain(smoothingData->setpointCutoffFrequency, dT));
             }
         }
-    }
 
-    // update or initialize the FF filter
-    oldCutoff = smoothingData->feedforwardCutoffFrequency;
-    if (rcSmoothingData.ffCutoffSetting == 0) {
-        smoothingData->feedforwardCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorSetpoint));
-    }
-    if (!smoothingData->filterInitialized) {
-        pidInitFeedforwardLpf(smoothingData->feedforwardCutoffFrequency, smoothingData->debugAxis);
-    } else if (smoothingData->feedforwardCutoffFrequency != oldCutoff) {
-        pidUpdateFeedforwardLpf(smoothingData->feedforwardCutoffFrequency);
+        // initialize or update the Feedforward and Horizon filters
+        if (rcSmoothingData.feedforwardCutoffSetting == 0) {
+            smoothingData->feedforwardCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorSetpoint));
+        }
+        for (int i = FD_ROLL; i <= FD_YAW; i++) {
+            if (!smoothingData->filterInitialized) {
+                pt3FilterInit(&smoothingData->filterFeedforward[i], pt3FilterGain(smoothingData->feedforwardCutoffFrequency, dT));
+            } else {
+                pt3FilterUpdateCutoff(&smoothingData->filterFeedforward[i], pt3FilterGain(smoothingData->feedforwardCutoffFrequency, dT));
+            }
+        }
     }
 }
 
@@ -396,7 +395,7 @@ static FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothing
 FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
 {
     // if any rc smoothing cutoff is 0 (auto) then we need to calculate cutoffs
-    if ((rcSmoothingData.setpointCutoffSetting == 0) || (rcSmoothingData.ffCutoffSetting == 0) || (rcSmoothingData.throttleCutoffSetting == 0)) {
+    if ((rcSmoothingData.setpointCutoffSetting == 0) || (rcSmoothingData.feedforwardCutoffSetting == 0) || (rcSmoothingData.throttleCutoffSetting == 0)) {
         return true;
     }
     return false;
@@ -419,17 +418,17 @@ static FAST_CODE void processRcSmoothingFilter(void)
         rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
         rcSmoothingData.setpointCutoffSetting = rxConfig()->rc_smoothing_setpoint_cutoff;
         rcSmoothingData.throttleCutoffSetting = rxConfig()->rc_smoothing_throttle_cutoff;
-        rcSmoothingData.ffCutoffSetting = rxConfig()->rc_smoothing_feedforward_cutoff;
+        rcSmoothingData.feedforwardCutoffSetting = rxConfig()->rc_smoothing_feedforward_cutoff;
         rcSmoothingResetAccumulation(&rcSmoothingData);
         rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
         rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
-        if (rcSmoothingData.ffCutoffSetting == 0) {
+        if (rcSmoothingData.feedforwardCutoffSetting == 0) {
             // calculate and use an initial derivative cutoff until the RC interval is known
-            const float cutoffFactor = 1.5f / (1.0f + (rcSmoothingData.autoSmoothnessFactorSetpoint / 10.0f));
-            float ffCutoff = RC_SMOOTHING_FEEDFORWARD_INITIAL_HZ * cutoffFactor;
-            rcSmoothingData.feedforwardCutoffFrequency = lrintf(ffCutoff);
+            const float initialCutoffFactor = 1.5f / (1.0f + (rcSmoothingData.autoSmoothnessFactorSetpoint / 10.0f));
+            const float feedforwardCutoff = RC_SMOOTHING_FEEDFORWARD_INITIAL_HZ * initialCutoffFactor;
+            rcSmoothingData.feedforwardCutoffFrequency = lrintf(feedforwardCutoff);
         } else {
-            rcSmoothingData.feedforwardCutoffFrequency = rcSmoothingData.ffCutoffSetting;
+            rcSmoothingData.feedforwardCutoffFrequency = rcSmoothingData.feedforwardCutoffSetting;
         }
 
         if (rxConfig()->rc_smoothing_mode) {
@@ -524,37 +523,141 @@ static FAST_CODE void processRcSmoothingFilter(void)
     for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
         float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
         if (rcSmoothingData.filterInitialized) {
-            *dst = pt3FilterApply(&rcSmoothingData.filter[i], rxDataToSmooth[i]);
+            *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
         } else {
             // If filter isn't initialized yet, as in smoothing off, use the actual unsmoothed rx channel data
             *dst = rxDataToSmooth[i];
         }
-    }
 
-    // for ANGLE and HORIZON, smooth rcDeflection on pitch and roll to avoid setpoint steps
-    bool smoothingNeeded = (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && rcSmoothingData.filterInitialized;
+    }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        if (smoothingNeeded && axis < FD_YAW) {
-            rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterDeflection[axis], rcDeflection[axis]);
+        // Feedforward smoothing
+        feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);
+        // Horizon mode smoothing of rcDeflection on pitch and roll to provide a smooth angle element
+        const bool smoothRcDeflection = FLIGHT_MODE(HORIZON_MODE) && rcSmoothingData.filterInitialized;
+        if (smoothRcDeflection && axis < FD_YAW) {
+            rcDeflectionSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterRcDeflection[axis], rcDeflection[axis]);
         } else {
             rcDeflectionSmoothed[axis] = rcDeflection[axis];
         }
     }
-
 }
 #endif // USE_RC_SMOOTHING_FILTER
+
+FAST_CODE_NOINLINE void initAveraging (void)
+{
+    feedforwardAveraging = pidGetFeedforwardAveraging();
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
+    }
+}
+
+FAST_CODE_NOINLINE void calculateFeedforward (int axis)
+{
+    const float rxInterval = currentRxRefreshRate * 1e-6f; // seconds
+    const float rxRate = 1.0f / rxInterval;
+
+    const float feedforwardSmoothFactor = pidGetFeedforwardSmoothFactor();
+    const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
+    const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
+    const float feedforwardBoostFactor = pidGetFeedforwardBoostFactor();
+
+    if (feedforwardAveraging != pidGetFeedforwardAveraging()) {
+        initAveraging();
+    }
+
+    const float rcCommandDeltaAbs = fabsf(rcCommand[axis] - prevRcCommand[axis]);
+    prevRcCommand[axis] = rcCommand[axis];
+
+    float setpoint = rawSetpoint[axis];
+    float feedforwardDelta = (setpoint - prevSetpoint[axis]);
+    float absPrevSetpointDelta = fabsf(prevSetpointDelta[axis]);
+    float setpointAcceleration = 0.0f;
+
+    // calculate an attenuator from average of two most recent rcCommand deltas vs jitter threshold
+    float ffAttenuator = 1.0f;
+    if (feedforwardJitterFactor && rcCommandDeltaAbs < feedforwardJitterFactor) {
+        ffAttenuator = MAX(1.0f - ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) / 2.0f) / feedforwardJitterFactor, 0.0f);
+        ffAttenuator = 1.0f - ffAttenuator * ffAttenuator;
+    }
+
+    // interpolate setpoint if necessary
+    if (rcCommandDeltaAbs == 0.0f) {
+        if (prevDuplicatePacket[axis] == false && fabsf(setpoint) < 0.98f * maxRcRate[axis]) {
+            // first duplicate after movement
+            // interpolate rawSetpoint by adding (speed + acceleration) * attenuator to previous setpoint
+            setpoint = prevSetpoint[axis] + (prevSetpointDelta[axis] + prevAcceleration[axis]) * ffAttenuator;
+            // recalculate feedforwardDelta and (later) acceleration from this new setpoint value
+            feedforwardDelta = (setpoint - prevSetpoint[axis]);
+        }
+        prevDuplicatePacket[axis] = true;
+    } else {
+        // movement!
+        if (prevDuplicatePacket[axis] == true) {
+            // don't boost the packet after a duplicate, the feedforward alone is enough, usually
+            // in part because after a duplicate, the raw up-step is large, so the jitter attenuator is less active
+            ffAttenuator = 0.0f;
+        }
+        prevDuplicatePacket[axis] = false;
+    }
+    prevSetpoint[axis] = setpoint;
+
+//             if (axis == FD_ROLL) {
+//                 DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(currentRxRefreshRate)); // un-smoothed setpoint after interpolations
+//                 DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(rawSetpoint[axis])); // un-smoothed setpoint after interpolations
+//                 DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpoint)); // un-smoothed setpoint after interpolations
+//             }
+
+    float absSetpointSpeed = fabsf(feedforwardDelta); // unsmoothed for kick prevention
+
+    // calculate acceleration, smooth and attenuate it
+    setpointAcceleration = feedforwardDelta - prevSetpointDelta[axis];
+    setpointAcceleration = prevAcceleration[axis] + feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
+    setpointAcceleration *= ffAttenuator;
+
+    // smooth feedforwardDelta but don't attenuate
+    feedforwardDelta = prevSetpointDelta[axis] + feedforwardSmoothFactor * (feedforwardDelta - prevSetpointDelta[axis]);
+
+    prevSetpointDelta[axis] = feedforwardDelta;
+    prevAcceleration[axis] = setpointAcceleration;
+    prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
+
+    // calculate boost and prevent kick-back spike at max deflection
+    float feedforwardBoost = 0.0f;
+    if (feedforwardBoostFactor) {
+        if (fabsf(setpoint) < 0.95f * maxRcRate[axis] || absSetpointSpeed > 3.0f * absPrevSetpointDelta) {
+            feedforwardBoost = feedforwardBoostFactor * setpointAcceleration;
+        }
+    }
+
+    if (axis == FD_ROLL) {
+        DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(feedforwardDelta * rxRate)); // un-smoothed final feedforward
+        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * rxRate)); // un-smoothed boost element
+    }
+
+    // add boost to base feedforward
+    feedforwardDelta += feedforwardBoost;
+    feedforwardDelta *= rxRate;
+
+    // apply feedforward transition
+    feedforwardDelta *= feedforwardTransitionFactor > 0 ? MIN(1.f, rcDeflectionAbs[axis] * feedforwardTransitionFactor) : 1;
+
+    // apply averaging
+    if (feedforwardAveraging) {
+        feedforwardDelta = laggedMovingAverageUpdate(&feedforwardDeltaAvg[axis].filter, feedforwardDelta);
+    }
+
+    feedforwardRaw[axis] = feedforwardDelta;
+
+    if (axis == FD_ROLL) {
+        DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(feedforwardRaw[axis])); // un-smoothed final feedforward
+    }
+}
 
 FAST_CODE void processRcCommand(void)
 {
     if (isRxDataNew) {
-        newRxDataForFF = true;
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-
-#ifdef USE_FEEDFORWARD
-            isDuplicate[axis] = (oldRcCommand[axis] == rcCommand[axis]);
-            rcCommandDelta[axis] = (rcCommand[axis] - oldRcCommand[axis]);
-            oldRcCommand[axis] = rcCommand[axis];
-#endif
 
             float angleRate;
             
@@ -582,12 +685,25 @@ FAST_CODE void processRcCommand(void)
                 rcDeflectionAbs[axis] = rcCommandfAbs;
 
                 angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
-
+#if defined(USE_ACC)
+                // In Angle mode, the 'levelled' axes use Angle Expo
+                // but in Horizon mode, primary control is Acro, so we use Acro rates, even though the axis also gets levelling
+                if (pidGetAxisInAngleMode(axis) && FLIGHT_MODE(ANGLE_MODE)) {
+                    const float expof = currentControlRateProfile->levelExpo[axis] / 100.0f;
+                    angleRate = power3(rcCommandf) * expof + rcCommandf * (1 - expof);
+                }
+#endif
             }
+
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
-            DEBUG_SET(DEBUG_ANGLERATE, axis, lrintf(angleRate));
+            DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
+
+#ifdef USE_FEEDFORWARD
+        calculateFeedforward(axis);
+#endif // USE_FEEDFORWARD
+
         }
-        // adjust raw setpoint steps to camera angle (mixing Roll and Yaw)
+        // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
             scaleRawSetpointToFpvCamAngle();
         }
@@ -725,6 +841,14 @@ void initRcProcessing(void)
         applyRates = applyQuickRates;
         break;
     }
+
+#ifdef USE_FEEDFORWARD
+    for (int i = 0; i < 3; i++) {
+        maxRcRate[i] = applyRates(i, 1.0f, 1.0f);
+        feedforwardSmoothed[i] = 0.0f;
+        feedforwardRaw[i] = 0.0f;
+    }
+#endif // USE_FEEDFORWARD
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const int maxYawRate = (int)applyRates(FD_YAW, 1.0f, 1.0f);

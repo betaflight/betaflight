@@ -4860,7 +4860,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
             cliPrintLine("(auto)");
         }
         cliPrintf("# Active FF cutoff: %dhz ", rcSmoothingData->feedforwardCutoffFrequency);
-        if (rcSmoothingData->ffCutoffSetting) {
+        if (rcSmoothingData->feedforwardCutoffSetting) {
             cliPrintLine("(manual)");
         } else {
             cliPrintLine("(auto)");
