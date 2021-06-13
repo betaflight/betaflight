@@ -43,8 +43,6 @@ typedef struct sdft_s {
 
 } sdft_t;
 
-STATIC_ASSERT(SDFT_SAMPLE_SIZE <= (uint8_t)-1, window_size_greater_than_underlying_type);
-
 void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numBatches);
 void sdftPush(sdft_t *sdft, const float sample);
 void sdftPushBatch(sdft_t *sdft, const float sample, const int batchIdx);

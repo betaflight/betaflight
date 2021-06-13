@@ -113,7 +113,7 @@ static float FAST_DATA_ZERO_INIT      sdftMeanSq;
 static float FAST_DATA_ZERO_INIT      dynNotchQ;
 static float FAST_DATA_ZERO_INIT      dynNotchMinHz;
 static float FAST_DATA_ZERO_INIT      dynNotchMaxHz;
-static int FAST_DATA_ZERO_INIT        dynNotchMaxFFT;
+static uint16_t FAST_DATA_ZERO_INIT   dynNotchMaxFFT;
 static float FAST_DATA_ZERO_INIT      gain;
 static int FAST_DATA_ZERO_INIT        numSamples;
 
@@ -343,7 +343,7 @@ static FAST_CODE_NOINLINE void gyroDataAnalyseUpdate(gyroAnalyseState_t *state)
 }
 
 
-int getMaxFFT(void) {
+uint16_t getMaxFFT(void) {
     return dynNotchMaxFFT;
 }
 

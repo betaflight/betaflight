@@ -49,5 +49,5 @@ typedef struct gyroAnalyseState_s {
 void gyroDataAnalyseInit(gyroAnalyseState_t *state, const uint32_t targetLooptimeUs);
 void gyroDataAnalysePush(gyroAnalyseState_t *state, const int axis, const float sample);
 void gyroDataAnalyse(gyroAnalyseState_t *state);
-int getMaxFFT(void);
+uint16_t getMaxFFT(void);
 void resetMaxFFT(void);
