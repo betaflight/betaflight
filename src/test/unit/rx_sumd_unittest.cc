@@ -43,6 +43,8 @@ extern "C" {
     int16_t telemTemperature1 = 0;
     baro_t baro = { .baroTemperature = 50 };
     telemetryConfig_t telemetryConfig_System;
+
+    timeUs_t rxFrameTimeUs(void) { return 0; }
 }
 
 
@@ -117,7 +119,7 @@ serialPort_t *openSerialPort(
 {
     openSerial_called = true;
     EXPECT_FALSE(NULL == callback);
-    EXPECT_TRUE(NULL == callbackData);
+    EXPECT_FALSE(NULL == callbackData);
     EXPECT_EQ(identifier, SERIAL_PORT_DUMMY_IDENTIFIER);
     EXPECT_EQ(options, serialExpectedOptions);
     EXPECT_EQ(function, FUNCTION_RX_SERIAL);
@@ -194,6 +196,11 @@ protected:
     {
         serialTestResetPort();
 
+        static uint16_t channelXData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+        static rxFrameBuffer_t rxFrameBuffer;
+        rxRuntimeState.incomingFrame = &rxFrameBuffer;
+        rxRuntimeState.channelXData = channelXData;
+
         const rxConfig_t initialRxConfig = {};
         findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
@@ -233,7 +240,7 @@ protected:
 
         for (size_t i = 0; i < sizeof(packet); i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
-            stub_serialRxCallback(packet[i], NULL);
+            stub_serialRxCallback(packet[i], &rxRuntimeState);
         }
         checkValidChannels();
     }
@@ -253,7 +260,7 @@ protected:
 
         for (size_t i = 0; i < sizeof(packet); i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
-            stub_serialRxCallback(packet[i], NULL);
+            stub_serialRxCallback(packet[i], &rxRuntimeState);
         }
         checkValidChannels();
     }
@@ -270,7 +277,7 @@ protected:
 
         for (size_t i = 0; i < sizeof(packet); i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
-            stub_serialRxCallback(packet[i], NULL);
+            stub_serialRxCallback(packet[i], &rxRuntimeState);
         }
 
         checkValidChannels();
@@ -286,7 +293,7 @@ protected:
 
         for (size_t i = 0; i < sizeof(packet); i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
-            stub_serialRxCallback(packet[i], NULL);
+            stub_serialRxCallback(packet[i], &rxRuntimeState);
         }
 
         EXPECT_EQ(RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
@@ -309,7 +316,7 @@ protected:
 
         for (size_t i = 0; i < sizeof(packet); i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
-            stub_serialRxCallback(packet[i], NULL);
+            stub_serialRxCallback(packet[i], &rxRuntimeState);
         }
 
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
@@ -329,7 +336,7 @@ protected:
 
         for (size_t i = 0; i < sizeof(packet); i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeState.rcFrameStatusFn(&rxRuntimeState));
-            stub_serialRxCallback(packet[i], NULL);
+            stub_serialRxCallback(packet[i], &rxRuntimeState);
         }
 
         microseconds_stub_value += 5000;

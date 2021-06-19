@@ -462,77 +462,15 @@ extern "C" {
     void pinioBoxTaskControl(void) { }
     bool taskUpdateRxMainInProgress() { return true; }
 
-    void rxPwmInit(rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-    }
-
-    bool sbusInit(rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(initialRxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool sumdInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool sumhInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool crsfRxInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback);
-
-    bool jetiExBusInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool ibusInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool xBusInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
-
-    bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRawDataFnPtr *callback)
-    {
-        UNUSED(rxConfig);
-        UNUSED(rxRuntimeState);
-        UNUSED(callback);
-        return true;
-    }
+    bool rxPwmInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool sbusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool spektrumInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool sumdInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool sumhInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool jetiExBusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool ibusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool xBusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool rxMspInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
 
     float pt1FilterGain(float f_cut, float dT)
     {

@@ -225,14 +225,14 @@ extern "C" {
     void resetPPMDataReceivedState(void) {}
     bool rxMspFrameComplete(void) { return false; }
 
-    void crsfRxInit(const rxConfig_t *, rxRuntimeState_t *) {}
-    void ibusInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    bool crsfRxInit(const struct rxConfig_s *, struct rxRuntimeState_s *) { return true; }
+    bool ibusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
     void jetiExBusInit(const rxConfig_t *, rxRuntimeState_t *) {}
-    void sbusInit(const rxConfig_t *, rxRuntimeState_t *) {}
-    void spektrumInit(const rxConfig_t *, rxRuntimeState_t *) {}
-    void sumdInit(const rxConfig_t *, rxRuntimeState_t *) {}
-    void sumhInit(const rxConfig_t *, rxRuntimeState_t *) {}
-    void xBusInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    bool sbusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool spektrumInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool sumdInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool sumhInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
+    bool xBusInit(const rxConfig_t *, rxRuntimeState_t *) { return true; }
     void rxMspInit(const rxConfig_t *, rxRuntimeState_t *) {}
     void rxPwmInit(const rxConfig_t *, rxRuntimeState_t *) {}
     bool taskUpdateRxMainInProgress() { return true; }

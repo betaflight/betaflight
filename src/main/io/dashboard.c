@@ -264,12 +264,13 @@ static void drawRxChannel(uint8_t channelIndex, uint8_t width)
 #define RX_CHANNELS_PER_PAGE_COUNT 14
 static void showRxPage(void)
 {
-    for (int channelIndex = 0; channelIndex < rxRuntimeState.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
+    const uint8_t channelCount = rxGetChannelCount();
+    for (int channelIndex = 0; channelIndex < channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
         i2c_OLED_set_line(dev, (channelIndex / 2) + PAGE_TITLE_LINE_COUNT);
 
         drawRxChannel(channelIndex, HALF_SCREEN_CHARACTER_COLUMN_COUNT);
 
-        if (channelIndex >= rxRuntimeState.channelCount) {
+        if (channelIndex >= channelCount) {
             continue;
         }
 

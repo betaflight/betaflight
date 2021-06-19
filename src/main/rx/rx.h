@@ -26,6 +26,16 @@
 #include "pg/rx.h"
 
 #include "drivers/io_types.h"
+#include "drivers/serial.h"
+
+#include "rx/ghst_protocol.h"
+#include "rx/ibus.h"
+#include "rx/crsf.h"
+#include "rx/sbus.h"
+#include "rx/spektrum.h"
+#include "rx/sumd.h"
+#include "rx/sumh.h"
+#include "rx/xbus.h"
 
 #define STICK_CHANNEL_COUNT 4
 
@@ -138,17 +148,31 @@ typedef enum {
     RX_PROVIDER_SPI,
 } rxProvider_t;
 
+typedef union rxFrameBuffer_u {
+    ghstFrame_t ghst;
+    uint8_t ibus[IBUS_FRAME_SIZE];
+    crsfFrame_t crsf;
+    sbusFrameData_t sbus;
+    uint8_t spek[SPEK_FRAME_SIZE];
+    uint8_t sumd[SUMD_BUFFSIZE];
+    uint8_t sumh[SUMH_FRAME_SIZE];
+    uint8_t xbus[XBUS_FRAME_SIZE_A2]; // Use max values for ram areas - size 35 for 16 channels in xbus_Mode_B
+} rxFrameBuffer_t;
+
 typedef struct rxRuntimeState_s {
-    rxProvider_t        rxProvider;
-    SerialRXType        serialrxProvider;
-    uint8_t             channelCount; // number of RC channels as reported by current input driver
-    uint16_t            rxRefreshRate;
-    rcReadRawDataFnPtr  rcReadRawFn;
-    rcFrameStatusFnPtr  rcFrameStatusFn;
-    rcProcessFrameFnPtr rcProcessFrameFn;
-    rcGetFrameTimeUsFn *rcFrameTimeUsFn;
-    uint16_t            *channelData;
-    void                *frameData;
+    rxProvider_t         rxProvider;
+    SerialRXType         serialrxProvider;
+    serialPort_t        *rxSerialPort;
+    uint8_t              channelCount; // number of RC channels as reported by current input driver
+    uint16_t             rxRefreshRate;
+    rcReadRawDataFnPtr   rcReadRawFn;
+    rcFrameStatusFnPtr   rcFrameStatusFn;
+    rcProcessFrameFnPtr  rcProcessFrameFn;
+    rcGetFrameTimeUsFn  *rcFrameTimeUsFn;
+    timeUs_t             lastRcFrameTimeUs;
+    uint16_t            *channelXData;
+    rxFrameBuffer_t     *incomingFrame;
+    rxFrameBuffer_t     *validatedFrame;
 } rxRuntimeState_t;
 
 typedef enum {
@@ -171,10 +195,10 @@ typedef enum {
 
 extern linkQualitySource_e linkQualitySource;
 
-extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
-
 void rxInit(void);
 void rxProcessPending(bool state);
+bool rxSerialPortIsActive(SerialRXType serialrxProvider);
+timeUs_t rxFrameTimeUs(void);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
@@ -218,3 +242,9 @@ void resumeRxPwmPpmSignal(void);
 uint16_t rxGetRefreshRate(void);
 
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
+
+void rxSwapFrameBuffers(rxRuntimeState_t *rxRuntimeState);
+SerialRXType rxGetSerialRxType();
+rxProvider_t rxGetRxProvider();
+uint8_t rxGetChannelCount();
+serialPort_t *rxGetSerialPort();

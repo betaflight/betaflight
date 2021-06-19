@@ -29,11 +29,11 @@
 
 static bool doRxBind(bool doBind)
 {
-    switch (rxRuntimeState.rxProvider) {
+    switch (rxGetRxProvider()) {
     default:
         return false;
     case RX_PROVIDER_SERIAL:
-        switch (rxRuntimeState.serialrxProvider) {
+        switch (rxGetSerialRxType()) {
         default:
             return false;
 #if defined(USE_SERIALRX_SRXL2)

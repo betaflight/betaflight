@@ -20,4 +20,9 @@
 
 #pragma once
 
-bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
+#define IBUS_FRAME_SIZE 32
+
+struct rxConfig_s;
+struct rxRuntimeState_s;
+
+bool ibusInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);

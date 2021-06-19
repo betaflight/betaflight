@@ -43,16 +43,7 @@
 #include "rx/rx.h"
 #include "rx/sumd.h"
 
-// driver for SUMD receiver using UART2
-
-// Support for SUMD and SUMD V3
-// Tested with 16 channels, SUMD supports up to 16(*), SUMD V3 up to 32 (MZ-32) channels, but limit to MAX_SUPPORTED_RC_CHANNEL_COUNT (currently 8, BF 3.4)
-// * According to the original SUMD V1 documentation, SUMD V1 already supports up to 32 Channels?!?
-
 #define SUMD_SYNCBYTE 0xA8
-#define SUMD_MAX_CHANNEL 32
-#define SUMD_BUFFSIZE (SUMD_MAX_CHANNEL * 2 + 5) // 6 channels + 5 = 17 bytes for 6 channels
-
 #define SUMD_BAUDRATE 115200
 #define SUMD_TIME_NEEDED_PER_FRAME 4000
 
@@ -70,18 +61,16 @@
 #define SUMD_FRAME_STATE_FAILSAFE 0x81
 
 static bool sumdFrameDone = false;
-static uint16_t sumdChannels[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static uint16_t crc;
 
-static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
 static timeUs_t lastFrameTimeUs = 0;
-static timeUs_t lastRcFrameTimeUs = 0;
 
 // Receive ISR callback
 static void sumdDataReceive(uint16_t c, void *data)
 {
-    UNUSED(data);
+    rxRuntimeState_t *const rxRuntimeState = (rxRuntimeState_t *)data;
+    uint8_t *const sumd = rxRuntimeState->incomingFrame->sumd;
 
     static timeUs_t sumdTimeLast;
     static uint8_t sumdIndex;
@@ -119,7 +108,7 @@ static void sumdDataReceive(uint16_t c, void *data)
 
 static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeState);
+    uint8_t *const sumd = rxRuntimeState->incomingFrame->sumd;
 
     uint8_t frameStatus = RX_FRAME_PENDING;
 
@@ -147,7 +136,7 @@ static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
             const unsigned channelsToProcess = MIN(sumdChannelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
 
             for (unsigned channelIndex = 0; channelIndex < channelsToProcess; channelIndex++) {
-                sumdChannels[channelIndex] = (
+                rxRuntimeState->channelXData[channelIndex] = (
                     (sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_HIGH] << 8) |
                     sumd[SUMD_BYTES_PER_CHANNEL * channelIndex + SUMD_OFFSET_CHANNEL_1_LOW]
                 );
@@ -156,7 +145,7 @@ static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
     }
 
     if (!(frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
-        lastRcFrameTimeUs = lastFrameTimeUs;
+        rxRuntimeState->lastRcFrameTimeUs = lastFrameTimeUs;
     }
 
     return frameStatus;
@@ -164,13 +153,7 @@ static uint8_t sumdFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
 static float sumdReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
-    UNUSED(rxRuntimeState);
-    return (float)sumdChannels[chan] / 8;
-}
-
-static timeUs_t sumdFrameTimeUsFn(void)
-{
-    return lastRcFrameTimeUs;
+    return rxRuntimeState->channelXData[chan] / 8.0f;
 }
 
 bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -182,7 +165,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = sumdReadRawRC;
     rxRuntimeState->rcFrameStatusFn = sumdFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = sumdFrameTimeUsFn;
+    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
@@ -195,10 +178,10 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     bool portShared = false;
 #endif
 
-    serialPort_t *sumdPort = openSerialPort(portConfig->identifier,
+    rxRuntimeState->rxSerialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         sumdDataReceive,
-        NULL,
+        rxRuntimeState,
         SUMD_BAUDRATE,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
@@ -206,10 +189,10 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
 #ifdef USE_TELEMETRY
     if (portShared) {
-        telemetrySharedPort = sumdPort;
+        telemetrySharedPort = rxRuntimeState->rxSerialPort;
     }
 #endif
 
-    return sumdPort != NULL;
+    return rxRuntimeState->rxSerialPort != NULL;
 }
 #endif

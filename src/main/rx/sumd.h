@@ -20,4 +20,16 @@
 
 #pragma once
 
-bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
+// driver for SUMD receiver using UART2
+
+// Support for SUMD and SUMD V3
+// Tested with 16 channels, SUMD supports up to 16(*), SUMD V3 up to 32 (MZ-32) channels, but limit to MAX_SUPPORTED_RC_CHANNEL_COUNT (currently 8, BF 3.4)
+// * According to the original SUMD V1 documentation, SUMD V1 already supports up to 32 Channels?!?
+
+#define SUMD_MAX_CHANNEL 32
+#define SUMD_BUFFSIZE (SUMD_MAX_CHANNEL * 2 + 5) // 6 channels + 5 = 17 bytes for 6 channels
+
+struct rxConfig_s;
+struct rxRuntimeState_s;
+
+bool sumdInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);

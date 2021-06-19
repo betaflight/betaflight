@@ -86,12 +86,19 @@ extern "C" {
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG,0);
 
     extern bool crsfFrameDone;
-    extern crsfFrame_t crsfFrame;
     extern mspPackage_t mspPackage;
     extern uint8_t checksum;
 
     uint32_t dummyTimeUs;
 
+    timeUs_t rxFrameTimeUs(void) { return 0; }
+    static uint16_t channelXData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    static rxFrameBuffer_t rxFrameBuffer[2];
+    rxRuntimeState_t rxRuntimeState = {.channelXData = channelXData,
+                                       .incomingFrame = &rxFrameBuffer[0], 
+                                       .validatedFrame = &rxFrameBuffer[1]};
+    bool rxSerialPortIsActive(SerialRXType) { return true; }
+    serialPort_t *rxGetSerialPort(){ return rxRuntimeState.rxSerialPort; }
 }
 
 #include "unittest_macros.h"
@@ -115,16 +122,16 @@ TEST(CrossFireMSPTest, RequestBufferTest)
     atomic_BASEPRI = 0;
 
     initSharedMsp();
-    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidRequest, sizeof(crsfMspFrame_t) );
+    const crsfFrame_t *const crsfFrame = &rxRuntimeState.incomingFrame->crsf;
     crsfFrameDone = true;
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
-    EXPECT_EQ(CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_EXT_TYPE_CRC + CRSF_FRAME_RX_MSP_FRAME_SIZE, crsfFrame.frame.frameLength);
-    EXPECT_EQ(CRSF_FRAMETYPE_MSP_REQ, crsfFrame.frame.type);
-    uint8_t *destination = (uint8_t *)&crsfFrame.frame.payload;
-    uint8_t *origin = (uint8_t *)&crsfFrame.frame.payload + 1;
-    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_FRAME_SIZE + 2;
+    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame->frame.deviceAddress);
+    EXPECT_EQ(CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_EXT_TYPE_CRC + CRSF_FRAME_RX_MSP_FRAME_SIZE, crsfFrame->frame.frameLength);
+    EXPECT_EQ(CRSF_FRAMETYPE_MSP_REQ, crsfFrame->frame.type);
+    uint8_t *destination = (uint8_t *)&crsfFrame->frame.payload;
+    uint8_t *origin = (uint8_t *)&crsfFrame->frame.payload + 1;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame->frame.payload + 2;
+    uint8_t *frameEnd = (uint8_t *)&crsfFrame->frame.payload + CRSF_FRAME_RX_MSP_FRAME_SIZE + 2;
     EXPECT_EQ(0xC8, *destination);
     EXPECT_EQ(0xEA, *origin);
     EXPECT_EQ(0x30, *frameStart);
@@ -134,10 +141,10 @@ TEST(CrossFireMSPTest, RequestBufferTest)
 TEST(CrossFireMSPTest, ResponsePacketTest)
 {
     initSharedMsp();
-    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidRequest, sizeof(crsfMspFrame_t) );
+    const crsfFrame_t *const crsfFrame = &rxRuntimeState.incomingFrame->crsf;
     crsfFrameDone = true;
-    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame->frame.payload + 2;
     handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     for (unsigned int ii=1; ii<30; ii++) {
         EXPECT_EQ(ii, sbufReadU8(&mspPackage.responsePacket->buf));
@@ -154,10 +161,10 @@ const uint8_t crsfPidWrite5[] = {0x00,0x0D,0x7C,0xC8,0xEA,0x25,0x00,0x37,0x37,0x
 TEST(CrossFireMSPTest, WriteResponseTest)
 {
     initSharedMsp();
-    const crsfMspFrame_t *framePtr1 = (const crsfMspFrame_t*)crsfPidWrite1;
-    crsfFrame = *(const crsfFrame_t*)framePtr1;
+    const crsfFrame_t *const crsfFrame = &rxRuntimeState.incomingFrame->crsf;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidWrite1, sizeof(crsfMspFrame_t) );
     crsfFrameDone = true;
-    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame->frame.payload + 2;
     bool pending1 = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     EXPECT_FALSE(pending1); // not done yet*/
     EXPECT_EQ(0x29, mspPackage.requestBuffer[0]);
@@ -166,10 +173,9 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x3A, mspPackage.requestBuffer[3]);
     EXPECT_EQ(0x32, mspPackage.requestBuffer[4]);
 
-    const crsfMspFrame_t *framePtr2 = (const crsfMspFrame_t*)crsfPidWrite2;
-    crsfFrame = *(const crsfFrame_t*)framePtr2;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidWrite2, sizeof(crsfMspFrame_t) );
     crsfFrameDone = true;
-    uint8_t *frameStart2 = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart2 = (uint8_t *)&crsfFrame->frame.payload + 2;
     bool pending2 = handleMspFrame(frameStart2, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     EXPECT_FALSE(pending2); // not done yet
     EXPECT_EQ(0x23, mspPackage.requestBuffer[5]);
@@ -180,10 +186,9 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x00, mspPackage.requestBuffer[10]);
     EXPECT_EQ(0x00, mspPackage.requestBuffer[11]);
 
-    const crsfMspFrame_t *framePtr3 = (const crsfMspFrame_t*)crsfPidWrite3;
-    crsfFrame = *(const crsfFrame_t*)framePtr3;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidWrite3, sizeof(crsfMspFrame_t) );
     crsfFrameDone = true;
-    uint8_t *frameStart3 = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart3 = (uint8_t *)&crsfFrame->frame.payload + 2;
     bool pending3 = handleMspFrame(frameStart3, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     EXPECT_FALSE(pending3); // not done yet
     EXPECT_EQ(0x0F, mspPackage.requestBuffer[12]);
@@ -194,10 +199,9 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x35, mspPackage.requestBuffer[17]);
     EXPECT_EQ(0x19, mspPackage.requestBuffer[18]);
 
-    const crsfMspFrame_t *framePtr4 = (const crsfMspFrame_t*)crsfPidWrite4;
-    crsfFrame = *(const crsfFrame_t*)framePtr4;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidWrite4, sizeof(crsfMspFrame_t) );
     crsfFrameDone = true;
-    uint8_t *frameStart4 = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart4 = (uint8_t *)&crsfFrame->frame.payload + 2;
     bool pending4 = handleMspFrame(frameStart4, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     EXPECT_FALSE(pending4); // not done yet
     EXPECT_EQ(0x21, mspPackage.requestBuffer[19]);
@@ -209,10 +213,9 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     EXPECT_EQ(0x00, mspPackage.requestBuffer[25]);
     //EXPECT_EQ(0xB3,checksum);
 
-    const crsfMspFrame_t *framePtr5 = (const crsfMspFrame_t*)crsfPidWrite5;
-    crsfFrame = *(const crsfFrame_t*)framePtr5;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidWrite5, sizeof(crsfMspFrame_t) );
     crsfFrameDone = true;
-    uint8_t *frameStart5 = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart5 = (uint8_t *)&crsfFrame->frame.payload + 2;
     bool pending5 = handleMspFrame(frameStart5, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     EXPECT_TRUE(pending5); // not done yet
     EXPECT_EQ(0x00, mspPackage.requestBuffer[26]);
@@ -231,10 +234,10 @@ void testSendMspResponse(uint8_t *payload) {
 
 TEST(CrossFireMSPTest, SendMspReply) {
     initSharedMsp();
-    const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
-    crsfFrame = *(const crsfFrame_t*)framePtr;
+    const crsfFrame_t *const crsfFrame = &rxRuntimeState.incomingFrame->crsf;
+    memcpy(rxRuntimeState.incomingFrame, crsfPidRequest, sizeof(crsfMspFrame_t) );
     crsfFrameDone = true;
-    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+    uint8_t *frameStart = (uint8_t *)&crsfFrame->frame.payload + 2;
     bool handled = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE, NULL);
     EXPECT_TRUE(handled);
     bool replyPending = sendMspReply(64, &testSendMspResponse);
@@ -316,5 +319,7 @@ extern "C" {
     bool telemetryIsSensorEnabled(sensor_e) {
         return true;
     }
+
+    void rxSwapFrameBuffers(rxRuntimeState_t *) {};
 
 }

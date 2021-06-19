@@ -182,7 +182,7 @@ void configureMAVLinkTelemetryPort(void)
 
 void checkMAVLinkTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxGetSerialRxType())) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             mavlinkTelemetryEnabled = true;
@@ -269,27 +269,28 @@ void mavlinkSendSystemStatus(void)
 void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
+    const uint8_t channelCount = rxGetChannelCount();
     mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
         // time_boot_ms Timestamp (milliseconds since system boot)
         millis(),
         // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
         0,
         // chan1_raw RC channel 1 value, in microseconds
-        (rxRuntimeState.channelCount >= 1) ? rcData[0] : 0,
+        (channelCount >= 1) ? rcData[0] : 0,
         // chan2_raw RC channel 2 value, in microseconds
-        (rxRuntimeState.channelCount >= 2) ? rcData[1] : 0,
+        (channelCount >= 2) ? rcData[1] : 0,
         // chan3_raw RC channel 3 value, in microseconds
-        (rxRuntimeState.channelCount >= 3) ? rcData[2] : 0,
+        (channelCount >= 3) ? rcData[2] : 0,
         // chan4_raw RC channel 4 value, in microseconds
-        (rxRuntimeState.channelCount >= 4) ? rcData[3] : 0,
+        (channelCount >= 4) ? rcData[3] : 0,
         // chan5_raw RC channel 5 value, in microseconds
-        (rxRuntimeState.channelCount >= 5) ? rcData[4] : 0,
+        (channelCount >= 5) ? rcData[4] : 0,
         // chan6_raw RC channel 6 value, in microseconds
-        (rxRuntimeState.channelCount >= 6) ? rcData[5] : 0,
+        (channelCount >= 6) ? rcData[5] : 0,
         // chan7_raw RC channel 7 value, in microseconds
-        (rxRuntimeState.channelCount >= 7) ? rcData[6] : 0,
+        (channelCount >= 7) ? rcData[6] : 0,
         // chan8_raw RC channel 8 value, in microseconds
-        (rxRuntimeState.channelCount >= 8) ? rcData[7] : 0,
+        (channelCount >= 8) ? rcData[7] : 0,
         // rssi Receive signal strength indicator, 0: 0%, 254: 100%
         scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 254));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);

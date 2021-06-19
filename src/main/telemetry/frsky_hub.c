@@ -494,7 +494,7 @@ static void configureFrSkyHubTelemetryPort(void)
 void checkFrSkyHubTelemetryState(void)
 {
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL) {
-        if (telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+        if (telemetryCheckRxPortShared(portConfig, rxGetSerialRxType())) {
             if (frSkyHubPort == NULL && telemetrySharedPort != NULL) {
                 frSkyHubPort = telemetrySharedPort;
             }

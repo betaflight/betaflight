@@ -77,6 +77,11 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+    timeUs_t rxFrameTimeUs(void) { return 0; }
+    rxRuntimeState_t rxRuntimeState;
+    bool rxSerialPortIsActive(SerialRXType) { return true; }
+    serialPort_t *rxGetSerialPort(){ return rxRuntimeState.rxSerialPort; }
 }
 
 #include "unittest_macros.h"
@@ -377,5 +382,6 @@ bool handleMspFrame(uint8_t *, int, uint8_t *)  { return false; }
 void crsfScheduleMspResponse(void) {};
 bool isBatteryVoltageConfigured(void) { return true; }
 bool isAmperageConfigured(void) { return true; }
+void rxSwapFrameBuffers(rxRuntimeState_t *) {};
 
 }

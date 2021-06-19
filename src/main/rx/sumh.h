@@ -20,4 +20,9 @@
 
 #pragma once
 
-bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
+#define SUMH_FRAME_SIZE 21
+
+struct rxConfig_s;
+struct rxRuntimeState_s;
+
+bool sumhInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);

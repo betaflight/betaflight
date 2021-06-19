@@ -20,4 +20,11 @@
 
 #pragma once
 
-bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
+// Frame is: ID(1 byte) + 12*channel(2 bytes) + CRC(2 bytes) = 27
+#define XBUS_FRAME_SIZE_A1 27
+#define XBUS_FRAME_SIZE_A2 35
+
+struct rxConfig_s;
+struct rxRuntimeState_s;
+
+bool xBusInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);
