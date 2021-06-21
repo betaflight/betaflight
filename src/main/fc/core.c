@@ -160,6 +160,7 @@ static timeUs_t runawayTakeoffAccumulatedUs = 0;
 static bool runawayTakeoffCheckDisabled = false;
 static timeUs_t runawayTakeoffTriggerUs = 0;
 static bool runawayTakeoffTemporarilyDisabled = false;
+static bool runawayTakeoffPrevention_FirstArmDone = false;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
@@ -800,7 +801,7 @@ bool processRx(timeUs_t currentTimeUs)
     // is above runaway_takeoff_deactivate_throttle with the any of the R/P/Y sticks deflected
     // to at least runaway_takeoff_stick_percent percent while the pidSum on all axis is kept low.
     // Once the amount of accumulated time exceeds runaway_takeoff_deactivate_delay then disable
-    // prevention for the remainder of the battery.
+    // prevention until next disarm.
 
     if (ARMING_FLAG(ARMED)
         && pidConfig()->runaway_takeoff_prevention
@@ -808,6 +809,15 @@ bool processRx(timeUs_t currentTimeUs)
         && !flipOverAfterCrashActive
         && !runawayTakeoffTemporarilyDisabled
         && !isFixedWing()) {
+
+        // determine if runaway_takeoff_prevention_first_arm_only is enabled (default = off)
+        // and if it is, disable runaway_takeoff_prevention for all the next arms, until the
+        // flight controller reboots
+        if (pidConfig()->runaway_takeoff_prevention_first_arm_only
+            && runawayTakeoffPrevention_FirstArmDone) {
+            runawayTakeoffPrevention_FirstArmDone = true;
+            runawayTakeoffCheckDisabled = true; // same result that if runaway_takeoff_deactivate_delay milliseconds was exceeded
+        }
 
         // Determine if we're in "flight"
         //   - motors running
