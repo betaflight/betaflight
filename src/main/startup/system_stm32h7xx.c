@@ -739,6 +739,12 @@ void SystemInit (void)
     systemProcessResetReason();
 #endif
 
+#if defined(USE_FLASH_MEMORY_MAPPED)
+    memoryMappedModeInit();
+
+    // !IMPORTANT!  Do NOT reset peripherals, clocks and GPIO pins used by the MCU to access the memory-mapped flash!!!
+#endif
+
     // FPU settings
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  // Set CP10 and CP11 Full Access

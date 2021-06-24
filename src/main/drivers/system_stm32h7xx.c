@@ -62,8 +62,39 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+#if defined(USE_FLASH_MEMORY_MAPPED)
+
+/*
+ * Memory mapped targets use a bootloader which enables memory mapped mode before running the firmware directly from external flash.
+ * Code running from external flash, i.e. most of the firmware, must not disable peripherals or reconfigure pins used by the CPU to access the flash chip.
+ * Refer to reference manuals and linker scripts for addresses of memory mapped regions.
+ * STM32H830 - RM0468 "Table 6. Memory map and default device memory area attributes"
+ *
+ * If the config is also stored on the same flash chip that code is running from then VERY special care must be taken when detecting the flash chip
+ * and when writing an updated config back to the flash.
+ */
+
+static bool memoryMappedModeEnabled = false;
+
+bool isMemoryMappedModeEnabled(void)
+{
+    return memoryMappedModeEnabled;
+}
+
+void memoryMappedModeInit(void)
+{
+#if defined(STM32H730xx)
+    // Small H730 packages have ONE OCTOSPI interface which supports memory mapped mode.
+    memoryMappedModeEnabled = READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE;
+#else
+#error No Memory Mapped implementation on current MCU.
+#endif
+}
+#endif
+
 void systemInit(void)
 {
+
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
