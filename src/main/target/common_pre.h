@@ -151,7 +151,6 @@
 #define FAST_IRQ_HANDLER
 #endif
 
-
 #ifdef USE_ITCM_RAM
 #if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
 #define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))

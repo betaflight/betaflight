@@ -397,6 +397,16 @@ extern uint8_t __config_end;
 #define USE_FLASH_BOOT_LOADER
 #endif
 
+#if defined(USE_FLASH_MEMORY_MAPPED) && !defined(USE_RAM_CODE)
+#define USE_RAM_CODE
+#endif
+
+#ifdef USE_RAM_CODE
+// RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
+// Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
+#define RAM_CODE                   __attribute__((section(".ram_code")))
+#endif
+
 #if !defined(USE_RPM_FILTER)
 #undef USE_DYN_IDLE
 #endif
