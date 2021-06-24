@@ -113,6 +113,19 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
   } >DTCM_RAM AT >MAIN
 
+  /* Non-critical program code goes into RAM */
+  /* Copy specific slow-executing code to RAM */ 
+  ram_code = LOADADDR(.ram_code); 
+  .ram_code :
+  {
+    . = ALIGN(4);
+    ram_code_start = .; 
+    *(.ram_code)
+    *(.ram_code*)
+    . = ALIGN(4);
+    ram_code_end = .; 
+  } >RAM AT >MAIN
+
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss (NOLOAD) :
