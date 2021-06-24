@@ -1,0 +1,81 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Author: Dominic Clifton
+ */
+
+/*
+ * OctoSPI support.
+ *
+ * Some STM32H7 MCUs support 2 OCTOSPI peripherals, each with up to 2 flash chips, using 2/4/8 IO lines each. Small MCU packages only have one instance.
+ * Additionally there is an OCTOSPIM peripheral which maps OCTOSPI1/2 peripherals to IO pins and can perform arbitration.
+ *
+ * Initial implementation is focused on supporting memory-mapped flash chips connected to an OCTOSPI peripheral that is already initialised by a bootloader.
+ *
+ * As such the following things are NOT supported:
+ * * Configuration of IO pins.
+ * * Clock configuration.
+ * * User-configuration.
+ * * OCTOSPIM configuration.
+ * * OCTOSPI2.
+ *
+ * Should the firmware need to know about the pins used by OCTOSPI then code can be written to determine this from the registers of the OCTOSPIM and OCTOSPI1/2 peripherals.
+ */
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "platform.h"
+
+#ifdef USE_OCTOSPI
+
+#include "bus_octospi.h"
+#include "bus_octospi_impl.h"
+
+octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
+
+const octoSpiHardware_t octoSpiHardware[] = {
+#if defined(STM32H730xx)
+    {
+        .device = OCTOSPIDEV_1,
+        .reg = OCTOSPI1,
+    }
+#else
+#error MCU not supported.
+#endif
+};
+
+bool octoSpiInit(void)
+{
+    for (size_t hwindex = 0; hwindex < ARRAYLEN(octoSpiHardware); hwindex++) {
+        const octoSpiHardware_t *hw = &octoSpiHardware[hwindex];
+
+        OCTOSPIDevice device = hw->device;
+        octoSpiDevice_t *pDev = &octoSpiDevice[device];
+
+        pDev->dev = hw->reg;
+    }
+
+    octoSpiInitDevice(OCTOSPIDEV_1);
+
+    return true;
+}
+
+#endif
