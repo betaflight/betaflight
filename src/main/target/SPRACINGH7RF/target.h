@@ -45,9 +45,12 @@
 // Config is to be stored on the flash chip used for code/data storage, this requires that the
 // config load/save routines must run from RAM and a method to enable/disable memory mapped mode is needed.
 
+#define USE_FLASH_MEMORY_MAPPED
+
 #define USE_OCTOSPI
 #define USE_OCTOSPI_DEVICE_1
 
+#if !defined(USE_FLASH_MEMORY_MAPPED)
 #define OCTOSPIM_P1_SCK_PIN PB2
 #define OCTOSPIM_P1_CS_PIN PB6
 
@@ -65,6 +68,8 @@
 
 #define OCTOSPIM_P1_MODE OCTOSPIM_P1_MODE_IO03_ONLY
 #define OCTOSPIM_P1_CS_FLAGS (OCTOSPIM_P1_CS_HARDWARE)
+#endif
+
 
 // TODO No support yet for config using a single flash device in memory mapped mode, using SDCARD until support is added.
 
@@ -197,7 +202,6 @@
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 #define USE_FLASHFS
-#define USE_FLASH_MEMORY_MAPPED
 #define USE_FLASH_TOOLS
 #define USE_FLASH_W25Q128
 #define USE_FLASH_M25P16
