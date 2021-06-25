@@ -41,6 +41,19 @@
 #error MCU not supported.
 #endif
 
+RAM_CODE NOINLINE static void Error_Handler(void) {
+    while (1)
+    {
+        NOOP;
+    }
+}
+
+
+#define __OSPI_GET_FLAG(__INSTANCE__, __FLAG__)           ((READ_BIT((__INSTANCE__)->SR, (__FLAG__)) != 0U) ? SET : RESET)
+#define __OSPI_ENABLE(__INSTANCE__)                       SET_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN)
+#define __OSPI_DISABLE(__INSTANCE__)                      CLEAR_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN)
+#define __OSPI_IS_ENABLED(__INSTANCE__)                       (READ_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN) != 0U)
+
 RAM_CODE NOINLINE static void octoSpiAbort(octoSpiDevice_t *octoSpi)
 {
     OCTOSPI_TypeDef *instance = octoSpi->dev;
@@ -75,13 +88,32 @@ RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(octoSpiDevice_t *octoSpi, u
  * This applies to ISR code that runs from the memory mapped region, so likely the caller should
  * also disable IRQs before calling this.
  */
+
+uint32_t busyCount = 0;
+
 RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
     OCTOSPI_TypeDef *instance = octoSpi->dev;
 
     octoSpiAbort(octoSpi);
+    if (__OSPI_GET_FLAG(instance, OCTOSPI_SR_BUSY) == SET) {
+        busyCount++;
+        __OSPI_DISABLE(instance);
+        octoSpiAbort(octoSpi);
+    }
+    octoSpiWaitStatusFlags(octoSpi, OCTOSPI_SR_BUSY, 0);
 
-    MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, 0x0); // b00 = indirect write, see OCTOSPI->CR->FMODE
+    uint32_t fmode = 0x0;  // b00 = indirect write, see OCTOSPI->CR->FMODE
+    MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, fmode);
+
+    uint32_t regval = READ_REG(instance->CR);
+    if ((regval & OCTOSPI_CR_FMODE) != fmode) {
+        Error_Handler();
+    }
+
+    if (!__OSPI_IS_ENABLED(instance)) {
+        __OSPI_ENABLE(instance);
+    }
 }
 
 /*
