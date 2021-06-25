@@ -20,6 +20,9 @@
  * Author: Dominic Clifton
  */
 
+/*
+ *
+ */
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -33,33 +36,33 @@
 #include "bus_octospi.h"
 #include "bus_octospi_impl.h"
 
-static void Error_Handler(void) { while (1) { } }
-
-uint32_t mmEnableCounter = 0; // XXX
-uint32_t mmDisableCounter = 0; // XXX
-
+#if !defined(STM32H730xx)
+// Implementation only tested on STM32H730.
+#error MCU not supported.
+#endif
 
 RAM_CODE NOINLINE static void octoSpiAbort(octoSpiDevice_t *octoSpi)
 {
-    OSPI_HandleTypeDef *handle = &octoSpi->hoctoSpi;
+    OCTOSPI_TypeDef *instance = octoSpi->dev;
 
-    SET_BIT(handle->Instance->CR, OCTOSPI_CR_ABORT);
+    SET_BIT(instance->CR, OCTOSPI_CR_ABORT);
 }
 
 RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(octoSpiDevice_t *octoSpi, uint32_t mask, int polarity)
 {
-    OSPI_HandleTypeDef *handle = &octoSpi->hoctoSpi;
+    OCTOSPI_TypeDef *instance = octoSpi->dev;
 
     uint32_t regval;
 
     if (polarity) {
-        while (!((regval = READ_REG(handle->Instance->SR)) & mask))
+        while (!((regval = READ_REG(instance->SR)) & mask))
             {}
     } else {
-        while (((regval = READ_REG(handle->Instance->SR)) & mask))
+        while (((regval = READ_REG(instance->SR)) & mask))
             {}
     }
 }
+
 /*
  * Disable memory mapped mode.
  *
@@ -74,13 +77,11 @@ RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(octoSpiDevice_t *octoSpi, u
  */
 RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
-    OSPI_HandleTypeDef *handle = &octoSpi->hoctoSpi;
+    OCTOSPI_TypeDef *instance = octoSpi->dev;
 
     octoSpiAbort(octoSpi);
 
-    MODIFY_REG(handle->Instance->CR, OCTOSPI_CR_FMODE, 0x0); // b00 = indirect write, see OCTOSPI->CR->FMODE
-
-    mmDisableCounter++;
+    MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, 0x0); // b00 = indirect write, see OCTOSPI->CR->FMODE
 }
 
 /*
@@ -92,26 +93,15 @@ RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 
 RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
-    mmEnableCounter++;
-
-    OSPI_HandleTypeDef *handle = &octoSpi->hoctoSpi;
+    OCTOSPI_TypeDef *instance = octoSpi->dev;
 
     octoSpiAbort(octoSpi);
     octoSpiWaitStatusFlags(octoSpi, OCTOSPI_SR_BUSY, 0);
 
-    MODIFY_REG(handle->Instance->CR, OCTOSPI_CR_FMODE, OCTOSPI_CR_FMODE);
+    MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, OCTOSPI_CR_FMODE);
 
     // Note: The OCTOSPI peripheral's registers for memory mapped mode will have been configured by the bootloader
     // They are flash chip specific, e.g. the amount of address/data lines to use, the command for reading, etc.
-
-    // Bypass the HAL requirement for configuring the commands.  See implementation of HAL_OSPI_MemoryMapped for the specific MCU.
-#if defined(STM32H730xx)
-    octoSpi->hoctoSpi.State = HAL_OSPI_STATE_BUSY_MEM_MAPPED;
-#else
-#error MCU not supported.
-#endif
-
-    //__HAL_OSPI_ENABLE(handle);
 }
 
 RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
@@ -126,20 +116,14 @@ void octoSpiInitDevice(OCTOSPIDevice device)
 {
     octoSpiDevice_t *octoSpi = &(octoSpiDevice[device]);
 
-    octoSpi->hoctoSpi.Instance = octoSpi->dev;
-
 #if defined(STM32H730xx)
     if (isMemoryMappedModeEnabled()) {
-        // NOTE: Specifically no HAL_OSPI_Init()
-        // The hardware is already initialised by the bootloader, so just update the HAL state to match the hardware's current configuration
-        octoSpi->hoctoSpi.State = HAL_OSPI_STATE_BUSY_MEM_MAPPED;
-        octoSpi->hoctoSpi.ErrorCode = HAL_OSPI_ERROR_NONE;
-
+        // Bootloader has already configured the IO, clocks and peripherals.
         octoSpiTestEnableDisableMemoryMappedMode(octoSpi);
     } else {
         failureMode(FAILURE_DEVELOPER); // trying to use this implementation when memory mapped mode is not already enabled by a bootloader
 
-        // Here is where we would configure the peripheral and call HAL_OSPI_Init() and HAL_OSPIM_Config()
+        // Here is where we would configure the OCTOSPI1/2 and OCTOSPIM peripherals for the non-memory-mapped use case.
     }
 #else
 #error MCU not supported.

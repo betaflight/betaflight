@@ -301,7 +301,7 @@ MCU_COMMON_SRC = \
             drivers/timer_stm32h7xx.c \
             drivers/serial_uart_hal.c \
             drivers/serial_uart_stm32h7xx.c \
-            drivers/bus_octospi_hal.c \
+            drivers/bus_octospi_stm32h7xx.c \
             drivers/bus_quadspi_hal.c \
             drivers/bus_spi_ll.c \
             drivers/dma_stm32h7xx.c \
