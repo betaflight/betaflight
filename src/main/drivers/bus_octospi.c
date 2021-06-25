@@ -36,6 +36,15 @@
  * * OCTOSPI2.
  *
  * Should the firmware need to know about the pins used by OCTOSPI then code can be written to determine this from the registers of the OCTOSPIM and OCTOSPI1/2 peripherals.
+ *
+ * Implementation notes:
+ * It's not possible to use the HAL libraries without modifying them and maintaining the internal state of the HAL structures.
+ * The HAL libraries were not designed to support the use-case of a bootloader configuring the flash in memory mapped mode and then
+ * having a second piece of software (this firmware) also use the flash.  Furthermore many HAL methods were not designed to run with
+ * interrupts disabled which is necessary as other ISRs in this firmware will be running from external flash and must be disabled.
+ * See HAL_OSPI_Abort, OSPI_WaitFlagStateUntilTimeout, etc.
+ * All code that is executed when memory mapped mode is disabled needs to run from RAM, this would also involve modification of the HAL
+ * libraries.
  */
 
 #include <stdbool.h>

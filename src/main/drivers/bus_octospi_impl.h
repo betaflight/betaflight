@@ -31,10 +31,6 @@ typedef struct octoSpiHardware_s {
 
 typedef struct OCTOSPIDevice_s {
     OCTOSPI_TypeDef *dev;
-
-#if defined(USE_HAL_DRIVER)
-    OSPI_HandleTypeDef hoctoSpi;
-#endif
 } octoSpiDevice_t;
 
 extern octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT];
