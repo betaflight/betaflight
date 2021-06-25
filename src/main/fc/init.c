@@ -309,10 +309,8 @@ void init(void)
     // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
     // sdcard are in the config which is on the sdcard which we can't read yet!
     //
-    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
-    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
-    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change sdio/spi configs needed for
-    // the system to boot and/or to save the config.
+    // FIXME For now, users must NOT change flash/pin configs needed for the system to boot and/or to save the config.
+    // One possible solution is to lock the pins for the flash chip so they cannot be modified post-boot.
     //
     // note that target specific SDCARD/SDIO/SPI/QUADSPI/OCTOSPI configs are
     // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_SDCARD.
@@ -357,10 +355,8 @@ void init(void)
     // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
     // external flash are in the config which is on a chip which we can't read yet!
     //
-    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
-    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
-    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change flash/pin configs needed for
-    // the system to boot and/or to save the config.
+    // FIXME For now, users must NOT change flash/pin configs needed for the system to boot and/or to save the config.
+    // One possible solution is to lock the pins for the flash chip so they cannot be modified post-boot.
     //
     // note that target specific FLASH/SPI/QUADSPI/OCTOSPI configs are
     // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH.
