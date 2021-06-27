@@ -36,8 +36,10 @@
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
+#include "drivers/bus_octospi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
+#include "drivers/system.h"
 
 // 20 MHz max SPI frequency
 #define FLASH_MAX_SPI_CLK_HZ 20000000
@@ -52,6 +54,109 @@ static flashPartitionTable_t flashPartitionTable;
 static int flashPartitions = 0;
 
 #define FLASH_INSTRUCTION_RDID 0x9F
+
+#ifdef USE_OCTOSPI
+RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
+{
+    bool detected = false;
+
+    enum { TRY_1LINE = 0, TRY_4LINE, BAIL};
+    int phase = TRY_1LINE;
+
+    bool memoryMappedMode = isMemoryMappedModeEnabled();
+
+#ifndef USE_OCTOSPI_EXPERIMENTAL
+    if (!memoryMappedMode) {
+        return false; // Not supported yet, enable USE_OCTOSPI_EXPERIMENTAL and test/update implementation as required.
+    }
+#endif
+
+    OCTOSPI_TypeDef *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
+
+    if (memoryMappedMode) {
+        __disable_irq();
+        octoSpiDisableMemoryMappedMode(instance);
+    }
+
+    do {
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+        if (!memoryMappedMode) {
+            octoSpiSetDivisor(instance, OCTOSPI_CLOCK_INITIALISATION);
+        }
+#endif
+        // for the memory-mapped use-case, we rely on the bootloader to have already selected the correct speed for the flash chip.
+
+        // 3 bytes for what we need, but some IC's need 8 dummy cycles after the instruction, so read 4 and make two attempts to
+        // assemble the chip id from the response.
+        uint8_t readIdResponse[4];
+
+        bool status = false;
+        switch (phase) {
+        case TRY_1LINE:
+            status = octoSpiReceive1LINE(instance, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
+            break;
+        case TRY_4LINE:
+            status = octoSpiReceive4LINES(instance, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
+            break;
+        default:
+            break;
+        }
+
+        if (!status) {
+            phase++;
+            continue;
+        }
+
+        flashDevice.io.handle.octoSpi = instance;
+        flashDevice.io.mode = FLASHIO_OCTOSPI;
+
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+        if (!memoryMappedMode) {
+            octoSpiSetDivisor(instance, OCTOSPI_CLOCK_ULTRAFAST);
+        }
+#endif
+
+        for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
+
+            uint32_t chipID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+
+            if (offset == 0) {
+#if defined(USE_FLASH_W25Q128FV)
+                if (!detected && w25q128fv_detect(&flashDevice, chipID)) {
+                    detected = true;
+                }
+#endif
+            }
+
+            if (offset == 1) {
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+                if (!memoryMappedMode) {
+                    // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
+#if defined(USE_FLASH_W25N01G)
+                    if (!detected && w25n01g_detect(&flashDevice, chipID)) {
+                        detected = true;
+                    }
+#endif
+#if defined(USE_FLASH_W25M02G)
+                    if (!detected && w25m_detect(&flashDevice, chipID)) {
+                        detected = true;
+                    }
+#endif
+                }
+#endif
+            }
+        }
+        phase++;
+    } while (phase != BAIL && !detected);
+
+    if (memoryMappedMode) {
+        octoSpiEnableMemoryMappedMode(instance);
+        __enable_irq();
+    }
+    return detected;
+
+}
+#endif
 
 #ifdef USE_QUADSPI
 static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
@@ -98,7 +203,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
             uint32_t chipID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
 
             if (offset == 0) {
-#ifdef USE_FLASH_W25Q128FV
+#if defined(USE_FLASH_W25Q128FV)
                 if (!detected && w25q128fv_detect(&flashDevice, chipID)) {
                     detected = true;
                 }
@@ -106,7 +211,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
             }
 
             if (offset == 1) {
-#ifdef USE_FLASH_W25N01G
+#if defined(USE_FLASH_W25N01G)
                 if (!detected && w25n01g_detect(&flashDevice, chipID)) {
                     detected = true;
                 }
@@ -224,6 +329,13 @@ bool flashDeviceInit(const flashConfig_t *flashConfig)
     bool useQuadSpi = (QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice) != QUADSPIINVALID);
     if (useQuadSpi) {
         return flashQuadSpiInit(flashConfig);
+    }
+#endif
+
+#ifdef USE_OCTOSPI
+    bool useOctoSpi = (OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice) != OCTOSPIINVALID);
+    if (useOctoSpi) {
+        return flashOctoSpiInit(flashConfig);
     }
 #endif
 

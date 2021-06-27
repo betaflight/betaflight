@@ -27,6 +27,7 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
+#include "drivers/bus_octospi.h"
 #include "drivers/io.h"
 
 #include "pg/pg.h"
@@ -48,6 +49,9 @@ void pgResetFn_flashConfig(flashConfig_t *flashConfig)
 #endif
 #if defined(USE_QUADSPI) && defined(FLASH_QUADSPI_INSTANCE)
     flashConfig->quadSpiDevice = QUADSPI_DEV_TO_CFG(quadSpiDeviceByInstance(FLASH_QUADSPI_INSTANCE));
+#endif
+#if defined(USE_OCTOSPI) && defined(FLASH_OCTOSPI_INSTANCE)
+    flashConfig->octoSpiDevice = OCTOSPI_DEV_TO_CFG(octoSpiDeviceByInstance(FLASH_OCTOSPI_INSTANCE));
 #endif
 }
 #endif
