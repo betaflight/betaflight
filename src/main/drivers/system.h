@@ -73,6 +73,10 @@ uint32_t getCycleCounter(void);
 void systemProcessResetReason(void);
 #endif
 
+// memory
+void memoryMappedModeInit(void);
+bool isMemoryMappedModeEnabledOnBoot(void);
+
 void initialiseMemorySections(void);
 #ifdef STM32H7
 void initialiseD2MemorySections(void);

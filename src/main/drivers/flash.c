@@ -64,17 +64,17 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
         TRY_1LINE = 0, TRY_4LINE, BAIL
     } phase = TRY_1LINE;
 
-    bool memoryMappedMode = isMemoryMappedModeEnabled();
+    bool memoryMappedModeEnabledOnBoot = isMemoryMappedModeEnabledOnBoot();
 
 #ifndef USE_OCTOSPI_EXPERIMENTAL
-    if (!memoryMappedMode) {
+    if (!memoryMappedModeEnabledOnBoot) {
         return false; // Not supported yet, enable USE_OCTOSPI_EXPERIMENTAL and test/update implementation as required.
     }
 #endif
 
     OCTOSPI_TypeDef *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
 
-    if (memoryMappedMode) {
+    if (memoryMappedModeEnabledOnBoot) {
         __disable_irq();
         octoSpiDisableMemoryMappedMode(instance);
     }
@@ -112,7 +112,7 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
         flashDevice.io.mode = FLASHIO_OCTOSPI;
 
 #ifdef USE_OCTOSPI_EXPERIMENTAL
-        if (!memoryMappedMode) {
+        if (!memoryMappedModeEnabledOnBoot) {
             octoSpiSetDivisor(instance, OCTOSPI_CLOCK_ULTRAFAST);
         }
 #endif
@@ -131,7 +131,7 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
 
             if (offset == 1) {
 #ifdef USE_OCTOSPI_EXPERIMENTAL
-                if (!memoryMappedMode) {
+                if (!memoryMappedModeEnabledOnBoot) {
                     // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
 #if defined(USE_FLASH_W25N01G)
                     if (!detected && w25n01g_detect(&flashDevice, chipID)) {
@@ -150,7 +150,7 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
         phase++;
     } while (phase != BAIL && !detected);
 
-    if (memoryMappedMode) {
+    if (memoryMappedModeEnabledOnBoot) {
         octoSpiEnableMemoryMappedMode(instance);
         __enable_irq();
     }

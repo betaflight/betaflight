@@ -60,7 +60,7 @@
 
 octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
 
-OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
+RAM_CODE NOINLINE OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
 {
 #ifdef USE_OCTOSPI_DEVICE_1
     if (instance == OCTOSPI1) {
@@ -107,9 +107,8 @@ bool octoSpiInit(OCTOSPIDevice device)
         return false;
     case OCTOSPIDEV_1:
 #ifdef USE_OCTOSPI_DEVICE_1
-    octoSpiInitDevice(OCTOSPIDEV_1);
-
-    return true;
+        octoSpiInitDevice(OCTOSPIDEV_1);
+        return true;
 #else
         break;
 #endif
