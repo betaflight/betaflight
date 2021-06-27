@@ -74,18 +74,18 @@ bool isMPUSoftReset(void)
  * and when writing an updated config back to the flash.
  */
 
-static bool memoryMappedModeEnabled = false;
+static bool memoryMappedModeEnabledOnBoot = false;
 
-bool isMemoryMappedModeEnabled(void)
+bool isMemoryMappedModeEnabledOnBoot(void)
 {
-    return memoryMappedModeEnabled;
+    return memoryMappedModeEnabledOnBoot;
 }
 
 void memoryMappedModeInit(void)
 {
 #if defined(STM32H730xx)
     // Small H730 packages have ONE OCTOSPI interface which supports memory mapped mode.
-    memoryMappedModeEnabled = READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE;
+    memoryMappedModeEnabledOnBoot = READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE;
 #else
 #error No Memory Mapped implementation on current MCU.
 #endif

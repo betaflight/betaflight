@@ -75,7 +75,7 @@ void systemProcessResetReason(void);
 
 // memory
 void memoryMappedModeInit(void);
-bool isMemoryMappedModeEnabled(void);
+bool isMemoryMappedModeEnabledOnBoot(void);
 
 void initialiseMemorySections(void);
 #ifdef STM32H7

@@ -41,6 +41,8 @@
 #error MCU not supported.
 #endif
 
+#define OCTOSPI_INTERFACE_COUNT         1
+
 #define OSPI_FUNCTIONAL_MODE_INDIRECT_WRITE ((uint32_t)0x00000000)
 #define OSPI_FUNCTIONAL_MODE_INDIRECT_READ  ((uint32_t)OCTOSPI_CR_FMODE_0)
 #define OSPI_FUNCTIONAL_MODE_AUTO_POLLING   ((uint32_t)OCTOSPI_CR_FMODE_1)
@@ -181,6 +183,8 @@ RAM_CODE static ErrorStatus octoSpiConfigureCommand(OCTOSPI_TypeDef *instance, O
 {
     ErrorStatus status = SUCCESS;
 
+    MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, 0U);
+
     instance->CCR = (cmd->DQSMode | cmd->SIOOMode);
 
     if (cmd->AlternateBytesMode != OSPI_ALTERNATE_BYTES_NONE)
@@ -306,7 +310,7 @@ RAM_CODE static ErrorStatus octoSpiConfigureCommand(OCTOSPI_TypeDef *instance, O
 
 RAM_CODE NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
 {
-    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, 0);
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
 
     ErrorStatus status = octoSpiConfigureCommand(instance, cmd);
     if (status == SUCCESS) {
@@ -400,6 +404,70 @@ RAM_CODE NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint8_t 
     return SUCCESS;
 }
 
+typedef struct
+{
+    // CR register contains the all-important FMODE bits.
+    uint32_t CR;
+
+    // flash chip specific configuration set by the bootloader
+    uint32_t CCR;
+    uint32_t TCR;
+    uint32_t IR;
+    uint32_t ABR;
+    // address register - no meaning.
+    // data length register no meaning.
+
+} octoSpiMemoryMappedModeConfigurationRegisterBackup_t;
+
+octoSpiMemoryMappedModeConfigurationRegisterBackup_t ospiMMMCRBackups[OCTOSPI_INTERFACE_COUNT];
+
+RAM_CODE NOINLINE void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
+{
+    OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
+    if (device == OCTOSPIINVALID) {
+        return;
+    }
+
+    octoSpiMemoryMappedModeConfigurationRegisterBackup_t *ospiMMMCRBackup = &ospiMMMCRBackups[device];
+
+    // backup all the registers used by memory mapped mode that:
+    // a) the bootloader configured.
+    // b) that other code in this implementation may have modified when memory mapped mode is disabled.
+
+    ospiMMMCRBackup->CR = instance->CR;
+    ospiMMMCRBackup->IR = instance->IR;
+    ospiMMMCRBackup->CCR = instance->CCR;
+    ospiMMMCRBackup->TCR = instance->TCR;
+    ospiMMMCRBackup->ABR = instance->ABR;
+}
+
+RAM_CODE NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
+{
+    OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
+    if (device == OCTOSPIINVALID) {
+        return;
+    }
+
+    octoSpiMemoryMappedModeConfigurationRegisterBackup_t *ospiMMMCRBackup = &ospiMMMCRBackups[device];
+
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
+
+    instance->ABR = ospiMMMCRBackup->ABR;
+    instance->TCR = ospiMMMCRBackup->TCR;
+
+    instance->DLR = 0; // "no meaning" in MM mode.
+
+    instance->CCR = ospiMMMCRBackup->CCR;
+
+    instance->IR = ospiMMMCRBackup->IR;
+    instance->AR = 0; // "no meaning" in MM mode.
+
+    octoSpiAbort(instance);
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
+
+    instance->CR = ospiMMMCRBackup->CR;
+}
+
 /*
  * Disable memory mapped mode.
  *
@@ -412,18 +480,19 @@ RAM_CODE NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint8_t 
  * This applies to ISR code that runs from the memory mapped region, so likely the caller should
  * also disable IRQs before calling this.
  */
-
-
-
 RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 {
+    if (READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) != OCTOSPI_CR_FMODE) {
+        failureMode(FAILURE_DEVELOPER); // likely not booted with memory mapped mode enabled, or mismatched calls to enable/disable memory map mode.
+    }
+
     octoSpiAbort(instance);
     if (__OSPI_GET_FLAG(instance, OCTOSPI_SR_BUSY) == SET) {
 
         __OSPI_DISABLE(instance);
         octoSpiAbort(instance);
     }
-    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, 0);
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
 
     uint32_t fmode = 0x0;  // b00 = indirect write, see OCTOSPI->CR->FMODE
     MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, fmode);
@@ -441,19 +510,16 @@ RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 /*
  * Enable memory mapped mode.
  *
- * @See octoSpiEnableMemoryMappedMode
+ * @See octoSpiDisableMemoryMappedMode
  * @See RAM_CODE
  */
 
 RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 {
     octoSpiAbort(instance);
-    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, 0);
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
 
-    MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, OCTOSPI_CR_FMODE);
-
-    // Note: The OCTOSPI peripheral's registers for memory mapped mode will have been configured by the bootloader
-    // They are flash chip specific, e.g. the amount of address/data lines to use, the command for reading, etc.
+    octoSpiRestoreMemoryMappedModeConfiguration(instance);
 }
 
 RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
@@ -466,7 +532,7 @@ RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t 
     __enable_irq();
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+RAM_CODE NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
@@ -496,15 +562,15 @@ RAM_CODE NOINLINE ErrorStatus octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, ui
         cmd.DataMode       = OSPI_DATA_1_LINE;
     }
 
-    bool result = octoSpiCommand(instance, &cmd);
+    bool status = octoSpiCommand(instance, &cmd);
 
-    if (result && out && length > 0) {
-        result = octoSpiTransmit(instance, (uint8_t *)out);
+    if (status == SUCCESS && out && length > 0) {
+        status = octoSpiTransmit(instance, (uint8_t *)out);
     }
-    return result;
+    return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+RAM_CODE NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
@@ -536,11 +602,11 @@ RAM_CODE NOINLINE ErrorStatus octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uin
         status = octoSpiReceive(instance, in);
     }
 
-    return status;
+    return status == SUCCESS;
 }
 
 
-RAM_CODE NOINLINE ErrorStatus octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+RAM_CODE NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
@@ -572,42 +638,42 @@ RAM_CODE NOINLINE ErrorStatus octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, ui
         status = octoSpiReceive(instance, in);
     }
 
-    return status;
+    return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+RAM_CODE NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
-    return status;
+    return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+RAM_CODE NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
-    return status;
+    return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+RAM_CODE NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
-    return status;
+    return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+RAM_CODE NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
-    return status;
+    return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+RAM_CODE NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
     // TODO
     ErrorStatus status = ERROR;
-    return status;
+    return status == SUCCESS;
 }
 
 
@@ -616,8 +682,10 @@ void octoSpiInitDevice(OCTOSPIDevice device)
     octoSpiDevice_t *octoSpi = &(octoSpiDevice[device]);
 
 #if defined(STM32H730xx)
-    if (isMemoryMappedModeEnabled()) {
+    if (isMemoryMappedModeEnabledOnBoot()) {
         // Bootloader has already configured the IO, clocks and peripherals.
+        octoSpiBackupMemoryMappedModeConfiguration(octoSpi->dev);
+
         octoSpiTestEnableDisableMemoryMappedMode(octoSpi);
     } else {
         failureMode(FAILURE_DEVELOPER); // trying to use this implementation when memory mapped mode is not already enabled by a bootloader
