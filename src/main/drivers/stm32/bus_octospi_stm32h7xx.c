@@ -138,6 +138,56 @@ RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t 
     __enable_irq();
 }
 
+RAM_CODE NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+{
+    // TODO
+    return false;
+}
+
+RAM_CODE NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+{
+    // TODO
+    return false;
+}
+
+
+RAM_CODE NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+{
+    // TODO
+    return false;
+}
+
+RAM_CODE NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+{
+    // TODO
+    return false;
+}
+
+RAM_CODE NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+{
+    // TODO
+    return false;
+}
+
+RAM_CODE NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+{
+    // TODO
+    return false;
+}
+
+RAM_CODE NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+{
+    // TODO
+    return false;
+}
+
+RAM_CODE NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+{
+    // TODO
+    return false;
+}
+
+
 void octoSpiInitDevice(OCTOSPIDevice device)
 {
     octoSpiDevice_t *octoSpi = &(octoSpiDevice[device]);
