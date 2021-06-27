@@ -32,7 +32,8 @@ struct flashVTable_s;
 typedef enum {
     FLASHIO_NONE = 0,
     FLASHIO_SPI,
-    FLASHIO_QUADSPI
+    FLASHIO_QUADSPI,
+    FLASHIO_OCTOSPI,
 } flashDeviceIoMode_e;
 
 typedef struct flashDeviceIO_s {
@@ -40,6 +41,9 @@ typedef struct flashDeviceIO_s {
         extDevice_t *dev; // Device interface dependent handle (spi/i2c)
     #ifdef USE_QUADSPI
         QUADSPI_TypeDef *quadSpi;
+    #endif
+    #ifdef USE_OCTOSPI
+        OCTOSPI_TypeDef *octoSpi;
     #endif
     } handle;
     flashDeviceIoMode_e mode;
