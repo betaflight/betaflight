@@ -91,7 +91,7 @@ const octoSpiHardware_t octoSpiHardware[] = {
 #endif
 };
 
-bool octoSpiInit(void)
+bool octoSpiInit(OCTOSPIDevice device)
 {
     for (size_t hwindex = 0; hwindex < ARRAYLEN(octoSpiHardware); hwindex++) {
         const octoSpiHardware_t *hw = &octoSpiHardware[hwindex];
@@ -102,9 +102,19 @@ bool octoSpiInit(void)
         pDev->dev = hw->reg;
     }
 
+    switch (device) {
+    case OCTOSPIINVALID:
+        return false;
+    case OCTOSPIDEV_1:
+#ifdef USE_OCTOSPI_DEVICE_1
     octoSpiInitDevice(OCTOSPIDEV_1);
 
     return true;
+#else
+        break;
+#endif
+    }
+    return false;
 }
 
 #endif
