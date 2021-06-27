@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_FLASH_W25Q128FV) && defined(USE_QUADSPI)
+#if defined(USE_FLASH_W25Q128FV) && (defined(USE_QUADSPI) || defined(USE_OCTOSPI))
 
 #define USE_FLASH_WRITES_USING_4LINES
 #define USE_FLASH_READS_USING_4LINES
@@ -37,11 +37,14 @@
 #include "drivers/flash_impl.h"
 #include "drivers/flash_w25q128fv.h"
 #include "drivers/bus_quadspi.h"
+#include "drivers/bus_octospi.h"
 
 // JEDEC ID
-#define JEDEC_ID_WINBOND_W25Q128FV_SPI      0xEF4018
-#define JEDEC_ID_WINBOND_W25Q128FV_QUADSPI  0xEF6018
-#define JEDEC_ID_WINBOND_W25Q128JV_QUADSPI  0xEF7018
+#define JEDEC_ID_WINBOND_W25Q128FV_SPI          0xEF4018
+#define JEDEC_ID_WINBOND_W25Q128FV_QUADSPI      0xEF6018
+#define JEDEC_ID_WINBOND_W25Q128JV_QUADSPI      0xEF7018
+#define JEDEC_ID_WINBOND_W25Q16JV_SPI           0xEF4015
+#define JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI       0xEF7015
 
 // Device size parameters
 #define W25Q128FV_PAGE_SIZE         2048
@@ -123,15 +126,27 @@ static void w25q128fv_setTimeout(flashDevice_t *fdevice, uint32_t timeoutMillis)
 
 static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
 {
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
     quadSpiTransmit1LINE(quadSpi, command, 0, NULL, 0);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+    octoSpiTransmit1LINE(octoSpi, command, 0, NULL, 0);
+#endif
+
 }
 
 static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io, uint8_t command, uint32_t address)
 {
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
     quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, address & 0xffffff, W25Q128FV_ADDRESS_BITS);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+
+    octoSpiInstructionWithAddress1LINE(octoSpi, command, 0, address & 0xffffff, W25Q128FV_ADDRESS_BITS);
+#endif
 }
 
 static void w25q128fv_writeEnable(flashDevice_t *fdevice)
@@ -141,19 +156,33 @@ static void w25q128fv_writeEnable(flashDevice_t *fdevice)
 
 static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t command)
 {
+    uint8_t in[1];
+#ifdef USE_QUADSPI
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-    uint8_t in[1];
     quadSpiReceive1LINE(quadSpi, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+
+    octoSpiReceive1LINE(octoSpi, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#endif
+
 
     return in[0];
 }
 
 static void w25q128fv_writeRegister(flashDeviceIO_t *io, uint8_t command, uint8_t data)
 {
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-   quadSpiTransmit1LINE(quadSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
+    quadSpiTransmit1LINE(quadSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+
+    octoSpiTransmit1LINE(octoSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#endif
+
 }
 
 static void w25q128fv_deviceReset(flashDevice_t *fdevice)
@@ -255,7 +284,7 @@ const flashVTable_t w25q128fv_vTable;
 
 static void w25q128fv_deviceInit(flashDevice_t *flashdev);
 
-bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
+RAM_CODE NOINLINE bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
     switch (chipID) {
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
@@ -264,6 +293,15 @@ bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
         fdevice->geometry.sectors           = 256;
         fdevice->geometry.pagesPerSector    = 256;
         fdevice->geometry.pageSize          = 256;
+        // = 16777216 128MBit 16MB
+        break;
+
+    case JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI:
+    case JEDEC_ID_WINBOND_W25Q16JV_SPI:
+        fdevice->geometry.sectors           = 32;
+        fdevice->geometry.pagesPerSector    = 256;
+        fdevice->geometry.pageSize          = 256;
+        // = 2097152 16MBit 2MB
         break;
 
     default:
@@ -277,6 +315,8 @@ bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
 
     // use the chip id to determine the initial interface mode on cold-boot.
     switch (chipID) {
+    case JEDEC_ID_WINBOND_W25Q16JV_SPI:
+    case JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI:
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
         w25q128fvState.initialMode = INITIAL_MODE_SPI;
         break;
@@ -331,12 +371,22 @@ static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *dat
 {
     w25q128fv_waitForReady(fdevice);
 
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
 #ifdef USE_FLASH_WRITES_USING_4LINES
     quadSpiTransmitWithAddress4LINES(quadSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #else
     quadSpiTransmitWithAddress1LINE(quadSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#endif
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
+
+#ifdef USE_FLASH_WRITES_USING_4LINES
+    octoSpiTransmitWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#else
+    octoSpiTransmitWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#endif
 #endif
 
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS);
@@ -397,12 +447,22 @@ static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
         return 0;
     }
 
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 #ifdef USE_FLASH_READS_USING_4LINES
     bool status = quadSpiReceiveWithAddress4LINES(quadSpi, W25Q128FV_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
 #else
     bool status = quadSpiReceiveWithAddress1LINE(quadSpi, W25Q128FV_INSTRUCTION_FAST_READ, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
 #endif
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
+#ifdef USE_FLASH_READS_USING_4LINES
+    bool status = octoSpiReceiveWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
+#else
+    bool status = octoSpiReceiveWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_FAST_READ, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
+#endif
+#endif
+
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_PAGE_READ_MS);
 
     if (!status) {
