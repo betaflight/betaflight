@@ -43,7 +43,7 @@ OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance);
 OCTOSPI_TypeDef *octoSpiInstanceByDevice(OCTOSPIDevice device);
 
 
-bool octoSpiInit(void);
+bool octoSpiInit(OCTOSPIDevice device);
 ErrorStatus octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
 ErrorStatus octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
 ErrorStatus octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);

@@ -237,7 +237,9 @@ static void configureSPIBusses(void)
 #endif // USE_QUAD_SPI
 
 #ifdef USE_OCTOSPI
-    octoSpiInit();
+#ifdef USE_OCTOSPI_DEVICE_1
+    octoSpiInit(OCTOSPIDEV_1);
+#endif
 #endif
 
 }
