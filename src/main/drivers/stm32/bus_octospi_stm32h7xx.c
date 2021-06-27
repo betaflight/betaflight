@@ -54,17 +54,13 @@ RAM_CODE NOINLINE static void Error_Handler(void) {
 #define __OSPI_DISABLE(__INSTANCE__)                      CLEAR_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN)
 #define __OSPI_IS_ENABLED(__INSTANCE__)                       (READ_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN) != 0U)
 
-RAM_CODE NOINLINE static void octoSpiAbort(octoSpiDevice_t *octoSpi)
+RAM_CODE NOINLINE static void octoSpiAbort(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPI_TypeDef *instance = octoSpi->dev;
-
     SET_BIT(instance->CR, OCTOSPI_CR_ABORT);
 }
 
-RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(octoSpiDevice_t *octoSpi, uint32_t mask, int polarity)
+RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(OCTOSPI_TypeDef *instance, uint32_t mask, int polarity)
 {
-    OCTOSPI_TypeDef *instance = octoSpi->dev;
-
     uint32_t regval;
 
     if (polarity) {
@@ -91,17 +87,15 @@ RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(octoSpiDevice_t *octoSpi, u
 
 uint32_t busyCount = 0;
 
-RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
+RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPI_TypeDef *instance = octoSpi->dev;
-
-    octoSpiAbort(octoSpi);
+    octoSpiAbort(instance);
     if (__OSPI_GET_FLAG(instance, OCTOSPI_SR_BUSY) == SET) {
         busyCount++;
         __OSPI_DISABLE(instance);
-        octoSpiAbort(octoSpi);
+        octoSpiAbort(instance);
     }
-    octoSpiWaitStatusFlags(octoSpi, OCTOSPI_SR_BUSY, 0);
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, 0);
 
     uint32_t fmode = 0x0;  // b00 = indirect write, see OCTOSPI->CR->FMODE
     MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, fmode);
@@ -123,12 +117,10 @@ RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
  * @See RAM_CODE
  */
 
-RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(octoSpiDevice_t *octoSpi)
+RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 {
-    OCTOSPI_TypeDef *instance = octoSpi->dev;
-
-    octoSpiAbort(octoSpi);
-    octoSpiWaitStatusFlags(octoSpi, OCTOSPI_SR_BUSY, 0);
+    octoSpiAbort(instance);
+    octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, 0);
 
     MODIFY_REG(instance->CR, OCTOSPI_CR_FMODE, OCTOSPI_CR_FMODE);
 
@@ -138,9 +130,11 @@ RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 
 RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
+    OCTOSPI_TypeDef *instance = octoSpi->dev;
+
     __disable_irq();
-    octoSpiDisableMemoryMappedMode(octoSpi);
-    octoSpiEnableMemoryMappedMode(octoSpi);
+    octoSpiDisableMemoryMappedMode(instance);
+    octoSpiEnableMemoryMappedMode(instance);
     __enable_irq();
 }
 
