@@ -73,7 +73,8 @@
 
 // TODO No support yet for config using a single flash device in memory mapped mode, using SDCARD until support is added.
 
-//#define USE_FLASH_CHIP
+#define USE_FLASH_CHIP
+
 //#define CONFIG_IN_EXTERNAL_FLASH
 #define CONFIG_IN_SDCARD
 //#define CONFIG_IN_RAM
@@ -203,8 +204,8 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
-#define USE_FLASH_W25Q128
-#define USE_FLASH_M25P16
+#define USE_FLASH_W25Q128FV
+#define FLASH_OCTOSPI_INSTANCE  OCTOSPI1
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
