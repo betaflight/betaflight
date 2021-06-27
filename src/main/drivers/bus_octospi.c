@@ -60,6 +60,26 @@
 
 octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
 
+OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
+{
+#ifdef USE_OCTOSPI_DEVICE_1
+    if (instance == OCTOSPI1) {
+        return OCTOSPIDEV_1;
+    }
+#endif
+
+    return OCTOSPIINVALID;
+}
+
+OCTOSPI_TypeDef *octoSpiInstanceByDevice(OCTOSPIDevice device)
+{
+    if (device == OCTOSPIINVALID || device >= OCTOSPIDEV_COUNT) {
+        return NULL;
+    }
+
+    return octoSpiDevice[device].dev;
+}
+
 const octoSpiHardware_t octoSpiHardware[] = {
 #if defined(STM32H730xx)
     {

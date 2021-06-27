@@ -31,11 +31,32 @@ typedef enum OCTOSPIDevice {
 
 #define OCTOSPIDEV_COUNT 1
 
+// Macros to convert between configuration ids and device ids.
+#define OCTOSPI_CFG_TO_DEV(x)   ((x) - 1)
+#define OCTOSPI_DEV_TO_CFG(x)   ((x) + 1)
+
 #if !defined(STM32H7)
 #error OctoSPI unsupported on this MCU
 #endif
 
-bool octoSpiInit(void);
+OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance);
+OCTOSPI_TypeDef *octoSpiInstanceByDevice(OCTOSPIDevice device);
 
+
+bool octoSpiInit(void);
+bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
+
+bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+
+bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
+
+
+void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance);
+void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance);
 
 #endif
