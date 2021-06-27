@@ -37,9 +37,11 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 10K
+    FLASH_CUSTOM_DEFAULTS (r)  : ORIGIN = 0x08002800, LENGTH = 118K
     FLASH_CONFIG (r)  : ORIGIN = 0x08020000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = 1792K
+    FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 1664K : 1792K
+    FLASH_CUSTOM_DEFAULTS_EXTENDED (r): ORIGIN = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 0x081E0000 : 0x08200000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 128K : 0K
 
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
@@ -139,14 +141,29 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH
+  } >FLASH1
   
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH
+  } >FLASH1
+
+  /* Storage for the address for the configuration section so we can grab it out of the hex file */
+  .custom_defaults :
+  {
+    . = ALIGN(4);
+    KEEP (*(.custom_defaults_start_address))
+    . = ALIGN(4);
+    KEEP (*(.custom_defaults_end_address))
+    . = ALIGN(4);
+    __custom_defaults_internal_start = .;
+    *(.custom_defaults);
+  } >FLASH_CUSTOM_DEFAULTS
+
+  PROVIDE_HIDDEN (__custom_defaults_start = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? ORIGIN(FLASH_CUSTOM_DEFAULTS_EXTENDED) : __custom_defaults_internal_start);
+  PROVIDE_HIDDEN (__custom_defaults_end = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? ORIGIN(FLASH_CUSTOM_DEFAULTS_EXTENDED) + LENGTH(FLASH_CUSTOM_DEFAULTS_EXTENDED) : ORIGIN(FLASH_CUSTOM_DEFAULTS) + LENGTH(FLASH_CUSTOM_DEFAULTS));
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
