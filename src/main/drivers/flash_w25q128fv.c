@@ -284,9 +284,9 @@ const flashVTable_t w25q128fv_vTable;
 
 static void w25q128fv_deviceInit(flashDevice_t *flashdev);
 
-RAM_CODE NOINLINE bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
+RAM_CODE NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
-    switch (chipID) {
+    switch (jedecID) {
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
     case JEDEC_ID_WINBOND_W25Q128FV_QUADSPI:
     case JEDEC_ID_WINBOND_W25Q128JV_QUADSPI:
@@ -314,7 +314,7 @@ RAM_CODE NOINLINE bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
     }
 
     // use the chip id to determine the initial interface mode on cold-boot.
-    switch (chipID) {
+    switch (jedecID) {
     case JEDEC_ID_WINBOND_W25Q16JV_SPI:
     case JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI:
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
@@ -334,13 +334,20 @@ RAM_CODE NOINLINE bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    w25q128fv_deviceReset(fdevice);
-
-    w25q128fv_deviceInit(fdevice);
-
     fdevice->vTable = &w25q128fv_vTable;
 
     return true;
+}
+
+void w25q128fv_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+{
+    if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
+        return;
+    }
+
+    w25q128fv_deviceReset(fdevice);
+
+    w25q128fv_deviceInit(fdevice);
 }
 
 static void w25q128fv_eraseSector(flashDevice_t *fdevice, uint32_t address)
@@ -480,6 +487,7 @@ const flashGeometry_t* w25q128fv_getGeometry(flashDevice_t *fdevice)
 }
 
 const flashVTable_t w25q128fv_vTable = {
+    .configure = w25q128fv_configure,
     .isReady = w25q128fv_isReady,
     .waitForReady = w25q128fv_waitForReady,
     .eraseSector = w25q128fv_eraseSector,

@@ -47,6 +47,16 @@ typedef struct flashGeometry_s {
     flashType_e flashType;
 } flashGeometry_t;
 
+
+typedef enum {
+    /*
+     * When set it indicates the system was booted in memory mapped mode, flash chip is already configured by
+     * the bootloader and does not need re-configuration.
+     * When un-set the system was booted normally and the flash chip needs configuration before use.
+     */
+    FLASH_CF_SYSTEM_IS_MEMORY_MAPPED  = (1 << 0),
+} flashConfigurationFlags_e;
+
 void flashPreInit(const flashConfig_t *flashConfig);
 bool flashInit(const flashConfig_t *flashConfig);
 

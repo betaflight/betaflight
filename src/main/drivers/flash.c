@@ -126,11 +126,11 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
 
         for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
 
-            uint32_t chipID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+            uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
 
             if (offset == 0) {
 #if defined(USE_FLASH_W25Q128FV)
-                if (!detected && w25q128fv_detect(&flashDevice, chipID)) {
+                if (!detected && w25q128fv_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
@@ -141,12 +141,12 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
                 if (!memoryMappedModeEnabledOnBoot) {
                     // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
 #if defined(USE_FLASH_W25N01G)
-                    if (!detected && w25n01g_detect(&flashDevice, chipID)) {
+                    if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
                         detected = true;
                     }
 #endif
 #if defined(USE_FLASH_W25M02G)
-                    if (!detected && w25m_detect(&flashDevice, chipID)) {
+                    if (!detected && w25m_identify(&flashDevice, jedecID)) {
                         detected = true;
                     }
 #endif
@@ -208,11 +208,11 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
         for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
 
-            uint32_t chipID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+            uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
 
             if (offset == 0) {
 #if defined(USE_FLASH_W25Q128FV)
-                if (!detected && w25q128fv_detect(&flashDevice, chipID)) {
+                if (!detected && w25q128fv_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
@@ -220,12 +220,12 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
             if (offset == 1) {
 #if defined(USE_FLASH_W25N01G)
-                if (!detected && w25n01g_detect(&flashDevice, chipID)) {
+                if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
 #if defined(USE_FLASH_W25M02G)
-                if (!detected && w25m_detect(&flashDevice, chipID)) {
+                if (!detected && w25m_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
@@ -288,31 +288,31 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     spiReadRegBuf(dev, FLASH_INSTRUCTION_RDID, readIdResponse, sizeof(readIdResponse));
 
     // Manufacturer, memory type, and capacity
-    uint32_t chipID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
+    uint32_t jedecID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
 
 #ifdef USE_FLASH_M25P16
-    if (m25p16_detect(&flashDevice, chipID)) {
+    if (m25p16_identify(&flashDevice, jedecID)) {
         return true;
     }
 #endif
 
 #ifdef USE_FLASH_W25M512
-    if (w25m_detect(&flashDevice, chipID)) {
+    if (w25m_identify(&flashDevice, jedecID)) {
         return true;
     }
 #endif
 
     // Newer chips
-    chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
+    jedecID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
 
 #ifdef USE_FLASH_W25N01G
-    if (w25n01g_detect(&flashDevice, chipID)) {
+    if (w25n01g_identify(&flashDevice, jedecID)) {
         return true;
     }
 #endif
 
 #ifdef USE_FLASH_W25M02G
-    if (w25m_detect(&flashDevice, chipID)) {
+    if (w25m_identify(&flashDevice, jedecID)) {
         return true;
     }
 #endif
@@ -325,29 +325,43 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
 bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
+    bool haveFlash = false;
+
 #ifdef USE_SPI
     bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
 
     if (useSpi) {
-        return flashSpiInit(flashConfig);
+        haveFlash = flashSpiInit(flashConfig);
     }
 #endif
 
 #ifdef USE_QUADSPI
     bool useQuadSpi = (QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice) != QUADSPIINVALID);
     if (useQuadSpi) {
-        return flashQuadSpiInit(flashConfig);
+        haveFlash = flashQuadSpiInit(flashConfig);
     }
 #endif
 
 #ifdef USE_OCTOSPI
     bool useOctoSpi = (OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice) != OCTOSPIINVALID);
     if (useOctoSpi) {
-        return flashOctoSpiInit(flashConfig);
+        haveFlash = flashOctoSpiInit(flashConfig);
     }
 #endif
 
-    return false;
+    if (haveFlash && flashDevice.vTable->configure) {
+        uint32_t configurationFlags = 0;
+
+#ifdef USE_FLASH_MEMORY_MAPPED
+        if (isMemoryMappedModeEnabledOnBoot()) {
+            configurationFlags |= FLASH_CF_SYSTEM_IS_MEMORY_MAPPED;
+        }
+#endif
+
+        flashDevice.vTable->configure(&flashDevice, configurationFlags);
+    }
+
+    return haveFlash;
 }
 
 bool flashIsReady(void)

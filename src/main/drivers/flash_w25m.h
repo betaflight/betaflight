@@ -22,4 +22,4 @@
 
 #include "flash_impl.h"
 
-bool w25m_detect(flashDevice_t *fdevice, uint32_t chipID);
+bool w25m_identify(flashDevice_t *fdevice, uint32_t jedecID);
