@@ -22,4 +22,4 @@
 
 #include "flash_impl.h"
 
-bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID);
+bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID);

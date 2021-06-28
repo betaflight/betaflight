@@ -311,18 +311,11 @@ static void w25n01g_writeEnable(flashDevice_t *fdevice)
     fdevice->couldBeBusy = true;
 }
 
-/**
- * Read chip identification and geometry information (into global `geometry`).
- *
- * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
- */
 const flashVTable_t w25n01g_vTable;
 
-static void w25n01g_deviceInit(flashDevice_t *flashdev);
-
-bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
+bool w25n01g_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
-    switch (chipID) {
+    switch (jedecID) {
     case JEDEC_ID_WINBOND_W25N01GV:
         fdevice->geometry.sectors = 1024;      // Blocks
         fdevice->geometry.pagesPerSector = 64; // Pages/Blocks
@@ -348,6 +341,19 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
             W25N01G_BB_MANAGEMENT_START_BLOCK + W25N01G_BB_MANAGEMENT_BLOCKS - 1);
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
+    fdevice->vTable = &w25n01g_vTable;
+
+    return true;
+}
+
+static void w25n01g_deviceInit(flashDevice_t *flashdev);
+
+
+void w25n01g_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+{
+    if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
+        return;
+    }
 
     w25n01g_deviceReset(fdevice);
 
@@ -366,10 +372,6 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
     // If it ever run out, the device becomes unusable.
 
     w25n01g_deviceInit(fdevice);
-
-    fdevice->vTable = &w25n01g_vTable;
-
-    return true;
 }
 
 /**
@@ -785,6 +787,7 @@ const flashGeometry_t* w25n01g_getGeometry(flashDevice_t *fdevice)
 }
 
 const flashVTable_t w25n01g_vTable = {
+    .configure = w25n01g_configure,
     .isReady = w25n01g_isReady,
     .waitForReady = w25n01g_waitForReady,
     .eraseSector = w25n01g_eraseSector,
