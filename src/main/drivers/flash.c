@@ -63,6 +63,28 @@ static int flashPartitions = 0;
 
 #define FLASH_INSTRUCTION_RDID 0x9F
 
+#ifdef USE_FLASH_MEMORY_MAPPED
+RAM_CODE NOINLINE void flashMemoryMappedModeDisable(void)
+{
+    __disable_irq();
+#ifdef USE_OCTOSPI
+    octoSpiDisableMemoryMappedMode(flashDevice.io.handle.octoSpi);
+#else
+#error Invalid configuration - Not implemented
+#endif
+}
+
+RAM_CODE NOINLINE void flashMemoryMappedModeEnable(void)
+{
+#ifdef USE_OCTOSPI
+    octoSpiEnableMemoryMappedMode(flashDevice.io.handle.octoSpi);
+    __enable_irq();
+#else
+#error Invalid configuration - Not implemented
+#endif
+}
+#endif
+
 #ifdef USE_OCTOSPI
 RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
 {
@@ -71,7 +93,11 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
     enum { TRY_1LINE = 0, TRY_4LINE, BAIL};
     int phase = TRY_1LINE;
 
+#ifdef USE_FLASH_MEMORY_MAPPED
     bool memoryMappedModeEnabledOnBoot = isMemoryMappedModeEnabledOnBoot();
+#else
+    bool memoryMappedModeEnabledOnBoot = false
+#endif
 
 #ifndef USE_OCTOSPI_EXPERIMENTAL
     if (!memoryMappedModeEnabledOnBoot) {
@@ -81,9 +107,11 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
 
     OCTOSPI_TypeDef *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
 
+    flashDevice.io.handle.octoSpi = instance;
+    flashDevice.io.mode = FLASHIO_OCTOSPI;
+
     if (memoryMappedModeEnabledOnBoot) {
-        __disable_irq();
-        octoSpiDisableMemoryMappedMode(instance);
+        flashMemoryMappedModeDisable();
     }
 
     do {
@@ -114,9 +142,6 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
             phase++;
             continue;
         }
-
-        flashDevice.io.handle.octoSpi = instance;
-        flashDevice.io.mode = FLASHIO_OCTOSPI;
 
 #ifdef USE_OCTOSPI_EXPERIMENTAL
         if (!memoryMappedModeEnabledOnBoot) {
@@ -158,8 +183,7 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
     } while (phase != BAIL && !detected);
 
     if (memoryMappedModeEnabledOnBoot) {
-        octoSpiEnableMemoryMappedMode(instance);
-        __enable_irq();
+        flashMemoryMappedModeDisable();
     }
     return detected;
 
@@ -175,6 +199,9 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     int phase = TRY_1LINE;
 
     QUADSPI_TypeDef *hqspi = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
+
+    flashDevice.io.handle.quadSpi = hqspi;
+    flashDevice.io.mode = FLASHIO_QUADSPI;
 
     do {
         quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_INITIALISATION);
@@ -199,9 +226,6 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
             phase++;
             continue;
         }
-
-        flashDevice.io.handle.quadSpi = hqspi;
-        flashDevice.io.mode = FLASHIO_QUADSPI;
 
         quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_ULTRAFAST);
 
