@@ -40,7 +40,11 @@
  *     i.e. when saving the config, *ALL* the code to erase a block and write data should be in RAM,
  *     this includes any `delay` methods.
  *   - not require the use of use any ISRs - interrupts are disabled during flash access when memory mapped mode is disabled.
- * Each
+ *
+ * When compiling a driver for use in a memory mapped flash system the following applies:
+ *   - the vTable must live in RAM so it can be used when memory mapped mode is disabled.
+ *   - other constant data structures that usually live in flash memory must be stored in RAM.
+ *   - methods used to erase sectors, write data and read data much live in RAM.
  */
 #pragma once
 

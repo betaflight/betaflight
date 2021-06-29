@@ -60,7 +60,7 @@ static int flashPartitions = 0;
 #define FLASH_INSTRUCTION_RDID 0x9F
 
 #ifdef USE_FLASH_MEMORY_MAPPED
-RAM_CODE NOINLINE void flashMemoryMappedModeDisable(void)
+MMFLASH_CODE_NOINLINE void flashMemoryMappedModeDisable(void)
 {
     __disable_irq();
 #ifdef USE_FLASH_OCTOSPI
@@ -70,7 +70,7 @@ RAM_CODE NOINLINE void flashMemoryMappedModeDisable(void)
 #endif
 }
 
-RAM_CODE NOINLINE void flashMemoryMappedModeEnable(void)
+MMFLASH_CODE_NOINLINE void flashMemoryMappedModeEnable(void)
 {
 #ifdef USE_FLASH_OCTOSPI
     octoSpiEnableMemoryMappedMode(flashDevice.io.handle.octoSpi);
@@ -82,7 +82,7 @@ RAM_CODE NOINLINE void flashMemoryMappedModeEnable(void)
 #endif
 
 #ifdef USE_FLASH_OCTOSPI
-RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
+MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
 {
     bool detected = false;
 

@@ -410,8 +410,21 @@ extern uint8_t __config_end;
 #define USE_FLASH_BOOT_LOADER
 #endif
 
-#if defined(USE_FLASH_MEMORY_MAPPED) && !defined(USE_RAM_CODE)
+#if defined(USE_FLASH_MEMORY_MAPPED)
+#if !defined(USE_RAM_CODE)
 #define USE_RAM_CODE
+#endif
+
+#define MMFLASH_CODE RAM_CODE
+#define MMFLASH_CODE_NOINLINE RAM_CODE NOINLINE
+
+#define MMFLASH_DATA FAST_DATA
+#define MMFLASH_DATA_ZERO_INIT FAST_DATA_ZERO_INIT
+#else
+#define MMFLASH_CODE
+#define MMFLASH_CODE_NOINLINE
+#define MMFLASH_DATA
+#define MMFLASH_DATA_ZERO_INIT
 #endif
 
 #ifdef USE_RAM_CODE

@@ -114,7 +114,7 @@
 #define OSPI_SIOO_INST_EVERY_CMD         ((uint32_t)0x00000000U)
 #define OSPI_SIOO_INST_ONLY_FIRST_CMD    ((uint32_t)OCTOSPI_CCR_SIOO)
 
-RAM_CODE NOINLINE static void Error_Handler(void) {
+MMFLASH_CODE_NOINLINE static void Error_Handler(void) {
     while (1)
     {
         NOOP;
@@ -128,12 +128,12 @@ RAM_CODE NOINLINE static void Error_Handler(void) {
 #define __OSPI_DISABLE(__INSTANCE__)                      CLEAR_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN)
 #define __OSPI_IS_ENABLED(__INSTANCE__)                   (READ_BIT((__INSTANCE__)->CR, OCTOSPI_CR_EN) != 0U)
 
-RAM_CODE NOINLINE static void octoSpiAbort(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE static void octoSpiAbort(OCTOSPI_TypeDef *instance)
 {
     SET_BIT(instance->CR, OCTOSPI_CR_ABORT);
 }
 
-RAM_CODE NOINLINE static void octoSpiWaitStatusFlags(OCTOSPI_TypeDef *instance, uint32_t mask, FlagStatus flagStatus)
+MMFLASH_CODE_NOINLINE static void octoSpiWaitStatusFlags(OCTOSPI_TypeDef *instance, uint32_t mask, FlagStatus flagStatus)
 {
     uint32_t regval;
 
@@ -179,7 +179,7 @@ typedef struct {
 } OSPI_Command_t;
 
 // TODO rename cmd to command
-RAM_CODE static ErrorStatus octoSpiConfigureCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
+MMFLASH_CODE_NOINLINE static ErrorStatus octoSpiConfigureCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
 {
     ErrorStatus status = SUCCESS;
 
@@ -308,7 +308,7 @@ RAM_CODE static ErrorStatus octoSpiConfigureCommand(OCTOSPI_TypeDef *instance, O
     return status;
 }
 
-RAM_CODE NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
+MMFLASH_CODE_NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI_Command_t *cmd)
 {
     octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
 
@@ -330,7 +330,7 @@ RAM_CODE NOINLINE ErrorStatus octoSpiCommand(OCTOSPI_TypeDef *instance, OSPI_Com
  *
  * Call optoSpiCommand first to configure the transaction stages.
  */
-RAM_CODE NOINLINE ErrorStatus octoSpiTransmit(OCTOSPI_TypeDef *instance, uint8_t *data)
+MMFLASH_CODE_NOINLINE ErrorStatus octoSpiTransmit(OCTOSPI_TypeDef *instance, uint8_t *data)
 {
     if (data == NULL) {
         return ERROR;
@@ -363,7 +363,7 @@ RAM_CODE NOINLINE ErrorStatus octoSpiTransmit(OCTOSPI_TypeDef *instance, uint8_t
  *
  * Call optoSpiCommand first to configure the transaction stages.
  */
-RAM_CODE NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint8_t *data)
+MMFLASH_CODE_NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint8_t *data)
 {
     if (data == NULL) {
         return ERROR;
@@ -421,7 +421,7 @@ typedef struct
 
 octoSpiMemoryMappedModeConfigurationRegisterBackup_t ospiMMMCRBackups[OCTOSPI_INTERFACE_COUNT];
 
-RAM_CODE NOINLINE void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
+void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
     OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
@@ -441,7 +441,7 @@ RAM_CODE NOINLINE void octoSpiBackupMemoryMappedModeConfiguration(OCTOSPI_TypeDe
     ospiMMMCRBackup->ABR = instance->ABR;
 }
 
-RAM_CODE NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeDef *instance)
 {
     OCTOSPIDevice device = octoSpiDeviceByInstance(instance);
     if (device == OCTOSPIINVALID) {
@@ -472,7 +472,7 @@ RAM_CODE NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeD
  * Disable memory mapped mode.
  *
  * @See octoSpiEnableMemoryMappedMode
- * @See RAM_CODE
+ * @See MMFLASH_CODE_NOINLINE
  *
  * Once this is called any code or data in the memory mapped region cannot be accessed.
  * Thus, this function itself must be in RAM, and the caller's code and data should all be in RAM
@@ -480,7 +480,7 @@ RAM_CODE NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OCTOSPI_TypeD
  * This applies to ISR code that runs from the memory mapped region, so likely the caller should
  * also disable IRQs before calling this.
  */
-RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 {
     if (READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) != OCTOSPI_CR_FMODE) {
         failureMode(FAILURE_DEVELOPER); // likely not booted with memory mapped mode enabled, or mismatched calls to enable/disable memory map mode.
@@ -511,10 +511,10 @@ RAM_CODE NOINLINE void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance)
  * Enable memory mapped mode.
  *
  * @See octoSpiDisableMemoryMappedMode
- * @See RAM_CODE
+ * @See MMFLASH_CODE_NOINLINE
  */
 
-RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance)
 {
     octoSpiAbort(instance);
     octoSpiWaitStatusFlags(instance, OCTOSPI_SR_BUSY, RESET);
@@ -522,7 +522,7 @@ RAM_CODE NOINLINE void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance)
     octoSpiRestoreMemoryMappedModeConfiguration(instance);
 }
 
-RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
+MMFLASH_CODE_NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
     OCTOSPI_TypeDef *instance = octoSpi->dev;
 
@@ -532,7 +532,7 @@ RAM_CODE NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevice_t 
     __enable_irq();
 }
 
-RAM_CODE NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
@@ -570,7 +570,7 @@ RAM_CODE NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t i
     return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
@@ -605,8 +605,7 @@ RAM_CODE NOINLINE bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t in
     return status == SUCCESS;
 }
 
-
-RAM_CODE NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
 
@@ -641,35 +640,35 @@ RAM_CODE NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t i
     return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
     return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
     return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
     return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
     // TODO
     ErrorStatus status = ERROR;
     return status == SUCCESS;
 }
 
-RAM_CODE NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+MMFLASH_CODE_NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
     // TODO
     ErrorStatus status = ERROR;
