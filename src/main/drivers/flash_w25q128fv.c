@@ -33,6 +33,7 @@
 #include "build/debug.h"
 #include "common/utils.h"
 
+#include "drivers/time.h"
 #include "drivers/flash.h"
 #include "drivers/flash_impl.h"
 #include "drivers/flash_w25q128fv.h"
@@ -93,14 +94,13 @@
 //#define W25Q128FV_INSTRUCTION_WRITE_DISABLE    0x04
 //#define W25Q128FV_INSTRUCTION_PAGE_PROGRAM     0x02
 
-// Timings (2ms minimum to avoid 1 tick advance in consecutive calls to HAL_GetTick).
 #define W25Q128FV_TIMEOUT_PAGE_READ_MS          4
-#define W25Q128FV_TIMEOUT_RESET_MS              2           // tRST = 30us
+#define W25Q128FV_TIMEOUT_RESET_MS              1           // tRST = 30us
 #define W25Q128FV_TIMEOUT_BLOCK_ERASE_64KB_MS   2000        // tBE2max = 2000ms, tBE2typ = 150ms
 #define W25Q128FV_TIMEOUT_CHIP_ERASE_MS        (200 * 1000) // tCEmax 200s, tCEtyp = 40s
 
-#define W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS       2           // tPPmax = 700us, tPPtyp = 250us
-#define W25Q128FV_TIMEOUT_WRITE_ENABLE_MS       2
+#define W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS       1           // tPPmax = 700us, tPPtyp = 250us
+#define W25Q128FV_TIMEOUT_WRITE_ENABLE_MS       1
 
 
 typedef enum {
@@ -118,13 +118,13 @@ w25q128fvState_t w25q128fvState = { 0 };
 static bool w25q128fv_waitForReady(flashDevice_t *fdevice);
 static void w25q128fv_waitForTimeout(flashDevice_t *fdevice);
 
-static void w25q128fv_setTimeout(flashDevice_t *fdevice, uint32_t timeoutMillis)
+MMFLASH_CODE static void w25q128fv_setTimeout(flashDevice_t *fdevice, timeMs_t timeoutMillis)
 {
-    uint32_t now = HAL_GetTick();
-    fdevice->timeoutAt = now + timeoutMillis;
+    timeMs_t nowMs = microsISR() / 1000;
+    fdevice->timeoutAt = nowMs + timeoutMillis;
 }
 
-static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
+MMFLASH_CODE static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
 {
 #if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
@@ -136,7 +136,7 @@ static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, uint8_t command
 
 }
 
-static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io, uint8_t command, uint32_t address)
+MMFLASH_CODE static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io, uint8_t command, uint32_t address)
 {
 #if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
@@ -149,12 +149,12 @@ static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io, uint8_t com
 #endif
 }
 
-static void w25q128fv_writeEnable(flashDevice_t *fdevice)
+MMFLASH_CODE static void w25q128fv_writeEnable(flashDevice_t *fdevice)
 {
     w25q128fv_performOneByteCommand(&fdevice->io, W25Q128FV_INSTRUCTION_WRITE_ENABLE);
 }
 
-static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t command)
+MMFLASH_CODE static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t command)
 {
     uint8_t in[1] = { 0 };
 #ifdef USE_QUADSPI
@@ -232,7 +232,7 @@ static void w25q128fv_deviceReset(flashDevice_t *fdevice)
 #endif
 }
 
-bool w25q128fv_isReady(flashDevice_t *fdevice)
+MMFLASH_CODE bool w25q128fv_isReady(flashDevice_t *fdevice)
 {
     uint8_t status = w25q128fv_readRegister(&fdevice->io, W25Q128FV_INSTRUCTION_READ_STATUS1_REG);
 
@@ -241,7 +241,7 @@ bool w25q128fv_isReady(flashDevice_t *fdevice)
     return !busy;
 }
 
-static bool w25q128fv_isWritable(flashDevice_t *fdevice)
+MMFLASH_CODE static bool w25q128fv_isWritable(flashDevice_t *fdevice)
 {
     uint8_t status = w25q128fv_readRegister(&fdevice->io, W25Q128FV_INSTRUCTION_READ_STATUS1_REG);
 
@@ -250,23 +250,23 @@ static bool w25q128fv_isWritable(flashDevice_t *fdevice)
     return writable;
 }
 
-bool w25q128fv_hasTimedOut(flashDevice_t *fdevice)
+MMFLASH_CODE bool w25q128fv_hasTimedOut(flashDevice_t *fdevice)
 {
-    uint32_t now = HAL_GetTick();
-    if (cmp32(now, fdevice->timeoutAt) >= 0) {
+    uint32_t nowMs = microsISR() / 1000;
+    if (cmp32(nowMs, fdevice->timeoutAt) >= 0) {
         return true;
     }
     return false;
 }
 
-void w25q128fv_waitForTimeout(flashDevice_t *fdevice)
+MMFLASH_CODE void w25q128fv_waitForTimeout(flashDevice_t *fdevice)
 {
    while (!w25q128fv_hasTimedOut(fdevice)) { }
 
    fdevice->timeoutAt = 0;
 }
 
-bool w25q128fv_waitForReady(flashDevice_t *fdevice)
+MMFLASH_CODE bool w25q128fv_waitForReady(flashDevice_t *fdevice)
 {
     bool ready = true;
     while (!w25q128fv_isReady(fdevice)) {
@@ -350,9 +350,8 @@ void w25q128fv_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     w25q128fv_deviceInit(fdevice);
 }
 
-static void w25q128fv_eraseSector(flashDevice_t *fdevice, uint32_t address)
+MMFLASH_CODE static void w25q128fv_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
-
     w25q128fv_waitForReady(fdevice);
 
     w25q128fv_writeEnable(fdevice);
@@ -373,8 +372,7 @@ static void w25q128fv_eraseCompletely(flashDevice_t *fdevice)
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_CHIP_ERASE_MS);
 }
 
-
-static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
+MMFLASH_CODE static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
     w25q128fv_waitForReady(fdevice);
 
@@ -401,13 +399,21 @@ static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *dat
     w25q128fvState.currentWriteAddress += length;
 }
 
+<<<<<<< HEAD
 static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+=======
+MMFLASH_CODE void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address)
+>>>>>>> 22c5c6daa4... FLASH - W25Q Prepare for memory mapped flash usage.
 {
     fdevice->callback = callback;
     w25q128fvState.currentWriteAddress = address;
 }
 
+<<<<<<< HEAD
 static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+=======
+MMFLASH_CODE void w25q128fv_pageProgramContinue(flashDevice_t *fdevice, const uint8_t *data, int length)
+>>>>>>> 22c5c6daa4... FLASH - W25Q Prepare for memory mapped flash usage.
 {
     for (uint32_t i = 0; i < bufferCount; i++) {
         w25q128fv_waitForReady(fdevice);
@@ -431,24 +437,36 @@ static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t co
     return fdevice->callbackArg;
 }
 
+<<<<<<< HEAD
 static void w25q128fv_pageProgramFinish(flashDevice_t *fdevice)
+=======
+MMFLASH_CODE void w25q128fv_pageProgramFinish(flashDevice_t *fdevice)
+>>>>>>> 22c5c6daa4... FLASH - W25Q Prepare for memory mapped flash usage.
 {
     UNUSED(fdevice);
 }
 
+<<<<<<< HEAD
 static void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+=======
+MMFLASH_CODE void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, int length)
+>>>>>>> 22c5c6daa4... FLASH - W25Q Prepare for memory mapped flash usage.
 {
     w25q128fv_pageProgramBegin(fdevice, address, callback);
     w25q128fv_pageProgramContinue(fdevice, &data, &length, 1);
     w25q128fv_pageProgramFinish(fdevice);
 }
 
-void w25q128fv_flush(flashDevice_t *fdevice)
+MMFLASH_CODE void w25q128fv_flush(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 }
 
+<<<<<<< HEAD
 static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
+=======
+MMFLASH_CODE int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, int length)
+>>>>>>> 22c5c6daa4... FLASH - W25Q Prepare for memory mapped flash usage.
 {
     if (!w25q128fv_waitForReady(fdevice)) {
         return 0;
@@ -478,8 +496,6 @@ static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
 
     return length;
 }
-
-
 
 const flashGeometry_t* w25q128fv_getGeometry(flashDevice_t *fdevice)
 {
