@@ -217,7 +217,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_feedforward_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_pitch_pd_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dterm_filter = false,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
