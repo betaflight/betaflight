@@ -39,23 +39,23 @@ static void calculateNewPidValues(pidProfile_t *pidProfile)
         };
     const int dMinDefaults[FLIGHT_DYNAMICS_INDEX_COUNT] = D_MIN_DEFAULT;
 
+    const float piGain = pidProfile->simplified_pi_gain / 100.0f;
+    const float dGain = pidProfile->simplified_d_gain / 100.0f;
     const float feedforwardGain = pidProfile->simplified_feedforward_gain / 100.0f;
-    const float pdGain = pidProfile->simplified_pd_gain / 100.0f;
     const float iGain = pidProfile->simplified_i_gain / 100.0f;
-    const float pdRatio = pidProfile->simplified_pd_ratio / 100.0f;
 
     for (int axis = FD_ROLL; axis <= pidProfile->simplified_pids_mode; ++axis) {
         const float rpRatio = (axis == FD_PITCH) ? pidProfile->simplified_roll_pitch_ratio / 100.0f : 1.0f;
         const float pitchPdRatio = (axis == FD_PITCH) ? pidProfile->simplified_pitch_pd_ratio / 100.0f : 1.0f;
         const float dminRatio = 1.0f + (((float)pidDefaults[axis].D / dMinDefaults[axis] - 1.0f) * (pidProfile->simplified_dmin_ratio / 100.0f - 1.0f));
 
-        pidProfile->pid[axis].P = constrain(pidDefaults[axis].P * pdGain * rpRatio, 0, PID_GAIN_MAX);
-        pidProfile->pid[axis].I = constrain(pidDefaults[axis].I * iGain * rpRatio, 0, PID_GAIN_MAX);
-        pidProfile->pid[axis].D = constrain(pidDefaults[axis].D * pdGain * pdRatio * pitchPdRatio * rpRatio, 0, PID_GAIN_MAX);
+        pidProfile->pid[axis].P = constrain(pidDefaults[axis].P * piGain * rpRatio, 0, PID_GAIN_MAX);
+        pidProfile->pid[axis].I = constrain(pidDefaults[axis].I * piGain * iGain * rpRatio, 0, PID_GAIN_MAX);
+        pidProfile->pid[axis].D = constrain(pidDefaults[axis].D * dGain * pitchPdRatio * rpRatio, 0, PID_GAIN_MAX);
         if (pidProfile->simplified_dmin_ratio == SIMPLIFIED_TUNING_MAX) {
             pidProfile->d_min[axis] = 0;
         } else {
-            pidProfile->d_min[axis] = constrain(dMinDefaults[axis] * pdGain * pdRatio * pitchPdRatio * rpRatio * dminRatio, 0, D_MIN_GAIN_MAX);
+            pidProfile->d_min[axis] = constrain(dMinDefaults[axis] * dGain * rpRatio * dminRatio, 0, D_MIN_GAIN_MAX);
         }
         pidProfile->pid[axis].F = constrain(pidDefaults[axis].F * feedforwardGain * rpRatio, 0, F_GAIN_MAX);
     }

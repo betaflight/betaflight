@@ -217,8 +217,8 @@ typedef struct pidProfile_s {
     uint8_t simplified_pids_mode;
     uint8_t simplified_roll_pitch_ratio;
     uint8_t simplified_i_gain;
-    uint8_t simplified_pd_ratio;
-    uint8_t simplified_pd_gain;
+    uint8_t simplified_d_gain;
+    uint8_t simplified_pi_gain;
     uint8_t simplified_dmin_ratio;
     uint8_t simplified_feedforward_gain;
     uint8_t simplified_pitch_pd_ratio;
