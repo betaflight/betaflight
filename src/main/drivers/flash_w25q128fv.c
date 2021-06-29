@@ -284,7 +284,7 @@ const flashVTable_t w25q128fv_vTable;
 
 static void w25q128fv_deviceInit(flashDevice_t *flashdev);
 
-RAM_CODE NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t jedecID)
+MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
     switch (jedecID) {
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
@@ -486,7 +486,7 @@ const flashGeometry_t* w25q128fv_getGeometry(flashDevice_t *fdevice)
     return &fdevice->geometry;
 }
 
-const flashVTable_t w25q128fv_vTable = {
+MMFLASH_DATA const flashVTable_t w25q128fv_vTable = {
     .configure = w25q128fv_configure,
     .isReady = w25q128fv_isReady,
     .waitForReady = w25q128fv_waitForReady,

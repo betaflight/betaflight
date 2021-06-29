@@ -60,7 +60,7 @@
 
 octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
 
-RAM_CODE NOINLINE OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE OCTOSPIDevice octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
 {
 #ifdef USE_OCTOSPI_DEVICE_1
     if (instance == OCTOSPI1) {
