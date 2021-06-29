@@ -2138,7 +2138,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
     case MSP_SIMPLIFIED_TUNING:
         {
             sbufWriteU8(dst, currentPidProfile->simplified_pids_mode);
-            sbufWriteU8(dst, currentPidProfile->simplified_master_multiplier);
             sbufWriteU8(dst, currentPidProfile->simplified_roll_pitch_ratio);
             sbufWriteU8(dst, currentPidProfile->simplified_i_gain);
             sbufWriteU8(dst, currentPidProfile->simplified_pd_ratio);
@@ -3112,7 +3111,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     // Added in MSP API 1.44
     case MSP_SET_SIMPLIFIED_TUNING:
         currentPidProfile->simplified_pids_mode = sbufReadU8(src);
-        currentPidProfile->simplified_master_multiplier = sbufReadU8(src);
         currentPidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
         currentPidProfile->simplified_i_gain = sbufReadU8(src);
         currentPidProfile->simplified_pd_ratio = sbufReadU8(src);

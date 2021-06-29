@@ -215,7 +215,6 @@ typedef struct pidProfile_s {
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
 
     uint8_t simplified_pids_mode;
-    uint8_t simplified_master_multiplier;
     uint8_t simplified_roll_pitch_ratio;
     uint8_t simplified_i_gain;
     uint8_t simplified_pd_ratio;
