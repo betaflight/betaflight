@@ -18,6 +18,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Future improvements:
+ *
+ * * If the target is only expected to use one type of bus for the flash chip then
+ *   there is no need to compile-in the init code for unused busses.
+ *   e.g. single-flash-chip targets that use quadspi or octospi don't need spi.
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -313,7 +321,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
     return false;
 }
-#endif // USE_SPI
+#endif // USE_SPI_FLASH
 
 bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
