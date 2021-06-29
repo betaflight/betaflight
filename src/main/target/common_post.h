@@ -209,6 +209,19 @@
 #define USE_FLASH_CHIP
 #endif
 
+#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25M02G))
+#define USE_FLASH_SPI
+#endif
+
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N01G))
+#define USE_FLASH_QUADSPI
+#endif
+
+#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV))
+#define USE_FLASH_OCTOSPI
+#endif
+
+
 #ifndef USE_FLASH_CHIP
 #undef USE_FLASHFS
 #endif

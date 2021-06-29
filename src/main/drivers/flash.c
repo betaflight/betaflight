@@ -18,14 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Future improvements:
- *
- * * If the target is only expected to use one type of bus for the flash chip then
- *   there is no need to compile-in the init code for unused busses.
- *   e.g. single-flash-chip targets that use quadspi or octospi don't need spi.
- */
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -49,6 +41,8 @@
 #include "drivers/time.h"
 #include "drivers/system.h"
 
+#ifdef USE_FLASH_SPI
+
 // 20 MHz max SPI frequency
 #define FLASH_MAX_SPI_CLK_HZ 20000000
 // 5 MHz max SPI init frequency
@@ -56,6 +50,8 @@
 
 static extDevice_t devInstance;
 static extDevice_t *dev;
+
+#endif
 
 static flashDevice_t flashDevice;
 static flashPartitionTable_t flashPartitionTable;
@@ -67,7 +63,7 @@ static int flashPartitions = 0;
 RAM_CODE NOINLINE void flashMemoryMappedModeDisable(void)
 {
     __disable_irq();
-#ifdef USE_OCTOSPI
+#ifdef USE_FLASH_OCTOSPI
     octoSpiDisableMemoryMappedMode(flashDevice.io.handle.octoSpi);
 #else
 #error Invalid configuration - Not implemented
@@ -76,7 +72,7 @@ RAM_CODE NOINLINE void flashMemoryMappedModeDisable(void)
 
 RAM_CODE NOINLINE void flashMemoryMappedModeEnable(void)
 {
-#ifdef USE_OCTOSPI
+#ifdef USE_FLASH_OCTOSPI
     octoSpiEnableMemoryMappedMode(flashDevice.io.handle.octoSpi);
     __enable_irq();
 #else
@@ -85,7 +81,7 @@ RAM_CODE NOINLINE void flashMemoryMappedModeEnable(void)
 }
 #endif
 
-#ifdef USE_OCTOSPI
+#ifdef USE_FLASH_OCTOSPI
 RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
 {
     bool detected = false;
@@ -183,14 +179,14 @@ RAM_CODE NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
     } while (phase != BAIL && !detected);
 
     if (memoryMappedModeEnabledOnBoot) {
-        flashMemoryMappedModeDisable();
+        flashMemoryMappedModeEnable();
     }
     return detected;
 
 }
-#endif
+#endif // USE_FLASH_OCTOSPI
 
-#ifdef USE_QUADSPI
+#ifdef USE_FLASH_QUADSPI
 static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 {
     bool detected = false;
@@ -260,15 +256,9 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
     return detected;
 }
-#endif  // USE_QUADSPI
+#endif  // USE_FLASH_QUADSPI
 
-#ifdef USE_SPI
-
-void flashPreInit(const flashConfig_t *flashConfig)
-{
-    spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
-}
-
+#ifdef USE_FLASH_SPI
 static bool flashSpiInit(const flashConfig_t *flashConfig)
 {
     // Read chip identification and send it to device detect
@@ -345,13 +335,18 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
     return false;
 }
-#endif // USE_SPI_FLASH
+#endif // USE_FLASH_SPI
+
+void flashPreInit(const flashConfig_t *flashConfig)
+{
+    spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
+}
 
 bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
     bool haveFlash = false;
 
-#ifdef USE_SPI
+#ifdef USE_FLASH_SPI
     bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
 
     if (useSpi) {
@@ -359,14 +354,14 @@ bool flashDeviceInit(const flashConfig_t *flashConfig)
     }
 #endif
 
-#ifdef USE_QUADSPI
+#ifdef USE_FLASH_QUADSPI
     bool useQuadSpi = (QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice) != QUADSPIINVALID);
     if (useQuadSpi) {
         haveFlash = flashQuadSpiInit(flashConfig);
     }
 #endif
 
-#ifdef USE_OCTOSPI
+#ifdef USE_FLASH_OCTOSPI
     bool useOctoSpi = (OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice) != OCTOSPIINVALID);
     if (useOctoSpi) {
         haveFlash = flashOctoSpiInit(flashConfig);
