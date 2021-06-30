@@ -72,6 +72,10 @@ int flashReadBytes(uint32_t address, uint8_t *buffer, uint32_t length);
 void flashFlush(void);
 const flashGeometry_t *flashGetGeometry(void);
 
+void flashMemoryMappedModeDisable(void);
+void flashMemoryMappedModeEnable(void);
+
+
 //
 // flash partitioning api
 //

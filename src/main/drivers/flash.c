@@ -515,7 +515,7 @@ static void flashConfigurePartitions(void)
     startSector = 0;
 #endif
 
-#if defined(CONFIG_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     const uint32_t configSize = EEPROM_SIZE;
     flashSector_t configSectors = (configSize / flashGeometry->sectorSize);
 
