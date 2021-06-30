@@ -71,15 +71,13 @@
 #endif
 
 
-// TODO No support yet for config using a single flash device in memory mapped mode, using SDCARD until support is added.
-
 #define USE_FLASH_CHIP
 
-//#define CONFIG_IN_EXTERNAL_FLASH
-#define CONFIG_IN_SDCARD
+#define CONFIG_IN_MEMORY_MAPPED_FLASH
+//#define CONFIG_IN_SDCARD
 //#define CONFIG_IN_RAM
-#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
-#error "EEPROM storage location not defined"
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
+#error "Config storage location not defined"
 #endif
 
 #define USE_UART
@@ -204,6 +202,8 @@
 
 #define USE_FLASH_W25Q128FV
 #define FLASH_OCTOSPI_INSTANCE  OCTOSPI1
+
+#define USE_FIRMWARE_PARTITION
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
