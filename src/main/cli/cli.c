@@ -2485,7 +2485,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 #endif
 }
 
-
+#ifdef USE_FLASHFS
 static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -2521,6 +2521,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
     cliPrintLine("Done.");
 }
+#endif
 
 #ifdef USE_FLASH_TOOLS
 
@@ -6539,10 +6540,12 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
         "\t<->[name]", cliFeature),
+#ifdef USE_FLASH_CHIP
 #ifdef USE_FLASHFS
     CLI_COMMAND_DEF("flash_erase", "erase flash chip", NULL, cliFlashErase),
+#endif
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
-#ifdef USE_FLASH_TOOLS
+#if defined(USE_FLASH_TOOLS) && defined(USE_FLASHFS)
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_scan", "scan flash device for errors", NULL, cliFlashVerify),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
