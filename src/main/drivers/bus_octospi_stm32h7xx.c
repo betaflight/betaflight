@@ -378,7 +378,7 @@ MMFLASH_CODE_NOINLINE ErrorStatus octoSpiReceive(OCTOSPI_TypeDef *instance, uint
     uint32_t ir_reg = instance->IR;
 
     // Trigger the transfer by re-writing the address or instruction register
-    if (READ_BIT(instance->CCR, OCTOSPI_CCR_ADMODE) != HAL_OSPI_ADDRESS_NONE)
+    if (READ_BIT(instance->CCR, OCTOSPI_CCR_ADMODE) != OSPI_ADDRESS_NONE)
     {
       WRITE_REG(instance->AR, addr_reg);
     }
@@ -575,7 +575,7 @@ MMFLASH_CODE_NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8
         cmd.DataMode       = OSPI_DATA_1_LINE;
     }
 
-    bool status = octoSpiCommand(instance, &cmd);
+    ErrorStatus status = octoSpiCommand(instance, &cmd);
 
     if (status == SUCCESS && out && length > 0) {
         status = octoSpiTransmit(instance, (uint8_t *)out);
