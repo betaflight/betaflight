@@ -2583,8 +2583,8 @@ static void cliFlashRead(const char *cmdName, char *cmdline)
         cliPrintLinefeed();
     }
 }
-#endif
-#endif
+#endif // USE_FLASH_TOOLS
+#endif // USE_FLASHFS
 
 #ifdef USE_VTX_CONTROL
 static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault, const char *headingStr)
