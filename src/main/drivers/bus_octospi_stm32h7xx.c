@@ -532,6 +532,19 @@ MMFLASH_CODE_NOINLINE void octoSpiTestEnableDisableMemoryMappedMode(octoSpiDevic
     __enable_irq();
 }
 
+MMFLASH_DATA static const uint32_t octoSpi_addressSizeMap[] = {
+    OSPI_ADDRESS_8_BITS,
+    OSPI_ADDRESS_16_BITS,
+    OSPI_ADDRESS_24_BITS,
+    OSPI_ADDRESS_32_BITS
+};
+
+MMFLASH_CODE static uint32_t octoSpi_addressSizeFromValue(uint8_t addressSize)
+{
+    return octoSpi_addressSizeMap[((addressSize + 1) / 8) - 1]; // rounds to nearest OSPI_ADDRESS_* value that will hold the address.
+}
+
+
 MMFLASH_CODE_NOINLINE bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
     OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
@@ -642,36 +655,178 @@ MMFLASH_CODE_NOINLINE bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8
 
 MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    // TODO
-    ErrorStatus status = ERROR;
+    OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
+
+    cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
+
+    cmd.Instruction        = instruction;
+    cmd.InstructionDtrMode = OSPI_INSTRUCTION_DTR_DISABLE;
+    cmd.InstructionMode    = OSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionSize    = OSPI_INSTRUCTION_8_BITS;
+
+    cmd.Address            = address;
+    cmd.AddressDtrMode     = OSPI_ADDRESS_DTR_DISABLE;
+    cmd.AddressMode        = OSPI_ADDRESS_1_LINE;
+    cmd.AddressSize        = octoSpi_addressSizeFromValue(addressSize);
+
+    cmd.AlternateBytesMode = OSPI_ALTERNATE_BYTES_NONE;
+
+    cmd.DummyCycles        = dummyCycles;
+
+    cmd.DataDtrMode        = OSPI_DATA_DTR_DISABLE;
+    cmd.DataMode           = OSPI_DATA_1_LINE;
+    cmd.NbData             = length;
+
+    cmd.SIOOMode           = OSPI_SIOO_INST_EVERY_CMD;
+    cmd.DQSMode            = OSPI_DQS_DISABLE;
+
+    ErrorStatus status = octoSpiCommand(instance, &cmd);
+
+    if (status == SUCCESS) {
+        status = octoSpiReceive(instance, in);
+    }
+
     return status == SUCCESS;
 }
 
 MMFLASH_CODE_NOINLINE bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    // TODO
-    ErrorStatus status = ERROR;
+    OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
+
+    cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
+
+    cmd.Instruction        = instruction;
+    cmd.InstructionDtrMode = OSPI_INSTRUCTION_DTR_DISABLE;
+    cmd.InstructionMode    = OSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionSize    = OSPI_INSTRUCTION_8_BITS;
+
+    cmd.Address            = address;
+    cmd.AddressDtrMode     = OSPI_ADDRESS_DTR_DISABLE;
+    cmd.AddressMode        = OSPI_ADDRESS_1_LINE;
+    cmd.AddressSize        = octoSpi_addressSizeFromValue(addressSize);
+
+    cmd.AlternateBytesMode = OSPI_ALTERNATE_BYTES_NONE;
+
+    cmd.DummyCycles        = dummyCycles;
+
+    cmd.DataDtrMode        = OSPI_DATA_DTR_DISABLE;
+    cmd.DataMode           = OSPI_DATA_4_LINES;
+    cmd.NbData             = length;
+
+    cmd.DQSMode            = OSPI_DQS_DISABLE;
+    cmd.SIOOMode           = OSPI_SIOO_INST_EVERY_CMD;
+
+    ErrorStatus status = octoSpiCommand(instance, &cmd);
+
+    if (status == SUCCESS) {
+        status = octoSpiReceive(instance, in);
+    }
+
     return status == SUCCESS;
 }
 
 MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    // TODO
-    ErrorStatus status = ERROR;
+    OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
+
+    cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
+
+    cmd.Instruction        = instruction;
+    cmd.InstructionDtrMode = OSPI_INSTRUCTION_DTR_DISABLE;
+    cmd.InstructionMode    = OSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionSize    = OSPI_INSTRUCTION_8_BITS;
+
+    cmd.Address            = address;
+    cmd.AddressDtrMode     = OSPI_ADDRESS_DTR_DISABLE;
+    cmd.AddressMode        = OSPI_ADDRESS_1_LINE;
+    cmd.AddressSize        = octoSpi_addressSizeFromValue(addressSize);
+
+    cmd.AlternateBytesMode = OSPI_ALTERNATE_BYTES_NONE;
+
+    cmd.DummyCycles        = dummyCycles;
+
+    cmd.DataDtrMode        = OSPI_DATA_DTR_DISABLE;
+    cmd.DataMode           = OSPI_DATA_1_LINE;
+    cmd.NbData             = length;
+
+    cmd.DQSMode            = OSPI_DQS_DISABLE;
+    cmd.SIOOMode           = OSPI_SIOO_INST_EVERY_CMD;
+
+    ErrorStatus status = octoSpiCommand(instance, &cmd);
+
+    if (status == SUCCESS) {
+        status = octoSpiTransmit(instance, (uint8_t *)out);
+    }
+
     return status == SUCCESS;
 }
 
 MMFLASH_CODE_NOINLINE bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    // TODO
-    ErrorStatus status = ERROR;
+    OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
+
+    cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
+
+    cmd.Instruction        = instruction;
+    cmd.InstructionDtrMode = OSPI_INSTRUCTION_DTR_DISABLE;
+    cmd.InstructionMode    = OSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionSize    = OSPI_INSTRUCTION_8_BITS;
+
+    cmd.Address            = address;
+    cmd.AddressDtrMode     = OSPI_ADDRESS_DTR_DISABLE;
+    cmd.AddressMode        = OSPI_ADDRESS_1_LINE;
+    cmd.AddressSize        = octoSpi_addressSizeFromValue(addressSize);
+
+    cmd.AlternateBytesMode = OSPI_ALTERNATE_BYTES_NONE;
+
+    cmd.DummyCycles        = dummyCycles;
+
+    cmd.DataDtrMode        = OSPI_DATA_DTR_DISABLE;
+    cmd.DataMode           = OSPI_DATA_4_LINES;
+    cmd.NbData             = length;
+
+    cmd.DQSMode            = OSPI_DQS_DISABLE;
+    cmd.SIOOMode           = OSPI_SIOO_INST_EVERY_CMD;
+
+    ErrorStatus status = octoSpiCommand(instance, &cmd);
+
+    if (status == SUCCESS) {
+        status = octoSpiTransmit(instance, (uint8_t *)out);
+    }
+
+
     return status == SUCCESS;
 }
 
 MMFLASH_CODE_NOINLINE bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
-    // TODO
-    ErrorStatus status = ERROR;
+    OSPI_Command_t cmd; // Can't initialise to zero as compiler optimization will use memset() which is not in RAM.
+
+    cmd.OperationType      = OSPI_OPTYPE_COMMON_CFG;
+
+    cmd.Instruction        = instruction;
+    cmd.InstructionDtrMode = OSPI_INSTRUCTION_DTR_DISABLE;
+    cmd.InstructionMode    = OSPI_INSTRUCTION_1_LINE;
+    cmd.InstructionSize    = OSPI_INSTRUCTION_8_BITS;
+
+    cmd.Address            = address;
+    cmd.AddressDtrMode     = OSPI_ADDRESS_DTR_DISABLE;
+    cmd.AddressMode        = OSPI_ADDRESS_1_LINE;
+    cmd.AddressSize        = octoSpi_addressSizeFromValue(addressSize);
+
+    cmd.AlternateBytesMode = OSPI_ALTERNATE_BYTES_NONE;
+
+    cmd.DummyCycles        = dummyCycles;
+
+    cmd.DataDtrMode        = OSPI_DATA_DTR_DISABLE;
+    cmd.DataMode           = OSPI_DATA_NONE;
+    cmd.NbData             = 0;
+
+    cmd.DQSMode            = OSPI_DQS_DISABLE;
+    cmd.SIOOMode           = OSPI_SIOO_INST_EVERY_CMD;
+
+    ErrorStatus status = octoSpiCommand(instance, &cmd);
+
     return status == SUCCESS;
 }
 
