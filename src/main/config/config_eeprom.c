@@ -113,7 +113,7 @@ MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
 }
 
 #ifdef CONFIG_IN_MEMORY_MAPPED_FLASH
-MMFLASH_CODE void saveEEPROMToMemoryMappedFlash(void)
+MMFLASH_CODE_NOINLINE void saveEEPROMToMemoryMappedFlash(void)
 {
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
     const flashGeometry_t *flashGeometry = flashGetGeometry();
