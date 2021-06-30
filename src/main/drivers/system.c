@@ -103,7 +103,7 @@ void SysTick_Handler(void)
 
 // Return system uptime in microseconds (rollover in 70minutes)
 
-uint32_t microsISR(void)
+MMFLASH_CODE_NOINLINE uint32_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;
 
