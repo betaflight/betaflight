@@ -51,6 +51,7 @@
 #define USE_OCTOSPI_DEVICE_1
 
 #if !defined(USE_FLASH_MEMORY_MAPPED)
+// Bootloader will have configured the OCTOSPI and OCTOSPIM peripherals and pins, firmware needs no-knowledge of the configuration.
 #define OCTOSPIM_P1_SCK_PIN PB2
 #define OCTOSPIM_P1_CS_PIN PB6
 
