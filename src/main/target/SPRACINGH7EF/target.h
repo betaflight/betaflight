@@ -204,6 +204,12 @@
 #ifdef USE_OCTOSPI
 #define USE_FLASH_W25Q128FV
 #define FLASH_OCTOSPI_INSTANCE  OCTOSPI1
+
+#if defined(USE_FLASH_MEMORY_MAPPED)
+// When the memory mapped flash is used the flash partitioning api must be aware of the firmware partition.
+#define USE_FIRMWARE_PARTITION
+#endif
+
 #endif
 
 
