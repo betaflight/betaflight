@@ -45,9 +45,15 @@
 // Config is to be stored on the flash chip used for code/data storage, this requires that the
 // config load/save routines must run from RAM and a method to enable/disable memory mapped mode is needed.
 
-#define USE_OCTOSPI
+// There is no support for using OCTOSPI *and* SPI for 2 flash chips.
+
+//#define USE_FLASH_MEMORY_MAPPED
+//#define USE_OCTOSPI
+#if defined(USE_OCTOSPI)
 #define USE_OCTOSPI_DEVICE_1
 
+#if !defined(USE_FLASH_MEMORY_MAPPED)
+// Bootloader will have configured the OCTOSPI and OCTOSPIM peripherals and pins, firmware needs no-knowledge of the configuration.
 #define OCTOSPIM_P1_SCK_PIN PB2
 #define OCTOSPIM_P1_CS_PIN PB10
 
@@ -65,13 +71,16 @@
 
 #define OCTOSPIM_P1_MODE OCTOSPIM_P1_MODE_IO47_ONLY
 #define OCTOSPIM_P1_CS_FLAGS (OCTOSPIM_P1_CS_HARDWARE)
+#endif
+#endif
 
 #define USE_FLASH_CHIP
-#define CONFIG_IN_EXTERNAL_FLASH
+//#define CONFIG_IN_MEMORY_MAPPED_FLASH
+#define CONFIG_IN_EXTERNAL_FLASH // Note: Since this FC has TWO flash chips, it's possible to use the non-memory-mapped flash to store the config instead.
 //#define CONFIG_IN_SDCARD
 //#define CONFIG_IN_RAM
-#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
-#error "EEPROM storage location not defined"
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH) && !defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
+#error "Config storage location not defined"
 #endif
 
 #define USE_UART
@@ -183,11 +192,20 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
+
+// For the SPI flash chip for logging
 #define USE_FLASH_W25Q128
 #define USE_FLASH_M25P16
 
 #define FLASH_CS_PIN            PD7 // *NOT* SPI6_NSS, SOFTWARE CS ONLY
 #define FLASH_SPI_INSTANCE      SPI6
+
+// For the Octo-Spi connected
+#ifdef USE_OCTOSPI
+#define USE_FLASH_W25Q128FV
+#define FLASH_OCTOSPI_INSTANCE  OCTOSPI1
+#endif
+
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
