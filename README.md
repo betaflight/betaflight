@@ -1,3 +1,46 @@
+os:
+  - linux
+  - osx
+
+sudo: false
+
+dist: trusty
+
+addons:
+  apt:
+    packages:
+      - rpm
+
+git:
+  depth: 5
+
+language: node_js
+
+node_js:
+  - 8.11.2
+
+before_install:
+  - npm i -g npm@6.0.1
+
+script:
+  - yarn gulp release
+
+cache:
+  directories:
+  - node_modules
+
+# Notifications are encrypted to betaflight/betaflight to avoid spam from forks
+# Command: `travis encrypt "<secret>" --com -r betaflight/blackbox-log-viewer`
+notifications:
+  slack:
+    rooms:
+      - secure: lg53G5eeNucPlQos/RUA/PxkewvJwcWU7vxqMQJ8/Ba6VEcK4Yd6jGOhb837suafyZXR4HPqrOxBY8GNfcf8ZL258vLjfNy1164KL1ErUIUGAFKtevsV2BIX+G8LbEKkJDimKmzTZ4mZ4mnPY9fmRffTZY4Ioj+tj+DeESEUjo1AGWLWynRsBz3BondtE/7R8p+Ab3GPWv/JuL8Q4t3fJH8ZRSkdPC5rHuZKYge6EhrwCRlUzQP5iDC6Fw9ZOuSbsAcNLFh1ClaXDps9EPKSL5M7UMDYk1IgVrci0jcVo9afI7IZf5/SuR/Pn9BGSgSIV1+subarc0pew6PKG+Nz6dy9edhlTU/w7M1pi0/aOiUVEmo5nSsgJRwJg3lroonaAZpn9KWtNTRRMZDUK1wrge/QFKLydsrGrmxVo+QkjUf82MGQBAe5yDMfPZzkl502AwBp/ZnE6AT6Fj60A2sPsUgredK70f85Yv9r7FOX/mm+MU4MBAsDgl7LHHnC4Q9mH4kjnu2QBMf+1c7YxlOz8Y/a0b1+F72+e25wRrz/NWZfJLv6KVb7bjAFA9B8bSn9DKSauwloM/Bn2vQz64tmEJIEXm734nQx/fwii8RuaUJ/t8OJRiXiAF1IDBdKZNtE7jsMDBFNP/ct30Mm9Cqpad9xDFjRH5CgUYsMMLqphyU=
+  webhooks:
+    urls:
+      - secure: qyk5ou1nFHaFJTeR5tUWqJdCKW6UPSrcedzhhcDpcT4seKtSycChzD6OJCJfdtI/9GbSw79H2E4chj49FzG9Qlilmq88TCIU61EKrxTmkUudXyxNKxBcUQ5S5N0y3GOABCUUxJpccDnLUHvD3MZ0ppQ43N4FdMygiq5yHwx1zXhBdnE6ZuwQGAwh/TPYOhPBbvB3W2xVXcQExWKCkhk8xGCA5vfvR0m82jkrwMSlfKLsWxmUNM6l5YDcHtCwE0F68WCtcTUiv6WVQ60SvVe1EVGiz0O43ee8K7Y/Ays23GSb839+N2NcAF0NY8BygPes3phbsw+zgJZB9PT3GmcY2A3U6n6SREtEy+7Zxc3m5ntI9FVrgepQqCnUHgu/sxV+eC356OXi1XIHK3Yv7ouh+gQTF3p3TVpMShesdW+zRzprt2x+PDFXv8ESu0DM6d7w0PU0YqcztON5fZQSvLytm+uXObIxDsT6oafdfR5J+hRHwEuBsPlMi7GaONQsMuxUC0nYBFq1VCHpVGLY2kbCxeqC35GmRH39Ei52U4Yr0fcgwa1Kh/2qTrjNtahrJhOcr+pE17XerPfWKCTfNARBI/AE274ykTNsKfhCQy6hETnw8xJm2GzARWmWK1Q3Ein0+C8Xs9LhQSrCpCGcKXsbsQZuqFY7gRrsbRGX9mzD7DI=
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: always     # options: [always|never|change] default: always
 ![Betaflight](docs/assets/images/bf_logo.png)
 
 [![Latest version](https://img.shields.io/github/v/release/betaflight/betaflight)](https://github.com/betaflight/betaflight/releases) [![Build Status](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_apis/build/status/betaflight.betaflight?branchName=master)](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_build/latest?definitionId=8&branchName=master) [![Build Status](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_apis/build/status/betaflight.betaflight?branchName=4.2-maintenance)](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_build/latest?definitionId=8&branchName=4.2-maintenance) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
