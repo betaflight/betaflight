@@ -123,6 +123,9 @@ uint8_t icm42688PSpiDetect(const extDevice_t *dev)
         delay(150);
         const uint8_t whoAmI = spiReadRegMsk(dev, MPU_RA_WHO_AM_I);
         switch (whoAmI) {
+        case ICM42605_WHO_AM_I_CONST:
+            icmDetected = ICM_42605_SPI;
+            break;
         case ICM42688P_WHO_AM_I_CONST:
             icmDetected = ICM_42688P_SPI;
             break;
