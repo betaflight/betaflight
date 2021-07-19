@@ -982,7 +982,7 @@
 
 #define DEF_TIM_AF__PA1__TCH_TIM15_CH1N   D(4, 15)
 #define DEF_TIM_AF__PA2__TCH_TIM15_CH1    D(4, 15)
-#define DEF_TIM_AF__PA2__TCH_TIM15_CH2    D(4, 15)
+#define DEF_TIM_AF__PA3__TCH_TIM15_CH2    D(4, 15)
 
 //PORTB
 #define DEF_TIM_AF__PB0__TCH_TIM1_CH2N    D(1, 1)
