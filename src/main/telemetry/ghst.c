@@ -227,6 +227,7 @@ static void processGhst(void)
         ghstFinalize(dst);
     }
 
+#if defined(USE_GPS)
     if (currentSchedule & BIT(GHST_FRAME_GPS_PRIMARY_INDEX)) {
         ghstInitializeFrame(dst);
         ghstFrameGpsPrimaryTelemetry(dst);
@@ -238,6 +239,7 @@ static void processGhst(void)
         ghstFrameGpsSecondaryTelemetry(dst);
         ghstFinalize(dst);
     }
+#endif
 
     if (currentSchedule & BIT(GHST_FRAME_MAGBARO_INDEX)) {
         ghstInitializeFrame(dst);
