@@ -51,6 +51,8 @@
 
 #include "pwm_output_dshot_shared.h"
 
+#include "sensors/esc_sensor.h"
+
 FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount = 0;
 #ifdef STM32F7
 FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
@@ -227,7 +229,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                     dshotTelemetryState.motorState[i].telemetryValue = value;
                     dshotTelemetryState.motorState[i].telemetryActive = true;
                     if (i < 4) {
-                        DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, value);
+                        DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, calcEscRpm(value) / 10);
                     }
 #ifdef USE_DSHOT_TELEMETRY_STATS
                     validTelemetryPacket = true;

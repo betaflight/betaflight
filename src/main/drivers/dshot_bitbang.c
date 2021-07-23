@@ -46,6 +46,8 @@
 
 #include "pg/motor.h"
 
+#include "sensors/esc_sensor.h"
+
 #if defined(USE_DEBUG_PIN)
 #include "build/debug_pin.h"
 #else
@@ -519,7 +521,7 @@ static bool bbUpdateStart(void)
                 dshotTelemetryState.motorState[motorIndex].telemetryValue = value;
                 dshotTelemetryState.motorState[motorIndex].telemetryActive = true;
                 if (motorIndex < 4) {
-                    DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, value);
+                    DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, calcEscRpm(value) / 10);
                 }
             } else {
                 dshotTelemetryState.invalidPacketCount++;
