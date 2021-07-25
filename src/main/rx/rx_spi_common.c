@@ -27,8 +27,10 @@
 
 #include "drivers/io.h"
 #include "drivers/time.h"
-#include "rx/rx_spi_common.h"
+
 #include "rx/rx_spi.h"
+
+#include "rx_spi_common.h"
 
 static IO_t ledPin;
 static bool ledInversion = false;

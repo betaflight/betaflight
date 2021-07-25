@@ -27,6 +27,8 @@
 
 #include "config_helper.h"
 
+#include "drivers/sdio.h"
+
 #include "io/serial.h"
 
 #include "osd/osd.h"
@@ -43,5 +45,7 @@ void targetConfiguration(void)
     osdConfigMutable()->core_temp_alarm = 85;
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
     sdcardConfigMutable()->mode = SDCARD_MODE_SDIO;
+    sdioPinConfigure();
+    SDIO_GPIO_Init();
 }
 #endif
