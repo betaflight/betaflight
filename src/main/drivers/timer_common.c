@@ -44,16 +44,6 @@ timerIOConfig_t *timerIoConfigByTag(ioTag_t ioTag)
     return NULL;
 }
 
-static uint8_t timerIndexByTag(ioTag_t ioTag)
-{
-    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-        if (timerIOConfig(i)->ioTag == ioTag) {
-            return timerIOConfig(i)->index;
-        }
-    }
-    return 0;
-}
-
 const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex)
 {
 
@@ -74,9 +64,16 @@ const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex)
     return NULL;
 }
 
-const timerHardware_t *timerGetByTag(ioTag_t ioTag)
+const timerHardware_t *timerGetConfiguredByTag(ioTag_t ioTag)
 {
-    uint8_t timerIndex = timerIndexByTag(ioTag);
+    uint8_t timerIndex = 0;
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        if (timerIOConfig(i)->ioTag == ioTag) {
+            timerIndex = timerIOConfig(i)->index;
+
+            break;
+        }
+    }
 
     return timerGetByTagAndIndex(ioTag, timerIndex);
 }
@@ -139,7 +136,7 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
 }
 #else
 
-const timerHardware_t *timerGetByTag(ioTag_t ioTag)
+const timerHardware_t *timerGetConfiguredByTag(ioTag_t ioTag)
 {
 #if TIMER_CHANNEL_COUNT > 0
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
@@ -158,7 +155,7 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
     UNUSED(owner);
     UNUSED(resourceIndex);
 
-    return timerGetByTag(ioTag);
+    return timerGetConfiguredByTag(ioTag);
 }
 #endif
 

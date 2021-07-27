@@ -711,7 +711,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
-        const timerHardware_t *timerHardware = timerGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
+        const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
         uint8_t output = motorConfig->motorPwmInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
