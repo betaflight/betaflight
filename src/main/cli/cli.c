@@ -5864,7 +5864,8 @@ static void showTimers(void)
         cliPrintf("TIM%d:", timerNumber);
         bool timerUsed = false;
         for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
-            const resourceOwner_t *timerOwner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            const timerHardware_t *timer = timerGetAllocatedByNumberAndChannel(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            const resourceOwner_t *timerOwner = timerGetOwner(timer);
             if (timerOwner->owner) {
                 if (!timerUsed) {
                     timerUsed = true;
@@ -5873,9 +5874,9 @@ static void showTimers(void)
                 }
 
                 if (timerOwner->resourceIndex > 0) {
-                    cliPrintLinef("    CH%d: %s %d", timerIndex + 1, ownerNames[timerOwner->owner], timerOwner->resourceIndex);
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner], timerOwner->resourceIndex);
                 } else {
-                    cliPrintLinef("    CH%d: %s", timerIndex + 1, ownerNames[timerOwner->owner]);
+                    cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner]);
                 }
             }
         }

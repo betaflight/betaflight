@@ -81,12 +81,24 @@ const timerHardware_t *timerGetByTag(ioTag_t ioTag)
     return timerGetByTagAndIndex(ioTag, timerIndex);
 }
 
-const resourceOwner_t *timerGetOwner(int8_t timerNumber, uint16_t timerChannel)
+const timerHardware_t *timerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel)
+{
+    for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        const timerHardware_t *timer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
+        if (timer && timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel && timerOwners[i].owner) {
+            return timer;
+        }
+    }
+
+    return NULL;
+}
+
+const resourceOwner_t *timerGetOwner(const timerHardware_t *timer)
 {
     const resourceOwner_t *timerOwner = &freeOwner;
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
-        const timerHardware_t *timer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
-        if (timer && timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel) {
+        const timerHardware_t *assignedTimer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
+        if (assignedTimer && assignedTimer == timer) {
             timerOwner = &timerOwners[i];
 
             break;
@@ -95,7 +107,7 @@ const resourceOwner_t *timerGetOwner(int8_t timerNumber, uint16_t timerChannel)
 
 #if defined(USE_DSHOT_BITBANG)
     if (!timerOwner->owner) {
-        timerOwner = dshotBitbangTimerGetOwner(timerNumber, timerChannel);
+        timerOwner = dshotBitbangTimerGetOwner(timer);
     }
 #endif
 
@@ -112,7 +124,7 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
         if (timerIOConfig(i)->ioTag == ioTag) {
             const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIOConfig(i)->index);
 
-            if (timerGetOwner(timerGetTIMNumber(timer->tim), timer->channel)->owner) {
+            if (timerGetOwner(timer)->owner) {
                 return NULL;
             }
 
