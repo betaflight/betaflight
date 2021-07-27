@@ -506,8 +506,20 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF)
-        && motorConfig()->dev.useDshotTelemetry) {
+    bool nChannelTimerUsed = false;
+    for (unsigned i = 0; i < getMotorCount(); i++) {
+        const ioTag_t tag = motorConfig()->dev.ioTags[i];
+        if (tag) {
+            const timerHardware_t *timer = timerGetByTag(tag);
+            if (timer && timer->output & TIMER_OUTPUT_N_CHANNEL) {
+                nChannelTimerUsed = true;
+
+                break;
+            }
+        }
+    }
+
+    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && (motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON || nChannelTimerUsed)) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF) && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
 

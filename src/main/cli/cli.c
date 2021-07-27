@@ -1585,8 +1585,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         // pwmDisableMotors();
         motorDisable();
         delay(5);
-        unsigned motorsCount = getMotorCount();
-        for (unsigned i = 0; i < motorsCount; i++) {
+        for (unsigned i = 0; i < getMotorCount(); i++) {
             const ioTag_t tag = motorConfig()->dev.ioTags[i];
             if (tag) {
                 const timerHardware_t *timerHardware = timerGetByTag(tag);
