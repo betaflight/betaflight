@@ -147,7 +147,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
         return false;
     }
 
-    if (!spiSetBusInstance(dev, flashConfig->spiDevice, OWNER_FLASH_CS)) {
+    if (!spiSetBusInstance(dev, flashConfig->spiDevice)) {
         return false;
     }
 

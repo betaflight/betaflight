@@ -147,7 +147,7 @@ bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 #ifdef USE_SPI
     case BUS_TYPE_SPI:
         {
-            if (!spiSetBusInstance(dev, compassConfig()->mag_spi_device, OWNER_COMPASS_CS)) {
+            if (!spiSetBusInstance(dev, compassConfig()->mag_spi_device)) {
                 return false;
             }
 

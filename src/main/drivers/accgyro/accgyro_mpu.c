@@ -250,7 +250,7 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 {
-    if (!config->csnTag || !spiSetBusInstance(&gyro->dev, config->spiBus, OWNER_GYRO_CS)) {
+    if (!config->csnTag || !spiSetBusInstance(&gyro->dev, config->spiBus)) {
         return false;
     }
 

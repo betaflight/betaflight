@@ -184,7 +184,7 @@ bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #ifdef USE_SPI
     case BUS_TYPE_SPI:
         {
-            if (!spiSetBusInstance(dev, barometerConfig()->baro_spi_device, OWNER_BARO_CS)) {
+            if (!spiSetBusInstance(dev, barometerConfig()->baro_spi_device)) {
                 return false;
             }
 
