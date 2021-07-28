@@ -149,9 +149,10 @@ enum {
 enum {
     DYN_LPF_NONE = 0,
     DYN_LPF_PT1,
-    DYN_LPF_BIQUAD,
+    DYN_LPF_BUTTERWORTH,
     DYN_LPF_PT2,
     DYN_LPF_PT3,
+    DYN_LPF_BESSEL,
 };
 
 typedef enum {

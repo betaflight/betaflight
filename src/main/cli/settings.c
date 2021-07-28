@@ -293,16 +293,18 @@ static const char * const lookupTablePwmProtocol[] = {
 
 static const char * const lookupTableLowpassType[] = {
     "PT1",
-    "BIQUAD",
+    "BUTTERWORTH",
     "PT2",
     "PT3",
+    "BESSEL",
 };
 
 static const char * const lookupTableDtermLowpassType[] = {
     "PT1",
-    "BIQUAD",
+    "BUTTERWORTH",
     "PT2",
     "PT3",
+    "BESSEL",
 };
 
 static const char * const lookupTableAntiGravityMode[] = {

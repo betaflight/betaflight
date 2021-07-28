@@ -148,7 +148,7 @@ static void gyroInitFilterDynamicNotch()
 }
 #endif
 
-static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_t looptime)
+static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfCutoffHz, uint32_t looptime)
 {
     filterApplyFnPtr *lowpassFilterApplyFn;
     gyroLowpassFilter_t *lowpassFilter = NULL;
@@ -175,48 +175,68 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
     const float gyroDt = looptime * 1e-6f;
 
     // Gain could be calculated a little later as it is specific to the pt1/bqrcf2/fkf branches
-    const float gain = pt1FilterGain(lpfHz, gyroDt);
+    const float gain = pt1FilterGain(lpfCutoffHz, gyroDt);
 
     // Dereference the pointer to null before checking valid cutoff and filter
     // type. It will be overridden for positive cases.
     *lowpassFilterApplyFn = nullFilterApply;
 
+    lpfCutoffHz = constrain(lpfCutoffHz, 0, gyroFrequencyNyquist);
+
     // If lowpass cutoff has been specified
-    if (lpfHz) {
+    if (lpfCutoffHz) {
+
         switch (type) {
+
         case FILTER_PT1:
-            *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApply;
+            *lowpassFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain);
             }
             ret = true;
             break;
-        case FILTER_BIQUAD:
-            if (lpfHz <= gyroFrequencyNyquist) {
+
+        case FILTER_BUTTERWORTH:
 #ifdef USE_DYN_LPF
-                *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApplyDF1;
+            *lowpassFilterApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
 #else
-                *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
+            *lowpassFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
 #endif
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
-                }
-                ret = true;
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                biquadFilterInitButterworthLPF(&lowpassFilter[axis].biquadFilterState, lpfCutoffHz, looptime);
             }
+            ret = true;
             break;
+
         case FILTER_PT2:
-            *lowpassFilterApplyFn = (filterApplyFnPtr) pt2FilterApply;
+            *lowpassFilterApplyFn = (filterApplyFnPtr)pt2FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt2FilterInit(&lowpassFilter[axis].pt2FilterState, gain);
             }
             ret = true;
             break;
+
         case FILTER_PT3:
-            *lowpassFilterApplyFn = (filterApplyFnPtr) pt3FilterApply;
+            *lowpassFilterApplyFn = (filterApplyFnPtr)pt3FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt3FilterInit(&lowpassFilter[axis].pt3FilterState, gain);
             }
             ret = true;
+            break;
+
+        case FILTER_BESSEL:
+#ifdef USE_DYN_LPF
+            *lowpassFilterApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
+#else
+            *lowpassFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
+#endif
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                biquadFilterInitBesselLPF(&lowpassFilter[axis].biquadFilterState, lpfCutoffHz, looptime);
+            }
+            ret = true;
+            break;
+
+        default:
             break;
         }
     }
@@ -226,13 +246,15 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 #ifdef USE_DYN_LPF
 static void dynLpfFilterInit()
 {
+    gyro.dynLpfFilter = DYN_LPF_NONE;
+
     if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
         switch (gyroConfig()->gyro_lowpass_type) {
         case FILTER_PT1:
             gyro.dynLpfFilter = DYN_LPF_PT1;
             break;
-        case FILTER_BIQUAD:
-            gyro.dynLpfFilter = DYN_LPF_BIQUAD;
+        case FILTER_BUTTERWORTH:
+            gyro.dynLpfFilter = DYN_LPF_BUTTERWORTH;
             break;
         case FILTER_PT2:
             gyro.dynLpfFilter = DYN_LPF_PT2;
@@ -240,12 +262,12 @@ static void dynLpfFilterInit()
         case FILTER_PT3:
             gyro.dynLpfFilter = DYN_LPF_PT3;
             break;
+        case FILTER_BESSEL:
+            gyro.dynLpfFilter = DYN_LPF_BESSEL;
+            break;
         default:
-            gyro.dynLpfFilter = DYN_LPF_NONE;
             break;
         }
-    } else {
-        gyro.dynLpfFilter = DYN_LPF_NONE;
     }
     gyro.dynLpfMin = gyroConfig()->dyn_lpf_gyro_min_hz;
     gyro.dynLpfMax = gyroConfig()->dyn_lpf_gyro_max_hz;

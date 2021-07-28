@@ -1237,9 +1237,9 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_BUTTERWORTH:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
+                biquadFilterUpdateButterworthLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
             }
             break;
         case DYN_LPF_PT2:
@@ -1250,6 +1250,11 @@ void dynLpfDTermUpdate(float throttle)
         case DYN_LPF_PT3:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt3FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(cutoffFreq, pidRuntime.dT));
+            }
+            break;
+        case DYN_LPF_BESSEL:
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                biquadFilterUpdateBesselLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
             }
             break;
         }

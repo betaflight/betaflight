@@ -643,9 +643,9 @@ void dynLpfGyroUpdate(float throttle)
                 pt1FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_BUTTERWORTH:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&gyro.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
+                biquadFilterUpdateButterworthLPF(&gyro.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
             }
             break;
         case  DYN_LPF_PT2:
@@ -656,6 +656,11 @@ void dynLpfGyroUpdate(float throttle)
         case DYN_LPF_PT3:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt3FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt3FilterState, pt3FilterGain(cutoffFreq, gyroDt));
+            }
+            break;
+        case DYN_LPF_BESSEL:
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                biquadFilterUpdateBesselLPF(&gyro.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
             }
             break;
         }

@@ -65,13 +65,14 @@ typedef struct laggedMovingAverage_s {
 
 typedef enum {
     FILTER_PT1 = 0,
-    FILTER_BIQUAD,
+    FILTER_BUTTERWORTH,
     FILTER_PT2,
     FILTER_PT3,
+    FILTER_BESSEL,
 } lowpassFilterType_e;
 
 typedef enum {
-    FILTER_LPF,    // 2nd order Butterworth section
+    FILTER_LPF,
     FILTER_NOTCH,
     FILTER_BPF,
 } biquadFilterType_e;
@@ -80,10 +81,30 @@ typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
 float nullFilterApply(filter_t *filter, float input);
 
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
+float pt1FilterGain(float f_cut, float dT);
+void pt1FilterInit(pt1Filter_t* filter, float k);
+void pt1FilterUpdateCutoff(pt1Filter_t* filter, float k);
+float pt1FilterApply(pt1Filter_t* filter, float input);
+
+float pt2FilterGain(float f_cut, float dT);
+void pt2FilterInit(pt2Filter_t* filter, float k);
+void pt2FilterUpdateCutoff(pt2Filter_t* filter, float k);
+float pt2FilterApply(pt2Filter_t* filter, float input);
+
+float pt3FilterGain(float f_cut, float dT);
+void pt3FilterInit(pt3Filter_t* filter, float k);
+void pt3FilterUpdateCutoff(pt3Filter_t* filter, float k);
+float pt3FilterApply(pt3Filter_t* filter, float input);
+
+void slewFilterInit(slewFilter_t* filter, float slewLimit, float threshold);
+float slewFilterApply(slewFilter_t* filter, float input);
+
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs, float Q, biquadFilterType_e filterType, float weight);
+void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs, float Q, biquadFilterType_e filterType, float weight);
+void biquadFilterInitButterworthLPF(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs);
+void biquadFilterUpdateButterworthLPF(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs);
+void biquadFilterInitBesselLPF(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs);
+void biquadFilterUpdateBesselLPF(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs);
 
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
@@ -92,21 +113,3 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf);
 float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input);
-
-float pt1FilterGain(float f_cut, float dT);
-void pt1FilterInit(pt1Filter_t *filter, float k);
-void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
-float pt1FilterApply(pt1Filter_t *filter, float input);
-
-float pt2FilterGain(float f_cut, float dT);
-void pt2FilterInit(pt2Filter_t *filter, float k);
-void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k);
-float pt2FilterApply(pt2Filter_t *filter, float input);
-
-float pt3FilterGain(float f_cut, float dT);
-void pt3FilterInit(pt3Filter_t *filter, float k);
-void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k);
-float pt3FilterApply(pt3Filter_t *filter, float input);
-
-void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
-float slewFilterApply(slewFilter_t *filter, float input);
