@@ -168,7 +168,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     // 2nd Dterm Lowpass Filter
 
-    uint16_t dterm_lowpass2_hz = constrain(dterm_lowpass2_hz, 0, pidFrequencyNyquist);;
+    uint16_t dterm_lowpass2_hz = constrain(pidProfile->dterm_lowpass2_hz, 0, pidFrequencyNyquist);
     pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
 
     if (dterm_lowpass2_hz > 0) {
