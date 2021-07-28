@@ -420,6 +420,7 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
 #else
     UNUSED(max7456Config);
     UNUSED(cpuOverclock);
+    max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
 #endif
 
     spiSetClkDivisor(dev, max7456SpiClock);
