@@ -369,6 +369,8 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     if (fdevice->callback == NULL) {
         // No callback was provided so block
         spiWait(fdevice->io.handle.dev);
+
+        fdevice->currentWriteAddress += segments[3].len + segments[4].len;
     }
 
     return fdevice->callbackArg;
