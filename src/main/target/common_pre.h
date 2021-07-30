@@ -289,7 +289,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_GHST
 #define USE_TELEMETRY_SRXL
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 12))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 12))
 #define USE_CMS
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
@@ -297,14 +297,14 @@ extern uint8_t _dmaram_end__;
 #define USE_LED_STRIP
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 11))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 11))
 #define USE_VTX_COMMON
 #define USE_VTX_CONTROL
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 10))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 10))
 #define USE_VIRTUAL_CURRENT_METER
 #define USE_CAMERA_CONTROL
 #define USE_ESC_SENSOR
@@ -312,39 +312,39 @@ extern uint8_t _dmaram_end__;
 #define USE_RCDEVICE
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 9))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 9))
 #define USE_GYRO_LPF2
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 8))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 8))
 #define USE_LAUNCH_CONTROL
 #define USE_DYN_LPF
 #define USE_D_MIN
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 7))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 7))
 #define USE_THROTTLE_BOOST
 #define USE_INTEGRATED_YAW_CONTROL
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 6))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 6))
 #define USE_ITERM_RELAX
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
 #define USE_TPA_MODE
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 5))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 5))
 #define USE_PWM
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 4))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 4))
 #define USE_HUFFMAN
 #define USE_PINIO
 #define USE_PINIOBOX
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 3))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 3))
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
@@ -358,14 +358,14 @@ extern uint8_t _dmaram_end__;
 #endif
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 2))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 2))
 #define USE_TELEMETRY_HOTT
 #define USE_TELEMETRY_LTM
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 1))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 1))
 #define USE_BOARD_INFO
 #define USE_EXTENDED_CMS_MENUS
 #define USE_RTC_TIME
