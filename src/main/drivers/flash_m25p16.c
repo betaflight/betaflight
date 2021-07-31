@@ -52,6 +52,9 @@
 
 #define W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE 0xB7
 
+// SPI transaction segment indicies for m25p16_pageProgramContinue()
+enum {READ_STATUS, WRITE_ENABLE, PAGE_PROGRAM, DATA1, DATA2};
+
 static uint32_t maxClkSPIHz;
 static uint32_t maxReadClkSPIHz;
 
@@ -234,6 +237,8 @@ busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
+    fdevice->currentWriteAddress += fdevice->callbackArg;
+
     // Call transfer completion callback
     if (fdevice->callback) {
         fdevice->callback(fdevice->callbackArg);
@@ -271,6 +276,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
     STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
     STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { M25P16_INSTRUCTION_WRITE_ENABLE };
+
     busSegment_t segments[] = {
             {readStatus, readyStatus, sizeof (readStatus), true, m25p16_callbackReady},
             {writeEnable, NULL, sizeof (writeEnable), true, m25p16_callbackWriteEnable},
@@ -283,7 +289,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
 
     m25p16_setCommandAddress(&sectorErase[1], address, fdevice->isLargeFlash);
 
-    spiSequence(fdevice->io.handle.dev, &segments[0]);
+    spiSequence(fdevice->io.handle.dev, segments);
 
     // Block pending completion of SPI access, but the erase will be ongoing
     spiWait(fdevice->io.handle.dev);
@@ -295,6 +301,7 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
     STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
     STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { M25P16_INSTRUCTION_WRITE_ENABLE };
     STATIC_DMA_DATA_AUTO uint8_t bulkErase[] = { M25P16_INSTRUCTION_BULK_ERASE };
+
     busSegment_t segments[] = {
             {readStatus, readyStatus, sizeof (readStatus), true, m25p16_callbackReady},
             {writeEnable, NULL, sizeof (writeEnable), true, m25p16_callbackWriteEnable},
@@ -305,7 +312,7 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
     // Ensure any prior DMA has completed before continuing
     spiWaitClaim(fdevice->io.handle.dev);
 
-    spiSequence(fdevice->io.handle.dev, &segments[0]);
+    spiSequence(fdevice->io.handle.dev, segments);
 
     // Block pending completion of SPI access, but the erase will be ongoing
     spiWait(fdevice->io.handle.dev);
@@ -339,32 +346,32 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     spiWaitClaim(fdevice->io.handle.dev);
 
     // Patch the pageProgram segment
-    segments[2].len = fdevice->isLargeFlash ? 5 : 4;
+    segments[PAGE_PROGRAM].len = fdevice->isLargeFlash ? 5 : 4;
     m25p16_setCommandAddress(&pageProgram[1], fdevice->currentWriteAddress, fdevice->isLargeFlash);
 
     // Patch the data segments
-    segments[3].txData = (uint8_t *)buffers[0];
-    segments[3].len = bufferSizes[0];
+    segments[DATA1].txData = (uint8_t *)buffers[0];
+    segments[DATA1].len = bufferSizes[0];
     fdevice->callbackArg = bufferSizes[0];
 
     if (bufferCount == 1) {
-        segments[3].negateCS = true;
-        segments[3].callback = m25p16_callbackWriteComplete;
+        segments[DATA1].negateCS = true;
+        segments[DATA1].callback = m25p16_callbackWriteComplete;
         // Mark segment following data as being of zero length
-        segments[4].len = 0;
+        segments[DATA2].len = 0;
     } else if (bufferCount == 2) {
-        segments[3].negateCS = false;
-        segments[3].callback = NULL;
-        segments[4].txData = (uint8_t *)buffers[1];
-        segments[4].len = bufferSizes[1];
+        segments[DATA1].negateCS = false;
+        segments[DATA1].callback = NULL;
+        segments[DATA2].txData = (uint8_t *)buffers[1];
+        segments[DATA2].len = bufferSizes[1];
         fdevice->callbackArg += bufferSizes[1];
-        segments[4].negateCS = true;
-        segments[4].callback = m25p16_callbackWriteComplete;
+        segments[DATA2].negateCS = true;
+        segments[DATA2].callback = m25p16_callbackWriteComplete;
     } else {
         return 0;
     }
 
-    spiSequence(fdevice->io.handle.dev, fdevice->couldBeBusy ? &segments[0] : &segments[1]);
+    spiSequence(fdevice->io.handle.dev, fdevice->couldBeBusy ? &segments[READ_STATUS] : &segments[WRITE_ENABLE]);
 
     if (fdevice->callback == NULL) {
         // No callback was provided so block
