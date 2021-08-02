@@ -221,4 +221,12 @@ void ws2811LedStripDMAEnable(void)
     TIM_Cmd(timer, ENABLE);
     xDMA_Cmd(dmaRef, ENABLE);
 }
+
+#ifdef STM32F4
+bool ws2811LedStripDMA2Errata(void)
+{
+    // Return true if the LED_STRIP timer is using DMA2
+    return (DMA_DEVICE_NO(dmaGetIdentifier(dmaRef)) == 2);
+}
+#endif
 #endif

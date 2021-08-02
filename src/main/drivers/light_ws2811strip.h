@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "common/color.h"
+
 #include "drivers/io_types.h"
 
 #define WS2811_LED_STRIP_LENGTH    32
@@ -87,6 +89,10 @@ void setStripColors(const hsvColor_t *colors);
 void setUsedLedCount(unsigned ledCount);
 
 bool isWS2811LedStripReady(void);
+
+#ifdef STM32F4
+bool ws2811LedStripDMA2Errata(void);
+#endif
 
 extern volatile bool ws2811LedDataTransferInProgress;
 

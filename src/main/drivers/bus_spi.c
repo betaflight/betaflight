@@ -34,6 +34,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
+#include "drivers/light_ws2811strip.h"
 #include "drivers/motor.h"
 #include "drivers/rcc.h"
 #include "nvic.h"
@@ -511,11 +512,14 @@ void spiInitBusDMA()
     uint32_t device;
 #ifdef STM32F4
     /* Check https://www.st.com/resource/en/errata_sheet/dm00037591-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
-     * section 2.1.10 which reports an errata that corruption may occurs on DMA2 if AHB peripherals (eg GPIO ports) are
-     * access concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
-     * is enabled, then don't enable DMA on an SPI bus using DMA2
+     * section 2.1.10 which reports an errata that corruption may occur on DMA2 if AHB peripherals (eg GPIO ports) are
+     * accessed concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
+     * is enabled, then don't enable DMA on an SPI bus using DMA2.
+     *
+     * The below requires explicit knowledge of which device drivers might perform bit banged DMA, but it is more efficient
+     * to do this than to have each bus be notified, and thus have to remember, if this issue applies.
      */
-    const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+    const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev) || ws2811LedStripDMA2Errata();
 #endif
 
     for (device = 0; device < SPIDEV_COUNT; device++) {
