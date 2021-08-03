@@ -537,6 +537,7 @@ bool max7456Init(const max7456Config_t *max7456Config, const vcdProfile_t *pVcdP
 #else
     UNUSED(max7456Config);
     UNUSED(cpuOverclock);
+    max7456SpiClock = MAX7456_SPI_CLK;
 #endif
 
 #ifdef USE_SPI_TRANSACTION
