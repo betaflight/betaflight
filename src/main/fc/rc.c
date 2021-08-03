@@ -553,9 +553,11 @@ FAST_CODE void processRcCommand(void)
     if (isRxDataNew) {
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
+#ifdef USE_FEEDFORWARD
             isDuplicate[axis] = (oldRcCommand[axis] == rcCommand[axis]);
             rcCommandDelta[axis] = fabsf(rcCommand[axis] - oldRcCommand[axis]);
             oldRcCommand[axis] = rcCommand[axis];
+#endif
 
             float angleRate;
             
