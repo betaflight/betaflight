@@ -605,21 +605,20 @@ static void bbUpdateComplete(void)
     }
 #endif
 
-#ifdef USE_DSHOT_TELEMETRY
     for (int i = 0; i < usedMotorPorts; i++) {
         bbPort_t *bbPort = &bbPorts[i];
 
+#ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
                 bbPort->inputActive = false;
                 bbSwitchToOutput(bbPort);
             }
-
-
-            bbDMA_Cmd(bbPort, ENABLE);
         }
-    }
 #endif
+
+        bbDMA_Cmd(bbPort, ENABLE);
+    }
 
     lastSendUs = micros();
     for (int i = 0; i < usedMotorPacers; i++) {
