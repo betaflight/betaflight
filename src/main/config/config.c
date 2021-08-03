@@ -510,7 +510,7 @@ static void validateAndFixConfig(void)
     for (unsigned i = 0; i < getMotorCount(); i++) {
         const ioTag_t tag = motorConfig()->dev.ioTags[i];
         if (tag) {
-            const timerHardware_t *timer = timerGetByTag(tag);
+            const timerHardware_t *timer = timerGetConfiguredByTag(tag);
             if (timer && timer->output & TIMER_OUTPUT_N_CHANNEL) {
                 nChannelTimerUsed = true;
 
