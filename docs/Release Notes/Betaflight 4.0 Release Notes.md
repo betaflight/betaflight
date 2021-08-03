@@ -67,3 +67,5 @@ _Kia kaha_ (stay strong)
 - EU LBT mode for the FrSky SPI RX ([#7339](https://github.com/betaflight/betaflight/pull/7339));
 - support for STM32F765xx based flight controllers ([#6669](https://github.com/betaflight/betaflight/pull/6669)).
 - configuration over HoTT telemetry ([#6224](https://github.com/betaflight/betaflight/pull/6224)).
+
+
