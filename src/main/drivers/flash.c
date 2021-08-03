@@ -190,7 +190,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 #endif
 
     // Newer chips
-    chipID = (readIdResponse[2] << 16) | (readIdResponse[3] << 8) | (readIdResponse[4]);
+    chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
 
 #ifdef USE_FLASH_W25N01G
     if (w25n01g_detect(&flashDevice, chipID)) {
