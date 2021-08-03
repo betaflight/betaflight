@@ -245,11 +245,11 @@ static bbPort_t *bbAllocMotorPort(int portIndex)
     return bbPort;
 }
 
-const resourceOwner_t *dshotBitbangTimerGetOwner(int8_t timerNumber, uint16_t timerChannel)
+const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
 {
     for (int index = 0; index < usedMotorPorts; index++) {
-        const timerHardware_t *timer = bbPorts[index].timhw;
-        if (timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel) {
+        const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
+        if (bitbangTimer && bitbangTimer == timer) {
             return &bbPorts[index].owner;
         }
     }
@@ -351,7 +351,8 @@ static void bbFindPacerTimer(void)
             }
             bool timerConflict = false;
             for (int channel = 0; channel < CC_CHANNELS_PER_TIMER; channel++) {
-                const resourceOwner_e timerOwner = timerGetOwner(timNumber, CC_CHANNEL_FROM_INDEX(channel))->owner;
+                const timerHardware_t *timer = timerGetAllocatedByNumberAndChannel(timNumber, CC_CHANNEL_FROM_INDEX(channel));
+                const resourceOwner_e timerOwner = timerGetOwner(timer)->owner;
                 if (timerOwner != OWNER_FREE && timerOwner != OWNER_DSHOT_BITBANG) {
                     timerConflict = true;
                     break;
@@ -709,7 +710,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const unsigned reorderedMotorIndex = motorConfig->motorOutputReordering[motorIndex];
-        const timerHardware_t *timerHardware = timerGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
+        const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
         uint8_t output = motorConfig->motorPwmInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;

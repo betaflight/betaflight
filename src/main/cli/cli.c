@@ -1588,7 +1588,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         for (unsigned i = 0; i < getMotorCount(); i++) {
             const ioTag_t tag = motorConfig()->dev.ioTags[i];
             if (tag) {
-                const timerHardware_t *timerHardware = timerGetByTag(tag);
+                const timerHardware_t *timerHardware = timerGetConfiguredByTag(tag);
                 if (timerHardware) {
                     IO_t io = IOGetByTag(tag);
                     IOInit(io, OWNER_MOTOR, 0);
@@ -5645,7 +5645,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
 #if defined(USE_TIMER_MGMT)
         timerIoConfig = timerIoConfigByTag(ioTag);
 #endif
-        timer = timerGetByTag(ioTag);
+        timer = timerGetConfiguredByTag(ioTag);
     }
 
     // opt or list
@@ -5863,7 +5863,8 @@ static void showTimers(void)
         cliPrintf("TIM%d:", timerNumber);
         bool timerUsed = false;
         for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
-            const resourceOwner_t *timerOwner = timerGetOwner(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            const timerHardware_t *timer = timerGetAllocatedByNumberAndChannel(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
+            const resourceOwner_t *timerOwner = timerGetOwner(timer);
             if (timerOwner->owner) {
                 if (!timerUsed) {
                     timerUsed = true;
@@ -5872,9 +5873,9 @@ static void showTimers(void)
                 }
 
                 if (timerOwner->resourceIndex > 0) {
-                    cliPrintLinef("    CH%d: %s %d", timerIndex + 1, ownerNames[timerOwner->owner], timerOwner->resourceIndex);
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner], timerOwner->resourceIndex);
                 } else {
-                    cliPrintLinef("    CH%d: %s", timerIndex + 1, ownerNames[timerOwner->owner]);
+                    cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", ownerNames[timerOwner->owner]);
                 }
             }
         }
