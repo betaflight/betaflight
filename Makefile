@@ -459,6 +459,9 @@ legacy: $(LEGACY_TARGETS)
 ## unsupported : Build unsupported targets
 unsupported: $(UNSUPPORTED_TARGETS)
 
+## spracing : Build unsupported targets
+spracingh7: $(SPRACINGH7_TARGETS)
+
 ## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
 pre-push:
 	$(MAKE) $(addsuffix _clean,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror

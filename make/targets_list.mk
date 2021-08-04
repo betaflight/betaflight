@@ -8,6 +8,8 @@ BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src
 NOBUILD_TARGETS   = $(sort $(filter-out target,$(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.nomk)))))
 VALID_TARGETS     = $(sort $(filter-out $(NOBUILD_TARGETS),$(BASE_TARGETS) $(ALT_TARGETS)))
 
+SPRACINGH7_TARGETS  = $(sort $(filter SPRACINGH7%, $(VALID_TARGETS)))
+
 # For alt targets, returns their base target name.
 # For base targets, returns the (same) target name.
 # param $1 = target name
