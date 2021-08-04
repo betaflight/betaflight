@@ -52,6 +52,9 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // On B_L_IO2
     DEF_TIM(TIM16, CH1, PB8,  TIM_USE_LED,                 0,  12, 1 ), // LED Strip
     DEF_TIM(TIM17, CH1, PB9,  TIM_USE_CAMERA_CONTROL,      0,  13, 1 ), // Camera Control
+
+    DEF_TIM(TIM15, CH1, PE5,  TIM_USE_VIDEO_PIXEL,         0,  15, 15 ), // Pixel DMA
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_VIDEO_SYNC,          0,  14, 14 ), // Sync
 };
 
 

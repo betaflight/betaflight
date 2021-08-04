@@ -1,8 +1,8 @@
-FEATURES       += VCP ONBOARDFLASH
+FEATURES       += VCP ONBOARDFLASH SPRACING_PIXEL_OSD
 
 ifneq ($(EXST),)
 EXST = yes
-LD_SCRIPT       = $(LINKER_DIR)/stm32_ram_h730_exst.ld
+LD_SCRIPT       = $(LINKER_DIR)/stm32_ram_h730_exst_spracingpixelosd.ld
 endif
 
 TARGET_SRC += \
