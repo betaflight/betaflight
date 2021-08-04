@@ -555,7 +555,7 @@ FAST_CODE void processRcCommand(void)
 
 #ifdef USE_FEEDFORWARD
             isDuplicate[axis] = (oldRcCommand[axis] == rcCommand[axis]);
-            rcCommandDelta[axis] = fabsf(rcCommand[axis] - oldRcCommand[axis]);
+            rcCommandDelta[axis] = (rcCommand[axis] - oldRcCommand[axis]);
             oldRcCommand[axis] = rcCommand[axis];
 #endif
 

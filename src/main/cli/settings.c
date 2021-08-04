@@ -1151,7 +1151,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_FEEDFORWARD
     { "feedforward_averaging",        VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FEEDFORWARD_AVERAGING }, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_averaging) },
-    { "feedforward_smooth_factor",    VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = {0, 75}, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_smooth_factor) },
+    { "feedforward_smoothing",        VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = {0, 75}, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_smooth_factor) },
     { "feedforward_jitter_reduction", VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = {0, 20}, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_jitter_factor) },
     { "feedforward_max_rate_limit",   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = {0, 150}, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_max_rate_limit) },
 #endif
