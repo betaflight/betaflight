@@ -101,7 +101,10 @@ extern "C" {
     {
         UNUSED(newRcFrame);
         UNUSED(feedforwardAveraging);
-        return simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+        const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
+        float setpointDelta = simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+        setpointDelta *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1;
+        return setpointDelta;
     }
     bool shouldApplyFeedforwardLimits(int axis)
     {

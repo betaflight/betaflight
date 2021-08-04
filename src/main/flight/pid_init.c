@@ -276,11 +276,6 @@ void pidUpdateFeedforwardLpf(uint16_t filterCutoff)
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
-    if (pidProfile->feedforwardTransition == 0) {
-        pidRuntime.feedforwardTransition = 0;
-    } else {
-        pidRuntime.feedforwardTransition = 100.0f / pidProfile->feedforwardTransition;
-    }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pidRuntime.pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
         pidRuntime.pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
@@ -428,6 +423,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.feedforwardSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) / 100.0f;
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
+    if (pidProfile->feedforwardTransition == 0) {
+        pidRuntime.feedforwardTransitionFactor = 0;
+    } else {
+        pidRuntime.feedforwardTransitionFactor = 100.0f / pidProfile->feedforwardTransition;
+    }
     feedforwardInit(pidProfile);
 #endif
 

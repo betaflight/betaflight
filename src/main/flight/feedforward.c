@@ -75,11 +75,11 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
         float feedforward;
 
-        // calculate an attenuator from average of two most recent rcCommand deltas vs jitter threshold
         if (axis == FD_ROLL) {
             DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(rcCommandDelta * 100.0f)); // rcCommand packet difference = steps of 50 mean 2000 RC steps
         }
         rcCommandDelta = fabsf(rcCommandDelta);
+        // calculate the jitter attenuator from average of two most recent abs rcCommand deltas vs jitter threshold
         float jitterAttenuator = 1.0f;
         if (feedforwardJitterFactor) {
             if (rcCommandDelta < feedforwardJitterFactor) {
@@ -161,6 +161,10 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         } else {
             setpointDelta[axis] = feedforward;
         }
+
+        // apply feedforward transition
+        setpointDelta[axis] *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1.0f;
+
     }
     return setpointDelta[axis];
 }
