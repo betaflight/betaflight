@@ -526,7 +526,14 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 # Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 14 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
+
+# On Cygwin, the latest version of clang 8.0.1 reports itself as version 4.2.1 when using the `-dumpversion` option, when using `--version` the result is 8.0.1
+ifeq ($(CYGWIN), 1)
+CC_VERSION_CHECK_MIN := 4
+else
 CC_VERSION_CHECK_MIN := 7
+endif
+
 CC_VERSION_CHECK_MAX := 14
 
 # Added flags for clang 11 - 13 are not backwards compatible
