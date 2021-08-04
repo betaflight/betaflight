@@ -17,7 +17,14 @@ ROOT = ../..
 OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
+# Allow certain tests to be temporarily excluded, e.g. `make TEST_EXCLUDES="alignsensor_unittest arming_prevention_unittest atomic_unittest"`
+TEST_EXCLUDES ?= 
+
 include $(ROOT)/make/system-id.mk
+
+ifneq ($(TEST_EXCLUDES),)
+$(warning Exclusions: $(TEST_EXCLUDES))
+endif
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -579,12 +586,13 @@ endif
 
 # Gather up all of the tests.
 TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
-TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
+TEST_BASENAMES = $(filter-out $(TEST_EXCLUDES), $(TEST_SRCS:$(TEST_DIR)/%.cc=%))
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
 TESTS_ALL = $(TESTS)
-
+$(info $(TEST_EXCLUDES))
+$(info $(TESTS))
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
 GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
@@ -697,7 +705,6 @@ target = $(1:$(basename $1).%=%)
 #
 # param $1 = plain test name for global tests, test.target for per-target tests
 define test-specific-stuff
-
 ifeq ($1,$(basename $1))
 # standard global test
 $1_OBJS = $(patsubst \
