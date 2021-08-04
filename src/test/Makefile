@@ -17,6 +17,9 @@ ROOT = ../..
 OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
+# Allow certain tests to be temporarily excluded, e.g. make TEST_EXCLUDED=atomic_unittest
+TEST_EXCLUDES = ?
+
 include $(ROOT)/make/system-id.mk
 include $(ROOT)/make/targets_list.mk
 
@@ -576,7 +579,7 @@ endif
 
 # Gather up all of the tests.
 TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
-TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
+TEST_BASENAMES = $(filter-out $(TEST_EXCLUDES), $(TEST_SRCS:$(TEST_DIR)/%.cc=%))
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
 TESTS_TARGET_SPECIFIC_EXPANDED = $(foreach test,$(TESTS_TARGET_SPECIFIC),$(foreach \
 		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)))
@@ -781,7 +784,7 @@ endif
 
 $(foreach test,$(TESTS_ALL),$(if $($(basename $(test))_SRC),,$(error \
 	Test 'unit/$(basename $(test)).cc' has no '$(basename $(test))_SRC' variable defined)))
-$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS_ALL)),,$(error \
+$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(filter-out $(TEST_EXCLUDES)%,$(.VARIABLES)))),$(if $(filter $(var:_SRC=)%,$(TESTS_ALL)),,$(error \
 	Variable '$(var)' has no 'unit/$(var:_SRC=).cc' test)))
 
 
