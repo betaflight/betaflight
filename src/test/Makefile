@@ -22,6 +22,12 @@ TEST_EXCLUDES ?=
 
 include $(ROOT)/make/system-id.mk
 
+ifeq ($(CYGWIN),1)
+CYGWIN_TEST_EXCLUDES = atomic_unittest
+TEST_EXCLUDES += $(CYGWIN_TEST_EXCLUDES)
+$(warning Cygwin detected: Automatically excluding $(CYGWIN_TEST_EXCLUDES) until the tests are made to run on Cygwin) 
+endif
+
 ifneq ($(TEST_EXCLUDES),)
 $(warning Exclusions: $(TEST_EXCLUDES))
 endif
@@ -591,8 +597,7 @@ TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
 TESTS_ALL = $(TESTS)
-$(info $(TEST_EXCLUDES))
-$(info $(TESTS))
+
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
 GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
