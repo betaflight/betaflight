@@ -18,10 +18,14 @@ OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
 # Allow certain tests to be temporarily excluded, e.g. make TEST_EXCLUDED=atomic_unittest
-TEST_EXCLUDES = ?
+TEST_EXCLUDES := ?
 
 include $(ROOT)/make/system-id.mk
 include $(ROOT)/make/targets_list.mk
+
+ifeq ($(CYGWIN), 1)
+TEST_EXCLUDES := $(TEST_EXCLUDES) atomic_unittest
+endif
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
