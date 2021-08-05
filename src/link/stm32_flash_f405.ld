@@ -37,4 +37,8 @@ REGION_ALIAS("STACKRAM", CCM)
 REGION_ALIAS("FASTRAM", CCM)
 REGION_ALIAS("VECTAB", RAM)
 
-INCLUDE "stm32_flash_split.ld"
+/* Put various bits and bobs of data into the main chunk of flash as we have enough of it */
+
+REGION_ALIAS("MOVABLE_FLASH", FLASH1)
+
+INCLUDE "stm32_flash_f4_split.ld"

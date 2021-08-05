@@ -38,7 +38,9 @@ ENTRY(Reset_Handler)
 MEMORY
 {
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 10K
-    FLASH_CUSTOM_DEFAULTS (r)  : ORIGIN = 0x08002800, LENGTH = 118K
+    FLASH_CUSTOM_DEFAULTS (r) : ORIGIN = 0x08002800, LENGTH = 10K
+    FLASH_UNUSED (r)     : ORIGIN = 0x08005000, LENGTH = 108K
+
     FLASH_CONFIG (r)  : ORIGIN = 0x08020000, LENGTH = 128K
     FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 1664K : 1792K
     FLASH_CUSTOM_DEFAULTS_EXTENDED (r): ORIGIN = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 0x081E0000 : 0x08200000, LENGTH = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? 128K : 0K
@@ -54,17 +56,6 @@ MEMORY
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
-
-/* INCLUDE "stm32_flash_f7_split.ld" */
-/*
-*****************************************************************************
-**
-**  File        : stm32_flash_f7_split.ld
-**
-**  Abstract    : Common linker script for STM32 devices.
-**
-*****************************************************************************
-*/
 
 /* Entry Point */
 ENTRY(Reset_Handler)
@@ -127,13 +118,13 @@ SECTIONS
   .ARM.extab   : 
   { 
     *(.ARM.extab* .gnu.linkonce.armextab.*) 
-  } >FLASH
+  } >FLASH1
   
   .ARM : 
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH
+  } >FLASH1
 
   .pg_registry :
   {
@@ -178,7 +169,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+  } >RAM AT >FLASH1
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -224,7 +215,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH
+  } >FASTRAM AT >FLASH1
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
@@ -253,7 +244,7 @@ SECTIONS
     *(.dmaram_data*)          /* .data* sections */
     . = ALIGN(32);
     _edmaram_data = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+  } >RAM AT >FLASH1
 
   . = ALIGN(32);
   .dmaram_bss (NOLOAD) :
