@@ -28,10 +28,10 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     
-	DEF_TIM(TIM3, CH3, PB0,   TIM_USE_MOTOR, 0, 0, 2),    //M1  
+    DEF_TIM(TIM3, CH3, PB0,   TIM_USE_MOTOR, 0, 0, 2),    //M1  
     DEF_TIM(TIM3, CH4, PB1,   TIM_USE_MOTOR, 0, 1, 2),    //M2
 
-	DEF_TIM(TIM2, CH2, PB3,   TIM_USE_MOTOR, 0, 2, 0),    //M3
+    DEF_TIM(TIM2, CH2, PB3,   TIM_USE_MOTOR, 0, 2, 0),    //M3
     DEF_TIM(TIM2, CH3, PB10,  TIM_USE_MOTOR, 0, 3, 0),    //M4
     
     DEF_TIM(TIM5, CH1, PA0,   TIM_USE_MOTOR, 0, 4, 0 ),   // M5  
@@ -40,8 +40,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH3, PC8,   TIM_USE_MOTOR, 0, 6, 1 ),   // M7 
     DEF_TIM(TIM8, CH4, PC9,   TIM_USE_MOTOR, 0, 7, 1 ),   // M8
     
-    DEF_TIM(TIM4, CH1, PD12, TIM_USE_LED,   0, 14, 0 ),    // LED_TRIP   DMA1-S0
+    DEF_TIM(TIM4, CH1, PD12, TIM_USE_LED,   0, 14, 0 ),    // LED_TRIP
     
-    DEF_TIM(TIM1, CH1, PE9,  TIM_USE_CAMERA_CONTROL,  0, 12, 0 )  // CAMERA_CONTROL         DMA1-S6
+    DEF_TIM(TIM1, CH1, PE9,  TIM_USE_CAMERA_CONTROL,  0, 12, 0 )  // CAMERA_CONTROL         
 };
 

@@ -150,7 +150,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define USE_ESCSERIAL
-//#define ESCSERIAL_TIMER_TX_PIN  PE13 // ( Hardware=0)
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
