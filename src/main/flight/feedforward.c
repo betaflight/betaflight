@@ -46,7 +46,7 @@ static float prevSetpoint[XYZ_AXIS_COUNT];
 static float prevSetpointSpeed[XYZ_AXIS_COUNT];
 static float prevAcceleration[XYZ_AXIS_COUNT];
 static float prevRcCommandDelta[XYZ_AXIS_COUNT];
-static bool prevDuplicatePacket[XYZ_AXIS_COUNT];
+static uint8_t goodPacketCount[XYZ_AXIS_COUNT];
 static uint8_t averagingCount;
 static float feedforwardMaxRateLimit[XYZ_AXIS_COUNT];
 static float feedforwardMaxRate[XYZ_AXIS_COUNT];
@@ -93,22 +93,25 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
 
         // interpolate setpoint if necessary
         if (rcCommandDelta == 0.0f) {
-            if (prevDuplicatePacket[axis] == false) {
-                // first duplicate after movement, interpolate setpoint and use previous acceleration
-                // don't interpolate if sticks close to centre or max, interpolate jitter signals less than larger ones
-                if (setpointPercent > 0.02f && setpointPercent < 0.95f) {
-                    // setpoint interpolation includes previous acceleration and attenuation
-                    setpoint = prevSetpoint[axis] + (prevSetpointSpeed[axis] + prevAcceleration[axis] * jitterAttenuator ) * rxInterval * jitterAttenuator;
-                    // recalculate speed and acceleration
-                    setpointSpeed = (setpoint - prevSetpoint[axis]) * rxRate;
-                }
+            // duplicate packet data on this axis
+            if (goodPacketCount[axis] >= 2 && setpointPercent < 0.95f) {
+                // interpolate if two or more preceding valid packets, or if sticks near max
+                setpoint = prevSetpoint[axis] + (prevSetpointSpeed[axis] + prevAcceleration[axis] * jitterAttenuator) * rxInterval * jitterAttenuator;
+                // setpoint interpolation includes previous acceleration and attenuation
+                setpointSpeed = (setpoint - prevSetpoint[axis]) * rxRate;
+                // recalculate speed and acceleration based on new setpoint
             } else {
                 // force to zero
                 setpointSpeed = 0.0f;
+                jitterAttenuator = 0.0f;
             }
-            prevDuplicatePacket[axis] = true;
+            goodPacketCount[axis] = 0;
         } else {
-            prevDuplicatePacket[axis] = false;
+            // we have movement
+            // count the number of valid steps to decide if we permit interpolation, for Tx ADC filter situations especially
+            if (goodPacketCount[axis] < 2) {
+                goodPacketCount[axis] += 1;
+            }
         }
 
         prevSetpoint[axis] = setpoint;
@@ -122,7 +125,7 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
 
         // second order smoothing for for acceleration by calculating it after smoothing setpointSpeed
         setpointAcceleration = setpointSpeed - prevSetpointSpeed[axis];
-        setpointAcceleration *= rxRate * 0.01f; // adjust boost for RC packet interval, including dropped packets
+        setpointAcceleration *= jitterAttenuator * rxRate * 0.01f; // adjust boost for RC packet interval, including dropped packets
         setpointAcceleration = prevAcceleration[axis] + feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
 
         prevSetpointSpeed[axis] = setpointSpeed;
@@ -136,9 +139,9 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         const float feedforwardBoostFactor = pidGetFeedforwardBoostFactor();
         float boostAmount = 0.0f;
         if (feedforwardBoostFactor) {
-            // allows boost when returning from max, but not when hitting max on the way up
             if (setpointPercent < 0.95f || absSetpointSpeed > 3.0f * absPrevSetpointSpeed) {
-                boostAmount = feedforwardBoostFactor * setpointAcceleration * jitterAttenuator;
+                // allow boost when returning from max, but not when hitting max on the way up
+                boostAmount = feedforwardBoostFactor * setpointAcceleration;
             }
         }
 
