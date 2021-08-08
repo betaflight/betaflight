@@ -593,7 +593,7 @@ static void bbUpdateComplete(void)
 
 #ifdef USE_DSHOT_CACHE_MGMT
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        // Only clean the buffer once. If all motors are on a common port they'll share a buffer.
+        // Only clean each buffer once. If all motors are on a common port they'll share a buffer.
         bool clean = false;
         for (int i = 0; i < motorIndex; i++) {
             if (bbMotors[motorIndex].bbPort->portOutputBuffer == bbMotors[i].bbPort->portOutputBuffer) {
