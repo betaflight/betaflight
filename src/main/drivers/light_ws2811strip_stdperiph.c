@@ -109,7 +109,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 #endif
 #endif
 
-    if (dmaRef == NULL) {
+    if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_LED_STRIP, 0)) {
         return false;
     }
 
@@ -171,7 +171,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     TIM_Cmd(timer, ENABLE);
 
-    dmaInit(dmaGetIdentifier(dmaRef), OWNER_LED_STRIP, 0);
+    dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
     xDMA_DeInit(dmaRef);

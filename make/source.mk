@@ -27,6 +27,7 @@ COMMON_SRC = \
             drivers/buttons.c \
             drivers/display.c \
             drivers/display_canvas.c \
+            drivers/dma_common.c \
             drivers/dma_reqmap.c \
             drivers/exti.c \
             drivers/io.c \
