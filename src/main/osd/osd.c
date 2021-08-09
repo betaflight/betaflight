@@ -155,7 +155,7 @@ static bool canvasSupported = false;
 escSensorData_t *osdEscDataCombined;
 #endif
 
-#define DEBUG_FRAMEBUFFER_ERASE_WAIT
+//#define DEBUG_FRAMEBUFFER_ERASE_WAIT
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
 
