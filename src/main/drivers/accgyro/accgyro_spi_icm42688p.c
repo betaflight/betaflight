@@ -36,7 +36,7 @@
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
-#include "drivers/accgyro/accgyro_spi_icm42688P.h"
+#include "drivers/accgyro/accgyro_spi_icm42688p.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
