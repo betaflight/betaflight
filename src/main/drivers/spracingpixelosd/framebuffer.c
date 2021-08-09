@@ -177,8 +177,6 @@ void frameBuffer_eraseInit(void)
 
 void frameBuffer_eraseBegin(uint8_t *frameBuffer)
 {
-    TIME_SECTION_BEGIN(0);
-
     uint32_t hal_status;
 
     uint32_t bytesRemaining = FRAME_BUFFER_SIZE;
@@ -221,7 +219,6 @@ void frameBuffer_eraseBegin(uint8_t *frameBuffer)
         bytesRemaining -= bytesToFill;
         streamIndex++;
     }
-    TIME_SECTION_END(0);
 }
 
 bool frameBuffer_eraseInProgress(void)
