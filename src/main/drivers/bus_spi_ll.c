@@ -77,6 +77,8 @@
 #define IS_DTCM(p) (((uint32_t)p & 0xfffe0000) == 0x20000000)
 #elif defined(STM32F7)
 #define IS_DTCM(p) (((uint32_t)p & 0xffff0000) == 0x20000000)
+#elif defined(STM32G4)
+#define IS_CCM(p) ((((uint32_t)p & 0xffff8000) == 0x10000000) || (((uint32_t)p & 0xffff8000) == 0x20018000))
 #endif
 static LL_SPI_InitTypeDef defaultInit =
 {
@@ -167,10 +169,10 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     LL_DMA_InitTypeDef *initRx = bus->initRx;
 
     LL_DMA_StructInit(initTx);
-#if defined(STM32H7)
-    initTx->PeriphRequest = bus->dmaTxChannel;
+#if defined(STM32G4) || defined(STM32H7)
+    initTx->PeriphRequest = bus->dmaTx->channel;
 #else
-    initTx->Channel = bus->dmaTxChannel;
+    initTx->Channel = bus->dmaTx->channel;
 #endif
     initTx->Mode = LL_DMA_MODE_NORMAL;
     initTx->Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
@@ -185,10 +187,10 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     initTx->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
 
     LL_DMA_StructInit(initRx);
-#if defined(STM32H7)
-    initRx->PeriphRequest = bus->dmaRxChannel;
+#if defined(STM32G4) || defined(STM32H7)
+    initRx->PeriphRequest = bus->dmaRx->channel;
 #else
-    initRx->Channel = bus->dmaRxChannel;
+    initRx->Channel = bus->dmaRx->channel;
 #endif
     initRx->Mode = LL_DMA_MODE_NORMAL;
     initRx->Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
@@ -205,8 +207,13 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
     // Disable the stream
+#if defined(STM32G4)
+    LL_DMA_DisableChannel(descriptor->dma, descriptor->stream);
+    while (LL_DMA_IsEnabledChannel(descriptor->dma, descriptor->stream));
+#else
     LL_DMA_DisableStream(descriptor->dma, descriptor->stream);
     while (LL_DMA_IsEnabledStream(descriptor->dma, descriptor->stream));
+#endif
 
     // Clear any pending interrupt flags
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
@@ -352,12 +359,6 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
         initRx->MemoryOrM2MDstAddress = (uint32_t)&dummyRxByte;
         initRx->MemoryOrM2MDstIncMode = LL_DMA_MEMORY_NOINCREMENT;
     }
-    // If possible use 16 bit memory writes to prevent atomic access issues on gyro data
-    if ((initRx->MemoryOrM2MDstAddress & 0x1) || (len & 0x1)) {
-        initRx->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
-    } else {
-        initRx->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_HALFWORD;
-    }
     initRx->NbData = len;
 }
 
@@ -371,15 +372,37 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
 
-    DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
-    DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
-
     // Use the correct callback argument
     dmaRx->userParam = (uint32_t)dev;
 
     // Clear transfer flags
     DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
     DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+
+#ifdef STM32G4
+    // Disable channels to enable update
+    LL_DMA_DisableChannel(dmaTx->dma, dmaTx->stream);
+    LL_DMA_DisableChannel(dmaRx->dma, dmaRx->stream);
+
+    /* Use the Rx interrupt as this occurs once the SPI operation is complete whereas the Tx interrupt
+     * occurs earlier when the Tx FIFO is empty, but the SPI operation is still in progress
+     */
+    LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
+
+    // Update channels
+    LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
+    LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->initRx);
+
+    LL_SPI_EnableDMAReq_RX(dev->bus->busType_u.spi.instance);
+
+    // Enable channels
+    LL_DMA_EnableChannel(dmaTx->dma, dmaTx->stream);
+    LL_DMA_EnableChannel(dmaRx->dma, dmaRx->stream);
+
+    LL_SPI_EnableDMAReq_TX(dev->bus->busType_u.spi.instance);
+#else
+    DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
+    DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
 
     // Disable streams to enable update
     LL_DMA_WriteReg(streamRegsTx, CR, 0U);
@@ -416,6 +439,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
     SET_BIT(dev->bus->busType_u.spi.instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
 #endif
+#endif
 }
 
 void spiInternalStopDMA (const extDevice_t *dev)
@@ -427,9 +451,15 @@ void spiInternalStopDMA (const extDevice_t *dev)
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
 
     // Disable the DMA engine and SPI interface
+#ifdef STM32G4
+    LL_DMA_DisableChannel(dmaTx->dma, dmaTx->stream);
+    LL_DMA_DisableChannel(dmaRx->dma, dmaRx->stream);
+#else
     LL_DMA_DisableStream(dmaRx->dma, dmaRx->stream);
     LL_DMA_DisableStream(dmaTx->dma, dmaTx->stream);
+#endif
 
+    // Clear transfer flags
     DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 
     LL_SPI_DisableDMAReq_TX(instance);
@@ -518,17 +548,17 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
             dmaSafe = false;
             break;
         }
-#elif defined(STM32F4)
+#elif defined(STM32G4)
         // Check if RX data can be DMAed
         if ((checkSegment->rxData) &&
-            // DTCM can't be accessed by DMA1/2 on the F4
-            (IS_DTCM(checkSegment->rxData)) {
+            // CCM can't be accessed by DMA1/2 on the G4
+            IS_CCM(checkSegment->rxData)) {
             dmaSafe = false;
             break;
         }
         if ((checkSegment->txData) &&
-            // DTCM can't be accessed by DMA1/2 on the F4
-            (IS_DTCM(checkSegment->txData)) {
+            // CCM can't be accessed by DMA1/2 on the G4
+            IS_CCM(checkSegment->txData)) {
             dmaSafe = false;
             break;
         }

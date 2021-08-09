@@ -543,7 +543,9 @@ void spiInitBusDMA()
                     break;
                 }
 #endif
-                bus->dmaTxChannel = dmaTxChannelSpec->channel;
+                bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
+                bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
+                bus->dmaTx->channel = dmaTxChannelSpec->channel;
                 dmaInit(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1);
                 break;
             }
@@ -564,16 +566,15 @@ void spiInitBusDMA()
                     break;
                 }
 #endif
-                bus->dmaRxChannel = dmaRxChannelSpec->channel;
+                bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
+                bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
+                bus->dmaRx->channel = dmaRxChannelSpec->channel;
                 dmaInit(dmaRxIdentifier, OWNER_SPI_MISO, device + 1);
                 break;
             }
         }
 
         if (dmaTxIdentifier && dmaRxIdentifier) {
-            bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-            bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-
             // Ensure streams are disabled
             spiInternalResetStream(bus->dmaRx);
             spiInternalResetStream(bus->dmaTx);
@@ -586,6 +587,10 @@ void spiInitBusDMA()
             dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
             bus->useDMA = true;
+        } else {
+            // Disassociate channels from bus
+            bus->dmaRx = (dmaChannelDescriptor_t *)NULL;
+            bus->dmaTx = (dmaChannelDescriptor_t *)NULL;
         }
     }
 }
