@@ -103,6 +103,8 @@
 #include "hardware_revision.h"
 #endif
 
+//#define DEBUG_FRAMEBUFFER_ERASE_WAIT
+
 typedef enum {
     OSD_LOGO_ARMING_OFF,
     OSD_LOGO_ARMING_ON,
@@ -159,8 +161,6 @@ escSensorData_t *osdEscDataCombined;
 #endif
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
-
-#define DEBUG_FRAMEBUFFER_ERASE_WAIT
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 12);
 
