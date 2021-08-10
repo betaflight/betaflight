@@ -1427,6 +1427,7 @@ static bool blackboxWriteSysinfo(void)
 #endif
 #ifdef USE_DSHOT_TELEMETRY
         BLACKBOX_PRINT_HEADER_LINE("dshot_bidir", "%d",                     motorConfig()->dev.useDshotTelemetry);
+        BLACKBOX_PRINT_HEADER_LINE("motor_poles", "%d",                     motorConfig()->motorPoleCount);
 #endif
 #ifdef USE_RPM_FILTER
         BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_harmonics", "%d",        rpmFilterConfig()->gyro_rpm_notch_harmonics);
