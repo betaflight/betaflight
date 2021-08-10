@@ -110,7 +110,7 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
         IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
     }
 
-    if (vtxIOConfig->csTag && spiSetBusInstance(dev, vtxIOConfig->spiDevice, OWNER_VTX_CS)) {
+    if (vtxIOConfig->csTag && spiSetBusInstance(dev, vtxIOConfig->spiDevice)) {
         devInstance.busType_u.spi.csnPin = csnPin;
         IOInit(devInstance.busType_u.spi.csnPin, OWNER_VTX_CS, 0);
 

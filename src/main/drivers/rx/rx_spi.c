@@ -87,7 +87,7 @@ void rxSpiStartupSpeed()
 
 bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 {
-    if (!spiSetBusInstance(dev, rxSpiConfig->spibus, OWNER_RX_SPI_CS)) {
+    if (!spiSetBusInstance(dev, rxSpiConfig->spibus)) {
         return false;
     }
 

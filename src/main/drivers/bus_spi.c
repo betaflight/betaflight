@@ -471,8 +471,8 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-// Mark this bus as being SPI and record the first owner to use it
-bool spiSetBusInstance(extDevice_t *dev, uint32_t device, resourceOwner_e owner)
+// Mark this bus as being SPI
+bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 {
     if (device > SPIDEV_COUNT) {
         return false;
@@ -499,7 +499,6 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device, resourceOwner_e owner)
     bus->useDMA = false;
     bus->useAtomicWait = false;
     bus->deviceCount = 1;
-    bus->owner = owner;
     bus->initTx = &dev->initTx;
     bus->initRx = &dev->initRx;
 
@@ -545,7 +544,7 @@ void spiInitBusDMA()
                 }
 #endif
                 bus->dmaTxChannel = dmaTxChannelSpec->channel;
-                dmaInit(dmaTxIdentifier, bus->owner, 0);
+                dmaInit(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1);
                 break;
             }
         }
@@ -566,7 +565,7 @@ void spiInitBusDMA()
                 }
 #endif
                 bus->dmaRxChannel = dmaRxChannelSpec->channel;
-                dmaInit(dmaRxIdentifier, bus->owner, 0);
+                dmaInit(dmaRxIdentifier, OWNER_SPI_MISO, device + 1);
                 break;
             }
         }

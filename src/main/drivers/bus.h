@@ -62,7 +62,6 @@ typedef struct busDevice_s {
     bool useDMA;
     bool useAtomicWait;
     uint8_t deviceCount;
-    resourceOwner_e owner; // owner of first device to use this bus
     dmaChannelDescriptor_t *dmaTx;
     dmaChannelDescriptor_t *dmaRx;
     uint32_t dmaTxChannel;
