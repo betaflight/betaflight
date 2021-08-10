@@ -22,13 +22,13 @@
 
 #include "drivers/bus.h"
 
-bool icm42605AccDetect(accDev_t *acc);
-bool icm42605GyroDetect(gyroDev_t *gyro);
+bool icm426xxAccDetect(accDev_t *acc);
+bool icm426xxGyroDetect(gyroDev_t *gyro);
 
-void icm42605AccInit(accDev_t *acc);
-void icm42605GyroInit(gyroDev_t *gyro);
+void icm426xxAccInit(accDev_t *acc);
+void icm426xxGyroInit(gyroDev_t *gyro);
 
-uint8_t icm42605SpiDetect(const extDevice_t *dev);
+uint8_t icm426xxSpiDetect(const extDevice_t *dev);
 
-bool icm42605SpiAccDetect(accDev_t *acc);
-bool icm42605SpiGyroDetect(gyroDev_t *gyro);
+bool icm426xxSpiAccDetect(accDev_t *acc);
+bool icm426xxSpiGyroDetect(gyroDev_t *gyro);

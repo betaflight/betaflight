@@ -45,8 +45,7 @@
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
-#include "drivers/accgyro/accgyro_spi_icm42605.h"
-#include "drivers/accgyro/accgyro_spi_icm42688p.h"
+#include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -467,19 +466,21 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
         FALLTHROUGH;
 #endif
 
-#ifdef USE_GYRO_SPI_ICM42605
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
     case GYRO_ICM42605:
-        if (icm42605SpiGyroDetect(dev)) {
-            gyroHardware = GYRO_ICM42605;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_GYRO_SPI_ICM42688P
     case GYRO_ICM42688P:
-        if (icm42688PSpiGyroDetect(dev)) {
-            gyroHardware = GYRO_ICM42688P;
+        if (icm426xxSpiGyroDetect(dev)) {
+            switch (dev->mpuDetectionResult.sensor) {
+            case ICM_42605_SPI:
+                gyroHardware = GYRO_ICM42605;
+                break;
+            case ICM_42688P_SPI:
+                gyroHardware = GYRO_ICM42688P;
+                break;
+            default:
+                gyroHardware = GYRO_NONE;
+                break;
+            }
             break;
         }
         FALLTHROUGH;

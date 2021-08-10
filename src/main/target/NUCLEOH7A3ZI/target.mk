@@ -25,7 +25,7 @@ TARGET_SRC = \
             drivers/accgyro/accgyro_spi_mpu6000.c \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
-            drivers/accgyro/accgyro_spi_icm42605.c \
+            drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_mpu6050.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \

@@ -46,8 +46,7 @@
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
-#include "drivers/accgyro/accgyro_spi_icm42605.h"
-#include "drivers/accgyro/accgyro_spi_icm42688p.h"
+#include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -269,19 +268,21 @@ retry:
         FALLTHROUGH;
 #endif
 
-#ifdef USE_ACC_SPI_ICM42605
+#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P)
     case ACC_ICM42605:
-        if (icm42605SpiAccDetect(dev)) {
-            accHardware = ACC_ICM42605;
-            break;
-        }
-        FALLTHROUGH;
-#endif
-
-#ifdef USE_ACC_SPI_ICM42688P
     case ACC_ICM42688P:
-        if (icm42688PSpiAccDetect(dev)) {
-            accHardware = ACC_ICM42688P;
+        if (icm426xxSpiAccDetect(dev)) {
+            switch (dev->mpuDetectionResult.sensor) {
+            case ICM_42605_SPI:
+                accHardware = ACC_ICM42605;
+                break;
+            case ICM_42688P_SPI:
+                accHardware = ACC_ICM42688P;
+                break;
+            default:
+                accHardware = ACC_NONE;
+                break;
+            }
             break;
         }
         FALLTHROUGH;
