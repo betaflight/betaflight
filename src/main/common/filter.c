@@ -45,8 +45,11 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 float pt1FilterGain(float f_cut, float dT)
 {
-    float RC = 1 / (2 * M_PIf * f_cut);
-    return dT / (RC + dT);
+    const float omega = 2.0f * M_PIf * f_cut * dT * 1e-6f;
+    const float cs = 1 - cos_approx(omega);
+    
+    // exact solution for PT1 gain (-3dB cutoff)
+    return sqrtf(cs * (cs + 2)) - cs;
 }
 
 void pt1FilterInit(pt1Filter_t *filter, float k)
@@ -73,10 +76,11 @@ float pt2FilterGain(float f_cut, float dT)
 {
     const float order = 2.0f;
     const float orderCutoffCorrection = 1 / sqrtf(powf(2, 1.0f / order) - 1);
-    float RC = 1 / (2 * orderCutoffCorrection * M_PIf * f_cut);
-    // float RC = 1 / (2 * 1.553773974f * M_PIf * f_cut);
+    // f_cut2 = 1.553773974f * f_cut1;
     // where 1.553773974 = 1 / sqrt( (2^(1 / order) - 1) ) and order is 2
-    return dT / (RC + dT);
+
+    // shift f_cut of the PT2 to satisfy -3dB cutoff condition
+    return pt1FilterGain(f_cut * orderCutoffCorrection, dT);
 }
 
 void pt2FilterInit(pt2Filter_t *filter, float k)
@@ -105,10 +109,11 @@ float pt3FilterGain(float f_cut, float dT)
 {
     const float order = 3.0f;
     const float orderCutoffCorrection = 1 / sqrtf(powf(2, 1.0f / order) - 1);
-    float RC = 1 / (2 * orderCutoffCorrection * M_PIf * f_cut);
-    // float RC = 1 / (2 * 1.961459177f * M_PIf * f_cut);
+    // f_cut3 = 1.961459177f * f_cut1;
     // where 1.961459177 = 1 / sqrt( (2^(1 / order) - 1) ) and order is 3
-    return dT / (RC + dT);
+
+    // shift f_cut of the PT3 to satisfy -3dB cutoff condition
+    return pt1FilterGain(f_cut * orderCutoffCorrection, dT);
 }
 
 void pt3FilterInit(pt3Filter_t *filter, float k)
@@ -172,6 +177,12 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t looptim
 
 FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t looptimeUs, float Q, biquadFilterType_e filterType, float weight)
 {
+    // shift filterFreq of the biquad to satisfy -3dB cutoff condition for all Q values
+    if (filterType == FILTER_LPF) {
+        const float q = 2 * Q * Q;
+        filterFreq *= sqrtf((1 - q + sqrtf(2 * q * (q - 1) + 1)) / q);
+    }
+
     // setup variables
     const float omega = 2.0f * M_PIf * filterFreq * looptimeUs * 0.000001f;
     const float sn = sin_approx(omega);
