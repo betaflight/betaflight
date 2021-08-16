@@ -88,7 +88,7 @@ typedef struct {
 #define E_SENSOR_NOT_DETECTED   (char) 0
 #define BMP085_PROM_START__ADDR 0xaa
 #define BMP085_PROM_DATA__LEN   22
-#define BMP085_T_MEASURE        0x2E                // temperature measurment
+#define BMP085_T_MEASURE        0x2E                // temperature measurement
 #define BMP085_P_MEASURE        0x34                // pressure measurement
 #define BMP085_CTRL_MEAS_REG    0xF4
 #define BMP085_ADC_OUT_MSB_REG  0xF6
