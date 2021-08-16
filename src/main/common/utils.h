@@ -48,7 +48,7 @@
 #define PP_IIF_0(t, f) f
 #define PP_IIF_1(t, f) t
 
-// Expand all argumens and call macro with them. When expansion of some argument contains ',', it will be passed as multiple arguments
+// Expand all arguments and call macro with them. When expansion of some argument contains ',', it will be passed as multiple arguments
 // #define TAKE3(_1,_2,_3) CONCAT3(_1,_2,_3)
 // #define MULTI2 A,B
 // PP_CALL(TAKE3, MULTI2, C) expands to ABC

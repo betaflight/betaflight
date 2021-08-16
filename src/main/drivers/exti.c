@@ -36,7 +36,7 @@ typedef struct {
 
 extiChannelRec_t extiChannelRecs[16];
 
-// IRQ gouping, same on F103, F303, F40x, F7xx, H7xx and G4xx.
+// IRQ grouping, same on F103, F303, F40x, F7xx, H7xx and G4xx.
 #define EXTI_IRQ_GROUPS 7
 //                                      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };

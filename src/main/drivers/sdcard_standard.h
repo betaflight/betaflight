@@ -203,7 +203,7 @@ typedef struct sdcardCSD_t {
 
 #define SDCARD_BLOCK_SIZE 512
 
-// Idle bit is set to 1 only when idle during intialization phase:
+// Idle bit is set to 1 only when idle during initialization phase:
 #define SDCARD_R1_STATUS_BIT_IDLE                 1
 #define SDCARD_R1_STATUS_BIT_ERASE_RESET          2
 #define SDCARD_R1_STATUS_BIT_ILLEGAL_COMMAND      4

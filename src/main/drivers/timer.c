@@ -525,7 +525,7 @@ static unsigned getFilter(unsigned ticks)
     return 0x0f;
 }
 
-// Configure input captupre
+// Configure input capture
 void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -629,7 +629,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 #if 1
     while (tim_status) {
         // flags will be cleared by reading CCR in dual capture, make sure we call handler correctly
-        // currrent order is highest bit first. Code should not rely on specific order (it will introduce race conditions anyway)
+        // current order is highest bit first. Code should not rely on specific order (it will introduce race conditions anyway)
         unsigned bit = __builtin_clz(tim_status);
         unsigned mask = ~(0x80000000 >> bit);
         tim->SR = mask;
@@ -816,7 +816,7 @@ void timerStart(void)
                 // TODO - move IRQ to timer info
                 irq = TIMER_HARDWARE[hwc].irq;
             }
-        // TODO - aggregate required timer paramaters
+        // TODO - aggregate required timer parameters
         configTimeBase(usedTimers[timer], 0, 1);
         TIM_Cmd(usedTimers[timer],  ENABLE);
         if (priority >= 0) {  // maybe none of the channels was configured

@@ -39,7 +39,7 @@
 // it is required to use DIV4 for SYSCLK = 254MHz (derives 62.5MHz)
 // it is required to use DIV2 for SYSCLK = 170MHz (derives 85MHz)
 //
-// - MCO frequenchy can be more flexible if PLLR is made configurable.
+// - MCO frequency can be more flexible if PLLR is made configurable.
 
 const uint32_t mcoSources[MCO_SOURCE_COUNT] = {
     RCC_MCO1SOURCE_NOCLOCK,

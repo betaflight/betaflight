@@ -195,7 +195,7 @@ uint32_t timerClock(TIM_TypeDef *tim)
 
     int index = (timpre << 3) | ppre;
 
-    static uint8_t periphToKernel[16] = { // The mutiplier table
+    static uint8_t periphToKernel[16] = { // The multiplier table
         1, 1, 1, 1, 2, 2, 2, 2, // TIMPRE = 0
         1, 1, 1, 1, 2, 4, 4, 4  // TIMPRE = 1
     };

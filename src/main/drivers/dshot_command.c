@@ -279,7 +279,7 @@ FAST_CODE_NOINLINE bool dshotCommandOutputIsEnabled(uint8_t motorCount)
     case DSHOT_COMMAND_STATE_STARTDELAY:
         if (command->nextCommandCycleDelay) {
             --command->nextCommandCycleDelay;
-            return false;  // Delay motor output until the start of the command seequence
+            return false;  // Delay motor output until the start of the command sequence
         }
         command->state = DSHOT_COMMAND_STATE_ACTIVE;
         command->nextCommandCycleDelay = 0;  // first iteration of the repeat happens now

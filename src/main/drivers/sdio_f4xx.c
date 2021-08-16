@@ -282,7 +282,7 @@ static void SD_DataTransferInit(uint32_t Size, uint32_t DataBlockSize, bool IsIt
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**		SD_TransmitCommand
   *
-  * @brief  Send the commande to SDIO
+  * @brief  Send the command to SDIO
   * @param  uint32_t Command
   * @param  uint32_t Argument              Must provide the response size
   * @param  uint8_t ResponseType

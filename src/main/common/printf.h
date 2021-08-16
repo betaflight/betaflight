@@ -84,7 +84,7 @@ This is not often needed but it was implemented like that because it made
 implementing the sprintf function so neat (look at the source code).
 
 The code is re-entrant, except for the 'init_printf' function, so it
-is safe to call it from interupts too, although this may result in mixed output.
+is safe to call it from interrupts too, although this may result in mixed output.
 If you rely on re-entrancy, take care that your 'putc' function is re-entrant!
 
 The printf and sprintf functions are actually macros that translate to
@@ -94,7 +94,7 @@ You just need to undef the names before you include the 'stdio.h'.
 Note that these are not function like macros, so if you have variables
 or struct members with these names, things will explode in your face.
 Without variadic macros this is the best we can do to wrap these
-fucnction. If it is a problem just give up the macros and use the
+functions. If it is a problem just give up the macros and use the
 functions directly or rename them.
 
 For further details see source code.
