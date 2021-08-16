@@ -33,4 +33,8 @@ MEMORY
 REGION_ALIAS("STACKRAM", RAM)
 REGION_ALIAS("FASTRAM", RAM)
 
-INCLUDE "stm32_flash_split.ld"
+/* Put various bits and bobs of data into the free space after the vector table in sector 0 to save flash space. */
+
+REGION_ALIAS("MOVABLE_FLASH", FLASH)
+
+INCLUDE "stm32_flash_f4_split.ld"

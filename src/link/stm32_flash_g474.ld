@@ -35,4 +35,8 @@ REGION_ALIAS("STACKRAM", CCM)
 REGION_ALIAS("FASTRAM", CCM)
 REGION_ALIAS("VECTAB", CCM)
 
-INCLUDE "stm32_flash_split_g4.ld"
+/* Put various bits and bobs of data into the free space after the vector table in sector 0 to save flash space. */
+
+REGION_ALIAS("MOVABLE_FLASH", FLASH)
+
+INCLUDE "stm32_flash_g4_split.ld"
