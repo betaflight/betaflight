@@ -60,7 +60,7 @@ void dbgPinHi(int index)
 
     dbgPin_t *dbgPin = &dbgPins[index];
     if (dbgPin->gpio) {
-#if defined(STM32F7)
+#if defined(STM32F7) || defined(STM32H7)
         dbgPin->gpio->BSRR = dbgPin->setBSRR;
 #else
         dbgPin->gpio->BSRRL = dbgPin->setBSRR;
@@ -77,7 +77,7 @@ void dbgPinLo(int index)
     dbgPin_t *dbgPin = &dbgPins[index];
 
     if (dbgPin->gpio) {
-#if defined(STM32F7)
+#if defined(STM32F7) || defined(STM32H7)
         dbgPin->gpio->BSRR = dbgPin->resetBSRR;
 #else
         dbgPin->gpio->BSRRL = dbgPin->resetBSRR;
