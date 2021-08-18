@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <drivers/io_types.h>
+#include <drivers/io.h>
 
 typedef struct dbgPin_s {
     ioTag_t tag;
