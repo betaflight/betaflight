@@ -53,6 +53,7 @@ void dbgPinInit(void)
         if (!io) {
             continue;
         }
+        IOInit(io, OWNER_SYSTEM, 0);
         IOConfigGPIO(io, IOCFG_OUT_PP);
         dbgPinState->gpio = IO_GPIO(io);
         int pinSrc = IO_GPIO_PinSource(io);
