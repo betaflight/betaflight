@@ -80,7 +80,7 @@ void dbgPinHi(int index)
 
 void dbgPinLo(int index)
 {
-    if ((unsigned)index > ARRAYLEN(dbgPins)) {
+    if ((unsigned)index >= ARRAYLEN(dbgPins)) {
         return;
     }
 
