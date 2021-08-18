@@ -27,3 +27,13 @@ typedef struct dbgPin_s {
 void dbgPinInit(void);
 void dbgPinHi(int index);
 void dbgPinLo(int index);
+
+#ifdef USE_DEBUG_PIN
+#define DEBUG_LO(index) \
+   dbgPinLo(index);
+#define DEBUG_HI(index) \
+   dbgPinHi(index);
+#else
+#define DEBUG_LO(index)
+#define DEBUG_HI(index)
+#endif
