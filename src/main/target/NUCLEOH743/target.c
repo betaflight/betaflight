@@ -27,6 +27,8 @@
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
 
+#include "build/debug_pin.h"
+
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // DEF_TIM(TIM2,  CH2, PB3,  TIM_USE_LED,                 0,  7,  0 ), // SPI1_SCK
     DEF_TIM(TIM12, CH2, PB15, TIM_USE_LED,                 0,  0,  0 ),
@@ -51,4 +53,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR,               0,  8,  0 ), // I2C1
     // DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR,               0,  0,  0 ), // I2C1
     // DEF_TIM(TIM9,  CH2, PE6,  TIM_USE_MOTOR,               0,  0,  0 ),
+};
+
+dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
+    { .tag = IO_TAG(PG1) },
 };
