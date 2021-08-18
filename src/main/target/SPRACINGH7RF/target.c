@@ -27,6 +27,8 @@
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
 
+#include "build/debug_pin.h"
+
 // TIM1, TIM2, TIM15 reserved for OSD.
 // TIM4 can be used for GYRO INT capture/FSYNC generation
 // TIM8 used for SX1280 timing
@@ -62,3 +64,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 };
 
 
+dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
+    { .tag = IO_TAG(PD9) },
+};

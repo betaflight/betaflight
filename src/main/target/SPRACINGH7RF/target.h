@@ -24,6 +24,8 @@
 #define USBD_PRODUCT_STRING "SPRacingH7RF"
 
 #define USE_TARGET_CONFIG
+#define USE_DEBUG_PIN
+#define DEBUG_PIN_COUNT 1
 
 #define USE_SPRACING_PERSISTENT_RTC_WORKAROUND
 
@@ -308,6 +310,7 @@
 
 #define RX_EXPRESSLRS_SPI_RESET_PIN                     SX1280_NRESET_PIN
 #define RX_EXPRESSLRS_SPI_BUSY_PIN                      SX1280_BUSY_PIN
+#define RX_EXPRESSLRS_TIMER_INSTANCE                    TIM6
 
 // These are connected, DIO1 is on a timer with a spare Capture Compare channel.  DIO2 is on a free EXTI capable pin.
 // These defines are not currently used anywhere in the code.
@@ -335,5 +338,7 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 15
 
-// TIM1, TIM2, TIM15 reserved for OSD
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(15) | TIM_N(17))
+// TIM1, TIM2, TIM15 reserved for OSD.
+// TIM6 (basic timer with no channels) used for RX_SPI
+
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(8) | TIM_N(15) | TIM_N(17))
