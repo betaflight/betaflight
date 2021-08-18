@@ -32,7 +32,7 @@ typedef struct dbgPin_s {
     uint32_t resetBSRR;
 } dbgPin_t;
 
-dbgPin_t dbgPins[] = {
+__weak dbgPin_t dbgPins[] = {
     { .tag = IO_TAG(NONE) },
 };
 
