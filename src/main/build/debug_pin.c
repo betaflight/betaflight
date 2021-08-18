@@ -76,7 +76,7 @@ void dbgPinLo(int index)
 
     dbgPin_t *dbgPin = &dbgPins[index];
 
-    if (dbgPins->gpio) {
+    if (dbgPin->gpio) {
 #if defined(STM32F7)
         dbgPin->gpio->BSRR = dbgPin->resetBSRR;
 #else
