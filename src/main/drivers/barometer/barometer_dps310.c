@@ -47,7 +47,8 @@
 
 #if defined(USE_BARO) && defined(USE_BARO_DPS310)
 
-#define DPS310_I2C_ADDR             0x76
+#define DPS310_I2C_ADDR1            0x76
+#define DPS310_I2C_ADDR2            0x77
 
 #define DPS310_REG_PSR_B2           0x00
 #define DPS310_REG_PSR_B1           0x01
@@ -357,16 +358,28 @@ bool baroDPS310Detect(baroDev_t *baro)
 {
     extDevice_t *dev = &baro->dev;
     bool defaultAddressApplied = false;
+    bool detected;
 
     deviceInit(&baro->dev, OWNER_BARO_CS);
 
     if ((dev->bus->busType == BUS_TYPE_I2C) && (dev->busType_u.i2c.address == 0)) {
-        // Default address for BMP280
-        dev->busType_u.i2c.address = DPS310_I2C_ADDR;
+        // Try default addresses for DSP310
+        dev->busType_u.i2c.address = DPS310_I2C_ADDR1;
         defaultAddressApplied = true;
+
+        detected = deviceDetect(dev);
+
+        if (!detected) {
+            dev->busType_u.i2c.address = DPS310_I2C_ADDR2;
+
+            detected = deviceDetect(dev);
+        }
+    } else {
+        // Try to detect using explicit device bus/address
+        detected = deviceDetect(dev);
     }
 
-    if (!deviceDetect(dev)) {
+    if (!detected) {
         deviceDeInit(dev);
         if (defaultAddressApplied) {
             dev->busType_u.i2c.address = 0;
