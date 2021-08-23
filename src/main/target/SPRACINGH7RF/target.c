@@ -66,4 +66,5 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
     { .tag = IO_TAG(PD9) },
+    { .tag = IO_TAG(PD8) },
 };
