@@ -38,6 +38,7 @@ TARGET_SRC += \
             drivers/barometer/barometer_bmp388.c \
             drivers/rx/rx_sx1280.c \
             drivers/rx/rx_sx127x.c \
+            drivers/rx/rx_sx127x.c \
+            drivers/rx/expresslrs_hal.c \
             rx/expresslrs.c \
             rx/expresslrs_common.c \
-            rx/expresslrs_hal.c \
