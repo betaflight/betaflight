@@ -45,7 +45,7 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 float pt1FilterGain(float f_cut, float dT)
 {
-    const float omega = 2.0f * M_PIf * f_cut * dT * 1e-6f;
+    const float omega = 2.0f * M_PIf * f_cut * dT;
     const float cs = 1 - cos_approx(omega);
     
     // exact solution for PT1 gain (-3dB cutoff)
