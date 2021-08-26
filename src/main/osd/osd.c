@@ -1046,6 +1046,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     if (!osdIsReady) {
         if (!displayCheckReady(osdDisplayPort, false)) {
+            // Frsky osd need a display redraw after search for MAX7456 devices
+            if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
+                displayRedraw(osdDisplayPort);
+            }
             return;
         }
 
