@@ -138,9 +138,10 @@ void lqgraph_render(displayCanvas_t *canvas, uint32_t bitArray[], uint8_t lqBitC
     const uint8_t barHeight = height - 2;
     const uint8_t borderWidth = 1;
 
-    displayCanvasSetStrokeColor(canvas, DISPLAY_CANVAS_COLOR_WHITE);
+    displayCanvasSetStrokeColor(canvas, DISPLAY_CANVAS_COLOR_GRAY);
     displayCanvasStrokeRect(canvas, xOffset - borderWidth, y, lqBitCount + borderWidth, height);
 
+    displayCanvasSetStrokeColor(canvas, DISPLAY_CANVAS_COLOR_WHITE);
 
     for (int i = 0; i < arrayLength; i++) {
 
@@ -150,7 +151,7 @@ void lqgraph_render(displayCanvas_t *canvas, uint32_t bitArray[], uint8_t lqBitC
 
             uint8_t index = i * bitsPerArrayIndex + bit;
 
-            if (value) {
+            if (!value) {
                 displayCanvasMoveToPoint(canvas, xOffset + index, y + borderWidth + (barHeight));
                 displayCanvasStrokeLineToPoint(canvas, xOffset + index, y + borderWidth);
             }
