@@ -29,4 +29,4 @@
 void frameBufferCanvasSetStrokeColor(displayCanvas_t *displayCanvas, displayCanvasColor_e color);
 void frameBufferCanvasMoveToPoint(displayCanvas_t *displayCanvas, int x, int y);
 void frameBufferCanvasStrokeLineToPoint(displayCanvas_t *displayCanvas, int x, int y);
-
+void frameBufferCanvasStrokeRect(displayCanvas_t *displayCanvas, int x, int y, int w, int h);
