@@ -77,6 +77,8 @@ void frameBufferCanvasStrokeLineToPoint(displayCanvas_t *displayCanvas, int x, i
     UNUSED(displayCanvas);
 
     framebuffer_drawLine(frameBuffer, context->x, context->y, x, y, canvasColorToFrameBufferModeMap[context->strokeColor]);
+    context->x = x;
+    context->y = y;
 }
 
 
