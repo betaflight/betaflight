@@ -157,6 +157,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #ifdef USE_RX_LINK_QUALITY_INFO
     {"LINK QUALITY",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_LINK_QUALITY]},
 #endif
+#ifdef USE_RX_EXPRESS_LRS
+    {"LQ GRAPH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_LQ_GRAPH], DYNAMIC},
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     {"STICK OVERLAY LEFT", OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_LEFT]},
     {"STICK OVERLAY RIGHT",OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_RIGHT]},

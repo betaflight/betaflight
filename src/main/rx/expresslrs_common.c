@@ -533,7 +533,8 @@ uint16_t txPowerIndexToValue(const uint8_t index)
     }
 }
 
-#define ELRS_LQ_DEPTH 4 //100 % 32
+#define ELRS_LQ_BIT_COUNT 100
+#define ELRS_LQ_DEPTH ((ELRS_LQ_BIT_COUNT + 31) / 32)
 
 typedef struct linkQuality_s {
     uint32_t array[ELRS_LQ_DEPTH];
@@ -543,6 +544,12 @@ typedef struct linkQuality_s {
 } linkQuality_t;
 
 static linkQuality_t lq;
+
+uint32_t *lqGetArray(uint8_t *bitCount)
+{
+    *bitCount = ELRS_LQ_BIT_COUNT;
+    return lq.array;
+}
 
 void lqIncrease(void)
 {
@@ -562,7 +569,7 @@ void lqNewPeriod(void)
     }
 
     // At idx N / 32 and bit N % 32, wrap back to idx=0, bit=0
-    if ((lq.index == 3) && (lq.mask & (1 << ELRS_LQ_DEPTH))) {
+    if ((lq.index == (ELRS_LQ_BIT_COUNT / 32)) && (lq.mask & (1 << (ELRS_LQ_BIT_COUNT % 32)))) {
         lq.index = 0;
         lq.mask = (1 << 0);
     }

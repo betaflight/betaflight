@@ -166,6 +166,7 @@ void lqNewPeriod(void);
 bool lqPeriodIsSet(void);
 void lqIncrease(void);
 uint8_t lqGet(void);
+uint32_t *lqGetArray(uint8_t *bitCount);
 
 uint16_t convertSwitch1b(const uint16_t val);
 uint16_t convertSwitch3b(const uint16_t val);
