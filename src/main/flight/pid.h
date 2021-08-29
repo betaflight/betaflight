@@ -204,7 +204,7 @@ typedef struct pidProfile_s {
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
     uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
 
-    uint8_t feedforwardTransition;          // Feedforward attenuation around centre sticks
+    uint8_t feedforward_transition;          // Feedforward attenuation around centre sticks
     uint8_t feedforward_averaging;          // Number of packets to average when averaging is on
     uint8_t feedforward_smooth_factor;      // Amount of lowpass type smoothing for feedforward steps
     uint8_t feedforward_jitter_factor;      // Number of RC steps below which to attenuate feedforward

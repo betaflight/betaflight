@@ -489,8 +489,6 @@ static CMS_Menu cmsx_menuLaunchControl = {
 };
 #endif
 
-static uint8_t  cmsx_feedforwardTransition;
-static uint8_t  cmsx_feedforward_boost;
 static uint8_t  cmsx_angleStrength;
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonTransition;
@@ -517,6 +515,8 @@ static uint8_t cmsx_iterm_relax_cutoff;
 #endif
 
 #ifdef USE_FEEDFORWARD
+static uint8_t cmsx_feedforward_transition;
+static uint8_t cmsx_feedforward_boost;
 static uint8_t cmsx_feedforward_averaging;
 static uint8_t cmsx_feedforward_smooth_factor;
 static uint8_t cmsx_feedforward_jitter_factor;
@@ -529,9 +529,6 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
-
-    cmsx_feedforwardTransition  = pidProfile->feedforwardTransition;
-    cmsx_feedforward_boost = pidProfile->feedforward_boost;
 
     cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
     cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
@@ -560,7 +557,9 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 #endif
 
 #ifdef USE_FEEDFORWARD
+    cmsx_feedforward_transition  = pidProfile->feedforward_transition;
     cmsx_feedforward_averaging = pidProfile->feedforward_averaging;
+    cmsx_feedforward_boost = pidProfile->feedforward_boost;
     cmsx_feedforward_smooth_factor = pidProfile->feedforward_smooth_factor;
     cmsx_feedforward_jitter_factor = pidProfile->feedforward_jitter_factor;
 #endif
@@ -577,9 +576,7 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     UNUSED(self);
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
-    pidProfile->feedforwardTransition = cmsx_feedforwardTransition;
     pidInitConfig(currentPidProfile);
-    pidProfile->feedforward_boost = cmsx_feedforward_boost;
 
     pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
     pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
@@ -608,7 +605,9 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 #endif
 
 #ifdef USE_FEEDFORWARD
+    pidProfile->feedforward_transition = cmsx_feedforward_transition;
     pidProfile->feedforward_averaging = cmsx_feedforward_averaging;
+    pidProfile->feedforward_boost = cmsx_feedforward_boost;
     pidProfile->feedforward_smooth_factor = cmsx_feedforward_smooth_factor;
     pidProfile->feedforward_jitter_factor = cmsx_feedforward_jitter_factor;
 #endif
@@ -624,13 +623,13 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
-    { "FF TRANSITION", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedforwardTransition,  0,    100,   1, 10 }, 0 },
 #ifdef USE_FEEDFORWARD
+    { "FF TRANSITION", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedforward_transition,        0,    100,   1, 10 }, 0 },
     { "FF AVERAGING",  OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_feedforward_averaging,         4, lookupTableFeedforwardAveraging}, 0 },
     { "FF SMOOTHNESS", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_smooth_factor,     0,     75,   1  }   , 0 },
     { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     20,   1  }   , 0 },
+    { "FF BOOST",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,             0,     50,   1  }   , 0 },
 #endif
-    { "FF BOOST",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,               0,     50,   1  }   , 0 },
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }   , 0 },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }   , 0 },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }   , 0 },

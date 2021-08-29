@@ -71,6 +71,7 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         float setpointSpeed = (setpoint - prevSetpoint[axis]) * rxRate;
         float absPrevSetpointSpeed = fabsf(prevSetpointSpeed[axis]);
         float setpointAcceleration = 0.0f;
+        const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
         const float feedforwardSmoothFactor = pidGetFeedforwardSmoothFactor();
         const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
         float feedforward;
