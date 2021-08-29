@@ -200,6 +200,7 @@ typedef enum {
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
     OSD_STAT_MIN_RSSI_DBM,
+    OSD_STAT_MAX_STICKS,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -326,7 +327,11 @@ typedef struct statistic_s {
     int16_t max_esc_temp;
     int32_t max_esc_rpm;
     uint16_t min_link_quality;
-    int16_t min_rssi_dbm;
+    int8_t min_rssi_dbm;
+    uint8_t max_throttle; // 0 - 9
+    int8_t max_roll;  // -9 - 9, sign indicates direction
+    int8_t max_pitch; // -9 - 9, sign indicates direction
+    int8_t max_yaw;   // -9 - 9, sign indicates direction
 } statistic_t;
 
 extern timeUs_t resumeRefreshAt;

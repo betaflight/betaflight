@@ -184,6 +184,7 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
+    OSD_STAT_MAX_STICKS,
 };
 
 // Format a float to the specified number of decimal places with optional rounding.
@@ -493,6 +494,10 @@ static void osdResetStats(void)
     stats.max_esc_rpm  = 0;
     stats.min_link_quality = (linkQualitySource == LQ_SOURCE_NONE) ? 99 : 100; // percent
     stats.min_rssi_dbm = CRSF_SNR_MAX;
+    stats.max_throttle = 0;
+    stats.max_roll = 0;
+    stats.max_pitch = 0;
+    stats.max_yaw = 0;
 }
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
@@ -600,6 +605,26 @@ static void osdUpdateStats(void)
         stats.max_esc_rpm = rpm;
     }
 #endif
+
+    uint8_t throttleScaled = (constrain(rcData[THROTTLE], 1000, 2000) - 1000)*9/1000;
+    if (throttleScaled > stats.max_throttle) {
+        stats.max_throttle = throttleScaled;
+    }
+
+    int8_t rollScaled = (constrain(rcData[ROLL], 1000, 2000) - 1500)*9/500;
+    if (ABS(rollScaled) > ABS(stats.max_roll)) {
+        stats.max_roll = rollScaled;
+    }
+
+    int8_t pitchScaled = (constrain(rcData[PITCH], 1000, 2000) - 1500)*9/500;
+    if (ABS(pitchScaled) > ABS(stats.max_pitch)) {
+        stats.max_pitch = pitchScaled;
+    }
+
+    int8_t yawScaled = (constrain(rcData[YAW], 1000, 2000) - 1500)*9/500;
+    if (ABS(yawScaled) > ABS(stats.max_yaw)) {
+        stats.max_yaw = yawScaled;
+    }
 }
 
 #ifdef USE_BLACKBOX
@@ -649,8 +674,8 @@ static void osdGetBlackboxStatusString(char * buff)
 static void osdDisplayStatisticLabel(uint8_t y, const char * text, const char * value)
 {
     displayWrite(osdDisplayPort, 2, y, DISPLAYPORT_ATTR_NONE, text);
-    displayWrite(osdDisplayPort, 20, y, DISPLAYPORT_ATTR_NONE, ":");
-    displayWrite(osdDisplayPort, 22, y, DISPLAYPORT_ATTR_NONE, value);
+    displayWrite(osdDisplayPort, 18, y, DISPLAYPORT_ATTR_NONE, ":");
+    displayWrite(osdDisplayPort, 20, y, DISPLAYPORT_ATTR_NONE, value);
 }
 
 /*
@@ -714,7 +739,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MAX_DISTANCE:
         if (featureIsEnabled(FEATURE_GPS)) {
             osdFormatDistanceString(buff, stats.max_distance, SYM_NONE);
-            osdDisplayStatisticLabel(displayRow, "MAX DISTANCE", buff);
+            osdDisplayStatisticLabel(displayRow, "MAX DIST", buff);
             return true;
         }
         break;
@@ -723,7 +748,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         if (featureIsEnabled(FEATURE_GPS)) {
             const int distanceFlown = GPS_distanceFlownInCm / 100;
             osdFormatDistanceString(buff, distanceFlown, SYM_NONE);
-            osdDisplayStatisticLabel(displayRow, "FLIGHT DISTANCE", buff);
+            osdDisplayStatisticLabel(displayRow, "FLIGHT DIST", buff);
             return true;
         }
         break;
@@ -848,13 +873,13 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #ifdef USE_PERSISTENT_STATS
     case OSD_STAT_TOTAL_FLIGHTS:
         itoa(statsConfig()->stats_total_flights, buff, 10);
-        osdDisplayStatisticLabel(displayRow, "TOTAL FLIGHTS", buff);
+        osdDisplayStatisticLabel(displayRow, "TOT FLIGHTS", buff);
         return true;
 
     case OSD_STAT_TOTAL_TIME: {
         int minutes = statsConfig()->stats_total_time_s / 60;
         tfp_sprintf(buff, "%d:%02dH", minutes / 60, minutes % 60);
-        osdDisplayStatisticLabel(displayRow, "TOTAL FLIGHT TIME", buff);
+        osdDisplayStatisticLabel(displayRow, "TOT FLIGHT TIME", buff);
         return true;
     }
 
@@ -866,10 +891,49 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         } else {
             tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER, SYM_KM);
         }
-        osdDisplayStatisticLabel(displayRow, "TOTAL DISTANCE", buff);
+        osdDisplayStatisticLabel(displayRow, "TOT DIST", buff);
         return true;
 #endif
+
+    case OSD_STAT_MAX_STICKS:
+        switch (osdConfig()->overlay_radio_mode) {
+        case 1:
+            tfp_sprintf(buff, "%c%d%c%d%c%d%c%d",
+                (stats.max_pitch >= 0) ? SYM_ARROW_NORTH : SYM_ARROW_SOUTH, ABS(stats.max_pitch),
+                (stats.max_yaw >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_yaw),
+                SYM_THR, stats.max_throttle,
+                (stats.max_roll >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_roll)
+            );
+            break;
+        case 3:
+            tfp_sprintf(buff, "%c%d%c%d%c%d%c%d",
+                (stats.max_pitch >= 0) ? SYM_ARROW_NORTH : SYM_ARROW_SOUTH, ABS(stats.max_pitch),
+                (stats.max_roll >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_roll),
+                SYM_THR, stats.max_throttle,
+                (stats.max_yaw >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_yaw)
+            );
+            break;
+        case 4:
+            tfp_sprintf(buff, "%c%d%c%d%c%d%c%d",
+                SYM_THR, stats.max_throttle,
+                (stats.max_roll >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_roll),
+                (stats.max_pitch >= 0) ? SYM_ARROW_NORTH : SYM_ARROW_SOUTH, ABS(stats.max_pitch),
+                (stats.max_yaw >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_yaw)
+            );
+            break;
+        case 2:
+        default:
+            tfp_sprintf(buff, "%c%d%c%d%c%d%c%d",
+                SYM_THR, stats.max_throttle,
+                (stats.max_yaw >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_yaw),
+                (stats.max_pitch >= 0) ? SYM_ARROW_NORTH : SYM_ARROW_SOUTH, ABS(stats.max_pitch),
+                (stats.max_roll >= 0) ? SYM_ARROW_EAST : SYM_ARROW_WEST, ABS(stats.max_roll)
+            );
+        }
+        osdDisplayStatisticLabel(displayRow, "MAX STICKS", buff);
+        return true;
     }
+
     return false;
 }
 
