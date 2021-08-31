@@ -108,7 +108,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     DMA_InitTypeDef *initRx = bus->initRx;
 
     DMA_StructInit(initTx);
-    initTx->DMA_Channel = bus->dmaTxChannel;
+    initTx->DMA_Channel = bus->dmaTx->channel;
     initTx->DMA_DIR = DMA_DIR_MemoryToPeripheral;
     initTx->DMA_Mode = DMA_Mode_Normal;
     initTx->DMA_PeripheralBaseAddr = (uint32_t)&bus->busType_u.spi.instance->DR;
@@ -118,7 +118,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     initTx->DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 
     DMA_StructInit(initRx);
-    initRx->DMA_Channel = bus->dmaRxChannel;
+    initRx->DMA_Channel = bus->dmaRx->channel;
     initRx->DMA_DIR = DMA_DIR_PeripheralToMemory;
     initRx->DMA_Mode = DMA_Mode_Normal;
     initRx->DMA_PeripheralBaseAddr = (uint32_t)&bus->busType_u.spi.instance->DR;

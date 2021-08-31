@@ -282,8 +282,8 @@ static bool bmi270AccRead(accDev_t *acc)
         BUFFER_SIZE,
     };
 
-    uint8_t bmi270_rx_buf[BUFFER_SIZE];
-    static const uint8_t bmi270_tx_buf[BUFFER_SIZE] = {BMI270_REG_ACC_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0, 0};
+    STATIC_DMA_DATA_AUTO uint8_t bmi270_rx_buf[BUFFER_SIZE];
+    STATIC_DMA_DATA_AUTO uint8_t bmi270_tx_buf[BUFFER_SIZE] = {BMI270_REG_ACC_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0, 0};
 
     spiReadWriteBuf(&acc->gyro->dev, (uint8_t *)bmi270_tx_buf, bmi270_rx_buf, BUFFER_SIZE);   // receive response
 
@@ -308,8 +308,8 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
         BUFFER_SIZE,
     };
 
-    uint8_t bmi270_rx_buf[BUFFER_SIZE];
-    static const uint8_t bmi270_tx_buf[BUFFER_SIZE] = {BMI270_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0, 0};
+    STATIC_DMA_DATA_AUTO uint8_t bmi270_rx_buf[BUFFER_SIZE];
+    STATIC_DMA_DATA_AUTO uint8_t bmi270_tx_buf[BUFFER_SIZE] = {BMI270_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0, 0};
 
     spiReadWriteBuf(&gyro->dev, (uint8_t *)bmi270_tx_buf, bmi270_rx_buf, BUFFER_SIZE);   // receive response
 
@@ -338,8 +338,8 @@ static bool bmi270GyroReadFifo(gyroDev_t *gyro)
     };
 
     bool dataRead = false;
-    static const uint8_t bmi270_tx_buf[BUFFER_SIZE] = {BMI270_REG_FIFO_LENGTH_LSB | 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t bmi270_rx_buf[BUFFER_SIZE];
+    STATIC_DMA_DATA_AUTO uint8_t bmi270_tx_buf[BUFFER_SIZE] = {BMI270_REG_FIFO_LENGTH_LSB | 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    STATIC_DMA_DATA_AUTO uint8_t bmi270_rx_buf[BUFFER_SIZE];
 
     // Burst read the FIFO length followed by the next 6 bytes containing the gyro axis data for
     // the first sample in the queue. It's possible for the FIFO to be empty so we need to check the

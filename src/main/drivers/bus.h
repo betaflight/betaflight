@@ -64,8 +64,6 @@ typedef struct busDevice_s {
     uint8_t deviceCount;
     dmaChannelDescriptor_t *dmaTx;
     dmaChannelDescriptor_t *dmaRx;
-    uint32_t dmaTxChannel;
-    uint32_t dmaRxChannel;
 #ifndef UNIT_TEST
     // Use a reference here as this saves RAM for unused descriptors
 #if defined(USE_FULL_LL_DRIVER)
@@ -109,7 +107,7 @@ typedef struct extDevice_s {
     } busType_u;
 #ifndef UNIT_TEST
     // Cache the init structure for the next DMA transfer to reduce inter-segment delay
-#if defined(USE_HAL_DRIVER)
+#if defined(USE_FULL_LL_DRIVER)
     LL_DMA_InitTypeDef          initTx;
     LL_DMA_InitTypeDef          initRx;
 #else
