@@ -329,8 +329,8 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_D_MIN
-    biquadFilter_t dMinRange[XYZ_AXIS_COUNT];
-    pt1Filter_t dMinLowpass[XYZ_AXIS_COUNT];
+    pt2Filter_t dMinRange[XYZ_AXIS_COUNT];
+    pt2Filter_t dMinLowpass[XYZ_AXIS_COUNT];
     float dMinPercent[XYZ_AXIS_COUNT];
     float dMinGyroGain;
     float dMinSetpointGain;
