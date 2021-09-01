@@ -58,13 +58,10 @@ void writeStats(struct dispatchEntry_s* self)
     UNUSED(self);
 
     if (!ARMING_FLAG(ARMED)) {
-        // Don't save if the user made config changes that have not yet been saved.
-        if (!isConfigDirty()) {
-            writeEEPROM();
+        writeEEPROM();
 
-            // Repeat disarming beep indicating the stats save is complete
-            beeper(BEEPER_DISARMING);
-        }
+        // Repeat disarming beep indicating the stats save is complete
+        beeper(BEEPER_DISARMING);
 
         saveRequired = false;
     }
