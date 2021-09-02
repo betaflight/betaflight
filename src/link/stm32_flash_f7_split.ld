@@ -90,7 +90,7 @@ SECTIONS
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH1 AT >WRITABLE_FLASH1
+  } >WRITABLE_FLASH1
 
   /* Storage for the address for the configuration section so we can grab it out of the hex file */
   .custom_defaults :
