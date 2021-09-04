@@ -161,7 +161,6 @@ typedef struct pidProfile_s {
     uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
-    uint8_t feedforwardTransition;          // Feedforward attenuation around centre sticks
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
     uint16_t dterm_lowpass2_hz;             // Extra PT1 Filter on D in hz
@@ -197,7 +196,6 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
-    uint8_t feedforward_boost;              // amount of setpoint acceleration to add to feedforward, 10 means 100% added
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 
     uint8_t dyn_idle_min_rpm;                   // minimum motor speed enforced by the dynamic idle controller
@@ -206,10 +204,13 @@ typedef struct pidProfile_s {
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
     uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
 
+    uint8_t feedforward_transition;          // Feedforward attenuation around centre sticks
     uint8_t feedforward_averaging;          // Number of packets to average when averaging is on
-    uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
     uint8_t feedforward_smooth_factor;      // Amount of lowpass type smoothing for feedforward steps
     uint8_t feedforward_jitter_factor;      // Number of RC steps below which to attenuate feedforward
+    uint8_t feedforward_boost;              // amount of setpoint acceleration to add to feedforward, 10 means 100% added
+    uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
+
     uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
@@ -284,10 +285,8 @@ typedef struct pidRuntime_s {
     float antiGravityOsdCutoff;
     float antiGravityThrottleHpf;
     float antiGravityPBoost;
-    float feedforwardBoostFactor;
     float itermAccelerator;
     uint16_t itermAcceleratorGain;
-    float feedforwardTransition;
     pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float levelGain;
     float horizonGain;
@@ -385,9 +384,11 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_FEEDFORWARD
+    float feedforwardTransitionFactor;
     feedforwardAveraging_t feedforwardAveraging;
     float feedforwardSmoothFactor;
     float feedforwardJitterFactor;
+    float feedforwardBoostFactor;
 #endif
 } pidRuntime_t;
 
@@ -443,4 +444,5 @@ float pidGetPidFrequency();
 float pidGetFeedforwardBoostFactor();
 float pidGetFeedforwardSmoothFactor();
 float pidGetFeedforwardJitterFactor();
+float pidGetFeedforwardTransitionFactor();
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

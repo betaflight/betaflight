@@ -87,7 +87,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
 #if defined(STM32F1)
 #define PID_PROCESS_DENOM_DEFAULT       8
@@ -141,7 +141,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermWindupPointPercent = 100,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
-        .feedforwardTransition = 0,
+        .feedforward_transition = 0,
         .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 250,
@@ -256,12 +256,12 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-float pidGetFeedforwardBoostFactor()
+#ifdef USE_FEEDFORWARD
+float pidGetFeedforwardTransitionFactor()
 {
-    return pidRuntime.feedforwardBoostFactor;
+    return pidRuntime.feedforwardTransitionFactor;
 }
 
-#ifdef USE_FEEDFORWARD
 float pidGetFeedforwardSmoothFactor()
 {
     return pidRuntime.feedforwardSmoothFactor;
@@ -270,6 +270,11 @@ float pidGetFeedforwardSmoothFactor()
 float pidGetFeedforwardJitterFactor()
 {
     return pidRuntime.feedforwardJitterFactor;
+}
+
+float pidGetFeedforwardBoostFactor()
+{
+    return pidRuntime.feedforwardBoostFactor;
 }
 #endif
 
@@ -1105,9 +1110,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (feedforwardGain > 0) {
             // halve feedforward in Level mode since stick sensitivity is weaker by about half
             feedforwardGain *= FLIGHT_MODE(ANGLE_MODE) ? 0.5f : 1.0f;
-            // no transition if feedforwardTransition == 0
-            float transition = pidRuntime.feedforwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * pidRuntime.feedforwardTransition) : 1;
-            float feedForward = feedforwardGain * transition * pidSetpointDelta * pidRuntime.pidFrequency;
+            // transition now calculated in feedforward.c when new RC data arrives 
+            float feedForward = feedforwardGain * pidSetpointDelta * pidRuntime.pidFrequency;
 
 #ifdef USE_FEEDFORWARD
             pidData[axis].F = shouldApplyFeedforwardLimits(axis) ?

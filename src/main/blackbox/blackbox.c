@@ -1384,16 +1384,16 @@ static bool blackboxWriteSysinfo(void)
 #ifdef USE_INTEGRATED_YAW_CONTROL
         BLACKBOX_PRINT_HEADER_LINE("use_integrated_yaw", "%d",              currentPidProfile->use_integrated_yaw);
 #endif
-        BLACKBOX_PRINT_HEADER_LINE("ff_transition", "%d",                   currentPidProfile->feedforwardTransition);
         BLACKBOX_PRINT_HEADER_LINE("ff_weight", "%d,%d,%d",                 currentPidProfile->pid[PID_ROLL].F,
                                                                             currentPidProfile->pid[PID_PITCH].F,
                                                                             currentPidProfile->pid[PID_YAW].F);
 #ifdef USE_FEEDFORWARD
+        BLACKBOX_PRINT_HEADER_LINE("ff_transition", "%d",                   currentPidProfile->feedforward_transition);
         BLACKBOX_PRINT_HEADER_LINE("ff_averaging", "%d",                    currentPidProfile->feedforward_averaging);
-        BLACKBOX_PRINT_HEADER_LINE("ff_max_rate_limit", "%d",               currentPidProfile->feedforward_max_rate_limit);
         BLACKBOX_PRINT_HEADER_LINE("ff_smooth_factor", "%d",                currentPidProfile->feedforward_smooth_factor);
         BLACKBOX_PRINT_HEADER_LINE("ff_jitter_factor", "%d",                currentPidProfile->feedforward_jitter_factor);
         BLACKBOX_PRINT_HEADER_LINE("ff_boost", "%d",                        currentPidProfile->feedforward_boost);
+        BLACKBOX_PRINT_HEADER_LINE("ff_max_rate_limit", "%d",               currentPidProfile->feedforward_max_rate_limit);
 #endif
 
         BLACKBOX_PRINT_HEADER_LINE("acc_limit_yaw", "%d",                   currentPidProfile->yawRateAccelLimit);

@@ -101,7 +101,10 @@ extern "C" {
     {
         UNUSED(newRcFrame);
         UNUSED(feedforwardAveraging);
-        return simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+        const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
+        float setpointDelta = simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+        setpointDelta *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1;
+        return setpointDelta;
     }
     bool shouldApplyFeedforwardLimits(int axis)
     {
@@ -139,7 +142,7 @@ void setDefaultTestSettings(void) {
     pidProfile->itermWindupPointPercent = 50;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->levelAngleLimit = 55;
-    pidProfile->feedforwardTransition = 100;
+    pidProfile->feedforward_transition = 100;
     pidProfile->yawRateAccelLimit = 100;
     pidProfile->rateAccelLimit = 0;
     pidProfile->antiGravityMode = ANTI_GRAVITY_SMOOTH;
