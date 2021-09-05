@@ -464,7 +464,7 @@ void max7456Invert(bool invert)
 }
 
 /**
- * Sets the brighness of black and white pixels.
+ * Sets the brightness of black and white pixels.
  *
  * @param black Black brightness (0-3, 0 is darkest)
  * @param white White brightness (0-3, 0 is darkest)

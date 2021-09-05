@@ -165,7 +165,7 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 
 #endif // USE_DSHOT
 
-// temporarly here, needs to be moved during refactoring
+// temporarily here, needs to be moved during refactoring
 void validateAndfixMotorOutputReordering(uint8_t *array, const unsigned size)
 {
     bool invalid = false;

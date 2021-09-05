@@ -265,7 +265,7 @@ void initialiseMemorySections(void)
 #endif
 
 #ifdef USE_FAST_DATA
-    /* Load FAST_DATA variable intializers into DTCM RAM */
+    /* Load FAST_DATA variable initializers into DTCM RAM */
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;
