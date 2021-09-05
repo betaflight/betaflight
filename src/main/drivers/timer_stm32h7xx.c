@@ -80,7 +80,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM15, CH1N, PA1, TIM_USE_ANY, 0, 0, 0),
     DEF_TIM(TIM15, CH1, PA2, TIM_USE_ANY, 0, 0, 0),
-    DEF_TIM(TIM15, CH2, PA2, TIM_USE_ANY, 0, 0, 0),
+    DEF_TIM(TIM15, CH2, PA3, TIM_USE_ANY, 0, 0, 0),
 
 // Port B
     DEF_TIM(TIM1, CH2N, PB0, TIM_USE_ANY, 0, 0, 0),
