@@ -176,24 +176,7 @@
 void targetPreInit(void);
 #endif
 
-#ifdef SOFTSERIAL_LOOPBACK
-serialPort_t *loopbackPort;
-#endif
-
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
-
-void processLoopback(void)
-{
-#ifdef SOFTSERIAL_LOOPBACK
-    if (loopbackPort) {
-        uint8_t bytesWaiting;
-        while ((bytesWaiting = serialRxBytesWaiting(loopbackPort))) {
-            uint8_t b = serialRead(loopbackPort);
-            serialWrite(loopbackPort, b);
-        };
-    }
-#endif
-}
 
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
@@ -872,15 +855,6 @@ void init(void)
     // start all timers
     // TODO - not implemented yet
     timerStart();
-#endif
-
-#ifdef SOFTSERIAL_LOOPBACK
-    // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
-    loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
-    if (!loopbackPort->vTable) {
-        loopbackPort = openSoftSerial(0, NULL, 19200, SERIAL_NOT_INVERTED);
-    }
-    serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
 
     batteryInit(); // always needs doing, regardless of features.
