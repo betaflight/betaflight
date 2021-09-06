@@ -24,29 +24,7 @@
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
 
-#define DEBUG_SET(mode, index, value) {if (debugMode == (mode)) {debug[(index)] = (value);}}
-
-#define DEBUG_SECTION_TIMES
-
-#ifdef DEBUG_SECTION_TIMES
-extern uint32_t sectionTimes[2][4];
-
-#define TIME_SECTION_BEGIN(index) { \
-    extern uint32_t sectionTimes[2][4]; \
-    sectionTimes[0][index] = micros(); \
-}
-
-#define TIME_SECTION_END(index) { \
-    extern uint32_t sectionTimes[2][4]; \
-    sectionTimes[1][index] = micros(); \
-    debug[index] = sectionTimes[1][index] - sectionTimes[0][index]; \
-}
-#else
-
-#define TIME_SECTION_BEGIN(index) {}
-#define TIME_SECTION_END(index) {}
-
-#endif
+#define DEBUG_SET(mode, index, value) do { if (debugMode == (mode)) { debug[(index)] = (value); } } while (0)
 
 typedef enum {
     DEBUG_NONE,
