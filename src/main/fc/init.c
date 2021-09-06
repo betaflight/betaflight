@@ -29,6 +29,7 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+#include "build/debug_pin.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -412,6 +413,10 @@ void init(void)
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
+
+#ifdef USE_DEBUG_PIN
+    dbgPinInit();
+#endif
 
 #ifdef USE_SDCARD
     // Ensure the SD card is initialised before the USB MSC starts to avoid a race condition

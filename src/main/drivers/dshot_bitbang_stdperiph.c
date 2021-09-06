@@ -28,6 +28,7 @@
 
 #include "build/atomic.h"
 #include "build/debug.h"
+#include "build/debug_pin.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -43,14 +44,6 @@
 #include "drivers/timer.h"
 
 #include "pg/motor.h"
-
-#if defined(USE_DEBUG_PIN)
-#include "build/debug_pin.h"
-#else
-#define dbgPinInit()
-#define dbgPinHi(x)
-#define dbgPinLo(x)
-#endif
 
 void bbGpioSetup(bbMotor_t *bbMotor)
 {
@@ -142,7 +135,7 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
 
 void bbSwitchToOutput(bbPort_t * bbPort)
 {
-    dbgPinHi(1);
+    DEBUG_HI(1);
     // Output idle level before switching to output
     // Use BSRR register for this
     // Normal: Use BR (higher half)
@@ -173,13 +166,13 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 
-    dbgPinLo(1);
+    DEBUG_LO(1);
 }
 
 #ifdef USE_DSHOT_TELEMETRY
 void bbSwitchToInput(bbPort_t *bbPort)
 {
-    dbgPinHi(1);
+    DEBUG_HI(1);
 
     // Set GPIO to input
 
@@ -208,7 +201,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
 
-    dbgPinLo(1);
+    DEBUG_LO(1);
 }
 #endif
 

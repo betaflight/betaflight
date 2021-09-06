@@ -27,6 +27,7 @@
 #ifdef USE_DSHOT_BITBANG
 
 #include "build/debug.h"
+#include "build/debug_pin.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -45,14 +46,6 @@
 #include "drivers/timer.h"
 
 #include "pg/motor.h"
-
-#if defined(USE_DEBUG_PIN)
-#include "build/debug_pin.h"
-#else
-#define dbgPinInit()
-#define dbgPinHi(x)
-#define dbgPinLo(x)
-#endif
 
 FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
 FAST_DATA_ZERO_INIT int usedMotorPacers = 0;
@@ -300,7 +293,7 @@ static void bbAllocDma(bbPort_t *bbPort)
 
 void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
-    dbgPinHi(0);
+    DEBUG_HI(0);
 
     bbPort_t *bbPort = (bbPort_t *)descriptor->userParam;
 
@@ -333,7 +326,7 @@ void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
         }
     }
 #endif
-    dbgPinLo(0);
+    DEBUG_LO(0);
 }
 
 // Setup bbPorts array elements so that they each have a TIM1 or TIM8 channel
@@ -693,9 +686,8 @@ dshotBitbangStatus_e dshotBitbangGetStatus()
 
 motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
 {
-    dbgPinInit();
-    dbgPinLo(0);
-    dbgPinLo(1);
+    DEBUG_LO(0);
+    DEBUG_LO(1);
 
     motorPwmProtocol = motorConfig->motorPwmProtocol;
     bbDevice.vTable = bbVTable;

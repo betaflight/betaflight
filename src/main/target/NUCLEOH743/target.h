@@ -25,6 +25,9 @@
 
 #define USE_TARGET_CONFIG
 
+#define USE_DEBUG_PIN
+#define DEBUG_PIN_COUNT         1
+
 #define LED0_PIN                PB0
 #define LED1_PIN                PB7 // PE1 on NUCLEO-H743ZI2 (may collide with UART8_TX)
 //#define LED2_PIN                PB14 // SDMMC2_D0
