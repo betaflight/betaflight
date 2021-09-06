@@ -198,7 +198,7 @@ void processLoopback(void)
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
-static IO_t busSwitchResetPin        = IO_NONE;
+    IO_t busSwitchResetPin = IO_NONE;
 
     busSwitchResetPin = IOGetByTag(IO_TAG(BUS_SWITCH_PIN));
     IOInit(busSwitchResetPin, OWNER_SYSTEM, 0);
