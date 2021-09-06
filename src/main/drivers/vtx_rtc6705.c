@@ -110,7 +110,9 @@ bool rtc6705IOInit(const vtxIOConfig_t *vtxIOConfig)
         IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
     }
 
-    if (vtxIOConfig->csTag && spiSetBusInstance(dev, vtxIOConfig->spiDevice)) {
+    // RTC6705 when using SOFT SPI driver doesn't use an SPI device, so don't attempt to initialise an spiInstance.
+    SPI_TypeDef *spiInstance = spiInstanceByDevice(SPI_CFG_TO_DEV(vtxIOConfig->spiDevice));
+    if (spiInstance && spiSetBusInstance(dev, vtxIOConfig->spiDevice)) {
         devInstance.busType_u.spi.csnPin = csnPin;
         IOInit(devInstance.busType_u.spi.csnPin, OWNER_VTX_CS, 0);
 
