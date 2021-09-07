@@ -135,7 +135,7 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
 
 void bbSwitchToOutput(bbPort_t * bbPort)
 {
-    DEBUG_HI(1);
+    dbgPinHi(1);
     // Output idle level before switching to output
     // Use BSRR register for this
     // Normal: Use BR (higher half)
@@ -166,13 +166,13 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 
-    DEBUG_LO(1);
+    dbgPinLo(1);
 }
 
 #ifdef USE_DSHOT_TELEMETRY
 void bbSwitchToInput(bbPort_t *bbPort)
 {
-    DEBUG_HI(1);
+    dbgPinHi(1);
 
     // Set GPIO to input
 
@@ -201,7 +201,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
 
-    DEBUG_LO(1);
+    dbgPinLo(1);
 }
 #endif
 
