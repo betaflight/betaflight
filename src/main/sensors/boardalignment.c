@@ -78,7 +78,7 @@ FAST_CODE_NOINLINE void alignSensorViaMatrix(float *dest, fp_rotationMatrix_t* s
     }
 }
 
-FAST_CODE void alignSensorViaRotation(float *dest, uint8_t rotation)
+void alignSensorViaRotation(float *dest, uint8_t rotation)
 {
     const float x = dest[X];
     const float y = dest[Y];
