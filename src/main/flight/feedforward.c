@@ -95,7 +95,7 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         // interpolate setpoint if necessary
         if (rcCommandDelta == 0.0f) {
             // duplicate packet data on this axis
-            if (goodPacketCount[axis] >= 2 && setpointPercent < 0.95f) {
+            if (getRxRateValid() && goodPacketCount[axis] >= 2 && setpointPercent < 0.95f) {
                 // interpolate if two or more preceding valid packets, or if sticks near max
                 setpoint = prevSetpoint[axis] + (prevSetpointSpeed[axis] + prevAcceleration[axis] * jitterAttenuator) * rxInterval * jitterAttenuator;
                 // setpoint interpolation includes previous acceleration and attenuation
