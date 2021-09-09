@@ -222,6 +222,9 @@ typedef struct uartDevice_s {
     uartPinDef_t tx;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
+#if !(defined(STM32F1) || defined(STM32F4)) // Older CPUs don't support pin swap.
+    bool pinSwap;
+#endif
 } uartDevice_t;
 
 extern uartDevice_t *uartDevmap[];
