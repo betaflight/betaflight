@@ -1654,7 +1654,7 @@ bool SD_GetState(void)
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
-bool SD_Init(void)
+static bool SD_DoInit(void)
 {
     SD_Error_t ErrorState;
 
@@ -1693,6 +1693,22 @@ bool SD_Init(void)
 
     // Configure the SDCARD device
     return ErrorState;
+}
+
+bool SD_Init(void)
+{
+    static bool sdInitAttempted = false;
+    static SD_Error_t result = SD_ERROR;
+
+    if (sdInitAttempted) {
+        return result;
+    }
+
+    sdInitAttempted = true;
+
+    result = SD_DoInit();
+
+    return result;
 }
 
 /** -----------------------------------------------------------------------------------------------------------------*/
