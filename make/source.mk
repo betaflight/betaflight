@@ -55,6 +55,7 @@ COMMON_SRC = \
             fc/tasks.c \
             fc/runtime_config.c \
             fc/stats.c \
+            fc/gps_lap_timer.c \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
@@ -142,6 +143,7 @@ COMMON_SRC = \
             cms/cms_menu_failsafe.c \
             cms/cms_menu_firmware.c \
             cms/cms_menu_gps_rescue.c\
+            cms/cms_menu_gps_lap_timer.c\
             cms/cms_menu_imu.c \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_main.c \

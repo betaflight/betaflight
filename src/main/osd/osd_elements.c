@@ -133,6 +133,7 @@
 
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
+#include "fc/gps_lap_timer.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -1098,6 +1099,22 @@ static void osdElementEfficiency(osdElementParms_t *element)
 }
 #endif // USE_GPS
 
+#ifdef USE_GPS_LAP_TIMER
+static void osdElementGpsLapTime(osdElementParms_t *element)
+{
+    //if ((millis() - gpsLapTimerData.timeOfLastLap) / 1000 < gpsLapTimerConfig()->minimumLapTimeSeconds) {
+        // within minimum lap time so show last lap
+        int lapTimeSeconds = gpsLapTimerData.lastLapTime / 1000;
+        int lapTimeDecimals = (gpsLapTimerData.lastLapTime % 1000) / 10;
+    //} else {
+        // outside minimum lap time so show current lap
+        int lapTimeSeconds2 = gpsLapTimerData.currentLapTime / 1000;
+        int lapTimeDecimals2 = (gpsLapTimerData.currentLapTime % 1000) / 10;
+    //}
+    tfp_sprintf(element->buff, "%02d.%02d %02d.%02d", lapTimeSeconds, lapTimeDecimals, lapTimeSeconds2, lapTimeDecimals2);
+}
+#endif // GPS_LAP_TIMER
+
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 {
     // Draw AH sides
@@ -1673,6 +1690,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PERSISTENT_STATS
     [OSD_TOTAL_FLIGHTS]   = osdElementTotalFlights,
 #endif
+#ifdef USE_GPS_LAP_TIMER
+    [OSD_GPS_LAP_TIME]            = osdElementGpsLapTime,
+#endif // GPS_LAP_TIMER
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -1743,6 +1763,11 @@ void osdAddActiveElements(void)
 #ifdef USE_PERSISTENT_STATS
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
 #endif
+#ifdef USE_GPS_LAP_TIMER
+    if (sensors(SENSOR_GPS)) {
+        osdAddActiveElement(OSD_GPS_LAP_TIME);
+    }
+#endif // GPS_LAP_TIMER
 }
 
 static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)

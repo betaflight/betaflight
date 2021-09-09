@@ -369,6 +369,8 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
+#define USE_GPS_LAP_TIMER
+#define USE_CMS_GPS_LAP_TIMER_MENU
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT

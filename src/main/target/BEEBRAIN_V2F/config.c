@@ -130,6 +130,7 @@ void targetConfiguration(void)
     osdElementConfigMutable()->item_pos[OSD_GPS_SPEED]          &= ~OSD_PROFILE_1_FLAG;
     osdElementConfigMutable()->item_pos[OSD_GPS_LON]            &= ~OSD_PROFILE_1_FLAG;
     osdElementConfigMutable()->item_pos[OSD_GPS_LAT]            &= ~OSD_PROFILE_1_FLAG;
+    osdElementConfigMutable()->item_pos[OSD_GPS_LAP_TIME]       &= ~OSD_PROFILE_1_FLAG;
     osdElementConfigMutable()->item_pos[OSD_GPS_SATS]           &= ~OSD_PROFILE_1_FLAG;
     osdElementConfigMutable()->item_pos[OSD_HOME_DIR]           &= ~OSD_PROFILE_1_FLAG;
     osdElementConfigMutable()->item_pos[OSD_HOME_DIST]          &= ~OSD_PROFILE_1_FLAG;
