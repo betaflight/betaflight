@@ -68,12 +68,13 @@ void cycleCounterInit(void);
 uint32_t clockCyclesToMicros(uint32_t clockCycles);
 uint32_t getCycleCounter(void);
 #if defined(STM32H7) || defined(STM32G4)
-void systemCheckResetReason(void);
+void systemProcessResetReason(void);
 #endif
 
 void initialiseMemorySections(void);
 #ifdef STM32H7
 void initialiseD2MemorySections(void);
+void systemResetWithoutDisablingCaches(void);
 #endif
 
 void enableGPIOPowerUsageAndNoiseReductions(void);
