@@ -46,6 +46,9 @@ typedef struct SD_Handle_s
     uint32_t          CID[4];           // SD card identification number table
     volatile uint32_t RXCplt;          // SD RX Complete is equal 0 when no transfer
     volatile uint32_t TXCplt;          // SD TX Complete is equal 0 when no transfer
+
+    uint32_t RXErrors;
+    uint32_t TXErrors;
 } SD_Handle_t;
 
 SD_HandleTypeDef hsd1;
@@ -54,7 +57,7 @@ SD_HandleTypeDef hsd1;
 SD_CardInfo_t                      SD_CardInfo;
 SD_CardType_t                      SD_CardType;
 
-static SD_Handle_t                 SD_Handle;
+SD_Handle_t                        SD_Handle;
 
 typedef struct sdioPin_s {
     ioTag_t pin;
@@ -265,7 +268,7 @@ bool SD_GetState(void)
  * The F4/F7 code actually returns an SD_Error_t if the card is detected
  * SD_OK == 0, SD_* are non-zero and indicate errors.  e.g. SD_ERROR = 42
  */
-bool SD_Init(void)
+static bool SD_DoInit(void)
 {
     bool failureResult = SD_ERROR; // FIXME fix the calling code, this false for success is bad.
     bool successResult = false;
@@ -524,6 +527,22 @@ SD_Error_t SD_GetCardInfo(void)
     return ErrorState;
 }
 
+bool SD_Init(void)
+{
+    static bool sdInitAttempted = false;
+    static SD_Error_t result = SD_ERROR;
+
+    if (sdInitAttempted) {
+        return result;
+    }
+
+    sdInitAttempted = true;
+
+    result = SD_DoInit();
+
+    return result;
+}
+
 SD_Error_t SD_CheckWrite(void) {
     if (SD_Handle.TXCplt != 0) return SD_BUSY;
     return SD_OK;
@@ -618,6 +637,20 @@ void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
      */
     uint32_t alignedAddr = (uint32_t)sdReadParameters.buffer &  ~0x1F;
     SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize + ((uint32_t)sdReadParameters.buffer - alignedAddr));
+}
+
+void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
+{
+    UNUSED(hsd);
+    if (SD_Handle.RXCplt) {
+        SD_Handle.RXErrors++;
+        SD_Handle.RXCplt = 0;
+    }
+
+    if (SD_Handle.TXCplt) {
+        SD_Handle.TXErrors++;
+        SD_Handle.TXCplt = 0;
+    }
 }
 
 void HAL_SD_AbortCallback(SD_HandleTypeDef *hsd)
