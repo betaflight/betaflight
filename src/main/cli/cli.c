@@ -5031,7 +5031,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
 
 #if defined(USE_RESOURCE_MGMT)
 
-#define MAX_RESOURCE_INDEX(x) ((x) == 0 ? 1 : (x))
+#define RESOURCE_VALUE_MAX_INDEX(x) ((x) == 0 ? 1 : (x))
 
 typedef struct {
     const uint8_t owner;
@@ -5207,7 +5207,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
             defaultConfig = NULL;
         }
 
-        for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
+        for (int index = 0; index < RESOURCE_VALUE_MAX_INDEX(resourceTable[i].maxIndex); index++) {
             const ioTag_t ioTag = *(ioTag_t *)((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             ioTag_t ioTagDefault = NULL;
             if (defaultConfig) {
@@ -5249,7 +5249,7 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
 
     const char * format = "\r\nNOTE: %c%02d already assigned to ";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
-        for (int i = 0; i < MAX_RESOURCE_INDEX(resourceTable[r].maxIndex); i++) {
+        for (int i = 0; i < RESOURCE_VALUE_MAX_INDEX(resourceTable[r].maxIndex); i++) {
             ioTag_t *tag = getIoTag(resourceTable[r], i);
             if (*tag == newTag) {
                 bool cleared = false;
@@ -6066,8 +6066,8 @@ static void cliResource(const char *cmdName, char *cmdline)
     int index = atoi(pch);
 
     if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError(cmdName, "INDEX", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
+        if (index <= 0 || index > RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex)) {
+            cliShowArgumentRangeError(cmdName, "INDEX", 1, RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex));
             return;
         }
         index -= 1;
