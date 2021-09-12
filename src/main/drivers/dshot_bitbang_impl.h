@@ -209,7 +209,7 @@ extern uint8_t bbPuPdMode;
 extern uint32_t bbOutputBuffer[MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH * MAX_SUPPORTED_MOTOR_PORTS];
 
 // DMA input buffer
-// (30us + <frame time> + <slack>) / <input sampling clock perid>
+// (30us + <frame time> + <slack>) / <input sampling clock period>
 // <frame time> = <DShot symbol time> * 16
 // Temporary size for DS600
 // <frame time> = 26us

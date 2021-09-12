@@ -112,8 +112,8 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
 // BusDevice API
 
-// Mark a device's associated bus as being SPI and record the first owner to use it
-bool spiSetBusInstance(extDevice_t *dev, uint32_t device, resourceOwner_e owner);
+// Mark a device's associated bus as being SPI
+bool spiSetBusInstance(extDevice_t *dev, uint32_t device);
 // Determine the divisor to use for a given bus frequency
 uint16_t spiCalculateDivider(uint32_t freq);
 // Set the clock divisor to be used for accesses by the given device

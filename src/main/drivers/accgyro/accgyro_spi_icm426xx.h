@@ -20,22 +20,15 @@
 
 #pragma once
 
-#include <drivers/io_types.h>
+#include "drivers/bus.h"
 
-typedef struct dbgPin_s {
-    ioTag_t tag;
-} dbgPin_t;
+bool icm426xxAccDetect(accDev_t *acc);
+bool icm426xxGyroDetect(gyroDev_t *gyro);
 
-void dbgPinInit(void);
-void dbgPinHi(int index);
-void dbgPinLo(int index);
+void icm426xxAccInit(accDev_t *acc);
+void icm426xxGyroInit(gyroDev_t *gyro);
 
-#ifdef USE_DEBUG_PIN
-#define DEBUG_LO(index) \
-   dbgPinLo(index);
-#define DEBUG_HI(index) \
-   dbgPinHi(index);
-#else
-#define DEBUG_LO(index)
-#define DEBUG_HI(index)
-#endif
+uint8_t icm426xxSpiDetect(const extDevice_t *dev);
+
+bool icm426xxSpiAccDetect(accDev_t *acc);
+bool icm426xxSpiGyroDetect(gyroDev_t *gyro);

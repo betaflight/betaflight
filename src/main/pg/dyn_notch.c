@@ -18,24 +18,22 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include <drivers/io_types.h>
+#ifdef USE_DYN_NOTCH_FILTER
 
-typedef struct dbgPin_s {
-    ioTag_t tag;
-} dbgPin_t;
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-void dbgPinInit(void);
-void dbgPinHi(int index);
-void dbgPinLo(int index);
+#include "dyn_notch.h"
 
-#ifdef USE_DEBUG_PIN
-#define DEBUG_LO(index) \
-   dbgPinLo(index);
-#define DEBUG_HI(index) \
-   dbgPinHi(index);
-#else
-#define DEBUG_LO(index)
-#define DEBUG_HI(index)
-#endif
+PG_REGISTER_WITH_RESET_TEMPLATE(dynNotchConfig_t, dynNotchConfig, PG_DYN_NOTCH_CONFIG, 0);
+
+PG_RESET_TEMPLATE(dynNotchConfig_t, dynNotchConfig,
+    .dyn_notch_min_hz = 150,
+    .dyn_notch_max_hz = 600,
+    .dyn_notch_q = 300,
+    .dyn_notch_count = 3
+);
+
+#endif // USE_DYN_NOTCH_FILTER

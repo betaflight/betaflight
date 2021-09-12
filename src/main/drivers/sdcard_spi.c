@@ -549,7 +549,7 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
         return;
     }
 
-    spiSetBusInstance(&sdcard.dev, config->device, OWNER_SDCARD_CS);
+    spiSetBusInstance(&sdcard.dev, config->device);
 
     IO_t chipSelectIO;
     if (config->chipSelectTag) {

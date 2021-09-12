@@ -471,8 +471,8 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-// Mark this bus as being SPI and record the first owner to use it
-bool spiSetBusInstance(extDevice_t *dev, uint32_t device, resourceOwner_e owner)
+// Mark this bus as being SPI
+bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 {
     if (device > SPIDEV_COUNT) {
         return false;
@@ -499,7 +499,6 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device, resourceOwner_e owner)
     bus->useDMA = false;
     bus->useAtomicWait = false;
     bus->deviceCount = 1;
-    bus->owner = owner;
     bus->initTx = &dev->initTx;
     bus->initRx = &dev->initRx;
 
@@ -544,8 +543,10 @@ void spiInitBusDMA()
                     break;
                 }
 #endif
-                bus->dmaTxChannel = dmaTxChannelSpec->channel;
-                dmaInit(dmaTxIdentifier, bus->owner, 0);
+                bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
+                bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
+                bus->dmaTx->channel = dmaTxChannelSpec->channel;
+                dmaInit(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1);
                 break;
             }
         }
@@ -565,16 +566,15 @@ void spiInitBusDMA()
                     break;
                 }
 #endif
-                bus->dmaRxChannel = dmaRxChannelSpec->channel;
-                dmaInit(dmaRxIdentifier, bus->owner, 0);
+                bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
+                bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
+                bus->dmaRx->channel = dmaRxChannelSpec->channel;
+                dmaInit(dmaRxIdentifier, OWNER_SPI_MISO, device + 1);
                 break;
             }
         }
 
         if (dmaTxIdentifier && dmaRxIdentifier) {
-            bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-            bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-
             // Ensure streams are disabled
             spiInternalResetStream(bus->dmaRx);
             spiInternalResetStream(bus->dmaTx);
@@ -587,6 +587,10 @@ void spiInitBusDMA()
             dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
             bus->useDMA = true;
+        } else {
+            // Disassociate channels from bus
+            bus->dmaRx = (dmaChannelDescriptor_t *)NULL;
+            bus->dmaTx = (dmaChannelDescriptor_t *)NULL;
         }
     }
 }

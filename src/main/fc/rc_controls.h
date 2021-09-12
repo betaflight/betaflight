@@ -75,8 +75,8 @@ typedef enum {
 
 #define CONTROL_RATE_CONFIG_RC_RATES_MAX  255
 
-#define CONTROL_RATE_CONFIG_RATE_LIMIT_MIN	200
-#define CONTROL_RATE_CONFIG_RATE_LIMIT_MAX	1998
+#define CONTROL_RATE_CONFIG_RATE_LIMIT_MIN  200
+#define CONTROL_RATE_CONFIG_RATE_LIMIT_MAX  1998
 
 // (Super) rates are constrained to [0, 100] for Betaflight rates, so values higher than 100 won't make a difference. Range extended for RaceFlight rates.
 #define CONTROL_RATE_CONFIG_RATE_MAX  255
@@ -95,6 +95,7 @@ typedef struct rcSmoothingFilterTraining_s {
 typedef struct rcSmoothingFilter_s {
     bool filterInitialized;
     pt3Filter_t filter[4];
+    pt3Filter_t filterDeflection[2];
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;
     uint16_t setpointCutoffFrequency;

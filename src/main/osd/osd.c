@@ -64,8 +64,8 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#if defined(USE_GYRO_DATA_ANALYSE)
-#include "flight/gyroanalyse.h"
+#if defined(USE_DYN_NOTCH_FILTER)
+#include "flight/dyn_notch_filter.h"
 #endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -823,7 +823,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         return true;
 #endif
 
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
     case OSD_STAT_MAX_FFT:
         if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
             int value = getMaxFFT();
@@ -1046,6 +1046,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     if (!osdIsReady) {
         if (!displayCheckReady(osdDisplayPort, false)) {
+            // Frsky osd need a display redraw after search for MAX7456 devices
+            if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
+                displayRedraw(osdDisplayPort);
+            }
             return;
         }
 

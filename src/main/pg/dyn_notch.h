@@ -20,15 +20,17 @@
 
 #pragma once
 
-#include "drivers/bus.h"
+#include <stdint.h>
 
-bool icm42605AccDetect(accDev_t *acc);
-bool icm42605GyroDetect(gyroDev_t *gyro);
+#include "pg/pg.h"
 
-void icm42605AccInit(accDev_t *acc);
-void icm42605GyroInit(gyroDev_t *gyro);
+typedef struct dynNotchConfig_s
+{
+    uint16_t dyn_notch_min_hz;
+    uint16_t dyn_notch_max_hz;
+    uint16_t dyn_notch_q;
+    uint8_t  dyn_notch_count;
 
-uint8_t icm42605SpiDetect(const extDevice_t *dev);
+} dynNotchConfig_t;
 
-bool icm42605SpiAccDetect(accDev_t *acc);
-bool icm42605SpiGyroDetect(gyroDev_t *gyro);
+PG_DECLARE(dynNotchConfig_t, dynNotchConfig);

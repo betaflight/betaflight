@@ -282,7 +282,7 @@ static void SD_DataTransferInit(uint32_t Size, uint32_t DataBlockSize, bool IsIt
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**		SD_TransmitCommand
   *
-  * @brief  Send the commande to SDIO
+  * @brief  Send the command to SDIO
   * @param  uint32_t Command
   * @param  uint32_t Argument              Must provide the response size
   * @param  uint8_t ResponseType
@@ -1654,7 +1654,7 @@ bool SD_GetState(void)
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
-SD_Error_t SD_Init(void)
+static SD_Error_t SD_DoInit(void)
 {
     SD_Error_t errorState;
 
@@ -1702,6 +1702,22 @@ SD_Error_t SD_Init(void)
     }
 
     return errorState;
+}
+
+SD_Error_t SD_Init(void)
+{
+    static bool sdInitAttempted = false;
+    static SD_Error_t result = SD_ERROR;
+
+    if (sdInitAttempted) {
+        return result;
+    }
+
+    sdInitAttempted = true;
+
+    result = SD_DoInit();
+
+    return result;
 }
 
 /** -----------------------------------------------------------------------------------------------------------------*/

@@ -46,10 +46,10 @@
 #include "pid_init.h"
 
 #if defined(USE_D_MIN)
-#define D_MIN_RANGE_HZ 80    // Biquad lowpass input cutoff to peak D around propwash frequencies
-#define D_MIN_LOWPASS_HZ 10  // PT1 lowpass cutoff to smooth the boost effect
-#define D_MIN_GAIN_FACTOR 0.00005f
-#define D_MIN_SETPOINT_GAIN_FACTOR 0.00005f
+#define D_MIN_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
+#define D_MIN_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
+#define D_MIN_GAIN_FACTOR 0.00008f
+#define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
 #define ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF 15  // The anti gravity throttle highpass filter cutoff
@@ -224,8 +224,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        biquadFilterInitLPF(&pidRuntime.dMinRange[axis], D_MIN_RANGE_HZ, targetPidLooptime);
-        pt1FilterInit(&pidRuntime.dMinLowpass[axis], pt1FilterGain(D_MIN_LOWPASS_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMinRange[axis], pt2FilterGain(D_MIN_RANGE_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMinLowpass[axis], pt2FilterGain(D_MIN_LOWPASS_HZ, pidRuntime.dT));
      }
 #endif
 
@@ -238,8 +238,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     pt1FilterInit(&pidRuntime.antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.antiGravitySmoothLpf, pt1FilterGain(ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF, pidRuntime.dT));
-
-    pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -276,11 +274,6 @@ void pidUpdateFeedforwardLpf(uint16_t filterCutoff)
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
-    if (pidProfile->feedforwardTransition == 0) {
-        pidRuntime.feedforwardTransition = 0;
-    } else {
-        pidRuntime.feedforwardTransition = 100.0f / pidProfile->feedforwardTransition;
-    }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pidRuntime.pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
         pidRuntime.pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
@@ -422,12 +415,18 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_FEEDFORWARD
+    if (pidProfile->feedforward_transition == 0) {
+        pidRuntime.feedforwardTransitionFactor = 0;
+    } else {
+        pidRuntime.feedforwardTransitionFactor = 100.0f / pidProfile->feedforward_transition;
+    }
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
     pidRuntime.feedforwardSmoothFactor = 1.0f;
     if (pidProfile->feedforward_smooth_factor) {
         pidRuntime.feedforwardSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) / 100.0f;
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
+    pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
     feedforwardInit(pidProfile);
 #endif
 

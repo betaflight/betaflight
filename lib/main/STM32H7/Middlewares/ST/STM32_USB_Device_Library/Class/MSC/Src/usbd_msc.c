@@ -281,17 +281,8 @@ static DMA_DATA_ZERO_INIT USBD_MSC_BOT_HandleTypeDef ClassData;
 uint8_t USBD_MSC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
   UNUSED(cfgidx);
-  USBD_MSC_BOT_HandleTypeDef *hmsc;
 
-  hmsc = &ClassData;
-
-  if (hmsc == NULL)
-  {
-    pdev->pMSC_ClassData = NULL;
-    return (uint8_t)USBD_EMEM;
-  }
-
-  pdev->pMSC_ClassData = (void *)hmsc;
+  pdev->pMSC_ClassData = (void *)&ClassData;
 
   if (pdev->dev_speed == USBD_SPEED_HIGH)
   {

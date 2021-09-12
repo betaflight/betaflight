@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_split.ld
+**  File        : stm32_flash_g4_split.ld
 **
 **  Abstract    : Common linker script for STM32 devices.
 **
@@ -75,12 +75,15 @@ SECTIONS
   } >FLASH1
 
 
-   .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
+   .ARM.extab   : {
+       *(.ARM.extab* .gnu.linkonce.armextab.*)
+   } >MOVABLE_FLASH
+
     .ARM : {
     __exidx_start = .;
       *(.ARM.exidx*)
       __exidx_end = .;
-    } >FLASH
+    } >MOVABLE_FLASH
 
   .preinit_array     :
   {

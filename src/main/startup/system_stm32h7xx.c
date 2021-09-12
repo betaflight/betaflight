@@ -69,7 +69,7 @@
 
 #include "build/debug.h"
 
-void forcedSystemResetWithoutDisablingCaches(void);
+void systemResetWithoutDisablingCaches(void);
 
 #if !defined  (HSE_VALUE)
 #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
@@ -179,7 +179,7 @@ void HandleStuckSysTick(void)
     }
 
     if (tickStart == tickEnd) {
-        forcedSystemResetWithoutDisablingCaches();
+        systemResetWithoutDisablingCaches();
     }
 }
 
@@ -389,7 +389,7 @@ static void SystemClockHSE_Config(void)
 
 #ifdef USE_H7_HSE_TIMEOUT_WORKAROUND
     if (status == HAL_TIMEOUT) {
-        forcedSystemResetWithoutDisablingCaches(); // DC - sometimes HSERDY gets stuck, waiting longer doesn't help.
+        systemResetWithoutDisablingCaches(); // DC - sometimes HSERDY gets stuck, waiting longer doesn't help.
     }
 #endif
 
@@ -596,6 +596,11 @@ void SystemClock_Config(void)
 
 #ifdef USE_SDCARD_SDIO
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
+
+#if (HSE_VALUE != 8000000)
+#error Unsupported external oscillator speed.  The calculations below are based on 8Mhz resonators
+// if you are seeing this, then calculate the PLL2 settings for your resonator and add support as required.
+#else
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
     RCC_PeriphClkInit.PLL2.PLL2N = 500;
     RCC_PeriphClkInit.PLL2.PLL2P = 2; // 500Mhz
@@ -606,6 +611,8 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.PLL2.PLL2FRACN = 0;
     RCC_PeriphClkInit.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL2;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+#endif // 8Mhz HSE_VALUE
+
 #endif
 
     // Configure MCO clocks for clock test/verification

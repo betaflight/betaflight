@@ -40,7 +40,7 @@
 #ifdef STM32F3
 #define MINIMAL_CLI
 #define USE_DSHOT
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_CCM_CODE
 #endif
 
@@ -54,7 +54,7 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_ADC
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
@@ -81,7 +81,7 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_OVERCLOCK
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
@@ -103,7 +103,7 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_DMA_SPEC
@@ -126,7 +126,7 @@
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_OVERCLOCK
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_ADC_INTERNAL
 #define USE_USB_MSC
 #define USE_USB_CDC_HID
@@ -180,8 +180,9 @@
 #define FAST_DATA
 #endif // USE_FAST_DATA
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32G4)
 // F4 can't DMA to/from CCM (core coupled memory) SRAM (where the stack lives)
+// On G4 there is no specific DMA target memory
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO        static

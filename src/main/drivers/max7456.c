@@ -351,7 +351,7 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
 
     max7456HardwareReset();
 
-    if (!max7456Config->csTag || !spiSetBusInstance(dev, max7456Config->spiDevice, OWNER_OSD_CS)) {
+    if (!max7456Config->csTag || !spiSetBusInstance(dev, max7456Config->spiDevice)) {
         return MAX7456_INIT_NOT_CONFIGURED;
     }
 
@@ -464,7 +464,7 @@ void max7456Invert(bool invert)
 }
 
 /**
- * Sets the brighness of black and white pixels.
+ * Sets the brightness of black and white pixels.
  *
  * @param black Black brightness (0-3, 0 is darkest)
  * @param white White brightness (0-3, 0 is darkest)

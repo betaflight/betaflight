@@ -87,7 +87,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
 #if defined(STM32F1)
 #define PID_PROCESS_DENOM_DEFAULT       8
@@ -141,7 +141,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermWindupPointPercent = 100,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
-        .feedforwardTransition = 0,
+        .feedforward_transition = 0,
         .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 250,
@@ -256,12 +256,12 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-float pidGetFeedforwardBoostFactor()
+#ifdef USE_FEEDFORWARD
+float pidGetFeedforwardTransitionFactor()
 {
-    return pidRuntime.feedforwardBoostFactor;
+    return pidRuntime.feedforwardTransitionFactor;
 }
 
-#ifdef USE_FEEDFORWARD
 float pidGetFeedforwardSmoothFactor()
 {
     return pidRuntime.feedforwardSmoothFactor;
@@ -270,6 +270,11 @@ float pidGetFeedforwardSmoothFactor()
 float pidGetFeedforwardJitterFactor()
 {
     return pidRuntime.feedforwardJitterFactor;
+}
+
+float pidGetFeedforwardBoostFactor()
+{
+    return pidRuntime.feedforwardBoostFactor;
 }
 #endif
 
@@ -1041,7 +1046,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // loop execution to be delayed.
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
-            float preTpaData = pidRuntime.pidCoefficient[axis].Kd * delta;
+            float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #if defined(USE_ACC)
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
@@ -1052,12 +1057,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #if defined(USE_D_MIN)
             float dMinFactor = 1.0f;
             if (pidRuntime.dMinPercent[axis] > 0) {
-                float dMinGyroFactor = biquadFilterApply(&pidRuntime.dMinRange[axis], delta);
+                float dMinGyroFactor = pt2FilterApply(&pidRuntime.dMinRange[axis], delta);
                 dMinGyroFactor = fabsf(dMinGyroFactor) * pidRuntime.dMinGyroGain;
                 const float dMinSetpointFactor = (fabsf(pidSetpointDelta)) * pidRuntime.dMinSetpointGain;
                 dMinFactor = MAX(dMinGyroFactor, dMinSetpointFactor);
                 dMinFactor = pidRuntime.dMinPercent[axis] + (1.0f - pidRuntime.dMinPercent[axis]) * dMinFactor;
-                dMinFactor = pt1FilterApply(&pidRuntime.dMinLowpass[axis], dMinFactor);
+                dMinFactor = pt2FilterApply(&pidRuntime.dMinLowpass[axis], dMinFactor);
                 dMinFactor = MIN(dMinFactor, 1.0f);
                 if (axis == FD_ROLL) {
                     DEBUG_SET(DEBUG_D_MIN, 0, lrintf(dMinGyroFactor * 100));
@@ -1069,17 +1074,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 
             // Apply the dMinFactor
-            preTpaData *= dMinFactor;
+            preTpaD *= dMinFactor;
 #endif
-            pidData[axis].D = preTpaData * tpaFactor;
+            pidData[axis].D = preTpaD * tpaFactor;
 
             // Log the value of D pre application of TPA
-            preTpaData *= D_LPF_FILT_SCALE;
+            preTpaD *= D_LPF_FILT_SCALE;
 
             if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_D_LPF, 2, lrintf(preTpaData));
+                DEBUG_SET(DEBUG_D_LPF, 2, lrintf(preTpaD));
             } else if (axis == FD_PITCH) {
-                DEBUG_SET(DEBUG_D_LPF, 3, lrintf(preTpaData));
+                DEBUG_SET(DEBUG_D_LPF, 3, lrintf(preTpaD));
             }
         } else {
             pidData[axis].D = 0;
@@ -1100,12 +1105,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidRuntime.oldSetpointCorrection[axis] = setpointCorrection;
 #endif
 
-        // Only enable feedforward for rate mode and if launch control is inactive
-        const float feedforwardGain = (flightModeFlags || launchControlActive) ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
+        // no feedforward in launch control
+        float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         if (feedforwardGain > 0) {
-            // no transition if feedforwardTransition == 0
-            float transition = pidRuntime.feedforwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * pidRuntime.feedforwardTransition) : 1;
-            float feedForward = feedforwardGain * transition * pidSetpointDelta * pidRuntime.pidFrequency;
+            // halve feedforward in Level mode since stick sensitivity is weaker by about half
+            feedforwardGain *= FLIGHT_MODE(ANGLE_MODE) ? 0.5f : 1.0f;
+            // transition now calculated in feedforward.c when new RC data arrives 
+            float feedForward = feedforwardGain * pidSetpointDelta * pidRuntime.pidFrequency;
 
 #ifdef USE_FEEDFORWARD
             pidData[axis].F = shouldApplyFeedforwardLimits(axis) ?
