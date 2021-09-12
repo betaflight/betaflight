@@ -207,6 +207,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .feedforward_smooth_factor = 25,
         .feedforward_jitter_factor = 7,
         .feedforward_boost = 15,
+        .feedforward_interpolate_dups = false,
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,

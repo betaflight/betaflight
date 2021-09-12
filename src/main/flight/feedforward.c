@@ -50,6 +50,7 @@ static uint8_t goodPacketCount[XYZ_AXIS_COUNT];
 static uint8_t averagingCount;
 static float feedforwardMaxRateLimit[XYZ_AXIS_COUNT];
 static float feedforwardMaxRate[XYZ_AXIS_COUNT];
+static bool interpolateDuplicates;
 
 void feedforwardInit(const pidProfile_t *pidProfile) {
     const float feedforwardMaxRateScale = pidProfile->feedforward_max_rate_limit * 0.01f;
@@ -59,6 +60,7 @@ void feedforwardInit(const pidProfile_t *pidProfile) {
         feedforwardMaxRateLimit[i] = feedforwardMaxRate[i] * feedforwardMaxRateScale;
         laggedMovingAverageInit(&setpointDeltaAvg[i].filter, averagingCount, (float *)&setpointDeltaAvg[i].buf[0]);
     }
+    interpolateDuplicates = pidProfile->feedforward_interpolate_dups;
 }
 
 FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging) {
@@ -92,13 +94,11 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         const float setpointPercent = fabsf(setpoint) / feedforwardMaxRate[axis];
         float absSetpointSpeed = fabsf(setpointSpeed); // unsmoothed for kick prevention
 
-        // interpolate setpoint if necessary
         if (rcCommandDelta == 0.0f) {
             // duplicate packet data on this axis
-            if (getRxRateValid() && goodPacketCount[axis] >= 2 && setpointPercent < 0.95f) {
-                // interpolate if two or more preceding valid packets, or if sticks near max
+            if (interpolateDuplicates && goodPacketCount[axis] >= 2 && getRxRateValid()  && setpointPercent < 0.95f) {
+                // interpolate duplicates after two previous good packets and not after long dropouts or or sticks near max
                 setpoint = prevSetpoint[axis] + (prevSetpointSpeed[axis] + prevAcceleration[axis] * jitterAttenuator) * rxInterval * jitterAttenuator;
-                // setpoint interpolation includes previous acceleration and attenuation
                 setpointSpeed = (setpoint - prevSetpoint[axis]) * rxRate;
                 // recalculate speed and acceleration based on new setpoint
             } else {

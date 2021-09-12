@@ -1156,6 +1156,7 @@ const clivalue_t valueTable[] = {
     { "feedforward_jitter_reduction", VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = {0, 20}, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_jitter_factor) },
     { "feedforward_boost",            VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_boost) },
     { "feedforward_max_rate_limit",   VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = {0, 150}, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_max_rate_limit) },
+    { "feedforward_interpolate_dups", VAR_UINT8 | PROFILE_VALUE| MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, feedforward_interpolate_dups) },
 #endif
 
 #ifdef USE_DYN_IDLE
