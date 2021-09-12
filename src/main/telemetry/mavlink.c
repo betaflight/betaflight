@@ -390,11 +390,11 @@ void mavlinkSendAttitude(void)
         // yaw Yaw angle (rad)
         DECIDEGREES_TO_RADIANS(attitude.values.yaw),
         // rollspeed Roll angular speed (rad/s)
-        0,
+        rates.values.rollRate,
         // pitchspeed Pitch angular speed (rad/s)
-        0,
+        rates.values.pitchRate,
         // yawspeed Yaw angular speed (rad/s)
-        0);
+        rates.values.yawRate);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 }

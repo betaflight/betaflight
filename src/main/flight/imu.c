@@ -109,6 +109,7 @@ quaternion offset = QUATERNION_INITIALIZE;
 
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
+attitudeRates_t rates = RATE_INITIALIZE;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 1);
 
@@ -535,6 +536,11 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
+
+    // let's save the gyro rates here so we can use it for telemetry later
+    rates.values.rollRate = gyroAverage[X];
+    rates.values.pitchRate = gyroAverage[Y];
+    rates.values.yawRate = gyroAverage[Z];
 
     if (accGetAccumulationAverage(accAverage)) {
         useAcc = imuIsAccelerometerHealthy(accAverage);

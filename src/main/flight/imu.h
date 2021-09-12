@@ -50,7 +50,18 @@ typedef union {
 } attitudeEulerAngles_t;
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
+typedef union {
+    float raw[XYZ_AXIS_COUNT];
+    struct {
+        float rollRate;
+        float pitchRate;
+        float yawRate;
+    } values;
+} attitudeRates_t;
+#define RATE_INITIALIZE  { { 0, 0, 0 } }
+
 extern attitudeEulerAngles_t attitude;
+extern attitudeRates_t rates;
 extern float rMat[3][3];
 
 typedef struct imuConfig_s {
