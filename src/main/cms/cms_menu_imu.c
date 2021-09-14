@@ -278,51 +278,42 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
 
     pidProfile_t *pidProfile = currentPidProfile;
 
-    pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
-    pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
-    pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
-    pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
-    pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
-    pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
+    const bool anySettingChanged = pidProfile->simplified_pids_mode != cmsx_simplified_pids_mode
+        || pidProfile->simplified_master_multiplier != cmsx_simplified_master_multiplier
+        || pidProfile->simplified_roll_pitch_ratio != cmsx_simplified_roll_pitch_ratio
+        || pidProfile->simplified_i_gain != cmsx_simplified_i_gain
+        || pidProfile->simplified_pd_ratio != cmsx_simplified_pd_ratio
+        || pidProfile->simplified_pd_gain != cmsx_simplified_pd_gain
 #ifdef USE_D_MIN
-    pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
+        || pidProfile->simplified_dmin_ratio != cmsx_simplified_dmin_ratio
 #endif
-    pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
+        || pidProfile->simplified_feedforward_gain != cmsx_simplified_feedforward_gain
+        || pidProfile->simplified_dterm_filter != cmsx_simplified_dterm_filter
+        || pidProfile->simplified_dterm_filter_multiplier != cmsx_simplified_dterm_filter_multiplier
+        || gyroConfigMutable()->simplified_gyro_filter != cmsx_simplified_gyro_filter
+        || gyroConfigMutable()->simplified_gyro_filter_multiplier != cmsx_simplified_gyro_filter_multiplier;
 
-    pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
-    pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
-    gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
-    gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
+    if (anySettingChanged) {
+        pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
+        pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
+        pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
+        pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
+        pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
+        pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
+#ifdef USE_D_MIN
+        pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
+#endif
+        pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
+
+        pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
+        pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
+        gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
+        gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
+
+        applySimplifiedTuning(currentPidProfile);
+    }
 
     return 0;
-}
-
-static const void *cmsx_applySimplifiedTuning(displayPort_t *pDisp, const void *self)
-{
-    UNUSED(pDisp);
-    UNUSED(self);
-
-    pidProfile_t *pidProfile = currentPidProfile;
-
-    pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
-    pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
-    pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
-    pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
-    pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
-    pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
-#ifdef USE_D_MIN
-    pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
-#endif
-    pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
-
-    pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
-    pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
-    gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
-    gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
-
-    applySimplifiedTuning(currentPidProfile);
-
-    return MENU_CHAIN_BACK;
 }
 
 static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
@@ -344,9 +335,6 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
     { "GYRO MULT",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
     { "DTERM TUNING",   OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_dterm_filter, 1, lookupTableOffOn }, 0 },
     { "DTERM MULT",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-
-    { "-- GENERAL --", OME_Label, NULL, NULL, 0},
-    { "APPLY TUNING",  OME_Funcall, cmsx_applySimplifiedTuning, NULL, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
