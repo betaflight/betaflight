@@ -50,9 +50,6 @@
  *
  * As noticed by Skrebber the GR-12 (and probably GR-16/24, too) are based on a PIC 24FJ64GA-002, which has 5V tolerant digital pins.
  *
- * Note: The softserial ports are not listed as 5V tolerant in the STM32F103xx data sheet pinouts and pin description
- * section.  Verify if you require a 5v/3.3v level shifters.  The softserial port should not be inverted.
- *
  * There is a technical discussion (in German) about HoTT here
  * http://www.rc-network.de/forum/showthread.php/281496-Graupner-HoTT-Telemetrie-Sensoren-Eigenbau-DIY-Telemetrie-Protokoll-entschl%C3%BCsselt/page21
  */
@@ -257,20 +254,20 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     if (shouldTriggerBatteryAlarmNow()) {
         lastHottAlarmSoundTime = millis();
-	const batteryState_e voltageState = getVoltageState();
-	const batteryState_e consumptionState = getConsumptionState();
+    const batteryState_e voltageState = getVoltageState();
+    const batteryState_e consumptionState = getConsumptionState();
         if (voltageState == BATTERY_WARNING  || voltageState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
-	}
-	else if (consumptionState == BATTERY_WARNING  || consumptionState == BATTERY_CRITICAL) {
+    }
+    else if (consumptionState == BATTERY_WARNING  || consumptionState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x16;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_MAH;
-	}		
-	else {
+    }       
+    else {
             hottEAMMessage->warning_beeps = HOTT_EAM_ALARM1_FLAG_NONE;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_NONE;
-	}
+    }
     }
 }
 

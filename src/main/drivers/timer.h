@@ -37,16 +37,11 @@
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
 typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
-#elif defined(STM32F1)
-typedef uint16_t timCCR_t;
-typedef uint16_t timCCER_t;
-typedef uint16_t timSR_t;
-typedef uint16_t timCNT_t;
 #else
 #error "Unknown CPU defined"
 #endif
@@ -91,7 +86,7 @@ typedef struct timerHardware_s {
     uint8_t channel;
     timerUsageFlag_e usageFlags;
     uint8_t output;
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint8_t alternateFunction;
 #endif
 
@@ -122,17 +117,7 @@ typedef enum {
     TIMER_OUTPUT_N_CHANNEL = (1 << 1),
 } timerFlag_e;
 
-#ifdef STM32F1
-#if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
-#define HARDWARE_TIMER_DEFINITION_COUNT 14
-#elif defined(STM32F10X_HD) || defined(STM32F10X_CL)
-#define HARDWARE_TIMER_DEFINITION_COUNT 7
-#else
-#define HARDWARE_TIMER_DEFINITION_COUNT 4
-#endif
-#elif defined(STM32F3)
-#define HARDWARE_TIMER_DEFINITION_COUNT 10
-#elif defined(STM32F411xE)
+#if defined(STM32F411xE)
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
 #elif defined(STM32F4)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
@@ -154,11 +139,7 @@ extern const timerHardware_t timerHardware[];
 
 
 #if defined(USE_TIMER_MGMT)
-#if defined(STM32F3)
-
-#define FULL_TIMER_CHANNEL_COUNT 88
-
-#elif defined(STM32F4)
+#if defined(STM32F4)
 
 #if defined(STM32F411xE)
 #define FULL_TIMER_CHANNEL_COUNT 59
@@ -192,14 +173,6 @@ extern const timerHardware_t fullTimerHardware[];
 #else
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14) )
 #endif
-
-#elif defined(STM32F3)
-
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-
-#elif defined(STM32F1)
-
-#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
 
 #elif defined(STM32H7)
 

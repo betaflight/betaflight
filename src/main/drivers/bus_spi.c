@@ -119,7 +119,7 @@ bool spiInit(SPIDevice device)
 #endif
 
     case SPIDEV_3:
-#if defined(USE_SPI_DEVICE_3) && !defined(STM32F1)
+#if defined(USE_SPI_DEVICE_3)
         spiInitDevice(device);
         return true;
 #else

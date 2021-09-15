@@ -28,20 +28,6 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-#ifdef STM32F1
-#define MINIMAL_CLI
-// Using RX DMA disables the use of receive callbacks
-#define USE_UART1_RX_DMA
-#define USE_UART1_TX_DMA
-#endif
-
-#ifdef STM32F3
-#define MINIMAL_CLI
-#define USE_DSHOT
-#define USE_DYN_NOTCH_FILTER
-#define USE_CCM_CODE
-#endif
-
 #ifdef STM32F4
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA

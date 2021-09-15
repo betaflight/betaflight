@@ -192,11 +192,7 @@ static void escSerialGPIOConfig(const timerHardware_t *timhw, ioConfig_t cfg)
 
 static void escSerialInputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
-#ifdef STM32F10X
-    escSerialGPIOConfig(timerHardwarePtr, IOCFG_IPU);
-#else
     escSerialGPIOConfig(timerHardwarePtr, IOCFG_AF_PP_UP);
-#endif
     timerChClearCCFlag(timerHardwarePtr);
     timerChITConfig(timerHardwarePtr,ENABLE);
 }

@@ -113,11 +113,6 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     }
 #else
     switch (tag) {
-#if defined(STM32F3) || defined(STM32F1)
-    case RCC_AHB:
-        RCC_AHBPeriphClockCmd(mask, NewState);
-        break;
-#endif
     case RCC_APB2:
         RCC_APB2PeriphClockCmd(mask, NewState);
         break;
@@ -213,11 +208,6 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 #else
 
     switch (tag) {
-#if defined(STM32F3) || defined(STM32F10X_CL)
-    case RCC_AHB:
-        RCC_AHBPeriphResetCmd(mask, NewState);
-        break;
-#endif
     case RCC_APB2:
         RCC_APB2PeriphResetCmd(mask, NewState);
         break;
