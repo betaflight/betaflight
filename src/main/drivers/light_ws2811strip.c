@@ -140,7 +140,7 @@ void ws2811LedStripEnable(void)
         const hsvColor_t hsv_black = { 0, 0, 0 };
         setStripColor(&hsv_black);
         // RGB or GRB ordering doesn't matter for black
-        ws2811UpdateStrip(LED_RGB);
+        ws2811UpdateStrip(LED_RGB, 100);
 
         ws2811Initialised = true;
     }
@@ -177,7 +177,7 @@ STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbCol
  * This method is non-blocking unless an existing LED update is in progress.
  * it does not wait until all the LEDs have been updated, that happens in the background.
  */
-void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
+void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat, uint8_t brightness)
 {
     // don't wait - risk of infinite block, just get an update next time round
     if (!ws2811Initialised || ws2811LedDataTransferInProgress) {
@@ -192,7 +192,11 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
     const unsigned ledUpdateCount = needsFullRefresh ? WS2811_DATA_BUFFER_SIZE : usedLedCount;
     const hsvColor_t hsvBlack = { 0, 0, 0 };
     while (ledIndex < ledUpdateCount) {
-        rgbColor24bpp_t *rgb24 = hsvToRgb24(ledIndex < usedLedCount ? &ledColorBuffer[ledIndex] : &hsvBlack);
+        hsvColor_t scaledLed = ledIndex < usedLedCount ? ledColorBuffer[ledIndex] : hsvBlack;
+        // Scale the LED brightness
+        scaledLed.v = scaledLed.v * brightness / 100;
+
+        rgbColor24bpp_t *rgb24 = hsvToRgb24(&scaledLed);
 
         updateLEDDMABuffer(ledFormat, rgb24, ledIndex++);
     }
