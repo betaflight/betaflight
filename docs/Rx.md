@@ -362,3 +362,14 @@ After configuring channel ranges use the sub-trim on your transmitter to set the
 
 
 You can also use rxrange to reverse the direction of an input channel, e.g. `rxrange 0 2000 1000`.
+
+## Disable ADC Filter
+
+It's very important to disable the `ADC filter` on your `OpenTX` based transmitter. For example the instructions provided below are for a Frsky Taranis X9D+ pre 2019 model:
+
+* Turn on your radio.
+* Hold Menu to access Global Settings.
+* Click the Page button 5 times to go to page 6 (HARDWARE).
+* Scroll down and select ADC filter.
+* Click Enter to disable the ADC filter as it's enabled by default.
+* Click Exit (twice) to return to the startup screen.
