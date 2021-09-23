@@ -59,33 +59,84 @@ static const void *cms_menuGpsLapTimerOnExit(displayPort_t *pDisp, const OSD_Ent
     return NULL;
 }
 
-static const void *cmsSetLeftGate(displayPort_t *pDisp, const void *self)
+static const void *cmsStartSetGate(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
-    UNUSED(self);
 
-    gpsLapTimerSetLeftGate();
+    gpsLapTimerStartSetGate();
 
     return NULL;
 }
 
-static const void *cmsSetRightGate(displayPort_t *pDisp, const void *self)
+static const void *cmsEndSetLeftGate(displayPort_t *pDisp, const OSD_Entry *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
 
-    gpsLapTimerSetRightGate();
+    gpsLapTimerEndSetGate(GATE_SIDE_LEFT);
 
     return NULL;
 }
+
+static const void *cmsEndSetRightGate(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    gpsLapTimerEndSetGate(GATE_SIDE_RIGHT);
+
+    return NULL;
+}
+
+static OSD_UINT16_t setGateCMSWaitCount = { &gpsLapTimerData.numberOfSetReadings, 0, 2000, 0 };
+
+static const OSD_Entry cmsSetleftGateMenuEntries[] = {
+    { "SETTING LEFT POSITION", OME_Label,     NULL, NULL,  0 },
+
+    { "READINGS",  OME_UINT16,     NULL, &setGateCMSWaitCount, DYNAMIC  },
+
+    {"BACK", OME_Back, NULL, NULL, 0},
+    { NULL,         OME_END,       NULL, NULL,     0 }
+};
+
+static CMS_Menu cmsSetLeftGateMenu = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "LEFTGATESET",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsStartSetGate,
+    .onExit = cmsEndSetLeftGate,
+    .onDisplayUpdate = NULL,
+    .entries = cmsSetleftGateMenuEntries,
+};
+
+static const OSD_Entry cmsSetRightGateMenuEntries[] = {
+    { "SETTING RIGHT POSITION", OME_Label,     NULL, NULL,    0 },
+
+    { "READINGS",  OME_UINT16,     NULL, &setGateCMSWaitCount, DYNAMIC  },
+
+    {"BACK", OME_Back, NULL, NULL, 0},
+    { NULL,         OME_END,       NULL, NULL,     0 }
+};
+
+static CMS_Menu cmsSetRightGateMenu = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "RIGHTGATESET",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsStartSetGate,
+    .onExit = cmsEndSetRightGate,
+    .onDisplayUpdate = NULL,
+    .entries = cmsSetRightGateMenuEntries,
+};
 
 const OSD_Entry cms_menuGpsLapTimerEntries[] =
 {
     {"--- GPS LAP TIMER ---", OME_Label, NULL, NULL, 0},
 
     { "MIN LAP", OME_UINT16,  NULL,            &(OSD_UINT16_t){ &gpsLapTimerConfig_minimumLapTimeSeconds, 0, 3000, 1 }, 0 },
-    { "LEFT",    OME_Funcall, cmsSetLeftGate,  NULL, 0 },
-    { "RIGHT",   OME_Funcall, cmsSetRightGate, NULL, 0 },
+    { "LEFT",    OME_Funcall, cmsMenuChange,   &cmsSetLeftGateMenu,                                                     0 },
+    { "RIGHT",   OME_Funcall, cmsMenuChange,   &cmsSetRightGateMenu,                                                    0 },
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}

@@ -41,33 +41,68 @@ PG_RESET_TEMPLATE(gpsLapTimerConfig_t, gpsLapTimerConfig,
     .minimumLapTimeSeconds = 10,
 );
 
+// if 1000 readings of 32-bit values are used, the total (for use in calculating the averate) would need 42 bits max.
+static int64_t gateSetLatReadings = 0;
+static int64_t gateSetLonReadings = 0;
+static bool settingGate = false;
+static gpsLocation_t lastLocation;
+static uint16_t timeOfLastLap;
+static bool timerRunning;
+static uint16_t previousLaps[2];
+
 gpsLapTimerData_t gpsLapTimerData;
 
 void gpsLapTimerInit(void)
 {
-    gpsLapTimerData.timeOfLastLap = 0L;
+    timeOfLastLap = 0L;
     gpsLapTimerData.currentLapTime = 0L;
     gpsLapTimerData.lastLapTime = 0L;
     gpsLapTimerData.gateLocationLeft.lat = gpsLapTimerConfig()->gateLeftLat;
     gpsLapTimerData.gateLocationLeft.lon = gpsLapTimerConfig()->gateLeftLon;
     gpsLapTimerData.gateLocationRight.lat = gpsLapTimerConfig()->gateRightLat;
     gpsLapTimerData.gateLocationRight.lon  = gpsLapTimerConfig()->gateRightLon;
+    gpsLapTimerData.bestLapTime = 0;
+    gpsLapTimerData.best3Consec = 0;
+    gateSetLatReadings = 0;
+    gateSetLonReadings = 0;
+    gpsLapTimerData.numberOfSetReadings = 0;
+    settingGate = false;
+    timerRunning = false;
 }
 
-void gpsLapTimerSetLeftGate(void)
+void gpsLapTimerStartSetGate(void)
 {
-    gpsLapTimerConfigMutable()->gateLeftLat = gpsSol.llh.lat;
-    gpsLapTimerConfigMutable()->gateLeftLon = gpsSol.llh.lon;
-    gpsLapTimerData.gateLocationLeft.lat = gpsLapTimerConfig()->gateLeftLat;
-    gpsLapTimerData.gateLocationLeft.lon = gpsLapTimerConfig()->gateLeftLon;
+    settingGate = true;
+    gateSetLatReadings = 0;
+    gateSetLonReadings = 0;
+    gpsLapTimerData.numberOfSetReadings = 0;
 }
 
-void gpsLapTimerSetRightGate(void)
+void gpsLapTimerProcessSettingGate(void)
 {
-    gpsLapTimerConfigMutable()->gateRightLat = gpsSol.llh.lat;
-    gpsLapTimerConfigMutable()->gateRightLon = gpsSol.llh.lon;
-    gpsLapTimerData.gateLocationRight.lat = gpsLapTimerConfig()->gateRightLat;
-    gpsLapTimerData.gateLocationRight.lon  = gpsLapTimerConfig()->gateRightLon;
+    gateSetLatReadings += gpsSol.llh.lat;
+    gateSetLonReadings += gpsSol.llh.lon;
+    gpsLapTimerData.numberOfSetReadings++;
+}
+
+void gpsLapTimerEndSetGate(gpsLapTimerGateSide_e side)
+{
+    settingGate = false;
+
+    uint32_t newLat = gateSetLatReadings / gpsLapTimerData.numberOfSetReadings;
+    uint32_t newLon = gateSetLonReadings / gpsLapTimerData.numberOfSetReadings;
+
+    if (side == GATE_SIDE_LEFT) {
+        gpsLapTimerData.gateLocationLeft.lat = newLat;
+        gpsLapTimerData.gateLocationLeft.lon = newLon;
+        gpsLapTimerConfigMutable()->gateLeftLat = newLat;
+        gpsLapTimerConfigMutable()->gateLeftLon = newLon;
+    } else {
+        gpsLapTimerConfigMutable()->gateRightLat = newLat;
+        gpsLapTimerConfigMutable()->gateRightLon = newLon;
+        gpsLapTimerData.gateLocationRight.lat = gpsLapTimerConfig()->gateRightLat;
+        gpsLapTimerData.gateLocationRight.lon  = gpsLapTimerConfig()->gateRightLon;
+    }
 }
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -142,17 +177,37 @@ bool doSegmentsIntersect(gpsLocation_t gateLeft, gpsLocation_t gateRight, gpsLoc
 void gpsLapTimerUpdate(void)
 {
     uint16_t currentTime = millis();
-    gpsLapTimerData.currentLapTime = currentTime - gpsLapTimerData.timeOfLastLap;
 
-    bool crossedTimingGate = doSegmentsIntersect(gpsLapTimerData.gateLocationLeft, gpsLapTimerData.gateLocationRight,
-                                                 gpsLapTimerData.lastLocation, gpsSol.llh);
-
-    if (crossedTimingGate && (gpsLapTimerData.currentLapTime > (gpsLapTimerConfig()->minimumLapTimeSeconds * 1000))) {
-        gpsLapTimerData.lastLapTime = gpsLapTimerData.currentLapTime;
-        gpsLapTimerData.timeOfLastLap = currentTime;
+    if (timerRunning) {
+        gpsLapTimerData.currentLapTime = currentTime - timeOfLastLap;
+    } else {
+        gpsLapTimerData.currentLapTime = 0.0;
     }
 
-    gpsLapTimerData.lastLocation = gpsSol.llh;
+    bool crossedTimingGate = doSegmentsIntersect(gpsLapTimerData.gateLocationLeft, gpsLapTimerData.gateLocationRight,
+                                                 lastLocation, gpsSol.llh);
+
+    if (crossedTimingGate) {
+        if (gpsLapTimerData.currentLapTime > (gpsLapTimerConfig()->minimumLapTimeSeconds * 1000) || !timerRunning) {
+            previousLaps[1] = previousLaps[0];
+            previousLaps[0] = gpsLapTimerData.lastLapTime;
+            gpsLapTimerData.lastLapTime = gpsLapTimerData.currentLapTime;
+            timeOfLastLap = currentTime;
+            if (timeOfLastLap < gpsLapTimerData.bestLapTime) {
+                gpsLapTimerData.bestLapTime = timeOfLastLap;
+            }
+            if (previousLaps[0] + previousLaps[1] + gpsLapTimerData.lastLapTime < gpsLapTimerData.best3Consec) {
+                gpsLapTimerData.best3Consec = previousLaps[0] + previousLaps[1] + gpsLapTimerData.lastLapTime;
+            }
+        }
+        timerRunning = true;
+    }
+
+    lastLocation = gpsSol.llh;
+
+    if (settingGate) {
+        gpsLapTimerProcessSettingGate();
+    }
 }
 
 #endif // GPS_LAP_TIMER

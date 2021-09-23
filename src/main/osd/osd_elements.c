@@ -1102,16 +1102,18 @@ static void osdElementEfficiency(osdElementParms_t *element)
 #ifdef USE_GPS_LAP_TIMER
 static void osdElementGpsLapTime(osdElementParms_t *element)
 {
-    //if ((millis() - gpsLapTimerData.timeOfLastLap) / 1000 < gpsLapTimerConfig()->minimumLapTimeSeconds) {
-        // within minimum lap time so show last lap
-        int lapTimeSeconds = gpsLapTimerData.lastLapTime / 1000;
-        int lapTimeDecimals = (gpsLapTimerData.lastLapTime % 1000) / 10;
-    //} else {
+    uint16_t lapTimeSeconds;
+    uint16_t lapTimeDecimals;
+    if (gpsLapTimerData.currentLapTime < (gpsLapTimerConfig()->minimumLapTimeSeconds * 1000) && gpsLapTimerData.lastLapTime != 0.0) {
+        // within minimum lap time, and not first lap, so show last lap
+        lapTimeSeconds = gpsLapTimerData.lastLapTime / 1000;
+        lapTimeDecimals = (gpsLapTimerData.lastLapTime % 1000) / 10;
+    } else {
         // outside minimum lap time so show current lap
-        int lapTimeSeconds2 = gpsLapTimerData.currentLapTime / 1000;
-        int lapTimeDecimals2 = (gpsLapTimerData.currentLapTime % 1000) / 10;
-    //}
-    tfp_sprintf(element->buff, "%02d.%02d %02d.%02d", lapTimeSeconds, lapTimeDecimals, lapTimeSeconds2, lapTimeDecimals2);
+        lapTimeSeconds = gpsLapTimerData.currentLapTime / 1000;
+        lapTimeDecimals = (gpsLapTimerData.currentLapTime % 1000) / 10;
+    }
+    tfp_sprintf(element->buff, "%02d.%02d", lapTimeSeconds, lapTimeDecimals);
 }
 #endif // GPS_LAP_TIMER
 

@@ -60,6 +60,7 @@
 #include "drivers/sdcard.h"
 #include "drivers/time.h"
 
+#include "fc/gps_lap_timer.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -184,6 +185,8 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
+    OSD_STAT_BEST_3_CONSEC_LAPS,
+    OSD_STAT_BEST_LAP,
 };
 
 // Format a float to the specified number of decimal places with optional rounding.
@@ -843,6 +846,21 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         tfp_sprintf(buff, "%3d", stats.min_rssi_dbm);
         osdDisplayStatisticLabel(displayRow, "MIN RSSI DBM", buff);
         return true;
+#endif
+
+#ifdef USE_GPS_LAP_TIMER
+    case OSD_STAT_BEST_3_CONSEC_LAPS:
+
+        return true;
+
+    case OSD_STAT_BEST_LAP: {
+        uint16_t lapTimeSeconds;
+        uint16_t lapTimeDecimals;
+        lapTimeSeconds = gpsLapTimerData.bestLapTime / 1000;
+        lapTimeDecimals = (gpsLapTimerData.bestLapTime % 1000) / 10;
+        tfp_sprintf(buff, "%02d.%02d", lapTimeSeconds, lapTimeDecimals);
+        return true;
+    }
 #endif
 
 #ifdef USE_PERSISTENT_STATS
