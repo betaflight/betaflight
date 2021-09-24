@@ -62,6 +62,7 @@
 #include "rx/sumd.h"
 #include "rx/sumh.h"
 #include "rx/msp.h"
+#include "rx/pinio.h"
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
@@ -273,6 +274,8 @@ void rxInit(void)
         rxRuntimeState.rxProvider = RX_PROVIDER_SERIAL;
     } else if (featureIsEnabled(FEATURE_RX_MSP)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_MSP;
+    } else if (featureIsEnabled(FEATURE_RX_PINIO)) {
+        rxRuntimeState.rxProvider = RX_PROVIDER_PINIO;
     } else if (featureIsEnabled(FEATURE_RX_SPI)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_SPI;
     } else {
@@ -329,6 +332,14 @@ void rxInit(void)
 #ifdef USE_RX_MSP
     case RX_PROVIDER_MSP:
         rxMspInit(rxConfig(), &rxRuntimeState);
+        needRxSignalMaxDelayUs = DELAY_5_HZ;
+
+        break;
+#endif
+
+#ifdef USE_RX_PINIO
+    case RX_PROVIDER_PINIO:
+        rxPinioInit(rxConfig(), &rxRuntimeState);
         needRxSignalMaxDelayUs = DELAY_5_HZ;
 
         break;
@@ -503,6 +514,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 #endif
     case RX_PROVIDER_SERIAL:
     case RX_PROVIDER_MSP:
+    case RX_PROVIDER_PINIO:
     case RX_PROVIDER_SPI:
         {
             const uint8_t frameStatus = rxRuntimeState.rcFrameStatusFn(&rxRuntimeState);
