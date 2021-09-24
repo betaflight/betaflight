@@ -59,10 +59,10 @@ void pinioInit(const pinioConfig_t *pinioConfig)
             IOConfigGPIO(io, IOCFG_OUT_PP);
             break;
         case PINIO_CONFIG_IN_PD:
-            IOConfigGPIO(io,IO_CFG_IPD);
+            IOConfigGPIO(io,IOCFG_IPD);
             break;
         case PINIO_CONFIG_IN_PU:
-            IOConfigGPIO(io,IO_CFG_IPU);
+            IOConfigGPIO(io,IOCFG_IPU);
             break;
         default:
             IOConfigGPIO(io,IOCFG_IN_FLOATING);
