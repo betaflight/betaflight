@@ -849,9 +849,15 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #endif
 
 #ifdef USE_GPS_LAP_TIMER
-    case OSD_STAT_BEST_3_CONSEC_LAPS:
-
+    case OSD_STAT_BEST_3_CONSEC_LAPS: {
+        uint16_t lapTimeSeconds;
+        uint16_t lapTimeDecimals;
+        lapTimeSeconds = gpsLapTimerData.best3Consec / 1000;
+        lapTimeDecimals = (gpsLapTimerData.best3Consec % 1000) / 10;
+        tfp_sprintf(buff, "%02d.%02d", lapTimeSeconds, lapTimeDecimals);
+        osdDisplayStatisticLabel(displayRow, "BEST 3 CON", buff);
         return true;
+    }
 
     case OSD_STAT_BEST_LAP: {
         uint16_t lapTimeSeconds;
@@ -859,6 +865,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         lapTimeSeconds = gpsLapTimerData.bestLapTime / 1000;
         lapTimeDecimals = (gpsLapTimerData.bestLapTime % 1000) / 10;
         tfp_sprintf(buff, "%02d.%02d", lapTimeSeconds, lapTimeDecimals);
+        osdDisplayStatisticLabel(displayRow, "BEST LAP", buff);
         return true;
     }
 #endif

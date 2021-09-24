@@ -41,6 +41,11 @@ PG_RESET_TEMPLATE(gpsLapTimerConfig_t, gpsLapTimerConfig,
     .minimumLapTimeSeconds = 10,
 );
 
+#define INTTYPE_SIGNED(T) ((T)-1 < (T)0)
+#define INTTYPE_MAX(T)                      \
+    (((T)1 << (8*sizeof(T)-INTTYPE_SIGNED(T)-1)) - 1 +   \
+     ((T)1 << (8*sizeof(T)-INTTYPE_SIGNED(T)-1)))
+
 // if 1000 readings of 32-bit values are used, the total (for use in calculating the averate) would need 42 bits max.
 static int64_t gateSetLatReadings = 0;
 static int64_t gateSetLonReadings = 0;
@@ -61,8 +66,8 @@ void gpsLapTimerInit(void)
     gpsLapTimerData.gateLocationLeft.lon = gpsLapTimerConfig()->gateLeftLon;
     gpsLapTimerData.gateLocationRight.lat = gpsLapTimerConfig()->gateRightLat;
     gpsLapTimerData.gateLocationRight.lon  = gpsLapTimerConfig()->gateRightLon;
-    gpsLapTimerData.bestLapTime = 0;
-    gpsLapTimerData.best3Consec = 0;
+    gpsLapTimerData.bestLapTime = INTTYPE_MAX(uint16_t);
+    gpsLapTimerData.best3Consec = INTTYPE_MAX(uint16_t);
     gateSetLatReadings = 0;
     gateSetLonReadings = 0;
     gpsLapTimerData.numberOfSetReadings = 0;
@@ -80,9 +85,11 @@ void gpsLapTimerStartSetGate(void)
 
 void gpsLapTimerProcessSettingGate(void)
 {
-    gateSetLatReadings += gpsSol.llh.lat;
-    gateSetLonReadings += gpsSol.llh.lon;
-    gpsLapTimerData.numberOfSetReadings++;
+    if (gpsLapTimerData.numberOfSetReadings < 1000){
+        gateSetLatReadings += gpsSol.llh.lat;
+        gateSetLonReadings += gpsSol.llh.lon;
+        gpsLapTimerData.numberOfSetReadings++;
+    }
 }
 
 void gpsLapTimerEndSetGate(gpsLapTimerGateSide_e side)
