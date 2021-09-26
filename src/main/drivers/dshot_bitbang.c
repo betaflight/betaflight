@@ -238,6 +238,18 @@ static bbPort_t *bbAllocMotorPort(int portIndex)
     return bbPort;
 }
 
+const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel)
+{
+    for (int index = 0; index < usedMotorPorts; index++) {
+        const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
+        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].owner.owner) {
+            return bitbangTimer;
+        }
+    }
+
+    return NULL;
+}
+
 const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
 {
     for (int index = 0; index < usedMotorPorts; index++) {
@@ -280,7 +292,7 @@ static void bbAllocDma(bbPort_t *bbPort)
 #endif
 
     dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(bbPort->dmaResource);
-    dmaInit(dmaIdentifier, OWNER_DSHOT_BITBANG, bbPort->owner.resourceIndex);
+    dmaInit(dmaIdentifier, bbPort->owner.owner, bbPort->owner.resourceIndex);
     bbPort->dmaSource = timerDmaSource(timhw->channel);
 
     bbPacer_t *bbPacer = bbFindMotorPacer(timhw->tim);
