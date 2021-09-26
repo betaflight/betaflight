@@ -30,6 +30,7 @@
 
 #include "common/filter.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "drivers/dshot.h"
 
@@ -59,7 +60,7 @@ typedef struct rpmNotchFilter_s {
     float    maxHz;
     float    fadeRangeHz;
     float    q;
-    uint32_t looptime;
+    timeUs_t looptimeUs;
 
     biquadFilter_t notch[XYZ_AXIS_COUNT][MAX_SUPPORTED_MOTORS][RPM_FILTER_MAXHARMONICS];
 
@@ -87,28 +88,28 @@ PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONF
 
 void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
 {
-    config->gyro_rpm_notch_harmonics = 3;
-    config->gyro_rpm_notch_min = 100;
-    config->gyro_rpm_notch_fade_range_hz = 50;
-    config->gyro_rpm_notch_q = 500;
+    config->rpm_filter_harmonics = 3;
+    config->rpm_filter_min_hz = 100;
+    config->rpm_filter_fade_range_hz = 50;
+    config->rpm_filter_q = 500;
 
-    config->rpm_lpf = 150;
+    config->rpm_filter_lpf_hz = 150;
 }
 
-static void rpmNotchFilterInit(rpmNotchFilter_t *filter, const rpmFilterConfig_t *config, const uint32_t looptime)
+static void rpmNotchFilterInit(rpmNotchFilter_t *filter, const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
 {
-    filter->harmonics = config->gyro_rpm_notch_harmonics;
-    filter->minHz = config->gyro_rpm_notch_min;
-    filter->maxHz = 0.48f * 1e6f / looptime; // don't go quite to nyquist to avoid oscillations
-    filter->fadeRangeHz = config->gyro_rpm_notch_fade_range_hz;
-    filter->q = config->gyro_rpm_notch_q / 100.0f;
-    filter->looptime = looptime;
+    filter->harmonics = config->rpm_filter_harmonics;
+    filter->minHz = config->rpm_filter_min_hz;
+    filter->maxHz = 0.48f * 1e6f / looptimeUs; // don't go quite to nyquist to avoid oscillations
+    filter->fadeRangeHz = config->rpm_filter_fade_range_hz;
+    filter->q = config->rpm_filter_q / 100.0f;
+    filter->looptimeUs = looptimeUs;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         for (int motor = 0; motor < getMotorCount(); motor++) {
             for (int i = 0; i < filter->harmonics; i++) {
                 biquadFilterInit(
-                    &filter->notch[axis][motor][i], filter->minHz * i, filter->looptime, filter->q, FILTER_NOTCH, 0.0f);
+                    &filter->notch[axis][motor][i], filter->minHz * i, filter->looptimeUs, filter->q, FILTER_NOTCH, 0.0f);
             }
         }
     }
@@ -126,7 +127,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     }
 
     pidLooptime = gyro.targetLooptime;
-    if (config->gyro_rpm_notch_harmonics) {
+    if (config->rpm_filter_harmonics) {
         gyroFilter = &filters[numberRpmNotchFilters++];
         rpmNotchFilterInit(gyroFilter, config, pidLooptime);
     } else {
@@ -134,7 +135,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     }
 
     for (int i = 0; i < getMotorCount(); i++) {
-        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_lpf, pidLooptime * 1e-6f));
+        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_filter_lpf_hz, pidLooptime * 1e-6f));
     }
 
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
@@ -163,7 +164,7 @@ float rpmFilterGyro(const int axis, float value)
     return applyFilter(gyroFilter, axis, value);
 }
 
-FAST_CODE_NOINLINE void rpmFilterUpdate()
+FAST_CODE_NOINLINE void rpmFilterUpdate(void)
 {
     if (gyroFilter == NULL) {
         return;
@@ -195,7 +196,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate()
         }
 
         biquadFilterUpdate(
-            template, frequency, currentFilter->looptime, currentFilter->q, FILTER_NOTCH, weight);
+            template, frequency, currentFilter->looptimeUs, currentFilter->q, FILTER_NOTCH, weight);
 
         for (int axis = 1; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilter_t *clone = &currentFilter->notch[axis][currentMotor][currentHarmonic];
@@ -223,10 +224,10 @@ FAST_CODE_NOINLINE void rpmFilterUpdate()
 
 bool isRpmFilterEnabled(void)
 {
-    return (motorConfig()->dev.useDshotTelemetry && rpmFilterConfig()->gyro_rpm_notch_harmonics);
+    return (motorConfig()->dev.useDshotTelemetry && rpmFilterConfig()->rpm_filter_harmonics);
 }
 
-float rpmMinMotorFrequency()
+float rpmMinMotorFrequency(void)
 {
     if (minMotorFrequency == 0.0f) {
         minMotorFrequency = 10000.0f;

@@ -1430,10 +1430,11 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("motor_poles", "%d",                     motorConfig()->motorPoleCount);
 #endif
 #ifdef USE_RPM_FILTER
-        BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_harmonics", "%d",        rpmFilterConfig()->gyro_rpm_notch_harmonics);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_q", "%d",                rpmFilterConfig()->gyro_rpm_notch_q);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_rpm_notch_min", "%d",              rpmFilterConfig()->gyro_rpm_notch_min);
-        BLACKBOX_PRINT_HEADER_LINE("rpm_notch_lpf", "%d",                   rpmFilterConfig()->rpm_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("rpm_filter_harmonics", "%d",            rpmFilterConfig()->rpm_filter_harmonics);
+        BLACKBOX_PRINT_HEADER_LINE("rpm_filter_q", "%d",                    rpmFilterConfig()->rpm_filter_q);
+        BLACKBOX_PRINT_HEADER_LINE("rpm_filter_min_hz", "%d",               rpmFilterConfig()->rpm_filter_min_hz);
+        BLACKBOX_PRINT_HEADER_LINE("rpm_filter_fade_range_hz", "%d",        rpmFilterConfig()->rpm_filter_fade_range_hz);
+        BLACKBOX_PRINT_HEADER_LINE("rpm_filter_lpf_hz", "%d",               rpmFilterConfig()->rpm_filter_lpf_hz);
 #endif
 #if defined(USE_ACC)
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                 (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
