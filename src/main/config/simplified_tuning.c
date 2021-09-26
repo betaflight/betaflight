@@ -95,4 +95,13 @@ void applySimplifiedTuning(pidProfile_t *pidProfile)
         calculateNewGyroFilterValues();
     }
 }
+
+void disableSimplifiedTuning(pidProfile_t *pidProfile)
+{
+    pidProfile->simplified_pids_mode = PID_SIMPLIFIED_TUNING_OFF;
+
+    pidProfile->simplified_dterm_filter = false;
+
+    gyroConfigMutable()->simplified_gyro_filter = false;
+}
 #endif // USE_SIMPLIFIED_TUNING
