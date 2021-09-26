@@ -39,9 +39,9 @@
 #define FILTER_FREQUENCY_MAX 1000 // so little filtering above 1000hz that if the user wants less delay, they must disable the filter
 #define DYN_LPF_FILTER_FREQUENCY_MAX 1000
 
-#define DYN_LPF_GYRO_MIN_HZ_DEFAULT 200
+#define DYN_LPF_GYRO_MIN_HZ_DEFAULT 250
 #define DYN_LPF_GYRO_MAX_HZ_DEFAULT 500
-#define GYRO_LOWPASS_2_HZ_DEFAULT 250
+#define GYRO_LOWPASS_2_HZ_DEFAULT 500
 
 #ifdef USE_YAW_SPIN_RECOVERY
 #define YAW_SPIN_RECOVERY_THRESHOLD_MIN 500

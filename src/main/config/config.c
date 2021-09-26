@@ -272,7 +272,7 @@ static void validateAndFixConfig(void)
 
         // If the d_min value for any axis is >= the D gain then reset d_min to 0 for consistent Configurator behavior
         for (unsigned axis = 0; axis <= FD_YAW; axis++) {
-            if (pidProfilesMutable(i)->d_min[axis] >= pidProfilesMutable(i)->pid[axis].D) {
+            if (pidProfilesMutable(i)->d_min[axis] > pidProfilesMutable(i)->pid[axis].D) {
                 pidProfilesMutable(i)->d_min[axis] = 0;
             }
         }
