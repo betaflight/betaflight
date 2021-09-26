@@ -1355,22 +1355,22 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("d_min_gain", "%d",                      currentPidProfile->d_min_gain);
         BLACKBOX_PRINT_HEADER_LINE("d_min_advance", "%d",                   currentPidProfile->d_min_advance);
 #endif
-        BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type", "%d",               currentPidProfile->dterm_filter_type);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_hz", "%d",                currentPidProfile->dterm_lowpass_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf1_type", "%d",                 currentPidProfile->dterm_lpf1_type);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf1_static_hz", "%d",            currentPidProfile->dterm_lpf1_static_hz);
 #ifdef USE_DYN_LPF
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass_dyn_hz", "%d,%d",         currentPidProfile->dyn_lpf_dterm_min_hz,
-                                                                            currentPidProfile->dyn_lpf_dterm_max_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf1_dyn_hz", "%d,%d",            currentPidProfile->dterm_lpf1_dyn_min_hz,
+                                                                            currentPidProfile->dterm_lpf1_dyn_max_hz);
 #endif
-        BLACKBOX_PRINT_HEADER_LINE("dterm_filter2_type", "%d",              currentPidProfile->dterm_filter2_type);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lowpass2_hz", "%d",               currentPidProfile->dterm_lowpass2_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf2_type", "%d",                 currentPidProfile->dterm_lpf2_type);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf2_static_hz", "%d",            currentPidProfile->dterm_lpf2_static_hz);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lowpass_hz", "%d",                  currentPidProfile->yaw_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",              currentPidProfile->dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("iterm_windup", "%d",                    currentPidProfile->itermWindupPointPercent);
 #if defined(USE_ITERM_RELAX)
-        BLACKBOX_PRINT_HEADER_LINE("iterm_relax", "%d",                    currentPidProfile->iterm_relax);
-        BLACKBOX_PRINT_HEADER_LINE("iterm_relax_type", "%d",               currentPidProfile->iterm_relax_type);
-        BLACKBOX_PRINT_HEADER_LINE("iterm_relax_cutoff", "%d",             currentPidProfile->iterm_relax_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("iterm_relax", "%d",                     currentPidProfile->iterm_relax);
+        BLACKBOX_PRINT_HEADER_LINE("iterm_relax_type", "%d",                currentPidProfile->iterm_relax_type);
+        BLACKBOX_PRINT_HEADER_LINE("iterm_relax_cutoff", "%d",              currentPidProfile->iterm_relax_cutoff);
 #endif
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle", "%d",                currentPidProfile->pidAtMinThrottle);
 
@@ -1406,14 +1406,14 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband", "%d",                    rcControlsConfig()->yaw_deadband);
 
         BLACKBOX_PRINT_HEADER_LINE("gyro_hardware_lpf", "%d",               gyroConfig()->gyro_hardware_lpf);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_type", "%d",               gyroConfig()->gyro_lowpass_type);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz", "%d",                 gyroConfig()->gyro_lowpass_hz);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf1_type", "%d",                  gyroConfig()->gyro_lpf1_type);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf1_static_hz", "%d",             gyroConfig()->gyro_lpf1_static_hz);
 #ifdef USE_DYN_LPF
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_dyn_hz", "%d,%d",          gyroConfig()->dyn_lpf_gyro_min_hz,
-                                                                            gyroConfig()->dyn_lpf_gyro_max_hz);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf1_dyn_hz", "%d,%d",             gyroConfig()->gyro_lpf1_dyn_min_hz,
+                                                                            gyroConfig()->gyro_lpf1_dyn_max_hz);
 #endif
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass2_type", "%d",              gyroConfig()->gyro_lowpass2_type);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass2_hz", "%d",                gyroConfig()->gyro_lowpass2_hz);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf2_type", "%d",                  gyroConfig()->gyro_lpf2_type);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf2_static_hz", "%d",             gyroConfig()->gyro_lpf2_static_hz);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz", "%d,%d",                gyroConfig()->gyro_soft_notch_hz_1,
                                                                             gyroConfig()->gyro_soft_notch_hz_2);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff", "%d,%d",            gyroConfig()->gyro_soft_notch_cutoff_1,

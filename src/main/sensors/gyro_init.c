@@ -130,12 +130,12 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
     gyroLowpassFilter_t *lowpassFilter = NULL;
 
     switch (slot) {
-    case FILTER_LOWPASS:
+    case FILTER_LPF1:
         lowpassFilterApplyFn = &gyro.lowpassFilterApplyFn;
         lowpassFilter = gyro.lowpassFilter;
         break;
 
-    case FILTER_LOWPASS2:
+    case FILTER_LPF2:
         lowpassFilterApplyFn = &gyro.lowpass2FilterApplyFn;
         lowpassFilter = gyro.lowpass2Filter;
         break;
@@ -202,8 +202,8 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 #ifdef USE_DYN_LPF
 static void dynLpfFilterInit()
 {
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        switch (gyroConfig()->gyro_lowpass_type) {
+    if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
+        switch (gyroConfig()->gyro_lpf1_type) {
         case FILTER_PT1:
             gyro.dynLpfFilter = DYN_LPF_PT1;
             break;
@@ -223,33 +223,33 @@ static void dynLpfFilterInit()
     } else {
         gyro.dynLpfFilter = DYN_LPF_NONE;
     }
-    gyro.dynLpfMin = gyroConfig()->dyn_lpf_gyro_min_hz;
-    gyro.dynLpfMax = gyroConfig()->dyn_lpf_gyro_max_hz;
-    gyro.dynLpfCurveExpo = gyroConfig()->dyn_lpf_curve_expo;
+    gyro.dynLpfMin = gyroConfig()->gyro_lpf1_dyn_min_hz;
+    gyro.dynLpfMax = gyroConfig()->gyro_lpf1_dyn_max_hz;
+    gyro.dynLpfCurveExpo = gyroConfig()->gyro_lpf1_dyn_expo;
 }
 #endif
 
 void gyroInitFilters(void)
 {
-    uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
+    uint16_t gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_static_hz;
 
 #ifdef USE_DYN_LPF
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        gyro_lowpass_hz = gyroConfig()->dyn_lpf_gyro_min_hz;
+    if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
+        gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_dyn_min_hz;
     }
 #endif
 
     gyroInitLowpassFilterLpf(
-      FILTER_LOWPASS,
-      gyroConfig()->gyro_lowpass_type,
-      gyro_lowpass_hz,
+      FILTER_LPF1,
+      gyroConfig()->gyro_lpf1_type,
+      gyro_lpf1_init_hz,
       gyro.targetLooptime
     );
 
     gyro.downsampleFilterEnabled = gyroInitLowpassFilterLpf(
-      FILTER_LOWPASS2,
-      gyroConfig()->gyro_lowpass2_type,
-      gyroConfig()->gyro_lowpass2_hz,
+      FILTER_LPF2,
+      gyroConfig()->gyro_lpf2_type,
+      gyroConfig()->gyro_lpf2_static_hz,
       gyro.sampleLooptime
     );
 

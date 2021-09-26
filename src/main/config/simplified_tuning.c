@@ -65,20 +65,20 @@ static void calculateNewPidValues(pidProfile_t *pidProfile)
 
 static void calculateNewDTermFilterValues(pidProfile_t *pidProfile)
 {
-    pidProfile->dyn_lpf_dterm_min_hz = constrain(DYN_LPF_DTERM_MIN_HZ_DEFAULT * pidProfile->simplified_dterm_filter_multiplier / 100, 0, DYN_LPF_FILTER_FREQUENCY_MAX);
-    pidProfile->dyn_lpf_dterm_max_hz = constrain(DYN_LPF_DTERM_MAX_HZ_DEFAULT * pidProfile->simplified_dterm_filter_multiplier / 100, 0, DYN_LPF_FILTER_FREQUENCY_MAX);
-    pidProfile->dterm_lowpass2_hz = constrain(DTERM_LOWPASS_2_HZ_DEFAULT * pidProfile->simplified_dterm_filter_multiplier / 100, 0, FILTER_FREQUENCY_MAX);
-    pidProfile->dterm_filter_type = FILTER_PT1;
-    pidProfile->dterm_filter2_type = FILTER_PT1;
+    pidProfile->dterm_lpf1_dyn_min_hz = constrain(DTERM_LPF1_DYN_MIN_HZ_DEFAULT * pidProfile->simplified_dterm_filter_multiplier / 100, 0, DYN_LPF_MAX_HZ);
+    pidProfile->dterm_lpf1_dyn_max_hz = constrain(DTERM_LPF1_DYN_MAX_HZ_DEFAULT * pidProfile->simplified_dterm_filter_multiplier / 100, 0, DYN_LPF_MAX_HZ);
+    pidProfile->dterm_lpf2_static_hz = constrain(DTERM_LPF2_HZ_DEFAULT * pidProfile->simplified_dterm_filter_multiplier / 100, 0, LPF_MAX_HZ);
+    pidProfile->dterm_lpf1_type = FILTER_PT1;
+    pidProfile->dterm_lpf2_type = FILTER_PT1;
 }
 
 static void calculateNewGyroFilterValues()
 {
-    gyroConfigMutable()->dyn_lpf_gyro_min_hz = constrain(DYN_LPF_GYRO_MIN_HZ_DEFAULT * gyroConfig()->simplified_gyro_filter_multiplier / 100, 0, DYN_LPF_FILTER_FREQUENCY_MAX);
-    gyroConfigMutable()->dyn_lpf_gyro_max_hz = constrain(DYN_LPF_GYRO_MAX_HZ_DEFAULT * gyroConfig()->simplified_gyro_filter_multiplier / 100, 0, DYN_LPF_FILTER_FREQUENCY_MAX);
-    gyroConfigMutable()->gyro_lowpass2_hz = constrain(GYRO_LOWPASS_2_HZ_DEFAULT * gyroConfig()->simplified_gyro_filter_multiplier / 100, 0, FILTER_FREQUENCY_MAX);
-    gyroConfigMutable()->gyro_lowpass_type = FILTER_PT1;
-    gyroConfigMutable()->gyro_lowpass2_type = FILTER_PT1;
+    gyroConfigMutable()->gyro_lpf1_dyn_min_hz = constrain(GYRO_LPF1_DYN_MIN_HZ_DEFAULT * gyroConfig()->simplified_gyro_filter_multiplier / 100, 0, DYN_LPF_MAX_HZ);
+    gyroConfigMutable()->gyro_lpf1_dyn_max_hz = constrain(GYRO_LPF1_DYN_MAX_HZ_DEFAULT * gyroConfig()->simplified_gyro_filter_multiplier / 100, 0, DYN_LPF_MAX_HZ);
+    gyroConfigMutable()->gyro_lpf2_static_hz = constrain(GYRO_LPF2_HZ_DEFAULT * gyroConfig()->simplified_gyro_filter_multiplier / 100, 0, LPF_MAX_HZ);
+    gyroConfigMutable()->gyro_lpf1_type = FILTER_PT1;
+    gyroConfigMutable()->gyro_lpf2_type = FILTER_PT1;
 }
 
 void applySimplifiedTuning(pidProfile_t *pidProfile)
