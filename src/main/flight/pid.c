@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -210,20 +210,24 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_lpf_curve_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
-        .simplified_pids_mode = PID_SIMPLIFIED_TUNING_OFF,
+        .simplified_pids_mode = PID_SIMPLIFIED_TUNING_RPY,
         .simplified_master_multiplier = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_roll_pitch_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_roll_pitch_ratio = SIMPLIFIED_TUNING_PITCH_D_DEFAULT,
         .simplified_i_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_pd_ratio = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_pd_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_d_gain = SIMPLIFIED_TUNING_D_DEFAULT,
+        .simplified_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_dmin_ratio = SIMPLIFIED_TUNING_D_DEFAULT,
         .simplified_feedforward_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dterm_filter = false,
+        .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_PITCH_P_DEFAULT,
+        .simplified_dterm_filter = true,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
+#endif
+#ifdef USE_SIMPLIFIED_TUNING
+        applySimplifiedTuning(pidProfile);
 #endif
 }
 

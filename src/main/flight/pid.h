@@ -36,9 +36,9 @@
 #define PIDSUM_LIMIT_MIN            100
 #define PIDSUM_LIMIT_MAX            1000
 
-#define PID_GAIN_MAX 200
+#define PID_GAIN_MAX 250
 #define F_GAIN_MAX 2000
-#define D_MIN_GAIN_MAX 100
+#define D_MIN_GAIN_MAX 250
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -58,13 +58,13 @@
 
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 30000
-#define PID_ROLL_DEFAULT  { 42, 85, 35, 90 }
-#define PID_PITCH_DEFAULT { 46, 90, 38, 95 }
-#define PID_YAW_DEFAULT   { 45, 90,  0, 90 }
-#define D_MIN_DEFAULT     { 23, 25, 0 }
+#define PID_ROLL_DEFAULT  { 45, 80, 40, 120 }
+#define PID_PITCH_DEFAULT { 45, 80, 40, 120 }
+#define PID_YAW_DEFAULT   { 45, 80,  0, 120 }
+#define D_MIN_DEFAULT     { 30, 30, 0 }
 
-#define DYN_LPF_DTERM_MIN_HZ_DEFAULT 70
-#define DYN_LPF_DTERM_MAX_HZ_DEFAULT 170
+#define DYN_LPF_DTERM_MIN_HZ_DEFAULT 75
+#define DYN_LPF_DTERM_MAX_HZ_DEFAULT 150
 #define DTERM_LOWPASS_2_HZ_DEFAULT 150
 
 typedef enum {
@@ -219,13 +219,13 @@ typedef struct pidProfile_s {
     uint8_t simplified_master_multiplier;
     uint8_t simplified_roll_pitch_ratio;
     uint8_t simplified_i_gain;
-    uint8_t simplified_pd_ratio;
-    uint8_t simplified_pd_gain;
+    uint8_t simplified_d_gain;
+    uint8_t simplified_pi_gain;
     uint8_t simplified_dmin_ratio;
     uint8_t simplified_feedforward_gain;
-
     uint8_t simplified_dterm_filter;
     uint8_t simplified_dterm_filter_multiplier;
+    uint8_t simplified_pitch_pi_gain;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

@@ -234,12 +234,13 @@ static uint8_t cmsx_simplified_pids_mode;
 static uint8_t cmsx_simplified_master_multiplier;
 static uint8_t cmsx_simplified_roll_pitch_ratio;
 static uint8_t cmsx_simplified_i_gain;
-static uint8_t cmsx_simplified_pd_ratio;
-static uint8_t cmsx_simplified_pd_gain;
+static uint8_t cmsx_simplified_d_gain;
+static uint8_t cmsx_simplified_pi_gain;
 #ifdef USE_D_MIN
 static uint8_t cmsx_simplified_dmin_ratio;
 #endif
 static uint8_t cmsx_simplified_feedforward_gain;
+static uint8_t cmsx_simplified_pitch_pi_gain;
 
 static uint8_t cmsx_simplified_dterm_filter;
 static uint8_t cmsx_simplified_dterm_filter_multiplier;
@@ -256,12 +257,13 @@ static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
     cmsx_simplified_master_multiplier = pidProfile->simplified_master_multiplier;
     cmsx_simplified_roll_pitch_ratio = pidProfile->simplified_roll_pitch_ratio;
     cmsx_simplified_i_gain = pidProfile->simplified_i_gain;
-    cmsx_simplified_pd_ratio = pidProfile->simplified_pd_ratio;
-    cmsx_simplified_pd_gain = pidProfile->simplified_pd_gain;
+    cmsx_simplified_d_gain = pidProfile->simplified_d_gain;
+    cmsx_simplified_pi_gain = pidProfile->simplified_pi_gain;
 #ifdef USE_D_MIN
     cmsx_simplified_dmin_ratio = pidProfile->simplified_dmin_ratio;
 #endif
     cmsx_simplified_feedforward_gain = pidProfile->simplified_feedforward_gain;
+    cmsx_simplified_pitch_pi_gain = pidProfile->simplified_pitch_pi_gain;
 
     cmsx_simplified_dterm_filter = pidProfile->simplified_dterm_filter;
     cmsx_simplified_dterm_filter_multiplier = pidProfile->simplified_dterm_filter_multiplier;
@@ -282,12 +284,13 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
     pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
     pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
     pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
-    pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
-    pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
+    pidProfile->simplified_d_gain = cmsx_simplified_d_gain;
+    pidProfile->simplified_pi_gain = cmsx_simplified_pi_gain;
 #ifdef USE_D_MIN
     pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
 #endif
     pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
+    pidProfile->simplified_pitch_pi_gain = cmsx_simplified_pitch_pi_gain;
 
     pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
     pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
@@ -303,17 +306,17 @@ static const void *cmsx_applySimplifiedTuning(displayPort_t *pDisp, const void *
     UNUSED(self);
 
     pidProfile_t *pidProfile = currentPidProfile;
-
-    pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
     pidProfile->simplified_master_multiplier = cmsx_simplified_master_multiplier;
+    pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
     pidProfile->simplified_roll_pitch_ratio = cmsx_simplified_roll_pitch_ratio;
     pidProfile->simplified_i_gain = cmsx_simplified_i_gain;
-    pidProfile->simplified_pd_ratio = cmsx_simplified_pd_ratio;
-    pidProfile->simplified_pd_gain = cmsx_simplified_pd_gain;
+    pidProfile->simplified_d_gain = cmsx_simplified_d_gain;
+    pidProfile->simplified_pi_gain = cmsx_simplified_pi_gain;
 #ifdef USE_D_MIN
     pidProfile->simplified_dmin_ratio = cmsx_simplified_dmin_ratio;
 #endif
     pidProfile->simplified_feedforward_gain = cmsx_simplified_feedforward_gain;
+    pidProfile->simplified_pitch_pi_gain = cmsx_simplified_pitch_pi_gain;
 
     pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
     pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
@@ -330,14 +333,19 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
     { "-- SIMPLIFIED PID --", OME_Label, NULL, NULL, 0},
     { "PID TUNING",    OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_pids_mode, PID_SIMPLIFIED_TUNING_MODE_COUNT - 1, lookupTableSimplifiedTuningPidsMode }, 0 },
     { "MASTER MULT",    OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-    { "R/P RATIO",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-    { "I GAIN",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-    { "PD RATIO",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pd_ratio,          SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-    { "PD GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pd_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-#ifdef USE_D_MIN
-    { "DMIN RATIO",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
-#endif
+
+    { "-- BASIC --",    OME_Label, NULL, NULL, 0},
+    { "PI GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pi_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "D GAIN",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
     { "FF GAIN",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+
+    { "-- EXPERT --",   OME_Label, NULL, NULL, 0},
+    { "I GAIN",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+#ifdef USE_D_MIN
+    { "D_MAX GAIN",     OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+#endif
+    { "PITCH D GAIN",   OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
+    { "PITCH PI GAIN",  OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pitch_pi_gain,     SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 }, 0 },
 
     { "-- SIMPLIFIED FILTER --", OME_Label, NULL, NULL, 0},
     { "GYRO TUNING",    OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_gyro_filter,  1, lookupTableOffOn }, 0 },
