@@ -172,7 +172,7 @@
 #define TARGET_IO_PORTF 0xffff
 
 #elif defined(STM32H743)
-#define TARGET_BOARD_IDENTIFIER "SH47"
+#define TARGET_BOARD_IDENTIFIER "SH74"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32H743"
 
