@@ -334,6 +334,25 @@ uint32_t millis(void) {
     return millis64() & 0xFFFFFFFF;
 }
 
+uint32_t clockCyclesToMicros(uint32_t clockCycles)
+{
+    return clockCycles;
+}
+
+int32_t clockCyclesTo10thMicros(int32_t clockCycles)
+{
+    return clockCycles;
+}
+
+uint32_t clockMicrosToCycles(uint32_t micros)
+{
+    return micros;
+}
+uint32_t getCycleCounter(void)
+{
+    return (uint32_t) (micros64() & 0xFFFFFFFF);
+}
+
 void microsleep(uint32_t usec) {
     struct timespec ts;
     ts.tv_sec = 0;

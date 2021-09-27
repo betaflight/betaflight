@@ -28,8 +28,6 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-//#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
-
 #ifdef STM32F1
 #define MINIMAL_CLI
 // Using RX DMA disables the use of receive callbacks
@@ -92,6 +90,7 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#define USE_LATE_TASK_STATISTICS
 #endif // STM32F7
 
 #ifdef STM32H7
@@ -133,6 +132,7 @@
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_LATE_TASK_STATISTICS
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -231,7 +231,6 @@ extern uint8_t _dmaram_end__;
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH
-#define USE_TASK_STATISTICS
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_IMU_CALC
 #define USE_PPM

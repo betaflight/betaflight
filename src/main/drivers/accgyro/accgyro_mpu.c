@@ -67,6 +67,9 @@
 
 #define MPU_INQUIRY_MASK   0x7E
 
+// Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
+#define GYRO_EXTI_DETECT_THRESHOLD 1000
+
 #ifdef USE_I2C_GYRO
 static void mpu6050FindRevision(gyroDev_t *gyro)
 {
@@ -107,21 +110,60 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
  * Gyro interrupt service routine
  */
 #ifdef USE_GYRO_EXTI
+#ifdef USE_SPI_GYRO
+// Called in ISR context
+// Gyro read has just completed
+busStatus_e mpuIntcallback(uint32_t arg)
+{
+    volatile gyroDev_t *gyro = (gyroDev_t *)arg;
+    int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
+
+    if (gyroDmaDuration > gyro->gyroDmaMaxDuration) {
+        gyro->gyroDmaMaxDuration = gyroDmaDuration;
+    }
+
+    gyro->dataReady = true;
+
+    return BUS_READY;
+}
+
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
-#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    static uint32_t lastCalledAtUs = 0;
-    const uint32_t nowUs = micros();
-    debug[0] = (uint16_t)(nowUs - lastCalledAtUs);
-    lastCalledAtUs = nowUs;
-#endif
+    // Non-blocking, so this needs to be static
+    static busSegment_t segments[] = {
+            {NULL, NULL, 15, true, mpuIntcallback},
+            {NULL, NULL, 0, true, NULL},
+    };
+    gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
+
+    // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
+    // not have an associated timer
+    uint32_t nowCycles = getCycleCounter();
+    int32_t gyroLastPeriod = cmpTimeCycles(nowCycles, gyro->gyroLastEXTI);
+    // This detects the short (~79us) EXTI interval of an MPU6xxx gyro
+    if ((gyro->gyroShortPeriod == 0) || (gyroLastPeriod < gyro->gyroShortPeriod)) {
+        gyro->gyroSyncEXTI = gyro->gyroLastEXTI + gyro->gyroDmaMaxDuration;
+    }
+    gyro->gyroLastEXTI = nowCycles;
+
+    if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
+        segments[0].txData = gyro->dev.txBuf;;
+        segments[0].rxData = &gyro->dev.rxBuf[1];
+
+        if (!spiIsBusy(&gyro->dev)) {
+            spiSequence(&gyro->dev, &segments[0]);
+        }
+    }
+
+    gyro->detectedEXTI++;
+}
+#else
+static void mpuIntExtiHandler(extiCallbackRec_t *cb)
+{
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
-#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    const uint32_t now2Us = micros();
-    debug[1] = (uint16_t)(now2Us - nowUs);
-#endif
 }
+#endif
 
 static void mpuIntExtiInit(gyroDev_t *gyro)
 {
@@ -177,37 +219,128 @@ bool mpuGyroRead(gyroDev_t *gyro)
     return true;
 }
 
+
 #ifdef USE_SPI_GYRO
 bool mpuAccReadSPI(accDev_t *acc)
 {
-    STATIC_DMA_DATA_AUTO uint8_t dataToSend[7] = {MPU_RA_ACCEL_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    STATIC_DMA_DATA_AUTO uint8_t data[7];
+    switch (acc->gyro->gyroModeSPI) {
+    case GYRO_EXTI_INT:
+    case GYRO_EXTI_NO_INT:
+    {
+        // Ensure any prior DMA has completed before continuing
+        spiWaitClaim(&acc->gyro->dev);
 
-    const bool ack = spiReadWriteBufRB(&acc->gyro->dev, dataToSend, data, 7);
-    if (!ack) {
-        return false;
+        acc->gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
+
+        busSegment_t segments[] = {
+                {NULL, NULL, 7, true, NULL},
+                {NULL, NULL, 0, true, NULL},
+        };
+        segments[0].txData = acc->gyro->dev.txBuf;
+        segments[0].rxData = &acc->gyro->dev.rxBuf[1];
+
+        spiSequence(&acc->gyro->dev, &segments[0]);
+
+        // Wait for completion
+        spiWait(&acc->gyro->dev);
+
+        // Fall through
+        FALLTHROUGH;
     }
 
-    acc->ADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
-    acc->ADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
-    acc->ADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
+    case GYRO_EXTI_INT_DMA:
+    {
+        // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
+        // up an old value.
+
+        // This data was read from the gyro, which is the same SPI device as the acc
+        uint16_t *accData = (uint16_t *)acc->gyro->dev.rxBuf;
+        acc->ADCRaw[X] = __builtin_bswap16(accData[1]);
+        acc->ADCRaw[Y] = __builtin_bswap16(accData[2]);
+        acc->ADCRaw[Z] = __builtin_bswap16(accData[3]);
+        break;
+    }
+
+    case GYRO_EXTI_INIT:
+    default:
+        break;
+    }
 
     return true;
 }
 
 bool mpuGyroReadSPI(gyroDev_t *gyro)
 {
-    STATIC_DMA_DATA_AUTO uint8_t dataToSend[7] = {MPU_RA_GYRO_XOUT_H | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    STATIC_DMA_DATA_AUTO uint8_t data[7];
+    uint16_t *gyroData = (uint16_t *)gyro->dev.rxBuf;
+    switch (gyro->gyroModeSPI) {
+    case GYRO_EXTI_INIT:
+    {
+        // Initialise the tx buffer to all 0xff
+        memset(gyro->dev.txBuf, 0xff, 16);
+#ifdef USE_GYRO_EXTI
+        // Check that minimum number of interrupts have been detected
 
-    const bool ack = spiReadWriteBufRB(&gyro->dev, dataToSend, data, 7);
-    if (!ack) {
-        return false;
+        // We need some offset from the gyro interrupts to ensure sampling after the interrupt
+        gyro->gyroDmaMaxDuration = 5;
+        // Using DMA for gyro access upsets the scheduler on the F4
+        if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
+            if (spiUseDMA(&gyro->dev)) {
+                // Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
+                spiSetAtomicWait(&gyro->dev);
+                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
+                gyro->dev.callbackArg = (uint32_t)gyro;
+                gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
+            } else {
+                // Interrupts are present, but no DMA
+                gyro->gyroModeSPI = GYRO_EXTI_INT;
+            }
+        } else
+#endif
+        {
+            gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
+        }
+        break;
     }
 
-    gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
+    case GYRO_EXTI_INT:
+    case GYRO_EXTI_NO_INT:
+    {
+        // Ensure any prior DMA has completed before continuing
+        spiWaitClaim(&gyro->dev);
+
+        gyro->dev.txBuf[0] = MPU_RA_GYRO_XOUT_H | 0x80;
+
+        busSegment_t segments[] = {
+                {NULL, NULL, 7, true, NULL},
+                {NULL, NULL, 0, true, NULL},
+        };
+        segments[0].txData = gyro->dev.txBuf;
+        segments[0].rxData = &gyro->dev.rxBuf[1];
+
+        spiSequence(&gyro->dev, &segments[0]);
+
+        // Wait for completion
+        spiWait(&gyro->dev);
+
+        gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[1]);
+        gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[2]);
+        gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[3]);
+        break;
+    }
+
+    case GYRO_EXTI_INT_DMA:
+    {
+        // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
+        // up an old value.
+        gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[5]);
+        gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[6]);
+        gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[7]);
+        break;
+    }
+
+    default:
+        break;
+    }
 
     return true;
 }

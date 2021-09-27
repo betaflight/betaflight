@@ -78,6 +78,11 @@
 #define ACTIVE_GYRO (&gyro.gyroSensor1)
 #endif
 
+// The gyro buffer is split 50/50, the first half for the transmit buffer, the second half for the receive buffer
+// This buffer is large enough for the gyros currently supported in accgyro_mpu.c but should be reviewed id other
+// gyro types are supported with SPI DMA.
+#define GYRO_BUF_SIZE 32
+
 static gyroDetectionFlags_t gyroDetectionFlags = GYRO_NONE_MASK;
 
 static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
@@ -635,6 +640,11 @@ bool gyroInit(void)
     }
 
     if (gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
+        static DMA_DATA uint8_t gyroBuf2[GYRO_BUF_SIZE];
+        // SPI DMA buffer required per device
+        gyro.gyroSensor2.gyroDev.dev.txBuf = gyroBuf2;
+        gyro.gyroSensor2.gyroDev.dev.rxBuf = &gyroBuf2[GYRO_BUF_SIZE / 2];
+
         gyroInitSensor(&gyro.gyroSensor2, gyroDeviceConfig(1));
         gyro.gyroHasOverflowProtection =  gyro.gyroHasOverflowProtection && gyro.gyroSensor2.gyroDev.gyroHasOverflowProtection;
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor2.gyroDev.gyroHardware;
@@ -646,6 +656,10 @@ bool gyroInit(void)
     }
 
     if (gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
+        static DMA_DATA uint8_t gyroBuf1[GYRO_BUF_SIZE];
+        // SPI DMA buffer required per device
+        gyro.gyroSensor1.gyroDev.dev.txBuf = gyroBuf1;
+        gyro.gyroSensor1.gyroDev.dev.rxBuf = &gyroBuf1[GYRO_BUF_SIZE / 2];
         gyroInitSensor(&gyro.gyroSensor1, gyroDeviceConfig(0));
         gyro.gyroHasOverflowProtection =  gyro.gyroHasOverflowProtection && gyro.gyroSensor1.gyroDev.gyroHasOverflowProtection;
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor1.gyroDev.gyroHardware;

@@ -4782,6 +4782,19 @@ static void cliStatus(const char *cmdName, char *cmdline)
             cliPrintf(" gyro %d", pos + 1);
         }
     }
+#ifdef USE_SPI
+#ifdef USE_GYRO_EXTI
+    if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
+        cliPrintf(" locked");
+    }
+    if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
+        cliPrintf(" dma");
+    }
+#endif
+    if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
+        cliPrintf(" shared");
+    }
+#endif
     cliPrintLinefeed();
 
 #if defined(USE_SENSOR_NAMES)
@@ -4867,7 +4880,6 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 }
 
-#if defined(USE_TASK_STATISTICS)
 static void cliTasks(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -4923,10 +4935,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         getCheckFuncInfo(&checkFuncInfo);
         cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %25d.%1d%% %4d.%1d%%", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+        if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
+            extern int32_t schedLoopStartCycles, taskGuardCycles;
+
+            cliPrintLinef("Scheduler start cycles %d guard cycles %d", schedLoopStartCycles, taskGuardCycles);
+        }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
 }
-#endif
 
 static void printVersion(const char *cmdName, bool printBoardInfo)
 {
@@ -6584,9 +6600,7 @@ const clicmd_t cmdTable[] = {
         "\treverse <servo> <source> r|n", cliServoMix),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
-#if defined(USE_TASK_STATISTICS)
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
-#endif
 #ifdef USE_TIMER_MGMT
     CLI_COMMAND_DEF("timer", "show/set timers", "<> | <pin> list | <pin> [af<alternate function>|none|<option(deprecated)>] | list | show", cliTimer),
 #endif
@@ -6831,8 +6845,6 @@ void cliEnter(serialPort_t *serialPort)
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
     cliErrorWriter = cliWriter;
-
-    schedulerSetCalulateTaskStatistics(systemConfig()->task_statistics);
 
 #ifndef MINIMAL_CLI
     cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");

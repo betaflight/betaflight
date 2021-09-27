@@ -56,7 +56,6 @@
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC5
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -73,7 +72,7 @@
 #if defined(FLYWOOF405)
 //------MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6000								  
+#define USE_ACC_SPI_MPU6000                               
 #endif
 
 #if defined(KAKUTEF4V2) || defined(FLYWOOF405)       // There is invertor on RXD3(PB11), so PB10/PB11 can't be used as I2C2.
@@ -154,8 +153,8 @@
 #define USE_PINIOBOX
 #else
 #define ESCSERIAL_TIMER_TX_PIN  PC7  // (HARDARE=0,PPM)
-#endif	
-									   
+#endif  
+                                       
 #define USE_SPI
 #define USE_SPI_DEVICE_1 //ICM20689
 #define SPI1_NSS_PIN            PC4

@@ -755,14 +755,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGPSRescueState();
     }
 #endif
-    // Call ignoreTaskTime() unless this took appreciable time
+    // Call ignoreTaskShortExecTime() unless this took appreciable time
     // Note that this will mess up the rate/Hz display under tasks, but the code
     // takes widely varying time to complete
     endTimeUs = micros();
     if ((endTimeUs - currentTimeUs) > maxTimeUs) {
         maxTimeUs = endTimeUs - currentTimeUs;
     } else {
-        ignoreTaskTime();
+        ignoreTaskShortExecTime();
         // Decay max time
         maxTimeUs--;
     }

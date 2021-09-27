@@ -44,6 +44,8 @@
 
 #include "light_ws2811strip.h"
 
+#include "scheduler/scheduler.h"
+
 #ifdef USE_LEDSTRIP_CACHE_MGMT
 // WS2811_DMA_BUFFER_SIZE is multiples of uint32_t
 // Number of bytes required for buffer
@@ -179,6 +181,7 @@ void ws2811UpdateStrip(ledStripFormatRGB_e ledFormat)
 {
     // don't wait - risk of infinite block, just get an update next time round
     if (!ws2811Initialised || ws2811LedDataTransferInProgress) {
+        ignoreTaskStateTime();
         return;
     }
 
