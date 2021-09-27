@@ -61,15 +61,17 @@
   * @{
   */
 
-#include "stm32h7xx.h"
-#include "drivers/system.h"
+#include <string.h>
+
 #include "platform.h"
-#include "string.h"
+
 #include "common/utils.h"
 
 #include "build/debug.h"
 
-void systemResetWithoutDisablingCaches(void);
+#include "drivers/memprot.h"
+#include "drivers/system.h"
+
 
 #if !defined  (HSE_VALUE)
 #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
@@ -670,12 +672,6 @@ void CRS_IRQHandler(void)
 }
 #endif
 
-#include "build/debug.h"
-
-void systemCheckResetReason(void);
-
-#include "drivers/memprot.h"
-
 void SystemInit (void)
 {
     memProtReset();
@@ -685,7 +681,7 @@ void SystemInit (void)
 #if !defined(USE_EXST)
     // only stand-alone and bootloader firmware needs to do this.
     // if it's done in the EXST firmware as well as the BOOTLOADER firmware you get a reset loop.
-    systemCheckResetReason();
+    systemProcessResetReason();
 #endif
 
     // FPU settings
