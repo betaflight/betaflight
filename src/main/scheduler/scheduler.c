@@ -606,9 +606,3 @@ uint16_t getAverageSystemLoadPercent(void)
 {
     return averageSystemLoadPercent;
 }
-
-float schedulerGetCycleTimeMultipler(void)
-{
-    return (float)clockMicrosToCycles(getTask(TASK_GYRO)->desiredPeriodUs) / desiredPeriodCycles;
-
-}
