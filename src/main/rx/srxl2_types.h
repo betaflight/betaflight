@@ -135,4 +135,15 @@ typedef struct {
   uint8_t   region;   // Region (0 = USA, 1 = EU)
 } PACKED Srxl2VtxData;
 
+#define SRXL2_MAX_PACKET_LENGTH        80
+
+typedef union {
+        uint8_t raw[SRXL2_MAX_PACKET_LENGTH];
+        Srxl2Header header;
+} Srxl2Frame;
+typedef struct Srxl2Buf_s {
+    volatile unsigned len;
+    Srxl2Frame packet;
+} Srxl2Buf_t;
+
 #undef PACKED

@@ -28,11 +28,13 @@
 #include "drivers/io_types.h"
 #include "drivers/serial.h"
 
+#include "rx/crsf.h"
 #include "rx/ghst_protocol.h"
 #include "rx/ibus.h"
-#include "rx/crsf.h"
+#include "rx/jetiexbus.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
+#include "rx/srxl2_types.h"
 #include "rx/sumd.h"
 #include "rx/sumh.h"
 #include "rx/xbus.h"
@@ -149,11 +151,13 @@ typedef enum {
 } rxProvider_t;
 
 typedef union rxFrameBuffer_u {
+    crsfFrame_t crsf;
     ghstFrame_t ghst;
     uint8_t ibus[IBUS_FRAME_SIZE];
-    crsfFrame_t crsf;
+    uint8_t jetiexbus[EXBUS_MAX_CHANNEL_FRAME_SIZE];
     sbusFrameData_t sbus;
     uint8_t spek[SPEK_FRAME_SIZE];
+    Srxl2Buf_t srxl2;
     uint8_t sumd[SUMD_BUFFSIZE];
     uint8_t sumh[SUMH_FRAME_SIZE];
     uint8_t xbus[XBUS_FRAME_SIZE_A2]; // Use max values for ram areas - size 35 for 16 channels in xbus_Mode_B

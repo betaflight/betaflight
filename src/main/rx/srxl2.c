@@ -67,7 +67,6 @@
 #define SRXL2_REPLY_QUIESCENCE         (2 * 10 * 1000000 / SRXL2_PORT_BAUDRATE_DEFAULT) // 2 * (lastIdleTimestamp - lastReceiveTimestamp). Time taken to send 2 bytes
 
 #define SRXL2_ID                       0xA6
-#define SRXL2_MAX_PACKET_LENGTH        80
 #define SRXL2_DEVICE_ID_BROADCAST      0xFF
 
 #define SRXL2_FRAME_TIMEOUT_US         50000
@@ -78,15 +77,6 @@
 
 #define SPEKTRUM_PULSE_OFFSET          988 // Offset value to convert digital data into RC pulse
 
-typedef union {
-        uint8_t raw[SRXL2_MAX_PACKET_LENGTH];
-        Srxl2Header header;
-} Srxl2Frame;
-
-struct rxBuf {
-    volatile unsigned len;
-    Srxl2Frame packet;
-};
 
 static uint8_t unitId = 0;
 static uint8_t baudRate = 0;
@@ -98,9 +88,6 @@ static uint32_t lastValidPacketTimestamp = 0;
 static volatile uint32_t lastReceiveTimestamp = 0;
 static volatile uint32_t lastIdleTimestamp = 0;
 
-struct rxBuf readBuffer[2];
-struct rxBuf* readBufferPtr = &readBuffer[0];
-struct rxBuf* processBufferPtr = &readBuffer[1];
 static volatile unsigned readBufferIdx = 0;
 static volatile bool transmittingTelemetry = false;
 static uint8_t writeBuffer[SRXL2_MAX_PACKET_LENGTH];
@@ -258,6 +245,8 @@ bool srxl2ProcessPacket(const Srxl2Header* header, rxRuntimeState_t *rxRuntimeSt
 // @note assumes packet is fully there
 void srxl2Process(rxRuntimeState_t *rxRuntimeState)
 {
+    const Srxl2Buf_t *const processBufferPtr = &rxRuntimeState->validatedFrame->srxl2;
+
     if (processBufferPtr->packet.header.id != SRXL2_ID || processBufferPtr->len != processBufferPtr->packet.header.length) {
         DEBUG_PRINTF("invalid header id: %x, or length: %x received vs %x expected \r\n", processBufferPtr->packet.header.id, processBufferPtr->len, processBufferPtr->packet.header.length);
         globalResult = RX_FRAME_DROPPED;
@@ -287,7 +276,8 @@ void srxl2Process(rxRuntimeState_t *rxRuntimeState)
 
 static void srxl2DataReceive(uint16_t character, void *data)
 {
-    UNUSED(data);
+    rxRuntimeState_t *const rxRuntimeState = (rxRuntimeState_t *)data;
+    Srxl2Buf_t *const readBufferPtr = &rxRuntimeState->incomingFrame->srxl2;
 
     lastReceiveTimestamp = microsISR();
 
@@ -304,6 +294,9 @@ static void srxl2DataReceive(uint16_t character, void *data)
 
 static void srxl2Idle()
 {
+    Srxl2Buf_t *const readBufferPtr = &rxRuntimeState->incomingFrame->srxl2;
+    Srxl2Buf_t *const processBufferPtr = &rxRuntimeState->validatedFrame->srxl2;
+
     if (transmittingTelemetry) { // Transmitting telemetry triggers idle interrupt as well. We dont want to change buffers then
         transmittingTelemetry = false;
     }
@@ -312,14 +305,7 @@ static void srxl2Idle()
     }
     else {
         lastIdleTimestamp = microsISR();
-        //Swap read and process buffer pointers
-        if (processBufferPtr == &readBuffer[0]) {
-            processBufferPtr = &readBuffer[1];
-            readBufferPtr = &readBuffer[0];
-        } else {
-            processBufferPtr = &readBuffer[0];
-            readBufferPtr = &readBuffer[1];
-        }
+        rxSwapFrameBuffers(rxRuntimeState);
         processBufferPtr->len = readBufferIdx;
     }
 
@@ -508,7 +494,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->rxSerialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, srxl2DataReceive,
-        NULL, SRXL2_PORT_BAUDRATE_DEFAULT, SRXL2_PORT_MODE, options);
+        rxRuntimeState, SRXL2_PORT_BAUDRATE_DEFAULT, SRXL2_PORT_MODE, options);
 
     if (!rxRuntimeState->rxSerialPort) {
         return false;

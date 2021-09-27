@@ -20,6 +20,14 @@
 
 #pragma once
 
+//
+// Serial driver for Jeti EX Bus receiver
+//
+#define JETIEXBUS_BAUDRATE 125000                       // EX Bus 125000; EX Bus HS 250000 not supported
+#define JETIEXBUS_OPTIONS (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
+#define JETIEXBUS_MIN_FRAME_GAP     1000
+#define JETIEXBUS_CHANNEL_COUNT     16                  // most Jeti TX transmit 16 channels
+
 #define EXBUS_HEADER_LEN                6
 #define EXBUS_CRC_LEN                   2
 #define EXBUS_OVERHEAD                  (EXBUS_HEADER_LEN + EXBUS_CRC_LEN)
@@ -48,7 +56,9 @@ enum {
 extern uint8_t jetiExBusRequestState;
 extern uint32_t jetiTimeStampRequest;
 extern uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
-struct serialPort_s;
 
-uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen);
-bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState);
+struct rxConfig_s;
+struct rxRuntimeState_s;
+
+uint16_t jetiExBusCalcCRC16(const uint8_t *const pt, uint8_t msgLen);
+bool jetiExBusInit(const struct rxConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState);

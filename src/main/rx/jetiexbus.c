@@ -57,15 +57,6 @@
 #include "rx/jetiexbus.h"
 
 
-//
-// Serial driver for Jeti EX Bus receiver
-//
-#define JETIEXBUS_BAUDRATE 125000                       // EX Bus 125000; EX Bus HS 250000 not supported
-#define JETIEXBUS_OPTIONS (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
-#define JETIEXBUS_MIN_FRAME_GAP     1000
-#define JETIEXBUS_CHANNEL_COUNT     16                  // most Jeti TX transmit 16 channels
-
-
 #define EXBUS_START_CHANNEL_FRAME       (0x3E)
 #define EXBUS_START_REQUEST_FRAME       (0x3D)
 #define EXBUS_JETIBOX_REQUEST           (0x3B)
@@ -73,9 +64,6 @@
 #define EXBUS_CHANNELDATA               (0x3E03)        // Frame contains Channel Data
 #define EXBUS_CHANNELDATA_DATA_REQUEST  (0x3E01)        // Frame contains Channel Data, but with a request for data
 #define EXBUS_TELEMETRY_REQUEST         (0x3D01)        // Frame is a request Frame
-
-
-
 
 uint32_t jetiTimeStampRequest = 0;
 
@@ -86,11 +74,10 @@ static uint8_t jetiExBusFrameState = EXBUS_STATE_ZERO;
 uint8_t jetiExBusRequestState = EXBUS_STATE_ZERO;
 
 // Use max values for ram areas
-static uint8_t jetiExBusChannelFrame[EXBUS_MAX_CHANNEL_FRAME_SIZE];
 uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 
 // Jeti Ex Bus CRC calculations for a frame
-uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
+uint16_t jetiExBusCalcCRC16(const uint8_t *const pt, uint8_t msgLen)
 {
     uint16_t crc16_data = 0;
     uint8_t data=0;
@@ -105,8 +92,9 @@ uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
     return(crc16_data);
 }
 
-void jetiExBusDecodeChannelFrame(rxRuntimeState_t *rxRuntimeState, uint8_t *exBusFrame)
+void jetiExBusDecodeChannelFrame(rxRuntimeState_t *rxRuntimeState)
 {
+    const uint8_t *const exBusFrame = rxRuntimeState->incomingFrame->jetiexbus;
     uint16_t value;
     uint8_t frameAddr;
 
@@ -146,7 +134,7 @@ void jetiExBusFrameReset(void)
 // Receive ISR callback
 static void jetiExBusDataReceive(uint16_t c, void *data)
 {
-    UNUSED(data);
+    rxRuntimeState_t *const rxRuntimeState = (rxRuntimeState_t *)data;
 
     static timeUs_t jetiExBusTimeLast = 0;
     static uint8_t *jetiExBusFrame;
@@ -165,7 +153,7 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
         switch (c) {
         case EXBUS_START_CHANNEL_FRAME:
             jetiExBusFrameState = EXBUS_STATE_IN_PROGRESS;
-            jetiExBusFrame = jetiExBusChannelFrame;
+            jetiExBusFrame = rxRuntimeState->incomingFrame->jetiexbus;
             break;
 
         case EXBUS_START_REQUEST_FRAME:
@@ -217,13 +205,12 @@ static void jetiExBusDataReceive(uint16_t c, void *data)
 // Check if it is time to read a frame from the data...
 static uint8_t jetiExBusFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeState);
-
+    const uint8_t *const jetiExBusChannelFrame = rxRuntimeState->incomingFrame->jetiexbus;
     uint8_t frameStatus = RX_FRAME_PENDING;
 
     if (jetiExBusFrameState == EXBUS_STATE_RECEIVED) {
         if (jetiExBusCalcCRC16(jetiExBusChannelFrame, jetiExBusChannelFrame[EXBUS_HEADER_MSG_LEN]) == 0) {
-            jetiExBusDecodeChannelFrame(rxRuntimeState, jetiExBusChannelFrame);
+            jetiExBusDecodeChannelFrame(rxRuntimeState);
             frameStatus = RX_FRAME_COMPLETE;
             rxRuntimeState->lastRcFrameTimeUs = jetiTimeStampRequest;
         }
@@ -263,7 +250,7 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->rxSerialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         jetiExBusDataReceive,
-        NULL,
+        rxRuntimeState,
         JETIEXBUS_BAUDRATE,
         MODE_RXTX,
         JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | SERIAL_BIDIR
