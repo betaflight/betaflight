@@ -181,7 +181,7 @@ uint8_t systemState = SYSTEM_STATE_INITIALISING;
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
-static IO_t busSwitchResetPin        = IO_NONE;
+    IO_t busSwitchResetPin = IO_NONE;
 
     busSwitchResetPin = IOGetByTag(IO_TAG(BUS_SWITCH_PIN));
     IOInit(busSwitchResetPin, OWNER_SYSTEM, 0);
