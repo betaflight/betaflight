@@ -33,16 +33,13 @@ typedef struct dbgPinState_s {
     uint32_t resetBSRR;
 } dbgPinState_t;
 
-#ifndef DEBUG_PIN_COUNT
-#define DEBUG_PIN_COUNT 1
-#endif
-
-// Provide a non-weak reference in target.c or elsewhere
-__weak dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
-    { .tag = IO_TAG(NONE) },
-};
-
 dbgPinState_t dbgPinStates[DEBUG_PIN_COUNT] = { 0 };
+
+extern dbgPin_t dbgPins[DEBUG_PIN_COUNT];
+// Define this in the target definition as (and set DEBUG_PIN_COUNT to the correct value):
+// dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
+//     { .tag = IO_TAG(<pin>) },
+// };
 
 void dbgPinInit(void)
 {
