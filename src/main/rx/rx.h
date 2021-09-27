@@ -149,6 +149,7 @@ typedef struct rxRuntimeState_s {
     rcGetFrameTimeUsFn *rcFrameTimeUsFn;
     uint16_t            *channelData;
     void                *frameData;
+    timeUs_t            lastRcFrameTimeUs;
 } rxRuntimeState_t;
 
 typedef enum {
@@ -218,3 +219,5 @@ void resumeRxPwmPpmSignal(void);
 uint16_t rxGetRefreshRate(void);
 
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
+
+timeUs_t rxFrameTimeUs(void);
