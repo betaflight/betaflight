@@ -127,7 +127,7 @@ void targetConfiguration(void)
         pidProfile->pid[PID_LEVEL].D = 55;
 
         /* Setpoints */
-        pidProfile->dterm_filter_type = FILTER_BIQUAD;
+        pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
         pidProfile->dterm_notch_hz = 0;
         pidProfile->pid[PID_PITCH].F = 100;
         pidProfile->pid[PID_ROLL].F = 100;
