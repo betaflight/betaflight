@@ -27,10 +27,6 @@
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
 
-#ifdef DEBUG_SECTION_TIMES
-uint32_t sectionTimes[2][4];
-#endif
-
 // Please ensure that these names are aligned with the enum values defined in 'debug.h' - for OSD be sure the name is unique with 12 chars.
 const char * const debugModeNames[DEBUG_COUNT] = {
     "NONE",
