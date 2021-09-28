@@ -509,8 +509,50 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+void mavSendCustomAndHeartbeat(void)
+{
+    uint16_t msgLength;
+
+    // Send heartbeat
+    mavlink_msg_heartbeat_pack(0, 200, &mavMsg,
+        // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
+        MAV_TYPE_QUADROTOR,
+        // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
+        MAV_AUTOPILOT_GENERIC,
+        // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
+        MAV_MODE_FLAG_MANUAL_INPUT_ENABLED,
+        // custom_mode A bitfield for use for autopilot-specific flags.
+        1,
+        // system_status System status flag, see MAV_STATE ENUM
+        MAV_STATE_ACTIVE);
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Send data packet
+    mavlink_msg_attitude_pack(0, 200, &mavMsg,
+        // time_boot_ms Timestamp (milliseconds since system boot)
+        millis(),
+        // roll Roll angle (rad)
+        DECIDEGREES_TO_RADIANS(attitude.values.roll),
+        // pitch Pitch angle (rad)
+        DECIDEGREES_TO_RADIANS(-attitude.values.pitch),
+        // yaw Yaw angle (rad)
+        DECIDEGREES_TO_RADIANS(attitude.values.yaw),
+        // rollspeed Roll angular speed (rad/s)
+        rates.values.rollRate,
+        // pitchspeed Pitch angular speed (rad/s)
+        rates.values.pitchRate,
+        // yawspeed Yaw angular speed (rad/s)
+        rates.values.yawRate);
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 void processMAVLinkTelemetry(void)
 {
+    mavSendCustomAndHeartbeat();
+
+    /*
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
         mavlinkSendSystemStatus();
@@ -533,6 +575,7 @@ void processMAVLinkTelemetry(void)
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
         mavlinkSendHUDAndHeartbeat();
     }
+    */
 }
 
 void handleMAVLinkTelemetry(void)
