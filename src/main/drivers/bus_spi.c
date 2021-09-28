@@ -533,7 +533,7 @@ void spiInitBusDMA()
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
-                if (dmaGetOwner(dmaTxIdentifier)->owner != OWNER_FREE) {
+                if (!dmaAllocate(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1)) {
                     dmaTxIdentifier = DMA_NONE;
                     continue;
                 }
@@ -546,7 +546,9 @@ void spiInitBusDMA()
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
-                dmaInit(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1);
+
+                dmaEnable(dmaTxIdentifier);
+
                 break;
             }
         }
@@ -556,7 +558,7 @@ void spiInitBusDMA()
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);
-                if (dmaGetOwner(dmaRxIdentifier)->owner != OWNER_FREE) {
+                if (!dmaAllocate(dmaRxIdentifier, OWNER_SPI_MISO, device + 1)) {
                     dmaRxIdentifier = DMA_NONE;
                     continue;
                 }
@@ -569,7 +571,9 @@ void spiInitBusDMA()
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
-                dmaInit(dmaRxIdentifier, OWNER_SPI_MISO, device + 1);
+
+                dmaEnable(dmaRxIdentifier);
+
                 break;
             }
         }

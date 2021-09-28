@@ -89,7 +89,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 #endif
 #endif
 
-    if (dmaRef == NULL) {
+    if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0)) {
         return;
     }
 
@@ -97,7 +97,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), timerHardware->alternateFunction);
 
-    dmaInit(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0);
+    dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);

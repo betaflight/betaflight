@@ -219,7 +219,7 @@ typedef struct
 extern           SD_CardInfo_t               SD_CardInfo;
 extern           SD_CardType_t               SD_CardType;
 
-void             SD_Initialize_LL            (DMA_Stream_TypeDef *dma);
+bool             SD_Initialize_LL            (DMA_Stream_TypeDef *dma);
 SD_Error_t       SD_Init                     (void);
 bool             SD_IsDetected				(void);
 bool             SD_GetState                 (void);
