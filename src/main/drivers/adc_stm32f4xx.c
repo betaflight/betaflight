@@ -304,15 +304,19 @@ void adcInit(const adcConfig_t *config)
 #ifdef USE_DMA_SPEC
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
-    if (!dmaSpec) {
+    if (!dmaSpec || !dmaAllocate(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device))) {
         return;
     }
 
-    dmaInit(dmaGetIdentifier(dmaSpec->ref), OWNER_ADC, RESOURCE_INDEX(device));
+    dmaEnable(dmaGetIdentifier(dmaSpec->ref));
 
     xDMA_DeInit(dmaSpec->ref);
 #else
-    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
+    if (!dmaAllocate(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0)) {
+        return;
+    }
+
+    dmaEnable(dmaGetIdentifier(adc.dmaResource));
 
     xDMA_DeInit(adc.dmaResource);
 #endif

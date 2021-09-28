@@ -532,8 +532,12 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
 
         if (dmaIdentifier) {
             sdcard.dma = dmaGetDescriptorByIdentifier(dmaIdentifier);
-            dmaInit(dmaIdentifier, OWNER_SDCARD, 0);
-            sdcard.useDMAForTx = true;
+	    if (dmaAllocate(dmaIdentifier, OWNER_SDCARD, 0)) {
+            	dmaEnable(dmaIdentifier);
+            	sdcard.useDMAForTx = true;
+            } else {
+                sdcard.useDMAForTx = false;
+            }
         } else {
             sdcard.useDMAForTx = false;
         }
