@@ -401,16 +401,6 @@ void init(void)
     dbgPinInit();
 #endif
 
-#ifdef USE_SDCARD
-    // Ensure the SD card is initialised before the USB MSC starts to avoid a race condition
-#if !defined(CONFIG_IN_SDCARD) && defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
-    sdioPinConfigure();
-    SDIO_GPIO_Init();
-    initFlags |= SD_INIT_ATTEMPTED;
-    sdCardAndFSInit();
-#endif
-#endif
-
 #ifdef USE_BRUSHED_ESC_AUTODETECT
     // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
     ioTag_t configuredMotorIoTag = motorConfig()->dev.ioTags[0];
@@ -597,12 +587,21 @@ void init(void)
         initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
     }
 
+#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && defined(STM32H7)
+    sdioPinConfigure();
+    SDIO_GPIO_Init();
+#endif
+
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
     mscInit();
     if (mscCheckBootAndReset() || mscCheckButton()) {
         ledInit(statusLedConfig());
+
+#ifdef USE_SDCARD
+        sdCardAndFSInit();
+#endif
 
 #if defined(USE_FLASHFS)
         // If the blackbox device is onboard flash, then initialize and scan
@@ -805,8 +804,8 @@ void init(void)
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         if (sdcardConfig()->mode) {
             if (!(initFlags & SD_INIT_ATTEMPTED)) {
-                initFlags |= SD_INIT_ATTEMPTED;
                 sdCardAndFSInit();
+                initFlags |= SD_INIT_ATTEMPTED;
             }
         }
     }
