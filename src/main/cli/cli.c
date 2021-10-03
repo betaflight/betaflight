@@ -2187,7 +2187,7 @@ static void cliServo(const char *cmdName, char *cmdline)
             arguments[MIN] < PWM_PULSE_MIN || arguments[MIN] > PWM_PULSE_MAX ||
             arguments[MAX] < PWM_PULSE_MIN || arguments[MAX] > PWM_PULSE_MAX ||
             arguments[MIDDLE] < arguments[MIN] || arguments[MIDDLE] > arguments[MAX] ||
-            arguments[MIN] > arguments[MAX] || arguments[MAX] < arguments[MIN] ||
+            arguments[MIN] > arguments[MAX] ||
             arguments[RATE] < -100 || arguments[RATE] > 100 ||
             arguments[FORWARD] >= MAX_SUPPORTED_RC_CHANNEL_COUNT
         ) {
