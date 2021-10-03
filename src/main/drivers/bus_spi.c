@@ -137,7 +137,7 @@ bool spiInit(SPIDevice device)
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev)
 {
-    return (dev->bus->curSegment != (busSegment_t *)NULL);
+    return (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
 }
 
 // Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
@@ -156,15 +156,15 @@ void spiWaitClaim(const extDevice_t *dev)
     if (dev->bus->useAtomicWait) {
         // Prevent race condition where the bus appears free, but a gyro interrupt starts a transfer
         do {
-            ATOMIC_BLOCK(NVIC_PRIO_MPU_INT_EXTI) {
-                if (dev->bus->curSegment == (busSegment_t *)NULL) {
-                    dev->bus->curSegment = (busSegment_t *)0x04;
+            ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+                if (dev->bus->curSegment == (busSegment_t *)BUS_SPI_FREE) {
+                    dev->bus->curSegment = (busSegment_t *)BUS_SPI_LOCKED;
                 }
             }
-        } while (dev->bus->curSegment != (busSegment_t *)0x04);
+        } while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_LOCKED);
     } else {
         // Wait for completion
-        while (dev->bus->curSegment != (busSegment_t *)NULL);
+        while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
     }
 }
 
@@ -172,7 +172,7 @@ void spiWaitClaim(const extDevice_t *dev)
 void spiWait(const extDevice_t *dev)
 {
     // Wait for completion
-    while (dev->bus->curSegment != (busSegment_t *)NULL);
+    while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
 }
 
 // Wait for bus to become free, then read/write block of data
@@ -407,6 +407,7 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 
     busDevice_t *bus = dev->bus;
+    busSegment_t *nextSegment;
 
     if (bus->curSegment->negateCS) {
         // Negate Chip Select
@@ -451,12 +452,23 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 
     // Advance through the segment list
-    bus->curSegment++;
+    nextSegment = bus->curSegment + 1;
 
-    if (bus->curSegment->len == 0) {
-        // The end of the segment list has been reached, so mark transactions as complete
-        bus->curSegment = (busSegment_t *)NULL;
+    if (nextSegment->len == 0) {
+        // If a following transaction has been linked, start it
+        if (nextSegment->txData) {
+            const extDevice_t *nextDev = (const extDevice_t *)nextSegment->txData;
+            busSegment_t *nextSegments = (busSegment_t *)nextSegment->rxData;
+            nextSegment->txData = NULL;
+            // The end of the segment list has been reached
+            spiSequenceStart(nextDev, nextSegments);
+        } else {
+            // The end of the segment list has been reached, so mark transactions as complete
+            bus->curSegment = (busSegment_t *)NULL;
+        }
     } else {
+        bus->curSegment = nextSegment;
+
         // After the completion of the first segment setup the init structure for the subsequent segment
         if (bus->initSegment) {
             spiInternalInitStream(dev, false);
@@ -479,6 +491,7 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
     }
 
     dev->bus = &spiBusDevice[SPI_CFG_TO_DEV(device)];
+    dev->useDMA = true;
 
     if (dev->bus->busType == BUS_TYPE_SPI) {
         // This bus has already been initialised
@@ -495,7 +508,6 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
     }
 
     bus->busType = BUS_TYPE_SPI;
-    dev->useDMA = true;
     bus->useDMA = false;
     bus->useAtomicWait = false;
     bus->deviceCount = 1;
@@ -636,5 +648,34 @@ uint8_t spiGetRegisteredDeviceCount(void)
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 {
     return dev->bus->deviceCount;
+}
+
+// DMA transfer setup and start
+void spiSequence(const extDevice_t *dev, busSegment_t *segments)
+{
+    busDevice_t *bus = dev->bus;
+
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        if ((bus->curSegment != (busSegment_t *)BUS_SPI_LOCKED) && spiIsBusy(dev)) {
+            /* Defer this transfer to be triggered upon completion of the current transfer. Blocking calls
+             * and those from non-interrupt context will have already called spiWaitClaim() so this will
+             * only happen for non-blocking calls called from an ISR.
+             */
+            busSegment_t *endSegment = bus->curSegment;
+
+            if (endSegment) {
+                // Find the last segment of the current transfer
+                for (; endSegment->len; endSegment++);
+
+                // Record the dev and segments parameters in the terminating segment entry
+                endSegment->txData = (uint8_t *)dev;
+                endSegment->rxData = (uint8_t *)segments;
+
+                return;
+            }
+        }
+    }
+
+    spiSequenceStart(dev, segments);
 }
 #endif
