@@ -72,6 +72,7 @@
 
 #ifdef STM32F7
 #define USE_ITCM_RAM
+#define ITCM_RAM_OPTIMISATION "-O2"
 #define USE_FAST_DATA
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -159,7 +160,11 @@
 
 
 #ifdef USE_ITCM_RAM
+#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
+#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
+#else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#endif
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
