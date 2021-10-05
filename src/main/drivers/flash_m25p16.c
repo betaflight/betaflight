@@ -361,6 +361,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
         segments[DATA1].negateCS = true;
         segments[DATA1].callback = m25p16_callbackWriteComplete;
         // Mark segment following data as being of zero length
+        segments[DATA2].txData = (uint8_t *)NULL;
         segments[DATA2].len = 0;
     } else if (bufferCount == 2) {
         segments[DATA1].negateCS = false;

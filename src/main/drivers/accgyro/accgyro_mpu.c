@@ -129,11 +129,6 @@ busStatus_e mpuIntcallback(uint32_t arg)
 
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
-    // Non-blocking, so this needs to be static
-    static busSegment_t segments[] = {
-            {NULL, NULL, 15, true, mpuIntcallback},
-            {NULL, NULL, 0, true, NULL},
-    };
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
 
     // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
@@ -147,12 +142,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     gyro->gyroLastEXTI = nowCycles;
 
     if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        segments[0].txData = gyro->dev.txBuf;;
-        segments[0].rxData = &gyro->dev.rxBuf[1];
-
-        if (!spiIsBusy(&gyro->dev)) {
-            spiSequence(&gyro->dev, &segments[0]);
-        }
+        spiSequence(&gyro->dev, gyro->segments);
     }
 
     gyro->detectedEXTI++;
@@ -287,9 +277,14 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
             if (spiUseDMA(&gyro->dev)) {
                 // Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
                 spiSetAtomicWait(&gyro->dev);
-                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
+                gyro->segments[0].len = 15;
+                gyro->segments[0].callback = mpuIntcallback;
+                gyro->segments[0].txData = gyro->dev.txBuf;
+                gyro->segments[0].rxData = &gyro->dev.rxBuf[1];
+                gyro->segments[0].negateCS = true;
+                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
             } else {
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;

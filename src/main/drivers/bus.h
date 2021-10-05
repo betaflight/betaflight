@@ -82,7 +82,13 @@ typedef struct busDevice_s {
  * is defined by a segment, with optional callback after each is completed
  */
 typedef struct busSegment_s {
+    /* Note that txData may point to the transmit buffer, or in the case of the final segment to
+     * a const extDevice_t * structure to link to the next transfer.
+     */
     uint8_t *txData;
+    /* Note that rxData may point to the receive buffer, or in the case of the final segment to
+     * a busSegment_t * structure to link to the next transfer.
+     */
     uint8_t *rxData;
     int len;
     bool negateCS; // Should CS be negated at the end of this segment

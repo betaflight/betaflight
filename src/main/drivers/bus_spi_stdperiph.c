@@ -270,7 +270,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 }
 
 // DMA transfer setup and start
-void spiSequence(const extDevice_t *dev, busSegment_t *segments)
+void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
@@ -360,7 +360,16 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
             bus->curSegment++;
         }
 
-        bus->curSegment = (busSegment_t *)NULL;
+        // If a following transaction has been linked, start it
+        if (bus->curSegment->txData) {
+            const extDevice_t *nextDev = (const extDevice_t *)bus->curSegment->txData;
+            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->rxData;
+            bus->curSegment->txData = NULL;
+            spiSequenceStart(nextDev, nextSegments);
+        } else {
+            // The end of the segment list has been reached, so mark transactions as complete
+            bus->curSegment = (busSegment_t *)NULL;
+        }
     }
 }
 #endif
