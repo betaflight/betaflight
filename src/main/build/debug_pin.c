@@ -40,9 +40,11 @@ extern dbgPin_t dbgPins[DEBUG_PIN_COUNT];
 // dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
 //     { .tag = IO_TAG(<pin>) },
 // };
+#endif
 
 void dbgPinInit(void)
 {
+#ifdef USE_DEBUG_PIN
     for (unsigned i = 0; i < ARRAYLEN(dbgPins); i++) {
         dbgPin_t *dbgPin = &dbgPins[i];
         dbgPinState_t *dbgPinState = &dbgPinStates[i];
@@ -57,10 +59,12 @@ void dbgPinInit(void)
         dbgPinState->setBSRR = (1 << pinSrc);
         dbgPinState->resetBSRR = (1 << (pinSrc + 16));
     }
+#endif
 }
 
 void dbgPinHi(int index)
 {
+#ifdef USE_DEBUG_PIN
     if ((unsigned)index >= ARRAYLEN(dbgPins)) {
         return;
     }
@@ -73,10 +77,14 @@ void dbgPinHi(int index)
         dbgPinState->gpio->BSRRL = dbgPinState->setBSRR;
 #endif
     }
+#else
+    UNUSED(index);
+#endif
 }
 
 void dbgPinLo(int index)
 {
+#ifdef USE_DEBUG_PIN
     if ((unsigned)index >= ARRAYLEN(dbgPins)) {
         return;
     }
@@ -90,6 +98,7 @@ void dbgPinLo(int index)
         dbgPinState->gpio->BSRRL = dbgPinState->resetBSRR;
 #endif
     }
-}
-
+#else
+    UNUSED(index);
 #endif
+}

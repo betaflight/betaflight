@@ -293,7 +293,7 @@ static void bbSetupDma(bbPort_t *bbPort)
 
 void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
-    DEBUG_HI(0);
+    dbgPinHi(0);
 
     bbPort_t *bbPort = (bbPort_t *)descriptor->userParam;
 
@@ -326,7 +326,7 @@ void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
         }
     }
 #endif
-    DEBUG_LO(0);
+    dbgPinLo(0);
 }
 
 // Setup bbPorts array elements so that they each have a TIM1 or TIM8 channel
@@ -700,8 +700,8 @@ dshotBitbangStatus_e dshotBitbangGetStatus()
 
 motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
 {
-    DEBUG_LO(0);
-    DEBUG_LO(1);
+    dbgPinLo(0);
+    dbgPinLo(1);
 
     motorPwmProtocol = motorConfig->motorPwmProtocol;
     bbDevice.vTable = bbVTable;
