@@ -169,6 +169,7 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
             }
         }
 
+
         if (axis == FD_ROLL) {
             DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * pidGetDT() * 100.0f)); // setpoint speed after smoothing
             DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(setpointAcceleration * pidGetDT() * 100.0f)); // boost amount after smoothing
