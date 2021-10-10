@@ -171,10 +171,6 @@
 #define USE_ADC
 #define USE_ADC_INTERNAL
 
-#define ADC1_INSTANCE               ADC1
-#define ADC2_INSTANCE               ADC2
-#define ADC3_INSTANCE               ADC3
-
 #define RSSI_ADC_PIN                PC5
 #define VBAT_ADC_PIN                PC3
 #define CURRENT_METER_ADC_PIN       PC2

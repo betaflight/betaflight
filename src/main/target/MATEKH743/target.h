@@ -182,8 +182,6 @@
 
 #define USE_ADC
 #define USE_ADC_INTERNAL   // ADC3
-#define ADC1_INSTANCE ADC1
-#define ADC3_INSTANCE ADC3
 
 #define VBAT_ADC_PIN            PC0  //ADC123 VBAT1 
 #define CURRENT_METER_ADC_PIN   PC1  //ADC123 CURR1
