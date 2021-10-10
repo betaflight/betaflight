@@ -37,3 +37,4 @@ typedef enum {
 } pidSimplifiedTuningMode_e;
 
 void applySimplifiedTuning(pidProfile_t *pidProfile);
+void disableSimplifiedTuning(pidProfile_t *pidProfile);
