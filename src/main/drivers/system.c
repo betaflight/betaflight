@@ -67,8 +67,10 @@ void cycleCounterInit(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
 #if defined(DWT_LAR_UNLOCK_VALUE)
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32H7)
     ITM->LAR = DWT_LAR_UNLOCK_VALUE;
+#elif defined(STM32F7)
+    DWT->LAR = DWT_LAR_UNLOCK_VALUE;
 #elif defined(STM32F3) || defined(STM32F4)
     // Note: DWT_Type does not contain LAR member.
 #define DWT_LAR
