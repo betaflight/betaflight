@@ -499,7 +499,8 @@ COMMON_FLAGS = \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \
 	-Wno-c99-extensions \
-	-Wno-reorder
+	-Wno-reorder \
+	-pipe
 
 CC_VERSION = $(shell $(CC) -dumpversion)
 CXX_VERSION = $(shell $(CXX) -dumpversion)
