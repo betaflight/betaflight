@@ -173,10 +173,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_error_limit = 20,
         .abs_control_cutoff = 11,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
-        .dterm_lpf1_static_hz = 150,    // NOTE: dynamic lpf is enabled by default so this setting is actually
-                                    // overridden and the static lowpass 1 is disabled. We can't set this
-                                    // value to 0 otherwise Configurator versions 10.4 and earlier will also
-                                    // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+        .dterm_lpf1_static_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT,
+            // NOTE: dynamic lpf is enabled by default so this setting is actually
+            // overridden and the static lowpass 1 is disabled. We can't set this
+            // value to 0 otherwise Configurator versions 10.4 and earlier will also
+            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
@@ -222,10 +223,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_dterm_filter = true,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
+
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
 #endif
+
 #ifdef USE_SIMPLIFIED_TUNING
         applySimplifiedTuning(pidProfile);
 #endif
