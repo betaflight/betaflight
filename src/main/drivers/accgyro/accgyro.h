@@ -125,6 +125,8 @@ typedef struct gyroDev_s {
     fp_rotationMatrix_t rotationMatrix;
     uint16_t gyroSampleRateHz;
     uint16_t accSampleRateHz;
+    uint8_t accDataReg;
+    uint8_t gyroDataReg;
 } gyroDev_t;
 
 typedef struct accDev_s {
