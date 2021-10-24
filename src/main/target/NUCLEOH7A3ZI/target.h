@@ -242,10 +242,6 @@
 
 #define USE_ADC
 
-#define ADC1_INSTANCE ADC1
-#define ADC2_INSTANCE ADC2
-#define ADC3_INSTANCE ADC3
-
 // DMA stream assignmnets
 #define VBAT_ADC_PIN            PB1  // ADC1
 #define CURRENT_METER_ADC_PIN   PC0  // ADC1
