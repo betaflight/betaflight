@@ -414,7 +414,7 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
         uint8_t cmd[] = { W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
 
          busSegment_t segments[] = {
-                 {cmd, NULL, sizeof (cmd), true, NULL},
+                 {cmd, NULL, sizeof (cmd), false, NULL},
                  {(uint8_t *)data, NULL, length, true, NULL},
                  {NULL, NULL, 0, true, NULL},
          };
@@ -448,7 +448,7 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
         extDevice_t *dev = fdevice->io.handle.dev;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), true, NULL},
+                {cmd, NULL, sizeof (cmd), false, NULL},
                 {(uint8_t *)data, NULL, length, true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
