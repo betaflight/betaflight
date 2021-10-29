@@ -1457,29 +1457,55 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
 #ifdef USE_RC_SMOOTHING_FILTER
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_mode", "%d",               rxConfig()->rc_smoothing_mode);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_feedforward_hz", "%d",     rcSmoothingData->ffCutoffSetting);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_setpoint_hz", "%d",        rcSmoothingData->setpointCutoffSetting);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_auto_factor_setpoint", "%d", rxConfig()->rc_smoothing_auto_factor_rpy);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_throttle_hz", "%d",        rcSmoothingData->throttleCutoffSetting);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_auto_factor_throttle", "%d", rxConfig()->rc_smoothing_auto_factor_throttle);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_debug_axis", "%d",         rcSmoothingData->debugAxis);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_active_cutoffs_ff_sp_thr", "%d,%d,%d", rcSmoothingData->feedforwardCutoffFrequency,
-                                                                            rcSmoothingData->setpointCutoffFrequency,
-                                                                            rcSmoothingData->throttleCutoffFrequency);
-        BLACKBOX_PRINT_HEADER_LINE("rc_smoothing_rx_average", "%d",         rcSmoothingData->averageFrameTimeUs);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_md", "%d",              rxConfig()->rc_smoothing_mode);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_ff_hz", "%d",           rcSmoothingData->ffCutoffSetting);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_sp_hz", "%d",           rcSmoothingData->setpointCutoffSetting);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_af_sp", "%d",           rxConfig()->rc_smoothing_auto_factor_rpy);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_thr_hz", "%d",          rcSmoothingData->throttleCutoffSetting);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_af_thr", "%d",          rxConfig()->rc_smoothing_auto_factor_throttle);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_dbg_ax", "%d",          rcSmoothingData->debugAxis);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_act_cuts", "%d,%d,%d",  rcSmoothingData->feedforwardCutoffFrequency,
+                                                                  rcSmoothingData->setpointCutoffFrequency,
+                                                                  rcSmoothingData->throttleCutoffFrequency);
+        BLACKBOX_PRINT_HEADER_LINE("rc_sm_rx_av", "%d",           rcSmoothingData->averageFrameTimeUs);
 #endif // USE_RC_SMOOTHING_FILTER
-        BLACKBOX_PRINT_HEADER_LINE("rates_type", "%d",                      currentControlRateProfile->rates_type);
-
-        BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",            blackboxConfig()->fields_disabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE("rates_type", "%d",            currentControlRateProfile->rates_type);
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
-        BLACKBOX_PRINT_HEADER_LINE("vbat_sag_compensation", "%d",           currentPidProfile->vbat_sag_compensation);
+        BLACKBOX_PRINT_HEADER_LINE("vbat_s_comp", "%d",           currentPidProfile->vbat_sag_compensation);
 #endif
 
 #if defined(USE_DYN_IDLE)
-        BLACKBOX_PRINT_HEADER_LINE("dynamic_idle_min_rpm", "%d",            currentPidProfile->dyn_idle_min_rpm);
+        BLACKBOX_PRINT_HEADER_LINE("d_idl_m_r", "%d",            currentPidProfile->dyn_idle_min_rpm);         ;
+        BLACKBOX_PRINT_HEADER_LINE("d_idl_p", "%d",              currentPidProfile->dyn_idle_p_gain);
+        BLACKBOX_PRINT_HEADER_LINE("d_idl_i", "%d",              currentPidProfile->dyn_idle_i_gain);
+        BLACKBOX_PRINT_HEADER_LINE("d_idl_d", "%d",              currentPidProfile->dyn_idle_d_gain);
+        BLACKBOX_PRINT_HEADER_LINE("d_idl_max", "%d",            currentPidProfile->dyn_idle_max_increase);
 #endif
+
+#ifdef USE_SIMPLIFIED_TUNING
+        BLACKBOX_PRINT_HEADER_LINE("simpl_mode", "%d",           currentPidProfile->simplified_pids_mode);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_mast", "%d",           currentPidProfile->simplified_master_multiplier);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_rpr", "%d",            currentPidProfile->simplified_roll_pitch_ratio);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_i", "%d",              currentPidProfile->simplified_i_gain);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_d", "%d",              currentPidProfile->simplified_d_gain);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_pi", "%d",             currentPidProfile->simplified_pi_gain);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_dmr", "%d",            currentPidProfile->simplified_dmin_ratio);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_ff", "%d",             currentPidProfile->simplified_feedforward_gain);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_p_pi", "%d",           currentPidProfile->simplified_pitch_pi_gain);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_d_f", "%d",            currentPidProfile->simplified_dterm_filter);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_d_f_m", "%d",          currentPidProfile->simplified_dterm_filter_multiplier);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_g_f", "%d",            gyroConfig()->simplified_gyro_filter);
+        BLACKBOX_PRINT_HEADER_LINE("simpl_g_f_m", "%d",          gyroConfig()->simplified_gyro_filter_multiplier);
+#endif
+
+        BLACKBOX_PRINT_HEADER_LINE("m_out_lim", "%d",            currentPidProfile->motor_output_limit);
+        BLACKBOX_PRINT_HEADER_LINE("thr_lim_t", "%d",            currentControlRateProfile->throttle_limit_type);
+        BLACKBOX_PRINT_HEADER_LINE("thr_lim_p", "%d",            currentControlRateProfile->throttle_limit_percent);
+        BLACKBOX_PRINT_HEADER_LINE("thr_bst", "%d",              currentPidProfile->throttle_boost);
+        BLACKBOX_PRINT_HEADER_LINE("thr_bst_cut", "%d",          currentPidProfile->throttle_boost_cutoff);
+
+        BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d", blackboxConfig()->fields_disabled_mask);
 
         default:
             return true;
