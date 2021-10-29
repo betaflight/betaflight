@@ -267,15 +267,26 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
+// convert andgle in decidegree to radians/10000 with reducing angle to +/-180 degree range
+static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
+{
+    while (angle_decidegree > 1800) {
+        angle_decidegree -= 3600;
+    }
+    while (angle_decidegree < -1800) {
+        angle_decidegree += 3600;
+    }
+    return (int16_t)(RAD * 1000.0f * angle_decidegree);
+}
 
+// fill dst buffer with crsf-attitude telemetry frame
 void crsfFrameAttitude(sbuf_t *dst)
 {
      sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
      sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
+     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.pitch));
+     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.roll));
+     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.yaw));
 }
 
 /*
