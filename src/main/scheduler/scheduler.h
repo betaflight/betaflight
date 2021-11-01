@@ -47,7 +47,7 @@
 #define TASK_AGE_EXPEDITE_SCALE         0.9 // By scaling their expected execution time
 
 // Gyro interrupt counts over which to measure loop time and skew
-#define GYRO_RATE_COUNT 32000
+#define GYRO_RATE_COUNT 25000
 #define GYRO_LOCK_COUNT 400
 
 typedef enum {

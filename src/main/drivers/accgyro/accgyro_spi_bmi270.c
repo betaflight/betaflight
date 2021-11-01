@@ -260,7 +260,7 @@ extiCallbackRec_t bmi270IntCallbackRec;
 // Gyro read has just completed
 busStatus_e bmi270Intcallback(uint32_t arg)
 {
-    volatile gyroDev_t *gyro = (gyroDev_t *)arg;
+    gyroDev_t *gyro = (gyroDev_t *)arg;
     int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
 
     if (gyroDmaDuration > gyro->gyroDmaMaxDuration) {
@@ -274,12 +274,6 @@ busStatus_e bmi270Intcallback(uint32_t arg)
 
 void bmi270ExtiHandler(extiCallbackRec_t *cb)
 {
-    // Non-blocking, so this needs to be static
-    static busSegment_t segments[] = {
-            {NULL, NULL, 14, true, bmi270Intcallback},
-            {NULL, NULL, 0, true, NULL},
-    };
-
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
@@ -288,12 +282,7 @@ void bmi270ExtiHandler(extiCallbackRec_t *cb)
     gyro->gyroLastEXTI = nowCycles;
 
     if (gyro->gyroModeSPI == GYRO_EXTI_INT_DMA) {
-        segments[0].txData = gyro->dev.txBuf;
-        segments[0].rxData = gyro->dev.rxBuf;
-
-        if (!spiIsBusy(&gyro->dev)) {
-            spiSequence(&gyro->dev, &segments[0]);
-        }
+        spiSequence(&gyro->dev, gyro->segments);
     }
 
     gyro->detectedEXTI++;
@@ -387,9 +376,14 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
             if (spiUseDMA(&gyro->dev)) {
                 // Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
                 spiSetAtomicWait(&gyro->dev);
-                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = BMI270_REG_ACC_DATA_X_LSB | 0x80;
+                gyro->segments[0].len = 14;
+                gyro->segments[0].callback = bmi270Intcallback;
+                gyro->segments[0].txData = gyro->dev.txBuf;
+                gyro->segments[0].rxData = gyro->dev.rxBuf;
+                gyro->segments[0].negateCS = true;
+                gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
             } else {
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
