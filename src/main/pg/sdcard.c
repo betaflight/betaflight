@@ -34,7 +34,7 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 
-PG_REGISTER_WITH_RESET_FN(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 2);
 
 void pgResetFn_sdcardConfig(sdcardConfig_t *config)
 {

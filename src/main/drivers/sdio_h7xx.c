@@ -251,9 +251,11 @@ void SDIO_GPIO_Init(void)
     IOConfigGPIO(cmd, IOCFG_OUT_PP);
 }
 
-void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 {
     UNUSED(dma);
+
+    return true;
 }
 
 bool SD_GetState(void)

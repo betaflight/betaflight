@@ -42,17 +42,6 @@
 
 #include "pg/adc.h"
 
-// XXX Instance and DMA stream defs will be gone in unified target
-
-#ifndef ADC1_INSTANCE
-#define ADC1_INSTANCE NULL
-#endif
-#ifndef ADC2_INSTANCE
-#define ADC2_INSTANCE NULL
-#endif
-#ifndef ADC3_INSTANCE
-#define ADC3_INSTANCE NULL
-#endif
 #ifndef ADC1_DMA_STREAM
 #define ADC1_DMA_STREAM NULL
 #endif
@@ -65,25 +54,25 @@
 
 const adcDevice_t adcHardware[ADCDEV_COUNT] = {
     {
-        .ADCx = ADC1_INSTANCE,
+        .ADCx = ADC1,
         .rccADC = RCC_AHB1(ADC12),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
         .channel = DMA_REQUEST_ADC1,
 #endif
     },
-    { .ADCx = ADC2_INSTANCE,
+    { .ADCx = ADC2,
         .rccADC = RCC_AHB1(ADC12),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
         .channel = DMA_REQUEST_ADC2,
 #endif
     },
-#if defined(ADC3)
+#if !(defined(STM32H7A3xx) || defined(STM32H7A3xxQ))
     // ADC3 is not available on all H7 MCUs, e.g. H7A3
     // On H743 and H750, ADC3 can be serviced by BDMA also, but we settle for DMA1 or 2 (for now).
     {
-        .ADCx = ADC3_INSTANCE,
+        .ADCx = ADC3,
         .rccADC = RCC_AHB4(ADC3),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC3_DMA_STREAM,
@@ -384,7 +373,7 @@ void adcInit(const adcConfig_t *config)
     for (int dev = 0; dev < ADCDEV_COUNT; dev++) {
         adcDevice_t *adc = &adcDevice[dev];
 
-        if (!(adc->ADCx && adc->channelBits)) {
+        if (!adc->channelBits) {
             continue;
         }
 
@@ -436,19 +425,23 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
-        dmaIdentifier_e dmaIdentifier;
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 
-        if (!dmaSpec) {
+        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
         adc->DmaHandle.Instance                 = dmaSpec->ref;
         adc->DmaHandle.Init.Request             = dmaSpec->channel;
-        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 #else
-        dmaIdentifier = dmaGetIdentifier(adc->dmaResource);
+        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(adc->dmaResource);
+
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+            return;
+        }
+
         adc->DmaHandle.Instance                 = (DMA_ARCH_TYPE *)adc->dmaResource;
         adc->DmaHandle.Init.Request             = adc->channel;
 #endif
@@ -462,9 +455,9 @@ void adcInit(const adcConfig_t *config)
 
         // Deinitialize  & Initialize the DMA for new transfer
 
-        // dmaInit must be called before calling HAL_DMA_Init,
+        // dmaEnable must be called before calling HAL_DMA_Init,
         // to enable clock for associated DMA if not already done so.
-        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
+        dmaEnable(dmaIdentifier);
 
         HAL_DMA_DeInit(&adc->DmaHandle);
         HAL_DMA_Init(&adc->DmaHandle);
@@ -495,7 +488,7 @@ void adcInit(const adcConfig_t *config)
 
         adcDevice_t *adc = &adcDevice[dev];
 
-        if (!(adc->ADCx && adc->channelBits)) {
+        if (!adc->channelBits) {
             continue;
         }
 

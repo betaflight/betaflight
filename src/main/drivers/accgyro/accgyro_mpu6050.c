@@ -41,8 +41,6 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6050.h"
 
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-
 // MPU6050, Standard address 0x68
 // MPU_INT on PB13 on rev4 Naze32 hardware
 #define MPU6050_ADDRESS         0x68

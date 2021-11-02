@@ -214,7 +214,7 @@ static bbPort_t *bbFindMotorPort(int portIndex)
     return NULL;
 }
 
-static bbPort_t *bbAllocMotorPort(int portIndex)
+static bbPort_t *bbAllocateMotorPort(int portIndex)
 {
     if (usedMotorPorts >= MAX_SUPPORTED_MOTOR_PORTS) {
         bbStatus = DSHOT_BITBANG_STATUS_TOO_MANY_PORTS;
@@ -236,6 +236,18 @@ static bbPort_t *bbAllocMotorPort(int portIndex)
     ++usedMotorPorts;
 
     return bbPort;
+}
+
+const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel)
+{
+    for (int index = 0; index < usedMotorPorts; index++) {
+        const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
+        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].owner.owner) {
+            return bitbangTimer;
+        }
+    }
+
+    return NULL;
 }
 
 const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer)
@@ -265,25 +277,13 @@ static uint32_t getDshotBaseFrequency(motorPwmProtocolTypes_e pwmProtocolType)
     }
 }
 
-static void bbAllocDma(bbPort_t *bbPort)
+static void bbSetupDma(bbPort_t *bbPort)
 {
-    const timerHardware_t *timhw = bbPort->timhw;
+    const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(bbPort->dmaResource);
+    dmaEnable(dmaIdentifier);
+    bbPort->dmaSource = timerDmaSource(bbPort->timhw->channel);
 
-#ifdef USE_DMA_SPEC
-    dmaoptValue_t dmaopt = dmaGetOptionByTimer(timhw);
-    const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timhw->tim, timhw->channel, dmaopt);
-    bbPort->dmaResource = dmaChannelSpec->ref;
-    bbPort->dmaChannel = dmaChannelSpec->channel;
-#else
-    bbPort->dmaResource = timhw->dmaRef;
-    bbPort->dmaChannel = timhw->dmaChannel;
-#endif
-
-    dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(bbPort->dmaResource);
-    dmaInit(dmaIdentifier, OWNER_DSHOT_BITBANG, bbPort->owner.resourceIndex);
-    bbPort->dmaSource = timerDmaSource(timhw->channel);
-
-    bbPacer_t *bbPacer = bbFindMotorPacer(timhw->tim);
+    bbPacer_t *bbPacer = bbFindMotorPacer(bbPort->timhw->tim);
     bbPacer->dmaSources |= bbPort->dmaSource;
 
     dmaSetHandler(dmaIdentifier, bbDMAIrqHandler, NVIC_BUILD_PRIORITY(2, 1), (uint32_t)bbPort);
@@ -293,7 +293,7 @@ static void bbAllocDma(bbPort_t *bbPort)
 
 void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
-    DEBUG_HI(0);
+    dbgPinHi(0);
 
     bbPort_t *bbPort = (bbPort_t *)descriptor->userParam;
 
@@ -326,7 +326,7 @@ void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
         }
     }
 #endif
-    DEBUG_LO(0);
+    dbgPinLo(0);
 }
 
 // Setup bbPorts array elements so that they each have a TIM1 or TIM8 channel
@@ -410,8 +410,22 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
 
         // New port group
 
-        bbPort = bbAllocMotorPort(portIndex);
-        if (!bbPort) {
+        bbPort = bbAllocateMotorPort(portIndex);
+
+        if (bbPort) {
+            const timerHardware_t *timhw = bbPort->timhw;
+
+#ifdef USE_DMA_SPEC
+            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timhw->tim, timhw->channel, dmaGetOptionByTimer(timhw));
+            bbPort->dmaResource = dmaChannelSpec->ref;
+            bbPort->dmaChannel = dmaChannelSpec->channel;
+#else
+            bbPort->dmaResource = timhw->dmaRef;
+            bbPort->dmaChannel = timhw->dmaChannel;
+#endif
+        }
+
+        if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
             bbDevice.vTable.write = motorWriteNull;
             bbDevice.vTable.updateStart = motorUpdateStartNull;
             bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
@@ -431,7 +445,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
         bbTIM_TimeBaseInit(bbPort, bbPort->outputARR);
         bbTimerChannelInit(bbPort);
 
-        bbAllocDma(bbPort);
+        bbSetupDma(bbPort);
         bbDMAPreconfigure(bbPort, DSHOT_BITBANG_DIRECTION_OUTPUT);
         bbDMAPreconfigure(bbPort, DSHOT_BITBANG_DIRECTION_INPUT);
 
@@ -686,8 +700,8 @@ dshotBitbangStatus_e dshotBitbangGetStatus()
 
 motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t count)
 {
-    DEBUG_LO(0);
-    DEBUG_LO(1);
+    dbgPinLo(0);
+    dbgPinLo(1);
 
     motorPwmProtocol = motorConfig->motorPwmProtocol;
     bbDevice.vTable = bbVTable;

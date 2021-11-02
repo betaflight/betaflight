@@ -87,28 +87,27 @@ const timerHardware_t *timerGetAllocatedByNumberAndChannel(int8_t timerNumber, u
         }
     }
 
+#if defined(USE_DSHOT_BITBANG)
+    return dshotBitbangTimerGetAllocatedByNumberAndChannel(timerNumber, timerChannel);
+#else
     return NULL;
+#endif
 }
 
 const resourceOwner_t *timerGetOwner(const timerHardware_t *timer)
 {
-    const resourceOwner_t *timerOwner = &freeOwner;
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const timerHardware_t *assignedTimer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
         if (assignedTimer && assignedTimer == timer) {
-            timerOwner = &timerOwners[i];
-
-            break;
+            return &timerOwners[i];
         }
     }
 
 #if defined(USE_DSHOT_BITBANG)
-    if (!timerOwner->owner) {
-        timerOwner = dshotBitbangTimerGetOwner(timer);
-    }
-#endif
-
+    return dshotBitbangTimerGetOwner(timer);
+#else
     return timerOwner;
+#endif
 }
 
 const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex)

@@ -19,6 +19,9 @@
  */
 
 #pragma once
+
+#define USE_LATE_TASK_STATISTICS
+
 #define TARGET_BOARD_IDENTIFIER "REVN"
 
 #define USBD_PRODUCT_STRING "Revo Nano"

@@ -92,7 +92,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     uint32_t dmaChannel = timerHardware->dmaChannel;
 #endif
 
-    if (dmaRef == NULL) {
+    dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
+    if (dmaRef == NULL || !dmaAllocate(dmaIdentifier, OWNER_TRANSPONDER, 0)) {
         return;
     }
 
@@ -153,8 +154,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&TimHandle, hdma[dmaIndex], hdma_tim);
 
-    dmaInit(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0);
-    dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, dmaIndex);
+    dmaEnable(dmaIdentifier);
+    dmaSetHandler(dmaIdentifier, TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, dmaIndex);
 
     /* Initialize TIMx DMA handle */
     if (HAL_DMA_Init(TimHandle.hdma[dmaIndex]) != HAL_OK) {

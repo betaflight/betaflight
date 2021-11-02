@@ -33,19 +33,18 @@ typedef struct dbgPinState_s {
     uint32_t resetBSRR;
 } dbgPinState_t;
 
-#ifndef DEBUG_PIN_COUNT
-#define DEBUG_PIN_COUNT 1
-#endif
-
-// Provide a non-weak reference in target.c or elsewhere
-__weak dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
-    { .tag = IO_TAG(NONE) },
-};
-
 dbgPinState_t dbgPinStates[DEBUG_PIN_COUNT] = { 0 };
+
+extern dbgPin_t dbgPins[DEBUG_PIN_COUNT];
+// Define this in the target definition as (and set DEBUG_PIN_COUNT to the correct value):
+// dbgPin_t dbgPins[DEBUG_PIN_COUNT] = {
+//     { .tag = IO_TAG(<pin>) },
+// };
+#endif
 
 void dbgPinInit(void)
 {
+#ifdef USE_DEBUG_PIN
     for (unsigned i = 0; i < ARRAYLEN(dbgPins); i++) {
         dbgPin_t *dbgPin = &dbgPins[i];
         dbgPinState_t *dbgPinState = &dbgPinStates[i];
@@ -60,10 +59,12 @@ void dbgPinInit(void)
         dbgPinState->setBSRR = (1 << pinSrc);
         dbgPinState->resetBSRR = (1 << (pinSrc + 16));
     }
+#endif
 }
 
 void dbgPinHi(int index)
 {
+#ifdef USE_DEBUG_PIN
     if ((unsigned)index >= ARRAYLEN(dbgPins)) {
         return;
     }
@@ -76,10 +77,14 @@ void dbgPinHi(int index)
         dbgPinState->gpio->BSRRL = dbgPinState->setBSRR;
 #endif
     }
+#else
+    UNUSED(index);
+#endif
 }
 
 void dbgPinLo(int index)
 {
+#ifdef USE_DEBUG_PIN
     if ((unsigned)index >= ARRAYLEN(dbgPins)) {
         return;
     }
@@ -93,6 +98,7 @@ void dbgPinLo(int index)
         dbgPinState->gpio->BSRRL = dbgPinState->resetBSRR;
 #endif
     }
-}
-
+#else
+    UNUSED(index);
 #endif
+}

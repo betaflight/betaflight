@@ -114,7 +114,7 @@ void systemJumpToBootloader(void)
 }
 
 
-void systemCheckResetReason(void)
+void systemProcessResetReason(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
@@ -122,12 +122,13 @@ void systemCheckResetReason(void)
     case RESET_MSC_REQUEST:
         // RESET_REASON will be reset by MSC
     case RESET_NONE:
-        return;
+        break;
 
     case RESET_BOOTLOADER_REQUEST_ROM:
         persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-        break;;
-    }
 
-    systemJumpToBootloader();
+        systemJumpToBootloader();
+
+        break;
+    }
 }

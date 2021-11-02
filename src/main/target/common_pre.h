@@ -28,8 +28,6 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-//#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
-
 #ifdef STM32F1
 #define MINIMAL_CLI
 // Using RX DMA disables the use of receive callbacks
@@ -55,7 +53,6 @@
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
-#define USE_ADC
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
@@ -74,6 +71,7 @@
 
 #ifdef STM32F7
 #define USE_ITCM_RAM
+#define ITCM_RAM_OPTIMISATION "-O2"
 #define USE_FAST_DATA
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -92,6 +90,7 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#define USE_LATE_TASK_STATISTICS
 #endif // STM32F7
 
 #ifdef STM32H7
@@ -133,6 +132,7 @@
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_LATE_TASK_STATISTICS
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -159,7 +159,11 @@
 
 
 #ifdef USE_ITCM_RAM
+#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
+#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
+#else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#endif
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
@@ -231,7 +235,6 @@ extern uint8_t _dmaram_end__;
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH
-#define USE_TASK_STATISTICS
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_IMU_CALC
 #define USE_PPM

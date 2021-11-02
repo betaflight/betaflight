@@ -67,7 +67,6 @@ const adcTagMap_t adcTagMap[] = {
 
 void adcInit(const adcConfig_t *config)
 {
-
     uint8_t configuredAdcChannels = 0;
 
     memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
@@ -89,10 +88,15 @@ void adcInit(const adcConfig_t *config)
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
-    if (device == ADCINVALID)
+    if (device == ADCINVALID) {
         return;
+    }
 
     const adcDevice_t adc = adcHardware[device];
+
+    if (!dmaAllocate(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0)) {
+        return;
+    }
 
     bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
@@ -115,7 +119,7 @@ void adcInit(const adcConfig_t *config)
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
+    dmaEnable(dmaGetIdentifier(adc.dmaResource));
 
     xDMA_DeInit(adc.dmaResource);
     DMA_InitTypeDef DMA_InitStructure;

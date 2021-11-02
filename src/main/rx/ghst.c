@@ -87,8 +87,6 @@ static timeUs_t ghstRxFrameEndAtUs = 0;
 static uint8_t telemetryBuf[GHST_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
-static timeUs_t lastRcFrameTimeUs = 0;
-
 /* GHST Protocol
  * Ghost uses 420k baud single-wire, half duplex connection, connected to a FC UART 'Tx' pin
  * Each control packet is interleaved with one or more corresponding downlink packets
@@ -305,11 +303,6 @@ STATIC_UNIT_TESTED float ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState, u
     return (5 * ((float)ghstChannelData[chan] + 1) / 8) + 880;
 }
 
-static timeUs_t ghstFrameTimeUs(void)
-{
-    return lastRcFrameTimeUs;
-}
-
 // UART idle detected (inter-packet)
 static void ghstIdle()
 {
@@ -329,7 +322,7 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = ghstReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ghstFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = ghstFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
     rxRuntimeState->rcProcessFrameFn = ghstProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);

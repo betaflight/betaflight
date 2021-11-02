@@ -36,12 +36,12 @@
 
 #include "pg/pg.h"
 
-#define FILTER_FREQUENCY_MAX 1000 // so little filtering above 1000hz that if the user wants less delay, they must disable the filter
-#define DYN_LPF_FILTER_FREQUENCY_MAX 1000
+#define LPF_MAX_HZ 1000 // so little filtering above 1000hz that if the user wants less delay, they must disable the filter
+#define DYN_LPF_MAX_HZ 1000
 
-#define DYN_LPF_GYRO_MIN_HZ_DEFAULT 200
-#define DYN_LPF_GYRO_MAX_HZ_DEFAULT 500
-#define GYRO_LOWPASS_2_HZ_DEFAULT 250
+#define GYRO_LPF1_DYN_MIN_HZ_DEFAULT 250
+#define GYRO_LPF1_DYN_MAX_HZ_DEFAULT 500
+#define GYRO_LPF2_HZ_DEFAULT 500
 
 #ifdef USE_YAW_SPIN_RECOVERY
 #define YAW_SPIN_RECOVERY_THRESHOLD_MIN 500
@@ -157,8 +157,8 @@ typedef enum {
 #define GYRO_CONFIG_USE_GYRO_BOTH   2
 
 enum {
-    FILTER_LOWPASS = 0,
-    FILTER_LOWPASS2
+    FILTER_LPF1 = 0,
+    FILTER_LPF2
 };
 
 typedef struct gyroConfig_s {
@@ -168,8 +168,8 @@ typedef struct gyroConfig_s {
     uint8_t gyro_high_fsr;
     uint8_t gyro_to_use;
 
-    uint16_t gyro_lowpass_hz;
-    uint16_t gyro_lowpass2_hz;
+    uint16_t gyro_lpf1_static_hz;
+    uint16_t gyro_lpf2_static_hz;
 
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
@@ -179,21 +179,21 @@ typedef struct gyroConfig_s {
     uint8_t checkOverflow;
 
     // Lowpass primary/secondary
-    uint8_t gyro_lowpass_type;
-    uint8_t gyro_lowpass2_type;
+    uint8_t gyro_lpf1_type;
+    uint8_t gyro_lpf2_type;
 
     uint8_t yaw_spin_recovery;
     int16_t yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;   // Gyro calibration duration in 1/100 second
 
-    uint16_t dyn_lpf_gyro_min_hz;
-    uint16_t dyn_lpf_gyro_max_hz;
+    uint16_t gyro_lpf1_dyn_min_hz;
+    uint16_t gyro_lpf1_dyn_max_hz;
 
     uint8_t gyro_filter_debug_axis;
 
     uint8_t gyrosDetected; // What gyros should detection be attempted for on startup. Automatically set on first startup.
-    uint8_t dyn_lpf_curve_expo; // set the curve for dynamic gyro lowpass filter
+    uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t simplified_gyro_filter;
     uint8_t simplified_gyro_filter_multiplier;
 } gyroConfig_t;

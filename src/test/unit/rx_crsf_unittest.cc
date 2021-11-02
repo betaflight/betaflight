@@ -361,4 +361,5 @@ void crsfScheduleMspResponse(void) {};
 bool bufferMspFrame(uint8_t *, int) {return true;}
 bool isBatteryVoltageAvailable(void) { return true; }
 bool isAmperageAvailable(void) { return true; }
+timeUs_t rxFrameTimeUs(void) { return 0; }
 }

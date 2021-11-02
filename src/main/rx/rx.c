@@ -282,6 +282,7 @@ void rxInit(void)
     rxRuntimeState.rcReadRawFn = nullReadRawRC;
     rxRuntimeState.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeState.rcProcessFrameFn = nullProcessFrame;
+    rxRuntimeState.lastRcFrameTimeUs = 0;
     rcSampleIndex = 0;
     needRxSignalMaxDelayUs = DELAY_10_HZ;
 
@@ -928,4 +929,9 @@ timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs)
     }
 
     return frameTimeDeltaUs;
+}
+
+timeUs_t rxFrameTimeUs(void)
+{
+    return rxRuntimeState.lastRcFrameTimeUs;
 }

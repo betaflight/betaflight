@@ -408,17 +408,16 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
-        dmaIdentifier_e dmaIdentifier;
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
 
-        if (!dmaSpec) {
+        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
+        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
         adc->DmaHandle.Instance                 = (DMA_ARCH_TYPE *)dmaSpec->ref;
         adc->DmaHandle.Init.Request             = dmaSpec->channel;
-        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 #else
         dmaIdentifier = dmaGetIdentifier(adc->dmaResource);
         adc->DmaHandle.Instance                 = (DMA_ARCH_TYPE *)adc->dmaResource;
@@ -434,9 +433,9 @@ void adcInit(const adcConfig_t *config)
 
         // Deinitialize  & Initialize the DMA for new transfer
 
-        // dmaInit must be called before calling HAL_DMA_Init,
+        // dmaEnable must be called before calling HAL_DMA_Init,
         // to enable clock for associated DMA if not already done so.
-        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
+        dmaEnable(dmaIdentifier);
 
         HAL_DMA_DeInit(&adc->DmaHandle);
         HAL_DMA_Init(&adc->DmaHandle);
