@@ -313,6 +313,13 @@ void OverclockRebootIfNecessary(uint32_t overclockLevel)
   */
 void SystemInit(void)
 {
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+
+    if (bootloaderRequest == RESET_BOOTLOADER_POST) {
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+        NVIC_SystemReset();
+    }
+
     initialiseMemorySections();
 
     SystemInitOC();
