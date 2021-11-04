@@ -115,7 +115,7 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 // Gyro read has just completed
 busStatus_e mpuIntcallback(uint32_t arg)
 {
-    volatile gyroDev_t *gyro = (gyroDev_t *)arg;
+    gyroDev_t *gyro = (gyroDev_t *)arg;
     int32_t gyroDmaDuration = cmpTimeCycles(getCycleCounter(), gyro->gyroLastEXTI);
 
     if (gyroDmaDuration > gyro->gyroDmaMaxDuration) {
