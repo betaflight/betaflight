@@ -344,8 +344,8 @@ uint32_t    Null Bytes
 uint8_t     255 (Max MSP Parameter)
 uint8_t     0x01 (Parameter version 1)
 */
-void crsfFrameDeviceInfo(sbuf_t *dst) {
-
+void crsfFrameDeviceInfo(sbuf_t *dst)
+{
     char buff[30];
     tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
 
@@ -355,7 +355,7 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteStringWithZeroTerminator(dst, buff);
-    for (unsigned int ii=0; ii<12; ii++) {
+    for (unsigned int ii = 0; ii < 12; ii++) {
         sbufWriteU8(dst, 0x00);
     }
     sbufWriteU8(dst, CRSF_DEVICEINFO_PARAMETER_COUNT);
@@ -367,7 +367,6 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 #if defined(USE_CRSF_V3)
 void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
 {
-
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_COMMAND);
@@ -383,7 +382,6 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
 
 static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
 {
-
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
     uint8_t ii = 0;
     for (ii = 0; ii < BAUD_COUNT; ++ii) {
@@ -476,7 +474,7 @@ static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
             const uint8_t remainder = (runLength % CRSF_RLE_MAX_RUN_LENGTH);
             const uint8_t totalBatches = fullBatches + (remainder) ? 1 : 0;
             if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
-                for (unsigned int i=1; i<=totalBatches; i++) {
+                for (unsigned int i = 1; i <= totalBatches; i++) {
                     const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;
                     sbufWriteU8(dest, c);
                     sbufWriteU8(dest, batchLength);
@@ -504,7 +502,7 @@ static void crsfFrameDisplayPortChunk(sbuf_t *dst, sbuf_t *src, uint8_t batchId,
     sbufWriteU8(dst, batchId);
     sbufWriteU8(dst, idx);
     cRleEncodeStream(src, dst, CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH);
-    if (idx == 0)  {
+    if (idx == 0) {
         *metaPtr |= CRSF_DISPLAYPORT_FIRST_CHUNK_MASK;
     }
     if (!sbufBytesRemaining(src)) {
@@ -602,7 +600,6 @@ void crsfScheduleDeviceInfoResponse(void)
 {
     deviceInfoReplyPending = true;
 }
-
 
 void initCrsfTelemetry(void)
 {
@@ -753,7 +750,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         sbuf_t *dst = &crsfDisplayPortBuf;
         displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
         uint8_t i = 0;
-        while(sbufBytesRemaining(src)) {
+        while (sbufBytesRemaining(src)) {
             crsfInitializeFrame(dst);
             crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, i);
             crsfFinalize(dst);
