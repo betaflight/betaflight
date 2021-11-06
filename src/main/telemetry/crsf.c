@@ -140,7 +140,11 @@ bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength)
 
 bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
 {
-    bool requestHandled = false;
+    static bool replyPending = false;
+    if (replyPending) {
+        replyPending = sendMspReply(payloadSize, responseFn);
+        return replyPending;
+    }
     if (!mspRxBuffer.len) {
         return false;
     }
@@ -148,17 +152,17 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
     while (true) {
         const int mspFrameLength = mspRxBuffer.bytes[pos];
         if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
-            requestHandled |= sendMspReply(payloadSize, responseFn);
+            replyPending |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
         ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
-                return requestHandled;
+                return replyPending;
             }
         }
     }
-    return requestHandled;
+    return replyPending;
 }
 #endif
 
