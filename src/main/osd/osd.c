@@ -827,7 +827,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
 #if defined(USE_DYN_NOTCH_FILTER)
     case OSD_STAT_MAX_FFT:
-        if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
+        if (isDynNotchActive()) {
             int value = getMaxFFT();
             if (value > 0) {
                 tfp_sprintf(buff, "%dHZ", value);

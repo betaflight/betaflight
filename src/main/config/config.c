@@ -102,8 +102,6 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-#define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
-
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
@@ -466,10 +464,6 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_ESC_SENSOR);
 #endif
 
-#ifndef USE_DYN_NOTCH_FILTER
-    featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-#endif
-
 #if !defined(USE_ADC)
     featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
@@ -681,14 +675,6 @@ void validateAndFixGyroConfig(void)
             }
         }
     }
-
-#ifdef USE_DYN_NOTCH_FILTER
-    // Disable dynamic filter if gyro loop is less than 2KHz
-    const uint32_t configuredLooptime = (gyro.sampleRateHz > 0) ? (pidConfig()->pid_process_denom * 1e6 / gyro.sampleRateHz) : 0;
-    if (configuredLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
-        featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-    }
-#endif
 
 #ifdef USE_BLACKBOX
 #ifndef USE_FLASHFS
