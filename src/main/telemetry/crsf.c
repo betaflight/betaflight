@@ -106,7 +106,11 @@ bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength)
 
 bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
 {
-    bool requestHandled = false;
+    static bool replyPending = false;
+    if (replyPending) {
+        replyPending = sendMspReply(payloadSize, responseFn);
+        return replyPending;
+    }
     if (!mspRxBuffer.len) {
         return false;
     }
@@ -114,17 +118,17 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
     while (true) {
         const int mspFrameLength = mspRxBuffer.bytes[pos];
         if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
-            requestHandled |= sendMspReply(payloadSize, responseFn);
+            replyPending |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
         ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
-                return requestHandled;
+                return replyPending;
             }
         }
     }
-    return requestHandled;
+    return replyPending;
 }
 #endif
 
@@ -317,8 +321,8 @@ uint32_t    Null Bytes
 uint8_t     255 (Max MSP Parameter)
 uint8_t     0x01 (Parameter version 1)
 */
-void crsfFrameDeviceInfo(sbuf_t *dst) {
-
+void crsfFrameDeviceInfo(sbuf_t *dst)
+{
     char buff[30];
     tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
 
@@ -328,7 +332,7 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteStringWithZeroTerminator(dst, buff);
-    for (unsigned int ii=0; ii<12; ii++) {
+    for (unsigned int ii = 0; ii < 12; ii++) {
         sbufWriteU8(dst, 0x00);
     }
     sbufWriteU8(dst, CRSF_DEVICEINFO_PARAMETER_COUNT);
@@ -445,7 +449,6 @@ void crsfScheduleDeviceInfoResponse(void)
 {
     deviceInfoReplyPending = true;
 }
-
 
 void initCrsfTelemetry(void)
 {
