@@ -89,7 +89,7 @@ uint32_t dmaFlag_IT_TCIF(const dmaResource_t *channel)
 }
 
 #define DMA_RCC(x) ((x) == DMA1 ? RCC_AHBPeriph_DMA1 : RCC_AHBPeriph_DMA2)
-dmaEnable(dmaIdentifier_e identifier) {
+void dmaEnable(dmaIdentifier_e identifier)
 {
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
 
