@@ -316,7 +316,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             for (int p = 0; p < dynNotch.count; p++) {
 
                 // Only update dynNotch.centerFreq if there is a peak (ignore void peaks) and if peak is above noise floor
-                if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
+                if (peaks[p].bin != 0) {
 
                     float meanBin = peaks[p].bin;
 
