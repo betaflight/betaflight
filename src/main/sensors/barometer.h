@@ -55,7 +55,7 @@ PG_DECLARE(barometerConfig_t, barometerConfig);
 
 typedef struct baro_s {
     baroDev_t dev;
-    int32_t BaroAlt;
+    int32_t BaroAlt;                     //altitude in centimeters (0.01m)
     int32_t baroTemperature;             // Use temperature for telemetry
     int32_t baroPressure;                // Use pressure for telemetry
 } baro_t;

@@ -61,6 +61,9 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#ifdef USE_BARO
+#include "sensors/barometer.h"
+#endif
 
 #include "telemetry/telemetry.h"
 #include "telemetry/msp_shared.h"
@@ -242,6 +245,46 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, batteryRemainingPercentage);
 }
 
+#ifdef USE_BARO
+// pack altitude in decimeters into a 16-bit value.
+// Due to strange OpenTX behavior of count any 0xFFFF value as incorrect, the maximum sending value is limited to 0xFFFE (32766 meters)
+// in order to have both precision and range in 16-bit 
+// value of altitude is packed with different precision depending on highest-bit value.
+// on receiving side:
+// if MSB==0, altitude is sent in decimeters as uint16 with -1000m base. So, range is -1000..2276m.
+// if MSB==1, altitude is sent in meters with 0 base. So, range is 0..32766m (MSB must be zeroed).
+// altitude lower  than -1000m is sent as zero   (should be displayed as "<-1000m" or something).
+// altitude higher than 32767m is sent as 0xfffe (should be displayed as ">32766m" or something).
+// range from 0 to 2276m might be sent with dm- or m-precision. But this function always use dm-precision.
+static inline uint16_t get_altitude_packed(int32_t altitude_dm) 
+{
+    enum { 
+        ALT_MIN_DM = 10000,                     //minimum altitude in dm.
+        ALT_TRESHOLD_DM = 0x8000 - ALT_MIN_DM,  //altitude of precision changing in dm
+        ALT_MAX_DM  = 0x7ffe * 10 - 5,          //maximum altitude in dm
+    };
+    if (altitude_dm < -ALT_MIN_DM) {   //less than minimum
+        return 0;   //send minimum
+    }
+    if (altitude_dm < ALT_TRESHOLD_DM) {
+        return altitude_dm + ALT_MIN_DM; //decimeter-resolution range
+    }
+    if (altitude_dm > ALT_MAX_DM) { //more than maximum
+        return 0xfffe; //send maximum
+    }
+    return ((altitude_dm + 5) / 10) | 0x8000; //meter-resulution range
+}
+
+// pack barometric altitude
+static void crsfFrameAltitude(sbuf_t* dst)
+{
+    // use sbufWrite since CRC does not include frame length
+    sbufWriteU8(dst, CRSF_FRAME_BARO_ALTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_BARO_ALTITUDE);
+    sbufWriteU16BigEndian(dst, get_altitude_packed((baro.BaroAlt+5)/10));
+}
+#endif 
+
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
     CRSF_ACTIVE_ANTENNA2 = 1
@@ -286,11 +329,11 @@ static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
 // fill dst buffer with crsf-attitude telemetry frame
 void crsfFrameAttitude(sbuf_t *dst)
 {
-     sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-     sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.pitch));
-     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.roll));
-     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.yaw));
+    sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
+    sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.pitch));
+    sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.roll));
+    sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.yaw));
 }
 
 /*
@@ -539,6 +582,7 @@ static void crsfFrameDisplayPortClear(sbuf_t *dst)
 typedef enum {
     CRSF_FRAME_START_INDEX = 0,
     CRSF_FRAME_ATTITUDE_INDEX = CRSF_FRAME_START_INDEX,
+    CRSF_FRAME_BARO_ALTITUDE_INDEX,
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
@@ -586,6 +630,14 @@ static void processCrsf(void)
         crsfFrameAttitude(dst);
         crsfFinalize(dst);
     }
+#ifdef USE_BARO
+    //send barometric altitude
+    if (currentSchedule & BIT(CRSF_FRAME_BARO_ALTITUDE_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameAltitude(dst);
+        crsfFinalize(dst);
+    }
+#endif
     if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameBatterySensor(dst);
@@ -631,6 +683,10 @@ void initCrsfTelemetry(void)
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
     }
+#ifdef USE_BARO
+    if (telemetryIsSensorEnabled(SENSOR_ALTITUDE))
+        crsfSchedule[index++] = BIT(CRSF_FRAME_BARO_ALTITUDE_INDEX);
+#endif
     if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
         || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
         crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);
