@@ -300,8 +300,7 @@ telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/sensors/barometer.c
+		$(USER_DIR)/fc/runtime_config.c
 
 telemetry_crsf_unittest_DEFINES := \
 		FLASH_SIZE=128 \
@@ -322,11 +321,12 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/telemetry/crsf.c \
 		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/telemetry/msp_shared.c \
-		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/sensors/barometer.c
+		$(USER_DIR)/fc/runtime_config.c
 
 telemetry_crsf_msp_unittest_DEFINES := \
-		USE_MSP_OVER_TELEMETRY=
+		USE_MSP_OVER_TELEMETRY= \
+		__TARGET__="TEST" \
+		__REVISION__="revision"
 
 
 telemetry_hott_unittest_SRC := \

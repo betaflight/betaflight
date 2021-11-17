@@ -56,11 +56,13 @@ extern "C" {
     #include "sensors/battery.h"
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
 
     #include "telemetry/crsf.h"
     #include "telemetry/telemetry.h"
     #include "telemetry/msp_shared.h"
 
+    baro_t baro;                        // barometer access functions
     rssiSource_e rssiSource;
     bool airMode;
 
