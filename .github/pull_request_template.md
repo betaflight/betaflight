@@ -1,6 +1,6 @@
 ## Important: Feature freeze / release candidate phase for Betaflight 4.3
 
-From 29 November 2020 until the release of Betaflight 4.3.0 (scheduled for early 2021), the project is in a 'feature freeze / release candidate' phase. This means:
+From 29 November 2021 until the release of Betaflight 4.3.0 (scheduled for early 2022), the project is in a 'feature freeze / release candidate' phase. This means:
 
  1. Pull requests can still be submitted as normal. Comments / discussions will probably be slower than normal due to shifted priorities;
 
