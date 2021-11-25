@@ -1907,7 +1907,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, currentPidProfile->feedforward_averaging);
         sbufWriteU8(dst, currentPidProfile->feedforward_smooth_factor);
         sbufWriteU8(dst, currentPidProfile->feedforward_boost);
+        sbufWriteU8(dst, currentPidProfile->feedforward_max_rate_limit);
+        sbufWriteU8(dst, currentPidProfile->feedforward_jitter_factor);
 #else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -2814,13 +2818,17 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 5) {
+        if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.44
 #if defined(USE_FEEDFORWARD)
             currentPidProfile->feedforward_averaging = sbufReadU8(src);
             currentPidProfile->feedforward_smooth_factor = sbufReadU8(src);
             currentPidProfile->feedforward_boost = sbufReadU8(src);
+            currentPidProfile->feedforward_max_rate_limit = sbufReadU8(src);
+            currentPidProfile->feedforward_jitter_factor = sbufReadU8(src);
 #else
+            sbufReadU8(src);
+            sbufReadU8(src);
             sbufReadU8(src);
             sbufReadU8(src);
             sbufReadU8(src);
