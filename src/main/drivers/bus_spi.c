@@ -486,7 +486,7 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 // Mark this bus as being SPI
 bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 {
-    if (device > SPIDEV_COUNT) {
+    if ((device == 0) || (device > SPIDEV_COUNT)) {
         return false;
     }
 
