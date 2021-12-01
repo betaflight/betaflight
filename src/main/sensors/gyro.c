@@ -473,7 +473,7 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_DYN_NOTCH_FILTER
-    if (isDynamicFilterActive()) {
+    if (isDynNotchActive()) {
         dynNotchUpdate();
     }
 #endif
