@@ -112,8 +112,6 @@ static bool telemetryRequested = false;
 
 static uint8_t telemetryFrame[22];
 
-static timeUs_t lastRcFrameTimeUs = 0;
-
 uint8_t globalResult = 0;
 
 /* handshake protocol
@@ -426,7 +424,7 @@ static uint8_t srxl2FrameStatus(rxRuntimeState_t *rxRuntimeState)
     }
 
     if (!(result & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
-        lastRcFrameTimeUs = lastIdleTimestamp;
+        rxRuntimeState->lastRcFrameTimeUs = lastIdleTimestamp;
     }
 
     return result;
@@ -478,11 +476,6 @@ void srxl2RxWriteData(const void *data, int len)
     writeBufferIdx = len;
 }
 
-static timeUs_t srxl2FrameTimeUsFn(void)
-{
-    return lastRcFrameTimeUs;
-}
-
 bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     static uint16_t channelData[SRXL2_MAX_CHANNELS];
@@ -499,7 +492,7 @@ bool srxl2RxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcReadRawFn = srxl2ReadRawRC;
     rxRuntimeState->rcFrameStatusFn = srxl2FrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = srxl2FrameTimeUsFn;
+    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
     rxRuntimeState->rcProcessFrameFn = srxl2ProcessFrame;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);

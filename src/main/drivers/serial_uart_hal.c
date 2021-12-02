@@ -76,21 +76,20 @@ static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
     return NULL;
 }
 
+#if !(defined(STM32F1) || defined(STM32F4))
 static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
-#if (defined(STM32F1) || defined(STM32F4))
-    // Older CPUs don't support pin swap.
-    UNUSED(uartPart);
-#else
     uartDevice_t *uartDevice = uartFindDevice(uartPort);
-    if (!uartDevice) return NULL;
+    if (!uartDevice) {
+        return NULL;
+    }
 
     if (uartDevice->pinSwap) {
         uartDevice->port.Handle.AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_SWAP_INIT;
         uartDevice->port.Handle.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
     }
-#endif
 }
+#endif
 
 // XXX uartReconfigure does not handle resource management properly.
 
@@ -119,7 +118,9 @@ void uartReconfigure(uartPort_t *uartPort)
 
 
     usartConfigurePinInversion(uartPort);
+#if !(defined(STM32F1) || defined(STM32F4))
     uartConfigurePinSwap(uartPort);
+#endif
 
 #ifdef TARGET_USART_CONFIG
     void usartTargetConfigure(uartPort_t *);

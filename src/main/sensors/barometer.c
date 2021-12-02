@@ -389,7 +389,13 @@ uint32_t baroUpdate(void)
     // Tell the scheduler to ignore how long this task takes unless the pressure is being read
     // as that takes the longest
     if (state != BAROMETER_NEEDS_PRESSURE_READ) {
-        ignoreTaskTime();
+        ignoreTaskStateTime();
+    }
+
+    if (busBusy(&baro.dev.dev, NULL)) {
+        // If the bus is busy, simply return to have another go later
+        ignoreTaskStateTime();
+        return sleepTime;
     }
 
     switch (state) {
@@ -422,7 +428,7 @@ uint32_t baroUpdate(void)
             if (baro.dev.read_up(&baro.dev)) {
                 state = BAROMETER_NEEDS_PRESSURE_SAMPLE;
             } else {
-                ignoreTaskTime();
+                ignoreTaskStateTime();
             }
         break;
 

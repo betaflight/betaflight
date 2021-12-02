@@ -50,7 +50,7 @@ void SystemClock_Config(void); // Forward
 
 void SystemInit(void)
 {
-  systemCheckResetReason();
+  systemProcessResetReason();
 
   initialiseMemorySections();
 

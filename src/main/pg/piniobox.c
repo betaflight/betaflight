@@ -34,6 +34,11 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig,
-    { PERMANENT_ID_NONE, PERMANENT_ID_NONE, PERMANENT_ID_NONE, PERMANENT_ID_NONE },
+    .permanentId = {
+        PERMANENT_ID_NONE,
+        PERMANENT_ID_NONE,
+        PERMANENT_ID_NONE,
+        PERMANENT_ID_NONE
+    },
 );
 #endif

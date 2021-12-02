@@ -150,8 +150,6 @@ static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
 #endif
 
-static timeUs_t lastRcFrameTimeUs = 0;
-
 static void reportFrameError(uint8_t errorReason) {
     static volatile uint16_t frameErrors = 0;
 
@@ -280,7 +278,7 @@ static uint8_t fportFrameStatus(rxRuntimeState_t *rxRuntimeState)
                         lastRcFrameReceivedMs = millis();
 
                         if (!(result & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
-                            lastRcFrameTimeUs = rxBuffer[rxBufferReadIndex].frameStartTimeUs;
+                            rxRuntimeState->lastRcFrameTimeUs = rxBuffer[rxBufferReadIndex].frameStartTimeUs;
                         }
                     }
 
@@ -386,11 +384,6 @@ static bool fportProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     return true;
 }
 
-static timeUs_t fportFrameTimeUs(void)
-{
-    return lastRcFrameTimeUs;
-}
-
 bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
@@ -402,7 +395,7 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 
     rxRuntimeState->rcFrameStatusFn = fportFrameStatus;
     rxRuntimeState->rcProcessFrameFn = fportProcessFrame;
-    rxRuntimeState->rcFrameTimeUsFn = fportFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

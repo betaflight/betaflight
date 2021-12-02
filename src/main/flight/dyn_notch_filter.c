@@ -29,6 +29,7 @@
  */
 
 #include <math.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -85,6 +86,7 @@
 #define DYN_NOTCH_SMOOTH_HZ        4
 #define DYN_NOTCH_CALC_TICKS       (XYZ_AXIS_COUNT * STEP_COUNT) // 3 axes and 4 steps per axis
 #define DYN_NOTCH_OSD_MIN_THROTTLE 20
+#define DYN_NOTCH_UPDATE_MIN_HZ    2000
 
 typedef enum {
 
@@ -119,7 +121,7 @@ typedef struct dynNotch_s {
     float maxHz;
     int count;
 
-    uint16_t maxCenterFreq;
+    int maxCenterFreq;
     float centerFreq[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
     
     timeUs_t looptimeUs;
@@ -154,7 +156,7 @@ static FAST_DATA_ZERO_INIT float   gain;
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs)
 {
-    // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
+    // always initialise, since the dynamic notch could be activated at any time
     dynNotch.q = config->dyn_notch_q / 100.0f;
     dynNotch.minHz = config->dyn_notch_min_hz;
     dynNotch.maxHz = MAX(2 * dynNotch.minHz, config->dyn_notch_max_hz);
@@ -164,6 +166,12 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
 
     // dynNotchUpdate() is running at looprateHz (which is PID looprate aka. 1e6f / gyro.targetLooptime)
     const float looprateHz = 1.0f / dynNotch.looptimeUs * 1e6f;
+
+    // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz
+    if (looprateHz < DYN_NOTCH_UPDATE_MIN_HZ) {
+        dynNotch.count = 0;
+    }
+
     sampleCount = MAX(1, looprateHz / (2 * dynNotch.maxHz)); // 600hz, 8k looptime, 6.00
     sampleCountRcp = 1.0f / sampleCount;
 
@@ -380,19 +388,19 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
 
 FAST_CODE float dynNotchFilter(const int axis, float value) 
 {
-    for (uint8_t p = 0; p < dynNotch.count; p++) {
+    for (int p = 0; p < dynNotch.count; p++) {
         value = biquadFilterApplyDF1(&dynNotch.notch[axis][p], value);
     }
 
     return value;
 }
 
-bool isDynamicFilterActive(void)
+bool isDynNotchActive(void)
 {
-    return featureIsEnabled(FEATURE_DYNAMIC_FILTER);
+    return dynNotch.count > 0;
 }
 
-uint16_t getMaxFFT(void)
+int getMaxFFT(void)
 {
     return dynNotch.maxCenterFreq;
 }

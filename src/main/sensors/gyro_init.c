@@ -78,6 +78,11 @@
 #define ACTIVE_GYRO (&gyro.gyroSensor1)
 #endif
 
+// The gyro buffer is split 50/50, the first half for the transmit buffer, the second half for the receive buffer
+// This buffer is large enough for the gyros currently supported in accgyro_mpu.c but should be reviewed id other
+// gyro types are supported with SPI DMA.
+#define GYRO_BUF_SIZE 32
+
 static gyroDetectionFlags_t gyroDetectionFlags = GYRO_NONE_MASK;
 
 static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
@@ -130,12 +135,12 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
     gyroLowpassFilter_t *lowpassFilter = NULL;
 
     switch (slot) {
-    case FILTER_LOWPASS:
+    case FILTER_LPF1:
         lowpassFilterApplyFn = &gyro.lowpassFilterApplyFn;
         lowpassFilter = gyro.lowpassFilter;
         break;
 
-    case FILTER_LOWPASS2:
+    case FILTER_LPF2:
         lowpassFilterApplyFn = &gyro.lowpass2FilterApplyFn;
         lowpassFilter = gyro.lowpass2Filter;
         break;
@@ -202,8 +207,8 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 #ifdef USE_DYN_LPF
 static void dynLpfFilterInit()
 {
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        switch (gyroConfig()->gyro_lowpass_type) {
+    if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
+        switch (gyroConfig()->gyro_lpf1_type) {
         case FILTER_PT1:
             gyro.dynLpfFilter = DYN_LPF_PT1;
             break;
@@ -223,33 +228,33 @@ static void dynLpfFilterInit()
     } else {
         gyro.dynLpfFilter = DYN_LPF_NONE;
     }
-    gyro.dynLpfMin = gyroConfig()->dyn_lpf_gyro_min_hz;
-    gyro.dynLpfMax = gyroConfig()->dyn_lpf_gyro_max_hz;
-    gyro.dynLpfCurveExpo = gyroConfig()->dyn_lpf_curve_expo;
+    gyro.dynLpfMin = gyroConfig()->gyro_lpf1_dyn_min_hz;
+    gyro.dynLpfMax = gyroConfig()->gyro_lpf1_dyn_max_hz;
+    gyro.dynLpfCurveExpo = gyroConfig()->gyro_lpf1_dyn_expo;
 }
 #endif
 
 void gyroInitFilters(void)
 {
-    uint16_t gyro_lowpass_hz = gyroConfig()->gyro_lowpass_hz;
+    uint16_t gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_static_hz;
 
 #ifdef USE_DYN_LPF
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > 0) {
-        gyro_lowpass_hz = gyroConfig()->dyn_lpf_gyro_min_hz;
+    if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
+        gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_dyn_min_hz;
     }
 #endif
 
     gyroInitLowpassFilterLpf(
-      FILTER_LOWPASS,
-      gyroConfig()->gyro_lowpass_type,
-      gyro_lowpass_hz,
+      FILTER_LPF1,
+      gyroConfig()->gyro_lpf1_type,
+      gyro_lpf1_init_hz,
       gyro.targetLooptime
     );
 
     gyro.downsampleFilterEnabled = gyroInitLowpassFilterLpf(
-      FILTER_LOWPASS2,
-      gyroConfig()->gyro_lowpass2_type,
-      gyroConfig()->gyro_lowpass2_hz,
+      FILTER_LPF2,
+      gyroConfig()->gyro_lpf2_type,
+      gyroConfig()->gyro_lpf2_static_hz,
       gyro.sampleLooptime
     );
 
@@ -635,6 +640,11 @@ bool gyroInit(void)
     }
 
     if (gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_2 || gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
+        static DMA_DATA uint8_t gyroBuf2[GYRO_BUF_SIZE];
+        // SPI DMA buffer required per device
+        gyro.gyroSensor2.gyroDev.dev.txBuf = gyroBuf2;
+        gyro.gyroSensor2.gyroDev.dev.rxBuf = &gyroBuf2[GYRO_BUF_SIZE / 2];
+
         gyroInitSensor(&gyro.gyroSensor2, gyroDeviceConfig(1));
         gyro.gyroHasOverflowProtection =  gyro.gyroHasOverflowProtection && gyro.gyroSensor2.gyroDev.gyroHasOverflowProtection;
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor2.gyroDev.gyroHardware;
@@ -646,6 +656,10 @@ bool gyroInit(void)
     }
 
     if (gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_1 || gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_BOTH) {
+        static DMA_DATA uint8_t gyroBuf1[GYRO_BUF_SIZE];
+        // SPI DMA buffer required per device
+        gyro.gyroSensor1.gyroDev.dev.txBuf = gyroBuf1;
+        gyro.gyroSensor1.gyroDev.dev.rxBuf = &gyroBuf1[GYRO_BUF_SIZE / 2];
         gyroInitSensor(&gyro.gyroSensor1, gyroDeviceConfig(0));
         gyro.gyroHasOverflowProtection =  gyro.gyroHasOverflowProtection && gyro.gyroSensor1.gyroDev.gyroHasOverflowProtection;
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor1.gyroDev.gyroHardware;

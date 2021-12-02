@@ -33,8 +33,6 @@
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA3
 #define USE_MPU_DATA_READY_SIGNAL
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2

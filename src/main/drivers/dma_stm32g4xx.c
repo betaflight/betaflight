@@ -34,7 +34,7 @@
 /*
  * DMA descriptors.
  */
-static dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
+dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA1, 1,  0),
     DEFINE_DMA_CHANNEL(DMA1, 2,  4),
     DEFINE_DMA_CHANNEL(DMA1, 3,  8),
@@ -81,13 +81,11 @@ static void enableDmaClock(int index)
     RCC_ClockCmd(RCC_AHB1(DMAMUX1), ENABLE);
 }
 
-void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
+void dmaEnable(dmaIdentifier_e identifier)
 {
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
 
     enableDmaClock(index);
-    dmaDescriptors[index].owner.owner = owner;
-    dmaDescriptors[index].owner.resourceIndex = resourceIndex;
 }
 
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
@@ -100,35 +98,5 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
     HAL_NVIC_SetPriority(dmaDescriptors[index].irqN, NVIC_PRIORITY_BASE(priority), NVIC_PRIORITY_SUB(priority));
     HAL_NVIC_EnableIRQ(dmaDescriptors[index].irqN);
-}
-
-const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
-{
-    return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
-}
-
-dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* stream)
-{
-    for (int i = 0; i < DMA_LAST_HANDLER; i++) {
-        if (dmaDescriptors[i].ref == stream) {
-            return i + 1;
-        }
-    }
-    return 0;
-}
-
-dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier)
-{
-    return dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].ref;
-}
-
-dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier)
-{
-    return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)];
-}
-
-uint32_t dmaGetChannel(const uint8_t channel)
-{
-    return ((uint32_t)channel*2)<<24;
 }
 #endif

@@ -32,6 +32,9 @@
 #error Unknown MCU family
 #endif
 
+#define BUS_SPI_FREE   0x0
+#define BUS_SPI_LOCKED 0x4
+
 typedef struct spiPinDef_s {
     ioTag_t pin;
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -87,4 +90,5 @@ void spiInternalStartDMA(const extDevice_t *dev);
 void spiInternalStopDMA (const extDevice_t *dev);
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor);
 void spiInternalResetDescriptors(busDevice_t *bus);
+void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments);
 

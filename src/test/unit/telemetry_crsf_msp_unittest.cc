@@ -317,4 +317,5 @@ extern "C" {
         return true;
     }
 
+    timeUs_t rxFrameTimeUs(void) { return 0; }
 }

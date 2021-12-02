@@ -362,3 +362,33 @@ After configuring channel ranges use the sub-trim on your transmitter to set the
 
 
 You can also use rxrange to reverse the direction of an input channel, e.g. `rxrange 0 2000 1000`.
+
+## Disabling the OpenTx/EdgeTx ADC Filter
+
+OpenTx and EdgeTx both enable an `ADC filter` by default.  Betaflight users should turn this off.
+
+The `ADC filter` converts what would otherwise be smooth changes in channel values into a series of steps, where each step is about 1% of the full stick travel.  It is intended to reduce 'chatter' when the Rx is connected to a *servo, so that the servo only changes position when a meaningful change has occurred.  It is not intended for use with flight controllers.
+
+When the `ADC Filter` is active, Betaflight does not receive the most recent position of the gimabl with each new RC packet.  Instead, the Rx repeatedly provides the same data, until a moving-averaged smoothed estimate of gimbal position has increased by about 1% of full stick resolution.  
+
+Betaflight needs a non-delayed, smooth and continuous representation of the stick travel to give the PID system a smooth target setpoint value.  Our RC Smoothing is based on the assumption that every packet is unique and that each is a new representation of the most recent position of the gimbal.  Feedforward is calculated from the packet-to-packet position difference, and absolutely relies on smooth and regular updates in measured gimbal position.
+
+When active with Betaflight firmware, the `ADC filter` causes:
+- delay (from the moving averaging)
+- sustained transient impacts
+- steps in setpoint
+- spikes and noise in feedforward, with reduced feedforward precision
+- spikes in motor control signals that may cause noticeable jerking in HD video
+
+This is why, whenever an OpenTx or EdgeTx user is using Betaflight, the OpenTx/EdgeTx `ADC Filter` **MUST** be disabled, for accurate smooth flight control.
+
+The user only has to find the `ADC Filter` checkbox in the Hardware tab of the Global Settings for their radio, and ensure it is un-checked.  For example, with the Frsky Taranis X9D+ pre 2019 model:
+
+ * Turn on your radio.
+ * Hold Menu to access Global Settings.
+ * Click the Page button 5 times to go to page 6 (HARDWARE).
+ * Scroll down and select ADC filter.
+ * Click Enter to disable the ADC filter as it's enabled by default.
+ * Click Exit (twice) to return to the startup screen.
+ 
+ 
