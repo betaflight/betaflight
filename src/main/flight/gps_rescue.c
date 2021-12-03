@@ -282,12 +282,10 @@ static void setBearing(int16_t desiredHeading)
 static void rescueAttainPosition()
 {
     // Speed and altitude controller internal variables
-    static float previousSpeedError = 0;
+    static int16_t previousSpeedError = 0;
     static int16_t speedIntegral = 0;
-    int zVelocityError;
     static int previousZVelocityError = 0;
     static float zVelocityIntegral = 0;
-    static float scalingRate = 0;
     static int16_t altitudeAdjustment = 0;
 
     if (rescueState.phase == RESCUE_INITIALIZE) {
@@ -332,12 +330,14 @@ static void rescueAttainPosition()
     const int16_t altitudeError = rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm;
 
     // P component
+    float scalingRate;
     if (ABS(altitudeError) > 0 && ABS(altitudeError) < GPS_RESCUE_ZVELOCITY_THRESHOLD) {
         scalingRate = (float)altitudeError / GPS_RESCUE_ZVELOCITY_THRESHOLD;
     } else {
         scalingRate = 1;
     }
 
+    int zVelocityError;
     if (altitudeError > 0) {
         zVelocityError = gpsRescueConfig()->ascendRate * scalingRate - rescueState.sensor.zVelocity;
     } else if (altitudeError < 0) {
