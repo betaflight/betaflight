@@ -260,7 +260,9 @@ typedef enum {
     CRSF_RF_POWER_100_mW = 3,
     CRSF_RF_POWER_500_mW = 4,
     CRSF_RF_POWER_1000_mW = 5,
-    CRSF_RF_POWER_2000_mW = 6
+    CRSF_RF_POWER_2000_mW = 6,
+    CRSF_RF_POWER_250_mW = 7,
+    CRSF_RF_POWER_50_mW = 8
 } crsrRfPower_e;
 
 /*

@@ -72,9 +72,9 @@ static uint8_t telemetryBufLen = 0;
 static float channelScale = CRSF_RC_CHANNEL_SCALE_LEGACY;
 
 #ifdef USE_RX_LINK_UPLINK_POWER
-#define CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT 8
-// Uplink power levels by uplinkTXPower expressed in mW (250 mW is from ver >=4.00)
-const uint16_t uplinkTXPowerStatesMw[CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT] = {0, 10, 25, 100, 500, 1000, 2000, 250};
+#define CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT 9
+// Uplink power levels by uplinkTXPower expressed in mW (250 mW is from ver >=4.00, 50 mW in a future version and for ExpressLRS)
+const uint16_t uplinkTXPowerStatesMw[CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT] = {0, 10, 25, 100, 500, 1000, 2000, 250, 50};
 #endif
 
 /*
