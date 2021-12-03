@@ -1036,7 +1036,7 @@ static uint8_t vtxSAGetPowerLevels(const vtxDevice_t *vtxDevice, uint16_t *level
 
     for (uint8_t i = 0; i < saSupportedNumPowerLevels; i++) {
         levels[i] = saSupportedPowerValues[i];
-        uint16_t power = (uint16_t)pow(10.0,levels[i]/10.0);
+        uint16_t power = (uint16_t)powf(10.0f, levels[i] / 10.0f);
 
         if (levels[i] > 14) {
             // For powers greater than 25mW round up to a multiple of 50 to match expectations

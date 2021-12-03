@@ -324,7 +324,7 @@ static void rescueAttainPosition()
 
     gpsRescueAngle[AI_PITCH] = constrain(gpsRescueAngle[AI_PITCH] + MIN(angleAdjustment, 80), rescueState.intent.minAngleDeg * 100, rescueState.intent.maxAngleDeg * 100);
 
-    const float ct = cos(DECIDEGREES_TO_RADIANS(gpsRescueAngle[AI_PITCH] / 10));
+    const float ct = cosf(DECIDEGREES_TO_RADIANS(gpsRescueAngle[AI_PITCH] / 10));
 
     /**
         Altitude controller
