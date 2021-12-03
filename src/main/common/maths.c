@@ -49,7 +49,7 @@
 #endif
 float sin_approx(float x)
 {
-    int32_t xint = x;
+    int32_t xint = (int32_t)x;
     if (xint < -32 || xint > 32) return 0.0f;                               // Stop here on error input (5 * 360 Deg)
     while (x >  M_PIf) x -= (2.0f * M_PIf);                                 // always wrap input angle to -PI..PI
     while (x < -M_PIf) x += (2.0f * M_PIf);

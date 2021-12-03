@@ -169,7 +169,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
     for (int motor = 0; motor < getMotorCount(); motor++) {
         filteredMotorErpm[motor] = pt1FilterApply(&rpmFilters[motor], getDshotTelemetry(motor));
         if (motor < 4) {
-            DEBUG_SET(DEBUG_RPM_FILTER, motor, motorFrequency[motor]);
+            DEBUG_SET(DEBUG_RPM_FILTER, motor, (int16_t)motorFrequency[motor]);
         }
         motorFrequency[motor] = erpmToHz * filteredMotorErpm[motor];
     }

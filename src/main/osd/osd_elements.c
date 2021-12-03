@@ -1251,7 +1251,7 @@ static void osdElementMotorDiagnostics(osdElementParms_t *element)
     const bool motorsRunning = areMotorsRunning();
     for (; i < getMotorCount(); i++) {
         if (motorsRunning) {
-            element->buff[i] =  0x88 - scaleRange(motor[i], getMotorOutputLow(), getMotorOutputHigh(), 0, 8);
+            element->buff[i] =  0x88 - scaleRange((int)motor[i], (int)getMotorOutputLow(), (int)getMotorOutputHigh(), 0, 8);
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
             if (getEscRpm(i) < MOTOR_STOPPED_THRESHOLD_RPM) {
                 // Motor is not spinning properly. Mark as Stopped
@@ -1327,7 +1327,7 @@ static void osdElementRcChannels(osdElementParms_t *element)
     for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
         if (osdConfig()->rcChannels[i] >= 0) {
             // Translate (1000, 2000) to (-1000, 1000)
-            int data = scaleRange(rcData[osdConfig()->rcChannels[i]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
+            int data = scaleRange((int)rcData[osdConfig()->rcChannels[i]], PWM_RANGE_MIN, PWM_RANGE_MAX, -1000, 1000);
             // Opt for the simplest formatting for now.
             // Decimal notation can be added when tfp_sprintf supports float among fancy options.
             char fmtbuf[6];
@@ -1416,8 +1416,8 @@ static void osdElementStickOverlay(osdElementParms_t *element)
         horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_horizontal;
     }
 
-    const uint8_t cursorX = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
-    const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
+    const uint8_t cursorX = scaleRange(constrain((int)rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
+    const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain((int)rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 
     osdDisplayWriteChar(element, xpos + cursorX, ypos + cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, DISPLAYPORT_ATTR_NONE, cursor);
@@ -1920,7 +1920,7 @@ void osdUpdateAlarms(void)
 {
     // This is overdone?
 
-    int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitudeCm()) / 100;
+    int32_t alt = (int32_t)(osdGetMetersToSelectedUnit(getEstimatedAltitudeCm()) / 100);
 
     if (getRssiPercent() < osdConfig()->rssi_alarm) {
         SET_BLINK(OSD_RSSI_VALUE);

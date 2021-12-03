@@ -202,7 +202,7 @@ int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeState.channelCount) {
-        return rcData[channelToForwardFrom];
+        return (int16_t)rcData[channelToForwardFrom];
     }
 
     return servoParams(servoIndex)->middle;
@@ -406,14 +406,14 @@ void servoMixer(void)
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
-        input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
-        input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
-        input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
+        input[INPUT_STABILIZED_ROLL] = (int16_t)rcCommand[ROLL];
+        input[INPUT_STABILIZED_PITCH] = (int16_t)rcCommand[PITCH];
+        input[INPUT_STABILIZED_YAW] = (int16_t)rcCommand[YAW];
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
-        input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum * PID_SERVO_MIXER_SCALING;
-        input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_ROLL] = (int16_t)(pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING);
+        input[INPUT_STABILIZED_PITCH] = (int16_t)(pidData[FD_PITCH].Sum * PID_SERVO_MIXER_SCALING);
+        input[INPUT_STABILIZED_YAW] = (int16_t)(pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING);
 
         // Reverse yaw servo when inverted in 3D mode
         if (featureIsEnabled(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {

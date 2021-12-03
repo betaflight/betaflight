@@ -67,8 +67,8 @@ static void i2cClockComputeRaw(uint32_t pclkFreq, int i2cFreqKhz, int presc, int
     // Convert target i2cFreq into cycle time (nsec)
     float tSCL = 1000000.0f / i2cFreqKhz;
 
-    uint32_t SCLDELmin = (trmax + tsuDATmin) / ((presc + 1) * tI2cclk) - 1;
-    uint32_t SDADELmin = (tfmax + thdDATmin - tAFmin - ((dfcoeff + 3) * tI2cclk)) / ((presc + 1) * tI2cclk);
+    uint32_t SCLDELmin = (uint32_t)((trmax + tsuDATmin) / ((presc + 1) * tI2cclk) - 1);
+    uint32_t SDADELmin = (uint32_t)((tfmax + thdDATmin - tAFmin - ((dfcoeff + 3) * tI2cclk)) / ((presc + 1) * tI2cclk));
 
     float tsync1 = tf + tAFmin + dfcoeff * tI2cclk + 2 * tI2cclk;
     float tsync2 = tr + tAFmin + dfcoeff * tI2cclk + 2 * tI2cclk;
@@ -76,8 +76,8 @@ static void i2cClockComputeRaw(uint32_t pclkFreq, int i2cFreqKhz, int presc, int
     float tSCLH = tHIGHmin * tSCL / (tHIGHmin + tLOWmin) - tsync2;
     float tSCLL = tSCL - tSCLH - tsync1 - tsync2;
 
-    uint32_t SCLH = tSCLH / ((presc + 1) * tI2cclk) - 1;
-    uint32_t SCLL = tSCLL / ((presc + 1) * tI2cclk) - 1;
+    uint32_t SCLH = (uint32_t)(tSCLH / ((presc + 1) * tI2cclk) - 1);
+    uint32_t SCLL = (uint32_t)(tSCLL / ((presc + 1) * tI2cclk) - 1);
 
     while (tsync1 + tsync2 + ((SCLH + 1) + (SCLL + 1)) * ((presc + 1) * tI2cclk) < tSCL) {
         SCLH++;

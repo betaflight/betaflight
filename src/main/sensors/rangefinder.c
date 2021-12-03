@@ -165,7 +165,7 @@ bool rangefinderInit(void)
     // XXX Interface to CF/BF legacy(?) altitude estimation code.
     // XXX Will be gone once iNav's estimator is ported.
     rangefinderMaxRangeCm = rangefinder.dev.maxRangeCm;
-    rangefinderMaxAltWithTiltCm = rangefinderMaxRangeCm * rangefinder.maxTiltCos;
+    rangefinderMaxAltWithTiltCm = (int16_t)(rangefinderMaxRangeCm * rangefinder.maxTiltCos);
     rangefinderCfAltCm = rangefinder.dev.maxRangeCm / 2 ; // Complimentary Filter altitude
 
     return true;
@@ -318,7 +318,7 @@ bool rangefinderProcess(float cosTiltAngle)
     if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     } else {
-        rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
+        rangefinder.calculatedAltitude = (int32_t)(rangefinder.rawAltitude * cosTiltAngle);
     }
 
     DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);

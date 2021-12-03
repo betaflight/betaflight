@@ -1824,9 +1824,9 @@ void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t
 {
     float dLat = *destinationLat2 - *currentLat1; // difference of latitude in 1/10 000 000 degrees
     float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;
-    *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS;
+    *dist = (uint32_t)(sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS);
 
-    *bearing = 9000.0f + atan2_approx(-dLat, dLon) * TAN_89_99_DEGREES;      // Convert the output radians to 100xdeg
+    *bearing = (int32_t)(9000.0f + atan2_approx(-dLat, dLon) * TAN_89_99_DEGREES);      // Convert the output radians to 100xdeg
     if (*bearing < 0)
         *bearing += 36000;
 }

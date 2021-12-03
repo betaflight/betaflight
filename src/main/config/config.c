@@ -683,7 +683,7 @@ void validateAndFixGyroConfig(void)
                 motorUpdateRestriction *= 2;
             }
             if (pidLooptime < motorUpdateRestriction) {
-                uint8_t minPidProcessDenom = motorUpdateRestriction / samplingTime;
+                uint8_t minPidProcessDenom = (uint8_t)(motorUpdateRestriction / samplingTime);
                 if (motorUpdateRestriction / samplingTime > minPidProcessDenom) {
                     // if any fractional part then round up
                     minPidProcessDenom++;

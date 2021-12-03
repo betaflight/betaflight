@@ -1088,7 +1088,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->setpoint[3] = lrintf(mixerGetThrottle() * 1000);
 
     for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
-        blackboxCurrent->debug[i] = debug[i];
+        blackboxCurrent->debug[i] = (int16_t)debug[i];
     }
 
     const int motorCount = getMotorCount();

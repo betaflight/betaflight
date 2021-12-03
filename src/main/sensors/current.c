@@ -128,7 +128,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
 static void updateCurrentmAhDrawnState(currentMeterMAhDrawnState_t *state, int32_t amperageLatest, int32_t lastUpdateAt)
 {
     state->mAhDrawnF = state->mAhDrawnF + (amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
-    state->mAhDrawn = state->mAhDrawnF;
+    state->mAhDrawn = (int32_t)state->mAhDrawnF;
 }
 #endif
 
@@ -149,7 +149,7 @@ void currentMeterADCRefresh(int32_t lastUpdateAt)
 #ifdef USE_ADC
     const uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
     currentMeterADCState.amperageLatest = currentMeterADCToCentiamps(iBatSample);
-    currentMeterADCState.amperage = currentMeterADCToCentiamps(pt1FilterApply(&adciBatFilter, iBatSample));
+    currentMeterADCState.amperage = currentMeterADCToCentiamps((uint16_t)pt1FilterApply(&adciBatFilter, iBatSample));
 
     updateCurrentmAhDrawnState(&currentMeterADCState.mahDrawnState, currentMeterADCState.amperageLatest, lastUpdateAt);
 #else

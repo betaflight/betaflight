@@ -716,7 +716,7 @@ void runawayTakeoffTemporaryDisable(uint8_t disableFlag)
 int8_t calculateThrottlePercent(void)
 {
     uint8_t ret = 0;
-    int channelData = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+    int channelData = constrain((int)rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
 
     if (featureIsEnabled(FEATURE_3D)
         && !IS_RC_MODE_ACTIVE(BOX3D)

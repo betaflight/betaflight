@@ -1308,7 +1308,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
     case MSP_RC:
         for (int i = 0; i < rxRuntimeState.channelCount; i++) {
-            sbufWriteU16(dst, rcData[i]);
+            sbufWriteU16(dst, (uint16_t)rcData[i]);
         }
         break;
 

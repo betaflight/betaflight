@@ -173,7 +173,7 @@ void voltageMeterADCRefresh(void)
 
         uint8_t channel = voltageMeterAdcChannelMap[i];
         uint16_t rawSample = adcGetChannel(channel);
-        uint16_t filteredDisplaySample = pt1FilterApply(&state->displayFilter, rawSample);
+        uint16_t filteredDisplaySample = (uint16_t)pt1FilterApply(&state->displayFilter, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
         state->voltageDisplayFiltered = voltageAdcToVoltage(filteredDisplaySample, config);
@@ -181,7 +181,7 @@ void voltageMeterADCRefresh(void)
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
         if (isSagCompensationConfigured()) {
-            uint16_t filteredSagSample = pt1FilterApply(&state->sagFilter, rawSample);
+            uint16_t filteredSagSample = (uint16_t)pt1FilterApply(&state->sagFilter, rawSample);
             state->voltageSagFiltered = voltageAdcToVoltage(filteredSagSample, config);
         }
 #endif
@@ -272,7 +272,7 @@ void voltageMeterESCRefresh(void)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData) {
         voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
-        voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
+        voltageMeterESCState.voltageDisplayFiltered = (uint16_t)pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
 }

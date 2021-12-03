@@ -588,7 +588,7 @@ bool gyroYawSpinDetected(void)
 
 uint16_t gyroAbsRateDps(int axis)
 {
-    return fabsf(gyro.gyroADCf[axis]);
+    return (uint16_t)fabsf(gyro.gyroADCf[axis]);
 }
 
 #ifdef USE_DYN_LPF
@@ -602,7 +602,7 @@ void dynLpfGyroUpdate(float throttle)
     if (gyro.dynLpfFilter != DYN_LPF_NONE) {
         float cutoffFreq;
         if (gyro.dynLpfCurveExpo > 0) {
-            cutoffFreq = dynLpfCutoffFreq(throttle, gyro.dynLpfMin, gyro.dynLpfMax, gyro.dynLpfCurveExpo);
+            cutoffFreq = (unsigned int)dynLpfCutoffFreq(throttle, gyro.dynLpfMin, gyro.dynLpfMax, gyro.dynLpfCurveExpo);
         } else {
             cutoffFreq = fmaxf(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
         }

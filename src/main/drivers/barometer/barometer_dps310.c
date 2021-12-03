@@ -275,11 +275,11 @@ static bool dps310GetUP(baroDev_t *baro)
 static void deviceCalculate(int32_t *pressure, int32_t *temperature)
 {
     if (pressure) {
-        *pressure = baroState.pressure; 
+        *pressure = (int32_t)baroState.pressure; 
     }
 
     if (temperature) {
-        *temperature = (baroState.temperature * 100);   // to centidegrees
+        *temperature = (int32_t)(baroState.temperature * 100);   // to centidegrees
     }
 }
 

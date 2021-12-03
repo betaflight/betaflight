@@ -640,9 +640,6 @@ static void readRxChannelsApplyRanges(void)
 void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
-    const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
-    rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
-    //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
 
     for (int channel = 0; channel < rxChannelCount; channel++) {
         float sample = rcRaw[channel]; // sample has latest RC value, rcData has last 'accepted valid' value
@@ -787,7 +784,7 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
 
     // Filter RSSI value
     if (source == RSSI_SOURCE_FRAME_ERRORS) {
-        rssi = pt1FilterApply(&frameErrFilter, rssiValue);
+        rssi = (uint16_t)pt1FilterApply(&frameErrFilter, rssiValue);
     } else {
         // calculate new sample mean
         rssi = updateRssiSamples(rssiValue);
@@ -809,7 +806,7 @@ void setRssiMsp(uint8_t newMspRssi)
 static void updateRSSIPWM(void)
 {
     // Read value of AUX channel as rssi
-    int16_t pwmRssi = rcData[rxConfig()->rssi_channel - 1];
+    int16_t pwmRssi = (int16_t)rcData[rxConfig()->rssi_channel - 1];
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
     setRssiDirect(scaleRange(constrain(pwmRssi, PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);

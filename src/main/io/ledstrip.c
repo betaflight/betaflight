@@ -484,7 +484,7 @@ static void applyLedFixedLayers(void)
             hsvColor_t previousColor = ledStripStatusModeConfig()->colors[(ledGetColor(ledConfig) - 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
 
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {   //smooth fade with selected Aux channel of all HSV values from previousColor through color to nextColor
-                const int auxInput = rcData[ledStripStatusModeConfig()->ledstrip_aux_channel];
+                const int auxInput = (int)rcData[ledStripStatusModeConfig()->ledstrip_aux_channel];
                 int centerPWM = (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2;
                 if (auxInput < centerPWM) {
                     color.h = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.h, color.h);
@@ -530,7 +530,7 @@ static void applyLedFixedLayers(void)
         }
 
         if ((fn != LED_FUNCTION_COLOR) && ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {
-            const int auxInput = rcData[ledStripStatusModeConfig()->ledstrip_aux_channel];
+            const int auxInput = (int)rcData[ledStripStatusModeConfig()->ledstrip_aux_channel];
             hOffset += scaleRange(auxInput, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
         }
 
@@ -821,7 +821,7 @@ static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         if (rxIsReceivingSignal()) {
             // calculate update frequency
-            int scale = MAX(fabsf(rcCommand[ROLL]), fabsf(rcCommand[PITCH]));  // 0 - 500
+            int scale = (int)MAX(fabsf(rcCommand[ROLL]), fabsf(rcCommand[PITCH]));  // 0 - 500
             scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband
             *timer += HZ_TO_US(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
 
@@ -865,7 +865,7 @@ static void applyLedThrustRingLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         rotationPhase = rotationPhase > 0 ? rotationPhase - 1 : ledCounts.ringSeqLen - 1;
 
-        const int scaledThrottle = ARMING_FLAG(ARMED) ? scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100) : 0;
+        const int scaledThrottle = ARMING_FLAG(ARMED) ? scaleRange((int)rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100) : 0;
         *timer += HZ_TO_US(5 + (45 * scaledThrottle) / 100);  // 5 - 50Hz update rate
     }
 

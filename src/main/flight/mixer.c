@@ -94,7 +94,7 @@ static void writeAllMotors(int16_t mc)
 
 void stopMotors(void)
 {
-    writeAllMotors(mixerRuntime.disarmMotorOutput);
+    writeAllMotors((int16_t)mixerRuntime.disarmMotorOutput);
     delay(50); // give the timers and ESCs a chance to react.
 }
 
@@ -156,7 +156,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             }
             motorOutputMixSign = -1;
 
-            rcThrottlePrevious = rcCommand[THROTTLE];
+            rcThrottlePrevious = (uint16_t)rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
         } else if (rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
@@ -169,7 +169,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
                 reversalTimeUs = currentTimeUs;
             }
             motorOutputMixSign = 1;
-            rcThrottlePrevious = rcCommand[THROTTLE];
+            rcThrottlePrevious = (uint16_t)rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         } else if ((rcThrottlePrevious <= rcCommand3dDeadBandLow &&

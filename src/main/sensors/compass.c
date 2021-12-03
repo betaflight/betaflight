@@ -339,8 +339,8 @@ void compassStartCalibration(void)
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
     for (int axis = 0; axis < 3; axis++) {
         magZero->raw[axis] = 0;
-        magZeroTempMin.raw[axis] = mag.magADC[axis];
-        magZeroTempMax.raw[axis] = mag.magADC[axis];
+        magZeroTempMin.raw[axis] = (int16_t)mag.magADC[axis];
+        magZeroTempMax.raw[axis] = (int16_t)mag.magADC[axis];
     }
 }
 
@@ -378,9 +378,9 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             LED0_TOGGLE;
             for (int axis = 0; axis < 3; axis++) {
                 if (mag.magADC[axis] < magZeroTempMin.raw[axis])
-                    magZeroTempMin.raw[axis] = mag.magADC[axis];
+                    magZeroTempMin.raw[axis] = (int16_t)mag.magADC[axis];
                 if (mag.magADC[axis] > magZeroTempMax.raw[axis])
-                    magZeroTempMax.raw[axis] = mag.magADC[axis];
+                    magZeroTempMax.raw[axis] = (int16_t)mag.magADC[axis];
             }
         } else {
             tCal = 0;
