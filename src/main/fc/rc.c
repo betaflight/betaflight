@@ -624,10 +624,10 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 
     int32_t tmp;
     if (featureIsEnabled(FEATURE_3D)) {
-        tmp = constrain((int)rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+        tmp = lconstrainf(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
     } else {
-        tmp = constrain((int)rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
+        tmp = lconstrainf(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
     }
 

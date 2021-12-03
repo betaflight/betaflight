@@ -640,6 +640,9 @@ static void readRxChannelsApplyRanges(void)
 void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
+    const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
+    //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
 
     for (int channel = 0; channel < rxChannelCount; channel++) {
         float sample = rcRaw[channel]; // sample has latest RC value, rcData has last 'accepted valid' value

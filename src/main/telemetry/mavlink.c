@@ -424,7 +424,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
-        scaleRange(constrain((int)rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
+        scaleRange(lconstrainf(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
         // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
         mavAltitude,
         // climb Current climb rate in meters/second

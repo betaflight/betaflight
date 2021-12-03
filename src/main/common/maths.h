@@ -173,3 +173,8 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+
+static inline int lconstrainf(float amt, int low, int high)
+{
+    return constrain((int)amt, low, high);
+}

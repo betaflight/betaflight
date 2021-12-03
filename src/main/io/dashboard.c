@@ -257,7 +257,8 @@ static void drawRxChannel(uint8_t channelIndex, uint8_t width)
 {
     LCDprint(rcChannelLetters[channelIndex]);
 
-    const uint32_t percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
+    const int value = lconstrainf(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX);
+    const uint32_t percentage = (value - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
     drawHorizonalPercentageBar(width - 1, percentage);
 }
 

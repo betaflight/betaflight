@@ -803,7 +803,7 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
                         switchPositions =  6;
                     }
                     const uint16_t rangeWidth = (2100 - 900) / switchPositions;
-                    const uint8_t position = (constrain((int)rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
+                    const uint8_t position = (lconstrainf(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
                     newValue = applySelectAdjustment(adjustmentFunction, position);
 
                     setConfigDirtyIfNotPermanent(&adjustmentRange->range);
