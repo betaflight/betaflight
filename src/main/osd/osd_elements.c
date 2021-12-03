@@ -332,8 +332,8 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
         gpsValue = (coordinateType == GPS_LONGITUDE) ? gpsSol.llh.lon : gpsSol.llh.lat;
     }
 
-    const int degreesPart = ABS(gpsValue) / GPS_DEGREES_DIVIDER;
-    int fractionalPart = ABS(gpsValue) % GPS_DEGREES_DIVIDER;
+    const int degreesPart = abs(gpsValue) / GPS_DEGREES_DIVIDER;
+    int fractionalPart = abs(gpsValue) % GPS_DEGREES_DIVIDER;
 
     switch (variantType) {
 #ifdef USE_GPS_PLUS_CODES
@@ -719,7 +719,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
     const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
 
-    if (ABS(earthUpinBodyFrame[2]) < SINE_25_DEG && ABS(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
+    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
         char *symbol[2] = {"U", "D"}; // character buffer

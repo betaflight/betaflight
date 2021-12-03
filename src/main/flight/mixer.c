@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 #include <float.h>
 
@@ -447,7 +448,7 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
         if (mixerConfig()->mixer_type == MIXER_LINEAR) {
             motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + motorMixDelta, motorMix[i] - motorMixDelta);
         } else {
-            motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + ABS(motorMix[i]), motorMix[i] - ABS(motorMix[i]));
+            motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + fabsf(motorMix[i]), motorMix[i] - fabsf(motorMix[i]));
         }
         motorMix[i] *= motorMixNormalizationFactor;
 

@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -741,7 +742,7 @@ int8_t calculateThrottlePercent(void)
 
 uint8_t calculateThrottlePercentAbs(void)
 {
-    return ABS(calculateThrottlePercent());
+    return abs(calculateThrottlePercent());
 }
 
 static bool airmodeIsActivated;

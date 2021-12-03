@@ -28,6 +28,7 @@
  * Phobos- - Port of v2.0
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include "platform.h"
 
@@ -976,15 +977,15 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
         lostConnection();
     }
 
-    if ((receiver.connectionState == ELRS_TENTATIVE) && (ABS(pl.offsetDeltaUs) <= 10) && (pl.offsetUs < 100) && (lqGet() > minLqForChaos())) {
+    if ((receiver.connectionState == ELRS_TENTATIVE) && (abs(pl.offsetDeltaUs) <= 10) && (pl.offsetUs < 100) && (lqGet() > minLqForChaos())) {
         gotConnection(timeStampMs); // detects when we are connected
     }
 
-    if ((receiver.timerState == ELRS_TIM_TENTATIVE) && ((timeStampMs - receiver.gotConnectionMs) > ELRS_CONSIDER_CONNECTION_GOOD_MS) && (ABS(pl.offsetDeltaUs) <= 5)) {
+    if ((receiver.timerState == ELRS_TIM_TENTATIVE) && ((timeStampMs - receiver.gotConnectionMs) > ELRS_CONSIDER_CONNECTION_GOOD_MS) && (abs(pl.offsetDeltaUs) <= 5)) {
         receiver.timerState = ELRS_TIM_LOCKED;
     }
 
-    if ((receiver.connectionState == ELRS_CONNECTED) && (ABS(pl.offsetDeltaUs) > 10) && (pl.offsetUs >= 100) && (lqGet() <= minLqForChaos())) {
+    if ((receiver.connectionState == ELRS_CONNECTED) && (abs(pl.offsetDeltaUs) > 10) && (pl.offsetUs >= 100) && (lqGet() <= minLqForChaos())) {
         lostConnection(); // SPI: resync when we're in chaos territory
     }
 }
