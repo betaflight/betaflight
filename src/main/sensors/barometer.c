@@ -382,9 +382,7 @@ uint32_t baroUpdate(void)
     static barometerState_e state = BAROMETER_NEEDS_PRESSURE_START;
     timeUs_t sleepTime = 1000; // Wait 1ms between states
 
-    if (debugMode == DEBUG_BARO) {
-        debug[0] = state;
-    }
+    DEBUG_SET(DEBUG_BARO, 0, state);
 
     // Tell the scheduler to ignore how long this task takes unless the pressure is being read
     // as that takes the longest
@@ -447,11 +445,9 @@ uint32_t baroUpdate(void)
                 state = BAROMETER_NEEDS_TEMPERATURE_START;
             }
 
-            if (debugMode == DEBUG_BARO) {
-                debug[1] = baroTemperature;
-                debug[2] = baroPressure;
-                debug[3] = baroPressureSum;
-            }
+            DEBUG_SET(DEBUG_BARO, 1, baroTemperature);
+            DEBUG_SET(DEBUG_BARO, 2, baroPressure);
+            DEBUG_SET(DEBUG_BARO, 3, baroPressureSum);
 
             sleepTime = baro.dev.ut_delay;
             break;
