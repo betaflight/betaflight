@@ -1671,7 +1671,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_EFFICIENCY]              = osdElementEfficiency,
 #endif
 #ifdef USE_PERSISTENT_STATS
-    [OSD_TOTAL_FLIGHTS]   = osdElementTotalFlights,
+    [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
 #endif
 };
 
