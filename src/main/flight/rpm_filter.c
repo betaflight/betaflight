@@ -143,7 +143,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     const float loopIterationsPerUpdate = MIN_UPDATE_T / (pidLooptime * 1e-6f);
     numberFilters = getMotorCount() * (filters[0].harmonics + filters[1].harmonics);
     const float filtersPerLoopIteration = numberFilters / loopIterationsPerUpdate;
-    filterUpdatesPerIteration = rintf(filtersPerLoopIteration + 0.49f);
+    filterUpdatesPerIteration = lrintf(filtersPerLoopIteration + 0.49f);
 }
 
 static float applyFilter(rpmNotchFilter_t *filter, const int axis, float value)
