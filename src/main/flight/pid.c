@@ -223,14 +223,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_dterm_filter = true,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
-
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
-#endif
-
-#ifdef USE_SIMPLIFIED_TUNING
-        applySimplifiedTuning(pidProfile);
 #endif
 }
 
