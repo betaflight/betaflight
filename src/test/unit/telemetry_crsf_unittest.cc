@@ -373,8 +373,7 @@ int32_t getMAhDrawn(void){
 }
 
 bool sendMspReply(uint8_t, mspResponseFnPtr) { return false; }
-bool handleMspFrame(uint8_t *, int, uint8_t *)  { return false; }
-void crsfScheduleMspResponse(void) {};
+bool handleMspFrame(uint8_t *, uint8_t, uint8_t *)  { return false; }
 bool isBatteryVoltageConfigured(void) { return true; }
 bool isAmperageConfigured(void) { return true; }
 timeUs_t rxFrameTimeUs(void) { return 0; }
