@@ -283,6 +283,7 @@ __ALIGN_BEGIN  uint8_t USBD_MSC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] 
   * @}
   */ 
 
+static DMA_DATA_ZERO_INIT USBD_MSC_BOT_HandleTypeDef ClassData;
 
 /** @defgroup MSC_CORE_Private_Functions
   * @{
@@ -328,18 +329,12 @@ uint8_t  USBD_MSC_Init (USBD_HandleTypeDef *pdev,
                    USBD_EP_TYPE_BULK,
                    MSC_MAX_FS_PACKET);  
   }
-  pdev->pClassData = USBD_malloc(sizeof (USBD_MSC_BOT_HandleTypeDef));
-  
-  if(pdev->pClassData == NULL)
-  {
-    ret = 1; 
-  }
-  else
-  {
-    /* Init the BOT  layer */
-    MSC_BOT_Init(pdev); 
-    ret = 0;
-  }
+
+  pdev->pMSC_ClassData = (void *)&ClassData;
+
+  /* Init the BOT  layer */
+  MSC_BOT_Init(pdev);
+  ret = 0;
   
   return ret;
 }

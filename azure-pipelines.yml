@@ -16,6 +16,7 @@ variables:
   owner: betaflight
   repoName: betaflight-pull-requests
   releaseNotes: This is a build of a community provided pull request. It may be unstable and result in corrupted configurations or data loss. **Use only for testing.**
+  vmImage: 'ubuntu-20.04'
 
 name: $(Build.RequestedFor)_$(Build.SourceBranchName)_$(BuildID)
 
@@ -41,7 +42,7 @@ stages:
   jobs:
   - job: 'Linux'
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: '$(vmImage)'
     steps:
     - script: make arm_sdk_install
       displayName: 'Install the build toolchain'
@@ -64,7 +65,8 @@ stages:
 - stage: Release
   jobs:
   - job: Release
-
+    pool:
+      vmImage: '$(vmImage)'
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:

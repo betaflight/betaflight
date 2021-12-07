@@ -220,10 +220,6 @@
 #define USE_ADC
 #define USE_ADC_INTERNAL // ADC3
 
-#define ADC1_INSTANCE ADC1
-#define ADC2_INSTANCE ADC2 // ADC2 not used
-#define ADC3_INSTANCE ADC3 // ADC3 only for core temp and vrefint
-
 #define RSSI_ADC_PIN            PC4  // ADC123
 #define VBAT_ADC_PIN            PC1  // ADC12
 #define CURRENT_METER_ADC_PIN   PC0  // ADC123

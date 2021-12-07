@@ -34,9 +34,9 @@ RAM_BASED ?= no
 CUSTOM_DEFAULTS_EXTENDED ?= no
 
 # Debugger optons:
-#   empty           - ordinary build with all optimizations enabled
-#   RELWITHDEBINFO  - ordinary build with debug symbols and all optimizations enabled
-#   GDB             - debug build with minimum number of optimizations
+#   empty - ordinary build with all optimizations enabled
+#   INFO - ordinary build with debug symbols and all optimizations enabled
+#   GDB - debug build with minimum number of optimizations
 DEBUG     ?=
 
 # Insert the debugging hardfault debugger
@@ -105,7 +105,12 @@ FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
 
 # The list of targets to build for 'pre-push'
-PRE_PUSH_TARGET_LIST ?= $(UNIFIED_TARGETS) NUCLEOH743 SITL STM32F4DISCOVERY_DEBUG test-representative
+ifeq ($(OSFAMILY), macosx)
+# SITL is not buildable on MacOS
+PRE_PUSH_TARGET_LIST ?= $(UNIFIED_TARGETS) STM32F4DISCOVERY_DEBUG test-representative
+else
+PRE_PUSH_TARGET_LIST ?= $(UNIFIED_TARGETS) SITL STM32F4DISCOVERY_DEBUG test-representative
+endif
 
 include $(ROOT)/make/targets.mk
 
@@ -144,7 +149,7 @@ else
 ifeq ($(DEBUG),INFO)
 DEBUG_FLAGS            = -ggdb3
 endif
-OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math
+OPTIMISATION_BASE     := -flto -fuse-linker-plugin -ffast-math -fmerge-all-constants
 OPTIMISE_DEFAULT      := -O2
 OPTIMISE_SPEED        := -Ofast
 OPTIMISE_SIZE         := -Os
@@ -603,8 +608,7 @@ targets:
 	@echo "Unified targets:     $(UNIFIED_TARGETS)"
 	@echo "Legacy targets:      $(LEGACY_TARGETS)"
 	@echo "Unsupported targets: $(UNSUPPORTED_TARGETS)"
-	@echo "Target:              $(TARGET)"
-	@echo "Base target:         $(BASE_TARGET)"
+	@echo "Default target:      $(TARGET)"
 	@echo "targets-group-1:     $(GROUP_1_TARGETS)"
 	@echo "targets-group-2:     $(GROUP_2_TARGETS)"
 	@echo "targets-group-rest:  $(GROUP_OTHER_TARGETS)"

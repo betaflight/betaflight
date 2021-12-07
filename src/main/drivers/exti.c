@@ -36,7 +36,7 @@ typedef struct {
 
 extiChannelRec_t extiChannelRecs[16];
 
-// IRQ gouping, same on F103, F303, F40x, F7xx, H7xx and G4xx.
+// IRQ grouping, same on F103, F303, F40x, F7xx, H7xx and G4xx.
 #define EXTI_IRQ_GROUPS 7
 //                                      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };
@@ -234,39 +234,40 @@ void EXTIEnable(IO_t io, bool enable)
 
 #define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
 
-void EXTI_IRQHandler(void)
+void EXTI_IRQHandler(uint32_t mask)
 {
-    uint32_t exti_active = (EXTI_REG_IMR & EXTI_REG_PR) & EXTI_EVENT_MASK;
+    uint32_t exti_active = (EXTI_REG_IMR & EXTI_REG_PR) & mask;
+
+    EXTI_REG_PR = exti_active;  // clear pending mask (by writing 1)
 
     while (exti_active) {
         unsigned idx = 31 - __builtin_clz(exti_active);
         uint32_t mask = 1 << idx;
         extiChannelRecs[idx].handler->fn(extiChannelRecs[idx].handler);
-        EXTI_REG_PR = mask;  // clear pending mask (by writing 1)
         exti_active &= ~mask;
     }
 }
 
-#define _EXTI_IRQ_HANDLER(name)                 \
-    void name(void) {                           \
-        EXTI_IRQHandler();                      \
-    }                                           \
-    struct dummy                                \
+#define _EXTI_IRQ_HANDLER(name, mask)            \
+    void name(void) {                            \
+        EXTI_IRQHandler(mask & EXTI_EVENT_MASK); \
+    }                                            \
+    struct dummy                                 \
     /**/
 
 
-_EXTI_IRQ_HANDLER(EXTI0_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI1_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0x0001);
+_EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 0x0002);
 #if defined(STM32F1) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-_EXTI_IRQ_HANDLER(EXTI2_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI2_IRQHandler, 0x0004);
 #elif defined(STM32F3)
-_EXTI_IRQ_HANDLER(EXTI2_TS_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI2_TS_IRQHandler, 0x0004);
 #else
 # warning "Unknown CPU"
 #endif
-_EXTI_IRQ_HANDLER(EXTI3_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI4_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI9_5_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI15_10_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI3_IRQHandler, 0x0008);
+_EXTI_IRQ_HANDLER(EXTI4_IRQHandler, 0x0010);
+_EXTI_IRQ_HANDLER(EXTI9_5_IRQHandler, 0x03e0);
+_EXTI_IRQ_HANDLER(EXTI15_10_IRQHandler, 0xfc00);
 
 #endif

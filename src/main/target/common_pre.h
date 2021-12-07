@@ -28,8 +28,6 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-//#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
-
 #ifdef STM32F1
 #define MINIMAL_CLI
 // Using RX DMA disables the use of receive callbacks
@@ -40,7 +38,7 @@
 #ifdef STM32F3
 #define MINIMAL_CLI
 #define USE_DSHOT
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_CCM_CODE
 #endif
 
@@ -54,8 +52,7 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
-#define USE_GYRO_DATA_ANALYSE
-#define USE_ADC
+#define USE_DYN_NOTCH_FILTER
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_USB_MSC
@@ -65,7 +62,6 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
-#define USE_SPI_TRANSACTION
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
@@ -75,6 +71,7 @@
 
 #ifdef STM32F7
 #define USE_ITCM_RAM
+#define ITCM_RAM_OPTIMISATION "-O2"
 #define USE_FAST_DATA
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -82,7 +79,7 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_OVERCLOCK
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
@@ -93,7 +90,7 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
-#define USE_SPI_TRANSACTION
+#define USE_LATE_TASK_STATISTICS
 #endif // STM32F7
 
 #ifdef STM32H7
@@ -105,7 +102,7 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_DMA_SPEC
@@ -128,13 +125,14 @@
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_OVERCLOCK
-#define USE_GYRO_DATA_ANALYSE
+#define USE_DYN_NOTCH_FILTER
 #define USE_ADC_INTERNAL
 #define USE_USB_MSC
 #define USE_USB_CDC_HID
 #define USE_MCO
 #define USE_DMA_SPEC
 #define USE_TIMER_MGMT
+#define USE_LATE_TASK_STATISTICS
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -161,7 +159,11 @@
 
 
 #ifdef USE_ITCM_RAM
+#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
+#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
+#else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#endif
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
@@ -169,18 +171,36 @@
 #endif // USE_ITCM_RAM
 
 #ifdef USE_CCM_CODE
-#define CCM_CODE              __attribute__((section(".ccm_code")))
+#define CCM_CODE                    __attribute__((section(".ccm_code")))
 #else
 #define CCM_CODE
 #endif
 
 #ifdef USE_FAST_DATA
-#define FAST_DATA_ZERO_INIT          __attribute__ ((section(".fastram_bss"), aligned(4)))
-#define FAST_DATA                    __attribute__ ((section(".fastram_data"), aligned(4)))
+#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
 #else
 #define FAST_DATA_ZERO_INIT
 #define FAST_DATA
 #endif // USE_FAST_DATA
+
+#if defined(STM32F4) || defined(STM32G4)
+// F4 can't DMA to/from CCM (core coupled memory) SRAM (where the stack lives)
+// On G4 there is no specific DMA target memory
+#define DMA_DATA_ZERO_INIT
+#define DMA_DATA
+#define STATIC_DMA_DATA_AUTO        static
+#elif defined (STM32F7)
+// F7 has no cache coherency issues DMAing to/from DTCM, otherwise buffers must be cache aligned
+#define DMA_DATA_ZERO_INIT          FAST_DATA_ZERO_INIT
+#define DMA_DATA                    FAST_DATA
+#define STATIC_DMA_DATA_AUTO        static DMA_DATA
+#else
+// DMA to/from any memory
+#define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
+#define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
+#define STATIC_DMA_DATA_AUTO        static DMA_DATA
+#endif
 
 #if defined(STM32F4) || defined (STM32H7)
 // Data in RAM which is guaranteed to not be reset on hot reboot
@@ -189,8 +209,10 @@
 
 #ifdef USE_DMA_RAM
 #if defined(STM32H7)
-#define DMA_RAM __attribute__((section(".DMA_RAM")))
-#define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI")))
+#define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
+#define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
+extern uint8_t _dmaram_start__;
+extern uint8_t _dmaram_end__;
 #elif defined(STM32G4)
 #define DMA_RAM_R __attribute__((section(".DMA_RAM_R")))
 #define DMA_RAM_W __attribute__((section(".DMA_RAM_W")))
@@ -213,7 +235,6 @@
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH
-#define USE_TASK_STATISTICS
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_IMU_CALC
 #define USE_PPM

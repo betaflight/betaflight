@@ -20,6 +20,12 @@
 
 #pragma once
 
+#include <drivers/io_types.h>
+
+typedef struct dbgPin_s {
+    ioTag_t tag;
+} dbgPin_t;
+
 void dbgPinInit(void);
 void dbgPinHi(int index);
 void dbgPinLo(int index);

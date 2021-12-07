@@ -278,9 +278,10 @@ extern const resourceOwner_t freeOwner;
 struct timerIOConfig_s;
 
 struct timerIOConfig_s *timerIoConfigByTag(ioTag_t ioTag);
-const resourceOwner_t *timerGetOwner(int8_t timerNumber, uint16_t timerChannel);
+const timerHardware_t *timerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel);
+const resourceOwner_t *timerGetOwner(const timerHardware_t *timer);
 #endif
-const timerHardware_t *timerGetByTag(ioTag_t ioTag);
+const timerHardware_t *timerGetConfiguredByTag(ioTag_t ioTag);
 const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8_t resourceIndex);
 const timerHardware_t *timerGetByTagAndIndex(ioTag_t ioTag, unsigned timerIndex);
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index);

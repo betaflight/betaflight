@@ -220,7 +220,7 @@ static uint32_t                    SD_Status;
 static uint32_t                    SD_CardRCA;
 SD_CardType_t                      SD_CardType;
 static volatile uint32_t           TimeOut;
-DMA_Stream_TypeDef                 *dma_stream;
+DMA_Stream_TypeDef                 *dmaStream;
 
 
 /* Private function(s) ----------------------------------------------------------------------------------------------*/
@@ -518,7 +518,7 @@ static SD_Error_t SD_InitializeCard(void)
   */
 static void SD_StartBlockTransfert(uint32_t* pBuffer, uint32_t BlockSize, uint32_t NumberOfBlocks, uint8_t dir)
 {
-    DMA_Stream_TypeDef *pDMA = dma_stream;
+    DMA_Stream_TypeDef *pDMA = dmaStream;
 
     SDMMC1->DCTRL                = 0;                                                                 // Initialize data control register
     SD_Handle.TransferComplete = 0;                                                                 // Initialize handle flags
@@ -545,7 +545,7 @@ static void SD_StartBlockTransfert(uint32_t* pBuffer, uint32_t BlockSize, uint32
     } else {
         pDMA->CR   |= DMA_MEMORY_TO_PERIPH;                                                         // Sets memory to peripheral
     }
-    if (dma_stream == DMA2_Stream3) {
+    if (dmaStream == DMA2_Stream3) {
             DMA2->LIFCR = DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 |
                     DMA_LIFCR_CFEIF3 | DMA_LIFCR_CHTIF3 | DMA_LIFCR_CTCIF3;                            // Clear the transfer error flag
     } else {
@@ -1541,9 +1541,14 @@ static SD_Error_t SD_IsCardProgramming(uint8_t *pStatus)
 /**
   * @brief  Initialize the SDMMC1 module, DMA, and IO
   */
-void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 {
-     // Reset SDMMC1 Module
+    const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier((dmaResource_t *)dmaStream);
+    if (!(dma == DMA2_Stream3 || dma == DMA2_Stream6) || !dmaAllocate(dmaIdentifier, OWNER_SDCARD, 0)) {
+        return false;
+    }
+
+    // Reset SDMMC1 Module
     RCC->APB2RSTR |=  RCC_APB2RSTR_SDMMC1RST;
     delay(1);
     RCC->APB2RSTR &= ~RCC_APB2RSTR_SDMMC1RST;
@@ -1595,35 +1600,31 @@ void SD_Initialize_LL(DMA_Stream_TypeDef *dma)
     NVIC_SetPriority(SDMMC1_IRQn, NVIC_EncodePriority(PriorityGroup, 1, 0));
     NVIC_EnableIRQ(SDMMC1_IRQn);
 
-    dma_stream = dma;
+    dmaStream = dma;
     RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-    if ((uint32_t)dma_stream == (uint32_t)DMA2_Stream3) {
-        // Initialize DMA2 channel 3
-        DMA2_Stream3->CR   = 0;                                                 // Reset DMA Stream control register
-        DMA2_Stream3->PAR  = (uint32_t)&SDMMC1->FIFO;
-        DMA2->LIFCR        = IFCR_CLEAR_MASK_STREAM3;                           // Clear all interrupt flags
-        DMA2_Stream3->CR   = (DMA_CHANNEL_4        | DMA_SxCR_PFCTRL        |   // Prepare the DMA Stream configuration
-                              DMA_MINC_ENABLE      | DMA_PDATAALIGN_WORD    |   // And write to DMA Stream CR register
-                              DMA_MDATAALIGN_WORD  | DMA_PRIORITY_VERY_HIGH |
-                              DMA_MBURST_INC4      | DMA_PBURST_INC4        |
-                              DMA_MEMORY_TO_PERIPH);
-        DMA2_Stream3->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream3), SDMMC_DMA_ST3_IRQHandler, 1, 0);
+
+    // Initialize DMA
+    dmaStream->CR = 0; // Reset DMA Stream control register
+    dmaStream->PAR = (uint32_t)&SDMMC1->FIFO;
+    if (dmaStream == DMA2_Stream3) {
+        DMA2->LIFCR = IFCR_CLEAR_MASK_STREAM3; // Clear all interrupt flags
     } else {
-        // Initialize DMA2 channel 6
-        DMA2_Stream6->CR   = 0;                                                 // Reset DMA Stream control register
-        DMA2_Stream6->PAR  = (uint32_t)&SDMMC1->FIFO;
-        DMA2->HIFCR        = IFCR_CLEAR_MASK_STREAM6;                           // Clear all interrupt flags
-        DMA2_Stream6->CR   = (DMA_CHANNEL_4        | DMA_SxCR_PFCTRL        |   // Prepare the DMA Stream configuration
-                              DMA_MINC_ENABLE      | DMA_PDATAALIGN_WORD    |   // And write to DMA Stream CR register
-                              DMA_MDATAALIGN_WORD  | DMA_PRIORITY_VERY_HIGH |
-                              DMA_MBURST_INC4      | DMA_PBURST_INC4        |
-                              DMA_MEMORY_TO_PERIPH);
-        DMA2_Stream6->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH);                 // Configuration FIFO control register
-        dmaInit(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), OWNER_SDCARD, 0);
-        dmaSetHandler(dmaGetIdentifier((dmaResource_t *)DMA2_Stream6), SDMMC_DMA_ST6_IRQHandler, 1, 0);
+        DMA2->HIFCR = IFCR_CLEAR_MASK_STREAM6; // Clear all interrupt flags
     }
+    dmaStream->CR = (DMA_CHANNEL_4 | DMA_SxCR_PFCTRL | // Prepare the DMA Stream configuration
+        DMA_MINC_ENABLE | DMA_PDATAALIGN_WORD | // And write to DMA Stream CR register
+        DMA_MDATAALIGN_WORD | DMA_PRIORITY_VERY_HIGH |
+        DMA_MBURST_INC4 | DMA_PBURST_INC4 |
+        DMA_MEMORY_TO_PERIPH);
+    dmaStream->FCR  = (DMA_SxFCR_DMDIS | DMA_SxFCR_FTH); // Configuration FIFO control register
+    dmaEnable(dmaIdentifier);
+    if (dmaStream == DMA2_Stream3) {
+        dmaSetHandler(dmaIdentifier, SDMMC_DMA_ST3_IRQHandler, 1, 0);
+    } else {
+        dmaSetHandler(dmaIdentifier, SDMMC_DMA_ST6_IRQHandler, 1, 0);
+    }
+
+    return true;
 }
 
 
@@ -1637,7 +1638,7 @@ bool SD_GetState(void)
 
 
 /** -----------------------------------------------------------------------------------------------------------------*/
-SD_Error_t SD_Init(void)
+static SD_Error_t SD_DoInit(void)
 {
     SD_Error_t errorState;
 
@@ -1683,6 +1684,23 @@ SD_Error_t SD_Init(void)
     return errorState;
 }
 
+SD_Error_t SD_Init(void)
+{
+    static bool sdInitAttempted = false;
+    static SD_Error_t result = SD_ERROR;
+
+    if (sdInitAttempted) {
+        return result;
+    }
+
+    sdInitAttempted = true;
+
+    result = SD_DoInit();
+
+    return result;
+}
+
+
 /** -----------------------------------------------------------------------------------------------------------------*/
 /**
   * @brief  This function handles SD card interrupt request.
@@ -1698,7 +1716,7 @@ void SDMMC1_IRQHandler(void) {
         /* Currently doesn't implement multiple block write handling */
         if ((SD_Handle.Operation & 0x02) == (SDMMC_DIR_TX << 1)) {
             /* Disable the stream */
-            dma_stream->CR &= ~DMA_SxCR_EN;
+            dmaStream->CR &= ~DMA_SxCR_EN;
             SDMMC1->DCTRL &= ~(SDMMC_DCTRL_DMAEN);
             /* Transfer is complete */
             SD_Handle.TXCplt = 0;

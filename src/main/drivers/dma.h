@@ -22,6 +22,9 @@
 
 #include "drivers/resource.h"
 
+#define CACHE_LINE_SIZE 32
+#define CACHE_LINE_MASK (CACHE_LINE_SIZE - 1)
+
 // dmaResource_t is a opaque data type which represents a single DMA engine,
 // called and implemented differently in different families of STM32s.
 // The opaque data type provides uniform handling of the engine in source code.
@@ -46,9 +49,10 @@ typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channel
 typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
     dmaResource_t               *ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
     uint8_t                     stream;
 #endif
+    uint32_t                    channel;
     dmaCallbackHandlerFuncPtr   irqHandlerCallback;
     uint8_t                     flagsShift;
     IRQn_Type                   irqN;
@@ -124,11 +128,6 @@ typedef enum {
 #define DMA_IT_DMEIF        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
-dmaIdentifier_e dmaGetIdentifier(const dmaResource_t *stream);
-dmaChannelDescriptor_t* dmaGetDmaDescriptor(const dmaResource_t *stream);
-dmaResource_t *dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
-uint32_t dmaGetChannel(const uint8_t channel);
-
 #else
 
 #if defined(STM32G4)
@@ -156,6 +155,8 @@ typedef enum {
 
 #define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
 #define DMA_DEVICE_INDEX(x) ((((x)-1) % 8) + 1)
+
+uint32_t dmaGetChannel(const uint8_t channel);
 
 #else // !STM32G4
 
@@ -220,9 +221,6 @@ typedef enum {
 #define DMA_IT_HTIF         ((uint32_t)0x00000004)
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
 
-dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel);
-dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
-
 #endif
 
 // Macros to avoid direct register and register bit access
@@ -262,11 +260,14 @@ dmaResource_t* dmaGetRefByIdentifier(const dmaIdentifier_e identifier);
 #define DMAx_SetMemoryAddress(reg, address) ((DMA_ARCH_TYPE *)(reg))->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail]
 #endif
 
-void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
+dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
+void dmaEnable(dmaIdentifier_e identifier);
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 
+dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel);
 const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier);
 dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier);
+uint32_t dmaGetChannel(const uint8_t channel);
 
 //
 // Wrapper macros to cast dmaResource_t back into DMA_ARCH_TYPE

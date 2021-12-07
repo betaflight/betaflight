@@ -140,7 +140,11 @@ bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength)
 
 bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
 {
-    bool requestHandled = false;
+    static bool replyPending = false;
+    if (replyPending) {
+        replyPending = sendMspReply(payloadSize, responseFn);
+        return replyPending;
+    }
     if (!mspRxBuffer.len) {
         return false;
     }
@@ -148,17 +152,17 @@ bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
     while (true) {
         const int mspFrameLength = mspRxBuffer.bytes[pos];
         if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength, NULL)) {
-            requestHandled |= sendMspReply(payloadSize, responseFn);
+            replyPending |= sendMspReply(payloadSize, responseFn);
         }
         pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
         ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
             if (pos >= mspRxBuffer.len) {
                 mspRxBuffer.len = 0;
-                return requestHandled;
+                return replyPending;
             }
         }
     }
-    return requestHandled;
+    return replyPending;
 }
 #endif
 
@@ -256,7 +260,9 @@ typedef enum {
     CRSF_RF_POWER_100_mW = 3,
     CRSF_RF_POWER_500_mW = 4,
     CRSF_RF_POWER_1000_mW = 5,
-    CRSF_RF_POWER_2000_mW = 6
+    CRSF_RF_POWER_2000_mW = 6,
+    CRSF_RF_POWER_250_mW = 7,
+    CRSF_RF_POWER_50_mW = 8
 } crsrRfPower_e;
 
 /*
@@ -267,15 +273,26 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
+// convert andgle in decidegree to radians/10000 with reducing angle to +/-180 degree range
+static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
+{
+    while (angle_decidegree > 1800) {
+        angle_decidegree -= 3600;
+    }
+    while (angle_decidegree < -1800) {
+        angle_decidegree += 3600;
+    }
+    return (int16_t)(RAD * 1000.0f * angle_decidegree);
+}
 
+// fill dst buffer with crsf-attitude telemetry frame
 void crsfFrameAttitude(sbuf_t *dst)
 {
      sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
      sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
-     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
+     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.pitch));
+     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.roll));
+     sbufWriteU16BigEndian(dst, decidegrees2Radians10000(attitude.values.yaw));
 }
 
 /*
@@ -340,8 +357,8 @@ uint32_t    Null Bytes
 uint8_t     255 (Max MSP Parameter)
 uint8_t     0x01 (Parameter version 1)
 */
-void crsfFrameDeviceInfo(sbuf_t *dst) {
-
+void crsfFrameDeviceInfo(sbuf_t *dst)
+{
     char buff[30];
     tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
 
@@ -351,7 +368,7 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
     sbufWriteStringWithZeroTerminator(dst, buff);
-    for (unsigned int ii=0; ii<12; ii++) {
+    for (unsigned int ii = 0; ii < 12; ii++) {
         sbufWriteU8(dst, 0x00);
     }
     sbufWriteU8(dst, CRSF_DEVICEINFO_PARAMETER_COUNT);
@@ -363,7 +380,6 @@ void crsfFrameDeviceInfo(sbuf_t *dst) {
 #if defined(USE_CRSF_V3)
 void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
 {
-
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, CRSF_FRAMETYPE_COMMAND);
@@ -379,7 +395,6 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
 
 static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
 {
-
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
     uint8_t ii = 0;
     for (ii = 0; ii < BAUD_COUNT; ++ii) {
@@ -472,7 +487,7 @@ static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
             const uint8_t remainder = (runLength % CRSF_RLE_MAX_RUN_LENGTH);
             const uint8_t totalBatches = fullBatches + (remainder) ? 1 : 0;
             if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
-                for (unsigned int i=1; i<=totalBatches; i++) {
+                for (unsigned int i = 1; i <= totalBatches; i++) {
                     const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;
                     sbufWriteU8(dest, c);
                     sbufWriteU8(dest, batchLength);
@@ -500,7 +515,7 @@ static void crsfFrameDisplayPortChunk(sbuf_t *dst, sbuf_t *src, uint8_t batchId,
     sbufWriteU8(dst, batchId);
     sbufWriteU8(dst, idx);
     cRleEncodeStream(src, dst, CRSF_DISPLAYPORT_MAX_CHUNK_LENGTH);
-    if (idx == 0)  {
+    if (idx == 0) {
         *metaPtr |= CRSF_DISPLAYPORT_FIRST_CHUNK_MASK;
     }
     if (!sbufBytesRemaining(src)) {
@@ -521,8 +536,6 @@ static void crsfFrameDisplayPortClear(sbuf_t *dst)
 }
 
 #endif
-
-#define BV(x)  (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
 typedef enum {
@@ -570,24 +583,24 @@ static void processCrsf(void)
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    if (currentSchedule & BV(CRSF_FRAME_ATTITUDE_INDEX)) {
+    if (currentSchedule & BIT(CRSF_FRAME_ATTITUDE_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameAttitude(dst);
         crsfFinalize(dst);
     }
-    if (currentSchedule & BV(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
+    if (currentSchedule & BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameBatterySensor(dst);
         crsfFinalize(dst);
     }
 
-    if (currentSchedule & BV(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
+    if (currentSchedule & BIT(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameFlightMode(dst);
         crsfFinalize(dst);
     }
 #ifdef USE_GPS
-    if (currentSchedule & BV(CRSF_FRAME_GPS_INDEX)) {
+    if (currentSchedule & BIT(CRSF_FRAME_GPS_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameGps(dst);
         crsfFinalize(dst);
@@ -600,7 +613,6 @@ void crsfScheduleDeviceInfoResponse(void)
 {
     deviceInfoReplyPending = true;
 }
-
 
 void initCrsfTelemetry(void)
 {
@@ -619,19 +631,19 @@ void initCrsfTelemetry(void)
 
     int index = 0;
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
-        crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
+        crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
     }
     if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
         || (isAmperageConfigured() && telemetryIsSensorEnabled(SENSOR_CURRENT | SENSOR_FUEL))) {
-        crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
+        crsfSchedule[index++] = BIT(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     }
     if (telemetryIsSensorEnabled(SENSOR_MODE)) {
-        crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
+        crsfSchedule[index++] = BIT(CRSF_FRAME_FLIGHT_MODE_INDEX);
     }
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)
        && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
-        crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
+        crsfSchedule[index++] = BIT(CRSF_FRAME_GPS_INDEX);
     }
 #endif
     crsfScheduleCount = (uint8_t)index;
@@ -751,7 +763,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         sbuf_t *dst = &crsfDisplayPortBuf;
         displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
         uint8_t i = 0;
-        while(sbufBytesRemaining(src)) {
+        while (sbufBytesRemaining(src)) {
             crsfInitializeFrame(dst);
             crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, i);
             crsfFinalize(dst);

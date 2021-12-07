@@ -24,8 +24,6 @@
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
 
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-
 #if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20649) \
  || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_USES_SPI
@@ -46,6 +44,7 @@
 #define ICM20649_WHO_AM_I_CONST             (0xE1)
 #define ICM20689_WHO_AM_I_CONST             (0x98)
 #define ICM42605_WHO_AM_I_CONST             (0x42)
+#define ICM42688P_WHO_AM_I_CONST            (0x47)
 
 // RA = Register Address
 
@@ -200,6 +199,7 @@ typedef enum {
     ICM_20649_SPI,
     ICM_20689_SPI,
     ICM_42605_SPI,
+    ICM_42688P_SPI,
     BMI_160_SPI,
     BMI_270_SPI,
     LSM6DSO_SPI,
@@ -224,7 +224,8 @@ bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuPreInit(const struct gyroDeviceConfig_s *config);
 bool mpuDetect(struct gyroDev_s *gyro, const struct gyroDeviceConfig_s *config);
 uint8_t mpuGyroDLPF(struct gyroDev_s *gyro);
-uint8_t mpuGyroReadRegister(const busDevice_t *bus, uint8_t reg);
+uint8_t mpuGyroReadRegister(const extDevice_t *dev, uint8_t reg);
 
 struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
+bool mpuAccReadSPI(struct accDev_s *acc);

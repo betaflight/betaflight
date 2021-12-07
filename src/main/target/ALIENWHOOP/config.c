@@ -103,14 +103,14 @@ void targetConfiguration(void)
 
     pidConfigMutable()->runaway_takeoff_prevention = false;
 
-    featureConfigSet((FEATURE_DYNAMIC_FILTER | FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
+    featureConfigSet((FEATURE_AIRMODE | FEATURE_ANTI_GRAVITY) ^ FEATURE_RX_PARALLEL_PWM);
 
     /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-	pidProfile->pidSumLimit = 1000;
-	pidProfile->pidSumLimitYaw = 1000;
+    pidProfile->pidSumLimit = 1000;
+    pidProfile->pidSumLimitYaw = 1000;
 
         /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
         pidProfile->pid[PID_PITCH].P = 115;
@@ -127,17 +127,17 @@ void targetConfiguration(void)
         pidProfile->pid[PID_LEVEL].D = 55;
 
         /* Setpoints */
-        pidProfile->dterm_filter_type = FILTER_BIQUAD;
+        pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
         pidProfile->dterm_notch_hz = 0;
         pidProfile->pid[PID_PITCH].F = 100;
         pidProfile->pid[PID_ROLL].F = 100;
-        pidProfile->feedforwardTransition = 0;
+        pidProfile->feedforward_transition = 0;
 
-	/* Anti-Gravity */
-	pidProfile->itermThrottleThreshold = 500;
-	pidProfile->itermAcceleratorGain = 5000;
+    /* Anti-Gravity */
+    pidProfile->itermThrottleThreshold = 500;
+    pidProfile->itermAcceleratorGain = 5000;
 
-	pidProfile->levelAngleLimit = 65;
+    pidProfile->levelAngleLimit = 65;
     }
 
     for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
@@ -148,7 +148,7 @@ void targetConfiguration(void)
         controlRateConfig->rcRates[FD_PITCH] = 218;
         controlRateConfig->rcRates[FD_YAW] = 218;
 
-	/* Classic Expo */
+    /* Classic Expo */
         controlRateConfig->rcExpo[FD_ROLL] = 45;
         controlRateConfig->rcExpo[FD_PITCH] = 45;
         controlRateConfig->rcExpo[FD_YAW] = 45;
@@ -162,7 +162,7 @@ void targetConfiguration(void)
         controlRateConfig->dynThrPID = 0; // tpa_rate off
         controlRateConfig->tpa_breakpoint = 1600;
 
-	/* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling)? */
+    /* Force the clipping mixer at 100% seems better for brushed than default (off) and scaling)? */
         controlRateConfig->throttle_limit_type = THROTTLE_LIMIT_TYPE_CLIP;
         //controlRateConfig->throttle_limit_percent = 100;
 

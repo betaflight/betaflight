@@ -38,11 +38,10 @@ int main(void)
     return 0;
 }
 
-void FAST_CODE FAST_CODE_NOINLINE run(void)
+void FAST_CODE run(void)
 {
     while (true) {
         scheduler();
-        processLoopback();
 #ifdef SIMULATOR_BUILD
         delayMicroseconds_real(50); // max rate 20kHz
 #endif

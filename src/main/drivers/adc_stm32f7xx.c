@@ -288,15 +288,18 @@ void adcInit(const adcConfig_t *config)
 #ifdef USE_DMA_SPEC
     const dmaChannelSpec_t *dmaspec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, device, config->dmaopt[device]);
 
-    if (!dmaspec) {
+    if (!dmaspec || !dmaAllocate(dmaGetIdentifier(dmaspec->ref), OWNER_ADC, 0)) {
         return;
     }
 
-    dmaInit(dmaGetIdentifier(dmaspec->ref), OWNER_ADC, 0);
+    dmaEnable(dmaGetIdentifier(dmaspec->ref));
     adc.DmaHandle.Init.Channel = dmaspec->channel;
     adc.DmaHandle.Instance = (DMA_ARCH_TYPE *)dmaspec->ref;
 #else
-    dmaInit(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0);
+    if (!dmaAllocate(dmaGetIdentifier(adc.dmaResource), OWNER_ADC, 0)) {
+        return;
+    }
+    dmaEnable(dmaGetIdentifier(adc.dmaResource));
     adc.DmaHandle.Init.Channel = adc.channel;
     adc.DmaHandle.Instance = (DMA_ARCH_TYPE *)adc.dmaResource;
 #endif

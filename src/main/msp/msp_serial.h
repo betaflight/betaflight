@@ -77,7 +77,7 @@ typedef enum {
 #define MSP_PORT_DATAFLASH_INFO_SIZE 16
 #define MSP_PORT_OUTBUF_SIZE (MSP_PORT_DATAFLASH_BUFFER_SIZE + MSP_PORT_DATAFLASH_INFO_SIZE)
 #else
-#define MSP_PORT_OUTBUF_SIZE 256
+#define MSP_PORT_OUTBUF_SIZE 320 // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1.
 #endif
 
 typedef struct __attribute__((packed)) {

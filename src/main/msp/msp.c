@@ -29,6 +29,7 @@
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
+#include "blackbox/blackbox_io.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -116,6 +117,7 @@
 
 #include "pg/beeper.h"
 #include "pg/board.h"
+#include "pg/dyn_notch.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
@@ -521,7 +523,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 #ifdef USE_HUFFMAN
         // compress in 256-byte chunks
         const uint16_t READ_BUFFER_SIZE = 256;
-        uint8_t readBuffer[READ_BUFFER_SIZE];
+        // This may be DMAable, so make it cache aligned
+        __attribute__ ((aligned(32))) uint8_t readBuffer[READ_BUFFER_SIZE];
 
         huffmanState_t state = {
             .bytesWritten = 0,
@@ -1746,8 +1749,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 
         break;
     case MSP_FILTER_CONFIG :
-        sbufWriteU8(dst, gyroConfig()->gyro_lowpass_hz);
-        sbufWriteU16(dst, currentPidProfile->dterm_lowpass_hz);
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf1_static_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf1_static_hz);
         sbufWriteU16(dst, currentPidProfile->yaw_lowpass_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1);
@@ -1755,21 +1758,21 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->dterm_notch_cutoff);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
-        sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
+        sbufWriteU8(dst, currentPidProfile->dterm_lpf1_type);
         sbufWriteU8(dst, gyroConfig()->gyro_hardware_lpf);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_32khz_hardware_lpf
-        sbufWriteU16(dst, gyroConfig()->gyro_lowpass_hz);
-        sbufWriteU16(dst, gyroConfig()->gyro_lowpass2_hz);
-        sbufWriteU8(dst, gyroConfig()->gyro_lowpass_type);
-        sbufWriteU8(dst, gyroConfig()->gyro_lowpass2_type);
-        sbufWriteU16(dst, currentPidProfile->dterm_lowpass2_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf1_static_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf2_static_hz);
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf1_type);
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf2_type);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf2_static_hz);
         // Added in MSP API 1.41
-        sbufWriteU8(dst, currentPidProfile->dterm_filter2_type);
+        sbufWriteU8(dst, currentPidProfile->dterm_lpf2_type);
 #if defined(USE_DYN_LPF)
-        sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_min_hz);
-        sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_max_hz);
-        sbufWriteU16(dst, currentPidProfile->dyn_lpf_dterm_min_hz);
-        sbufWriteU16(dst, currentPidProfile->dyn_lpf_dterm_max_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf1_dyn_min_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf1_dyn_max_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf1_dyn_min_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf1_dyn_max_hz);
 #else
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1777,11 +1780,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
 #endif
         // Added in MSP API 1.42
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
         sbufWriteU8(dst, 0);  // DEPRECATED 1.43: dyn_notch_range
         sbufWriteU8(dst, 0);  // DEPRECATED 1.44: dyn_notch_width_percent
-        sbufWriteU16(dst, 0); // DEPRECATED 1.44: dyn_notch_q
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_min_hz);
+        sbufWriteU16(dst, dynNotchConfig()->dyn_notch_q);
+        sbufWriteU16(dst, dynNotchConfig()->dyn_notch_min_hz);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -1789,30 +1792,28 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
 #endif
 #if defined(USE_RPM_FILTER)
-        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_harmonics);
-        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_min);
+        sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_harmonics);
+        sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_min_hz);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
         // Added in MSP API 1.43
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_max_hz);
+        sbufWriteU16(dst, dynNotchConfig()->dyn_notch_max_hz);
 #else
         sbufWriteU16(dst, 0);
 #endif
 #if defined(USE_DYN_LPF)
         // Added in MSP API 1.44
-        sbufWriteU8(dst, currentPidProfile->dyn_lpf_curve_expo);
+        sbufWriteU8(dst, currentPidProfile->dterm_lpf1_dyn_expo);
 #else
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
-        sbufWriteU8(dst, gyroConfig()->dyn_notch_count);
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_bandwidth_hz);
+#if defined(USE_DYN_NOTCH_FILTER)
+        sbufWriteU8(dst, dynNotchConfig()->dyn_notch_count);
 #else
         sbufWriteU8(dst, 0);
-        sbufWriteU16(dst, 0);
 #endif
 
         break;
@@ -1822,7 +1823,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0); // was pidProfile.yaw_p_limit
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // was vbatPidCompensation
-        sbufWriteU8(dst, currentPidProfile->feedforwardTransition);
+#if defined(USE_FEEDFORWARD)
+        sbufWriteU8(dst, currentPidProfile->feedforward_transition);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, 0); // was low byte of currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
@@ -1901,11 +1906,16 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #if defined(USE_FEEDFORWARD)
         sbufWriteU8(dst, currentPidProfile->feedforward_averaging);
         sbufWriteU8(dst, currentPidProfile->feedforward_smooth_factor);
+        sbufWriteU8(dst, currentPidProfile->feedforward_boost);
+        sbufWriteU8(dst, currentPidProfile->feedforward_max_rate_limit);
+        sbufWriteU8(dst, currentPidProfile->feedforward_jitter_factor);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, currentPidProfile->feedforward_boost);
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
         sbufWriteU8(dst, currentPidProfile->vbat_sag_compensation);
 #else
@@ -2143,10 +2153,15 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             sbufWriteU8(dst, currentPidProfile->simplified_master_multiplier);
             sbufWriteU8(dst, currentPidProfile->simplified_roll_pitch_ratio);
             sbufWriteU8(dst, currentPidProfile->simplified_i_gain);
-            sbufWriteU8(dst, currentPidProfile->simplified_pd_ratio);
-            sbufWriteU8(dst, currentPidProfile->simplified_pd_gain);
+            sbufWriteU8(dst, currentPidProfile->simplified_d_gain);
+            sbufWriteU8(dst, currentPidProfile->simplified_pi_gain);
+#ifdef USE_D_MIN
             sbufWriteU8(dst, currentPidProfile->simplified_dmin_ratio);
+#else
+            sbufWriteU8(dst, 0);
+#endif
             sbufWriteU8(dst, currentPidProfile->simplified_feedforward_gain);
+            sbufWriteU8(dst, currentPidProfile->simplified_pitch_pi_gain);
 
             sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter);
             sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter_multiplier);
@@ -2611,8 +2626,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         break;
     case MSP_SET_FILTER_CONFIG:
-        gyroConfigMutable()->gyro_lowpass_hz = sbufReadU8(src);
-        currentPidProfile->dterm_lowpass_hz = sbufReadU16(src);
+        gyroConfigMutable()->gyro_lpf1_static_hz = sbufReadU8(src);
+        currentPidProfile->dterm_lpf1_static_hz = sbufReadU16(src);
         currentPidProfile->yaw_lowpass_hz = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
@@ -2625,25 +2640,25 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 1) {
-            currentPidProfile->dterm_filter_type = sbufReadU8(src);
+            currentPidProfile->dterm_lpf1_type = sbufReadU8(src);
         }
         if (sbufBytesRemaining(src) >= 10) {
             gyroConfigMutable()->gyro_hardware_lpf = sbufReadU8(src);
             sbufReadU8(src); // DEPRECATED: gyro_32khz_hardware_lpf
-            gyroConfigMutable()->gyro_lowpass_hz = sbufReadU16(src);
-            gyroConfigMutable()->gyro_lowpass2_hz = sbufReadU16(src);
-            gyroConfigMutable()->gyro_lowpass_type = sbufReadU8(src);
-            gyroConfigMutable()->gyro_lowpass2_type = sbufReadU8(src);
-            currentPidProfile->dterm_lowpass2_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_static_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf2_static_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_type = sbufReadU8(src);
+            gyroConfigMutable()->gyro_lpf2_type = sbufReadU8(src);
+            currentPidProfile->dterm_lpf2_static_hz = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 9) {
             // Added in MSP API 1.41
-            currentPidProfile->dterm_filter2_type = sbufReadU8(src);
+            currentPidProfile->dterm_lpf2_type = sbufReadU8(src);
 #if defined(USE_DYN_LPF)
-            gyroConfigMutable()->dyn_lpf_gyro_min_hz = sbufReadU16(src);
-            gyroConfigMutable()->dyn_lpf_gyro_max_hz = sbufReadU16(src);
-            currentPidProfile->dyn_lpf_dterm_min_hz = sbufReadU16(src);
-            currentPidProfile->dyn_lpf_dterm_max_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_dyn_min_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_dyn_max_hz = sbufReadU16(src);
+            currentPidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16(src);
+            currentPidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16(src);
 #else
             sbufReadU16(src);
             sbufReadU16(src);
@@ -2653,11 +2668,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         if (sbufBytesRemaining(src) >= 8) {
             // Added in MSP API 1.42
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
             sbufReadU8(src); // DEPRECATED 1.43: dyn_notch_range
             sbufReadU8(src); // DEPRECATED 1.44: dyn_notch_width_percent
-            sbufReadU16(src); // DEPRECATED 1.44: dyn_notch_q
-            gyroConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
+            dynNotchConfigMutable()->dyn_notch_q = sbufReadU16(src);
+            dynNotchConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -2665,34 +2680,32 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
 #if defined(USE_RPM_FILTER)
-            rpmFilterConfigMutable()->gyro_rpm_notch_harmonics = sbufReadU8(src);
-            rpmFilterConfigMutable()->gyro_rpm_notch_min = sbufReadU8(src);
+            rpmFilterConfigMutable()->rpm_filter_harmonics = sbufReadU8(src);
+            rpmFilterConfigMutable()->rpm_filter_min_hz = sbufReadU8(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 2) {
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
             // Added in MSP API 1.43
-            gyroConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
+            dynNotchConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
 #else
             sbufReadU16(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 4) {
+        if (sbufBytesRemaining(src) >= 2) {
             // Added in MSP API 1.44
 #if defined(USE_DYN_LPF)
-            currentPidProfile->dyn_lpf_curve_expo = sbufReadU8(src);
+            currentPidProfile->dterm_lpf1_dyn_expo = sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
-            gyroConfigMutable()->dyn_notch_count = sbufReadU8(src);
-            gyroConfigMutable()->dyn_notch_bandwidth_hz = sbufReadU16(src);
+#if defined(USE_DYN_NOTCH_FILTER)
+            dynNotchConfigMutable()->dyn_notch_count = sbufReadU8(src);
 #else
             sbufReadU8(src);
-            sbufReadU16(src);
 #endif
         }
 
@@ -2709,7 +2722,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         sbufReadU16(src); // was pidProfile.yaw_p_limit
         sbufReadU8(src); // reserved
         sbufReadU8(src); // was vbatPidCompensation
-        currentPidProfile->feedforwardTransition = sbufReadU8(src);
+#if defined(USE_FEEDFORWARD)
+        currentPidProfile->feedforward_transition = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         sbufReadU8(src); // was low byte of currentPidProfile->dtermSetpointWeight
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
@@ -2801,16 +2818,22 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 5) {
+        if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.44
 #if defined(USE_FEEDFORWARD)
             currentPidProfile->feedforward_averaging = sbufReadU8(src);
             currentPidProfile->feedforward_smooth_factor = sbufReadU8(src);
+            currentPidProfile->feedforward_boost = sbufReadU8(src);
+            currentPidProfile->feedforward_max_rate_limit = sbufReadU8(src);
+            currentPidProfile->feedforward_jitter_factor = sbufReadU8(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
 #endif
-            currentPidProfile->feedforward_boost = sbufReadU8(src);
+
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
             currentPidProfile->vbat_sag_compensation = sbufReadU8(src);
 #else
@@ -3118,10 +3141,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         currentPidProfile->simplified_master_multiplier = sbufReadU8(src);
         currentPidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
         currentPidProfile->simplified_i_gain = sbufReadU8(src);
-        currentPidProfile->simplified_pd_ratio = sbufReadU8(src);
-        currentPidProfile->simplified_pd_gain = sbufReadU8(src);
+        currentPidProfile->simplified_d_gain = sbufReadU8(src);
+        currentPidProfile->simplified_pi_gain = sbufReadU8(src);
+#ifdef USE_D_MIN
         currentPidProfile->simplified_dmin_ratio = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         currentPidProfile->simplified_feedforward_gain = sbufReadU8(src);
+        currentPidProfile->simplified_pitch_pi_gain = sbufReadU8(src);
 
         currentPidProfile->simplified_dterm_filter = sbufReadU8(src);
         currentPidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
@@ -3180,7 +3208,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
-        flashfsEraseCompletely();
+        blackboxEraseAll();
 
         break;
 #endif

@@ -20,15 +20,18 @@
 
 #pragma once
 
-#include "drivers/bus.h"
+#include <stdbool.h>
 
-bool icm42605AccDetect(accDev_t *acc);
-bool icm42605GyroDetect(gyroDev_t *gyro);
+#include "common/time.h"
 
-void icm42605AccInit(accDev_t *acc);
-void icm42605GyroInit(gyroDev_t *gyro);
+#include "pg/dyn_notch.h"
 
-uint8_t icm42605SpiDetect(const busDevice_t *bus);
+#define DYN_NOTCH_COUNT_MAX 5
 
-bool icm42605SpiAccDetect(accDev_t *acc);
-bool icm42605SpiGyroDetect(gyroDev_t *gyro);
+void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs);
+void dynNotchPush(const int axis, const float sample);
+void dynNotchUpdate(void);
+float dynNotchFilter(const int axis, float value);
+bool isDynNotchActive(void);
+int getMaxFFT(void);
+void resetMaxFFT(void);

@@ -28,6 +28,7 @@
 
 #include "build/atomic.h"
 #include "build/debug.h"
+#include "build/debug_pin.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -43,14 +44,6 @@
 #include "drivers/timer.h"
 
 #include "pg/motor.h"
-
-#if defined(USE_DEBUG_PIN)
-#include "build/debug_pin.h"
-#else
-#define dbgPinInit()
-#define dbgPinHi(x)
-#define dbgPinLo(x)
-#endif
 
 void bbGpioSetup(bbMotor_t *bbMotor)
 {

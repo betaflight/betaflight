@@ -61,15 +61,17 @@
   * @{
   */
 
-#include "stm32h7xx.h"
-#include "drivers/system.h"
+#include <string.h>
+
 #include "platform.h"
-#include "string.h"
+
 #include "common/utils.h"
 
 #include "build/debug.h"
 
-void forcedSystemResetWithoutDisablingCaches(void);
+#include "drivers/memprot.h"
+#include "drivers/system.h"
+
 
 #if !defined  (HSE_VALUE)
 #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
@@ -173,13 +175,13 @@ void HandleStuckSysTick(void)
     uint32_t tickStart = HAL_GetTick();
     uint32_t tickEnd = 0;
 
-    int attemptsRemaining = 80 * 1000;
+    // H7 at 480Mhz requires a loop count of 160000. Double this for the timeout to be safe.
+    int attemptsRemaining = 320000;
     while (((tickEnd = HAL_GetTick()) == tickStart) && --attemptsRemaining) {
-        // H7 at 400Mhz - attemptsRemaining was reduced by debug build: 5,550, release build: 33,245
     }
 
     if (tickStart == tickEnd) {
-        forcedSystemResetWithoutDisablingCaches();
+        systemResetWithoutDisablingCaches();
     }
 }
 
@@ -389,7 +391,7 @@ static void SystemClockHSE_Config(void)
 
 #ifdef USE_H7_HSE_TIMEOUT_WORKAROUND
     if (status == HAL_TIMEOUT) {
-        forcedSystemResetWithoutDisablingCaches(); // DC - sometimes HSERDY gets stuck, waiting longer doesn't help.
+        systemResetWithoutDisablingCaches(); // DC - sometimes HSERDY gets stuck, waiting longer doesn't help.
     }
 #endif
 
@@ -596,6 +598,11 @@ void SystemClock_Config(void)
 
 #ifdef USE_SDCARD_SDIO
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
+
+#if (HSE_VALUE != 8000000)
+#error Unsupported external oscillator speed.  The calculations below are based on 8Mhz resonators
+// if you are seeing this, then calculate the PLL2 settings for your resonator and add support as required.
+#else
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
     RCC_PeriphClkInit.PLL2.PLL2N = 500;
     RCC_PeriphClkInit.PLL2.PLL2P = 2; // 500Mhz
@@ -606,6 +613,8 @@ void SystemClock_Config(void)
     RCC_PeriphClkInit.PLL2.PLL2FRACN = 0;
     RCC_PeriphClkInit.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL2;
     HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphClkInit);
+#endif // 8Mhz HSE_VALUE
+
 #endif
 
     // Configure MCO clocks for clock test/verification
@@ -663,12 +672,6 @@ void CRS_IRQHandler(void)
 }
 #endif
 
-#include "build/debug.h"
-
-void systemCheckResetReason(void);
-
-#include "drivers/memprot.h"
-
 void SystemInit (void)
 {
     memProtReset();
@@ -678,7 +681,7 @@ void SystemInit (void)
 #if !defined(USE_EXST)
     // only stand-alone and bootloader firmware needs to do this.
     // if it's done in the EXST firmware as well as the BOOTLOADER firmware you get a reset loop.
-    systemCheckResetReason();
+    systemProcessResetReason();
 #endif
 
     // FPU settings
@@ -769,7 +772,9 @@ void SystemInit (void)
 #error Unknown MCU type
 #endif
 #elif defined(USE_EXST)
-    // Don't touch the vector table, the bootloader will have already set it.
+    extern void *isr_vector_table_base;
+
+    SCB->VTOR = (uint32_t)&isr_vector_table_base;
 #else
     SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
 #endif
@@ -780,6 +785,10 @@ void SystemInit (void)
 
     SystemClock_Config();
     SystemCoreClockUpdate();
+
+#ifdef STM32H7
+    initialiseD2MemorySections();
+#endif
 
     // Configure MPU
 

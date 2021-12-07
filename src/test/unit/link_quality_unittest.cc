@@ -560,5 +560,8 @@ extern "C" {
 
     float getMotorOutputHigh(void) { return 2047.0; }
 
+    void ignoreTaskShortExecTime(void) {}
+    void ignoreTaskStateTime(void) {}
+
     bool crashRecoveryModeActive(void) { return false; }
 }

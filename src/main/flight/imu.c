@@ -47,6 +47,8 @@
 
 #include "io/gps.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/compass.h"
@@ -602,6 +604,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         acc.accADC[X] = 0;
         acc.accADC[Y] = 0;
         acc.accADC[Z] = 0;
+        ignoreTaskStateTime();
     }
 }
 #endif // USE_ACC

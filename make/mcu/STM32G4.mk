@@ -40,6 +40,7 @@ EXCLUDES        = \
                 stm32g4xx_hal_smartcard.c \
                 stm32g4xx_hal_smartcard_ex.c \
                 stm32g4xx_hal_smbus.c \
+                stm32g4xx_hal_spi.c \
                 stm32g4xx_hal_spi_ex.c \
                 stm32g4xx_hal_sram.c \
                 stm32g4xx_hal_timebase_tim_template.c \
@@ -65,7 +66,6 @@ EXCLUDES        = \
                 stm32g4xx_ll_rcc.c \
                 stm32g4xx_ll_rng.c \
                 stm32g4xx_ll_rtc.c \
-                stm32g4xx_ll_spi.c \
                 stm32g4xx_ll_ucpd.c \
                 stm32g4xx_ll_usart.c \
                 stm32g4xx_ll_utils.c
@@ -161,7 +161,7 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_hal.c \
             drivers/bus_i2c_hal_init.c \
             drivers/bus_i2c_timing.c \
-            drivers/bus_spi_hal.c \
+            drivers/bus_spi_ll.c \
             drivers/dma_stm32g4xx.c \
             drivers/dshot_bitbang.c \
             drivers/dshot_bitbang_decode.c \

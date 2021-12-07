@@ -22,9 +22,12 @@
 
 #include "flight/pid.h"
 
-#define SIMPLIFIED_TUNING_MIN 50
+#define SIMPLIFIED_TUNING_MIN 0
 #define SIMPLIFIED_TUNING_MAX 200
 #define SIMPLIFIED_TUNING_DEFAULT 100
+#define SIMPLIFIED_TUNING_PITCH_P_DEFAULT 105
+#define SIMPLIFIED_TUNING_PITCH_D_DEFAULT 115
+#define SIMPLIFIED_TUNING_D_DEFAULT 100
 
 typedef enum {
     PID_SIMPLIFIED_TUNING_OFF = 0,
@@ -34,3 +37,4 @@ typedef enum {
 } pidSimplifiedTuningMode_e;
 
 void applySimplifiedTuning(pidProfile_t *pidProfile);
+void disableSimplifiedTuning(pidProfile_t *pidProfile);

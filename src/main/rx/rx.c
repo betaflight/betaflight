@@ -120,6 +120,7 @@ uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 #define DELAY_50_HZ (1000000 / 50)
 #define DELAY_33_HZ (1000000 / 33)
+#define DELAY_15_HZ (1000000 / 15)
 #define DELAY_10_HZ (1000000 / 10)
 #define DELAY_5_HZ (1000000 / 5)
 #define SKIP_RC_ON_SUSPEND_PERIOD 1500000           // 1.5 second period in usec (call frequency independent)
@@ -281,6 +282,7 @@ void rxInit(void)
     rxRuntimeState.rcReadRawFn = nullReadRawRC;
     rxRuntimeState.rcFrameStatusFn = nullFrameStatus;
     rxRuntimeState.rcProcessFrameFn = nullProcessFrame;
+    rxRuntimeState.lastRcFrameTimeUs = 0;
     rcSampleIndex = 0;
     needRxSignalMaxDelayUs = DELAY_10_HZ;
 
@@ -695,7 +697,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     }
 
     rxDataProcessingRequired = false;
-    rxNextUpdateAtUs = currentTimeUs + DELAY_33_HZ;
+    rxNextUpdateAtUs = currentTimeUs + DELAY_15_HZ;
 
     // only proceed when no more samples to skip and suspend period is over
     if (skipRxSamples || currentTimeUs <= suspendRxSignalUntil) {
@@ -927,4 +929,9 @@ timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs)
     }
 
     return frameTimeDeltaUs;
+}
+
+timeUs_t rxFrameTimeUs(void)
+{
+    return rxRuntimeState.lastRcFrameTimeUs;
 }

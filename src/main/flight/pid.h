@@ -36,9 +36,9 @@
 #define PIDSUM_LIMIT_MIN            100
 #define PIDSUM_LIMIT_MAX            1000
 
-#define PID_GAIN_MAX 200
-#define F_GAIN_MAX 2000
-#define D_MIN_GAIN_MAX 100
+#define PID_GAIN_MAX 250
+#define F_GAIN_MAX 1000
+#define D_MIN_GAIN_MAX 250
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -58,14 +58,14 @@
 
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 30000
-#define PID_ROLL_DEFAULT  { 42, 85, 35, 90 }
-#define PID_PITCH_DEFAULT { 46, 90, 38, 95 }
-#define PID_YAW_DEFAULT   { 45, 90,  0, 90 }
-#define D_MIN_DEFAULT     { 23, 25, 0 }
+#define PID_ROLL_DEFAULT  { 45, 80, 40, 120 }
+#define PID_PITCH_DEFAULT { 45, 80, 40, 120 }
+#define PID_YAW_DEFAULT   { 45, 80,  0, 120 }
+#define D_MIN_DEFAULT     { 30, 30, 0 }
 
-#define DYN_LPF_DTERM_MIN_HZ_DEFAULT 70
-#define DYN_LPF_DTERM_MAX_HZ_DEFAULT 170
-#define DTERM_LOWPASS_2_HZ_DEFAULT 150
+#define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
+#define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
+#define DTERM_LPF2_HZ_DEFAULT 150
 
 typedef enum {
     PID_ROLL,
@@ -133,13 +133,13 @@ typedef enum feedforwardAveraging_e {
 
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
-    uint16_t dterm_lowpass_hz;              // Delta Filter in hz
+    uint16_t dterm_lpf1_static_hz;          // Static Dterm lowpass 1 filter cutoff value in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 
     pidf_t  pid[PID_ITEM_COUNT];
 
-    uint8_t dterm_filter_type;              // Filter selection for dterm
+    uint8_t dterm_lpf1_type;                // Filter type for dterm lowpass 1
     uint8_t itermWindupPointPercent;        // iterm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
@@ -162,10 +162,9 @@ typedef struct pidProfile_s {
     uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
-    uint8_t feedforwardTransition;          // Feedforward attenuation around centre sticks
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
-    uint16_t dterm_lowpass2_hz;             // Extra PT1 Filter on D in hz
+    uint16_t dterm_lpf2_static_hz;          // Static Dterm lowpass 2 filter cutoff value in hz
     uint8_t crash_recovery;                 // off, on, on and beeps when it is in crash recovery mode
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
@@ -181,9 +180,9 @@ typedef struct pidProfile_s {
     uint8_t abs_control_limit;              // Limit to the correction
     uint8_t abs_control_error_limit;        // Limit to the accumulated error
     uint8_t abs_control_cutoff;             // Cutoff frequency for path estimation in abs control
-    uint8_t dterm_filter2_type;             // Filter selection for 2nd dterm
-    uint16_t dyn_lpf_dterm_min_hz;
-    uint16_t dyn_lpf_dterm_max_hz;
+    uint8_t dterm_lpf2_type;                // Filter type for 2nd dterm lowpass
+    uint16_t dterm_lpf1_dyn_min_hz;         // Dterm lowpass filter 1 min hz when in dynamic mode
+    uint16_t dterm_lpf1_dyn_max_hz;         // Dterm lowpass filter 1 max hz when in dynamic mode
     uint8_t launchControlMode;              // Whether launch control is limited to pitch only (launch stand or top-mount) or all axes (on battery)
     uint8_t launchControlThrottlePercent;   // Throttle percentage to trigger launch for launch control
     uint8_t launchControlAngleLimit;        // Optional launch control angle limit (requires ACC)
@@ -198,7 +197,6 @@ typedef struct pidProfile_s {
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
-    uint8_t feedforward_boost;              // amount of setpoint acceleration to add to feedforward, 10 means 100% added
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 
     uint8_t dyn_idle_min_rpm;                   // minimum motor speed enforced by the dynamic idle controller
@@ -207,25 +205,28 @@ typedef struct pidProfile_s {
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
     uint8_t dyn_idle_max_increase;          // limit on maximum possible increase in motor idle drive during active control
 
+    uint8_t feedforward_transition;         // Feedforward attenuation around centre sticks
     uint8_t feedforward_averaging;          // Number of packets to average when averaging is on
-    uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
     uint8_t feedforward_smooth_factor;      // Amount of lowpass type smoothing for feedforward steps
     uint8_t feedforward_jitter_factor;      // Number of RC steps below which to attenuate feedforward
-    uint8_t dyn_lpf_curve_expo;             // set the curve for dynamic dterm lowpass filter
-    uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calcualtion is gyro based in level mode
+    uint8_t feedforward_boost;              // amount of setpoint acceleration to add to feedforward, 10 means 100% added
+    uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
+
+    uint8_t dterm_lpf1_dyn_expo;            // set the curve for dynamic dterm lowpass filter
+    uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calculation is gyro based in level mode
     uint8_t vbat_sag_compensation;          // Reduce motor output by this percentage of the maximum compensation amount
 
     uint8_t simplified_pids_mode;
     uint8_t simplified_master_multiplier;
     uint8_t simplified_roll_pitch_ratio;
     uint8_t simplified_i_gain;
-    uint8_t simplified_pd_ratio;
-    uint8_t simplified_pd_gain;
+    uint8_t simplified_d_gain;
+    uint8_t simplified_pi_gain;
     uint8_t simplified_dmin_ratio;
     uint8_t simplified_feedforward_gain;
-
     uint8_t simplified_dterm_filter;
     uint8_t simplified_dterm_filter_multiplier;
+    uint8_t simplified_pitch_pi_gain;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -285,10 +286,8 @@ typedef struct pidRuntime_s {
     float antiGravityOsdCutoff;
     float antiGravityThrottleHpf;
     float antiGravityPBoost;
-    float ffBoostFactor;
     float itermAccelerator;
     uint16_t itermAcceleratorGain;
-    float feedforwardTransition;
     pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float levelGain;
     float horizonGain;
@@ -330,8 +329,8 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_D_MIN
-    biquadFilter_t dMinRange[XYZ_AXIS_COUNT];
-    pt1Filter_t dMinLowpass[XYZ_AXIS_COUNT];
+    pt2Filter_t dMinRange[XYZ_AXIS_COUNT];
+    pt2Filter_t dMinLowpass[XYZ_AXIS_COUNT];
     float dMinPercent[XYZ_AXIS_COUNT];
     float dMinGyroGain;
     float dMinSetpointGain;
@@ -386,9 +385,11 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_FEEDFORWARD
+    float feedforwardTransitionFactor;
     feedforwardAveraging_t feedforwardAveraging;
-    float ffSmoothFactor;
-    float ffJitterFactor;
+    float feedforwardSmoothFactor;
+    float feedforwardJitterFactor;
+    float feedforwardBoostFactor;
 #endif
 } pidRuntime_t;
 
@@ -402,6 +403,8 @@ extern uint32_t targetPidLooptime;
 
 extern float throttleBoost;
 extern pt1Filter_t throttleLpf;
+
+void resetPidProfile(pidProfile_t *profile);
 
 void pidResetIterm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
@@ -441,7 +444,8 @@ void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT();
 float pidGetPidFrequency();
-float pidGetFfBoostFactor();
-float pidGetFfSmoothFactor();
-float pidGetFfJitterFactor();
+float pidGetFeedforwardBoostFactor();
+float pidGetFeedforwardSmoothFactor();
+float pidGetFeedforwardJitterFactor();
+float pidGetFeedforwardTransitionFactor();
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

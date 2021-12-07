@@ -32,6 +32,9 @@
 #error Unknown MCU family
 #endif
 
+#define BUS_SPI_FREE   0x0
+#define BUS_SPI_LOCKED 0x4
+
 typedef struct spiPinDef_s {
     ioTag_t pin;
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
@@ -49,7 +52,7 @@ typedef struct spiHardware_s {
     uint8_t af;
 #endif
     rccPeriphTag_t rcc;
-#if defined(USE_DMA) && defined(USE_HAL_DRIVER)
+#ifdef USE_DMA
     uint8_t dmaIrqHandler;
 #endif
 } spiHardware_t;
@@ -68,22 +71,24 @@ typedef struct SPIDevice_s {
 #else
     uint8_t af;
 #endif
+#if defined(HAL_SPI_MODULE_ENABLED)
+    SPI_HandleTypeDef hspi;
+#endif
     rccPeriphTag_t rcc;
     volatile uint16_t errorCount;
     bool leadingEdge;
-#if defined(USE_HAL_DRIVER)
-    SPI_HandleTypeDef hspi;
 #ifdef USE_DMA
-    DMA_HandleTypeDef hdma;
     uint8_t dmaIrqHandler;
-#endif
-#endif
-#ifdef USE_SPI_TRANSACTION
-    uint16_t cr1SoftCopy;   // Copy of active CR1 value for this SPI instance
 #endif
 } spiDevice_t;
 
 extern spiDevice_t spiDevice[SPIDEV_COUNT];
 
-void spiInitDevice(SPIDevice device, bool leadingEdge);
-uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance);
+void spiInitDevice(SPIDevice device);
+void spiInternalInitStream(const extDevice_t *dev, bool preInit);
+void spiInternalStartDMA(const extDevice_t *dev);
+void spiInternalStopDMA (const extDevice_t *dev);
+void spiInternalResetStream(dmaChannelDescriptor_t *descriptor);
+void spiInternalResetDescriptors(busDevice_t *bus);
+void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments);
+

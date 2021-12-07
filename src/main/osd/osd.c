@@ -64,8 +64,8 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#if defined(USE_GYRO_DATA_ANALYSE)
-#include "flight/gyroanalyse.h"
+#if defined(USE_DYN_NOTCH_FILTER)
+#include "flight/dyn_notch_filter.h"
 #endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -86,6 +86,8 @@
 
 #include "rx/crsf.h"
 #include "rx/rx.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
@@ -823,9 +825,9 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         return true;
 #endif
 
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
     case OSD_STAT_MAX_FFT:
-        if (featureIsEnabled(FEATURE_DYNAMIC_FILTER)) {
+        if (isDynNotchActive()) {
             int value = getMaxFFT();
             if (value > 0) {
                 tfp_sprintf(buff, "%dHZ", value);
@@ -1046,6 +1048,12 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     if (!osdIsReady) {
         if (!displayCheckReady(osdDisplayPort, false)) {
+            // Frsky osd need a display redraw after search for MAX7456 devices
+            if (osdDisplayPortDeviceType == OSD_DISPLAYPORT_DEVICE_FRSKYOSD) {
+                displayRedraw(osdDisplayPort);
+            } else {
+                ignoreTaskShortExecTime();
+            }
             return;
         }
 
@@ -1056,17 +1064,17 @@ void osdUpdate(timeUs_t currentTimeUs)
         showVisualBeeper = true;
     }
 
-#ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
     if (displayIsTransferInProgress(osdDisplayPort)) {
+        ignoreTaskShortExecTime();
         return;
     }
-#endif // MAX7456_DMA_CHANNEL_TX
 
 #ifdef USE_SLOW_MSP_DISPLAYPORT_RATE_WHEN_UNARMED
     static uint32_t idlecounter = 0;
     if (!ARMING_FLAG(ARMED)) {
         if (idlecounter++ % 4 != 0) {
+            ignoreTaskShortExecTime();
             return;
         }
     }
@@ -1089,6 +1097,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         if (doDrawScreen) {
             displayDrawScreen(osdDisplayPort);
         }
+        ignoreTaskShortExecTime();
     }
     ++counter;
 }

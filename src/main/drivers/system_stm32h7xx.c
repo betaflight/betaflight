@@ -110,10 +110,8 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-void forcedSystemResetWithoutDisablingCaches(void)
+void systemResetWithoutDisablingCaches(void)
 {
-    // Don't overwrite the PERSISTENT_OBJECT_RESET_REASON; just make another attempt
-
     __disable_irq();
     NVIC_SystemReset();
 }
@@ -165,7 +163,7 @@ void systemJumpToBootloader(void)
 }
 
 
-void systemCheckResetReason(void)
+void systemProcessResetReason(void)
 {
     uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
@@ -175,23 +173,26 @@ void systemCheckResetReason(void)
 #endif
     case RESET_BOOTLOADER_REQUEST_ROM:
         persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
+        systemJumpToBootloader();
+
         break;
 
     case RESET_FORCED:
         persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-        return;
+        break;
 
     case RESET_BOOTLOADER_POST:
         // Boot loader activity magically prevents SysTick from interrupting.
         // Issue a soft reset to prevent the condition.
-        forcedSystemResetWithoutDisablingCaches(); // observed that disabling dcache after cold boot with BOOT pin high causes segfault.
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FORCED);
+        systemResetWithoutDisablingCaches(); // observed that disabling dcache after cold boot with BOOT pin high causes segfault.
+
+        break;
 
     case RESET_MSC_REQUEST:
     case RESET_NONE:
     default:
-        return;
+        break;
 
     }
-
-    systemJumpToBootloader();
 }

@@ -87,7 +87,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
 #if defined(STM32F1)
 #define PID_PROCESS_DENOM_DEFAULT       8
@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -135,13 +135,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
         },
         .pidSumLimit = PIDSUM_LIMIT,
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
-        .yaw_lowpass_hz = 0,
+        .yaw_lowpass_hz = 100,
         .dterm_notch_hz = 0,
         .dterm_notch_cutoff = 0,
-        .itermWindupPointPercent = 100,
+        .itermWindupPointPercent = 85,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
-        .feedforwardTransition = 0,
+        .feedforward_transition = 0,
         .yawRateAccelLimit = 0,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 250,
@@ -173,15 +173,16 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .abs_control_error_limit = 20,
         .abs_control_cutoff = 11,
         .antiGravityMode = ANTI_GRAVITY_SMOOTH,
-        .dterm_lowpass_hz = 150,    // NOTE: dynamic lpf is enabled by default so this setting is actually
-                                    // overridden and the static lowpass 1 is disabled. We can't set this
-                                    // value to 0 otherwise Configurator versions 10.4 and earlier will also
-                                    // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
-        .dterm_lowpass2_hz = DTERM_LOWPASS_2_HZ_DEFAULT,   // second Dterm LPF ON by default
-        .dterm_filter_type = FILTER_PT1,
-        .dterm_filter2_type = FILTER_PT1,
-        .dyn_lpf_dterm_min_hz = DYN_LPF_DTERM_MIN_HZ_DEFAULT,
-        .dyn_lpf_dterm_max_hz = DYN_LPF_DTERM_MAX_HZ_DEFAULT,
+        .dterm_lpf1_static_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT,
+            // NOTE: dynamic lpf is enabled by default so this setting is actually
+            // overridden and the static lowpass 1 is disabled. We can't set this
+            // value to 0 otherwise Configurator versions 10.4 and earlier will also
+            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+        .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
+        .dterm_lpf1_type = FILTER_PT1,
+        .dterm_lpf2_type = FILTER_PT1,
+        .dterm_lpf1_dyn_min_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT,
+        .dterm_lpf1_dyn_max_hz = DTERM_LPF1_DYN_MAX_HZ_DEFAULT,
         .launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
         .launchControlThrottlePercent = 20,
         .launchControlAngleLimit = 0,
@@ -203,27 +204,33 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dyn_idle_d_gain = 50,
         .dyn_idle_max_increase = 150,
         .feedforward_averaging = FEEDFORWARD_AVERAGING_OFF,
-        .feedforward_max_rate_limit = 100,
-        .feedforward_smooth_factor = 37,
+        .feedforward_max_rate_limit = 90,
+        .feedforward_smooth_factor = 25,
         .feedforward_jitter_factor = 7,
         .feedforward_boost = 15,
-        .dyn_lpf_curve_expo = 5,
+        .dterm_lpf1_dyn_expo = 5,
         .level_race_mode = false,
         .vbat_sag_compensation = 0,
-        .simplified_pids_mode = PID_SIMPLIFIED_TUNING_OFF,
+        .simplified_pids_mode = PID_SIMPLIFIED_TUNING_RPY,
         .simplified_master_multiplier = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_roll_pitch_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_roll_pitch_ratio = SIMPLIFIED_TUNING_PITCH_D_DEFAULT,
         .simplified_i_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_pd_ratio = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_pd_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dmin_ratio = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_d_gain = SIMPLIFIED_TUNING_D_DEFAULT,
+        .simplified_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
+        .simplified_dmin_ratio = SIMPLIFIED_TUNING_D_DEFAULT,
         .simplified_feedforward_gain = SIMPLIFIED_TUNING_DEFAULT,
-        .simplified_dterm_filter = false,
+        .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_PITCH_P_DEFAULT,
+        .simplified_dterm_filter = true,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
     );
+
 #ifndef USE_D_MIN
     pidProfile->pid[PID_ROLL].D = 30;
     pidProfile->pid[PID_PITCH].D = 32;
+#endif
+
+#ifdef USE_SIMPLIFIED_TUNING
+        applySimplifiedTuning(pidProfile);
 #endif
 }
 
@@ -256,20 +263,25 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-float pidGetFfBoostFactor()
-{
-    return pidRuntime.ffBoostFactor;
-}
-
 #ifdef USE_FEEDFORWARD
-float pidGetFfSmoothFactor()
+float pidGetFeedforwardTransitionFactor()
 {
-    return pidRuntime.ffSmoothFactor;
+    return pidRuntime.feedforwardTransitionFactor;
 }
 
-float pidGetFfJitterFactor()
+float pidGetFeedforwardSmoothFactor()
 {
-    return pidRuntime.ffJitterFactor;
+    return pidRuntime.feedforwardSmoothFactor;
+}
+
+float pidGetFeedforwardJitterFactor()
+{
+    return pidRuntime.feedforwardJitterFactor;
+}
+
+float pidGetFeedforwardBoostFactor()
+{
+    return pidRuntime.feedforwardBoostFactor;
 }
 #endif
 
@@ -382,7 +394,7 @@ STATIC_UNIT_TESTED float calcHorizonLevelStrength(void)
         }
     } else { // horizon_tilt_expert_mode = 0 (leveling always active when sticks centered)
         float sensitFact;
-        if (pidRuntime.horizonFactorRatio < 1.01f) { // if horizonTiltEffect > 0
+        if (pidRuntime.horizonFactorRatio < 1.0f) { // if horizonTiltEffect > 0
             // horizonFactorRatio: 1.0 to 0.0 (larger means more leveling)
             // inclinationLevelRatio (0.0 to 1.0) is smaller (less leveling)
             //  for larger inclinations, goes to 1.0 at inclination==level:
@@ -1044,7 +1056,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // loop execution to be delayed.
             const float delta =
                 - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
-            float preTpaData = pidRuntime.pidCoefficient[axis].Kd * delta;
+            float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #if defined(USE_ACC)
             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
@@ -1055,12 +1067,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #if defined(USE_D_MIN)
             float dMinFactor = 1.0f;
             if (pidRuntime.dMinPercent[axis] > 0) {
-                float dMinGyroFactor = biquadFilterApply(&pidRuntime.dMinRange[axis], delta);
+                float dMinGyroFactor = pt2FilterApply(&pidRuntime.dMinRange[axis], delta);
                 dMinGyroFactor = fabsf(dMinGyroFactor) * pidRuntime.dMinGyroGain;
                 const float dMinSetpointFactor = (fabsf(pidSetpointDelta)) * pidRuntime.dMinSetpointGain;
                 dMinFactor = MAX(dMinGyroFactor, dMinSetpointFactor);
                 dMinFactor = pidRuntime.dMinPercent[axis] + (1.0f - pidRuntime.dMinPercent[axis]) * dMinFactor;
-                dMinFactor = pt1FilterApply(&pidRuntime.dMinLowpass[axis], dMinFactor);
+                dMinFactor = pt2FilterApply(&pidRuntime.dMinLowpass[axis], dMinFactor);
                 dMinFactor = MIN(dMinFactor, 1.0f);
                 if (axis == FD_ROLL) {
                     DEBUG_SET(DEBUG_D_MIN, 0, lrintf(dMinGyroFactor * 100));
@@ -1072,17 +1084,17 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 
             // Apply the dMinFactor
-            preTpaData *= dMinFactor;
+            preTpaD *= dMinFactor;
 #endif
-            pidData[axis].D = preTpaData * tpaFactor;
+            pidData[axis].D = preTpaD * tpaFactor;
 
             // Log the value of D pre application of TPA
-            preTpaData *= D_LPF_FILT_SCALE;
+            preTpaD *= D_LPF_FILT_SCALE;
 
             if (axis == FD_ROLL) {
-                DEBUG_SET(DEBUG_D_LPF, 2, lrintf(preTpaData));
+                DEBUG_SET(DEBUG_D_LPF, 2, lrintf(preTpaD));
             } else if (axis == FD_PITCH) {
-                DEBUG_SET(DEBUG_D_LPF, 3, lrintf(preTpaData));
+                DEBUG_SET(DEBUG_D_LPF, 3, lrintf(preTpaD));
             }
         } else {
             pidData[axis].D = 0;
@@ -1103,12 +1115,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidRuntime.oldSetpointCorrection[axis] = setpointCorrection;
 #endif
 
-        // Only enable feedforward for rate mode and if launch control is inactive
-        const float feedforwardGain = (flightModeFlags || launchControlActive) ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
+        // no feedforward in launch control
+        float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         if (feedforwardGain > 0) {
-            // no transition if feedforwardTransition == 0
-            float transition = pidRuntime.feedforwardTransition > 0 ? MIN(1.f, getRcDeflectionAbs(axis) * pidRuntime.feedforwardTransition) : 1;
-            float feedForward = feedforwardGain * transition * pidSetpointDelta * pidRuntime.pidFrequency;
+            // halve feedforward in Level mode since stick sensitivity is weaker by about half
+            feedforwardGain *= FLIGHT_MODE(ANGLE_MODE) ? 0.5f : 1.0f;
+            // transition now calculated in feedforward.c when new RC data arrives 
+            float feedForward = feedforwardGain * pidSetpointDelta * pidRuntime.pidFrequency;
 
 #ifdef USE_FEEDFORWARD
             pidData[axis].F = shouldApplyFeedforwardLimits(axis) ?

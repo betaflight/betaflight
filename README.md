@@ -34,7 +34,7 @@ Betaflight has the following features:
 * Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
 * Support for targets that use the STM32 F7, F4 and F3 processors
 * PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
-* Multiple telemetry protocols (CSRF, FrSky, HoTT smart-port, MSP, etc)
+* Multiple telemetry protocols (CRSF, FrSky, HoTT smart-port, MSP, etc)
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
 * OSD support & configuration without needing third-party OSD software/firmware/comm devices
 * OLED Displays - Display information on: Battery voltage/current/mAh, profile, rate profile, mode, version, sensors, etc

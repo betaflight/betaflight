@@ -10,25 +10,30 @@ ifeq ($(TARGET), STM32F7X2)
 F7X2RE_TARGETS += $(TARGET)
 
 else
+ifeq ($(TARGET), STM32F745)
+F7X5XG_TARGETS += $(TARGET)
+
+else
 ifeq ($(TARGET), STM32G47X)
 G47X_TARGETS += $(TARGET)
 
-else # STM32F745
-F7X5XG_TARGETS += $(TARGET)
+else # STM32H743
+H743xI_TARGETS += $(TARGET)
 
 endif
 endif
 endif
 endif
+endif
 
-ifeq ($(TARGET), $(filter $(TARGET), STM32F405 STM32F745))
+ifeq ($(TARGET), $(filter $(TARGET), STM32F405 STM32F745 STM32H743))
 # Use a full block (16 kB) of flash for custom defaults - with 1 MB flash we have more than we know how to use anyway
 
 CUSTOM_DEFAULTS_EXTENDED = yes
 endif
 
 ifeq ($(TARGET), STM32G47X)
-FEATURES       += VCP ONBOARDFLASH
+FEATURES       += VCP SDCARD_SPI ONBOARDFLASH
 else
 FEATURES       += VCP SDCARD_SPI SDCARD_SDIO ONBOARDFLASH
 endif

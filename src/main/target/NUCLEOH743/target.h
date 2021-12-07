@@ -25,6 +25,9 @@
 
 #define USE_TARGET_CONFIG
 
+#define USE_DEBUG_PIN
+#define DEBUG_PIN_COUNT         1
+
 #define LED0_PIN                PB0
 #define LED1_PIN                PB7 // PE1 on NUCLEO-H743ZI2 (may collide with UART8_TX)
 //#define LED2_PIN                PB14 // SDMMC2_D0
@@ -78,9 +81,9 @@
 #define UART8_RX_PIN            PE0
 #define UART8_TX_PIN            PE1
 
-#define USE_UART9 // LPUART1
-#define UART9_RX_PIN            PB7 // PA10 (Shared with UART1)
-#define UART9_TX_PIN            PB6 // PA9 (Shared with UART1)
+#define USE_LPUART1
+#define LPUART1_RX_PIN          PB7 // PA10 (Shared with UART1)
+#define LPUART1_TX_PIN          PB6 // PA9 (Shared with UART1)
 
 #define USE_VCP
 
@@ -211,6 +214,8 @@
 #define USE_ACC_SPI_MPU9250
 #define USE_GYRO_SPI_ICM42605
 #define USE_ACC_SPI_ICM42605
+#define USE_GYRO_SPI_ICM42688P
+#define USE_ACC_SPI_ICM42688P
 
 #define GYRO_1_CS_PIN           PD15
 #define GYRO_1_SPI_INSTANCE     SPI1
@@ -250,10 +255,6 @@
 #define USE_I2C_OLED_DISPLAY
 
 #define USE_ADC
-
-#define ADC1_INSTANCE ADC1
-#define ADC2_INSTANCE ADC2
-#define ADC3_INSTANCE ADC3
 
 // DMA stream assignmnets
 #define VBAT_ADC_PIN            PB1  // ADC1

@@ -41,7 +41,6 @@
 #define BEEPER_PIN              PA5
 
 #define USE_EXTI
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 
 // Using MPU6050 for the moment.
