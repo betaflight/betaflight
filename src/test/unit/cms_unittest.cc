@@ -125,10 +125,10 @@ TEST(CMSUnittest, TestCmsMenuKey)
 extern "C" {
 static const OSD_Entry menuMainEntries[] =
 {
-    {"-- MAIN MENU --", OME_Label, NULL, NULL, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},
-    {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    {"-- MAIN MENU --", OME_Label, NULL, NULL},
+    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1},
+    {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0},
+    {NULL, OME_END, NULL, NULL}
 };
 CMS_Menu cmsx_menuMain = {
 #ifdef CMS_MENU_DEBUG

@@ -75,17 +75,17 @@ static const void *cmsx_Failsafe_onExit(displayPort_t *pDisp, const OSD_Entry *s
 
 static const OSD_Entry cmsx_menuFailsafeEntries[] =
 {
-    { "-- FAILSAFE --", OME_Label, NULL, NULL, 0},
+    { "-- FAILSAFE --", OME_Label, NULL, NULL},
 
-    { "PROCEDURE",        OME_TAB,    NULL, &(OSD_TAB_t)    { &failsafeConfig_failsafe_procedure, FAILSAFE_PROCEDURE_COUNT - 1, failsafeProcedureNames }, REBOOT_REQUIRED },
-    { "GUARD TIME",       OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_delay, 0, 200, 1, 100 }, REBOOT_REQUIRED },
-    { "STAGE 2 DELAY",    OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_off_delay, 0, 200, 1, 100 }, REBOOT_REQUIRED },
-    { "STAGE 2 THROTTLE", OME_UINT16, NULL, &(OSD_UINT16_t) { &failsafeConfig_failsafe_throttle, PWM_PULSE_MIN, PWM_PULSE_MAX, 1 }, REBOOT_REQUIRED },
+    { "PROCEDURE",        OME_TAB | REBOOT_REQUIRED,    NULL, &(OSD_TAB_t)    { &failsafeConfig_failsafe_procedure, FAILSAFE_PROCEDURE_COUNT - 1, failsafeProcedureNames } },
+    { "GUARD TIME",       OME_FLOAT | REBOOT_REQUIRED,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_delay, 0, 200, 1, 100 } },
+    { "STAGE 2 DELAY",    OME_FLOAT | REBOOT_REQUIRED,  NULL, &(OSD_FLOAT_t)  { &failsafeConfig_failsafe_off_delay, 0, 200, 1, 100 } },
+    { "STAGE 2 THROTTLE", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t) { &failsafeConfig_failsafe_throttle, PWM_PULSE_MIN, PWM_PULSE_MAX, 1 } },
 #ifdef USE_CMS_GPS_RESCUE_MENU
-    { "GPS RESCUE",       OME_Submenu, cmsMenuChange, &cmsx_menuGpsRescue, 0},
+    { "GPS RESCUE",       OME_Submenu, cmsMenuChange, &cmsx_menuGpsRescue},
 #endif
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuFailsafe = {

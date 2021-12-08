@@ -109,18 +109,18 @@ static const void *cmsx_Ledstrip_OnExit(displayPort_t *pDisp, const OSD_Entry *s
 
 static const OSD_Entry cmsx_menuLedstripEntries[] =
 {
-    { "-- LED STRIP --",  OME_Label, NULL, NULL, 0 },
-    { "ENABLED",          OME_Bool,  NULL, &cmsx_FeatureLedstrip, 0 },
-    { "PROFILE",          OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledProfile, LED_PROFILE_COUNT - 1, ledProfileNames }, 0 },
-    { "RACE COLOR",       OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledRaceColor, COLOR_COUNT - 1, lookupTableLedstripColors }, 0 },
-    { "BEACON COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledBeaconColor, COLOR_COUNT -1, lookupTableLedstripColors }, 0 },
-    { "BEACON PERIOD",    OME_UINT16,NULL, &(OSD_UINT16_t){ &cmsx_ledBeaconPeriod, 50, 10000, 10 }, 0 },
-    { "BEACON ON %",      OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_ledBeaconOnPercent, 0, 100, 1 }, 0 },
-    { "BEACON ARMED ONLY",OME_Bool,  NULL, &cmsx_ledBeaconArmedOnly, 0 },
-    { "VISUAL BEEPER",    OME_Bool,  NULL, &cmsx_ledVisualBeeper, 0 },
-    { "VISUAL COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledVisualBeeperColor, COLOR_COUNT - 1, lookupTableLedstripColors }, 0 },
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "-- LED STRIP --",  OME_Label, NULL, NULL },
+    { "ENABLED",          OME_Bool,  NULL, &cmsx_FeatureLedstrip },
+    { "PROFILE",          OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledProfile, LED_PROFILE_COUNT - 1, ledProfileNames } },
+    { "RACE COLOR",       OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledRaceColor, COLOR_COUNT - 1, lookupTableLedstripColors } },
+    { "BEACON COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledBeaconColor, COLOR_COUNT -1, lookupTableLedstripColors } },
+    { "BEACON PERIOD",    OME_UINT16,NULL, &(OSD_UINT16_t){ &cmsx_ledBeaconPeriod, 50, 10000, 10 } },
+    { "BEACON ON %",      OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_ledBeaconOnPercent, 0, 100, 1 } },
+    { "BEACON ARMED ONLY",OME_Bool,  NULL, &cmsx_ledBeaconArmedOnly },
+    { "VISUAL BEEPER",    OME_Bool,  NULL, &cmsx_ledVisualBeeper },
+    { "VISUAL COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledVisualBeeperColor, COLOR_COUNT - 1, lookupTableLedstripColors } },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuLedstrip = {
