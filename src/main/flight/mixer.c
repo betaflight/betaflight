@@ -105,7 +105,6 @@ static FAST_DATA_ZERO_INIT float motorRangeMax;
 static FAST_DATA_ZERO_INIT float motorOutputRange;
 static FAST_DATA_ZERO_INIT int8_t motorOutputMixSign;
 
-
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
@@ -220,7 +219,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 
 #ifdef USE_DYN_IDLE
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
-            const float maxIncrease = isAirmodeActivated() ? mixerRuntime.dynIdleMaxIncrease : 0.04f;
+            const float maxIncrease = isAirmodeActivated() ? mixerRuntime.dynIdleMaxIncrease : 0.05f;
             float minRps = rpmMinMotorFrequency();
             DEBUG_SET(DEBUG_DYN_IDLE, 3, (minRps * 10));
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
@@ -233,11 +232,10 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             mixerRuntime.dynIdleI += rpsError * mixerRuntime.dynIdleIGain;
             mixerRuntime.dynIdleI = constrainf(mixerRuntime.dynIdleI, 0.0f, maxIncrease);
             motorRangeMinIncrease = constrainf((dynIdleP + mixerRuntime.dynIdleI + dynIdleD), 0.0f, maxIncrease);
-
             DEBUG_SET(DEBUG_DYN_IDLE, 0, (MAX(-1000.0f, dynIdleP * 10000)));
             DEBUG_SET(DEBUG_DYN_IDLE, 1, (mixerRuntime.dynIdleI * 10000));
             DEBUG_SET(DEBUG_DYN_IDLE, 2, (dynIdleD * 10000));
-       } else {
+        } else {
             motorRangeMinIncrease = 0;
         }
 #endif
@@ -537,9 +535,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     mixerThrottle = throttle;
 
 #ifdef USE_DYN_IDLE
-    // Apply digital idle throttle offset when stick is at zero after all other adjustments are complete
+    // Set min throttle offset of 1% when stick is at zero and dynamic idle is active
     if (mixerRuntime.dynIdleMinRps > 0.0f) {
-        throttle = MAX(throttle, mixerRuntime.idleThrottleOffset);
+        throttle = MAX(throttle, 0.01f);
     }
 #endif
 
