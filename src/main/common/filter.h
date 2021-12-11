@@ -27,6 +27,7 @@ typedef struct filter_s filter_t;
 typedef struct pt1Filter_s {
     float state;
     float k;
+    float weight;
 } pt1Filter_t;
 
 typedef struct pt2Filter_s {
@@ -96,6 +97,7 @@ float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input);
 float pt1FilterGain(float f_cut, float dT);
 void pt1FilterInit(pt1Filter_t *filter, float k);
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
+void pt1FilterUpdateCutoffWeighted(pt1Filter_t *filter, float k, float weight);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 
 float pt2FilterGain(float f_cut, float dT);

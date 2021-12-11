@@ -122,6 +122,7 @@ typedef struct gyro_s {
     uint16_t dynLpfMin;
     uint16_t dynLpfMax;
     uint8_t dynLpfCurveExpo;
+    uint8_t dynLpfThrPercent;
 #endif
 
 #ifdef USE_GYRO_OVERFLOW_CHECK
@@ -197,6 +198,7 @@ typedef struct gyroConfig_s {
     uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
     uint8_t simplified_gyro_filter;
     uint8_t simplified_gyro_filter_multiplier;
+    uint8_t gyro_lpf1_dyn_thr_percent; //add comment here
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

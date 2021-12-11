@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 4);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -222,6 +222,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dterm_filter = true,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
+        .dterm_lpf1_thr_percent = 0,
+        .dterm_lpf1_min_weight = 50
     );
 
 #ifndef USE_D_MIN
@@ -1241,10 +1243,17 @@ void dynLpfDTermUpdate(float throttle)
             cutoffFreq = fmaxf(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
         }
 
+        float weight = 1.0f;
+        if (pidRuntime.dynLpfThrPercent) {
+            const float throttlePercent = pidRuntime.dynLpfThrPercent / 100.0f;
+            const float minWeight = pidRuntime.dynLpfMinWeight / 100.0f;
+            weight = MIN(scaleRangef(throttle, 0.0f, throttlePercent, minWeight, 1.0f), 1.0f);
+        }
+
         switch (pidRuntime.dynLpfFilter) {
         case DYN_LPF_PT1:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
+                pt1FilterUpdateCutoffWeighted(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT), weight);
             }
             break;
         case DYN_LPF_BIQUAD:
