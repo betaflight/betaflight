@@ -219,7 +219,7 @@ CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
 OBJDUMP     := $(ARM_SDK_PREFIX)objdump
 READELF     := $(ARM_SDK_PREFIX)readelf
-SIZE        := $(ARM_SDK_PREFIX)size
+SIZE        := $(ARM_SDK_PREFIX)size -G
 DFUSE-PACK  := src/utils/dfuse-pack.py
 
 #
@@ -556,6 +556,9 @@ binary:
 
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
+
+size-report:
+	$(V1) $(SIZE) $(OBJECT_DIR)/*.elf
 
 TARGETS_REVISION = $(addsuffix _rev,$(VALID_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
