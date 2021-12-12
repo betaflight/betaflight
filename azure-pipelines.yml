@@ -44,8 +44,15 @@ stages:
     pool:
       vmImage: '$(vmImage)'
     steps:
+    - task: Cache@2
+      inputs:
+        key: '"toolchain" | "$(Agent.OS)" | make/tools.mk'
+        path: tools/
+        cacheHitVar: CACHE_RESTORED
+      displayName: Restore toolchain from cache
     - script: make arm_sdk_install
       displayName: 'Install the build toolchain'
+      condition: ne(variables.CACHE_RESTORED, 'true')
     - script: sudo apt-get install -y libblocksruntime-dev
       displayName: 'Install extra packages'
     - script: make  EXTRA_FLAGS=-Werror checks
