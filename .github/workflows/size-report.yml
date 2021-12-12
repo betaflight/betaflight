@@ -1,0 +1,94 @@
+name: Build size report
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build targets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Fetch toolchain from cache
+        uses: actions/cache@v2
+        id: cache-toolchain
+        with:
+          path: tools/
+          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+
+      - name: Fetch toolchain online
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make arm_sdk_install
+
+      - name: Run sanity checks
+        run: make EXTRA_FLAGS=-Werror checks
+
+      - name: Build unified targets
+        run: make EXTRA_FLAGS=-Werror unified
+
+      - name: Create build size report
+        run: make size-report > size-report.json
+
+      - name: Archive size report
+        uses: actions/upload-artifact@v2
+        with:
+          name: size-report
+          path: size-report.json
+
+  size-report:
+    name: Create build size comparison report
+    if: github.event_name == 'pull_request'
+    needs: build
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Fetch new size report
+        uses: actions/download-artifact@v2
+        with:
+          name: size-report
+
+      - name: Fetch base size report
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: size-report.yml
+          commit: ${{ github.event.pull_request.base.sha }}
+          name: size-report
+          path: base
+
+      - name: Create build size change report
+        run: src/utils/compare-sizes.py base/size-report.json size-report.json > size-report.md
+
+      - name: Escape PR comment body
+        id: get-comment-body
+        run: |
+          body="$(cat size-report.md)"
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}"
+          echo "::set-output name=body::$body"
+
+      - name: Find PR Comment
+        uses: peter-evans/find-comment@v1
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Build size comparison:'
+
+      - name: Create or update PR comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Build size comparison: https://github.com/betaflight/betaflight/compare/${{ github.event.pull_request.base.sha }}...${{ github.sha }}
+            ${{ steps.get-comment-body.outputs.body }}
+          edit-mode: replace
