@@ -222,8 +222,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_pitch_pi_gain = SIMPLIFIED_TUNING_DEFAULT,
         .simplified_dterm_filter = true,
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
-        .dterm_lpf1_thr_percent = 0,
-        .dterm_lpf1_min_weight = 50
+        .dterm_lpf1_dyn_thr_percent = 0,
+        .dterm_lpf1_dyn_min_weight = 50
     );
 
 #ifndef USE_D_MIN
