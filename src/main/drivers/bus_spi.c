@@ -37,6 +37,7 @@
 #include "drivers/motor.h"
 #include "drivers/rcc.h"
 #include "nvic.h"
+#include "pg/bus_spi.h"
 
 static uint8_t spiRegisteredDeviceCount = 0;
 
@@ -540,8 +541,17 @@ void spiInitBusDMA()
         dmaIdentifier_e dmaTxIdentifier = DMA_NONE;
         dmaIdentifier_e dmaRxIdentifier = DMA_NONE;
 
-        for (uint8_t opt = 0; opt < MAX_PERIPHERAL_DMA_OPTIONS; opt++) {
-            const dmaChannelSpec_t *dmaTxChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_TX, device, opt);
+        int8_t txDmaopt = spiPinConfig(device)->txDmaopt;
+        uint8_t txDmaoptMin = 0;
+        uint8_t txDmaoptMax = MAX_PERIPHERAL_DMA_OPTIONS - 1;
+
+        if (txDmaopt != -1) {
+            txDmaoptMin = txDmaopt;
+            txDmaoptMax = txDmaopt;
+        }
+
+        for (uint8_t opt = txDmaoptMin; opt <= txDmaoptMax; opt++) {
+            const dmaChannelSpec_t *dmaTxChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_MOSI, device, opt);
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
@@ -565,8 +575,17 @@ void spiInitBusDMA()
             }
         }
 
-        for (uint8_t opt = 0; opt < MAX_PERIPHERAL_DMA_OPTIONS; opt++) {
-            const dmaChannelSpec_t *dmaRxChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_RX, device, opt);
+        int8_t rxDmaopt = spiPinConfig(device)->rxDmaopt;
+        uint8_t rxDmaoptMin = 0;
+        uint8_t rxDmaoptMax = MAX_PERIPHERAL_DMA_OPTIONS - 1;
+
+        if (rxDmaopt != -1) {
+            rxDmaoptMin = rxDmaopt;
+            rxDmaoptMax = rxDmaopt;
+        }
+
+        for (uint8_t opt = rxDmaoptMin; opt <= rxDmaoptMax; opt++) {
+            const dmaChannelSpec_t *dmaRxChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SPI_MISO, device, opt);
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);

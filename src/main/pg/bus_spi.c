@@ -25,6 +25,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 
+#include "pg/bus_spi.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
