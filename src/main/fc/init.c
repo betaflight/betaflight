@@ -600,7 +600,14 @@ void init(void)
         ledInit(statusLedConfig());
 
 #ifdef USE_SDCARD
-        sdCardAndFSInit();
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+            if (sdcardConfig()->mode) {
+                if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                    sdCardAndFSInit();
+                    initFlags |= SD_INIT_ATTEMPTED;
+                }
+            }
+        }
 #endif
 
 #if defined(USE_FLASHFS)
