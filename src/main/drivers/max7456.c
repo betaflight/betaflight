@@ -667,7 +667,7 @@ static void max7456DrawScreenSlow(void)
     dma_regs[1] = 0;
     dma_regs[2] = 0;
 
-    spiWriteRegBuf(dev, MAX7456ADD_DMM, dma_regs, sizeof (dma_regs));
+    spiWriteRegBuf(dev, MAX7456ADD_DMM, dma_regs, sizeof(dma_regs));
 
     // The "escape" character 0xFF must be skipped as it causes the MAX7456 to exit auto-increment mode.
     for (int xx = 0; xx < maxScreenSize; xx++) {
@@ -693,7 +693,7 @@ static void max7456DrawScreenSlow(void)
             if (buffer[xx] == END_STRING) {
                 dma_regs[0] = xx >> 8;
                 dma_regs[1] = xx & 0xFF;
-                spiWriteRegBuf(dev, MAX7456ADD_DMAH, dma_regs, sizeof (dma_regs));
+                spiWriteRegBuf(dev, MAX7456ADD_DMAH, dma_regs, sizeof(dma_regs));
             }
         }
     }

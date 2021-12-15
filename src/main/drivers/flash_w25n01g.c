@@ -150,7 +150,7 @@ static void w25n01g_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
         extDevice_t *dev = io->handle.dev;
 
         busSegment_t segments[] = {
-                {&command, NULL, sizeof (command), true, NULL},
+                {&command, NULL, sizeof(command), true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
 
@@ -178,7 +178,7 @@ static void w25n01g_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t c
         uint8_t cmd[] = { command, 0, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), true, NULL},
+                {cmd, NULL, sizeof(cmd), true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
 
@@ -208,7 +208,7 @@ static uint8_t w25n01g_readRegister(flashDeviceIO_t *io, uint8_t reg)
         uint8_t in[3];
 
         busSegment_t segments[] = {
-                {cmd, in, sizeof (cmd), true, NULL},
+                {cmd, in, sizeof(cmd), true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
 
@@ -243,7 +243,7 @@ static void w25n01g_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data
         uint8_t cmd[3] = { W25N01G_INSTRUCTION_WRITE_STATUS_REG, reg, data };
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), true, NULL},
+                {cmd, NULL, sizeof(cmd), true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
 
@@ -414,7 +414,7 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
         uint8_t cmd[] = { W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
 
          busSegment_t segments[] = {
-                 {cmd, NULL, sizeof (cmd), false, NULL},
+                 {cmd, NULL, sizeof(cmd), false, NULL},
                  {(uint8_t *)data, NULL, length, true, NULL},
                  {NULL, NULL, 0, true, NULL},
          };
@@ -448,7 +448,7 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
         extDevice_t *dev = fdevice->io.handle.dev;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), false, NULL},
+                {cmd, NULL, sizeof(cmd), false, NULL},
                 {(uint8_t *)data, NULL, length, true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
@@ -694,7 +694,7 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
         cmd[3] = 0;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), false, NULL},
+                {cmd, NULL, sizeof(cmd), false, NULL},
                 {NULL, buffer, length, true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
@@ -762,7 +762,7 @@ int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
         cmd[3] = 0;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), false, NULL},
+                {cmd, NULL, sizeof(cmd), false, NULL},
                 {NULL, buffer, length, true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
@@ -862,8 +862,8 @@ void w25n01g_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
         cb_context.lutindex = 0;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), false, NULL},
-                {NULL, in, sizeof (in), true, w25n01g_readBBLUTCallback},
+                {cmd, NULL, sizeof(cmd), false, NULL},
+                {NULL, in, sizeof(in), true, w25n01g_readBBLUTCallback},
                 {NULL, NULL, 0, true, NULL},
         };
 
@@ -905,7 +905,7 @@ void w25n01g_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
         uint8_t cmd[5] = { W25N01G_INSTRUCTION_BB_MANAGEMENT, lba >> 8, lba, pba >> 8, pba };
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof (cmd), true, NULL},
+                {cmd, NULL, sizeof(cmd), true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
 

@@ -881,7 +881,7 @@ _TIM_IRQ_HANDLER(TIM20_CC_IRQHandler, 20);
 
 void timerInit(void)
 {
-    memset(timerConfig, 0, sizeof (timerConfig));
+    memset(timerConfig, 0, sizeof(timerConfig));
 
 #if USED_TIMERS & TIM_N(1)
     __HAL_RCC_TIM1_CLK_ENABLE();
