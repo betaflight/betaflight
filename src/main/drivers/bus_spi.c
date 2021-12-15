@@ -213,7 +213,7 @@ uint8_t spiReadWrite(const extDevice_t *dev, uint8_t data)
 
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&data, &retval, sizeof (data), true, NULL},
+            {&data, &retval, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
 
@@ -234,8 +234,8 @@ uint8_t spiReadWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
 
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof (reg), false, NULL},
-            {&data, &retval, sizeof (data), true, NULL},
+            {&reg, NULL, sizeof(reg), false, NULL},
+            {&data, &retval, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
 
@@ -254,7 +254,7 @@ void spiWrite(const extDevice_t *dev, uint8_t data)
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&data, NULL, sizeof (data), true, NULL},
+            {&data, NULL, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
 
@@ -271,8 +271,8 @@ void spiWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof (reg), false, NULL},
-            {&data, NULL, sizeof (data), true, NULL},
+            {&reg, NULL, sizeof(reg), false, NULL},
+            {&data, NULL, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
 
@@ -302,7 +302,7 @@ void spiReadRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t l
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof (reg), false, NULL},
+            {&reg, NULL, sizeof(reg), false, NULL},
             {NULL, data, length, true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
@@ -339,7 +339,7 @@ void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof (reg), false, NULL},
+            {&reg, NULL, sizeof(reg), false, NULL},
             {data, NULL, length, true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
@@ -358,8 +358,8 @@ uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg)
     uint8_t data;
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof (reg), false, NULL},
-            {NULL, &data, sizeof (data), true, NULL},
+            {&reg, NULL, sizeof(reg), false, NULL},
+            {NULL, &data, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
 

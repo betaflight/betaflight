@@ -49,11 +49,11 @@
 #ifdef USE_LEDSTRIP_CACHE_MGMT
 // WS2811_DMA_BUFFER_SIZE is multiples of uint32_t
 // Number of bytes required for buffer
-#define WS2811_DMA_BUF_BYTES              (WS2811_DMA_BUFFER_SIZE * sizeof (uint32_t))
+#define WS2811_DMA_BUF_BYTES              (WS2811_DMA_BUFFER_SIZE * sizeof(uint32_t))
 // Number of bytes required to cache align buffer
 #define WS2811_DMA_BUF_CACHE_ALIGN_BYTES  ((WS2811_DMA_BUF_BYTES + 0x20) & ~0x1f)
 // Size of array to create a cache aligned buffer
-#define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof (uint32_t))
+#define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 DMA_RW_AXI __attribute__((aligned(32))) uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
 #else
 #if defined(STM32F1) || defined(STM32F3)

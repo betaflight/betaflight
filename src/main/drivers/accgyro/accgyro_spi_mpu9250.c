@@ -56,7 +56,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 bool mpu9250SpiWriteRegister(const extDevice_t *dev, uint8_t reg, uint8_t data)
 {
     delayMicroseconds(1);
-    spiWriteRegBuf(dev, reg, &data, sizeof (data));
+    spiWriteRegBuf(dev, reg, &data, sizeof(data));
     delayMicroseconds(1);
 
     return true;
