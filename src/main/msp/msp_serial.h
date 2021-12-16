@@ -124,5 +124,3 @@ void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
 void mspSerialReleaseSharedTelemetryPorts(void);
 int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction);
 uint32_t mspSerialTxBytesFree(void);
-
-extern uint8_t mspSerialOutBuf[MSP_PORT_OUTBUF_SIZE];   // this buffer also used in msp_shared.c

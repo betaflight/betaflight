@@ -391,10 +391,10 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
     return mspSerialSendFrame(msp, hdrBuf, hdrLen, sbufPtr(&packet->buf), dataLen, crcBuf, crcLen);
 }
 
-uint8_t mspSerialOutBuf[MSP_PORT_OUTBUF_SIZE];   // this buffer also used in msp_shared.c
-
 static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
 {
+    static uint8_t mspSerialOutBuf[MSP_PORT_OUTBUF_SIZE];
+
     mspPacket_t reply = {
         .buf = { .ptr = mspSerialOutBuf, .end = ARRAYEND(mspSerialOutBuf), },
         .cmd = -1,

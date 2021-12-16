@@ -51,7 +51,6 @@ extern "C" {
     #include "io/gps.h"
 
     #include "msp/msp.h"
-    #include "msp/msp_serial.h"
 
     #include "rx/rx.h"
     #include "rx/crsf.h"
@@ -88,7 +87,7 @@ extern "C" {
 
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
-    extern uint8_t requestBuffer[MSP_PORT_INBUF_SIZE];
+    extern uint8_t requestBuffer[MSP_TLM_INBUF_SIZE];
     extern struct mspPacket_s requestPacket;
     extern struct mspPacket_s responsePacket;
 
@@ -254,7 +253,7 @@ extern "C" {
 
     gpsSolutionData_t gpsSol;
     attitudeEulerAngles_t attitude = { { 0, 0, 0 } };
-    uint8_t mspSerialOutBuf[MSP_PORT_OUTBUF_SIZE];
+    uint8_t responseBuffer[MSP_TLM_OUTBUF_SIZE];
 
     uint32_t micros(void) {return dummyTimeUs;}
     uint32_t microsISR(void) {return micros();}
