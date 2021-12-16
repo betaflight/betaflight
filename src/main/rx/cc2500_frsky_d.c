@@ -229,7 +229,8 @@ rx_spi_received_e frSkyDHandlePacket(uint8_t * const packet, uint8_t * const pro
                     timeoutUs = 1;
                     if (packet[0] == 0x11) {
                         if ((packet[1] == rxCc2500SpiConfig()->bindTxId[0]) &&
-                            (packet[2] == rxCc2500SpiConfig()->bindTxId[1])) {
+                            (packet[2] == rxCc2500SpiConfig()->bindTxId[1]) &&
+                            (packet[5] == rxCc2500SpiConfig()->bindTxId[2])) {
                             rxSpiLedOn();
                             nextChannel(1);
                             cc2500setRssiDbm(packet[18]);
