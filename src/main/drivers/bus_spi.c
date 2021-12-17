@@ -399,6 +399,64 @@ uint16_t spiCalculateDivider(uint32_t freq)
 }
 
 // Interrupt handler for SPI receive DMA completion
+static void spiIrqHandler(const extDevice_t *dev)
+{
+    busDevice_t *bus = dev->bus;
+    busSegment_t *nextSegment;
+
+    if (bus->curSegment->callback) {
+        switch(bus->curSegment->callback(dev->callbackArg)) {
+        case BUS_BUSY:
+            // Repeat the last DMA segment
+            bus->curSegment--;
+            // Reinitialise the cached init values as segment is not progressing
+            spiInternalInitStream(dev, true);
+            break;
+
+        case BUS_ABORT:
+            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+            return;
+
+        case BUS_READY:
+        default:
+            // Advance to the next DMA segment
+            break;
+        }
+    }
+
+    // Advance through the segment list
+    nextSegment = bus->curSegment + 1;
+
+    if (nextSegment->len == 0) {
+        // If a following transaction has been linked, start it
+        if (nextSegment->txData) {
+            const extDevice_t *nextDev = (const extDevice_t *)nextSegment->txData;
+            busSegment_t *nextSegments = (busSegment_t *)nextSegment->rxData;
+            nextSegment->txData = NULL;
+            // The end of the segment list has been reached
+            spiSequenceStart(nextDev, nextSegments);
+        } else {
+            // The end of the segment list has been reached, so mark transactions as complete
+            bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+        }
+    } else {
+        bus->curSegment = nextSegment;
+
+        // After the completion of the first segment setup the init structure for the subsequent segment
+        if (bus->initSegment) {
+            spiInternalInitStream(dev, false);
+            bus->initSegment = false;
+        }
+
+        // Launch the next transfer
+        spiInternalStartDMA(dev);
+
+        // Prepare the init structures ready for the next segment to reduce inter-segment time
+        spiInternalInitStream(dev, true);
+    }
+}
+
+// Interrupt handler for SPI receive DMA completion
 static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
     const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
@@ -408,7 +466,6 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 
     busDevice_t *bus = dev->bus;
-    busSegment_t *nextSegment;
 
     if (bus->curSegment->negateCS) {
         // Negate Chip Select
@@ -432,59 +489,33 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     }
 #endif // __DCACHE_PRESENT
 
-    if (bus->curSegment->callback) {
-        switch(bus->curSegment->callback(dev->callbackArg)) {
-        case BUS_BUSY:
-            // Repeat the last DMA segment
-            bus->curSegment--;
-            // Reinitialise the cached init values as segment is not progressing
-            spiInternalInitStream(dev, true);
-            break;
-
-        case BUS_ABORT:
-            bus->curSegment = (busSegment_t *)NULL;
-            return;
-
-        case BUS_READY:
-        default:
-            // Advance to the next DMA segment
-            break;
-        }
-    }
-
-    // Advance through the segment list
-    nextSegment = bus->curSegment + 1;
-
-    if (nextSegment->len == 0) {
-        // If a following transaction has been linked, start it
-        if (nextSegment->txData) {
-            const extDevice_t *nextDev = (const extDevice_t *)nextSegment->txData;
-            busSegment_t *nextSegments = (busSegment_t *)nextSegment->rxData;
-            nextSegment->txData = NULL;
-            // The end of the segment list has been reached
-            spiSequenceStart(nextDev, nextSegments);
-        } else {
-            // The end of the segment list has been reached, so mark transactions as complete
-            bus->curSegment = (busSegment_t *)NULL;
-        }
-    } else {
-        bus->curSegment = nextSegment;
-
-        // After the completion of the first segment setup the init structure for the subsequent segment
-        if (bus->initSegment) {
-            spiInternalInitStream(dev, false);
-            bus->initSegment = false;
-        }
-
-        // Launch the next transfer
-        spiInternalStartDMA(dev);
-
-        // Prepare the init structures ready for the next segment to reduce inter-segment time
-        spiInternalInitStream(dev, true);
-    }
+    spiIrqHandler(dev);
 }
 
-// Mark this bus as being SPI
+#if !defined(STM32G4) && !defined(STM32H7)
+// Interrupt handler for SPI transmit DMA completion
+static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
+{
+    const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
+
+    if (!dev) {
+        return;
+    }
+
+    busDevice_t *bus = dev->bus;
+
+    spiInternalStopDMA(dev);
+
+    if (bus->curSegment->negateCS) {
+        // Negate Chip Select
+        IOHi(dev->busType_u.spi.csnPin);
+    }
+
+    spiIrqHandler(dev);
+}
+#endif
+
+// Mark this bus as being SPI and record the first owner to use it
 bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 {
     if ((device == 0) || (device > SPIDEV_COUNT)) {
@@ -492,6 +523,8 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
     }
 
     dev->bus = &spiBusDevice[SPI_CFG_TO_DEV(device)];
+
+    // By default each device should use SPI DMA if the bus supports it
     dev->useDMA = true;
 
     if (dev->bus->busType == BUS_TYPE_SPI) {
@@ -622,6 +655,21 @@ void spiInitBusDMA()
             dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
             bus->useDMA = true;
+#if !defined(STM32G4) && !defined(STM32H7)
+        } else if (dmaTxIdentifier) {
+            // Transmit on DMA is adequate for OSD so worth having
+            bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
+            bus->dmaRx = (dmaChannelDescriptor_t *)NULL;
+
+            // Ensure streams are disabled
+            spiInternalResetStream(bus->dmaTx);
+
+            spiInternalResetDescriptors(bus);
+
+            dmaSetHandler(dmaTxIdentifier, spiTxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
+
+            bus->useDMA = true;
+#endif
         } else {
             // Disassociate channels from bus
             bus->dmaRx = (dmaChannelDescriptor_t *)NULL;
@@ -648,6 +696,12 @@ void spiDmaEnable(const extDevice_t *dev, bool enable)
 }
 
 bool spiUseDMA(const extDevice_t *dev)
+{
+    // Full DMA only requires both transmit and receive}
+    return dev->bus->useDMA && dev->bus->dmaRx && dev->useDMA;
+}
+
+bool spiUseMOSI_DMA(const extDevice_t *dev)
 {
     return dev->bus->useDMA && dev->useDMA;
 }

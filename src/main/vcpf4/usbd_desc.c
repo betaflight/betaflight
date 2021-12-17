@@ -224,8 +224,8 @@ uint8_t *  USBD_USR_DeviceDescriptor( uint8_t speed , uint16_t *length)
     (void)speed;
 #ifdef USE_USB_CDC_HID
     if (usbDevConfig()->type == COMPOSITE) {
-	    *length = sizeof(USBD_DeviceDesc_Composite);
-	    return USBD_DeviceDesc_Composite;
+        *length = sizeof(USBD_DeviceDesc_Composite);
+        return USBD_DeviceDesc_Composite;
     }
 #endif
     *length = sizeof(USBD_DeviceDesc);

@@ -32,7 +32,7 @@ extern "C" {
 
 extern "C" {
     void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex);
-    void ignoreTaskShortExecTime(void) {}
+    void ignoreTaskExecTime(void) {}
     void ignoreTaskStateTime(void) {}
 }
 
