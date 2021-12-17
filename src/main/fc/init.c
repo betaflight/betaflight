@@ -772,12 +772,6 @@ void init(void)
     }
 #endif
 
-#ifdef USE_TELEMETRY
-    if (featureIsEnabled(FEATURE_TELEMETRY)) {
-        telemetryInit();
-    }
-#endif
-
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         escSensorInit();
@@ -882,6 +876,12 @@ void init(void)
  */
 #ifdef USE_CMS
     cmsInit();
+#endif
+
+#ifdef USE_TELEMETRY
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
+        telemetryInit();
+    }
 #endif
 
 #if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
