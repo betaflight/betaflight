@@ -31,12 +31,12 @@
 
 #define LOAD_PERCENTAGE_ONE 100
 
-#define SCHED_START_LOOP_MIN_US         4   // Wait at start of scheduler loop if gyroTask is nearly due
+#define SCHED_START_LOOP_MIN_US         1   // Wait at start of scheduler loop if gyroTask is nearly due
 #define SCHED_START_LOOP_MAX_US         12
 #define SCHED_START_LOOP_DOWN_STEP      50  // Fraction of a us to reduce start loop wait
 #define SCHED_START_LOOP_UP_STEP        1   // Fraction of a us to increase start loop wait
 
-#define TASK_GUARD_MARGIN_MIN_US        4   // Add an amount to the estimate of a task duration
+#define TASK_GUARD_MARGIN_MIN_US        1   // Add an amount to the estimate of a task duration
 #define TASK_GUARD_MARGIN_MAX_US        6
 #define TASK_GUARD_MARGIN_DOWN_STEP     50  // Fraction of a us to reduce task guard margin
 #define TASK_GUARD_MARGIN_UP_STEP       1   // Fraction of a us to increase task guard margin
