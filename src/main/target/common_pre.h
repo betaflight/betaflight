@@ -383,7 +383,6 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_MULTI_GYRO
-#define USE_OSD_ADJUSTMENTS
 #define USE_SENSOR_NAMES
 #define USE_SERIALRX_JETIEXBUS
 #define USE_TELEMETRY_IBUS
@@ -423,4 +422,6 @@ extern uint8_t _dmaram_end__;
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
+#define USE_ADJUSTMENTS
+#define USE_OSD_ADJUSTMENTS
 #endif

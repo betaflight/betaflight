@@ -963,9 +963,11 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_ADJUSTMENTS
     if (!cliMode && !(IS_RC_MODE_ACTIVE(BOXPARALYZE) && !ARMING_FLAG(ARMED))) {
         processRcAdjustments(currentControlRateProfile);
     }
+#endif
 
     bool canUseHorizonMode = true;
 

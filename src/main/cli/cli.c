@@ -1608,6 +1608,7 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 }
 #endif
 
+#ifdef USE_ADJUSTMENTS
 static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges, const char *headingStr)
 {
     const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
@@ -1735,6 +1736,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
         }
     }
 }
+#endif // USE_ADJUSTMENTS
 
 #ifndef USE_QUAD_MIXER_ONLY
 static void printMotorMix(dumpFlags_t dumpMask, const motorMixer_t *customMotorMixer, const motorMixer_t *defaultCustomMotorMixer, const char *headingStr)
@@ -6335,7 +6337,9 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
             printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0), "aux");
 
+#ifdef USE_ADJUSTMENTS
             printAdjustmentRange(dumpMask, adjustmentRanges_CopyArray, adjustmentRanges(0), "adjrange");
+#endif
 
             printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0), "rxrange");
 
@@ -6483,7 +6487,9 @@ static void cliHelp(const char *cmdName, char *cmdline);
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
+#ifdef USE_ADJUSTMENTS
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", "<index> <unused> <range channel> <start> <end> <function> <select channel> [<center> <scale>]", cliAdjustmentRange),
+#endif
     CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef USE_CLI_BATCH
     CLI_COMMAND_DEF("batch", "start or end a batch of commands", "start | end", cliBatch),
