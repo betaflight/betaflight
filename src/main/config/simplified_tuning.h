@@ -21,12 +21,11 @@
 #pragma once
 
 #include "flight/pid.h"
+#include "sensors/gyro.h"
 
 #define SIMPLIFIED_TUNING_MIN 0
 #define SIMPLIFIED_TUNING_MAX 200
 #define SIMPLIFIED_TUNING_DEFAULT 100
-#define SIMPLIFIED_TUNING_PITCH_P_DEFAULT 105
-#define SIMPLIFIED_TUNING_PITCH_D_DEFAULT 115
 #define SIMPLIFIED_TUNING_D_DEFAULT 100
 
 typedef enum {
@@ -36,5 +35,10 @@ typedef enum {
     PID_SIMPLIFIED_TUNING_MODE_COUNT,
 } pidSimplifiedTuningMode_e;
 
-void applySimplifiedTuning(pidProfile_t *pidProfile);
-void disableSimplifiedTuning(pidProfile_t *pidProfile);
+void applySimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig);
+
+void applySimplifiedTuningPids(pidProfile_t *pidProfile);
+void applySimplifiedTuningDtermFilters(pidProfile_t *pidProfile);
+void applySimplifiedTuningGyroFilters(gyroConfig_t *gyroConfig);
+
+void disableSimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig);

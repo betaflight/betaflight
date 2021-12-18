@@ -2021,6 +2021,133 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
     return !unsupportedCommand;
 }
 
+
+#ifdef USE_SIMPLIFIED_TUNING
+// Reads simplified PID tuning values from MSP buffer
+static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
+{
+    pidProfile->simplified_pids_mode = sbufReadU8(src);
+    pidProfile->simplified_master_multiplier = sbufReadU8(src);
+    pidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
+    pidProfile->simplified_i_gain = sbufReadU8(src);
+    pidProfile->simplified_d_gain = sbufReadU8(src);
+    pidProfile->simplified_pi_gain = sbufReadU8(src);
+#ifdef USE_D_MIN
+    pidProfile->simplified_dmin_ratio = sbufReadU8(src);
+#else
+    sbufReadU8(src);
+#endif
+    pidProfile->simplified_feedforward_gain = sbufReadU8(src);
+    pidProfile->simplified_pitch_pi_gain = sbufReadU8(src);
+    sbufReadU32(src); // reserved for future use
+    sbufReadU32(src); // reserved for future use
+}
+
+// Writes simplified PID tuning values to MSP buffer
+static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
+{
+    sbufWriteU8(dst, pidProfile->simplified_pids_mode);
+    sbufWriteU8(dst, pidProfile->simplified_master_multiplier);
+    sbufWriteU8(dst, pidProfile->simplified_roll_pitch_ratio);
+    sbufWriteU8(dst, pidProfile->simplified_i_gain);
+    sbufWriteU8(dst, pidProfile->simplified_d_gain);
+    sbufWriteU8(dst, pidProfile->simplified_pi_gain);
+#ifdef USE_D_MIN
+    sbufWriteU8(dst, pidProfile->simplified_dmin_ratio);
+#else
+    sbufWriteU8(dst, 0);
+#endif
+    sbufWriteU8(dst, pidProfile->simplified_feedforward_gain);
+    sbufWriteU8(dst, pidProfile->simplified_pitch_pi_gain);
+    sbufWriteU32(dst, 0); // reserved for future use
+    sbufWriteU32(dst, 0); // reserved for future use
+}
+
+// Reads simplified Dterm Filter values from MSP buffer
+static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
+{
+    pidProfile->simplified_dterm_filter = sbufReadU8(src);
+    pidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
+    pidProfile->dterm_lpf1_static_hz = sbufReadU16(src);
+    pidProfile->dterm_lpf2_static_hz = sbufReadU16(src);
+#if defined(USE_DYN_LPF)
+    pidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16(src);
+    pidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16(src);
+#else
+    sbufReadU16(src);
+    sbufReadU16(src);
+#endif
+    sbufReadU32(src); // reserved for future use
+    sbufReadU32(src); // reserved for future use
+}
+
+// Writes simplified Dterm Filter values into MSP buffer
+static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *dst)
+{
+    sbufWriteU8(dst, pidProfile->simplified_dterm_filter);
+    sbufWriteU8(dst, pidProfile->simplified_dterm_filter_multiplier);
+    sbufWriteU16(dst, pidProfile->dterm_lpf1_static_hz);
+    sbufWriteU16(dst, pidProfile->dterm_lpf2_static_hz);
+#if defined(USE_DYN_LPF)
+    sbufWriteU16(dst, pidProfile->dterm_lpf1_dyn_min_hz);
+    sbufWriteU16(dst, pidProfile->dterm_lpf1_dyn_max_hz);
+#else
+    sbufWriteU16(dst, 0);
+    sbufWriteU16(dst, 0);
+#endif
+    sbufWriteU32(dst, 0); // reserved for future use
+    sbufWriteU32(dst, 0); // reserved for future use
+}
+
+// Writes simplified Gyro Filter values from MSP buffer
+static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
+{
+    gyroConfig->simplified_gyro_filter = sbufReadU8(src);
+    gyroConfig->simplified_gyro_filter_multiplier = sbufReadU8(src);
+    gyroConfig->gyro_lpf1_static_hz = sbufReadU16(src);
+    gyroConfig->gyro_lpf2_static_hz = sbufReadU16(src);
+#if defined(USE_DYN_LPF)
+    gyroConfig->gyro_lpf1_dyn_min_hz = sbufReadU16(src);
+    gyroConfig->gyro_lpf1_dyn_max_hz = sbufReadU16(src);
+#else
+    sbufReadU16(src);
+    sbufReadU16(src);
+#endif
+    sbufReadU32(src); // reserved for future use
+    sbufReadU32(src); // reserved for future use
+}
+
+// Writes simplified Gyro Filter values into MSP buffer
+static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *dst)
+{
+    sbufWriteU8(dst, gyroConfig->simplified_gyro_filter);
+    sbufWriteU8(dst, gyroConfig->simplified_gyro_filter_multiplier);
+    sbufWriteU16(dst, gyroConfig->gyro_lpf1_static_hz);
+    sbufWriteU16(dst, gyroConfig->gyro_lpf2_static_hz);
+#if defined(USE_DYN_LPF)
+    sbufWriteU16(dst, gyroConfig->gyro_lpf1_dyn_min_hz);
+    sbufWriteU16(dst, gyroConfig->gyro_lpf1_dyn_max_hz);
+#else
+    sbufWriteU16(dst, 0);
+    sbufWriteU16(dst, 0);
+#endif
+    sbufWriteU32(dst, 0); // reserved for future use
+    sbufWriteU32(dst, 0); // reserved for future use
+}
+
+// writes results of simplified PID tuning values to MSP buffer
+static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
+{
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        sbufWriteU8(dst, pidProfile->pid[i].P);
+        sbufWriteU8(dst, pidProfile->pid[i].I);
+        sbufWriteU8(dst, pidProfile->pid[i].D);
+        sbufWriteU8(dst, pidProfile->d_min[i]);
+        sbufWriteU16(dst, pidProfile->pid[i].F);
+    }
+}
+#endif // USE_SIMPLIFIED_TUNING
+
 static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
 
@@ -2149,25 +2276,82 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
     // Added in MSP API 1.44
     case MSP_SIMPLIFIED_TUNING:
         {
-            sbufWriteU8(dst, currentPidProfile->simplified_pids_mode);
-            sbufWriteU8(dst, currentPidProfile->simplified_master_multiplier);
-            sbufWriteU8(dst, currentPidProfile->simplified_roll_pitch_ratio);
-            sbufWriteU8(dst, currentPidProfile->simplified_i_gain);
-            sbufWriteU8(dst, currentPidProfile->simplified_d_gain);
-            sbufWriteU8(dst, currentPidProfile->simplified_pi_gain);
-#ifdef USE_D_MIN
-            sbufWriteU8(dst, currentPidProfile->simplified_dmin_ratio);
-#else
-            sbufWriteU8(dst, 0);
+            writeSimplifiedPids(currentPidProfile, dst);
+            writeSimplifiedDtermFilters(currentPidProfile, dst);
+            writeSimplifiedGyroFilters(gyroConfig(), dst);
+        }
+        break;
+
+    case MSP_CALCULATE_SIMPLIFIED_PID:
+        {
+            pidProfile_t tempPidProfile = *currentPidProfile;
+            readSimplifiedPids(&tempPidProfile, src);
+            applySimplifiedTuningPids(&tempPidProfile);
+            writePidfs(&tempPidProfile, dst);
+        }
+        break;
+
+    case MSP_CALCULATE_SIMPLIFIED_DTERM:
+        {
+            pidProfile_t tempPidProfile = *currentPidProfile;
+            readSimplifiedDtermFilters(&tempPidProfile, src);
+            applySimplifiedTuningDtermFilters(&tempPidProfile);
+            writeSimplifiedDtermFilters(&tempPidProfile, dst);
+        }
+        break;
+
+    case MSP_CALCULATE_SIMPLIFIED_GYRO:
+        {
+            gyroConfig_t tempGyroConfig = *gyroConfig();
+            readSimplifiedGyroFilters(&tempGyroConfig, src);
+            applySimplifiedTuningGyroFilters(&tempGyroConfig);
+            writeSimplifiedGyroFilters(&tempGyroConfig, dst);
+        }
+        break;
+
+    case MSP_VALIDATE_SIMPLIFIED_TUNING:
+        {
+            pidProfile_t tempPidProfile = *currentPidProfile;
+            applySimplifiedTuningPids(&tempPidProfile);
+            bool result = true;
+
+            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+                result = result &&
+                    tempPidProfile.pid[i].P == currentPidProfile->pid[i].P &&
+                    tempPidProfile.pid[i].I == currentPidProfile->pid[i].I &&
+                    tempPidProfile.pid[i].D == currentPidProfile->pid[i].D &&
+                    tempPidProfile.d_min[i] == currentPidProfile->d_min[i] &&
+                    tempPidProfile.pid[i].F == currentPidProfile->pid[i].F;
+            }
+
+            sbufWriteU8(dst, result);
+
+            gyroConfig_t tempGyroConfig = *gyroConfig();
+            applySimplifiedTuningGyroFilters(&tempGyroConfig);
+            result =
+                tempGyroConfig.gyro_lpf1_static_hz == gyroConfig()->gyro_lpf1_static_hz &&
+                tempGyroConfig.gyro_lpf2_static_hz == gyroConfig()->gyro_lpf2_static_hz;
+
+#if defined(USE_DYN_LPF)
+            result = result &&
+                tempGyroConfig.gyro_lpf1_dyn_min_hz == gyroConfig()->gyro_lpf1_dyn_min_hz &&
+                tempGyroConfig.gyro_lpf1_dyn_max_hz == gyroConfig()->gyro_lpf1_dyn_max_hz;
 #endif
-            sbufWriteU8(dst, currentPidProfile->simplified_feedforward_gain);
-            sbufWriteU8(dst, currentPidProfile->simplified_pitch_pi_gain);
 
-            sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter);
-            sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter_multiplier);
+            sbufWriteU8(dst, result);
 
-            sbufWriteU8(dst, gyroConfig()->simplified_gyro_filter);
-            sbufWriteU8(dst, gyroConfig()->simplified_gyro_filter_multiplier);
+            applySimplifiedTuningDtermFilters(&tempPidProfile);
+            result =
+                tempPidProfile.dterm_lpf1_static_hz == currentPidProfile->dterm_lpf1_static_hz &&
+                tempPidProfile.dterm_lpf2_static_hz == currentPidProfile->dterm_lpf2_static_hz;
+
+#if defined(USE_DYN_LPF)
+            result = result &&
+                tempPidProfile.dterm_lpf1_dyn_min_hz == currentPidProfile->dterm_lpf1_dyn_min_hz &&
+                tempPidProfile.dterm_lpf1_dyn_max_hz == currentPidProfile->dterm_lpf1_dyn_max_hz;
+#endif
+
+            sbufWriteU8(dst, result);
         }
         break;
 #endif
@@ -3142,28 +3326,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_SIMPLIFIED_TUNING
     // Added in MSP API 1.44
     case MSP_SET_SIMPLIFIED_TUNING:
-        currentPidProfile->simplified_pids_mode = sbufReadU8(src);
-        currentPidProfile->simplified_master_multiplier = sbufReadU8(src);
-        currentPidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
-        currentPidProfile->simplified_i_gain = sbufReadU8(src);
-        currentPidProfile->simplified_d_gain = sbufReadU8(src);
-        currentPidProfile->simplified_pi_gain = sbufReadU8(src);
-#ifdef USE_D_MIN
-        currentPidProfile->simplified_dmin_ratio = sbufReadU8(src);
-#else
-        sbufReadU8(src);
-#endif
-        currentPidProfile->simplified_feedforward_gain = sbufReadU8(src);
-        currentPidProfile->simplified_pitch_pi_gain = sbufReadU8(src);
-
-        currentPidProfile->simplified_dterm_filter = sbufReadU8(src);
-        currentPidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
-
-        gyroConfigMutable()->simplified_gyro_filter = sbufReadU8(src);
-        gyroConfigMutable()->simplified_gyro_filter_multiplier = sbufReadU8(src);
-
-        applySimplifiedTuning(currentPidProfile);
-
+        {
+            readSimplifiedPids(currentPidProfile, src);
+            readSimplifiedDtermFilters(currentPidProfile, src);
+            readSimplifiedGyroFilters(gyroConfigMutable(), src);
+            applySimplifiedTuning(currentPidProfile, gyroConfigMutable());
+        }
         break;
 #endif
 
