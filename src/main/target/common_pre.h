@@ -413,7 +413,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_MSP_OVERRIDE
 #define USE_SIMPLIFIED_TUNING
 #define USE_RX_LINK_UPLINK_POWER
-#define USE_GPS_PLUS_CODES
 #define USE_CRSF_V3
 #endif
 
@@ -423,4 +422,5 @@ extern uint8_t _dmaram_end__;
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
+#define USE_GPS_PLUS_CODES
 #endif
