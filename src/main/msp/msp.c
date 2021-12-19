@@ -2889,7 +2889,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         // This is going to take some time and won't be done where real-time performance is needed so
         // ignore how long it takes to avoid confusing the scheduler
-        ignoreTaskStateTime();
+        schedulerIgnoreTaskStateTime();
 
         writeEEPROM();
         readEEPROM();

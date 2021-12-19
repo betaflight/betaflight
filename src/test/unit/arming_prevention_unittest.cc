@@ -1108,4 +1108,5 @@ extern "C" {
     uint16_t getAverageSystemLoadPercent(void) { return 0; }
     bool isMotorProtocolEnabled(void) { return true; }
     void pinioBoxTaskControl(void) {}
+    void schedulerSetNextStateTime(timeDelta_t) {}
 }

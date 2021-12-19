@@ -388,14 +388,14 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_BARO, 0, state);
 
-    // Where we are using a state machine call ignoreTaskExecRate() for all states bar one
+    // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
     if (state != BARO_STATE_TEMPERATURE_START) {
-        ignoreTaskExecRate();
+        schedulerIgnoreTaskExecRate();
     }
 
     if (busBusy(&baro.dev.dev, NULL)) {
         // If the bus is busy, simply return to have another go later
-        ignoreTaskStateTime();
+        schedulerIgnoreTaskStateTime();
         return sleepTime;
     }
 
@@ -429,7 +429,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             if (baro.dev.read_up(&baro.dev)) {
                 state = BARO_STATE_PRESSURE_SAMPLE;
             } else {
-                ignoreTaskStateTime();
+                schedulerIgnoreTaskStateTime();
             }
             break;
 
