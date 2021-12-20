@@ -314,7 +314,7 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
         gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
         gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
 
-        applySimplifiedTuning(currentPidProfile);
+        applySimplifiedTuning(currentPidProfile, gyroConfigMutable());
     }
 
     return 0;
