@@ -50,6 +50,7 @@
 
 #include "config/config.h"
 #include "config/feature.h"
+#include "config/simplified_tuning.h"
 
 #include "drivers/motor.h"
 #include "drivers/osd_symbols.h"
@@ -71,6 +72,8 @@
 #include "osd/osd.h"
 
 #include "rx/rx.h"
+
+#include "sensors/gyro.h"
 
 // DisplayPort management
 
@@ -192,10 +195,10 @@ static bool saveMenuInhibited = false;
 static char menuErrLabel[21 + 1] = "RANDOM DATA";
 
 static OSD_Entry menuErrEntries[] = {
-    { "BROKEN MENU", OME_Label, NULL, NULL, 0 },
-    { menuErrLabel, OME_Label, NULL, NULL, 0 },
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "BROKEN MENU", OME_Label, NULL, NULL },
+    { menuErrLabel, OME_Label, NULL, NULL },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 static CMS_Menu menuErr = {
@@ -221,7 +224,7 @@ static void cmsUpdateMaxRow(displayPort_t *instance)
     UNUSED(instance);
     pageMaxRow = 0;
 
-    for (const OSD_Entry *ptr = pageTop; ptr->type != OME_END; ptr++) {
+    for (const OSD_Entry *ptr = pageTop; (ptr->flags & OSD_MENU_ELEMENT_MASK) != OME_END; ptr++) {
         pageMaxRow++;
     }
 
@@ -408,7 +411,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
         row++;
     }
 
-    switch (p->type) {
+    switch (p->flags & OSD_MENU_ELEMENT_MASK) {
     case OME_String:
         if (IS_PRINTVALUE(*flags) && p->data) {
             strncpy(buff, p->data, CMS_DRAW_BUFFER_LEN);
@@ -422,13 +425,13 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, const OSD_Entry *p, uint8_t
         if (IS_PRINTVALUE(*flags)) {
             buff[0]= 0x0;
 
-            if (p->type == OME_Submenu && p->func && *flags & OPTSTRING) {
+            if ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_Submenu && p->func && *flags & OPTSTRING) {
 
                 // Special case of sub menu entry with optional value display.
 
                 const char *str = p->func(pDisplay, p->data);
                 strncpy(buff, str, CMS_DRAW_BUFFER_LEN);
-            } else if (p->type == OME_Funcall && p->data) {
+            } else if ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_Funcall && p->data) {
                 strncpy(buff, p->data, CMS_DRAW_BUFFER_LEN);
             }
             strncat(buff, ">", CMS_DRAW_BUFFER_LEN);
@@ -617,7 +620,7 @@ static void cmsMenuCountPage(displayPort_t *pDisplay)
 {
     UNUSED(pDisplay);
     const OSD_Entry *p;
-    for (p = currentCtx.menu->entries; p->type != OME_END; p++);
+    for (p = currentCtx.menu->entries; (p->flags & OSD_MENU_ELEMENT_MASK) != OME_END; p++);
     pageCount = (p - currentCtx.menu->entries - 1) / maxMenuItems + 1;
 }
 
@@ -649,18 +652,47 @@ STATIC_UNIT_TESTED const void *cmsMenuBack(displayPort_t *pDisplay)
     return NULL;
 }
 
+// Check if overridden by slider
+static bool rowSliderOverride(const uint16_t flags)
+{
+#ifdef UNIT_TEST
+    UNUSED(flags);
+#else
+    pidSimplifiedTuningMode_e simplified_pids_mode = currentPidProfile->simplified_pids_mode;
+
+    bool slider_flags_mode_rpy = (simplified_pids_mode == PID_SIMPLIFIED_TUNING_RPY);
+    bool slider_flags_mode_rp = slider_flags_mode_rpy || (simplified_pids_mode == PID_SIMPLIFIED_TUNING_RP);
+
+    bool simplified_gyro_filter = gyroConfig()->simplified_gyro_filter;
+    bool simplified_dterm_filter = currentPidProfile->simplified_dterm_filter;
+
+    if (((flags & SLIDER_RP) && slider_flags_mode_rp) ||
+        ((flags & SLIDER_RPY) && slider_flags_mode_rpy) ||
+        ((flags & SLIDER_GYRO) && simplified_gyro_filter) ||
+        ((flags & SLIDER_DTERM) && simplified_dterm_filter)) {
+        return true;
+    }
+#endif
+
+    return false;
+}
+
 // Skip read-only entries
 static bool rowIsSkippable(const OSD_Entry *row)
 {
-    if (row->type == OME_Label) {
+    OSD_MenuElement type = row->flags & OSD_MENU_ELEMENT_MASK;
+
+    if (type == OME_Label) {
         return true;
     }
 
-    if (row->type == OME_String) {
+    if (type == OME_String) {
         return true;
     }
-	
-    if ((row->type == OME_UINT16 || row->type == OME_INT16) && row->flags == DYNAMIC) {
+    
+    if ((type == OME_UINT8 || type == OME_INT8 ||
+         type == OME_UINT16 || type == OME_INT16) &&
+        ((row->flags == DYNAMIC) || rowSliderOverride(row->flags))) {
         return true;
     }
     return false;
@@ -743,12 +775,18 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     for (i = 0, p = pageTop; (p <= pageTop + pageMaxRow); i++, p++) {
         if (IS_PRINTLABEL(runtimeEntryFlags[i])) {
             uint8_t coloff = leftMenuColumn;
-            coloff += (p->type == OME_Label) ? 0 : 1;
+            coloff += ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_Label) ? 0 : 1;
             room -= cmsDisplayWrite(pDisplay, coloff, top + i * linesPerMenuItem, DISPLAYPORT_ATTR_NONE, p->text);
             CLR_PRINTLABEL(runtimeEntryFlags[i]);
             if (room < 30) {
                 return;
             }
+        }
+
+
+        // Highlight values overridden by sliders
+        if (rowSliderOverride(p->flags)) {
+            displayWriteChar(pDisplay, leftMenuColumn - 1, top + i * linesPerMenuItem, DISPLAYPORT_ATTR_NONE, 'S');
         }
 
     // Print values
@@ -903,9 +941,9 @@ void cmsMenuOpen(void)
     }
 
     if (pCurrentDisplay->useFullscreen) {
-    	leftMenuColumn = 0;
-    	rightMenuColumn   = pCurrentDisplay->cols;
-    	maxMenuItems      = pCurrentDisplay->rows;
+        leftMenuColumn = 0;
+        rightMenuColumn   = pCurrentDisplay->cols;
+        maxMenuItems      = pCurrentDisplay->rows;
     }
 
     cmsMenuChange(pCurrentDisplay, startMenu);
@@ -913,8 +951,8 @@ void cmsMenuOpen(void)
 
 static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 {
-    for (const OSD_Entry *p = pMenu->entries; p->type != OME_END ; p++) {
-        if (p->type == OME_Submenu) {
+    for (const OSD_Entry *p = pMenu->entries; (p->flags & OSD_MENU_ELEMENT_MASK) != OME_END ; p++) {
+        if ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_Submenu) {
             cmsTraverseGlobalExit(p->data);
         }
     }
@@ -1033,7 +1071,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
         while ((rowIsSkippable(pageTop + currentCtx.cursorRow)) && currentCtx.cursorRow > 0) {
             currentCtx.cursorRow--;
         }
-        if (currentCtx.cursorRow == -1 || (pageTop + currentCtx.cursorRow)->type == OME_Label) {
+        if (currentCtx.cursorRow == -1 || ((pageTop + currentCtx.cursorRow)->flags & OSD_MENU_ELEMENT_MASK) == OME_Label) {
             // Goto previous page
             cmsPagePrev(pDisplay);
             currentCtx.cursorRow = pageMaxRow;
@@ -1046,7 +1084,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
 
     p = pageTop + currentCtx.cursorRow;
 
-    switch (p->type) {
+    switch (p->flags & OSD_MENU_ELEMENT_MASK) {
         case OME_Submenu:
             if (key == CMS_KEY_RIGHT) {
                 cmsMenuChange(pDisplay, p->data);
@@ -1157,7 +1195,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, cms_key_e key)
             break;
 
         case OME_TAB:
-            if (p->type == OME_TAB) {
+            if ((p->flags & OSD_MENU_ELEMENT_MASK) == OME_TAB) {
                 OSD_TAB_t *ptr = p->data;
                 const uint8_t previousValue = *ptr->val;
 
@@ -1467,13 +1505,12 @@ void inhibitSaveMenu(void)
     saveMenuInhibited = true;
 }
 
-void cmsAddMenuEntry(OSD_Entry *menuEntry, char *text, OSD_MenuElement type, CMSEntryFuncPtr func, void *data, uint8_t flags)
+void cmsAddMenuEntry(OSD_Entry *menuEntry, char *text, uint16_t flags, CMSEntryFuncPtr func, void *data)
 {
         menuEntry->text = text;
-        menuEntry->type = type;
+        menuEntry->flags = flags;
         menuEntry->func = func;
         menuEntry->data = data;
-        menuEntry->flags = flags;
 }
 
 #endif // CMS
