@@ -683,13 +683,19 @@ void gpsUpdate(timeUs_t currentTimeUs)
     timeUs_t executeTimeUs;
     gpsState_e gpsCurState = gpsData.state;
 
-
     // read out available GPS bytes
     if (gpsPort) {
-        while (serialRxBytesWaiting(gpsPort) && (cmpTimeUs(micros(), currentTimeUs) < GPS_MAX_WAIT_DATA_RX)) {
+        while (serialRxBytesWaiting(gpsPort)) {
+            if (cmpTimeUs(micros(), currentTimeUs) > GPS_MAX_WAIT_DATA_RX) {
+                // Wait 1ms and come back
+                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
+                return;
+            }
             gpsNewData(serialRead(gpsPort));
         }
-    } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
+        // Restore default task rate
+        rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
+   } else if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
         gpsSetState(GPS_STATE_RECEIVING_DATA);
         gpsData.lastMessage = millis();
         sensorsSet(SENSOR_GPS);

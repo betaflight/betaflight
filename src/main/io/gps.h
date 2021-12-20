@@ -180,6 +180,9 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 
+#define TASK_GPS_RATE       100
+#define TASK_GPS_RATE_FAST  1000
+
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
