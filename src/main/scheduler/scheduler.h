@@ -36,7 +36,7 @@
 #define SCHED_START_LOOP_DOWN_STEP      50  // Fraction of a us to reduce start loop wait
 #define SCHED_START_LOOP_UP_STEP        1   // Fraction of a us to increase start loop wait
 
-#define TASK_GUARD_MARGIN_MIN_US        1   // Add an amount to the estimate of a task duration
+#define TASK_GUARD_MARGIN_MIN_US        3   // Add an amount to the estimate of a task duration
 #define TASK_GUARD_MARGIN_MAX_US        6
 #define TASK_GUARD_MARGIN_DOWN_STEP     50  // Fraction of a us to reduce task guard margin
 #define TASK_GUARD_MARGIN_UP_STEP       1   // Fraction of a us to increase task guard margin
