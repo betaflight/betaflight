@@ -43,7 +43,8 @@
 // MPU6000 interrupts
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
-#define USE_GYRO_EXTI
+// disable GYRO_EXTI when MAX7456 is on same SPI bus as gyro
+// #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA4
 
 #define USE_GYRO
