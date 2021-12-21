@@ -150,7 +150,7 @@ static FAST_DATA_ZERO_INIT float   sdftSampleRateHz;
 static FAST_DATA_ZERO_INIT float   sdftResolutionHz;
 static FAST_DATA_ZERO_INIT int     sdftStartBin;
 static FAST_DATA_ZERO_INIT int     sdftEndBin;
-static FAST_DATA_ZERO_INIT float   sdftMeanSq;
+static FAST_DATA_ZERO_INIT float   sdftNoiseThreshold;
 static FAST_DATA_ZERO_INIT float   pt1LooptimeS;
 
 
@@ -259,22 +259,21 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
 
     switch (state.step) {
     
-        case STEP_WINDOW: // 6us @ F722
+        case STEP_WINDOW: // 4.1us (3-6us) @ F722
         {
             sdftWinSq(&sdft[state.axis], sdftData);
             
-            // Calculate mean square over frequency range (= average power of vibrations)
-            sdftMeanSq = 0.0f;
+            // Get total vibrational power in dyn notch range for noise floor estimate in STEP_CALC_FREQUENCIES
+            sdftNoiseThreshold = 0.0f;
             for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {   // don't use startBin or endBin because they are not windowed properly
-                sdftMeanSq += sdftData[bin];                                // sdftData is already squared (see sdftWinSq)
+                sdftNoiseThreshold += sdftData[bin];                        // sdftData contains power spectral density
             }
-            sdftMeanSq /= sdftEndBin - sdftStartBin - 1;
 
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 
             break;
         }
-        case STEP_DETECT_PEAKS: // 6us @ F722
+        case STEP_DETECT_PEAKS: // 5.5us (4-7us) @ F722
         {
             // Get memory ready for new peak data on current axis
             for (int p = 0; p < dynNotch.count; p++) {
@@ -319,12 +318,27 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
 
             break;
         }
-        case STEP_CALC_FREQUENCIES: // 4us @ F722
+        case STEP_CALC_FREQUENCIES: // 4.0us (2-7us) @ F722
         {
+            // Approximate noise floor (= average power spectral density in dyn notch range, excluding peaks)
+            int peakCount = 0;
+            for (int p = 0; p < dynNotch.count; p++) {
+                if (peaks[p].bin != 0) {
+                    sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin - 1];
+                    sdftNoiseThreshold -= sdftData[peaks[p].bin];
+                    sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin + 1];
+                    peakCount++;
+                }
+            }
+            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount - 1;
+
+            // A noise threshold 2 times the noise floor prevents peak tracking being too sensitive to noise
+            sdftNoiseThreshold *= 2.0f;
+
             for (int p = 0; p < dynNotch.count; p++) {
 
                 // Only update dynNotch.centerFreq if there is a peak (ignore void peaks) and if peak is above noise floor
-                if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
+                if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
 
                     float meanBin = peaks[p].bin;
 
@@ -343,7 +357,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
                     const float centerFreq = constrainf(meanBin * sdftResolutionHz, dynNotch.minHz, dynNotch.maxHz);
 
                     // PT1 style smoothing moves notch center freqs rapidly towards big peaks and slowly away, up to 10x faster 
-                    const float cutoffMult = constrainf(peaks[p].value / sdftMeanSq, 1.0f, 10.0f);
+                    const float cutoffMult = constrainf(peaks[p].value / sdftNoiseThreshold, 1.0f, 10.0f);
                     const float gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ * cutoffMult, pt1LooptimeS); // dynamic PT1 k value
 
                     // Finally update notch center frequency p on current axis
@@ -368,11 +382,11 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
 
             break;
         }
-        case STEP_UPDATE_FILTERS: // 7us @ F722
+        case STEP_UPDATE_FILTERS: // 5.4us (2-9us) @ F722
         {
             for (int p = 0; p < dynNotch.count; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
-                if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
+                if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
                     biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
                 }
             }
