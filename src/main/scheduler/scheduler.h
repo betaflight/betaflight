@@ -81,7 +81,7 @@ typedef struct {
     timeUs_t     maxExecutionTimeUs;
     timeUs_t     totalExecutionTimeUs;
     timeUs_t     averageExecutionTimeUs;
-    timeUs_t     averageDeltaTimeUs;
+    timeUs_t     averageDeltaTime10thUs;
     float        movingAverageCycleTimeUs;
 #if defined(USE_LATE_TASK_STATISTICS)
     uint32_t     runCount;
@@ -201,7 +201,7 @@ typedef struct {
     // Statistics
     float    movingAverageCycleTimeUs;
     timeUs_t anticipatedExecutionTime;  // Fixed point expectation of next execution time
-    timeUs_t movingSumDeltaTimeUs;      // moving sum over 32 samples
+    timeUs_t movingSumDeltaTime10thUs;  // moving sum over 64 samples
     timeUs_t maxExecutionTimeUs;
     timeUs_t totalExecutionTimeUs;      // total time consumed by task since boot
     timeUs_t lastStatsAtUs;             // time of last stats gathering for rate calculation

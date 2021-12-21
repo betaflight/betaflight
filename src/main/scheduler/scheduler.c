@@ -211,7 +211,7 @@ void getTaskInfo(taskId_e taskId, taskInfo_t * taskInfo)
     taskInfo->maxExecutionTimeUs = getTask(taskId)->maxExecutionTimeUs;
     taskInfo->totalExecutionTimeUs = getTask(taskId)->totalExecutionTimeUs;
     taskInfo->averageExecutionTimeUs = getTask(taskId)->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT;
-    taskInfo->averageDeltaTimeUs = getTask(taskId)->movingSumDeltaTimeUs / TASK_STATS_MOVING_SUM_COUNT;
+    taskInfo->averageDeltaTime10thUs = getTask(taskId)->movingSumDeltaTime10thUs / TASK_STATS_MOVING_SUM_COUNT;
     taskInfo->latestDeltaTimeUs = getTask(taskId)->taskLatestDeltaTimeUs;
     taskInfo->movingAverageCycleTimeUs = getTask(taskId)->movingAverageCycleTimeUs;
 #if defined(USE_LATE_TASK_STATISTICS)
@@ -291,12 +291,12 @@ void schedulerResetTaskStatistics(taskId_e taskId)
 {
     if (taskId == TASK_SELF) {
         currentTask->anticipatedExecutionTime = 0;
-        currentTask->movingSumDeltaTimeUs = 0;
+        currentTask->movingSumDeltaTime10thUs = 0;
         currentTask->totalExecutionTimeUs = 0;
         currentTask->maxExecutionTimeUs = 0;
     } else if (taskId < TASK_COUNT) {
         getTask(taskId)->anticipatedExecutionTime = 0;
-        getTask(taskId)->movingSumDeltaTimeUs = 0;
+        getTask(taskId)->movingSumDeltaTime10thUs = 0;
         getTask(taskId)->totalExecutionTimeUs = 0;
         getTask(taskId)->maxExecutionTimeUs = 0;
     }
@@ -388,7 +388,7 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
         if (!ignoreCurrentTaskExecRate) {
             // Record task execution rate and max execution time
             selectedTask->taskLatestDeltaTimeUs = cmpTimeUs(currentTimeUs, selectedTask->lastStatsAtUs);
-            selectedTask->movingSumDeltaTimeUs += selectedTask->taskLatestDeltaTimeUs - selectedTask->movingSumDeltaTimeUs / TASK_STATS_MOVING_SUM_COUNT;
+            selectedTask->movingSumDeltaTime10thUs += (selectedTask->taskLatestDeltaTimeUs * 10) - selectedTask->movingSumDeltaTime10thUs / TASK_STATS_MOVING_SUM_COUNT;
             selectedTask->lastStatsAtUs = currentTimeUs;
         }
 
