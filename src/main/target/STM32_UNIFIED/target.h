@@ -21,9 +21,9 @@
 #pragma once
 
 #if defined(STM32F405)
-#define TARGET_BOARD_IDENTIFIER "S405"
+#define TARGET_BOARD_IDENTIFIER "S40X"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32F405"
+#define USBD_PRODUCT_STRING     "Betaflight STM32F40x"
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
