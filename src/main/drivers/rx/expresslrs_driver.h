@@ -18,18 +18,27 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Author: Dominic Clifton / Seriously Pro Racing
+ */
+
 #pragma once
 
-#define MSP_TLM_INBUF_SIZE 128
-#define MSP_TLM_OUTBUF_SIZE 128
+void expressLrsInitialiseTimer(TIM_TypeDef *timer, timerOvrHandlerRec_t *timerUpdateCb);
+void expressLrsTimerEnableIRQs(void);
+void expressLrsUpdateTimerInterval(uint16_t intervalUs);
+void expressLrsUpdatePhaseShift(int32_t newPhaseShift);
+void expressLrsOnTimerTickISR(void);
+void expressLrsOnTimerTockISR(void);
 
-// type of function to send MSP response chunk over telemetry.
-typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
+void expressLrsTimerIncreaseFrequencyOffset(void);
+void expressLrsTimerDecreaseFrequencyOffset(void);
+void expressLrsTimerResetFrequencyOffset(void);
 
-void initSharedMsp(void);
+void expressLrsTimerStop(void);
+void expressLrsTimerResume(void);
 
-// receives telemetry payload with msp and handles it.
-bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);
+bool expressLrsTimerIsRunning(void);
 
-// sends MSP reply from previously handled msp-request over telemetry
-bool sendMspReply(const uint8_t payloadSize_max, mspResponseFnPtr responseFn);
+void expressLrsTimerDebug(void);
+

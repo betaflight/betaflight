@@ -18,18 +18,25 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#define MSP_TLM_INBUF_SIZE 128
-#define MSP_TLM_OUTBUF_SIZE 128
+#include "platform.h"
+#include "drivers/io.h"
 
-// type of function to send MSP response chunk over telemetry.
-typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
-void initSharedMsp(void);
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
-// receives telemetry payload with msp and handles it.
-bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);
+    DEF_TIM( TIM3, CH4, PB1, TIM_USE_LED,              0, 0 ), // LED Strip
+    DEF_TIM( TIM4, CH3, PB8, TIM_USE_MOTOR,            0, 0 ), // M1
+    DEF_TIM( TIM2, CH1, PA0, TIM_USE_MOTOR,            0, 0 ), // M2
+    DEF_TIM( TIM2, CH3, PB10,TIM_USE_MOTOR,            0, 0 ), // M3
+    DEF_TIM( TIM4, CH2, PB7, TIM_USE_MOTOR,            0, 0 ), // M4
+    
+    DEF_TIM( TIM1, CH1, PA8, TIM_USE_MOTOR,            0, 0 ), //S5
+    DEF_TIM( TIM1, CH3, PA10,TIM_USE_MOTOR,            0, 0 ), //S6 
+};
 
-// sends MSP reply from previously handled msp-request over telemetry
-bool sendMspReply(const uint8_t payloadSize_max, mspResponseFnPtr responseFn);
+

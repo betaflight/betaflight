@@ -110,3 +110,12 @@ float pt3FilterApply(pt3Filter_t *filter, float input);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);
+
+typedef struct simpleLowpassFilter_s {
+    int32_t fp;
+    int32_t beta;
+    int32_t fpShift;
+} simpleLowpassFilter_t;
+
+int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal);
+void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift);
