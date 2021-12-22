@@ -72,7 +72,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-const float sqrt2over2 = sqrt(2) / 2.0f;
+const float sqrt2over2 = sqrtf(2) / 2.0f;
 
 TEST(FlightImuTest, TestCalculateRotationMatrix)
 {

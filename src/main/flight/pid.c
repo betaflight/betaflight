@@ -1233,13 +1233,14 @@ bool pidAntiGravityEnabled(void)
 #ifdef USE_DYN_LPF
 void dynLpfDTermUpdate(float throttle)
 {
-    unsigned int cutoffFreq;
     if (pidRuntime.dynLpfFilter != DYN_LPF_NONE) {
+        float cutoffFreq;
         if (pidRuntime.dynLpfCurveExpo > 0) {
             cutoffFreq = dynLpfCutoffFreq(throttle, pidRuntime.dynLpfMin, pidRuntime.dynLpfMax, pidRuntime.dynLpfCurveExpo);
         } else {
-            cutoffFreq = fmax(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
+            cutoffFreq = fmaxf(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
         }
+
         switch (pidRuntime.dynLpfFilter) {
         case DYN_LPF_PT1:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

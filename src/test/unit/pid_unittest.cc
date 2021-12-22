@@ -224,7 +224,7 @@ void setStickPosition(int axis, float stickRatio) {
 
 // All calculations will have 10% tolerance
 float calculateTolerance(float input) {
-    return fabs(input * 0.1f);
+    return fabsf(input * 0.1f);
 }
 
 TEST(pidControllerTest, testInitialisation)
