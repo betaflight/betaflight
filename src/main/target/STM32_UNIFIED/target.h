@@ -51,10 +51,16 @@
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
 
-#elif defined(STM32F411)
+#elif defined(STM32F411) || defined(STM32F411_SPIRX)
+#if defined(STM32F411)
 #define TARGET_BOARD_IDENTIFIER "S411"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F411"
+#else
+#define TARGET_BOARD_IDENTIFIER "SF4S"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411 SPIRX"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -78,10 +84,16 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#elif defined(STM32F7X2)
+#elif defined(STM32F7X2) || defined(STM32F7X2_SPIRX)
+#if defined(STM32F7X2)
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"
+#else
+#define TARGET_BOARD_IDENTIFIER "SF7S"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F7x2 SPIRX"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -140,10 +152,16 @@
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
 
-#elif defined(STM32G47X)
+#elif defined(STM32G47X) || defined(STM32G47X_SPIRX)
+#if defined(STM32G47X)
 #define TARGET_BOARD_IDENTIFIER "SG47"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32G47x"
+#else
+#define TARGET_BOARD_IDENTIFIER "SF7S"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32G47x SPIRX"
+#endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -307,6 +325,18 @@
 
 #define USE_ADC
 
+#if defined(STM32F411_SPIRX) || defined(STM32F7X2_SPIRX) || defined(STM32G47X_SPIRX)
+//#undef USE_SERIAL_RX
+//#undef USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
+#undef USE_SERIALRX_GHST       // ImmersionRC Ghost Protocol
+#undef USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers
+#undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
+#undef USE_SERIALRX_SUMD       // Graupner Hott protocol
+#undef USE_SERIALRX_FPORT      // FrSky FPort
+#endif
+
+#if (TARGET_FLASH_SIZE > 512) || defined(STM32F411_SPIRX) || defined(STM32F7X2_SPIRX) || defined(STM32G47X_SPIRX)
 #define USE_RX_SPI
 
 #define USE_RX_FRSKY_SPI_D
@@ -322,6 +352,14 @@
 
 #define USE_RX_SPEKTRUM
 #define USE_RX_SPEKTRUM_TELEMETRY
+
+#define USE_RX_SPI
+#define USE_RX_EXPRESSLRS
+#define USE_RX_SX1280
+#if (TARGET_FLASH_SIZE > 512) || defined(STM32F7X2_SPIRX) || defined(STM32G47X_SPIRX)
+#define USE_RX_SX127X
+#endif
+#endif
 
 #define USE_CUSTOM_DEFAULTS
 
