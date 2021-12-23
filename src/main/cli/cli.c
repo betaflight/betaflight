@@ -310,6 +310,7 @@ static const char *mcuTypeNames[] = {
     "H7A3",
     "H723/H725",
     "G474",
+    "H730",
 };
 
 static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
