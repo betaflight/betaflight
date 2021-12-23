@@ -51,15 +51,19 @@
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
 
-#elif defined(STM32F411) || defined(STM32F411_CC2500)
-#if defined(STM32F411)
-#define TARGET_BOARD_IDENTIFIER "S411"
+#elif defined(STM32F411) || defined(STM32F411_CC2500) || defined(STM32F411_SX12XX)
+#if defined(STM32F411_SX12XX)
+#define TARGET_BOARD_IDENTIFIER "SF4X"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32F411"
-#else
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411 SX12xx"
+#elif defined(STM32F411_CC2500)
 #define TARGET_BOARD_IDENTIFIER "SF4C"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F411 CC2500"
+#else
+#define TARGET_BOARD_IDENTIFIER "S411"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411"
 #endif
 
 #define USE_I2C_DEVICE_1
@@ -84,15 +88,19 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#elif defined(STM32F7X2) || defined(STM32F7X2_CC2500)
-#if defined(STM32F7X2)
-#define TARGET_BOARD_IDENTIFIER "SFX2"
+#elif defined(STM32F7X2) || defined(STM32F7X2_CC2500) || defined(STM32F7X2_SX12XX)
+#if defined(STM32F7X2_SX12XX)
+#define TARGET_BOARD_IDENTIFIER "SF7X"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"
-#else
+#define USBD_PRODUCT_STRING     "Betaflight STM32F7x2 SX12xx"
+#elif defined(STM32F7X2_CC2500)
 #define TARGET_BOARD_IDENTIFIER "SF7C"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F7x2 CC2500"
+#else
+#define TARGET_BOARD_IDENTIFIER "SFX2"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"
 #endif
 
 #define USE_I2C_DEVICE_1
@@ -152,15 +160,19 @@
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
 
-#elif defined(STM32G47X) || defined(STM32G47X_CC2500)
-#if defined(STM32G47X)
-#define TARGET_BOARD_IDENTIFIER "SG47"
+#elif defined(STM32G47X) || defined(STM32G47X_CC2500) || defined(STM32G47X_SX12XX)
+#if defined(STM32G47X_SX12XX)
+#define TARGET_BOARD_IDENTIFIER "SG4X"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32G47x"
-#else
+#define USBD_PRODUCT_STRING     "Betaflight STM32G47x SX12xx"
+#elif defined(STM32G47X_CC2500)
 #define TARGET_BOARD_IDENTIFIER "SG4C"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32G47x CC2500"
+#else
+#define TARGET_BOARD_IDENTIFIER "SG47"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32G47x"
 #endif
 
 #define USE_I2C_DEVICE_1
@@ -343,6 +355,14 @@
 
 #define USE_RX_SPEKTRUM
 #define USE_RX_SPEKTRUM_TELEMETRY
+#endif
+
+#if (TARGET_FLASH_SIZE > 512) || defined(STM32F411_SX12XX) || defined(STM32F7X2_SX12XX) || defined(STM32G47X_SX12XX)
+#define USE_RX_EXPRESSLRS
+#define USE_RX_SX1280
+#if (TARGET_FLASH_SIZE > 512) || defined(STM32F7X2_SX12XX) || defined(STM32G47X_SX12XX)
+#define USE_RX_SX127X
+#endif
 #endif
 
 #define USE_CUSTOM_DEFAULTS
