@@ -442,10 +442,23 @@ FAST_CODE void scheduler(void)
     uint32_t nextTargetCycles = 0;
     int32_t schedLoopRemainingCycles;
 
+    nowCycles = getCycleCounter();
+    currentTimeUs = clockCyclesToMicros(nowCycles);
+
+#ifdef USE_RX_EXPRESSLRS
+    bool rxTaskRan = false;
+    task_t *rxTask = getTask(TASK_RX);
+    if (rxTask->checkFunc(currentTimeUs, cmpTimeUs(currentTimeUs, rxTask->lastExecutedAtUs))) {
+        taskExecutionTimeUs = schedulerExecuteTask(rxTask, currentTimeUs);
+        rxTaskRan = true;
+    }
+
+    if (gyroEnabled && !rxTaskRan) {
+#else
     if (gyroEnabled) {
+#endif
         // Realtime gyro/filtering/PID tasks get complete priority
         task_t *gyroTask = getTask(TASK_GYRO);
-        nowCycles = getCycleCounter();
 #if defined(UNIT_TEST)
         lastTargetCycles = clockMicrosToCycles(gyroTask->lastExecutedAtUs);
 #endif
@@ -480,7 +493,6 @@ FAST_CODE void scheduler(void)
             }
             DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 0, clockCyclesTo10thMicros(cmpTimeCycles(nowCycles, lastTargetCycles)));
 #endif
-            currentTimeUs = clockCyclesToMicros(nowCycles);
             taskExecutionTimeUs += schedulerExecuteTask(gyroTask, currentTimeUs);
 
             if (gyroFilterReady()) {
