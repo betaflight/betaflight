@@ -158,6 +158,12 @@
 #define SPI6_MOSI_PIN           PB5
 #define SPI6_NSS_PIN            PA15
 
+#define USE_SPI_DEVICE_3
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
+#define SPI3_NSS_PIN            PA15
+
 #define USE_I2C
 // I2C1 for external MAG connection on J8
 #define USE_I2C_DEVICE_1
