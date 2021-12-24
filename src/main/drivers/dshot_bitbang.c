@@ -622,8 +622,14 @@ static void bbUpdateComplete(void)
                 bbPort->inputActive = false;
                 bbSwitchToOutput(bbPort);
             }
-        }
+        } else
 #endif
+        {
+#if defined(STM32G4)
+            // Using circular mode resets the counter one short, so explicitly reload
+            bbSwitchToOutput(bbPort);
+#endif
+        }
 
         bbDMA_Cmd(bbPort, ENABLE);
     }
