@@ -1151,7 +1151,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         osdUpdateAlarms();
 
         if (resumeRefreshAt) {
-            osdState = OSD_STATE_IDLE;
+            osdState = OSD_STATE_TRANSFER;
         } else {
             osdState = OSD_STATE_UPDATE_CANVAS;
         }
