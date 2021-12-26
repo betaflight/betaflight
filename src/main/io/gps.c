@@ -1487,11 +1487,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lon = _buffer.pvt.lon;
         gpsSol.llh.lat = _buffer.pvt.lat;
         gpsSol.llh.altCm = _buffer.pvt.hMSL / 10;  //alt in cm
-        if (next_fix) {
-            ENABLE_STATE(GPS_FIX);
-        } else {
-            DISABLE_STATE(GPS_FIX);
-        }
+        gpsSetFixState(next_fix);
         _new_position = true;
         gpsSol.numSat = _buffer.pvt.numSV;
         gpsSol.hdop = _buffer.pvt.pDOP;
