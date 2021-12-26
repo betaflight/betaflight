@@ -225,26 +225,20 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 static bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
 #if defined(STM32H7)
-    int txLen = len;
-    int rxLen = len;
-
-    LL_SPI_SetTransferSize(instance, txLen);
+    LL_SPI_SetTransferSize(instance, len);
     LL_SPI_Enable(instance);
     LL_SPI_StartMasterTransfer(instance);
-    while (txLen || rxLen) {
-        if (txLen && LL_SPI_IsActiveFlag_TXP(instance)) {
-            uint8_t b = txData ? *(txData++) : 0xFF;
-            LL_SPI_TransmitData8(instance, b);
-            txLen--;
-        }
+    while (len) {
+        while (!LL_SPI_IsActiveFlag_TXP(instance));
+        uint8_t b = txData ? *(txData++) : 0xFF;
+        LL_SPI_TransmitData8(instance, b);
 
-        if (rxLen && LL_SPI_IsActiveFlag_RXP(instance)) {
-            uint8_t b = LL_SPI_ReceiveData8(instance);
-            if (rxData) {
-                *(rxData++) = b;
-            }
-            rxLen--;
+        while (!LL_SPI_IsActiveFlag_RXP(instance));
+        b = LL_SPI_ReceiveData8(instance);
+        if (rxData) {
+            *(rxData++) = b;
         }
+        --len;
     }
     while (!LL_SPI_IsActiveFlag_EOT(instance));
     LL_SPI_ClearFlag_TXTF(instance);
