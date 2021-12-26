@@ -64,7 +64,7 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 }
 
-static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
+static uartDevice_t *uartFindDevice(const uartPort_t *uartPort)
 {
     for (uint32_t i = 0; i < UARTDEV_COUNT_MAX; i++) {
         uartDevice_t *candidate = uartDevmap[i];
@@ -77,7 +77,7 @@ static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
 }
 
 #if !(defined(STM32F1) || defined(STM32F4))
-static void uartConfigurePinSwap(uartPort_t *uartPort)
+static void uartConfigurePinSwap(const uartPort_t *uartPort)
 {
     uartDevice_t *uartDevice = uartFindDevice(uartPort);
     if (!uartDevice) {

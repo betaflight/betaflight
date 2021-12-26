@@ -344,7 +344,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
+static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.

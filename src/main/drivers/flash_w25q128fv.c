@@ -350,7 +350,7 @@ static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address,
     w25q128fvState.currentWriteAddress = address;
 }
 
-static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
     for (uint32_t i = 0; i < bufferCount; i++) {
         w25q128fv_waitForReady(fdevice);

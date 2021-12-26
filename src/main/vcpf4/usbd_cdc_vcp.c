@@ -62,7 +62,7 @@ static uint16_t VCP_Init(void);
 static uint16_t VCP_DeInit(void);
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len);
-static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len);
+static uint16_t VCP_DataRx(const uint8_t* Buf, uint32_t Len);
 static void (*ctrlLineStateCb)(void* context, uint16_t ctrlLineState);
 static void *ctrlLineStateCbContext;
 static void (*baudRateCb)(void *context, uint32_t baud);
@@ -265,7 +265,7 @@ uint32_t CDC_Receive_BytesAvailable(void)
  * @param  Len: Number of data received (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
-static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
+static uint16_t VCP_DataRx(const uint8_t* Buf, uint32_t Len)
 {
     if (CDC_Receive_BytesAvailable() + Len > APP_TX_DATA_SIZE) {
         return USBD_FAIL;

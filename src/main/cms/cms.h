@@ -48,7 +48,7 @@ extern displayPort_t *pCurrentDisplay;
 void cmsInit(void);
 void cmsHandler(timeUs_t currentTimeUs);
 
-bool cmsDisplayPortSelect(displayPort_t *instance);
+bool cmsDisplayPortSelect(const displayPort_t *instance);
 void cmsMenuOpen(void);
 const void *cmsMenuChange(displayPort_t *pPort, const void *ptr);
 const void *cmsMenuExit(displayPort_t *pPort, const void *ptr);

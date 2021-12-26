@@ -84,7 +84,7 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 #endif
 }
 
-void enableInverter(USART_TypeDef *USARTx, bool on)
+void enableInverter(const USART_TypeDef *USARTx, bool on)
 {
     int identifier = SERIAL_PORT_NONE;
 

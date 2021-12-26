@@ -49,7 +49,7 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 #endif
 };
 
-uint32_t timerClock(TIM_TypeDef *tim)
+uint32_t timerClock(const TIM_TypeDef *tim)
 {
     UNUSED(tim);
     return SystemCoreClock;

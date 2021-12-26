@@ -93,10 +93,10 @@ uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 static uint16_t jetiExBusChannelData[JETIEXBUS_CHANNEL_COUNT];
 
 // Jeti Ex Bus CRC calculations for a frame
-uint16_t jetiExBusCalcCRC16(uint8_t *pt, uint8_t msgLen)
+uint16_t jetiExBusCalcCRC16(const uint8_t *pt, uint8_t msgLen)
 {
     uint16_t crc16_data = 0;
-    uint8_t data=0;
+    uint8_t data;
 
     for (uint8_t mlen = 0; mlen < msgLen; mlen++) {
         data = pt[mlen] ^ ((uint8_t)(crc16_data) & (uint8_t)(0xFF));

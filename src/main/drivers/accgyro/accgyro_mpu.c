@@ -387,14 +387,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
     IOConfigGPIO(gyro->dev.busType_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(gyro->dev.busType_u.spi.csnPin); // Ensure device is disabled, important when two devices are on the same bus.
 
-    uint8_t sensor = MPU_NONE;
-
     // It is hard to use hardware to optimize the detection loop here,
     // as hardware type and detection function name doesn't match.
     // May need a bitmap of hardware to detection function to do it right?
 
     for (size_t index = 0 ; gyroSpiDetectFnTable[index] ; index++) {
-        sensor = (gyroSpiDetectFnTable[index])(&gyro->dev);
+        uint8_t sensor = (gyroSpiDetectFnTable[index])(&gyro->dev);
         if (sensor != MPU_NONE) {
             gyro->mpuDetectionResult.sensor = sensor;
             busDeviceRegister(&gyro->dev);

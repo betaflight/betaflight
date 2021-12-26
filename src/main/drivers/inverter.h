@@ -24,4 +24,4 @@
 
 void initInverters(const serialPinConfig_t *serialPinConfigToUse);
 
-void enableInverter(USART_TypeDef *USARTx, bool on);
+void enableInverter(const USART_TypeDef *USARTx, bool on);

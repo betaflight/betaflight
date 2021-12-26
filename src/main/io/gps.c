@@ -426,48 +426,52 @@ static void ubloxSendByteUpdateChecksum(const uint8_t data, uint8_t *checksumA, 
     serialWrite(gpsPort, data);
 }
 
-static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_t *checksumA, uint8_t *checksumB)
+static void ubloxSendDataUpdateChecksum(const ubx_message *msg, uint8_t *checksumA, uint8_t *checksumB)
 {
+    // CRC includes msg_class, msg_id, length and payload
+    // length is payload length only
+    const uint8_t *data = (const uint8_t *)&msg->header.msg_class;
+    uint16_t len = msg->header.length + sizeof(msg->header.msg_class) + sizeof(msg->header.msg_id) + sizeof(msg->header.length);
     while (len--) {
         ubloxSendByteUpdateChecksum(*data, checksumA, checksumB);
         data++;
     }
 }
 
-static void ubloxSendMessage(const uint8_t *data, uint8_t len)
+static void ubloxSendMessage(const ubx_message *msg)
 {
     uint8_t checksumA = 0, checksumB = 0;
-    serialWrite(gpsPort, data[0]);
-    serialWrite(gpsPort, data[1]);
-    ubloxSendDataUpdateChecksum(&data[2], len - 2, &checksumA, &checksumB);
+    serialWrite(gpsPort, msg->header.preamble1);
+    serialWrite(gpsPort, msg->header.preamble2);
+    ubloxSendDataUpdateChecksum(msg, &checksumA, &checksumB);
     serialWrite(gpsPort, checksumA);
     serialWrite(gpsPort, checksumB);
 
     // Save state for ACK waiting
-    gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
+    gpsData.ackWaitingMsgId = msg->header.msg_id; //save message id for ACK
     gpsData.ackTimeoutCounter = 0;
     gpsData.ackState = UBLOX_ACK_WAITING;
 }
 
-static void ubloxSendConfigMessage(ubx_message *message, uint8_t msg_id, uint8_t length)
+static void ubloxSendConfigMessage(ubx_message *msg, uint8_t msg_id, uint8_t length)
 {
-    message->header.preamble1 = PREAMBLE1;
-    message->header.preamble2 = PREAMBLE2;
-    message->header.msg_class = CLASS_CFG;
-    message->header.msg_id = msg_id;
-    message->header.length = length;
-    ubloxSendMessage((const uint8_t *) message, length + 6);
+    msg->header.preamble1 = PREAMBLE1;
+    msg->header.preamble2 = PREAMBLE2;
+    msg->header.msg_class = CLASS_CFG;
+    msg->header.msg_id = msg_id;
+    msg->header.length = length;
+    ubloxSendMessage(msg);
 }
 
 static void ubloxSendPollMessage(uint8_t msg_id)
 {
-    ubx_message tx_buffer;
-    tx_buffer.header.preamble1 = PREAMBLE1;
-    tx_buffer.header.preamble2 = PREAMBLE2;
-    tx_buffer.header.msg_class = CLASS_CFG;
-    tx_buffer.header.msg_id = msg_id;
-    tx_buffer.header.length = 0;
-    ubloxSendMessage((const uint8_t *) &tx_buffer, 6);
+    ubx_message msg;
+    msg.header.preamble1 = PREAMBLE1;
+    msg.header.preamble2 = PREAMBLE2;
+    msg.header.msg_class = CLASS_CFG;
+    msg.header.msg_id = msg_id;
+    msg.header.length = 0;
+    ubloxSendMessage(&msg);
 }
 
 static void ubloxSendNAV5Message(bool airborne) {
@@ -1427,15 +1431,6 @@ static union {
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
-void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
-{
-    while (len--) {
-        *ck_a += *data;
-        *ck_b += *ck_a;
-        data++;
-    }
-}
-
 static bool UBLOX_parse_gps(void)
 {
     uint32_t i;
@@ -1804,7 +1799,7 @@ void GPS_reset_home_position(void)
 #define TAN_89_99_DEGREES 5729.57795f
 // Get distance between two points in cm
 // Get bearing from pos1 to pos2, returns an 1deg = 100 precision
-void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
+void GPS_distance_cm_bearing(const int32_t *currentLat1, const int32_t *currentLon1, const int32_t *destinationLat2, const int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
 {
     float dLat = *destinationLat2 - *currentLat1; // difference of latitude in 1/10 000 000 degrees
     float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;

@@ -335,7 +335,7 @@ static bool handleFHSS(void)
 {
     uint8_t modresultFHSS = (receiver.nonceRX + 1) % receiver.modParams->fhssHopInterval;
 
-    if ((receiver.modParams->fhssHopInterval == 0) || receiver.alreadyFHSS == true || receiver.inBindingMode || (modresultFHSS != 0) || (receiver.connectionState == ELRS_DISCONNECTED)) {
+    if (receiver.alreadyFHSS == true || receiver.inBindingMode || (modresultFHSS != 0) || (receiver.connectionState == ELRS_DISCONNECTED)) {
         return false;
     }
 
@@ -567,7 +567,7 @@ static void initializeReceiver(void)
     receiver.rfModeCycleMultiplier = 1;
 }
 
-static void unpackBindPacket(uint8_t *packet)
+static void unpackBindPacket(const uint8_t *packet)
 {
     rxExpressLrsSpiConfigMutable()->UID[2] = packet[3];
     rxExpressLrsSpiConfigMutable()->UID[3] = packet[4];

@@ -140,7 +140,7 @@ static int trampReceivePos = 0;
 static timeUs_t trampLastTimeUs = 0;
 
 // Calculate tramp protocol checksum of provided buffer
-static uint8_t trampChecksum(uint8_t *trampBuf)
+static uint8_t trampChecksum(const uint8_t *trampBuf)
 {
     uint8_t cksum = 0;
 

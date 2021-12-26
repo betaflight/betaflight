@@ -41,7 +41,7 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM17, .rcc = RCC_APB2(TIM17), .inputIrq = TIM1_TRG_COM_TIM17_IRQn },
 };
 
-uint32_t timerClock(TIM_TypeDef *tim)
+uint32_t timerClock(const TIM_TypeDef *tim)
 {
     UNUSED(tim);
     return SystemCoreClock;

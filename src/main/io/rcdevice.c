@@ -86,7 +86,7 @@ static uint8_t runcamDeviceGetRespLen(uint8_t command)
     return 0;
 }
 
-static bool rcdeviceRespCtxQueuePush(rcdeviceWaitingResponseQueue *queue, rcdeviceResponseParseContext_t *respCtx)
+static bool rcdeviceRespCtxQueuePush(rcdeviceWaitingResponseQueue *queue, const rcdeviceResponseParseContext_t *respCtx)
 {
     if (queue == NULL || (queue->itemCount + 1) > MAX_WAITING_RESPONSES) {
         return false;
