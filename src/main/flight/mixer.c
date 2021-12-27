@@ -62,8 +62,7 @@
 
 #include "mixer.h"
 
-#define DYN_LPF_THROTTLE_STEPS           100
-#define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
+#define DYN_LPF_UPDATE_CYCLES            40
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -404,22 +403,28 @@ static void applyMotorStop(void)
 }
 
 #ifdef USE_DYN_LPF
-static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
+static void updateDynLpfCutoffs(float throttle)
 {
-    static timeUs_t lastDynLpfUpdateUs = 0;
-    static int dynLpfPreviousQuantizedThrottle = -1;  // to allow an initial zero throttle to set the filter cutoff
+    static uint8_t counter = 0;
+    static bool updateGyro = true;
+    const uint8_t updateCycle = DYN_LPF_UPDATE_CYCLES / pidConfigMutable()->pid_process_denom / 2;
 
-    if (cmpTimeUs(currentTimeUs, lastDynLpfUpdateUs) >= DYN_LPF_THROTTLE_UPDATE_DELAY_US) {
-        const int quantizedThrottle = lrintf(throttle * DYN_LPF_THROTTLE_STEPS); // quantize the throttle reduce the number of filter updates
-        if (quantizedThrottle != dynLpfPreviousQuantizedThrottle) {
-            // scale the quantized value back to the throttle range so the filter cutoff steps are repeatable
-            const float dynLpfThrottle = (float)quantizedThrottle / DYN_LPF_THROTTLE_STEPS;
-            dynLpfGyroUpdate(dynLpfThrottle);
-            dynLpfDTermUpdate(dynLpfThrottle);
-            dynLpfPreviousQuantizedThrottle = quantizedThrottle;
-            lastDynLpfUpdateUs = currentTimeUs;
+    counter += 1; 
+    if (counter == updateCycle) {
+        if (updateGyro) {
+            dynLpfGyroUpdate(throttle);
+            DEBUG_SET(DEBUG_TEST, 1, 1);
+            DEBUG_SET(DEBUG_TEST, 2, 0);
+        } else {
+            dynLpfDTermUpdate(throttle);
+            /DEBUG_SET(DEBUG_TEST, 2, 1);
+            /DEBUG_SET(DEBUG_TEST, 1, 0);
         }
+        counter = 0;
+        updateGyro = !updateGyro;
     }
+    DEBUG_SET(DEBUG_TEST, 0, counter);
+    DEBUG_SET(DEBUG_TEST, 3, updateCycle);
 }
 #endif
 
@@ -520,7 +525,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_DYN_LPF
     // keep the changes to dynamic lowpass clean, without unnecessary dynamic changes
-    updateDynLpfCutoffs(currentTimeUs, throttle);
+    updateDynLpfCutoffs(throttle);
 #endif
 
     // apply throttle boost when throttle moves quickly
