@@ -360,9 +360,7 @@
 #if (TARGET_FLASH_SIZE > 512) || defined(STM32F411_SX12XX) || defined(STM32F7X2_SX12XX) || defined(STM32G47X_SX12XX)
 #define USE_RX_EXPRESSLRS
 #define USE_RX_SX1280
-#if (TARGET_FLASH_SIZE > 512) || defined(STM32F7X2_SX12XX) || defined(STM32G47X_SX12XX)
 #define USE_RX_SX127X
-#endif
 #endif
 
 #define USE_CUSTOM_DEFAULTS
