@@ -95,7 +95,7 @@ extern "C" {
     extern task_t *queueFirst(void);
     extern task_t *queueNext(void);
 
-    task_t tasks[TASK_COUNT] = {
+    task_id_t task_ids[TASK_COUNT] = {
         [TASK_SYSTEM] = {
             .taskName = "SYSTEM",
             .taskFunc = taskSystemLoad,
@@ -159,19 +159,29 @@ extern "C" {
         }
     };
 
+    task_t tasks[TASK_COUNT];
+
     task_t *getTask(unsigned taskId)
     {
         return &tasks[taskId];
     }
 }
 
+TEST(SchedulerUnittest, SetupTasks)
+{
+	for (int i = 0; i < TASK_COUNT; ++i) {
+		tasks[i].id = &task_ids[i];
+	}
+}
+
+
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].id->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].id->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].id->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].id->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].id->staticPriority);
 }
 
 TEST(SchedulerUnittest, TestQueueInit)
@@ -242,7 +252,6 @@ TEST(SchedulerUnittest, TestQueueAddAndRemove)
         EXPECT_EQ(taskId + 1, taskQueueSize);
         EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
     }
-
     // double check end of queue
     EXPECT_EQ(TASK_COUNT, taskQueueSize);
     EXPECT_NE(static_cast<task_t*>(0), taskQueueArray[TASK_COUNT - 1]); // last item was indeed added to queue
@@ -274,7 +283,7 @@ TEST(SchedulerUnittest, TestQueueArray)
     EXPECT_EQ(enqueuedTasks, taskQueueSize);
 
     for (int taskId = 0; taskId < TASK_COUNT_UNITTEST - 1; ++taskId) {
-        if (tasks[taskId].taskFunc) {
+        if (tasks[taskId].id->taskFunc) {
             setTaskEnabled(static_cast<taskId_e>(taskId), true);
             enqueuedTasks++;
             EXPECT_EQ(enqueuedTasks, taskQueueSize);
