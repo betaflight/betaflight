@@ -108,7 +108,7 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >MOVABLE_FLASH
+  } >FLASH1
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);

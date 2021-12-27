@@ -158,7 +158,7 @@
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32G47x"
 #else
-#define TARGET_BOARD_IDENTIFIER "SF7S"
+#define TARGET_BOARD_IDENTIFIER "SG4S"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32G47x SPIRX"
 #endif
@@ -356,9 +356,7 @@
 #define USE_RX_SPI
 #define USE_RX_EXPRESSLRS
 #define USE_RX_SX1280
-#if (TARGET_FLASH_SIZE > 512) || defined(STM32F7X2_SPIRX) || defined(STM32G47X_SPIRX)
 #define USE_RX_SX127X
-#endif
 #endif
 
 #define USE_CUSTOM_DEFAULTS
