@@ -53,6 +53,7 @@ typedef struct mixerRuntime_s {
     float vbatFull;
     float vbatRangeToCompensate;
 #endif
+    uint16_t lpfUpdateRate;
 } mixerRuntime_t;
 
 extern mixerRuntime_t mixerRuntime;

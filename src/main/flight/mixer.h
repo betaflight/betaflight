@@ -90,6 +90,7 @@ typedef struct mixerConfig_s {
     uint8_t crashflip_motor_percent;
     uint8_t crashflip_expo;
     uint8_t mixer_type;
+    uint8_t dyn_lpf_update_rate;
 } mixerConfig_t;
 
 PG_DECLARE(mixerConfig_t, mixerConfig);

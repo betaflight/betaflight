@@ -52,6 +52,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .crashflip_motor_percent = 0,
     .crashflip_expo = 35,
     .mixer_type = MIXER_LEGACY,
+    .dyn_lpf_update_rate = 40,
 );
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
@@ -325,6 +326,9 @@ void mixerInitProfile(void)
             mixerRuntime.vbatSagCompensationFactor = ((float)currentPidProfile->vbat_sag_compensation) / 100.0f;
         }
     }
+#endif
+#ifdef USE_DYN_LPF
+    mixerRuntime.lpfUpdateRate = mixerConfig()->dyn_lpf_update_rate * 100 / 2;
 #endif
 }
 
