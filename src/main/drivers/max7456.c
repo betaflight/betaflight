@@ -205,7 +205,7 @@ static uint8_t shadowBuffer[VIDEO_BUFFER_CHARS_PAL];
 //Max bytes to update in one call to max7456DrawScreen()
 
 #define MAX_BYTES2SEND          250
-#define MAX_BYTES2SEND_POLLED   25
+#define MAX_BYTES2SEND_POLLED   20
 
 static DMA_DATA uint8_t spiBuf[MAX_BYTES2SEND];
 
