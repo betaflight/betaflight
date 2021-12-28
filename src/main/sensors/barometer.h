@@ -55,7 +55,7 @@ PG_DECLARE(barometerConfig_t, barometerConfig);
 
 typedef struct baro_s {
     baroDev_t dev;
-    int32_t BaroAlt;                     //altitude in centimeters (0.01m)
+    int32_t BaroAlt;                     // Altitude in centimeters (0.01m)
     int32_t baroTemperature;             // Use temperature for telemetry
     int32_t baroPressure;                // Use pressure for telemetry
 } baro_t;
@@ -67,7 +67,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse);
 bool baroIsCalibrationComplete(void);
 void baroStartCalibration(void);
 void baroSetGroundLevel(void);
-uint32_t baroUpdate(void);
+uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
 int32_t baroCalculateAltitude(void);
 void performBaroCalibrationCycle(void);

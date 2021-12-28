@@ -54,7 +54,7 @@ static int clearScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int drawScreen(displayPort_t *displayPort)
+static bool drawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     frskyOsdUpdate();

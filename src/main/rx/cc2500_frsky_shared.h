@@ -33,9 +33,10 @@
 
 #define MAX_MISSING_PKT 100
 
-#define FRSKY_RX_D16FCC_LENGTH 0x1d + 3
-#define FRSKY_RX_D16LBT_LENGTH 0x20 + 3
-#define FRSKY_RX_D16v2_LENGTH  0x1d + 3
+#define FRSKY_RX_D8_LENGTH     (0x11 + 3)
+#define FRSKY_RX_D16FCC_LENGTH (0x1d + 3)
+#define FRSKY_RX_D16LBT_LENGTH (0x20 + 3)
+#define FRSKY_RX_D16v2_LENGTH  (0x1d + 3)
 
 enum {
     STATE_INIT = 0,

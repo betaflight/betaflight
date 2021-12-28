@@ -130,7 +130,7 @@ static uint8_t m25p16_readStatus(flashDevice_t *fdevice)
     STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
 
-    spiReadWriteBuf(fdevice->io.handle.dev, readStatus, readyStatus, sizeof (readStatus));
+    spiReadWriteBuf(fdevice->io.handle.dev, readStatus, readyStatus, sizeof(readStatus));
 
     return readyStatus[1];
 }
@@ -204,7 +204,7 @@ bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
         // This routine blocks so no need to use static data
         uint8_t modeSet[] = { W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE };
 
-        spiReadWriteBuf(fdevice->io.handle.dev, modeSet, NULL, sizeof (modeSet));
+        spiReadWriteBuf(fdevice->io.handle.dev, modeSet, NULL, sizeof(modeSet));
     }
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
@@ -281,8 +281,8 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
     STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { M25P16_INSTRUCTION_WRITE_ENABLE };
 
     busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof (readStatus), true, m25p16_callbackReady},
-            {writeEnable, NULL, sizeof (writeEnable), true, m25p16_callbackWriteEnable},
+            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
+            {writeEnable, NULL, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {sectorErase, NULL, fdevice->isLargeFlash ? 5 : 4, true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
@@ -306,9 +306,9 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
     STATIC_DMA_DATA_AUTO uint8_t bulkErase[] = { M25P16_INSTRUCTION_BULK_ERASE };
 
     busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof (readStatus), true, m25p16_callbackReady},
-            {writeEnable, NULL, sizeof (writeEnable), true, m25p16_callbackWriteEnable},
-            {bulkErase, NULL, sizeof (bulkErase), true, NULL},
+            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
+            {writeEnable, NULL, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
+            {bulkErase, NULL, sizeof(bulkErase), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
 
@@ -337,8 +337,8 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     STATIC_DMA_DATA_AUTO uint8_t pageProgram[5] = { M25P16_INSTRUCTION_PAGE_PROGRAM };
 
     static busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof (readStatus), true, m25p16_callbackReady},
-            {writeEnable, NULL, sizeof (writeEnable), true, m25p16_callbackWriteEnable},
+            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
+            {writeEnable, NULL, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {pageProgram, NULL, 0, false, NULL},
             {NULL, NULL, 0, true, NULL},
             {NULL, NULL, 0, true, NULL},
@@ -430,7 +430,7 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
     spiWaitClaim(fdevice->io.handle.dev);
 
     busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof (readStatus), true, m25p16_callbackReady},
+            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
             {readBytes, NULL, fdevice->isLargeFlash ? 5 : 4, false, NULL},
             {NULL, buffer, length, true, NULL},
             {NULL, NULL, 0, true, NULL},

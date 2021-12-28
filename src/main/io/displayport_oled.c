@@ -48,7 +48,7 @@ static int oledClearScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int oledDrawScreen(displayPort_t *displayPort)
+static bool oledDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;

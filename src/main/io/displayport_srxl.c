@@ -38,7 +38,7 @@
 
 displayPort_t srxlDisplayPort;
 
-static int srxlDrawScreen(displayPort_t *displayPort)
+static bool srxlDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;

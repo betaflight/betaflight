@@ -129,13 +129,13 @@ static const void *cmsCalibrateBaro(displayPort_t *pDisp, const void *self)
 
 #if defined(USE_ACC)
 static const OSD_Entry menuCalibrateAccEntries[] = {
-    { "--- CALIBRATE ACC ---", OME_Label, NULL, NULL, 0 },
-    { "PLACE ON A LEVEL SURFACE", OME_Label, NULL, NULL, 0},
-    { "MAKE SURE CRAFT IS STILL", OME_Label, NULL, NULL, 0},
-    { " ", OME_Label, NULL, NULL, 0},
-    { "START CALIBRATION",  OME_Funcall, cmsCalibrateAcc, NULL, 0 },
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "--- CALIBRATE ACC ---", OME_Label, NULL, NULL },
+    { "PLACE ON A LEVEL SURFACE", OME_Label, NULL, NULL},
+    { "MAKE SURE CRAFT IS STILL", OME_Label, NULL, NULL},
+    { " ", OME_Label, NULL, NULL},
+    { "START CALIBRATION",  OME_Funcall, cmsCalibrateAcc, NULL },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuCalibrateAcc = {
@@ -163,16 +163,16 @@ const void *cmsCalibrateAccMenu(displayPort_t *pDisp, const void *self)
 #endif
 
 static const OSD_Entry menuCalibrationEntries[] = {
-    { "--- CALIBRATE ---", OME_Label, NULL, NULL, 0 },
-    { "GYRO", OME_Funcall, cmsCalibrateGyro, gyroCalibrationStatus, DYNAMIC },
+    { "--- CALIBRATE ---", OME_Label, NULL, NULL },
+    { "GYRO", OME_Funcall | DYNAMIC, cmsCalibrateGyro, gyroCalibrationStatus },
 #if defined(USE_ACC)
-    { "ACC",  OME_Funcall, cmsCalibrateAccMenu, accCalibrationStatus, DYNAMIC },
+    { "ACC",  OME_Funcall | DYNAMIC, cmsCalibrateAccMenu, accCalibrationStatus },
 #endif
 #if defined(USE_BARO)
-    { "BARO", OME_Funcall, cmsCalibrateBaro, baroCalibrationStatus, DYNAMIC },
+    { "BARO", OME_Funcall | DYNAMIC, cmsCalibrateBaro, baroCalibrationStatus },
 #endif
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 static CMS_Menu cmsx_menuCalibration = {
@@ -204,19 +204,19 @@ static const void *cmsx_FirmwareInit(displayPort_t *pDisp)
 #endif
 
 static const OSD_Entry menuFirmwareEntries[] = {
-    { "--- INFO ---", OME_Label, NULL, NULL, 0 },
-    { "FWID", OME_String, NULL, FC_FIRMWARE_IDENTIFIER, 0 },
-    { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
-    { "GITREV", OME_String, NULL, __REVISION__, 0 },
-    { "TARGET", OME_String, NULL, __TARGET__, 0 },
+    { "--- INFO ---", OME_Label, NULL, NULL },
+    { "FWID", OME_String, NULL, FC_FIRMWARE_IDENTIFIER },
+    { "FWVER", OME_String, NULL, FC_VERSION_STRING },
+    { "GITREV", OME_String, NULL, __REVISION__ },
+    { "TARGET", OME_String, NULL, __TARGET__ },
 #if defined(USE_BOARD_INFO)
-    { "MFR", OME_String, NULL, manufacturerId, 0 },
-    { "BOARD", OME_String, NULL, boardName, 0 },
+    { "MFR", OME_String, NULL, manufacturerId },
+    { "BOARD", OME_String, NULL, boardName },
 #endif
-    { "--- SETUP ---", OME_Label, NULL, NULL, 0 },
-    { "CALIBRATE",     OME_Submenu, cmsMenuChange, &cmsx_menuCalibration, 0},
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "--- SETUP ---", OME_Label, NULL, NULL },
+    { "CALIBRATE",     OME_Submenu, cmsMenuChange, &cmsx_menuCalibration},
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuFirmware = {

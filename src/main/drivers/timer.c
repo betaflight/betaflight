@@ -56,9 +56,15 @@
 #define TIM_IT_CCx(ch) (TIM_IT_CC1 << ((ch) / 4))
 
 typedef struct timerConfig_s {
+    // per-timer
+    timerOvrHandlerRec_t *updateCallback;
+
+    // per-channel
     timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
-    timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linkded list of active overflow callbacks
+
+    // state
+    timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linked list of active overflow callbacks
     uint32_t forcedOverflowTimerValue;
 } timerConfig_t;
 timerConfig_t timerConfig[USED_TIMER_COUNT];
@@ -410,9 +416,15 @@ void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *
 
 // update overflow callback list
 // some synchronization mechanism is neccesary to avoid disturbing other channels (BASEPRI used now)
-static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef *tim) {
+static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, const TIM_TypeDef *tim) {
     timerOvrHandlerRec_t **chain = &cfg->overflowCallbackActive;
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+
+        if (cfg->updateCallback) {
+            *chain = cfg->updateCallback;
+            chain = &cfg->updateCallback->next;
+        }
+
         for (int i = 0; i < CC_CHANNELS_PER_TIMER; i++)
             if (cfg->overflowCallback[i]) {
                 *chain = cfg->overflowCallback[i];
@@ -421,10 +433,10 @@ static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef *tim) {
         *chain = NULL;
     }
     // enable or disable IRQ
-    TIM_ITConfig(tim, TIM_IT_Update, cfg->overflowCallbackActive ? ENABLE : DISABLE);
+    TIM_ITConfig((TIM_TypeDef *)tim, TIM_IT_Update, cfg->overflowCallbackActive ? ENABLE : DISABLE);
 }
 
-// config edge and overflow callback for channel. Try to avoid overflowCallback, it is a bit expensive
+// config edge and overflow callback for channel. Try to avoid per-channel overflowCallback, it is a bit expensive
 void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *edgeCallback, timerOvrHandlerRec_t *overflowCallback)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
@@ -442,6 +454,16 @@ void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *e
         TIM_ITConfig(timHw->tim, TIM_IT_CCx(timHw->channel), ENABLE);
 
     timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
+}
+
+void timerConfigUpdateCallback(const TIM_TypeDef *tim, timerOvrHandlerRec_t *updateCallback)
+{
+    uint8_t timerIndex = lookupTimerIndex(tim);
+    if (timerIndex >= USED_TIMER_COUNT) {
+        return;
+    }
+    timerConfig[timerIndex].updateCallback = updateCallback;
+    timerChConfig_UpdateOverflow(&timerConfig[timerIndex], tim);
 }
 
 // configure callbacks for pair of channels (1+2 or 3+4).
@@ -694,6 +716,39 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 #endif
 }
 
+static inline void timUpdateHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
+{
+    uint16_t capture;
+    unsigned tim_status;
+    tim_status = tim->SR & tim->DIER;
+    while (tim_status) {
+        // flags will be cleared by reading CCR in dual capture, make sure we call handler correctly
+        // currrent order is highest bit first. Code should not rely on specific order (it will introduce race conditions anyway)
+        unsigned bit = __builtin_clz(tim_status);
+        unsigned mask = ~(0x80000000 >> bit);
+        tim->SR = mask;
+        tim_status &= mask;
+        switch (bit) {
+            case __builtin_clz(TIM_IT_Update): {
+
+                if (timerConfig->forcedOverflowTimerValue != 0) {
+                    capture = timerConfig->forcedOverflowTimerValue - 1;
+                    timerConfig->forcedOverflowTimerValue = 0;
+                } else {
+                    capture = tim->ARR;
+                }
+
+                timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
+                while (cb) {
+                    cb->fn(cb, capture);
+                    cb = cb->next;
+                }
+                break;
+            }
+        }
+    }
+}
+
 // handler for shared interrupts when both timers need to check status bits
 #define _TIM_IRQ_HANDLER2(name, i, j)                                   \
     void name(void)                                                     \
@@ -706,6 +761,12 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
     void name(void)                                                     \
     {                                                                   \
         timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
+    } struct dummy
+
+#define _TIM_IRQ_HANDLER_UPDATE_ONLY(name, i)                           \
+    void name(void)                                                     \
+    {                                                                   \
+        timUpdateHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);       \
     } struct dummy
 
 #if USED_TIMERS & TIM_N(1)
@@ -740,6 +801,23 @@ _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #if USED_TIMERS & TIM_N(5)
 _TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
 #endif
+
+#if USED_TIMERS & TIM_N(6)
+#  if !(defined(USE_PID_AUDIO) && (defined(STM32H7) || defined(STM32F7)))
+_TIM_IRQ_HANDLER_UPDATE_ONLY(TIM6_IRQHandler, 6);
+#  endif
+#endif
+#if USED_TIMERS & TIM_N(7)
+// The USB VCP_HAL driver conflicts with TIM7, see TIMx_IRQHandler in usbd_cdc_interface.h
+#  if !(defined(USE_VCP) && (defined(STM32F4) || defined(STM32G4) || defined(STM32H7)))
+#    if defined(STM32G4)
+_TIM_IRQ_HANDLER_UPDATE_ONLY(TIM7_DAC_IRQHandler, 7);
+#    else
+_TIM_IRQ_HANDLER_UPDATE_ONLY(TIM7_IRQHandler, 7);
+#    endif
+#  endif
+#endif
+
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
 # if defined(STM32F10X_XL)
@@ -781,7 +859,7 @@ _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
 
 void timerInit(void)
 {
-    memset(timerConfig, 0, sizeof (timerConfig));
+    memset(timerConfig, 0, sizeof(timerConfig));
 
 #if defined(PARTIAL_REMAP_TIM3)
     GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);

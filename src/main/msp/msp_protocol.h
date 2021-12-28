@@ -285,8 +285,12 @@
 #define MSP_VTXTABLE_POWERLEVEL  138    //out message         vtxTable powerLevel data
 #define MSP_MOTOR_TELEMETRY      139    //out message         Per-motor telemetry data (RPM, packet stats, ESC temp, etc.)
 
-#define MSP_SIMPLIFIED_TUNING       140    //out message         Simplified tuning values and enabled state
-#define MSP_SET_SIMPLIFIED_TUNING   141    //in message          Set simplified tuning positions and apply the calculated tuning
+#define MSP_SIMPLIFIED_TUNING             140    //out message    Simplified tuning values and enabled state
+#define MSP_SET_SIMPLIFIED_TUNING         141    //in message     Set simplified tuning positions and apply the calculated tuning
+#define MSP_CALCULATE_SIMPLIFIED_PID      142    //out message    Requests calculations of PID values based on sliders. Sends the calculated values back. But don't save anything to the firmware
+#define MSP_CALCULATE_SIMPLIFIED_GYRO     143    //out message    Requests calculations of gyro filter values based on sliders. Sends the calculated values back. But don't save anything to the firmware
+#define MSP_CALCULATE_SIMPLIFIED_DTERM    144    //out message    Requests calculations of gyro filter values based on sliders. Sends the calculated values back. But don't save anything to the firmware
+#define MSP_VALIDATE_SIMPLIFIED_TUNING    145    //out message    Returns an array of true/false showing which simpligfied tuning groups are matching with value and which are not
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed

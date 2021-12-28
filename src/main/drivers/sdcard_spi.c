@@ -168,7 +168,7 @@ static bool sdcard_waitForIdle(int maxBytesToWait)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-        {NULL, &idleByte, sizeof (idleByte), false, sdcard_callbackIdle},
+        {NULL, &idleByte, sizeof(idleByte), false, sdcard_callbackIdle},
         {NULL, NULL, 0, false, NULL},
     };
 
@@ -196,7 +196,7 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-        {NULL, &idleByte, sizeof (idleByte), false, sdcard_callbackNotIdle},
+        {NULL, &idleByte, sizeof(idleByte), false, sdcard_callbackNotIdle},
         {NULL, NULL, 0, false, NULL},
     };
 
@@ -238,8 +238,8 @@ static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-            {command, NULL, sizeof (command), false, NULL},
-            {NULL, &idleByte, sizeof (idleByte), false, sdcard_callbackNotIdle},
+            {command, NULL, sizeof(command), false, NULL},
+            {NULL, &idleByte, sizeof(idleByte), false, sdcard_callbackNotIdle},
             {NULL, NULL, 0, false, NULL},
     };
 
@@ -288,7 +288,7 @@ static bool sdcard_validateInterfaceCondition(void)
     } else if (status == SDCARD_R1_STATUS_BIT_IDLE) {
         // Note that this does not release the CS at the end of the transaction
         busSegment_t segments[] = {
-                {NULL, ifCondReply, sizeof (ifCondReply), false, NULL},
+                {NULL, ifCondReply, sizeof(ifCondReply), false, NULL},
                 {NULL, NULL, 0, false, NULL},
         };
 
@@ -321,7 +321,7 @@ static bool sdcard_readOCRRegister(uint32_t *result)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-             {NULL, response, sizeof (response), false, NULL},
+             {NULL, response, sizeof(response), false, NULL},
                 {NULL, NULL, 0, false, NULL},
         };
 
@@ -391,8 +391,8 @@ static bool sdcard_sendDataBlockFinish(void)
     uint8_t dataResponseToken;
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-            {(uint8_t *)&dummyCRC, NULL, sizeof (dummyCRC), false, NULL},
-            {NULL, &dataResponseToken, sizeof (dataResponseToken), false, NULL},
+            {(uint8_t *)&dummyCRC, NULL, sizeof(dummyCRC), false, NULL},
+            {NULL, &dataResponseToken, sizeof(dataResponseToken), false, NULL},
             {NULL, NULL, 0, false, NULL},
         };
 
@@ -432,7 +432,7 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
     static busSegment_t segments[] = {
             // Write a single 0xff
             {NULL, NULL, 1, false, NULL},
-            {&token, NULL, sizeof (token), false, NULL},
+            {&token, NULL, sizeof(token), false, NULL},
             {NULL, NULL, 0, false, NULL},
             {NULL, NULL, 0, false, NULL},
         };

@@ -52,7 +52,7 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
     sdft->startBin = startBin;
     sdft->endBin = endBin;
     sdft->numBatches = numBatches;
-    sdft->batchSize = (sdft->endBin - sdft->startBin + 1) / sdft->numBatches + 1;
+    sdft->batchSize = (sdft->endBin - sdft->startBin) / sdft->numBatches + 1;  // batchSize = ceil(numBins / numBatches)
 
     for (int i = 0; i < SDFT_SAMPLE_SIZE; i++) {
         sdft->samples[i] = 0.0f;

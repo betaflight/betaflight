@@ -76,28 +76,28 @@ static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 
 static const OSD_Entry menuFeaturesEntries[] =
 {
-    {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
+    {"--- FEATURES ---", OME_Label, NULL, NULL},
 
 #if defined(USE_BLACKBOX)
-    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
+    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox},
 #endif
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
-    {"VTX", OME_Funcall, cmsSelectVtx, NULL, 0},
+    {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
 #ifdef USE_LED_STRIP
-    {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
+    {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip},
 #endif // LED_STRIP
-    {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower, 0},
+    {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower},
 #ifdef USE_CMS_FAILSAFE_MENU
-    {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe, 0},
+    {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe},
 #endif
 #ifdef USE_PERSISTENT_STATS
-    {"PERSISTENT STATS", OME_Submenu, cmsMenuChange, &cmsx_menuPersistentStats, 0},
+    {"PERSISTENT STATS", OME_Submenu, cmsMenuChange, &cmsx_menuPersistentStats},
 #endif
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
 static CMS_Menu cmsx_menuFeatures = {
@@ -130,17 +130,17 @@ static bool setupPopupMenuBuild(void)
     uint8_t menuIndex = 0;
     updateArmingStatus();
 
-    cmsAddMenuEntry(&setupPopupMenuEntries[menuIndex], "-- SETUP MENU --", OME_Label, NULL, NULL, 0);
+    cmsAddMenuEntry(&setupPopupMenuEntries[menuIndex], "-- SETUP MENU --", OME_Label, NULL, NULL);
 
     // Add menu entries for uncompleted setup tasks
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC) && (getArmingDisableFlags() & ARMING_DISABLED_ACC_CALIBRATION)) {
-        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "CALIBRATE ACC", OME_Funcall, cmsCalibrateAccMenu, accCalibrationStatus, DYNAMIC);
+        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "CALIBRATE ACC", OME_Funcall | DYNAMIC, cmsCalibrateAccMenu, accCalibrationStatus);
     }
 #endif
 
-    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "EXIT", OME_Back, NULL, NULL, DYNAMIC);
-    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "NULL", OME_END, NULL, NULL, 0);
+    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "EXIT", OME_Back | DYNAMIC, NULL, NULL);
+    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "NULL", OME_END, NULL, NULL);
 
     return (menuIndex > 2);  // return true if any setup items were added
 }
@@ -181,17 +181,17 @@ static const void *mainMenuOnEnter(displayPort_t *pDisp)
 
 static const OSD_Entry menuMainEntries[] =
 {
-    {"-- MAIN --",  OME_Label, NULL, NULL, 0},
+    {"-- MAIN --",  OME_Label, NULL, NULL},
 
-    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
-    {"FEATURES",    OME_Submenu,  cmsMenuChange, &cmsx_menuFeatures, 0},
+    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu},
+    {"FEATURES",    OME_Submenu,  cmsMenuChange, &cmsx_menuFeatures},
 #ifdef USE_OSD
-    {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
+    {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd},
 #endif
-    {"FC&FIRMWARE", OME_Submenu,  cmsMenuChange, &cmsx_menuFirmware, 0},
-    {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
-    {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0},
+    {"FC&FIRMWARE", OME_Submenu,  cmsMenuChange, &cmsx_menuFirmware},
+    {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc},
+    {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL},
+    {NULL, OME_END, NULL, NULL},
 };
 
 CMS_Menu cmsx_menuMain = {

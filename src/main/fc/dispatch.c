@@ -30,6 +30,8 @@
 
 #include "fc/dispatch.h"
 
+#include "scheduler/scheduler.h"
+
 static dispatchEntry_t *head = NULL;
 static bool dispatchEnabled = false;
 
@@ -43,10 +45,10 @@ void dispatchEnable(void)
     dispatchEnabled = true;
 }
 
-void dispatchProcess(uint32_t currentTime)
+void dispatchProcess(uint32_t currentTimeUs)
 {
     for (dispatchEntry_t **p = &head; *p; ) {
-        if (cmp32(currentTime, (*p)->delayedUntil) < 0)
+        if (cmp32(currentTimeUs, (*p)->delayedUntil) < 0)
             break;
         // unlink entry first, so handler can replan self
         dispatchEntry_t *current = *p;

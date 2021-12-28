@@ -172,7 +172,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
      */
     uint8_t readIdResponse[4] = { 0 };
 
-    spiReadRegBuf(dev, FLASH_INSTRUCTION_RDID, readIdResponse, sizeof (readIdResponse));
+    spiReadRegBuf(dev, FLASH_INSTRUCTION_RDID, readIdResponse, sizeof(readIdResponse));
 
     // Manufacturer, memory type, and capacity
     uint32_t chipID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);

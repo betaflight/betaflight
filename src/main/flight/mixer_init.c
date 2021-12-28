@@ -288,11 +288,7 @@ void initEscEndpoints(void)
     if (currentPidProfile->motor_output_limit < 100) {
         motorOutputLimit = currentPidProfile->motor_output_limit / 100.0f;
     }
-
     motorInitEndpoints(motorConfig(), motorOutputLimit, &mixerRuntime.motorOutputLow, &mixerRuntime.motorOutputHigh, &mixerRuntime.disarmMotorOutput, &mixerRuntime.deadbandMotor3dHigh, &mixerRuntime.deadbandMotor3dLow);
-    if (!mixerRuntime.feature3dEnabled && currentPidProfile->dyn_idle_min_rpm) {
-        mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE;
-    }
 }
 
 // Initialize pidProfile related mixer settings
@@ -300,12 +296,23 @@ void initEscEndpoints(void)
 void mixerInitProfile(void)
 {
 #ifdef USE_DYN_IDLE
-    mixerRuntime.dynIdleMinRps = currentPidProfile->dyn_idle_min_rpm * 100.0f / 60.0f;
+    if (motorConfigMutable()->dev.useDshotTelemetry) {
+        mixerRuntime.dynIdleMinRps = currentPidProfile->dyn_idle_min_rpm * 100.0f / 60.0f;
+    } else {
+        mixerRuntime.dynIdleMinRps = 0.0f;
+    }
     mixerRuntime.dynIdlePGain = currentPidProfile->dyn_idle_p_gain * 0.00015f;
     mixerRuntime.dynIdleIGain = currentPidProfile->dyn_idle_i_gain * 0.01f * pidGetDT();
     mixerRuntime.dynIdleDGain = currentPidProfile->dyn_idle_d_gain * 0.0000003f * pidGetPidFrequency();
     mixerRuntime.dynIdleMaxIncrease = currentPidProfile->dyn_idle_max_increase * 0.001f;
     mixerRuntime.minRpsDelayK = 800 * pidGetDT() / 20.0f; //approx 20ms D delay, arbitrarily suits many motors
+    if (!mixerRuntime.feature3dEnabled ) {
+        if (mixerRuntime.dynIdleMinRps) {
+            mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE;
+        } else {
+            mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE + mixerRuntime.idleThrottleOffset * DSHOT_RANGE;
+        }
+    }
 #endif
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)

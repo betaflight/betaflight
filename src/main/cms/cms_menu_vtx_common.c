@@ -68,11 +68,11 @@ static const void *setStatusMessage(displayPort_t *pDisp)
 
 static const OSD_Entry vtxErrorMenuEntries[] =
 {
-    { "",     OME_Label, NULL, statusLine1,  DYNAMIC },
-    { "",     OME_Label, NULL, statusLine2,  DYNAMIC },
-    { "",     OME_Label, NULL, NULL, 0 },
-    { "BACK", OME_Back,  NULL, NULL, 0 },
-    { NULL,   OME_END,   NULL, NULL, 0 }
+    { "",     OME_Label | DYNAMIC, NULL, statusLine1 },
+    { "",     OME_Label | DYNAMIC, NULL, statusLine2 },
+    { "",     OME_Label, NULL, NULL },
+    { "BACK", OME_Back,  NULL, NULL },
+    { NULL,   OME_END,   NULL, NULL }
 };
 
 static CMS_Menu cmsx_menuVtxError = {
