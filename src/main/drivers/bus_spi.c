@@ -570,7 +570,7 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 void spiInitBusDMA()
 {
     uint32_t device;
-#ifdef STM32F4
+#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
     /* Check https://www.st.com/resource/en/errata_sheet/dm00037591-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
      * section 2.1.10 which reports an errata that corruption may occurs on DMA2 if AHB peripherals (eg GPIO ports) are
      * access concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
@@ -608,7 +608,7 @@ void spiInitBusDMA()
                     dmaTxIdentifier = DMA_NONE;
                     continue;
                 }
-#ifdef STM32F4
+#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
                     dmaTxIdentifier = DMA_NONE;
                     break;
@@ -642,7 +642,7 @@ void spiInitBusDMA()
                     dmaRxIdentifier = DMA_NONE;
                     continue;
                 }
-#ifdef STM32F4
+#if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
                     dmaRxIdentifier = DMA_NONE;
                     break;
