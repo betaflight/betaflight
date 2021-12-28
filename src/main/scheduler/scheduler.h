@@ -52,7 +52,7 @@
 
 // Gyro interrupt counts over which to measure loop time and skew
 #define GYRO_RATE_COUNT 25000
-#define GYRO_LOCK_COUNT 400
+#define GYRO_LOCK_COUNT 50
 
 typedef enum {
     TASK_PRIORITY_REALTIME = -1, // Task will be run outside the scheduler logic
