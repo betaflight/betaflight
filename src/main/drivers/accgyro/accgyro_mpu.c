@@ -325,13 +325,13 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT_DMA:
     {
         // Acc and gyro data may not be continuous (MPU6xxx has temperature in between)
-        uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->accDataReg) >> 1) + 1;
+        const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->accDataReg) >> 1) + 1;
 
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[gyroDataIndex++]);
-        gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[gyroDataIndex++]);
-        gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[gyroDataIndex]);
+        gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[gyroDataIndex]);
+        gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[gyroDataIndex + 1]);
+        gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[gyroDataIndex + 2]);
         break;
     }
 
