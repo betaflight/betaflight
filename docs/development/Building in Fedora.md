@@ -1,4 +1,4 @@
-# Building in Fedora 32
+# Building in Fedora 35
 
     $ sudo dnf check-update
     $ sudo dnf install git clang libblocksruntime-devel
@@ -8,14 +8,17 @@
     $ make arm_sdk_install
     $ make TARGET=MATEKF411
 
-### Building Configurator in Fedora 32
+### Building Configurator in Fedora 35
 
     $ sudo dnf check-update
     $ sudo dnf install libatomic rpm-build dpkg
-    $ sudo dnf module install nodejs:10
+    $ sudo dnf module list nodejs
+    $ sudo dnf module install nodejs:14/default
     $ sudo npm install -g gulp-cli yarn
     $ yarn install
     $ yarn gulp debug
+
+Note: Please check this link for the required Node version: https://github.com/betaflight/betaflight-configurator#development
 
 ### Serial permissions
 
