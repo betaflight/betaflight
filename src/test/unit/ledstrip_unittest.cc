@@ -27,6 +27,7 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/color.h"
+    #include "common/utils.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -165,7 +166,7 @@ TEST(LedStripTest, parseLedStripConfig)
     };
 
     // when
-    for (uint8_t index = 0; index < (sizeof(ledStripConfigCommands) / sizeof(ledStripConfigCommands[0])); index++) {
+    for (uint8_t index = 0; index < ARRAYLEN(ledStripConfigCommands); index++) {
         EXPECT_TRUE(parseLedStripConfig(index, ledStripConfigCommands[index]));
     }
 
