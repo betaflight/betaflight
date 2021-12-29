@@ -208,27 +208,33 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
-int32_t getAmperage(void) {
+int32_t getAmperage(void)
+{
     return 100;
 }
 
-uint16_t getBatteryVoltage(void) {
+uint16_t getBatteryVoltage(void)
+{
     return 42;
 }
 
-batteryState_e getBatteryState(void) {
+batteryState_e getBatteryState(void)
+{
     return BATTERY_OK;
 }
 
-uint8_t calculateBatteryPercentageRemaining(void) {
+uint8_t calculateBatteryPercentageRemaining(void)
+{
     return 67;
 }
 
-uint8_t getMotorCount() {
+uint8_t getMotorCount()
+{
     return 4;
 }
 
-size_t getEEPROMStorageSize() {
+size_t getEEPROMStorageSize()
+{
     return 0;
 }
 
@@ -241,7 +247,8 @@ const box_t *findBoxByBoxId(boxId_e) { return &boxes[0]; }
 
 int8_t unitTestDataArray[3];
 
-void pgResetFn_unitTestData(int8_t *) {}
+void pgResetFn_unitTestData(int8_t *)
+{}
 
 uint32_t getBeeperOffMask(void) { return 0; }
 uint32_t getPreferredBeeperOffMask(void) { return 0; }

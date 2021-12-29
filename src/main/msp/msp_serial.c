@@ -106,7 +106,8 @@ mspDescriptor_t getMspSerialPortDescriptor(const uint8_t portIdentifier)
 }
 
 #if defined(USE_TELEMETRY)
-void mspSerialReleaseSharedTelemetryPorts(void) {
+void mspSerialReleaseSharedTelemetryPorts(void)
+{
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];
         if (candidateMspPort->sharedWithTelemetry) {

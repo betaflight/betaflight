@@ -72,5 +72,6 @@ void detectHardwareRevision(void)
     }
 }
 
-void updateHardwareRevision(void) {
+void updateHardwareRevision(void)
+{
 }

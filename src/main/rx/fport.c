@@ -150,7 +150,8 @@ static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
 #endif
 
-static void reportFrameError(uint8_t errorReason) {
+static void reportFrameError(uint8_t errorReason)
+{
     static volatile uint16_t frameErrors = 0;
 
     frameErrors++;

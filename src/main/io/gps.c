@@ -298,7 +298,8 @@ static void shiftPacketLog(void)
     }
 }
 
-static bool isConfiguratorConnected() {
+static bool isConfiguratorConnected()
+{
     return (getArmingDisableFlags() & ARMING_DISABLED_MSP);
 }
 
@@ -473,7 +474,8 @@ static void ubloxSendPollMessage(uint8_t msg_id)
     ubloxSendMessage((const uint8_t *) &tx_buffer, 6);
 }
 
-static void ubloxSendNAV5Message(bool airborne) {
+static void ubloxSendNAV5Message(bool airborne)
+{
     ubx_message tx_buffer;
     tx_buffer.payload.cfg_nav5.mask = 0xFFFF;
     if (airborne) {
@@ -511,7 +513,8 @@ static void ubloxSendNAV5Message(bool airborne) {
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubx_cfg_nav5));
 }
 
-static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate) {
+static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate)
+{
     ubx_message tx_buffer;
     tx_buffer.payload.cfg_msg.msgClass = messageClass;
     tx_buffer.payload.cfg_msg.msgID = messageID;
@@ -519,7 +522,8 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubx_cfg_msg));
 }
 
-static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint16_t timeRef) {
+static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint16_t timeRef)
+{
     ubx_message tx_buffer;
     tx_buffer.payload.cfg_rate.measRate = measRate;
     tx_buffer.payload.cfg_rate.navRate = navRate;
@@ -527,7 +531,8 @@ static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint16_t timeRe
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_RATE, sizeof(ubx_cfg_rate));
 }
 
-static void ubloxSetSbas() {
+static void ubloxSetSbas()
+{
     ubx_message tx_buffer;
 
     //NOTE: default ublox config for sbas mode is: UBLOX_MODE_ENABLED, test is disabled

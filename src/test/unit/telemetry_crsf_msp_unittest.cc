@@ -224,13 +224,15 @@ TEST(CrossFireMSPTest, WriteResponseTest)
 
 }
 
-void testSendMspResponse(uint8_t *payload, const uint8_t ) {
+void testSendMspResponse(uint8_t *payload, const uint8_t )
+{
     sbuf_t *plOut = sbufInit(&payloadOutputBuf, payloadOutput, payloadOutput + 64);
     sbufWriteData(plOut, payload, *payload + 64);
     sbufSwitchToReader(&payloadOutputBuf, payloadOutput);
 }
 
-TEST(CrossFireMSPTest, SendMspReply) {
+TEST(CrossFireMSPTest, SendMspReply)
+{
     initSharedMsp();
     const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
     crsfFrame = *(const crsfFrame_t*)framePtr;

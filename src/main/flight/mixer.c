@@ -424,7 +424,8 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 }
 #endif
 
-static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled) {
+static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled)
+{
     float airmodeTransitionPercent = 1.0f;
     float motorDeltaScale = 0.5f;
 
@@ -458,7 +459,8 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
 }
 
-static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled) {
+static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
+{
 #ifdef USE_AIRMODE_LPF
     const float unadjustedThrottle = throttle;
     throttle += pidGetAirmodeThrottleOffset();

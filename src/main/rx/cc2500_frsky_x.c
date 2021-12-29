@@ -134,14 +134,16 @@ static uint8_t remoteToProcessIndex = 0;
 static uint8_t packetLength;
 static uint16_t telemetryDelayUs;
 
-static uint16_t crcTable(uint8_t val) {
+static uint16_t crcTable(uint8_t val)
+{
     uint16_t word;
     word = (*(&crcTable_Short[val & 0x0f]));
     val /= 16;
     return word ^ (0x1081 * val);
 }
 
-static uint16_t calculateCrc(const uint8_t *data, uint8_t len) {
+static uint16_t calculateCrc(const uint8_t *data, uint8_t len)
+{
     uint16_t crc = 0;
     for (unsigned i = 0; i < len; i++) {
         crc = (crc << 8) ^ crcTable((uint8_t)(crc >> 8) ^ *data++);
@@ -244,7 +246,8 @@ static bool frSkyXReadyToSend(void)
 }
 
 #if defined(USE_TELEMETRY_SMARTPORT)
-static void frSkyXTelemetrySendByte(uint8_t c) {
+static void frSkyXTelemetrySendByte(uint8_t c)
+{
     if (c == FSSP_DLE || c == FSSP_START_STOP) {
         telemetryOutBuffer[telemetryOutWriter] = FSSP_DLE;
         telemetryOutWriter = (telemetryOutWriter + 1) % TELEMETRY_OUT_BUFFER_SIZE;

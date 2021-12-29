@@ -60,7 +60,8 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-void unsetArmingDisabled(armingDisableFlags_e flag) {
+void unsetArmingDisabled(armingDisableFlags_e flag)
+{
   UNUSED(flag);
 }
 
@@ -202,37 +203,44 @@ static int callCounts[CALL_COUNT_ITEM_COUNT];
 #define CALL_COUNTER(item) (callCounts[item])
 
 extern "C" {
-void beeperConfirmationBeeps(uint8_t) {
+void beeperConfirmationBeeps(uint8_t)
+{
     callCounts[COUNTER_QUEUE_CONFIRMATION_BEEP]++;
 }
 
-void beeper(beeperMode_e mode) {
+void beeper(beeperMode_e mode)
+{
     UNUSED(mode);
 }
 
-void changeControlRateProfile(uint8_t) {
+void changeControlRateProfile(uint8_t)
+{
     callCounts[COUNTER_CHANGE_CONTROL_RATE_PROFILE]++;
 }
 
 }
 
-void resetCallCounters(void) {
+void resetCallCounters(void)
+{
     memset(&callCounts, 0, sizeof(callCounts));
 }
 
 uint32_t fixedMillis;
 
 extern "C" {
-uint32_t millis(void) {
+uint32_t millis(void)
+{
     return fixedMillis;
 }
 
-uint32_t micros(void) {
+uint32_t micros(void)
+{
     return fixedMillis * 1000;
 }
 }
 
-void resetMillis(void) {
+void resetMillis(void)
+{
     fixedMillis = 0;
 }
 
@@ -628,7 +636,8 @@ bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
 bool failsafeIsReceivingRxData() { return true; }
 
-uint8_t getCurrentControlRateProfileIndex(void) {
+uint8_t getCurrentControlRateProfileIndex(void)
+{
     return 0;
 }
 void GPS_reset_home_position(void) {}
@@ -648,7 +657,8 @@ PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 void resetArmingDisabled(void) {}
 timeDelta_t getTaskDeltaTimeUs(taskId_e) { return 20000; }
-armingDisableFlags_e getArmingDisableFlags(void) {
+armingDisableFlags_e getArmingDisableFlags(void)
+{
     return (armingDisableFlags_e) 0;
 }
 bool isTryingToArm(void) { return false; }

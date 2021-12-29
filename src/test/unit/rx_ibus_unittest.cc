@@ -175,7 +175,8 @@ static bool    stubTelemetryCalled = false;
 static uint8_t stubTelemetryPacket[100];
 static uint8_t stubTelemetryIgnoreRxChars = 0;
 
-uint8_t respondToIbusRequest(uint8_t const * const ibusPacket) {
+uint8_t respondToIbusRequest(uint8_t const * const ibusPacket)
+{
     uint8_t len = ibusPacket[0];
     EXPECT_LT(len, sizeof(stubTelemetryPacket));
     memcpy(stubTelemetryPacket, ibusPacket, len);

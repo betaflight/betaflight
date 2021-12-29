@@ -139,7 +139,8 @@ static uint8_t getSensorID(ibusAddress_t address)
 }
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
-static const uint8_t* getSensorStruct(uint8_t sensorType, uint8_t* itemCount){
+static const uint8_t* getSensorStruct(uint8_t sensorType, uint8_t* itemCount)
+{
     const uint8_t* structure = 0;
     if (sensorType == IBUS_SENSOR_TYPE_GPS_FULL) {
         structure = FULL_GPS_IDS;
