@@ -288,7 +288,6 @@ void processMspPacket(uint8_t *packet)
         deviceInfoReplyPending = true;
         break;
     case CRSF_FRAMETYPE_MSP_REQ:
-        FALLTHROUGH;
     case CRSF_FRAMETYPE_MSP_WRITE:
         if (bufferCrsfMspFrame(&packet[ELRS_MSP_PACKET_OFFSET], CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
             handleCrsfMspFrameBuffer(&bufferMspResponse);
