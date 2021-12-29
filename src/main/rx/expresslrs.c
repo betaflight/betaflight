@@ -75,7 +75,7 @@ static uint8_t wideSwitchIndex = 0;
 
 static simpleLowpassFilter_t rssiFilter;
 
-static void rssiFilterReset(void)
+static inline void rssiFilterReset(void)
 {
     simpleLPFilterInit(&rssiFilter, 3, 5);
 }
@@ -106,10 +106,9 @@ static void expressLrsEPRRecordEvent(eprEvent_e event, uint32_t currentTimeUs)
     eprState.eventRecorded[event] = true;
 }
 
-static bool expressLrsEPRHaveBothEvents(void)
+static inline bool expressLrsEPRHaveBothEvents(void)
 {
-    bool bothEventsRecorded = eprState.eventRecorded[EPR_SECOND] && eprState.eventRecorded[EPR_FIRST];
-    return bothEventsRecorded;
+    return eprState.eventRecorded[EPR_SECOND] && eprState.eventRecorded[EPR_FIRST];
 }
 
 static int32_t expressLrsEPRGetResult(void)

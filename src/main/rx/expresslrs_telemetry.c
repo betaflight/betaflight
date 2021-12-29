@@ -107,7 +107,7 @@ void setTelemetryDataToTransmit(const uint8_t lengthToTransmit, uint8_t* dataToT
     senderState = (senderState == ELRS_SENDER_IDLE) ? ELRS_SENDING : ELRS_RESYNC_THEN_SEND;
 }
 
-bool isTelemetrySenderActive(void)
+inline bool isTelemetrySenderActive(void)
 {
     return senderState != ELRS_SENDER_IDLE;
 }
@@ -213,7 +213,7 @@ void mspReceiverResetState(void) {
     deviceInfoReplyPending = false;
 }
 
-bool getCurrentMspConfirm(void)
+inline bool getCurrentMspConfirm(void)
 {
     return mspConfirm;
 }
@@ -261,7 +261,7 @@ void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* receiveD
     return;
 }
 
-bool hasFinishedMspData(void)
+inline bool hasFinishedMspData(void)
 {
     return finishedData;
 }
@@ -277,7 +277,7 @@ void mspReceiverUnlock(void)
 
 static uint8_t mspFrameSize = 0;
 
-static void bufferMspResponse(uint8_t *payload, const uint8_t payloadSize)
+static inline void bufferMspResponse(uint8_t *payload, const uint8_t payloadSize)
 {
     mspFrameSize = getCrsfMspFrame(tlmBuffer, payload, payloadSize);
 }

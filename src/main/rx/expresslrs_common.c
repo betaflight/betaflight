@@ -384,27 +384,27 @@ static void initializeFHSSFrequencies(const elrsFreqDomain_e dom) {
     }
 }
 
-uint32_t getInitialFreq(const int32_t freqCorrection)
+inline uint32_t getInitialFreq(const int32_t freqCorrection)
 {
     return FHSSfreqs[syncChannel] - freqCorrection;
 }
 
-uint8_t getFHSSNumEntries(void)
+inline uint8_t getFHSSNumEntries(void)
 {
     return numFreqs;
 }
 
-uint8_t FHSSgetCurrIndex(void)
+inline uint8_t FHSSgetCurrIndex(void)
 {
     return FHSSptr;
 }
 
-void FHSSsetCurrIndex(const uint8_t value)
+inline void FHSSsetCurrIndex(const uint8_t value)
 {
     FHSSptr = value % seqCount;
 }
 
-uint32_t FHSSgetNextFreq(const int32_t freqCorrection)
+inline uint32_t FHSSgetNextFreq(const int32_t freqCorrection)
 {
     FHSSptr = (FHSSptr + 1) % seqCount;
     return FHSSfreqs[FHSSsequence[FHSSptr]] - freqCorrection;
@@ -573,12 +573,12 @@ void lqNewPeriod(void)
     }
 }
 
-uint8_t lqGet(void)
+inline uint8_t lqGet(void)
 {
     return lq.value;
 }
 
-bool lqPeriodIsSet(void)
+inline bool lqPeriodIsSet(void)
 {
     return lq.array[lq.index] & lq.mask;
 }
@@ -589,7 +589,7 @@ void lqReset(void)
     lq.mask = (1 << 0);
 }
 
-uint16_t convertSwitch1b(const uint16_t val)
+inline uint16_t convertSwitch1b(const uint16_t val)
 {
     return val ? 2000 : 1000;
 }
@@ -615,17 +615,17 @@ uint16_t convertSwitch3b(const uint16_t val)
     }
 }
 
-uint16_t convertSwitchNb(const uint16_t val, const uint16_t max)
+inline uint16_t convertSwitchNb(const uint16_t val, const uint16_t max)
 {
     return (val > max) ? 1500 : val * 1000 / max + 1000;
 }
 
-uint16_t convertAnalog(const uint16_t val)
+inline uint16_t convertAnalog(const uint16_t val)
 {
     return CRSF_RC_CHANNEL_SCALE_LEGACY * val + 881;
 }
 
-uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
+inline uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
 {
     // Returns the sequence (0 to 7, then 0 to 7 rotated left by 1):
     // 0, 1, 2, 3, 4, 5, 6, 7,
