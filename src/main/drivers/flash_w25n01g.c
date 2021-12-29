@@ -154,9 +154,6 @@ static void w25n01g_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
                 {NULL, NULL, 0, true, NULL},
         };
 
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
-
         spiSequence(dev, &segments[0]);
 
         // Block pending completion of SPI access
@@ -181,9 +178,6 @@ static void w25n01g_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t c
                 {cmd, NULL, sizeof(cmd), true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -419,9 +413,6 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
                  {NULL, NULL, 0, true, NULL},
          };
 
-         // Ensure any prior DMA has completed before continuing
-         spiWaitClaim(dev);
-
          spiSequence(dev, &segments[0]);
 
          // Block pending completion of SPI access
@@ -452,9 +443,6 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
                 {(uint8_t *)data, NULL, length, true, NULL},
                 {NULL, NULL, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -699,9 +687,6 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
                 {NULL, NULL, 0, true, NULL},
         };
 
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
-
         spiSequence(dev, &segments[0]);
 
         // Block pending completion of SPI access
@@ -866,9 +851,6 @@ void w25n01g_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
                 {NULL, in, sizeof(in), true, w25n01g_readBBLUTCallback},
                 {NULL, NULL, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 

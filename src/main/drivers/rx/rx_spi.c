@@ -98,8 +98,6 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
         return false;
     }
 
-    spiSetAtomicWait(dev);
-
     const IO_t rxCsPin = IOGetByTag(rxSpiConfig->csnTag);
     IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);
     IOConfigGPIO(rxCsPin, SPI_IO_CS_CFG);

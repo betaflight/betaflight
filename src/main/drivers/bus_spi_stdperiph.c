@@ -320,7 +320,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 }
 
 // DMA transfer setup and start
-void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
+void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
@@ -329,7 +329,6 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     uint32_t segmentCount = 0;
 
     dev->bus->initSegment = true;
-    dev->bus->curSegment = segments;
 
     SPI_Cmd(instance, DISABLE);
 
@@ -415,8 +414,10 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
         if (bus->curSegment->txData) {
             const extDevice_t *nextDev = (const extDevice_t *)bus->curSegment->txData;
             busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->rxData;
-            bus->curSegment->txData = NULL;
-            spiSequenceStart(nextDev, nextSegments);
+            busSegment_t *endSegment = bus->curSegment;
+            bus->curSegment = nextSegments;
+            endSegment->txData = NULL;
+            spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;

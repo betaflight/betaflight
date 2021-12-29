@@ -331,7 +331,7 @@ static const char * const lookupTableBusType[] = {
 
 #ifdef USE_MAX7456
 static const char * const lookupTableMax7456Clock[] = {
-    "HALF", "DEFAULT", "FULL"
+    "HALF", "NOMINAL", "DOUBLE"
 };
 #endif
 

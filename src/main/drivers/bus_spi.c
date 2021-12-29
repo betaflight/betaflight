@@ -39,6 +39,8 @@
 #include "nvic.h"
 #include "pg/bus_spi.h"
 
+#define NUM_QUEUE_SEGS 5
+
 static uint8_t spiRegisteredDeviceCount = 0;
 
 spiDevice_t spiDevice[SPIDEV_COUNT];
@@ -157,34 +159,6 @@ bool spiIsBusy(const extDevice_t *dev)
     return (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
 }
 
-// Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
-void spiSetAtomicWait(const extDevice_t *dev)
-{
-    dev->bus->useAtomicWait = true;
-}
-
-// Wait for DMA completion and claim the bus driver
-void spiWaitClaim(const extDevice_t *dev)
-{
-    // If there is a device on the bus whose driver might call spiSequence from an ISR then an
-    // atomic access is required to claim the bus, however if not, then interrupts need not be
-    // disabled as this can result in edge triggered interrupts being missed
-
-    if (dev->bus->useAtomicWait) {
-        // Prevent race condition where the bus appears free, but a gyro interrupt starts a transfer
-        do {
-            ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-                if (dev->bus->curSegment == (busSegment_t *)BUS_SPI_FREE) {
-                    dev->bus->curSegment = (busSegment_t *)BUS_SPI_LOCKED;
-                }
-            }
-        } while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_LOCKED);
-    } else {
-        // Wait for completion
-        while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
-    }
-}
-
 // Wait for DMA completion
 void spiWait(const extDevice_t *dev)
 {
@@ -200,9 +174,6 @@ void spiReadWriteBuf(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData, i
             {txData, rxData, len, true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -233,9 +204,6 @@ uint8_t spiReadWrite(const extDevice_t *dev, uint8_t data)
             {NULL, NULL, 0, true, NULL},
     };
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
-
     spiSequence(dev, &segments[0]);
 
     spiWait(dev);
@@ -255,9 +223,6 @@ uint8_t spiReadWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
             {NULL, NULL, 0, true, NULL},
     };
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
-
     spiSequence(dev, &segments[0]);
 
     spiWait(dev);
@@ -274,9 +239,6 @@ void spiWrite(const extDevice_t *dev, uint8_t data)
             {NULL, NULL, 0, true, NULL},
     };
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
-
     spiSequence(dev, &segments[0]);
 
     spiWait(dev);
@@ -291,9 +253,6 @@ void spiWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
             {&data, NULL, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -322,9 +281,6 @@ void spiReadRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t l
             {NULL, data, length, true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -360,9 +316,6 @@ void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t
             {NULL, NULL, 0, true, NULL},
     };
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
-
     spiSequence(dev, &segments[0]);
 
     spiWait(dev);
@@ -378,9 +331,6 @@ uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg)
             {NULL, &data, sizeof(data), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -412,6 +362,19 @@ uint16_t spiCalculateDivider(uint32_t freq)
     for (; (spiClk > freq) && (divisor < 256); divisor <<= 1, spiClk >>= 1);
 
     return divisor;
+}
+
+uint32_t spiCalculateClock(uint16_t spiClkDivisor)
+{
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+    uint32_t spiClk = SystemCoreClock / 2;
+#elif defined(STM32H7)
+    uint32_t spiClk = 100000000;
+#else
+#error "Base SPI clock not defined for this architecture"
+#endif
+
+    return spiClk / spiClkDivisor;
 }
 
 // Interrupt handler for SPI receive DMA completion
@@ -448,9 +411,10 @@ static void spiIrqHandler(const extDevice_t *dev)
         if (nextSegment->txData) {
             const extDevice_t *nextDev = (const extDevice_t *)nextSegment->txData;
             busSegment_t *nextSegments = (busSegment_t *)nextSegment->rxData;
-            nextSegment->txData = NULL;
             // The end of the segment list has been reached
-            spiSequenceStart(nextDev, nextSegments);
+            bus->curSegment = nextSegments;
+            nextSegment->txData = NULL;
+            spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
@@ -559,7 +523,6 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 
     bus->busType = BUS_TYPE_SPI;
     bus->useDMA = false;
-    bus->useAtomicWait = false;
     bus->deviceCount = 1;
     bus->initTx = &dev->initTx;
     bus->initRx = &dev->initRx;
@@ -743,28 +706,62 @@ uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 {
     busDevice_t *bus = dev->bus;
+    busSegment_t *queuedEndSegments[NUM_QUEUE_SEGS];
+    uint8_t queuedEndSegmentsIndex = 0;
 
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-        if ((bus->curSegment != (busSegment_t *)BUS_SPI_LOCKED) && spiIsBusy(dev)) {
-            /* Defer this transfer to be triggered upon completion of the current transfer. Blocking calls
-             * and those from non-interrupt context will have already called spiWaitClaim() so this will
-             * only happen for non-blocking calls called from an ISR.
-             */
-            busSegment_t *endSegment = bus->curSegment;
+        if (spiIsBusy(dev)) {
+            busSegment_t *endSegment;
 
-            if (endSegment) {
-                // Find the last segment of the current transfer
-                for (; endSegment->len; endSegment++);
+            // Defer this transfer to be triggered upon completion of the current transfer
+            // Find the last segment of the current transfer
+            for (endSegment = segments; endSegment->len; endSegment++);
+
+            busSegment_t *endCmpSegment = bus->curSegment;
+
+            if (endCmpSegment) {
+                while (true) {
+                    // Find the last segment of the current transfer
+                    for (; endCmpSegment->len; endCmpSegment++);
+
+                    if (endCmpSegment == endSegment) {
+                        // Attempt to use the new segment list twice in the same queue. Abort.
+                        return;
+                    }
+
+                    for (uint8_t n = 0; n < queuedEndSegmentsIndex; n++) {
+                        if (endCmpSegment == queuedEndSegments[n]) {
+                            // Attempt to use the same segment list twice in the same queue. Abort.
+                            return;
+                        }
+                    }
+
+                    queuedEndSegments[queuedEndSegmentsIndex++] = endCmpSegment;
+
+                    if (queuedEndSegmentsIndex == NUM_QUEUE_SEGS) {
+                        // Queue is too long. Abort.
+                        return;
+                    }
+
+                    if (endCmpSegment->txData == NULL) {
+                        break;
+                    } else {
+                        endCmpSegment = (busSegment_t *)endCmpSegment->rxData;
+                    }
+                }
 
                 // Record the dev and segments parameters in the terminating segment entry
-                endSegment->txData = (uint8_t *)dev;
-                endSegment->rxData = (uint8_t *)segments;
+                endCmpSegment->txData = (uint8_t *)dev;
+                endCmpSegment->rxData = (uint8_t *)segments;
 
                 return;
             }
+        } else {
+            // Claim the bus with this list of segments
+            bus->curSegment = segments;
         }
     }
 
-    spiSequenceStart(dev, segments);
+    spiSequenceStart(dev);
 }
 #endif

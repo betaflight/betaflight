@@ -288,7 +288,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
     };
 
     // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
+    spiWait(fdevice->io.handle.dev);
 
     m25p16_setCommandAddress(&sectorErase[1], address, fdevice->isLargeFlash);
 
@@ -311,9 +311,6 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
             {bulkErase, NULL, sizeof(bulkErase), true, NULL},
             {NULL, NULL, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
 
     spiSequence(fdevice->io.handle.dev, segments);
 
@@ -346,7 +343,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     };
 
     // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
+    spiWait(fdevice->io.handle.dev);
 
     // Patch the pageProgram segment
     segments[PAGE_PROGRAM].len = fdevice->isLargeFlash ? 5 : 4;
@@ -427,7 +424,7 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
     STATIC_DMA_DATA_AUTO uint8_t readBytes[5] = { M25P16_INSTRUCTION_READ_BYTES };
 
     // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
+    spiWait(fdevice->io.handle.dev);
 
     busSegment_t segments[] = {
             {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
