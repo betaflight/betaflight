@@ -414,6 +414,19 @@ uint16_t spiCalculateDivider(uint32_t freq)
     return divisor;
 }
 
+uint32_t spiCalculateClock(uint16_t spiClkDivisor)
+{
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+    uint32_t spiClk = SystemCoreClock / 2;
+#elif defined(STM32H7)
+    uint32_t spiClk = 100000000;
+#else
+#error "Base SPI clock not defined for this architecture"
+#endif
+
+    return spiClk / spiClkDivisor;
+}
+
 // Interrupt handler for SPI receive DMA completion
 static void spiIrqHandler(const extDevice_t *dev)
 {
