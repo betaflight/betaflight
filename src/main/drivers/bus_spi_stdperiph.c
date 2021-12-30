@@ -355,6 +355,12 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
 
     SPI_Cmd(instance, ENABLE);
 
+    // Make sure the RX FIFO is empty
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE)) {
+        volatile uint16_t w = SPI_I2S_ReceiveData(instance);
+        (void)w;
+    }
+
     // Check that any there are no attempts to DMA to/from CCD SRAM
     for (busSegment_t *checkSegment = bus->curSegment; checkSegment->len; checkSegment++) {
         // Check there is no receive data as only transmit DMA is available
