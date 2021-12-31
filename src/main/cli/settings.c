@@ -1065,9 +1065,6 @@ const clivalue_t valueTable[] = {
     { "dterm_lpf1_dyn_min_hz",      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, DYN_LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_min_hz) },
     { "dterm_lpf1_dyn_max_hz",      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, DYN_LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_max_hz) },
     { "dterm_lpf1_dyn_expo",        VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 10 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_expo) },
-    { "dterm_lpf1_dyn_thr_percent", VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_thr_percent) },
-    { "dterm_lpf1_dyn_min_weight",  VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 90 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_dyn_min_weight) },
-
 #endif
     { PARAM_NAME_DTERM_LPF1_TYPE,       VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DTERM_LPF_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_type) },
     { PARAM_NAME_DTERM_LPF1_STATIC_HZ,  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf1_static_hz) },

@@ -226,8 +226,6 @@ typedef struct pidProfile_s {
     uint8_t simplified_dterm_filter;
     uint8_t simplified_dterm_filter_multiplier;
     uint8_t simplified_pitch_pi_gain;
-    uint8_t dterm_lpf1_dyn_thr_percent; //add comment
-    uint8_t dterm_lpf1_dyn_min_weight; //add comment
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -363,8 +361,6 @@ typedef struct pidRuntime_s {
     uint16_t dynLpfMin;
     uint16_t dynLpfMax;
     uint8_t dynLpfCurveExpo;
-    uint8_t dynLpfThrPercent;
-    uint8_t dynLpfMinWeight;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL

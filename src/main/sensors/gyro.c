@@ -634,7 +634,7 @@ void dynLpfGyroUpdate(float throttle)
         if (gyro.dynLpfThrPercent) {
             const float throttlePercent = gyro.dynLpfThrPercent / 100.0f;
             //weight = MIN(throttle / throttlePercent, 1.0f);
-            const float minWeight = pidRuntime.dynLpfMinWeight / 100.0f;
+            const float minWeight = gyro.dynLpfMinWeight / 100.0f;
             weight = MIN(scaleRangef(throttle, 0.0f, throttlePercent, minWeight, 1.0f), 1.0f);
         }
 
