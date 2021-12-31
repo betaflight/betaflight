@@ -99,6 +99,7 @@ void pt1FilterInit(pt1Filter_t *filter, float k);
 void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k);
 void pt1FilterUpdateCutoffWeighted(pt1Filter_t *filter, float k, float weight);
 float pt1FilterApply(pt1Filter_t *filter, float input);
+float pt1FilterApplyWeighted(pt1Filter_t *filter, float input);
 
 float pt2FilterGain(float f_cut, float dT);
 void pt2FilterInit(pt2Filter_t *filter, float k);

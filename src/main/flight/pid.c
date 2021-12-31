@@ -1240,6 +1240,7 @@ void dynLpfDTermUpdate(float throttle)
         } else {
             cutoffFreq = fmaxf(dynThrottle(throttle) * pidRuntime.dynLpfMax, pidRuntime.dynLpfMin);
         }
+
         switch (pidRuntime.dynLpfFilter) {
         case DYN_LPF_PT1:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

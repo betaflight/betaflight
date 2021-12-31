@@ -166,7 +166,11 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
     if (lpfHz) {
         switch (type) {
         case FILTER_PT1:
+#ifdef USE_DYN_LPF
+            *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApplyWeighted;
+#else
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApply;
+#endif
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain);
             }
