@@ -615,8 +615,8 @@ bool max7456DrawScreen(void)
     static uint16_t pos = 0;
     // This routine doesn't block so need to use static data
     static busSegment_t segments[] = {
-            {NULL, NULL, 0, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
 
     if (!fontIsLoading) {
@@ -697,7 +697,7 @@ bool max7456DrawScreen(void)
         }
 
         if (spiBufIndex) {
-            segments[0].txData = spiBuf;
+            segments[0].u.buffers.txData = spiBuf;
             segments[0].len = spiBufIndex;
 
             spiSequence(dev, &segments[0]);

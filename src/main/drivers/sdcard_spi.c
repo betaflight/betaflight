@@ -121,14 +121,14 @@ busStatus_e sdcard_callbackIdle(uint32_t arg)
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
 
-    uint8_t idleByte = dev->bus->curSegment->rxData[0];
+    uint8_t idleByte = dev->bus->curSegment->u.buffers.rxData[0];
 
     if (idleByte == 0xff) {
         return BUS_READY;
     }
 
     if (--sdcard->idleCount == 0) {
-        dev->bus->curSegment->rxData[0] = 0x00;
+        dev->bus->curSegment->u.buffers.rxData[0] = 0x00;
         return BUS_ABORT;
     }
 
@@ -143,7 +143,7 @@ busStatus_e sdcard_callbackNotIdle(uint32_t arg)
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
 
-    uint8_t idleByte = dev->bus->curSegment->rxData[0];
+    uint8_t idleByte = dev->bus->curSegment->u.buffers.rxData[0];
 
     if (idleByte != 0xff) {
         return BUS_READY;
@@ -168,8 +168,8 @@ static bool sdcard_waitForIdle(int maxBytesToWait)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-        {NULL, &idleByte, sizeof(idleByte), false, sdcard_callbackIdle},
-        {NULL, NULL, 0, false, NULL},
+        {.u.buffers = {NULL, &idleByte}, sizeof(idleByte), false, sdcard_callbackIdle},
+        {.u.buffers = {NULL, NULL}, 0, false, NULL},
     };
 
     sdcard.idleCount = maxBytesToWait;
@@ -193,8 +193,8 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-        {NULL, &idleByte, sizeof(idleByte), false, sdcard_callbackNotIdle},
-        {NULL, NULL, 0, false, NULL},
+        {.u.buffers = {NULL, &idleByte}, sizeof(idleByte), false, sdcard_callbackNotIdle},
+        {.u.buffers = {NULL, NULL}, 0, false, NULL},
     };
 
     sdcard.idleCount = maxDelay;
@@ -232,9 +232,9 @@ static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-            {command, NULL, sizeof(command), false, NULL},
-            {NULL, &idleByte, sizeof(idleByte), false, sdcard_callbackNotIdle},
-            {NULL, NULL, 0, false, NULL},
+            {.u.buffers = {command, NULL}, sizeof(command), false, NULL},
+            {.u.buffers = {NULL, &idleByte}, sizeof(idleByte), false, sdcard_callbackNotIdle},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
     };
 
     if (!sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY) && commandCode != SDCARD_COMMAND_GO_IDLE_STATE)
@@ -279,8 +279,8 @@ static bool sdcard_validateInterfaceCondition(void)
     } else if (status == SDCARD_R1_STATUS_BIT_IDLE) {
         // Note that this does not release the CS at the end of the transaction
         busSegment_t segments[] = {
-                {NULL, ifCondReply, sizeof(ifCondReply), false, NULL},
-                {NULL, NULL, 0, false, NULL},
+                {.u.buffers = {NULL, ifCondReply}, sizeof(ifCondReply), false, NULL},
+                {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
         spiSequence(&sdcard.dev, &segments[0]);
@@ -312,8 +312,8 @@ static bool sdcard_readOCRRegister(uint32_t *result)
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-             {NULL, response, sizeof(response), false, NULL},
-                {NULL, NULL, 0, false, NULL},
+             {.u.buffers = {NULL, response}, sizeof(response), false, NULL},
+             {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
     spiSequence(&sdcard.dev, &segments[0]);
@@ -359,10 +359,10 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
 
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-            {NULL, buffer, count, false, NULL},
+            {.u.buffers = {NULL, buffer}, count, false, NULL},
             // Discard trailing CRC, we don't care
-            {NULL, NULL, 2, false, NULL},
-            {NULL, NULL, 0, false, NULL},
+            {.u.buffers = {NULL, NULL}, 2, false, NULL},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
     spiSequence(&sdcard.dev, &segments[0]);
@@ -379,9 +379,9 @@ static bool sdcard_sendDataBlockFinish(void)
     uint8_t dataResponseToken;
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
-            {(uint8_t *)&dummyCRC, NULL, sizeof(dummyCRC), false, NULL},
-            {NULL, &dataResponseToken, sizeof(dataResponseToken), false, NULL},
-            {NULL, NULL, 0, false, NULL},
+            {.u.buffers = {(uint8_t *)&dummyCRC, NULL}, sizeof(dummyCRC), false, NULL},
+            {.u.buffers = {NULL, &dataResponseToken}, sizeof(dataResponseToken), false, NULL},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
     spiSequence(&sdcard.dev, &segments[0]);
@@ -416,13 +416,13 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
     // Note that this does not release the CS at the end of the transaction
     static busSegment_t segments[] = {
             // Write a single 0xff
-            {NULL, NULL, 1, false, NULL},
-            {&token, NULL, sizeof(token), false, NULL},
-            {NULL, NULL, 0, false, NULL},
-            {NULL, NULL, 0, false, NULL},
+            {.u.buffers = {NULL, NULL}, 1, false, NULL},
+            {.u.buffers = {&token, NULL}, sizeof(token), false, NULL},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
-    segments[2].txData = buffer;
+    segments[2].u.buffers.txData = buffer;
     segments[2].len = spiUseDMA(&sdcard.dev) ? SDCARD_BLOCK_SIZE : SDCARD_NON_DMA_CHUNK_SIZE;
 
     spiSequence(&sdcard.dev, &segments[0]);
@@ -562,8 +562,8 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
             // Write a single 0xff
-            {NULL, NULL, SDCARD_INIT_NUM_DUMMY_BYTES, false, NULL},
-            {NULL, NULL, 0, false, NULL},
+            {.u.buffers = {NULL, NULL}, SDCARD_INIT_NUM_DUMMY_BYTES, false, NULL},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
     spiSequence(&sdcard.dev, &segments[0]);
@@ -613,9 +613,9 @@ static sdcardOperationStatus_e sdcard_endWriteBlocks(void)
     // Note that this does not release the CS at the end of the transaction
     busSegment_t segments[] = {
             // 8 dummy clocks to guarantee N_WR clocks between the last card response and this token
-            {NULL, NULL, 1, false, NULL},
-            {&token, NULL, sizeof(token), false, NULL},
-            {NULL, NULL, 0, false, NULL},
+            {.u.buffers = {NULL, NULL}, 1, false, NULL},
+            {.u.buffers = {&token, NULL}, sizeof(token), false, NULL},
+            {.u.buffers = {NULL, NULL}, 0, false, NULL},
         };
 
     spiSequence(&sdcard.dev, &segments[0]);
