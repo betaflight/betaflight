@@ -706,14 +706,13 @@ uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 {
     busDevice_t *bus = dev->bus;
-    busSegment_t *queuedEndSegments[NUM_QUEUE_SEGS];
-    uint8_t queuedEndSegmentsIndex = 0;
 
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         if (spiIsBusy(dev)) {
             busSegment_t *endSegment;
 
             // Defer this transfer to be triggered upon completion of the current transfer
+
             // Find the last segment of the current transfer
             for (endSegment = segments; endSegment->len; endSegment++);
 
@@ -725,27 +724,18 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
                     for (; endCmpSegment->len; endCmpSegment++);
 
                     if (endCmpSegment == endSegment) {
-                        // Attempt to use the new segment list twice in the same queue. Abort.
-                        return;
-                    }
-
-                    for (uint8_t n = 0; n < queuedEndSegmentsIndex; n++) {
-                        if (endCmpSegment == queuedEndSegments[n]) {
-                            // Attempt to use the same segment list twice in the same queue. Abort.
-                            return;
-                        }
-                    }
-
-                    queuedEndSegments[queuedEndSegmentsIndex++] = endCmpSegment;
-
-                    if (queuedEndSegmentsIndex == NUM_QUEUE_SEGS) {
-                        // Queue is too long. Abort.
+                        /* Attempt to use the new segment list twice in the same queue. Abort.
+                         * Note that this can only happen with non-blocking transfers so drivers must take
+                         * care to avoid this.
+                         * */
                         return;
                     }
 
                     if (endCmpSegment->txData == NULL) {
+                        // End of the segment list queue reached
                         break;
                     } else {
+                        // Follow the link to the next queued segment list
                         endCmpSegment = (busSegment_t *)endCmpSegment->rxData;
                     }
                 }
