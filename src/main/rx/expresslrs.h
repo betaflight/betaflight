@@ -34,3 +34,4 @@
 bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 void expressLrsSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e expressLrsDataReceived(uint8_t *payload);
+void expressLrsStop(void);

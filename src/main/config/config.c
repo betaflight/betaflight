@@ -736,6 +736,9 @@ void writeUnmodifiedConfigToEEPROM(void)
 
 void writeEEPROM(void)
 {
+#ifdef USE_RX_SPI
+    rxSpiStop(); // some rx spi protocols use hardware timer, which needs to be stopped before writing to eeprom
+#endif
     systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
 
     writeUnmodifiedConfigToEEPROM();

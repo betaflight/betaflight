@@ -427,6 +427,8 @@ void sx127xGetLastPacketStats(int8_t *rssi, int8_t *snr)
 {
     *rssi = sx127xGetLastPacketRSSI();
     *snr = sx127xGetLastPacketSNR();
+    int8_t negOffset = (*snr < 0) ? *snr : 0;
+    *rssi += negOffset;
 }
 
 uint8_t sx127xGetIrqFlags(void)

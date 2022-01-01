@@ -458,6 +458,8 @@ void sx1280GetLastPacketStats(int8_t *rssi, int8_t *snr)
     sx1280ReadCommandBurst(SX1280_RADIO_GET_PACKETSTATUS, status, 2);
     *rssi = -(int8_t)(status[0] / 2);
     *snr = ((int8_t) status[1]) / 4;
+    int8_t negOffset = (*snr < 0) ? *snr : 0;
+    *rssi += negOffset;
 }
 
 #endif /* USE_RX_SX1280 */
