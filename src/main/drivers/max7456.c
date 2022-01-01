@@ -631,9 +631,6 @@ bool max7456DrawScreen(void)
             return true;
         }
 
-        // Ensure any prior DMA has completed before overwriting the buffer
-        spiWaitClaim(dev);
-
         // Allow for 8 bytes followed by an ESCAPE and reset of DMM at end of buffer
         maxSpiBufStartIndex -= 12;
 

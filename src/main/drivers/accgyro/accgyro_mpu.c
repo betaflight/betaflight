@@ -217,9 +217,6 @@ bool mpuAccReadSPI(accDev_t *acc)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(&acc->gyro->dev);
-
         acc->gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
 
         busSegment_t segments[] = {
@@ -274,8 +271,6 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroDmaMaxDuration = 5;
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
             if (spiUseDMA(&gyro->dev)) {
-                // Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
-                spiSetAtomicWait(&gyro->dev);
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
                 gyro->segments[0].len = 15;
@@ -299,9 +294,6 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(&gyro->dev);
-
         gyro->dev.txBuf[0] = MPU_RA_GYRO_XOUT_H | 0x80;
 
         busSegment_t segments[] = {

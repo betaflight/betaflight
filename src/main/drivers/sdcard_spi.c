@@ -174,9 +174,6 @@ static bool sdcard_waitForIdle(int maxBytesToWait)
 
     sdcard.idleCount = maxBytesToWait;
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
-
     spiSequence(&sdcard.dev, &segments[0]);
 
     // Block pending completion of SPI access
@@ -201,9 +198,6 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
     };
 
     sdcard.idleCount = maxDelay;
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
 
     spiSequence(&sdcard.dev, &segments[0]);
 
@@ -247,9 +241,6 @@ static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
         return 0xFF;
 
     sdcard.idleCount = SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY;
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
 
     spiSequence(&sdcard.dev, &segments[0]);
 
@@ -374,9 +365,6 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
             {NULL, NULL, 0, false, NULL},
         };
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
-
     spiSequence(&sdcard.dev, &segments[0]);
 
     // Block pending completion of SPI access
@@ -395,9 +383,6 @@ static bool sdcard_sendDataBlockFinish(void)
             {NULL, &dataResponseToken, sizeof(dataResponseToken), false, NULL},
             {NULL, NULL, 0, false, NULL},
         };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
 
     spiSequence(&sdcard.dev, &segments[0]);
 
@@ -439,9 +424,6 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
 
     segments[2].txData = buffer;
     segments[2].len = spiUseDMA(&sdcard.dev) ? SDCARD_BLOCK_SIZE : SDCARD_NON_DMA_CHUNK_SIZE;
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
 
     spiSequence(&sdcard.dev, &segments[0]);
 
@@ -584,9 +566,6 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
             {NULL, NULL, 0, false, NULL},
         };
 
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
-
     spiSequence(&sdcard.dev, &segments[0]);
 
     // Block pending completion of SPI access
@@ -638,9 +617,6 @@ static sdcardOperationStatus_e sdcard_endWriteBlocks(void)
             {&token, NULL, sizeof(token), false, NULL},
             {NULL, NULL, 0, false, NULL},
         };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(&sdcard.dev);
 
     spiSequence(&sdcard.dev, &segments[0]);
 
