@@ -618,6 +618,9 @@ targets:
 	@echo "targets-group-rest:  $(words $(GROUP_OTHER_TARGETS)) targets"
 	@echo "total in all groups  $(words $(CI_TARGETS)) targets"
 
+targets-ci-print:
+	@echo $(CI_TARGETS)
+
 ## target-mcu        : print the MCU type of the target
 target-mcu:
 	@echo $(TARGET_MCU)
