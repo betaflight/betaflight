@@ -85,9 +85,11 @@ SECTIONS
   .spracingpixelosdlibrary_d2_ram (NOLOAD):
   {
     . = ALIGN(32);
+    PROVIDE(__spracingpixelosd_lib_d2_start = .);
     /* fill to end of the area, so the usage is 100% */
     FILL(0xDEADBEEF);
     . = ORIGIN(SPRACINGPIXELOSD_D2_RAM) + LENGTH(SPRACINGPIXELOSD_D2_RAM);
+    PROVIDE(__spracingpixelosd_lib_d2_end = .);
   } >SPRACINGPIXELOSD_D2_RAM
 
   .spracingpixelosdlibrary_dtcm_ram (NOLOAD):
@@ -98,15 +100,40 @@ SECTIONS
     . = ORIGIN(SPRACINGPIXELOSD_DTCM_RAM) + LENGTH(SPRACINGPIXELOSD_DTCM_RAM);
   } >SPRACINGPIXELOSD_DTCM_RAM
 
+  /* used during startup to initialized dmaram_data */
+  _sdmaram_idata = LOADADDR(.dmaram_data);
+
+  . = ALIGN(32);
+  .dmaram_data :
+  {
+    _sdmaram_data = .;        /* create a global symbol at data start */
+    *(.dmaram_data)           /* .data sections */
+    *(.dmaram_data*)          /* .data* sections */
+    . = ALIGN(32);
+    _edmaram_data = .;        /* define a global symbol at data end */
+  } >RAM AT >FLASH
+
+  . = ALIGN(32);
+  .dmaram_bss (NOLOAD) :
+  {
+    _sdmaram_bss = .;
+    __dmaram_bss_start__ = _sdmaram_bss;
+    *(.dmaram_bss)
+    *(SORT_BY_ALIGNMENT(.dmaram_bss*))
+    . = ALIGN(32);
+    _edmaram_bss = .;
+    __dmaram_bss_end__ = _edmaram_bss;
+  } >RAM
+
+  . = ALIGN(32);
   .DMA_RAM (NOLOAD) :
   {
-    . = ALIGN(32);
     KEEP(*(.DMA_RAM))
     PROVIDE(dmaram_end = .);
     _edmaram = .;
     _dmaram_end__ = _edmaram;
-  } >D2_RAM
-  
+  } >RAM
+
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
@@ -130,7 +157,7 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
-  
+
   .spracingpixelosdlibrary_d1_ram (NOLOAD):
   {
     . = ALIGN(32);
