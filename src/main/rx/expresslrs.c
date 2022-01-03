@@ -98,7 +98,10 @@ typedef struct eprState_s {
     bool eventRecorded[EPR_EVENT_COUNT];
 } eprState_t;
 
-eprState_t eprState = {0};
+eprState_t eprState = {
+    .eventAtUs = {0},
+    .eventRecorded = {0},
+};
 
 static void expressLrsEPRRecordEvent(eprEvent_e event, uint32_t currentTimeUs)
 {
