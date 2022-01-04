@@ -1359,7 +1359,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 #ifdef DEBUG_FRAMEBUFFER_ERASE_WAIT
             debug[1]++;
 #endif
-            return;
+            break;
         }
 #endif
 
