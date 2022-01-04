@@ -28,6 +28,7 @@ struct rxConfig_s;
 struct rxRuntimeState_s;
 
 void ghstRxWriteTelemetryData(const void *const data, const int len);
+uint8_t ghstRxGetTelemetryBufLen(void);
 void ghstRxSendTelemetryData(void);
 
 bool ghstRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);

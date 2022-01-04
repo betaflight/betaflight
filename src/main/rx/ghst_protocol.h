@@ -63,6 +63,9 @@ typedef enum {
     GHST_UL_RC_CHANS_HS4_12_RSSI   = 0x33,  // 12 bit primary 4 channel, plus RSSI, LQ, RF Mode, and Tx Power
     GHST_UL_RC_CHANS_HS4_12_LAST   = 0x3f,  // 12 bit last frame type
 
+    // MSP commands
+    GHST_UL_MSP_REQ                = 0x21,  // response request using msp sequence as command
+    GHST_UL_MSP_WRITE              = 0x22,  // write
 } ghstUl_e;
 
 typedef enum {
@@ -72,7 +75,8 @@ typedef enum {
     GHST_DL_PACK_STAT           = 0x23,     // Battery (Pack) Status
     GHST_DL_GPS_PRIMARY         = 0x25,     // Primary GPS data (position)
     GHST_DL_GPS_SECONDARY       = 0x26,
-    GHST_DL_MAGBARO             = 0x27
+    GHST_DL_MAGBARO             = 0x27,
+    GHST_DL_MSP_RESP            = 0x28,     // reply
 } ghstDl_e;
 
 typedef enum {

@@ -29,6 +29,7 @@
 #include "build/atomic.h"
 #include "build/build_config.h"
 #include "build/version.h"
+#include "build/debug.h"
 
 #include "config/feature.h"
 #include "pg/pg.h"
@@ -69,8 +70,11 @@
 #define GHST_FRAME_PACK_PAYLOAD_SIZE        10
 #define GHST_FRAME_GPS_PAYLOAD_SIZE         10
 #define GHST_FRAME_MAGBARO_PAYLOAD_SIZE     10
-#define GHST_FRAME_LENGTH_CRC               1
-#define GHST_FRAME_LENGTH_TYPE              1
+
+#define GHST_MSP_BUFFER_SIZE    96
+#define GHST_UL_MSP_FRAME_SIZE  10
+#define GHST_DL_MSP_FRAME_SIZE   6
+#define GHST_MSP_LENGTH_OFFSET   1
 
 static bool ghstTelemetryEnabled;
 static uint8_t ghstFrame[GHST_FRAME_SIZE];
@@ -213,6 +217,31 @@ typedef enum {
 static uint8_t ghstScheduleCount;
 static uint8_t ghstSchedule[GHST_SCHEDULE_COUNT_MAX];
 
+static bool mspReplyPending;
+
+void ghstScheduleMspResponse()
+{
+    mspReplyPending = true;
+}
+
+static void ghstSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
+{
+    sbuf_t ghstPayloadBuf;
+    sbuf_t *dst = &ghstPayloadBuf;
+
+    static uint8_t mspFrameCounter = 0;
+    DEBUG_SET(DEBUG_GHST_MSP, 1, ++mspFrameCounter);
+
+    ghstInitializeFrame(dst);                                                               // addr
+    sbufWriteU8(dst, GHST_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);   // lenght
+    sbufWriteU8(dst, GHST_DL_MSP_RESP);                                                 // type
+    sbufWriteData(dst, payload, payloadSize);                                           // payload
+    for(int i = 0; i < GHST_PAYLOAD_SIZE - payloadSize; ++i) {                          // payload fill zeroes
+        sbufWriteU8(dst, 0);
+    }
+    ghstFinalize(dst);  // crc
+}
+
 static void processGhst(void)
 {
     static uint8_t ghstScheduleIndex = 0;
@@ -260,6 +289,9 @@ void initGhstTelemetry(void)
     }
 
     ghstTelemetryEnabled = false;
+#if defined(USE_MSP_OVER_TELEMETRY)
+    mspReplyPending = false;
+#endif
 
     int index = 0;
     if ((isBatteryVoltageConfigured() && telemetryIsSensorEnabled(SENSOR_VOLTAGE))
@@ -301,13 +333,24 @@ bool checkGhstTelemetryState(void)
 }
 
 // Called periodically by the scheduler
- void handleGhstTelemetry(timeUs_t currentTimeUs)
+void handleGhstTelemetry(timeUs_t currentTimeUs)
 {
     static timeUs_t ghstLastCycleTime;
 
     if (!ghstTelemetryEnabled) {
         return;
     }
+
+    // Send ad-hoc response frames as soon as possible
+#if defined(USE_MSP_OVER_TELEMETRY)
+    if (mspReplyPending) {
+        ghstLastCycleTime = currentTimeUs;
+        if (ghstRxGetTelemetryBufLen() == 0) {
+            mspReplyPending = sendMspReply(GHST_DL_MSP_FRAME_SIZE, ghstSendMspResponse);
+        }
+        return;
+    }
+#endif
 
     // Ready to send telemetry?
     if (currentTimeUs >= ghstLastCycleTime + (GHST_CYCLETIME_US / ghstScheduleCount)) {
