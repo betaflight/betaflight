@@ -105,7 +105,7 @@ SECTIONS
     PROVIDE(__frame_buffer_end = .);
   } >FRAMEBUFFER_RAM
 
-  .spracingpixelosdlibrary_d2_ram (NOLOAD):
+  .sprosdl_d2_ram (NOLOAD):
   {
     . = ALIGN(32);
     PROVIDE(__spracingpixelosd_lib_d2_start = .);
@@ -115,7 +115,7 @@ SECTIONS
     PROVIDE(__spracingpixelosd_lib_d2_end = .);
   } >SPRACINGPIXELOSD_D2_RAM
 
-  .spracingpixelosdlibrary_dtcm_ram (NOLOAD):
+  .sprosdl_dtcm_ram (NOLOAD):
   {
     . = ALIGN(32);
     /* fill to end of the area, so the usage is 100% */
@@ -184,7 +184,7 @@ SECTIONS
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
 
-  .spracingpixelosdlibrary_d1_ram (NOLOAD):
+  .sprosdl_d1_ram (NOLOAD):
   {
     . = ALIGN(32);
     /* fill to end of the area, so the usage is 100% */
@@ -192,7 +192,7 @@ SECTIONS
     . = ORIGIN(SPRACINGPIXELOSD_D1_RAM) + LENGTH(SPRACINGPIXELOSD_D1_RAM);
   } >SPRACINGPIXELOSD_D1_RAM
   
-  .spracingpixelosdlibrary_api (NOLOAD):
+  .sprosdl_api (NOLOAD):
   {
     . = ALIGN(4);
     PROVIDE_HIDDEN (__library_descriptor_start = .);
