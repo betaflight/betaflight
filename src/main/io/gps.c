@@ -1493,15 +1493,20 @@ static bool UBLOX_parse_gps(void)
         gpsSol.hdop = _buffer.pvt.pDOP;
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
-        gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headVeh / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
         if (!rtcHasTime() && (_buffer.pvt.valid & NAV_VALID_DATE) && (_buffer.pvt.valid & NAV_VALID_TIME)) {
-            rtcTime_t temp_time = (_buffer.pvt.sec + _buffer.pvt.min * 60 + _buffer.pvt.hour * 3600 + _buffer.pvt.day * 86400 +
-                                    (_buffer.pvt.year - 70) * 31536000 + ((_buffer.pvt.year - 69) / 4) * 86400 -
-                                    ((_buffer.pvt.year - 1) / 100) * 86400 + ((_buffer.pvt.year + 299) / 400) * 86400) * 1000L;
-            rtcSet(&temp_time);
+            dateTime_t dt;
+            dt.year = _buffer.pvt.year;
+            dt.month = _buffer.pvt.month;
+            dt.day = _buffer.pvt.day;
+            dt.hours = _buffer.pvt.hour;
+            dt.minutes = _buffer.pvt.min;
+            dt.seconds = _buffer.pvt.sec;
+            dt.millis = (_buffer.pvt.nano > 0) ? _buffer.pvt.nano / 1000 : 0; //up to 5ms of error
+            rtcSetDateTime(&dt);
         }
 #endif
         break;
