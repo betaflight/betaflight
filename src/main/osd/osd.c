@@ -893,6 +893,9 @@ static uint8_t osdShowStats(int statsRowCount)
 
 static void osdRefreshStats(void)
 {
+    // Non-flight operation which takes a little longer than normal
+    schedulerIgnoreTaskExecTime();
+
     displayClearScreen(osdDisplayPort);
     if (osdStatsRowCount == 0) {
         // No stats row count has been set yet.

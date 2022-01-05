@@ -169,9 +169,9 @@ extern "C" {
 
 TEST(SchedulerUnittest, SetupTasks)
 {
-	for (int i = 0; i < TASK_COUNT; ++i) {
-		tasks[i].id = &task_ids[i];
-	}
+    for (int i = 0; i < TASK_COUNT; ++i) {
+        tasks[i].id = &task_ids[i];
+    }
 }
 
 
