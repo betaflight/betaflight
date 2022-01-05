@@ -77,23 +77,6 @@ typedef struct busDevice_s {
     bool initSegment;
 } busDevice_t;
 
-/* Each SPI access may comprise multiple parts, for example, wait/write enable/write/data each of which
- * is defined by a segment, with optional callback after each is completed
- */
-typedef struct busSegment_s {
-    /* Note that txData may point to the transmit buffer, or in the case of the final segment to
-     * a const extDevice_t * structure to link to the next transfer.
-     */
-    uint8_t *txData;
-    /* Note that rxData may point to the receive buffer, or in the case of the final segment to
-     * a busSegment_t * structure to link to the next transfer.
-     */
-    uint8_t *rxData;
-    int len;
-    bool negateCS; // Should CS be negated at the end of this segment
-    busStatus_e (*callback)(uint32_t arg);
-} busSegment_t;
-
 // External device has an associated bus and bus dependent address
 typedef struct extDevice_s {
     busDevice_t *bus;
@@ -128,6 +111,28 @@ typedef struct extDevice_s {
     uint32_t callbackArg;
 } extDevice_t;
 
+/* Each SPI access may comprise multiple parts, for example, wait/write enable/write/data each of which
+ * is defined by a segment, with optional callback after each is completed
+ */
+typedef struct busSegment_s {
+    union {
+        struct {
+            // Transmit buffer
+            uint8_t *txData;
+            // Receive buffer, or in the case of the final segment to
+            uint8_t *rxData;
+        } buffers;
+        struct {
+            // Link to the device associated with the next transfer
+            const extDevice_t *dev;
+            // Segments to process in the next transfer.
+            struct busSegment_s *segments;
+        } link;
+    } u;
+    int len;
+    bool negateCS; // Should CS be negated at the end of this segment
+    busStatus_e (*callback)(uint32_t arg);
+} busSegment_t;
 
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);

@@ -319,11 +319,11 @@ static bool bmi270AccRead(accDev_t *acc)
         acc->gyro->dev.txBuf[0] = BMI270_REG_ACC_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
-                {NULL, NULL, 8, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {NULL, NULL}, 8, true, NULL},
+                {.u.buffers = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].txData = acc->gyro->dev.txBuf;
-        segments[0].rxData = acc->gyro->dev.rxBuf;
+        segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
+        segments[0].u.buffers.rxData = acc->gyro->dev.rxBuf;
 
         spiSequence(&acc->gyro->dev, &segments[0]);
 
@@ -375,8 +375,8 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
                 gyro->dev.txBuf[0] = BMI270_REG_ACC_DATA_X_LSB | 0x80;
                 gyro->segments[0].len = 14;
                 gyro->segments[0].callback = bmi270Intcallback;
-                gyro->segments[0].txData = gyro->dev.txBuf;
-                gyro->segments[0].rxData = gyro->dev.rxBuf;
+                gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
+                gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
             } else {
@@ -397,11 +397,11 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
         gyro->dev.txBuf[0] = BMI270_REG_GYR_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
-                {NULL, NULL, 8, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {NULL, NULL}, 8, true, NULL},
+                {.u.buffers = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].txData = gyro->dev.txBuf;
-        segments[0].rxData = gyro->dev.rxBuf;
+        segments[0].u.buffers.txData = gyro->dev.txBuf;
+        segments[0].u.buffers.rxData = gyro->dev.rxBuf;
 
         spiSequence(&gyro->dev, &segments[0]);
 
