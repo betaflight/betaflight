@@ -840,15 +840,15 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
     }
 
     rxSpiCommonIOInit(rxConfig);
-	
+    
     rxRuntimeState->channelCount = ELRS_MAX_CHANNELS;
-	
+    
     extiConfig->ioConfig = IOCFG_IPD;
     extiConfig->trigger = BETAFLIGHT_EXTI_TRIGGER_RISING;
 
     if (rxExpressLrsSpiConfig()->resetIoTag) {
         receiver.resetPin = IOGetByTag(rxExpressLrsSpiConfig()->resetIoTag);
-	} else {
+    } else {
         receiver.resetPin = IO_NONE;
     }
 

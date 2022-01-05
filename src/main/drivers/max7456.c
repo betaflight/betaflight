@@ -395,21 +395,20 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
     }
 
 #if defined(USE_OVERCLOCK)
-    max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
-
     // Determine SPI clock divisor based on config and the device type.
 
     switch (max7456Config->clockConfig) {
     case MAX7456_CLOCK_CONFIG_HALF:
-        max7456SpiClockDiv <<= 1;
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2);
         break;
 
     case MAX7456_CLOCK_CONFIG_NOMINAL:
     default:
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
         break;
 
     case MAX7456_CLOCK_CONFIG_DOUBLE:
-        max7456SpiClockDiv >>= 1;
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ * 2);
         break;
     }
 
