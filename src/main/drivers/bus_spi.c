@@ -39,6 +39,8 @@
 #include "nvic.h"
 #include "pg/bus_spi.h"
 
+#define NUM_QUEUE_SEGS 5
+
 static uint8_t spiRegisteredDeviceCount = 0;
 
 spiDevice_t spiDevice[SPIDEV_COUNT];
@@ -157,34 +159,6 @@ bool spiIsBusy(const extDevice_t *dev)
     return (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
 }
 
-// Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
-void spiSetAtomicWait(const extDevice_t *dev)
-{
-    dev->bus->useAtomicWait = true;
-}
-
-// Wait for DMA completion and claim the bus driver
-void spiWaitClaim(const extDevice_t *dev)
-{
-    // If there is a device on the bus whose driver might call spiSequence from an ISR then an
-    // atomic access is required to claim the bus, however if not, then interrupts need not be
-    // disabled as this can result in edge triggered interrupts being missed
-
-    if (dev->bus->useAtomicWait) {
-        // Prevent race condition where the bus appears free, but a gyro interrupt starts a transfer
-        do {
-            ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-                if (dev->bus->curSegment == (busSegment_t *)BUS_SPI_FREE) {
-                    dev->bus->curSegment = (busSegment_t *)BUS_SPI_LOCKED;
-                }
-            }
-        } while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_LOCKED);
-    } else {
-        // Wait for completion
-        while (dev->bus->curSegment != (busSegment_t *)BUS_SPI_FREE);
-    }
-}
-
 // Wait for DMA completion
 void spiWait(const extDevice_t *dev)
 {
@@ -197,12 +171,9 @@ void spiReadWriteBuf(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData, i
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {txData, rxData, len, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {txData, rxData}, len, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -229,12 +200,9 @@ uint8_t spiReadWrite(const extDevice_t *dev, uint8_t data)
 
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&data, &retval, sizeof(data), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&data, &retval}, sizeof(data), true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -250,13 +218,10 @@ uint8_t spiReadWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
 
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof(reg), false, NULL},
-            {&data, &retval, sizeof(data), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
+            {.u.buffers = {&data, &retval}, sizeof(data), true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -270,12 +235,9 @@ void spiWrite(const extDevice_t *dev, uint8_t data)
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&data, NULL, sizeof(data), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&data, NULL}, sizeof(data), true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -287,13 +249,10 @@ void spiWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof(reg), false, NULL},
-            {&data, NULL, sizeof(data), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
+            {.u.buffers = {&data, NULL}, sizeof(data), true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -318,13 +277,10 @@ void spiReadRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t l
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof(reg), false, NULL},
-            {NULL, data, length, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
+            {.u.buffers = {NULL, data}, length, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -355,13 +311,10 @@ void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t
 {
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof(reg), false, NULL},
-            {data, NULL, length, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
+            {.u.buffers = {data, NULL}, length, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -374,13 +327,10 @@ uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg)
     uint8_t data;
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
-            {&reg, NULL, sizeof(reg), false, NULL},
-            {NULL, &data, sizeof(data), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
+            {.u.buffers = {NULL, &data}, sizeof(data), true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(dev);
 
     spiSequence(dev, &segments[0]);
 
@@ -414,6 +364,19 @@ uint16_t spiCalculateDivider(uint32_t freq)
     return divisor;
 }
 
+uint32_t spiCalculateClock(uint16_t spiClkDivisor)
+{
+#if defined(STM32F4) || defined(STM32G4) || defined(STM32F7)
+    uint32_t spiClk = SystemCoreClock / 2;
+#elif defined(STM32H7)
+    uint32_t spiClk = 100000000;
+#else
+#error "Base SPI clock not defined for this architecture"
+#endif
+
+    return spiClk / spiClkDivisor;
+}
+
 // Interrupt handler for SPI receive DMA completion
 static void spiIrqHandler(const extDevice_t *dev)
 {
@@ -445,12 +408,13 @@ static void spiIrqHandler(const extDevice_t *dev)
 
     if (nextSegment->len == 0) {
         // If a following transaction has been linked, start it
-        if (nextSegment->txData) {
-            const extDevice_t *nextDev = (const extDevice_t *)nextSegment->txData;
-            busSegment_t *nextSegments = (busSegment_t *)nextSegment->rxData;
-            nextSegment->txData = NULL;
+        if (nextSegment->u.link.dev) {
+            const extDevice_t *nextDev = nextSegment->u.link.dev;
+            busSegment_t *nextSegments = nextSegment->u.link.segments;
             // The end of the segment list has been reached
-            spiSequenceStart(nextDev, nextSegments);
+            bus->curSegment = nextSegments;
+            nextSegment->u.link.dev = NULL;
+            spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
@@ -492,15 +456,15 @@ static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 #ifdef __DCACHE_PRESENT
 #ifdef STM32H7
-    if (bus->curSegment->rxData &&
-        ((bus->curSegment->rxData < &_dmaram_start__) || (bus->curSegment->rxData >= &_dmaram_end__))) {
+    if (bus->curSegment->u.buffers.rxData &&
+        ((bus->curSegment->u.buffers.rxData < &_dmaram_start__) || (bus->curSegment->u.buffers.rxData >= &_dmaram_end__))) {
 #else
-    if (bus->curSegment->rxData) {
+    if (bus->curSegment->u.buffers.rxData) {
 #endif
          // Invalidate the D cache covering the area into which data has been read
         SCB_InvalidateDCache_by_Addr(
-            (uint32_t *)((uint32_t)bus->curSegment->rxData & ~CACHE_LINE_MASK),
-            (((uint32_t)bus->curSegment->rxData & CACHE_LINE_MASK) +
+            (uint32_t *)((uint32_t)bus->curSegment->u.buffers.rxData & ~CACHE_LINE_MASK),
+            (((uint32_t)bus->curSegment->u.buffers.rxData & CACHE_LINE_MASK) +
               bus->curSegment->len - 1 + CACHE_LINE_SIZE) & ~CACHE_LINE_MASK);
     }
 #endif // __DCACHE_PRESENT
@@ -559,7 +523,6 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
 
     bus->busType = BUS_TYPE_SPI;
     bus->useDMA = false;
-    bus->useAtomicWait = false;
     bus->deviceCount = 1;
     bus->initTx = &dev->initTx;
     bus->initRx = &dev->initRx;
@@ -745,26 +708,50 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
     busDevice_t *bus = dev->bus;
 
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
-        if ((bus->curSegment != (busSegment_t *)BUS_SPI_LOCKED) && spiIsBusy(dev)) {
-            /* Defer this transfer to be triggered upon completion of the current transfer. Blocking calls
-             * and those from non-interrupt context will have already called spiWaitClaim() so this will
-             * only happen for non-blocking calls called from an ISR.
-             */
-            busSegment_t *endSegment = bus->curSegment;
+        if (spiIsBusy(dev)) {
+            busSegment_t *endSegment;
 
-            if (endSegment) {
-                // Find the last segment of the current transfer
-                for (; endSegment->len; endSegment++);
+            // Defer this transfer to be triggered upon completion of the current transfer
+
+            // Find the last segment of the current transfer
+            for (endSegment = segments; endSegment->len; endSegment++);
+
+            busSegment_t *endCmpSegment = bus->curSegment;
+
+            if (endCmpSegment) {
+                while (true) {
+                    // Find the last segment of the current transfer
+                    for (; endCmpSegment->len; endCmpSegment++);
+
+                    if (endCmpSegment == endSegment) {
+                        /* Attempt to use the new segment list twice in the same queue. Abort.
+                         * Note that this can only happen with non-blocking transfers so drivers must take
+                         * care to avoid this.
+                         * */
+                        return;
+                    }
+
+                    if (endCmpSegment->u.link.dev == NULL) {
+                        // End of the segment list queue reached
+                        break;
+                    } else {
+                        // Follow the link to the next queued segment list
+                        endCmpSegment = endCmpSegment->u.link.segments;
+                    }
+                }
 
                 // Record the dev and segments parameters in the terminating segment entry
-                endSegment->txData = (uint8_t *)dev;
-                endSegment->rxData = (uint8_t *)segments;
+                endCmpSegment->u.link.dev = dev;
+                endCmpSegment->u.link.segments = segments;
 
                 return;
             }
+        } else {
+            // Claim the bus with this list of segments
+            bus->curSegment = segments;
         }
     }
 
-    spiSequenceStart(dev, segments);
+    spiSequenceStart(dev);
 }
 #endif

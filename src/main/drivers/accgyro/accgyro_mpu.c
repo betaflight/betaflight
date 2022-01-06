@@ -181,7 +181,7 @@ bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
-    const bool ack = busReadRegisterBuffer(&acc->gyro->dev, MPU_RA_ACCEL_XOUT_H, data, 6);
+    const bool ack = busReadRegisterBuffer(&acc->gyro->dev, acc->gyro->accDataReg, data, 6);
     if (!ack) {
         return false;
     }
@@ -197,7 +197,7 @@ bool mpuGyroRead(gyroDev_t *gyro)
 {
     uint8_t data[6];
 
-    const bool ack = busReadRegisterBuffer(&gyro->dev, MPU_RA_GYRO_XOUT_H, data, 6);
+    const bool ack = busReadRegisterBuffer(&gyro->dev, gyro->gyroDataReg, data, 6);
     if (!ack) {
         return false;
     }
@@ -217,17 +217,14 @@ bool mpuAccReadSPI(accDev_t *acc)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(&acc->gyro->dev);
-
         acc->gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
 
         busSegment_t segments[] = {
-                {NULL, NULL, 7, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
+                {.u.buffers = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].txData = acc->gyro->dev.txBuf;
-        segments[0].rxData = &acc->gyro->dev.rxBuf[1];
+        segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
+        segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
 
         spiSequence(&acc->gyro->dev, &segments[0]);
 
@@ -274,14 +271,12 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroDmaMaxDuration = 5;
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
             if (spiUseDMA(&gyro->dev)) {
-                // Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
-                spiSetAtomicWait(&gyro->dev);
                 gyro->dev.callbackArg = (uint32_t)gyro;
-                gyro->dev.txBuf[0] = MPU_RA_ACCEL_XOUT_H | 0x80;
-                gyro->segments[0].len = 15;
+                gyro->dev.txBuf[0] = gyro->accDataReg | 0x80;
+                gyro->segments[0].len = gyro->gyroDataReg - gyro->accDataReg + 7;
                 gyro->segments[0].callback = mpuIntcallback;
-                gyro->segments[0].txData = gyro->dev.txBuf;
-                gyro->segments[0].rxData = &gyro->dev.rxBuf[1];
+                gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
+                gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
             } else {
@@ -299,17 +294,14 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(&gyro->dev);
-
         gyro->dev.txBuf[0] = MPU_RA_GYRO_XOUT_H | 0x80;
 
         busSegment_t segments[] = {
-                {NULL, NULL, 7, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
+                {.u.buffers = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].txData = gyro->dev.txBuf;
-        segments[0].rxData = &gyro->dev.rxBuf[1];
+        segments[0].u.buffers.txData = gyro->dev.txBuf;
+        segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
 
         spiSequence(&gyro->dev, &segments[0]);
 
@@ -324,11 +316,14 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 
     case GYRO_EXTI_INT_DMA:
     {
+        // Acc and gyro data may not be continuous (MPU6xxx has temperature in between)
+        const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->accDataReg) >> 1) + 1;
+
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
-        gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[5]);
-        gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[6]);
-        gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[7]);
+        gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[gyroDataIndex]);
+        gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[gyroDataIndex + 1]);
+        gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[gyroDataIndex + 2]);
         break;
     }
 
@@ -479,6 +474,8 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
 void mpuGyroInit(gyroDev_t *gyro)
 {
+    gyro->accDataReg = MPU_RA_ACCEL_XOUT_H;
+    gyro->gyroDataReg = MPU_RA_GYRO_XOUT_H;
 #ifdef USE_GYRO_EXTI
     mpuIntExtiInit(gyro);
 #else

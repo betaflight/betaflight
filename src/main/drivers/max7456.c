@@ -56,6 +56,7 @@
 #define DEBUG_MAX7456_SPICLOCK_OVERCLOCK   0
 #define DEBUG_MAX7456_SPICLOCK_DEVTYPE     1
 #define DEBUG_MAX7456_SPICLOCK_DIVISOR     2
+#define DEBUG_MAX7456_SPICLOCK_X100        3
 
 // VM0 bits
 #define VIDEO_BUFFER_DISABLE        0x01
@@ -192,7 +193,7 @@ extDevice_t max7456Device;
 extDevice_t *dev = &max7456Device;
 
 static bool max7456DeviceDetected = false;
-static uint16_t max7456SpiClock;
+static uint16_t max7456SpiClockDiv;
 
 uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
 
@@ -398,28 +399,30 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
 
     switch (max7456Config->clockConfig) {
     case MAX7456_CLOCK_CONFIG_HALF:
-        max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2);
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2);
         break;
 
-    case MAX7456_CLOCK_CONFIG_OC:
-        max7456SpiClock = (cpuOverclock && (max7456DeviceType == MAX7456_DEVICE_TYPE_MAX)) ? spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2) : spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
+    case MAX7456_CLOCK_CONFIG_NOMINAL:
+    default:
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
         break;
 
-    case MAX7456_CLOCK_CONFIG_FULL:
-        max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
+    case MAX7456_CLOCK_CONFIG_DOUBLE:
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ * 2);
         break;
     }
 
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_OVERCLOCK, cpuOverclock);
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DEVTYPE, max7456DeviceType);
-    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClock);
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClockDiv);
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_X100, spiCalculateClock(max7456SpiClockDiv) / 10000);
 #else
     UNUSED(max7456Config);
     UNUSED(cpuOverclock);
-    max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
+    max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
 #endif
 
-    spiSetClkDivisor(dev, max7456SpiClock);
+    spiSetClkDivisor(dev, max7456SpiClockDiv);
 
     // force soft reset on Max7456
     spiWriteReg(dev, MAX7456ADD_VM0, MAX7456_RESET);
@@ -611,8 +614,8 @@ bool max7456DrawScreen(void)
     static uint16_t pos = 0;
     // This routine doesn't block so need to use static data
     static busSegment_t segments[] = {
-            {NULL, NULL, 0, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
 
     if (!fontIsLoading) {
@@ -630,9 +633,6 @@ bool max7456DrawScreen(void)
             // Not finished yet
             return true;
         }
-
-        // Ensure any prior DMA has completed before overwriting the buffer
-        spiWaitClaim(dev);
 
         // Allow for 8 bytes followed by an ESCAPE and reset of DMM at end of buffer
         maxSpiBufStartIndex -= 12;
@@ -696,7 +696,7 @@ bool max7456DrawScreen(void)
         }
 
         if (spiBufIndex) {
-            segments[0].txData = spiBuf;
+            segments[0].u.buffers.txData = spiBuf;
             segments[0].len = spiBufIndex;
 
             spiSequence(dev, &segments[0]);

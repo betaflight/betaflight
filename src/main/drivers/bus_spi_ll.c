@@ -309,7 +309,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 
     int len = segment->len;
 
-    uint8_t *txData = segment->txData;
+    uint8_t *txData = segment->u.buffers.txData;
     LL_DMA_InitTypeDef *initTx = bus->initTx;
 
     if (txData) {
@@ -337,7 +337,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 #if !defined(STM32G4) && !defined(STM32H7) 
     if (dev->bus->dmaRx) {
 #endif
-        uint8_t *rxData = segment->rxData;
+        uint8_t *rxData = segment->u.buffers.rxData;
         LL_DMA_InitTypeDef *initRx = bus->initRx;
 
         if (rxData) {
@@ -539,7 +539,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 }
 
 // DMA transfer setup and start
-void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
+void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
@@ -549,7 +549,6 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     uint32_t segmentCount = 0;
 
     bus->initSegment = true;
-    bus->curSegment = segments;
 
     // Switch bus speed
 #if !defined(STM32H7)
@@ -593,45 +592,45 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     // Check that any reads are cache aligned and of multiple cache lines in length
     for (busSegment_t *checkSegment = bus->curSegment; checkSegment->len; checkSegment++) {
         // Check there is no receive data as only transmit DMA is available
-        if ((checkSegment->rxData) && (bus->dmaRx == (dmaChannelDescriptor_t *)NULL)) {
+        if ((checkSegment->u.buffers.rxData) && (bus->dmaRx == (dmaChannelDescriptor_t *)NULL)) {
             dmaSafe = false;
             break;
         }
 #ifdef STM32H7
         // Check if RX data can be DMAed
-        if ((checkSegment->rxData) &&
+        if ((checkSegment->u.buffers.rxData) &&
             // DTCM can't be accessed by DMA1/2 on the H7
-            (IS_DTCM(checkSegment->rxData) ||
+            (IS_DTCM(checkSegment->u.buffers.rxData) ||
              // Memory declared as DMA_RAM will have an address between &_dmaram_start__ and &_dmaram_end__
-             (((checkSegment->rxData < &_dmaram_start__) || (checkSegment->rxData >= &_dmaram_end__)) &&
-             (((uint32_t)checkSegment->rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1)))))) {
+             (((checkSegment->u.buffers.rxData < &_dmaram_start__) || (checkSegment->u.buffers.rxData >= &_dmaram_end__)) &&
+             (((uint32_t)checkSegment->u.buffers.rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1)))))) {
             dmaSafe = false;
             break;
         }
         // Check if TX data can be DMAed
-        else if ((checkSegment->txData) && IS_DTCM(checkSegment->txData)) {
+        else if ((checkSegment->u.buffers.txData) && IS_DTCM(checkSegment->u.buffers.txData)) {
             dmaSafe = false;
             break;
         }
 #elif defined(STM32F7)
-        if ((checkSegment->rxData) &&
+        if ((checkSegment->u.buffers.rxData) &&
             // DTCM is accessible and uncached on the F7
-            (!IS_DTCM(checkSegment->rxData) &&
-            (((uint32_t)checkSegment->rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1))))) {
+            (!IS_DTCM(checkSegment->u.buffers.rxData) &&
+            (((uint32_t)checkSegment->u.buffers.rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1))))) {
             dmaSafe = false;
             break;
         }
 #elif defined(STM32G4)
         // Check if RX data can be DMAed
-        if ((checkSegment->rxData) &&
+        if ((checkSegment->u.buffers.rxData) &&
             // CCM can't be accessed by DMA1/2 on the G4
-            IS_CCM(checkSegment->rxData)) {
+            IS_CCM(checkSegment->u.buffers.rxData)) {
             dmaSafe = false;
             break;
         }
-        if ((checkSegment->txData) &&
+        if ((checkSegment->u.buffers.txData) &&
             // CCM can't be accessed by DMA1/2 on the G4
-            IS_CCM(checkSegment->txData)) {
+            IS_CCM(checkSegment->u.buffers.txData)) {
             dmaSafe = false;
             break;
         }
@@ -656,8 +655,8 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
 
             spiInternalReadWriteBufPolled(
                     bus->busType_u.spi.instance,
-                    bus->curSegment->txData,
-                    bus->curSegment->rxData,
+                    bus->curSegment->u.buffers.txData,
+                    bus->curSegment->u.buffers.rxData,
                     bus->curSegment->len);
 
             if (bus->curSegment->negateCS) {
@@ -686,11 +685,13 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
         }
 
         // If a following transaction has been linked, start it
-        if (bus->curSegment->txData) {
-            const extDevice_t *nextDev = (const extDevice_t *)bus->curSegment->txData;
-            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->rxData;
-            bus->curSegment->txData = NULL;
-            spiSequenceStart(nextDev, nextSegments);
+        if (bus->curSegment->u.link.dev) {
+            const extDevice_t *nextDev = bus->curSegment->u.link.dev;
+            busSegment_t *nextSegments = bus->curSegment->u.link.segments;
+            busSegment_t *endSegment = bus->curSegment;
+            bus->curSegment = nextSegments;
+            endSegment->u.link.dev = NULL;
+            spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;

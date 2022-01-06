@@ -52,12 +52,12 @@
 
 // Gyro interrupt counts over which to measure loop time and skew
 #define GYRO_RATE_COUNT 25000
-#define GYRO_LOCK_COUNT 400
+#define GYRO_LOCK_COUNT 50
 
 typedef enum {
     TASK_PRIORITY_REALTIME = -1, // Task will be run outside the scheduler logic
-    TASK_PRIORITY_IDLE = 0,      // Disables dynamic scheduling, task is executed only if no other task is active this cycle
-    TASK_PRIORITY_LOW = 1,
+    TASK_PRIORITY_LOWEST = 1,
+    TASK_PRIORITY_LOW = 2,
     TASK_PRIORITY_MEDIUM = 3,
     TASK_PRIORITY_MEDIUM_HIGH = 4,
     TASK_PRIORITY_HIGH = 5,
@@ -189,6 +189,11 @@ typedef struct {
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeDelta_t desiredPeriodUs;        // target period of execution
     const int8_t staticPriority;        // dynamicPriority grows in steps of this size
+} task_id_t;
+
+typedef struct {
+    // Task static data
+    task_id_t *id;
 
     // Scheduling
     uint16_t dynamicPriority;           // measurement of how old task was last executed, used to avoid task starvation
