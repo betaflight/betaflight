@@ -49,7 +49,7 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-# Release file naming
+# Release file naming (no revision to be present if this is 'yes')
 RELEASE ?= no
 
 ###############################################################################
