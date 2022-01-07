@@ -49,6 +49,8 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+# Release file naming
+RELEASE ?= no
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -304,8 +306,11 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
-
+ifeq ($(RELEASE),yes)
+TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)
+else
 TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(REVISION)
+endif
 
 #
 # Things we will build
@@ -486,7 +491,7 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 $(VALID_TARGETS):
 	$(V0) @echo "Building $@" && \
-	$(MAKE) binary hex TARGET=$@ && \
+	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
 $(NOBUILD_TARGETS):
