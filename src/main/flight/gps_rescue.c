@@ -186,7 +186,6 @@ static float    rescueYaw;
 int32_t       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 uint16_t      hoverThrottle = 0;
 float         averageThrottle = 0.0;
-float         altitudeError = 0.0;
 uint32_t      throttleSamples = 0;
 bool          magForceDisable = false;
 

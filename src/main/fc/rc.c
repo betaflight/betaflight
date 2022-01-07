@@ -636,7 +636,6 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop = 100;
         throttlePIDAttenuation = 1.0f;
     } else {
         if (rcData[THROTTLE] < 2000) {

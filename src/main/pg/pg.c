@@ -48,7 +48,7 @@ void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     const uint16_t regSize = pgSize(reg);
 
     memset(base, 0, regSize);
-    if (reg->reset.ptr >= (void*)__pg_resetdata_start && reg->reset.ptr < (void*)__pg_resetdata_end) {
+    if (reg->reset.ptr >= (void*)&__pg_resetdata_start && reg->reset.ptr < (void*)&__pg_resetdata_end) {
         // pointer points to resetdata section, to it is data template
         memcpy(base, reg->reset.ptr, regSize);
     } else if (reg->reset.fn) {

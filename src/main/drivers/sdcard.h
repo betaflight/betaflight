@@ -53,7 +53,7 @@ typedef enum {
     SDCARD_OPERATION_FAILURE
 } sdcardOperationStatus_e;
 
-typedef void(*sdcard_operationCompleteCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, uint8_t *buffer, uint32_t callbackData);
+typedef void(*sdcard_operationCompleteCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, const uint8_t *buffer, uint32_t callbackData);
 
 typedef void(*sdcard_profilerCallback_c)(sdcardBlockOperation_e operation, uint32_t blockIndex, uint32_t duration);
 

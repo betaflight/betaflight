@@ -1086,7 +1086,7 @@ static void cliRxFailsafe(const char *cmdName, char *cmdline)
 
             const rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
             rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
-            bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
+            bool requireValue = mode == RX_FAILSAFE_MODE_SET;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1649,28 +1649,26 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
 static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 {
     const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
-    int i, val = 0;
     const char *ptr;
 
     if (isEmpty(cmdline)) {
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL, NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr++);
+        int i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
                 // Was: slot
                 // Keeping the parameter to retain backwards compatibility for the command format.
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1681,7 +1679,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
                     ar->adjustmentConfig = val;
                     validArgumentCount++;
@@ -1689,7 +1687,7 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxSwitchChannelIndex = val;
                     validArgumentCount++;
@@ -1708,13 +1706,13 @@ static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 ar->adjustmentCenter = val;
                 validArgumentCount++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 ar->adjustmentScale = val;
                 validArgumentCount++;
             }
@@ -2631,7 +2629,6 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
 static void cliVtx(const char *cmdName, char *cmdline)
 {
     const char *format = "vtx %u %u %u %u %u %u %u";
-    int i, val = 0;
     const char *ptr;
 
     if (isEmpty(cmdline)) {
@@ -2647,13 +2644,13 @@ static void cliVtx(const char *cmdName, char *cmdline)
         const uint8_t maxPowerIndex = VTX_TABLE_MAX_POWER_LEVELS;
 #endif
         ptr = cmdline;
-        i = atoi(ptr++);
+        int i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     cac->auxChannelIndex = val;
                     validArgumentCount++;
@@ -2661,7 +2658,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxBandIndex) {
                     cac->band = val;
                     validArgumentCount++;
@@ -2669,7 +2666,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxChannelIndex) {
                     cac->channel = val;
                     validArgumentCount++;
@@ -2677,7 +2674,7 @@ static void cliVtx(const char *cmdName, char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                int val = atoi(ptr);
                 if (val >= 0 && val <= maxPowerIndex) {
                     cac->power= val;
                     validArgumentCount++;
@@ -4514,7 +4511,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     }
 }
 
-static uint8_t getWordLength(char *bufBegin, char *bufEnd)
+static uint8_t getWordLength(const char *bufBegin, char *bufEnd)
 {
     while (*(bufEnd - 1) == ' ') {
         bufEnd--;
@@ -4729,7 +4726,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
 static const char *getMcuTypeById(mcuTypeId_e id)
 {
-    if (id < MCU_TYPE_UNKNOWN) {
+    if (id < MCU_TYPE_LAST) {
         return mcuTypeNames[id];
     } else {
         return "UNKNOWN";
@@ -5252,7 +5249,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 
         for (int index = 0; index < RESOURCE_VALUE_MAX_INDEX(resourceTable[i].maxIndex); index++) {
             const ioTag_t ioTag = *(ioTag_t *)((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
-            ioTag_t ioTagDefault = NULL;
+            ioTag_t ioTagDefault = 0;
             if (defaultConfig) {
                 ioTagDefault = *(ioTag_t *)((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             }
@@ -5523,9 +5520,8 @@ static void printTimerDmaoptDetails(const ioTag_t ioTag, const timerHardware_t *
 
         if (printDetails) {
             const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
-            dmaCode_t dmaCode = 0;
             if (dmaChannelSpec) {
-                dmaCode = dmaChannelSpec->code;
+                dmaCode_t dmaCode = dmaChannelSpec->code;
                 printValue(dumpMask, false,
                     "# pin %c%02d: " DMASPEC_FORMAT_STRING,
                     IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
@@ -5664,7 +5660,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
     const timerHardware_t *timer = NULL;
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
-        index = atoi(pch) - 1;
+        index = pch ? (atoi(pch) - 1) : -1;
         if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
             cliPrintErrorLinef(cmdName, "BAD INDEX: '%s'", pch ? pch : "");
             return;

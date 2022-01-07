@@ -74,7 +74,7 @@ bool IS_RC_MODE_ACTIVE(boxId_e boxId)
     return bitArrayGet(&rcModeActivationMask, boxId);
 }
 
-void rcModeUpdate(boxBitmask_t *newState)
+void rcModeUpdate(const boxBitmask_t *newState)
 {
     rcModeActivationMask = *newState;
 }

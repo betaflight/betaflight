@@ -632,7 +632,6 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
 
     uint8_t band = 255, channel = 255;
-    uint16_t check = 0;
 
     if (updateNow) {
         // keep counter running, so it stays in sync with vtx
@@ -643,7 +642,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         frequency = vtxCommonLookupFrequency(vtxDevice, band, channel);
 
         // check if last vtx values have changed.
-        check = ((vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0) + (power << 1) + (band << 4) + (channel << 8);
+        uint16_t check = ((vtxStatus & VTX_STATUS_PIT_MODE) ? 1 : 0) + (power << 1) + (band << 4) + (channel << 8);
         if (!showSettings && check != lastCheck) {
             // display settings for 3 seconds.
             showSettings = 15;
@@ -703,7 +702,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         } else {
             colorIndex = COLOR_DEEP_PINK;
         }
-        hsvColor_t color = ledStripStatusModeConfig()->colors[colorIndex];
+        color = ledStripStatusModeConfig()->colors[colorIndex];
         color.v = (vtxStatus & VTX_STATUS_PIT_MODE) ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }

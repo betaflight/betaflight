@@ -607,7 +607,7 @@ static uint8_t *afatfs_cacheSectorGetMemory(int cacheEntryIndex)
     return afatfs.cache + cacheEntryIndex * AFATFS_SECTOR_SIZE;
 }
 
-static int afatfs_getCacheDescriptorIndexForBuffer(uint8_t *memory)
+static int afatfs_getCacheDescriptorIndexForBuffer(const uint8_t *memory)
 {
     int index = (memory - afatfs.cache) / AFATFS_SECTOR_SIZE;
 
@@ -650,7 +650,7 @@ static void afatfs_cacheSectorInit(afatfsCacheBlockDescriptor_t *descriptor, uin
 /**
  * Called by the SD card driver when one of our read operations completes.
  */
-static void afatfs_sdcardReadComplete(sdcardBlockOperation_e operation, uint32_t sectorIndex, uint8_t *buffer, uint32_t callbackData)
+static void afatfs_sdcardReadComplete(sdcardBlockOperation_e operation, uint32_t sectorIndex, const uint8_t *buffer, uint32_t callbackData)
 {
     (void) operation;
     (void) callbackData;
@@ -676,7 +676,7 @@ static void afatfs_sdcardReadComplete(sdcardBlockOperation_e operation, uint32_t
 /**
  * Called by the SD card driver when one of our write operations completes.
  */
-static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_t sectorIndex, uint8_t *buffer, uint32_t callbackData)
+static void afatfs_sdcardWriteComplete(sdcardBlockOperation_e operation, uint32_t sectorIndex, const uint8_t *buffer, uint32_t callbackData)
 {
     (void) operation;
     (void) callbackData;
@@ -2294,7 +2294,7 @@ static afatfsOperationStatus_e afatfs_extendSubdirectoryContinue(afatfsFile_t *d
             }
 
             // Seek back to the beginning of the cluster
-            afatfs_assert(afatfs_fseekAtomic(directory, -AFATFS_SECTOR_SIZE * (afatfs.sectorsPerCluster - 1)));
+            afatfs_assert(afatfs_fseekAtomic(directory, -(AFATFS_SECTOR_SIZE * (afatfs.sectorsPerCluster - 1))));
             opState->phase = AFATFS_EXTEND_SUBDIRECTORY_PHASE_SUCCESS;
             goto doMore;
         break;

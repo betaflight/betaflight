@@ -165,7 +165,7 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
@@ -238,7 +238,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cReadBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 

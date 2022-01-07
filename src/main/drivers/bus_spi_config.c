@@ -104,7 +104,7 @@ void spiPreinit(void)
     }
 }
 
-void spiPreinitByIO(IO_t io)
+void spiPreinitByIO(const IO_t io)
 {
     for (int i = 0; i < spiPreinitCount; i++) {
         if (io == IOGetByTag(spiPreinitArray[i].iotag)) {

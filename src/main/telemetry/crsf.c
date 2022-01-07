@@ -399,7 +399,7 @@ void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
-static void crsfProcessSpeedNegotiationCmd(uint8_t *frameStart)
+static void crsfProcessSpeedNegotiationCmd(const uint8_t *frameStart)
 {
     uint32_t newBaudrate = frameStart[2] << 24 | frameStart[3] << 16 | frameStart[4] << 8 | frameStart[5];
     uint8_t ii = 0;
@@ -493,7 +493,7 @@ static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
             c |=  CRSF_RLE_CHAR_REPEATED_MASK;
             const uint8_t fullBatches = (runLength / CRSF_RLE_MAX_RUN_LENGTH);
             const uint8_t remainder = (runLength % CRSF_RLE_MAX_RUN_LENGTH);
-            const uint8_t totalBatches = fullBatches + (remainder) ? 1 : 0;
+            const uint8_t totalBatches = fullBatches + (remainder ? 1 : 0);
             if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
                 for (unsigned int i = 1; i <= totalBatches; i++) {
                     const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;

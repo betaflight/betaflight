@@ -218,6 +218,6 @@ FAST_CODE_NOINLINE float applyFeedforwardLimit(int axis, float value, float Kp, 
 
 bool shouldApplyFeedforwardLimits(int axis)
 {
-    return feedforwardMaxRateLimit[axis] != 0.0f && axis < FD_YAW;
+    return axis < FD_YAW && feedforwardMaxRateLimit[axis] != 0.0f;
 }
 #endif
