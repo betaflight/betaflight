@@ -80,7 +80,7 @@ uint32_t i2cTimeoutUserCallback(void)
 
 void i2cInit(I2CDevice device)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return;
     }
 
@@ -129,7 +129,7 @@ uint16_t i2cGetErrorCounter(void)
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
@@ -203,7 +203,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
