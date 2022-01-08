@@ -57,6 +57,8 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
 
+    #include "msp/msp_serial.h"
+
     #include "telemetry/crsf.h"
     #include "telemetry/telemetry.h"
     #include "telemetry/msp_shared.h"
