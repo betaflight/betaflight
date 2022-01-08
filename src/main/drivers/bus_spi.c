@@ -567,16 +567,16 @@ void spiInitBusDMA()
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
-                if (!dmaAllocate(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1)) {
-                    dmaTxIdentifier = DMA_NONE;
-                    continue;
-                }
 #if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
                     dmaTxIdentifier = DMA_NONE;
                     break;
                 }
 #endif
+                if (!dmaAllocate(dmaTxIdentifier, OWNER_SPI_MOSI, device + 1)) {
+                    dmaTxIdentifier = DMA_NONE;
+                    continue;
+                }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
@@ -601,16 +601,16 @@ void spiInitBusDMA()
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);
-                if (!dmaAllocate(dmaRxIdentifier, OWNER_SPI_MISO, device + 1)) {
-                    dmaRxIdentifier = DMA_NONE;
-                    continue;
-                }
 #if defined(STM32F4) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
                     dmaRxIdentifier = DMA_NONE;
                     break;
                 }
 #endif
+                if (!dmaAllocate(dmaRxIdentifier, OWNER_SPI_MISO, device + 1)) {
+                    dmaRxIdentifier = DMA_NONE;
+                    continue;
+                }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
