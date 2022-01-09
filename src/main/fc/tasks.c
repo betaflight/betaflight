@@ -312,7 +312,7 @@ static void taskCameraControl(uint32_t currentTime)
 task_t tasks[TASK_COUNT];
 
 // Task ID data in .data (initialised data)
-task_id_t task_ids[TASK_COUNT] = {
+task_attr_t task_attrs[TASK_COUNT] = {
     [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
@@ -423,7 +423,7 @@ task_t *getTask(unsigned taskId)
 void tasksInit(void)
 {
     for (int i = 0; i < TASK_COUNT; i++) {
-        tasks[i].id = &task_ids[i];
+        tasks[i].attr = &task_attrs[i];
     }
 
     schedulerInit();

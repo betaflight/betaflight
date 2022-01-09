@@ -95,7 +95,7 @@ extern "C" {
     extern task_t *queueFirst(void);
     extern task_t *queueNext(void);
 
-    task_id_t task_ids[TASK_COUNT] = {
+    task_attr_t task_attrs[TASK_COUNT] = {
         [TASK_SYSTEM] = {
             .taskName = "SYSTEM",
             .taskFunc = taskSystemLoad,
@@ -170,18 +170,18 @@ extern "C" {
 TEST(SchedulerUnittest, SetupTasks)
 {
     for (int i = 0; i < TASK_COUNT; ++i) {
-        tasks[i].id = &task_ids[i];
+        tasks[i].attr = &task_attrs[i];
     }
 }
 
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].id->staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].id->staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].id->staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].id->staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].id->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].attr->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].attr->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].attr->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].attr->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].attr->staticPriority);
 }
 
 TEST(SchedulerUnittest, TestQueueInit)
@@ -283,7 +283,7 @@ TEST(SchedulerUnittest, TestQueueArray)
     EXPECT_EQ(enqueuedTasks, taskQueueSize);
 
     for (int taskId = 0; taskId < TASK_COUNT_UNITTEST - 1; ++taskId) {
-        if (tasks[taskId].id->taskFunc) {
+        if (tasks[taskId].attr->taskFunc) {
             setTaskEnabled(static_cast<taskId_e>(taskId), true);
             enqueuedTasks++;
             EXPECT_EQ(enqueuedTasks, taskQueueSize);
