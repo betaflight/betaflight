@@ -398,18 +398,8 @@ void resumeRxSignal(void)
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 #define LINK_QUALITY_SAMPLE_COUNT 16
-
-STATIC_UNIT_TESTED uint16_t updateLinkQualitySamples(uint16_t value)
-{
-    static uint16_t samples[LINK_QUALITY_SAMPLE_COUNT];
-    static uint8_t sampleIndex = 0;
-    static uint16_t sum = 0;
-
-    sum += value - samples[sampleIndex];
-    samples[sampleIndex] = value;
-    sampleIndex = (sampleIndex + 1) % LINK_QUALITY_SAMPLE_COUNT;
-    return sum / LINK_QUALITY_SAMPLE_COUNT;
-}
+static uint16_t lqSamples[LINK_QUALITY_SAMPLE_COUNT];
+movingAverageStateUint16_t lqSampleState = { 0, lqSamples, LINK_QUALITY_SAMPLE_COUNT, 0 };
 
 void rxSetRfMode(uint8_t rfModeValue)
 {
@@ -426,7 +416,7 @@ static void setLinkQuality(bool validFrame, timeDelta_t currentDeltaTimeUs)
 #ifdef USE_RX_LINK_QUALITY_INFO
     if (linkQualitySource == LQ_SOURCE_NONE) {
         // calculate new sample mean
-        linkQuality = updateLinkQualitySamples(validFrame ? LINK_QUALITY_MAX_VALUE : 0);
+        linkQuality = updateMovingAverageUint16(&lqSampleState, validFrame ? LINK_QUALITY_MAX_VALUE : 0);
     }
 #endif
 
@@ -765,18 +755,8 @@ void setRssiDirect(uint16_t newRssi, rssiSource_e source)
 }
 
 #define RSSI_SAMPLE_COUNT 16
-
-static uint16_t updateRssiSamples(uint16_t value)
-{
-    static uint16_t samples[RSSI_SAMPLE_COUNT];
-    static uint8_t sampleIndex = 0;
-    static unsigned sum = 0;
-
-    sum += value - samples[sampleIndex];
-    samples[sampleIndex] = value;
-    sampleIndex = (sampleIndex + 1) % RSSI_SAMPLE_COUNT;
-    return sum / RSSI_SAMPLE_COUNT;
-}
+static uint16_t rssiSamples[RSSI_SAMPLE_COUNT];
+movingAverageStateUint16_t rssiSampleState = { 0, rssiSamples, RSSI_SAMPLE_COUNT, 0 };
 
 void setRssi(uint16_t rssiValue, rssiSource_e source)
 {
@@ -789,7 +769,7 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
         rssi = pt1FilterApply(&frameErrFilter, rssiValue);
     } else {
         // calculate new sample mean
-        rssi = updateRssiSamples(rssiValue);
+        rssi = updateMovingAverageUint16(&rssiSampleState, rssiValue);
     }
 }
 
@@ -875,18 +855,8 @@ int16_t getRssiDbm(void)
 }
 
 #define RSSI_SAMPLE_COUNT_DBM 16
-
-static int16_t updateRssiDbmSamples(int16_t value)
-{
-    static int16_t samplesdbm[RSSI_SAMPLE_COUNT_DBM];
-    static uint8_t sampledbmIndex = 0;
-    static int sumdbm = 0;
-
-    sumdbm += value - samplesdbm[sampledbmIndex];
-    samplesdbm[sampledbmIndex] = value;
-    sampledbmIndex = (sampledbmIndex + 1) % RSSI_SAMPLE_COUNT_DBM;
-    return sumdbm / RSSI_SAMPLE_COUNT_DBM;
-}
+static int16_t rssiDbmSamples[RSSI_SAMPLE_COUNT];
+movingAverageStateInt16_t rssiDbmSampleState = { 0, rssiDbmSamples, RSSI_SAMPLE_COUNT, 0 } ;
 
 void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
 {
@@ -894,7 +864,7 @@ void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
         return;
     }
 
-    rssiDbm = updateRssiDbmSamples(rssiDbmValue);
+    rssiDbm = updateMovingAverageInt16(&rssiDbmSampleState, rssiDbmValue);
 }
 
 void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)

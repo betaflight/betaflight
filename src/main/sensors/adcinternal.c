@@ -28,33 +28,19 @@
 #include "build/debug.h"
 
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "drivers/adc.h"
 
-typedef struct movingAverageStateUint16_s {
-    uint32_t sum;
-    uint16_t *values;
-    uint8_t size;
-    uint8_t pos;
-} movingAverageStateUint16_t;
-
-uint16_t updateMovingAverageUint16(movingAverageStateUint16_t *state, uint16_t newValue)
-{
-    state->sum -= state->values[state->pos];
-    state->values[state->pos] = newValue;
-    state->sum += newValue;
-    state->pos = (state->pos + 1) % state->size;
-
-    return state->sum / state->size;
-}
+#define  ADC_AVG_SMOOTHING_COUNT 8
 
 static uint16_t adcVrefintValue;
-static uint16_t adcVrefintValues[8];
-movingAverageStateUint16_t adcVrefintAverageState = { 0, adcVrefintValues, 8, 0 } ;
+static uint16_t adcVrefintValues[ADC_AVG_SMOOTHING_COUNT];
+movingAverageStateUint16_t adcVrefintAverageState = { 0, adcVrefintValues, ADC_AVG_SMOOTHING_COUNT, 0 };
 
 static uint16_t adcTempsensorValue;
-static uint16_t adcTempsensorValues[8];
-movingAverageStateUint16_t adcTempsensorAverageState = { 0, adcTempsensorValues, 8, 0 } ;
+static uint16_t adcTempsensorValues[ADC_AVG_SMOOTHING_COUNT];
+movingAverageStateUint16_t adcTempsensorAverageState = { 0, adcTempsensorValues, ADC_AVG_SMOOTHING_COUNT, 0 };
 
 static int16_t coreTemperature;
 static uint16_t vrefMv;

@@ -92,7 +92,6 @@ extern "C" {
     timeUs_t simulationTime = 0;
 
     void osdUpdate(timeUs_t currentTimeUs);
-    uint16_t updateLinkQualitySamples(uint16_t value);
 #define LINK_QUALITY_SAMPLE_COUNT 16
 }
 
@@ -108,8 +107,6 @@ extern "C" {
     boxBitmask_t rcModeActivationMask;
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode = 0;
-
-    uint16_t updateLinkQualitySamples(uint16_t value);
 
     extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
 }
@@ -241,10 +238,13 @@ TEST(LQTest, TestInit)
     displayPortTestBufferIsEmpty();
 }
 /*
- * Tests the Tests the OSD_LINK_QUALITY element updateLinkQualitySamples  default LQ_SOURCE_NONE
+ * Tests the Tests the OSD_LINK_QUALITY element  default LQ_SOURCE_NONE
  */
 TEST(LQTest, TestElement_LQ_SOURCE_NONE_SAMPLES)
 {
+    static uint16_t lqSamples[LINK_QUALITY_SAMPLE_COUNT];
+    movingAverageStateUint16_t lqSampleState = { 0, lqSamples, LINK_QUALITY_SAMPLE_COUNT, 0 };
+
     // given
     linkQualitySource = LQ_SOURCE_NONE;
 
@@ -255,7 +255,7 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_SAMPLES)
 
     // when samples populated 100%
     for (int x = 0; x < LINK_QUALITY_SAMPLE_COUNT; x++) {
-        setLinkQualityDirect(updateLinkQualitySamples(LINK_QUALITY_MAX_VALUE));
+        setLinkQualityDirect(updateMovingAverageUint16(&lqSampleState, LINK_QUALITY_MAX_VALUE));
     }
 
     simulationTime += 1000000;
@@ -268,10 +268,10 @@ TEST(LQTest, TestElement_LQ_SOURCE_NONE_SAMPLES)
     // then
     displayPortTestBufferSubstring(8, 1, "%c9", SYM_LINK_QUALITY);
 
-    // when  updateLinkQualitySamples used   50% rounds to 4
+    // when  used   50% rounds to 4
     for (int x = 0; x < LINK_QUALITY_SAMPLE_COUNT; x++) {
-        setLinkQualityDirect(updateLinkQualitySamples(LINK_QUALITY_MAX_VALUE));
-        setLinkQualityDirect(updateLinkQualitySamples(0));
+        setLinkQualityDirect(updateMovingAverageUint16(&lqSampleState, LINK_QUALITY_MAX_VALUE));
+        setLinkQualityDirect(updateMovingAverageUint16(&lqSampleState, 0));
     }
 
     simulationTime += 1000000;
@@ -391,8 +391,11 @@ TEST(LQTest, TestLQAlarm)
     // the craft is armed
     doTestArm(false);
 
+    static uint16_t lqSamples[LINK_QUALITY_SAMPLE_COUNT];
+    movingAverageStateUint16_t lqSampleState = { 0, lqSamples, LINK_QUALITY_SAMPLE_COUNT, 0 };
+
     for (int x = 0; x < LINK_QUALITY_SAMPLE_COUNT; x++) {
-        setLinkQualityDirect(updateLinkQualitySamples(LINK_QUALITY_MAX_VALUE));
+        setLinkQualityDirect(updateMovingAverageUint16(&lqSampleState, LINK_QUALITY_MAX_VALUE));
     }
 
     // then
@@ -590,26 +593,6 @@ extern "C" {
         UNUSED(rxRuntimeState);
         UNUSED(callback);
         return true;
-    }
-
-    float pt1FilterGain(float f_cut, float dT)
-    {
-        UNUSED(f_cut);
-        UNUSED(dT);
-        return 0.0;
-    }
-
-    void pt1FilterInit(pt1Filter_t *filter, float k)
-    {
-        UNUSED(filter);
-        UNUSED(k);
-    }
-
-    float pt1FilterApply(pt1Filter_t *filter, float input)
-    {
-        UNUSED(filter);
-        UNUSED(input);
-        return 0.0;
     }
 
     bool isUpright(void) { return true; }

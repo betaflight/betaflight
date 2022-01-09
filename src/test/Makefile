@@ -215,6 +215,7 @@ link_quality_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/time.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
@@ -263,6 +264,7 @@ rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/rx/rx.c \
 		$(USER_DIR)/pg/pg.c \
@@ -274,6 +276,7 @@ rx_rx_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/rx.c
 

@@ -119,3 +119,20 @@ typedef struct simpleLowpassFilter_s {
 
 int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal);
 void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift);
+
+typedef struct movingAverageStateUint16_s {
+    uint32_t sum;
+    uint16_t *values;
+    uint8_t size;
+    uint8_t pos;
+} movingAverageStateUint16_t;
+
+typedef struct movingAverageStateInt16_s {
+    int32_t sum;
+    int16_t *values;
+    uint8_t size;
+    uint8_t pos;
+} movingAverageStateInt16_t;
+
+uint16_t updateMovingAverageUint16(movingAverageStateUint16_t *state, uint16_t newValue);
+int16_t updateMovingAverageInt16(movingAverageStateInt16_t *state, int16_t newValue);

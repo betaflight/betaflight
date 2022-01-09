@@ -238,26 +238,6 @@ uint32_t failsafeFailurePeriodMs(void)
     return 400;
 }
 
-float pt1FilterGain(float f_cut, float dT)
-{
-    UNUSED(f_cut);
-    UNUSED(dT);
-    return 0.0;
-}
-
-void pt1FilterInit(pt1Filter_t *filter, float k)
-{
-    UNUSED(filter);
-    UNUSED(k);
-}
-
-float pt1FilterApply(pt1Filter_t *filter, float input)
-{
-    UNUSED(filter);
-    UNUSED(input);
-    return 0.0;
-}
-
 void pinioBoxTaskControl(void) {}
 
 }

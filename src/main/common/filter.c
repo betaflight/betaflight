@@ -309,3 +309,23 @@ void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpS
     filter->beta = beta;
     filter->fpShift = fpShift;
 }
+
+uint16_t updateMovingAverageUint16(movingAverageStateUint16_t *state, uint16_t newValue)
+{
+    state->sum -= state->values[state->pos];
+    state->sum += newValue;
+    state->values[state->pos] = newValue;
+    state->pos = (state->pos + 1) % state->size;
+
+    return state->sum / state->size;
+}
+
+int16_t updateMovingAverageInt16(movingAverageStateInt16_t *state, int16_t newValue)
+{
+    state->sum -= state->values[state->pos];
+    state->sum += newValue;
+    state->values[state->pos] = newValue;
+    state->pos = (state->pos + 1) % state->size;
+
+    return lrintf(state->sum / state->size);
+}
