@@ -304,11 +304,12 @@ static bool bmi160AccRead(accDev_t *acc)
         acc->gyro->dev.txBuf[0] = BMI160_REG_ACC_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
-                {NULL, NULL, 7, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
+                {.u.buffers = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].txData = acc->gyro->dev.txBuf;
-        segments[0].rxData = &acc->gyro->dev.rxBuf[1];
+        segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
+        segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
+
 
         spiSequence(&acc->gyro->dev, &segments[0]);
 
@@ -365,8 +366,8 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
                 gyro->dev.txBuf[0] = BMI160_REG_GYR_DATA_X_LSB | 0x80;
                 gyro->segments[0].len = 13;
                 gyro->segments[0].callback = bmi160Intcallback;
-                gyro->segments[0].txData = gyro->dev.txBuf;
-                gyro->segments[0].rxData = &gyro->dev.rxBuf[1];
+                gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
+                gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
             } else {
@@ -387,11 +388,11 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
         gyro->dev.txBuf[0] = BMI160_REG_GYR_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
-                {NULL, NULL, 7, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
+                {.u.buffers = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].txData = gyro->dev.txBuf;
-        segments[0].rxData = &gyro->dev.rxBuf[1];
+        segments[0].u.buffers.txData = gyro->dev.txBuf;
+        segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
 
         spiSequence(&gyro->dev, &segments[0]);
 
