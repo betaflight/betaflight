@@ -59,7 +59,7 @@ enum icm20649_accel_fsr_e {
 void icm20649AccInit(accDev_t *acc);
 void icm20649GyroInit(gyroDev_t *gyro);
 
-uint8_t icm20649SpiDetect(const busDevice_t *bus);
+uint8_t icm20649SpiDetect(const extDevice_t *dev);
 
 bool icm20649SpiAccDetect(accDev_t *acc);
 bool icm20649SpiGyroDetect(gyroDev_t *gyro);

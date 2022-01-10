@@ -42,7 +42,7 @@
 // 8 MHz max SPI frequency
 #define ICM20649_MAX_SPI_CLK_HZ 8000000
 
-static void icm20649SpiInit(const busDevice_t *bus)
+static void icm20649SpiInit(const extDevice_t *dev)
 {
     static bool hardwareInitialised = false;
 
@@ -57,16 +57,17 @@ static void icm20649SpiInit(const busDevice_t *bus)
     hardwareInitialised = true;
 }
 
-uint8_t icm20649SpiDetect(const busDevice_t *bus)
+uint8_t icm20649SpiDetect(const extDevice_t *dev)
 {
-    icm20649SpiInit(bus);
+
+    icm20649SpiInit(dev);
 
     spiSetClkDivisor(dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
 
-    spiWriteReg(bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // select bank 0 just to be safe
+    spiWriteReg(dev, ICM20649_RA_REG_BANK_SEL, 0 << 4); // select bank 0 just to be safe
     delay(15);
 
-    spiWriteReg(bus, ICM20649_RA_PWR_MGMT_1, ICM20649_BIT_RESET);
+    spiWriteReg(dev, ICM20649_RA_PWR_MGMT_1, ICM20649_BIT_RESET);
 
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
@@ -96,14 +97,14 @@ void icm20649AccInit(accDev_t *acc)
     // 1,024 LSB/g 30g
     acc->acc_1G = acc->acc_high_fsr ? 1024 : 2048;
 
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
+    spiSetClkDivisor(&acc->dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
 
-    spiWriteReg(&acc->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
+    spiWriteReg(&acc->dev, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
     const uint8_t acc_fsr = acc->acc_high_fsr ? ICM20649_FSR_30G : ICM20649_FSR_16G;
-    spiWriteReg(&acc->bus, ICM20649_RA_ACCEL_CONFIG, acc_fsr << 1);
+    spiWriteReg(&acc->dev, ICM20649_RA_ACCEL_CONFIG, acc_fsr << 1);
     delay(15);
-    spiWriteReg(&acc->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // back to bank 0
+    spiWriteReg(&acc->dev, ICM20649_RA_REG_BANK_SEL, 0 << 4); // back to bank 0
     delay(15);
 }
 
