@@ -1123,16 +1123,16 @@ static void osdElementLinkQuality(osdElementParms_t *element)
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
         osdLinkQuality = rxGetLinkQuality();
         const uint8_t osdRfMode = rxGetRfMode();
-        tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
+        tfp_sprintf(element->buff, "LQ %1d:%03d %3d", osdRfMode, osdLinkQuality, getRssiDbm());
     } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
         osdLinkQuality = rxGetLinkQuality();
-        tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
+        tfp_sprintf(element->buff, "LQ %03d %3d", osdLinkQuality, getRssiDbm());
     } else { // 0-9
         osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
         if (osdLinkQuality >= 10) {
             osdLinkQuality = 9;
         }
-        tfp_sprintf(element->buff, "%c%1d", SYM_LINK_QUALITY, osdLinkQuality);
+        tfp_sprintf(element->buff, "LQ %1d", osdLinkQuality);
     }
 }
 #endif // USE_RX_LINK_QUALITY_INFO
@@ -1475,6 +1475,18 @@ static void osdElementWarnings(osdElementParms_t *element)
     }
 }
 
+static void osdElementWarnings2(osdElementParms_t *element)
+{
+    osdElementWarnings(element);
+
+    if (strlen(element->buff) == 0) {
+        osdElementLinkQuality(element);
+    }
+
+    strncpy(pilotConfigMutable()->name, element->buff, 12);
+    return;
+}
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -1591,7 +1603,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_YAW_PIDS]                = osdElementPidsYaw,
     [OSD_POWER]                   = osdElementPower,
     [OSD_PIDRATE_PROFILE]         = osdElementPidRateProfile,
-    [OSD_WARNINGS]                = osdElementWarnings,
+    [OSD_WARNINGS]                = osdElementWarnings2,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
