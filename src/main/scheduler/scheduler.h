@@ -230,6 +230,7 @@ void schedulerResetTaskStatistics(taskId_e taskId);
 void schedulerResetTaskMaxExecutionTime(taskId_e taskId);
 void schedulerResetCheckFunctionMaxExecutionTime(void);
 void schedulerSetNextStateTime(timeDelta_t nextStateTime);
+timeDelta_t schedulerGetNextStateTime();
 void schedulerInit(void);
 void scheduler(void);
 timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs);

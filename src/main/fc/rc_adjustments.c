@@ -659,6 +659,9 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
 
 static void calcActiveAdjustmentRanges(void)
 {
+    // This initialisation upsets the scheduler task duration estimation
+    schedulerIgnoreTaskExecTime();
+
     adjustmentRange_t defaultAdjustmentRange;
     memset(&defaultAdjustmentRange, 0, sizeof(defaultAdjustmentRange));
 

@@ -356,6 +356,11 @@ FAST_CODE void schedulerSetNextStateTime(timeDelta_t nextStateTime)
     taskNextStateTime = nextStateTime;
 }
 
+FAST_CODE timeDelta_t schedulerGetNextStateTime()
+{
+    return currentTask->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT;
+}
+
 FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs)
 {
     timeUs_t taskExecutionTimeUs = 0;

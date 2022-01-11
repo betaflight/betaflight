@@ -299,6 +299,13 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 
 void osdAnalyzeActiveElements(void)
 {
+    /* This code results in a total RX task RX_STATE_MODES state time of ~68us on an F411 overclocked to 108MHz
+     * This upsets the scheduler task duration estimation and will break SPI RX communication. This can
+     * occur in flight, but only when the OSD profile is changed by switch so can be ignored, only causing
+     * one late task instance.
+     */
+    schedulerIgnoreTaskExecTime();
+
     osdAddActiveElements();
     osdDrawActiveElementsBackground(osdDisplayPort);
 }
