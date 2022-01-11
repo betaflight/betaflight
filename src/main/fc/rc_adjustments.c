@@ -61,6 +61,8 @@
 
 #include "rc_adjustments.h"
 
+#include "scheduler/scheduler.h"
+
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
@@ -834,6 +836,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     // Recalculate the new active adjustments if required
     if (stepwiseAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
+        // This can take up to 30us and is only call when not armed so ignore this timing as it doesn't impact flight
+        schedulerIgnoreTaskExecTime();
         calcActiveAdjustmentRanges();
     }
 
