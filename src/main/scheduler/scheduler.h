@@ -191,11 +191,11 @@ typedef struct {
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeDelta_t desiredPeriodUs;        // target period of execution
     const int8_t staticPriority;        // dynamicPriority grows in steps of this size
-} task_attr_t;
+} task_attribute_t;
 
 typedef struct {
     // Task static data
-    task_attr_t *attr;
+    task_attribute_t *attribute;
 
     // Scheduling
     uint16_t dynamicPriority;           // measurement of how old task was last executed, used to avoid task starvation
