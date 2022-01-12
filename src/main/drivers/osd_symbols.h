@@ -161,3 +161,9 @@
 #define SYM_GPS_DEGREE              SYM_STICK_OVERLAY_SPRITE_HIGH  // kind of looks like the degree symbol
 #define SYM_GPS_MINUTE              0x27 // '
 #define SYM_GPS_SECOND              0x22 // "
+
+// OSD AAT telemtery
+#define SYM_TELEMETRY_0             0x7C 
+#define SYM_TELEMETRY_1             0x79
+
+

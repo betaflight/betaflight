@@ -420,6 +420,7 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_MSP_OVERRIDE
 #define USE_SIMPLIFIED_TUNING
 #define USE_RX_LINK_UPLINK_POWER
+#define USE_OSD_AAT_TELEMETRY
 #define USE_CRSF_V3
 #endif
 

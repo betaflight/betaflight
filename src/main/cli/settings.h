@@ -145,6 +145,9 @@ typedef enum {
     TABLE_FREQ_DOMAIN,
     TABLE_SWITCH_MODE,
 #endif
+#ifdef USE_OSD_AAT_TELEMETRY
+    TABLE_OSD_AAT_TELEMETRY, 
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
