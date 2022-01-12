@@ -396,7 +396,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
     simulatedTime = startTime;
     tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime;
     tasks[TASK_ATTITUDE].lastExecutedAtUs = tasks[TASK_ACCEL].lastExecutedAtUs - TEST_UPDATE_ATTITUDE_TIME;
-    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgeCycles);
+    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgePeriods);
     // run the scheduler
     scheduler();
     // no tasks should have run, since neither task's desired time has elapsed
