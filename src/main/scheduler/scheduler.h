@@ -48,6 +48,7 @@
 #define TASK_EXEC_TIME_SHIFT            7
 
 #define TASK_AGE_EXPEDITE_RX            25  // Make RX tasks more schedulable if it's failed to be scheduled this many times
+#define TASK_AGE_EXPEDITE_OSD           25  // Make OSD tasks more schedulable if it's failed to be scheduled this many times
 #define TASK_AGE_EXPEDITE_COUNT         1   // Make aged tasks more schedulable
 #define TASK_AGE_EXPEDITE_SCALE         0.9 // By scaling their expected execution time
 

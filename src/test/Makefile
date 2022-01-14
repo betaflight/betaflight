@@ -278,6 +278,8 @@ scheduler_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c
 
+scheduler_unittest_DEFINES := \
+		USE_OSD= 
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
