@@ -1006,6 +1006,8 @@ void osdDrawStats2(timeUs_t currentTimeUs)
             osdStatsEnabled = false;
             stats.armed_time = 0;
         }
+
+        schedulerIgnoreTaskExecTime();
     }
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
@@ -1305,20 +1307,22 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
     }
 
-    executeTimeUs = micros() - currentTimeUs;
+    if (!schedulerGetIgnoreTaskExecTime()) {
+        executeTimeUs = micros() - currentTimeUs;
 
 
-    // On the first pass no element groups will have been formed, so all elements will have been
-    // rendered which is unrepresentative, so ignore
-    if (!firstPass) {
-        if (osdCurState == OSD_STATE_UPDATE_ELEMENTS) {
-            if (executeTimeUs > osdElementGroupDurationUs[osdCurElementGroup]) {
-                osdElementGroupDurationUs[osdCurElementGroup] = executeTimeUs;
+        // On the first pass no element groups will have been formed, so all elements will have been
+        // rendered which is unrepresentative, so ignore
+        if (!firstPass) {
+            if (osdCurState == OSD_STATE_UPDATE_ELEMENTS) {
+                if (executeTimeUs > osdElementGroupDurationUs[osdCurElementGroup]) {
+                    osdElementGroupDurationUs[osdCurElementGroup] = executeTimeUs;
+                }
             }
-        }
 
-        if (executeTimeUs > osdStateDurationUs[osdCurState]) {
-            osdStateDurationUs[osdCurState] = executeTimeUs;
+            if (executeTimeUs > osdStateDurationUs[osdCurState]) {
+                osdStateDurationUs[osdCurState] = executeTimeUs;
+            }
         }
     }
 
