@@ -585,7 +585,7 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
 
 static void bbWrite(uint8_t motorIndex, float value)
 {
-    bbWriteInt(motorIndex, value);
+    bbWriteInt(motorIndex, lrintf(value));
 }
 
 static void bbUpdateComplete(void)
