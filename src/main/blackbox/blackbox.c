@@ -1089,7 +1089,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
     const int motorCount = getMotorCount();
     for (int i = 0; i < motorCount; i++) {
-        blackboxCurrent->motor[i] = motor[i];
+        blackboxCurrent->motor[i] = lrintf(motor[i]);
     }
 
     blackboxCurrent->vbatLatest = getBatteryVoltageLatest();
