@@ -388,11 +388,6 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_BARO, 0, state);
 
-    // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
-    if (state != BARO_STATE_TEMPERATURE_START) {
-        schedulerIgnoreTaskExecRate();
-    }
-
     if (busBusy(&baro.dev.dev, NULL)) {
         // If the bus is busy, simply return to have another go later
         schedulerIgnoreTaskStateTime();
@@ -412,7 +407,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 state = BARO_STATE_TEMPERATURE_SAMPLE;
             } else {
                 // No action was taken as the read has not completed
-                schedulerIgnoreTaskStateTime();
+                schedulerIgnoreTaskExecTime();
             }
             break;
 
@@ -421,7 +416,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 state = BARO_STATE_PRESSURE_START;
             } else {
                 // No action was taken as the read has not completed
-                schedulerIgnoreTaskStateTime();
+                schedulerIgnoreTaskExecTime();
             }
             break;
 
@@ -436,14 +431,14 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 state = BARO_STATE_PRESSURE_SAMPLE;
             } else {
                 // No action was taken as the read has not completed
-                schedulerIgnoreTaskStateTime();
+                schedulerIgnoreTaskExecTime();
             }
             break;
 
         case BARO_STATE_PRESSURE_SAMPLE:
             if (!baro.dev.get_up(&baro.dev)) {
                 // No action was taken as the read has not completed
-                schedulerIgnoreTaskStateTime();
+                schedulerIgnoreTaskExecTime();
                 break;
             }
 
@@ -463,6 +458,11 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 
             sleepTime = baro.dev.ut_delay;
             break;
+    }
+
+    // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
+    if (sleepTime != baro.dev.ut_delay) {
+        schedulerIgnoreTaskExecRate();
     }
 
     executeTimeUs = micros() - currentTimeUs;
