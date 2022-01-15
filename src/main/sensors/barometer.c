@@ -411,12 +411,16 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             if (baro.dev.read_ut(&baro.dev)) {
                 state = BARO_STATE_TEMPERATURE_SAMPLE;
             }
+            // No action was taken as the read has not completed
+            schedulerIgnoreTaskStateTime();
             break;
 
         case BARO_STATE_TEMPERATURE_SAMPLE:
             if (baro.dev.get_ut(&baro.dev)) {
                 state = BARO_STATE_PRESSURE_START;
             }
+            // No action was taken as the read has not completed
+            schedulerIgnoreTaskStateTime();
             break;
 
         case BARO_STATE_PRESSURE_START:
@@ -429,12 +433,15 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             if (baro.dev.read_up(&baro.dev)) {
                 state = BARO_STATE_PRESSURE_SAMPLE;
             } else {
+                // No action was taken as the read has not completed
                 schedulerIgnoreTaskStateTime();
             }
             break;
 
         case BARO_STATE_PRESSURE_SAMPLE:
             if (!baro.dev.get_up(&baro.dev)) {
+                // No action was taken as the read has not completed
+                schedulerIgnoreTaskStateTime();
                 break;
             }
 
