@@ -221,6 +221,8 @@ typedef struct
 #define UART7 ((USART_TypeDef *)0x0007)
 #define UART8 ((USART_TypeDef *)0x0008)
 
+#define MAX_RC_SITL 16
+
 typedef struct
 {
     void* test;
@@ -243,6 +245,12 @@ typedef struct {
     double velocity_xyz[3];             // m/s, earth frame
     double position_xyz[3];             // meters, NED from origin
 } fdm_packet;
+
+typedef struct {
+    double timestamp;                   // in seconds
+    uint16_t channels[MAX_RC_SITL];             // meters, NED from origin
+} rc_packet;
+
 typedef struct {
     float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;

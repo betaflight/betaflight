@@ -278,8 +278,7 @@ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
     static int index;
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
 
-    const int rxRefreshRateMs = rxRefreshRate / 1000;
-    const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
+    const int indexMax = constrain(THROTTLE_DELTA_MS*1000 / rxRefreshRate, 1, THROTTLE_BUFFER_MAX);
     const int16_t throttleVelocityThreshold = (featureIsEnabled(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];

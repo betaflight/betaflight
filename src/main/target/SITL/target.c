@@ -60,15 +60,20 @@ const timerHardware_t timerHardware[1]; // unused
 uint32_t SystemCoreClock;
 
 static fdm_packet fdmPkt;
+static rc_packet rcPkt;
 static servo_packet pwmPkt;
+
+static bool rc_received = false;
+static bool fdm_received = false;
 
 static struct timespec start_time;
 static double simRate = 1.0;
-static pthread_t tcpWorker, udpWorker;
+static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
-static udpLink_t stateLink, pwmLink;
+static udpLink_t stateLink, pwmLink, rcLink;
 static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
+extern rxRuntimeState_t rxRuntimeState;
 
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
@@ -190,6 +195,47 @@ static void* udpThread(void* data) {
     return NULL;
 }
 
+static float readRCSITL(const rxRuntimeState_t *rxRuntimeState, uint8_t channel) {
+    UNUSED(rxRuntimeState);
+    return rcPkt.channels[channel];
+}
+
+static uint8_t rxRCFrameStatus(rxRuntimeState_t *rxRuntimeState)
+{
+    UNUSED(rxRuntimeState);
+    return RX_FRAME_COMPLETE;
+}
+
+
+static void* udpRCThread(void* data) {
+    UNUSED(data);
+    int n = 0;
+
+    while (workerRunning) {
+        n = udpRecv(&rcLink, &rcPkt, sizeof(rc_packet), 100);
+        if (n == sizeof(rc_packet)) {
+            if (!rc_received) {
+                printf("[data]new rc %d: t:%f AETR: %d %d %d %d AUX1-4: %d %d %d %d\n", n, rcPkt.timestamp,
+                    rcPkt.channels[0], rcPkt.channels[1],rcPkt.channels[2],rcPkt.channels[3],
+                    rcPkt.channels[4], rcPkt.channels[5],rcPkt.channels[6],rcPkt.channels[7]);
+                
+                rxRuntimeState.channelCount = MAX_RC_SITL;
+                rxRuntimeState.rcReadRawFn = readRCSITL;
+                rxRuntimeState.rcFrameStatusFn = rxRCFrameStatus;
+
+                rxRuntimeState.rxRefreshRate = 20000;
+                rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
+                rc_received = true;
+            }
+        }
+    }
+
+    printf("udpRCThread end!!\n");
+    return NULL;
+}
+
+
+
 static void* tcpThread(void* data) {
     UNUSED(data);
 
@@ -232,12 +278,16 @@ void systemInit(void) {
     }
 
     ret = udpInit(&pwmLink, "127.0.0.1", 9002, false);
-    printf("init PwmOut UDP link...%d\n", ret);
+    printf("init PwmOut UDP link@%d...%d\n", 9002, ret);
 
     ret = udpInit(&stateLink, NULL, 9003, true);
-    printf("start UDP server...%d\n", ret);
+    printf("start UDP server @%d...%d\n", 9003, ret);
+
+    ret = udpInit(&rcLink, NULL, 9004, true);
+    printf("start UDP server for RC @%d...%d\n", 9004, ret);
 
     ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
+    ret = pthread_create(&udpWorkerRC, NULL, udpRCThread, NULL);
     if (ret != 0) {
         printf("Create udpWorker error!\n");
         exit(1);
