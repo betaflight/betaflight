@@ -62,6 +62,7 @@ uint32_t SystemCoreClock;
 static fdm_packet fdmPkt;
 static rc_packet rcPkt;
 static servo_packet pwmPkt;
+static servo_packet_raw pwmRawPkt;
 
 static bool rc_received = false;
 static bool fdm_received = false;
@@ -70,7 +71,7 @@ static struct timespec start_time;
 static double simRate = 1.0;
 static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
-static udpLink_t stateLink, pwmLink, rcLink;
+static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
 static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
 extern rxRuntimeState_t rxRuntimeState;
@@ -84,6 +85,15 @@ int lockMainPID(void) {
 #define RAD2DEG (180.0 / M_PI)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
+
+//#define SIMULATOR_IP "127.0.0.1"
+#define SIMULATOR_IP "172.21.32.1"
+#define SIMULATOR_GAZEBO_IP "127.0.0.1"
+#define PORT_OUT_PWM_RAW 9001
+#define PORT_OUT_PWM 9002
+#define PORT_IN_STATE 9003
+#define PORT_IN_RC 9004
+
 void sendMotorUpdate() {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
@@ -186,7 +196,11 @@ static void* udpThread(void* data) {
     while (workerRunning) {
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
         if (n == sizeof(fdm_packet)) {
-//            printf("[data]new fdm %d\n", n);
+            if (!fdm_received) {
+                printf("[data]new fdm %d t:%f from %s:%d", n, fdmPkt.timestamp, inet_ntoa(stateLink.recv.sin_addr), stateLink.recv.sin_port);
+                fdm_received = true;
+                // pwmLink.si.sin_addr = stateLink.recv.sin_addr;
+            }
             updateState(&fdmPkt);
         }
     }
@@ -277,14 +291,17 @@ void systemInit(void) {
         exit(1);
     }
 
-    ret = udpInit(&pwmLink, "127.0.0.1", 9002, false);
-    printf("init PwmOut UDP link@%d...%d\n", 9002, ret);
+    ret = udpInit(&pwmLink, SIMULATOR_GAZEBO_IP, PORT_OUT_PWM, false);
+    printf("init PwmOut UDP link to gazebo %s:%d...%d\n", SIMULATOR_GAZEBO_IP, PORT_OUT_PWM, ret);
 
-    ret = udpInit(&stateLink, NULL, 9003, true);
-    printf("start UDP server @%d...%d\n", 9003, ret);
+    ret = udpInit(&pwmRawLink, SIMULATOR_IP, PORT_OUT_PWM_RAW, false);
+    printf("init PwmOut UDP link to RF9 %s:%d...%d\n", SIMULATOR_IP, PORT_OUT_PWM_RAW, ret);
 
-    ret = udpInit(&rcLink, NULL, 9004, true);
-    printf("start UDP server for RC @%d...%d\n", 9004, ret);
+    ret = udpInit(&stateLink, NULL, PORT_IN_STATE, true);
+    printf("start UDP server @%d...%d\n", PORT_IN_STATE, ret);
+
+    ret = udpInit(&rcLink, NULL, PORT_IN_RC, true);
+    printf("start UDP server for RC @%d...%d\n", PORT_IN_RC, ret);
 
     ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
     ret = pthread_create(&udpWorkerRC, NULL, udpRCThread, NULL);
@@ -494,6 +511,7 @@ static bool pwmEnableMotors(void)
 static void pwmWriteMotor(uint8_t index, float value)
 {
     motorsPwm[index] = value - idlePulse;
+    pwmRawPkt.pwm_output_raw[index] = value;
 }
 
 static void pwmWriteMotorInt(uint8_t index, uint16_t value)
@@ -528,7 +546,9 @@ static void pwmCompleteMotorUpdate(void)
     // get one "fdm_packet" can only send one "servo_packet"!!
     if (pthread_mutex_trylock(&updateLock) != 0) return;
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
-//    printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
+    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
+    // printf("[pwm]%u:%f,%f,%f,%f\n", idlePulse, pwmRawPkt.pwm_output_raw[0], 
+        // pwmRawPkt.pwm_output_raw[1], pwmRawPkt.pwm_output_raw[2], pwmRawPkt.pwm_output_raw[3]);
 }
 
 void pwmWriteServo(uint8_t index, float value) {

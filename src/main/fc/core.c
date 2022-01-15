@@ -380,11 +380,15 @@ void updateArmingStatus(void)
         }
 
 #ifdef USE_ACC
+#ifndef SIMULATOR_MULTITHREAD
         if (accNeedsCalibration()) {
             setArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
         }
+#else
+        unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION); //In simulator mode we don't calibrate the IMU.
+#endif
 #endif
 
         if (!isMotorProtocolEnabled()) {

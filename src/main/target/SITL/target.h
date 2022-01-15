@@ -35,8 +35,8 @@
 // disable this if wants to test AHRS algorithm
 #undef USE_IMU_CALC
 
-//#define SIMULATOR_ACC_SYNC
-//#define SIMULATOR_GYRO_SYNC
+// #define SIMULATOR_ACC_SYNC
+// #define SIMULATOR_GYRO_SYNC
 //#define SIMULATOR_IMU_SYNC
 //#define SIMULATOR_GYROPID_SYNC
 
@@ -222,6 +222,7 @@ typedef struct
 #define UART8 ((USART_TypeDef *)0x0008)
 
 #define MAX_RC_SITL 16
+#define MAX_PWM_OUTPUT_NUM 8
 
 typedef struct
 {
@@ -254,6 +255,10 @@ typedef struct {
 typedef struct {
     float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
+
+typedef struct {
+    float pwm_output_raw[MAX_PWM_OUTPUT_NUM];   // Raw PWM from 1100 to 1900
+} servo_packet_raw;
 
 void FLASH_Unlock(void);
 void FLASH_Lock(void);
