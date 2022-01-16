@@ -233,7 +233,7 @@ static void* udpRCThread(void* data) {
                     rcPkt.channels[0], rcPkt.channels[1],rcPkt.channels[2],rcPkt.channels[3],
                     rcPkt.channels[4], rcPkt.channels[5],rcPkt.channels[6],rcPkt.channels[7]);
                 
-                rxRuntimeState.channelCount = MAX_RC_SITL;
+                rxRuntimeState.channelCount = SIMULATOR_MAX_RC_CHANNELS;
                 rxRuntimeState.rcReadRawFn = readRCSITL;
                 rxRuntimeState.rcFrameStatusFn = rxRCFrameStatus;
 

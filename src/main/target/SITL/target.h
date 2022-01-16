@@ -249,7 +249,7 @@ typedef struct {
 
 typedef struct {
     double timestamp;                   // in seconds
-    uint16_t channels[MAX_RC_SITL];             // meters, NED from origin
+    uint16_t channels[SIMULATOR_MAX_RC_CHANNELS];             // meters, NED from origin
 } rc_packet;
 
 typedef struct {
@@ -257,7 +257,7 @@ typedef struct {
 } servo_packet;
 
 typedef struct {
-    float pwm_output_raw[MAX_PWM_OUTPUT_NUM];   // Raw PWM from 1100 to 1900
+    float pwm_output_raw[SIMULATOR_MAX_PWM_CHANNELS];   // Raw PWM from 1100 to 1900
 } servo_packet_raw;
 
 void FLASH_Unlock(void);
