@@ -1377,5 +1377,6 @@ extern "C" {
     void schedulerIgnoreTaskStateTime(void) { }
     void schedulerIgnoreTaskExecRate(void) { }
     void schedulerIgnoreTaskExecTime(void) { }
+    bool schedulerGetIgnoreTaskExecTime() { return false; }
     void schedulerSetNextStateTime(timeDelta_t) {}
 }

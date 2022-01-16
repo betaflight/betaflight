@@ -92,6 +92,11 @@ static FAST_DATA_ZERO_INIT bool gyroEnabled;
 static int32_t desiredPeriodCycles;
 static uint32_t lastTargetCycles;
 
+static uint8_t skippedRxAttempts = 0;
+#ifdef USE_OSD
+static uint8_t skippedOSDAttempts = 0;
+#endif
+
 #if defined(USE_LATE_TASK_STATISTICS)
 static int16_t lateTaskCount = 0;
 static uint32_t lateTaskTotal = 0;
@@ -356,6 +361,11 @@ FAST_CODE void schedulerSetNextStateTime(timeDelta_t nextStateTime)
     taskNextStateTime = nextStateTime;
 }
 
+FAST_CODE timeDelta_t schedulerGetNextStateTime()
+{
+    return currentTask->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT;
+}
+
 FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs)
 {
     timeUs_t taskExecutionTimeUs = 0;
@@ -564,8 +574,8 @@ FAST_CODE void scheduler(void)
                 if (task->attr->checkFunc) {
                     // Increase priority for event driven tasks
                     if (task->dynamicPriority > 0) {
-                        task->taskAgeCycles = 1 + (cmpTimeUs(currentTimeUs, task->lastSignaledAtUs) / task->attr->desiredPeriodUs);
-                        task->dynamicPriority = 1 + task->attr->staticPriority * task->taskAgeCycles;
+                        task->taskAgePeriods = 1 + (cmpTimeUs(currentTimeUs, task->lastSignaledAtUs) / task->attr->desiredPeriodUs);
+                        task->dynamicPriority = 1 + task->attr->staticPriority * task->taskAgePeriods;
                     } else if (task->attr->checkFunc(currentTimeUs, cmpTimeUs(currentTimeUs, task->lastExecutedAtUs))) {
                         const uint32_t checkFuncExecutionTimeUs = cmpTimeUs(micros(), currentTimeUs);
 #if !defined(UNIT_TEST)
@@ -576,17 +586,17 @@ FAST_CODE void scheduler(void)
                         checkFuncTotalExecutionTimeUs += checkFuncExecutionTimeUs;   // time consumed by scheduler + task
                         checkFuncMaxExecutionTimeUs = MAX(checkFuncMaxExecutionTimeUs, checkFuncExecutionTimeUs);
                         task->lastSignaledAtUs = currentTimeUs;
-                        task->taskAgeCycles = 1;
+                        task->taskAgePeriods = 1;
                         task->dynamicPriority = 1 + task->attr->staticPriority;
                     } else {
-                        task->taskAgeCycles = 0;
+                        task->taskAgePeriods = 0;
                     }
                 } else {
                     // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
                     // Task age is calculated from last execution
-                    task->taskAgeCycles = (cmpTimeUs(currentTimeUs, task->lastExecutedAtUs) / task->attr->desiredPeriodUs);
-                    if (task->taskAgeCycles > 0) {
-                        task->dynamicPriority = 1 + task->attr->staticPriority * task->taskAgeCycles;
+                    task->taskAgePeriods = (cmpTimeUs(currentTimeUs, task->lastExecutedAtUs) / task->attr->desiredPeriodUs);
+                    if (task->taskAgePeriods > 0) {
+                        task->dynamicPriority = 1 + task->attr->staticPriority * task->taskAgePeriods;
                     }
                 }
 
@@ -628,6 +638,15 @@ FAST_CODE void scheduler(void)
                 }
 #endif  // USE_LATE_TASK_STATISTICS
 
+                if ((currentTask - tasks) == TASK_RX) {
+                    skippedRxAttempts = 0;
+                }
+#ifdef USE_OSD
+                else if ((currentTask - tasks) == TASK_OSD) {
+                    skippedOSDAttempts = 0;
+                }
+#endif
+
                 if ((cyclesOverdue > 0) || (-cyclesOverdue < taskGuardMinCycles)) {
                     if (taskGuardCycles < taskGuardMaxCycles) {
                         taskGuardCycles += taskGuardDeltaUpCycles;
@@ -638,7 +657,11 @@ FAST_CODE void scheduler(void)
 #if defined(USE_LATE_TASK_STATISTICS)
                 taskCount++;
 #endif  // USE_LATE_TASK_STATISTICS
-            } else if (selectedTask->taskAgeCycles > TASK_AGE_EXPEDITE_COUNT) {
+            } else if ((selectedTask->taskAgePeriods > TASK_AGE_EXPEDITE_COUNT) ||
+#ifdef USE_OSD
+                       (((selectedTask - tasks) == TASK_OSD) && (++skippedOSDAttempts > TASK_AGE_EXPEDITE_OSD)) ||
+#endif
+                       (((selectedTask - tasks) == TASK_RX) && (++skippedRxAttempts > TASK_AGE_EXPEDITE_RX))) {
                 // If a task has been unable to run, then reduce it's recorded estimated run time to ensure
                 // it's ultimate scheduling
                 selectedTask->anticipatedExecutionTime *= TASK_AGE_EXPEDITE_SCALE;

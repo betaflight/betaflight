@@ -37,6 +37,8 @@ const int TEST_UPDATE_RX_CHECK_TIME = 34;
 const int TEST_UPDATE_RX_MAIN_TIME = 1;
 const int TEST_IMU_UPDATE_TIME = 5;
 const int TEST_DISPATCH_TIME = 1;
+const int TEST_UPDATE_OSD_CHECK_TIME = 5;
+const int TEST_UPDATE_OSD_TIME = 30;
 
 #define TASK_COUNT_UNITTEST (TASK_BATTERY_VOLTAGE + 1)
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
@@ -76,6 +78,8 @@ extern "C" {
     void taskUpdateRxMain(timeUs_t) { simulatedTime += TEST_UPDATE_RX_MAIN_TIME; }
     void imuUpdateAttitude(timeUs_t) { simulatedTime += TEST_IMU_UPDATE_TIME; }
     void dispatchProcess(timeUs_t) { simulatedTime += TEST_DISPATCH_TIME; }
+    bool osdUpdateCheck(timeUs_t, timeDelta_t) { simulatedTime += TEST_UPDATE_OSD_CHECK_TIME; return false; }
+    void osdUpdate(timeUs_t) { simulatedTime += TEST_UPDATE_OSD_TIME; }
 
     void resetGyroTaskTestFlags(void) {
         taskGyroRan = false;
@@ -156,6 +160,13 @@ extern "C" {
             .taskFunc = taskUpdateBatteryVoltage,
             .desiredPeriodUs = TASK_PERIOD_HZ(50),
             .staticPriority = TASK_PRIORITY_MEDIUM,
+        },
+        [TASK_OSD] = {
+            .taskName = "OSD",
+            .checkFunc = osdUpdateCheck,
+            .taskFunc = osdUpdate,
+            .desiredPeriodUs = TASK_PERIOD_HZ(12),
+            .staticPriority = TASK_PRIORITY_LOW,
         }
     };
 
@@ -396,7 +407,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
     simulatedTime = startTime;
     tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime;
     tasks[TASK_ATTITUDE].lastExecutedAtUs = tasks[TASK_ACCEL].lastExecutedAtUs - TEST_UPDATE_ATTITUDE_TIME;
-    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgeCycles);
+    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgePeriods);
     // run the scheduler
     scheduler();
     // no tasks should have run, since neither task's desired time has elapsed

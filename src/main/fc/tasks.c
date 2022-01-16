@@ -182,9 +182,10 @@ bool taskUpdateRxMainInProgress()
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    static timeUs_t rxStateDurationFracUs[RX_STATE_COUNT];
-    timeUs_t executeTimeUs;
+    static timeDelta_t rxStateDurationFracUs[RX_STATE_COUNT];
+    timeDelta_t executeTimeUs;
     rxState_e oldRxState = rxState;
+    timeDelta_t anticipatedExecutionTime;
 
     // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
     if (rxState != RX_STATE_UPDATE) {
@@ -224,17 +225,25 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         break;
     }
 
-    if (schedulerGetIgnoreTaskExecTime()) {
-        return;
+    if (!schedulerGetIgnoreTaskExecTime()) {
+        executeTimeUs = micros() - currentTimeUs + RX_TASK_MARGIN;
+
+        // If the scheduler has reduced the anticipatedExecutionTime due to task aging, pick that up
+        anticipatedExecutionTime = schedulerGetNextStateTime();
+        if (anticipatedExecutionTime != (rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
+            rxStateDurationFracUs[oldRxState] = anticipatedExecutionTime << RX_TASK_DECAY_SHIFT;
+        }
+
+        if (executeTimeUs > (rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
+            rxStateDurationFracUs[oldRxState] = executeTimeUs << RX_TASK_DECAY_SHIFT;
+        } else {
+            // Slowly decay the max time
+            rxStateDurationFracUs[oldRxState]--;
+        }
     }
 
-    executeTimeUs = micros() - currentTimeUs + RX_TASK_MARGIN;
-
-    if (executeTimeUs > (rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
-        rxStateDurationFracUs[oldRxState] = executeTimeUs << RX_TASK_DECAY_SHIFT;
-    } else {
-        // Slowly decay the max time
-        rxStateDurationFracUs[oldRxState]--;
+    if (debugMode == DEBUG_RX_STATE_TIME) {
+        debug[oldRxState] = rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT;
     }
 
     schedulerSetNextStateTime(rxStateDurationFracUs[rxState] >> RX_TASK_DECAY_SHIFT);

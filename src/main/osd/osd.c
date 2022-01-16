@@ -299,6 +299,13 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 
 void osdAnalyzeActiveElements(void)
 {
+    /* This code results in a total RX task RX_STATE_MODES state time of ~68us on an F411 overclocked to 108MHz
+     * This upsets the scheduler task duration estimation and will break SPI RX communication. This can
+     * occur in flight, but only when the OSD profile is changed by switch so can be ignored, only causing
+     * one late task instance.
+     */
+    schedulerIgnoreTaskExecTime();
+
     osdAddActiveElements();
     osdDrawActiveElementsBackground(osdDisplayPort);
 }
@@ -999,6 +1006,8 @@ void osdDrawStats2(timeUs_t currentTimeUs)
             osdStatsEnabled = false;
             stats.armed_time = 0;
         }
+
+        schedulerIgnoreTaskExecTime();
     }
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
@@ -1298,20 +1307,22 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
     }
 
-    executeTimeUs = micros() - currentTimeUs;
+    if (!schedulerGetIgnoreTaskExecTime()) {
+        executeTimeUs = micros() - currentTimeUs;
 
 
-    // On the first pass no element groups will have been formed, so all elements will have been
-    // rendered which is unrepresentative, so ignore
-    if (!firstPass) {
-        if (osdCurState == OSD_STATE_UPDATE_ELEMENTS) {
-            if (executeTimeUs > osdElementGroupDurationUs[osdCurElementGroup]) {
-                osdElementGroupDurationUs[osdCurElementGroup] = executeTimeUs;
+        // On the first pass no element groups will have been formed, so all elements will have been
+        // rendered which is unrepresentative, so ignore
+        if (!firstPass) {
+            if (osdCurState == OSD_STATE_UPDATE_ELEMENTS) {
+                if (executeTimeUs > osdElementGroupDurationUs[osdCurElementGroup]) {
+                    osdElementGroupDurationUs[osdCurElementGroup] = executeTimeUs;
+                }
             }
-        }
 
-        if (executeTimeUs > osdStateDurationUs[osdCurState]) {
-            osdStateDurationUs[osdCurState] = executeTimeUs;
+            if (executeTimeUs > osdStateDurationUs[osdCurState]) {
+                osdStateDurationUs[osdCurState] = executeTimeUs;
+            }
         }
     }
 
