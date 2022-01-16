@@ -387,7 +387,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION);
         }
 #else
-        unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION); //In simulator mode we don't calibrate the IMU.
+        unsetArmingDisabled(ARMING_DISABLED_ACC_CALIBRATION); //In simulator mode we don't need to calibrate the IMU.
 #endif
 #endif
 
