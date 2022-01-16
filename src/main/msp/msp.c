@@ -3359,7 +3359,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 disableRunawayTakeoff = sbufReadU8(src);
             }
             if (command) {
-#ifndef SIMULATOR_MULTITHREAD //In simulator mode we can safe arm with MSP link.
+#ifndef SIMULATOR_MULTITHREAD //In simulator mode we can safely arm with MSP link.
                 mspArmingDisableByDescriptor(srcDesc);
                 setArmingDisabled(ARMING_DISABLED_MSP);
                 if (ARMING_FLAG(ARMED)) {
