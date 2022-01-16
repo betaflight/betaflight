@@ -221,8 +221,8 @@ typedef struct
 #define UART7 ((USART_TypeDef *)0x0007)
 #define UART8 ((USART_TypeDef *)0x0008)
 
-#define MAX_RC_SITL 16
-#define MAX_PWM_OUTPUT_NUM 8
+#define SIMULATOR_MAX_RC_CHANNELS 16
+#define SIMULATOR_MAX_PWM_CHANNELS 8
 
 typedef struct
 {
