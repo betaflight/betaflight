@@ -98,6 +98,7 @@
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/servos.h"
+#include "flight/alt_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -995,6 +996,10 @@ void init(void)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
 #endif
+#endif
+
+#ifdef USE_ALTHOLD_MODE
+    initAltHoldState();
 #endif
 
     swdPinsInit();

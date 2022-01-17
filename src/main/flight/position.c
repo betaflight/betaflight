@@ -106,7 +106,11 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     int32_t baroAlt = 0;
     int32_t gpsAlt = 0;
+<<<<<<< HEAD
     uint8_t gpsNumSat = 0;
+=======
+    uint16_t gpsNumSat = 0;
+>>>>>>> a501032f7 (Altitude hold mode)
 
 #if defined(USE_GPS) && defined(USE_VARIO)
     int16_t gpsVertSpeed = 0;

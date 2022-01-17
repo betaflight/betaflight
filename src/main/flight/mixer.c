@@ -46,6 +46,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/alt_hold.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
@@ -592,6 +593,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // like throttle boost or throttle limit from negatively affecting the throttle.
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         throttle = gpsRescueGetThrottle();
+    }
+#endif
+
+#ifdef USE_ALTHOLD_MODE
+    if (FLIGHT_MODE(ALTHOLD_MODE) && ARMING_FLAG(ARMED)) {
+        throttle = getAltHoldThrottle();
     }
 #endif
 
