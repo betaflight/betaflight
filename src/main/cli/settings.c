@@ -1714,6 +1714,7 @@ const clivalue_t valueTable[] = {
 
 // PG_POSITION
     { "position_alt_source",           VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_SOURCE }, PG_POSITION, offsetof(positionConfig_t, altSource) },
+    { "position_gps_alt_min_sats",     VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_POSITION, offsetof(positionConfig_t, gpsAltMinSats) },
 
 // PG_MODE_ACTIVATION_CONFIG
 #if defined(USE_CUSTOM_BOX_NAMES)
