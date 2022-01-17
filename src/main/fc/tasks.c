@@ -57,6 +57,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/alt_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -297,6 +298,10 @@ void tasksInit(void)
     setTaskEnabled(TASK_GPS, featureIsEnabled(FEATURE_GPS));
 #endif
 
+#ifdef USE_ALTHOLD_MODE
+    setTaskEnabled(TASK_ALTHOLD, true);
+#endif
+
 #ifdef USE_MAG
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
 #endif
@@ -428,6 +433,10 @@ task_t tasks[TASK_COUNT] = {
 
 #ifdef USE_GPS
     [TASK_GPS] = DEFINE_TASK("GPS", NULL, NULL, gpsUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM), // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
+#endif
+
+#ifdef USE_ALTHOLD_MODE
+        [TASK_ALTHOLD] = DEFINE_TASK("ALTHOLD", NULL, NULL, updateAltHoldState, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_MAG

@@ -97,6 +97,7 @@
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#include "flight/alt_hold.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -1039,6 +1040,11 @@ void init(void)
 #ifdef USE_MOTOR
     motorPostInit();
     motorEnable();
+#endif
+
+
+#ifdef USE_ALTHOLD_MODE
+    initAltHoldState();
 #endif
 
     swdPinsInit();

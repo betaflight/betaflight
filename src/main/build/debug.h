@@ -90,6 +90,7 @@ typedef enum {
     DEBUG_BLACKBOX_OUTPUT,
     DEBUG_GYRO_SAMPLE,
     DEBUG_RX_TIMING,
+    DEBUG_ALTHOLD,
     DEBUG_COUNT
 } debugType_e;
 

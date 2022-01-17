@@ -247,6 +247,10 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
     buildRotationMatrix(delta, &rotationMatrix);
 
     applyRotation((float *)&v_tmp, &rotationMatrix);
+
+    v->X = v_tmp.X;
+    v->Y = v_tmp.Y;
+    v->Z = v_tmp.Z;
 }
 
 // Quick median filter implementation

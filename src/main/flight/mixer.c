@@ -53,6 +53,7 @@
 #include "fc/rc.h"
 
 #include "flight/failsafe.h"
+#include "flight/alt_hold.h"
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/mixer.h"
@@ -947,6 +948,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
     float airmodeThrottleChange = 0;
 #endif
     mixerThrottle = throttle;
+
+#ifdef USE_ALTHOLD_MODE
+    if (FLIGHT_MODE(ALTHOLD_MODE) && ARMING_FLAG(ARMED)) {
+        throttle = getAltHoldThrottle();
+    }
+#endif
 
     motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {

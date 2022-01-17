@@ -93,6 +93,7 @@ COMMON_SRC = \
             flight/failsafe.c \
             flight/gps_rescue.c \
             flight/gyroanalyse.c \
+            flight/alt_hold.c \
             flight/imu.c \
             flight/interpolated_setpoint.c \
             flight/mixer.c \
