@@ -24,6 +24,7 @@
 
 typedef struct positionConfig_s {
     uint8_t altSource;
+    uint8_t gpsAltMinSats;
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);

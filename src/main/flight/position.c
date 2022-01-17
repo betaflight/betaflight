@@ -56,6 +56,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 1
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altSource = DEFAULT,
+    .gpsAltMinSats = 9,
 );
 
 static int32_t estimatedAltitudeCm = 0;                // in cm
@@ -87,6 +88,7 @@ int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
 
 #if defined(USE_BARO) || defined(USE_GPS)
 static bool altitudeOffsetSet = false;
+static bool altitudeOffsetSetGPS = false;
 
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
@@ -103,6 +105,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     int32_t baroAlt = 0;
     int32_t gpsAlt = 0;
+    uint16_t gpsNumSat = 0;
 
 #if defined(USE_GPS) && defined(USE_VARIO)
     int16_t gpsVertSpeed = 0;
@@ -124,6 +127,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         gpsAlt = gpsSol.llh.altCm;
+        gpsNumSat = gpsSol.numSat;
 #ifdef USE_VARIO
         gpsVertSpeed = GPS_verticalSpeedInCmS;
 #endif
@@ -144,9 +148,23 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSet) {
         altitudeOffsetSet = false;
     }
+
     baroAlt -= baroAltOffset;
+
+    if (ARMING_FLAG(ARMED) && !altitudeOffsetSetGPS) {
+        if (haveBaroAlt && gpsNumSat >= positionConfig()->gpsAltMinSats && altitudeOffsetSet) {
+            gpsAltOffset = gpsAlt - baroAlt;
+            altitudeOffsetSetGPS = true;
+        }
+    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetGPS) {
+        altitudeOffsetSetGPS = false;
+    }
+
     gpsAlt -= gpsAltOffset;
 
+    if (!altitudeOffsetSetGPS) {
+        haveGpsAlt = false;
+    }
 
     if (haveGpsAlt && haveBaroAlt && positionConfig()->altSource == DEFAULT) {
         if (ARMING_FLAG(ARMED)) {

@@ -50,7 +50,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXARM, "ARM", 0 },
     { BOXANGLE, "ANGLE", 1 },
     { BOXHORIZON, "HORIZON", 2 },
-//    { BOXBARO, "BARO", 3 },
+    { BOXALTHOLD, "ALTHOLD", 3 },
     { BOXANTIGRAVITY, "ANTI GRAVITY", 4 },
     { BOXMAG, "MAG", 5 },
     { BOXHEADFREE, "HEADFREE", 6 },
@@ -203,6 +203,7 @@ void initActiveBoxIds(void)
     if (sensors(SENSOR_ACC)) {
         BME(BOXANGLE);
         BME(BOXHORIZON);
+        BME(BOXALTHOLD);
         BME(BOXHEADFREE);
         BME(BOXHEADADJ);
     }
