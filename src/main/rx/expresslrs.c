@@ -33,6 +33,7 @@
 
 #ifdef USE_RX_EXPRESSLRS
 
+#include "build/atomic.h"
 #include "build/debug.h"
 #include "build/debug_pin.h"
 
@@ -40,6 +41,7 @@
 #include "common/filter.h"
 
 #include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -50,6 +52,8 @@
 
 #include "config/config.h"
 #include "config/feature.h"
+
+#include "fc/init.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -354,19 +358,23 @@ static bool handleFHSS(void)
     return true;
 }
 
-static bool handleSendTelemetryResponse(void)
+static bool shouldSendTelemetryResponse(void)
+{
+    uint8_t modresult = (receiver.nonceRX + 1) % tlmRatioEnumToValue(receiver.modParams->tlmInterval);
+    if ((receiver.connectionState == ELRS_DISCONNECTED) || (receiver.modParams->tlmInterval == TLM_RATIO_NO_TLM) || (receiver.alreadyTLMresp == true) || (modresult != 0)) {
+        return false; // don't bother sending tlm if disconnected or TLM is off
+    } else {
+        return true;
+    }
+}
+
+static void handleSendTelemetryResponse(void)
 {
     uint8_t packet[8];
 
     uint8_t *data;
     uint8_t maxLength;
     uint8_t packageIndex;
-    uint8_t modresult = (receiver.nonceRX + 1) % tlmRatioEnumToValue(receiver.modParams->tlmInterval);
-
-    if ((receiver.connectionState == ELRS_DISCONNECTED) || (receiver.modParams->tlmInterval == TLM_RATIO_NO_TLM) 
-        || (receiver.alreadyTLMresp == true) || (modresult != 0)) {
-        return false; // don't bother sending tlm if disconnected or TLM is off
-    }
 
     receiver.alreadyTLMresp = true;
     packet[0] = ELRS_TLM_PACKET;
@@ -408,13 +416,13 @@ static bool handleSendTelemetryResponse(void)
 
     dbgPinHi(1);
     receiver.transmitData(packet, ELRS_RX_TX_BUFF_SIZE);
-    return true;
 }
 
 static void updatePhaseLock(void)
 {
     if (receiver.connectionState != ELRS_DISCONNECTED && expressLrsEPRHaveBothEvents()) {
-        pl.rawOffsetUs = expressLrsEPRGetResult();
+        int32_t maxOffset = receiver.modParams->interval / 4;
+        pl.rawOffsetUs = constrain(expressLrsEPRGetResult(), -maxOffset, maxOffset);
 
         pl.offsetUs = simpleLPFilterUpdate(&pl.offsetFilter, pl.rawOffsetUs);
         pl.offsetDeltaUs = simpleLPFilterUpdate(&pl.offsetDxFilter, pl.rawOffsetUs - pl.previousRawOffsetUs);
@@ -552,6 +560,7 @@ static void initializeReceiver(void)
     receiver.rateIndex = receiver.inBindingMode ? bindingRateIndex : rxExpressLrsSpiConfig()->rateIndex;
     setRFLinkRate(receiver.rateIndex);
 
+    receiver.started = false;
     receiver.alreadyFHSS = false;
     receiver.alreadyTLMresp = false;
     receiver.lockRFmode = false;
@@ -584,7 +593,6 @@ static void unpackBindPacket(uint8_t *packet)
     initializeReceiver();
 
     receiver.configChanged = true; //after initialize as it sets it to false
-    startReceiving();
 }
 
 /**
@@ -679,13 +687,11 @@ static bool processRFSyncPacket(uint8_t *packet, const uint32_t timeStampMs)
     return false;
 }
 
-static rx_spi_received_e processRFPacket(uint8_t *payload)
+static rx_spi_received_e processRFPacket(uint8_t *payload, uint32_t timeStampUs)
 {
     uint8_t packet[ELRS_RX_TX_BUFF_SIZE];
 
     receiver.receiveData(packet, ELRS_RX_TX_BUFF_SIZE);
-
-    uint32_t timeStampUs = micros();
 
     elrsPacketType_e type = packet[0] & 0x03;
     uint16_t inCRC = (((uint16_t)(packet[0] & 0xFC)) << 6 ) | packet[7];
@@ -925,8 +931,6 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
     // Timer IRQs must only be enabled after the receiver is configured otherwise race conditions occur.
     expressLrsTimerEnableIRQs();
 
-    startReceiving();
-
     return true;
 }
 
@@ -955,16 +959,20 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
 
     uint32_t localLastValidPacket = receiver.lastValidPacketMs; // Required to prevent race condition due to LastValidPacket getting updated from ISR
     if ((receiver.connectionState == ELRS_DISCONNECT_PENDING) || // check if we lost conn.
-        ((receiver.connectionState == ELRS_CONNECTED) && ((int32_t)receiver.rfPerfParams->disconnectTimeoutMs < (int32_t)(timeStampMs - localLastValidPacket)))) {
+        ((receiver.connectionState == ELRS_CONNECTED) && (receiver.rfPerfParams->disconnectTimeoutMs < (timeStampMs - localLastValidPacket)))) {
         lostConnection();
     }
 
-    if ((receiver.connectionState == ELRS_TENTATIVE) && (ABS(pl.offsetDeltaUs) <= 10) && (pl.offsetUs < 100) && (lqGet() > minLqForChaos())) { //detects when we are connected
-        gotConnection(timeStampMs);
+    if ((receiver.connectionState == ELRS_TENTATIVE) && (ABS(pl.offsetDeltaUs) <= 10) && (pl.offsetUs < 100) && (lqGet() > minLqForChaos())) {
+        gotConnection(timeStampMs); // detects when we are connected
     }
 
     if ((receiver.timerState == ELRS_TIM_TENTATIVE) && ((timeStampMs - receiver.gotConnectionMs) > ELRS_CONSIDER_CONNECTION_GOOD_MS) && (ABS(pl.offsetDeltaUs) <= 5)) {
         receiver.timerState = ELRS_TIM_LOCKED;
+    }
+
+    if ((receiver.connectionState == ELRS_CONNECTED) && (ABS(pl.offsetDeltaUs) > 10) && (pl.offsetUs >= 100) && (lqGet() <= minLqForChaos())) {
+        lostConnection(); // SPI: resync when we're in chaos territory
     }
 }
 
@@ -973,7 +981,6 @@ static void handleConfigUpdate(const uint32_t timeStampMs)
     if ((timeStampMs - receiver.configCheckedAtMs) > ELRS_CONFIG_CHECK_MS) {
         receiver.configCheckedAtMs = timeStampMs;
         if (receiver.configChanged) {
-            lostConnection();
             writeEEPROM();
             receiver.configChanged = false;
         }
@@ -986,15 +993,7 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
 
         receiver.statsUpdatedAtMs = timeStampMs;
 
-        if (receiver.connectionState != ELRS_CONNECTED) {
-            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
-#ifdef USE_RX_RSSI_DBM
-            setRssiDbmDirect(-130, RSSI_SOURCE_RX_PROTOCOL);
-#endif
-#ifdef USE_RX_LINK_QUALITY_INFO
-            setLinkQualityDirect(0);
-#endif
-        } else {
+        if (receiver.connectionState == ELRS_CONNECTED) {
             receiver.rssiFiltered = simpleLPFilterUpdate(&rssiFilter, receiver.rssi);
             uint16_t rssiScaled = scaleRange(constrain(receiver.rssiFiltered, receiver.rfPerfParams->sensitivity, -50), receiver.rfPerfParams->sensitivity, -50, 0, 1023);
             setRssi(rssiScaled, RSSI_SOURCE_RX_PROTOCOL);
@@ -1006,6 +1005,14 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
 #endif
 #ifdef USE_RX_LINK_UPLINK_POWER
             rxSetUplinkTxPwrMw(txPowerIndexToValue(txPower));
+#endif
+        } else {
+            setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
+#ifdef USE_RX_RSSI_DBM
+            setRssiDbmDirect(-130, RSSI_SOURCE_RX_PROTOCOL);
+#endif
+#ifdef USE_RX_LINK_QUALITY_INFO
+            setLinkQualityDirect(0);
 #endif
         }
     }
@@ -1050,10 +1057,16 @@ static void enterBindingMode(void)
     startReceiving();
 }
 
+static uint32_t isrTimeStampUs;
+
 rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
-    uint32_t isrTimeStampUs;
+
+    if (!receiver.started && (systemState & SYSTEM_STATE_READY)) {
+        receiver.started = true;
+        startReceiving(); // delay receiving after initialization to ensure a clean connect
+    }
 
     if (rxSpiCheckBindRequested(true)) {
         enterBindingMode();
@@ -1063,15 +1076,30 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
     if (irqReason == ELRS_DIO_TX_DONE) {
         startReceiving();
     } else if (irqReason == ELRS_DIO_RX_DONE) {
-        result = processRFPacket(payload);
+        result = processRFPacket(payload, isrTimeStampUs);
     }
 
     if (receiver.fhssRequired) {
         receiver.fhssRequired = false;
-        bool didFHSS = handleFHSS();
-        bool tlmSent = handleSendTelemetryResponse();
+        bool didFHSS = false;
+        bool tlmReq = false;
+        ATOMIC_BLOCK(NVIC_PRIO_TIMER) { // prevent from updating nonce in TICK
+            didFHSS = handleFHSS();
+            tlmReq = shouldSendTelemetryResponse();
+        }
 
-        if (!didFHSS && !tlmSent && lqPeriodIsSet() && rxExpressLrsSpiConfig()->domain != ISM2400) {
+        if (tlmReq) {
+            // in case we miss a packet before TLM we still need to estimate processing time using %
+            uint32_t processingTime = (micros() - isrTimeStampUs) % receiver.modParams->interval;
+            if (processingTime < PACKET_HANDLING_TO_TOCK_ISR_DELAY_US && receiver.timerState == ELRS_TIM_LOCKED) {
+                handleSendTelemetryResponse();
+            } else {
+                receiver.alreadyTLMresp = true;
+                startReceiving();
+            }
+        }
+
+        if (rxExpressLrsSpiConfig()->domain != ISM2400 && !didFHSS && !tlmReq && lqPeriodIsSet()) {
             receiver.handleFreqCorrection(receiver.freqOffset, receiver.currentFreq); //corrects for RX freq offset
         }
     }
@@ -1092,6 +1120,13 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
     receiver.inBindingMode ? rxSpiLedBlinkBind() : rxSpiLedBlinkRxLoss(result);
 
     return result;
+}
+
+void expressLrsStop(void)
+{
+    if (receiver.started) {
+        lostConnection();
+    }
 }
 
 #endif /* USE_RX_EXPRESSLRS */
