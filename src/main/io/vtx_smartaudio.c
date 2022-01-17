@@ -500,7 +500,7 @@ static void saSendFrame(uint8_t *buf, int len)
         switch (smartAudioSerialPort->identifier) {
         case SERIAL_PORT_SOFTSERIAL1:
         case SERIAL_PORT_SOFTSERIAL2:
-            if(vtxSettingsConfig()->softserialAlt) {
+            if (vtxSettingsConfig()->softserialAlt) {
                 serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
             }
             break;
