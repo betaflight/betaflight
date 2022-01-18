@@ -1,0 +1,53 @@
+# 
+
+# DIFF
+
+# version
+# Betaflight / SITL (SITL) 4.3.0 Jan 17 2022 / 23:45:50 (norevision) MSP API: 1.44
+
+# start the command batch
+batch start
+
+board_name SITL
+
+# feature
+feature -GPS
+
+# aux
+aux 0 0 0 1700 2100 0 0
+aux 1 1 1 1700 2100 0 0
+
+# master
+set motor_pwm_protocol = PWM
+set pid_process_denom = 16
+
+profile 0
+
+# profile 0
+set p_pitch = 61
+set i_pitch = 109
+set d_pitch = 59
+set f_pitch = 81
+set p_roll = 58
+set i_roll = 104
+set d_roll = 52
+set f_roll = 78
+set p_yaw = 58
+set i_yaw = 104
+set f_yaw = 78
+set d_min_roll = 39
+set d_min_pitch = 44
+set simplified_master_multiplier = 130
+set simplified_feedforward_gain = 50
+
+rateprofile 0
+
+# rateprofile 0
+set roll_srate = 33
+set pitch_srate = 33
+set yaw_srate = 33
+
+# end the command batch
+batch end
+
+# 

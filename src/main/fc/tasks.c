@@ -572,5 +572,9 @@ void tasksInit(void)
     const bool useCRSF = rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
     setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
 #endif
+
+#ifdef SIMULATOR_MULTITHREAD
+    rescheduleTask(TASK_RX, 1);
+#endif
 }
 
