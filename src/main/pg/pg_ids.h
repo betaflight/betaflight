@@ -152,7 +152,8 @@
 #define PG_MODE_ACTIVATION_CONFIG 553
 #define PG_DYN_NOTCH_CONFIG 554
 #define PG_RX_EXPRESSLRS_SPI_CONFIG 555
-#define PG_BETAFLIGHT_END 555
+#define PG_SCHEDULER_CONFIG 536
+#define PG_BETAFLIGHT_END 556
 
 
 // OSD configuration (subject to change)
