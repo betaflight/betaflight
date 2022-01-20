@@ -62,11 +62,11 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#define USE_LATE_TASK_STATISTICS
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
 #endif
-
 #endif // STM32F4
 
 #ifdef STM32F7
@@ -157,6 +157,13 @@
 #define DEFAULT_CPU_OVERCLOCK 0
 #endif
 
+#if defined(STM32H7)
+// Move ISRs to fast ram to avoid flash latency.
+#define FAST_IRQ_HANDLER FAST_CODE
+#else
+#define FAST_IRQ_HANDLER
+#endif
+
 
 #ifdef USE_ITCM_RAM
 #if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
@@ -164,9 +171,16 @@
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
 #endif
+// Handle case where we'd prefer code to be in ITCM, but it won't fit on the F745
+#ifdef STM32F745xx
+#define FAST_CODE_PREF
+#else
+#define FAST_CODE_PREF                  __attribute__((section(".tcm_code")))
+#endif
 #define FAST_CODE_NOINLINE          NOINLINE
 #else
 #define FAST_CODE
+#define FAST_CODE_PREF
 #define FAST_CODE_NOINLINE
 #endif // USE_ITCM_RAM
 
@@ -406,7 +420,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_MSP_OVERRIDE
 #define USE_SIMPLIFIED_TUNING
 #define USE_RX_LINK_UPLINK_POWER
-#define USE_GPS_PLUS_CODES
 #define USE_CRSF_V3
 #endif
 
@@ -414,4 +427,7 @@ extern uint8_t _dmaram_end__;
 #define USE_ESCSERIAL_SIMONK
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_DASHBOARD
+#define USE_EMFAT_AUTORUN
+#define USE_EMFAT_ICON
+#define USE_GPS_PLUS_CODES
 #endif

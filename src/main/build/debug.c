@@ -95,5 +95,9 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "D_LPF",
     "VTX_TRAMP",
     "GHST",
-    "SCHEDULER_DETERMINISM"
+    "SCHEDULER_DETERMINISM",
+    "TIMING_ACCURACY",
+    "RX_EXPRESSLRS_SPI",
+    "RX_EXPRESSLRS_PHASELOCK",
+    "RX_STATE_TIME"
 };

@@ -364,12 +364,13 @@ static uint32_t recalculateBarometerTotal(uint32_t pressureTotal, int32_t newPre
 }
 
 typedef enum {
-    BAROMETER_NEEDS_TEMPERATURE_READ = 0,
-    BAROMETER_NEEDS_TEMPERATURE_SAMPLE,
-    BAROMETER_NEEDS_PRESSURE_START,
-    BAROMETER_NEEDS_PRESSURE_READ,
-    BAROMETER_NEEDS_PRESSURE_SAMPLE,
-    BAROMETER_NEEDS_TEMPERATURE_START
+    BARO_STATE_TEMPERATURE_READ = 0,
+    BARO_STATE_TEMPERATURE_SAMPLE,
+    BARO_STATE_PRESSURE_START,
+    BARO_STATE_PRESSURE_READ,
+    BARO_STATE_PRESSURE_SAMPLE,
+    BARO_STATE_TEMPERATURE_START,
+    BARO_STATE_COUNT
 } barometerState_e;
 
 
@@ -377,63 +378,67 @@ bool isBaroReady(void) {
     return baroReady;
 }
 
-uint32_t baroUpdate(void)
+uint32_t baroUpdate(timeUs_t currentTimeUs)
 {
-    static barometerState_e state = BAROMETER_NEEDS_PRESSURE_START;
+    static timeUs_t baroStateDurationUs[BARO_STATE_COUNT];
+    static barometerState_e state = BARO_STATE_PRESSURE_START;
+    barometerState_e oldState = state;
+    timeUs_t executeTimeUs;
     timeUs_t sleepTime = 1000; // Wait 1ms between states
 
-    if (debugMode == DEBUG_BARO) {
-        debug[0] = state;
-    }
-
-    // Tell the scheduler to ignore how long this task takes unless the pressure is being read
-    // as that takes the longest
-    if (state != BAROMETER_NEEDS_PRESSURE_READ) {
-        ignoreTaskStateTime();
-    }
+    DEBUG_SET(DEBUG_BARO, 0, state);
 
     if (busBusy(&baro.dev.dev, NULL)) {
         // If the bus is busy, simply return to have another go later
-        ignoreTaskStateTime();
+        schedulerIgnoreTaskStateTime();
         return sleepTime;
     }
 
     switch (state) {
         default:
-        case BAROMETER_NEEDS_TEMPERATURE_START:
+        case BARO_STATE_TEMPERATURE_START:
             baro.dev.start_ut(&baro.dev);
-            state = BAROMETER_NEEDS_TEMPERATURE_READ;
+            state = BARO_STATE_TEMPERATURE_READ;
             sleepTime = baro.dev.ut_delay;
             break;
 
-        case BAROMETER_NEEDS_TEMPERATURE_READ:
+        case BARO_STATE_TEMPERATURE_READ:
             if (baro.dev.read_ut(&baro.dev)) {
-                state = BAROMETER_NEEDS_TEMPERATURE_SAMPLE;
-            }
-        break;
-
-        case BAROMETER_NEEDS_TEMPERATURE_SAMPLE:
-            if (baro.dev.get_ut(&baro.dev)) {
-                state = BAROMETER_NEEDS_PRESSURE_START;
-            }
-        break;
-
-        case BAROMETER_NEEDS_PRESSURE_START:
-            baro.dev.start_up(&baro.dev);
-            state = BAROMETER_NEEDS_PRESSURE_READ;
-            sleepTime = baro.dev.up_delay;
-        break;
-
-        case BAROMETER_NEEDS_PRESSURE_READ:
-            if (baro.dev.read_up(&baro.dev)) {
-                state = BAROMETER_NEEDS_PRESSURE_SAMPLE;
+                state = BARO_STATE_TEMPERATURE_SAMPLE;
             } else {
-                ignoreTaskStateTime();
+                // No action was taken as the read has not completed
+                schedulerIgnoreTaskExecTime();
             }
-        break;
+            break;
 
-        case BAROMETER_NEEDS_PRESSURE_SAMPLE:
+        case BARO_STATE_TEMPERATURE_SAMPLE:
+            if (baro.dev.get_ut(&baro.dev)) {
+                state = BARO_STATE_PRESSURE_START;
+            } else {
+                // No action was taken as the read has not completed
+                schedulerIgnoreTaskExecTime();
+            }
+            break;
+
+        case BARO_STATE_PRESSURE_START:
+            baro.dev.start_up(&baro.dev);
+            state = BARO_STATE_PRESSURE_READ;
+            sleepTime = baro.dev.up_delay;
+            break;
+
+        case BARO_STATE_PRESSURE_READ:
+            if (baro.dev.read_up(&baro.dev)) {
+                state = BARO_STATE_PRESSURE_SAMPLE;
+            } else {
+                // No action was taken as the read has not completed
+                schedulerIgnoreTaskExecTime();
+            }
+            break;
+
+        case BARO_STATE_PRESSURE_SAMPLE:
             if (!baro.dev.get_up(&baro.dev)) {
+                // No action was taken as the read has not completed
+                schedulerIgnoreTaskExecTime();
                 break;
             }
 
@@ -442,20 +447,31 @@ uint32_t baroUpdate(void)
             baro.baroTemperature = baroTemperature;
             baroPressureSum = recalculateBarometerTotal(baroPressureSum, baroPressure);
             if (baro.dev.combined_read) {
-                state = BAROMETER_NEEDS_PRESSURE_START;
+                state = BARO_STATE_PRESSURE_START;
             } else {
-                state = BAROMETER_NEEDS_TEMPERATURE_START;
+                state = BARO_STATE_TEMPERATURE_START;
             }
 
-            if (debugMode == DEBUG_BARO) {
-                debug[1] = baroTemperature;
-                debug[2] = baroPressure;
-                debug[3] = baroPressureSum;
-            }
+            DEBUG_SET(DEBUG_BARO, 1, baroTemperature);
+            DEBUG_SET(DEBUG_BARO, 2, baroPressure);
+            DEBUG_SET(DEBUG_BARO, 3, baroPressureSum);
 
             sleepTime = baro.dev.ut_delay;
             break;
     }
+
+    // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
+    if (sleepTime != baro.dev.ut_delay) {
+        schedulerIgnoreTaskExecRate();
+    }
+
+    executeTimeUs = micros() - currentTimeUs;
+
+    if (executeTimeUs > baroStateDurationUs[oldState]) {
+        baroStateDurationUs[oldState] = executeTimeUs;
+    }
+
+    schedulerSetNextStateTime(baroStateDurationUs[state]);
 
     return sleepTime;
 }

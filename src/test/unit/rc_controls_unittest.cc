@@ -543,7 +543,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 {
     // given
     pidProfile_t pidProfile;
-    memset(&pidProfile, 0, sizeof (pidProfile));
+    memset(&pidProfile, 0, sizeof(pidProfile));
     pidProfile.pid[PID_PITCH].P = 0;
     pidProfile.pid[PID_PITCH].I = 10;
     pidProfile.pid[PID_PITCH].D = 20;
@@ -555,7 +555,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     pidProfile.pid[PID_YAW].D = 27;
     // and
     controlRateConfig_t controlRateConfig;
-    memset(&controlRateConfig, 0, sizeof (controlRateConfig));
+    memset(&controlRateConfig, 0, sizeof(controlRateConfig));
 
     const timedAdjustmentState_t *adjustmentState1 = configureStepwiseAdjustment(AUX1 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_PITCH_ROLL_P_INDEX);
     const timedAdjustmentState_t *adjustmentState2 = configureStepwiseAdjustment(AUX2 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_PITCH_ROLL_I_INDEX);
@@ -656,4 +656,5 @@ void setLedProfile(uint8_t profile) { UNUSED(profile); }
 uint8_t getLedProfile(void) { return 0; }
 void compassStartCalibration(void) {}
 void pinioBoxTaskControl(void) {}
+void schedulerIgnoreTaskExecTime(void) {}
 }

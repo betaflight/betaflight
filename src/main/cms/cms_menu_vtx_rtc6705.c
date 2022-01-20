@@ -151,13 +151,13 @@ static const void *cmsx_Vtx_onPitChange(displayPort_t *pDisp, const void *self)
 }
 
 static const OSD_Entry cmsx_menuVtxEntries[] = {
-    {"--- VTX ---", OME_Label, NULL, NULL, 0},
-    {"BAND", OME_TAB, cmsx_Vtx_onBandChange, &entryVtxBand, 0},
-    {"CHANNEL", OME_TAB, cmsx_Vtx_onChanChange, &entryVtxChannel, 0},
-    {"POWER", OME_TAB, cmsx_Vtx_onPowerChange, &entryVtxPower, 0},
-    {"PIT", OME_TAB, cmsx_Vtx_onPitChange, &entryVtxPit, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    {"--- VTX ---", OME_Label, NULL, NULL},
+    {"BAND", OME_TAB, cmsx_Vtx_onBandChange, &entryVtxBand},
+    {"CHANNEL", OME_TAB, cmsx_Vtx_onChanChange, &entryVtxChannel},
+    {"POWER", OME_TAB, cmsx_Vtx_onPowerChange, &entryVtxPower},
+    {"PIT", OME_TAB, cmsx_Vtx_onPitChange, &entryVtxPit},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuVtxRTC6705 = {

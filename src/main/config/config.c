@@ -102,8 +102,6 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-#define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
-
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
@@ -111,7 +109,7 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .displayName = { 0 },
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
@@ -124,7 +122,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Only used for F4 and G4 targets
     .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
-    .schedulerOptimizeRate = SCHEDULER_OPTIMIZE_RATE_AUTO,
     .enableStickArming = false,
 );
 
@@ -159,7 +156,6 @@ void resetConfig(void)
 
 static void activateConfig(void)
 {
-    schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_ON || (systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_AUTO && motorConfig()->dev.useDshotTelemetry));
     loadPidProfile();
     loadControlRateProfile();
 
@@ -466,10 +462,6 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_ESC_SENSOR);
 #endif
 
-#ifndef USE_DYN_NOTCH_FILTER
-    featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-#endif
-
 #if !defined(USE_ADC)
     featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
@@ -519,17 +511,9 @@ static void validateAndFixConfig(void)
         }
     }
 
-    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && (motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON || nChannelTimerUsed)) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF) && motorConfig()->dev.useDshotTelemetry) {
+    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && (motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON || nChannelTimerUsed))) && motorConfig()->dev.useDshotTelemetry) {
         motorConfigMutable()->dev.useDshotTelemetry = false;
     }
-
-#if defined(USE_DYN_IDLE)
-    if (!isRpmFilterEnabled()) {
-        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->dyn_idle_min_rpm = 0;
-        }
-    }
-#endif // USE_DYN_IDLE
 #endif // USE_DSHOT_TELEMETRY
 #endif // USE_DSHOT
 
@@ -634,6 +618,16 @@ void validateAndFixGyroConfig(void)
 
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
+
+#if defined(STM32F411xE)
+        /* If bidirectional DSHOT is being used on an F411 then force DSHOT300. The motor update restrictions then applied
+         * will automatically consider the loop time and adjust pid_process_denom appropriately
+         */
+        if (motorConfig()->dev.useDshotTelemetry && (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)) {
+            motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+        }
+#endif
+
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
@@ -681,14 +675,6 @@ void validateAndFixGyroConfig(void)
             }
         }
     }
-
-#ifdef USE_DYN_NOTCH_FILTER
-    // Disable dynamic filter if gyro loop is less than 2KHz
-    const uint32_t configuredLooptime = (gyro.sampleRateHz > 0) ? (pidConfig()->pid_process_denom * 1e6 / gyro.sampleRateHz) : 0;
-    if (configuredLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
-        featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-    }
-#endif
 
 #ifdef USE_BLACKBOX
 #ifndef USE_FLASHFS
@@ -750,6 +736,9 @@ void writeUnmodifiedConfigToEEPROM(void)
 
 void writeEEPROM(void)
 {
+#ifdef USE_RX_SPI
+    rxSpiStop(); // some rx spi protocols use hardware timer, which needs to be stopped before writing to eeprom
+#endif
     systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
 
     writeUnmodifiedConfigToEEPROM();
@@ -785,6 +774,9 @@ void ensureEEPROMStructureIsValid(void)
 
 void saveConfigAndNotify(void)
 {
+    // The write to EEPROM will cause a big delay in the current task, so ignore
+    schedulerIgnoreTaskExecTime();
+
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(1);
@@ -827,6 +819,9 @@ void changePidProfileFromCellCount(uint8_t cellCount)
 
 void changePidProfile(uint8_t pidProfileIndex)
 {
+    // The config switch will cause a big enough delay in the current task to upset the scheduler
+    schedulerIgnoreTaskExecTime();
+
     if (pidProfileIndex < PID_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         loadPidProfile();

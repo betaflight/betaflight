@@ -73,8 +73,8 @@ static void w25m_dieSelect(const extDevice_t *dev, int die)
     uint8_t command[2] = { W25M_INSTRUCTION_SOFTWARE_DIE_SELECT, die };
 
     busSegment_t segments[] = {
-            {command, NULL, sizeof (command), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {command, NULL}, sizeof(command), true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing

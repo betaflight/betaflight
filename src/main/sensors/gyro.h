@@ -23,6 +23,7 @@
 #include "common/axis.h"
 #include "common/filter.h"
 #include "common/time.h"
+#include "common/utils.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus.h"

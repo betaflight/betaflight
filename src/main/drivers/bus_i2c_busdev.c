@@ -43,7 +43,7 @@ bool i2cBusWriteRegisterStart(const extDevice_t *dev, uint8_t reg, uint8_t data)
 
     byte = data;
 
-    return i2cWriteBuffer(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, sizeof (byte), &byte);
+    return i2cWriteBuffer(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, sizeof(byte), &byte);
 }
 
 bool i2cBusReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)

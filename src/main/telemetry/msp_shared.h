@@ -20,31 +20,16 @@
 
 #pragma once
 
-#include "common/streambuf.h"
-#include "telemetry/crsf.h"
-#include "telemetry/smartport.h"
+#define MSP_TLM_INBUF_SIZE MSP_PORT_INBUF_SIZE
+#define MSP_TLM_OUTBUF_SIZE MSP_PORT_OUTBUF_SIZE_MIN
 
-typedef void (*mspResponseFnPtr)(uint8_t *payload);
-
-struct mspPacket_s;
-typedef struct mspPackage_s {
-    sbuf_t requestFrame;
-    uint8_t *requestBuffer;
-    uint8_t *responseBuffer;
-    struct mspPacket_s *requestPacket;
-    struct mspPacket_s *responsePacket;
-} mspPackage_t;
-
-typedef union mspRxBuffer_u {
-    uint8_t smartPortMspRxBuffer[SMARTPORT_MSP_RX_BUF_SIZE];
-    uint8_t crsfMspRxBuffer[CRSF_MSP_RX_BUF_SIZE];
-} mspRxBuffer_t;
-
-typedef union mspTxBuffer_u {
-    uint8_t smartPortMspTxBuffer[SMARTPORT_MSP_TX_BUF_SIZE];
-    uint8_t crsfMspTxBuffer[CRSF_MSP_TX_BUF_SIZE];
-} mspTxBuffer_t;
+// type of function to send MSP response chunk over telemetry.
+typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
 
 void initSharedMsp(void);
-bool handleMspFrame(uint8_t *frameStart, int frameLength, uint8_t *skipsBeforeResponse);
-bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
+
+// receives telemetry payload with msp and handles it.
+bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);
+
+// sends MSP reply from previously handled msp-request over telemetry
+bool sendMspReply(const uint8_t payloadSize_max, mspResponseFnPtr responseFn);

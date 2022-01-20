@@ -31,7 +31,7 @@
 
 displayPort_t hottDisplayPort;
 
-static int hottDrawScreen(displayPort_t *displayPort)
+static bool hottDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;

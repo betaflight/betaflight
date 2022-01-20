@@ -30,8 +30,6 @@
 
 #include "platform.h"
 
-#include "build/debug.h"
-
 #include "common/axis.h"
 #include "common/maths.h"
 
@@ -58,7 +56,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 bool mpu9250SpiWriteRegister(const extDevice_t *dev, uint8_t reg, uint8_t data)
 {
     delayMicroseconds(1);
-    spiWriteRegBuf(dev, reg, &data, sizeof (data));
+    spiWriteRegBuf(dev, reg, &data, sizeof(data));
     delayMicroseconds(1);
 
     return true;
@@ -105,7 +103,6 @@ bool mpu9250SpiWriteRegisterVerify(const extDevice_t *dev, uint8_t reg, uint8_t 
         if (in == data) {
             return true;
         } else {
-            debug[3]++;
             mpu9250SpiWriteRegister(dev, reg, data);
             delayMicroseconds(100);
         }

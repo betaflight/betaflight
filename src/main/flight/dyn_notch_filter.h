@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
 
 #include "common/time.h"
 
@@ -32,6 +32,6 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
 void dynNotchPush(const int axis, const float sample);
 void dynNotchUpdate(void);
 float dynNotchFilter(const int axis, float value);
-bool isDynamicFilterActive(void);
-uint16_t getMaxFFT(void);
+bool isDynNotchActive(void);
+int getMaxFFT(void);
 void resetMaxFFT(void);

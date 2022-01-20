@@ -600,7 +600,14 @@ void init(void)
         ledInit(statusLedConfig());
 
 #ifdef USE_SDCARD
-        sdCardAndFSInit();
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+            if (sdcardConfig()->mode) {
+                if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                    sdCardAndFSInit();
+                    initFlags |= SD_INIT_ATTEMPTED;
+                }
+            }
+        }
 #endif
 
 #if defined(USE_FLASHFS)
@@ -765,12 +772,6 @@ void init(void)
     }
 #endif
 
-#ifdef USE_TELEMETRY
-    if (featureIsEnabled(FEATURE_TELEMETRY)) {
-        telemetryInit();
-    }
-#endif
-
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         escSensorInit();
@@ -908,7 +909,7 @@ void init(void)
 
 #if defined(USE_MAX7456)
         case OSD_DISPLAYPORT_DEVICE_MAX7456:
-            // If there is a max7456 chip for the OSD configured and detectd then use it.
+            // If there is a max7456 chip for the OSD configured and detected then use it.
             if (max7456DisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_MAX7456) {
                 osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
                 break;
@@ -962,16 +963,34 @@ void init(void)
     }
 #endif
 
+#ifdef USE_TELEMETRY
+    // Telemetry will initialise displayport and register with CMS by itself.
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
+        telemetryInit();
+    }
+#endif
+
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+
+    // On F4/F7 allocate SPI DMA streams before motor timers
+#if defined(STM32F4) || defined(STM32F7)
+#ifdef USE_SPI
+    // Attempt to enable DMA on all SPI busses
+    spiInitBusDMA();
+#endif
+#endif
 
 #ifdef USE_MOTOR
     motorPostInit();
     motorEnable();
 #endif
 
+    // On H7/G4 allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
+#if defined(STM32H7) || defined(STM32G4)
 #ifdef USE_SPI
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
+#endif
 #endif
 
     swdPinsInit();

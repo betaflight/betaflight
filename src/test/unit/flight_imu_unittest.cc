@@ -72,7 +72,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-const float sqrt2over2 = sqrt(2) / 2.0f;
+const float sqrt2over2 = sqrtf(2) / 2.0f;
 
 TEST(FlightImuTest, TestCalculateRotationMatrix)
 {
@@ -250,6 +250,8 @@ void mixerSetThrottleAngleCorrection(int) {};
 bool gpsRescueIsRunning(void) { return false; }
 bool isFixedWing(void) { return false; }
 void pinioBoxTaskControl(void) {}
-void ignoreTaskShortExecTime(void) {}
-void ignoreTaskStateTime(void) {}
+void schedulerIgnoreTaskExecTime(void) {}
+void schedulerIgnoreTaskStateTime(void) {}
+void schedulerSetNextStateTime(timeDelta_t) {}
+bool schedulerGetIgnoreTaskExecTime() { return false; }
 }

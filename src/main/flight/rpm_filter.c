@@ -166,16 +166,17 @@ float rpmFilterGyro(const int axis, float value)
 
 FAST_CODE_NOINLINE void rpmFilterUpdate(void)
 {
-    if (gyroFilter == NULL) {
-        return;
-    }
-
     for (int motor = 0; motor < getMotorCount(); motor++) {
         filteredMotorErpm[motor] = pt1FilterApply(&rpmFilters[motor], getDshotTelemetry(motor));
         if (motor < 4) {
             DEBUG_SET(DEBUG_RPM_FILTER, motor, motorFrequency[motor]);
         }
         motorFrequency[motor] = erpmToHz * filteredMotorErpm[motor];
+    }
+
+    if (gyroFilter == NULL) {
+        minMotorFrequency = 0.0f;
+        return;
     }
 
     for (int i = 0; i < filterUpdatesPerIteration; i++) {
@@ -230,7 +231,7 @@ bool isRpmFilterEnabled(void)
 float rpmMinMotorFrequency(void)
 {
     if (minMotorFrequency == 0.0f) {
-        minMotorFrequency = 10000.0f;
+        minMotorFrequency = 10000.0f; // max RPM reported in Hz = 600,000RPM
         for (int i = getMotorCount(); i--;) {
             if (motorFrequency[i] < minMotorFrequency) {
                 minMotorFrequency = motorFrequency[i];
@@ -239,6 +240,5 @@ float rpmMinMotorFrequency(void)
     }
     return minMotorFrequency;
 }
-
 
 #endif
