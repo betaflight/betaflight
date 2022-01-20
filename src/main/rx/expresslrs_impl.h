@@ -73,6 +73,7 @@ typedef struct elrsReceiver_s {
     bool alreadyFHSS;
     bool alreadyTLMresp;
     bool lockRFmode;
+    bool started;
 
     timerState_e timerState;
     connectionState_e connectionState;

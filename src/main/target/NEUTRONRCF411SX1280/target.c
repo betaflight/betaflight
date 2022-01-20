@@ -18,20 +18,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Based on https://github.com/ExpressLRS/ExpressLRS
- * Thanks to AlessandroAU, original creator of the ExpressLRS project.
- */
-
-#pragma once
-
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "drivers/timer.h"
-#include "rx/expresslrs_common.h"
+#include "platform.h"
+#include "drivers/io.h"
 
-bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
-void expressLrsSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-rx_spi_received_e expressLrsDataReceived(uint8_t *payload);
-void expressLrsStop(void);
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
+
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+
+    DEF_TIM( TIM3, CH4, PB1, TIM_USE_LED,              0, 0 ), // LED Strip
+    DEF_TIM( TIM4, CH3, PB8, TIM_USE_MOTOR,            0, 0 ), // M1
+    DEF_TIM( TIM2, CH1, PA0, TIM_USE_MOTOR,            0, 0 ), // M2
+    DEF_TIM( TIM2, CH3, PB10,TIM_USE_MOTOR,            0, 0 ), // M3
+    DEF_TIM( TIM4, CH2, PB7, TIM_USE_MOTOR,            0, 0 ), // M4
+};
