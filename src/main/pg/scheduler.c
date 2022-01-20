@@ -26,6 +26,6 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig, PG_SCHEDULER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig,
-    .rxRelaxDeterminism = 25,
-    .osdRelaxDeterminism = 25,
+    .rxRelaxDeterminism = SCHEDULER_RELAX_RX,
+    .osdRelaxDeterminism = SCHEDULER_RELAX_OSD,
 );
