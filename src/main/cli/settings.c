@@ -1683,8 +1683,8 @@ const clivalue_t valueTable[] = {
     { "expresslrs_model_id",    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_EXPRESSLRS_SPI_CONFIG, offsetof(rxExpressLrsSpiConfig_t, modelId) },
 #endif
 
-    { "scheduler_relax_rx",  VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, rxRelaxDeterminism) },
-    { "scheduler_relax_osd", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, osdRelaxDeterminism) },
+    { "scheduler_relax_rx",  VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, rxRelaxDeterminism) },
+    { "scheduler_relax_osd", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, osdRelaxDeterminism) },
 
 // PG_TIMECONFIG
 #ifdef USE_RTC_TIME
