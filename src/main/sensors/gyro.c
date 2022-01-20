@@ -473,7 +473,7 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_DYN_NOTCH_FILTER
-    if (isDynamicFilterActive()) {
+    if (isDynNotchActive()) {
         dynNotchUpdate();
     }
 #endif
@@ -619,13 +619,13 @@ float dynThrottle(float throttle) {
 void dynLpfGyroUpdate(float throttle)
 {
     if (gyro.dynLpfFilter != DYN_LPF_NONE) {
-        unsigned int cutoffFreq;
+        float cutoffFreq;
         if (gyro.dynLpfCurveExpo > 0) {
             cutoffFreq = dynLpfCutoffFreq(throttle, gyro.dynLpfMin, gyro.dynLpfMax, gyro.dynLpfCurveExpo);
         } else {
-            cutoffFreq = fmax(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
+            cutoffFreq = fmaxf(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
         }
-        DEBUG_SET(DEBUG_DYN_LPF, 2, cutoffFreq);
+        DEBUG_SET(DEBUG_DYN_LPF, 2, lrintf(cutoffFreq));
         const float gyroDt = gyro.targetLooptime * 1e-6f;
         switch (gyro.dynLpfFilter) {
         case DYN_LPF_PT1:

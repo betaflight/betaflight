@@ -49,6 +49,8 @@
 
 #include "pg/beeper.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
@@ -390,6 +392,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     if (beeperNextToggleTime > currentTimeUs) {
+        schedulerIgnoreTaskExecTime();
         return;
     }
 

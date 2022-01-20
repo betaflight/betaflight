@@ -101,18 +101,17 @@ static void l3gd20IntExtiInit(gyroDev_t *gyro)
 
 void l3gd20GyroInit(gyroDev_t *gyro)
 {
-    spiSetClkDivisor(dev, spiCalculateDivider(L3GD20_MAX_SPI_CLK_HZ));
+    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(L3GD20_MAX_SPI_CLK_HZ));
 
-    spiWriteReg(&gyro->bus, CTRL_REG5_ADDR, BOOT);
+    spiWriteReg(&gyro->dev, CTRL_REG5_ADDR, BOOT);
 
     delayMicroseconds(100);
 
-    spiWriteReg(&gyro->bus, CTRL_REG1_ADDR, MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_3);
-    //spiWriteReg(&gyro->bus, CTRL_REG1_ADDR. MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_4);
+    spiWriteReg(&gyro->dev, CTRL_REG1_ADDR, MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_3);
 
     delayMicroseconds(1);
 
-    spiWriteReg(&gyro->bus, CTRL_REG4_ADDR, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
+    spiWriteReg(&gyro->dev, CTRL_REG4_ADDR, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
 
     delay(100);
 
@@ -126,7 +125,7 @@ static bool l3gd20GyroRead(gyroDev_t *gyro)
 {
     uint8_t buf[6];
 
-    const bool ack = spiReadRegMskBufRB(&gyro->bus, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD,buf, sizeof(buf));
+    const bool ack = spiReadRegMskBufRB(&gyro->dev, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD,buf, sizeof(buf));
     if (!ack) {
         return false;
     }
@@ -141,9 +140,9 @@ static bool l3gd20GyroRead(gyroDev_t *gyro)
 // Page 9 in datasheet, So - Sensitivity, Full Scale = 2000, 70 mdps/digit
 #define L3GD20_GYRO_SCALE_FACTOR  0.07f
 
-uint8_t l3gd20Detect(const busDevice_t *bus)
+uint8_t l3gd20Detect(const extDevice_t *dev)
 {
-    UNUSED(bus);
+    UNUSED(dev);
 
     return L3GD20_SPI; // blindly assume it's present, for now.
 }

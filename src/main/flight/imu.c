@@ -599,7 +599,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         acc.accADC[X] = 0;
         acc.accADC[Y] = 0;
         acc.accADC[Z] = 0;
-        ignoreTaskStateTime();
+        schedulerIgnoreTaskStateTime();
     }
 }
 #endif // USE_ACC

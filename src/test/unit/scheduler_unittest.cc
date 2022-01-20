@@ -37,6 +37,8 @@ const int TEST_UPDATE_RX_CHECK_TIME = 34;
 const int TEST_UPDATE_RX_MAIN_TIME = 1;
 const int TEST_IMU_UPDATE_TIME = 5;
 const int TEST_DISPATCH_TIME = 1;
+const int TEST_UPDATE_OSD_CHECK_TIME = 5;
+const int TEST_UPDATE_OSD_TIME = 30;
 
 #define TASK_COUNT_UNITTEST (TASK_BATTERY_VOLTAGE + 1)
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
@@ -44,7 +46,6 @@ const int TEST_DISPATCH_TIME = 1;
 extern "C" {
     task_t * unittest_scheduler_selectedTask;
     uint8_t unittest_scheduler_selectedTaskDynPrio;
-    uint16_t unittest_scheduler_waitingTasks;
     timeDelta_t unittest_scheduler_taskRequiredTimeUs;
     bool taskGyroRan = false;
     bool taskFilterRan = false;
@@ -77,6 +78,8 @@ extern "C" {
     void taskUpdateRxMain(timeUs_t) { simulatedTime += TEST_UPDATE_RX_MAIN_TIME; }
     void imuUpdateAttitude(timeUs_t) { simulatedTime += TEST_IMU_UPDATE_TIME; }
     void dispatchProcess(timeUs_t) { simulatedTime += TEST_DISPATCH_TIME; }
+    bool osdUpdateCheck(timeUs_t, timeDelta_t) { simulatedTime += TEST_UPDATE_OSD_CHECK_TIME; return false; }
+    void osdUpdate(timeUs_t) { simulatedTime += TEST_UPDATE_OSD_TIME; }
 
     void resetGyroTaskTestFlags(void) {
         taskGyroRan = false;
@@ -96,7 +99,7 @@ extern "C" {
     extern task_t *queueFirst(void);
     extern task_t *queueNext(void);
 
-    task_t tasks[TASK_COUNT] = {
+    task_attribute_t task_attributes[TASK_COUNT] = {
         [TASK_SYSTEM] = {
             .taskName = "SYSTEM",
             .taskFunc = taskSystemLoad,
@@ -157,8 +160,17 @@ extern "C" {
             .taskFunc = taskUpdateBatteryVoltage,
             .desiredPeriodUs = TASK_PERIOD_HZ(50),
             .staticPriority = TASK_PRIORITY_MEDIUM,
+        },
+        [TASK_OSD] = {
+            .taskName = "OSD",
+            .checkFunc = osdUpdateCheck,
+            .taskFunc = osdUpdate,
+            .desiredPeriodUs = TASK_PERIOD_HZ(12),
+            .staticPriority = TASK_PRIORITY_LOW,
         }
     };
+
+    task_t tasks[TASK_COUNT];
 
     task_t *getTask(unsigned taskId)
     {
@@ -166,13 +178,21 @@ extern "C" {
     }
 }
 
+TEST(SchedulerUnittest, SetupTasks)
+{
+    for (int i = 0; i < TASK_COUNT; ++i) {
+        tasks[i].attribute = &task_attributes[i];
+    }
+}
+
+
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, tasks[TASK_SYSTEM].attribute->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_REALTIME, tasks[TASK_GYRO].attribute->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_ACCEL].attribute->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_LOW, tasks[TASK_SERIAL].attribute->staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_MEDIUM, tasks[TASK_BATTERY_VOLTAGE].attribute->staticPriority);
 }
 
 TEST(SchedulerUnittest, TestQueueInit)
@@ -243,7 +263,6 @@ TEST(SchedulerUnittest, TestQueueAddAndRemove)
         EXPECT_EQ(taskId + 1, taskQueueSize);
         EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
     }
-
     // double check end of queue
     EXPECT_EQ(TASK_COUNT, taskQueueSize);
     EXPECT_NE(static_cast<task_t*>(0), taskQueueArray[TASK_COUNT - 1]); // last item was indeed added to queue
@@ -275,7 +294,7 @@ TEST(SchedulerUnittest, TestQueueArray)
     EXPECT_EQ(enqueuedTasks, taskQueueSize);
 
     for (int taskId = 0; taskId < TASK_COUNT_UNITTEST - 1; ++taskId) {
-        if (tasks[taskId].taskFunc) {
+        if (tasks[taskId].attribute->taskFunc) {
             setTaskEnabled(static_cast<taskId_e>(taskId), true);
             enqueuedTasks++;
             EXPECT_EQ(enqueuedTasks, taskQueueSize);
@@ -388,7 +407,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
     simulatedTime = startTime;
     tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime;
     tasks[TASK_ATTITUDE].lastExecutedAtUs = tasks[TASK_ACCEL].lastExecutedAtUs - TEST_UPDATE_ATTITUDE_TIME;
-    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgeCycles);
+    EXPECT_EQ(0, tasks[TASK_ATTITUDE].taskAgePeriods);
     // run the scheduler
     scheduler();
     // no tasks should have run, since neither task's desired time has elapsed
@@ -402,14 +421,12 @@ TEST(SchedulerUnittest, TestTwoTasks)
     // no tasks should run, since neither task's desired time has elapsed
     scheduler();
     EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
-    EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
     // 500 microseconds later, TASK_ACCEL desiredPeriodUs has elapsed
     simulatedTime += 500;
     // TASK_ACCEL should now run
     scheduler();
     EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
-    EXPECT_EQ(1, unittest_scheduler_waitingTasks);
     EXPECT_EQ(5000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
 
     simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
@@ -420,7 +437,6 @@ TEST(SchedulerUnittest, TestTwoTasks)
     scheduler();
     // No task should have run
     EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
-    EXPECT_EQ(0, unittest_scheduler_waitingTasks);
 
     simulatedTime = startTime + 10500; // TASK_ACCEL and TASK_ATTITUDE desiredPeriodUss have elapsed
     // of the two TASK_ACCEL should run first

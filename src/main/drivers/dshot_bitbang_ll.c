@@ -156,10 +156,10 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     dmaRegCache->PAR = ((DMA_ARCH_TYPE *)dmaResource)->PAR;
     dmaRegCache->M0AR = ((DMA_ARCH_TYPE *)dmaResource)->M0AR;
 #elif defined(STM32G4)
-    ((DMA_ARCH_TYPE *)dmaResource)->CCR = dmaRegCache->CCR;
-    ((DMA_ARCH_TYPE *)dmaResource)->CNDTR = dmaRegCache->CNDTR;
-    ((DMA_ARCH_TYPE *)dmaResource)->CPAR = dmaRegCache->CPAR;
-    ((DMA_ARCH_TYPE *)dmaResource)->CMAR = dmaRegCache->CMAR;
+    dmaRegCache->CCR = ((DMA_ARCH_TYPE *)dmaResource)->CCR;
+    dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->CNDTR;
+    dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->CPAR;
+    dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->CMAR;
 #else
 #error MCU dependent code required
 #endif

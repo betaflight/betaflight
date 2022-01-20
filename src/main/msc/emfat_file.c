@@ -45,10 +45,6 @@
 #define FILESYSTEM_SIZE_MB 256
 #define HDR_BUF_SIZE 32
 
-#define USE_EMFAT_AUTORUN
-#define USE_EMFAT_ICON
-//#define USE_EMFAT_README
-
 #ifdef USE_EMFAT_AUTORUN
 static const char autorun_file[] =
     "[autorun]\r\n"
@@ -231,6 +227,7 @@ static const char icon_file[] =
 #define CMA_TIME EMFAT_ENCODE_CMA_TIME(1,1,2018, 13,0,0)
 #define CMA { CMA_TIME, CMA_TIME, CMA_TIME }
 
+#if defined (USE_EMFAT_AUTORUN) || defined (USE_EMFAT_ICON) || defined (USE_EMFAT_README)
 static void memory_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
 {
     int len;
@@ -247,6 +244,7 @@ static void memory_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_ent
 
     memcpy(dest, &((char *)entry->user_data)[offset], len);
 }
+#endif
 
 static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
 {

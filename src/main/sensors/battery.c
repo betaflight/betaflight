@@ -45,6 +45,8 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/battery.h"
 
 /**
@@ -409,12 +411,10 @@ void batteryInit(void)
         default:
             break;
     }
-
 }
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
     if (batteryCellCount == 0) {
         currentMeterReset(&currentMeter);
         return;

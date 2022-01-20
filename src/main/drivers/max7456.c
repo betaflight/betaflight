@@ -56,6 +56,7 @@
 #define DEBUG_MAX7456_SPICLOCK_OVERCLOCK   0
 #define DEBUG_MAX7456_SPICLOCK_DEVTYPE     1
 #define DEBUG_MAX7456_SPICLOCK_DIVISOR     2
+#define DEBUG_MAX7456_SPICLOCK_X100        3
 
 // VM0 bits
 #define VIDEO_BUFFER_DISABLE        0x01
@@ -114,6 +115,9 @@
 
 #define VIN_IS_PAL(val)  (!STAT_IS_LOS(val) && STAT_IS_PAL(val))
 #define VIN_IS_NTSC(val)  (!STAT_IS_LOS(val) && STAT_IS_NTSC(val))
+
+// DMM register bits
+#define DMM_AUTO_INC 0x01
 
 // Kluege warning!
 // There are occasions that NTSC is not detected even with !LOS (AB7456 specific?)
@@ -182,14 +186,14 @@ typedef struct max7456Layer_s {
     uint8_t buffer[VIDEO_BUFFER_CHARS_PAL];
 } max7456Layer_t;
 
-static DMA_DATA_ZERO_INIT max7456Layer_t displayLayers[MAX7456_SUPPORTED_LAYER_COUNT];
+static max7456Layer_t displayLayers[MAX7456_SUPPORTED_LAYER_COUNT];
 static displayPortLayer_e activeLayer = DISPLAYPORT_LAYER_FOREGROUND;
 
 extDevice_t max7456Device;
 extDevice_t *dev = &max7456Device;
 
 static bool max7456DeviceDetected = false;
-static uint16_t max7456SpiClock;
+static uint16_t max7456SpiClockDiv;
 
 uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
 
@@ -199,11 +203,12 @@ uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
 
 static uint8_t shadowBuffer[VIDEO_BUFFER_CHARS_PAL];
 
-//Max chars to update in one idle
+//Max bytes to update in one call to max7456DrawScreen()
 
-#define MAX_CHARS2UPDATE    100
+#define MAX_BYTES2SEND          250
+#define MAX_BYTES2SEND_POLLED   20
 
-static uint8_t spiBuff[MAX_CHARS2UPDATE*6];
+static DMA_DATA uint8_t spiBuf[MAX_BYTES2SEND];
 
 static uint8_t  videoSignalCfg;
 static uint8_t  videoSignalReg  = OSD_ENABLE; // OSD_ENABLE required to trigger first ReInit
@@ -222,8 +227,6 @@ static displayPortBackground_e deviceBackgroundType = DISPLAY_BACKGROUND_TRANSPA
 #define INVALID_PREVIOUS_REGISTER_STATE 255
 static uint8_t previousBlackWhiteRegister = INVALID_PREVIOUS_REGISTER_STATE;
 static uint8_t previousInvertRegister = INVALID_PREVIOUS_REGISTER_STATE;
-
-static void max7456DrawScreenSlow(void);
 
 static uint8_t *getLayerBuffer(displayPortLayer_e layer)
 {
@@ -279,7 +282,6 @@ static void max7456ClearLayer(displayPortLayer_e layer)
 void max7456ReInit(void)
 {
     uint8_t srdata = 0;
-    static bool firstInit = true;
 
     switch (videoSignalCfg) {
     case VIDEO_SYSTEM_PAL:
@@ -322,13 +324,8 @@ void max7456ReInit(void)
 
     max7456SetRegisterVM1();
 
-    // Clear shadow to force redraw all screen in non-dma mode.
+    // Clear shadow to force redraw all screen
     max7456ClearShadowBuffer();
-
-    if (firstInit) {
-        max7456DrawScreenSlow();
-        firstInit = false;
-    }
 }
 
 void max7456PreInit(const max7456Config_t *max7456Config)
@@ -402,34 +399,36 @@ max7456InitStatus_e max7456Init(const max7456Config_t *max7456Config, const vcdP
 
     switch (max7456Config->clockConfig) {
     case MAX7456_CLOCK_CONFIG_HALF:
-        max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2);
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2);
         break;
 
-    case MAX7456_CLOCK_CONFIG_OC:
-        max7456SpiClock = (cpuOverclock && (max7456DeviceType == MAX7456_DEVICE_TYPE_MAX)) ? spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ / 2) : spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
+    case MAX7456_CLOCK_CONFIG_NOMINAL:
+    default:
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
         break;
 
-    case MAX7456_CLOCK_CONFIG_FULL:
-        max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
+    case MAX7456_CLOCK_CONFIG_DOUBLE:
+        max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ * 2);
         break;
     }
 
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_OVERCLOCK, cpuOverclock);
     DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DEVTYPE, max7456DeviceType);
-    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClock);
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClockDiv);
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_X100, spiCalculateClock(max7456SpiClockDiv) / 10000);
 #else
     UNUSED(max7456Config);
     UNUSED(cpuOverclock);
-    max7456SpiClock = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
+    max7456SpiClockDiv = spiCalculateDivider(MAX7456_MAX_SPI_CLK_HZ);
 #endif
 
-    spiSetClkDivisor(dev, max7456SpiClock);
+    spiSetClkDivisor(dev, max7456SpiClockDiv);
 
     // force soft reset on Max7456
     spiWriteReg(dev, MAX7456ADD_VM0, MAX7456_RESET);
 
-    // Wait for 100us before polling for completion of reset
-    delayMicroseconds(100);
+    // Wait for 200us before polling for completion of reset
+    delayMicroseconds(200);
 
     // Wait for reset to complete
     while ((spiReadRegMsk(dev, MAX7456ADD_VM0) & MAX7456_RESET) != 0x00);
@@ -475,9 +474,12 @@ void max7456Brightness(uint8_t black, uint8_t white)
 
     if (reg != previousBlackWhiteRegister) {
         previousBlackWhiteRegister = reg;
-        for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
-            spiWriteReg(dev, i, reg);
+        STATIC_DMA_DATA_AUTO uint8_t buf[32];
+        for (int i = MAX7456ADD_RB0, j = 0; i <= MAX7456ADD_RB15; i++) {
+            buf[j++] = i;
+            buf[j++] = reg;
         }
+        spiReadWriteBuf(dev, buf, NULL, sizeof(buf));
     }
 }
 
@@ -548,7 +550,7 @@ bool max7456BuffersSynced(void)
     return true;
 }
 
-void max7456ReInitIfRequired(bool forceStallCheck)
+bool max7456ReInitIfRequired(bool forceStallCheck)
 {
     static timeMs_t lastSigCheckMs = 0;
     static timeMs_t videoDetectTimeMs = 0;
@@ -603,36 +605,78 @@ void max7456ReInitIfRequired(bool forceStallCheck)
         lastSigCheckMs = nowMs;
     }
 
-    //------------   end of (re)init-------------------------------------
+    return stalled;
 }
 
-void max7456DrawScreen(void)
+// Return true if screen still being transferred
+bool max7456DrawScreen(void)
 {
     static uint16_t pos = 0;
     // This routine doesn't block so need to use static data
     static busSegment_t segments[] = {
-            {NULL, NULL, 0, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.buffers = {NULL, NULL}, 0, true, NULL},
     };
 
     if (!fontIsLoading) {
-
-        // (Re)Initialize MAX7456 at startup or stall is detected.
-
-        max7456ReInitIfRequired(false);
-
         uint8_t *buffer = getActiveLayerBuffer();
+        int spiBufIndex = 0;
+        int maxSpiBufStartIndex;
+        bool setAddress = true;
+        bool autoInc = false;
+        int posLimit = pos + (maxScreenSize / 2);
 
-        int buff_len = 0;
-        for (int k = 0; k < MAX_CHARS2UPDATE; k++) {
+        maxSpiBufStartIndex = spiUseMOSI_DMA(dev) ? MAX_BYTES2SEND : MAX_BYTES2SEND_POLLED;
+
+        // Abort for now if the bus is still busy
+        if (spiIsBusy(dev)) {
+            // Not finished yet
+            return true;
+        }
+
+        // Allow for 8 bytes followed by an ESCAPE and reset of DMM at end of buffer
+        maxSpiBufStartIndex -= 12;
+
+        // Initialise the transfer buffer
+        while ((spiBufIndex < maxSpiBufStartIndex) && (pos < posLimit)) {
             if (buffer[pos] != shadowBuffer[pos]) {
-                spiBuff[buff_len++] = MAX7456ADD_DMAH;
-                spiBuff[buff_len++] = pos >> 8;
-                spiBuff[buff_len++] = MAX7456ADD_DMAL;
-                spiBuff[buff_len++] = pos & 0xff;
-                spiBuff[buff_len++] = MAX7456ADD_DMDI;
-                spiBuff[buff_len++] = buffer[pos];
+                if (buffer[pos] == 0xff) {
+                    buffer[pos] = ' ';
+                }
+
+                if (setAddress || !autoInc) {
+                    if (buffer[pos + 1] != shadowBuffer[pos + 1]) {
+                        // It's worth auto incrementing
+                        spiBuf[spiBufIndex++] = MAX7456ADD_DMM;
+                        spiBuf[spiBufIndex++] = displayMemoryModeReg | DMM_AUTO_INC;
+                        autoInc = true;
+                    } else {
+                        // It's not worth auto incrementing
+                        spiBuf[spiBufIndex++] = MAX7456ADD_DMM;
+                        spiBuf[spiBufIndex++] = displayMemoryModeReg;
+                        autoInc = false;
+                    }
+
+                    spiBuf[spiBufIndex++] = MAX7456ADD_DMAH;
+                    spiBuf[spiBufIndex++] = pos >> 8;
+                    spiBuf[spiBufIndex++] = MAX7456ADD_DMAL;
+                    spiBuf[spiBufIndex++] = pos & 0xff;
+
+                    setAddress = false;
+                }
+
+                spiBuf[spiBufIndex++] = MAX7456ADD_DMDI;
+                spiBuf[spiBufIndex++] = buffer[pos];
+
                 shadowBuffer[pos] = buffer[pos];
+            } else {
+                if (!setAddress) {
+                    setAddress = true;
+                    if (autoInc) {
+                        spiBuf[spiBufIndex++] = MAX7456ADD_DMDI;
+                        spiBuf[spiBufIndex++] = END_STRING;
+                    }
+                }
             }
 
             if (++pos >= maxScreenSize) {
@@ -641,70 +685,34 @@ void max7456DrawScreen(void)
             }
         }
 
-        if (buff_len) {
-            segments[0].txData = spiBuff;
-            segments[0].len = buff_len;
+        if (autoInc) {
+            if (!setAddress) {
+                spiBuf[spiBufIndex++] = MAX7456ADD_DMDI;
+                spiBuf[spiBufIndex++] = END_STRING;
+            }
 
-            // Ensure any prior DMA has completed
-            spiWaitClaim(dev);
+            spiBuf[spiBufIndex++] = MAX7456ADD_DMM;
+            spiBuf[spiBufIndex++] = displayMemoryModeReg;
+        }
+
+        if (spiBufIndex) {
+            segments[0].u.buffers.txData = spiBuf;
+            segments[0].len = spiBufIndex;
 
             spiSequence(dev, &segments[0]);
 
-            // Non-blocking, so transfer still in progress
+            // Non-blocking, so transfer still in progress if using DMA
         }
     }
+
+    return (pos != 0);
 }
-
-static void max7456DrawScreenSlow(void)
-{
-    bool escapeCharFound = false;
-    uint8_t *buffer = getActiveLayerBuffer();
-
-    // Enable auto-increment mode and update every character in the active buffer.
-    uint8_t dma_regs[3];
-
-    dma_regs[0] = displayMemoryModeReg | 1;
-    dma_regs[1] = 0;
-    dma_regs[2] = 0;
-
-    spiWriteRegBuf(dev, MAX7456ADD_DMM, dma_regs, sizeof (dma_regs));
-
-    // The "escape" character 0xFF must be skipped as it causes the MAX7456 to exit auto-increment mode.
-    for (int xx = 0; xx < maxScreenSize; xx++) {
-        if (buffer[xx] == END_STRING) {
-            escapeCharFound = true;
-            spiWriteReg(dev, MAX7456ADD_DMDI, ' ');  // replace the 0xFF character with a blank in the first pass to avoid terminating auto-increment
-        } else {
-            spiWriteReg(dev, MAX7456ADD_DMDI, buffer[xx]);
-        }
-        shadowBuffer[xx] = buffer[xx];
-    }
-
-    spiWriteReg(dev, MAX7456ADD_DMDI, END_STRING);
-
-    // Turn off auto increment
-    spiWriteReg(dev, MAX7456ADD_DMM, displayMemoryModeReg);
-
-    // If we found any of the "escape" character 0xFF, then make a second pass
-    // to update them with direct addressing
-    if (escapeCharFound) {
-        dma_regs[2] = END_STRING;
-        for (int xx = 0; xx < maxScreenSize; xx++) {
-            if (buffer[xx] == END_STRING) {
-                dma_regs[0] = xx >> 8;
-                dma_regs[1] = xx & 0xFF;
-                spiWriteRegBuf(dev, MAX7456ADD_DMAH, dma_regs, sizeof (dma_regs));
-            }
-        }
-    }
-}
-
 
 // should not be used when armed
 void max7456RefreshAll(void)
 {
     max7456ReInitIfRequired(true);
-    max7456DrawScreenSlow();
+    while (max7456DrawScreen());
 }
 
 bool max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)

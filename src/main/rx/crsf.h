@@ -80,6 +80,7 @@ typedef union crsfFrame_u {
 
 void crsfRxWriteTelemetryData(const void *data, int len);
 void crsfRxSendTelemetryData(void);
+bool crsfRxIsTelemetryBufEmpty(void); // check this function before using crsfRxWriteTelemetryData()
 
 struct rxConfig_s;
 struct rxRuntimeState_s;

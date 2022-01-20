@@ -55,7 +55,7 @@ static int displayPortTestClearScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int displayPortTestDrawScreen(displayPort_t *displayPort)
+static bool displayPortTestDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;

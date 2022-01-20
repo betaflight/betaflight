@@ -151,21 +151,6 @@ void icm426xxAccInit(accDev_t *acc)
     acc->acc_1G = 512 * 4;
 }
 
-bool icm426xxAccRead(accDev_t *acc)
-{
-    uint8_t data[6];
-
-    const bool ack = busReadRegisterBuffer(&acc->gyro->dev, ICM426XX_RA_ACCEL_DATA_X1, data, 6);
-    if (!ack) {
-        return false;
-    }
-
-    acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
-    acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
-    acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
-
-    return true;
-}
 bool icm426xxSpiAccDetect(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.sensor) {
@@ -178,7 +163,7 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     }
 
     acc->initFn = icm426xxAccInit;
-    acc->readFn = icm426xxAccRead;
+    acc->readFn = mpuAccReadSPI;
 
     return true;
 }
@@ -198,6 +183,8 @@ static odrEntry_t icm426xxPkhzToSupportedODRMap[] = {
 void icm426xxGyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
+    gyro->accDataReg = ICM426XX_RA_ACCEL_DATA_X1;
+    gyro->gyroDataReg = ICM426XX_RA_GYRO_DATA_X1;
 
     spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM426XX_MAX_SPI_INIT_CLK_HZ));
 
@@ -252,23 +239,6 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM426XX_MAX_SPI_CLK_HZ));
 }
 
-bool icm426xxGyroReadSPI(gyroDev_t *gyro)
-{
-    STATIC_DMA_DATA_AUTO uint8_t dataToSend[7] = {ICM426XX_RA_GYRO_DATA_X1 | 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    STATIC_DMA_DATA_AUTO uint8_t data[7];
-
-    const bool ack = spiReadWriteBufRB(&gyro->dev, dataToSend, data, 7);
-    if (!ack) {
-        return false;
-    }
-
-    gyro->gyroADCRaw[X] = (int16_t)((data[1] << 8) | data[2]);
-    gyro->gyroADCRaw[Y] = (int16_t)((data[3] << 8) | data[4]);
-    gyro->gyroADCRaw[Z] = (int16_t)((data[5] << 8) | data[6]);
-
-    return true;
-}
-
 bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
 {
     switch (gyro->mpuDetectionResult.sensor) {
@@ -281,7 +251,7 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
     }
 
     gyro->initFn = icm426xxGyroInit;
-    gyro->readFn = icm426xxGyroReadSPI;
+    gyro->readFn = mpuGyroReadSPI;
 
     gyro->scale = GYRO_SCALE_2000DPS;
 

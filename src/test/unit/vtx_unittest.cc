@@ -197,5 +197,5 @@ extern "C" {
     void sbufWriteU8(sbuf_t *, uint8_t) {}
     void sbufWriteU16(sbuf_t *, uint16_t) {}
     void sbufWriteU32(sbuf_t *, uint32_t) {}
-
+    void schedulerSetNextStateTime(timeDelta_t) {}
 }

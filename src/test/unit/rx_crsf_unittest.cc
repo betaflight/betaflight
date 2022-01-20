@@ -357,7 +357,7 @@ const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NU
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};
-void crsfScheduleMspResponse(void) {};
+void crsfScheduleMspResponse(uint8_t ) {};
 bool bufferMspFrame(uint8_t *, int) {return true;}
 bool isBatteryVoltageAvailable(void) { return true; }
 bool isAmperageAvailable(void) { return true; }

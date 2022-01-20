@@ -116,6 +116,8 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 bool spiSetBusInstance(extDevice_t *dev, uint32_t device);
 // Determine the divisor to use for a given bus frequency
 uint16_t spiCalculateDivider(uint32_t freq);
+// Return the SPI clock based on the given divisor
+uint32_t spiCalculateClock(uint16_t spiClkDivisor);
 // Set the clock divisor to be used for accesses by the given device
 void spiSetClkDivisor(const extDevice_t *dev, uint16_t divider);
 // Set the clock phase/polarity to be used for accesses by the given device
@@ -127,10 +129,6 @@ void spiDmaEnable(const extDevice_t *dev, bool enable);
 void spiSequence(const extDevice_t *dev, busSegment_t *segments);
 // Wait for DMA completion
 void spiWait(const extDevice_t *dev);
-// Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
-void spiSetAtomicWait(const extDevice_t *dev);
-// Wait for DMA completion and claim the bus driver - use this when waiting for a prior access to complete before starting a new one
-void spiWaitClaim(const extDevice_t *dev);
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev);
 
@@ -170,6 +168,7 @@ bool spiReadWriteBufRB(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData,
 struct spiPinConfig_s;
 void spiPinConfigure(const struct spiPinConfig_s *pConfig);
 bool spiUseDMA(const extDevice_t *dev);
+bool spiUseMOSI_DMA(const extDevice_t *dev);
 void spiBusDeviceRegister(const extDevice_t *dev);
 uint8_t spiGetRegisteredDeviceCount(void);
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev);

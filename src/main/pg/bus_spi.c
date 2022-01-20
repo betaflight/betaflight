@@ -25,6 +25,7 @@
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 
+#include "pg/bus_spi.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -51,6 +52,12 @@ const spiDefaultConfig_t spiDefaultConfig[] = {
 #endif
 #ifdef USE_SPI_DEVICE_4
     { SPIDEV_4, IO_TAG(SPI4_SCK_PIN), IO_TAG(SPI4_MISO_PIN), IO_TAG(SPI4_MOSI_PIN), SPI4_TX_DMA_OPT, SPI4_RX_DMA_OPT },
+#endif
+#ifdef USE_SPI_DEVICE_5
+    { SPIDEV_5, IO_TAG(SPI5_SCK_PIN), IO_TAG(SPI5_MISO_PIN), IO_TAG(SPI5_MOSI_PIN), SPI5_TX_DMA_OPT, SPI5_RX_DMA_OPT },
+#endif
+#ifdef USE_SPI_DEVICE_6
+    { SPIDEV_6, IO_TAG(SPI6_SCK_PIN), IO_TAG(SPI6_MISO_PIN), IO_TAG(SPI6_MOSI_PIN), SPI6_TX_DMA_OPT, SPI6_RX_DMA_OPT },
 #endif
 };
 
