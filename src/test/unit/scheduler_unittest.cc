@@ -19,7 +19,17 @@
 
 extern "C" {
     #include "platform.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/scheduler.h"
     #include "scheduler/scheduler.h"
+
+    PG_REGISTER_WITH_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig, PG_SCHEDULER_CONFIG, 0);
+
+    PG_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig,
+        .rxRelaxDeterminism = 25,
+        .osdRelaxDeterminism = 25,
+    );
 }
 
 #include "unittest_macros.h"
