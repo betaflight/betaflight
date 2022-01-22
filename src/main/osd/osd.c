@@ -137,7 +137,6 @@ static osdDisplayPortDevice_e osdDisplayPortDeviceType;
 static bool osdIsReady;
 
 static bool suppressStatsDisplay = false;
-static uint8_t osdStatsRowCount = 0;
 
 static bool backgroundLayerSupported = false;
 
@@ -868,44 +867,93 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     return false;
 }
 
-static uint8_t osdShowStats(int statsRowCount)
+typedef struct osdStatsRenderingState_s {
+    uint8_t row;
+    uint8_t index;
+    uint8_t rowCount;
+} osdStatsRenderingState_t;
+
+static osdStatsRenderingState_t osdStatsRenderingState;
+
+static void osdRenderStatsReset(void)
 {
-    uint8_t top = 0;
-    bool displayLabel = false;
+    // reset to 0 so it will be recalculated on the next stats refresh
+    osdStatsRenderingState.rowCount = 0;
+}
 
-    // if statsRowCount is 0 then we're running an initial analysis of the active stats items
-    if (statsRowCount > 0) {
-        const int availableRows = osdDisplayPort->rows;
-        int displayRows = MIN(statsRowCount, availableRows);
-        if (statsRowCount < availableRows) {
-            displayLabel = true;
-            displayRows++;
+static void osdRenderStatsBegin(void)
+{
+    osdStatsRenderingState.row = 0;
+    osdStatsRenderingState.index = 0;
+}
+
+
+// call repeatedly until it returns true which indicates that all stats have been rendered.
+static bool osdRenderStatsContinue(void)
+{
+    if (osdStatsRenderingState.row == 0) {
+
+        bool displayLabel = false;
+
+        // if rowCount is 0 then we're running an initial analysis of the active stats items
+        if (osdStatsRenderingState.rowCount > 0) {
+            const int availableRows = osdDisplayPort->rows;
+            int displayRows = MIN(osdStatsRenderingState.rowCount, availableRows);
+            if (osdStatsRenderingState.rowCount < availableRows) {
+                displayLabel = true;
+                displayRows++;
+            }
+            osdStatsRenderingState.row = (availableRows - displayRows) / 2;  // center the stats vertically
         }
-        top = (availableRows - displayRows) / 2;  // center the stats vertically
+
+        if (displayLabel) {
+            displayWrite(osdDisplayPort, 2, osdStatsRenderingState.row++, DISPLAYPORT_ATTR_NONE, "  --- STATS ---");
+            return false;
+        }
     }
 
-    if (displayLabel) {
-        displayWrite(osdDisplayPort, 2, top++, DISPLAYPORT_ATTR_NONE, "  --- STATS ---");
-    }
 
-    for (int i = 0; i < OSD_STAT_COUNT; i++) {
-        if (osdStatGetState(osdStatsDisplayOrder[i])) {
-            if (osdDisplayStat(osdStatsDisplayOrder[i], top)) {
-                top++;
+    bool renderedStat = false;
+
+    while (osdStatsRenderingState.index < OSD_STAT_COUNT) {
+        int index = osdStatsRenderingState.index;
+
+        // prepare for the next call to the method
+        osdStatsRenderingState.index++;
+
+        // look for something to render
+        if (osdStatGetState(osdStatsDisplayOrder[index])) {
+            if (osdDisplayStat(osdStatsDisplayOrder[index], osdStatsRenderingState.row)) {
+                osdStatsRenderingState.row++;
+                renderedStat = true;
+                break;
             }
         }
     }
-    return top;
+
+    bool moreSpaceAvailable = osdStatsRenderingState.row < osdDisplayPort->rows;
+
+    if (renderedStat && moreSpaceAvailable) {
+        return false;
+    }
+
+    if (osdStatsRenderingState.rowCount == 0) {
+        osdStatsRenderingState.rowCount = osdStatsRenderingState.row;
+    }
+
+    return true;
 }
 
 // returns true when all phases are complete
 static bool osdRefreshStats(void)
 {
+    bool completed = false;
+
     typedef enum {
         INITIAL_CLEAR_SCREEN = 0,
         COUNT_STATS,
         CLEAR_SCREEN,
-        DRAW_STATS,
+        RENDER_STATS,
     } osd_refresh_stats_phase_e;
 
     static osd_refresh_stats_phase_e phase = INITIAL_CLEAR_SCREEN;
@@ -916,30 +964,41 @@ static bool osdRefreshStats(void)
     switch (phase) {
     default:
     case INITIAL_CLEAR_SCREEN:
-        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
-        if (osdStatsRowCount > 0) {
-            phase = DRAW_STATS;
+        osdRenderStatsBegin();
+        if (osdStatsRenderingState.rowCount > 0) {
+            phase = RENDER_STATS;
         } else {
             phase++;
         }
-        return false;
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+        break;
     case COUNT_STATS:
-        // No stats row count has been set yet.
-        // Go through the logic one time to determine how many stats are actually displayed.
-        osdStatsRowCount = osdShowStats(0);
-        phase++;
-        return false;
+        {
+            // No stats row count has been set yet.
+            // Go through the logic one time to determine how many stats are actually displayed.
+            bool count_phase_complete = osdRenderStatsContinue();
+            if (count_phase_complete) {
+                phase++;
+            }
+            break;
+        }
     case CLEAR_SCREEN:
+        osdRenderStatsBegin();
         // Then clear the screen and commence with normal stats display which will
         // determine if the heading should be displayed and also center the content vertically.
         displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
         phase++;
-        return false;
-    case DRAW_STATS:
-        osdShowStats(osdStatsRowCount);
-        phase = INITIAL_CLEAR_SCREEN; // now the count is determined, we can skip counting the next time
-        return true; // all phases complete
+        break;
+    case RENDER_STATS:
+        completed = osdRenderStatsContinue();
+        break;
     };
+
+    if (completed) {
+        phase = INITIAL_CLEAR_SCREEN;
+    }
+
+    return completed;
 }
 
 static timeDelta_t osdShowArmed(void)
@@ -983,7 +1042,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
             stats.end_voltage = getStatsVoltage();
-            osdStatsRowCount = 0; // reset to 0 so it will be recalculated on the next stats refresh
+            osdRenderStatsReset();
         }
 
         armState = ARMING_FLAG(ARMED);
