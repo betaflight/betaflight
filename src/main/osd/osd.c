@@ -1181,6 +1181,15 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
     UNUSED(currentDeltaTimeUs);
     static timeUs_t osdUpdateDueUs = 0;
 
+#if defined(USE_SPRACING_PIXEL_OSD)
+    if (frameBuffer_eraseInProgress()) {
+#ifdef DEBUG_FRAMEBUFFER_ERASE_WAIT
+        debug[1]++;
+#endif
+        return false;
+    }
+#endif
+
     if (osdState == OSD_STATE_IDLE) {
         // If the OSD is due a refresh, mark that as being the case
         if (cmpTimeUs(currentTimeUs, osdUpdateDueUs) > 0) {
@@ -1236,15 +1245,6 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     case OSD_STATE_CHECK:
         showVisualBeeper = isBeeperOn();
-
-#if defined(USE_SPRACING_PIXEL_OSD)
-        if (frameBuffer_eraseInProgress()) {
-#ifdef DEBUG_FRAMEBUFFER_ERASE_WAIT
-            debug[1]++;
-#endif
-            break;
-        }
-#endif
 
         // SPRacingPixelOSD - don't touch buffers while we're waiting for the framebuffer to be committed
         // MAX7456/etc - don't touch buffers if DMA transaction is in progress
