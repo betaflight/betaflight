@@ -428,7 +428,7 @@ static void osdCompleteInitialization(void)
     displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
 
     displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
-    displayClearScreen(osdDisplayPort);
+    displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
 
     osdDrawLogo(3, 1);
 
@@ -903,14 +903,14 @@ static void osdRefreshStats(void)
     // Non-flight operation which takes a little longer than normal
     schedulerIgnoreTaskExecTime();
 
-    displayClearScreen(osdDisplayPort);
+    displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
     if (osdStatsRowCount == 0) {
         // No stats row count has been set yet.
         // Go through the logic one time to determine how many stats are actually displayed.
         osdStatsRowCount = osdShowStats(0);
         // Then clear the screen and commence with normal stats display which will
         // determine if the heading should be displayed and also center the content vertically.
-        displayClearScreen(osdDisplayPort);
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
     }
     osdShowStats(osdStatsRowCount);
 }
@@ -919,7 +919,7 @@ static timeDelta_t osdShowArmed(void)
 {
     timeDelta_t ret;
 
-    displayClearScreen(osdDisplayPort);
+    displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
 
     if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !ARMING_FLAG(WAS_EVER_ARMED))) {
         osdDrawLogo(3, 1);
@@ -973,7 +973,7 @@ STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
         } else {
             if (IS_RC_MODE_ACTIVE(BOXOSD) && osdStatsVisible) {
                 osdStatsVisible = false;
-                displayClearScreen(osdDisplayPort);
+                displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
             } else if (!IS_RC_MODE_ACTIVE(BOXOSD)) {
                 if (!osdStatsVisible) {
                     osdStatsVisible = true;
@@ -1001,7 +1001,7 @@ void osdDrawStats2(timeUs_t currentTimeUs)
             }
             return;
         } else {
-            displayClearScreen(osdDisplayPort);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
             resumeRefreshAt = 0;
             osdStatsEnabled = false;
             stats.armed_time = 0;
@@ -1172,7 +1172,7 @@ void osdUpdate(timeUs_t currentTimeUs)
     case OSD_STATE_UPDATE_CANVAS:
         // Hide OSD when OSDSW mode is active
         if (IS_RC_MODE_ACTIVE(BOXOSD)) {
-            displayClearScreen(osdDisplayPort);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
             osdState = OSD_STATE_COMMIT;
             break;
         }
@@ -1184,7 +1184,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         } else {
             // Background layer not supported, just clear the foreground in preparation
             // for drawing the elements including their backgrounds.
-            displayClearScreen(osdDisplayPort);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
         }
 
 #ifdef USE_GPS
