@@ -312,8 +312,10 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 {
     if (profileIndex <= OSD_PROFILE_COUNT) {
         osdConfigMutable()->osdProfileIndex = profileIndex;
+        displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
         setOsdProfile(profileIndex);
         osdAnalyzeActiveElements();
+        displayCommitTransaction(osdDisplayPort);
     }
 }
 #endif
