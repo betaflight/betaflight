@@ -898,21 +898,48 @@ static uint8_t osdShowStats(int statsRowCount)
     return top;
 }
 
-static void osdRefreshStats(void)
+// returns true when all phases are complete
+static bool osdRefreshStats(void)
 {
+    typedef enum {
+        INITIAL_CLEAR_SCREEN = 0,
+        COUNT_STATS,
+        CLEAR_SCREEN,
+        DRAW_STATS,
+    } osd_refresh_stats_phase_e;
+
+    static osd_refresh_stats_phase_e phase = INITIAL_CLEAR_SCREEN;
+
     // Non-flight operation which takes a little longer than normal
     schedulerIgnoreTaskExecTime();
 
-    displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
-    if (osdStatsRowCount == 0) {
+    switch (phase) {
+    default:
+    case INITIAL_CLEAR_SCREEN:
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+        if (osdStatsRowCount > 0) {
+            phase = DRAW_STATS;
+        } else {
+            phase++;
+        }
+        return false;
+    case COUNT_STATS:
         // No stats row count has been set yet.
         // Go through the logic one time to determine how many stats are actually displayed.
         osdStatsRowCount = osdShowStats(0);
+        phase++;
+        return false;
+    case CLEAR_SCREEN:
         // Then clear the screen and commence with normal stats display which will
         // determine if the heading should be displayed and also center the content vertically.
-        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
-    }
-    osdShowStats(osdStatsRowCount);
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+        phase++;
+        return false;
+    case DRAW_STATS:
+        osdShowStats(osdStatsRowCount);
+        phase = INITIAL_CLEAR_SCREEN; // now the count is determined, we can skip counting the next time
+        return true; // all phases complete
+    };
 }
 
 static timeDelta_t osdShowArmed(void)
@@ -935,10 +962,12 @@ static timeDelta_t osdShowArmed(void)
 static bool osdStatsVisible = false;
 static bool osdStatsEnabled = false;
 
-STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
+STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
 {
     static timeUs_t lastTimeUs = 0;
     static timeUs_t osdStatsRefreshTimeUs;
+
+    bool refreshStatsRequired = false;
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
@@ -973,7 +1002,7 @@ STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
         } else {
             if (IS_RC_MODE_ACTIVE(BOXOSD) && osdStatsVisible) {
                 osdStatsVisible = false;
-                displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
+                displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
             } else if (!IS_RC_MODE_ACTIVE(BOXOSD)) {
                 if (!osdStatsVisible) {
                     osdStatsVisible = true;
@@ -981,15 +1010,17 @@ STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
                 }
                 if (currentTimeUs >= osdStatsRefreshTimeUs) {
                     osdStatsRefreshTimeUs = currentTimeUs + REFRESH_1S;
-                    osdRefreshStats();
+                    refreshStatsRequired = true;
                 }
             }
         }
     }
     lastTimeUs = currentTimeUs;
+
+    return refreshStatsRequired;
 }
 
-void osdDrawStats2(timeUs_t currentTimeUs)
+void osdProcessStats2(timeUs_t currentTimeUs)
 {
     displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
 
@@ -1001,7 +1032,7 @@ void osdDrawStats2(timeUs_t currentTimeUs)
             }
             return;
         } else {
-            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
             resumeRefreshAt = 0;
             osdStatsEnabled = false;
             stats.armed_time = 0;
@@ -1016,7 +1047,7 @@ void osdDrawStats2(timeUs_t currentTimeUs)
 #endif
 }
 
-void osdDrawStats3()
+void osdProcessStats3()
 {
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC)
@@ -1035,9 +1066,10 @@ typedef enum {
     OSD_STATE_INIT,
     OSD_STATE_IDLE,
     OSD_STATE_CHECK,
-    OSD_STATE_UPDATE_STATS1,
-    OSD_STATE_UPDATE_STATS2,
-    OSD_STATE_UPDATE_STATS3,
+    OSD_STATE_PROCESS_STATS1,
+    OSD_STATE_REFRESH_STATS,
+    OSD_STATE_PROCESS_STATS2,
+    OSD_STATE_PROCESS_STATS3,
     OSD_STATE_UPDATE_ALARMS,
     OSD_STATE_UPDATE_CANVAS,
     OSD_STATE_UPDATE_ELEMENTS,
@@ -1129,24 +1161,36 @@ void osdUpdate(timeUs_t currentTimeUs)
             return;
         }
 
-        osdState = OSD_STATE_UPDATE_STATS1;
+        osdState = OSD_STATE_PROCESS_STATS1;
         break;
 
-    case OSD_STATE_UPDATE_STATS1:
-        osdDrawStats1(currentTimeUs);
-        showVisualBeeper = false;
+    case OSD_STATE_PROCESS_STATS1:
+        {
+            bool refreshStatsRequired = osdProcessStats1(currentTimeUs);
+            showVisualBeeper = false;
 
-        osdState = OSD_STATE_UPDATE_STATS2;
+            if (refreshStatsRequired) {
+                osdState = OSD_STATE_REFRESH_STATS;
+            } else {
+                osdState = OSD_STATE_PROCESS_STATS2;
+            }
+            break;
+        }
+    case OSD_STATE_REFRESH_STATS:
+        {
+            bool completed = osdRefreshStats();
+            if (completed) {
+                osdState = OSD_STATE_PROCESS_STATS2;
+            }
+            break;
+        }
+    case OSD_STATE_PROCESS_STATS2:
+        osdProcessStats2(currentTimeUs);
+
+        osdState = OSD_STATE_PROCESS_STATS3;
         break;
-
-    case OSD_STATE_UPDATE_STATS2:
-        osdDrawStats2(currentTimeUs);
-
-        osdState = OSD_STATE_UPDATE_STATS3;
-        break;
-
-    case OSD_STATE_UPDATE_STATS3:
-        osdDrawStats3();
+    case OSD_STATE_PROCESS_STATS3:
+        osdProcessStats3();
 
 #ifdef USE_CMS
         if (!displayIsGrabbed(osdDisplayPort))
