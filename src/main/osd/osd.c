@@ -958,9 +958,6 @@ static bool osdRefreshStats(void)
 
     static osd_refresh_stats_phase_e phase = INITIAL_CLEAR_SCREEN;
 
-    // Non-flight operation which takes a little longer than normal
-    schedulerIgnoreTaskExecTime();
-
     switch (phase) {
     default:
     case INITIAL_CLEAR_SCREEN:
