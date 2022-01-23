@@ -1412,7 +1412,7 @@ static uint16_t cmsScanKeys(timeMs_t currentTimeMs, timeMs_t lastCalledMs, int16
             rcDelayMs = cmsHandleKeyWithRepeat(pCurrentDisplay, key, repeatCount);
 
             // Key repeat effect is implemented in two phases.
-            // First phldase is to decrease rcDelayMs reciprocal to hold time.
+            // First phase is to decrease rcDelayMs reciprocal to hold time.
             // When rcDelayMs reached a certain limit (scheduling interval),
             // repeat rate will not raise anymore, so we call key handler
             // multiple times (repeatCount).
