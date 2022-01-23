@@ -60,7 +60,15 @@ typedef enum {
 } displayPortBackground_e;
 
 typedef enum {
+    // Display drivers that can perform screen clearing in the background, e.g. via DMA, should do so.
+    // use `displayCheckReady` function to check if the screen clear has been completed.
     DISPLAY_CLEAR_NONE = 0,
+
+    // * when set, the display driver should block until the screen clear has completed, use in synchronous cases
+    //   only, e.g. where the screen is cleared and the display is immediately drawn to.
+    // * when NOT set, return immediately and do not block unless screen is a simple operation or cannot
+    //   be performed in the background.  As with any long delay, waiting can cause task starvation which
+    //   can result in RX loss.
     DISPLAY_CLEAR_WAIT = 1 << 0,
 } displayClearOption_e;
 
