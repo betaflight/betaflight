@@ -189,7 +189,7 @@
 #define USE_UART6
 #define USE_UART7
 #define USE_UART8
-// #define USE_LPUART1
+#define USE_LPUART1
 
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 9)
 
