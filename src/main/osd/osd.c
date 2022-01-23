@@ -965,7 +965,7 @@ static bool osdRefreshStats(void)
         if (osdStatsRenderingState.rowCount > 0) {
             phase = RENDER_STATS;
         } else {
-            phase++;
+            phase = COUNT_STATS;
         }
         displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
         break;
@@ -975,7 +975,7 @@ static bool osdRefreshStats(void)
             // Go through the logic one time to determine how many stats are actually displayed.
             bool count_phase_complete = osdRenderStatsContinue();
             if (count_phase_complete) {
-                phase++;
+                phase = CLEAR_SCREEN;
             }
             break;
         }
@@ -984,7 +984,7 @@ static bool osdRefreshStats(void)
         // Then clear the screen and commence with normal stats display which will
         // determine if the heading should be displayed and also center the content vertically.
         displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
-        phase++;
+        phase = RENDER_STATS;
         break;
     case RENDER_STATS:
         completed = osdRenderStatsContinue();
