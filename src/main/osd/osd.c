@@ -954,9 +954,9 @@ static bool osdRefreshStats(void)
         COUNT_STATS,
         CLEAR_SCREEN,
         RENDER_STATS,
-    } osd_refresh_stats_phase_e;
+    } osdRefreshStatsPhase_e;
 
-    static osd_refresh_stats_phase_e phase = INITIAL_CLEAR_SCREEN;
+    static osdRefreshStatsPhase_e phase = INITIAL_CLEAR_SCREEN;
 
     switch (phase) {
     default:
