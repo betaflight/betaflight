@@ -1440,7 +1440,7 @@ static uint16_t cmsScanKeys(timeMs_t currentTimeMs, timeMs_t lastCalledMs, int16
                     repeatCount = repeatCount + (holdCount - repeatBase) / 5;
 
                     if (repeatCount > 5) {
-                        repeatCount= 5;
+                        repeatCount = 5;
                     }
                 }
             }
