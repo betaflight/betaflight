@@ -1073,7 +1073,9 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
     }
 
     uint8_t irqReason = receiver.rxISR(&isrTimeStampUs);
-    if (irqReason == ELRS_DIO_TX_DONE) {
+    if (irqReason == ELRS_DIO_RX_AND_TX_DONE) {
+        startReceiving();
+    } else if (irqReason == ELRS_DIO_TX_DONE) {
         startReceiving();
     } else if (irqReason == ELRS_DIO_RX_DONE) {
         result = processRFPacket(payload, isrTimeStampUs);

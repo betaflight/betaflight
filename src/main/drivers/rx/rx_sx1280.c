@@ -418,8 +418,11 @@ void sx1280ClearIrqStatus(const uint16_t irqMask)
 uint8_t sx1280GetIrqReason(void)
 {
     uint16_t irqStatus = sx1280GetIrqStatus();
+
     sx1280ClearIrqStatus(SX1280_IRQ_RADIO_ALL);
-    if ((irqStatus & SX1280_IRQ_TX_DONE)) {
+    if ((irqStatus & SX1280_IRQ_TX_DONE) && (irqStatus & SX1280_IRQ_RX_DONE)) {
+        return 3;
+    } else if ((irqStatus & SX1280_IRQ_TX_DONE)) {
         return 2;
     } else if ((irqStatus & SX1280_IRQ_RX_DONE)) {
         return 1;

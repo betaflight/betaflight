@@ -445,7 +445,9 @@ uint8_t sx127xGetIrqReason(void)
 {
     uint8_t irqFlags = sx127xGetIrqFlags();
     sx127xClearIrqFlags();
-    if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE)) {
+    if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE) && (irqFlags & SX127X_CLEAR_IRQ_FLAG_RX_DONE)) {
+        return 3;
+    } else if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE)) {
         return 2;
     } else if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_RX_DONE)) {
         return 1;
