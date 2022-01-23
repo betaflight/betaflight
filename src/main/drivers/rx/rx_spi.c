@@ -125,7 +125,7 @@ void rxSpiExtiInit(ioConfig_t rxSpiExtiPinConfig, extiTrigger_t rxSpiExtiPinTrig
             extiLevel = false;
         }
         EXTIHandlerInit(&rxSpiExtiCallbackRec, rxSpiExtiHandler);
-        EXTIConfig(extiPin, &rxSpiExtiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, rxSpiExtiPinConfig, rxSpiExtiPinTrigger);
+        EXTIConfig(extiPin, &rxSpiExtiCallbackRec, NVIC_PRIO_RX_SPI_INT_EXTI, rxSpiExtiPinConfig, rxSpiExtiPinTrigger);
         EXTIEnable(extiPin, true);
     }
 }
