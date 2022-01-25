@@ -115,7 +115,7 @@
 
 // taskUpdateRxMain() has occasional peaks in execution time so normal moving average duration estimation doesn't work
 // Decay the estimated max task duration by 1/(1 << RX_TASK_DECAY_SHIFT) on every invocation
-#define RX_TASK_DECAY_SHIFT 7
+#define RX_TASK_DECAY_SHIFT 6
 // Add a margin to the task duration estimation
 #define RX_TASK_MARGIN 1
 
@@ -312,7 +312,7 @@ static void taskCameraControl(uint32_t currentTime)
 task_t tasks[TASK_COUNT];
 
 // Task ID data in .data (initialised data)
-task_id_t task_ids[TASK_COUNT] = {
+task_attr_t task_attrs[TASK_COUNT] = {
     [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
@@ -395,7 +395,7 @@ task_id_t task_ids[TASK_COUNT] = {
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-    [TASK_CAMCTRL] = DEFINE_TASK("CAMCTRL", NULL, NULL, taskCameraControl, TASK_PERIOD_HZ(5), TASK_PRIORITY_LOWEST),
+    [TASK_CAMCTRL] = DEFINE_TASK("CAMCTRL", NULL, NULL, taskCameraControl, TASK_PERIOD_HZ(5), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_ADC_INTERNAL
@@ -423,7 +423,7 @@ task_t *getTask(unsigned taskId)
 void tasksInit(void)
 {
     for (int i = 0; i < TASK_COUNT; i++) {
-        tasks[i].id = &task_ids[i];
+        tasks[i].attr = &task_attrs[i];
     }
 
     schedulerInit();
