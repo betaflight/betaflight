@@ -60,7 +60,7 @@ typedef struct {
     float integral;
 } simplePid_s;
 
-void simplePidInit(simplePid_s* simplePid, float dt, float max, float min, float kp, float kd, float ki)
+void simplePidInit(simplePid_s* simplePid, float dt, float min, float max, float kp, float kd, float ki)
 {
     simplePid->dt = dt;
     simplePid->max = max;
@@ -110,25 +110,25 @@ typedef struct {
 
 void altHoldReset(altHoldState_s* altHoldState)
 {
-    simplePidInit(&altHoldState->altPid, 0.1, 50.0, -50.0,
-                  0.01 * altholdConfig()->altPidP,
-                  0.01 * altholdConfig()->altPidD,
-                  0.01 * altholdConfig()->altPidI);
+    simplePidInit(&altHoldState->altPid, 0.1f, -50.0f, 50.0f,
+                  0.01f * altholdConfig()->altPidP,
+                  0.01f * altholdConfig()->altPidD,
+                  0.01f * altholdConfig()->altPidI);
 
-    simplePidInit(&altHoldState->velPid, 0.1, 1.0, 0.0,
-                  0.01 * altholdConfig()->velPidP,
-                  0.01 * altholdConfig()->velPidD,
-                  0.01 * altholdConfig()->velPidI);
+    simplePidInit(&altHoldState->velPid, 0.1f, 0.0f, 1.0f,
+                  0.01f * altholdConfig()->velPidP,
+                  0.01f * altholdConfig()->velPidD,
+                  0.01f * altholdConfig()->velPidI);
 
-    altHoldState->throttle = 0.0;
+    altHoldState->throttle = 0.0f;
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel;
-    altHoldState->targetAltitude = (float)(0.01 * getEstimatedAltitudeCm());
+    altHoldState->targetAltitude = (float)(0.01f * getEstimatedAltitudeCm());
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
 {
     altHoldState->prevAltHoldModeEnabled = false;
-    altHoldState->velocityEstimationAccel = 0.0;
+    altHoldState->velocityEstimationAccel = 0.0f;
     altHoldReset(altHoldState);
 }
 
