@@ -15,6 +15,7 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
 #include "alt_hold.h"
 
 #ifdef USE_ALTHOLD_MODE
