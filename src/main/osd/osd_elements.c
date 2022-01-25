@@ -1479,7 +1479,7 @@ static void osdElementWarnings2(osdElementParms_t *element)
 {
     osdElementWarnings(element);
 
-    if (strlen(element->buff) == 0) {
+    if (blinkState || (strlen(element->buff) == 0)) {
         osdElementLinkQuality(element);
     }
 
