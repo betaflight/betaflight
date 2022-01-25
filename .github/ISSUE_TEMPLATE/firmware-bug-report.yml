@@ -1,6 +1,6 @@
 name: Firmware Bug Report
 description: Create a report to help us fix bugs in the Betaflight firmware.
-labels: [Template: Bug]
+labels: ["Template: Bug"]
 body:
 
   - type: markdown
