@@ -160,7 +160,7 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->prevAltHoldModeEnabled = altHoldModeEnabled;
 
 
-    float measuredAltitude = (float)(0.01 * getEstimatedAltitudeCm());
+    float measuredAltitude = (float)(0.01f * getEstimatedAltitudeCm());
 
     t_fp_vector_def accelerationVector = {
         acc.accADC[X],
@@ -199,10 +199,10 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
 
     newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
-    newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01 * altholdConfig()->minThrottle, 0.01 * altholdConfig()->maxThrottle);
+    newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01f * altholdConfig()->minThrottle, 0.01f * altholdConfig()->maxThrottle);
 
     if (!altHoldModeEnabled) {
-        newThrottle = 0.0;
+        newThrottle = 0.0f;
     }
 
     altHoldState->throttle = newThrottle;
