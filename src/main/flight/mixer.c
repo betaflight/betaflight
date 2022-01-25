@@ -46,7 +46,9 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#ifdef USE_ALTHOLD_MODE
 #include "flight/alt_hold.h"
+#endif
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"

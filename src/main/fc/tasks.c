@@ -57,7 +57,9 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#ifdef USE_ALTHOLD_MODE
 #include "flight/alt_hold.h"
+#endif
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"

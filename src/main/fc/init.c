@@ -98,7 +98,9 @@
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/servos.h"
+#ifdef USE_ALTHOLD_MODE
 #include "flight/alt_hold.h"
+#endif
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
