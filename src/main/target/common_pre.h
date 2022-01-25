@@ -430,5 +430,5 @@ extern uint8_t _dmaram_end__;
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_GPS_PLUS_CODES
-#define USE_ALTHOLD_MODE
+//#define USE_ALTHOLD_MODE
 #endif
