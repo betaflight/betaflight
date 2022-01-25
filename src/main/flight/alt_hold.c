@@ -184,19 +184,19 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->velocityEstimationAccel *= 0.999f;
 
     float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
-    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0 * currentVelocityEstimationAccel));
+    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
 
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
     float velocityTarget = simplePidCalculate(&altHoldState->altPid, altHoldState->targetAltitude, altHoldState->measuredAltitude);
-    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0 * velocityTarget));
+    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
 
     float velPidForce = simplePidCalculate(&altHoldState->velPid, velocityTarget, currentVelocityEstimationAccel);
     
     float newThrottle = velPidForce;
 
-    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0 * velPidForce));
+    DEBUG_SET(DEBUG_ALTHOLD, 3, (int16_t)(100.0f * velPidForce));
 
     newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
     newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01 * altholdConfig()->minThrottle, 0.01 * altholdConfig()->maxThrottle);
