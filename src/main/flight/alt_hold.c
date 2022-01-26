@@ -74,19 +74,15 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
 
     float pOut = simplePid->kp * error;
 
-    simplePid->integral += error * dt;
-
     float iOut = simplePid->ki * simplePid->integral;
+
+    simplePid->integral += error * dt;
 
     float derivative = (error - simplePid->lastErr) / dt;
     float dOut = simplePid->kd * derivative;
 
     float output = pOut + iOut + dOut;
-    if (output > simplePid->max) {
-        output = simplePid->max;
-    } else if (output < simplePid->min) {
-        output = simplePid->min;
-    }
+    output = constrainf(output, simplePid->min, simplePid->max);
 
     simplePid->lastErr = error;
     return output;
