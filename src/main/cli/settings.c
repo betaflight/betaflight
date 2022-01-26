@@ -1058,14 +1058,12 @@ const clivalue_t valueTable[] = {
 #ifdef USE_ALTHOLD_MODE
     { "althold_vel_pid_p",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, velPidP) },
     { "althold_vel_pid_d",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, velPidD) },
-    { "althold_vel_pid_i",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, velPidI) },
 
     { "althold_alt_pid_p",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altPidP) },
-    { "althold_alt_pid_d",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altPidD) },
     { "althold_alt_pid_i",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altPidI) },
 
-    { "althold_acc_throttle_min",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, minThrottle) },
-    { "althold_acc_throttle_max",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, maxThrottle) },
+    { "althold_throttle_min",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, minThrottle) },
+    { "althold_throttle_max",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, maxThrottle) },
 #endif
 
 
