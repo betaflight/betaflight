@@ -28,10 +28,8 @@
 typedef struct altholdConfig_s {
     uint16_t velPidP;
     uint16_t velPidD;
-    uint16_t velPidI;
 
     uint16_t altPidP;
-    uint16_t altPidD;
     uint16_t altPidI;
 
     uint16_t minThrottle;

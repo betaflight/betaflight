@@ -38,10 +38,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFI
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
     .velPidD = 0,
-    .velPidI = 0,
 
     .altPidP = 50,
-    .altPidD = 0,
     .altPidI = 5,
 
     .minThrottle = 6,
@@ -112,13 +110,13 @@ void altHoldReset(altHoldState_s* altHoldState)
 {
     simplePidInit(&altHoldState->altPid, 0.1f, -50.0f, 50.0f,
                   0.01f * altholdConfig()->altPidP,
-                  0.01f * altholdConfig()->altPidD,
+                  0.0f,
                   0.01f * altholdConfig()->altPidI);
 
     simplePidInit(&altHoldState->velPid, 0.1f, 0.0f, 1.0f,
                   0.01f * altholdConfig()->velPidP,
                   0.01f * altholdConfig()->velPidD,
-                  0.01f * altholdConfig()->velPidI);
+                  0.0f);
 
     altHoldState->throttle = 0.0f;
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel;
