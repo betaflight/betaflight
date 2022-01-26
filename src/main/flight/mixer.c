@@ -613,7 +613,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALTITUDE_HOLD)   // disable motor_stop while GPS Rescue / altitude hold is active
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALTHOLD_MODE)   // disable motor_stop while GPS Rescue / altitude hold is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         // motor_stop handling
         applyMotorStop();
