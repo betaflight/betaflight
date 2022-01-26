@@ -99,6 +99,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "TIMING_ACCURACY",
     "RX_EXPRESSLRS_SPI",
     "RX_EXPRESSLRS_PHASELOCK",
-    "RX_STATE_TIME"
+    "RX_STATE_TIME",
     "ALTHOLD",
 };
