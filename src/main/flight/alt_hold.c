@@ -33,7 +33,7 @@
 #include "build/debug.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 1);
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
