@@ -709,7 +709,7 @@ TEST_F(OsdTest, TestAlarms)
     // elements showing values in alarm range should flash
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
-    timeUs_t startTime = simulationTime + 0.25e6;
+    timeUs_t startTime = simulationTime;
     for (int i = 0; i < 15; i++) {
         // Blinking should happen at 2Hz
         simulationTime = startTime + i*0.25e6;
@@ -1083,6 +1083,7 @@ TEST_F(OsdTest, TestElementWarningsBattery)
     // Delay as the warnings are flashing
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
+    simulationTime += 0.25e6;
     osdRefresh();
 
     // then
@@ -1098,6 +1099,7 @@ TEST_F(OsdTest, TestElementWarningsBattery)
     // Delay as the warnings are flashing
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
+    simulationTime += 0.25e6;
     osdRefresh();
 
     // then
@@ -1204,7 +1206,7 @@ TEST_F(OsdTest, TestGpsElements)
     // Sat indicator should blink and show "NC"
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
-    timeUs_t startTime = simulationTime + 0.25e6;
+    timeUs_t startTime = simulationTime;
     for (int i = 0; i < 15; i++) {
         // Blinking should happen at 2Hz
         simulationTime = startTime + i*0.25e6;
@@ -1228,7 +1230,7 @@ TEST_F(OsdTest, TestGpsElements)
     // Sat indicator should blink and show "0"
     simulationTime += 1000000;
     simulationTime -= simulationTime % 1000000;
-    startTime = simulationTime + 0.25e6;
+    startTime = simulationTime;
     for (int i = 0; i < 15; i++) {
         // Blinking should happen at 2Hz
         simulationTime = startTime + i*0.25e6;

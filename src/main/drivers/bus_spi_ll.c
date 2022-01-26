@@ -635,7 +635,7 @@ void spiSequenceStart(const extDevice_t *dev)
     }
 
     // Use DMA if possible
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen > 8))) {
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8))) {
         // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
 
