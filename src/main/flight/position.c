@@ -86,7 +86,7 @@ int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-static bool altitudeOffsetSet = false;
+static bool altitudeOffsetSetBaro = false;
 static bool altitudeOffsetSetGPS = false;
 
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
@@ -140,20 +140,29 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
+    if (ARMING_FLAG(ARMED) && !altitudeOffsetSetBaro) {
         baroAltOffset = baroAlt;
-        gpsAltOffset = gpsAlt;
-        altitudeOffsetSet = true;
-    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSet) {
-        altitudeOffsetSet = false;
+        altitudeOffsetSetBaro = true;
+    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetBaro) {
+        altitudeOffsetSetBaro = false;
     }
 
     baroAlt -= baroAltOffset;
 
-    if (ARMING_FLAG(ARMED) && !altitudeOffsetSetGPS) {
-        if (haveBaroAlt && gpsNumSat >= 10 && altitudeOffsetSet) {
+    int goodGpsSats = 999;
+    int badGpsSats = 0;
+
+    if (haveBaroAlt) {
+        goodGpsSats = 10;
+        badGpsSats = 7;
+    }
+
+    if (ARMING_FLAG(ARMED)) {
+        if (!altitudeOffsetSetGPS && gpsNumSat >= goodGpsSats) {
             gpsAltOffset = gpsAlt - baroAlt;
             altitudeOffsetSetGPS = true;
+        } else if (gpsNumSat <= badGpsSats) {
+            altitudeOffsetSetGPS = false;
         }
     } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetGPS) {
         altitudeOffsetSetGPS = false;
@@ -163,6 +172,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     if (!altitudeOffsetSetGPS) {
         haveGpsAlt = false;
+        gpsTrust = 0.0f;
     }
 
     if (haveGpsAlt && haveBaroAlt && positionConfig()->altSource == DEFAULT) {
@@ -199,7 +209,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
 bool isAltitudeOffset(void)
 {
-    return altitudeOffsetSet;
+    return altitudeOffsetSetBaro || altitudeOffsetSetGPS;
 }
 #endif
 
