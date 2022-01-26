@@ -56,7 +56,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 1
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altSource = DEFAULT,
-    .gpsAltMinSats = 9,
 );
 
 static int32_t estimatedAltitudeCm = 0;                // in cm
@@ -152,7 +151,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     baroAlt -= baroAltOffset;
 
     if (ARMING_FLAG(ARMED) && !altitudeOffsetSetGPS) {
-        if (haveBaroAlt && gpsNumSat >= positionConfig()->gpsAltMinSats && altitudeOffsetSet) {
+        if (haveBaroAlt && gpsNumSat >= 10 && altitudeOffsetSet) {
             gpsAltOffset = gpsAlt - baroAlt;
             altitudeOffsetSetGPS = true;
         }

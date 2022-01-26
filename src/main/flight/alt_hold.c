@@ -48,39 +48,37 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
 
 
 typedef struct {
-    float dt;
     float max;
     float min;
     float kp;
     float kd;
     float ki;
-    float preErr;
+    float lastErr;
     float integral;
 } simplePid_s;
 
-void simplePidInit(simplePid_s* simplePid, float dt, float min, float max, float kp, float kd, float ki)
+void simplePidInit(simplePid_s* simplePid, float min, float max, float kp, float kd, float ki)
 {
-    simplePid->dt = dt;
     simplePid->max = max;
     simplePid->min = min;
     simplePid->kp = kp;
     simplePid->kd = kd;
     simplePid->ki = ki;
-    simplePid->preErr = 0;
+    simplePid->lastErr = 0;
     simplePid->integral = 0;
 }
 
-float simplePidCalculate(simplePid_s* simplePid, float targetValue, float measuredValue)
+float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, float measuredValue)
 {
     float error = targetValue - measuredValue;
 
     float pOut = simplePid->kp * error;
 
-    simplePid->integral += error * simplePid->dt;
+    simplePid->integral += error * dt;
 
     float iOut = simplePid->ki * simplePid->integral;
 
-    float derivative = (error - simplePid->preErr) / simplePid->dt;
+    float derivative = (error - simplePid->lastErr) / dt;
     float dOut = simplePid->kd * derivative;
 
     float output = pOut + iOut + dOut;
@@ -90,7 +88,7 @@ float simplePidCalculate(simplePid_s* simplePid, float targetValue, float measur
         output = simplePid->min;
     }
 
-    simplePid->preErr = error;
+    simplePid->lastErr = error;
     return output;
 }
 
@@ -108,12 +106,12 @@ typedef struct {
 
 void altHoldReset(altHoldState_s* altHoldState)
 {
-    simplePidInit(&altHoldState->altPid, 0.1f, -50.0f, 50.0f,
+    simplePidInit(&altHoldState->altPid, -50.0f, 50.0f,
                   0.01f * altholdConfig()->altPidP,
                   0.0f,
                   0.01f * altholdConfig()->altPidI);
 
-    simplePidInit(&altHoldState->velPid, 0.1f, 0.0f, 1.0f,
+    simplePidInit(&altHoldState->velPid, 0.0f, 1.0f,
                   0.01f * altholdConfig()->velPidP,
                   0.01f * altholdConfig()->velPidD,
                   0.0f);
@@ -187,10 +185,10 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
-    float velocityTarget = simplePidCalculate(&altHoldState->altPid, altHoldState->targetAltitude, altHoldState->measuredAltitude);
+    float velocityTarget = simplePidCalculate(&altHoldState->altPid, 0.01f, altHoldState->targetAltitude, altHoldState->measuredAltitude);
     DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
 
-    float velPidForce = simplePidCalculate(&altHoldState->velPid, velocityTarget, currentVelocityEstimationAccel);
+    float velPidForce = simplePidCalculate(&altHoldState->velPid, 0.01f, velocityTarget, currentVelocityEstimationAccel);
     
     float newThrottle = velPidForce;
 
