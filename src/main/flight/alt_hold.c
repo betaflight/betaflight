@@ -39,8 +39,8 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
     .velPidD = 0,
 
-    .altPidP = 50,
-    .altPidI = 5,
+    .altPidP = 75,
+    .altPidI = 20,
 
     .minThrottle = 6,
     .maxThrottle = 65,
@@ -168,7 +168,7 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     rotateV(&accelerationVector, &attitudeAngles);
 
-    float measuredAccel = 0.01f * (accelerationVector.Z - acc.dev.acc_1G);
+    float measuredAccel = 9.8f * (accelerationVector.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
 
