@@ -431,6 +431,8 @@ static void readSchedulerLocals(task_t *selectedTask, uint8_t selectedTaskDynami
 
 FAST_CODE void scheduler(void)
 {
+    static uint32_t checkCycles = 0;
+    static uint32_t scheduleCount = 0;
 #if !defined(UNIT_TEST)
     const timeUs_t schedulerStartTimeUs = micros();
 #endif
@@ -441,6 +443,13 @@ FAST_CODE void scheduler(void)
     uint16_t selectedTaskDynamicPriority = 0;
     uint32_t nextTargetCycles = 0;
     int32_t schedLoopRemainingCycles;
+
+#if defined(UNIT_TEST)
+    if (nextTargetCycles == 0) {
+        lastTargetCycles = getCycleCounter();
+        nextTargetCycles = lastTargetCycles + desiredPeriodCycles;
+    }
+#endif
 
     if (gyroEnabled) {
         // Realtime gyro/filtering/PID tasks get complete priority
@@ -601,13 +610,30 @@ FAST_CODE void scheduler(void)
                 }
 
                 if (task->dynamicPriority > selectedTaskDynamicPriority) {
-                    selectedTaskDynamicPriority = task->dynamicPriority;
-                    selectedTask = task;
+                    timeDelta_t taskRequiredTimeUs = task->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT;
+                    int32_t taskRequiredTimeCycles = (int32_t)clockMicrosToCycles((uint32_t)taskRequiredTimeUs);
+                    // Allow a little extra time
+                    taskRequiredTimeCycles += checkCycles + taskGuardCycles;
+
+                    // If there's no time to run the task, discount it from prioritisation unless aged sufficiently
+                    // Don't block the SERIAL task.
+                    if ((taskRequiredTimeCycles < schedLoopRemainingCycles) ||
+                        ((scheduleCount & SCHED_TASK_DEFER_MASK) == 0) ||
+                        ((task - tasks) == TASK_SERIAL)) {
+                        selectedTaskDynamicPriority = task->dynamicPriority;
+                        selectedTask = task;
+                    }
                 }
             }
+
         }
 
+        // The number of cycles taken to run the checkers is quite consistent with some higher spikes, but
+        // that doesn't defeat its use
+        checkCycles = cmpTimeCycles(getCycleCounter(), nowCycles);
+
         if (selectedTask) {
+            // Recheck the available time as checkCycles is only approximate
             timeDelta_t taskRequiredTimeUs = selectedTask->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT;
 #if defined(USE_LATE_TASK_STATISTICS)
             selectedTask->execTime = taskRequiredTimeUs;
@@ -676,6 +702,8 @@ FAST_CODE void scheduler(void)
 #if defined(UNIT_TEST)
     readSchedulerLocals(selectedTask, selectedTaskDynamicPriority);
 #endif
+
+    scheduleCount++;
 }
 
 void schedulerEnableGyro(void)
