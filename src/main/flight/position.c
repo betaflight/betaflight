@@ -55,9 +55,9 @@ typedef enum {
 PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 2);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
-.altSource = DEFAULT,
-.altNumSatsGpsUse = 10,
-.altNumSatsBaroFallback = 7,
+    .altSource = DEFAULT,
+    .altNumSatsGpsUse = 10,
+    .altNumSatsBaroFallback = 7,
 );
 
 static int32_t estimatedAltitudeCm = 0;                // in cm
@@ -106,7 +106,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     int32_t baroAlt = 0;
     int32_t gpsAlt = 0;
-    uint16_t gpsNumSat = 0;
+    uint8_t gpsNumSat = 0;
 
 #if defined(USE_GPS) && defined(USE_VARIO)
     int16_t gpsVertSpeed = 0;
