@@ -192,6 +192,14 @@ void failsafeOnValidDataFailed(void)
     }
 }
 
+void failsafeCheckDataFailurePeriod(void)
+{
+    if ((millis() - failsafeState.validRxDataReceivedAt) > failsafeState.rxDataFailurePeriod) {
+        setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE); // To prevent arming with no RX link
+        failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
+    }
+}
+
 void failsafeUpdateState(void)
 {
     if (!failsafeIsMonitoring()) {
