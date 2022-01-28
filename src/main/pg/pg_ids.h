@@ -95,64 +95,65 @@
 
 
 // betaflight specific parameter group ids start at 500
-#define PG_BETAFLIGHT_START 500
+#define PG_BETAFLIGHT_START         500
 //#define PG_MODE_ACTIVATION_OPERATOR_CONFIG 500 removed
-#define PG_OSD_CONFIG 501
-#define PG_BEEPER_CONFIG 502
-#define PG_BEEPER_DEV_CONFIG 503
-#define PG_PID_CONFIG 504
-#define PG_STATUS_LED_CONFIG 505
-#define PG_FLASH_CONFIG 506
-#define PG_PPM_CONFIG 507
-#define PG_PWM_CONFIG 508
-#define PG_SERIAL_PIN_CONFIG 509
-#define PG_ADC_CONFIG 510
-#define PG_SDCARD_CONFIG 511
-#define PG_DISPLAY_PORT_MSP_CONFIG 512
+#define PG_OSD_CONFIG               501
+#define PG_BEEPER_CONFIG            502
+#define PG_BEEPER_DEV_CONFIG        503
+#define PG_PID_CONFIG               504
+#define PG_STATUS_LED_CONFIG        505
+#define PG_FLASH_CONFIG             506
+#define PG_PPM_CONFIG               507
+#define PG_PWM_CONFIG               508
+#define PG_SERIAL_PIN_CONFIG        509
+#define PG_ADC_CONFIG               510
+#define PG_SDCARD_CONFIG            511
+#define PG_DISPLAY_PORT_MSP_CONFIG  512
 #define PG_DISPLAY_PORT_MAX7456_CONFIG 513
-#define PG_VCD_CONFIG 514
-#define PG_VTX_CONFIG 515
-#define PG_SONAR_CONFIG 516
-#define PG_ESC_SENSOR_CONFIG 517
-#define PG_I2C_CONFIG 518
-#define PG_DASHBOARD_CONFIG 519
-#define PG_SPI_PIN_CONFIG 520
-#define PG_ESCSERIAL_CONFIG 521
-#define PG_CAMERA_CONTROL_CONFIG 522
-#define PG_RX_CC2500_SPI_CONFIG 523
-#define PG_MAX7456_CONFIG 524
-#define PG_FLYSKY_CONFIG 525
-#define PG_TIME_CONFIG 526
-#define PG_RANGEFINDER_CONFIG 527 // iNav
-#define PG_TRICOPTER_CONFIG 528
-#define PG_PINIO_CONFIG 529
-#define PG_PINIOBOX_CONFIG 530
-#define PG_USB_CONFIG 531
-#define PG_SDIO_CONFIG 532
+#define PG_VCD_CONFIG               514
+#define PG_VTX_CONFIG               515
+#define PG_SONAR_CONFIG             516
+#define PG_ESC_SENSOR_CONFIG        517
+#define PG_I2C_CONFIG               518
+#define PG_DASHBOARD_CONFIG         519
+#define PG_SPI_PIN_CONFIG           520
+#define PG_ESCSERIAL_CONFIG         521
+#define PG_CAMERA_CONTROL_CONFIG    522
+#define PG_RX_CC2500_SPI_CONFIG     523
+#define PG_MAX7456_CONFIG           524
+#define PG_FLYSKY_CONFIG            525
+#define PG_TIME_CONFIG              526
+#define PG_RANGEFINDER_CONFIG       527 // iNav
+#define PG_TRICOPTER_CONFIG         528
+#define PG_PINIO_CONFIG             529
+#define PG_PINIOBOX_CONFIG          530
+#define PG_USB_CONFIG               531
+#define PG_SDIO_CONFIG              532
 #define PG_DISPLAY_PORT_CRSF_CONFIG 533  // no longer required -- never released
-#define PG_TIMER_IO_CONFIG 534 // used to store the index for timer use in timerHardware array in target.c
-#define PG_SPI_PREINIT_IPU_CONFIG 535
-#define PG_SPI_PREINIT_OPU_CONFIG 536
-#define PG_RX_SPI_CONFIG 537
-#define PG_BOARD_CONFIG 538
-#define PG_RCDEVICE_CONFIG 539
-#define PG_GYRO_DEVICE_CONFIG 540
-#define PG_MCO_CONFIG 541
-#define PG_RX_SPEKTRUM_SPI_CONFIG 542
-#define PG_SERIAL_UART_CONFIG 543
-#define PG_RPM_FILTER_CONFIG 544
+#define PG_TIMER_IO_CONFIG          534 // used to store the index for timer use in timerHardware array in target.c
+#define PG_SPI_PREINIT_IPU_CONFIG   535
+#define PG_SPI_PREINIT_OPU_CONFIG   536
+#define PG_RX_SPI_CONFIG            537
+#define PG_BOARD_CONFIG             538
+#define PG_RCDEVICE_CONFIG          539
+#define PG_GYRO_DEVICE_CONFIG       540
+#define PG_MCO_CONFIG               541
+#define PG_RX_SPEKTRUM_SPI_CONFIG   542
+#define PG_SERIAL_UART_CONFIG       543
+#define PG_RPM_FILTER_CONFIG        544
 #define PG_LED_STRIP_STATUS_MODE_CONFIG 545 // Used to hold the configuration for the LED_STRIP status mode (not built on targets with limited flash)
-#define PG_VTX_TABLE_CONFIG 546
-#define PG_STATS_CONFIG 547
-#define PG_QUADSPI_CONFIG 548
-#define PG_TIMER_UP_CONFIG 549 // used to store dmaopt for TIMx_UP channel
-#define PG_SDIO_PIN_CONFIG 550
-#define PG_PULLUP_CONFIG 551
-#define PG_PULLDOWN_CONFIG 552
-#define PG_MODE_ACTIVATION_CONFIG 553
-#define PG_DYN_NOTCH_CONFIG 554
+#define PG_VTX_TABLE_CONFIG         546
+#define PG_STATS_CONFIG             547
+#define PG_QUADSPI_CONFIG           548
+#define PG_TIMER_UP_CONFIG          549 // used to store dmaopt for TIMx_UP channel
+#define PG_SDIO_PIN_CONFIG          550
+#define PG_PULLUP_CONFIG            551
+#define PG_PULLDOWN_CONFIG          552
+#define PG_MODE_ACTIVATION_CONFIG   553
+#define PG_DYN_NOTCH_CONFIG         554
 #define PG_RX_EXPRESSLRS_SPI_CONFIG 555
-#define PG_BETAFLIGHT_END 555
+#define PG_SCHEDULER_CONFIG         556
+#define PG_BETAFLIGHT_END           556
 
 
 // OSD configuration (subject to change)

@@ -659,9 +659,9 @@ FAST_CODE void scheduler(void)
 #endif  // USE_LATE_TASK_STATISTICS
             } else if ((selectedTask->taskAgePeriods > TASK_AGE_EXPEDITE_COUNT) ||
 #ifdef USE_OSD
-                       (((selectedTask - tasks) == TASK_OSD) && (++skippedOSDAttempts > TASK_AGE_EXPEDITE_OSD)) ||
+                       (((selectedTask - tasks) == TASK_OSD) && (TASK_AGE_EXPEDITE_OSD != 0) && (++skippedOSDAttempts > TASK_AGE_EXPEDITE_OSD)) ||
 #endif
-                       (((selectedTask - tasks) == TASK_RX) && (++skippedRxAttempts > TASK_AGE_EXPEDITE_RX))) {
+                       (((selectedTask - tasks) == TASK_RX) && (TASK_AGE_EXPEDITE_RX != 0) && (++skippedRxAttempts > TASK_AGE_EXPEDITE_RX))) {
                 // If a task has been unable to run, then reduce it's recorded estimated run time to ensure
                 // it's ultimate scheduling
                 selectedTask->anticipatedExecutionTime *= TASK_AGE_EXPEDITE_SCALE;
