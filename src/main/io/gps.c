@@ -766,7 +766,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 {
     static gpsState_e gpsStateDurationUs[GPS_STATE_COUNT];
     timeUs_t executeTimeUs;
-    gpsState_e gpsCurState = gpsData.state;
+    gpsState_e gpsCurrentState = gpsData.state;
 
     // read out available GPS bytes
     if (gpsPort) {
@@ -861,8 +861,8 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
     executeTimeUs = micros() - currentTimeUs;
 
-    if (executeTimeUs > gpsStateDurationUs[gpsCurState]) {
-        gpsStateDurationUs[gpsCurState] = executeTimeUs;
+    if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
+        gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
     }
     schedulerSetNextStateTime(gpsStateDurationUs[gpsData.state]);
 

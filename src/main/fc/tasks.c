@@ -182,7 +182,7 @@ bool taskUpdateRxMainInProgress()
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    static timeDelta_t rxStateDurationFracUs[RX_STATE_COUNT];
+    static timeDelta_t rxStateDurationFractionUs[RX_STATE_COUNT];
     timeDelta_t executeTimeUs;
     rxState_e oldRxState = rxState;
     timeDelta_t anticipatedExecutionTime;
@@ -230,23 +230,23 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 
         // If the scheduler has reduced the anticipatedExecutionTime due to task aging, pick that up
         anticipatedExecutionTime = schedulerGetNextStateTime();
-        if (anticipatedExecutionTime != (rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
-            rxStateDurationFracUs[oldRxState] = anticipatedExecutionTime << RX_TASK_DECAY_SHIFT;
+        if (anticipatedExecutionTime != (rxStateDurationFractionUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
+            rxStateDurationFractionUs[oldRxState] = anticipatedExecutionTime << RX_TASK_DECAY_SHIFT;
         }
 
-        if (executeTimeUs > (rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
-            rxStateDurationFracUs[oldRxState] = executeTimeUs << RX_TASK_DECAY_SHIFT;
+        if (executeTimeUs > (rxStateDurationFractionUs[oldRxState] >> RX_TASK_DECAY_SHIFT)) {
+            rxStateDurationFractionUs[oldRxState] = executeTimeUs << RX_TASK_DECAY_SHIFT;
         } else {
             // Slowly decay the max time
-            rxStateDurationFracUs[oldRxState]--;
+            rxStateDurationFractionUs[oldRxState]--;
         }
     }
 
     if (debugMode == DEBUG_RX_STATE_TIME) {
-        debug[oldRxState] = rxStateDurationFracUs[oldRxState] >> RX_TASK_DECAY_SHIFT;
+        debug[oldRxState] = rxStateDurationFractionUs[oldRxState] >> RX_TASK_DECAY_SHIFT;
     }
 
-    schedulerSetNextStateTime(rxStateDurationFracUs[rxState] >> RX_TASK_DECAY_SHIFT);
+    schedulerSetNextStateTime(rxStateDurationFractionUs[rxState] >> RX_TASK_DECAY_SHIFT);
 }
 
 
