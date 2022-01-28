@@ -259,7 +259,7 @@ protected:
             .thrMid8 = 0,
             .thrExpo8 = 0,
             .rates = {0, 0, 0},
-            .dynThrPID = 0,
+            .tpa_rate = 0,
             .rcExpo[FD_YAW] = 0,
             .tpa_breakpoint = 0
     };
@@ -287,7 +287,7 @@ protected:
         controlRateConfig.rates[0] = 0;
         controlRateConfig.rates[1] = 0;
         controlRateConfig.rates[2] = 0;
-        controlRateConfig.dynThrPID = 0;
+        controlRateConfig.tpa_rate = 0;
         controlRateConfig.tpa_breakpoint = 0;
 
         PG_RESET(adjustmentRanges);
@@ -365,7 +365,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
             .thrMid8 = 0,
             .thrExpo8 = 0,
             .rates = {0,0,0},
-            .dynThrPID = 0,
+            .tpa_rate = 0,
             .rcExpo[FD_YAW] = 0,
             .tpa_breakpoint = 0
     };
