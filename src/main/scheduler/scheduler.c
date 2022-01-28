@@ -42,6 +42,8 @@
 #include "fc/core.h"
 #include "fc/tasks.h"
 
+#include "flight/failsafe.h"
+
 #include "scheduler.h"
 
 #include "sensors/gyro_init.h"
@@ -103,6 +105,8 @@ static uint32_t lateTaskTotal = 0;
 static int16_t taskCount = 0;
 static uint32_t nextTimingCycles;
 #endif
+
+static timeUs_t lastFailsafeCheck = 0;
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
@@ -497,6 +501,14 @@ FAST_CODE void scheduler(void)
             }
             if (pidLoopReady()) {
                 taskExecutionTimeUs += schedulerExecuteTask(getTask(TASK_PID), currentTimeUs);
+            }
+
+            // Check for failsafe conditions without reliance on the RX task being well behaved
+            if (millis() - lastFailsafeCheck > PERIOD_RXDATA_FAILURE) {
+                // This is very low cost taking less that 4us every 200ms
+                failsafeCheckDataFailurePeriod();
+                failsafeUpdateState();
+                lastFailsafeCheck = millis();
             }
 
 #if defined(USE_LATE_TASK_STATISTICS)
