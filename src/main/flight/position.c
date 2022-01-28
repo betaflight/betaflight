@@ -151,8 +151,8 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     baroAlt -= baroAltOffset;
 
-    int goodGpsSats = 999;
-    int badGpsSats = 0;
+    int goodGpsSats = 0;
+    int badGpsSats = -1;
 
     if (haveBaroAlt) {
         goodGpsSats = positionConfig()->altNumSatsGpsUse;
