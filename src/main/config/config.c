@@ -54,6 +54,7 @@
 #include "flight/pid_init.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -198,6 +199,13 @@ static void validateAndFixRatesSettings(void)
             controlRateProfilesMutable(profileIndex)->rates[axis] = constrain(controlRateProfilesMutable(profileIndex)->rates[axis], 0, ratesSettingLimits[ratesType].srate_limit);
             controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
         }
+    }
+}
+
+static void validateAndFixPositionConfig(void)
+{
+    if (positionConfig()->altNumSatsBaroFallback >= positionConfig()->altNumSatsGpsUse) {
+        PG_RESET(positionConfig);
     }
 }
 
@@ -586,6 +594,8 @@ static void validateAndFixConfig(void)
     // This should be done at the end of the validation
     targetValidateConfiguration();
 #endif
+
+    validateAndFixPositionConfig();
 }
 
 void validateAndFixGyroConfig(void)
