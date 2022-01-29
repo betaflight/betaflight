@@ -200,7 +200,7 @@ void failsafeCheckDataFailurePeriod(void)
     }
 }
 
-void failsafeUpdateState(void)
+FAST_CODE_NOINLINE void failsafeUpdateState(void)
 {
     if (!failsafeIsMonitoring()) {
         return;
