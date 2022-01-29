@@ -157,6 +157,10 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     if (haveBaroAlt) {
         goodGpsSats = positionConfig()->altNumSatsGpsUse;
         badGpsSats = positionConfig()->altNumSatsBaroFallback;
+        if (badGpsSats >= goodGpsSats) {
+            badGpsSats = goodGpsSats - 1;
+            positionConfigMutable()->altNumSatsBaroFallback = badGpsSats;
+        }
     }
 
     if (ARMING_FLAG(ARMED)) {
