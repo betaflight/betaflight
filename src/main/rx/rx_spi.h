@@ -96,3 +96,4 @@ typedef struct {
 
 bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState);
 void rxSpiStop(void);
+void rxSpiHandleDeferredISR();

@@ -42,6 +42,10 @@
 #include "fc/core.h"
 #include "fc/tasks.h"
 
+#ifdef USE_RX_SPI
+#include "rx/rx_spi.h"
+#endif
+
 #include "scheduler.h"
 
 #include "sensors/gyro_init.h"
@@ -489,6 +493,11 @@ FAST_CODE void scheduler(void)
             if (pidLoopReady()) {
                 taskExecutionTimeUs += schedulerExecuteTask(getTask(TASK_PID), currentTimeUs);
             }
+
+            // Perform any critical deferred RX ISR processing
+#ifdef USE_RX_SPI
+            rxSpiHandleDeferredISR();
+#endif
 
 #if defined(USE_LATE_TASK_STATISTICS)
             // % CPU busy

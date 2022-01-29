@@ -199,24 +199,30 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
+static uint8_t rxFrameStatus;
+
 static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
+    uint8_t currentFrameStatus = rxFrameStatus;
 
-    uint8_t status = RX_FRAME_PENDING;
+    rxFrameStatus = RX_FRAME_PENDING;
 
+    return currentFrameStatus;
+}
+
+void rxSpiHandleDeferredISR()
+{
     rx_spi_received_e result = protocolDataReceived(rxSpiPayload);
 
     if (result & RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
-        status = RX_FRAME_COMPLETE;
+        rxFrameStatus = RX_FRAME_COMPLETE;
     }
 
     if (result & RX_SPI_ROCESSING_REQUIRED) {
-        status |= RX_FRAME_PROCESSING_REQUIRED;
+        rxFrameStatus |= RX_FRAME_PROCESSING_REQUIRED;
     }
-
-    return status;
 }
 
 static bool rxSpiProcessFrame(const rxRuntimeState_t *rxRuntimeState)
