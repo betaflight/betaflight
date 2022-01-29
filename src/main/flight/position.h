@@ -22,6 +22,9 @@
 
 #include "common/time.h"
 
+#define POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE 10
+#define POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK 7
+
 typedef struct positionConfig_s {
     uint8_t altSource;
     uint8_t altNumSatsGpsUse;

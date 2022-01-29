@@ -56,8 +56,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 2
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altSource = DEFAULT,
-    .altNumSatsGpsUse = 10,
-    .altNumSatsBaroFallback = 7,
+    .altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE,
+    .altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK,
 );
 
 static int32_t estimatedAltitudeCm = 0;                // in cm
