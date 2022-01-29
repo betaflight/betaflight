@@ -31,9 +31,12 @@
 
 #ifdef USE_RX_SX127X
 
+#include "build/atomic.h"
+
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/nvic.h"
 #include "drivers/rx/rx_sx127x.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
@@ -73,15 +76,23 @@ static bool sx127xDetectChip(void)
 
 uint8_t sx127xISR(timeUs_t *timeStamp)
 {
-    if (rxSpiPollExti()) {
-        if (rxSpiGetLastExtiTimeUs()) {
-            *timeStamp = rxSpiGetLastExtiTimeUs();
+    bool extiTriggered = false;
+    timeUs_t extiTimestamp;
+
+    ATOMIC_BLOCK(NVIC_PRIO_RX_SPI_INT_EXTI) {
+        // prevent a data-race that can occur if a new EXTI ISR occurs during this block.
+        extiTriggered = rxSpiPollExti();
+        extiTimestamp = rxSpiGetLastExtiTimeUs();
+        if (extiTriggered) {
+            rxSpiResetExti();
         }
+    }
 
-        uint8_t irqReason;
-        irqReason = sx127xGetIrqReason();
-
-        rxSpiResetExti();
+    if (extiTriggered) {
+        uint8_t irqReason = sx127xGetIrqReason();
+        if (extiTimestamp) {
+            *timeStamp = extiTimestamp;
+        }
 
         return irqReason;
     }
@@ -445,7 +456,9 @@ uint8_t sx127xGetIrqReason(void)
 {
     uint8_t irqFlags = sx127xGetIrqFlags();
     sx127xClearIrqFlags();
-    if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE)) {
+    if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE) && (irqFlags & SX127X_CLEAR_IRQ_FLAG_RX_DONE)) {
+        return 3;
+    } else if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE)) {
         return 2;
     } else if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_RX_DONE)) {
         return 1;
