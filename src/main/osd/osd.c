@@ -300,8 +300,8 @@ void osdAnalyzeActiveElements(void)
 {
     /* This code results in a total RX task RX_STATE_MODES state time of ~68us on an F411 overclocked to 108MHz
      * This upsets the scheduler task duration estimation and will break SPI RX communication. This can
-     * occur in flight, but only when the OSD profile is changed by switch so can be ignored, only causing
-     * one late task instance.
+     * occur in flight, e.g. when the OSD profile is changed by switch so can be ignored, or GPS sensor comms
+     * is lost - only causing one late task instance.
      */
     schedulerIgnoreTaskExecTime();
 
@@ -1272,7 +1272,7 @@ void osdUpdate(timeUs_t currentTimeUs)
     case OSD_STATE_UPDATE_CANVAS:
         // Hide OSD when OSDSW mode is active
         if (IS_RC_MODE_ACTIVE(BOXOSD)) {
-            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
             osdState = OSD_STATE_COMMIT;
             break;
         }
@@ -1284,7 +1284,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         } else {
             // Background layer not supported, just clear the foreground in preparation
             // for drawing the elements including their backgrounds.
-            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
         }
 
 #ifdef USE_GPS
