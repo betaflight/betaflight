@@ -203,16 +203,21 @@ static uint8_t rxFrameStatus;
 
 static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
+    pinioSet(2, 1);
     UNUSED(rxRuntimeState);
     uint8_t currentFrameStatus = rxFrameStatus;
 
     rxFrameStatus = RX_FRAME_PENDING;
 
+    pinioSet(2, 0);
     return currentFrameStatus;
 }
 
 void rxSpiHandleDeferredISR()
 {
+    pinioSet(1, 1);
+    pinioSet(0, 0);
+
     rx_spi_received_e result = protocolDataReceived(rxSpiPayload);
 
     if (result & RX_SPI_RECEIVED_DATA) {
@@ -223,6 +228,7 @@ void rxSpiHandleDeferredISR()
     if (result & RX_SPI_ROCESSING_REQUIRED) {
         rxFrameStatus |= RX_FRAME_PROCESSING_REQUIRED;
     }
+    pinioSet(1, 0);
 }
 
 static bool rxSpiProcessFrame(const rxRuntimeState_t *rxRuntimeState)

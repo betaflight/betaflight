@@ -375,6 +375,7 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
     timeUs_t taskExecutionTimeUs = 0;
 
     if (selectedTask) {
+        pinioSet(3, 1);
         currentTask = selectedTask;
         ignoreCurrentTaskExecRate = false;
         ignoreCurrentTaskExecTime = false;
@@ -417,6 +418,7 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
 #if defined(USE_LATE_TASK_STATISTICS)
         selectedTask->runCount++;
 #endif
+        pinioSet(3, 0);
     }
 
     return taskExecutionTimeUs;

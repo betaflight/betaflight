@@ -69,12 +69,10 @@ void rxSpiExtiHandler(extiCallbackRec_t* callback)
 {
     UNUSED(callback);
 
-    const timeUs_t extiTimeUs = microsISR();
+    pinioSet(0, 1);
 
-    if (IORead(extiPin) == extiLevel) {
-        lastExtiTimeUs = extiTimeUs;
-        extiHasOccurred = true;
-    }
+    lastExtiTimeUs = microsISR();
+    extiHasOccurred = true;
 }
 
 void rxSpiSetNormalSpeedMhz(uint32_t mhz)

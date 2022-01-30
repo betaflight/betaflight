@@ -1068,9 +1068,15 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
         startReceiving(); // delay receiving after initialization to ensure a clean connect
     }
 
+    pinioSet(1, 0);
+    pinioSet(1, 1);
+
     if (rxSpiCheckBindRequested(true)) {
         enterBindingMode();
     }
+
+    pinioSet(1, 0);
+    pinioSet(1, 1);
 
     uint8_t irqReason = receiver.rxISR(&isrTimeStampUs);
     if (irqReason == ELRS_DIO_TX_DONE) {
@@ -1078,6 +1084,9 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
     } else if (irqReason == ELRS_DIO_RX_DONE) {
         result = processRFPacket(payload, isrTimeStampUs);
     }
+
+    pinioSet(1, 0);
+    pinioSet(1, 1);
 
     if (receiver.fhssRequired) {
         receiver.fhssRequired = false;
@@ -1103,6 +1112,9 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payload)
             receiver.handleFreqCorrection(receiver.freqOffset, receiver.currentFreq); //corrects for RX freq offset
         }
     }
+
+    pinioSet(1, 0);
+    pinioSet(1, 1);
 
     handleTelemetryUpdate();
 
