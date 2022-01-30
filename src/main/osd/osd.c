@@ -188,16 +188,19 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
-#define OSD_GROUP_COUNT 20
+#define OSD_GROUP_COUNT                 OSD_ITEM_COUNT
 // Aim to render a group of elements within a target time
-#define OSD_ELEMENT_RENDER_TARGET 40
+#define OSD_ELEMENT_RENDER_TARGET       30
 // Allow a margin by which a group render can exceed that of the sum of the elements before declaring insane
 // This will most likely be violated by a USB interrupt whilst using the CLI
-#define OSD_ELEMENT_RENDER_GROUP_MARGIN 5
-// Safe margin when rendering elements
-#define OSD_ELEMENT_RENDER_MARGIN 5
-// Safe margin in other states
-#define OSD_MARGIN 2
+#if defined(STM32F411xE)
+#define OSD_ELEMENT_RENDER_GROUP_MARGIN 7
+#else
+#define OSD_ELEMENT_RENDER_GROUP_MARGIN 2
+#endif
+#define OSD_TASK_MARGIN                 1
+// Decay the estimated max task duration by 1/(1 << OSD_EXEC_TIME_SHIFT) on every invocation
+#define OSD_EXEC_TIME_SHIFT             8
 
 // Format a float to the specified number of decimal places with optional rounding.
 // OSD symbols can optionally be placed before and after the formatted number (use SYM_NONE for no symbol).
@@ -1128,6 +1131,7 @@ typedef enum {
     OSD_STATE_PROCESS_STATS3,
     OSD_STATE_UPDATE_ALARMS,
     OSD_STATE_UPDATE_CANVAS,
+    OSD_STATE_GROUP_ELEMENTS,
     OSD_STATE_UPDATE_ELEMENTS,
     OSD_STATE_UPDATE_HEARTBEAT,
     OSD_STATE_COMMIT,
@@ -1165,16 +1169,16 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 // Called when there is OSD update work to be done
 void osdUpdate(timeUs_t currentTimeUs)
 {
-    static timeUs_t osdStateDurationUs[OSD_STATE_COUNT] = { 0 };
-    static timeUs_t osdElementDurationUs[OSD_ITEM_COUNT] = { 0 };
-    static timeUs_t osdElementGroupMembership[OSD_ITEM_COUNT];
-    static timeUs_t osdElementGroupTargetUs[OSD_GROUP_COUNT] = { 0 };
-    static timeUs_t osdElementGroupDurationUs[OSD_GROUP_COUNT] = { 0 };
+    static uint16_t osdStateDurationFractionUs[OSD_STATE_COUNT] = { 0 };
+    static uint32_t osdElementDurationUs[OSD_ITEM_COUNT] = { 0 };
+    static uint8_t osdElementGroupMemberships[OSD_ITEM_COUNT];
+    static uint16_t osdElementGroupTargetFractionUs[OSD_GROUP_COUNT] = { 0 };
+    static uint16_t osdElementGroupDurationFractionUs[OSD_GROUP_COUNT] = { 0 };
     static uint8_t osdElementGroup;
     static bool firstPass = true;
-    uint8_t osdCurElementGroup = 0;
+    uint8_t osdCurrentElementGroup = 0;
     timeUs_t executeTimeUs;
-    osdState_e osdCurState = osdState;
+    osdState_e osdCurrentState = osdState;
 
     if (osdState != OSD_STATE_UPDATE_CANVAS) {
         schedulerIgnoreTaskExecRate();
@@ -1213,7 +1217,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     case OSD_STATE_UPDATE_HEARTBEAT:
         if (displayHeartbeat(osdDisplayPort)) {
-            // Extraordinary action was taken, so return without allowing osdStateDurationUs table to be updated
+            // Extraordinary action was taken, so return without allowing osdStateDurationFractionUs table to be updated
             return;
         }
 
@@ -1300,58 +1304,65 @@ void osdUpdate(timeUs_t currentTimeUs)
 
         osdSyncBlink();
 
-        uint8_t elementGroup;
-        uint8_t activeElements = osdGetActiveElementCount();
+        osdState = OSD_STATE_GROUP_ELEMENTS;
 
-        // Reset groupings
-        for (elementGroup = 0; elementGroup < OSD_GROUP_COUNT; elementGroup++) {
-            if (osdElementGroupDurationUs[elementGroup] > (osdElementGroupTargetUs[elementGroup] + OSD_ELEMENT_RENDER_GROUP_MARGIN)) {
-                osdElementGroupDurationUs[elementGroup] = 0;
-            }
-            osdElementGroupTargetUs[elementGroup] = 0;
-        }
+        break;
 
-        elementGroup = 0;
+    case OSD_STATE_GROUP_ELEMENTS:
+        {
+            uint8_t elementGroup;
+            uint8_t activeElements = osdGetActiveElementCount();
 
-        // Based on the current element rendering, group to execute in approx 40us
-        for (uint8_t curElement = 0; curElement < activeElements; curElement++) {
-            if ((osdElementGroupTargetUs[elementGroup] == 0) ||
-                ((osdElementGroupTargetUs[elementGroup] + osdElementDurationUs[curElement]) <= OSD_ELEMENT_RENDER_TARGET) ||
-                (elementGroup == (OSD_GROUP_COUNT - 1))) {
-                osdElementGroupTargetUs[elementGroup] += osdElementDurationUs[curElement];
-                // If group membership changes, reset the stats for the group
-                if (osdElementGroupMembership[curElement] != elementGroup) {
-                    osdElementGroupDurationUs[elementGroup] = 0;
+            // Reset groupings
+            for (elementGroup = 0; elementGroup < OSD_GROUP_COUNT; elementGroup++) {
+                if (osdElementGroupDurationFractionUs[elementGroup] > (OSD_ELEMENT_RENDER_TARGET << OSD_EXEC_TIME_SHIFT)) {
+                    osdElementGroupDurationFractionUs[elementGroup] = 0;
                 }
-                osdElementGroupMembership[curElement] = elementGroup;
-            } else {
-                elementGroup++;
-                // Try again for this element
-                curElement--;
+                osdElementGroupTargetFractionUs[elementGroup] = 0;
             }
-        }
 
-        // Start with group 0
-        osdElementGroup = 0;
+            elementGroup = 0;
 
-        if (activeElements > 0) {
-            osdState = OSD_STATE_UPDATE_ELEMENTS;
-        } else {
-            osdState = OSD_STATE_COMMIT;
+            // Based on the current element rendering, group to execute in approx 40us
+            for (uint8_t curElement = 0; curElement < activeElements; curElement++) {
+                if ((osdElementGroupTargetFractionUs[elementGroup] == 0) ||
+                    (osdElementGroupTargetFractionUs[elementGroup] + (osdElementDurationUs[curElement]) <= (OSD_ELEMENT_RENDER_TARGET << OSD_EXEC_TIME_SHIFT)) ||
+                    (elementGroup == (OSD_GROUP_COUNT - 1))) {
+                    osdElementGroupTargetFractionUs[elementGroup] += osdElementDurationUs[curElement];
+                    // If group membership changes, reset the stats for the group
+                    if (osdElementGroupMemberships[curElement] != elementGroup) {
+                        osdElementGroupDurationFractionUs[elementGroup] = osdElementGroupTargetFractionUs[elementGroup] + (OSD_ELEMENT_RENDER_GROUP_MARGIN << OSD_EXEC_TIME_SHIFT);
+                    }
+                    osdElementGroupMemberships[curElement] = elementGroup;
+                } else {
+                    elementGroup++;
+                    // Try again for this element
+                    curElement--;
+                }
+            }
+
+            // Start with group 0
+            osdElementGroup = 0;
+
+            if (activeElements > 0) {
+                osdState = OSD_STATE_UPDATE_ELEMENTS;
+            } else {
+                osdState = OSD_STATE_COMMIT;
+            }
         }
         break;
 
     case OSD_STATE_UPDATE_ELEMENTS:
         {
-            osdCurElementGroup = osdElementGroup;
+            osdCurrentElementGroup = osdElementGroup;
             bool moreElements = true;
 
             do {
                 timeUs_t startElementTime = micros();
-                uint8_t osdCurElement = osdGetActiveElement();
+                uint8_t osdCurrentElement = osdGetActiveElement();
 
                 // This element should be rendered in the next group
-                if (osdElementGroupMembership[osdCurElement] != osdElementGroup) {
+                if (osdElementGroupMemberships[osdCurrentElement] != osdElementGroup) {
                     osdElementGroup++;
                     break;
                 }
@@ -1360,8 +1371,11 @@ void osdUpdate(timeUs_t currentTimeUs)
 
                 executeTimeUs = micros() - startElementTime;
 
-                if (executeTimeUs > osdElementDurationUs[osdCurElement]) {
-                    osdElementDurationUs[osdCurElement] = executeTimeUs;
+                if (executeTimeUs > (osdElementDurationUs[osdCurrentElement] >> OSD_EXEC_TIME_SHIFT)) {
+                    osdElementDurationUs[osdCurrentElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+                } else if (osdElementDurationUs[osdCurrentElement] > 0) {
+                    // Slowly decay the max time
+                    osdElementDurationUs[osdCurrentElement]--;
                 }
             } while (moreElements);
 
@@ -1399,6 +1413,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 
         firstPass = false;
         osdState = OSD_STATE_IDLE;
+
         break;
 
     case OSD_STATE_IDLE:
@@ -1414,27 +1429,32 @@ void osdUpdate(timeUs_t currentTimeUs)
         // On the first pass no element groups will have been formed, so all elements will have been
         // rendered which is unrepresentative, so ignore
         if (!firstPass) {
-            if (osdCurState == OSD_STATE_UPDATE_ELEMENTS) {
-                if (executeTimeUs > osdElementGroupDurationUs[osdCurElementGroup]) {
-                    osdElementGroupDurationUs[osdCurElementGroup] = executeTimeUs;
+            if (osdCurrentState == OSD_STATE_UPDATE_ELEMENTS) {
+                if (executeTimeUs > (osdElementGroupDurationFractionUs[osdCurrentElementGroup] >> OSD_EXEC_TIME_SHIFT)) {
+                    osdElementGroupDurationFractionUs[osdCurrentElementGroup] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+                } else if (osdElementGroupDurationFractionUs[osdCurrentElementGroup] > 0) {
+                    // Slowly decay the max time
+                    osdElementGroupDurationFractionUs[osdCurrentElementGroup]--;
                 }
             }
 
-            if (executeTimeUs > osdStateDurationUs[osdCurState]) {
-                osdStateDurationUs[osdCurState] = executeTimeUs;
+            if (executeTimeUs > (osdStateDurationFractionUs[osdCurrentState] >> OSD_EXEC_TIME_SHIFT)) {
+                osdStateDurationFractionUs[osdCurrentState] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+            } else if (osdStateDurationFractionUs[osdCurrentState] > 0) {
+                // Slowly decay the max time
+                osdStateDurationFractionUs[osdCurrentState]--;
             }
         }
     }
 
     if (osdState == OSD_STATE_UPDATE_ELEMENTS) {
-        schedulerSetNextStateTime(osdElementGroupDurationUs[osdElementGroup] + OSD_ELEMENT_RENDER_MARGIN);
+        schedulerSetNextStateTime((osdElementGroupDurationFractionUs[osdElementGroup] >> OSD_EXEC_TIME_SHIFT) + OSD_ELEMENT_RENDER_GROUP_MARGIN);
     } else {
         if (osdState == OSD_STATE_IDLE) {
-            schedulerSetNextStateTime(osdStateDurationUs[OSD_STATE_CHECK] + OSD_MARGIN);
+            schedulerSetNextStateTime((osdStateDurationFractionUs[OSD_STATE_CHECK] >> OSD_EXEC_TIME_SHIFT) + OSD_TASK_MARGIN);
         } else {
-            schedulerSetNextStateTime(osdStateDurationUs[osdState] + OSD_MARGIN);
+            schedulerSetNextStateTime((osdStateDurationFractionUs[osdState] >> OSD_EXEC_TIME_SHIFT) + OSD_TASK_MARGIN);
         }
-        schedulerIgnoreTaskExecTime();
     }
 }
 
