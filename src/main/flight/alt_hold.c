@@ -30,6 +30,7 @@
 #include "common/printf.h"
 #include "common/maths.h"
 #include "math.h"
+#include "rc_controls.h"
 #include "build/debug.h"
 
 
@@ -141,6 +142,27 @@ void rotateV(struct fp_vector *v, fp_angles_t *delta)
     v->Z = v_tmp.Z;
 }
 
+void altHoldUpdateTarget(altHoldState_s* altHoldState)
+{
+    float rcThrottle = rcCommand[THROTTLE];
+
+    float altitudeChangeMaxSpeed = 1.5f;
+
+    if (rcThrottle < 0.33f) {
+        rcThrottle = scaleRangef(rcThrottle, 0.0f, 0.2f, -1.0f, 0.0f);
+    } else if (rcThrottle > 0.8f) {
+        rcThrottle = scaleRangef(rcThrottle, 0.8f, 1.0f, 0.0f, 1.0f);
+    } else {
+        rcThrottle = 0.0f;
+    }
+
+    float currentAltitudeChangeSpeed = 0.01f * altitudeChangeMaxSpeed * rcThrottle;
+    float newTargetAltitude = altHoldState->targetAltitude + currentAltitudeChangeSpeed;
+    if (fabs(altHoldState->targetAltitude - altHoldState->measuredAltitude) < 8.0f) {
+        altHoldState->targetAltitude = newTargetAltitude;
+    }
+}
+
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     bool altHoldModeEnabled = FLIGHT_MODE(ALTHOLD_MODE);
@@ -150,6 +172,9 @@ void altHoldUpdate(altHoldState_s* altHoldState)
         altHoldReset(altHoldState);
     }
     altHoldState->prevAltHoldModeEnabled = altHoldModeEnabled;
+
+
+    altHoldUpdateTarget(altHoldState);
 
 
     float measuredAltitude = (float)(0.01f * getEstimatedAltitudeCm());
