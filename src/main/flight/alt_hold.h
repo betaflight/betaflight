@@ -34,6 +34,8 @@ typedef struct altholdConfig_s {
 
     uint16_t minThrottle;
     uint16_t maxThrottle;
+
+    uint16_t maxVerticalVelocity;
 } altholdConfig_t;
 
 PG_DECLARE(altholdConfig_t, altholdConfig);

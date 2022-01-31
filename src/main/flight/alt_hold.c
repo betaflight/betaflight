@@ -35,17 +35,19 @@
 #include "build/debug.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 2);
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
     .velPidD = 0,
 
-    .altPidP = 50,
+    .altPidP = 75,
     .altPidI = 20,
 
     .minThrottle = 6,
     .maxThrottle = 65,
+
+    .maxVerticalVelocity = 30,
 );
 
 
@@ -156,7 +158,7 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
 
     DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(rcThrottle * 100.0f));
 
-    float altitudeChangeMaxSpeed = 3.0f;
+    float altitudeChangeMaxSpeed = 0.1f * altholdConfig()->maxVerticalVelocity;
 
     if (rcThrottle < 0.25f) {
         rcThrottle = scaleRangef(rcThrottle, 0.0f, 0.25f, -1.0f, 0.0f);
