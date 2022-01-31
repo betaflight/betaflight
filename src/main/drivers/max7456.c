@@ -206,7 +206,9 @@ static uint8_t shadowBuffer[VIDEO_BUFFER_CHARS_PAL];
 //Max bytes to update in one call to max7456DrawScreen()
 
 #define MAX_BYTES2SEND          250
-#define MAX_BYTES2SEND_POLLED   20
+#define MAX_BYTES2SEND_POLLED   12
+#define MAX_ENCODE_US           20
+#define MAX_ENCODE_US_POLLED    10
 
 static DMA_DATA uint8_t spiBuf[MAX_BYTES2SEND];
 
@@ -622,11 +624,13 @@ bool max7456DrawScreen(void)
         uint8_t *buffer = getActiveLayerBuffer();
         int spiBufIndex = 0;
         int maxSpiBufStartIndex;
+        timeDelta_t maxEncodeTime;
         bool setAddress = true;
         bool autoInc = false;
         int posLimit = pos + (maxScreenSize / 2);
 
         maxSpiBufStartIndex = spiUseMOSI_DMA(dev) ? MAX_BYTES2SEND : MAX_BYTES2SEND_POLLED;
+        maxEncodeTime = spiUseMOSI_DMA(dev) ? MAX_ENCODE_US : MAX_ENCODE_US_POLLED;
 
         // Abort for now if the bus is still busy
         if (spiIsBusy(dev)) {
@@ -634,11 +638,13 @@ bool max7456DrawScreen(void)
             return true;
         }
 
-        // Allow for 8 bytes followed by an ESCAPE and reset of DMM at end of buffer
-        maxSpiBufStartIndex -= 12;
+        timeUs_t startTime = micros();
+
+        // Allow for an ESCAPE, a reset of DMM and a two byte MAX7456ADD_DMM command at end of buffer
+        maxSpiBufStartIndex -= 4;
 
         // Initialise the transfer buffer
-        while ((spiBufIndex < maxSpiBufStartIndex) && (pos < posLimit)) {
+        while ((spiBufIndex < maxSpiBufStartIndex) && (pos < posLimit) && (cmpTimeUs(micros(), startTime) < maxEncodeTime)) {
             if (buffer[pos] != shadowBuffer[pos]) {
                 if (buffer[pos] == 0xff) {
                     buffer[pos] = ' ';

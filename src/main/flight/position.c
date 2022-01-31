@@ -52,10 +52,12 @@ typedef enum {
     GPS_ONLY
 } altSource_e;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 2);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altSource = DEFAULT,
+    .altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE,
+    .altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK,
 );
 
 static int32_t estimatedAltitudeCm = 0;                // in cm
@@ -104,7 +106,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     int32_t baroAlt = 0;
     int32_t gpsAlt = 0;
-    uint16_t gpsNumSat = 0;
+    uint8_t gpsNumSat = 0;
 
 #if defined(USE_GPS) && defined(USE_VARIO)
     int16_t gpsVertSpeed = 0;
@@ -149,12 +151,13 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     baroAlt -= baroAltOffset;
 
-    int goodGpsSats = 999;
-    int badGpsSats = 0;
+
+    int goodGpsSats = 0;
+    int badGpsSats = -1;
 
     if (haveBaroAlt) {
-        goodGpsSats = 10;
-        badGpsSats = 7;
+        goodGpsSats = positionConfig()->altNumSatsGpsUse;
+        badGpsSats = positionConfig()->altNumSatsBaroFallback;
     }
 
     if (ARMING_FLAG(ARMED)) {

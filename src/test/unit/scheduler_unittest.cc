@@ -46,7 +46,7 @@ const int TEST_UPDATE_BATTERY_TIME = 1;
 const int TEST_UPDATE_RX_CHECK_TIME = 34;
 const int TEST_UPDATE_RX_MAIN_TIME = 1;
 const int TEST_IMU_UPDATE_TIME = 5;
-const int TEST_DISPATCH_TIME = 1;
+const int TEST_DISPATCH_TIME = 200;
 const int TEST_UPDATE_OSD_CHECK_TIME = 5;
 const int TEST_UPDATE_OSD_TIME = 30;
 
@@ -455,6 +455,87 @@ TEST(SchedulerUnittest, TestTwoTasks)
     // and finally TASK_ATTITUDE should now run
     scheduler();
     EXPECT_EQ(&tasks[TASK_ATTITUDE], unittest_scheduler_selectedTask);
+}
+
+TEST(SchedulerUnittest, TestPriorityBump)
+{
+    // disable all tasks except TASK_ACCEL and TASK_ATTITUDE
+    for (int taskId = 0; taskId < TASK_COUNT; ++taskId) {
+        setTaskEnabled(static_cast<taskId_e>(taskId), false);
+    }
+    setTaskEnabled(TASK_ACCEL, true);
+    setTaskEnabled(TASK_DISPATCH, true);
+
+    // Both tasks have an update rate of 1kHz, but TASK_DISPATCH has TASK_PRIORITY_HIGH whereas TASK_ACCEL has TASK_PRIORITY_MEDIUM
+    static const uint32_t startTime = 4000;
+    simulatedTime = startTime;
+    tasks[TASK_ACCEL].lastExecutedAtUs = simulatedTime;
+    tasks[TASK_DISPATCH].lastExecutedAtUs = tasks[TASK_ACCEL].lastExecutedAtUs;
+    EXPECT_EQ(0, tasks[TASK_DISPATCH].taskAgePeriods);
+
+    // Set expectation for execution time of TEST_DISPATCH_TIME us
+    tasks[TASK_DISPATCH].anticipatedExecutionTime = TEST_DISPATCH_TIME << TASK_EXEC_TIME_SHIFT;
+
+    // run the scheduler
+    scheduler();
+    // no tasks should have run, since neither task's desired time has elapsed
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+
+    // NOTE:
+    // TASK_ACCEL    desiredPeriodUs is 1000 microseconds
+    // TASK_DISPATCH desiredPeriodUs is 1000 microseconds
+    // 500 microseconds later
+    simulatedTime += 500;
+    // no tasks should run, since neither task's desired time has elapsed
+    scheduler();
+    EXPECT_EQ(static_cast<task_t*>(0), unittest_scheduler_selectedTask);
+
+    // 500 microseconds later, 1000 desiredPeriodUs has elapsed
+    simulatedTime += 500;
+    // TASK_ACCEL should now run as there is not enough time to run the higher priority TASK_DISPATCH
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(5000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
+
+    simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
+    // TASK_ACCEL should now run as there is not enough time to run the higher priority TASK_DISPATCH
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(6000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
+
+    simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
+    // TASK_ACCEL should now run as there is not enough time to run the higher priority TASK_DISPATCH
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(7000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
+
+    simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
+    // TASK_ACCEL should now run as there is not enough time to run the higher priority TASK_DISPATCH
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(8000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
+
+    simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
+    // TASK_ACCEL should now run as there is not enough time to run the higher priority TASK_DISPATCH
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(9000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
+
+    // TASK_DISPATCH has aged whilst not being run
+    EXPECT_EQ(5, tasks[TASK_DISPATCH].taskAgePeriods);
+    simulatedTime += 1000 - TEST_UPDATE_ACCEL_TIME;
+    // TASK_TASK_DISPATCH should now run as the scheduler is on its eighth loop. Note that this is affected by prior test count.
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_DISPATCH], unittest_scheduler_selectedTask);
+    EXPECT_EQ(10000 + TEST_DISPATCH_TIME, simulatedTime);
+    // TASK_DISPATCH still hasn't been executed
+    EXPECT_EQ(6, tasks[TASK_DISPATCH].taskAgePeriods);
+
+    simulatedTime += 1000 - TEST_DISPATCH_TIME;
+    // TASK_ACCEL should now run again as there is not enough time to run the higher priority TASK_DISPATCH
+    scheduler();
+    EXPECT_EQ(&tasks[TASK_ACCEL], unittest_scheduler_selectedTask);
+    EXPECT_EQ(11000 + TEST_UPDATE_ACCEL_TIME, simulatedTime);
 }
 
 TEST(SchedulerUnittest, TestGyroTask)

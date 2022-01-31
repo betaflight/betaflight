@@ -31,9 +31,9 @@
 
 #include "display.h"
 
-void displayClearScreen(displayPort_t *instance)
+void displayClearScreen(displayPort_t *instance, displayClearOption_e options)
 {
-    instance->vTable->clearScreen(instance);
+    instance->vTable->clearScreen(instance, options);
     instance->cleared = true;
     instance->cursorRow = -1;
 }
@@ -52,7 +52,7 @@ int displayScreenSize(const displayPort_t *instance)
 void displayGrab(displayPort_t *instance)
 {
     instance->vTable->grab(instance);
-    instance->vTable->clearScreen(instance);
+    instance->vTable->clearScreen(instance, DISPLAY_CLEAR_WAIT);
     ++instance->grabCount;
 }
 
@@ -216,10 +216,11 @@ bool displaySupportsOsdSymbols(displayPort_t *instance)
 void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable, displayPortDeviceType_e deviceType)
 {
     instance->vTable = vTable;
-    instance->vTable->clearScreen(instance);
     instance->useFullscreen = false;
-    instance->cleared = true;
     instance->grabCount = 0;
-    instance->cursorRow = -1;
     instance->deviceType = deviceType;
+
+    displayBeginTransaction(instance, DISPLAY_TRANSACTION_OPT_NONE);
+    displayClearScreen(instance, DISPLAY_CLEAR_WAIT);
+    displayCommitTransaction(instance);
 }
