@@ -222,10 +222,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 
-#ifdef USE_UART9
-    // On G474, UART9 is implemented as LPUART1
+#ifdef USE_LPUART1
     {
-        .device = UARTDEV_9,
+        .device = LPUARTDEV_1,
         .reg = LPUART1,
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_LPUART1_RX,
@@ -247,10 +246,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxIrq = LPUART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6,
-        .txBuffer = uart9TxBuffer,
-        .rxBuffer = uart9RxBuffer,
-        .txBufferSize = sizeof(uart9TxBuffer),
-        .rxBufferSize = sizeof(uart9RxBuffer),
+        .txBuffer = lpuart1TxBuffer,
+        .rxBuffer = lpuart1RxBuffer,
+        .txBufferSize = sizeof(lpuart1TxBuffer),
+        .rxBufferSize = sizeof(lpuart1RxBuffer),
     },
 #endif
 };

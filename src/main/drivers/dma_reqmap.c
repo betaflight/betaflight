@@ -61,15 +61,13 @@ typedef struct dmaTimerMapping_s {
 #define REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device ## _ ## dir }
 #define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, timno - 1, DMA_REQUEST_ ## TIM ## timno ## _UP }
 
-// Resolve UART/USART mess, also map UART6 requests to LPUART1 requests
+// Resolve UART/USART mess
 #define DMA_REQUEST_UART1_RX DMA_REQUEST_USART1_RX
 #define DMA_REQUEST_UART1_TX DMA_REQUEST_USART1_TX
 #define DMA_REQUEST_UART2_RX DMA_REQUEST_USART2_RX
 #define DMA_REQUEST_UART2_TX DMA_REQUEST_USART2_TX
 #define DMA_REQUEST_UART3_RX DMA_REQUEST_USART3_RX
 #define DMA_REQUEST_UART3_TX DMA_REQUEST_USART3_TX
-#define DMA_REQUEST_UART9_RX DMA_REQUEST_LPUART1_RX
-#define DMA_REQUEST_UART9_TX DMA_REQUEST_LPUART1_TX
 
 // Resolve our preference for MOSI/MISO rather than TX/RX
 #define DMA_REQUEST_SPI1_MOSI DMA_REQUEST_SPI1_TX
@@ -112,8 +110,10 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 4, RX),
     REQMAP_DIR(UART, 5, TX),
     REQMAP_DIR(UART, 5, RX),
-    REQMAP_DIR(UART, 9, TX),
-    REQMAP_DIR(UART, 9, RX),
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, LPUARTDEV_1, DMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, LPUARTDEV_1, DMA_REQUEST_LPUART1_RX },
+#endif
 #endif
 
 #ifdef USE_TIMER
@@ -218,6 +218,8 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define DMA_REQUEST_UART3_TX DMA_REQUEST_USART3_TX
 #define DMA_REQUEST_UART6_RX DMA_REQUEST_USART6_RX
 #define DMA_REQUEST_UART6_TX DMA_REQUEST_USART6_TX
+#define DMA_REQUEST_UART10_RX DMA_REQUEST_USART10_RX
+#define DMA_REQUEST_UART10_TX DMA_REQUEST_USART10_TX
 
 // Resolve our preference for MOSI/MISO rather than TX/RX
 #define DMA_REQUEST_SPI1_MOSI DMA_REQUEST_SPI1_TX
@@ -272,6 +274,16 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 7, RX),
     REQMAP_DIR(UART, 8, TX),
     REQMAP_DIR(UART, 8, RX),
+#if defined(STM32H7A3xxQ)
+    REQMAP_DIR(UART, 9, TX),
+    REQMAP_DIR(UART, 9, RX),
+    REQMAP_DIR(UART, 10, TX),
+    REQMAP_DIR(UART, 10, RX),
+#endif
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, LPUARTDEV_1, BDMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, LPUARTDEV_1, BDMA_REQUEST_LPUART1_RX },
+#endif
 #endif
 
 #ifdef USE_TIMER

@@ -1,6 +1,6 @@
 name: Feature Request
 description: Suggest an idea for for a new feature for Betaflight.
-labels: [Template: Feature Request]
+labels: ["Template: Feature Request"]
 body:
 
   - type: markdown

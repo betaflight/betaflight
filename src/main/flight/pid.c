@@ -291,6 +291,20 @@ void pidResetIterm(void)
     }
 }
 
+void pidUpdateTpaFactor(float throttle)
+{
+    const float tpaBreakpoint = (currentControlRateProfile->tpa_breakpoint - 1000) / 1000.0f;
+    float tpaRate = currentControlRateProfile->tpa_rate / 100.0f;
+    if (throttle > tpaBreakpoint) {
+        if (throttle < 1.0f) {
+            tpaRate *= (throttle - tpaBreakpoint) / (1.0f - tpaBreakpoint);
+        }
+    } else {
+        tpaRate = 0.0f;
+    }
+    pidRuntime.tpaFactor = 1.0f - tpaRate;
+}
+
 void pidUpdateAntiGravityThrottleFilter(float throttle)
 {
     if (pidRuntime.antiGravityMode == ANTI_GRAVITY_SMOOTH) {
@@ -816,8 +830,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     static bool gpsRescuePreviousState = false;
 #endif
 
-    const float tpaFactor = getThrottlePIDAttenuation();
-
 #if defined(USE_ACC)
     const rollAndPitchTrims_t *angleTrim = &accelerometerConfig()->accelerometerTrims;
 #else
@@ -826,9 +838,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
 #ifdef USE_TPA_MODE
-    const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? tpaFactor : 1.0f;
+    const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
 #else
-    const float tpaFactorKp = tpaFactor;
+    const float tpaFactorKp = pidRuntime.tpaFactor;
 #endif
 
 #ifdef USE_YAW_SPIN_RECOVERY
@@ -1079,7 +1091,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // Apply the dMinFactor
             preTpaD *= dMinFactor;
 #endif
-            pidData[axis].D = preTpaD * tpaFactor;
+            pidData[axis].D = preTpaD * pidRuntime.tpaFactor;
 
             // Log the value of D pre application of TPA
             preTpaD *= D_LPF_FILT_SCALE;

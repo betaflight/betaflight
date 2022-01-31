@@ -65,7 +65,6 @@ float rcCommandDelta[XYZ_AXIS_COUNT];
 static float rawSetpoint[XYZ_AXIS_COUNT];
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float rcDeflectionSmoothed[3];
-static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 static uint16_t currentRxRefreshRate;
@@ -129,11 +128,6 @@ float getRcDeflection(int axis)
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
-}
-
-float getThrottlePIDAttenuation(void)
-{
-    return throttlePIDAttenuation;
 }
 
 #ifdef USE_FEEDFORWARD
@@ -632,20 +626,6 @@ FAST_CODE void processRcCommand(void)
 FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     isRxDataNew = true;
-
-    // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
-    int32_t prop;
-    if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop = 100;
-        throttlePIDAttenuation = 1.0f;
-    } else {
-        if (rcData[THROTTLE] < 2000) {
-            prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
-        } else {
-            prop = 100 - currentControlRateProfile->dynThrPID;
-        }
-        throttlePIDAttenuation = prop / 100.0f;
-    }
 
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
