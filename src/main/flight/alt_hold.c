@@ -39,8 +39,8 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
     .velPidD = 0,
 
-    .altPidP = 50,
-    .altPidI = 5,
+    .altPidP = 75,
+    .altPidI = 20,
 
     .minThrottle = 6,
     .maxThrottle = 65,
