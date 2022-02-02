@@ -38,9 +38,9 @@
 
 STATIC_UNIT_TESTED uint16_t crc14tab[ELRS_CRC_LEN] = {0};
 
-static uint8_t volatile FHSSptr = 0;
-STATIC_UNIT_TESTED uint8_t FHSSsequence[ELRS_NR_SEQUENCE_ENTRIES] = {0};
-static const uint32_t *FHSSfreqs;
+static uint8_t volatile fhssIndex = 0;
+STATIC_UNIT_TESTED uint8_t fhssSequence[ELRS_NR_SEQUENCE_ENTRIES] = {0};
+static const uint32_t *fhssFreqs;
 static uint8_t numFreqs = 0; // The number of FHSS frequencies in the table
 static uint8_t seqCount = 0;
 static uint8_t syncChannel = 0;
@@ -96,12 +96,12 @@ elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX] = {
 };
 
 #ifdef USE_RX_SX127X
-const uint32_t FHSSfreqsAU433[] = {
+const uint32_t fhssFreqsAU433[] = {
     FREQ_HZ_TO_REG_VAL_900(433420000),
     FREQ_HZ_TO_REG_VAL_900(433920000),
     FREQ_HZ_TO_REG_VAL_900(434420000)};
 
-const uint32_t FHSSfreqsAU915[] = {
+const uint32_t fhssFreqsAU915[] = {
     FREQ_HZ_TO_REG_VAL_900(915500000),
     FREQ_HZ_TO_REG_VAL_900(916100000),
     FREQ_HZ_TO_REG_VAL_900(916700000),
@@ -135,7 +135,7 @@ const uint32_t FHSSfreqsAU915[] = {
  * Therefore we simply maximize the usage of available spectrum so laboratory testing of the software won't disturb existing
  * 868MHz ISM band traffic too much.
  */
-const uint32_t FHSSfreqsEU868[] = {
+const uint32_t fhssFreqsEU868[] = {
     FREQ_HZ_TO_REG_VAL_900(863275000), // band H1, 863 - 865MHz, 0.1% duty cycle or CSMA techniques, 25mW EIRP
     FREQ_HZ_TO_REG_VAL_900(863800000),
     FREQ_HZ_TO_REG_VAL_900(864325000),
@@ -157,7 +157,7 @@ const uint32_t FHSSfreqsEU868[] = {
  * There is currently no mention of Direct-sequence spread spectrum,
  * So these frequencies are a subset of Regulatory_Domain_EU_868 frequencies.
  */
-const uint32_t FHSSfreqsIN866[] = {
+const uint32_t fhssFreqsIN866[] = {
     FREQ_HZ_TO_REG_VAL_900(865375000),
     FREQ_HZ_TO_REG_VAL_900(865900000),
     FREQ_HZ_TO_REG_VAL_900(866425000),
@@ -167,14 +167,14 @@ const uint32_t FHSSfreqsIN866[] = {
  * Note: As is the case with the 868Mhz band, these frequencies only comply to the license free portion
  * of the spectrum, nothing else. As such, these are likely illegal to use. 
  */
-const uint32_t FHSSfreqsEU433[] = {
+const uint32_t fhssFreqsEU433[] = {
     FREQ_HZ_TO_REG_VAL_900(433100000),
     FREQ_HZ_TO_REG_VAL_900(433925000),
     FREQ_HZ_TO_REG_VAL_900(434450000)};
 
 /* Very definitely not fully checked. An initial pass at increasing the hops
 */
-const uint32_t FHSSfreqsFCC915[] = {
+const uint32_t fhssFreqsFCC915[] = {
     FREQ_HZ_TO_REG_VAL_900(903500000),
     FREQ_HZ_TO_REG_VAL_900(904100000),
     FREQ_HZ_TO_REG_VAL_900(904700000),
@@ -226,7 +226,7 @@ const uint32_t FHSSfreqsFCC915[] = {
     FREQ_HZ_TO_REG_VAL_900(926900000)};
 #endif
 #ifdef USE_RX_SX1280
-const uint32_t FHSSfreqsISM2400[] = {
+const uint32_t fhssFreqsISM2400[] = {
     FREQ_HZ_TO_REG_VAL_24(2400400000),
     FREQ_HZ_TO_REG_VAL_24(2401400000),
     FREQ_HZ_TO_REG_VAL_24(2402400000),
@@ -344,70 +344,70 @@ uint16_t calcCrc14(uint8_t *data, uint8_t len, uint16_t crc)
     return crc & 0x3FFF;
 }
 
-static void initializeFHSSFrequencies(const elrsFreqDomain_e dom) {
+static void initializeFhssFrequencies(const elrsFreqDomain_e dom) {
     switch (dom) {
 #ifdef USE_RX_SX127X
     case AU433:
-        FHSSfreqs = FHSSfreqsAU433;
-        numFreqs = sizeof(FHSSfreqsAU433) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsAU433;
+        numFreqs = sizeof(fhssFreqsAU433) / sizeof(uint32_t);
         break;
     case AU915:
-        FHSSfreqs = FHSSfreqsAU915;
-        numFreqs = sizeof(FHSSfreqsAU915) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsAU915;
+        numFreqs = sizeof(fhssFreqsAU915) / sizeof(uint32_t);
         break;
     case EU433:
-        FHSSfreqs = FHSSfreqsEU433;
-        numFreqs = sizeof(FHSSfreqsEU433) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsEU433;
+        numFreqs = sizeof(fhssFreqsEU433) / sizeof(uint32_t);
         break;
     case EU868:
-        FHSSfreqs = FHSSfreqsEU868;
-        numFreqs = sizeof(FHSSfreqsEU868) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsEU868;
+        numFreqs = sizeof(fhssFreqsEU868) / sizeof(uint32_t);
         break;
     case IN866:
-        FHSSfreqs = FHSSfreqsIN866;
-        numFreqs = sizeof(FHSSfreqsIN866) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsIN866;
+        numFreqs = sizeof(fhssFreqsIN866) / sizeof(uint32_t);
         break;
     case FCC915:
-        FHSSfreqs = FHSSfreqsFCC915;
-        numFreqs = sizeof(FHSSfreqsFCC915) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsFCC915;
+        numFreqs = sizeof(fhssFreqsFCC915) / sizeof(uint32_t);
         break;
 #endif
 #ifdef USE_RX_SX1280
     case ISM2400:
-        FHSSfreqs = FHSSfreqsISM2400;
-        numFreqs = sizeof(FHSSfreqsISM2400) / sizeof(uint32_t);
+        fhssFreqs = fhssFreqsISM2400;
+        numFreqs = sizeof(fhssFreqsISM2400) / sizeof(uint32_t);
         break;
 #endif
     default:
-        FHSSfreqs = NULL;
+        fhssFreqs = NULL;
         numFreqs = 0;
     }
 }
 
-uint32_t getInitialFreq(const int32_t freqCorrection)
+uint32_t fhssGetInitialFreq(const int32_t freqCorrection)
 {
-    return FHSSfreqs[syncChannel] - freqCorrection;
+    return fhssFreqs[syncChannel] - freqCorrection;
 }
 
-uint8_t getFHSSNumEntries(void)
+uint8_t fhssGetNumEntries(void)
 {
     return numFreqs;
 }
 
-uint8_t FHSSgetCurrIndex(void)
+uint8_t fhssGetCurrIndex(void)
 {
-    return FHSSptr;
+    return fhssIndex;
 }
 
-void FHSSsetCurrIndex(const uint8_t value)
+void fhssSetCurrIndex(const uint8_t value)
 {
-    FHSSptr = value % seqCount;
+    fhssIndex = value % seqCount;
 }
 
-uint32_t FHSSgetNextFreq(const int32_t freqCorrection)
+uint32_t fhssGetNextFreq(const int32_t freqCorrection)
 {
-    FHSSptr = (FHSSptr + 1) % seqCount;
-    return FHSSfreqs[FHSSsequence[FHSSptr]] - freqCorrection;
+    fhssIndex = (fhssIndex + 1) % seqCount;
+    return fhssFreqs[fhssSequence[fhssIndex]] - freqCorrection;
 }
 
 static uint32_t seed = 0;
@@ -435,11 +435,11 @@ Approach:
   another random entry, excluding the sync channel.
 
 */
-void FHSSrandomiseFHSSsequence(const uint8_t UID[], const elrsFreqDomain_e dom)
+void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
 {
     seed = ((long)UID[2] << 24) + ((long)UID[3] << 16) + ((long)UID[4] << 8) + UID[5];
 
-    initializeFHSSFrequencies(dom);
+    initializeFhssFrequencies(dom);
 
     seqCount = (256 / MAX(numFreqs, 1)) * numFreqs;
 
@@ -448,11 +448,11 @@ void FHSSrandomiseFHSSsequence(const uint8_t UID[], const elrsFreqDomain_e dom)
     // initialize the sequence array
     for (uint8_t i = 0; i < seqCount; i++) {
         if (i % numFreqs == 0) {
-            FHSSsequence[i] = syncChannel;
+            fhssSequence[i] = syncChannel;
         } else if (i % numFreqs == syncChannel) {
-            FHSSsequence[i] = 0;
+            fhssSequence[i] = 0;
         } else {
-            FHSSsequence[i] = i % numFreqs;
+            fhssSequence[i] = i % numFreqs;
         }
     }
 
@@ -463,9 +463,9 @@ void FHSSrandomiseFHSSsequence(const uint8_t UID[], const elrsFreqDomain_e dom)
             uint8_t rand = rngN(numFreqs - 1) + 1; // random number between 1 and numFreqs
 
             // switch this entry and another random entry in the same block
-            uint8_t temp = FHSSsequence[i];
-            FHSSsequence[i] = FHSSsequence[offset + rand];
-            FHSSsequence[offset + rand] = temp;
+            uint8_t temp = fhssSequence[i];
+            fhssSequence[i] = fhssSequence[offset + rand];
+            fhssSequence[offset + rand] = temp;
         }
     }
 }

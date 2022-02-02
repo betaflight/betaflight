@@ -70,6 +70,7 @@ typedef enum {
 #define THR_LO (1 << (2 * THROTTLE))
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
+#define THR_MASK (3 << (2 * THROTTLE))
 
 #define CONTROL_RATE_CONFIG_RC_EXPO_MAX  100
 

@@ -284,7 +284,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {.u.buffers = {sectorErase, NULL}, fdevice->isLargeFlash ? 5 : 4, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing
@@ -309,7 +309,7 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {.u.buffers = {bulkErase, NULL}, sizeof(bulkErase), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(fdevice->io.handle.dev, segments);
@@ -337,9 +337,9 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {.u.buffers = {pageProgram, NULL}, 0, false, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing
@@ -430,7 +430,7 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {readBytes, NULL}, fdevice->isLargeFlash ? 5 : 4, false, NULL},
             {.u.buffers = {NULL, buffer}, length, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Patch the readBytes command

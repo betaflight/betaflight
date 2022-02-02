@@ -107,6 +107,7 @@ extern "C" {
 
 void failsafeOnRxSuspend(uint32_t ) {}
 void failsafeOnRxResume(void) {}
+bool failsafeIsReceivingRxData(void) { return true; }
 bool taskUpdateRxMainInProgress() { return true; }
 
 uint32_t micros(void) { return 0; }

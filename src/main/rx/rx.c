@@ -470,12 +470,20 @@ void rxSetUplinkTxPwrMw(uint16_t uplinkTxPwrMwValue)
 
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
+    UNUSED(currentTimeUs);
+    UNUSED(currentDeltaTimeUs);
+
+    return taskUpdateRxMainInProgress() || rxDataProcessingRequired || auxiliaryProcessingRequired || !failsafeIsReceivingRxData();
+}
+
+FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+{
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
 
     if (taskUpdateRxMainInProgress()) {
-        // There are more states to process
-        return true;
+        // No need to check for new data as a packet is being processed already
+        return;
     }
 
     switch (rxRuntimeState.rxProvider) {
@@ -535,8 +543,6 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
     if ((signalReceived && useDataDrivenProcessing) || cmpTimeUs(currentTimeUs, rxNextUpdateAtUs) > 0) {
         rxDataProcessingRequired = true;
     }
-
-    return rxDataProcessingRequired || auxiliaryProcessingRequired; // data driven or 50Hz
 }
 
 #if defined(USE_PWM) || defined(USE_PPM)

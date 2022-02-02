@@ -767,7 +767,6 @@ bool processRx(timeUs_t currentTimeUs)
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();
     }
-    failsafeUpdateState();
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
@@ -1264,6 +1263,14 @@ FAST_CODE bool gyroFilterReady(void)
 FAST_CODE bool pidLoopReady(void)
 {
     if ((pidUpdateCounter % activePidLoopDenom) == (activePidLoopDenom / 2)) {
+        return true;
+    }
+    return false;
+}
+
+FAST_CODE bool rxFrameReady(void)
+{
+    if ((activePidLoopDenom == 1) || (pidUpdateCounter % activePidLoopDenom == 0)) {
         return true;
     }
     return false;
