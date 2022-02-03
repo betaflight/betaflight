@@ -125,22 +125,6 @@ void altHoldInit(altHoldState_s* altHoldState)
 }
 
 
-// Rotate a vector *v by the euler angles defined by the 3-vector *delta.
-void rotateV(struct fp_vector *v, fp_angles_t *delta)
-{
-    struct fp_vector v_tmp = *v;
-
-    fp_rotationMatrix_t rotationMatrix;
-
-    buildRotationMatrix(delta, &rotationMatrix);
-
-    applyMatrixRotation((float *)&v_tmp, &rotationMatrix);
-
-    v->X = v_tmp.X;
-    v->Y = v_tmp.Y;
-    v->Z = v_tmp.Z;
-}
-
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     bool altHoldModeEnabled = FLIGHT_MODE(ALTHOLD_MODE);
@@ -154,21 +138,15 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     float measuredAltitude = (float)(0.01f * getEstimatedAltitudeCm());
 
-    t_fp_vector_def accelerationVector = {
+    t_fp_vector accelerationVector = {{
         acc.accADC[X],
         acc.accADC[Y],
         acc.accADC[Z]
-    };
-
-    fp_angles_t attitudeAngles = {{
-        DECIDEGREES_TO_RADIANS(-attitude.values.roll),
-        DECIDEGREES_TO_RADIANS(-attitude.values.pitch),
-        DECIDEGREES_TO_RADIANS(attitude.values.yaw)
     }};
 
-    rotateV(&accelerationVector, &attitudeAngles);
+    imuTransformVectorBodyToEarth(&accelerationVector);
 
-    float measuredAccel = 9.8f * (accelerationVector.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
+    float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
 
