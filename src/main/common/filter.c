@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 #include "platform.h"
 
@@ -37,6 +38,19 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 {
     UNUSED(filter);
     return input;
+}
+
+FAST_CODE void nullFilterUpdateCutoff(filter_t *filter, float k)
+{
+    UNUSED(filter);
+    UNUSED(k);
+}
+
+FAST_CODE float nullFilterGain(float cutoffFreq, float dT)
+{
+    UNUSED(cutoffFreq);
+    UNUSED(dT);
+    return 0.0f;
 }
 
 
@@ -265,6 +279,82 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     filter->x2 = filter->b2 * input - filter->a2 * result;
 
     return result;
+}
+
+float biquadFilterGain(float cutoffFreq, float dT)
+{
+    return cutoffFreq * dT;
+}
+
+void biquadFilterLPFUpdateCutoff(biquadFilter_t *filter, float k)
+{
+    biquadFilterUpdateLPF(filter, k, 1000000);
+}
+
+void lowpassFilterInit(lowpassFilter_t *filter, lowpassFilterType_e type, float cutoffFreq, float dT)
+{
+    filter->type = cutoffFreq < FLT_EPSILON ? FILTER_NONE : type;
+
+    switch (filter->type) {
+        case FILTER_PT1: {
+            const float k = pt1FilterGain(cutoffFreq, dT);
+            pt1FilterInit(&filter->data.pt1Filter, k);
+            filter->applyFn = (filterApplyFnPtr)pt1FilterApply;
+            filter->updateFn = (filterUpdateFnPtr)pt1FilterUpdateCutoff;
+            filter->gainFn = (filterGainFnPtr)pt1FilterGain;
+            }
+            break;
+        case FILTER_BIQUAD: {
+            const float frequencyNyquist = (1 / dT) / 2;
+            if (cutoffFreq < frequencyNyquist) {
+                biquadFilterInitLPF(&filter->data.biquadFilter, cutoffFreq, dT * 1e6f);
+                filter->applyFn = (filterApplyFnPtr)biquadFilterApply;
+                filter->updateFn = (filterUpdateFnPtr)biquadFilterLPFUpdateCutoff;
+                filter->gainFn = (filterGainFnPtr)biquadFilterGain;
+            } else {
+                filter->applyFn = nullFilterApply;
+                filter->updateFn = (filterUpdateFnPtr)nullFilterUpdateCutoff;
+                filter->gainFn = (filterGainFnPtr)nullFilterGain;
+            }
+            }
+            break;
+        case FILTER_PT2: {
+            const float k = pt2FilterGain(cutoffFreq, dT);
+            pt2FilterInit(&filter->data.pt2Filter, k);
+            filter->applyFn = (filterApplyFnPtr)pt2FilterApply;
+            filter->updateFn = (filterUpdateFnPtr)pt2FilterUpdateCutoff;
+            filter->gainFn = (filterGainFnPtr)pt2FilterGain;
+            }
+            break;
+        case FILTER_PT3: {
+            const float k = pt3FilterGain(cutoffFreq, dT);
+            pt3FilterInit(&filter->data.pt3Filter, k);
+            filter->applyFn = (filterApplyFnPtr)pt3FilterApply;
+            filter->updateFn = (filterUpdateFnPtr)pt3FilterUpdateCutoff;
+            filter->gainFn = (filterGainFnPtr)pt3FilterGain;
+            }
+            break;
+        default:
+            filter->applyFn = nullFilterApply;
+            filter->updateFn = (filterUpdateFnPtr)nullFilterUpdateCutoff;
+            filter->gainFn = (filterGainFnPtr)nullFilterGain;
+            break;
+        }
+}
+
+float lowpassFilterApply(lowpassFilter_t *filter, float input)
+{
+    return filter->applyFn((filter_t *) &filter->data, input);
+}
+
+void lowpassFilterUpdateCutoff(lowpassFilter_t *filter, float k)
+{
+    filter->updateFn((filter_t *) &filter->data, k);
+}
+
+float lowpassFilterGain(lowpassFilter_t *filter, float cutoffFreq, float dT)
+{
+    return filter->gainFn(cutoffFreq, dT);
 }
 
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)

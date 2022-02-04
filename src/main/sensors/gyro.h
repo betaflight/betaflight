@@ -96,12 +96,10 @@ typedef struct gyro_s {
     gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
     // lowpass gyro soft filter
-    filterApplyFnPtr lowpassFilterApplyFn;
-    gyroLowpassFilter_t lowpassFilter[XYZ_AXIS_COUNT];
+    lowpassFilter_t lowpassFilter[XYZ_AXIS_COUNT];
 
     // lowpass2 gyro soft filter
-    filterApplyFnPtr lowpass2FilterApplyFn;
-    gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
+    lowpassFilter_t lowpassFilter2[XYZ_AXIS_COUNT];
 
     // notch filters
     filterApplyFnPtr notchFilter1ApplyFn;

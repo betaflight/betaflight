@@ -72,8 +72,10 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (targetPidLooptime == 0) {
         // no looptime set, so set all the filters to null
         pidRuntime.dtermNotchApplyFn = nullFilterApply;
-        pidRuntime.dtermLowpassApplyFn = nullFilterApply;
-        pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            lowpassFilterInit(&pidRuntime.dtermLowpass[axis], FILTER_NONE, 0.0f, 0.0f);
+            lowpassFilterInit(&pidRuntime.dtermLowpass2[axis], FILTER_NONE, 0.0f, 0.0f);
+        }
         pidRuntime.ptermYawLowpassApplyFn = nullFilterApply;
         return;
     }
@@ -111,84 +113,30 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     if (dterm_lpf1_init_hz > 0) {
-        switch (pidProfile->dterm_lpf1_type) {
-        case FILTER_PT1:
-            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt1FilterInit(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
-            }
-            break;
-        case FILTER_BIQUAD:
-            if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            lowpassFilterInit(&pidRuntime.dtermLowpass[axis], pidProfile->dterm_lpf1_type, dterm_lpf1_init_hz, pidRuntime.dT);
 #ifdef USE_DYN_LPF
-                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
-#else
-                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApply;
+            // Override BIQUAD filterApply to faster one to make it work in Dynamic mode
+            if (pidProfile->dterm_lpf1_type == FILTER_BIQUAD && pidRuntime.dtermLowpass[axis].applyFn) {
+                pidRuntime.dtermLowpass[axis].applyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
+            }
 #endif
-                for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                    biquadFilterInitLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, dterm_lpf1_init_hz, targetPidLooptime);
-                }
-            } else {
-                pidRuntime.dtermLowpassApplyFn = nullFilterApply;
-            }
-            break;
-        case FILTER_PT2:
-            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt2FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt2FilterInit(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
-            }
-            break;
-        case FILTER_PT3:
-            pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt3FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt3FilterInit(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
-            }
-            break;
-        default:
-            pidRuntime.dtermLowpassApplyFn = nullFilterApply;
-            break;
         }
     } else {
-        pidRuntime.dtermLowpassApplyFn = nullFilterApply;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            lowpassFilterInit(&pidRuntime.dtermLowpass[axis], FILTER_NONE, 0.0f, 0.0f);
+        }
     }
 
     //2nd Dterm Lowpass Filter
     if (pidProfile->dterm_lpf2_static_hz > 0) {
-        switch (pidProfile->dterm_lpf2_type) {
-        case FILTER_PT1:
-            pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt1FilterInit(&pidRuntime.dtermLowpass2[axis].pt1Filter, pt1FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
-            }
-            break;
-        case FILTER_BIQUAD:
-            if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
-                pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
-                for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                    biquadFilterInitLPF(&pidRuntime.dtermLowpass2[axis].biquadFilter, pidProfile->dterm_lpf2_static_hz, targetPidLooptime);
-                }
-            } else {
-                pidRuntime.dtermLowpassApplyFn = nullFilterApply;
-            }
-            break;
-        case FILTER_PT2:
-            pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt2FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt2FilterInit(&pidRuntime.dtermLowpass2[axis].pt2Filter, pt2FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
-            }
-            break;
-        case FILTER_PT3:
-            pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt3FilterApply;
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt3FilterInit(&pidRuntime.dtermLowpass2[axis].pt3Filter, pt3FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
-            }
-            break;
-        default:
-            pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
-            break;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            lowpassFilterInit(&pidRuntime.dtermLowpass2[axis], pidProfile->dterm_lpf2_type, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
         }
     } else {
-        pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            lowpassFilterInit(&pidRuntime.dtermLowpass2[axis], FILTER_NONE, 0.0f, 0.0f);
+        }
     }
 
     if (pidProfile->yaw_lowpass_hz == 0) {

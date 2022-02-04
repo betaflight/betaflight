@@ -129,81 +129,6 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz)
     }
 }
 
-static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_t looptime)
-{
-    filterApplyFnPtr *lowpassFilterApplyFn;
-    gyroLowpassFilter_t *lowpassFilter = NULL;
-
-    switch (slot) {
-    case FILTER_LPF1:
-        lowpassFilterApplyFn = &gyro.lowpassFilterApplyFn;
-        lowpassFilter = gyro.lowpassFilter;
-        break;
-
-    case FILTER_LPF2:
-        lowpassFilterApplyFn = &gyro.lowpass2FilterApplyFn;
-        lowpassFilter = gyro.lowpass2Filter;
-        break;
-
-    default:
-        return false;
-    }
-
-    bool ret = false;
-
-    // Establish some common constants
-    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / looptime;
-    const float gyroDt = looptime * 1e-6f;
-
-    // Gain could be calculated a little later as it is specific to the pt1/bqrcf2/fkf branches
-    const float gain = pt1FilterGain(lpfHz, gyroDt);
-
-    // Dereference the pointer to null before checking valid cutoff and filter
-    // type. It will be overridden for positive cases.
-    *lowpassFilterApplyFn = nullFilterApply;
-
-    // If lowpass cutoff has been specified
-    if (lpfHz) {
-        switch (type) {
-        case FILTER_PT1:
-            *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApply;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain);
-            }
-            ret = true;
-            break;
-        case FILTER_BIQUAD:
-            if (lpfHz <= gyroFrequencyNyquist) {
-#ifdef USE_DYN_LPF
-                *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApplyDF1;
-#else
-                *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
-#endif
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
-                }
-                ret = true;
-            }
-            break;
-        case FILTER_PT2:
-            *lowpassFilterApplyFn = (filterApplyFnPtr) pt2FilterApply;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt2FilterInit(&lowpassFilter[axis].pt2FilterState, gain);
-            }
-            ret = true;
-            break;
-        case FILTER_PT3:
-            *lowpassFilterApplyFn = (filterApplyFnPtr) pt3FilterApply;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt3FilterInit(&lowpassFilter[axis].pt3FilterState, gain);
-            }
-            ret = true;
-            break;
-        }
-    }
-    return ret;
-}
-
 #ifdef USE_DYN_LPF
 static void dynLpfFilterInit()
 {
@@ -244,19 +169,20 @@ void gyroInitFilters(void)
     }
 #endif
 
-    gyroInitLowpassFilterLpf(
-      FILTER_LPF1,
-      gyroConfig()->gyro_lpf1_type,
-      gyro_lpf1_init_hz,
-      gyro.targetLooptime
-    );
+    const float gyroDt = gyro.targetLooptime * 1e-6f;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        lowpassFilterInit(&gyro.lowpassFilter[axis], gyroConfig()->gyro_lpf1_type, gyro_lpf1_init_hz, gyroDt);
+#ifdef USE_DYN_LPF
+        // Override BIQUAD filterApply to faster one to make it work in Dynamic mode
+        if (gyroConfig()->gyro_lpf1_type == FILTER_BIQUAD && gyro.lowpassFilter[axis].applyFn) {
+            gyro.lowpassFilter[axis].applyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
+        }
+#endif
+    }
 
-    gyro.downsampleFilterEnabled = gyroInitLowpassFilterLpf(
-      FILTER_LPF2,
-      gyroConfig()->gyro_lpf2_type,
-      gyroConfig()->gyro_lpf2_static_hz,
-      gyro.sampleLooptime
-    );
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        lowpassFilterInit(&gyro.lowpassFilter2[axis], gyroConfig()->gyro_lpf2_type, gyroConfig()->gyro_lpf2_static_hz, gyroDt);
+    }
 
     gyroInitFilterNotch1(gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);

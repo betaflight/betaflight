@@ -436,9 +436,9 @@ FAST_CODE void gyroUpdate(void)
 
     if (gyro.downsampleFilterEnabled) {
         // using gyro lowpass 2 filter for downsampling
-        gyro.sampleSum[X] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[X], gyro.gyroADC[X]);
-        gyro.sampleSum[Y] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Y], gyro.gyroADC[Y]);
-        gyro.sampleSum[Z] = gyro.lowpass2FilterApplyFn((filter_t *)&gyro.lowpass2Filter[Z], gyro.gyroADC[Z]);
+        gyro.sampleSum[X] = lowpassFilterApply(&gyro.lowpassFilter2[X], gyro.gyroADC[X]);
+        gyro.sampleSum[Y] = lowpassFilterApply(&gyro.lowpassFilter2[Y], gyro.gyroADC[Y]);
+        gyro.sampleSum[Z] = lowpassFilterApply(&gyro.lowpassFilter2[Z], gyro.gyroADC[Z]);
     } else {
         // using simple averaging for downsampling
         gyro.sampleSum[X] += gyro.gyroADC[X];
@@ -626,28 +626,10 @@ void dynLpfGyroUpdate(float throttle)
             cutoffFreq = fmaxf(dynThrottle(throttle) * gyro.dynLpfMax, gyro.dynLpfMin);
         }
         DEBUG_SET(DEBUG_DYN_LPF, 2, lrintf(cutoffFreq));
-        const float gyroDt = gyro.targetLooptime * 1e-6f;
-        switch (gyro.dynLpfFilter) {
-        case DYN_LPF_PT1:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
-            }
-            break;
-        case DYN_LPF_BIQUAD:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&gyro.lowpassFilter[axis].biquadFilterState, cutoffFreq, gyro.targetLooptime);
-            }
-            break;
-        case  DYN_LPF_PT2:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt2FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt2FilterState, pt2FilterGain(cutoffFreq, gyroDt));
-            }
-            break;
-        case DYN_LPF_PT3:
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt3FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt3FilterState, pt3FilterGain(cutoffFreq, gyroDt));
-            }
-            break;
+
+        const float k = lowpassFilterGain(&pidRuntime.dtermLowpass[0], cutoffFreq, pidRuntime.dT);
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            lowpassFilterUpdateCutoff(&gyro.lowpassFilter[axis], k);
         }
     }
 }

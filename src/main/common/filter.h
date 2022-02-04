@@ -64,7 +64,8 @@ typedef struct laggedMovingAverage_s {
 } laggedMovingAverage_t;
 
 typedef enum {
-    FILTER_PT1 = 0,
+    FILTER_NONE = 0,
+    FILTER_PT1,
     FILTER_BIQUAD,
     FILTER_PT2,
     FILTER_PT3,
@@ -77,6 +78,23 @@ typedef enum {
 } biquadFilterType_e;
 
 typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
+typedef void (*filterUpdateFnPtr)(filter_t *filter, float k);
+typedef float (*filterGainFnPtr)(float cutoffFreq, float dT);
+
+typedef union lowpassFilterData_u {
+    pt1Filter_t pt1Filter;
+    biquadFilter_t biquadFilter;
+    pt2Filter_t pt2Filter;
+    pt3Filter_t pt3Filter;
+} lowpassFilterData_t;
+
+typedef struct lowpassFilter_s {
+    lowpassFilterData_t data;
+    filterApplyFnPtr applyFn;
+    filterUpdateFnPtr updateFn;
+    filterGainFnPtr gainFn;
+    lowpassFilterType_e type;
+} lowpassFilter_t;
 
 float nullFilterApply(filter_t *filter, float input);
 
@@ -84,6 +102,7 @@ void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refr
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
 void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
 void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
+void biquadFilterLPFUpdateCutoff(biquadFilter_t *filter, float k);
 
 float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
@@ -107,6 +126,11 @@ float pt3FilterGain(float f_cut, float dT);
 void pt3FilterInit(pt3Filter_t *filter, float k);
 void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k);
 float pt3FilterApply(pt3Filter_t *filter, float input);
+
+void lowpassFilterInit(lowpassFilter_t *filter, lowpassFilterType_e type, float cutoffFreq, float dT);
+float lowpassFilterApply(lowpassFilter_t *filter, float input);
+void lowpassFilterUpdateCutoff(lowpassFilter_t *filter, float k);
+float lowpassFilterGain(lowpassFilter_t *filter, float cutoffFreq, float dT);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);
