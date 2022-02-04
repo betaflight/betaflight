@@ -20,6 +20,7 @@
 #include "platform.h"
 
 #ifdef USE_ALTHOLD_MODE
+#define ALTHOLD_TASK_PERIOD 100
 
 #include "common/time.h"
 #include "pg/pg.h"

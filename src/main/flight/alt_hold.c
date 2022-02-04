@@ -135,8 +135,9 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     }
     altHoldState->prevAltHoldModeEnabled = altHoldModeEnabled;
 
+    float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
-    float measuredAltitude = (float)(0.01f * getEstimatedAltitudeCm());
+    float measuredAltitude = (float)(timeInterval * getEstimatedAltitudeCm());
 
     t_fp_vector accelerationVector = {{
         acc.accADC[X],
@@ -150,7 +151,7 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
 
-    altHoldState->velocityEstimationAccel += measuredAccel * 0.01f;
+    altHoldState->velocityEstimationAccel += measuredAccel * timeInterval;
     altHoldState->velocityEstimationAccel *= 0.999f;
 
     float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
@@ -159,10 +160,10 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
-    float velocityTarget = simplePidCalculate(&altHoldState->altPid, 0.01f, altHoldState->targetAltitude, altHoldState->measuredAltitude);
+    float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
     DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
 
-    float velPidForce = simplePidCalculate(&altHoldState->velPid, 0.01f, velocityTarget, currentVelocityEstimationAccel);
+    float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
     
     float newThrottle = velPidForce;
 
