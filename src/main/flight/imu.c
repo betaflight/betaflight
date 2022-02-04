@@ -725,7 +725,6 @@ bool isUpright(void)
 }
 
 
-#if defined(USE_ALTHOLD_MODE)
 void imuTransformVectorBodyToEarth(t_fp_vector * v)
 {
     /* From body frame to earth frame */
@@ -737,4 +736,3 @@ void imuTransformVectorBodyToEarth(t_fp_vector * v)
     v->V.Y = -y;
     v->V.Z = z;
 }
-#endif
