@@ -31,7 +31,7 @@
 #include "piniobox.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 2);
 
 PG_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig,
     .permanentId = {
@@ -39,6 +39,12 @@ PG_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig,
         PERMANENT_ID_NONE,
         PERMANENT_ID_NONE,
         PERMANENT_ID_NONE
+    },
+    .onDuration = {
+      0,
+      0,
+      0,
+      0
     },
 );
 #endif

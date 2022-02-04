@@ -26,6 +26,7 @@
 
 typedef struct pinioBoxConfig_s {
     uint8_t permanentId[PINIO_COUNT];
+    uint8_t onDuration[PINIO_COUNT]; // on duration length x 100ms or zero
 } pinioBoxConfig_t;
 
 PG_DECLARE(pinioBoxConfig_t, pinioBoxConfig);
