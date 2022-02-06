@@ -70,7 +70,7 @@
 #define PG_RX_CHANNEL_RANGE_CONFIG 44
 #define PG_MODE_COLOR_CONFIG 45  // part of led strip, structs OK
 #define PG_SPECIAL_COLOR_CONFIG 46  // part of led strip, structs OK
-#define PG_PILOT_CONFIG 47 // does not exist in betaflight
+#define PG_PILOT_CONFIG 47 // used for pilot and craft name from 4.4
 #define PG_MSP_SERVER_CONFIG 48 // does not exist in betaflight
 #define PG_VOLTAGE_METER_CONFIG 49 // renamed from PG_VOLTAGE_METER_CONFIG    // deprecated
 #define PG_AMPERAGE_METER_CONFIG 50 // renamed from PG_AMPERAGE_METER_CONFIG  // deprecated

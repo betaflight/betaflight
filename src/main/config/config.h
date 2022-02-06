@@ -34,8 +34,8 @@ typedef enum {
 } configurationState_e;
 
 typedef struct pilotConfig_s {
-    char name[MAX_NAME_LENGTH + 1];
-    char displayName[MAX_NAME_LENGTH + 1];
+    char craftName[MAX_NAME_LENGTH + 1];
+    char pilotName[MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
