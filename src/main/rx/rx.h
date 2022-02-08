@@ -136,6 +136,7 @@ typedef enum {
     RX_PROVIDER_SERIAL,
     RX_PROVIDER_MSP,
     RX_PROVIDER_SPI,
+    RX_PROVIDER_UDP,
 } rxProvider_t;
 
 typedef struct rxRuntimeState_s {
@@ -172,7 +173,7 @@ typedef enum {
 
 extern linkQualitySource_e linkQualitySource;
 
-extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
+extern rxRuntimeState_t rxRuntimeState;
 
 void rxInit(void);
 void rxProcessPending(bool state);

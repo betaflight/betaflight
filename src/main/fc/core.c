@@ -467,7 +467,6 @@ void disarm(flightLogDisarmReason_e reason)
             statsOnDisarm();
         }
 #endif
-
         flipOverAfterCrashActive = false;
 
         // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play it's beep pattern instead

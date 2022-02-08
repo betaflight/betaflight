@@ -502,6 +502,7 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 
         break;
 #endif
+    case RX_PROVIDER_UDP:
     case RX_PROVIDER_SERIAL:
     case RX_PROVIDER_MSP:
     case RX_PROVIDER_SPI:
