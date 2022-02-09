@@ -1,0 +1,6 @@
+{
+    "C_Cpp.default.includePath": [
+        "./src/main",
+        "./src/test/unit"
+    ]
+}
