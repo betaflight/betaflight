@@ -94,7 +94,7 @@ FAST_CODE void sdftPushBatch(sdft_t* sdft, const float sample, const int batchId
         batchEnd += sdft->batchSize;
     }
 
-    for (int i = batchStart; i < batchEnd; i++) {
+    for (int i = batchStart; i <= batchEnd; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
 }
@@ -130,7 +130,7 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
-    for (int i = (sdft->startBin + 1); i < sdft->endBin; i++) {
+    for (int i = sdft->startBin ; i <= sdft->endBin; i++) {
         val = sdft->data[i] - 0.5f * (sdft->data[i - 1] + sdft->data[i + 1]); // multiply by 2 to save one multiplication
         re = crealf(val);
         im = cimagf(val);

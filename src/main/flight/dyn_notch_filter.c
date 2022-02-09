@@ -282,7 +282,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             }
 
             // Search for N biggest peaks in frequency spectrum
-            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
+            for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
                 // Check if bin is peak
                 if ((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
                     // Check if peak is big enough to be one of N biggest peaks.
