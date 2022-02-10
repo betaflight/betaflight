@@ -69,17 +69,20 @@ int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
     static float vel = 0;
     static int32_t lastBaroAlt = 0;
 
-    int32_t baroVel = 0;
+    int32_t baroVel = 0;  // it would be more efficient to keep it in float
 
     baroVel = (baroAlt - lastBaroAlt) * 1000000.0f / dTime;
     lastBaroAlt = baroAlt;
 
-    baroVel = constrain(baroVel, -1500.0f, 1500.0f);
-    baroVel = applyDeadband(baroVel, 10.0f);
+    baroVel = constrain(baroVel, -1500.0f, 1500.0f); // why such constrains?
+    baroVel = applyDeadband(baroVel, 10.0f); // even if dead zone is neede (it's debateable), it only needs to be done once later in the code.
 
+    // is it really worth it to keep config values in int16 and convert it to float twice on each itteration? 
+    // It would be much more efficient to keep config values in float in the first place.
+    // But best-case scenario would be using more effective, efficient and predictable filters.
     vel = vel * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_cf_vel) + baroVel * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_cf_vel));
     int32_t vel_tmp = lrintf(vel);
-    vel_tmp = applyDeadband(vel_tmp, 5.0f);
+    vel_tmp = applyDeadband(vel_tmp, 5.0f); // second deadbanding.
 
     return constrain(vel_tmp, SHRT_MIN, SHRT_MAX);
 }

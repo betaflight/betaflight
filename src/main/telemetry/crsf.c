@@ -21,6 +21,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -61,7 +63,7 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-#ifdef USE_BARO
+#if defined(USE_BARO) && defined(USE_VARIO)
 #include "sensors/barometer.h"
 #endif
 
@@ -251,7 +253,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, batteryRemainingPercentage);
 }
 
-#ifdef USE_BARO
+#if defined(USE_BARO) && defined(USE_VARIO)
 // pack altitude in decimeters into a 16-bit value.
 // Due to strange OpenTX behavior of count any 0xFFFF value as incorrect, the maximum sending value is limited to 0xFFFE (32766 meters)
 // in order to have both precision and range in 16-bit 
@@ -281,6 +283,27 @@ static inline uint16_t getAltitudePacked(int32_t altitude_dm)
     return ((altitude_dm + 5) / 10) | 0x8000; // meter-resulution range
 }
 
+static inline int8_t getVerticalSpeedPacked(int16_t Vspeed_cm_s) //Vertical speed in m/s (meters per second)
+{
+    // linearity coefficient.
+    // Bigger values lead to more linear output i.e., less precise smaller values and more precise big values.
+    // Decrieasing the coefficient increases nonlinearity, i.e., more precise small values and less precise big values.
+    static const float Kl = 100.0f;
+
+    // Range coefficient is calculated as result_max / log(VspeedMax_cm_s * LinearityCoefficient + 1);
+    // but it must be set manually (not calculated) for equality of packing and unpacking
+    static const float Kr = .026f;
+
+    int8_t sign = Vspeed_cm_s < 0 ? -1 : 1;
+    const int result32 = lrintf(logf((float)(Vspeed_cm_s * sign) / Kl + 1) / Kr) * sign;
+    int8_t result8 = constrain( result32, SCHAR_MIN, SCHAR_MAX);
+    return result8;
+
+    // for unpacking the following function might be used:
+    // int unpacked = lrintf((expf(result8 * sign * Kr) - 1) * Kl) * sign;
+    // lrint might not be used depending on integer or floating output.
+}
+
 // pack barometric altitude
 static void crsfFrameAltitude(sbuf_t* dst)
 {
@@ -288,6 +311,7 @@ static void crsfFrameAltitude(sbuf_t* dst)
     sbufWriteU8(dst, CRSF_FRAME_BARO_ALTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BARO_ALTITUDE);
     sbufWriteU16BigEndian(dst, getAltitudePacked((baro.BaroAlt+5)/10));
+    sbufWriteU8(dst, getVerticalSpeedPacked(getEstimatedVario()));
 }
 #endif 
 
@@ -647,7 +671,7 @@ static void processCrsf(void)
         crsfFrameAttitude(dst);
         crsfFinalize(dst);
     }
-#ifdef USE_BARO
+#if defined(USE_BARO) && defined(USE_VARIO)
     // send barometric altitude
     if (currentSchedule & BIT(CRSF_FRAME_BARO_ALTITUDE_INDEX)) {
         crsfInitializeFrame(dst);
@@ -700,7 +724,7 @@ void initCrsfTelemetry(void)
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
         crsfSchedule[index++] = BIT(CRSF_FRAME_ATTITUDE_INDEX);
     }
-#ifdef USE_BARO
+#if defined(USE_BARO) && defined(USE_VARIO)
     if (telemetryIsSensorEnabled(SENSOR_ALTITUDE))
         crsfSchedule[index++] = BIT(CRSF_FRAME_BARO_ALTITUDE_INDEX);
 #endif
