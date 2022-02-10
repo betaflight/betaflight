@@ -20,26 +20,21 @@
 
 #pragma once
 
-#include "flight/pid.h"
-#include "sensors/gyro.h"
+#include "pg/pg.h"
 
-#define SIMPLIFIED_TUNING_PIDS_MIN 0
-#define SIMPLIFIED_TUNING_FILTERS_MIN 10
-#define SIMPLIFIED_TUNING_MAX 200
-#define SIMPLIFIED_TUNING_DEFAULT 100
-#define SIMPLIFIED_TUNING_D_DEFAULT 100
+#ifdef STM32F411xE
+// Allow RX and OSD tasks to be scheduled at the second attempt on F411 processors
+#define SCHEDULER_RELAX_RX  1
+#define SCHEDULER_RELAX_OSD 1
+#else
+#define SCHEDULER_RELAX_RX  25
+#define SCHEDULER_RELAX_OSD 25
+#endif
 
-typedef enum {
-    PID_SIMPLIFIED_TUNING_OFF = 0,
-    PID_SIMPLIFIED_TUNING_RP,
-    PID_SIMPLIFIED_TUNING_RPY,
-    PID_SIMPLIFIED_TUNING_MODE_COUNT,
-} pidSimplifiedTuningMode_e;
+typedef struct schedulerConfig_s {
+    uint16_t rxRelaxDeterminism;
+    uint16_t osdRelaxDeterminism;
+} schedulerConfig_t;
 
-void applySimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig);
+PG_DECLARE(schedulerConfig_t, schedulerConfig);
 
-void applySimplifiedTuningPids(pidProfile_t *pidProfile);
-void applySimplifiedTuningDtermFilters(pidProfile_t *pidProfile);
-void applySimplifiedTuningGyroFilters(gyroConfig_t *gyroConfig);
-
-void disableSimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig);

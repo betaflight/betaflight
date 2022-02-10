@@ -322,7 +322,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             for (i = 0 ; i < 3; i++) {
                 bstWrite8(currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
             }
-            bstWrite8(currentControlRateProfile->dynThrPID);
+            bstWrite8(currentControlRateProfile->tpa_rate);
             bstWrite8(currentControlRateProfile->thrMid8);
             bstWrite8(currentControlRateProfile->thrExpo8);
             bstWrite16(currentControlRateProfile->tpa_breakpoint);
@@ -460,7 +460,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     currentControlRateProfile->rates[i] = bstRead8();
                 }
                 rate = bstRead8();
-                currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+                currentControlRateProfile->tpa_rate = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
                 currentControlRateProfile->thrMid8 = bstRead8();
                 currentControlRateProfile->thrExpo8 = bstRead8();
                 currentControlRateProfile->tpa_breakpoint = bstRead16();

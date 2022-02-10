@@ -45,7 +45,6 @@
 #ifdef STM32F4
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA
-#define USE_LATE_TASK_STATISTICS
 #endif
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -63,6 +62,7 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#define USE_LATE_TASK_STATISTICS
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK

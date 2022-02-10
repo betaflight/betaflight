@@ -1,13 +1,12 @@
 # Building in Ubuntu
 
 Building for Ubuntu platform is remarkably easy.
-This document is tested and based on the latest Ubuntu 20.04 LTS release and can also be used for WSL.
+This document is tested and based on the latest Ubuntu 20.04.03 LTS release and can also be used for WSL(2).
 
 ### Clone betaflight repository and install toolchain
 
-    $ sudo apt update
-    $ sudo apt upgrade
-    $ sudo apt install build-essential
+    $ sudo apt update && apt upgrade
+    $ sudo apt install build-essential libblocksruntime-dev git curl clang
     $ git clone https://github.com/betaflight/betaflight.git
     $ cd betaflight
     $ make arm_sdk_install
@@ -28,6 +27,13 @@ You can use the Betaflight-Configurator to flash the `obj/betaflight_MATEKF405.h
 Make sure to remove `obj/` and `make clean`, before building again.
 
 ### Building Betaflight Configurator
+
+    $ sudo apt update && apt upgrade
+    $ sudo apt install libatomic1 npm
+    $ sudo npm install -g gulp-cli yarn
+    $ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh
+    $ source ~/.bashrc
+    $ nvm install v14.18.2 (for exact version please check link below)
 
 See [Betaflight Configurator Development](https://github.com/betaflight/betaflight-configurator#development) for how to build the Betaflight Configurator.
 

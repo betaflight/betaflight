@@ -1,0 +1,77 @@
+name: Firmware Bug Report
+description: Create a report to help us fix bugs in the Betaflight firmware.
+labels: ["Template: Bug"]
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        # Please fill all the fields with the required information
+
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Flight controller configuration
+      description: |
+        Create a `diff` and post it here in a code block. Put (three backticks) at the start and end of the diff block (instructions  on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/).
+        Use `resource show all` to create a resource allocation list and post it here in a code block. Put (three backticks) at the start and end of the output block.
+      value: |
+        ```
+          # REPLACE THIS LINE BY THE OUTPUT OF YOUR `diff`
+        ```
+        ```
+          # REPLACE THIS LINE BY THE OUTPUT OF YOUR `resource show all`
+        ```
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        # Setup / Versions
+
+  - type: input
+    attributes:
+      label: Flight controller
+      description: Specify your flight controller model (what type is it, where was it bought from, ...).
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Other components
+      description: Specify other components attached to the flight controller (RX, VTX, brand / model for all of them, firmware version where applicable...).
+
+  - type: textarea
+    attributes:
+      label: How are the different components wired up
+      description: Details about how all is wired.
+
+  - type: markdown
+    attributes:
+      value: |
+        # Other information
+
+  - type: textarea
+    attributes:
+      label: Add any other context about the problem that you think might be relevant here

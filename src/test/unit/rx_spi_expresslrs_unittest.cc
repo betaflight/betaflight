@@ -28,6 +28,8 @@
 extern "C" {
     #include "platform.h"
 
+    #include "build/atomic.h"
+
     #include "drivers/io.h"
     #include "common/filter.h"
 
@@ -372,6 +374,7 @@ TEST(RxSpiExpressLrsUnitTest, TestAnalogDecode)
 
 extern "C" {
 
+    uint8_t systemState;
     int16_t *debug;
     uint8_t debugMode;
 

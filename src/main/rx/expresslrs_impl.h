@@ -33,7 +33,8 @@ typedef enum {
 typedef enum {
     ELRS_DIO_UNKNOWN = 0,
     ELRS_DIO_RX_DONE = 1,
-    ELRS_DIO_TX_DONE = 2
+    ELRS_DIO_TX_DONE = 2,
+    ELRS_DIO_RX_AND_TX_DONE = 3,
 } dioReason_e;
 
 typedef enum {
@@ -73,6 +74,7 @@ typedef struct elrsReceiver_s {
     bool alreadyFHSS;
     bool alreadyTLMresp;
     bool lockRFmode;
+    bool started;
 
     timerState_e timerState;
     connectionState_e connectionState;

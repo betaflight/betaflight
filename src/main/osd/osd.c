@@ -137,7 +137,6 @@ static osdDisplayPortDevice_e osdDisplayPortDeviceType;
 static bool osdIsReady;
 
 static bool suppressStatsDisplay = false;
-static uint8_t osdStatsRowCount = 0;
 
 static bool backgroundLayerSupported = false;
 
@@ -189,16 +188,19 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
-#define OSD_GROUP_COUNT 20
+#define OSD_GROUP_COUNT                 OSD_ITEM_COUNT
 // Aim to render a group of elements within a target time
-#define OSD_ELEMENT_RENDER_TARGET 40
+#define OSD_ELEMENT_RENDER_TARGET       30
 // Allow a margin by which a group render can exceed that of the sum of the elements before declaring insane
 // This will most likely be violated by a USB interrupt whilst using the CLI
-#define OSD_ELEMENT_RENDER_GROUP_MARGIN 5
-// Safe margin when rendering elements
-#define OSD_ELEMENT_RENDER_MARGIN 5
-// Safe margin in other states
-#define OSD_MARGIN 2
+#if defined(STM32F411xE)
+#define OSD_ELEMENT_RENDER_GROUP_MARGIN 7
+#else
+#define OSD_ELEMENT_RENDER_GROUP_MARGIN 2
+#endif
+#define OSD_TASK_MARGIN                 1
+// Decay the estimated max task duration by 1/(1 << OSD_EXEC_TIME_SHIFT) on every invocation
+#define OSD_EXEC_TIME_SHIFT             8
 
 // Format a float to the specified number of decimal places with optional rounding.
 // OSD symbols can optionally be placed before and after the formatted number (use SYM_NONE for no symbol).
@@ -299,6 +301,13 @@ void changeOsdProfileIndex(uint8_t profileIndex)
 
 void osdAnalyzeActiveElements(void)
 {
+    /* This code results in a total RX task RX_STATE_MODES state time of ~68us on an F411 overclocked to 108MHz
+     * This upsets the scheduler task duration estimation and will break SPI RX communication. This can
+     * occur in flight, e.g. when the OSD profile is changed by switch so can be ignored, or GPS sensor comms
+     * is lost - only causing one late task instance.
+     */
+    schedulerIgnoreTaskExecTime();
+
     osdAddActiveElements();
     osdDrawActiveElementsBackground(osdDisplayPort);
 }
@@ -421,7 +430,7 @@ static void osdCompleteInitialization(void)
     displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
 
     displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
-    displayClearScreen(osdDisplayPort);
+    displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
 
     osdDrawLogo(3, 1);
 
@@ -861,55 +870,142 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     return false;
 }
 
-static uint8_t osdShowStats(int statsRowCount)
+typedef struct osdStatsRenderingState_s {
+    uint8_t row;
+    uint8_t index;
+    uint8_t rowCount;
+} osdStatsRenderingState_t;
+
+static osdStatsRenderingState_t osdStatsRenderingState;
+
+static void osdRenderStatsReset(void)
 {
-    uint8_t top = 0;
-    bool displayLabel = false;
+    // reset to 0 so it will be recalculated on the next stats refresh
+    osdStatsRenderingState.rowCount = 0;
+}
 
-    // if statsRowCount is 0 then we're running an initial analysis of the active stats items
-    if (statsRowCount > 0) {
-        const int availableRows = osdDisplayPort->rows;
-        int displayRows = MIN(statsRowCount, availableRows);
-        if (statsRowCount < availableRows) {
-            displayLabel = true;
-            displayRows++;
+static void osdRenderStatsBegin(void)
+{
+    osdStatsRenderingState.row = 0;
+    osdStatsRenderingState.index = 0;
+}
+
+
+// call repeatedly until it returns true which indicates that all stats have been rendered.
+static bool osdRenderStatsContinue(void)
+{
+    if (osdStatsRenderingState.row == 0) {
+
+        bool displayLabel = false;
+
+        // if rowCount is 0 then we're running an initial analysis of the active stats items
+        if (osdStatsRenderingState.rowCount > 0) {
+            const int availableRows = osdDisplayPort->rows;
+            int displayRows = MIN(osdStatsRenderingState.rowCount, availableRows);
+            if (osdStatsRenderingState.rowCount < availableRows) {
+                displayLabel = true;
+                displayRows++;
+            }
+            osdStatsRenderingState.row = (availableRows - displayRows) / 2;  // center the stats vertically
         }
-        top = (availableRows - displayRows) / 2;  // center the stats vertically
+
+        if (displayLabel) {
+            displayWrite(osdDisplayPort, 2, osdStatsRenderingState.row++, DISPLAYPORT_ATTR_NONE, "  --- STATS ---");
+            return false;
+        }
     }
 
-    if (displayLabel) {
-        displayWrite(osdDisplayPort, 2, top++, DISPLAYPORT_ATTR_NONE, "  --- STATS ---");
-    }
 
-    for (int i = 0; i < OSD_STAT_COUNT; i++) {
-        if (osdStatGetState(osdStatsDisplayOrder[i])) {
-            if (osdDisplayStat(osdStatsDisplayOrder[i], top)) {
-                top++;
+    bool renderedStat = false;
+
+    while (osdStatsRenderingState.index < OSD_STAT_COUNT) {
+        int index = osdStatsRenderingState.index;
+
+        // prepare for the next call to the method
+        osdStatsRenderingState.index++;
+
+        // look for something to render
+        if (osdStatGetState(osdStatsDisplayOrder[index])) {
+            if (osdDisplayStat(osdStatsDisplayOrder[index], osdStatsRenderingState.row)) {
+                osdStatsRenderingState.row++;
+                renderedStat = true;
+                break;
             }
         }
     }
-    return top;
+
+    bool moreSpaceAvailable = osdStatsRenderingState.row < osdDisplayPort->rows;
+
+    if (renderedStat && moreSpaceAvailable) {
+        return false;
+    }
+
+    if (osdStatsRenderingState.rowCount == 0) {
+        osdStatsRenderingState.rowCount = osdStatsRenderingState.row;
+    }
+
+    return true;
 }
 
-static void osdRefreshStats(void)
+// returns true when all phases are complete
+static bool osdRefreshStats(void)
 {
-    displayClearScreen(osdDisplayPort);
-    if (osdStatsRowCount == 0) {
-        // No stats row count has been set yet.
-        // Go through the logic one time to determine how many stats are actually displayed.
-        osdStatsRowCount = osdShowStats(0);
+    bool completed = false;
+
+    typedef enum {
+        INITIAL_CLEAR_SCREEN = 0,
+        COUNT_STATS,
+        CLEAR_SCREEN,
+        RENDER_STATS,
+    } osdRefreshStatsPhase_e;
+
+    static osdRefreshStatsPhase_e phase = INITIAL_CLEAR_SCREEN;
+
+    switch (phase) {
+    default:
+    case INITIAL_CLEAR_SCREEN:
+        osdRenderStatsBegin();
+        if (osdStatsRenderingState.rowCount > 0) {
+            phase = RENDER_STATS;
+        } else {
+            phase = COUNT_STATS;
+        }
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+        break;
+    case COUNT_STATS:
+        {
+            // No stats row count has been set yet.
+            // Go through the logic one time to determine how many stats are actually displayed.
+            bool count_phase_complete = osdRenderStatsContinue();
+            if (count_phase_complete) {
+                phase = CLEAR_SCREEN;
+            }
+            break;
+        }
+    case CLEAR_SCREEN:
+        osdRenderStatsBegin();
         // Then clear the screen and commence with normal stats display which will
         // determine if the heading should be displayed and also center the content vertically.
-        displayClearScreen(osdDisplayPort);
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
+        phase = RENDER_STATS;
+        break;
+    case RENDER_STATS:
+        completed = osdRenderStatsContinue();
+        break;
+    };
+
+    if (completed) {
+        phase = INITIAL_CLEAR_SCREEN;
     }
-    osdShowStats(osdStatsRowCount);
+
+    return completed;
 }
 
 static timeDelta_t osdShowArmed(void)
 {
     timeDelta_t ret;
 
-    displayClearScreen(osdDisplayPort);
+    displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
 
     if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !ARMING_FLAG(WAS_EVER_ARMED))) {
         osdDrawLogo(3, 1);
@@ -925,10 +1021,12 @@ static timeDelta_t osdShowArmed(void)
 static bool osdStatsVisible = false;
 static bool osdStatsEnabled = false;
 
-STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
+STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
 {
     static timeUs_t lastTimeUs = 0;
     static timeUs_t osdStatsRefreshTimeUs;
+
+    bool refreshStatsRequired = false;
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
@@ -944,7 +1042,7 @@ STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
             osdStatsEnabled = true;
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
             stats.end_voltage = getStatsVoltage();
-            osdStatsRowCount = 0; // reset to 0 so it will be recalculated on the next stats refresh
+            osdRenderStatsReset();
         }
 
         armState = ARMING_FLAG(ARMED);
@@ -963,7 +1061,7 @@ STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
         } else {
             if (IS_RC_MODE_ACTIVE(BOXOSD) && osdStatsVisible) {
                 osdStatsVisible = false;
-                displayClearScreen(osdDisplayPort);
+                displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
             } else if (!IS_RC_MODE_ACTIVE(BOXOSD)) {
                 if (!osdStatsVisible) {
                     osdStatsVisible = true;
@@ -971,15 +1069,17 @@ STATIC_UNIT_TESTED void osdDrawStats1(timeUs_t currentTimeUs)
                 }
                 if (currentTimeUs >= osdStatsRefreshTimeUs) {
                     osdStatsRefreshTimeUs = currentTimeUs + REFRESH_1S;
-                    osdRefreshStats();
+                    refreshStatsRequired = true;
                 }
             }
         }
     }
     lastTimeUs = currentTimeUs;
+
+    return refreshStatsRequired;
 }
 
-void osdDrawStats2(timeUs_t currentTimeUs)
+void osdProcessStats2(timeUs_t currentTimeUs)
 {
     displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
 
@@ -991,11 +1091,13 @@ void osdDrawStats2(timeUs_t currentTimeUs)
             }
             return;
         } else {
-            displayClearScreen(osdDisplayPort);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
             resumeRefreshAt = 0;
             osdStatsEnabled = false;
             stats.armed_time = 0;
         }
+
+        schedulerIgnoreTaskExecTime();
     }
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
@@ -1004,7 +1106,7 @@ void osdDrawStats2(timeUs_t currentTimeUs)
 #endif
 }
 
-void osdDrawStats3()
+void osdProcessStats3()
 {
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC)
@@ -1023,11 +1125,13 @@ typedef enum {
     OSD_STATE_INIT,
     OSD_STATE_IDLE,
     OSD_STATE_CHECK,
-    OSD_STATE_UPDATE_STATS1,
-    OSD_STATE_UPDATE_STATS2,
-    OSD_STATE_UPDATE_STATS3,
+    OSD_STATE_PROCESS_STATS1,
+    OSD_STATE_REFRESH_STATS,
+    OSD_STATE_PROCESS_STATS2,
+    OSD_STATE_PROCESS_STATS3,
     OSD_STATE_UPDATE_ALARMS,
     OSD_STATE_UPDATE_CANVAS,
+    OSD_STATE_GROUP_ELEMENTS,
     OSD_STATE_UPDATE_ELEMENTS,
     OSD_STATE_UPDATE_HEARTBEAT,
     OSD_STATE_COMMIT,
@@ -1065,16 +1169,16 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 // Called when there is OSD update work to be done
 void osdUpdate(timeUs_t currentTimeUs)
 {
-    static timeUs_t osdStateDurationUs[OSD_STATE_COUNT] = { 0 };
-    static timeUs_t osdElementDurationUs[OSD_ITEM_COUNT] = { 0 };
-    static timeUs_t osdElementGroupMembership[OSD_ITEM_COUNT];
-    static timeUs_t osdElementGroupTargetUs[OSD_GROUP_COUNT] = { 0 };
-    static timeUs_t osdElementGroupDurationUs[OSD_GROUP_COUNT] = { 0 };
+    static uint16_t osdStateDurationFractionUs[OSD_STATE_COUNT] = { 0 };
+    static uint32_t osdElementDurationUs[OSD_ITEM_COUNT] = { 0 };
+    static uint8_t osdElementGroupMemberships[OSD_ITEM_COUNT];
+    static uint16_t osdElementGroupTargetFractionUs[OSD_GROUP_COUNT] = { 0 };
+    static uint16_t osdElementGroupDurationFractionUs[OSD_GROUP_COUNT] = { 0 };
     static uint8_t osdElementGroup;
     static bool firstPass = true;
-    uint8_t osdCurElementGroup = 0;
+    uint8_t osdCurrentElementGroup = 0;
     timeUs_t executeTimeUs;
-    osdState_e osdCurState = osdState;
+    osdState_e osdCurrentState = osdState;
 
     if (osdState != OSD_STATE_UPDATE_CANVAS) {
         schedulerIgnoreTaskExecRate();
@@ -1099,9 +1203,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
-        if (isBeeperOn()) {
-            showVisualBeeper = true;
-        }
+        showVisualBeeper = isBeeperOn();
 
         // don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
@@ -1113,28 +1215,39 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     case OSD_STATE_UPDATE_HEARTBEAT:
         if (displayHeartbeat(osdDisplayPort)) {
-            // Extraordinary action was taken, so return without allowing osdStateDurationUs table to be updated
+            // Extraordinary action was taken, so return without allowing osdStateDurationFractionUs table to be updated
             return;
         }
 
-        osdState = OSD_STATE_UPDATE_STATS1;
+        osdState = OSD_STATE_PROCESS_STATS1;
         break;
 
-    case OSD_STATE_UPDATE_STATS1:
-        osdDrawStats1(currentTimeUs);
-        showVisualBeeper = false;
+    case OSD_STATE_PROCESS_STATS1:
+        {
+            bool refreshStatsRequired = osdProcessStats1(currentTimeUs);
 
-        osdState = OSD_STATE_UPDATE_STATS2;
+            if (refreshStatsRequired) {
+                osdState = OSD_STATE_REFRESH_STATS;
+            } else {
+                osdState = OSD_STATE_PROCESS_STATS2;
+            }
+            break;
+        }
+    case OSD_STATE_REFRESH_STATS:
+        {
+            bool completed = osdRefreshStats();
+            if (completed) {
+                osdState = OSD_STATE_PROCESS_STATS2;
+            }
+            break;
+        }
+    case OSD_STATE_PROCESS_STATS2:
+        osdProcessStats2(currentTimeUs);
+
+        osdState = OSD_STATE_PROCESS_STATS3;
         break;
-
-    case OSD_STATE_UPDATE_STATS2:
-        osdDrawStats2(currentTimeUs);
-
-        osdState = OSD_STATE_UPDATE_STATS3;
-        break;
-
-    case OSD_STATE_UPDATE_STATS3:
-        osdDrawStats3();
+    case OSD_STATE_PROCESS_STATS3:
+        osdProcessStats3();
 
 #ifdef USE_CMS
         if (!displayIsGrabbed(osdDisplayPort))
@@ -1160,7 +1273,7 @@ void osdUpdate(timeUs_t currentTimeUs)
     case OSD_STATE_UPDATE_CANVAS:
         // Hide OSD when OSDSW mode is active
         if (IS_RC_MODE_ACTIVE(BOXOSD)) {
-            displayClearScreen(osdDisplayPort);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
             osdState = OSD_STATE_COMMIT;
             break;
         }
@@ -1172,7 +1285,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         } else {
             // Background layer not supported, just clear the foreground in preparation
             // for drawing the elements including their backgrounds.
-            displayClearScreen(osdDisplayPort);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);
         }
 
 #ifdef USE_GPS
@@ -1188,58 +1301,65 @@ void osdUpdate(timeUs_t currentTimeUs)
 
         osdSyncBlink();
 
-        uint8_t elementGroup;
-        uint8_t activeElements = osdGetActiveElementCount();
+        osdState = OSD_STATE_GROUP_ELEMENTS;
 
-        // Reset groupings
-        for (elementGroup = 0; elementGroup < OSD_GROUP_COUNT; elementGroup++) {
-            if (osdElementGroupDurationUs[elementGroup] > (osdElementGroupTargetUs[elementGroup] + OSD_ELEMENT_RENDER_GROUP_MARGIN)) {
-                osdElementGroupDurationUs[elementGroup] = 0;
-            }
-            osdElementGroupTargetUs[elementGroup] = 0;
-        }
+        break;
 
-        elementGroup = 0;
+    case OSD_STATE_GROUP_ELEMENTS:
+        {
+            uint8_t elementGroup;
+            uint8_t activeElements = osdGetActiveElementCount();
 
-        // Based on the current element rendering, group to execute in approx 40us
-        for (uint8_t curElement = 0; curElement < activeElements; curElement++) {
-            if ((osdElementGroupTargetUs[elementGroup] == 0) ||
-                ((osdElementGroupTargetUs[elementGroup] + osdElementDurationUs[curElement]) <= OSD_ELEMENT_RENDER_TARGET) ||
-                (elementGroup == (OSD_GROUP_COUNT - 1))) {
-                osdElementGroupTargetUs[elementGroup] += osdElementDurationUs[curElement];
-                // If group membership changes, reset the stats for the group
-                if (osdElementGroupMembership[curElement] != elementGroup) {
-                    osdElementGroupDurationUs[elementGroup] = 0;
+            // Reset groupings
+            for (elementGroup = 0; elementGroup < OSD_GROUP_COUNT; elementGroup++) {
+                if (osdElementGroupDurationFractionUs[elementGroup] > (OSD_ELEMENT_RENDER_TARGET << OSD_EXEC_TIME_SHIFT)) {
+                    osdElementGroupDurationFractionUs[elementGroup] = 0;
                 }
-                osdElementGroupMembership[curElement] = elementGroup;
-            } else {
-                elementGroup++;
-                // Try again for this element
-                curElement--;
+                osdElementGroupTargetFractionUs[elementGroup] = 0;
             }
-        }
 
-        // Start with group 0
-        osdElementGroup = 0;
+            elementGroup = 0;
 
-        if (activeElements > 0) {
-            osdState = OSD_STATE_UPDATE_ELEMENTS;
-        } else {
-            osdState = OSD_STATE_COMMIT;
+            // Based on the current element rendering, group to execute in approx 40us
+            for (uint8_t curElement = 0; curElement < activeElements; curElement++) {
+                if ((osdElementGroupTargetFractionUs[elementGroup] == 0) ||
+                    (osdElementGroupTargetFractionUs[elementGroup] + (osdElementDurationUs[curElement]) <= (OSD_ELEMENT_RENDER_TARGET << OSD_EXEC_TIME_SHIFT)) ||
+                    (elementGroup == (OSD_GROUP_COUNT - 1))) {
+                    osdElementGroupTargetFractionUs[elementGroup] += osdElementDurationUs[curElement];
+                    // If group membership changes, reset the stats for the group
+                    if (osdElementGroupMemberships[curElement] != elementGroup) {
+                        osdElementGroupDurationFractionUs[elementGroup] = osdElementGroupTargetFractionUs[elementGroup] + (OSD_ELEMENT_RENDER_GROUP_MARGIN << OSD_EXEC_TIME_SHIFT);
+                    }
+                    osdElementGroupMemberships[curElement] = elementGroup;
+                } else {
+                    elementGroup++;
+                    // Try again for this element
+                    curElement--;
+                }
+            }
+
+            // Start with group 0
+            osdElementGroup = 0;
+
+            if (activeElements > 0) {
+                osdState = OSD_STATE_UPDATE_ELEMENTS;
+            } else {
+                osdState = OSD_STATE_COMMIT;
+            }
         }
         break;
 
     case OSD_STATE_UPDATE_ELEMENTS:
         {
-            osdCurElementGroup = osdElementGroup;
+            osdCurrentElementGroup = osdElementGroup;
             bool moreElements = true;
 
             do {
                 timeUs_t startElementTime = micros();
-                uint8_t osdCurElement = osdGetActiveElement();
+                uint8_t osdCurrentElement = osdGetActiveElement();
 
                 // This element should be rendered in the next group
-                if (osdElementGroupMembership[osdCurElement] != osdElementGroup) {
+                if (osdElementGroupMemberships[osdCurrentElement] != osdElementGroup) {
                     osdElementGroup++;
                     break;
                 }
@@ -1248,8 +1368,11 @@ void osdUpdate(timeUs_t currentTimeUs)
 
                 executeTimeUs = micros() - startElementTime;
 
-                if (executeTimeUs > osdElementDurationUs[osdCurElement]) {
-                    osdElementDurationUs[osdCurElement] = executeTimeUs;
+                if (executeTimeUs > (osdElementDurationUs[osdCurrentElement] >> OSD_EXEC_TIME_SHIFT)) {
+                    osdElementDurationUs[osdCurrentElement] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+                } else if (osdElementDurationUs[osdCurrentElement] > 0) {
+                    // Slowly decay the max time
+                    osdElementDurationUs[osdCurrentElement]--;
                 }
             } while (moreElements);
 
@@ -1287,6 +1410,7 @@ void osdUpdate(timeUs_t currentTimeUs)
 
         firstPass = false;
         osdState = OSD_STATE_IDLE;
+
         break;
 
     case OSD_STATE_IDLE:
@@ -1295,32 +1419,39 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
     }
 
-    executeTimeUs = micros() - currentTimeUs;
+    if (!schedulerGetIgnoreTaskExecTime()) {
+        executeTimeUs = micros() - currentTimeUs;
 
 
-    // On the first pass no element groups will have been formed, so all elements will have been
-    // rendered which is unrepresentative, so ignore
-    if (!firstPass) {
-        if (osdCurState == OSD_STATE_UPDATE_ELEMENTS) {
-            if (executeTimeUs > osdElementGroupDurationUs[osdCurElementGroup]) {
-                osdElementGroupDurationUs[osdCurElementGroup] = executeTimeUs;
+        // On the first pass no element groups will have been formed, so all elements will have been
+        // rendered which is unrepresentative, so ignore
+        if (!firstPass) {
+            if (osdCurrentState == OSD_STATE_UPDATE_ELEMENTS) {
+                if (executeTimeUs > (osdElementGroupDurationFractionUs[osdCurrentElementGroup] >> OSD_EXEC_TIME_SHIFT)) {
+                    osdElementGroupDurationFractionUs[osdCurrentElementGroup] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+                } else if (osdElementGroupDurationFractionUs[osdCurrentElementGroup] > 0) {
+                    // Slowly decay the max time
+                    osdElementGroupDurationFractionUs[osdCurrentElementGroup]--;
+                }
             }
-        }
 
-        if (executeTimeUs > osdStateDurationUs[osdCurState]) {
-            osdStateDurationUs[osdCurState] = executeTimeUs;
+            if (executeTimeUs > (osdStateDurationFractionUs[osdCurrentState] >> OSD_EXEC_TIME_SHIFT)) {
+                osdStateDurationFractionUs[osdCurrentState] = executeTimeUs << OSD_EXEC_TIME_SHIFT;
+            } else if (osdStateDurationFractionUs[osdCurrentState] > 0) {
+                // Slowly decay the max time
+                osdStateDurationFractionUs[osdCurrentState]--;
+            }
         }
     }
 
     if (osdState == OSD_STATE_UPDATE_ELEMENTS) {
-        schedulerSetNextStateTime(osdElementGroupDurationUs[osdElementGroup] + OSD_ELEMENT_RENDER_MARGIN);
+        schedulerSetNextStateTime((osdElementGroupDurationFractionUs[osdElementGroup] >> OSD_EXEC_TIME_SHIFT) + OSD_ELEMENT_RENDER_GROUP_MARGIN);
     } else {
         if (osdState == OSD_STATE_IDLE) {
-            schedulerSetNextStateTime(osdStateDurationUs[OSD_STATE_CHECK] + OSD_MARGIN);
+            schedulerSetNextStateTime((osdStateDurationFractionUs[OSD_STATE_CHECK] >> OSD_EXEC_TIME_SHIFT) + OSD_TASK_MARGIN);
         } else {
-            schedulerSetNextStateTime(osdStateDurationUs[osdState] + OSD_MARGIN);
+            schedulerSetNextStateTime((osdStateDurationFractionUs[osdState] >> OSD_EXEC_TIME_SHIFT) + OSD_TASK_MARGIN);
         }
-        schedulerIgnoreTaskExecTime();
     }
 }
 

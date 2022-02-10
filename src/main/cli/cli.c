@@ -4729,7 +4729,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
 static const char *getMcuTypeById(mcuTypeId_e id)
 {
-    if (id < MCU_TYPE_UNKNOWN) {
+    if (id < ARRAYLEN(mcuTypeNames)) {
         return mcuTypeNames[id];
     } else {
         return "UNKNOWN";
@@ -5664,7 +5664,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
     const timerHardware_t *timer = NULL;
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
-        index = atoi(pch) - 1;
+        index = pch ? (atoi(pch) - 1) : -1;
         if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
             cliPrintErrorLinef(cmdName, "BAD INDEX: '%s'", pch ? pch : "");
             return;

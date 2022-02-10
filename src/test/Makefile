@@ -278,6 +278,8 @@ scheduler_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c
 
+scheduler_unittest_DEFINES := \
+		USE_OSD= 
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
@@ -424,6 +426,7 @@ rx_spi_expresslrs_unittest_SRC := \
         $(USER_DIR)/pg/rx_spi_expresslrs.c \
 		$(USER_DIR)/rx/expresslrs_common.c \
 		$(USER_DIR)/rx/expresslrs.c \
+		$(USER_DIR)/build/atomic.c \
 
 rx_spi_expresslrs_unittest_DEFINES := \
 		USE_RX_SPI= \

@@ -54,6 +54,7 @@
 #include "flight/pid_init.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -198,6 +199,14 @@ static void validateAndFixRatesSettings(void)
             controlRateProfilesMutable(profileIndex)->rates[axis] = constrain(controlRateProfilesMutable(profileIndex)->rates[axis], 0, ratesSettingLimits[ratesType].srate_limit);
             controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
         }
+    }
+}
+
+static void validateAndFixPositionConfig(void)
+{
+    if (positionConfig()->altNumSatsBaroFallback >= positionConfig()->altNumSatsGpsUse) {
+        positionConfigMutable()->altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE;
+        positionConfigMutable()->altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK;
     }
 }
 
@@ -586,6 +595,8 @@ static void validateAndFixConfig(void)
     // This should be done at the end of the validation
     targetValidateConfiguration();
 #endif
+
+    validateAndFixPositionConfig();
 }
 
 void validateAndFixGyroConfig(void)
@@ -618,6 +629,16 @@ void validateAndFixGyroConfig(void)
 
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
+
+#if defined(STM32F411xE)
+        /* If bidirectional DSHOT is being used on an F411 then force DSHOT300. The motor update restrictions then applied
+         * will automatically consider the loop time and adjust pid_process_denom appropriately
+         */
+        if (motorConfig()->dev.useDshotTelemetry && (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)) {
+            motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+        }
+#endif
+
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
@@ -726,6 +747,9 @@ void writeUnmodifiedConfigToEEPROM(void)
 
 void writeEEPROM(void)
 {
+#ifdef USE_RX_SPI
+    rxSpiStop(); // some rx spi protocols use hardware timer, which needs to be stopped before writing to eeprom
+#endif
     systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
 
     writeUnmodifiedConfigToEEPROM();
@@ -761,6 +785,9 @@ void ensureEEPROMStructureIsValid(void)
 
 void saveConfigAndNotify(void)
 {
+    // The write to EEPROM will cause a big delay in the current task, so ignore
+    schedulerIgnoreTaskExecTime();
+
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(1);
@@ -803,6 +830,9 @@ void changePidProfileFromCellCount(uint8_t cellCount)
 
 void changePidProfile(uint8_t pidProfileIndex)
 {
+    // The config switch will cause a big enough delay in the current task to upset the scheduler
+    schedulerIgnoreTaskExecTime();
+
     if (pidProfileIndex < PID_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         loadPidProfile();

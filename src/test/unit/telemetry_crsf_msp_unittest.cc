@@ -51,6 +51,7 @@ extern "C" {
     #include "io/gps.h"
 
     #include "msp/msp.h"
+    #include "msp/msp_serial.h"
 
     #include "rx/rx.h"
     #include "rx/crsf.h"

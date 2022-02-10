@@ -560,7 +560,7 @@ static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
             c |=  CRSF_RLE_CHAR_REPEATED_MASK;
             const uint8_t fullBatches = (runLength / CRSF_RLE_MAX_RUN_LENGTH);
             const uint8_t remainder = (runLength % CRSF_RLE_MAX_RUN_LENGTH);
-            const uint8_t totalBatches = fullBatches + (remainder) ? 1 : 0;
+            const uint8_t totalBatches = fullBatches + (remainder ? 1 : 0);
             if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
                 for (unsigned int i = 1; i <= totalBatches; i++) {
                     const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;
