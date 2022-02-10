@@ -106,7 +106,7 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
     SERIAL_PORT_SOFTSERIAL2,
 #endif
 #ifdef USE_LPUART1
-    SERIAL_PORT_LPUART1
+    SERIAL_PORT_LPUART1,
 #endif
 };
 
@@ -406,6 +406,9 @@ serialPort_t *openSerialPort(
 #ifdef USE_UART10
         case SERIAL_PORT_USART10:
 #endif
+#ifdef USE_LPUART1
+        case SERIAL_PORT_LPUART1:
+#endif
 #if defined(SIMULATOR_BUILD)
             // emulate serial ports over TCP
             serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
@@ -474,9 +477,12 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
                 serialPortCount--;
             }
         }
-
 #if !defined(SIMULATOR_BUILD)
-        else if (serialPortUsageList[index].identifier <= SERIAL_PORT_USART8) {
+        else if (serialPortUsageList[index].identifier <= SERIAL_PORT_USART10
+#ifdef USE_LPUART1
+            || serialPortUsageList[index].identifier == SERIAL_PORT_LPUART1
+#endif
+        ) {
             int resourceIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(serialPortUsageList[index].identifier);
             if (!(serialPinConfig()->ioTagTx[resourceIndex] || serialPinConfig()->ioTagRx[resourceIndex])) {
                 serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
@@ -484,7 +490,6 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
             }
         }
 #endif
-
         else if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #ifdef USE_SOFTSERIAL1
             && !(softserialEnabled && (serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1] ||

@@ -92,6 +92,10 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
     requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderHardwareToUse;
 
+#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF)
+    UNUSED(dev);
+#endif
+
     switch (rangefinderHardwareToUse) {
         case RANGEFINDER_HCSR04:
 #ifdef USE_RANGEFINDER_HCSR04

@@ -512,6 +512,7 @@ extern "C" {
     bool taskUpdateRxMainInProgress() { return true; }
     void schedulerIgnoreTaskStateTime(void) { }
     void schedulerIgnoreTaskExecRate(void) { }
+    bool schedulerGetIgnoreTaskExecTime() { return false; }
     void schedulerIgnoreTaskExecTime(void) { }
     void schedulerSetNextStateTime(timeDelta_t) {}
 

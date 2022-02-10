@@ -52,10 +52,12 @@ typedef enum {
     GPS_ONLY
 } altSource_e;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 2);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altSource = DEFAULT,
+    .altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE,
+    .altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK,
 );
 
 static int32_t estimatedAltitudeCm = 0;                // in cm
@@ -86,7 +88,8 @@ int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-static bool altitudeOffsetSet = false;
+static bool altitudeOffsetSetBaro = false;
+static bool altitudeOffsetSetGPS = false;
 
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
@@ -103,6 +106,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     int32_t baroAlt = 0;
     int32_t gpsAlt = 0;
+    uint8_t gpsNumSat = 0;
 
 #if defined(USE_GPS) && defined(USE_VARIO)
     int16_t gpsVertSpeed = 0;
@@ -124,6 +128,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         gpsAlt = gpsSol.llh.altCm;
+        gpsNumSat = gpsSol.numSat;
 #ifdef USE_VARIO
         gpsVertSpeed = GPS_verticalSpeedInCmS;
 #endif
@@ -137,16 +142,40 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (ARMING_FLAG(ARMED) && !altitudeOffsetSet) {
+    if (ARMING_FLAG(ARMED) && !altitudeOffsetSetBaro) {
         baroAltOffset = baroAlt;
-        gpsAltOffset = gpsAlt;
-        altitudeOffsetSet = true;
-    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSet) {
-        altitudeOffsetSet = false;
+        altitudeOffsetSetBaro = true;
+    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetBaro) {
+        altitudeOffsetSetBaro = false;
     }
+
     baroAlt -= baroAltOffset;
+
+    int goodGpsSats = 0;
+    int badGpsSats = -1;
+
+    if (haveBaroAlt) {
+        goodGpsSats = positionConfig()->altNumSatsGpsUse;
+        badGpsSats = positionConfig()->altNumSatsBaroFallback;
+    }
+
+    if (ARMING_FLAG(ARMED)) {
+        if (!altitudeOffsetSetGPS && gpsNumSat >= goodGpsSats) {
+            gpsAltOffset = gpsAlt - baroAlt;
+            altitudeOffsetSetGPS = true;
+        } else if (gpsNumSat <= badGpsSats) {
+            altitudeOffsetSetGPS = false;
+        }
+    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetGPS) {
+        altitudeOffsetSetGPS = false;
+    }
+
     gpsAlt -= gpsAltOffset;
 
+    if (!altitudeOffsetSetGPS) {
+        haveGpsAlt = false;
+        gpsTrust = 0.0f;
+    }
 
     if (haveGpsAlt && haveBaroAlt && positionConfig()->altSource == DEFAULT) {
         if (ARMING_FLAG(ARMED)) {
@@ -182,7 +211,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
 bool isAltitudeOffset(void)
 {
-    return altitudeOffsetSet;
+    return altitudeOffsetSetBaro || altitudeOffsetSetGPS;
 }
 #endif
 

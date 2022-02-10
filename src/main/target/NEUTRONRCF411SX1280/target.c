@@ -18,21 +18,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#include "drivers/io_types.h"
-#include "pg/pg.h"
+#include "platform.h"
+#include "drivers/io.h"
 
-typedef struct max7456Config_s {
-    uint8_t clockConfig; // SPI clock modifier
-    ioTag_t csTag;
-    uint8_t spiDevice;
-    bool preInitOPU;
-} max7456Config_t;
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
-// clockConfig values
-#define MAX7456_CLOCK_CONFIG_HALF       0  // Force half clock
-#define MAX7456_CLOCK_CONFIG_NOMINAL    1  // Nominal clock (default)
-#define MAX7456_CLOCK_CONFIG_DOUBLE     2  // Double clock
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
-PG_DECLARE(max7456Config_t, max7456Config);
+    DEF_TIM( TIM3, CH4, PB1, TIM_USE_LED,              0, 0 ), // LED Strip
+    DEF_TIM( TIM4, CH3, PB8, TIM_USE_MOTOR,            0, 0 ), // M1
+    DEF_TIM( TIM2, CH1, PA0, TIM_USE_MOTOR,            0, 0 ), // M2
+    DEF_TIM( TIM2, CH3, PB10,TIM_USE_MOTOR,            0, 0 ), // M3
+    DEF_TIM( TIM4, CH2, PB7, TIM_USE_MOTOR,            0, 0 ), // M4
+};

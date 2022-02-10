@@ -18,21 +18,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "drivers/io_types.h"
-#include "pg/pg.h"
+#include "pg/pg_ids.h"
+#include "pg/scheduler.h"
 
-typedef struct max7456Config_s {
-    uint8_t clockConfig; // SPI clock modifier
-    ioTag_t csTag;
-    uint8_t spiDevice;
-    bool preInitOPU;
-} max7456Config_t;
+PG_REGISTER_WITH_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig, PG_SCHEDULER_CONFIG, 0);
 
-// clockConfig values
-#define MAX7456_CLOCK_CONFIG_HALF       0  // Force half clock
-#define MAX7456_CLOCK_CONFIG_NOMINAL    1  // Nominal clock (default)
-#define MAX7456_CLOCK_CONFIG_DOUBLE     2  // Double clock
-
-PG_DECLARE(max7456Config_t, max7456Config);
+PG_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig,
+    .rxRelaxDeterminism = SCHEDULER_RELAX_RX,
+    .osdRelaxDeterminism = SCHEDULER_RELAX_OSD,
+);

@@ -95,3 +95,4 @@ typedef struct {
 #define RC_CHANNEL_RTH         RC_SPI_AUX6 // return to home
 
 bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState);
+void rxSpiStop(void);

@@ -21,8 +21,8 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "BHER"
-#define USBD_PRODUCT_STRING     "BETAFPVF4SX1280"
+#define TARGET_BOARD_IDENTIFIER "NERC"
+#define USBD_PRODUCT_STRING     "NEUTRONRCF411SX1280"
 
 #define LED0_PIN                PC14
 
@@ -31,10 +31,6 @@
 #define BEEPER_INVERTED
 
 #define USE_UART
-
-#define USE_SOFTSERIAL1
-#define SOFTSERIAL1_TX_PIN      PA8
-#define SOFTSERIAL1_RX_PIN      PA8
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
@@ -46,44 +42,19 @@
 
 #define USE_VCP
 
-#define SERIAL_PORT_COUNT       4
-
-#define USE_SPI
-
-#define USE_SPI_DEVICE_1
-#define SPI1_SCK_PIN            PA5
-#define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN           PA7
-#define SPI1_NSS_PIN            PA4
-
-#define USE_SPI_DEVICE_2
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
-#define SPI2_NSS_PIN            PB12
-
-#define USE_SPI_DEVICE_3
-#define SPI3_SCK_PIN            PB3
-#define SPI3_MISO_PIN           PB4
-#define SPI3_MOSI_PIN           PB5
+#define SERIAL_PORT_COUNT       3
 
 #define USE_GYRO
 #define USE_ACC
-
-//MPU6000
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC_SPI_MPU6000
-
-// ICM-20689
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
-
+#define USE_ACCGYRO_BMI270
 #define USE_EXTI
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN        PB6
 #define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
 #define GYRO_1_CS_PIN          SPI1_NSS_PIN
 #define GYRO_1_SPI_INSTANCE    SPI1
 #define GYRO_1_ALIGN           CW90_DEG
@@ -92,7 +63,18 @@
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE   SPI2
-#define MAX7456_SPI_CS_PIN     SPI2_NSS_PIN
+#define MAX7456_SPI_CS_PIN     PB12
+
+#define USE_FLASHFS
+#define USE_FLASH_TOOLS
+#define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G          // 1Gb NAND flash support
+#define USE_FLASH_W25M             // Stacked die support
+#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define FLASH_CS_PIN           PA8
+#define FLASH_SPI_INSTANCE     SPI2
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define USE_RX_SPI
 #define RX_SPI_INSTANCE        SPI3
@@ -113,6 +95,24 @@
 #define RX_EXPRESSLRS_SPI_BUSY_PIN       PA13
 #define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 
+#define USE_SPI
+
+#define USE_SPI_DEVICE_1
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
+#define SPI1_NSS_PIN            PA4
+
+#define USE_SPI_DEVICE_2
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
+// #define SPI2_NSS_PIN            PB12
+
+#define USE_SPI_DEVICE_3
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
 
 #define ADC1_DMA_OPT                0
 
@@ -130,20 +130,17 @@
 #define VBAT_SCALE_DEFAULT          110
 #define CURRENT_METER_SCALE_DEFAULT 800
 
-#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP |FEATURE_SOFTSERIAL)
+#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
 
 #define USE_ESCSERIAL
 #define ENABLE_DSHOT_DMAR       DSHOT_DMAR_AUTO
-#define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_ON
+#define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_OFF
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USABLE_TIMER_CHANNEL_COUNT 5
 
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
-
-
-
+#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4))

@@ -67,7 +67,7 @@
 #endif
 #endif
 #elif defined(STM32H7)
-#define UARTDEV_COUNT_MAX 8
+#define UARTDEV_COUNT_MAX 11 // UARTs 1 to 10 + LPUART1
 #define UARTHARDWARE_MAX_PINS 5
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     128
@@ -80,7 +80,7 @@
 #endif
 #endif
 #elif defined(STM32G4)
-#define UARTDEV_COUNT_MAX 9  // UART1~5 + UART9 (Implemented with LPUART1)
+#define UARTDEV_COUNT_MAX 11  // UARTs 1 to 5 + LPUART1 (index 10)
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     128

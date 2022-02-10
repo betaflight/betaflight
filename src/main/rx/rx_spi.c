@@ -57,15 +57,19 @@ uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
+static void nullProtocolStop(void) {}
+
 typedef bool (*protocolInitFnPtr)(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
 typedef rx_spi_received_e (*protocolProcessFrameFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
+typedef void (*protocolStopFnPtr)(void);
 
 static protocolInitFnPtr protocolInit;
 static protocolDataReceivedFnPtr protocolDataReceived;
 static protocolProcessFrameFnPtr protocolProcessFrame;
 static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
+static protocolStopFnPtr protocolStop = nullProtocolStop;
 
 STATIC_UNIT_TESTED float rxSpiReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
 {
@@ -180,6 +184,7 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolInit = expressLrsSpiInit;
         protocolDataReceived = expressLrsDataReceived;
         protocolSetRcDataFromPayload = expressLrsSetRcDataFromPayload;
+        protocolStop = expressLrsStop;
         break;
 #endif
     default:
@@ -270,4 +275,10 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
 
     return ret;
 }
+
+void rxSpiStop(void)
+{
+    protocolStop();
+}
+
 #endif
