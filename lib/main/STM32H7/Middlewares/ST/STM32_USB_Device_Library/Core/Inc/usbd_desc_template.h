@@ -46,7 +46,7 @@
 #define USBD_BB_ALTMODE1_STR_DESC     (uint8_t *)"STM32 Alternate1 Mode"
 #endif
 
-#define  USB_SIZ_STRING_SERIAL       0x1AU
+//#define  USB_SIZ_STRING_SERIAL       0x1AU
 
 #if (USBD_LPM_ENABLED == 1)
 #define  USB_SIZ_BOS_DESC            0x0CU

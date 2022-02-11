@@ -312,52 +312,34 @@ __ALIGN_BEGIN static uint8_t USBD_HID_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
 
 __ALIGN_BEGIN static uint8_t HID_MOUSE_ReportDesc[HID_MOUSE_REPORT_DESC_SIZE] __ALIGN_END =
 {
-  0x05,   0x01,
-  0x09,   0x02,
-  0xA1,   0x01,
-  0x09,   0x01,
-
-  0xA1,   0x00,
-  0x05,   0x09,
-  0x19,   0x01,
-  0x29,   0x03,
-
-  0x15,   0x00,
-  0x25,   0x01,
-  0x95,   0x03,
-  0x75,   0x01,
-
-  0x81,   0x02,
-  0x95,   0x01,
-  0x75,   0x05,
-  0x81,   0x01,
-
-  0x05,   0x01,
-  0x09,   0x30,
-  0x09,   0x31,
-  0x09,   0x38,
-
-  0x15,   0x81,
-  0x25,   0x7F,
-  0x75,   0x08,
-  0x95,   0x03,
-
-  0x81,   0x06,
-  0xC0,   0x09,
-  0x3c,   0x05,
-  0xff,   0x09,
-
-  0x01,   0x15,
-  0x00,   0x25,
-  0x01,   0x75,
-  0x01,   0x95,
-
-  0x02,   0xb1,
-  0x22,   0x75,
-  0x06,   0x95,
-  0x01,   0xb1,
-
-  0x01,   0xc0
+        0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
+        0x09, 0x05,                    // USAGE (Game Pad)
+        0xa1, 0x01,                    // COLLECTION (Application)
+        0xa1, 0x00,                    //   COLLECTION (Physical)
+        0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
+        0x09, 0x30,                    //     USAGE (X)
+        0x09, 0x31,                    //     USAGE (Y)
+        0x09, 0x32,                    //     USAGE (Z)
+        0x09, 0x33,                    //     USAGE (Rx)
+        0x09, 0x35,                    //     USAGE (Rz)
+        0x09, 0x34,                    //     USAGE (Ry)
+        0x09, 0x36,                    //     USAGE (Slider)
+        0x09, 0x37,                    //     USAGE (Dial)
+        0x15, 0x81,                    //     LOGICAL_MINIMUM (-127)
+        0x25, 0x7f,                    //     LOGICAL_MAXIMUM (127)
+        0x75, 0x08,                    //     REPORT_SIZE (8)
+        0x95, 0x08,                    //     REPORT_COUNT (8)
+        0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+        0x05, 0x09,                    //     USAGE_PAGE (Button)
+        0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
+        0x29, 0x08,                    //     USAGE_MAXIMUM (Button 8)
+        0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+        0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
+        0x95, 0x08,                    //     REPORT_COUNT (8)
+        0x75, 0x01,                    //     REPORT_SIZE (1)
+        0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+        0xc0,                          //   END_COLLECTION
+        0xc0                           /*     END_COLLECTION                 */
 };
 
 /**
@@ -385,11 +367,11 @@ static uint8_t USBD_HID_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
   if (hhid == NULL)
   {
-    pdev->pClassData = NULL;
+    pdev->pHID_ClassData = NULL;
     return (uint8_t)USBD_EMEM;
   }
 
-  pdev->pClassData = (void *)hhid;
+  pdev->pHID_ClassData = (void *)hhid;
 
   if (pdev->dev_speed == USBD_SPEED_HIGH)
   {
@@ -426,10 +408,10 @@ static uint8_t USBD_HID_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   pdev->ep_in[HID_EPIN_ADDR & 0xFU].bInterval = 0U;
 
   /* Free allocated memory */
-  if (pdev->pClassData != NULL)
+  if (pdev->pHID_ClassData != NULL)
   {
-    (void)USBD_free(pdev->pClassData);
-    pdev->pClassData = NULL;
+    (void)USBD_free(pdev->pHID_ClassData);
+    pdev->pHID_ClassData = NULL;
   }
 
   return (uint8_t)USBD_OK;
@@ -444,7 +426,7 @@ static uint8_t USBD_HID_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   */
 static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-  USBD_HID_HandleTypeDef *hhid = (USBD_HID_HandleTypeDef *)pdev->pClassData;
+  USBD_HID_HandleTypeDef *hhid = (USBD_HID_HandleTypeDef *)pdev->pHID_ClassData;
   USBD_StatusTypeDef ret = USBD_OK;
   uint16_t len;
   uint8_t *pbuf;
@@ -569,7 +551,7 @@ static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *re
   */
 uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, uint16_t len)
 {
-  USBD_HID_HandleTypeDef *hhid = (USBD_HID_HandleTypeDef *)pdev->pClassData;
+  USBD_HID_HandleTypeDef *hhid = (USBD_HID_HandleTypeDef *)pdev->pHID_ClassData;
 
   if (hhid == NULL)
   {
@@ -670,7 +652,7 @@ static uint8_t USBD_HID_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
   UNUSED(epnum);
   /* Ensure that the FIFO is empty before a new transfer, this condition could
   be caused by  a new transfer before the end of the previous transfer */
-  ((USBD_HID_HandleTypeDef *)pdev->pClassData)->state = HID_IDLE;
+  ((USBD_HID_HandleTypeDef *)pdev->pHID_ClassData)->state = HID_IDLE;
 
   return (uint8_t)USBD_OK;
 }

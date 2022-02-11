@@ -227,7 +227,6 @@ typedef enum
 #define __MPU_PRESENT             1U       /*!< CM4 provides an MPU                           */
 #define __NVIC_PRIO_BITS          4U       /*!< CM4 uses 4 Bits for the Priority Levels       */
 #define __Vendor_SysTickConfig    0U       /*!< Set to 1 if different SysTick Config is used  */
-#define __FPU_PRESENT             1U       /*!< FPU present                                   */
 
 #include "core_cm4.h"                     /*!< Cortex-M4 processor and core peripherals      */
 #else  /* CORE_CM7 */
@@ -236,7 +235,6 @@ typedef enum
 #define __MPU_PRESENT             1U       /*!< CM7 provides an MPU                           */
 #define __NVIC_PRIO_BITS          4U       /*!< CM7 uses 4 Bits for the Priority Levels       */
 #define __Vendor_SysTickConfig    0U       /*!< Set to 1 if different SysTick Config is used  */
-#define __FPU_PRESENT             1U       /*!< FPU present                                   */
 #define __ICACHE_PRESENT          1U       /*!< CM7 instruction cache present                 */
 #define __DCACHE_PRESENT          1U       /*!< CM7 data cache present                        */
 #include "core_cm7.h"                 /*!< Cortex-M7 processor and core peripherals          */

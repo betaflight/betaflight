@@ -297,11 +297,11 @@ uint8_t USBD_MSC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
   if (hmsc == NULL)
   {
-    pdev->pClassData = NULL;
+    pdev->pMSC_ClassData = NULL;
     return (uint8_t)USBD_EMEM;
   }
 
-  pdev->pClassData = (void *)hmsc;
+  pdev->pMSC_ClassData = (void *)hmsc;
 
   if (pdev->dev_speed == USBD_SPEED_HIGH)
   {
@@ -350,13 +350,13 @@ uint8_t USBD_MSC_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   pdev->ep_in[MSC_EPIN_ADDR & 0xFU].is_used = 0U;
 
   /* Free MSC Class Resources */
-  if (pdev->pClassData != NULL)
+  if (pdev->pMSC_ClassData != NULL)
   {
     /* De-Init the BOT layer */
     MSC_BOT_DeInit(pdev);
 
-    (void)USBD_free(pdev->pClassData);
-    pdev->pClassData = NULL;
+    (void)USBD_free(pdev->pMSC_ClassData);
+    pdev->pMSC_ClassData = NULL;
   }
 
   return (uint8_t)USBD_OK;
@@ -370,7 +370,7 @@ uint8_t USBD_MSC_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   */
 uint8_t USBD_MSC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-  USBD_MSC_BOT_HandleTypeDef *hmsc = (USBD_MSC_BOT_HandleTypeDef *)pdev->pClassData;
+  USBD_MSC_BOT_HandleTypeDef *hmsc = (USBD_MSC_BOT_HandleTypeDef *)pdev->pMSC_ClassData;
   USBD_StatusTypeDef ret = USBD_OK;
   uint16_t status_info = 0U;
 
@@ -389,7 +389,7 @@ uint8_t USBD_MSC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
           if ((req->wValue  == 0U) && (req->wLength == 1U) &&
               ((req->bmRequest & 0x80U) == 0x80U))
           {
-            hmsc->max_lun = (uint32_t)((USBD_StorageTypeDef *)pdev->pUserData)->GetMaxLun();
+            hmsc->max_lun = (uint32_t)((USBD_StorageTypeDef *)pdev->pMSC_UserData)->GetMaxLun();
             (void)USBD_CtlSendData(pdev, (uint8_t *)&hmsc->max_lun, 1U);
           }
           else
@@ -579,7 +579,7 @@ uint8_t USBD_MSC_RegisterStorage(USBD_HandleTypeDef *pdev, USBD_StorageTypeDef *
     return (uint8_t)USBD_FAIL;
   }
 
-  pdev->pUserData = fops;
+  pdev->pMSC_UserData = fops;
 
   return (uint8_t)USBD_OK;
 }

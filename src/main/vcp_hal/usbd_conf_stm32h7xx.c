@@ -499,7 +499,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef * pdev)
 #endif
     hpcd.Init.dev_endpoints = 9;
     hpcd.Init.use_dedicated_ep1 = DISABLE;
-    hpcd.Init.ep0_mps = DEP0CTL_MPS_64;
+    hpcd.Init.ep0_mps = EP_MPS_64;
     hpcd.Init.low_power_enable = DISABLE;
     hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
     hpcd.Init.Sof_enable = DISABLE;

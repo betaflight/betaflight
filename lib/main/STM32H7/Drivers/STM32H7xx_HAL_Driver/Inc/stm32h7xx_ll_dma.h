@@ -171,7 +171,6 @@ typedef struct
                                         @note The burst mode is possible only if the address Increment mode is enabled.
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetPeriphBurstxfer(). */
-
 } LL_DMA_InitTypeDef;
 /**
   * @}
