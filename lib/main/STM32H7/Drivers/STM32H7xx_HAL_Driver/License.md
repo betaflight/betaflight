@@ -1,0 +1,1 @@
+License.md file kept for legacy purpose
