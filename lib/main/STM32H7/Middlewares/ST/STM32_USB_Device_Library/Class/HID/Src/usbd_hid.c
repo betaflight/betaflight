@@ -558,7 +558,7 @@ uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, uint16_t 
     return (uint8_t)USBD_FAIL;
   }
 
-  if (pdev->dev_state == USBD_STATE_CONFIGURED)
+  if (pdev->dev_state == USBD_STATE_CONFIGURED && hhid)
   {
     if (hhid->state == HID_IDLE)
     {
