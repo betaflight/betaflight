@@ -184,8 +184,18 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
 
     sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 18.5hz per bin at 8k and 600Hz maxHz
+
+    // Check for nyquist and decrease sampleCount if maxHz close to nyquist
+    // this allows for detecting peaks between minHz and maxHz
+    if (((sdftSampleRateHz / 2) - (2 * sdftResolutionHz)) < dynNotch.maxHz) {
+        sampleCount = MAX(1, sampleCount - 1);
+        sampleCountRcp = 1 / sampleCount;
+        sdftSampleRateHz = looprateHz / sampleCount;
+        sdftResolutionHz = looprateHz / SDFT_SAMPLE_SIZE;
+    }
+
     sdftStartBin = MAX(2, dynNotch.minHz / sdftResolutionHz + 0.5f); // can't use bin 0 because it is DC.
-    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynNotch.maxHz / sdftResolutionHz + 0.5f); // can't use more than SDFT_BIN_COUNT bins.
+    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynNotch.maxHz / sdftResolutionHz + 1.5f); // can't use more than SDFT_BIN_COUNT bins.
     pt1LooptimeS = DYN_NOTCH_CALC_TICKS / looprateHz;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -282,7 +292,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             }
 
             // Search for N biggest peaks in frequency spectrum
-            for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
+            for (int bin = sdftStartBin; bin < sdftEndBin; bin++) {
                 // Check if bin is peak
                 if ((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
                     // Check if peak is big enough to be one of N biggest peaks.
