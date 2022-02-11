@@ -106,7 +106,7 @@ FAST_CODE void sdftMagSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
-    for (int i = sdft->startBin; i < sdft->endBin; i++) {
+    for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         re = crealf(sdft->data[i]);
         im = cimagf(sdft->data[i]);
         output[i] = re * re + im * im;
@@ -130,7 +130,7 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
-    for (int i = sdft->startBin ; i <= sdft->endBin; i++) {
+    for (int i = sdft->startBin ; i < sdft->endBin; i++) {
         val = sdft->data[i] - 0.5f * (sdft->data[i - 1] + sdft->data[i + 1]); // multiply by 2 to save one multiplication
         re = crealf(val);
         im = cimagf(val);
