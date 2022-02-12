@@ -277,8 +277,10 @@ static const char * const lookupTableRxSpi[] = {
 
 static const char * const lookupTableGyroHardwareLpf[] = {
     "NORMAL",
+    "OPTION_1",
+    "OPTION_2",
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
-    "EXPERIMENTAL"
+    "EXPERIMENTAL",
 #endif
 };
 
@@ -658,6 +660,7 @@ const lookupTableEntry_t lookupTables[] = {
 const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
     { PARAM_NAME_GYRO_HARDWARE_LPF, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
+    
 #if defined(USE_GYRO_SPI_ICM20649)
     { "gyro_high_range",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_high_fsr) },
 #endif
