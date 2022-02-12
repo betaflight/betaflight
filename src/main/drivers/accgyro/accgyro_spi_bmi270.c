@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "platform.h"
-
+#include "sensors/gyro.h"
 #ifdef USE_ACCGYRO_BMI270
 
 #include "drivers/accgyro/accgyro.h"
@@ -37,6 +37,7 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+
 
 // 10 MHz max SPI frequency
 #define BMI270_MAX_SPI_CLK_HZ 10000000
@@ -108,7 +109,9 @@ typedef enum {
     BMI270_VAL_ACC_RANGE_8G = 0x02,          // set acc to 8G full scale
     BMI270_VAL_ACC_RANGE_16G = 0x03,         // set acc to 16G full scale
     BMI270_VAL_GYRO_CONF_ODR3200 = 0x0D,     // set gyro sample rate to 3200hz
-    BMI270_VAL_GYRO_CONF_BWP = 0x02,         // set gyro filter in normal mode
+    BMI270_VAL_GYRO_CONF_BWP_OSR4 = 0x00,    // set gyro filter in OSR4 mode
+    BMI270_VAL_GYRO_CONF_BWP_OSR2 = 0x01,    // set gyro filter in OSR2 mode
+    BMI270_VAL_GYRO_CONF_BWP_NORM = 0x02,    // set gyro filter in normal mode
     BMI270_VAL_GYRO_CONF_NOISE_PERF = 0x01,  // set gyro in high performance noise mode
     BMI270_VAL_GYRO_CONF_FILTER_PERF = 0x01, // set gyro in high performance filter mode
 
@@ -184,6 +187,27 @@ static void bmi270UploadConfig(const extDevice_t *dev)
     bmi270RegisterWrite(dev, BMI270_REG_INIT_CTRL, 1, 1);
 }
 
+static uint8_t getBmiOversampleMode()
+{
+    uint8_t currentBmiOversampleMode = 0;
+
+    switch(gyroConfig()->gyro_bmi_oversample)
+    {
+            case GYRO_BMI_OVERSAMPLE_OSR4:
+                currentBmiOversampleMode = BMI270_VAL_GYRO_CONF_BWP_OSR4;
+                break;
+            case GYRO_BMI_OVERSAMPLE_OSR2:
+                currentBmiOversampleMode = BMI270_VAL_GYRO_CONF_BWP_OSR2;
+                break;
+            case GYRO_BMI_OVERSAMPLE_NORM:
+                currentBmiOversampleMode = BMI270_VAL_GYRO_CONF_BWP_NORM;
+                break;
+    }
+
+    return currentBmiOversampleMode;
+}
+
+
 static void bmi270Config(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
@@ -221,7 +245,8 @@ static void bmi270Config(gyroDev_t *gyro)
     bmi270RegisterWrite(dev, BMI270_REG_ACC_RANGE, BMI270_VAL_ACC_RANGE_16G, 1);
 
     // Configure the gyro
-    bmi270RegisterWrite(dev, BMI270_REG_GYRO_CONF, (BMI270_VAL_GYRO_CONF_FILTER_PERF << 7) | (BMI270_VAL_GYRO_CONF_NOISE_PERF << 6) | (BMI270_VAL_GYRO_CONF_BWP << 4) | BMI270_VAL_GYRO_CONF_ODR3200, 1);
+    uint8_t currentBmiOversample = getBmiOversampleMode();
+    bmi270RegisterWrite(dev, BMI270_REG_GYRO_CONF, (BMI270_VAL_GYRO_CONF_FILTER_PERF << 7) | (BMI270_VAL_GYRO_CONF_NOISE_PERF << 6) | (currentBmiOversample << 4) | BMI270_VAL_GYRO_CONF_ODR3200, 1);
 
     // Configure the gyro full-range scale
     bmi270RegisterWrite(dev, BMI270_REG_GYRO_RANGE, BMI270_VAL_GYRO_RANGE_2000DPS, 1);

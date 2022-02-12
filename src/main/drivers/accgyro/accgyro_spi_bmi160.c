@@ -48,6 +48,7 @@
 
 #include "accgyro.h"
 #include "accgyro_spi_bmi160.h"
+#include "sensors/gyro.h"
 
 
 // 10 MHz max SPI frequency
@@ -83,6 +84,9 @@
 #define BMI160_REG_STATUS_NVM_RDY 0x10
 #define BMI160_REG_STATUS_FOC_RDY 0x08
 #define BMI160_REG_CONF_NVM_PROG_EN 0x02
+#define BMI160_VAL_GYRO_CONF_BWP_OSR4 0x00
+#define BMI160_VAL_GYRO_CONF_BWP_OSR2 0x10
+#define BMI160_VAL_GYRO_CONF_BWP_NORM 0x20
 
 ///* Global Variables */
 static volatile bool BMI160InitDone = false;
@@ -139,6 +143,25 @@ static void BMI160_Init(const extDevice_t *dev)
     BMI160InitDone = true;
 }
 
+static uint8_t getBmiOversampleMode()
+{
+    uint8_t currentBmiOversampleMode = 0;
+
+    switch(gyroConfig()->gyro_bmi_oversample)
+    {
+            case GYRO_BMI_OVERSAMPLE_OSR4:
+                currentBmiOversampleMode = BMI160_VAL_GYRO_CONF_BWP_OSR4;
+                break;
+            case GYRO_BMI_OVERSAMPLE_OSR2:
+                currentBmiOversampleMode = BMI160_VAL_GYRO_CONF_BWP_OSR2;
+                break;
+            case GYRO_BMI_OVERSAMPLE_NORM:
+                currentBmiOversampleMode = BMI160_VAL_GYRO_CONF_BWP_NORM;
+                break;
+    }
+
+    return currentBmiOversampleMode;
+}
 
 /**
  * @brief Configure the sensor
@@ -164,8 +187,8 @@ static int32_t BMI160_Config(const extDevice_t *dev)
     spiWriteReg(dev, BMI160_REG_ACC_CONF, 0x20 | BMI160_ODR_800_Hz);
     delay(1);
 
-    // Set gyr_bwp = 0b010 so only the first filter stage is used
-    spiWriteReg(dev, BMI160_REG_GYR_CONF, 0x20 | BMI160_ODR_3200_Hz);
+    uint8_t currentBmiOversample = getBmiOversampleMode();
+    spiWriteReg(dev, BMI160_REG_GYR_CONF, currentBmiOversample | BMI160_ODR_3200_Hz);
     delay(1);
 
     spiWriteReg(dev, BMI160_REG_ACC_RANGE, BMI160_RANGE_8G);

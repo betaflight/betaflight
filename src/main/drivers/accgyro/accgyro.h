@@ -70,6 +70,12 @@ typedef enum {
 } gyroHardwareLpf_e;
 
 typedef enum {
+    GYRO_BMI_OVERSAMPLE_OSR4,
+    GYRO_BMI_OVERSAMPLE_OSR2,
+    GYRO_BMI_OVERSAMPLE_NORM,
+} gyroBmiOversample_e;
+
+typedef enum {
     GYRO_RATE_1_kHz,
     GYRO_RATE_1100_Hz,
     GYRO_RATE_3200_Hz,
