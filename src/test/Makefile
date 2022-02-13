@@ -463,6 +463,13 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
 
+althold_unittest_SRC := \
+		$(USER_DIR)/flight/alt_hold.c \
+		$(USER_DIR)/common/maths.c \
+
+althold_unittest_DEFINES := \
+		USE_ALTHOLD_MODE= \
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
