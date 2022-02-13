@@ -20,6 +20,7 @@
 
 #ifdef USE_ALTHOLD_MODE
 
+#include "drivers/time.h"
 #include "flight/position.h"
 #include "flight/imu.h"
 #include "sensors/acceleration.h"
@@ -50,16 +51,6 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .maxVerticalVelocity = 30,
 );
 
-
-typedef struct {
-    float max;
-    float min;
-    float kp;
-    float kd;
-    float ki;
-    float lastErr;
-    float integral;
-} simplePid_s;
 
 void simplePidInit(simplePid_s* simplePid, float min, float max, float kp, float kd, float ki)
 {
@@ -92,18 +83,6 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
     return output;
 }
 
-typedef struct {
-    simplePid_s altPid;
-    simplePid_s velPid;
-    float throttle;
-    float targetAltitude;
-    float measuredAltitude;
-    float measuredAccel;
-    float velocityEstimationAccel;  // based on acceleration
-    float startVelocityEstimationAccel;
-    bool prevAltHoldModeEnabled;
-} altHoldState_s;
-
 void altHoldReset(altHoldState_s* altHoldState)
 {
     simplePidInit(&altHoldState->altPid, -50.0f, 50.0f,
@@ -117,32 +96,59 @@ void altHoldReset(altHoldState_s* altHoldState)
                   0.0f);
 
     altHoldState->throttle = 0.0f;
-    altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel;
+    altHoldState->enterTime = millis();
+    altHoldState->exitTime = 0;
+    float externalVelocityEstimation = 0.01f * getEstimatedVario();
+    altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
     altHoldState->targetAltitude = (float)(0.01f * getEstimatedAltitudeCm());
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
 {
-    altHoldState->prevAltHoldModeEnabled = false;
+    altHoldState->altHoldEnabled = false;
+    altHoldState->throttleFactor = 0.0f;
     altHoldState->velocityEstimationAccel = 0.0f;
     altHoldReset(altHoldState);
 }
 
+void altHoldProcessTransitions(altHoldState_s* altHoldState) {
+    bool newAltHoldEnabled = FLIGHT_MODE(ALTHOLD_MODE);
 
-// Rotate a vector *v by the euler angles defined by the 3-vector *delta.
-void rotateV(struct fp_vector *v, fp_angles_t *delta)
-{
-    struct fp_vector v_tmp = *v;
+    if (newAltHoldEnabled && !altHoldState->altHoldEnabled)
+    {
+        altHoldReset(altHoldState);
+    }
+    if (!newAltHoldEnabled && altHoldState->altHoldEnabled) {
+        altHoldState->exitTime = millis();
+    }
+    altHoldState->altHoldEnabled = newAltHoldEnabled;
 
-    fp_rotationMatrix_t rotationMatrix;
+    uint32_t currTime = millis();
 
-    buildRotationMatrix(delta, &rotationMatrix);
+    if (newAltHoldEnabled) {
+        uint32_t timeSinceEnter = currTime - altHoldState->enterTime;
+        if (timeSinceEnter < ALTHOLD_ENTER_PERIOD) {
+            float delta = (float)timeSinceEnter / ALTHOLD_ENTER_PERIOD;
+            altHoldState->throttleFactor = MAX(delta, altHoldState->throttleFactor);
+            return;
+        }
+        altHoldState->throttleFactor = 1.0f;
+        return;
+    }
 
-    applyMatrixRotation((float *)&v_tmp, &rotationMatrix);
+    if (altHoldState->exitTime == 0) {
+        altHoldState->throttleFactor = 0.0f;
+        return;
+    }
 
-    v->X = v_tmp.X;
-    v->Y = v_tmp.Y;
-    v->Z = v_tmp.Z;
+    uint32_t timeSinceExit = currTime - altHoldState->exitTime;
+    if (timeSinceExit < ALTHOLD_MAX_EXIT_PERIOD) {
+        float delta = (float)timeSinceExit / ALTHOLD_MAX_EXIT_PERIOD;
+        altHoldState->throttleFactor = MIN(altHoldState->throttleFactor, 1.0f - delta);
+        return;
+    }
+
+    altHoldState->throttleFactor = 0.0f;
 }
 
 void altHoldUpdateTarget(altHoldState_s* altHoldState)
@@ -175,39 +181,26 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
 
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
-    bool altHoldModeEnabled = FLIGHT_MODE(ALTHOLD_MODE);
-
-    if (altHoldModeEnabled && !altHoldState->prevAltHoldModeEnabled)
-    {
-        altHoldReset(altHoldState);
-    }
-    altHoldState->prevAltHoldModeEnabled = altHoldModeEnabled;
-
-
+    altHoldProcessTransitions(altHoldState);
     altHoldUpdateTarget(altHoldState);
 
+    float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
-    float measuredAltitude = (float)(0.01f * getEstimatedAltitudeCm());
+    float measuredAltitude = (float)(timeInterval * getEstimatedAltitudeCm());
 
-    t_fp_vector_def accelerationVector = {
+    t_fp_vector accelerationVector = {{
         acc.accADC[X],
         acc.accADC[Y],
         acc.accADC[Z]
-    };
-
-    fp_angles_t attitudeAngles = {{
-        DECIDEGREES_TO_RADIANS(-attitude.values.roll),
-        DECIDEGREES_TO_RADIANS(-attitude.values.pitch),
-        DECIDEGREES_TO_RADIANS(attitude.values.yaw)
     }};
 
-    rotateV(&accelerationVector, &attitudeAngles);
+    imuTransformVectorBodyToEarth(&accelerationVector);
 
-    float measuredAccel = 9.8f * (accelerationVector.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
+    float measuredAccel = 9.8f * (accelerationVector.V.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
 
     DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
 
-    altHoldState->velocityEstimationAccel += measuredAccel * 0.01f;
+    altHoldState->velocityEstimationAccel += measuredAccel * timeInterval;
     altHoldState->velocityEstimationAccel *= 0.999f;
 
     float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
@@ -216,10 +209,10 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
-    float velocityTarget = simplePidCalculate(&altHoldState->altPid, 0.01f, altHoldState->targetAltitude, altHoldState->measuredAltitude);
+    float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, altHoldState->measuredAltitude);
     DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
 
-    float velPidForce = simplePidCalculate(&altHoldState->velPid, 0.01f, velocityTarget, currentVelocityEstimationAccel);
+    float velPidForce = simplePidCalculate(&altHoldState->velPid, timeInterval, velocityTarget, currentVelocityEstimationAccel);
     
     float newThrottle = velPidForce;
 
@@ -228,11 +221,9 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
     newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01f * altholdConfig()->minThrottle, 0.01f * altholdConfig()->maxThrottle);
 
-    if (!altHoldModeEnabled) {
-        newThrottle = 0.0f;
+    if (altHoldState->altHoldEnabled) {
+        altHoldState->throttle = newThrottle;
     }
-
-    altHoldState->throttle = newThrottle;
 }
 
 
@@ -249,6 +240,16 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
 
 float getAltHoldThrottle(void) {
     return altHoldState.throttle;
+}
+
+float getAltHoldThrottleFactor(float currentThrottle) {
+    if (!altHoldState.altHoldEnabled
+        && altHoldState.exitTime != 0
+        && (ABS(currentThrottle - altHoldState.throttle) < 0.15f))
+    {
+        altHoldState.exitTime = 0;
+    }
+    return altHoldState.throttleFactor;
 }
 
 #endif

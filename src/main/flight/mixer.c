@@ -597,8 +597,10 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_ALTHOLD_MODE
-    if (FLIGHT_MODE(ALTHOLD_MODE) && ARMING_FLAG(ARMED)) {
-        throttle = getAltHoldThrottle();
+    if (ARMING_FLAG(ARMED)) {
+        float altHoldThrottle = getAltHoldThrottle();
+        float altHoldThrottleFactor = getAltHoldThrottleFactor(throttle);
+        throttle = throttle * (1.0f - altHoldThrottleFactor) + altHoldThrottle * altHoldThrottleFactor;
     }
 #endif
 

@@ -20,10 +20,14 @@
 #include "platform.h"
 
 #ifdef USE_ALTHOLD_MODE
-
 #include "common/time.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#define ALTHOLD_TASK_PERIOD 100         // hz
+#define ALTHOLD_ENTER_PERIOD 500        // ms
+#define ALTHOLD_MAX_EXIT_PERIOD 5000    // ms
+
 
 typedef struct altholdConfig_s {
     uint16_t velPidP;
@@ -40,10 +44,36 @@ typedef struct altholdConfig_s {
 
 PG_DECLARE(altholdConfig_t, altholdConfig);
 
+typedef struct {
+    float max;
+    float min;
+    float kp;
+    float kd;
+    float ki;
+    float lastErr;
+    float integral;
+} simplePid_s;
+
+typedef struct {
+    simplePid_s altPid;
+    simplePid_s velPid;
+    float throttle;
+    float throttleFactor;
+    float targetAltitude;
+    float measuredAltitude;
+    float measuredAccel;
+    float velocityEstimationAccel;  // based on acceleration
+    float startVelocityEstimationAccel;
+    bool altHoldEnabled;
+    uint32_t enterTime;
+    uint32_t exitTime;
+} altHoldState_s;
+
 
 void initAltHoldState(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float getAltHoldThrottle(void);
+float getAltHoldThrottleFactor(float currentThrottle);
 
 
 #endif
