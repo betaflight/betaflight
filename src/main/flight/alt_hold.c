@@ -20,6 +20,7 @@
 
 #ifdef USE_ALTHOLD_MODE
 
+#include "drivers/time.h"
 #include "flight/position.h"
 #include "flight/imu.h"
 #include "sensors/acceleration.h"
@@ -46,16 +47,6 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .maxThrottle = 65,
 );
 
-
-typedef struct {
-    float max;
-    float min;
-    float kp;
-    float kd;
-    float ki;
-    float lastErr;
-    float integral;
-} simplePid_s;
 
 void simplePidInit(simplePid_s* simplePid, float min, float max, float kp, float kd, float ki)
 {
@@ -88,18 +79,6 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
     return output;
 }
 
-typedef struct {
-    simplePid_s altPid;
-    simplePid_s velPid;
-    float throttle;
-    float targetAltitude;
-    float measuredAltitude;
-    float measuredAccel;
-    float velocityEstimationAccel;  // based on acceleration
-    float startVelocityEstimationAccel;
-    bool prevAltHoldModeEnabled;
-} altHoldState_s;
-
 void altHoldReset(altHoldState_s* altHoldState)
 {
     simplePidInit(&altHoldState->altPid, -50.0f, 50.0f,
@@ -113,6 +92,9 @@ void altHoldReset(altHoldState_s* altHoldState)
                   0.0f);
 
     altHoldState->throttle = 0.0f;
+    altHoldState->throttleFactor = 0.0f;
+    altHoldState->enterTime = millis();
+    altHoldState->exitTime = 0;
     float externalVelocityEstimation = 0.01f * getEstimatedVario();
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
     altHoldState->targetAltitude = (float)(0.01f * getEstimatedAltitudeCm());
@@ -120,21 +102,54 @@ void altHoldReset(altHoldState_s* altHoldState)
 
 void altHoldInit(altHoldState_s* altHoldState)
 {
-    altHoldState->prevAltHoldModeEnabled = false;
+    altHoldState->altHoldEnabled = false;
     altHoldState->velocityEstimationAccel = 0.0f;
     altHoldReset(altHoldState);
 }
 
+void altHoldProcessTransitions(altHoldState_s* altHoldState) {
+    bool newAltHoldEnabled = FLIGHT_MODE(ALTHOLD_MODE);
 
-void altHoldUpdate(altHoldState_s* altHoldState)
-{
-    bool altHoldModeEnabled = FLIGHT_MODE(ALTHOLD_MODE);
-
-    if (altHoldModeEnabled && !altHoldState->prevAltHoldModeEnabled)
+    if (newAltHoldEnabled && !altHoldState->altHoldEnabled)
     {
         altHoldReset(altHoldState);
     }
-    altHoldState->prevAltHoldModeEnabled = altHoldModeEnabled;
+    if (!newAltHoldEnabled && altHoldState->altHoldEnabled) {
+        altHoldState->exitTime = millis();
+    }
+    altHoldState->altHoldEnabled = newAltHoldEnabled;
+
+    uint32_t currTime = millis();
+
+    if (newAltHoldEnabled) {
+        uint32_t timeSinceEnter = currTime - altHoldState->enterTime;
+        if (timeSinceEnter < ALTHOLD_ENTER_PERIOD) {
+            float delta = (float)timeSinceEnter / ALTHOLD_ENTER_PERIOD;
+            altHoldState->throttleFactor = delta;
+            return;
+        }
+        altHoldState->throttleFactor = 1.0f;
+        return;
+    }
+
+    if (altHoldState->exitTime == 0) {
+        altHoldState->throttleFactor = 0.0f;
+        return;
+    }
+
+    uint32_t timeSinceExit = currTime - altHoldState->exitTime;
+    if (timeSinceExit < ALTHOLD_MAX_EXIT_PERIOD) {
+        float delta = (float)timeSinceExit / ALTHOLD_MAX_EXIT_PERIOD;
+        altHoldState->throttleFactor = MIN(altHoldState->throttleFactor, 1.0f - delta);
+        return;
+    }
+
+    altHoldState->throttleFactor = 0.0f;
+}
+
+void altHoldUpdate(altHoldState_s* altHoldState)
+{
+    altHoldProcessTransitions(altHoldState);
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
@@ -173,11 +188,9 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     newThrottle = constrainf(newThrottle, 0.0f, 1.0f);
     newThrottle = scaleRangef(newThrottle, 0.0f, 1.0f, 0.01f * altholdConfig()->minThrottle, 0.01f * altholdConfig()->maxThrottle);
 
-    if (!altHoldModeEnabled) {
-        newThrottle = 0.0f;
+    if (altHoldState->altHoldEnabled) {
+        altHoldState->throttle = newThrottle;
     }
-
-    altHoldState->throttle = newThrottle;
 }
 
 
@@ -194,6 +207,16 @@ void updateAltHoldState(timeUs_t currentTimeUs) {
 
 float getAltHoldThrottle(void) {
     return altHoldState.throttle;
+}
+
+float getAltHoldThrottleFactor(float currentThrottle) {
+    if (!altHoldState.altHoldEnabled
+        && altHoldState.exitTime != 0
+        && (ABS(currentThrottle - altHoldState.throttle) < 0.15f))
+    {
+        altHoldState.exitTime = 0;
+    }
+    return altHoldState.throttleFactor;
 }
 
 #endif
