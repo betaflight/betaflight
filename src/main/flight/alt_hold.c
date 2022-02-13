@@ -152,11 +152,7 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
     rcThrottle -= rxConfig()->midrc;
     rcThrottle = constrainf(rcThrottle, -500.0f, 500.0f);
 
-    DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(rcThrottle));
-
     rcThrottle = scaleRangef(rcThrottle, -500.0f, 500.0f, 0.0f, 1.0f);
-
-    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(rcThrottle * 100.0f));
 
     float altitudeChangeMaxSpeed = 0.1f * altholdConfig()->maxVerticalVelocity;
 
@@ -167,8 +163,6 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
     } else {
         rcThrottle = 0.0f;
     }
-
-    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(rcThrottle * 100.0f));
 
     float currentAltitudeChangeSpeed = 0.01f * altitudeChangeMaxSpeed * rcThrottle;
     float newTargetAltitude = altHoldState->targetAltitude + currentAltitudeChangeSpeed;
@@ -211,19 +205,19 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     float measuredAccel = 9.8f * (accelerationVector.Z - acc.dev.acc_1G) / acc.dev.acc_1G;
 
-    //DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
+    DEBUG_SET(DEBUG_ALTHOLD, 0, (int16_t)(measuredAccel * 100.0f));
 
     altHoldState->velocityEstimationAccel += measuredAccel * 0.01f;
     altHoldState->velocityEstimationAccel *= 0.999f;
 
     float currentVelocityEstimationAccel = altHoldState->velocityEstimationAccel - altHoldState->startVelocityEstimationAccel;
-    //DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
+    DEBUG_SET(DEBUG_ALTHOLD, 1, (int16_t)(100.0f * currentVelocityEstimationAccel));
 
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
     float velocityTarget = simplePidCalculate(&altHoldState->altPid, 0.01f, altHoldState->targetAltitude, altHoldState->measuredAltitude);
-    //DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
+    DEBUG_SET(DEBUG_ALTHOLD, 2, (int16_t)(100.0f * velocityTarget));
 
     float velPidForce = simplePidCalculate(&altHoldState->velPid, 0.01f, velocityTarget, currentVelocityEstimationAccel);
     
