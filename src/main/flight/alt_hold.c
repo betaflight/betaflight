@@ -92,7 +92,6 @@ void altHoldReset(altHoldState_s* altHoldState)
                   0.0f);
 
     altHoldState->throttle = 0.0f;
-    altHoldState->throttleFactor = 0.0f;
     altHoldState->enterTime = millis();
     altHoldState->exitTime = 0;
     float externalVelocityEstimation = 0.01f * getEstimatedVario();
@@ -103,6 +102,7 @@ void altHoldReset(altHoldState_s* altHoldState)
 void altHoldInit(altHoldState_s* altHoldState)
 {
     altHoldState->altHoldEnabled = false;
+    altHoldState->throttleFactor = 0.0f;
     altHoldState->velocityEstimationAccel = 0.0f;
     altHoldReset(altHoldState);
 }
@@ -125,7 +125,7 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
         uint32_t timeSinceEnter = currTime - altHoldState->enterTime;
         if (timeSinceEnter < ALTHOLD_ENTER_PERIOD) {
             float delta = (float)timeSinceEnter / ALTHOLD_ENTER_PERIOD;
-            altHoldState->throttleFactor = delta;
+            altHoldState->throttleFactor = MAX(delta, altHoldState->throttleFactor);
             return;
         }
         altHoldState->throttleFactor = 1.0f;

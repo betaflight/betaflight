@@ -106,3 +106,32 @@ TEST(AltholdUnittest, altHoldTransitionsTest)
     altHoldUpdate(&altHoldState);
     EXPECT_TRUE(ABS(getAltHoldThrottleFactor(0.5f)) < 0.01f);
 }
+
+TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
+{
+    altHoldInit(&altHoldState);
+    EXPECT_EQ(altHoldState.altHoldEnabled, false);
+
+    flightModeFlags |= ALTHOLD_MODE;
+    millisRW = 42;
+    altHoldUpdate(&altHoldState);
+    EXPECT_EQ(altHoldState.altHoldEnabled, true);
+    EXPECT_EQ(altHoldState.enterTime, 42);
+    EXPECT_EQ(altHoldState.exitTime, 0);
+    EXPECT_TRUE(getAltHoldThrottleFactor(0) < 0.01f);
+
+    millisRW += ALTHOLD_ENTER_PERIOD * 2;
+    altHoldUpdate(&altHoldState);
+    EXPECT_TRUE(ABS(getAltHoldThrottleFactor(0) - 1.0f) < 0.01f);
+
+    flightModeFlags ^= ALTHOLD_MODE;
+    altHoldUpdate(&altHoldState);
+    millisRW += 0.5f * ALTHOLD_MAX_EXIT_PERIOD;
+    altHoldUpdate(&altHoldState);
+    EXPECT_TRUE(ABS(getAltHoldThrottleFactor(1.5f) - 0.5f) < 0.01f);
+
+    flightModeFlags |= ALTHOLD_MODE;
+    millisRW += 1;
+    altHoldUpdate(&altHoldState);
+    EXPECT_TRUE(ABS(getAltHoldThrottleFactor(1.5f) - 0.5f) < 0.01f);
+}
