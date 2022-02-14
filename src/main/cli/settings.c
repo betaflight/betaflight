@@ -1062,8 +1062,11 @@ const clivalue_t valueTable[] = {
     { "althold_alt_pid_p",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altPidP) },
     { "althold_alt_pid_i",          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, altPidI) },
 
-    { "althold_throttle_min",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, minThrottle) },
-    { "althold_throttle_max",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, maxThrottle) },
+    { "althold_throttle_min",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, minThrottle) },
+    { "althold_throttle_max",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, maxThrottle) },
+
+    { "althold_angle_limit",            VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 55 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, angleLimit) },
+    { "althold_angle_smooth_factor",    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_ALTHOLD_CONFIG, offsetof(altholdConfig_t, angleSmoothFactor) },
 #endif
 
 

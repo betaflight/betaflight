@@ -27,6 +27,7 @@
 #include "sensors/barometer.h"
 #include "config/config.h"
 #include "fc/runtime_config.h"
+#include "fc/rc.h"
 #include "osd/osd.h"
 #include "common/printf.h"
 #include "common/maths.h"
@@ -34,7 +35,7 @@
 #include "build/debug.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 2);
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
@@ -45,6 +46,9 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
 
     .minThrottle = 6,
     .maxThrottle = 65,
+
+    .angleLimit = 38,
+    .angleSmoothFactor = 970,
 );
 
 
@@ -79,6 +83,22 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
     return output;
 }
 
+static float getCurrentAltitude(altHoldState_s* altHoldState)
+{
+#ifdef USE_BARO
+    if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
+        return 0.01f * baro.BaroAlt;
+    }
+#endif
+    float rawAltitude = 0.01f * getEstimatedAltitudeCm();
+    if (ABS(altHoldState->smoothedAltitude) < 0.01f) {
+        altHoldState->smoothedAltitude = rawAltitude;
+    }
+    float smoothFactor = 0.98f;
+    altHoldState->smoothedAltitude = (1.0f - smoothFactor) * rawAltitude + smoothFactor * altHoldState->smoothedAltitude;
+    return altHoldState->smoothedAltitude;
+}
+
 void altHoldReset(altHoldState_s* altHoldState)
 {
     simplePidInit(&altHoldState->altPid, -50.0f, 50.0f,
@@ -96,7 +116,21 @@ void altHoldReset(altHoldState_s* altHoldState)
     altHoldState->exitTime = 0;
     float externalVelocityEstimation = 0.01f * getEstimatedVario();
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
-    altHoldState->targetAltitude = (float)(0.01f * getEstimatedAltitudeCm());
+    altHoldState->targetAltitude = getCurrentAltitude(altHoldState);
+    altHoldState->smoothedAltitude = 0.01f;
+
+    for (int i = FD_ROLL; i <= FD_YAW; i++) {
+        altHoldState->angleDeflections[i] = 0.0f;
+    }
+}
+
+void altHoldProcessDeflection(altHoldState_s* altHoldState)
+{
+    float cf = 0.001f * altholdConfig()->angleSmoothFactor;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        float measuredDeflection = getRcDeflection(axis);
+        altHoldState->angleDeflections[axis] = (1.0f - cf) * measuredDeflection + cf * altHoldState->angleDeflections[axis];
+    }
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
@@ -150,10 +184,11 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     altHoldProcessTransitions(altHoldState);
+    altHoldProcessDeflection(altHoldState);
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
-    float measuredAltitude = (float)(timeInterval * getEstimatedAltitudeCm());
+    float measuredAltitude = getCurrentAltitude(altHoldState);
 
     t_fp_vector accelerationVector = {{
         acc.accADC[X],
@@ -217,6 +252,16 @@ float getAltHoldThrottleFactor(float currentThrottle) {
         altHoldState.exitTime = 0;
     }
     return altHoldState.throttleFactor;
+}
+
+float getAltHoldAngle(int axis) {
+    float cf = 0.001f * altholdConfig()->angleSmoothFactor;
+    float angleLimit = altholdConfig()->angleLimit;
+
+    if (cf <= 0.001f) {
+        return angleLimit * getRcDeflection(axis);
+    }
+    return angleLimit * altHoldState.angleDeflections[axis];
 }
 
 #endif
