@@ -142,6 +142,9 @@
 
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
+// which simulator
+#define SITL_AIRSIM  // options: SITL_AIRSIM, SITL_GAZEBO, SITL_REALFLIGHT
+
 // belows are internal stuff
 
 extern uint32_t SystemCoreClock;
@@ -221,8 +224,12 @@ typedef struct
 #define UART7 ((USART_TypeDef *)0x0007)
 #define UART8 ((USART_TypeDef *)0x0008)
 
-#define SIMULATOR_MAX_RC_CHANNELS 16
 #define SIMULATOR_MAX_PWM_CHANNELS 16
+#if defined(SITL_AIRSIM)
+    #define SIMULATOR_MAX_RC_CHANNELS 8 // 8 seems more than enough 
+#else
+    #define SIMULATOR_MAX_RC_CHANNELS 16
+#endif
 
 typedef struct
 {
@@ -252,8 +259,16 @@ typedef struct {
     uint16_t channels[SIMULATOR_MAX_RC_CHANNELS];             // meters, NED from origin
 } rc_packet;
 
-typedef struct {
-    float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+typedef struct { 
+    #if defined(SITL_AIRSIM)
+        uint16_t motor_speed[4]; // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    #elif defined(SITL_GAZEBO)
+        float motor_speed[4];
+    #elif defined(SITL_REALFLIGHT)
+        uint16_t motorCount; //Count of motor in the PWM output.
+        float motor_speed[SIMULATOR_MAX_PWM_CHANNELS]; 
+    #endif
+       
 } servo_packet;
 
 typedef struct {

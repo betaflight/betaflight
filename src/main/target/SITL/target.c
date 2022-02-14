@@ -53,7 +53,7 @@ const timerHardware_t timerHardware[1]; // unused
 #include "pg/motor.h"
 
 #include "rx/rx.h"
-
+#include "target.h"
 #include "dyad.h"
 #include "target/SITL/udplink.h"
 
@@ -75,6 +75,15 @@ static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
 static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
+
+// Just some help for logging
+#if defined(SITL_AIRSIM)
+    static char simulator_name[] = "AirSim";
+#elif defined(SITL_GAZEBO)
+    static char simulator_name[] = "Gazebo";
+#elif defined(SITL_REALFLIGHT)
+    static char simulator_name[] = "Realflight bridge";
+#endif
 
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
@@ -101,8 +110,8 @@ int targetParseArgs(int argc, char * argv[]) {
         strcpy(simulator_ip, argv[1]);
     }
 
-    printf("[SITL] The SITL will output to IP %s:%d (Gazebo) and %s:%d (RealFlightBridge)\n", 
-            simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
+    printf("[SITL][config] The SITL will output to IP %s:%d (%s)\n", 
+            simulator_ip, PORT_PWM, simulator_name);
     return 0;
 }
 
@@ -206,7 +215,7 @@ static void* udpThread(void* data) {
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
         if (n == sizeof(fdm_packet)) {
             if (!fdm_received) {
-                printf("[SITL] new fdm %d t:%f from %s:%d\n", n, fdmPkt.timestamp, inet_ntoa(stateLink.recv.sin_addr), stateLink.recv.sin_port);
+                printf("[SITL][status] new state packet received (%d bytes) at time:%f from %s:%d\n", n, fdmPkt.timestamp, inet_ntoa(stateLink.recv.sin_addr), stateLink.recv.sin_port);
                 fdm_received = true;
                 // pwmLink.si.sin_addr = stateLink.recv.sin_addr;
             }
@@ -299,16 +308,16 @@ void systemInit(void) {
     }
 
     ret = udpInit(&pwmLink, simulator_ip, PORT_PWM, false);
-    printf("[SITL] init PwmOut UDP link to gazebo %s:%d...%d\n", simulator_ip, PORT_PWM, ret);
+    printf("[SITL][status] Sending PWM output to %s at UDP link: %s:%d...%d\n", simulator_name, simulator_ip, PORT_PWM, ret);
 
     ret = udpInit(&pwmRawLink, simulator_ip, PORT_PWM_RAW, false);
     printf("[SITL] init PwmOut UDP link to RF9 %s:%d...%d\n", simulator_ip, PORT_PWM_RAW, ret);
 
     ret = udpInit(&stateLink, NULL, PORT_STATE, true);
-    printf("[SITL] start UDP server @%d...%d\n", PORT_STATE, ret);
+    printf("[SITL][status] Receiving state input from %s at UDP server: %s:%d...%d\n", simulator_name,simulator_ip, PORT_STATE, ret);
 
     ret = udpInit(&rcLink, NULL, PORT_RC, true);
-    printf("[SITL] start UDP server for RC input @%d...%d\n", PORT_RC, ret);
+    printf("[SITL][status] Receiving RC input at 127.0.0.1:%d...%d\n", PORT_RC, ret);
 
     ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
     ret = pthread_create(&udpWorkerRC, NULL, udpRCThread, NULL);
@@ -547,23 +556,42 @@ bool pwmIsMotorEnabled(uint8_t index) {
 static void pwmCompleteMotorUpdate(void)
 {
     // send to simulator
-    // for gazebo8 ArduCopterPlugin remap, normal range = [0.0, 1.0], 3D rang = [-1.0, 1.0]
+    
+    #if defined(SITL_GAZEBO)  // for gazebo8 ArduCopterPlugin remap, normal range = [0.0, 1.0], 3D rang = [-1.0, 1.0]
+        double outScale = 1000.0;
+        if (featureIsEnabled(FEATURE_3D)) {
+            outScale = 500.0;
+        }
+        // airsim quad x map
+        pwmPkt.motor_speed[3] = motorsPwm[0] / outScale;
+        pwmPkt.motor_speed[0] = motorsPwm[1] / outScale;
+        pwmPkt.motor_speed[1] = motorsPwm[2] / outScale;
+        pwmPkt.motor_speed[2] = motorsPwm[3] / outScale;
+    #else
+    // for airsim (0,1) mapping is done in BetaflightApi.hpp. So just send raw pwm
+    // Realflight bridge also requires only raw pwm.
+        pwmPkt.motor_speed[3] = motorsPwm[0] + idlePulse;
+        pwmPkt.motor_speed[0] = motorsPwm[1] + idlePulse;
+        pwmPkt.motor_speed[1] = motorsPwm[2] + idlePulse;
+        pwmPkt.motor_speed[2] = motorsPwm[3] + idlePulse;
 
-    double outScale = 1000.0;
-    if (featureIsEnabled(FEATURE_3D)) {
-        outScale = 500.0;
-    }
+    #endif
+    // printf("motor raw pwm: ");
+    // for (int i=0; i<4; i++){
+    //     printf(" %f ", pwmPkt.motor_speed[i]);
+    // }
+    // printf("[pwm sent to airsim] %d,%d,%d,%d \n", pwmPkt.motor_speed[3], pwmPkt.motor_speed[0],pwmPkt.motor_speed[1], pwmPkt.motor_speed[2]);
 
-    pwmPkt.motor_speed[3] = motorsPwm[0] / outScale;
-    pwmPkt.motor_speed[0] = motorsPwm[1] / outScale;
-    pwmPkt.motor_speed[1] = motorsPwm[2] / outScale;
-    pwmPkt.motor_speed[2] = motorsPwm[3] / outScale;
-
+    // printf("\n");
     // get one "fdm_packet" can only send one "servo_packet"!!
     if (pthread_mutex_trylock(&updateLock) != 0) return;
+
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
     udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
-    // printf("[pwm]%u:%f,%f,%f,%f\n", idlePulse, pwmRawPkt.pwm_output_raw[0], 
+    
+    // fflush(stdout);
+    // printf("[pwm sent to airsim]%f,%f,%f,%f\n", pwmPkt.motor_speed[3], pwmPkt.motor_speed[0],pwmPkt.motor_speed[1],pwmPkt.motor_speed[2]);
+    // printf("[pwm normalised by airsim to airsim] %f,%f,%f,%f\n", idlePulse, pwmRawPkt.pwm_output_raw[0]);
         // pwmRawPkt.pwm_output_raw[1], pwmRawPkt.pwm_output_raw[2], pwmRawPkt.pwm_output_raw[3]);
 }
 
@@ -595,7 +623,7 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _id
     UNUSED(motorConfig);
     UNUSED(useUnsyncedPwm);
 
-    printf("[SITL] Initialized motor count %d\n", motorCount);
+    printf("[SITL][config] Initialized motor count %d\n", motorCount);
 
     pwmRawPkt.motorCount = motorCount;
 
