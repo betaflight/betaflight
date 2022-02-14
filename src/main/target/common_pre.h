@@ -288,6 +288,7 @@ extern uint8_t _dmaram_end__;
 #define USE_VTX_CONTROL
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
+#define USE_VTX_MSP
 #endif
 
 #if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 10))

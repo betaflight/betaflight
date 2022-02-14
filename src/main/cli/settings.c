@@ -88,6 +88,7 @@
 #include "pg/max7456.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
+#include "pg/msp.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pinio.h"
@@ -1633,6 +1634,8 @@ const clivalue_t valueTable[] = {
 
     { "scheduler_relax_rx",  VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, rxRelaxDeterminism) },
     { "scheduler_relax_osd", VAR_UINT16  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 500 }, PG_SCHEDULER_CONFIG, PG_ARRAY_ELEMENT_OFFSET(schedulerConfig_t, 0, osdRelaxDeterminism) },
+
+    { "serialmsp_halfduplex", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MSP_CONFIG, offsetof(mspConfig_t, halfDuplex) },
 
 // PG_TIMECONFIG
 #ifdef USE_RTC_TIME

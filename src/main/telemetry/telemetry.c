@@ -160,6 +160,11 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const Seri
         return true;
     }
 #endif
+#if defined(USE_MSP_OVER_TELEMETRY) && defined(USE_VTX_MSP)
+    if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & FUNCTION_VTX_MSP) {
+        return true;
+    }
+#endif
     return false;
 }
 

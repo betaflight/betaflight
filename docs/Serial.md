@@ -100,25 +100,26 @@ Other devices can be added starting from id 50.
 
 ### 2. Serial Port Function
 
-| Function                     | Value |
-| ---------------------------- | ----- |
-| FUNCTION_NONE                | 0     |
-| FUNCTION_MSP                 | 1     |
-| FUNCTION_GPS                 | 2     |
-| FUNCTION_TELEMETRY_FRSKY_HUB | 4     |
-| FUNCTION_TELEMETRY_HOTT      | 8     |
-| FUNCTION_TELEMETRY_LTM       | 16    |
-| FUNCTION_TELEMETRY_SMARTPORT | 32    |
-| FUNCTION_RX_SERIAL           | 64    |
-| FUNCTION_BLACKBOX            | 128   |
-| FUNCTION_TELEMETRY_MAVLINK   | 512   |
-| FUNCTION_ESC_SENSOR          | 1024  |
-| FUNCTION_VTX_SMARTAUDIO      | 2048  |
-| FUNCTION_TELEMETRY_IBUS      | 4096  |
-| FUNCTION_VTX_TRAMP           | 8192  |
-| FUNCTION_RCDEVICE            | 16384 |
-| FUNCTION_LIDAR_TF            | 32768 |
-| FUNCTION_FRSKY_OSD           | 65536 |
+| Function                     | Value  |
+| ---------------------------- | ------ |
+| FUNCTION_NONE                | 0      |
+| FUNCTION_MSP                 | 1      |
+| FUNCTION_GPS                 | 2      |
+| FUNCTION_TELEMETRY_FRSKY_HUB | 4      |
+| FUNCTION_TELEMETRY_HOTT      | 8      |
+| FUNCTION_TELEMETRY_LTM       | 16     |
+| FUNCTION_TELEMETRY_SMARTPORT | 32     |
+| FUNCTION_RX_SERIAL           | 64     |
+| FUNCTION_BLACKBOX            | 128    |
+| FUNCTION_TELEMETRY_MAVLINK   | 512    |
+| FUNCTION_ESC_SENSOR          | 1024   |
+| FUNCTION_VTX_SMARTAUDIO      | 2048   |
+| FUNCTION_TELEMETRY_IBUS      | 4096   |
+| FUNCTION_VTX_TRAMP           | 8192   |
+| FUNCTION_RCDEVICE            | 16384  |
+| FUNCTION_LIDAR_TF            | 32768  |
+| FUNCTION_FRSKY_OSD           | 65536  |
+| FUNCTION_VTX_MSP             | 131072 |
 
 Note: `FUNCTION_FRSKY_OSD` = `(1<<16)` requires 17 bits.
 

@@ -105,6 +105,7 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
+#include "io/vtx_msp.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
@@ -1053,9 +1054,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
-static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
+static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
+
+#if !defined(USE_VTX_COMMON) || !defined(USE_VTX_MSP)
+    UNUSED(srcDesc);
+#endif
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
@@ -2026,7 +2031,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, 0);
             sbufWriteU8(dst, 0);
 #endif
-
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);        
+#endif
         }
         break;
 #endif
@@ -2304,6 +2311,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 
@@ -2320,6 +2330,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif // USE_VTX_TABLE
@@ -3261,6 +3274,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 sbufReadU8(src);
 #endif
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -3308,6 +3324,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 
@@ -3332,6 +3351,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -4047,7 +4069,7 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
 
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
-    } else if (mspProcessOutCommand(cmdMSP, dst)) {
+    } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
     } else if ((ret = mspFcProcessOutCommandWithArg(srcDesc, cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;

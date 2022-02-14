@@ -82,7 +82,7 @@ static const OSD_Entry menuFeaturesEntries[] =
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox},
 #endif
 #if defined(USE_VTX_CONTROL)
-#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
+#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP) || defined(USE_VTX_MSP)
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
