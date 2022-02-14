@@ -85,9 +85,11 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
 
 static float getCurrentAltitude(altHoldState_s* altHoldState)
 {
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
         return 0.01f * baro.BaroAlt;
     }
+#endif
     float rawAltitude = 0.01f * getEstimatedAltitudeCm();
     if (ABS(altHoldState->smoothedAltitude) < 0.01f) {
         altHoldState->smoothedAltitude = rawAltitude;
