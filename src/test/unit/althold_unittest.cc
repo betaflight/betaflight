@@ -28,6 +28,9 @@ extern "C" {
         return millisRW;
     }
 
+    #include "sensors/barometer.h"
+    baro_t baro;
+
     #include "flight/position.h"
     int32_t getEstimatedAltitudeCm(void)
     {
@@ -38,6 +41,21 @@ extern "C" {
         return 0;
     }
 
+    // other
+    float getRcDeflection(int)
+    {
+        return 0;
+    }
+
+    bool baroIsCalibrationComplete(void)
+    {
+        return 0;
+    }
+
+    bool sensors(uint32_t)
+    {
+        return 1;
+    }
 
     #include "flight/alt_hold.h"
 
