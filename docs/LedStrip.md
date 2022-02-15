@@ -72,6 +72,13 @@ The BEACON profile is used to find a lost quad, it flashes all LEDs white once p
 4. Type ```save``` followed by enter to save the race color to be used.
 
 
+###### BRIGHTNESS: The brightness can be configured using the CLI:
+1. Open the CLI.
+2. Type ```get ledstrip_brightness``` followed by enter to display the current brightness.
+3. Type ```set ledstrip_brightness=x``` where x is the brighness in percentage between 5 and 100.
+4. Type ```save``` followed by enter to save the brightness level to be used.
+
+
 ## Supported hardware
 
 Only strips of 32 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter, but only the first 32 are used.
@@ -146,7 +153,7 @@ The led strip feature can be configured via the GUI.
 GUI:
 Enable the Led Strip feature via the GUI under setup.
 
-Configure the LEDs from the Led Strip tab in the cleanflight GUI.
+Configure the LEDs from the Led Strip tab in the Betaflight GUI.
 First setup how the LEDs are laid out so that you can visualize it later as you configure and so the flight controller knows how many LEDs there are available.
 
 There is a step by step guide on how to use the GUI to configure the Led Strip feature using the GUI http://blog.oscarliang.net/setup-rgb-led-cleanflight/ which was published early 2015 by Oscar Liang which may or may not be up-to-date by the time you read this.
@@ -295,9 +302,9 @@ This overlay makes the LED color dependent on the current channel of the VTX, in
 The color is selected according to the following table:
 
  Frequency range | Default color | Color index
- ------------ | ------------- | -------------
- <= 5672 |  White | 1
- |> 5672 <= 5711 |  Red | 2
+ --- | --- | ---
+ <= 5672 | White | 1
+ |> 5672 <= 5711 | Red | 2
  |> 5711 <= 5750 | Orange | 3
  |> 5750 <= 5789 | Yellow | 4
  |> 5789 <= 5829 | Green | 6
