@@ -145,22 +145,15 @@ static void BMI160_Init(const extDevice_t *dev)
 
 static uint8_t getBmiOversampleMode()
 {
-    uint8_t currentBmiOversampleMode = 0;
-
-    switch(gyroConfig()->gyro_bmi_oversample)
-    {
-            case GYRO_BMI_OVERSAMPLE_OSR4:
-                currentBmiOversampleMode = BMI160_VAL_GYRO_CONF_BWP_OSR4;
-                break;
-            case GYRO_BMI_OVERSAMPLE_OSR2:
-                currentBmiOversampleMode = BMI160_VAL_GYRO_CONF_BWP_OSR2;
-                break;
-            case GYRO_BMI_OVERSAMPLE_NORM:
-                currentBmiOversampleMode = BMI160_VAL_GYRO_CONF_BWP_NORM;
-                break;
+    switch(gyroConfig()->gyro_bmi_oversample) {
+        case GYRO_BMI_OVERSAMPLE_OSR4:
+            return BMI160_VAL_GYRO_CONF_BWP_OSR4;
+        case GYRO_BMI_OVERSAMPLE_OSR2:
+            return BMI160_VAL_GYRO_CONF_BWP_OSR2;
+        case GYRO_BMI_OVERSAMPLE_NORM:
+            return BMI160_VAL_GYRO_CONF_BWP_NORM;
     }
-
-    return currentBmiOversampleMode;
+    return 0;
 }
 
 /**
