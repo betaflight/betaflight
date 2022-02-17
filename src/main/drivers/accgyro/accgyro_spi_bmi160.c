@@ -145,12 +145,14 @@ static void BMI160_Init(const extDevice_t *dev)
 
 static uint8_t getBmiOversampleMode()
 {
-    switch(gyroConfig()->gyro_bmi_oversample) {
+    switch(gyroConfig()->gyro_hardware_lpf) {
         case GYRO_BMI_OVERSAMPLE_OSR4:
             return BMI160_VAL_GYRO_CONF_BWP_OSR4;
         case GYRO_BMI_OVERSAMPLE_OSR2:
             return BMI160_VAL_GYRO_CONF_BWP_OSR2;
-        case GYRO_BMI_OVERSAMPLE_NORM:
+        case GYRO_HARDWARE_LPF_NORMAL:
+            return BMI160_VAL_GYRO_CONF_BWP_NORM;
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:
             return BMI160_VAL_GYRO_CONF_BWP_NORM;
     }
     return 0;
@@ -180,8 +182,7 @@ static int32_t BMI160_Config(const extDevice_t *dev)
     spiWriteReg(dev, BMI160_REG_ACC_CONF, 0x20 | BMI160_ODR_800_Hz);
     delay(1);
 
-    uint8_t currentBmiOversample = getBmiOversampleMode();
-    spiWriteReg(dev, BMI160_REG_GYR_CONF, currentBmiOversample | BMI160_ODR_3200_Hz);
+    spiWriteReg(dev, BMI160_REG_GYR_CONF, getBmiOversampleMode() | BMI160_ODR_3200_Hz);
     delay(1);
 
     spiWriteReg(dev, BMI160_REG_ACC_RANGE, BMI160_RANGE_8G);

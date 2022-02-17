@@ -65,15 +65,11 @@ typedef enum {
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
-    GYRO_HARDWARE_LPF_EXPERIMENTAL
+    GYRO_HARDWARE_LPF_EXPERIMENTAL,
 #endif
-} gyroHardwareLpf_e;
-
-typedef enum {
-    GYRO_BMI_OVERSAMPLE_OSR4,
     GYRO_BMI_OVERSAMPLE_OSR2,
-    GYRO_BMI_OVERSAMPLE_NORM,
-} gyroBmiOversample_e;
+    GYRO_BMI_OVERSAMPLE_OSR4
+} gyroHardwareLpf_e;
 
 typedef enum {
     GYRO_RATE_1_kHz,

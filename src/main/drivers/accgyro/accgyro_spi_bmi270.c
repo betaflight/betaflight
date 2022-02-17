@@ -189,12 +189,14 @@ static void bmi270UploadConfig(const extDevice_t *dev)
 
 static uint8_t getBmiOversampleMode()
 {
-    switch(gyroConfig()->gyro_bmi_oversample) {
+    switch(gyroConfig()->gyro_hardware_lpf) {
         case GYRO_BMI_OVERSAMPLE_OSR4:
             return BMI270_VAL_GYRO_CONF_BWP_OSR4;
         case GYRO_BMI_OVERSAMPLE_OSR2:
             return BMI270_VAL_GYRO_CONF_BWP_OSR2;
-        case GYRO_BMI_OVERSAMPLE_NORM:
+        case GYRO_HARDWARE_LPF_NORMAL:
+            return BMI270_VAL_GYRO_CONF_BWP_NORM;
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:
             return BMI270_VAL_GYRO_CONF_BWP_NORM;
     }
     return 0;

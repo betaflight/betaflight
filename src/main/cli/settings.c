@@ -278,15 +278,12 @@ static const char * const lookupTableRxSpi[] = {
 static const char * const lookupTableGyroHardwareLpf[] = {
     "NORMAL",
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
-    "EXPERIMENTAL"
+    "EXPERIMENTAL",
 #endif
+    "BMI_OSR2",
+    "BMI_OSR4"
 };
 
-static const char * const lookupTableGyroBmiOversample[] = {
-    "OSR4",
-    "OSR2",
-    "NORMAL",
-};
 
 #ifdef USE_CAMERA_CONTROL
 static const char * const lookupTableCameraControlMode[] = {
@@ -564,7 +561,6 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
-    LOOKUP_TABLE_ENTRY(lookupTableGyroBmiOversample),
     LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
 #ifdef USE_BARO
     LOOKUP_TABLE_ENTRY(lookupTableBaroHardware),
@@ -665,7 +661,7 @@ const lookupTableEntry_t lookupTables[] = {
 const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
     { PARAM_NAME_GYRO_HARDWARE_LPF, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
-    { PARAM_NAME_GYRO_BMI_OVERSAMPLE, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_BMI_OVERSAMPLE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_bmi_oversample) },
+    
 #if defined(USE_GYRO_SPI_ICM20649)
     { "gyro_high_range",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_high_fsr) },
 #endif
