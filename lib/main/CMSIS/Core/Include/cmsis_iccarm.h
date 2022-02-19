@@ -1,13 +1,14 @@
 /**************************************************************************//**
  * @file     cmsis_iccarm.h
  * @brief    CMSIS compiler ICCARM (IAR Compiler for Arm) header file
- * @version  V5.0.5
- * @date     10. January 2018
+ * @version  V5.1.0
+ * @date     08. May 2019
  ******************************************************************************/
 
 //------------------------------------------------------------------------------
 //
-// Copyright (c) 2017-2018 IAR Systems
+// Copyright (c) 2017-2019 IAR Systems
+// Copyright (c) 2017-2019 Arm Limited. All rights reserved. 
 //
 // Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
@@ -110,6 +111,10 @@
   #define __ASM __asm
 #endif
 
+#ifndef   __COMPILER_BARRIER
+  #define __COMPILER_BARRIER() __ASM volatile("":::"memory")
+#endif
+
 #ifndef __INLINE
   #define __INLINE inline
 #endif
@@ -150,7 +155,12 @@
 #endif
 
 #ifndef   __RESTRICT
-  #define __RESTRICT            restrict
+  #if __ICCARM_V8
+    #define __RESTRICT            __restrict
+  #else
+    /* Needs IAR language extensions */
+    #define __RESTRICT            restrict
+  #endif
 #endif
 
 #ifndef   __STATIC_INLINE
@@ -234,6 +244,25 @@ __packed struct  __iar_u32 { uint32_t v; };
   #endif
 #endif
 
+#ifndef __PROGRAM_START
+#define __PROGRAM_START           __iar_program_start
+#endif
+
+#ifndef __INITIAL_SP
+#define __INITIAL_SP              CSTACK$$Limit
+#endif
+
+#ifndef __STACK_LIMIT
+#define __STACK_LIMIT             CSTACK$$Base
+#endif
+
+#ifndef __VECTOR_TABLE
+#define __VECTOR_TABLE            __vector_table
+#endif
+
+#ifndef __VECTOR_TABLE_ATTRIBUTE
+#define __VECTOR_TABLE_ATTRIBUTE  @".intvec"
+#endif
 
 #ifndef __ICCARM_INTRINSICS_VERSION__
   #define __ICCARM_INTRINSICS_VERSION__  0
@@ -340,8 +369,17 @@ __packed struct  __iar_u32 { uint32_t v; };
   #define __TZ_set_BASEPRI_NS(VALUE)  (__arm_wsr("BASEPRI_NS", (VALUE)))
   #define __TZ_get_FAULTMASK_NS()     (__arm_rsr("FAULTMASK_NS"))
   #define __TZ_set_FAULTMASK_NS(VALUE)(__arm_wsr("FAULTMASK_NS", (VALUE)))
-  #define __TZ_get_PSPLIM_NS()        (__arm_rsr("PSPLIM_NS"))
-  #define __TZ_set_PSPLIM_NS(VALUE)   (__arm_wsr("PSPLIM_NS", (VALUE)))
+
+  #if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+       (!defined (__ARM_FEATURE_CMSE) || (__ARM_FEATURE_CMSE < 3)))
+    // without main extensions, the non-secure PSPLIM is RAZ/WI
+    #define __TZ_get_PSPLIM_NS()      (0U)
+    #define __TZ_set_PSPLIM_NS(VALUE) ((void)(VALUE))
+  #else
+    #define __TZ_get_PSPLIM_NS()      (__arm_rsr("PSPLIM_NS"))
+    #define __TZ_set_PSPLIM_NS(VALUE) (__arm_wsr("PSPLIM_NS", (VALUE)))
+  #endif
+
   #define __TZ_get_MSPLIM_NS()        (__arm_rsr("MSPLIM_NS"))
   #define __TZ_set_MSPLIM_NS(VALUE)   (__arm_wsr("MSPLIM_NS", (VALUE)))
 
@@ -716,12 +754,25 @@ __packed struct  __iar_u32 { uint32_t v; };
     __IAR_FT uint32_t   __TZ_get_PSPLIM_NS(void)
     {
       uint32_t res;
+    #if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+         (!defined (__ARM_FEATURE_CMSE  ) || (__ARM_FEATURE_CMSE   < 3)))
+      // without main extensions, the non-secure PSPLIM is RAZ/WI
+      res = 0U;
+    #else
       __asm volatile("MRS      %0,PSPLIM_NS" : "=r" (res));
+    #endif
       return res;
     }
+
     __IAR_FT void   __TZ_set_PSPLIM_NS(uint32_t value)
     {
+    #if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+         (!defined (__ARM_FEATURE_CMSE  ) || (__ARM_FEATURE_CMSE   < 3)))
+      // without main extensions, the non-secure PSPLIM is RAZ/WI
+      (void)value;
+    #else
       __asm volatile("MSR      PSPLIM_NS,%0" :: "r" (value));
+    #endif
     }
 
     __IAR_FT uint32_t   __TZ_get_MSPLIM_NS(void)
@@ -826,78 +877,78 @@ __packed struct  __iar_u32 { uint32_t v; };
   __IAR_FT uint8_t __LDAB(volatile uint8_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("LDAB %0, [%1]" : "=r" (res) : "r" (*ptr) : "memory");
+    __ASM volatile ("LDAB %0, [%1]" : "=r" (res) : "r" (ptr) : "memory");
     return ((uint8_t)res);
   }
 
   __IAR_FT uint16_t __LDAH(volatile uint16_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("LDAH %0, [%1]" : "=r" (res) : "r" (*ptr) : "memory");
+    __ASM volatile ("LDAH %0, [%1]" : "=r" (res) : "r" (ptr) : "memory");
     return ((uint16_t)res);
   }
 
   __IAR_FT uint32_t __LDA(volatile uint32_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("LDA %0, [%1]" : "=r" (res) : "r" (*ptr) : "memory");
+    __ASM volatile ("LDA %0, [%1]" : "=r" (res) : "r" (ptr) : "memory");
     return res;
   }
 
   __IAR_FT void __STLB(uint8_t value, volatile uint8_t *ptr)
   {
-    __ASM volatile ("STLB %1, [%0]" :: "r" (*ptr), "r" (value) : "memory");
+    __ASM volatile ("STLB %1, [%0]" :: "r" (ptr), "r" (value) : "memory");
   }
 
   __IAR_FT void __STLH(uint16_t value, volatile uint16_t *ptr)
   {
-    __ASM volatile ("STLH %1, [%0]" :: "r" (*ptr), "r" (value) : "memory");
+    __ASM volatile ("STLH %1, [%0]" :: "r" (ptr), "r" (value) : "memory");
   }
 
   __IAR_FT void __STL(uint32_t value, volatile uint32_t *ptr)
   {
-    __ASM volatile ("STL %1, [%0]" :: "r" (*ptr), "r" (value) : "memory");
+    __ASM volatile ("STL %1, [%0]" :: "r" (ptr), "r" (value) : "memory");
   }
 
   __IAR_FT uint8_t __LDAEXB(volatile uint8_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("LDAEXB %0, [%1]" : "=r" (res) : "r" (*ptr) : "memory");
+    __ASM volatile ("LDAEXB %0, [%1]" : "=r" (res) : "r" (ptr) : "memory");
     return ((uint8_t)res);
   }
 
   __IAR_FT uint16_t __LDAEXH(volatile uint16_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("LDAEXH %0, [%1]" : "=r" (res) : "r" (*ptr) : "memory");
+    __ASM volatile ("LDAEXH %0, [%1]" : "=r" (res) : "r" (ptr) : "memory");
     return ((uint16_t)res);
   }
 
   __IAR_FT uint32_t __LDAEX(volatile uint32_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("LDAEX %0, [%1]" : "=r" (res) : "r" (*ptr) : "memory");
+    __ASM volatile ("LDAEX %0, [%1]" : "=r" (res) : "r" (ptr) : "memory");
     return res;
   }
 
   __IAR_FT uint32_t __STLEXB(uint8_t value, volatile uint8_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("STLEXB %0, %2, [%1]" : "=r" (res) : "r" (*ptr), "r" (value) : "memory");
+    __ASM volatile ("STLEXB %0, %2, [%1]" : "=r" (res) : "r" (ptr), "r" (value) : "memory");
     return res;
   }
 
   __IAR_FT uint32_t __STLEXH(uint16_t value, volatile uint16_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("STLEXH %0, %2, [%1]" : "=r" (res) : "r" (*ptr), "r" (value) : "memory");
+    __ASM volatile ("STLEXH %0, %2, [%1]" : "=r" (res) : "r" (ptr), "r" (value) : "memory");
     return res;
   }
 
   __IAR_FT uint32_t __STLEX(uint32_t value, volatile uint32_t *ptr)
   {
     uint32_t res;
-    __ASM volatile ("STLEX %0, %2, [%1]" : "=r" (res) : "r" (*ptr), "r" (value) : "memory");
+    __ASM volatile ("STLEX %0, %2, [%1]" : "=r" (res) : "r" (ptr), "r" (value) : "memory");
     return res;
   }
 
