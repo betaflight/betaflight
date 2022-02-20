@@ -3030,6 +3030,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         }
         pidInitConfig(currentPidProfile);
+        initEscEndpoints();
         mixerInitProfile();
 
         break;
