@@ -3,13 +3,13 @@
  * Title:        arm_mean_q15.c
  * Description:  Mean value of a Q15 vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,59 +29,55 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupStats
+  @ingroup groupStats
  */
 
 /**
- * @addtogroup mean
- * @{
+  @addtogroup mean
+  @{
  */
 
-
 /**
- * @brief Mean value of a Q15 vector.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       blockSize length of the input vector
- * @param[out]      *pResult mean value returned here
- * @return none.
- *
- * @details
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function is implemented using a 32-bit internal accumulator.
- * The input is represented in 1.15 format and is accumulated in a 32-bit
- * accumulator in 17.15 format.
- * There is no risk of internal overflow with this approach, and the
- * full precision of intermediate result is preserved.
- * Finally, the accumulator is saturated and truncated to yield a result of 1.15 format.
- *
+  @brief         Mean value of a Q15 vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     blockSize  number of samples in input vector
+  @param[out]    pResult    mean value returned here
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function is implemented using a 32-bit internal accumulator.
+                   The input is represented in 1.15 format and is accumulated in a 32-bit
+                   accumulator in 17.15 format.
+                   There is no risk of internal overflow with this approach, and the
+                   full precision of intermediate result is preserved.
+                   Finally, the accumulator is truncated to yield a result of 1.15 format.
  */
 
 void arm_mean_q15(
-  q15_t * pSrc,
-  uint32_t blockSize,
-  q15_t * pResult)
+  const q15_t * pSrc,
+        uint32_t blockSize,
+        q15_t * pResult)
 {
-  q31_t sum = 0;                                 /* Temporary result storage */
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
+        q31_t sum = 0;                                 /* Temporary result storage */
 
-#if defined (ARM_MATH_DSP)
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
+#if defined (ARM_MATH_LOOPUNROLL)
+        q31_t in;
+#endif
 
-  q31_t in;
+#if defined (ARM_MATH_LOOPUNROLL)
 
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
-    in = *__SIMD32(pSrc)++;
+    in = read_q15x2_ia ((q15_t **) &pSrc);
     sum += ((in << 16U) >> 16U);
     sum +=  (in >> 16U);
-    in = *__SIMD32(pSrc)++;
+
+    in = read_q15x2_ia ((q15_t **) &pSrc);
     sum += ((in << 16U) >> 16U);
     sum +=  (in >> 16U);
 
@@ -89,32 +85,30 @@ void arm_mean_q15(
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
-  /* Run the below code for Cortex-M0 */
 
-  /* Loop over blockSize number of values */
+  /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
     sum += *pSrc++;
 
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
   /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) / blockSize  */
-  /* Store the result to the destination */
-  *pResult = (q15_t) (sum / (q31_t)blockSize);
+  /* Store result to destination */
+  *pResult = (q15_t) (sum / (int32_t) blockSize);
 }
 
 /**
- * @} end of mean group
+  @} end of mean group
  */

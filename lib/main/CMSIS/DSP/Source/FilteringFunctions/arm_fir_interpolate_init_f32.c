@@ -3,13 +3,13 @@
  * Title:        arm_fir_interpolate_init_f32.c
  * Description:  Floating-point FIR interpolator initialization function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,45 +29,46 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupFilters
+  @ingroup groupFilters
  */
 
 /**
- * @addtogroup FIR_Interpolate
- * @{
+  @addtogroup FIR_Interpolate
+  @{
  */
 
 /**
- * @brief  Initialization function for the floating-point FIR interpolator.
- * @param[in,out] *S        points to an instance of the floating-point FIR interpolator structure.
- * @param[in]     L         upsample factor.
- * @param[in]     numTaps   number of filter coefficients in the filter.
- * @param[in]     *pCoeffs  points to the filter coefficient buffer.
- * @param[in]     *pState   points to the state buffer.
- * @param[in]     blockSize number of input samples to process per call.
- * @return        The function returns ARM_MATH_SUCCESS if initialization was successful or ARM_MATH_LENGTH_ERROR if
- * the filter length <code>numTaps</code> is not a multiple of the interpolation factor <code>L</code>.
- *
- * <b>Description:</b>
- * \par
- * <code>pCoeffs</code> points to the array of filter coefficients stored in time reversed order:
- * <pre>
- *    {b[numTaps-1], b[numTaps-2], b[numTaps-2], ..., b[1], b[0]}
- * </pre>
- * The length of the filter <code>numTaps</code> must be a multiple of the interpolation factor <code>L</code>.
- * \par
- * <code>pState</code> points to the array of state variables.
- * <code>pState</code> is of length <code>(numTaps/L)+blockSize-1</code> words
- * where <code>blockSize</code> is the number of input samples processed by each call to <code>arm_fir_interpolate_f32()</code>.
+  @brief         Initialization function for the floating-point FIR interpolator.
+  @param[in,out] S         points to an instance of the floating-point FIR interpolator structure
+  @param[in]     L         upsample factor
+  @param[in]     numTaps   number of filter coefficients in the filter
+  @param[in]     pCoeffs   points to the filter coefficient buffer
+  @param[in]     pState    points to the state buffer
+  @param[in]     blockSize number of input samples to process per call
+  @return        execution status
+                   - \ref ARM_MATH_SUCCESS        : Operation successful
+                   - \ref ARM_MATH_ARGUMENT_ERROR : filter length <code>numTaps</code> is not a multiple of the interpolation factor <code>L</code>
+
+  @par           Details
+                   <code>pCoeffs</code> points to the array of filter coefficients stored in time reversed order:
+  <pre>
+      {b[numTaps-1], b[numTaps-2], b[numTaps-2], ..., b[1], b[0]}
+  </pre>
+  @par
+                   The length of the filter <code>numTaps</code> must be a multiple of the interpolation factor <code>L</code>.
+  @par
+                   <code>pState</code> points to the array of state variables.
+                   <code>pState</code> is of length <code>(numTaps/L)+blockSize-1</code> words
+                   where <code>blockSize</code> is the number of input samples processed by each call to <code>arm_fir_interpolate_f32()</code>.
  */
 
 arm_status arm_fir_interpolate_init_f32(
-  arm_fir_interpolate_instance_f32 * S,
-  uint8_t L,
-  uint16_t numTaps,
-  float32_t * pCoeffs,
-  float32_t * pState,
-  uint32_t blockSize)
+        arm_fir_interpolate_instance_f32 * S,
+        uint8_t L,
+        uint16_t numTaps,
+  const float32_t * pCoeffs,
+        float32_t * pState,
+        uint32_t blockSize)
 {
   arm_status status;
 
@@ -79,7 +80,6 @@ arm_status arm_fir_interpolate_init_f32(
   }
   else
   {
-
     /* Assign coefficient pointer */
     S->pCoeffs = pCoeffs;
 
@@ -89,10 +89,8 @@ arm_status arm_fir_interpolate_init_f32(
     /* Assign polyPhaseLength */
     S->phaseLength = numTaps / L;
 
-    /* Clear state buffer and size of state array is always phaseLength + blockSize - 1 */
-    memset(pState, 0,
-           (blockSize +
-            ((uint32_t) S->phaseLength - 1U)) * sizeof(float32_t));
+    /* Clear state buffer and size of buffer is always phaseLength + blockSize - 1 */
+    memset(pState, 0, (blockSize + ((uint32_t) S->phaseLength - 1U)) * sizeof(float32_t));
 
     /* Assign state pointer */
     S->pState = pState;
@@ -101,9 +99,8 @@ arm_status arm_fir_interpolate_init_f32(
   }
 
   return (status);
-
 }
 
- /**
-  * @} end of FIR_Interpolate group
-  */
+/**
+  @} end of FIR_Interpolate group
+ */

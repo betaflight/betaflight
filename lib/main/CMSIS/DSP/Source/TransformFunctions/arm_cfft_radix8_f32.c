@@ -3,13 +3,13 @@
  * Title:        arm_cfft_radix8_f32.c
  * Description:  Radix-8 Decimation in Frequency CFFT & CIFFT Floating point processing function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -33,20 +33,20 @@
  * Internal helper function used by the FFTs
  * -------------------------------------------------------------------- */
 
-/*
-* @brief  Core function for the floating-point CFFT butterfly process.
-* @param[in, out] *pSrc            points to the in-place buffer of floating-point data type.
-* @param[in]      fftLen           length of the FFT.
-* @param[in]      *pCoef           points to the twiddle coefficient buffer.
-* @param[in]      twidCoefModifier twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.
-* @return none.
+/**
+  brief         Core function for the floating-point CFFT butterfly process.
+  param[in,out] pSrc             points to the in-place buffer of floating-point data type.
+  param[in]     fftLen           length of the FFT.
+  param[in]     pCoef            points to the twiddle coefficient buffer.
+  param[in]     twidCoefModifier twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.
+  return        none
 */
 
 void arm_radix8_butterfly_f32(
-float32_t * pSrc,
-uint16_t fftLen,
-const float32_t * pCoef,
-uint16_t twidCoefModifier)
+  float32_t * pSrc,
+  uint16_t fftLen,
+  const float32_t * pCoef,
+  uint16_t twidCoefModifier)
 {
    uint32_t ia1, ia2, ia3, ia4, ia5, ia6, ia7;
    uint32_t i1, i2, i3, i4, i5, i6, i7, i8;

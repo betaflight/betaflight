@@ -3,13 +3,13 @@
  * Title:        arm_fir_lattice_init_q15.c
  * Description:  Q15 FIR Lattice filter initialization function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,28 +29,28 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupFilters
+  @ingroup groupFilters
  */
 
 /**
- * @addtogroup FIR_Lattice
- * @{
+  @addtogroup FIR_Lattice
+  @{
  */
 
-  /**
-   * @brief Initialization function for the Q15 FIR lattice filter.
-   * @param[in] *S points to an instance of the Q15 FIR lattice structure.
-   * @param[in] numStages  number of filter stages.
-   * @param[in] *pCoeffs points to the coefficient buffer.  The array is of length numStages.
-   * @param[in] *pState points to the state buffer.  The array is of length numStages.
-   * @return none.
-   */
+/**
+  @brief         Initialization function for the Q15 FIR lattice filter.
+  @param[in]     S          points to an instance of the Q15 FIR lattice structure
+  @param[in]     numStages  number of filter stages
+  @param[in]     pCoeffs    points to the coefficient buffer.  The array is of length numStages
+  @param[in]     pState     points to the state buffer.  The array is of length numStages
+  @return        none
+ */
 
 void arm_fir_lattice_init_q15(
-  arm_fir_lattice_instance_q15 * S,
-  uint16_t numStages,
-  q15_t * pCoeffs,
-  q15_t * pState)
+        arm_fir_lattice_instance_q15 * S,
+        uint16_t numStages,
+  const q15_t * pCoeffs,
+        q15_t * pState)
 {
   /* Assign filter taps */
   S->numStages = numStages;
@@ -63,9 +63,8 @@ void arm_fir_lattice_init_q15(
 
   /* Assign state pointer */
   S->pState = pState;
-
 }
 
 /**
- * @} end of FIR_Lattice group
+  @} end of FIR_Lattice group
  */

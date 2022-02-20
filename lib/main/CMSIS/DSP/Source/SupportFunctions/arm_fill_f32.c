@@ -3,13 +3,13 @@
  * Title:        arm_fill_f32.c
  * Description:  Fills a constant value into a floating-point vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,36 +29,35 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupSupport
+  @ingroup groupSupport
  */
 
 /**
- * @defgroup Fill Vector Fill
- *
- * Fills the destination vector with a constant value.
- *
- * <pre>
- * 	pDst[n] = value;   0 <= n < blockSize.
- * </pre>
- *
- * There are separate functions for floating point, Q31, Q15, and Q7 data types.
+  @defgroup Fill Vector Fill
+
+  Fills the destination vector with a constant value.
+
+  <pre>
+      pDst[n] = value;   0 <= n < blockSize.
+  </pre>
+
+  There are separate functions for floating point, Q31, Q15, and Q7 data types.
  */
 
 /**
- * @addtogroup Fill
- * @{
+  @addtogroup Fill
+  @{
  */
 
 /**
- * @brief Fills a constant value into a floating-point vector.
- * @param[in]       value input value to be filled
- * @param[out]      *pDst points to output vector
- * @param[in]       blockSize length of the output vector
- * @return none.
- *
+  @brief         Fills a constant value into a floating-point vector.
+  @param[in]     value      input value to be filled
+  @param[out]    pDst       points to output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
  */
 
-
+#if defined(ARM_MATH_NEON_EXPERIMENTAL)
 void arm_fill_f32(
   float32_t value,
   float32_t * pDst,
@@ -66,27 +65,19 @@ void arm_fill_f32(
 {
   uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_DSP)
 
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t in1 = value;
-  float32_t in2 = value;
-  float32_t in3 = value;
-  float32_t in4 = value;
+  float32x4_t inV = vdupq_n_f32(value);
 
-  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+  /* Compute 4 outputs at a time.
    ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = value */
     /* Fill the value in the destination buffer */
-    *pDst++ = in1;
-    *pDst++ = in2;
-    *pDst++ = in3;
-    *pDst++ = in4;
+    vst1q_f32(pDst, inV);
+    pDst += 4;
 
     /* Decrement the loop counter */
     blkCnt--;
@@ -94,17 +85,7 @@ void arm_fill_f32(
 
   /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4U;
-
-#else
-
-  /* Run the below code for Cortex-M0 */
-
-  /* Loop over blockSize number of values */
-  blkCnt = blockSize;
-
-#endif /* #if defined (ARM_MATH_DSP) */
-
+  blkCnt = blockSize & 3;
 
   while (blkCnt > 0U)
   {
@@ -116,7 +97,55 @@ void arm_fill_f32(
     blkCnt--;
   }
 }
+#else
+void arm_fill_f32(
+  float32_t value,
+  float32_t * pDst,
+  uint32_t blockSize)
+{
+  uint32_t blkCnt;                               /* Loop counter */
 
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
+  while (blkCnt > 0U)
+  {
+    /* C = value */
+
+    /* Fill value in destination buffer */
+    *pDst++ = value;
+    *pDst++ = value;
+    *pDst++ = value;
+    *pDst++ = value;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  while (blkCnt > 0U)
+  {
+    /* C = value */
+
+    /* Fill value in destination buffer */
+    *pDst++ = value;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+}
+#endif /* #if defined(ARM_MATH_NEON) */
 /**
- * @} end of Fill group
+  @} end of Fill group
  */

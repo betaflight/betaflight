@@ -3,13 +3,13 @@
  * Title:        arm_std_f32.c
  * Description:  Standard deviation of the elements of a floating-point vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,111 +29,131 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupStats
+  @ingroup groupStats
  */
 
 /**
- * @defgroup STD Standard deviation
- *
- * Calculates the standard deviation of the elements in the input vector.
- * The underlying algorithm is used:
- *
- * <pre>
- *   Result = sqrt((sumOfSquares - sum<sup>2</sup> / blockSize) / (blockSize - 1))
- *
- *     where, sumOfSquares = pSrc[0] * pSrc[0] + pSrc[1] * pSrc[1] + ... + pSrc[blockSize-1] * pSrc[blockSize-1]
- *
- *                     sum = pSrc[0] + pSrc[1] + pSrc[2] + ... + pSrc[blockSize-1]
- * </pre>
- *
- * There are separate functions for floating point, Q31, and Q15 data types.
+  @defgroup STD Standard deviation
+
+  Calculates the standard deviation of the elements in the input vector.
+  The underlying algorithm is used:
+
+  <pre>
+      Result = sqrt((sumOfSquares - sum<sup>2</sup> / blockSize) / (blockSize - 1))
+
+      sumOfSquares = pSrc[0] * pSrc[0] + pSrc[1] * pSrc[1] + ... + pSrc[blockSize-1] * pSrc[blockSize-1]
+      sum = pSrc[0] + pSrc[1] + pSrc[2] + ... + pSrc[blockSize-1]
+  </pre>
+
+  There are separate functions for floating point, Q31, and Q15 data types.
  */
 
 /**
- * @addtogroup STD
- * @{
+  @addtogroup STD
+  @{
  */
-
 
 /**
- * @brief Standard deviation of the elements of a floating-point vector.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       blockSize length of the input vector
- * @param[out]      *pResult standard deviation value returned here
- * @return none.
+  @brief         Standard deviation of the elements of a floating-point vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     blockSize  number of samples in input vector
+  @param[out]    pResult    standard deviation value returned here
+  @return        none
  */
-
+#if defined(ARM_MATH_NEON_EXPERIMENTAL)
 void arm_std_f32(
-  float32_t * pSrc,
-  uint32_t blockSize,
-  float32_t * pResult)
+  const float32_t * pSrc,
+        uint32_t blockSize,
+        float32_t * pResult)
 {
-  float32_t sum = 0.0f;                          /* Temporary result storage */
-  float32_t sumOfSquares = 0.0f;                 /* Sum of squares */
-  float32_t in;                                  /* input value */
-  uint32_t blkCnt;                               /* loop counter */
-#if defined (ARM_MATH_DSP)
-  float32_t meanOfSquares, mean, squareOfMean;   /* Temporary variables */
+  float32_t var;
+  arm_var_f32(pSrc,blockSize,&var);
+  arm_sqrt_f32(var, pResult);
+}
 #else
-  float32_t squareOfSum;                         /* Square of Sum */
-  float32_t var;                                 /* Temporary varaince storage */
+void arm_std_f32(
+  const float32_t * pSrc,
+        uint32_t blockSize,
+        float32_t * pResult)
+{
+        uint32_t blkCnt;                               /* Loop counter */
+        float32_t sum = 0.0f;                          /* Temporary result storage */
+        float32_t sumOfSquares = 0.0f;                 /* Sum of squares */
+        float32_t in;                                  /* Temporary variable to store input value */
+
+#ifndef ARM_MATH_CM0_FAMILY
+        float32_t meanOfSquares, mean, squareOfMean;   /* Temporary variables */
+#else
+        float32_t squareOfSum;                         /* Square of Sum */
+        float32_t var;                                 /* Temporary varaince storage */
 #endif
 
-  if (blockSize == 1U)
+  if (blockSize <= 1U)
   {
     *pResult = 0;
     return;
   }
 
-#if defined (ARM_MATH_DSP)
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
+#if defined (ARM_MATH_LOOPUNROLL)
 
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* C = (A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1])  */
-    /* Compute Sum of squares of the input samples
-     * and then store the result in a temporary variable, sum. */
-    in = *pSrc++;
-    sum += in;
-    sumOfSquares += in * in;
-    in = *pSrc++;
-    sum += in;
-    sumOfSquares += in * in;
-    in = *pSrc++;
-    sum += in;
-    sumOfSquares += in * in;
-    in = *pSrc++;
-    sum += in;
-    sumOfSquares += in * in;
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+    /* C = A[0] + A[1] + ... + A[blockSize-1] */
 
-    /* Decrement the loop counter */
+    in = *pSrc++;
+    /* Compute sum of squares and store result in a temporary variable, sumOfSquares. */
+    sumOfSquares += in * in;
+    /* Compute sum and store result in a temporary variable, sum. */
+    sum += in;
+
+    in = *pSrc++;
+    sumOfSquares += in * in;
+    sum += in;
+
+    in = *pSrc++;
+    sumOfSquares += in * in;
+    sum += in;
+
+    in = *pSrc++;
+    sumOfSquares += in * in;
+    sum += in;
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
   while (blkCnt > 0U)
   {
-    /* C = (A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1]) */
-    /* Compute Sum of squares of the input samples
-     * and then store the result in a temporary variable, sum. */
-    in = *pSrc++;
-    sum += in;
-    sumOfSquares += in * in;
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+    /* C = A[0] + A[1] + ... + A[blockSize-1] */
 
-    /* Decrement the loop counter */
+    in = *pSrc++;
+    /* Compute sum of squares and store result in a temporary variable, sumOfSquares. */
+    sumOfSquares += ( in * in);
+    /* Compute sum and store result in a temporary variable, sum. */
+    sum += in;
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* Compute Mean of squares of the input samples
-   * and then store the result in a temporary variable, meanOfSquares. */
+#ifndef ARM_MATH_CM0_FAMILY
+
+  /* Compute Mean of squares and store result in a temporary variable, meanOfSquares. */
   meanOfSquares = sumOfSquares / ((float32_t) blockSize - 1.0f);
 
   /* Compute mean of all input values */
@@ -143,44 +163,26 @@ void arm_std_f32(
   squareOfMean = (mean * mean) * (((float32_t) blockSize) /
                                   ((float32_t) blockSize - 1.0f));
 
-  /* Compute standard deviation and then store the result to the destination */
+  /* Compute standard deviation and store result to destination */
   arm_sqrt_f32((meanOfSquares - squareOfMean), pResult);
 
 #else
   /* Run the below code for Cortex-M0 */
 
-  /* Loop over blockSize number of values */
-  blkCnt = blockSize;
-
-  while (blkCnt > 0U)
-  {
-    /* C = (A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1]) */
-    /* Compute Sum of squares of the input samples
-     * and then store the result in a temporary variable, sumOfSquares. */
-    in = *pSrc++;
-    sumOfSquares += in * in;
-
-    /* C = (A[0] + A[1] + ... + A[blockSize-1]) */
-    /* Compute Sum of the input samples
-     * and then store the result in a temporary variable, sum. */
-    sum += in;
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
-  /* Compute the square of sum */
+  /* Compute square of sum */
   squareOfSum = ((sum * sum) / (float32_t) blockSize);
 
-  /* Compute the variance */
+  /* Compute variance */
   var = ((sumOfSquares - squareOfSum) / (float32_t) (blockSize - 1.0f));
 
-  /* Compute standard deviation and then store the result to the destination */
+  /* Compute standard deviation and store result in destination */
   arm_sqrt_f32(var, pResult);
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #ifndef ARM_MATH_CM0_FAMILY */
+
 }
+#endif /* #if defined(ARM_MATH_NEON) */
 
 /**
- * @} end of STD group
+  @} end of STD group
  */

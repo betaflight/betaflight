@@ -3,13 +3,13 @@
  * Title:        arm_mat_scale_q31.c
  * Description:  Multiplies a Q31 matrix by a scalar
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,152 +29,125 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMatrix
+  @ingroup groupMatrix
  */
 
 /**
- * @addtogroup MatrixScale
- * @{
+  @addtogroup MatrixScale
+  @{
  */
 
 /**
- * @brief Q31 matrix scaling.
- * @param[in]       *pSrc points to input matrix
- * @param[in]       scaleFract fractional portion of the scale factor
- * @param[in]       shift number of bits to shift the result by
- * @param[out]      *pDst points to output matrix structure
- * @return     		The function returns either
- * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
- *
- * @details
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.31 format.
- * These are multiplied to yield a 2.62 intermediate result and this is shifted with saturation to 1.31 format.
+  @brief         Q31 matrix scaling.
+  @param[in]     pSrc        points to input matrix
+  @param[in]     scaleFract  fractional portion of the scale factor
+  @param[in]     shift       number of bits to shift the result by
+  @param[out]    pDst        points to output matrix structure
+  @return        execution status
+                   - \ref ARM_MATH_SUCCESS       : Operation successful
+                   - \ref ARM_MATH_SIZE_MISMATCH : Matrix size check failed
+
+  @par           Scaling and Overflow Behavior
+                   The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.31 format.
+                   These are multiplied to yield a 2.62 intermediate result which is shifted with saturation to 1.31 format.
  */
 
 arm_status arm_mat_scale_q31(
   const arm_matrix_instance_q31 * pSrc,
-  q31_t scaleFract,
-  int32_t shift,
-  arm_matrix_instance_q31 * pDst)
+        q31_t                     scaleFract,
+        int32_t                   shift,
+        arm_matrix_instance_q31 * pDst)
 {
-  q31_t *pIn = pSrc->pData;                      /* input data matrix pointer */
-  q31_t *pOut = pDst->pData;                     /* output data matrix pointer */
-  uint32_t numSamples;                           /* total number of elements in the matrix */
-  int32_t totShift = shift + 1;                  /* shift to apply after scaling */
-  uint32_t blkCnt;                               /* loop counters  */
-  arm_status status;                             /* status of matrix scaling      */
-  q31_t in1, in2, out1;                          /* temporary variabels */
-
-#if defined (ARM_MATH_DSP)
-
-  q31_t in3, in4, out2, out3, out4;              /* temporary variables */
-
-#endif //      #ifndef ARM_MAT_CM0
+  q31_t *pIn = pSrc->pData;                      /* Input data matrix pointer */
+  q31_t *pOut = pDst->pData;                     /* Output data matrix pointer */
+  uint32_t numSamples;                           /* Total number of elements in the matrix */
+  uint32_t blkCnt;                               /* Loop counter */
+  arm_status status;                             /* Status of matrix scaling */
+  int32_t kShift = shift + 1;                    /* Shift to apply after scaling */
+  q31_t in, out;                                 /* Temporary variabels */
 
 #ifdef ARM_MATH_MATRIX_CHECK
-  /* Check for matrix mismatch  */
-  if ((pSrc->numRows != pDst->numRows) || (pSrc->numCols != pDst->numCols))
+
+  /* Check for matrix mismatch condition */
+  if ((pSrc->numRows != pDst->numRows) ||
+      (pSrc->numCols != pDst->numCols)   )
   {
     /* Set status as ARM_MATH_SIZE_MISMATCH */
     status = ARM_MATH_SIZE_MISMATCH;
   }
   else
-#endif //    #ifdef ARM_MATH_MATRIX_CHECK
+
+#endif /* #ifdef ARM_MATH_MATRIX_CHECK */
+
   {
-    /* Total number of samples in the input matrix */
+    /* Total number of samples in input matrix */
     numSamples = (uint32_t) pSrc->numRows * pSrc->numCols;
 
-#if defined (ARM_MATH_DSP)
+#if defined (ARM_MATH_LOOPUNROLL)
 
-    /* Run the below code for Cortex-M4 and Cortex-M3 */
-
-    /* Loop Unrolling */
+    /* Loop unrolling: Compute 4 outputs at a time */
     blkCnt = numSamples >> 2U;
 
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-     ** a second loop below computes the remaining 1 to 3 samples. */
     while (blkCnt > 0U)
     {
       /* C(m,n) = A(m,n) * k */
-      /* Read values from input */
-      in1 = *pIn;
-      in2 = *(pIn + 1);
-      in3 = *(pIn + 2);
-      in4 = *(pIn + 3);
 
-      /* multiply input with scaler value */
-      in1 = ((q63_t) in1 * scaleFract) >> 32;
-      in2 = ((q63_t) in2 * scaleFract) >> 32;
-      in3 = ((q63_t) in3 * scaleFract) >> 32;
-      in4 = ((q63_t) in4 * scaleFract) >> 32;
+      /* Scale, saturate and store result in destination buffer. */
+      in = *pIn++;                                 /* read four inputs from source */
+      in = ((q63_t) in * scaleFract) >> 32;        /* multiply input with scaler value */
+      out = in << kShift;                          /* apply shifting */
+      if (in != (out >> kShift))                   /* saturate the results. */
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pOut++ = out;                               /* Store result destination */
 
-      /* apply shifting */
-      out1 = in1 << totShift;
-      out2 = in2 << totShift;
+      in = *pIn++;
+      in = ((q63_t) in * scaleFract) >> 32;
+      out = in << kShift;
+      if (in != (out >> kShift))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pOut++ = out;
 
-      /* saturate the results. */
-      if (in1 != (out1 >> totShift))
-        out1 = 0x7FFFFFFF ^ (in1 >> 31);
+      in = *pIn++;
+      in = ((q63_t) in * scaleFract) >> 32;
+      out = in << kShift;
+      if (in != (out >> kShift))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pOut++ = out;
 
-      if (in2 != (out2 >> totShift))
-        out2 = 0x7FFFFFFF ^ (in2 >> 31);
+      in = *pIn++;
+      in = ((q63_t) in * scaleFract) >> 32;
+      out = in << kShift;
+      if (in != (out >> kShift))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pOut++ = out;
 
-      out3 = in3 << totShift;
-      out4 = in4 << totShift;
-
-      *pOut = out1;
-      *(pOut + 1) = out2;
-
-      if (in3 != (out3 >> totShift))
-        out3 = 0x7FFFFFFF ^ (in3 >> 31);
-
-      if (in4 != (out4 >> totShift))
-        out4 = 0x7FFFFFFF ^ (in4 >> 31);
-
-
-      *(pOut + 2) = out3;
-      *(pOut + 3) = out4;
-
-      /* update pointers to process next sampels */
-      pIn += 4U;
-      pOut += 4U;
-
-
-      /* Decrement the numSamples loop counter */
+      /* Decrement loop counter */
       blkCnt--;
     }
 
-    /* If the numSamples is not a multiple of 4, compute any remaining output samples here.
-     ** No loop unrolling is used. */
+    /* Loop unrolling: Compute remaining outputs */
     blkCnt = numSamples % 0x4U;
 
 #else
 
-    /* Run the below code for Cortex-M0 */
-
     /* Initialize blkCnt with number of samples */
     blkCnt = numSamples;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
     while (blkCnt > 0U)
     {
       /* C(m,n) = A(m,n) * k */
-      /* Scale, saturate and then store the results in the destination buffer. */
-      in1 = *pIn++;
 
-      in2 = ((q63_t) in1 * scaleFract) >> 32;
+      /* Scale, saturate and store result in destination buffer. */
+      in = *pIn++;
+      in = ((q63_t) in * scaleFract) >> 32;
+      out = in << kShift;
+      if (in != (out >> kShift))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pOut++ = out;
 
-      out1 = in2 << totShift;
-
-      if (in2 != (out1 >> totShift))
-        out1 = 0x7FFFFFFF ^ (in2 >> 31);
-
-      *pOut++ = out1;
-
-      /* Decrement the numSamples loop counter */
+      /* Decrement loop counter */
       blkCnt--;
     }
 
@@ -187,5 +160,5 @@ arm_status arm_mat_scale_q31(
 }
 
 /**
- * @} end of MatrixScale group
+  @} end of MatrixScale group
  */

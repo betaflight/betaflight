@@ -3,13 +3,13 @@
  * Title:        arm_copy_f32.c
  * Description:  Copies the elements of a floating-point vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,66 +29,56 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupSupport
+  @ingroup groupSupport
  */
 
 /**
- * @defgroup copy Vector Copy
- *
- * Copies sample by sample from source vector to destination vector.
- *
- * <pre>
- * 	pDst[n] = pSrc[n];   0 <= n < blockSize.
- * </pre>
- *
- * There are separate functions for floating point, Q31, Q15, and Q7 data types.
+  @defgroup copy Vector Copy
+
+  Copies sample by sample from source vector to destination vector.
+
+  <pre>
+      pDst[n] = pSrc[n];   0 <= n < blockSize.
+  </pre>
+
+  There are separate functions for floating point, Q31, Q15, and Q7 data types.
  */
 
 /**
- * @addtogroup copy
- * @{
+  @addtogroup copy
+  @{
  */
 
 /**
- * @brief Copies the elements of a floating-point vector.
- * @param[in]       *pSrc points to input vector
- * @param[out]      *pDst points to output vector
- * @param[in]       blockSize length of the input vector
- * @return none.
- *
+  @brief         Copies the elements of a floating-point vector.
+  @param[in]     pSrc       points to input vector
+  @param[out]    pDst       points to output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
  */
 
-
+#if defined(ARM_MATH_NEON_EXPERIMENTAL)
 void arm_copy_f32(
-  float32_t * pSrc,
+  const float32_t * pSrc,
   float32_t * pDst,
   uint32_t blockSize)
 {
   uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_DSP)
+  float32x4_t inV;
 
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t in1, in2, in3, in4;
-
-  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+  /* Compute 4 outputs at a time.
    ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A */
     /* Copy and then store the results in the destination buffer */
-    in1 = *pSrc++;
-    in2 = *pSrc++;
-    in3 = *pSrc++;
-    in4 = *pSrc++;
-
-    *pDst++ = in1;
-    *pDst++ = in2;
-    *pDst++ = in3;
-    *pDst++ = in4;
+    inV = vld1q_f32(pSrc);
+    vst1q_f32(pDst, inV);
+    pSrc += 4;
+    pDst += 4;
 
     /* Decrement the loop counter */
     blkCnt--;
@@ -96,16 +86,7 @@ void arm_copy_f32(
 
   /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4U;
-
-#else
-
-  /* Run the below code for Cortex-M0 */
-
-  /* Loop over blockSize number of values */
-  blkCnt = blockSize;
-
-#endif /* #if defined (ARM_MATH_DSP) */
+  blkCnt = blockSize & 3;
 
   while (blkCnt > 0U)
   {
@@ -117,7 +98,55 @@ void arm_copy_f32(
     blkCnt--;
   }
 }
+#else
+void arm_copy_f32(
+  const float32_t * pSrc,
+        float32_t * pDst,
+        uint32_t blockSize)
+{
+  uint32_t blkCnt;                               /* Loop counter */
 
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
+  while (blkCnt > 0U)
+  {
+    /* C = A */
+
+    /* Copy and store result in destination buffer */
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+    *pDst++ = *pSrc++;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  while (blkCnt > 0U)
+  {
+    /* C = A */
+
+    /* Copy and store result in destination buffer */
+    *pDst++ = *pSrc++;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+}
+#endif /* #if defined(ARM_MATH_NEON) */
 /**
- * @} end of BasicCopy group
+  @} end of BasicCopy group
  */

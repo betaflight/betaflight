@@ -3,13 +3,13 @@
  * Title:        arm_cos_q31.c
  * Description:  Fast cosine calculation for Q31 values
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -30,36 +30,35 @@
 #include "arm_common_tables.h"
 
 /**
- * @ingroup groupFastMath
- */
-
- /**
- * @addtogroup cos
- * @{
+  @ingroup groupFastMath
  */
 
 /**
- * @brief Fast approximation to the trigonometric cosine function for Q31 data.
- * @param[in] x Scaled input value in radians.
- * @return  cos(x).
- *
- * The Q31 input value is in the range [0 +0.9999] and is mapped to a radian
- * value in the range [0 2*pi).
+  @addtogroup cos
+  @{
+ */
+
+/**
+  @brief         Fast approximation to the trigonometric cosine function for Q31 data.
+  @param[in]     x  Scaled input value in radians
+  @return        cos(x)
+
+  The Q31 input value is in the range [0 +0.9999] and is mapped to a radian value in the range [0 2*PI).
  */
 
 q31_t arm_cos_q31(
   q31_t x)
 {
-  q31_t cosVal;                                  /* Temporary variables for input, output */
-  int32_t index;                                 /* Index variables */
-  q31_t a, b;                                    /* Four nearest output values */
+  q31_t cosVal;                                  /* Temporary input, output variables */
+  int32_t index;                                 /* Index variable */
+  q31_t a, b;                                    /* Two nearest output values */
   q31_t fract;                                   /* Temporary values for fractional values */
 
   /* add 0.25 (pi/2) to read sine table */
   x = (uint32_t)x + 0x20000000;
   if (x < 0)
-  {   /* convert negative numbers to corresponding positive ones */
-      x = (uint32_t)x + 0x80000000;
+  { /* convert negative numbers to corresponding positive ones */
+    x = (uint32_t)x + 0x80000000;
   }
 
   /* Calculate the nearest index */
@@ -73,12 +72,13 @@ q31_t arm_cos_q31(
   b = sinTable_q31[index+1];
 
   /* Linear interpolation process */
-  cosVal = (q63_t)(0x80000000-fract)*a >> 32;
-  cosVal = (q31_t)((((q63_t)cosVal << 32) + ((q63_t)fract*b)) >> 32);
+  cosVal = (q63_t) (0x80000000 - fract) * a >> 32;
+  cosVal = (q31_t) ((((q63_t) cosVal << 32) + ((q63_t) fract * b)) >> 32);
 
-  return cosVal << 1;
+  /* Return output value */
+  return (cosVal << 1);
 }
 
 /**
- * @} end of cos group
+  @} end of cos group
  */

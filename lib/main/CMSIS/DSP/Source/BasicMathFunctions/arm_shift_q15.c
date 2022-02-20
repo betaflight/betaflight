@@ -3,13 +3,13 @@
  * Title:        arm_shift_q15.c
  * Description:  Shifts the elements of a Q15 vector by a specified number of bits
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,208 +29,173 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup shift
- * @{
+  @addtogroup BasicShift
+  @{
  */
 
 /**
- * @brief  Shifts the elements of a Q15 vector a specified number of bits.
- * @param[in]  *pSrc points to the input vector
- * @param[in]  shiftBits number of bits to shift.  A positive value shifts left; a negative value shifts right.
- * @param[out]  *pDst points to the output vector
- * @param[in]  blockSize number of samples in the vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q15 range [0x8000 0x7FFF] will be saturated.
+  @brief         Shifts the elements of a Q15 vector a specified number of bits
+  @param[in]     pSrc       points to the input vector
+  @param[in]     shiftBits  number of bits to shift.  A positive value shifts left; a negative value shifts right.
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
  */
 
 void arm_shift_q15(
-  q15_t * pSrc,
-  int8_t shiftBits,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t * pSrc,
+        int8_t shiftBits,
+        q15_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
-  uint8_t sign;                                  /* Sign of shiftBits */
+        uint32_t blkCnt;                               /* Loop counter */
+        uint8_t sign = (shiftBits & 0x80);             /* Sign of shiftBits */
+
+#if defined (ARM_MATH_LOOPUNROLL)
 
 #if defined (ARM_MATH_DSP)
+  q15_t in1, in2;                                /* Temporary input variables */
+#endif
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-
-  q15_t in1, in2;                                /* Temporary variables */
-
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* Getting the sign of shiftBits */
-  sign = (shiftBits & 0x80);
-
   /* If the shift value is positive then do right shift else left shift */
   if (sign == 0U)
   {
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-     ** a second loop below computes the remaining 1 to 3 samples. */
     while (blkCnt > 0U)
     {
-      /* Read 2 inputs */
+      /* C = A << shiftBits */
+
+#if defined (ARM_MATH_DSP)
+      /* read 2 samples from source */
       in1 = *pSrc++;
       in2 = *pSrc++;
-      /* C = A << shiftBits */
+
       /* Shift the inputs and then store the results in the destination buffer. */
-#ifndef  ARM_MATH_BIG_ENDIAN
-
-      *__SIMD32(pDst)++ = __PKHBT(__SSAT((in1 << shiftBits), 16),
-                                  __SSAT((in2 << shiftBits), 16), 16);
-
+#ifndef ARM_MATH_BIG_ENDIAN
+      write_q15x2_ia (&pDst, __PKHBT(__SSAT((in1 << shiftBits), 16),
+                                     __SSAT((in2 << shiftBits), 16), 16));
 #else
+      write_q15x2_ia (&pDst, __PKHBT(__SSAT((in2 << shiftBits), 16),
+                                      __SSAT((in1 << shiftBits), 16), 16));
+#endif /* #ifndef ARM_MATH_BIG_ENDIAN */
 
-      *__SIMD32(pDst)++ = __PKHBT(__SSAT((in2 << shiftBits), 16),
-                                  __SSAT((in1 << shiftBits), 16), 16);
-
-#endif /* #ifndef  ARM_MATH_BIG_ENDIAN    */
-
+      /* read 2 samples from source */
       in1 = *pSrc++;
       in2 = *pSrc++;
 
-#ifndef  ARM_MATH_BIG_ENDIAN
-
-      *__SIMD32(pDst)++ = __PKHBT(__SSAT((in1 << shiftBits), 16),
-                                  __SSAT((in2 << shiftBits), 16), 16);
+#ifndef ARM_MATH_BIG_ENDIAN
+      write_q15x2_ia (&pDst, __PKHBT(__SSAT((in1 << shiftBits), 16),
+                                     __SSAT((in2 << shiftBits), 16), 16));
+#else
+      write_q15x2_ia (&pDst, __PKHBT(__SSAT((in2 << shiftBits), 16),
+                                     __SSAT((in1 << shiftBits), 16), 16));
+#endif /* #ifndef ARM_MATH_BIG_ENDIAN */
 
 #else
+      *pDst++ = __SSAT(((q31_t) *pSrc++ << shiftBits), 16);
+      *pDst++ = __SSAT(((q31_t) *pSrc++ << shiftBits), 16);
+      *pDst++ = __SSAT(((q31_t) *pSrc++ << shiftBits), 16);
+      *pDst++ = __SSAT(((q31_t) *pSrc++ << shiftBits), 16);
+#endif
 
-      *__SIMD32(pDst)++ = __PKHBT(__SSAT((in2 << shiftBits), 16),
-                                  __SSAT((in1 << shiftBits), 16), 16);
-
-#endif /* #ifndef  ARM_MATH_BIG_ENDIAN    */
-
-      /* Decrement the loop counter */
-      blkCnt--;
-    }
-
-    /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-     ** No loop unrolling is used. */
-    blkCnt = blockSize % 0x4U;
-
-    while (blkCnt > 0U)
-    {
-      /* C = A << shiftBits */
-      /* Shift and then store the results in the destination buffer. */
-      *pDst++ = __SSAT((*pSrc++ << shiftBits), 16);
-
-      /* Decrement the loop counter */
+      /* Decrement loop counter */
       blkCnt--;
     }
   }
   else
   {
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-     ** a second loop below computes the remaining 1 to 3 samples. */
-    while (blkCnt > 0U)
-    {
-      /* Read 2 inputs */
-      in1 = *pSrc++;
-      in2 = *pSrc++;
-
-      /* C = A >> shiftBits */
-      /* Shift the inputs and then store the results in the destination buffer. */
-#ifndef  ARM_MATH_BIG_ENDIAN
-
-      *__SIMD32(pDst)++ = __PKHBT((in1 >> -shiftBits),
-                                  (in2 >> -shiftBits), 16);
-
-#else
-
-      *__SIMD32(pDst)++ = __PKHBT((in2 >> -shiftBits),
-                                  (in1 >> -shiftBits), 16);
-
-#endif /* #ifndef  ARM_MATH_BIG_ENDIAN    */
-
-      in1 = *pSrc++;
-      in2 = *pSrc++;
-
-#ifndef  ARM_MATH_BIG_ENDIAN
-
-      *__SIMD32(pDst)++ = __PKHBT((in1 >> -shiftBits),
-                                  (in2 >> -shiftBits), 16);
-
-#else
-
-      *__SIMD32(pDst)++ = __PKHBT((in2 >> -shiftBits),
-                                  (in1 >> -shiftBits), 16);
-
-#endif /* #ifndef  ARM_MATH_BIG_ENDIAN    */
-
-      /* Decrement the loop counter */
-      blkCnt--;
-    }
-
-    /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-     ** No loop unrolling is used. */
-    blkCnt = blockSize % 0x4U;
-
     while (blkCnt > 0U)
     {
       /* C = A >> shiftBits */
+
+#if defined (ARM_MATH_DSP)
+      /* read 2 samples from source */
+      in1 = *pSrc++;
+      in2 = *pSrc++;
+
       /* Shift the inputs and then store the results in the destination buffer. */
+#ifndef ARM_MATH_BIG_ENDIAN
+      write_q15x2_ia (&pDst, __PKHBT((in1 >> -shiftBits),
+                                     (in2 >> -shiftBits), 16));
+#else
+      write_q15x2_ia (&pDst, __PKHBT((in2 >> -shiftBits),
+                                     (in1 >> -shiftBits), 16));
+#endif /* #ifndef ARM_MATH_BIG_ENDIAN */
+
+      /* read 2 samples from source */
+      in1 = *pSrc++;
+      in2 = *pSrc++;
+
+#ifndef ARM_MATH_BIG_ENDIAN
+      write_q15x2_ia (&pDst, __PKHBT((in1 >> -shiftBits),
+                                     (in2 >> -shiftBits), 16));
+#else
+      write_q15x2_ia (&pDst, __PKHBT((in2 >> -shiftBits),
+                                     (in1 >> -shiftBits), 16));
+#endif /* #ifndef ARM_MATH_BIG_ENDIAN */
+
+#else
       *pDst++ = (*pSrc++ >> -shiftBits);
+      *pDst++ = (*pSrc++ >> -shiftBits);
+      *pDst++ = (*pSrc++ >> -shiftBits);
+      *pDst++ = (*pSrc++ >> -shiftBits);
+#endif
 
-      /* Decrement the loop counter */
+      /* Decrement loop counter */
       blkCnt--;
     }
   }
 
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
 #else
 
-  /* Run the below code for Cortex-M0 */
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
 
-  /* Getting the sign of shiftBits */
-  sign = (shiftBits & 0x80);
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   /* If the shift value is positive then do right shift else left shift */
   if (sign == 0U)
   {
-    /* Initialize blkCnt with number of samples */
-    blkCnt = blockSize;
-
     while (blkCnt > 0U)
     {
       /* C = A << shiftBits */
-      /* Shift and then store the results in the destination buffer. */
-      *pDst++ = __SSAT(((q31_t) * pSrc++ << shiftBits), 16);
 
-      /* Decrement the loop counter */
+      /* Shift input and store result in destination buffer. */
+      *pDst++ = __SSAT(((q31_t) *pSrc++ << shiftBits), 16);
+
+      /* Decrement loop counter */
       blkCnt--;
     }
   }
   else
   {
-    /* Initialize blkCnt with number of samples */
-    blkCnt = blockSize;
-
     while (blkCnt > 0U)
     {
       /* C = A >> shiftBits */
-      /* Shift the inputs and then store the results in the destination buffer. */
+
+      /* Shift input and store result in destination buffer. */
       *pDst++ = (*pSrc++ >> -shiftBits);
 
-      /* Decrement the loop counter */
+      /* Decrement loop counter */
       blkCnt--;
     }
   }
-
-#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
 /**
- * @} end of shift group
+  @} end of BasicShift group
  */

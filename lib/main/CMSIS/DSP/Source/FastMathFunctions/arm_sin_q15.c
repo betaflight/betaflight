@@ -3,13 +3,13 @@
  * Title:        arm_sin_q15.c
  * Description:  Fast sine calculation for Q15 values
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -30,28 +30,28 @@
 #include "arm_common_tables.h"
 
 /**
- * @ingroup groupFastMath
- */
-
- /**
- * @addtogroup sin
- * @{
+  @ingroup groupFastMath
  */
 
 /**
- * @brief Fast approximation to the trigonometric sine function for Q15 data.
- * @param[in] x Scaled input value in radians.
- * @return  sin(x).
- *
- * The Q15 input value is in the range [0 +0.9999] and is mapped to a radian value in the range [0 2*pi).
+  @addtogroup sin
+  @{
+ */
+
+/**
+  @brief         Fast approximation to the trigonometric sine function for Q15 data.
+  @param[in]     x  Scaled input value in radians
+  @return        sin(x)
+
+  The Q15 input value is in the range [0 +0.9999] and is mapped to a radian value in the range [0 2*PI).
  */
 
 q15_t arm_sin_q15(
   q15_t x)
 {
-  q15_t sinVal;                                  /* Temporary variables for input, output */
-  int32_t index;                                 /* Index variables */
-  q15_t a, b;                                    /* Four nearest output values */
+  q15_t sinVal;                                  /* Temporary input, output variables */
+  int32_t index;                                 /* Index variable */
+  q15_t a, b;                                    /* Two nearest output values */
   q15_t fract;                                   /* Temporary values for fractional values */
 
   /* Calculate the nearest index */
@@ -65,12 +65,13 @@ q15_t arm_sin_q15(
   b = sinTable_q15[index+1];
 
   /* Linear interpolation process */
-  sinVal = (q31_t)(0x8000-fract)*a >> 16;
-  sinVal = (q15_t)((((q31_t)sinVal << 16) + ((q31_t)fract*b)) >> 16);
+  sinVal = (q31_t) (0x8000 - fract) * a >> 16;
+  sinVal = (q15_t) ((((q31_t) sinVal << 16) + ((q31_t) fract * b)) >> 16);
 
-  return sinVal << 1;
+  /* Return output value */
+  return (sinVal << 1);
 }
 
 /**
- * @} end of sin group
+  @} end of sin group
  */

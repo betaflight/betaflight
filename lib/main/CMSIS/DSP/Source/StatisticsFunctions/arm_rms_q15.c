@@ -3,13 +3,13 @@
  * Title:        arm_rms_q15.c
  * Description:  Root Mean Square of the elements of a Q15 vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,111 +29,106 @@
 #include "arm_math.h"
 
 /**
- * @addtogroup RMS
- * @{
+  @ingroup groupStats
  */
 
 /**
- * @brief Root Mean Square of the elements of a Q15 vector.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       blockSize length of the input vector
- * @param[out]      *pResult rms value returned here
- * @return none.
- *
- * @details
- * <b>Scaling and Overflow Behavior:</b>
- *
- * \par
- * The function is implemented using a 64-bit internal accumulator.
- * The input is represented in 1.15 format.
- * Intermediate multiplication yields a 2.30 format, and this
- * result is added without saturation to a 64-bit accumulator in 34.30 format.
- * With 33 guard bits in the accumulator, there is no risk of overflow, and the
- * full precision of the intermediate multiplication is preserved.
- * Finally, the 34.30 result is truncated to 34.15 format by discarding the lower
- * 15 bits, and then saturated to yield a result in 1.15 format.
- *
+  @addtogroup RMS
+  @{
+ */
+
+/**
+  @brief         Root Mean Square of the elements of a Q15 vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     blockSize  number of samples in input vector
+  @param[out]    pResult    root mean square value returned here
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function is implemented using a 64-bit internal accumulator.
+                   The input is represented in 1.15 format.
+                   Intermediate multiplication yields a 2.30 format, and this
+                   result is added without saturation to a 64-bit accumulator in 34.30 format.
+                   With 33 guard bits in the accumulator, there is no risk of overflow, and the
+                   full precision of the intermediate multiplication is preserved.
+                   Finally, the 34.30 result is truncated to 34.15 format by discarding the lower
+                   15 bits, and then saturated to yield a result in 1.15 format.
  */
 
 void arm_rms_q15(
-  q15_t * pSrc,
-  uint32_t blockSize,
-  q15_t * pResult)
+  const q15_t * pSrc,
+        uint32_t blockSize,
+        q15_t * pResult)
 {
-  q63_t sum = 0;                                 /* accumulator */
+        uint32_t blkCnt;                               /* Loop counter */
+        q63_t sum = 0;                                 /* Temporary result storage */
+        q15_t in;                                      /* Temporary variable to store input value */
 
-#if defined (ARM_MATH_DSP)
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
+#if defined (ARM_MATH_LOOPUNROLL) && defined (ARM_MATH_DSP)
+        q31_t in32;                                    /* Temporary variable to store input value */
+#endif
 
-  q31_t in;                                      /* temporary variable to store the input value */
-  q15_t in1;                                     /* temporary variable to store the input value */
-  uint32_t blkCnt;                               /* loop counter */
+#if defined (ARM_MATH_LOOPUNROLL)
 
-  /* loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* C = (A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1]) */
-    /* Compute sum of the squares and then store the results in a temporary variable, sum */
-    in = *__SIMD32(pSrc)++;
-    sum = __SMLALD(in, in, sum);
-    in = *__SIMD32(pSrc)++;
-    sum = __SMLALD(in, in, sum);
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
 
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
+    /* Compute sum of squares and store result in a temporary variable. */
+#if defined (ARM_MATH_DSP)
+    in32 = read_q15x2_ia ((q15_t **) &pSrc);
+    sum = __SMLALD(in32, in32, sum);
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4U;
-
-  while (blkCnt > 0U)
-  {
-    /* C = (A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1]) */
-    /* Compute sum of the squares and then store the results in a temporary variable, sum */
-    in1 = *pSrc++;
-    sum = __SMLALD(in1, in1, sum);
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
-  /* Truncating and saturating the accumulator to 1.15 format */
-  /* Store the result in the destination */
-  arm_sqrt_q15(__SSAT((sum / (q63_t)blockSize) >> 15, 16), pResult);
-
+    in32 = read_q15x2_ia ((q15_t **) &pSrc);
+    sum = __SMLALD(in32, in32, sum);
 #else
-  /* Run the below code for Cortex-M0 */
-
-  q15_t in;                                      /* temporary variable to store the input value */
-  uint32_t blkCnt;                               /* loop counter */
-
-  /* Loop over blockSize number of values */
-  blkCnt = blockSize;
-
-  while (blkCnt > 0U)
-  {
-    /* C = (A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1]) */
-    /* Compute sum of the squares and then store the results in a temporary variable, sum */
     in = *pSrc++;
     sum += ((q31_t) in * in);
 
-    /* Decrement the loop counter */
+    in = *pSrc++;
+    sum += ((q31_t) in * in);
+
+    in = *pSrc++;
+    sum += ((q31_t) in * in);
+
+    in = *pSrc++;
+    sum += ((q31_t) in * in);
+#endif /* #if defined (ARM_MATH_DSP) */
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  while (blkCnt > 0U)
+  {
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+
+    in = *pSrc++;
+    /* Compute sum of squares and store result in a temporary variable. */
+    sum += ((q31_t) in * in);
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
   /* Truncating and saturating the accumulator to 1.15 format */
-  /* Store the result in the destination */
+  /* Store result in destination */
   arm_sqrt_q15(__SSAT((sum / (q63_t)blockSize) >> 15, 16), pResult);
-
-#endif /* #if defined (ARM_MATH_DSP) */
-
 }
 
 /**
- * @} end of RMS group
+  @} end of RMS group
  */

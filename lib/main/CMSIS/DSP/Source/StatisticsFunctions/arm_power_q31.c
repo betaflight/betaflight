@@ -3,13 +3,13 @@
  * Title:        arm_power_q31.c
  * Description:  Sum of the squares of the elements of a Q31 vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,58 +29,51 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupStats
+  @ingroup groupStats
  */
 
 /**
- * @addtogroup power
- * @{
+  @addtogroup power
+  @{
  */
 
 /**
- * @brief Sum of the squares of the elements of a Q31 vector.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       blockSize length of the input vector
- * @param[out]      *pResult sum of the squares value returned here
- * @return none.
- *
- * @details
- * <b>Scaling and Overflow Behavior:</b>
- *
- * \par
- * The function is implemented using a 64-bit internal accumulator.
- * The input is represented in 1.31 format.
- * Intermediate multiplication yields a 2.62 format, and this
- * result is truncated to 2.48 format by discarding the lower 14 bits.
- * The 2.48 result is then added without saturation to a 64-bit accumulator in 16.48 format.
- * With 15 guard bits in the accumulator, there is no risk of overflow, and the
- * full precision of the intermediate multiplication is preserved.
- * Finally, the return result is in 16.48 format.
- *
+  @brief         Sum of the squares of the elements of a Q31 vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     blockSize  number of samples in input vector
+  @param[out]    pResult    sum of the squares value returned here
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function is implemented using a 64-bit internal accumulator.
+                   The input is represented in 1.31 format.
+                   Intermediate multiplication yields a 2.62 format, and this
+                   result is truncated to 2.48 format by discarding the lower 14 bits.
+                   The 2.48 result is then added without saturation to a 64-bit accumulator in 16.48 format.
+                   With 15 guard bits in the accumulator, there is no risk of overflow, and the
+                   full precision of the intermediate multiplication is preserved.
+                   Finally, the return result is in 16.48 format.
  */
 
 void arm_power_q31(
-  q31_t * pSrc,
-  uint32_t blockSize,
-  q63_t * pResult)
+  const q31_t * pSrc,
+        uint32_t blockSize,
+        q63_t * pResult)
 {
-  q63_t sum = 0;                                 /* Temporary result storage */
-  q31_t in;
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
+        q63_t sum = 0;                                 /* Temporary result storage */
+        q31_t in;                                      /* Temporary variable to store input value */
 
+#if defined (ARM_MATH_LOOPUNROLL)
 
-#if defined (ARM_MATH_DSP)
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* C = A[0] * A[0] + A[1] * A[1] + A[2] * A[2] + ... + A[blockSize-1] * A[blockSize-1] */
-    /* Compute Power then shift intermediate results by 14 bits to maintain 16.48 format and then store the result in a temporary variable sum, providing 15 guard bits. */
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+
+    /* Compute Power then shift intermediate results by 14 bits to maintain 16.48 format and store result in a temporary variable sum, providing 15 guard bits. */
     in = *pSrc++;
     sum += ((q63_t) in * in) >> 14U;
 
@@ -93,37 +86,36 @@ void arm_power_q31(
     in = *pSrc++;
     sum += ((q63_t) in * in) >> 14U;
 
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
-  /* Run the below code for Cortex-M0 */
 
-  /* Loop over blockSize number of values */
+  /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
-    /* C = A[0] * A[0] + A[1] * A[1] + A[2] * A[2] + ... + A[blockSize-1] * A[blockSize-1] */
-    /* Compute Power and then store the result in a temporary variable, sum. */
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+
+    /* Compute Power and store result in a temporary variable, sum. */
     in = *pSrc++;
     sum += ((q63_t) in * in) >> 14U;
 
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* Store the results in 16.48 format  */
+  /* Store results in 16.48 format */
   *pResult = sum;
 }
 
 /**
- * @} end of power group
+  @} end of power group
  */

@@ -3,13 +3,13 @@
  * Title:        arm_negate_q15.c
  * Description:  Negates Q15 vectors
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,103 +29,98 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup negate
- * @{
+  @addtogroup BasicNegate
+  @{
  */
 
 /**
- * @brief  Negates the elements of a Q15 vector.
- * @param[in]  *pSrc points to the input vector
- * @param[out]  *pDst points to the output vector
- * @param[in]  blockSize number of samples in the vector
- * @return none.
- *
- * \par Conditions for optimum performance
- *  Input and output buffers should be aligned by 32-bit
- *
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * The Q15 value -1 (0x8000) will be saturated to the maximum allowable positive value 0x7FFF.
+  @brief         Negates the elements of a Q15 vector.
+  @param[in]     pSrc       points to the input vector.
+  @param[out]    pDst       points to the output vector.
+  @param[in]     blockSize  number of samples in each vector.
+  @return        none
+
+  @par           Conditions for optimum performance
+                   Input and output buffers should be aligned by 32-bit
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   The Q15 value -1 (0x8000) is saturated to the maximum allowable positive value 0x7FFF.
  */
 
 void arm_negate_q15(
-  q15_t * pSrc,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t * pSrc,
+        q15_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
-  q15_t in;
+        uint32_t blkCnt;                               /* Loop counter */
+        q15_t in;                                      /* Temporary input variable */
+
+#if defined (ARM_MATH_LOOPUNROLL)
 
 #if defined (ARM_MATH_DSP)
+  q31_t in1;                                    /* Temporary input variables */
+#endif
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-
-  q31_t in1, in2;                                /* Temporary variables */
-
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = -A */
-    /* Read two inputs at a time */
-    in1 = _SIMD32_OFFSET(pSrc);
-    in2 = _SIMD32_OFFSET(pSrc + 2);
 
-    /* negate two samples at a time */
-    in1 = __QSUB16(0, in1);
+#if defined (ARM_MATH_DSP)
+    /* Negate and store result in destination buffer (2 samples at a time). */
+    in1 = read_q15x2_ia ((q15_t **) &pSrc);
+    write_q15x2_ia (&pDst, __QSUB16(0, in1));
 
-    /* negate two samples at a time */
-    in2 = __QSUB16(0, in2);
+    in1 = read_q15x2_ia ((q15_t **) &pSrc);
+    write_q15x2_ia (&pDst, __QSUB16(0, in1));
+#else
+    in = *pSrc++;
+    *pDst++ = (in == (q15_t) 0x8000) ? (q15_t) 0x7fff : -in;
 
-    /* store the result to destination 2 samples at a time */
-    _SIMD32_OFFSET(pDst) = in1;
-    /* store the result to destination 2 samples at a time */
-    _SIMD32_OFFSET(pDst + 2) = in2;
+    in = *pSrc++;
+    *pDst++ = (in == (q15_t) 0x8000) ? (q15_t) 0x7fff : -in;
 
+    in = *pSrc++;
+    *pDst++ = (in == (q15_t) 0x8000) ? (q15_t) 0x7fff : -in;
 
-    /* update pointers to process next samples */
-    pSrc += 4U;
-    pDst += 4U;
+    in = *pSrc++;
+    *pDst++ = (in == (q15_t) 0x8000) ? (q15_t) 0x7fff : -in;
+#endif
 
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Run the below code for Cortex-M0 */
-
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = -A */
-    /* Negate and then store the result in the destination buffer. */
-    in = *pSrc++;
-    *pDst++ = (in == (q15_t) 0x8000) ? 0x7fff : -in;
 
-    /* Decrement the loop counter */
+    /* Negate and store result in destination buffer. */
+    in = *pSrc++;
+    *pDst++ = (in == (q15_t) 0x8000) ? (q15_t) 0x7fff : -in;
+
+    /* Decrement loop counter */
     blkCnt--;
   }
+
 }
 
 /**
- * @} end of negate group
+  @} end of BasicNegate group
  */

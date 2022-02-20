@@ -3,13 +3,13 @@
  * Title:        arm_var_f32.c
  * Description:  Variance of the elements of a floating-point vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,153 +29,206 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupStats
+  @ingroup groupStats
  */
 
 /**
- * @defgroup variance  Variance
- *
- * Calculates the variance of the elements in the input vector.
- * The underlying algorithm used is the direct method sometimes referred to as the two-pass method:
- *
- * <pre>
- *   Result = sum(element - meanOfElements)^2) / numElement - 1
- *
- *     where, meanOfElements = ( pSrc[0] * pSrc[0] + pSrc[1] * pSrc[1] + ... + pSrc[blockSize-1] ) / blockSize
- *
- * </pre>
- *
- * There are separate functions for floating point, Q31, and Q15 data types.
+  @defgroup variance  Variance
+
+  Calculates the variance of the elements in the input vector.
+  The underlying algorithm used is the direct method sometimes referred to as the two-pass method:
+
+  <pre>
+      Result = sum(element - meanOfElements)^2) / numElement - 1
+
+      meanOfElements = ( pSrc[0] * pSrc[0] + pSrc[1] * pSrc[1] + ... + pSrc[blockSize-1] ) / blockSize
+  </pre>
+
+  There are separate functions for floating point, Q31, and Q15 data types.
  */
 
 /**
- * @addtogroup variance
- * @{
+  @addtogroup variance
+  @{
  */
-
 
 /**
- * @brief Variance of the elements of a floating-point vector.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       blockSize length of the input vector
- * @param[out]      *pResult variance value returned here
- * @return none.
+  @brief         Variance of the elements of a floating-point vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     blockSize  number of samples in input vector
+  @param[out]    pResult    variance value returned here
+  @return        none
  */
-
+#if defined(ARM_MATH_NEON_EXPERIMENTAL)
 void arm_var_f32(
-                 float32_t * pSrc,
+           const float32_t * pSrc,
                  uint32_t blockSize,
                  float32_t * pResult)
 {
-    float32_t fMean, fValue;
-    uint32_t blkCnt;            /* loop counter */
-    float32_t * pInput = pSrc;
-    float32_t sum = 0.0f;
-    float32_t fSum = 0.0f;
-    #if defined(ARM_MATH_DSP)
-    float32_t in1, in2, in3, in4;
-    #endif
+  float32_t mean;
 
-    if (blockSize <= 1U)
-    {
-        *pResult = 0;
-        return;
-    }
+  float32_t sum = 0.0f;                          /* accumulator */
+  float32_t in;                                  /* Temporary variable to store input value */
+  uint32_t blkCnt;                               /* loop counter */
 
-    #if defined(ARM_MATH_DSP)
-        /* Run the below code for Cortex-M4 and Cortex-M7 */
+  float32x4_t sumV = vdupq_n_f32(0.0f);                          /* Temporary result storage */
+  float32x2_t sumV2;
+  float32x4_t inV;
+  float32x4_t avg;
 
-        /*loop Unrolling */
-        blkCnt = blockSize >> 2U;
+  arm_mean_f32(pSrc,blockSize,&mean);
+  avg = vdupq_n_f32(mean);
 
-        /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-        ** a second loop below computes the remaining 1 to 3 samples. */
-        while (blkCnt > 0U)
-        {
-            /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
-            in1 = *pInput++;
-            in2 = *pInput++;
-            in3 = *pInput++;
-            in4 = *pInput++;
+  blkCnt = blockSize >> 2U;
 
-            sum += in1;
-            sum += in2;
-            sum += in3;
-            sum += in4;
+  /* Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
+  while (blkCnt > 0U)
+  {
+    /* C = A[0] * A[0] + A[1] * A[1] + A[2] * A[2] + ... + A[blockSize-1] * A[blockSize-1] */
+    /* Compute Power and then store the result in a temporary variable, sum. */
+    inV = vld1q_f32(pSrc);
+    inV = vsubq_f32(inV, avg);
+    sumV = vmlaq_f32(sumV, inV, inV);
+    pSrc += 4;
 
-            /* Decrement the loop counter */
-            blkCnt--;
-        }
+    /* Decrement the loop counter */
+    blkCnt--;
+  }
 
-        /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-        ** No loop unrolling is used. */
-        blkCnt = blockSize % 0x4U;
+  sumV2 = vpadd_f32(vget_low_f32(sumV),vget_high_f32(sumV));
+  sum = sumV2[0] + sumV2[1];
 
-    #else
-        /* Run the below code for Cortex-M0 or Cortex-M3 */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
+  blkCnt = blockSize % 0x4U;
 
-        /* Loop over blockSize number of values */
-        blkCnt = blockSize;
+  while (blkCnt > 0U)
+  {
+    /* C = A[0] * A[0] + A[1] * A[1] + A[2] * A[2] + ... + A[blockSize-1] * A[blockSize-1] */
+    /* compute power and then store the result in a temporary variable, sum. */
+    in = *pSrc++;
+    in = in - mean;
+    sum += in * in;
 
-    #endif
+    /* Decrement the loop counter */
+    blkCnt--;
+  }
 
-    while (blkCnt > 0U)
-    {
-        /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
-        sum += *pInput++;
+  /* Variance */
+  *pResult = sum / (float32_t)(blockSize - 1.0f);
 
-        /* Decrement the loop counter */
-        blkCnt--;
-    }
-
-    /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) / blockSize  */
-    fMean = sum / (float32_t) blockSize;
-
-    pInput = pSrc;
-
-    #if defined(ARM_MATH_DSP)
-
-        /*loop Unrolling */
-        blkCnt = blockSize >> 2U;
-
-        /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-        ** a second loop below computes the remaining 1 to 3 samples. */
-        while (blkCnt > 0U)
-        {
-            fValue = *pInput++ - fMean;
-            fSum += fValue * fValue;
-            fValue = *pInput++ - fMean;
-            fSum += fValue * fValue;
-            fValue = *pInput++ - fMean;
-            fSum += fValue * fValue;
-            fValue = *pInput++ - fMean;
-            fSum += fValue * fValue;
-
-            /* Decrement the loop counter */
-            blkCnt--;
-        }
-
-        blkCnt = blockSize % 0x4U;
-    #else
-        /* Run the below code for Cortex-M0 or Cortex-M3 */
-
-        /* Loop over blockSize number of values */
-        blkCnt = blockSize;
-    #endif
-
-    while (blkCnt > 0U)
-    {
-        fValue = *pInput++ - fMean;
-        fSum += fValue * fValue;
-
-        /* Decrement the loop counter */
-        blkCnt--;
-    }
-
-    /* Variance */
-    *pResult = fSum / (float32_t)(blockSize - 1.0f);
 }
 
+#else
+void arm_var_f32(
+  const float32_t * pSrc,
+        uint32_t blockSize,
+        float32_t * pResult)
+{
+        uint32_t blkCnt;                               /* Loop counter */
+        float32_t sum = 0.0f;                          /* Temporary result storage */
+        float32_t fSum = 0.0f;
+        float32_t fMean, fValue;
+  const float32_t * pInput = pSrc;
+
+  if (blockSize <= 1U)
+  {
+    *pResult = 0;
+    return;
+  }
+
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
+  while (blkCnt > 0U)
+  {
+    /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
+
+    sum += *pInput++;
+    sum += *pInput++;
+    sum += *pInput++;
+    sum += *pInput++;
+
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  while (blkCnt > 0U)
+  {
+    /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
+
+    sum += *pInput++;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) / blockSize  */
+  fMean = sum / (float32_t) blockSize;
+
+  pInput = pSrc;
+
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
+  while (blkCnt > 0U)
+  {
+    fValue = *pInput++ - fMean;
+    fSum += fValue * fValue;
+
+    fValue = *pInput++ - fMean;
+    fSum += fValue * fValue;
+
+    fValue = *pInput++ - fMean;
+    fSum += fValue * fValue;
+
+    fValue = *pInput++ - fMean;
+    fSum += fValue * fValue;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  while (blkCnt > 0U)
+  {
+    fValue = *pInput++ - fMean;
+    fSum += fValue * fValue;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Variance */
+  *pResult = fSum / (float32_t)(blockSize - 1.0f);
+}
+#endif /* #if defined(ARM_MATH_NEON) */
+
 /**
- * @} end of variance group
+  @} end of variance group
  */

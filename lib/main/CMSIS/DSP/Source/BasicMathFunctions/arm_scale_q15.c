@@ -3,13 +3,13 @@
  * Title:        arm_scale_q15.c
  * Description:  Multiplies a Q15 vector by a scalar
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,66 +29,66 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup scale
- * @{
+  @addtogroup BasicScale
+  @{
  */
 
 /**
- * @brief Multiplies a Q15 vector by a scalar.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       scaleFract fractional portion of the scale value
- * @param[in]       shift number of bits to shift the result by
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in the vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.15 format.
- * These are multiplied to yield a 2.30 intermediate result and this is shifted with saturation to 1.15 format.
- */
+  @brief         Multiplies a Q15 vector by a scalar.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     scaleFract fractional portion of the scale value
+  @param[in]     shift      number of bits to shift the result by
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
 
+  @par           Scaling and Overflow Behavior
+                   The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.15 format.
+                   These are multiplied to yield a 2.30 intermediate result and this is shifted with saturation to 1.15 format.
+ */
 
 void arm_scale_q15(
-  q15_t * pSrc,
-  q15_t scaleFract,
-  int8_t shift,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t *pSrc,
+        q15_t scaleFract,
+        int8_t shift,
+        q15_t *pDst,
+        uint32_t blockSize)
 {
-  int8_t kShift = 15 - shift;                    /* shift to apply after scaling */
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
+        int8_t kShift = 15 - shift;                    /* Shift to apply after scaling */
 
+#if defined (ARM_MATH_LOOPUNROLL)
 #if defined (ARM_MATH_DSP)
+  q31_t inA1, inA2;
+  q31_t out1, out2, out3, out4;                  /* Temporary output variables */
+  q15_t in1, in2, in3, in4;                      /* Temporary input variables */
+#endif
+#endif
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  q15_t in1, in2, in3, in4;
-  q31_t inA1, inA2;                              /* Temporary variables */
-  q31_t out1, out2, out3, out4;
+#if defined (ARM_MATH_LOOPUNROLL)
 
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* Reading 2 inputs from memory */
-    inA1 = *__SIMD32(pSrc)++;
-    inA2 = *__SIMD32(pSrc)++;
-
     /* C = A * scale */
-    /* Scale the inputs and then store the 2 results in the destination buffer
+
+#if defined (ARM_MATH_DSP)
+    /* read 2 times 2 samples at a time from source */
+    inA1 = read_q15x2_ia ((q15_t **) &pSrc);
+    inA2 = read_q15x2_ia ((q15_t **) &pSrc);
+
+    /* Scale inputs and store result in temporary variables
      * in single cycle by packing the outputs */
     out1 = (q31_t) ((q15_t) (inA1 >> 16) * scaleFract);
-    out2 = (q31_t) ((q15_t) inA1 * scaleFract);
+    out2 = (q31_t) ((q15_t) (inA1      ) * scaleFract);
     out3 = (q31_t) ((q15_t) (inA2 >> 16) * scaleFract);
-    out4 = (q31_t) ((q15_t) inA2 * scaleFract);
+    out4 = (q31_t) ((q15_t) (inA2      ) * scaleFract);
 
     /* apply shifting */
     out1 = out1 >> kShift;
@@ -102,49 +102,43 @@ void arm_scale_q15(
     in3 = (q15_t) (__SSAT(out3, 16));
     in4 = (q15_t) (__SSAT(out4, 16));
 
-    /* store the result to destination */
-    *__SIMD32(pDst)++ = __PKHBT(in2, in1, 16);
-    *__SIMD32(pDst)++ = __PKHBT(in4, in3, 16);
+    /* store result to destination */
+    write_q15x2_ia (&pDst, __PKHBT(in2, in1, 16));
+    write_q15x2_ia (&pDst, __PKHBT(in4, in3, 16));
+#else
+    *pDst++ = (q15_t) (__SSAT(((q31_t) *pSrc++ * scaleFract) >> kShift, 16));
+    *pDst++ = (q15_t) (__SSAT(((q31_t) *pSrc++ * scaleFract) >> kShift, 16));
+    *pDst++ = (q15_t) (__SSAT(((q31_t) *pSrc++ * scaleFract) >> kShift, 16));
+    *pDst++ = (q15_t) (__SSAT(((q31_t) *pSrc++ * scaleFract) >> kShift, 16));
+#endif
 
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
-  while (blkCnt > 0U)
-  {
-    /* C = A * scale */
-    /* Scale the input and then store the result in the destination buffer. */
-    *pDst++ = (q15_t) (__SSAT(((*pSrc++) * scaleFract) >> kShift, 16));
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
 #else
-
-  /* Run the below code for Cortex-M0 */
 
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
   while (blkCnt > 0U)
   {
     /* C = A * scale */
-    /* Scale the input and then store the result in the destination buffer. */
-    *pDst++ = (q15_t) (__SSAT(((q31_t) * pSrc++ * scaleFract) >> kShift, 16));
 
-    /* Decrement the loop counter */
+    /* Scale input and store result in destination buffer. */
+    *pDst++ = (q15_t) (__SSAT(((q31_t) *pSrc++ * scaleFract) >> kShift, 16));
+
+    /* Decrement loop counter */
     blkCnt--;
   }
-
-#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
 /**
- * @} end of scale group
+  @} end of BasicScale group
  */

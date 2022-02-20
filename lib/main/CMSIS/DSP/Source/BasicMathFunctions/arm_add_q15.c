@@ -3,13 +3,13 @@
  * Title:        arm_add_q15.c
  * Description:  Q15 vector addition
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,100 +29,98 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup BasicAdd
- * @{
+  @addtogroup BasicAdd
+  @{
  */
 
 /**
- * @brief Q15 vector addition.
- * @param[in]       *pSrcA points to the first input vector
- * @param[in]       *pSrcB points to the second input vector
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in each vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q15 range [0x8000 0x7FFF] will be saturated.
+  @brief         Q15 vector addition.
+  @param[in]     pSrcA      points to the first input vector
+  @param[in]     pSrcB      points to the second input vector
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
  */
 
 void arm_add_q15(
-  q15_t * pSrcA,
-  q15_t * pSrcB,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t * pSrcA,
+  const q15_t * pSrcB,
+        q15_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
+
+#if defined (ARM_MATH_LOOPUNROLL)
 
 #if defined (ARM_MATH_DSP)
+  q31_t inA1, inA2;
+  q31_t inB1, inB2;
+#endif
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  q31_t inA1, inA2, inB1, inB2;
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    inA1 = *__SIMD32(pSrcA)++;
-    inA2 = *__SIMD32(pSrcA)++;
-    inB1 = *__SIMD32(pSrcB)++;
-    inB2 = *__SIMD32(pSrcB)++;
 
-    *__SIMD32(pDst)++ = __QADD16(inA1, inB1);
-    *__SIMD32(pDst)++ = __QADD16(inA2, inB2);
+#if defined (ARM_MATH_DSP)
+    /* read 2 times 2 samples at a time from sourceA */
+    inA1 = read_q15x2_ia ((q15_t **) &pSrcA);
+    inA2 = read_q15x2_ia ((q15_t **) &pSrcA);
+    /* read 2 times 2 samples at a time from sourceB */
+    inB1 = read_q15x2_ia ((q15_t **) &pSrcB);
+    inB2 = read_q15x2_ia ((q15_t **) &pSrcB);
 
-    /* Decrement the loop counter */
+    /* Add and store 2 times 2 samples at a time */
+    write_q15x2_ia (&pDst, __QADD16(inA1, inB1));
+    write_q15x2_ia (&pDst, __QADD16(inA2, inB2));
+#else
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrcA++ + *pSrcB++), 16);
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrcA++ + *pSrcB++), 16);
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrcA++ + *pSrcB++), 16);
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrcA++ + *pSrcB++), 16);
+#endif
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
-  while (blkCnt > 0U)
-  {
-    /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    *pDst++ = (q15_t) __QADD16(*pSrcA++, *pSrcB++);
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
 #else
-
-  /* Run the below code for Cortex-M0 */
-
-
 
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
   while (blkCnt > 0U)
   {
     /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    *pDst++ = (q15_t) __SSAT(((q31_t) * pSrcA++ + *pSrcB++), 16);
 
-    /* Decrement the loop counter */
+    /* Add and store result in destination buffer. */
+#if defined (ARM_MATH_DSP)
+    *pDst++ = (q15_t) __QADD16(*pSrcA++, *pSrcB++);
+#else
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrcA++ + *pSrcB++), 16);
+#endif
+
+    /* Decrement loop counter */
     blkCnt--;
   }
-
-#endif /* #if defined (ARM_MATH_DSP) */
-
 
 }
 
 /**
- * @} end of BasicAdd group
+  @} end of BasicAdd group
  */

@@ -3,13 +3,13 @@
  * Title:        arm_offset_q15.c
  * Description:  Q15 vector offset
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,96 +29,93 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup offset
- * @{
+  @addtogroup BasicOffset
+  @{
  */
 
 /**
- * @brief  Adds a constant offset to a Q15 vector.
- * @param[in]  *pSrc points to the input vector
- * @param[in]  offset is the offset to be added
- * @param[out]  *pDst points to the output vector
- * @param[in]  blockSize number of samples in the vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
+  @brief         Adds a constant offset to a Q15 vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     offset     is the offset to be added
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
  */
 
 void arm_offset_q15(
-  q15_t * pSrc,
-  q15_t offset,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t * pSrc,
+        q15_t offset,
+        q15_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
+
+#if defined (ARM_MATH_LOOPUNROLL)
 
 #if defined (ARM_MATH_DSP)
-
-/* Run the below code for Cortex-M4 and Cortex-M3 */
   q31_t offset_packed;                           /* Offset packed to 32 bit */
-
-
-  /*loop Unrolling */
-  blkCnt = blockSize >> 2U;
 
   /* Offset is packed to 32 bit in order to use SIMD32 for addition */
   offset_packed = __PKHBT(offset, offset, 16);
+#endif
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
   while (blkCnt > 0U)
   {
     /* C = A + offset */
-    /* Add offset and then store the results in the destination buffer, 2 samples at a time. */
-    *__SIMD32(pDst)++ = __QADD16(*__SIMD32(pSrc)++, offset_packed);
-    *__SIMD32(pDst)++ = __QADD16(*__SIMD32(pSrc)++, offset_packed);
 
-    /* Decrement the loop counter */
+#if defined (ARM_MATH_DSP)
+    /* Add offset and store result in destination buffer (2 samples at a time). */
+    write_q15x2_ia (&pDst, __QADD16(read_q15x2_ia ((q15_t **) &pSrc), offset_packed));
+    write_q15x2_ia (&pDst, __QADD16(read_q15x2_ia ((q15_t **) &pSrc), offset_packed));
+#else
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrc++ + offset), 16);
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrc++ + offset), 16);
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrc++ + offset), 16);
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrc++ + offset), 16);
+#endif
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
-  while (blkCnt > 0U)
-  {
-    /* C = A + offset */
-    /* Add offset and then store the results in the destination buffer. */
-    *pDst++ = (q15_t) __QADD16(*pSrc++, offset);
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
 #else
-
-  /* Run the below code for Cortex-M0 */
 
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
   while (blkCnt > 0U)
   {
     /* C = A + offset */
-    /* Add offset and then store the results in the destination buffer. */
-    *pDst++ = (q15_t) __SSAT(((q31_t) * pSrc++ + offset), 16);
 
-    /* Decrement the loop counter */
+    /* Add offset and store result in destination buffer. */
+#if defined (ARM_MATH_DSP)
+    *pDst++ = (q15_t) __QADD16(*pSrc++, offset);
+#else
+    *pDst++ = (q15_t) __SSAT(((q31_t) *pSrc++ + offset), 16);
+#endif
+
+    /* Decrement loop counter */
     blkCnt--;
   }
-
-#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
 /**
- * @} end of offset group
+  @} end of BasicOffset group
  */

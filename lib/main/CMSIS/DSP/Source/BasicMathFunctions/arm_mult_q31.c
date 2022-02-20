@@ -3,13 +3,13 @@
  * Title:        arm_mult_q31.c
  * Description:  Q31 vector multiplication
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,120 +29,91 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup BasicMult
- * @{
+  @addtogroup BasicMult
+  @{
  */
 
 /**
- * @brief Q31 vector multiplication.
- * @param[in]       *pSrcA points to the first input vector
- * @param[in]       *pSrcB points to the second input vector
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in each vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q31 range[0x80000000 0x7FFFFFFF] will be saturated.
+  @brief         Q31 vector multiplication.
+  @param[in]     pSrcA      points to the first input vector.
+  @param[in]     pSrcB      points to the second input vector.
+  @param[out]    pDst       points to the output vector.
+  @param[in]     blockSize  number of samples in each vector.
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q31 range[0x80000000 0x7FFFFFFF] are saturated.
  */
 
 void arm_mult_q31(
-  q31_t * pSrcA,
-  q31_t * pSrcB,
-  q31_t * pDst,
-  uint32_t blockSize)
+  const q31_t * pSrcA,
+  const q31_t * pSrcB,
+        q31_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counters */
+        uint32_t blkCnt;                               /* Loop counter */
+        q31_t out;                                     /* Temporary output variable */
 
-#if defined (ARM_MATH_DSP)
+#if defined (ARM_MATH_LOOPUNROLL)
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  q31_t inA1, inA2, inA3, inA4;                  /* temporary input variables */
-  q31_t inB1, inB2, inB3, inB4;                  /* temporary input variables */
-  q31_t out1, out2, out3, out4;                  /* temporary output variables */
-
-  /* loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A * B */
-    /* Multiply the inputs and then store the results in the destination buffer. */
-    inA1 = *pSrcA++;
-    inA2 = *pSrcA++;
-    inA3 = *pSrcA++;
-    inA4 = *pSrcA++;
-    inB1 = *pSrcB++;
-    inB2 = *pSrcB++;
-    inB3 = *pSrcB++;
-    inB4 = *pSrcB++;
 
-    out1 = ((q63_t) inA1 * inB1) >> 32;
-    out2 = ((q63_t) inA2 * inB2) >> 32;
-    out3 = ((q63_t) inA3 * inB3) >> 32;
-    out4 = ((q63_t) inA4 * inB4) >> 32;
+    /* Multiply inputs and store result in destination buffer. */
+    out = ((q63_t) *pSrcA++ * *pSrcB++) >> 32;
+    out = __SSAT(out, 31);
+    *pDst++ = out << 1U;
 
-    out1 = __SSAT(out1, 31);
-    out2 = __SSAT(out2, 31);
-    out3 = __SSAT(out3, 31);
-    out4 = __SSAT(out4, 31);
+    out = ((q63_t) *pSrcA++ * *pSrcB++) >> 32;
+    out = __SSAT(out, 31);
+    *pDst++ = out << 1U;
 
-    *pDst++ = out1 << 1U;
-    *pDst++ = out2 << 1U;
-    *pDst++ = out3 << 1U;
-    *pDst++ = out4 << 1U;
+    out = ((q63_t) *pSrcA++ * *pSrcB++) >> 32;
+    out = __SSAT(out, 31);
+    *pDst++ = out << 1U;
 
-    /* Decrement the blockSize loop counter */
+    out = ((q63_t) *pSrcA++ * *pSrcB++) >> 32;
+    out = __SSAT(out, 31);
+    *pDst++ = out << 1U;
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
-  while (blkCnt > 0U)
-  {
-    /* C = A * B */
-    /* Multiply the inputs and then store the results in the destination buffer. */
-    inA1 = *pSrcA++;
-    inB1 = *pSrcB++;
-    out1 = ((q63_t) inA1 * inB1) >> 32;
-    out1 = __SSAT(out1, 31);
-    *pDst++ = out1 << 1U;
-
-    /* Decrement the blockSize loop counter */
-    blkCnt--;
-  }
-
 #else
-
-  /* Run the below code for Cortex-M0 */
 
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = A * B */
-    /* Multiply the inputs and then store the results in the destination buffer. */
-    *pDst++ =
-      (q31_t) clip_q63_to_q31(((q63_t) (*pSrcA++) * (*pSrcB++)) >> 31);
 
-    /* Decrement the blockSize loop counter */
+    /* Multiply inputs and store result in destination buffer. */
+    out = ((q63_t) *pSrcA++ * *pSrcB++) >> 32;
+    out = __SSAT(out, 31);
+    *pDst++ = out << 1U;
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-#endif /* #if defined (ARM_MATH_DSP) */
 }
 
 /**
- * @} end of BasicMult group
+  @} end of BasicMult group
  */

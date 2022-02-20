@@ -3,13 +3,13 @@
  * Title:        arm_mult_f32.c
  * Description:  Floating-point vector multiplication
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,134 +29,120 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @defgroup BasicMult Vector Multiplication
- *
- * Element-by-element multiplication of two vectors.
- *
- * <pre>
- *     pDst[n] = pSrcA[n] * pSrcB[n],   0 <= n < blockSize.
- * </pre>
- *
- * There are separate functions for floating-point, Q7, Q15, and Q31 data types.
+  @defgroup BasicMult Vector Multiplication
+
+  Element-by-element multiplication of two vectors.
+
+  <pre>
+      pDst[n] = pSrcA[n] * pSrcB[n],   0 <= n < blockSize.
+  </pre>
+
+  There are separate functions for floating-point, Q7, Q15, and Q31 data types.
  */
 
 /**
- * @addtogroup BasicMult
- * @{
+  @addtogroup BasicMult
+  @{
  */
 
 /**
- * @brief Floating-point vector multiplication.
- * @param[in]       *pSrcA points to the first input vector
- * @param[in]       *pSrcB points to the second input vector
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in each vector
- * @return none.
+  @brief         Floating-point vector multiplication.
+  @param[in]     pSrcA      points to the first input vector.
+  @param[in]     pSrcB      points to the second input vector.
+  @param[out]    pDst       points to the output vector.
+  @param[in]     blockSize  number of samples in each vector.
+  @return        none
  */
 
 void arm_mult_f32(
-  float32_t * pSrcA,
-  float32_t * pSrcB,
-  float32_t * pDst,
-  uint32_t blockSize)
+  const float32_t * pSrcA,
+  const float32_t * pSrcB,
+        float32_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counters */
-#if defined (ARM_MATH_DSP)
+    uint32_t blkCnt;                               /* Loop counter */
 
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t inA1, inA2, inA3, inA4;              /* temporary input variables */
-  float32_t inB1, inB2, inB3, inB4;              /* temporary input variables */
-  float32_t out1, out2, out3, out4;              /* temporary output variables */
+#if defined(ARM_MATH_NEON)
+    float32x4_t vec1;
+    float32x4_t vec2;
+    float32x4_t res;
 
-  /* loop Unrolling */
+    /* Compute 4 outputs at a time */
+    blkCnt = blockSize >> 2U;
+
+    while (blkCnt > 0U)
+    {
+        /* C = A * B */
+
+    	/* Multiply the inputs and then store the results in the destination buffer. */
+        vec1 = vld1q_f32(pSrcA);
+        vec2 = vld1q_f32(pSrcB);
+        res = vmulq_f32(vec1, vec2);
+        vst1q_f32(pDst, res);
+
+        /* Increment pointers */
+        pSrcA += 4;
+        pSrcB += 4; 
+        pDst += 4;
+        
+        /* Decrement the loop counter */
+        blkCnt--;
+    }
+
+    /* Tail */
+    blkCnt = blockSize & 0x3;
+
+#else
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A * B */
-    /* Multiply the inputs and store the results in output buffer */
-    /* read sample from sourceA */
-    inA1 = *pSrcA;
-    /* read sample from sourceB */
-    inB1 = *pSrcB;
-    /* read sample from sourceA */
-    inA2 = *(pSrcA + 1);
-    /* read sample from sourceB */
-    inB2 = *(pSrcB + 1);
 
-    /* out = sourceA * sourceB */
-    out1 = inA1 * inB1;
+    /* Multiply inputs and store result in destination buffer. */
+    *pDst++ = (*pSrcA++) * (*pSrcB++);
 
-    /* read sample from sourceA */
-    inA3 = *(pSrcA + 2);
-    /* read sample from sourceB */
-    inB3 = *(pSrcB + 2);
+    *pDst++ = (*pSrcA++) * (*pSrcB++);
 
-    /* out = sourceA * sourceB */
-    out2 = inA2 * inB2;
+    *pDst++ = (*pSrcA++) * (*pSrcB++);
 
-    /* read sample from sourceA */
-    inA4 = *(pSrcA + 3);
+    *pDst++ = (*pSrcA++) * (*pSrcB++);
 
-    /* store result to destination buffer */
-    *pDst = out1;
-
-    /* read sample from sourceB */
-    inB4 = *(pSrcB + 3);
-
-    /* out = sourceA * sourceB */
-    out3 = inA3 * inB3;
-
-    /* store result to destination buffer */
-    *(pDst + 1) = out2;
-
-    /* out = sourceA * sourceB */
-    out4 = inA4 * inB4;
-    /* store result to destination buffer */
-    *(pDst + 2) = out3;
-    /* store result to destination buffer */
-    *(pDst + 3) = out4;
-
-
-    /* update pointers to process next samples */
-    pSrcA += 4U;
-    pSrcB += 4U;
-    pDst += 4U;
-
-    /* Decrement the blockSize loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Run the below code for Cortex-M0 */
-
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+#endif /* #if defined(ARM_MATH_NEON) */
 
   while (blkCnt > 0U)
   {
     /* C = A * B */
-    /* Multiply the inputs and store the results in output buffer */
+
+    /* Multiply input and store result in destination buffer. */
     *pDst++ = (*pSrcA++) * (*pSrcB++);
 
-    /* Decrement the blockSize loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
+
 }
 
 /**
- * @} end of BasicMult group
+  @} end of BasicMult group
  */

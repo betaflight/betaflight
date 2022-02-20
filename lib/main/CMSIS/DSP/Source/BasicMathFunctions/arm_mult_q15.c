@@ -3,13 +3,13 @@
  * Title:        arm_mult_q15.c
  * Description:  Q15 vector multiplication
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,65 +29,65 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup BasicMult
- * @{
+  @addtogroup BasicMult
+  @{
  */
 
-
 /**
- * @brief           Q15 vector multiplication
- * @param[in]       *pSrcA points to the first input vector
- * @param[in]       *pSrcB points to the second input vector
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in each vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q15 range [0x8000 0x7FFF] will be saturated.
+  @brief         Q15 vector multiplication
+  @param[in]     pSrcA      points to first input vector
+  @param[in]     pSrcB      points to second input vector
+  @param[out]    pDst       points to output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
  */
 
 void arm_mult_q15(
-  q15_t * pSrcA,
-  q15_t * pSrcB,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t * pSrcA,
+  const q15_t * pSrcB,
+        q15_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counters */
+        uint32_t blkCnt;                               /* Loop counter */
+
+#if defined (ARM_MATH_LOOPUNROLL)
 
 #if defined (ARM_MATH_DSP)
+  q31_t inA1, inA2, inB1, inB2;                  /* Temporary input variables */
+  q15_t out1, out2, out3, out4;                  /* Temporary output variables */
+  q31_t mul1, mul2, mul3, mul4;                  /* Temporary variables */
+#endif
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  q31_t inA1, inA2, inB1, inB2;                  /* temporary input variables */
-  q15_t out1, out2, out3, out4;                  /* temporary output variables */
-  q31_t mul1, mul2, mul3, mul4;                  /* temporary variables */
-
-  /* loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* read two samples at a time from sourceA */
-    inA1 = *__SIMD32(pSrcA)++;
-    /* read two samples at a time from sourceB */
-    inB1 = *__SIMD32(pSrcB)++;
-    /* read two samples at a time from sourceA */
-    inA2 = *__SIMD32(pSrcA)++;
-    /* read two samples at a time from sourceB */
-    inB2 = *__SIMD32(pSrcB)++;
+    /* C = A * B */
+
+#if defined (ARM_MATH_DSP)
+    /* read 2 samples at a time from sourceA */
+    inA1 = read_q15x2_ia ((q15_t **) &pSrcA);
+    /* read 2 samples at a time from sourceB */
+    inB1 = read_q15x2_ia ((q15_t **) &pSrcB);
+    /* read 2 samples at a time from sourceA */
+    inA2 = read_q15x2_ia ((q15_t **) &pSrcA);
+    /* read 2 samples at a time from sourceB */
+    inB2 = read_q15x2_ia ((q15_t **) &pSrcB);
 
     /* multiply mul = sourceA * sourceB */
     mul1 = (q31_t) ((q15_t) (inA1 >> 16) * (q15_t) (inB1 >> 16));
-    mul2 = (q31_t) ((q15_t) inA1 * (q15_t) inB1);
+    mul2 = (q31_t) ((q15_t) (inA1      ) * (q15_t) (inB1      ));
     mul3 = (q31_t) ((q15_t) (inA2 >> 16) * (q15_t) (inB2 >> 16));
-    mul4 = (q31_t) ((q15_t) inA2 * (q15_t) inB2);
+    mul4 = (q31_t) ((q15_t) (inA2      ) * (q15_t) (inB2      ));
 
     /* saturate result to 16 bit */
     out1 = (q15_t) __SSAT(mul1 >> 15, 16);
@@ -95,48 +95,49 @@ void arm_mult_q15(
     out3 = (q15_t) __SSAT(mul3 >> 15, 16);
     out4 = (q15_t) __SSAT(mul4 >> 15, 16);
 
-    /* store the result */
+    /* store result to destination */
 #ifndef ARM_MATH_BIG_ENDIAN
-
-    *__SIMD32(pDst)++ = __PKHBT(out2, out1, 16);
-    *__SIMD32(pDst)++ = __PKHBT(out4, out3, 16);
-
+    write_q15x2_ia (&pDst, __PKHBT(out2, out1, 16));
+    write_q15x2_ia (&pDst, __PKHBT(out4, out3, 16));
 #else
-
-    *__SIMD32(pDst)++ = __PKHBT(out2, out1, 16);
-    *__SIMD32(pDst)++ = __PKHBT(out4, out3, 16);
-
+    write_q15x2_ia (&pDst, __PKHBT(out1, out2, 16));
+    write_q15x2_ia (&pDst, __PKHBT(out3, out4, 16));
 #endif /* #ifndef ARM_MATH_BIG_ENDIAN */
 
-    /* Decrement the blockSize loop counter */
+#else
+    *pDst++ = (q15_t) __SSAT((((q31_t) (*pSrcA++) * (*pSrcB++)) >> 15), 16);
+    *pDst++ = (q15_t) __SSAT((((q31_t) (*pSrcA++) * (*pSrcB++)) >> 15), 16);
+    *pDst++ = (q15_t) __SSAT((((q31_t) (*pSrcA++) * (*pSrcB++)) >> 15), 16);
+    *pDst++ = (q15_t) __SSAT((((q31_t) (*pSrcA++) * (*pSrcB++)) >> 15), 16);
+#endif
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Run the below code for Cortex-M0 */
-
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
-
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = A * B */
-    /* Multiply the inputs and store the result in the destination buffer */
+
+    /* Multiply inputs and store result in destination buffer. */
     *pDst++ = (q15_t) __SSAT((((q31_t) (*pSrcA++) * (*pSrcB++)) >> 15), 16);
 
-    /* Decrement the blockSize loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
+
 }
 
 /**
- * @} end of BasicMult group
+  @} end of BasicMult group
  */

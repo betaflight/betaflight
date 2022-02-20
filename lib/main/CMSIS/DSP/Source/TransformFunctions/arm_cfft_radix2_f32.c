@@ -3,13 +3,13 @@
  * Title:        arm_cfft_radix2_f32.c
  * Description:  Radix-2 Decimation in Frequency CFFT & CIFFT Floating point processing function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,64 +29,62 @@
 #include "arm_math.h"
 
 void arm_radix2_butterfly_f32(
-  float32_t * pSrc,
-  uint32_t fftLen,
-  float32_t * pCoef,
-  uint16_t twidCoefModifier);
+        float32_t * pSrc,
+        uint32_t fftLen,
+  const float32_t * pCoef,
+        uint16_t twidCoefModifier);
 
 void arm_radix2_butterfly_inverse_f32(
-  float32_t * pSrc,
-  uint32_t fftLen,
-  float32_t * pCoef,
-  uint16_t twidCoefModifier,
-  float32_t onebyfftLen);
+        float32_t * pSrc,
+        uint32_t fftLen,
+  const float32_t * pCoef,
+        uint16_t twidCoefModifier,
+        float32_t onebyfftLen);
 
 extern void arm_bitreversal_f32(
-    float32_t * pSrc,
-    uint16_t fftSize,
-    uint16_t bitRevFactor,
-    uint16_t * pBitRevTab);
+        float32_t * pSrc,
+        uint16_t fftSize,
+        uint16_t bitRevFactor,
+  const uint16_t * pBitRevTab);
 
 /**
-* @ingroup groupTransforms
-*/
+  @ingroup groupTransforms
+ */
 
 /**
-* @addtogroup ComplexFFT
-* @{
-*/
+  @addtogroup ComplexFFT
+  @{
+ */
 
 /**
-* @details
-* @brief Radix-2 CFFT/CIFFT.
-* @deprecated Do not use this function.  It has been superseded by \ref arm_cfft_f32 and will be removed
-* in the future.
-* @param[in]      *S    points to an instance of the floating-point Radix-2 CFFT/CIFFT structure.
-* @param[in, out] *pSrc points to the complex data buffer of size <code>2*fftLen</code>. Processing occurs in-place.
-* @return none.
-*/
+  @brief         Radix-2 CFFT/CIFFT.
+  @deprecated    Do not use this function. It has been superseded by \ref arm_cfft_f32 and will be removed in the future
+  @param[in]     S    points to an instance of the floating-point Radix-2 CFFT/CIFFT structure
+  @param[in,out] pSrc points to the complex data buffer of size <code>2*fftLen</code>. Processing occurs in-place
+  @return        none
+ */
 
 void arm_cfft_radix2_f32(
 const arm_cfft_radix2_instance_f32 * S,
-float32_t * pSrc)
+      float32_t * pSrc)
 {
 
    if (S->ifftFlag == 1U)
    {
-      /*  Complex IFFT radix-2  */
+      /* Complex IFFT radix-2 */
       arm_radix2_butterfly_inverse_f32(pSrc, S->fftLen, S->pTwiddle,
       S->twidCoefModifier, S->onebyfftLen);
    }
    else
    {
-      /*  Complex FFT radix-2  */
+      /* Complex FFT radix-2 */
       arm_radix2_butterfly_f32(pSrc, S->fftLen, S->pTwiddle,
       S->twidCoefModifier);
    }
 
    if (S->bitReverseFlag == 1U)
    {
-      /*  Bit Reversal */
+      /* Bit Reversal */
       arm_bitreversal_f32(pSrc, S->fftLen, S->bitRevFactor, S->pBitRevTable);
    }
 
@@ -94,36 +92,36 @@ float32_t * pSrc)
 
 
 /**
-* @} end of ComplexFFT group
-*/
+  @} end of ComplexFFT group
+ */
 
 
 
 /* ----------------------------------------------------------------------
-** Internal helper function used by the FFTs
-** ------------------------------------------------------------------- */
+ ** Internal helper function used by the FFTs
+ ** ------------------------------------------------------------------- */
 
-/*
-* @brief  Core function for the floating-point CFFT butterfly process.
-* @param[in, out] *pSrc            points to the in-place buffer of floating-point data type.
-* @param[in]      fftLen           length of the FFT.
-* @param[in]      *pCoef           points to the twiddle coefficient buffer.
-* @param[in]      twidCoefModifier twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table.
-* @return none.
-*/
+/**
+  brief  Core function for the floating-point CFFT butterfly process.
+  param[in,out] pSrc             points to in-place buffer of floating-point data type
+  param[in]     fftLen           length of the FFT
+  param[in]     pCoef            points to twiddle coefficient buffer
+  param[in]     twidCoefModifier twiddle coefficient modifier that supports different size FFTs with the same twiddle factor table
+  return        none
+ */
 
 void arm_radix2_butterfly_f32(
-float32_t * pSrc,
-uint32_t fftLen,
-float32_t * pCoef,
-uint16_t twidCoefModifier)
+        float32_t * pSrc,
+        uint32_t fftLen,
+  const float32_t * pCoef,
+        uint16_t twidCoefModifier)
 {
 
-   uint32_t i, j, k, l;
-   uint32_t n1, n2, ia;
-   float32_t xt, yt, cosVal, sinVal;
-   float32_t p0, p1, p2, p3;
-   float32_t a0, a1;
+        uint32_t i, j, k, l;
+        uint32_t n1, n2, ia;
+        float32_t xt, yt, cosVal, sinVal;
+        float32_t p0, p1, p2, p3;
+        float32_t a0, a1;
 
 #if defined (ARM_MATH_DSP)
 
@@ -227,7 +225,7 @@ uint16_t twidCoefModifier)
       pSrc[2 * i + 3] = yt;
    }                             // groups loop end
 
-#else
+#else /* #if defined (ARM_MATH_DSP) */
 
    n2 = fftLen;
 
@@ -275,24 +273,24 @@ uint16_t twidCoefModifier)
       twidCoefModifier <<= 1U;
    }
 
-#endif //    #if defined (ARM_MATH_DSP)
+#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
 
 void arm_radix2_butterfly_inverse_f32(
-float32_t * pSrc,
-uint32_t fftLen,
-float32_t * pCoef,
-uint16_t twidCoefModifier,
-float32_t onebyfftLen)
+        float32_t * pSrc,
+        uint32_t fftLen,
+  const float32_t * pCoef,
+        uint16_t twidCoefModifier,
+        float32_t onebyfftLen)
 {
 
-   uint32_t i, j, k, l;
-   uint32_t n1, n2, ia;
-   float32_t xt, yt, cosVal, sinVal;
-   float32_t p0, p1, p2, p3;
-   float32_t a0, a1;
+        uint32_t i, j, k, l;
+        uint32_t n1, n2, ia;
+        float32_t xt, yt, cosVal, sinVal;
+        float32_t p0, p1, p2, p3;
+        float32_t a0, a1;
 
 #if defined (ARM_MATH_DSP)
 
@@ -392,7 +390,7 @@ float32_t onebyfftLen)
       pSrc[2 * i + 3] = p3;
    }                             // butterfly loop end
 
-#else
+#else /* #if defined (ARM_MATH_DSP) */
 
    n2 = fftLen;
 
@@ -461,12 +459,12 @@ float32_t onebyfftLen)
       p3 = yt * onebyfftLen;
 
       pSrc[2 * i] = p0;
-      pSrc[2U * l] = p2;
+      pSrc[2 * l] = p2;
 
       pSrc[2 * i + 1] = p1;
-      pSrc[2U * l + 1U] = p3;
+      pSrc[2 * l + 1] = p3;
    }                             // butterfly loop end
 
-#endif //      #if defined (ARM_MATH_DSP)
+#endif /* #if defined (ARM_MATH_DSP) */
 
 }

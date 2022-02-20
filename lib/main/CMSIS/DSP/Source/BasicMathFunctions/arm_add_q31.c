@@ -3,13 +3,13 @@
  * Title:        arm_add_q31.c
  * Description:  Q31 vector addition
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,108 +29,80 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup BasicAdd
- * @{
+  @addtogroup BasicAdd
+  @{
  */
 
-
 /**
- * @brief Q31 vector addition.
- * @param[in]       *pSrcA points to the first input vector
- * @param[in]       *pSrcB points to the second input vector
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in each vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q31 range[0x80000000 0x7FFFFFFF] will be saturated.
+  @brief         Q31 vector addition.
+  @param[in]     pSrcA      points to the first input vector
+  @param[in]     pSrcB      points to the second input vector
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q31 range [0x80000000 0x7FFFFFFF] are saturated.
  */
 
 void arm_add_q31(
-  q31_t * pSrcA,
-  q31_t * pSrcB,
-  q31_t * pDst,
-  uint32_t blockSize)
+  const q31_t * pSrcA,
+  const q31_t * pSrcB,
+        q31_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
 
-#if defined (ARM_MATH_DSP)
+#if defined (ARM_MATH_LOOPUNROLL)
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  q31_t inA1, inA2, inA3, inA4;
-  q31_t inB1, inB2, inB3, inB4;
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    inA1 = *pSrcA++;
-    inA2 = *pSrcA++;
-    inB1 = *pSrcB++;
-    inB2 = *pSrcB++;
 
-    inA3 = *pSrcA++;
-    inA4 = *pSrcA++;
-    inB3 = *pSrcB++;
-    inB4 = *pSrcB++;
-
-    *pDst++ = __QADD(inA1, inB1);
-    *pDst++ = __QADD(inA2, inB2);
-    *pDst++ = __QADD(inA3, inB3);
-    *pDst++ = __QADD(inA4, inB4);
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4U;
-
-  while (blkCnt > 0U)
-  {
-    /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
+    /* Add and store result in destination buffer. */
     *pDst++ = __QADD(*pSrcA++, *pSrcB++);
 
-    /* Decrement the loop counter */
+    *pDst++ = __QADD(*pSrcA++, *pSrcB++);
+
+    *pDst++ = __QADD(*pSrcA++, *pSrcB++);
+
+    *pDst++ = __QADD(*pSrcA++, *pSrcB++);
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
 #else
-
-  /* Run the below code for Cortex-M0 */
-
-
 
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
   while (blkCnt > 0U)
   {
     /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    *pDst++ = (q31_t) clip_q63_to_q31((q63_t) * pSrcA++ + *pSrcB++);
 
-    /* Decrement the loop counter */
+    /* Add and store result in destination buffer. */
+    *pDst++ = __QADD(*pSrcA++, *pSrcB++);
+
+    /* Decrement loop counter */
     blkCnt--;
   }
-
-#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
 /**
- * @} end of BasicAdd group
+  @} end of BasicAdd group
  */

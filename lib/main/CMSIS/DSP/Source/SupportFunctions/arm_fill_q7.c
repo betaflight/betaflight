@@ -3,13 +3,13 @@
  * Title:        arm_fill_q7.c
  * Description:  Fills a constant value into a Q7 vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,21 +29,20 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupSupport
+  @ingroup groupSupport
  */
 
 /**
- * @addtogroup Fill
- * @{
+  @addtogroup Fill
+  @{
  */
 
 /**
- * @brief Fills a constant value into a Q7 vector.
- * @param[in]       value input value to be filled
- * @param[out]      *pDst points to output vector
- * @param[in]       blockSize length of the output vector
- * @return none.
- *
+  @brief         Fills a constant value into a Q7 vector.
+  @param[in]     value      input value to be filled
+  @param[out]    pDst       points to output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
  */
 
 void arm_fill_q7(
@@ -51,56 +50,50 @@ void arm_fill_q7(
   q7_t * pDst,
   uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
+  uint32_t blkCnt;                               /* Loop counter */
 
-#if defined (ARM_MATH_DSP)
-
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-
+#if defined (ARM_MATH_LOOPUNROLL)
   q31_t packedValue;                             /* value packed to 32 bits */
-
-  /*loop Unrolling */
-  blkCnt = blockSize >> 2U;
 
   /* Packing four 8 bit values to 32 bit value in order to use SIMD */
   packedValue = __PACKq7(value, value, value, value);
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
   while (blkCnt > 0U)
   {
     /* C = value */
-    /* Fill the value in the destination buffer */
-    *__SIMD32(pDst)++ = packedValue;
 
-    /* Decrement the loop counter */
+    /* fill 4 samples at a time */
+    write_q7x4_ia (&pDst, packedValue);
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Run the below code for Cortex-M0 */
-
-  /* Loop over blockSize number of values */
+  /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = value */
-    /* Fill the value in the destination buffer */
+
+    /* Fill value in destination buffer */
     *pDst++ = value;
 
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 }
 
 /**
- * @} end of Fill group
+  @} end of Fill group
  */

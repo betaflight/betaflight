@@ -3,13 +3,13 @@
  * Title:        arm_biquad_cascade_stereo_df2T_init_f32.c
  * Description:  Initialization function for floating-point transposed direct form II Biquad cascade filter
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,47 +29,44 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupFilters
+  @ingroup groupFilters
  */
 
 /**
- * @addtogroup BiquadCascadeDF2T
- * @{
+  @addtogroup BiquadCascadeDF2T
+  @{
  */
 
 /**
- * @brief  Initialization function for the floating-point transposed direct form II Biquad cascade filter.
- * @param[in,out] *S           points to an instance of the filter data structure.
- * @param[in]     numStages    number of 2nd order stages in the filter.
- * @param[in]     *pCoeffs     points to the filter coefficients.
- * @param[in]     *pState      points to the state buffer.
- * @return        none
- *
- * <b>Coefficient and State Ordering:</b>
- * \par
- * The coefficients are stored in the array <code>pCoeffs</code> in the following order:
- * <pre>
- *     {b10, b11, b12, a11, a12, b20, b21, b22, a21, a22, ...}
- * </pre>
- *
- * \par
- * where <code>b1x</code> and <code>a1x</code> are the coefficients for the first stage,
- * <code>b2x</code> and <code>a2x</code> are the coefficients for the second stage,
- * and so on.  The <code>pCoeffs</code> array contains a total of <code>5*numStages</code> values.
- *
- * \par
- * The <code>pState</code> is a pointer to state array.
- * Each Biquad stage has 2 state variables <code>d1,</code> and <code>d2</code> for each channel.
- * The 2 state variables for stage 1 are first, then the 2 state variables for stage 2, and so on.
- * The state array has a total length of <code>2*numStages</code> values.
- * The state variables are updated after each block of data is processed; the coefficients are untouched.
+  @brief         Initialization function for the floating-point transposed direct form II Biquad cascade filter.
+  @param[in,out] S           points to an instance of the filter data structure.
+  @param[in]     numStages   number of 2nd order stages in the filter.
+  @param[in]     pCoeffs     points to the filter coefficients.
+  @param[in]     pState      points to the state buffer.
+  @return        none
+
+  @par           Coefficient and State Ordering
+                   The coefficients are stored in the array <code>pCoeffs</code> in the following order:
+  <pre>
+      {b10, b11, b12, a11, a12, b20, b21, b22, a21, a22, ...}
+  </pre>
+  @par
+                   where <code>b1x</code> and <code>a1x</code> are the coefficients for the first stage,
+                   <code>b2x</code> and <code>a2x</code> are the coefficients for the second stage,
+                   and so on.  The <code>pCoeffs</code> array contains a total of <code>5*numStages</code> values.
+  @par
+                   The <code>pState</code> is a pointer to state array.
+                   Each Biquad stage has 2 state variables <code>d1,</code> and <code>d2</code> for each channel.
+                   The 2 state variables for stage 1 are first, then the 2 state variables for stage 2, and so on.
+                   The state array has a total length of <code>2*numStages</code> values.
+                   The state variables are updated after each block of data is processed; the coefficients are untouched.
  */
 
 void arm_biquad_cascade_stereo_df2T_init_f32(
-  arm_biquad_cascade_stereo_df2T_instance_f32 * S,
-  uint8_t numStages,
-  float32_t * pCoeffs,
-  float32_t * pState)
+        arm_biquad_cascade_stereo_df2T_instance_f32 * S,
+        uint8_t numStages,
+  const float32_t * pCoeffs,
+        float32_t * pState)
 {
   /* Assign filter stages */
   S->numStages = numStages;
@@ -85,5 +82,5 @@ void arm_biquad_cascade_stereo_df2T_init_f32(
 }
 
 /**
- * @} end of BiquadCascadeDF2T group
+  @} end of BiquadCascadeDF2T group
  */

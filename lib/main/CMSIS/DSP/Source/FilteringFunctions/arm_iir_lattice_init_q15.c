@@ -3,13 +3,13 @@
  * Title:        arm_iir_lattice_init_q15.c
  * Description:  Q15 IIR lattice filter initialization function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,24 +29,24 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupFilters
+  @ingroup groupFilters
  */
 
 /**
- * @addtogroup IIR_Lattice
- * @{
+  @addtogroup IIR_Lattice
+  @{
  */
 
-  /**
-   * @brief Initialization function for the Q15 IIR lattice filter.
-   * @param[in] *S points to an instance of the Q15 IIR lattice structure.
-   * @param[in] numStages  number of stages in the filter.
-   * @param[in] *pkCoeffs points to reflection coefficient buffer.  The array is of length numStages.
-   * @param[in] *pvCoeffs points to ladder coefficient buffer.  The array is of length numStages+1.
-   * @param[in] *pState points to state buffer.  The array is of length numStages+blockSize.
-   * @param[in] blockSize number of samples to process per call.
-   * @return none.
-   */
+/**
+  @brief     Initialization function for the Q15 IIR lattice filter.
+  @param[in] S          points to an instance of the Q15 IIR lattice structure
+  @param[in] numStages  number of stages in the filter
+  @param[in] pkCoeffs   points to reflection coefficient buffer.  The array is of length numStages
+  @param[in] pvCoeffs   points to ladder coefficient buffer.  The array is of length numStages+1
+  @param[in] pState     points to state buffer.  The array is of length numStages+blockSize
+  @param[in] blockSize  number of samples to process
+  @return        none
+ */
 
 void arm_iir_lattice_init_q15(
   arm_iir_lattice_instance_q15 * S,
@@ -70,10 +70,8 @@ void arm_iir_lattice_init_q15(
 
   /* Assign state pointer */
   S->pState = pState;
-
-
 }
 
 /**
- * @} end of IIR_Lattice group
+  @} end of IIR_Lattice group
  */

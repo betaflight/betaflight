@@ -3,13 +3,13 @@
  * Title:        arm_biquad_cascade_df1_q15.c
  * Description:  Processing function for the Q15 Biquad cascade DirectFormI(DF1) filter
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,79 +29,74 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupFilters
+  @ingroup groupFilters
  */
 
 /**
- * @addtogroup BiquadCascadeDF1
- * @{
+  @addtogroup BiquadCascadeDF1
+  @{
  */
 
 /**
- * @brief Processing function for the Q15 Biquad cascade filter.
- * @param[in]  *S points to an instance of the Q15 Biquad cascade structure.
- * @param[in]  *pSrc points to the block of input data.
- * @param[out] *pDst points to the location where the output result is written.
- * @param[in]  blockSize number of samples to process per call.
- * @return none.
- *
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function is implemented using a 64-bit internal accumulator.
- * Both coefficients and state variables are represented in 1.15 format and multiplications yield a 2.30 result.
- * The 2.30 intermediate results are accumulated in a 64-bit accumulator in 34.30 format.
- * There is no risk of internal overflow with this approach and the full precision of intermediate multiplications is preserved.
- * The accumulator is then shifted by <code>postShift</code> bits to truncate the result to 1.15 format by discarding the low 16 bits.
- * Finally, the result is saturated to 1.15 format.
- *
- * \par
- * Refer to the function <code>arm_biquad_cascade_df1_fast_q15()</code> for a faster but less precise implementation of this filter for Cortex-M3 and Cortex-M4.
+  @brief         Processing function for the Q15 Biquad cascade filter.
+  @param[in]     S         points to an instance of the Q15 Biquad cascade structure
+  @param[in]     pSrc      points to the block of input data
+  @param[out]    pDst      points to the location where the output result is written
+  @param[in]     blockSize number of samples to process
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function is implemented using a 64-bit internal accumulator.
+                   Both coefficients and state variables are represented in 1.15 format and multiplications yield a 2.30 result.
+                   The 2.30 intermediate results are accumulated in a 64-bit accumulator in 34.30 format.
+                   There is no risk of internal overflow with this approach and the full precision of intermediate multiplications is preserved.
+                   The accumulator is then shifted by <code>postShift</code> bits to truncate the result to 1.15 format by discarding the low 16 bits.
+                   Finally, the result is saturated to 1.15 format.
+  @remark
+                   Refer to \ref arm_biquad_cascade_df1_fast_q15() for a faster but less precise implementation of this filter.
  */
 
 void arm_biquad_cascade_df1_q15(
   const arm_biquad_casd_df1_inst_q15 * S,
-  q15_t * pSrc,
-  q15_t * pDst,
-  uint32_t blockSize)
+  const q15_t * pSrc,
+        q15_t * pDst,
+        uint32_t blockSize)
 {
 
 
 #if defined (ARM_MATH_DSP)
 
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-
-  q15_t *pIn = pSrc;                             /*  Source pointer                               */
-  q15_t *pOut = pDst;                            /*  Destination pointer                          */
-  q31_t in;                                      /*  Temporary variable to hold input value       */
-  q31_t out;                                     /*  Temporary variable to hold output value      */
-  q31_t b0;                                      /*  Temporary variable to hold bo value          */
-  q31_t b1, a1;                                  /*  Filter coefficients                          */
-  q31_t state_in, state_out;                     /*  Filter state variables                       */
-  q31_t acc_l, acc_h;
-  q63_t acc;                                     /*  Accumulator                                  */
-  int32_t lShift = (15 - (int32_t) S->postShift);       /*  Post shift                                   */
-  q15_t *pState = S->pState;                     /*  State pointer                                */
-  q15_t *pCoeffs = S->pCoeffs;                   /*  Coefficient pointer                          */
-  uint32_t sample, stage = (uint32_t) S->numStages;     /*  Stage loop counter                           */
-  int32_t uShift = (32 - lShift);
+  const q15_t *pIn = pSrc;                             /* Source pointer */
+        q15_t *pOut = pDst;                            /* Destination pointer */
+        q31_t in;                                      /* Temporary variable to hold input value */
+        q31_t out;                                     /* Temporary variable to hold output value */
+        q31_t b0;                                      /* Temporary variable to hold bo value */
+        q31_t b1, a1;                                  /* Filter coefficients */
+        q31_t state_in, state_out;                     /* Filter state variables */
+        q31_t acc_l, acc_h;
+        q63_t acc;                                     /* Accumulator */
+        q15_t *pState = S->pState;                     /* State pointer */
+  const q15_t *pCoeffs = S->pCoeffs;                   /* Coefficient pointer */
+        int32_t lShift = (15 - (int32_t) S->postShift);       /* Post shift */
+        uint32_t sample, stage = (uint32_t) S->numStages;     /* Stage loop counter */
+        int32_t uShift = (32 - lShift);
 
   do
   {
     /* Read the b0 and 0 coefficients using SIMD  */
-    b0 = *__SIMD32(pCoeffs)++;
+    b0 = read_q15x2_ia ((q15_t **) &pCoeffs);
 
     /* Read the b1 and b2 coefficients using SIMD */
-    b1 = *__SIMD32(pCoeffs)++;
+    b1 = read_q15x2_ia ((q15_t **) &pCoeffs);
 
     /* Read the a1 and a2 coefficients using SIMD */
-    a1 = *__SIMD32(pCoeffs)++;
+    a1 = read_q15x2_ia ((q15_t **) &pCoeffs);
 
     /* Read the input state values from the state buffer:  x[n-1], x[n-2] */
-    state_in = *__SIMD32(pState)++;
+    state_in = read_q15x2_ia (&pState);
 
     /* Read the output state values from the state buffer:  y[n-1], y[n-2] */
-    state_out = *__SIMD32(pState)--;
+    state_out = read_q15x2_da (&pState);
 
     /* Apply loop unrolling and compute 2 output values simultaneously. */
     /*      The variable acc hold output values that are being computed:
@@ -117,7 +112,7 @@ void arm_biquad_cascade_df1_q15(
     {
 
       /* Read the input */
-      in = *__SIMD32(pIn)++;
+      in = read_q15x2_ia ((q15_t **) &pIn);
 
       /* out =  b0 * x[n] + 0 * 0 */
       out = __SMUAD(b0, in);
@@ -141,23 +136,19 @@ void arm_biquad_cascade_df1_q15(
 
       /* Every time after the output is computed state should be updated. */
       /* The states should be updated as:  */
-      /* Xn2 = Xn1    */
-      /* Xn1 = Xn     */
-      /* Yn2 = Yn1    */
-      /* Yn1 = acc   */
+      /* Xn2 = Xn1 */
+      /* Xn1 = Xn  */
+      /* Yn2 = Yn1 */
+      /* Yn1 = acc */
       /* x[n-N], x[n-N-1] are packed together to make state_in of type q31 */
       /* y[n-N], y[n-N-1] are packed together to make state_out of type q31 */
 
 #ifndef  ARM_MATH_BIG_ENDIAN
-
-      state_in = __PKHBT(in, state_in, 16);
+      state_in  = __PKHBT(in, state_in, 16);
       state_out = __PKHBT(out, state_out, 16);
-
 #else
-
-      state_in = __PKHBT(state_in >> 16, (in >> 16), 16);
+      state_in  = __PKHBT(state_in >> 16, (in >> 16), 16);
       state_out = __PKHBT(state_out >> 16, (out), 16);
-
 #endif /* #ifndef  ARM_MATH_BIG_ENDIAN */
 
       /* out =  b0 * x[n] + 0 * 0 */
@@ -180,41 +171,30 @@ void arm_biquad_cascade_df1_q15(
       out = __SSAT(out, 16);
 
       /* Store the output in the destination buffer. */
-
 #ifndef  ARM_MATH_BIG_ENDIAN
-
-      *__SIMD32(pOut)++ = __PKHBT(state_out, out, 16);
-
+      write_q15x2_ia (&pOut, __PKHBT(state_out, out, 16));
 #else
-
-      *__SIMD32(pOut)++ = __PKHBT(out, state_out >> 16, 16);
-
+      write_q15x2_ia (&pOut, __PKHBT(out, state_out >> 16, 16));
 #endif /* #ifndef  ARM_MATH_BIG_ENDIAN */
 
       /* Every time after the output is computed state should be updated. */
       /* The states should be updated as:  */
-      /* Xn2 = Xn1    */
-      /* Xn1 = Xn     */
-      /* Yn2 = Yn1    */
-      /* Yn1 = acc   */
+      /* Xn2 = Xn1 */
+      /* Xn1 = Xn  */
+      /* Yn2 = Yn1 */
+      /* Yn1 = acc */
       /* x[n-N], x[n-N-1] are packed together to make state_in of type q31 */
       /* y[n-N], y[n-N-1] are packed together to make state_out of type q31 */
 #ifndef  ARM_MATH_BIG_ENDIAN
-
-      state_in = __PKHBT(in >> 16, state_in, 16);
+      state_in  = __PKHBT(in >> 16, state_in, 16);
       state_out = __PKHBT(out, state_out, 16);
-
 #else
-
-      state_in = __PKHBT(state_in >> 16, in, 16);
+      state_in  = __PKHBT(state_in >> 16, in, 16);
       state_out = __PKHBT(state_out >> 16, out, 16);
-
 #endif /* #ifndef  ARM_MATH_BIG_ENDIAN */
 
-
-      /* Decrement the loop counter */
+      /* Decrement loop counter */
       sample--;
-
     }
 
     /* If the blockSize is not a multiple of 2, compute any remaining output samples here.
@@ -226,15 +206,10 @@ void arm_biquad_cascade_df1_q15(
       in = *pIn++;
 
       /* out =  b0 * x[n] + 0 * 0 */
-
 #ifndef  ARM_MATH_BIG_ENDIAN
-
       out = __SMUAD(b0, in);
-
 #else
-
       out = __SMUADX(b0, in);
-
 #endif /* #ifndef  ARM_MATH_BIG_ENDIAN */
 
       /* acc =  b1 * x[n-1] + b2 * x[n-2] + out */
@@ -259,58 +234,49 @@ void arm_biquad_cascade_df1_q15(
 
       /* Every time after the output is computed state should be updated. */
       /* The states should be updated as:  */
-      /* Xn2 = Xn1    */
-      /* Xn1 = Xn     */
-      /* Yn2 = Yn1    */
-      /* Yn1 = acc   */
+      /* Xn2 = Xn1 */
+      /* Xn1 = Xn  */
+      /* Yn2 = Yn1 */
+      /* Yn1 = acc */
       /* x[n-N], x[n-N-1] are packed together to make state_in of type q31 */
       /* y[n-N], y[n-N-1] are packed together to make state_out of type q31 */
-
 #ifndef  ARM_MATH_BIG_ENDIAN
-
       state_in = __PKHBT(in, state_in, 16);
       state_out = __PKHBT(out, state_out, 16);
-
 #else
-
       state_in = __PKHBT(state_in >> 16, in, 16);
       state_out = __PKHBT(state_out >> 16, out, 16);
-
 #endif /* #ifndef  ARM_MATH_BIG_ENDIAN */
-
     }
 
-    /*  The first stage goes from the input wire to the output wire.  */
-    /*  Subsequent numStages occur in-place in the output wire  */
+    /* The first stage goes from the input wire to the output wire.  */
+    /* Subsequent numStages occur in-place in the output wire  */
     pIn = pDst;
 
     /* Reset the output pointer */
     pOut = pDst;
 
-    /*  Store the updated state variables back into the state array */
-    *__SIMD32(pState)++ = state_in;
-    *__SIMD32(pState)++ = state_out;
+    /* Store the updated state variables back into the state array */
+    write_q15x2_ia (&pState, state_in);
+    write_q15x2_ia (&pState, state_out);
 
-
-    /* Decrement the loop counter */
+    /* Decrement loop counter */
     stage--;
 
   } while (stage > 0U);
 
 #else
 
-  /* Run the below code for Cortex-M0 */
-
-  q15_t *pIn = pSrc;                             /*  Source pointer                               */
-  q15_t *pOut = pDst;                            /*  Destination pointer                          */
-  q15_t b0, b1, b2, a1, a2;                      /*  Filter coefficients           */
-  q15_t Xn1, Xn2, Yn1, Yn2;                      /*  Filter state variables        */
-  q15_t Xn;                                      /*  temporary input               */
-  q63_t acc;                                     /*  Accumulator                                  */
-  int32_t shift = (15 - (int32_t) S->postShift); /*  Post shift                                   */
-  q15_t *pState = S->pState;                     /*  State pointer                                */
-  q15_t *pCoeffs = S->pCoeffs;                   /*  Coefficient pointer                          */
-  uint32_t sample, stage = (uint32_t) S->numStages;     /*  Stage loop counter                           */
+  const q15_t *pIn = pSrc;                             /* Source pointer */
+        q15_t *pOut = pDst;                            /* Destination pointer */
+        q15_t b0, b1, b2, a1, a2;                      /* Filter coefficients */
+        q15_t Xn1, Xn2, Yn1, Yn2;                      /* Filter state variables */
+        q15_t Xn;                                      /* temporary input */
+        q63_t acc;                                     /* Accumulator */
+        int32_t shift = (15 - (int32_t) S->postShift); /* Post shift */
+        q15_t *pState = S->pState;                     /* State pointer */
+  const q15_t *pCoeffs = S->pCoeffs;                   /* Coefficient pointer */
+        uint32_t sample, stage = (uint32_t) S->numStages;     /* Stage loop counter */
 
   do
   {
@@ -328,7 +294,7 @@ void arm_biquad_cascade_df1_q15(
     Yn1 = pState[2];
     Yn2 = pState[3];
 
-    /*      The variables acc holds the output value that is computed:
+    /* The variables acc holds the output value that is computed:
      *    acc =  b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] + a1 * y[n-1] + a2 * y[n-2]
      */
 
@@ -357,10 +323,10 @@ void arm_biquad_cascade_df1_q15(
 
       /* Every time after the output is computed state should be updated. */
       /* The states should be updated as:  */
-      /* Xn2 = Xn1    */
-      /* Xn1 = Xn     */
-      /* Yn2 = Yn1    */
-      /* Yn1 = acc    */
+      /* Xn2 = Xn1 */
+      /* Xn1 = Xn  */
+      /* Yn2 = Yn1 */
+      /* Yn1 = acc */
       Xn2 = Xn1;
       Xn1 = Xn;
       Yn2 = Yn1;
@@ -392,7 +358,6 @@ void arm_biquad_cascade_df1_q15(
 
 }
 
-
 /**
- * @} end of BiquadCascadeDF1 group
+  @} end of BiquadCascadeDF1 group
  */

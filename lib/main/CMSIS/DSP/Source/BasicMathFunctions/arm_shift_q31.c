@@ -3,13 +3,13 @@
  * Title:        arm_shift_q31.c
  * Description:  Shifts the elements of a Q31 vector by a specified number of bits
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,163 +29,153 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 /**
- * @defgroup shift Vector Shift
- *
- * Shifts the elements of a fixed-point vector by a specified number of bits.
- * There are separate functions for Q7, Q15, and Q31 data types.
- * The underlying algorithm used is:
- *
- * <pre>
- *     pDst[n] = pSrc[n] << shift,   0 <= n < blockSize.
- * </pre>
- *
- * If <code>shift</code> is positive then the elements of the vector are shifted to the left.
- * If <code>shift</code> is negative then the elements of the vector are shifted to the right.
- *
- * The functions support in-place computation allowing the source and destination
- * pointers to reference the same memory buffer.
+  @defgroup BasicShift Vector Shift
+
+  Shifts the elements of a fixed-point vector by a specified number of bits.
+  There are separate functions for Q7, Q15, and Q31 data types.
+  The underlying algorithm used is:
+
+  <pre>
+      pDst[n] = pSrc[n] << shift,   0 <= n < blockSize.
+  </pre>
+
+  If <code>shift</code> is positive then the elements of the vector are shifted to the left.
+  If <code>shift</code> is negative then the elements of the vector are shifted to the right.
+
+  The functions support in-place computation allowing the source and destination
+  pointers to reference the same memory buffer.
  */
 
 /**
- * @addtogroup shift
- * @{
+  @addtogroup BasicShift
+  @{
  */
 
 /**
- * @brief  Shifts the elements of a Q31 vector a specified number of bits.
- * @param[in]  *pSrc points to the input vector
- * @param[in]  shiftBits number of bits to shift.  A positive value shifts left; a negative value shifts right.
- * @param[out]  *pDst points to the output vector
- * @param[in]  blockSize number of samples in the vector
- * @return none.
- *
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q31 range [0x80000000 0x7FFFFFFF] will be saturated.
+  @brief         Shifts the elements of a Q31 vector a specified number of bits.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     shiftBits  number of bits to shift.  A positive value shifts left; a negative value shifts right.
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in the vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q31 range [0x80000000 0x7FFFFFFF] are saturated.
  */
 
 void arm_shift_q31(
-  q31_t * pSrc,
-  int8_t shiftBits,
-  q31_t * pDst,
-  uint32_t blockSize)
+  const q31_t * pSrc,
+        int8_t shiftBits,
+        q31_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
-  uint8_t sign = (shiftBits & 0x80);             /* Sign of shiftBits */
+        uint32_t blkCnt;                               /* Loop counter */
+        uint8_t sign = (shiftBits & 0x80);             /* Sign of shiftBits */
 
-#if defined (ARM_MATH_DSP)
+#if defined (ARM_MATH_LOOPUNROLL)
 
-  q31_t in1, in2, in3, in4;                      /* Temporary input variables */
-  q31_t out1, out2, out3, out4;                  /* Temporary output variables */
+  q31_t in, out;                                 /* Temporary variables */
 
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-
+  /* If the shift value is positive then do right shift else left shift */
   if (sign == 0U)
   {
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-     ** a second loop below computes the remaining 1 to 3 samples. */
     while (blkCnt > 0U)
     {
-      /* C = A  << shiftBits */
-      /* Shift the input and then store the results in the destination buffer. */
-      in1 = *pSrc;
-      in2 = *(pSrc + 1);
-      out1 = in1 << shiftBits;
-      in3 = *(pSrc + 2);
-      out2 = in2 << shiftBits;
-      in4 = *(pSrc + 3);
-      if (in1 != (out1 >> shiftBits))
-        out1 = 0x7FFFFFFF ^ (in1 >> 31);
+      /* C = A << shiftBits */
 
-      if (in2 != (out2 >> shiftBits))
-        out2 = 0x7FFFFFFF ^ (in2 >> 31);
+      /* Shift input and store result in destination buffer. */
+      in = *pSrc++;
+      out = in << shiftBits;
+      if (in != (out >> shiftBits))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pDst++ = out;
 
-      *pDst = out1;
-      out3 = in3 << shiftBits;
-      *(pDst + 1) = out2;
-      out4 = in4 << shiftBits;
+      in = *pSrc++;
+      out = in << shiftBits;
+      if (in != (out >> shiftBits))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pDst++ = out;
 
-      if (in3 != (out3 >> shiftBits))
-        out3 = 0x7FFFFFFF ^ (in3 >> 31);
+      in = *pSrc++;
+      out = in << shiftBits;
+      if (in != (out >> shiftBits))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pDst++ = out;
 
-      if (in4 != (out4 >> shiftBits))
-        out4 = 0x7FFFFFFF ^ (in4 >> 31);
+      in = *pSrc++;
+      out = in << shiftBits;
+      if (in != (out >> shiftBits))
+        out = 0x7FFFFFFF ^ (in >> 31);
+      *pDst++ = out;
 
-      *(pDst + 2) = out3;
-      *(pDst + 3) = out4;
-
-      /* Update destination pointer to process next sampels */
-      pSrc += 4U;
-      pDst += 4U;
-
-      /* Decrement the loop counter */
+      /* Decrement loop counter */
       blkCnt--;
     }
   }
   else
   {
-
-    /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-     ** a second loop below computes the remaining 1 to 3 samples. */
     while (blkCnt > 0U)
     {
-      /* C = A >>  shiftBits */
-      /* Shift the input and then store the results in the destination buffer. */
-      in1 = *pSrc;
-      in2 = *(pSrc + 1);
-      in3 = *(pSrc + 2);
-      in4 = *(pSrc + 3);
+      /* C = A >> shiftBits */
 
-      *pDst = (in1 >> -shiftBits);
-      *(pDst + 1) = (in2 >> -shiftBits);
-      *(pDst + 2) = (in3 >> -shiftBits);
-      *(pDst + 3) = (in4 >> -shiftBits);
+      /* Shift input and store results in destination buffer. */
+      *pDst++ = (*pSrc++ >> -shiftBits);
+      *pDst++ = (*pSrc++ >> -shiftBits);
+      *pDst++ = (*pSrc++ >> -shiftBits);
+      *pDst++ = (*pSrc++ >> -shiftBits);
 
-
-      pSrc += 4U;
-      pDst += 4U;
-
+      /* Decrement loop counter */
       blkCnt--;
     }
-
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Run the below code for Cortex-M0 */
-
-
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_DSP) */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
-
-  while (blkCnt > 0U)
+  /* If the shift value is positive then do right shift else left shift */
+  if (sign == 0U)
   {
-    /* C = A (>> or <<) shiftBits */
-    /* Shift the input and then store the result in the destination buffer. */
-    *pDst++ = (sign == 0U) ? clip_q63_to_q31((q63_t) * pSrc++ << shiftBits) :
-      (*pSrc++ >> -shiftBits);
+    while (blkCnt > 0U)
+    {
+      /* C = A << shiftBits */
 
-    /* Decrement the loop counter */
-    blkCnt--;
+      /* Shift input and store result in destination buffer. */
+      *pDst++ = clip_q63_to_q31((q63_t) *pSrc++ << shiftBits);
+
+      /* Decrement loop counter */
+      blkCnt--;
+    }
   }
+  else
+  {
+    while (blkCnt > 0U)
+    {
+      /* C = A >> shiftBits */
 
+      /* Shift input and store result in destination buffer. */
+      *pDst++ = (*pSrc++ >> -shiftBits);
+
+      /* Decrement loop counter */
+      blkCnt--;
+    }
+  }
 
 }
 
 /**
- * @} end of shift group
+  @} end of BasicShift group
  */

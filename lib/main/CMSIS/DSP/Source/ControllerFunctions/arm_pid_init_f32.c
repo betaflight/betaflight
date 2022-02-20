@@ -3,13 +3,13 @@
  * Title:        arm_pid_init_f32.c
  * Description:  Floating-point PID Control initialization function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -28,29 +28,30 @@
 
 #include "arm_math.h"
 
- /**
- * @addtogroup PID
- * @{
+/**
+  @addtogroup PID
+  @{
  */
 
 /**
- * @brief  Initialization function for the floating-point PID Control.
- * @param[in,out] *S points to an instance of the PID structure.
- * @param[in]     resetStateFlag  flag to reset the state. 0 = no change in state & 1 = reset the state.
- * @return none.
- * \par Description:
- * \par
- * The <code>resetStateFlag</code> specifies whether to set state to zero or not. \n
- * The function computes the structure fields: <code>A0</code>, <code>A1</code> <code>A2</code>
- * using the proportional gain( \c Kp), integral gain( \c Ki) and derivative gain( \c Kd)
- * also sets the state variables to all zeros.
+  @brief         Initialization function for the floating-point PID Control.
+  @param[in,out] S               points to an instance of the PID structure
+  @param[in]     resetStateFlag
+                   - value = 0: no change in state
+                   - value = 1: reset state
+  @return        none
+
+  @par           Details
+                   The <code>resetStateFlag</code> specifies whether to set state to zero or not. \n
+                   The function computes the structure fields: <code>A0</code>, <code>A1</code> <code>A2</code>
+                   using the proportional gain( \c Kp), integral gain( \c Ki) and derivative gain( \c Kd)
+                   also sets the state variables to all zeros.
  */
 
 void arm_pid_init_f32(
   arm_pid_instance_f32 * S,
   int32_t resetStateFlag)
 {
-
   /* Derived coefficient A0 */
   S->A0 = S->Kp + S->Ki + S->Kd;
 
@@ -63,12 +64,12 @@ void arm_pid_init_f32(
   /* Check whether state needs reset or not */
   if (resetStateFlag)
   {
-    /* Clear the state buffer.  The size will be always 3 samples */
+    /* Reset state to zero, The size will be always 3 samples */
     memset(S->state, 0, 3U * sizeof(float32_t));
   }
 
 }
 
 /**
- * @} end of PID group
+  @} end of PID group
  */

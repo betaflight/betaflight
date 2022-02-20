@@ -5,13 +5,13 @@
 ; *               Called after doing an fft to reorder the output.
 ; *               The function is loop unrolled by 2. arm_bitreversal_16 as well.
 ; *
-; * $Date:        27. January 2017
-; * $Revision:    V.1.5.1
+; * $Date:        18. March 2019
+; * $Revision:    V1.5.2
 ; *
 ; * Target Processor: Cortex-M cores
 ; * -------------------------------------------------------------------- */
 ;/*
-; * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+; * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
 ; *
 ; * SPDX-License-Identifier: Apache-2.0
 ; *
@@ -68,13 +68,13 @@
 	CODESECT
 	THUMB
 
-;/*
-;* @brief  In-place bit reversal function.
-;* @param[in, out] *pSrc        points to the in-place buffer of unknown 32-bit data type.
-;* @param[in]      bitRevLen    bit reversal table length
-;* @param[in]      *pBitRevTab  points to bit reversal table.
-;* @return none.
-;*/
+;/**
+;  @brief         In-place bit reversal function.
+;  @param[in,out] pSrc        points to the in-place buffer of unknown 32-bit data type
+;  @param[in]     bitRevLen   bit reversal table length
+;  @param[in]     pBitRevTab  points to bit reversal table
+;  @return        none
+; */
 	EXPORT arm_bitreversal_32
 	EXPORT arm_bitreversal_16
 
@@ -87,7 +87,7 @@
 	.type   arm_bitreversal_32, %function
 #endif
 
-#if defined(ARM_MATH_CM0) || defined(ARM_MATH_CM0PLUS) || defined(ARM_MATH_ARMV8MBL)
+#if defined (ARM_MATH_CM0_FAMILY)
 
 arm_bitreversal_32 PROC
 	ADDS     r3,r1,#1

@@ -3,13 +3,13 @@
  * Title:        arm_fir_fast_q31.c
  * Description:  Processing function for the Q31 Fast FIR filter
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,73 +29,75 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupFilters
+  @ingroup groupFilters
  */
 
 /**
- * @addtogroup FIR
- * @{
+  @addtogroup FIR
+  @{
  */
 
 /**
- * @param[in] *S points to an instance of the Q31 structure.
- * @param[in] *pSrc points to the block of input data.
- * @param[out] *pDst points to the block output data.
- * @param[in] blockSize number of samples to process per call.
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- *
- * \par
- * This function is optimized for speed at the expense of fixed-point precision and overflow protection.
- * The result of each 1.31 x 1.31 multiplication is truncated to 2.30 format.
- * These intermediate results are added to a 2.30 accumulator.
- * Finally, the accumulator is saturated and converted to a 1.31 result.
- * The fast version has the same overflow behavior as the standard version and provides less precision since it discards the low 32 bits of each multiplication result.
- * In order to avoid overflows completely the input signal must be scaled down by log2(numTaps) bits.
- *
- * \par
- * Refer to the function <code>arm_fir_q31()</code> for a slower implementation of this function which uses a 64-bit accumulator to provide higher precision.  Both the slow and the fast versions use the same instance structure.
- * Use the function <code>arm_fir_init_q31()</code> to initialize the filter structure.
+  @brief         Processing function for the Q31 FIR filter (fast version).
+  @param[in]     S          points to an instance of the Q31 structure
+  @param[in]     pSrc       points to the block of input data
+  @param[out]    pDst       points to the block of output data
+  @param[in]     blockSize  number of samples to process
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   This function is optimized for speed at the expense of fixed-point precision and overflow protection.
+                   The result of each 1.31 x 1.31 multiplication is truncated to 2.30 format.
+                   These intermediate results are added to a 2.30 accumulator.
+                   Finally, the accumulator is saturated and converted to a 1.31 result.
+                   The fast version has the same overflow behavior as the standard version and provides less precision since it discards the low 32 bits of each multiplication result.
+                   In order to avoid overflows completely the input signal must be scaled down by log2(numTaps) bits.
+
+ @remark
+                   Refer to \ref arm_fir_q31() for a slower implementation of this function which uses a 64-bit accumulator to provide higher precision.  Both the slow and the fast versions use the same instance structure.
+                   Use function \ref arm_fir_init_q31() to initialize the filter structure.
  */
 
 IAR_ONLY_LOW_OPTIMIZATION_ENTER
 void arm_fir_fast_q31(
   const arm_fir_instance_q31 * S,
-  q31_t * pSrc,
-  q31_t * pDst,
-  uint32_t blockSize)
+  const q31_t * pSrc,
+        q31_t * pDst,
+        uint32_t blockSize)
 {
-  q31_t *pState = S->pState;                     /* State pointer */
-  q31_t *pCoeffs = S->pCoeffs;                   /* Coefficient pointer */
-  q31_t *pStateCurnt;                            /* Points to the current sample of the state */
-  q31_t x0, x1, x2, x3;                          /* Temporary variables to hold state */
-  q31_t c0;                                      /* Temporary variable to hold coefficient value */
-  q31_t *px;                                     /* Temporary pointer for state */
-  q31_t *pb;                                     /* Temporary pointer for coefficient buffer */
-  q31_t acc0, acc1, acc2, acc3;                  /* Accumulators */
-  uint32_t numTaps = S->numTaps;                 /* Number of filter coefficients in the filter */
-  uint32_t i, tapCnt, blkCnt;                    /* Loop counters */
+        q31_t *pState = S->pState;                     /* State pointer */
+  const q31_t *pCoeffs = S->pCoeffs;                   /* Coefficient pointer */
+        q31_t *pStateCurnt;                            /* Points to the current sample of the state */
+        q31_t *px;                                     /* Temporary pointer for state buffer */
+  const q31_t *pb;                                     /* Temporary pointer for coefficient buffer */
+        q31_t acc0;                                    /* Accumulators */
+        uint32_t numTaps = S->numTaps;                 /* Number of filter coefficients in the filter */
+        uint32_t i, tapCnt, blkCnt;                    /* Loop counters */
 
-  /* S->pState points to buffer which contains previous frame (numTaps - 1) samples */
+#if defined (ARM_MATH_LOOPUNROLL)
+        q31_t acc1, acc2, acc3;                        /* Accumulators */
+        q31_t x0, x1, x2, x3, c0;                      /* Temporary variables to hold state and coefficient values */
+#endif
+
+  /* S->pState points to state array which contains previous frame (numTaps - 1) samples */
   /* pStateCurnt points to the location where the new input data should be written */
   pStateCurnt = &(S->pState[(numTaps - 1U)]);
 
-  /* Apply loop unrolling and compute 4 output values simultaneously.
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 output values simultaneously.
    * The variables acc0 ... acc3 hold output values that are being computed:
    *
    *    acc0 =  b[numTaps-1] * x[n-numTaps-1] + b[numTaps-2] * x[n-numTaps-2] + b[numTaps-3] * x[n-numTaps-3] +...+ b[0] * x[0]
-   *    acc1 =  b[numTaps-1] * x[n-numTaps] +   b[numTaps-2] * x[n-numTaps-1] + b[numTaps-3] * x[n-numTaps-2] +...+ b[0] * x[1]
-   *    acc2 =  b[numTaps-1] * x[n-numTaps+1] + b[numTaps-2] * x[n-numTaps] +   b[numTaps-3] * x[n-numTaps-1] +...+ b[0] * x[2]
+   *    acc1 =  b[numTaps-1] * x[n-numTaps]   + b[numTaps-2] * x[n-numTaps-1] + b[numTaps-3] * x[n-numTaps-2] +...+ b[0] * x[1]
+   *    acc2 =  b[numTaps-1] * x[n-numTaps+1] + b[numTaps-2] * x[n-numTaps]   + b[numTaps-3] * x[n-numTaps-1] +...+ b[0] * x[2]
    *    acc3 =  b[numTaps-1] * x[n-numTaps+2] + b[numTaps-2] * x[n-numTaps+1] + b[numTaps-3] * x[n-numTaps]   +...+ b[0] * x[3]
    */
-  blkCnt = blockSize >> 2;
+  blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* Copy four new input samples into the state buffer */
+    /* Copy 4 new input samples into the state buffer. */
     *pStateCurnt++ = *pSrc++;
     *pStateCurnt++ = *pSrc++;
     *pStateCurnt++ = *pSrc++;
@@ -113,17 +115,18 @@ void arm_fir_fast_q31(
     /* Initialize coefficient pointer */
     pb = pCoeffs;
 
-    /* Read the first three samples from the state buffer:
+    /* Read the first 3 samples from the state buffer:
      *  x[n-numTaps], x[n-numTaps-1], x[n-numTaps-2] */
-    x0 = *(px++);
-    x1 = *(px++);
-    x2 = *(px++);
+    x0 = *px++;
+    x1 = *px++;
+    x2 = *px++;
 
-    /* Loop unrolling.  Process 4 taps at a time. */
-    tapCnt = numTaps >> 2;
-    i = tapCnt;
+    /* Loop unrolling. Process 4 taps at a time. */
+    tapCnt = numTaps >> 2U;
 
-    while (i > 0U)
+    /* Loop over the number of taps.  Unroll by a factor of 4.
+       Repeat until we've computed numTaps-4 coefficients. */
+    while (tapCnt > 0U)
     {
       /* Read the b[numTaps] coefficient */
       c0 = *pb;
@@ -183,14 +186,14 @@ void arm_fir_fast_q31(
       pb += 4U;
       px += 4U;
 
-      /* Decrement the loop counter */
-      i--;
+      /* Decrement loop counter */
+      tapCnt--;
     }
 
     /* If the filter length is not a multiple of 4, compute the remaining filter taps */
+    tapCnt = numTaps % 0x4U;
 
-    i = numTaps - (tapCnt * 4U);
-    while (i > 0U)
+    while (tapCnt > 0U)
     {
       /* Read coefficients */
       c0 = *(pb++);
@@ -209,28 +212,33 @@ void arm_fir_fast_q31(
       x1 = x2;
       x2 = x3;
 
-      /* Decrement the loop counter */
-      i--;
+      /* Decrement loop counter */
+      tapCnt--;
     }
 
-    /* Advance the state pointer by 4 to process the next group of 4 samples */
-    pState = pState + 4;
-
-    /* The results in the 4 accumulators are in 2.30 format.  Convert to 1.31
-     ** Then store the 4 outputs in the destination buffer. */
+    /* The results in the 4 accumulators are in 2.30 format. Convert to 1.31
+       Then store the 4 outputs in the destination buffer. */
     *pDst++ = (q31_t) (acc0 << 1);
     *pDst++ = (q31_t) (acc1 << 1);
     *pDst++ = (q31_t) (acc2 << 1);
     *pDst++ = (q31_t) (acc3 << 1);
 
-    /* Decrement the samples loop counter */
+    /* Advance the state pointer by 4 to process the next group of 4 samples */
+    pState = pState + 4U;
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
+  /* Loop unrolling: Compute remaining output samples */
+  blkCnt = blockSize % 0x4U;
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
-  blkCnt = blockSize % 4U;
+#else
+
+  /* Initialize blkCnt with number of taps */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
@@ -244,39 +252,63 @@ void arm_fir_fast_q31(
     px = pState;
 
     /* Initialize Coefficient pointer */
-    pb = (pCoeffs);
+    pb = pCoeffs;
 
     i = numTaps;
 
     /* Perform the multiply-accumulates */
     do
     {
-      multAcc_32x32_keep32_R(acc0, (*px++), (*(pb++)));
+      multAcc_32x32_keep32_R(acc0, (*px++), (*pb++));
       i--;
     } while (i > 0U);
 
-    /* The result is in 2.30 format.  Convert to 1.31
-     ** Then store the output in the destination buffer. */
+    /* The result is in 2.30 format. Convert to 1.31
+       Then store the output in the destination buffer. */
     *pDst++ = (q31_t) (acc0 << 1);
 
     /* Advance state pointer by 1 for the next sample */
-    pState = pState + 1;
+    pState = pState + 1U;
 
-    /* Decrement the samples loop counter */
+    /* Decrement loop counter */
     blkCnt--;
   }
 
   /* Processing is complete.
-   ** Now copy the last numTaps - 1 samples to the start of the state buffer.
-   ** This prepares the state buffer for the next function call. */
+     Now copy the last numTaps - 1 samples to the start of the state buffer.
+     This prepares the state buffer for the next function call. */
 
   /* Points to the start of the state buffer */
   pStateCurnt = S->pState;
 
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 taps at a time */
+  tapCnt = (numTaps - 1U) >> 2U;
+
+  /* Copy data */
+  while (tapCnt > 0U)
+  {
+    *pStateCurnt++ = *pState++;
+    *pStateCurnt++ = *pState++;
+    *pStateCurnt++ = *pState++;
+    *pStateCurnt++ = *pState++;
+
+    /* Decrement loop counter */
+    tapCnt--;
+  }
+
   /* Calculate remaining number of copies */
+  tapCnt = (numTaps - 1U) % 0x4U;
+
+#else
+
+  /* Initialize tapCnt with number of taps */
   tapCnt = (numTaps - 1U);
 
-  /* Copy the remaining q31_t data */
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  /* Copy remaining data */
   while (tapCnt > 0U)
   {
     *pStateCurnt++ = *pState++;
@@ -285,9 +317,8 @@ void arm_fir_fast_q31(
     tapCnt--;
   }
 
-
 }
 IAR_ONLY_LOW_OPTIMIZATION_EXIT
 /**
- * @} end of FIR group
+  @} end of FIR group
  */

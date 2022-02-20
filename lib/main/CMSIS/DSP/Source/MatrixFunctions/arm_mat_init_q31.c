@@ -3,13 +3,13 @@
  * Title:        arm_mat_init_q31.c
  * Description:  Q31 matrix initialization
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,27 +29,27 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMatrix
+  @ingroup groupMatrix
  */
 
 /**
- * @defgroup MatrixInit Matrix Initialization
- *
+  @defgroup MatrixInit Matrix Initialization
+ 
  */
 
 /**
- * @addtogroup MatrixInit
- * @{
+  @addtogroup MatrixInit
+  @{
  */
 
-  /**
-   * @brief  Q31 matrix initialization.
-   * @param[in,out] *S             points to an instance of the floating-point matrix structure.
-   * @param[in]     nRows          number of rows in the matrix.
-   * @param[in]     nColumns       number of columns in the matrix.
-   * @param[in]     *pData	   points to the matrix data array.
-   * @return        none
-   */
+/**
+  @brief         Q31 matrix initialization.
+  @param[in,out] S         points to an instance of the Q31 matrix structure
+  @param[in]     nRows     number of rows in the matrix
+  @param[in]     nColumns  number of columns in the matrix
+  @param[in]     pData     points to the matrix data array
+  @return        none
+ */
 
 void arm_mat_init_q31(
   arm_matrix_instance_q31 * S,
@@ -68,5 +68,5 @@ void arm_mat_init_q31(
 }
 
 /**
- * @} end of MatrixInit group
+  @} end of MatrixInit group
  */

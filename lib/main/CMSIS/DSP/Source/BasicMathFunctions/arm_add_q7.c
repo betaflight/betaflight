@@ -3,13 +3,13 @@
  * Title:        arm_add_q7.c
  * Description:  Q7 vector addition
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,94 +29,81 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupMath
+  @ingroup groupMath
  */
 
 /**
- * @addtogroup BasicAdd
- * @{
+  @addtogroup BasicAdd
+  @{
  */
 
 /**
- * @brief Q7 vector addition.
- * @param[in]       *pSrcA points to the first input vector
- * @param[in]       *pSrcB points to the second input vector
- * @param[out]      *pDst points to the output vector
- * @param[in]       blockSize number of samples in each vector
- * @return none.
- *
- * <b>Scaling and Overflow Behavior:</b>
- * \par
- * The function uses saturating arithmetic.
- * Results outside of the allowable Q7 range [0x80 0x7F] will be saturated.
+  @brief         Q7 vector addition.
+  @param[in]     pSrcA      points to the first input vector
+  @param[in]     pSrcB      points to the second input vector
+  @param[out]    pDst       points to the output vector
+  @param[in]     blockSize  number of samples in each vector
+  @return        none
+
+  @par           Scaling and Overflow Behavior
+                   The function uses saturating arithmetic.
+                   Results outside of the allowable Q7 range [0x80 0x7F] are saturated.
  */
 
 void arm_add_q7(
-  q7_t * pSrcA,
-  q7_t * pSrcB,
-  q7_t * pDst,
-  uint32_t blockSize)
+  const q7_t * pSrcA,
+  const q7_t * pSrcB,
+        q7_t * pDst,
+        uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* loop counter */
+        uint32_t blkCnt;                               /* Loop counter */
 
-#if defined (ARM_MATH_DSP)
+#if defined (ARM_MATH_LOOPUNROLL)
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-
-
-  /*loop Unrolling */
+  /* Loop unrolling: Compute 4 outputs at a time */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    *__SIMD32(pDst)++ = __QADD8(*__SIMD32(pSrcA)++, *__SIMD32(pSrcB)++);
 
-    /* Decrement the loop counter */
+#if defined (ARM_MATH_DSP)
+    /* Add and store result in destination buffer (4 samples at a time). */
+    write_q7x4_ia (&pDst, __QADD8 (read_q7x4_ia ((q7_t **) &pSrcA), read_q7x4_ia ((q7_t **) &pSrcB)));
+#else
+    *pDst++ = (q7_t) __SSAT ((q15_t) *pSrcA++ + *pSrcB++, 8);
+    *pDst++ = (q7_t) __SSAT ((q15_t) *pSrcA++ + *pSrcB++, 8);
+    *pDst++ = (q7_t) __SSAT ((q15_t) *pSrcA++ + *pSrcB++, 8);
+    *pDst++ = (q7_t) __SSAT ((q15_t) *pSrcA++ + *pSrcB++, 8);
+#endif
+
+    /* Decrement loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
+  /* Loop unrolling: Compute remaining outputs */
   blkCnt = blockSize % 0x4U;
 
-  while (blkCnt > 0U)
-  {
-    /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    *pDst++ = (q7_t) __SSAT(*pSrcA++ + *pSrcB++, 8);
-
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
-
 #else
-
-  /* Run the below code for Cortex-M0 */
-
-
 
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
   while (blkCnt > 0U)
   {
     /* C = A + B */
-    /* Add and then store the results in the destination buffer. */
-    *pDst++ = (q7_t) __SSAT((q15_t) * pSrcA++ + *pSrcB++, 8);
 
-    /* Decrement the loop counter */
+    /* Add and store result in destination buffer. */
+    *pDst++ = (q7_t) __SSAT((q15_t) *pSrcA++ + *pSrcB++, 8);
+
+    /* Decrement loop counter */
     blkCnt--;
   }
-
-#endif /* #if defined (ARM_MATH_DSP) */
-
 
 }
 
 /**
- * @} end of BasicAdd group
+  @} end of BasicAdd group
  */

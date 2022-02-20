@@ -1,15 +1,15 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_rms_f32.c
- * Description:  Root mean square value of an array of F32 type
+ * Description:  Root mean square value of the elements of a floating-point vector
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,88 +29,75 @@
 #include "arm_math.h"
 
 /**
- * @ingroup groupStats
+  @ingroup groupStats
  */
 
 /**
- * @defgroup RMS Root mean square (RMS)
- *
- *
- * Calculates the Root Mean Sqaure of the elements in the input vector.
- * The underlying algorithm is used:
- *
- * <pre>
- * 	Result = sqrt(((pSrc[0] * pSrc[0] + pSrc[1] * pSrc[1] + ... + pSrc[blockSize-1] * pSrc[blockSize-1]) / blockSize));
- * </pre>
- *
- * There are separate functions for floating point, Q31, and Q15 data types.
+  @defgroup RMS Root mean square (RMS)
+
+  Calculates the Root Mean Square of the elements in the input vector.
+  The underlying algorithm is used:
+
+  <pre>
+      Result = sqrt(((pSrc[0] * pSrc[0] + pSrc[1] * pSrc[1] + ... + pSrc[blockSize-1] * pSrc[blockSize-1]) / blockSize));
+  </pre>
+
+  There are separate functions for floating point, Q31, and Q15 data types.
  */
 
 /**
- * @addtogroup RMS
- * @{
+  @addtogroup RMS
+  @{
  */
-
 
 /**
- * @brief Root Mean Square of the elements of a floating-point vector.
- * @param[in]       *pSrc points to the input vector
- * @param[in]       blockSize length of the input vector
- * @param[out]      *pResult rms value returned here
- * @return none.
- *
+  @brief         Root Mean Square of the elements of a floating-point vector.
+  @param[in]     pSrc       points to the input vector
+  @param[in]     blockSize  number of samples in input vector
+  @param[out]    pResult    root mean square value returned here
+  @return        none
  */
-
+#if defined(ARM_MATH_NEON)
 void arm_rms_f32(
-  float32_t * pSrc,
+  const float32_t * pSrc,
   uint32_t blockSize,
   float32_t * pResult)
 {
-  float32_t sum = 0.0f;                          /* Accumulator */
-  float32_t in;                                  /* Tempoprary variable to store input value */
+  float32_t sum = 0.0f;                          /* accumulator */
+  float32_t in;                                  /* Temporary variable to store input value */
   uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_DSP)
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
+  float32x4_t sumV = vdupq_n_f32(0.0f);                          /* Temporary result storage */
+  float32x2_t sumV2;
+  float32x4_t inV;
 
-  /* loop Unrolling */
   blkCnt = blockSize >> 2U;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+  /* Compute 4 outputs at a time.
    ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A[0] * A[0] + A[1] * A[1] + A[2] * A[2] + ... + A[blockSize-1] * A[blockSize-1] */
-    /* Compute sum of the squares and then store the result in a temporary variable, sum  */
-    in = *pSrc++;
-    sum += in * in;
-    in = *pSrc++;
-    sum += in * in;
-    in = *pSrc++;
-    sum += in * in;
-    in = *pSrc++;
-    sum += in * in;
+    /* Compute Power and then store the result in a temporary variable, sum. */
+    inV = vld1q_f32(pSrc);
+    sumV = vmlaq_f32(sumV, inV, inV);
+    pSrc += 4;
 
     /* Decrement the loop counter */
     blkCnt--;
   }
 
+  sumV2 = vpadd_f32(vget_low_f32(sumV),vget_high_f32(sumV));
+  sum = sumV2[0] + sumV2[1];
+
   /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
    ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
 
-#else
-  /* Run the below code for Cortex-M0 */
-
-  /* Loop over blockSize number of values */
-  blkCnt = blockSize;
-
-#endif /* #if defined (ARM_MATH_DSP) */
-
   while (blkCnt > 0U)
   {
     /* C = A[0] * A[0] + A[1] * A[1] + A[2] * A[2] + ... + A[blockSize-1] * A[blockSize-1] */
-    /* Compute sum of the squares and then store the results in a temporary variable, sum  */
+    /* compute power and then store the result in a temporary variable, sum. */
     in = *pSrc++;
     sum += in * in;
 
@@ -121,7 +108,69 @@ void arm_rms_f32(
   /* Compute Rms and store the result in the destination */
   arm_sqrt_f32(sum / (float32_t) blockSize, pResult);
 }
+#else
+void arm_rms_f32(
+  const float32_t * pSrc,
+        uint32_t blockSize,
+        float32_t * pResult)
+{
+        uint32_t blkCnt;                               /* Loop counter */
+        float32_t sum = 0.0f;                          /* Temporary result storage */
+        float32_t in;                                  /* Temporary variable to store input value */
+
+#if defined (ARM_MATH_LOOPUNROLL)
+
+  /* Loop unrolling: Compute 4 outputs at a time */
+  blkCnt = blockSize >> 2U;
+
+  while (blkCnt > 0U)
+  {
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+
+    in = *pSrc++;
+    /* Compute sum of squares and store result in a temporary variable, sum. */
+    sum += in * in;
+
+    in = *pSrc++;
+    sum += in * in;
+
+    in = *pSrc++;
+    sum += in * in;
+
+    in = *pSrc++;
+    sum += in * in;
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Loop unrolling: Compute remaining outputs */
+  blkCnt = blockSize % 0x4U;
+
+#else
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+
+  while (blkCnt > 0U)
+  {
+    /* C = A[0] * A[0] + A[1] * A[1] + ... + A[blockSize-1] * A[blockSize-1] */
+
+    in = *pSrc++;
+    /* Compute sum of squares and store result in a temporary variable. */
+    sum += ( in * in);
+
+    /* Decrement loop counter */
+    blkCnt--;
+  }
+
+  /* Compute Rms and store result in destination */
+  arm_sqrt_f32(sum / (float32_t) blockSize, pResult);
+}
+#endif /* #if defined(ARM_MATH_NEON) */
 
 /**
- * @} end of RMS group
+  @} end of RMS group
  */

@@ -3,13 +3,13 @@
  * Title:        arm_bitreversal.c
  * Description:  Bitreversal functions
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,20 +29,20 @@
 #include "arm_math.h"
 #include "arm_common_tables.h"
 
-/*
-* @brief  In-place bit reversal function.
-* @param[in, out] *pSrc        points to the in-place buffer of floating-point data type.
-* @param[in]      fftSize      length of the FFT.
-* @param[in]      bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table.
-* @param[in]      *pBitRevTab  points to the bit reversal table.
-* @return none.
-*/
+/**
+  @brief         In-place floating-point bit reversal function.
+  @param[in,out] pSrc         points to in-place floating-point data buffer
+  @param[in]     fftSize      length of FFT
+  @param[in]     bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
+  @param[in]     pBitRevTab   points to bit reversal table
+  @return        none
+ */
 
 void arm_bitreversal_f32(
-float32_t * pSrc,
-uint16_t fftSize,
-uint16_t bitRevFactor,
-uint16_t * pBitRevTab)
+        float32_t * pSrc,
+        uint16_t fftSize,
+        uint16_t bitRevFactor,
+  const uint16_t * pBitRevTab)
 {
    uint16_t fftLenBy2, fftLenBy2p1;
    uint16_t i, j;
@@ -100,21 +100,20 @@ uint16_t * pBitRevTab)
 }
 
 
-
-/*
-* @brief  In-place bit reversal function.
-* @param[in, out] *pSrc        points to the in-place buffer of Q31 data type.
-* @param[in]      fftLen       length of the FFT.
-* @param[in]      bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
-* @param[in]      *pBitRevTab  points to bit reversal table.
-* @return none.
+/**
+  @brief         In-place Q31 bit reversal function.
+  @param[in,out] pSrc         points to in-place Q31 data buffer.
+  @param[in]     fftLen       length of FFT.
+  @param[in]     bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
+  @param[in]     pBitRevTab   points to bit reversal table
+  @return        none
 */
 
 void arm_bitreversal_q31(
-q31_t * pSrc,
-uint32_t fftLen,
-uint16_t bitRevFactor,
-uint16_t * pBitRevTable)
+        q31_t * pSrc,
+        uint32_t fftLen,
+        uint16_t bitRevFactor,
+  const uint16_t * pBitRevTab)
 {
    uint32_t fftLenBy2, fftLenBy2p1, i, j;
    q31_t in;
@@ -163,29 +162,29 @@ uint16_t * pBitRevTable)
       pSrc[(2U * (j + fftLenBy2)) + 1U] = in;
 
       /*  Reading the index for the bit reversal */
-      j = *pBitRevTable;
+      j = *pBitRevTab;
 
       /*  Updating the bit reversal index depending on the fft length */
-      pBitRevTable += bitRevFactor;
+      pBitRevTab += bitRevFactor;
    }
 }
 
 
 
-/*
-   * @brief  In-place bit reversal function.
-   * @param[in, out] *pSrc        points to the in-place buffer of Q15 data type.
-   * @param[in]      fftLen       length of the FFT.
-   * @param[in]      bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
-   * @param[in]      *pBitRevTab  points to bit reversal table.
-   * @return none.
+/**
+  @brief         In-place Q15 bit reversal function.
+  @param[in,out] pSrc16       points to in-place Q15 data buffer
+  @param[in]     fftLen       length of FFT
+  @param[in]     bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
+  @param[in]     pBitRevTab   points to bit reversal table
+  @return        none
 */
 
 void arm_bitreversal_q15(
-q15_t * pSrc16,
-uint32_t fftLen,
-uint16_t bitRevFactor,
-uint16_t * pBitRevTab)
+        q15_t * pSrc16,
+        uint32_t fftLen,
+        uint16_t bitRevFactor,
+  const uint16_t * pBitRevTab)
 {
    q31_t *pSrc = (q31_t *) pSrc16;
    q31_t in;

@@ -3,13 +3,13 @@
  * Title:        arm_pid_reset_q15.c
  * Description:  Q15 PID Control reset function
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        18. March 2019
+ * $Revision:    V1.6.0
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -28,18 +28,20 @@
 
 #include "arm_math.h"
 
- /**
- * @addtogroup PID
- * @{
+/**
+  @addtogroup PID
+  @{
  */
 
 /**
-* @brief  Reset function for the Q15 PID Control.
-* @param[in] *S		Instance pointer of PID control data structure.
-* @return none.
-* \par Description:
-* The function resets the state buffer to zeros.
-*/
+  @brief         Reset function for the Q15 PID Control.
+  @param[in,out] S  points to an instance of the Q15 PID structure
+  @return        none
+
+  @par           Details
+                   The function resets the state buffer to zeros.
+ */
+
 void arm_pid_reset_q15(
   arm_pid_instance_q15 * S)
 {
@@ -48,5 +50,5 @@ void arm_pid_reset_q15(
 }
 
 /**
- * @} end of PID group
+  @} end of PID group
  */
