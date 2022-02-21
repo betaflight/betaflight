@@ -56,6 +56,7 @@ const timerHardware_t timerHardware[1]; // unused
 #include "target.h"
 #include "dyad.h"
 #include "target/SITL/udplink.h"
+#include "target.h"
 
 uint32_t SystemCoreClock;
 
@@ -124,7 +125,7 @@ void updateState(const fdm_packet* pkt) {
     clock_gettime(CLOCK_MONOTONIC, &now_ts);
 
     const uint64_t realtime_now = micros64_real();
-    if (realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+    if (realtime_now > last_realtime +600*1e3) { // 500ms timeout works for gazebo but not for AirSim. 600ms works for both. TODO need general method
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
         sendMotorUpdate();
