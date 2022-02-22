@@ -51,10 +51,11 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_GYRO_SPI_ICM20689
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-
+#define USE_ACC_SPI_ICM20689
 
 // *************** OSD/FLASH *****************************
 #define USE_SPI_DEVICE_2
