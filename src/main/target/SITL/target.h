@@ -143,7 +143,7 @@
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
 // which simulator
-#define SITL_AIRSIM  // options: SITL_AIRSIM, SITL_GAZEBO, SITL_REALFLIGHT
+#define SIM_AIRSIM  // options: SIM_AIRSIM, SIM_GAZEBO, SIM_REALFLIGHT
 
 // belows are internal stuff
 
@@ -224,11 +224,13 @@ typedef struct
 #define UART7 ((USART_TypeDef *)0x0007)
 #define UART8 ((USART_TypeDef *)0x0008)
 
-#define SIMULATOR_MAX_PWM_CHANNELS 16
-#if defined(SITL_AIRSIM)
+
+#if defined(SIM_AIRSIM)
     #define SIMULATOR_MAX_RC_CHANNELS 8 // 8 seems more than enough 
+    #define SIMULATOR_MAX_PWM_CHANNELS 4 // for now basic quadcopter
 #else
     #define SIMULATOR_MAX_RC_CHANNELS 16
+    #define SIMULATOR_MAX_PWM_CHANNELS 16
 #endif
 
 typedef struct
@@ -256,19 +258,18 @@ typedef struct {
 
 typedef struct {
     double timestamp;                   // in seconds
-    uint16_t channels[SIMULATOR_MAX_RC_CHANNELS];             // meters, NED from origin
+    uint16_t channels[SIMULATOR_MAX_RC_CHANNELS]; // (1000-2000) channel values
 } rc_packet;
 
-typedef struct { 
-    #if defined(SITL_AIRSIM)
-        uint16_t motor_speed[4]; // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
-    #elif defined(SITL_GAZEBO)
-        float motor_speed[4];
-    #elif defined(SITL_REALFLIGHT)
+typedef struct { // PWM control packet. might be different for each simulator
+    #if defined(SIM_AIRSIM)
+        uint16_t motor_speed[SIMULATOR_MAX_PWM_CHANNELS]; // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    #elif defined(SIM_GAZEBO)
+        float motor_speed[SIMULATOR_MAX_PWM_CHANNELS];
+    #elif defined(SIM_REALFLIGHT)
         uint16_t motorCount; //Count of motor in the PWM output.
         float motor_speed[SIMULATOR_MAX_PWM_CHANNELS]; 
     #endif
-       
 } servo_packet;
 
 typedef struct {

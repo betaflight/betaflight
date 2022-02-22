@@ -78,11 +78,11 @@ static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
 
 // Just some help for logging
-#if defined(SITL_AIRSIM)
+#if defined(SIM_AIRSIM)
     static char simulator_name[] = "AirSim";
-#elif defined(SITL_GAZEBO)
+#elif defined(SIM_GAZEBO)
     static char simulator_name[] = "Gazebo";
-#elif defined(SITL_REALFLIGHT)
+#elif defined(SIM_REALFLIGHT)
     static char simulator_name[] = "Realflight bridge";
 #endif
 
@@ -125,10 +125,13 @@ void updateState(const fdm_packet* pkt) {
     clock_gettime(CLOCK_MONOTONIC, &now_ts);
 
     const uint64_t realtime_now = micros64_real();
-    if (realtime_now > last_realtime +600*1e3) { // 500ms timeout works for gazebo but not for AirSim. 600ms works for both. TODO need general method
+
+    // if updateState is called after while, send current pwm and ask for the state first (sync)
+    if (realtime_now > last_realtime + 600*1e3) { // 500ms timeout works for gazebo but not for AirSim. 600ms works for both. TODO need general method
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
-        sendMotorUpdate();
+        printf("Timed out\n");
+        sendMotorUpdate(); // send a pwm update so that a state packet can be received when returning back to updateState after timeout
         return;
     }
 
@@ -193,7 +196,7 @@ void updateState(const fdm_packet* pkt) {
         timeval_sub(&out_ts, &now_ts, &last_ts);
         simRate = deltaSim / (out_ts.tv_sec + 1e-9*out_ts.tv_nsec);
     }
-//    printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
+    // printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
 
     last_timestamp = pkt->timestamp;
     last_realtime = micros64_real();
@@ -569,7 +572,7 @@ static void pwmCompleteMotorUpdate(void)
         pwmPkt.motor_speed[1] = motorsPwm[2] / outScale;
         pwmPkt.motor_speed[2] = motorsPwm[3] / outScale;
     #else
-    // for airsim (0,1) mapping is done in BetaflightApi.hpp. So just send raw pwm
+    // for airsim, (0,1) mapping is done in BetaflightApi.hpp. So just send raw pwm
     // Realflight bridge also requires only raw pwm.
         pwmPkt.motor_speed[3] = motorsPwm[0] + idlePulse;
         pwmPkt.motor_speed[0] = motorsPwm[1] + idlePulse;
