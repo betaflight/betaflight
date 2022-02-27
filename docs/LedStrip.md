@@ -75,7 +75,7 @@ The BEACON profile is used to find a lost quad, it flashes all LEDs white once p
 ###### BRIGHTNESS: The brightness can be configured using the CLI:
 1. Open the CLI.
 2. Type ```get ledstrip_brightness``` followed by enter to display the current brightness.
-3. Type ```set ledstrip_brightness=x``` where x is the brighness in percentage between 5 and 100.
+3. Type ```set ledstrip_brightness=x``` where x is the brightness in percentage between 5 and 100.
 4. Type ```save``` followed by enter to save the brightness level to be used.
 
 
