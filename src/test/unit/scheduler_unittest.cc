@@ -67,9 +67,13 @@ extern "C" {
     int16_t debug[1];
     uint8_t debugMode = 0;
 
+    bool rxFrameReady(void) { return 0; }
+    void rxFrameCheck(timeUs_t, timeDelta_t) {}
+
     // set up micros() to simulate time
     uint32_t simulatedTime = 0;
     uint32_t micros(void) { return simulatedTime; }
+    uint32_t millis(void) { return simulatedTime/1000; } // Note simplistic mapping suitable only for short unit tests
     uint32_t clockCyclesToMicros(uint32_t x) { return x/10;}
     int32_t clockCyclesTo10thMicros(int32_t x) { return x;}
     uint32_t clockMicrosToCycles(uint32_t x) { return x*10;}
@@ -78,6 +82,8 @@ extern "C" {
     // set up tasks to take a simulated representative time to execute
     bool gyroFilterReady(void) { return taskFilterReady; }
     bool pidLoopReady(void) { return taskPidReady; }
+    void failsafeCheckDataFailurePeriod(void) {}
+    void failsafeUpdateState(void) {}
     void taskGyroSample(timeUs_t) { simulatedTime += TEST_GYRO_SAMPLE_TIME; taskGyroRan = true; }
     void taskFiltering(timeUs_t) { simulatedTime += TEST_FILTERING_TIME; taskFilterRan = true; }
     void taskMainPidLoop(timeUs_t) { simulatedTime += TEST_PID_LOOP_TIME; taskPidRan = true; }

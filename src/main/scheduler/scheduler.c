@@ -42,15 +42,17 @@
 #include "fc/core.h"
 #include "fc/tasks.h"
 
+#include "rx/rx.h"
+#include "flight/failsafe.h"
+
 #include "scheduler.h"
 
 #include "sensors/gyro_init.h"
 
 // DEBUG_SCHEDULER, timings for:
-// 0 - gyroUpdate()
-// 1 - pidController()
+// 0 - Average time spent executing check function
+// 1 - Time spent priortising
 // 2 - time spent in scheduler
-// 3 - time spent executing check function
 
 // DEBUG_SCHEDULER_DETERMINISM, requires USE_LATE_TASK_STATISTICS to be defined
 // 0 - Gyro task start cycle time in 10th of a us
@@ -103,6 +105,8 @@ static uint32_t lateTaskTotal = 0;
 static int16_t taskCount = 0;
 static uint32_t nextTimingCycles;
 #endif
+
+static timeMs_t lastFailsafeCheckMs = 0;
 
 // No need for a linked list for the queue, since items are only inserted at startup
 
@@ -498,6 +502,20 @@ FAST_CODE void scheduler(void)
             if (pidLoopReady()) {
                 taskExecutionTimeUs += schedulerExecuteTask(getTask(TASK_PID), currentTimeUs);
             }
+            if (rxFrameReady()) {
+                // Check to for incoming RX data. Don't do this in the checker as that is called repeatedly within
+                // a given gyro loop, and ELRS takes a long time to process this and so can only be safely processed
+                // before the checkers
+                rxFrameCheck(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX)->lastExecutedAtUs));
+            }
+
+            // Check for failsafe conditions without reliance on the RX task being well behaved
+            if (cmp32(millis(), lastFailsafeCheckMs) > PERIOD_RXDATA_FAILURE) {
+                // This is very low cost taking less that 4us every 200ms
+                failsafeCheckDataFailurePeriod();
+                failsafeUpdateState();
+                lastFailsafeCheckMs = millis();
+            }
 
 #if defined(USE_LATE_TASK_STATISTICS)
             // % CPU busy
@@ -587,9 +605,6 @@ FAST_CODE void scheduler(void)
                         task->dynamicPriority = 1 + task->attribute->staticPriority * task->taskAgePeriods;
                     } else if (task->attribute->checkFunc(currentTimeUs, cmpTimeUs(currentTimeUs, task->lastExecutedAtUs))) {
                         const uint32_t checkFuncExecutionTimeUs = cmpTimeUs(micros(), currentTimeUs);
-#if !defined(UNIT_TEST)
-                        DEBUG_SET(DEBUG_SCHEDULER, 3, checkFuncExecutionTimeUs);
-#endif
                         checkFuncMovingSumExecutionTimeUs += checkFuncExecutionTimeUs - checkFuncMovingSumExecutionTimeUs / TASK_STATS_MOVING_SUM_COUNT;
                         checkFuncMovingSumDeltaTimeUs += task->taskLatestDeltaTimeUs - checkFuncMovingSumDeltaTimeUs / TASK_STATS_MOVING_SUM_COUNT;
                         checkFuncTotalExecutionTimeUs += checkFuncExecutionTimeUs;   // time consumed by scheduler + task

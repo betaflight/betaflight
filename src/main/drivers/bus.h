@@ -73,7 +73,7 @@ typedef struct busDevice_s {
     DMA_InitTypeDef             *initRx;
 #endif
 #endif // UNIT_TEST
-    struct busSegment_s* volatile curSegment;
+    volatile struct busSegment_s* volatile curSegment;
     bool initSegment;
 } busDevice_t;
 
@@ -112,7 +112,10 @@ typedef struct extDevice_s {
 } extDevice_t;
 
 /* Each SPI access may comprise multiple parts, for example, wait/write enable/write/data each of which
- * is defined by a segment, with optional callback after each is completed
+ * is defined by a segment, with optional callback after each is completed.
+ *
+ * If there are more than one segments, or a single segment with negateCS negated then DMA will be used irrespective of length
+ *
  */
 typedef struct busSegment_s {
     union {
@@ -126,7 +129,7 @@ typedef struct busSegment_s {
             // Link to the device associated with the next transfer
             const extDevice_t *dev;
             // Segments to process in the next transfer.
-            struct busSegment_s *segments;
+            volatile struct busSegment_s *segments;
         } link;
     } u;
     int len;

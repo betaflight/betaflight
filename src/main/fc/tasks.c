@@ -167,7 +167,6 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 
 typedef enum {
     RX_STATE_CHECK,
-    RX_STATE_PROCESS,
     RX_STATE_MODES,
     RX_STATE_UPDATE,
     RX_STATE_COUNT
@@ -195,10 +194,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     switch (rxState) {
     default:
     case RX_STATE_CHECK:
-        rxState = RX_STATE_PROCESS;
-        break;
-
-    case RX_STATE_PROCESS:
         if (!processRx(currentTimeUs)) {
             rxState = RX_STATE_CHECK;
             break;

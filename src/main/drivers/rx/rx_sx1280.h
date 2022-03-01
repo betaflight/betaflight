@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define REG_LR_FIRMWARE_VERSION_MSB 0x0153 //The address of the register holding the firmware version MSB
 #define SX1280_REG_LR_ESTIMATED_FREQUENCY_ERROR_MSB 0x0954
 #define SX1280_REG_LR_ESTIMATED_FREQUENCY_ERROR_MASK 0x0FFFFF
@@ -247,7 +249,8 @@ typedef enum {
 } sx1280TickSizes_e;
 
 bool sx1280Init(IO_t resetPin, IO_t busyPin);
-uint8_t sx1280ISR(uint32_t *timeStamp);
+void sx1280ISR(void);
+bool sx1280HandleFromTick(void);
 bool sx1280IsBusy(void);
 void sx1280WriteCommand(const uint8_t address, const uint8_t data);
 void sx1280WriteCommandBurst(const uint8_t address, const uint8_t *data, const uint8_t length);
@@ -266,14 +269,14 @@ void sx1280SetOutputPower(const int8_t power);
 void sx1280SetPacketParams(const uint8_t preambleLength, const sx1280LoraPacketLengthsModes_e headerType, const uint8_t payloadLength, const sx1280LoraCrcModes_e crc, const sx1280LoraIqModes_e invertIQ);
 void sx1280SetMode(const sx1280OperatingModes_e opMode);
 void sx1280ConfigLoraModParams(const sx1280LoraBandwidths_e bw, const sx1280LoraSpreadingFactors_e sf, const sx1280LoraCodingRates_e cr);
-void sx1280SetFrequencyHZ(const uint32_t reqFreq);
-void sx1280SetFrequencyReg(const uint32_t freq);
+void sx1280SetFrequencyReg(const uint32_t freqReg);
 void sx1280AdjustFrequency(int32_t offset, const uint32_t freq);
-void sx1280SetFIFOaddr(const uint8_t txBaseAddr, const uint8_t rxBaseAddr);
+void sx1280SetFifoAddr(const uint8_t txBaseAddr, const uint8_t rxBaseAddr);
 void sx1280SetDioIrqParams(const uint16_t irqMask, const uint16_t dio1Mask, const uint16_t dio2Mask, const uint16_t dio3Mask);
-uint16_t sx1280GetIrqStatus(void);
 void sx1280ClearIrqStatus(const uint16_t irqMask);
-uint8_t sx1280GetIrqReason(void);
+void sx1280GetIrqReason(void);
+
+void sx1280HandleFromTock();
 
 void sx1280TransmitData(const uint8_t *data, const uint8_t length);
 void sx1280ReceiveData(uint8_t *data, const uint8_t length);

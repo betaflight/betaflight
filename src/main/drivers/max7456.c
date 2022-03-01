@@ -616,8 +616,8 @@ bool max7456DrawScreen(void)
     static uint16_t pos = 0;
     // This routine doesn't block so need to use static data
     static busSegment_t segments[] = {
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     if (!fontIsLoading) {

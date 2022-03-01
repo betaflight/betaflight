@@ -74,7 +74,7 @@ static void w25m_dieSelect(const extDevice_t *dev, int die)
 
     busSegment_t segments[] = {
             {.u.buffers = {command, NULL}, sizeof(command), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing

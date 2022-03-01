@@ -144,6 +144,7 @@ void processRcStickPositions()
     // an extra guard for disarming through switch to prevent that one frame can disarm it
     static uint8_t rcDisarmTicks;
     static bool doNotRepeat;
+    static bool pendingApplyRollAndPitchTrimDeltaSave = false;
 
     // checking sticks positions
     uint8_t stTmp = 0;
@@ -306,6 +307,12 @@ void processRcStickPositions()
         rollAndPitchTrims_t accelerometerTrimsDelta;
         memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
 
+        if (pendingApplyRollAndPitchTrimDeltaSave && ((rcSticks & THR_MASK) != THR_HI)) {
+            saveConfigAndNotify();
+            pendingApplyRollAndPitchTrimDeltaSave = false;
+            return;
+        }
+
         bool shouldApplyRollAndPitchTrimDelta = false;
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
@@ -329,7 +336,9 @@ void processRcStickPositions()
 #if defined(USE_ACC)
             applyAccelerometerTrimsDelta(&accelerometerTrimsDelta);
 #endif
-            saveConfigAndNotify();
+            pendingApplyRollAndPitchTrimDeltaSave = true;
+
+            beeperConfirmationBeeps(1);
 
             repeatAfter(STICK_AUTOREPEAT_MS);
 

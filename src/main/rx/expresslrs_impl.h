@@ -71,8 +71,8 @@ typedef struct elrsReceiver_s {
 
     uint8_t uplinkLQ;
 
-    bool alreadyFHSS;
-    bool alreadyTLMresp;
+    bool alreadyFhss;
+    bool alreadyTelemResp;
     bool lockRFmode;
     bool started;
 
@@ -93,7 +93,9 @@ typedef struct elrsReceiver_s {
     bool configChanged;
 
     bool inBindingMode;
+    volatile bool initializeReceiverPending;
     volatile bool fhssRequired;
+    volatile bool didFhss;
 
     uint32_t statsUpdatedAtMs;
 
@@ -101,9 +103,9 @@ typedef struct elrsReceiver_s {
     elrsRxConfigFnPtr config;
     elrsRxStartReceivingFnPtr startReceiving;
     elrsRxISRFnPtr rxISR;
-    elrsRxTransmitDataFnPtr transmitData;
-    elrsRxReceiveDataFnPtr receiveData;
-    elrsRxGetRFlinkInfoFnPtr getRFlinkInfo;
+    elrsRxHandleFromTockFnPtr rxHandleFromTock;
+    elrsRxBusyTimeoutFnPtr rxHandleFromTick;
+    elrsRxgetRfLinkInfoFnPtr getRfLinkInfo;
     elrsRxSetFrequencyFnPtr setFrequency;
     elrsRxHandleFreqCorrectionFnPtr handleFreqCorrection;
 

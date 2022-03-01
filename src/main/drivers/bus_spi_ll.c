@@ -290,7 +290,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     STATIC_DMA_DATA_AUTO uint8_t dummyRxByte;
     busDevice_t *bus = dev->bus;
 
-    busSegment_t *segment = bus->curSegment;
+    busSegment_t *segment = (busSegment_t *)bus->curSegment;
 
     if (preInit) {
         // Prepare the init structure for the next segment to reduce inter-segment interval
@@ -367,9 +367,6 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 void spiInternalStartDMA(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-
-    // Assert Chip Select
-    IOLo(dev->busType_u.spi.csnPin);
 
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
@@ -584,7 +581,7 @@ void spiSequenceStart(const extDevice_t *dev)
      */
 
     // Check that any reads are cache aligned and of multiple cache lines in length
-    for (busSegment_t *checkSegment = bus->curSegment; checkSegment->len; checkSegment++) {
+    for (busSegment_t *checkSegment = (busSegment_t *)bus->curSegment; checkSegment->len; checkSegment++) {
         // Check there is no receive data as only transmit DMA is available
         if ((checkSegment->u.buffers.rxData) && (bus->dmaRx == (dmaChannelDescriptor_t *)NULL)) {
             dmaSafe = false;
@@ -635,17 +632,25 @@ void spiSequenceStart(const extDevice_t *dev)
     }
 
     // Use DMA if possible
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8))) {
+    // If there are more than one segments, or a single segment with negateCS negated then force DMA irrespective of length
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8) || !bus->curSegment->negateCS)) {
         // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
+
+        // Assert Chip Select
+        IOLo(dev->busType_u.spi.csnPin);
 
         // Start the transfers
         spiInternalStartDMA(dev);
     } else {
+        busSegment_t *lastSegment = NULL;
+
         // Manually work through the segment list performing a transfer for each
         while (bus->curSegment->len) {
-            // Assert Chip Select
-            IOLo(dev->busType_u.spi.csnPin);
+            if (!lastSegment || lastSegment->negateCS) {
+                // Assert Chip Select if necessary - it's costly so only do so if necessary
+                IOLo(dev->busType_u.spi.csnPin);
+            }
 
             spiInternalReadWriteBufPolled(
                     bus->busType_u.spi.instance,
@@ -675,14 +680,20 @@ void spiSequenceStart(const extDevice_t *dev)
                     break;
                 }
             }
+            lastSegment = (busSegment_t *)bus->curSegment;
             bus->curSegment++;
+        }
+
+        if (lastSegment && !lastSegment->negateCS) {
+            // Negate Chip Select if not done so already
+            IOHi(dev->busType_u.spi.csnPin);
         }
 
         // If a following transaction has been linked, start it
         if (bus->curSegment->u.link.dev) {
             const extDevice_t *nextDev = bus->curSegment->u.link.dev;
-            busSegment_t *nextSegments = bus->curSegment->u.link.segments;
-            busSegment_t *endSegment = bus->curSegment;
+            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->u.link.segments;
+            busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
             bus->curSegment = nextSegments;
             endSegment->u.link.dev = NULL;
             spiSequenceStart(nextDev);

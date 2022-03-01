@@ -82,6 +82,7 @@ void updateArmingStatus(void);
 void taskGyroSample(timeUs_t currentTimeUs);
 bool gyroFilterReady(void);
 bool pidLoopReady(void);
+bool rxFrameReady(void);
 void taskFiltering(timeUs_t currentTimeUs);
 void taskMainPidLoop(timeUs_t currentTimeUs);
 
