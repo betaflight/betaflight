@@ -259,6 +259,20 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
+#ifdef USE_MAG
+static void taskUpdateMag(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (sensors(SENSOR_MAG)) {
+        const uint32_t newDeadline = compassUpdate(currentTimeUs);
+        if (newDeadline != 0) {
+            rescheduleTask(TASK_SELF, newDeadline);
+        }
+    }
+}
+#endif
+
 #if defined(USE_RANGEFINDER)
 void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
@@ -351,7 +365,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_MAG
-    [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, compassUpdate,TASK_PERIOD_HZ(10), TASK_PRIORITY_LOW),
+    [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, taskUpdateMag, TASK_PERIOD_HZ(10), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_BARO

@@ -200,19 +200,23 @@ static void hmc5883SpiInit(const extDevice_t *dev)
 
 static bool hmc5883lRead(magDev_t *mag, int16_t *magData)
 {
-    uint8_t buf[6];
+    static uint8_t buf[6];
+    static bool pendingRead = true;
 
     extDevice_t *dev = &mag->dev;
 
-    bool ack = busReadRegisterBuffer(dev, HMC58X3_REG_DATA, buf, 6);
+    if (pendingRead) {
+        busReadRegisterBufferStart(dev, HMC58X3_REG_DATA, buf, sizeof(buf));
 
-    if (!ack) {
+        pendingRead = false;
         return false;
     }
 
     magData[X] = (int16_t)(buf[0] << 8 | buf[1]);
     magData[Z] = (int16_t)(buf[2] << 8 | buf[3]);
     magData[Y] = (int16_t)(buf[4] << 8 | buf[5]);
+
+    pendingRead = true;
 
     return true;
 }
