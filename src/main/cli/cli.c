@@ -6162,8 +6162,8 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
     if (useDshotTelemetry) {
         cliPrintLinef("Dshot reads: %u", dshotTelemetryState.readCount);
         cliPrintLinef("Dshot invalid pkts: %u", dshotTelemetryState.invalidPacketCount);
-        uint32_t directionChangeCycles = dshotDMAHandlerCycleCounters.changeDirectionCompletedAt - dshotDMAHandlerCycleCounters.irqAt;
-        uint32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
+        int32_t directionChangeCycles = cmp32(dshotDMAHandlerCycleCounters.changeDirectionCompletedAt, dshotDMAHandlerCycleCounters.irqAt);
+        int32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
         cliPrintLinef("Dshot directionChange cycles: %u, micros: %u", directionChangeCycles, directionChangeDurationUs);
         cliPrintLinefeed();
 

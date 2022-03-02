@@ -298,13 +298,18 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     static timeUs_t lastRxTimeUs;
 
     timeDelta_t frameAgeUs;
-    timeDelta_t refreshRateUs = rxGetFrameDelta(&frameAgeUs);
-    if (!refreshRateUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
-        refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
+    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
+
+    if (!frameDeltaUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
+        frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
     }
+
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
+    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
+
     lastRxTimeUs = currentTimeUs;
-    isRxRateValid = (refreshRateUs >= RC_RX_RATE_MIN_US && refreshRateUs <= RC_RX_RATE_MAX_US);
-    currentRxRefreshRate = constrain(refreshRateUs, RC_RX_RATE_MIN_US, RC_RX_RATE_MAX_US);
+    isRxRateValid = (frameDeltaUs >= RC_RX_RATE_MIN_US && frameDeltaUs <= RC_RX_RATE_MAX_US);
+    currentRxRefreshRate = constrain(frameDeltaUs, RC_RX_RATE_MIN_US, RC_RX_RATE_MAX_US);
 }
 
 uint16_t getCurrentRxRefreshRate(void)

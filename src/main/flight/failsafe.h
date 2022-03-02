@@ -28,18 +28,17 @@
 #define PERIOD_OF_1_SECONDS            1 * MILLIS_PER_SECOND
 #define PERIOD_OF_3_SECONDS            3 * MILLIS_PER_SECOND
 #define PERIOD_OF_30_SECONDS          30 * MILLIS_PER_SECOND
-#define PERIOD_RXDATA_FAILURE        200    // millis
+#define PERIOD_RXDATA_FAILURE        10     // millis
 #define PERIOD_RXDATA_RECOVERY       200    // millis
-
 
 typedef struct failsafeConfig_s {
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
     uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure".
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
-    uint8_t failsafe_switch_mode;           // failsafe switch action is 0: stage1 (identical to rc link loss), 1: disarms instantly, 2: stage2
+    uint8_t failsafe_switch_mode;           // failsafe switch action is 0: Stage 1, 1: Disarms instantly, 2: Stage 2
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it
-    uint16_t failsafe_recovery_delay;       // Time (in 0.1sec) of valid rx data (plus 200ms) needed to allow recovering from failsafe procedure
+    uint16_t failsafe_recovery_delay;       // Time (in 0.1sec) of valid rx data (min 200ms PERIOD_RXDATA_RECOVERY) to allow recovering from failsafe procedure
     uint8_t failsafe_stick_threshold;       // Stick deflection percentage to exit GPS Rescue procedure
 } failsafeConfig_t;
 
@@ -106,6 +105,5 @@ bool failsafeIsReceivingRxData(void);
 void failsafeCheckDataFailurePeriod(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
-
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);
