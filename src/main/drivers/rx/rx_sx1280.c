@@ -208,6 +208,7 @@ bool sx1280Init(IO_t resetPin, IO_t busyPin)
 
     if (busyPin) {
         IOInit(busyPin, OWNER_RX_SPI_EXPRESSLRS_BUSY, 0);
+        IOConfigGPIO(busyPin, IOCFG_IN_FLOATING);
     } else {
         busyPin = IO_NONE;
     }
