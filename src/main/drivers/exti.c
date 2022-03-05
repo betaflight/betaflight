@@ -131,6 +131,8 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
     extiChannelRec_t *rec = &extiChannelRecs[chIdx];
     rec->handler = cb;
 
+    EXTIDisable(io);
+
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
@@ -139,7 +141,6 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         .Pull = IO_CONFIG_GET_PULL(config),
     };
     HAL_GPIO_Init(IO_GPIO(io), &init);
-
 
     if (extiGroupPriority[group] > irqPriority) {
         extiGroupPriority[group] = irqPriority;
@@ -158,10 +159,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 #else
 # warning "Unknown CPU"
 #endif
-
     uint32_t extiLine = IO_EXTI_Line(io);
-
-    EXTI_ClearITPendingBit(extiLine);
 
     EXTI_InitTypeDef EXTIInit;
     EXTIInit.EXTI_Line = extiLine;
