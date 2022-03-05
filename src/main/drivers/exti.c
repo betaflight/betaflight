@@ -226,6 +226,7 @@ void EXTIEnable(IO_t io, bool enable)
         EXTI_REG_IMR |= 1 << extiLine;
     } else {
         EXTI_REG_IMR &= ~(1 << extiLine);
+        EXTI_REG_PR = extiLine;
     }
 #else
 # error "Unknown CPU"
