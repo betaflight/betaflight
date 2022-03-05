@@ -178,8 +178,8 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
     EXTIHandlerInit(&mag->exti, hmc5883_extiHandler);
     EXTIConfig(magIntIO, &mag->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
-    EXTIEnable(magIntIO, true);
-    EXTIEnable(magIntIO, true);
+    EXTIEnable(magIntIO);
+    EXTIEnable(magIntIO);
 #else
     UNUSED(mag);
 #endif

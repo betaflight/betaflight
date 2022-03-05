@@ -168,7 +168,7 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
     IOInit(eocIO, OWNER_BARO_EOC, 0);
     EXTIHandlerInit(&exti, bmp085ExtiHandler);
     EXTIConfig(eocIO, &exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
-    EXTIEnable(eocIO, true);
+    EXTIEnable(eocIO);
 #else
     UNUSED(config);
 #endif
