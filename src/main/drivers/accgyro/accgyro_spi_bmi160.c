@@ -255,7 +255,7 @@ static void bmi160IntExtiInit(gyroDev_t *gyro)
     IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, bmi160ExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING); // TODO - maybe pullup / pulldown ?
-    EXTIEnable(mpuIntIO, true);
+    EXTIEnable(mpuIntIO);
 }
 #endif
 

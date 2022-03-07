@@ -106,7 +106,7 @@ static bool sx1280MarkBusy(void)
 
 static void sx1280ClearBusyFn(void)
 {
-    EXTIEnable(busy, false);
+    EXTIDisable(busy);
 }
 
 // Switch to waiting for busy interrupt
@@ -143,9 +143,9 @@ static void sx1280SetBusyFn(extiHandlerCallback *waitingFn)
         sx1280Busy = IORead(busy);
         if (sx1280Busy) {
             EXTIHandlerInit(&busyIntContext.exti, waitingFn);
-            EXTIEnable(busy, true);
+            EXTIEnable(busy);
         } else {
-            EXTIEnable(busy, false);
+            EXTIDisable(busy);
         }
     }
 

@@ -138,7 +138,7 @@ void rxSpiExtiInit(ioConfig_t rxSpiExtiPinConfig, extiTrigger_t rxSpiExtiPinTrig
 
         EXTIHandlerInit(&rxSpiExtiCallbackRec, rxSpiExtiHandler);
         EXTIConfig(extiPin, &rxSpiExtiCallbackRec, NVIC_PRIO_RX_INT_EXTI, rxSpiExtiPinConfig, rxSpiExtiPinTrigger);
-        EXTIEnable(extiPin, true);
+        EXTIEnable(extiPin);
 
         // Check that we've not missed the rising edge on the interrupt line
         if (rxSpiGetExtiState()) {

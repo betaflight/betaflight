@@ -180,7 +180,9 @@ void EXTIHandlerInit(extiCallbackRec_t *, extiHandlerCallback *) {
 void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t) {
 }
 
-void EXTIEnable(IO_t, bool) {
+void EXTIEnable(IO_t) {
+}
+void EXTIDisable(IO_t) {
 }
 
 
