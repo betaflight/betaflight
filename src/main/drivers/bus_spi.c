@@ -378,7 +378,7 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 }
 
 // Interrupt handler for SPI receive DMA completion
-static void spiIrqHandler(const extDevice_t *dev)
+FAST_IRQ_HANDLER static void spiIrqHandler(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     busSegment_t *nextSegment;
