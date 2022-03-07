@@ -572,7 +572,7 @@ static void sx1280StartTransmittingDMA(extiCallbackRec_t *cb);
 FAST_IRQ_HANDLER void sx1280ISR(void)
 {
     // Only attempt to access the SX1280 if it is currently idle to avoid any race condition
-    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+    ATOMIC_BLOCK(NVIC_PRIO_RX_INT_EXTI) {
         if (sx1280EnableBusy()) {
             pendingISR = false;
             sx1280SetBusyFn(sx1280IrqGetStatus);
