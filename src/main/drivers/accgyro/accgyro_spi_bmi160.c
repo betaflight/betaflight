@@ -117,7 +117,6 @@ uint8_t bmi160Detect(const extDevice_t *dev)
     return BMI_160_SPI;
 }
 
-
 /**
  * @brief Initialize the BMI160 6-axis sensor.
  * @return 0 for success, -1 for failure to allocate, -10 for failure to get irq
@@ -146,11 +145,11 @@ static void BMI160_Init(const extDevice_t *dev)
 static uint8_t getBmiOversampleMode()
 {
     switch(gyroConfig()->gyro_hardware_lpf) {
-        case GYRO_BMI_OVERSAMPLE_OSR4:
-            return BMI160_VAL_GYRO_CONF_BWP_OSR4;
-        case GYRO_BMI_OVERSAMPLE_OSR2:
-            return BMI160_VAL_GYRO_CONF_BWP_OSR2;
         case GYRO_HARDWARE_LPF_NORMAL:
+            return BMI160_VAL_GYRO_CONF_BWP_OSR4;
+        case GYRO_HARDWARE_LPF_OPTION_1:
+            return BMI160_VAL_GYRO_CONF_BWP_OSR2;
+        case GYRO_HARDWARE_LPF_OPTION_2:
             return BMI160_VAL_GYRO_CONF_BWP_NORM;
         case GYRO_HARDWARE_LPF_EXPERIMENTAL:
             return BMI160_VAL_GYRO_CONF_BWP_NORM;

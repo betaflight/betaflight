@@ -277,15 +277,12 @@ static const char * const lookupTableRxSpi[] = {
 
 static const char * const lookupTableGyroHardwareLpf[] = {
     "NORMAL",
+    "OPTION_1",
+    "OPTION_2",
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
     "EXPERIMENTAL",
 #endif
-#if defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270)
-    "BMI_OSR2",
-    "BMI_OSR4",
-#endif
 };
-
 
 #ifdef USE_CAMERA_CONTROL
 static const char * const lookupTableCameraControlMode[] = {
