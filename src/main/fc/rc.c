@@ -64,7 +64,6 @@ float rcCommandDelta[XYZ_AXIS_COUNT];
 #endif
 static float rawSetpoint[XYZ_AXIS_COUNT];
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
-static float rcDeflectionSmoothed[3];
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 static uint16_t currentRxRefreshRate;
@@ -90,12 +89,14 @@ enum {
 #define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS   1000  // Additional time to wait after receiving first valid rx frame before initial training starts
 #define RC_SMOOTHING_FILTER_RETRAINING_DELAY_MS 2000  // Guard time to wait after retraining to prevent retraining again too quickly
 #define RC_SMOOTHING_RX_RATE_CHANGE_PERCENT     20    // Look for samples varying this much from the current detected frame rate to initiate retraining
-#define RC_SMOOTHING_RX_RATE_MIN_US             950   // 0.950ms to fit 1kHz without an issue
-#define RC_SMOOTHING_RX_RATE_MAX_US             65500 // 65.5ms or 15.26hz
 #define RC_SMOOTHING_FEEDFORWARD_INITIAL_HZ     100 // The value to use for "auto" when interpolated feedforward is enabled
 
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
+static float rcDeflectionSmoothed[3];
 #endif // USE_RC_SMOOTHING_FILTER
+
+#define RC_RX_RATE_MIN_US                       950   // 0.950ms to fit 1kHz without an issue
+#define RC_RX_RATE_MAX_US                       65500 // 65.5ms or 15.26hz
 
 bool getShouldUpdateFeedforward()
 // only used in pid.c, when feedforward is enabled, to initiate a new FF value
@@ -302,8 +303,8 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
         refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
     }
     lastRxTimeUs = currentTimeUs;
-    isRxRateValid = (refreshRateUs >= RC_SMOOTHING_RX_RATE_MIN_US && refreshRateUs <= RC_SMOOTHING_RX_RATE_MAX_US);
-    currentRxRefreshRate = constrain(refreshRateUs, RC_SMOOTHING_RX_RATE_MIN_US, RC_SMOOTHING_RX_RATE_MAX_US);
+    isRxRateValid = (refreshRateUs >= RC_RX_RATE_MIN_US && refreshRateUs <= RC_RX_RATE_MAX_US);
+    currentRxRefreshRate = constrain(refreshRateUs, RC_RX_RATE_MIN_US, RC_RX_RATE_MAX_US);
 }
 
 uint16_t getCurrentRxRefreshRate(void)
