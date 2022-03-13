@@ -26,6 +26,7 @@
 #include "platform.h"
 
 #include "sensors/gyro.h"
+
 #ifdef USE_ACCGYRO_BMI270
 
 #include "drivers/accgyro/accgyro.h"
