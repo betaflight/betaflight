@@ -46,9 +46,10 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
+#include "sensors/gyro.h"
+
 #include "accgyro.h"
 #include "accgyro_spi_bmi160.h"
-#include "sensors/gyro.h"
 
 
 // 10 MHz max SPI frequency
