@@ -38,6 +38,7 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
+#include "sensors/gyro.h"
 
 // 10 MHz max SPI frequency
 #define BMI270_MAX_SPI_CLK_HZ 10000000
@@ -187,7 +188,7 @@ static void bmi270UploadConfig(const extDevice_t *dev)
     bmi270RegisterWrite(dev, BMI270_REG_INIT_CTRL, 1, 1);
 }
 
-static uint8_t getBmiOversampleMode()
+static uint8_t getBmiOsrMode()
 {
     switch(gyroConfig()->gyro_hardware_lpf) {
         case GYRO_HARDWARE_LPF_NORMAL:
@@ -239,7 +240,7 @@ static void bmi270Config(gyroDev_t *gyro)
     bmi270RegisterWrite(dev, BMI270_REG_ACC_RANGE, BMI270_VAL_ACC_RANGE_16G, 1);
 
     // Configure the gyro
-    bmi270RegisterWrite(dev, BMI270_REG_GYRO_CONF, (BMI270_VAL_GYRO_CONF_FILTER_PERF << 7) | (BMI270_VAL_GYRO_CONF_NOISE_PERF << 6) | (getBmiOversampleMode() << 4) | BMI270_VAL_GYRO_CONF_ODR3200, 1);
+    bmi270RegisterWrite(dev, BMI270_REG_GYRO_CONF, (BMI270_VAL_GYRO_CONF_FILTER_PERF << 7) | (BMI270_VAL_GYRO_CONF_NOISE_PERF << 6) | (getBmiOsrMode() << 4) | BMI270_VAL_GYRO_CONF_ODR3200, 1);
 
     // Configure the gyro full-range scale
     bmi270RegisterWrite(dev, BMI270_REG_GYRO_RANGE, BMI270_VAL_GYRO_RANGE_2000DPS, 1);
