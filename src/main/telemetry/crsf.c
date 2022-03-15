@@ -431,7 +431,7 @@ void speedNegotiationProcess(uint32_t currentTime)
         crsfRxSendTelemetryData();
     } else {
         if (crsfSpeed.hasPendingReply) {
-            bool found = crsfSpeed.index < BAUD_COUNT ? true : false;
+            bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
             sbuf_t crsfSpeedNegotiationBuf;
             sbuf_t *dst = &crsfSpeedNegotiationBuf;
             crsfInitializeFrame(dst);
@@ -440,7 +440,7 @@ void speedNegotiationProcess(uint32_t currentTime)
             crsfFinalize(dst);
             crsfRxSendTelemetryData();
             crsfSpeed.hasPendingReply = false;
-            crsfSpeed.isNewSpeedValid = true;
+            crsfSpeed.isNewSpeedValid = found;
             crsfSpeed.confirmationTime = currentTime;
             return;
         } else if (crsfSpeed.isNewSpeedValid) {
