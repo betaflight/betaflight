@@ -228,7 +228,7 @@ boolean isBiQuadReady();
 
 ## Parameter order
 
-Data should move from right to left, as in memcpy(void *dst, const void *src, size\_t size).
+Data should move from right to left, as in `memcpy(void *dst, const void *src, size\_t size)`.
 This also mimics the assignment operator (e.g. dst = src;)
 
 When a group of functions act on an 'object' then that object should be the first parameter for all the functions, e.g.:
