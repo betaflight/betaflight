@@ -30,7 +30,6 @@
 #define NVIC_PRIO_TRANSPONDER_DMA          NVIC_BUILD_PRIORITY(3, 0)
 
 // RX_SPI must be lower priority than SPI DMA so EXTI ISRs don't interfere with SPI transfers and transfer complete callbacks
-#define NVIC_PRIO_RX_SPI_INT_EXTI          NVIC_BUILD_PRIORITY(3, 0x0f)
 #define NVIC_PRIO_RX_INT_EXTI              NVIC_BUILD_PRIORITY(3, 0x0f)
 #define NVIC_PRIO_RX_BUSY_EXTI             NVIC_BUILD_PRIORITY(3, 0x0f)
 
