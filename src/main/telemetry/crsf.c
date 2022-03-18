@@ -32,13 +32,14 @@
 
 #include "cms/cms.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
-#include "config/config.h"
 #include "common/crc.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "drivers/nvic.h"
@@ -248,6 +249,18 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, batteryRemainingPercentage);
 }
 
+/*
+0x0B Heartbeat
+Payload:
+int16_t    origin_add ( Origin Device address )
+*/
+void crsfFrameHeartbeat(sbuf_t *dst)
+{
+    sbufWriteU8(dst, CRSF_FRAME_HEARTBEAT_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_HEARTBEAT);
+    sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+}
+
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
     CRSF_ACTIVE_ANTENNA2 = 1
@@ -418,40 +431,36 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
-void speedNegotiationProcess(uint32_t currentTime)
+void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
-    if (!featureIsEnabled(FEATURE_TELEMETRY) && getCrsfDesiredSpeed() == CRSF_BAUDRATE) {
-        // to notify the RX to fall back to default baud rate by sending device info frame if telemetry is disabled
-        sbuf_t crsfPayloadBuf;
-        sbuf_t *dst = &crsfPayloadBuf;
+    if (crsfSpeed.hasPendingReply) {
+        bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
+        sbuf_t crsfSpeedNegotiationBuf;
+        sbuf_t *dst = &crsfSpeedNegotiationBuf;
         crsfInitializeFrame(dst);
-        crsfFrameDeviceInfo(dst);
+        crsfFrameSpeedNegotiationResponse(dst, found);
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
-    } else {
-        if (crsfSpeed.hasPendingReply) {
-            bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
-            sbuf_t crsfSpeedNegotiationBuf;
-            sbuf_t *dst = &crsfSpeedNegotiationBuf;
-            crsfInitializeFrame(dst);
-            crsfFrameSpeedNegotiationResponse(dst, found);
-            crsfRxSendTelemetryData(); // prevent overwriting previous data
-            crsfFinalize(dst);
-            crsfRxSendTelemetryData();
-            crsfSpeed.hasPendingReply = false;
-            crsfSpeed.isNewSpeedValid = found;
-            crsfSpeed.confirmationTime = currentTime;
-            return;
-        } else if (crsfSpeed.isNewSpeedValid) {
-            if (currentTime - crsfSpeed.confirmationTime >= 4000) {
-                // delay 4ms before applying the new baudrate
-                crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
-                crsfSpeed.isNewSpeedValid = false;
-                isCrsfV3Running = true;
-                return;
-            }
+        crsfSpeed.hasPendingReply = false;
+        crsfSpeed.isNewSpeedValid = found;
+        crsfSpeed.confirmationTime = currentTimeUs;
+    } else if (crsfSpeed.isNewSpeedValid) {
+        if (cmpTimeUs(currentTimeUs, crsfSpeed.confirmationTime) >= 4000) {
+            // delay 4ms before applying the new baudrate
+            crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
+            crsfSpeed.isNewSpeedValid = false;
+            isCrsfV3Running = true;
         }
+    } else if (!featureIsEnabled(FEATURE_TELEMETRY) && crsfRxUseNegotiatedBaud()) {
+        // Send heartbeat if telemetry is disabled to allow RX to detect baud rate mismatches
+        sbuf_t crsfPayloadBuf;
+        sbuf_t *dst = &crsfPayloadBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameHeartbeat(dst);
+        crsfRxSendTelemetryData(); // prevent overwriting previous data
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
     }
 }
 #endif
