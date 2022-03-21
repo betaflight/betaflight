@@ -119,6 +119,11 @@ void setCrsfDefaultSpeed(void)
     isCrsfV3Running = false;
     crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
 }
+
+bool crsfBaudNegotiationInProgress(void)
+{
+    return crsfSpeed.hasPendingReply || crsfSpeed.isNewSpeedValid;
+}
 #endif
 
 void initCrsfMspBuffer(void)
