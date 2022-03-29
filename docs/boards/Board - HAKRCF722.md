@@ -110,6 +110,23 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 62	PB9	I2C1_SDA	
 
 
+## Hints
+
+HAKRC F7 mini default target is "MATEKF722SE", the internal flash configuration is wrong for this. To fix it, run this in cli:
+
+```
+resource SDCARD_CS 1 none
+resource FLASH_CS 1 D02
+set blackbox_device = SPIFLASH
+set flash_spi_bus = 3
+set sdcard_mode = OFF
+save
+```
+
+power cycle and verify that blackbox is working
+
+
+
 ## Manufacturers and Distributors
 
 HAKRC Loopur
