@@ -28,7 +28,7 @@
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
-#define TASK_STATS_MOVING_SUM_COUNT     64
+#define TASK_STATS_MOVING_SUM_COUNT     8
 
 #define LOAD_PERCENTAGE_ONE             100
 

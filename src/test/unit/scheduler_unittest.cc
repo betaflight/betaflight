@@ -74,7 +74,7 @@ extern "C" {
     uint32_t simulatedTime = 0;
     uint32_t micros(void) { return simulatedTime; }
     uint32_t millis(void) { return simulatedTime/1000; } // Note simplistic mapping suitable only for short unit tests
-    uint32_t clockCyclesToMicros(uint32_t x) { return x/10;}
+    int32_t clockCyclesToMicros(int32_t x) { return x/10;}
     int32_t clockCyclesTo10thMicros(int32_t x) { return x;}
     uint32_t clockMicrosToCycles(uint32_t x) { return x*10;}
     uint32_t getCycleCounter(void) {return simulatedTime * 10;}

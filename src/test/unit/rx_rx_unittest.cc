@@ -27,6 +27,8 @@ extern "C" {
     #include "build/debug.h"
     #include "drivers/io.h"
     #include "fc/rc_controls.h"
+    #include "fc/runtime_config.h"
+    #include "flight/failsafe.h"
     #include "rx/rx.h"
     #include "fc/rc_modes.h"
     #include "common/maths.h"
@@ -39,6 +41,7 @@ extern "C" {
     boxBitmask_t rcModeActivationMask;
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode = 0;
+    uint8_t armingFlags = 0;
 
     bool isPulseValid(uint16_t pulseDuration);
 
@@ -47,6 +50,7 @@ extern "C" {
     );
 
     PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -210,7 +214,9 @@ extern "C" {
 
     void failsafeOnRxSuspend(uint32_t ) {}
     void failsafeOnRxResume(void) {}
+    bool failsafeIsActive(void) { return false; }
     bool failsafeIsReceivingRxData(void) { return true; }
+    uint32_t failsafeFailurePeriodMs(void) { return 400; }
 
     uint32_t micros(void) { return 0; }
     uint32_t millis(void) { return 0; }
@@ -236,6 +242,8 @@ extern "C" {
     void xBusInit(const rxConfig_t *, rxRuntimeState_t *) {}
     void rxMspInit(const rxConfig_t *, rxRuntimeState_t *) {}
     void rxPwmInit(const rxConfig_t *, rxRuntimeState_t *) {}
+    void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+    void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
     bool taskUpdateRxMainInProgress() { return true; }
     float pt1FilterGain(float f_cut, float dT)
     {

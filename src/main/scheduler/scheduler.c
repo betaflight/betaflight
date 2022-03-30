@@ -494,7 +494,7 @@ FAST_CODE void scheduler(void)
             }
             DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 0, clockCyclesTo10thMicros(cmpTimeCycles(nowCycles, lastTargetCycles)));
 #endif
-            currentTimeUs = clockCyclesToMicros(nowCycles);
+            currentTimeUs = micros();
             taskExecutionTimeUs += schedulerExecuteTask(gyroTask, currentTimeUs);
 
             if (gyroFilterReady()) {
@@ -504,15 +504,15 @@ FAST_CODE void scheduler(void)
                 taskExecutionTimeUs += schedulerExecuteTask(getTask(TASK_PID), currentTimeUs);
             }
             if (rxFrameReady()) {
-                // Check to for incoming RX data. Don't do this in the checker as that is called repeatedly within
+                // Check for incoming RX data. Don't do this in the checker as that is called repeatedly within
                 // a given gyro loop, and ELRS takes a long time to process this and so can only be safely processed
                 // before the checkers
-                rxFrameCheck(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX)->lastExecutedAtUs));
+                rxFrameCheck(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX)->lastExecutedAtUs), getTask(TASK_RX)->movingSumDeltaTime10thUs / TASK_STATS_MOVING_SUM_COUNT);
             }
 
             // Check for failsafe conditions without reliance on the RX task being well behaved
             if (cmp32(millis(), lastFailsafeCheckMs) > PERIOD_RXDATA_FAILURE) {
-                // This is very low cost taking less that 4us every 200ms
+                // This is very low cost taking less that 4us every 10ms
                 failsafeCheckDataFailurePeriod();
                 failsafeUpdateState();
                 lastFailsafeCheckMs = millis();

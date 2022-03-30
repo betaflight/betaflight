@@ -183,7 +183,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
     failsafeOnValidDataReceived();                  // set last valid sample at current time
 
     // when
-    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND); sysTickUptime++) {
+    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND); sysTickUptime++) {
         failsafeOnValidDataFailed();
 
         failsafeUpdateState();
@@ -237,7 +237,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_TRUE(isArmingDisabled());
 
     // given
-    sysTickUptime += PERIOD_OF_30_SECONDS + 1;      // adjust time to point just past the required additional recovery time
+    sysTickUptime += PERIOD_OF_3_SECONDS + 1;      // adjust time to point just past the required additional recovery time
     failsafeOnValidDataReceived();
 
     // when
@@ -361,7 +361,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
     // given
-    sysTickUptime += PERIOD_OF_1_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
     failsafeOnValidDataReceived();
 
     // when
@@ -435,8 +435,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     failsafeUpdateState();                          // should activate stage2 immediately
 
     // then
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_TRUE(failsafeIsActive());               // stick induced failsafe allows re-arming
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
 
@@ -456,7 +455,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
     // given
-    sysTickUptime += PERIOD_OF_30_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
 
     // and
     deactivateBoxFailsafe();
@@ -497,7 +496,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     sysTickUptime = 0;                              // restart time from 0
     failsafeOnValidDataReceived();                  // set last valid sample at current time
 
-    // when
+    // enter stage 1 failsafe
     for (sysTickUptime = 0; sysTickUptime < PERIOD_RXDATA_FAILURE; sysTickUptime++) {
         failsafeOnValidDataFailed();
 
@@ -520,10 +519,20 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_FALSE(isArmingDisabled());               // arming not blocked in stage 1
 
-    // given
-    // enough valid data is received
+    // add enough time to enter stage 2
+    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND + 1;
+    failsafeOnValidDataFailed();
+
+    // when
+    failsafeUpdateState();
+
+    // then
+    EXPECT_TRUE(isArmingDisabled());                // arming blocked until recovery time
+    EXPECT_FALSE(failsafeIsActive());               // failsafe is still not active
+
+    // given valid data is received for the recovery time, allow re-arming
     uint32_t sysTickTarget = sysTickUptime + PERIOD_RXDATA_RECOVERY;
     for (; sysTickUptime < sysTickTarget; sysTickUptime++) {
         failsafeOnValidDataReceived();
@@ -546,6 +555,7 @@ extern "C" {
 float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 float rcCommand[4];
 int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode = 0;
 bool isUsingSticksToArm = true;
 
 PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
