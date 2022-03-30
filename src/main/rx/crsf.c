@@ -34,6 +34,8 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
+
 #include "pg/rx.h"
 
 #include "drivers/serial.h"
@@ -464,8 +466,8 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
             }
         }
 #if defined(USE_CRSF_V3)
-        if (crsfBaudNegotiationInProgress()) {
-            // don't count errors when negotiation in progress.
+        if (crsfBaudNegotiationInProgress() || isEepromWriteInProgress()) {
+            // don't count errors when negotiation or eeprom write is in progress
             crsfFrameErrorCnt = 0;
         } else if (crsfFrameErrorCnt >= CRSF_FRAME_ERROR_COUNT_THRESHOLD) {
             // fall back to default speed if speed mismatch detected
