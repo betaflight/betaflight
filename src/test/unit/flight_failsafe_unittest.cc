@@ -290,7 +290,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
 
     // given
     failsafeOnValidDataFailed();                    // set last invalid sample at current time
-    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;    // adjust time to point just past the recovery time to
     failsafeOnValidDataReceived();                  // cause a recovered link
 
     // when
@@ -303,7 +303,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     EXPECT_TRUE(isArmingDisabled());
 
     // given
-    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    sysTickUptime += PERIOD_OF_1_SECONDS + 1;       // adjust time to point just past the required additional recovery time
     failsafeOnValidDataReceived();
 
     // when
@@ -401,7 +401,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Drop)
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
     // given
-    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    sysTickUptime += PERIOD_OF_1_SECONDS + 1;       // adjust time to point just past the required additional recovery time
     deactivateBoxFailsafe();
     failsafeOnValidDataReceived();                  // inactive box failsafe gives valid data
 

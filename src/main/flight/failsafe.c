@@ -255,10 +255,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
 #endif
                             ) {
-                            // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds
+                            // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds before failsafe
+                            // protects against false arming when the Tx is powered up after the quad
                             failsafeActivate();
-                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
-                            failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
+                            // skip auto-landing procedure
+                            failsafeState.phase = FAILSAFE_LANDED;
+                            // re-arm at rxDataRecoveryPeriod - default is 1.0 seconds
+                            failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
                         } else {
                             failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
                         }
@@ -289,6 +292,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         case FAILSAFE_PROCEDURE_DROP_IT:
                             // Drop the craft
                             failsafeActivate();
+                            // re-arm at rxDataRecoveryPeriod - default is 1.0 seconds
+                            failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
                             // skip auto-landing procedure
                             failsafeState.phase = FAILSAFE_LANDED;
                             break;
