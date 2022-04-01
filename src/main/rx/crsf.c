@@ -636,11 +636,17 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
+    uint32_t crsfBaudrate = CRSF_BAUDRATE;
+
+#if defined(USE_CRSF_V3)
+    crsfBaudrate = (isMPUSoftReset() && rxConfig->crsf_use_negotiated_baud) ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
+#endif
+
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         crsfDataReceive,
         rxRuntimeState,
-        CRSF_BAUDRATE,
+        crsfBaudrate,
         CRSF_PORT_MODE,
         CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );

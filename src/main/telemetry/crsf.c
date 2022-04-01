@@ -100,6 +100,19 @@ typedef struct {
 
 static crsfSpeedControl_s crsfSpeed = {0};
 
+uint32_t crsfCachedBaudrate __attribute__ ((section (".noinit"))); // Used for retaining negotiated baudrate after soft reset
+
+uint32_t getCrsfCachedBaudrate(void)
+{
+    // check if valid first. return default baudrate if not
+    for (unsigned i = 0; i < BAUD_COUNT; i++) {
+        if (crsfCachedBaudrate == baudRates[i] && baudRates[i] >= CRSF_BAUDRATE) {
+            return crsfCachedBaudrate;
+        }
+    }
+    return CRSF_BAUDRATE;
+}
+
 bool checkCrsfCustomizedSpeed(void)
 {
     return crsfSpeed.index < BAUD_COUNT ? true : false;
@@ -117,7 +130,8 @@ void setCrsfDefaultSpeed(void)
     crsfSpeed.confirmationTime = 0;
     crsfSpeed.index = BAUD_COUNT;
     isCrsfV3Running = false;
-    crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
+    crsfCachedBaudrate = getCrsfDesiredSpeed();
+    crsfRxUpdateBaudrate(crsfCachedBaudrate);
 }
 
 bool crsfBaudNegotiationInProgress(void)
@@ -453,7 +467,8 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
     } else if (crsfSpeed.isNewSpeedValid) {
         if (cmpTimeUs(currentTimeUs, crsfSpeed.confirmationTime) >= 4000) {
             // delay 4ms before applying the new baudrate
-            crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
+            crsfCachedBaudrate = getCrsfDesiredSpeed();
+            crsfRxUpdateBaudrate(crsfCachedBaudrate);
             crsfSpeed.isNewSpeedValid = false;
             isCrsfV3Running = true;
         }
