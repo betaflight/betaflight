@@ -958,9 +958,19 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
 
     cycleRfMode(timeStampMs);
 
-    uint32_t localLastValidPacket = receiver.lastValidPacketMs; // Required to prevent race condition due to LastValidPacket getting updated from ISR
+    // Note that will updated from ISR and could thus be ahead of the timestamp
+    uint32_t localLastValidPacket = receiver.lastValidPacketMs;
+
+    // Determine the time in ms since the last valid packet was received. As this will be received under interrupt control it may be
+    // after the timeStampMs value was taken in which case treat as if it arrived at the same time to avoid a timeout
+    int32_t lastPacketDeltaMs = cmp32(timeStampMs, localLastValidPacket);
+
+    if (lastPacketDeltaMs < 0) {
+        lastPacketDeltaMs = 0;
+    }
+
     if ((receiver.connectionState == ELRS_DISCONNECT_PENDING) || // check if we lost conn.
-        ((receiver.connectionState == ELRS_CONNECTED) && (receiver.rfPerfParams->disconnectTimeoutMs < (timeStampMs - localLastValidPacket)))) {
+        ((receiver.connectionState == ELRS_CONNECTED) && ((uint32_t)lastPacketDeltaMs > receiver.rfPerfParams->disconnectTimeoutMs))) {
         lostConnection();
     }
 
