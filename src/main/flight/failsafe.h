@@ -107,3 +107,6 @@ void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);
+#ifdef USE_GPS_RESCUE
+bool failsafePhaseIsGpsRescue(void);
+#endif

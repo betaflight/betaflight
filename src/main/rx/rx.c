@@ -642,6 +642,9 @@ void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
     const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+#ifdef USE_GPS_RESCUE
+    const bool gpsRescue = failsafePhaseIsGpsRescue();
+#endif
     rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
     //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
 
@@ -651,28 +654,32 @@ void detectAndApplySignalLossBehaviour(void)
           //  if the packet is bad, we don't allow any channels to be good
 
         if (thisChannelValid) {
-            //  reset the invalid pulse period timer for each good-channel
+            //  reset the invalid pulse period timer for every good channel
             validRxSignalTimeout[channel] = currentTimeMs + MAX_INVALID_PULSE_TIME;
         }
 
-        // set failsafe and hold values
-        if (failsafeIsActive() && ARMING_FLAG(ARMED)) {
-            //  in STAGE 2 failsafe, and armed.  Apply failsafe values until failsafe ends or disarmed
+       if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
+            //  apply failsafe values, until failsafe ends, or disarmed, unless in GPS Return
             if (channel < NON_AUX_CHANNEL_COUNT) {
+#ifdef USE_GPS_RESCUE
+                if (gpsRescue) {
+                    continue;
+                } 
+#endif 
                 if (channel == THROTTLE ) {
                     sample = failsafeConfig()->failsafe_throttle;
                 } else {
                     sample = rxConfig()->midrc;
                 }
             } else if (!failsafeAuxSwitch) {
-                //  Aux channels as Set in Configurator, unless failsafe initiated by switch
+                //  aux channels as Set in Configurator, unless failsafe initiated by switch
                 sample = getRxfailValue(channel);
             }
         } else {
             //  in STAGE 1 failsafe or HOLD period.
             if (!thisChannelValid) {
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
-                    //  in HOLD PERIOD of 300ms for invalid channels/packets
+                    //  HOLD PERIOD is MAX_INVALID_PULSE_TIME or 300ms for invalid channels/packets
                 } else {
                     //  in STAGE 1 failsafe now that hold time has expired
                     if (channel < NON_AUX_CHANNEL_COUNT) {

@@ -125,6 +125,13 @@ bool failsafeIsActive(void)
     return failsafeState.active;
 }
 
+#ifdef USE_GPS_RESCUE
+bool failsafePhaseIsGpsRescue(void)
+{
+    return failsafeState.phase == FAILSAFE_GPS_RESCUE;
+}
+#endif
+
 void failsafeStartMonitoring(void)
 {
     failsafeState.monitoring = true;
@@ -328,6 +335,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
                     if (areSticksActive(failsafeConfig()->failsafe_stick_threshold)) {
+                        //  hence we must allow stick inputs during FAILSAFE_GPS_RESCUE see PR #7936 for rationale
                         failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                         reprocessState = true;
                     }
