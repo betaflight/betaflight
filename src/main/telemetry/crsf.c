@@ -89,6 +89,9 @@ typedef struct mspBuffer_s {
 static mspBuffer_t mspRxBuffer;
 
 #if defined(USE_CRSF_V3)
+
+#define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 20000 // 20ms
+
 static bool isCrsfV3Running = false;
 typedef struct {
     uint8_t hasPendingReply:1;
@@ -581,6 +584,7 @@ typedef enum {
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
+    CRSF_FRAME_HEARTBEAT_INDEX,
     CRSF_SCHEDULE_COUNT_MAX
 } crsfFrameTypeIndex_e;
 
@@ -650,6 +654,15 @@ static void processCrsf(void)
         crsfFinalize(dst);
     }
 #endif
+
+#if defined(USE_CRSF_V3)
+    if (currentSchedule & BIT(CRSF_FRAME_HEARTBEAT_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameHeartbeat(dst);
+        crsfFinalize(dst);
+    }
+#endif
+
     crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
 }
 
@@ -690,6 +703,14 @@ void initCrsfTelemetry(void)
         crsfSchedule[index++] = BIT(CRSF_FRAME_GPS_INDEX);
     }
 #endif
+
+#if defined(USE_CRSF_V3)
+    while (index < (CRSF_CYCLETIME_US / CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) && index < CRSF_SCHEDULE_COUNT_MAX) {
+        // schedule heartbeat to ensure that telemetry/heartbeat frames are sent at minimum 50Hz
+        crsfSchedule[index++] = BIT(CRSF_FRAME_HEARTBEAT_INDEX);
+    }
+#endif
+
     crsfScheduleCount = (uint8_t)index;
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
