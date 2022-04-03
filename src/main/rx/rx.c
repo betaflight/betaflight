@@ -530,7 +530,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
             //  initial time to signalReceived failure is 2.5 packets then every 100ms
             rxSignalReceived = false;
             needRxSignalBefore = currentTimeUs + (timeDelta_t)DELAY_10_HZ;
-            //  review rcData values every 100ms in failsafe changed them
+            //  review rcData values every 100ms in case failsafe changed them
             rxDataProcessingRequired = true;
         }
     }
@@ -644,7 +644,6 @@ void detectAndApplySignalLossBehaviour(void)
     const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
     //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
-
     for (int channel = 0; channel < rxChannelCount; channel++) {
         float sample = rcRaw[channel];
         const bool thisChannelValid = rxFlightChannelsValid && isPulseValid(sample);
@@ -656,7 +655,8 @@ void detectAndApplySignalLossBehaviour(void)
         }
 
        if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
-            //  apply failsafe values, until failsafe ends, or disarmed, unless in GPS Return
+            //  in STAGE 2 failsafe, and armed.  Apply failsafe values until failsafe ends or disarmed
+            //  in GPS Rescue mode, allow flight channel signals through
             if ((channel < NON_AUX_CHANNEL_COUNT) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 if (channel == THROTTLE ) {
                     sample = failsafeConfig()->failsafe_throttle;
@@ -671,12 +671,12 @@ void detectAndApplySignalLossBehaviour(void)
             //  in STAGE 1 failsafe or HOLD period.
             if (!thisChannelValid) {
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
-                    //  HOLD PERIOD is MAX_INVALID_PULSE_TIME or 300ms for invalid channels/packets
+                    //  HOLD invalid channel values for up to MAX_INVALID_PULSE_TIME (300ms)
                 } else {
-                    //  in STAGE 1 failsafe now that hold time has expired
+                    //  then use STAGE 1 failsafe values when MAX_INVALID_PULSE_TIME is exceeded
                     if (channel < NON_AUX_CHANNEL_COUNT) {
                         rxFlightChannelsValid = false;
-                        //  some flight channels were bad, so flag them
+                        //  flag that some flight channels were bad
                         sample = getRxfailValue(channel);
                         //  affected RPYT values will get Stage 1 values
                     } else if (!failsafeAuxSwitch) {
