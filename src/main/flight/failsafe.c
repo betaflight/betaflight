@@ -125,13 +125,6 @@ bool failsafeIsActive(void)
     return failsafeState.active;
 }
 
-#ifdef USE_GPS_RESCUE
-bool failsafePhaseIsGpsRescue(void)
-{
-    return failsafeState.phase == FAILSAFE_GPS_RESCUE;
-}
-#endif
-
 void failsafeStartMonitoring(void)
 {
     failsafeState.monitoring = true;
@@ -306,6 +299,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             break;
 #ifdef USE_GPS_RESCUE
                         case FAILSAFE_PROCEDURE_GPS_RESCUE:
+                            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
                             failsafeActivate();
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
                             break;
@@ -341,7 +335,6 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     }
                 } else {
                     if (armed) {
-                        ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
                         beeperMode = BEEPER_RX_LOST_LANDING;
                     } else {
                         // require 3 seconds of valid rxData
@@ -381,7 +374,11 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                 failsafeState.phase = FAILSAFE_IDLE;
                 failsafeState.active = false;
+#ifdef USE_GPS_RESCUE
+                DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+#else
                 DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
+#endif
                 unsetArmingDisabled(ARMING_DISABLED_FAILSAFE);
                 reprocessState = true;
                 break;

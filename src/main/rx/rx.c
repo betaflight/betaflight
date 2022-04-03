@@ -642,9 +642,6 @@ void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
     const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
-#ifdef USE_GPS_RESCUE
-    const bool gpsRescue = failsafePhaseIsGpsRescue();
-#endif
     rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
     //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
 
@@ -660,12 +657,7 @@ void detectAndApplySignalLossBehaviour(void)
 
        if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
             //  apply failsafe values, until failsafe ends, or disarmed, unless in GPS Return
-            if (channel < NON_AUX_CHANNEL_COUNT) {
-#ifdef USE_GPS_RESCUE
-                if (gpsRescue) {
-                    continue;
-                } 
-#endif 
+            if ((channel < NON_AUX_CHANNEL_COUNT) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
                 if (channel == THROTTLE ) {
                     sample = failsafeConfig()->failsafe_throttle;
                 } else {
