@@ -217,6 +217,7 @@ extern "C" {
     bool failsafeIsActive(void) { return false; }
     bool failsafeIsReceivingRxData(void) { return true; }
     uint32_t failsafeFailurePeriodMs(void) { return 400; }
+    uint16_t flightModeFlags = 0;
 
     uint32_t micros(void) { return 0; }
     uint32_t millis(void) { return 0; }

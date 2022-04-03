@@ -116,6 +116,7 @@ bool failsafeIsReceivingRxData(void) { return true; }
 bool taskUpdateRxMainInProgress() { return true; }
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+uint16_t flightModeFlags = 0;
 
 uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }

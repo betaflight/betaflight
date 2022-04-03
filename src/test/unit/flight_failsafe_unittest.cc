@@ -80,11 +80,12 @@ void configureFailsafe(void)
     rxConfigMutable()->mincheck = TEST_MIN_CHECK;
 
     failsafeConfigMutable()->failsafe_delay = 10; // 1 second
-    failsafeConfigMutable()->failsafe_off_delay = 50; // 5 seconds
+    failsafeConfigMutable()->failsafe_off_delay = 15; // 1.5 seconds
     failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1;
     failsafeConfigMutable()->failsafe_throttle = 1200;
-    failsafeConfigMutable()->failsafe_throttle_low_delay = 50; // 5 seconds
+    failsafeConfigMutable()->failsafe_throttle_low_delay = 100; // 10 seconds
     failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
+    // NB we don't have failsafe_recovery_delay so use PERIOD_RXDATA_RECOVERY (200ms)
     sysTickUptime = 0;
 }
 
@@ -143,7 +144,8 @@ TEST(FlightFailsafeTest, TestFailsafeFirstArmedCycle)
     ENABLE_ARMING_FLAG(ARMED);
 
     // when
-    failsafeOnValidDataFailed();                    // set last invalid sample at current time
+    sysTickUptime ++;
+    failsafeOnValidDataFailed();                    // set last invalid sample to a non-zero value
     sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
     failsafeOnValidDataReceived();                  // cause a recovered link
 
@@ -171,79 +173,130 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenReceivingData)
 }
 
 /****************************************************************************************/
+//
+// Clean start
+//
+/****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
 {
     // given
-    ENABLE_ARMING_FLAG(ARMED);
-
-    // and
+    configureFailsafe();
+    failsafeInit();
+    
+    DISABLE_ARMING_FLAG(ARMED);
+    resetCallCounters();
     failsafeStartMonitoring();
-    throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
-    sysTickUptime = 0;                              // restart time from 0
-    failsafeOnValidDataReceived();                  // set last valid sample at current time
 
-    // when
-    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND); sysTickUptime++) {
-        failsafeOnValidDataFailed();
-
-        failsafeUpdateState();
-
-        // then
-        EXPECT_FALSE(failsafeIsActive());
-        EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-    }
+    // then
+    EXPECT_TRUE(failsafeIsMonitoring());
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 
     // given
-    sysTickUptime++;                                // adjust time to point just past the failure time to
-    failsafeOnValidDataFailed();                    // cause a lost link
+    ENABLE_ARMING_FLAG(ARMED);
+    throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
+    failsafeOnValidDataReceived();
 
-    // when
+    sysTickUptime = 0;
     failsafeUpdateState();
 
     // then
-    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_FALSE(isArmingDisabled());
+
+    // simulate an Rx loss for the stage 1 duration
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);;
+    failsafeOnValidDataFailed();
+    failsafeUpdateState();
+
+    //  should be in stage 1
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    sysTickUptime ++;                               // exceed the stage 1 period by one tick
+    failsafeOnValidDataFailed();                    // confirm that we still have no valid data
+
+    failsafeUpdateState();
+
+    // we should now be in stage 2, landing phase
     EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
 }
 
 /****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
+// note this test follows on from the previous test
 {
-    // given
-    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+    // exceed the stage 2 landing time
+    sysTickUptime += (failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND);
+    failsafeOnValidDataFailed();                    // confirm that we still have no valid data
+
+    // when
+    failsafeUpdateState();
+
+    // expect to still be in landing phase
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+
+    // adjust time to point just past the landing time
     sysTickUptime++;
+    failsafeOnValidDataFailed();                    // confirm that we still have no valid data
 
     // when
-    // no call to failsafeOnValidDataReceived();
     failsafeUpdateState();
 
-    // then
+    // expect to be in monitoring mode
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());
 
-    // given
-    failsafeOnValidDataFailed();                    // set last invalid sample at current time
-    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
-    failsafeOnValidDataReceived();                  // cause a recovered link
-
+    // let's wait 3 seconds and still get no signal
+    sysTickUptime += PERIOD_OF_3_SECONDS;
+    failsafeOnValidDataFailed();                    // confirm that we still have no valid data
     // when
     failsafeUpdateState();
 
-    // then
+    // nothing should change
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_TRUE(isArmingDisabled());
 
-    // given
-    sysTickUptime += PERIOD_OF_3_SECONDS + 1;      // adjust time to point just past the required additional recovery time
+    // now lets get a signal while in monitoring mode
     failsafeOnValidDataReceived();
+    // we must clear the first delay in failsafeOnValidDataReceived(), for which 200ms 'works'
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+    failsafeUpdateState();
 
+    // nothing should change
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+    failsafeUpdateState();
+
+    // nothing should change
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    // One tick later
+    sysTickUptime++;
+    failsafeOnValidDataReceived();
     // when
     failsafeUpdateState();
 
-    // then
+    // we expect failsafe to finish and to revert to idle
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM)); // disarm not called repeatedly.
@@ -252,69 +305,98 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
 
 /****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
+//  Just Disarm is when throttle is low for >10s before signal loss
+//  we should exit stage 1 directly into failsafe monitoring mode, and not enter landing mode
 {
-    // given
-    DISABLE_ARMING_FLAG(ARMED);
+    ENABLE_ARMING_FLAG(ARMED);
     resetCallCounters();
-
-    // and
     failsafeStartMonitoring();
-    throttleStatus = THROTTLE_LOW;                  // throttle LOW to go for a failsafe just-disarm procedure
-    sysTickUptime = 0;                              // restart time from 0
-    failsafeOnValidDataReceived();                  // set last valid sample at current time
 
-    // when
-    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_FAILURE); sysTickUptime++) {
-        failsafeOnValidDataFailed();
+    // set to normal initial state
+    throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
+    failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_KILL;
 
-        failsafeUpdateState();
-
-        // then
-        EXPECT_FALSE(failsafeIsActive());
-        EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-    }
-
-    // given
-    sysTickUptime++;                                // adjust time to point just past the failure time to
-    failsafeOnValidDataFailed();                    // cause a lost link
-    ENABLE_ARMING_FLAG(ARMED);                      // armed from here (disarmed state has cleared throttleLowPeriod).
-
+    sysTickUptime += PERIOD_OF_3_SECONDS;           // 3s of normality
+    failsafeOnValidDataReceived();                  // we have a valid signal
     // when
     failsafeUpdateState();
 
-    // then
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(isArmingDisabled());
-
-    // given
-    failsafeOnValidDataFailed();                    // set last invalid sample at current time
-    sysTickUptime += PERIOD_RXDATA_RECOVERY;    // adjust time to point just past the recovery time to
-    failsafeOnValidDataReceived();                  // cause a recovered link
-
-    // when
-    failsafeUpdateState();
-
-    // then
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(isArmingDisabled());
-
-    // given
-    sysTickUptime += PERIOD_OF_1_SECONDS + 1;       // adjust time to point just past the required additional recovery time
-    failsafeOnValidDataReceived();
-
-    // when
-    failsafeUpdateState();
-
-    // then
+    // confirm that we are in idle mode
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_FALSE(isArmingDisabled());
-}
+
+
+    // run throttle_low for 11s
+    throttleStatus = THROTTLE_LOW;                  // for failsafe 'just-disarm' procedure
+    sysTickUptime += 11000;
+    throttleStatus = THROTTLE_LOW;                  // for failsafe 'just-disarm' procedure
+    failsafeOnValidDataReceived();                  // set the last valid signal to now
+
+    failsafeUpdateState();
+
+    // check that we are still in idle mode
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_FALSE(isArmingDisabled());
+
+    // simulate an Rx loss for the stage 1 duration
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);;
+    failsafeOnValidDataFailed();
+    failsafeUpdateState();
+
+    //  should remain in stage 1
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    sysTickUptime ++;                               // now we exceed stage 1
+    failsafeOnValidDataFailed();                    // we still have no valid data
+    failsafeUpdateState();
+
+    // we should now be in stage 2 via Just Disarm, going direct to monitoring mode.
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    // now lets get a signal while in monitoring mode
+    failsafeOnValidDataReceived();
+    // we must clear the first delay in failsafeOnValidDataReceived(), for which 200ms 'works'
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+    failsafeUpdateState();
+
+    // nothing should change
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+    failsafeUpdateState();
+
+    // nothing should change
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    // One tick later
+    sysTickUptime++;
+    failsafeOnValidDataReceived();
+    // when
+    failsafeUpdateState();
+
+    // we expect failsafe to finish and to revert to idle
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM)); // disarm not called repeatedly.
+    EXPECT_FALSE(isArmingDisabled());}
 
 /****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
@@ -324,36 +406,26 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     resetCallCounters();
     failsafeStartMonitoring();
 
-    // and
+    // set to normal initial state
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
     failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_KILL;
 
-    activateBoxFailsafe();
-
-    sysTickUptime = 0;                              // restart time from 0
-    failsafeOnValidDataReceived();                  // set last valid sample at current time
-    sysTickUptime = PERIOD_RXDATA_FAILURE + 1;      // adjust time to point just past the failure time to
-    failsafeOnValidDataFailed();                    // cause a lost link
-
-    // when
-    failsafeUpdateState();                          // kill switch handling should come first
-
-    // then
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-
-    // given
-    failsafeOnValidDataFailed();                    // set last invalid sample at current time
-    sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
-    failsafeOnValidDataReceived();                  // cause a recovered link
-
-    deactivateBoxFailsafe();
-
+    sysTickUptime += PERIOD_OF_3_SECONDS;           // 3s of normality
+    failsafeOnValidDataReceived();                  // we have a valid signal
     // when
     failsafeUpdateState();
 
+    // confirm that we are in idle mode
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+
+    // given
+    activateBoxFailsafe();                          // activate the Kill swith
+
+    // when
+    failsafeUpdateState();                          // should failsafe immediately the kill switch is hit
+
     // then
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
@@ -361,110 +433,254 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
     // given
-    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    failsafeOnValidDataReceived();                  // the link is active the whole time
+
+    // deactivate the kill switch
+    deactivateBoxFailsafe();                        // receivingRxData is immediately true
+
+    // we should go to failsafe monitoring mode, via Landing
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // since we didn't enter stage 2, we have one rxDataRecoveryPeriod delay to deal with
+    // while within rxDataRecoveryPeriod in monitoring mode...
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
     failsafeOnValidDataReceived();
 
+    // when 
+    failsafeUpdateState();
+
+    // we should still be in failsafe monitoring mode
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // one tick later
+    sysTickUptime ++;
+
     // when
     failsafeUpdateState();
 
-    // then
+    // we should now have exited failsafe
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
 }
 
-TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Drop)
+/****************************************************************************************/
+
+TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage1OrStage2Drop)
+// should immediately stop motors and go to monitoring mode diretly
 {
-    // given
+    // given a clean start
     ENABLE_ARMING_FLAG(ARMED);
     resetCallCounters();
+    failsafeStartMonitoring();
 
-    // and
+    // and set initial states
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
     failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE2;
     failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
 
-
-
     sysTickUptime = 0;                              // restart time from 0
-    activateBoxFailsafe();
-    failsafeOnValidDataFailed();                    // box failsafe causes data to be invalid
+    failsafeOnValidDataReceived();                  // we have a valid signal
+    sysTickUptime += 3000;                          // 3s of normality
 
     // when
-    failsafeUpdateState();                          // should activate stage2 immediately
+    failsafeUpdateState();
+    
+    // confirm that we are in idle mode
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
 
-    // then
+    // given
+    activateBoxFailsafe();                          // activate the stage 2 Drop switch
+    failsafeOnValidDataFailed();                    // immediate stage 2 switch sets failsafeOnValidDataFailed
+
+    // when
+    failsafeUpdateState();                          // should activate stage2 immediately, even though signal is good
+
+    // expect to be in monitoring mode, and to have disarmed
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    // deactivate the failsafe switch
+    deactivateBoxFailsafe();
+
+    // receivingRxData is immediately true
+    // we go directly to failsafe monitoring mode, via Landing
+    // because the switch also forces rxFlightChannelsValid false, emulating real failsafe
+    // we have two delays to deal with before we can re-arm
+
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
-    // given
-    sysTickUptime += PERIOD_OF_1_SECONDS + 1;       // adjust time to point just past the required additional recovery time
-    deactivateBoxFailsafe();
-    failsafeOnValidDataReceived();                  // inactive box failsafe gives valid data
+    // handle the first delay in rxDataRecoveryPeriod
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+
+    // when 
+    failsafeUpdateState();
+
+    // we should still be in failsafe monitoring mode
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // handle the second delay
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+
+    // when 
+    failsafeUpdateState();
+
+    // we should still be in failsafe monitoring mode
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // one tick later
+    sysTickUptime ++;
 
     // when
     failsafeUpdateState();
 
-    // then
+    // we should now have exited failsafe
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
     EXPECT_FALSE(isArmingDisabled());
 }
 
+/****************************************************************************************/
+
 TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
 {
-    // given
+    // given a clean start
     ENABLE_ARMING_FLAG(ARMED);
     resetCallCounters();
+    failsafeStartMonitoring();
 
     // and
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
     failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE2;
     failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
 
-
     sysTickUptime = 0;                              // restart time from 0
-    activateBoxFailsafe();
-    failsafeOnValidDataFailed();                    // box failsafe causes data to be invalid
+    failsafeOnValidDataReceived();                  // we have a valid signal
+    sysTickUptime += 3000;                          // 3s of normality
+
+    // when
+    failsafeUpdateState();
+    
+    // confirm that we are in idle mode
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+
+    // given
+    activateBoxFailsafe();                          // activate the stage 2 Drop switch
+    failsafeOnValidDataFailed();                    // immediate stage 2 switch sets failsafeOnValidDataFailed
 
     // when
     failsafeUpdateState();                          // should activate stage2 immediately
 
-    // then
+    // expect to immediately be in landing mode, and not disarmed
     EXPECT_TRUE(failsafeIsActive());               // stick induced failsafe allows re-arming
-    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
-
-
-    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND + 1;
-
-    // given
-    failsafeOnValidDataFailed();                    // set last invalid sample at current time
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+    
+    // should stay in landing for failsafe_off_delay (stage 2 period) of 1s
+    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
 
     // when
     failsafeUpdateState();
 
-    // then
+    EXPECT_TRUE(failsafeIsActive());                    // stick induced failsafe allows re-arming
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+
+    // one tick later, landing time has elapsed
+    sysTickUptime ++;
+
+    // when
+    failsafeUpdateState();
+
+    // now should be in monitoring mode, with switch holding signalReceived false
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+
+    // given
+    sysTickUptime += PERIOD_OF_3_SECONDS;               // hang around a bit waiting for switch change
+
+    // when
+    failsafeUpdateState();
+
+    // should still be in monitoring mode because switch is still forcing receivingRxData false
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+
+    // deactivate the failsafe switch
+    deactivateBoxFailsafe();
+
+    // receivingRxData is immediately true
+    // we go directly to failsafe monitoring mode, via Landing
+    // however, because the switch also forces rxFlightChannelsValid false, emulating real failsafe
+    // we have two delays to deal with before we can re-arm
+
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
-    // given
-    sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
+    // handle the first delay in rxDataRecoveryPeriod
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
 
-    // and
-    deactivateBoxFailsafe();
-    failsafeOnValidDataReceived();                   // inactive box failsafe gives valid data
+    // when 
+    failsafeUpdateState();
+
+    // we should still be in failsafe monitoring mode
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // handle the second delay
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+
+    // when 
+    failsafeUpdateState();
+
+    // we should still be in failsafe monitoring mode
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
+
+    // one tick later
+    sysTickUptime ++;
 
     // when
     failsafeUpdateState();
 
-    // then
+    // we should now have exited failsafe
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
@@ -474,7 +690,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
 
 /****************************************************************************************/
 //
-// Additional non-stepwise tests
+// Clean start
 //
 /****************************************************************************************/
 TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected)
@@ -486,66 +702,65 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     // and
     failsafeInit();
 
-    // and
+    // and ** WE ARE DISARMED **
     DISABLE_ARMING_FLAG(ARMED);
 
-    // when
+    // when failsafe starts
     failsafeStartMonitoring();
 
     // and
     sysTickUptime = 0;                              // restart time from 0
-    failsafeOnValidDataReceived();                  // set last valid sample at current time
-
-    // enter stage 1 failsafe
-    for (sysTickUptime = 0; sysTickUptime < PERIOD_RXDATA_FAILURE; sysTickUptime++) {
-        failsafeOnValidDataFailed();
-
-        failsafeUpdateState();
-
-        // then
-        EXPECT_FALSE(failsafeIsActive());
-        EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
-    }
-
-    // given
-    sysTickUptime++;                                // adjust time to point just past the failure time to
-    failsafeOnValidDataFailed();                    // cause a lost link
+    failsafeOnValidDataReceived();                  // we have a valid signal
+    sysTickUptime += 3000;                          // 3s of normality
 
     // when
     failsafeUpdateState();
 
-    // then
-    EXPECT_TRUE(failsafeIsMonitoring());
+    // confirm that we are in idle mode
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_FALSE(isArmingDisabled());               // arming not blocked in stage 1
 
-    // add enough time to enter stage 2
-    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND + 1;
+    // and that arming is not disabled
+    EXPECT_FALSE(isArmingDisabled());
+
+    // simulate an Rx loss for the stage 1 duration
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);;
     failsafeOnValidDataFailed();
-
-    // when
     failsafeUpdateState();
 
-    // then
-    EXPECT_TRUE(isArmingDisabled());                // arming blocked until recovery time
-    EXPECT_FALSE(failsafeIsActive());               // failsafe is still not active
+    // within stage 1 time from a true failsafe while disarmed, stage 2 should normally not be active
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
 
-    // given valid data is received for the recovery time, allow re-arming
-    uint32_t sysTickTarget = sysTickUptime + PERIOD_RXDATA_RECOVERY;
-    for (; sysTickUptime < sysTickTarget; sysTickUptime++) {
-        failsafeOnValidDataReceived();
-        failsafeUpdateState();
+    // arming is disabled due to setArmingDisabled in stage 1 due to failsafeOnValidDataFailed()
+    EXPECT_FALSE(failsafeIsActive());
 
-        EXPECT_TRUE(isArmingDisabled());
-    }
+   // given
+    sysTickUptime++;                                // adjust time to point just past stage 1
+    failsafeOnValidDataFailed();                    // would normally enter stage 2, but we are disarmed
+    failsafeUpdateState();
 
-    // and
-    sysTickUptime++;                                // adjust time to point just past the failure time to
-    failsafeOnValidDataReceived();                  // cause link recovery
+    // expect that we do not enter failsafe stage 2, ie no change from above
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
 
-    // then
+    // the lock on the aux channels persists at fixed stage 1 values until recovery time
+    EXPECT_TRUE(isArmingDisabled());
+
+    // allow signal received for the recovery time
+    sysTickUptime += PERIOD_RXDATA_RECOVERY;
+    failsafeOnValidDataReceived();
+    failsafeUpdateState();
+
+    // no change in failsafe state (still idle)
+    EXPECT_FALSE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
+    EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
+
+    // but now arming is possible
     EXPECT_FALSE(isArmingDisabled());
 }
 
