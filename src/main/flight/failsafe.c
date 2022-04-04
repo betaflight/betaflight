@@ -372,9 +372,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 failsafeState.active = false;
 #ifdef USE_GPS_RESCUE
                 DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-#else
-                DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
 #endif
+                DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
                 unsetArmingDisabled(ARMING_DISABLED_FAILSAFE);
                 reprocessState = true;
                 break;
