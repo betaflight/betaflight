@@ -332,7 +332,7 @@ uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data) {
 #define ATMEL_DEVICE_MATCH ((pDeviceInfo->words[0] == 0x9307) || (pDeviceInfo->words[0] == 0x930A) || \
         (pDeviceInfo->words[0] == 0x930F) || (pDeviceInfo->words[0] == 0x940B))
 
-#define SILABS_DEVICE_MATCH (pDeviceInfo->words[0] > 0xE800) // && (pDeviceInfo->words[0] < 0xF900))
+#define SILABS_DEVICE_MATCH ((pDeviceInfo->words[0] > 0xE800) && (pDeviceInfo->words[0] < 0xF900))
 
 
 // BLHeli_32 MCU ID hi > 0x00 and < 0x90 / lo always = 0x06
