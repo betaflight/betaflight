@@ -507,10 +507,9 @@ FAST_CODE void scheduler(void)
                 // Check for incoming RX data. Don't do this in the checker as that is called repeatedly within
                 // a given gyro loop, and ELRS takes a long time to process this and so can only be safely processed
                 // before the checkers
-                rxFrameCheck(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX)->lastExecutedAtUs), getTask(TASK_RX)->movingSumDeltaTime10thUs / TASK_STATS_MOVING_SUM_COUNT);
+                rxFrameCheck(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX)->lastExecutedAtUs));
             }
-
-            // Check for failsafe conditions without reliance on the RX task being well behaved
+            // Check for failsafe conditions every 10ms, independently of the Rx Task, which runs at 33hz.
             if (cmp32(millis(), lastFailsafeCheckMs) > PERIOD_RXDATA_FAILURE) {
                 // This is very low cost taking less that 4us every 10ms
                 failsafeCheckDataFailurePeriod();
