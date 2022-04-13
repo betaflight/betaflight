@@ -30,13 +30,12 @@
 #define NVIC_PRIO_TRANSPONDER_DMA          NVIC_BUILD_PRIORITY(3, 0)
 
 // RX_SPI must be lower priority than SPI DMA so EXTI ISRs don't interfere with SPI transfers and transfer complete callbacks
-#define NVIC_PRIO_RX_SPI_INT_EXTI          NVIC_BUILD_PRIORITY(3, 0x0f)
 #define NVIC_PRIO_RX_INT_EXTI              NVIC_BUILD_PRIORITY(3, 0x0f)
 #define NVIC_PRIO_RX_BUSY_EXTI             NVIC_BUILD_PRIORITY(3, 0x0f)
 
 #define NVIC_PRIO_MPU_INT_EXTI             NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_MAG_INT_EXTI             NVIC_BUILD_PRIORITY(0x0f, 0x0f)
-#define NVIC_PRIO_WS2811_DMA               NVIC_BUILD_PRIORITY(1, 2)  // TODO - is there some reason to use high priority? (or to use DMA IRQ at all?)
+#define NVIC_PRIO_WS2811_DMA               NVIC_BUILD_PRIORITY(1, 2)  // TODO - is there some reason to use high priority?
 #define NVIC_PRIO_SERIALUART_TXDMA         NVIC_BUILD_PRIORITY(1, 1)  // Highest of all SERIALUARTx_TXDMA
 #define NVIC_PRIO_SERIALUART1_TXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
@@ -75,10 +74,6 @@
 #define NVIC_PRIO_I2C_EV                   NVIC_BUILD_PRIORITY(0, 0)
 #define NVIC_PRIO_USB                      NVIC_BUILD_PRIORITY(2, 0)
 #define NVIC_PRIO_USB_WUP                  NVIC_BUILD_PRIORITY(1, 0)
-#define NVIC_PRIO_SONAR_ECHO               NVIC_BUILD_PRIORITY(0x0f, 0x0f)
-#define NVIC_PRIO_MPU_DATA_READY           NVIC_BUILD_PRIORITY(0, 1)
-#define NVIC_PRIO_MAG_DATA_READY           NVIC_BUILD_PRIORITY(0x0f, 0x0f)
-#define NVIC_PRIO_CALLBACK                 NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_SPI_DMA                  NVIC_BUILD_PRIORITY(0, 0)
 #define NVIC_PRIO_SDIO_DMA                 NVIC_BUILD_PRIORITY(0, 0)
 
