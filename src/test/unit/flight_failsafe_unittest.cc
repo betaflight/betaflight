@@ -331,7 +331,6 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     // run throttle_low for 11s
     throttleStatus = THROTTLE_LOW;                  // for failsafe 'just-disarm' procedure
     sysTickUptime += 11000;
-    throttleStatus = THROTTLE_LOW;                  // for failsafe 'just-disarm' procedure
     failsafeOnValidDataReceived();                  // set the last valid signal to now
 
     failsafeUpdateState();
