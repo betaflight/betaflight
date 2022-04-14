@@ -214,8 +214,8 @@ uint16_t rxGetUplinkTxPwrMw(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
-void suspendRxPwmPpmSignal(void);
-void resumeRxPwmPpmSignal(void);
+void suspendRxSignal(void);
+void resumeRxSignal(void);
 
 uint16_t rxGetRefreshRate(void);
 

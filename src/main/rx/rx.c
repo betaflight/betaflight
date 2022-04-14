@@ -374,26 +374,26 @@ bool rxAreFlightChannelsValid(void)
     return rxFlightChannelsValid;
 }
 
-void suspendRxPwmPpmSignal(void)
+void suspendRxSignal(void)
 {
 #if defined(USE_PWM) || defined(USE_PPM)
     if (rxRuntimeState.rxProvider == RX_PROVIDER_PARALLEL_PWM || rxRuntimeState.rxProvider == RX_PROVIDER_PPM) {
         suspendRxSignalUntil = micros() + DELAY_1500_MS;  // 1.5s
         skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
-        failsafeOnRxSuspend(DELAY_1500_MS);  // 1.5s
     }
 #endif
+    failsafeOnRxSuspend(DELAY_1500_MS);  // 1.5s
 }
 
-void resumeRxPwmPpmSignal(void)
+void resumeRxSignal(void)
 {
 #if defined(USE_PWM) || defined(USE_PPM)
     if (rxRuntimeState.rxProvider == RX_PROVIDER_PARALLEL_PWM || rxRuntimeState.rxProvider == RX_PROVIDER_PPM) {
         suspendRxSignalUntil = micros();
         skipRxSamples = SKIP_RC_SAMPLES_ON_RESUME;
-        failsafeOnRxResume();
     }
 #endif
+    failsafeOnRxResume();
 }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
