@@ -438,12 +438,16 @@ task_t *getTask(unsigned taskId)
     return &tasks[taskId];
 }
 
-void tasksInit(void)
+// Has to be done before tasksInit() in order to initialize any task data which may be uninitialized at boot
+void tasksInitData(void)
 {
     for (int i = 0; i < TASK_COUNT; i++) {
         tasks[i].attribute = &task_attributes[i];
     }
+}
 
+void tasksInit(void)
+{
     schedulerInit();
 
     setTaskEnabled(TASK_MAIN, true);
