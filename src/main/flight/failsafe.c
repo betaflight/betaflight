@@ -158,9 +158,6 @@ void failsafeOnRxResume(void)
 void failsafeOnValidDataReceived(void)
 // runs when packets are received for more than the signal validation period (100ms)
 {
-    unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
-    // clear RXLOSS in OSD immediately we get a good packet, and un-set its arming block
-
     failsafeState.validRxDataReceivedAt = millis();
 
     if (failsafeState.validRxDataFailedAt == 0) {
@@ -184,9 +181,6 @@ void failsafeOnValidDataReceived(void)
 void failsafeOnValidDataFailed(void)
 // runs when packets are lost for more than the signal validation period (100ms)
 {
-    setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
-    //  set RXLOSS in OSD and block arming after 100ms of signal loss (is restored in rx.c immediately signal returns)
-
     failsafeState.validRxDataFailedAt = millis();
     if ((cmp32(failsafeState.validRxDataFailedAt, failsafeState.validRxDataReceivedAt) > (int32_t)failsafeState.rxDataFailurePeriod)) {
         // sets rxLinkState = DOWN to initiate stage 2 failsafe, if no validated signal for the stage 1 period
@@ -201,8 +195,6 @@ void failsafeCheckDataFailurePeriod(void)
     if (cmp32(millis(), failsafeState.validRxDataReceivedAt) > (int32_t)failsafeState.rxDataFailurePeriod) {
         // sets link DOWN after the stage 1 failsafe period, initiating stage 2
         failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
-        // Prevent arming with no RX link
-        setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
     }
 }
 

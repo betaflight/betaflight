@@ -682,6 +682,8 @@ void detectAndApplySignalLossBehaviour(void)
                     if (channel < NON_AUX_CHANNEL_COUNT) {
                         allAuxChannelsAreGood = false;
                         //  declare signal lost after 300ms of at least one bad flight channel
+                        setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
+                        //  set RXLOSS in OSD (cleared immediately signal returns, see below)
                     }
                     sample = getRxfailValue(channel);
                     //  set all channels to Stage 1 values
@@ -708,6 +710,9 @@ void detectAndApplySignalLossBehaviour(void)
     if (rxFlightChannelsValid && allAuxChannelsAreGood) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe
+        unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
+        // clear RXLOSS in OSD immediately, and un-set its arming block
+
     } else {
         failsafeOnValidDataFailed();
         //  -> start timer to enter stage2 failsafe

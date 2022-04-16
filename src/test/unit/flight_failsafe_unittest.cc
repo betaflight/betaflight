@@ -215,7 +215,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_FALSE(isArmingDisabled());
 
     sysTickUptime ++;                               // exceed the stage 1 period by one tick
     failsafeOnValidDataFailed();                    // confirm that we still have no valid data
@@ -350,7 +350,6 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(isArmingDisabled());
 
     sysTickUptime ++;                               // now we exceed stage 1
     failsafeOnValidDataFailed();                    // we still have no valid data
@@ -745,9 +744,6 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     EXPECT_FALSE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
-
-    // the lock on the aux channels persists at fixed stage 1 values until recovery time
-    EXPECT_TRUE(isArmingDisabled());
 
     // allow signal received for the recovery time
     sysTickUptime += PERIOD_RXDATA_RECOVERY;
