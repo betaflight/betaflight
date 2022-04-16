@@ -352,6 +352,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         reprocessState = true;
                     }
                 } else {
+                    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE); // if the link is bad, reaffirm GPS Rescue flight mode is active 
                     if (armed) {
                         beeperMode = BEEPER_RX_LOST_LANDING;
                     } else {
