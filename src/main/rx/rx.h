@@ -150,6 +150,7 @@ typedef struct rxRuntimeState_s {
     uint16_t            *channelData;
     void                *frameData;
     timeUs_t            lastRcFrameTimeUs;
+    timeDelta_t         needRxSignalMaxDelayUs; // number of Us of lost RX signal before stage 1 failsafe is activated
 } rxRuntimeState_t;
 
 typedef enum {

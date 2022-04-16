@@ -40,6 +40,7 @@ typedef struct failsafeConfig_s {
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it
     uint16_t failsafe_recovery_delay;       // Time (in 0.1sec) of valid rx data (min 200ms PERIOD_RXDATA_RECOVERY) to allow recovering from failsafe procedure
     uint8_t failsafe_stick_threshold;       // Stick deflection percentage to exit GPS Rescue procedure
+    uint8_t failsafe_rxloss_delay;          // The delay of no RX signal before stage 1 is activated
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);

@@ -116,7 +116,6 @@ uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 #define PPM_AND_PWM_SAMPLE_COUNT 3
 
 #define DELAY_20_MS (20 * 1000)                         // 20ms in us
-#define DELAY_100_MS (100 * 1000)                       // 100ms in us
 #define DELAY_1500_MS (1500 * 1000)                     // 1.5 seconds in us
 #define SKIP_RC_SAMPLES_ON_RESUME  2                    // flush 2 samples to drop wrong measurements (timing independent)
 
@@ -278,6 +277,11 @@ void rxInit(void)
     rxRuntimeState.rcProcessFrameFn = nullProcessFrame;
     rxRuntimeState.lastRcFrameTimeUs = 0;
     rcSampleIndex = 0;
+
+    rxRuntimeState.needRxSignalMaxDelayUs = failsafeConfig()->failsafe_rxloss_delay * MILLIS_PER_TENTH_SECOND;
+    if (rxRuntimeState.needRxSignalMaxDelayUs < MILLIS_PER_TENTH_SECOND) {
+        rxRuntimeState.needRxSignalMaxDelayUs = MILLIS_PER_TENTH_SECOND;
+    }
 
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig()->midrc;
@@ -472,7 +476,6 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 {
     bool signalReceived = false;
     bool useDataDrivenProcessing = true;
-    timeDelta_t needRxSignalMaxDelayUs = DELAY_100_MS;
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 2, MIN(2000, currentDeltaTimeUs / 100));
 
@@ -517,14 +520,14 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
 
     if (signalReceived) {
         //  true only when a new packet arrives
-        needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+        needRxSignalBefore = currentTimeUs + rxRuntimeState.needRxSignalMaxDelayUs;
         rxSignalReceived = true; // immediately process packet data
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
             //  initial time to signalReceived failure is 100ms, then we check every 100ms
             rxSignalReceived = false;
-            needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
+            needRxSignalBefore = currentTimeUs + rxRuntimeState.needRxSignalMaxDelayUs;
             //  review rcData values every 100ms in failsafe changed them
             rxDataProcessingRequired = true;
         }
