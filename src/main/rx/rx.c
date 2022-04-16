@@ -653,15 +653,17 @@ void detectAndApplySignalLossBehaviour(void)
         }
 
        if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
-            //  apply failsafe values, until failsafe ends, or disarmed, unless in GPS Return
-            if ((channel < NON_AUX_CHANNEL_COUNT) && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                if (channel == THROTTLE ) {
-                    sample = failsafeConfig()->failsafe_throttle;
-                } else {
-                    sample = rxConfig()->midrc;
+            //  apply failsafe values, until failsafe ends, or disarmed, unless in GPS Return (where stick values should remain)
+            if (channel < NON_AUX_CHANNEL_COUNT) {
+                if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                    if (channel == THROTTLE ) {
+                        sample = failsafeConfig()->failsafe_throttle;
+                    } else {
+                        sample = rxConfig()->midrc;
+                    }
                 }
             } else if (!failsafeAuxSwitch) {
-                //  aux channels as Set in Configurator, unless failsafe initiated by switch
+                // aux channels as Set in Configurator, unless failsafe initiated by switch
                 sample = getRxfailValue(channel);
             }
         } else {
