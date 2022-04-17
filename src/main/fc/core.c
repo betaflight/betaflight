@@ -1262,14 +1262,6 @@ FAST_CODE bool pidLoopReady(void)
     return false;
 }
 
-FAST_CODE bool rxFrameReady(void)
-{
-    if ((activePidLoopDenom == 1) || (pidUpdateCounter % activePidLoopDenom == 0)) {
-        return true;
-    }
-    return false;
-}
-
 FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
 {
     gyroFiltering(currentTimeUs);

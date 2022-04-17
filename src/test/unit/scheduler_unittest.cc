@@ -67,7 +67,6 @@ extern "C" {
     int16_t debug[1];
     uint8_t debugMode = 0;
 
-    bool rxFrameReady(void) { return 0; }
     void rxFrameCheck(timeUs_t, timeDelta_t) {}
 
     // set up micros() to simulate time
