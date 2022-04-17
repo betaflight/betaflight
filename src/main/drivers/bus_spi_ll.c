@@ -644,6 +644,7 @@ void spiSequenceStart(const extDevice_t *dev)
         spiInternalStartDMA(dev);
     } else {
         busSegment_t *lastSegment = NULL;
+        bool segmentComplete;
 
         // Manually work through the segment list performing a transfer for each
         while (bus->curSegment->len) {
@@ -663,15 +664,17 @@ void spiSequenceStart(const extDevice_t *dev)
                 IOHi(dev->busType_u.spi.csnPin);
             }
 
+            segmentComplete = true;
             if (bus->curSegment->callback) {
                 switch(bus->curSegment->callback(dev->callbackArg)) {
                 case BUS_BUSY:
                     // Repeat the last DMA segment
-                    bus->curSegment--;
+                    segmentComplete = false;
                     break;
 
                 case BUS_ABORT:
                     bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+                    segmentComplete = false;
                     return;
 
                 case BUS_READY:
@@ -680,8 +683,10 @@ void spiSequenceStart(const extDevice_t *dev)
                     break;
                 }
             }
-            lastSegment = (busSegment_t *)bus->curSegment;
-            bus->curSegment++;
+            if (segmentComplete) {
+                lastSegment = (busSegment_t *)bus->curSegment;
+                bus->curSegment++;
+            }
         }
 
         if (lastSegment && !lastSegment->negateCS) {
