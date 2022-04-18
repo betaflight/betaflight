@@ -47,6 +47,10 @@
 #include "io/gps.h"
 #endif
 
+#ifdef USE_OSD
+#include "osd/osd.h"
+#endif
+
 #include "pg/beeper.h"
 
 #include "scheduler/scheduler.h"
@@ -435,6 +439,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
     }
 
+#if defined(USE_OSD)
+    static bool beeperWasOn = false;
+    if (beeperIsOn && !beeperWasOn) {
+        osdSetVisualBeeperState(true);
+    }
+    beeperWasOn = beeperIsOn;
+#endif
+    
     beeperProcessCommand(currentTimeUs);
 }
 
