@@ -66,8 +66,8 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(1000, RANGE_CONFIGURATION(1000, 2000)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(1000, 2000)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(2000, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(700, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(2500, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1000, 2000)));
 
     // Reversed channel
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(1000, RANGE_CONFIGURATION(2000, 1000)));
@@ -78,31 +78,31 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(900, RANGE_CONFIGURATION(900, 1900)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1400, RANGE_CONFIGURATION(900, 1900)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(1900, RANGE_CONFIGURATION(900, 1900)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 1900)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(900, 1900)));
+    EXPECT_EQ(700, applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 1900)));
+    EXPECT_EQ(2600, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(900, 1900)));
 
     // Narrower range than expected
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(1300, RANGE_CONFIGURATION(1300, 1700)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(1300, 1700)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(1700, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(-500, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(4000, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1300, 1700)));
 
     // Wider range than expected
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(900, RANGE_CONFIGURATION(900, 2100)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(900, 2100)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(2100, RANGE_CONFIGURATION(900, 2100)));
     EXPECT_EQ(750, applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 2100)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2700, RANGE_CONFIGURATION(900, 2100)));
+    EXPECT_EQ(2500, applyRxChannelRangeConfiguraton(2700, RANGE_CONFIGURATION(900, 2100)));
 
     // extreme out of range
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(900, 2100)));
+    EXPECT_EQ(1, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(-2245, applyRxChannelRangeConfiguraton(2, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(252.5, applyRxChannelRangeConfiguraton(3, RANGE_CONFIGURATION(900, 2100)));
 
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(900, 2100)));
+    EXPECT_EQ(10000, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(22750, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(25250, applyRxChannelRangeConfiguraton(30000, RANGE_CONFIGURATION(900, 2100)));
 }
 
 

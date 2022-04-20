@@ -107,8 +107,8 @@ static timeUs_t needRxSignalBefore = 0;
 static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
-static float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
-float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];           // interval [1000;2000]
+static float rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // last received raw value, as it comes
+float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];           // scaled, modified, checked and constrained values
 uint32_t validRxSignalTimeout[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 #define MAX_INVALID_PULSE_TIME_MS 300                   // hold time in milliseconds after bad channel or Rx link loss
@@ -507,7 +507,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
         {
             const uint8_t frameStatus = rxRuntimeState.rcFrameStatusFn(&rxRuntimeState);
             DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 1, (frameStatus & RX_FRAME_FAILSAFE));
-            signalReceived = (frameStatus & RX_FRAME_COMPLETE) && !((frameStatus & RX_FRAME_FAILSAFE) || (frameStatus & RX_FRAME_DROPPED));
+            signalReceived = (frameStatus & RX_FRAME_COMPLETE) && !(frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED));
             setLinkQuality(signalReceived, currentDeltaTimeUs);
             auxiliaryProcessingRequired |= (frameStatus & RX_FRAME_PROCESSING_REQUIRED);
         }
@@ -519,21 +519,22 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
         //  true only when a new packet arrives
         needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
         rxSignalReceived = true; // immediately process packet data
+        if (useDataDrivenProcessing) {
+            rxDataProcessingRequired = true;
+            //  process the new Rx packet when it arrives
+        }
     } else {
         //  watch for next packet
         if (cmpTimeUs(currentTimeUs, needRxSignalBefore) > 0) {
             //  initial time to signalReceived failure is 100ms, then we check every 100ms
             rxSignalReceived = false;
             needRxSignalBefore = currentTimeUs + needRxSignalMaxDelayUs;
-            //  review rcData values every 100ms in failsafe changed them
+            //  review and process rcData values every 100ms in case failsafe changed them
             rxDataProcessingRequired = true;
         }
     }
 
     DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 0, rxSignalReceived);
-    //  process the new Rx packet when it arrives
-    rxDataProcessingRequired |= (signalReceived && useDataDrivenProcessing);
-
 }
 
 #if defined(USE_PWM) || defined(USE_PPM)
@@ -602,8 +603,7 @@ STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, const rxC
     }
 
     sample = scaleRangef(sample, range->min, range->max, PWM_RANGE_MIN, PWM_RANGE_MAX);
-    sample = constrainf(sample, PWM_PULSE_MIN, PWM_PULSE_MAX);
-
+    // out of range channel values are now constrained after the validity check in detectAndApplySignalLossBehaviour()
     return sample;
 }
 
@@ -645,7 +645,7 @@ void detectAndApplySignalLossBehaviour(void)
     for (int channel = 0; channel < rxChannelCount; channel++) {
         float sample = rcRaw[channel];
         const bool thisChannelValid = rxFlightChannelsValid && isPulseValid(sample);
-        //  if the packet is bad, we don't allow any channels to be good
+        // if the whole packet is bad, consider all channels bad
 
         if (thisChannelValid) {
             //  reset the invalid pulse period timer for every good channel
@@ -653,9 +653,10 @@ void detectAndApplySignalLossBehaviour(void)
         }
 
        if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
-            //  apply failsafe values, until failsafe ends, or disarmed, unless in GPS Return (where stick values should remain)
+            // while in failsafe Stage 2, pass incoming flight channel values unless they are bad
+            // this allows GPS Return to detect the 30% requirement for termination
             if (channel < NON_AUX_CHANNEL_COUNT) {
-                if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
+                if (!thisChannelValid) {
                     if (channel == THROTTLE ) {
                         sample = failsafeConfig()->failsafe_throttle;
                     } else {
@@ -663,7 +664,7 @@ void detectAndApplySignalLossBehaviour(void)
                     }
                 }
             } else if (!failsafeAuxSwitch) {
-                // aux channels as Set in Configurator, unless failsafe initiated by switch
+                // set aux channels as per Stage 1 Configurator values, unless failsafe was initiated by switch
                 sample = getRxfailValue(channel);
             }
         } else {
@@ -674,7 +675,8 @@ void detectAndApplySignalLossBehaviour(void)
                 }
             } else if (!thisChannelValid) {
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
-                    //  HOLD bad channel/s for MAX_INVALID_PULSE_TIME_MS (300ms) after Rx loss
+                    sample = rcData[channel];
+                    //  HOLD last valid value on bad channel/s for MAX_INVALID_PULSE_TIME_MS (300ms)
                 } else {
                     //  then use STAGE 1 failsafe values
                     if (channel < NON_AUX_CHANNEL_COUNT) {
@@ -687,6 +689,8 @@ void detectAndApplySignalLossBehaviour(void)
             }
         }
 
+        sample = constrainf(sample, PWM_PULSE_MIN, PWM_PULSE_MAX);
+
 #if defined(USE_PWM) || defined(USE_PPM)
         if (rxRuntimeState.rxProvider == RX_PROVIDER_PARALLEL_PWM || rxRuntimeState.rxProvider == RX_PROVIDER_PPM) {
             //  smooth output for PWM and PPM using moving average
@@ -695,8 +699,9 @@ void detectAndApplySignalLossBehaviour(void)
 #endif
 
         {
-            //  set rcData to either clean raw incoming values, or failsafe-modified values
+            //  set rcData to either validated incoming values, or failsafe-modified values
             rcData[channel] = sample;
+
         }
     }
 
