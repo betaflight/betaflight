@@ -82,7 +82,7 @@
 #define USE_RX_SX1280
 
 #define RX_SPI_LED_INVERTED
-#define RX_SPI_BIND_PIN         		PB2
+#define RX_SPI_BIND_PIN			PB2
 #define RX_SPI_EXTI_PIN             	PC14
 #define RX_SPI_LED_PIN              	PB9
 #define RX_EXPRESSLRS_SPI_RESET_PIN     PA8
@@ -109,8 +109,8 @@
 
 // *************** ADC *****************************
 #define USE_ADC
-#define ADC_INSTANCE         ADC1  // Default added
-#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0 
+#define ADC_INSTANCE            ADC1  // Default added
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0
 
 #define VBAT_ADC_PIN            PB0
 #define CURRENT_METER_ADC_PIN   PB1
@@ -120,7 +120,7 @@
 #define DEFAULT_FEATURES                (FEATURE_OSD | FEATURE_TELEMETRY )
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
-#define CURRENT_METER_SCALE_DEFAULT 179
+#define CURRENT_METER_SCALE_DEFAULT 	179
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
@@ -128,4 +128,4 @@
 #define TARGET_IO_PORTD         (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
-#define USED_TIMERS             ( TIM_N(1)|TIM_N(2)|TIM_N(4)|TIM_N(5)|TIM_N(9))
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(4) | TIM_N(5) | TIM_N(9) )
