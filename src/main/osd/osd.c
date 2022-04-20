@@ -1205,8 +1205,6 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
-        showVisualBeeper = isBeeperOn();
-
         // don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
             break;
@@ -1472,6 +1470,11 @@ bool osdElementVisible(uint16_t value)
 bool osdGetVisualBeeperState(void)
 {
     return showVisualBeeper;
+}
+
+void osdSetVisualBeeperState(bool state)
+{
+    showVisualBeeper = state;
 }
 
 statistic_t *osdGetStats(void)
