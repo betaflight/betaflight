@@ -34,4 +34,15 @@
 bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeState_s *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 void expressLrsSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e expressLrsDataReceived(uint8_t *payload);
+rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampUs);
+bool expressLrsIsFhssReq(void);
+void expressLrsDoTelem(void);
+bool expressLrsTelemRespReq(void);
+void expressLrsSetRfPacketStatus(rx_spi_received_e status);
+uint32_t expressLrsGetCurrentFreq(void);
+volatile uint8_t *expressLrsGetRxBuffer(void);
+volatile uint8_t *expressLrsGetTelemetryBuffer(void);
+volatile uint8_t *expressLrsGetPayloadBuffer(void);
+void expressLrsHandleTelemetryUpdate(void);
 void expressLrsStop(void);
+void expressLrsISR(bool runAlways);

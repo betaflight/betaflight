@@ -656,6 +656,11 @@ void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
 }
+
+bool crsfRxUseNegotiatedBaud(void)
+{
+    return rxConfig()->crsf_use_negotiated_baud;
+}
 #endif
 
 bool crsfRxIsActive(void)

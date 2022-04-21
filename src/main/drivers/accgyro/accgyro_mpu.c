@@ -173,7 +173,7 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
-    EXTIEnable(mpuIntIO, true);
+    EXTIEnable(mpuIntIO);
 }
 #endif // USE_GYRO_EXTI
 
@@ -221,7 +221,7 @@ bool mpuAccReadSPI(accDev_t *acc)
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
         segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
@@ -298,7 +298,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = gyro->dev.txBuf;
         segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];

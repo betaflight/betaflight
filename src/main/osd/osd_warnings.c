@@ -331,6 +331,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_VISUAL_BEEPER) && osdGetVisualBeeperState()) {
         tfp_sprintf(warningText, "  * * * *");
         *displayAttr = DISPLAYPORT_ATTR_INFO;
+        osdSetVisualBeeperState(false);
         return;
     }
 

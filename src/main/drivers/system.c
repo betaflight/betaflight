@@ -153,7 +153,7 @@ uint32_t getCycleCounter(void)
     return DWT->CYCCNT;
 }
 
-uint32_t clockCyclesToMicros(uint32_t clockCycles)
+int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles / usTicks;
 }

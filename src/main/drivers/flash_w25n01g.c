@@ -151,7 +151,7 @@ static void w25n01g_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
 
         busSegment_t segments[] = {
                 {.u.buffers = {&command, NULL}, sizeof(command), true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         spiSequence(dev, &segments[0]);
@@ -176,7 +176,7 @@ static void w25n01g_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t c
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         spiSequence(dev, &segments[0]);
@@ -203,7 +203,7 @@ static uint8_t w25n01g_readRegister(flashDeviceIO_t *io, uint8_t reg)
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, in}, sizeof(cmd), true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing
@@ -238,7 +238,7 @@ static void w25n01g_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing
@@ -410,7 +410,7 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
          busSegment_t segments[] = {
                  {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
                  {.u.buffers = {(uint8_t *)data, NULL}, length, true, NULL},
-                 {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                 {.u.link = {NULL, NULL}, 0, true, NULL},
          };
 
          spiSequence(dev, &segments[0]);
@@ -441,7 +441,7 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
                 {.u.buffers = {(uint8_t *)data, NULL}, length, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         spiSequence(dev, &segments[0]);
@@ -684,7 +684,7 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
                 {.u.buffers = {NULL, buffer}, length, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         spiSequence(dev, &segments[0]);
@@ -749,7 +749,7 @@ int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
                 {.u.buffers = {NULL, buffer}, length, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing
@@ -849,7 +849,7 @@ void w25n01g_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
                 {.u.buffers = {NULL, in}, sizeof(in), true, w25n01g_readBBLUTCallback},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         spiSequence(dev, &segments[0]);
@@ -888,7 +888,7 @@ void w25n01g_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing

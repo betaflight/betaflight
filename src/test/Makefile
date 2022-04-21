@@ -192,6 +192,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \

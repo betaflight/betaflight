@@ -25,11 +25,13 @@ extern "C" {
     #include "build/debug.h"
     #include "drivers/io.h"
     #include "common/maths.h"
+    #include "flight/failsafe.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
+    #include "fc/runtime_config.h"
     #include "rx/rx.h"
 }
 
@@ -39,10 +41,12 @@ extern "C" {
 extern "C" {
 
 PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
 boxBitmask_t rcModeActivationMask;
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode = 0;
+uint8_t armingFlags = 0;
 
 extern float applyRxChannelRangeConfiguraton(float sample, const rxChannelRangeConfig_t *range);
 }
@@ -62,8 +66,8 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(1000, RANGE_CONFIGURATION(1000, 2000)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(1000, 2000)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(2000, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(700, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(2500, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1000, 2000)));
 
     // Reversed channel
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(1000, RANGE_CONFIGURATION(2000, 1000)));
@@ -74,31 +78,31 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(900, RANGE_CONFIGURATION(900, 1900)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1400, RANGE_CONFIGURATION(900, 1900)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(1900, RANGE_CONFIGURATION(900, 1900)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 1900)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(900, 1900)));
+    EXPECT_EQ(700, applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 1900)));
+    EXPECT_EQ(2600, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(900, 1900)));
 
     // Narrower range than expected
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(1300, RANGE_CONFIGURATION(1300, 1700)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(1300, 1700)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(1700, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(-500, applyRxChannelRangeConfiguraton(700, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(4000, applyRxChannelRangeConfiguraton(2500, RANGE_CONFIGURATION(1300, 1700)));
 
     // Wider range than expected
     EXPECT_EQ(1000, applyRxChannelRangeConfiguraton(900, RANGE_CONFIGURATION(900, 2100)));
     EXPECT_EQ(1500, applyRxChannelRangeConfiguraton(1500, RANGE_CONFIGURATION(900, 2100)));
     EXPECT_EQ(2000, applyRxChannelRangeConfiguraton(2100, RANGE_CONFIGURATION(900, 2100)));
     EXPECT_EQ(750, applyRxChannelRangeConfiguraton(600, RANGE_CONFIGURATION(900, 2100)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(2700, RANGE_CONFIGURATION(900, 2100)));
+    EXPECT_EQ(2500, applyRxChannelRangeConfiguraton(2700, RANGE_CONFIGURATION(900, 2100)));
 
     // extreme out of range
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(750, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(900, 2100)));
+    EXPECT_EQ(1, applyRxChannelRangeConfiguraton(1, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(-2245, applyRxChannelRangeConfiguraton(2, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(252.5, applyRxChannelRangeConfiguraton(3, RANGE_CONFIGURATION(900, 2100)));
 
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1000, 2000)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1300, 1700)));
-    EXPECT_EQ(2250, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(900, 2100)));
+    EXPECT_EQ(10000, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1000, 2000)));
+    EXPECT_EQ(22750, applyRxChannelRangeConfiguraton(10000, RANGE_CONFIGURATION(1300, 1700)));
+    EXPECT_EQ(25250, applyRxChannelRangeConfiguraton(30000, RANGE_CONFIGURATION(900, 2100)));
 }
 
 
@@ -107,7 +111,12 @@ extern "C" {
 
 void failsafeOnRxSuspend(uint32_t ) {}
 void failsafeOnRxResume(void) {}
+bool failsafeIsActive(void) { return false; }
+bool failsafeIsReceivingRxData(void) { return true; }
 bool taskUpdateRxMainInProgress() { return true; }
+void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+uint16_t flightModeFlags = 0;
 
 uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }
@@ -222,6 +231,11 @@ void failsafeOnValidDataReceived(void)
 
 void failsafeOnValidDataFailed(void)
 {
+}
+
+uint32_t failsafeFailurePeriodMs(void)
+{
+    return 400;
 }
 
 float pt1FilterGain(float f_cut, float dT)

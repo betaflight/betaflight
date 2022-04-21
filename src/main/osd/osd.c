@@ -67,6 +67,7 @@
 #if defined(USE_DYN_NOTCH_FILTER)
 #include "flight/dyn_notch_filter.h"
 #endif
+#include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/position.h"
@@ -1037,6 +1038,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
             resumeRefreshAt = osdShowArmed() + currentTimeUs;
         } else if (isSomeStatEnabled()
                    && !suppressStatsDisplay
+                   && !failsafeIsActive()
                    && (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))
                        || !VISIBLE(osdElementConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
@@ -1203,8 +1205,6 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
-        showVisualBeeper = isBeeperOn();
-
         // don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
             break;
@@ -1470,6 +1470,11 @@ bool osdElementVisible(uint16_t value)
 bool osdGetVisualBeeperState(void)
 {
     return showVisualBeeper;
+}
+
+void osdSetVisualBeeperState(bool state)
+{
+    showVisualBeeper = state;
 }
 
 statistic_t *osdGetStats(void)

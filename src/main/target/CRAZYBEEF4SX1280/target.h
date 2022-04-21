@@ -51,10 +51,11 @@
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_GYRO_SPI_ICM20689
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-
+#define USE_ACC_SPI_ICM20689
 
 // *************** OSD/FLASH *****************************
 #define USE_SPI_DEVICE_2
@@ -125,7 +126,7 @@
 #define USE_LED_STRIP
 
 #define ENABLE_DSHOT_DMAR       DSHOT_DMAR_AUTO
-#define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_ON
+#define DSHOT_BITBANG_DEFAULT   DSHOT_BITBANG_OFF
 
 #define USE_PINIO
 //#define PINIO1_PIN              PB5  // VTX  switcher

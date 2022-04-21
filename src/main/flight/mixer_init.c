@@ -306,12 +306,8 @@ void mixerInitProfile(void)
     mixerRuntime.dynIdleDGain = currentPidProfile->dyn_idle_d_gain * 0.0000003f * pidGetPidFrequency();
     mixerRuntime.dynIdleMaxIncrease = currentPidProfile->dyn_idle_max_increase * 0.001f;
     mixerRuntime.minRpsDelayK = 800 * pidGetDT() / 20.0f; //approx 20ms D delay, arbitrarily suits many motors
-    if (!mixerRuntime.feature3dEnabled ) {
-        if (mixerRuntime.dynIdleMinRps) {
-            mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE;
-        } else {
-            mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE + mixerRuntime.idleThrottleOffset * DSHOT_RANGE;
-        }
+    if (!mixerRuntime.feature3dEnabled && mixerRuntime.dynIdleMinRps) {
+        mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE; // Override value set by initEscEndpoints to allow zero motor drive
     }
 #endif
 

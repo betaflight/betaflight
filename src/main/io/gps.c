@@ -43,6 +43,7 @@
 #include "drivers/light_led.h"
 #include "drivers/time.h"
 
+#include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/serial.h"
@@ -872,11 +873,26 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
         DISABLE_STATE(GPS_FIX_HOME);
     }
+
+    uint8_t minSats = 5;
+
 #if defined(USE_GPS_RESCUE)
     if (gpsRescueIsConfigured()) {
         updateGPSRescueState();
+        minSats = gpsRescueConfig()->minSats;
     }
 #endif
+
+    static bool hasFix = false;
+    if (STATE(GPS_FIX)) {
+        if (gpsIsHealthy() && gpsSol.numSat >= minSats && !hasFix) {
+            // ready beep sequence on fix or requirements for gps rescue met.
+            beeper(BEEPER_READY_BEEP);
+            hasFix = true;
+        }
+    } else {
+        hasFix = false;
+    }
 }
 
 static void gpsNewData(uint16_t c)

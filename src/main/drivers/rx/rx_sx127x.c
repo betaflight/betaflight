@@ -76,27 +76,16 @@ static bool sx127xDetectChip(void)
 
 uint8_t sx127xISR(timeUs_t *timeStamp)
 {
-    bool extiTriggered = false;
-    timeUs_t extiTimestamp;
+    timeUs_t extiTimestamp = rxSpiGetLastExtiTimeUs();
 
-    ATOMIC_BLOCK(NVIC_PRIO_RX_SPI_INT_EXTI) {
-        // prevent a data-race that can occur if a new EXTI ISR occurs during this block.
-        extiTriggered = rxSpiPollExti();
-        extiTimestamp = rxSpiGetLastExtiTimeUs();
-        if (extiTriggered) {
-            rxSpiResetExti();
-        }
+    rxSpiResetExti();
+
+    uint8_t irqReason = sx127xGetIrqReason();
+    if (extiTimestamp) {
+        *timeStamp = extiTimestamp;
     }
 
-    if (extiTriggered) {
-        uint8_t irqReason = sx127xGetIrqReason();
-        if (extiTimestamp) {
-            *timeStamp = extiTimestamp;
-        }
-
-        return irqReason;
-    }
-    return 0;
+    return irqReason;
 }
 
 bool sx127xInit(IO_t resetPin, IO_t busyPin)

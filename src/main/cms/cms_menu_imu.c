@@ -326,25 +326,25 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
     { "PID TUNING",        OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_pids_mode, PID_SIMPLIFIED_TUNING_MODE_COUNT - 1, lookupTableSimplifiedTuningPidsMode } },
 
     { "-- BASIC --",       OME_Label, NULL, NULL},
-    { "D GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "P&I GAINS",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pi_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "FF GAINS",          OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "D GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_gain,            SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "P&I GAINS",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pi_gain,           SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "FF GAINS",          OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "-- EXPERT --",      OME_Label, NULL, NULL},
 #ifdef USE_D_MIN
-    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 #endif
-    { "I GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "I GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
-    { "PITCH:ROLL D",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "PITCH:ROLL P,I&FF", OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pitch_pi_gain,     SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "MASTER MULT",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "PITCH:ROLL D",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "PITCH:ROLL P,I&FF", OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pitch_pi_gain,     SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "MASTER MULT",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "-- SIMPLIFIED FILTER --", OME_Label, NULL, NULL},
     { "GYRO TUNING",       OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_gyro_filter,  1, lookupTableOffOn } },
-    { "GYRO MULT",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "GYRO MULT",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
     { "DTERM TUNING",      OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_dterm_filter, 1, lookupTableOffOn } },
-    { "DTERM MULT",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "DTERM MULT",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

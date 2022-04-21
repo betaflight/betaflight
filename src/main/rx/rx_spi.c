@@ -71,6 +71,11 @@ static protocolProcessFrameFnPtr protocolProcessFrame;
 static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 static protocolStopFnPtr protocolStop = nullProtocolStop;
 
+static rxSpiExtiConfig_t extiConfig = {
+    .ioConfig = IOCFG_IN_FLOATING,
+    .trigger = BETAFLIGHT_EXTI_TRIGGER_RISING,
+};
+
 STATIC_UNIT_TESTED float rxSpiReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
 {
     STATIC_ASSERT(NRF24L01_MAX_PAYLOAD_SIZE <= RX_SPI_MAX_PAYLOAD_SIZE, NRF24L01_MAX_PAYLOAD_SIZE_larger_than_RX_SPI_MAX_PAYLOAD_SIZE);
@@ -194,10 +199,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
     return true;
 }
 
-/*
+/* Called by scheduler immediately after real-time tasks
  * Returns true if the RX has received new data.
- * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
- * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
 static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
@@ -218,7 +221,10 @@ static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
     return status;
 }
-
+/* Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
+ * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
+ *
+ */
 static bool rxSpiProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
@@ -253,11 +259,6 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
         return false;
     }
 
-    rxSpiExtiConfig_t extiConfig = {
-        .ioConfig = IOCFG_IN_FLOATING,
-        .trigger = BETAFLIGHT_EXTI_TRIGGER_RISING,
-    };
-
     ret = protocolInit(rxSpiConfig, rxRuntimeState, &extiConfig);
 
     if (rxSpiExtiConfigured()) {
@@ -274,6 +275,11 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
     rxRuntimeState->rcProcessFrameFn = rxSpiProcessFrame;
 
     return ret;
+}
+
+void rxSpiEnableExti(void)
+{
+    rxSpiExtiInit(extiConfig.ioConfig, extiConfig.trigger);
 }
 
 void rxSpiStop(void)

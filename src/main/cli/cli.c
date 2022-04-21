@@ -4929,20 +4929,20 @@ static void cliTasks(const char *cmdName, char *cmdline)
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTimeUs == 0 ? 0 : (taskInfo.averageExecutionTimeUs * taskFrequency) / 1000;
+            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
+                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
                         maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
                         taskInfo.totalExecutionTimeUs / 1000,
                         taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
 #else
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
+                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
                         maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
                         taskInfo.totalExecutionTimeUs / 1000);
 #endif
@@ -6162,8 +6162,8 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
     if (useDshotTelemetry) {
         cliPrintLinef("Dshot reads: %u", dshotTelemetryState.readCount);
         cliPrintLinef("Dshot invalid pkts: %u", dshotTelemetryState.invalidPacketCount);
-        uint32_t directionChangeCycles = dshotDMAHandlerCycleCounters.changeDirectionCompletedAt - dshotDMAHandlerCycleCounters.irqAt;
-        uint32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
+        int32_t directionChangeCycles = cmp32(dshotDMAHandlerCycleCounters.changeDirectionCompletedAt, dshotDMAHandlerCycleCounters.irqAt);
+        int32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
         cliPrintLinef("Dshot directionChange cycles: %u, micros: %u", directionChangeCycles, directionChangeDurationUs);
         cliPrintLinefeed();
 

@@ -199,7 +199,7 @@ Avoid implicit double conversions and only use float-argument functions.
 
 Check .map file to make sure no conversions sneak in, and use -Wdouble-promotion warning for the compiler
 
-Instead of sin() and cos(), use sin\_approx() and cos\_approx() from common/math.h.
+Instead of `sin()` and `cos()`, use `sin_approx()` and `cos_approx()` from common/math.h.
 
 Float constants should be defined with "f" suffix, like 1.0f and 3.1415926f, otherwise double conversion might occur.
 
@@ -228,7 +228,7 @@ boolean isBiQuadReady();
 
 ## Parameter order
 
-Data should move from right to left, as in memcpy(void *dst, const void *src, size\_t size).
+Data should move from right to left, as in `memcpy(void *dst, const void *src, size_t size)`.
 This also mimics the assignment operator (e.g. dst = src;)
 
 When a group of functions act on an 'object' then that object should be the first parameter for all the functions, e.g.:
@@ -299,7 +299,7 @@ All files must include their own dependencies and not rely on includes from the 
 
 Do not include things you are not using.
 
-"[#pragma once](https://en.wikipedia.org/wiki/Pragma_once)" is preferred over "#include guards" to avoid multiple includes.
+`#pragma once` ([see wiki](https://en.wikipedia.org/wiki/Pragma_once)) is preferred over `#include guards` to avoid multiple includes.
 
 
 # Other details

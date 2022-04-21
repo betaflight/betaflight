@@ -745,12 +745,6 @@ bool isAirmodeActivated()
  */
 bool processRx(timeUs_t currentTimeUs)
 {
-    timeDelta_t frameAgeUs;
-    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
-
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
-    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
-
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
         return false;
     }
@@ -768,7 +762,6 @@ bool processRx(timeUs_t currentTimeUs)
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();
     }
-    failsafeUpdateState();
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
@@ -1281,6 +1274,14 @@ FAST_CODE bool gyroFilterReady(void)
 FAST_CODE bool pidLoopReady(void)
 {
     if ((pidUpdateCounter % activePidLoopDenom) == (activePidLoopDenom / 2)) {
+        return true;
+    }
+    return false;
+}
+
+FAST_CODE bool rxFrameReady(void)
+{
+    if ((activePidLoopDenom == 1) || (pidUpdateCounter % activePidLoopDenom == 0)) {
         return true;
     }
     return false;

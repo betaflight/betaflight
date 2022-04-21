@@ -168,7 +168,6 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 
 typedef enum {
     RX_STATE_CHECK,
-    RX_STATE_PROCESS,
     RX_STATE_MODES,
     RX_STATE_UPDATE,
     RX_STATE_COUNT
@@ -196,10 +195,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     switch (rxState) {
     default:
     case RX_STATE_CHECK:
-        rxState = RX_STATE_PROCESS;
-        break;
-
-    case RX_STATE_PROCESS:
         if (!processRx(currentTimeUs)) {
             rxState = RX_STATE_CHECK;
             break;
@@ -258,6 +253,20 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 
     if (sensors(SENSOR_BARO)) {
         const uint32_t newDeadline = baroUpdate(currentTimeUs);
+        if (newDeadline != 0) {
+            rescheduleTask(TASK_SELF, newDeadline);
+        }
+    }
+}
+#endif
+
+#ifdef USE_MAG
+static void taskUpdateMag(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (sensors(SENSOR_MAG)) {
+        const uint32_t newDeadline = compassUpdate(currentTimeUs);
         if (newDeadline != 0) {
             rescheduleTask(TASK_SELF, newDeadline);
         }
@@ -361,7 +370,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_MAG
-    [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, compassUpdate,TASK_PERIOD_HZ(10), TASK_PRIORITY_LOW),
+    [TASK_COMPASS] = DEFINE_TASK("COMPASS", NULL, NULL, taskUpdateMag, TASK_PERIOD_HZ(10), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_BARO
@@ -434,12 +443,16 @@ task_t *getTask(unsigned taskId)
     return &tasks[taskId];
 }
 
-void tasksInit(void)
+// Has to be done before tasksInit() in order to initialize any task data which may be uninitialized at boot
+void tasksInitData(void)
 {
     for (int i = 0; i < TASK_COUNT; i++) {
         tasks[i].attribute = &task_attributes[i];
     }
+}
 
+void tasksInit(void)
+{
     schedulerInit();
 
     setTaskEnabled(TASK_MAIN, true);

@@ -144,6 +144,7 @@
 #define USE_FLASH_W25M             // Stacked die support
 #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128 iFlight_Beast_H7_55A_V1 version uses 16Mbit Winbond W25Q128FV Flash
 #define FLASH_CS_PIN            SPI3_NSS_PIN
 #define FLASH_SPI_INSTANCE      SPI3
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT

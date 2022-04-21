@@ -1,0 +1,35 @@
+# Builds Betaflight Firmware.
+#
+# After building, artifacts are kept for 7 days.
+
+name: CI
+
+on: 
+  workflow_call:
+    inputs:
+      release_build:
+        description: 'Specifies if it is a debug build or a release build'
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build
+    runs-on:  ubuntu-20.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare environment
+        run: make arm_sdk_install
+
+      - name: Execute Build
+        run: make all RELEASE=${{ inputs.release_build && 'yes' || 'no' }}
+
+      - name: Publish build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Assets
+          path: ./obj/*.hex
+          retention-days: 7

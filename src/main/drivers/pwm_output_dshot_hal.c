@@ -172,8 +172,8 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
-        if (!motor->isInput) {
 #ifdef USE_DSHOT_TELEMETRY
+        if (!motor->isInput) {
             dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
 #endif
 #ifdef USE_DSHOT_DMAR
@@ -195,8 +195,8 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
                 LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
                 dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
             }
-#endif
         }
+#endif
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
