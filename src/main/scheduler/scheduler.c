@@ -58,7 +58,7 @@
 // 0 - Gyro task start cycle time in 10th of a us
 // 1 - ID of late task
 // 2 - Amount task is late in 10th of a us
-// 3 - Gyro lock skew in clock cycles
+// 3 - Gyro lock skew in 10th of a us
 
 // DEBUG_TIMING_ACCURACY, requires USE_LATE_TASK_STATISTICS to be defined
 // 0 - % CPU busy
