@@ -32,13 +32,14 @@
 
 #include "cms/cms.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
-#include "config/config.h"
 #include "common/crc.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "drivers/nvic.h"
@@ -88,6 +89,9 @@ typedef struct mspBuffer_s {
 static mspBuffer_t mspRxBuffer;
 
 #if defined(USE_CRSF_V3)
+
+#define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 20000 // 20ms
+
 static bool isCrsfV3Running = false;
 typedef struct {
     uint8_t hasPendingReply:1;
@@ -98,6 +102,19 @@ typedef struct {
 } crsfSpeedControl_s;
 
 static crsfSpeedControl_s crsfSpeed = {0};
+
+uint32_t crsfCachedBaudrate __attribute__ ((section (".noinit"))); // Used for retaining negotiated baudrate after soft reset
+
+uint32_t getCrsfCachedBaudrate(void)
+{
+    // check if valid first. return default baudrate if not
+    for (unsigned i = 0; i < BAUD_COUNT; i++) {
+        if (crsfCachedBaudrate == baudRates[i] && baudRates[i] >= CRSF_BAUDRATE) {
+            return crsfCachedBaudrate;
+        }
+    }
+    return CRSF_BAUDRATE;
+}
 
 bool checkCrsfCustomizedSpeed(void)
 {
@@ -116,7 +133,13 @@ void setCrsfDefaultSpeed(void)
     crsfSpeed.confirmationTime = 0;
     crsfSpeed.index = BAUD_COUNT;
     isCrsfV3Running = false;
-    crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
+    crsfCachedBaudrate = getCrsfDesiredSpeed();
+    crsfRxUpdateBaudrate(crsfCachedBaudrate);
+}
+
+bool crsfBaudNegotiationInProgress(void)
+{
+    return crsfSpeed.hasPendingReply || crsfSpeed.isNewSpeedValid;
 }
 #endif
 
@@ -246,6 +269,18 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, (mAhDrawn >> 8));
     sbufWriteU8(dst, (uint8_t)mAhDrawn);
     sbufWriteU8(dst, batteryRemainingPercentage);
+}
+
+/*
+0x0B Heartbeat
+Payload:
+int16_t    origin_add ( Origin Device address )
+*/
+void crsfFrameHeartbeat(sbuf_t *dst)
+{
+    sbufWriteU8(dst, CRSF_FRAME_HEARTBEAT_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_HEARTBEAT);
+    sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
 }
 
 typedef enum {
@@ -418,40 +453,37 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
-void speedNegotiationProcess(uint32_t currentTime)
+void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
-    if (!featureIsEnabled(FEATURE_TELEMETRY) && getCrsfDesiredSpeed() == CRSF_BAUDRATE) {
-        // to notify the RX to fall back to default baud rate by sending device info frame if telemetry is disabled
-        sbuf_t crsfPayloadBuf;
-        sbuf_t *dst = &crsfPayloadBuf;
+    if (crsfSpeed.hasPendingReply) {
+        bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
+        sbuf_t crsfSpeedNegotiationBuf;
+        sbuf_t *dst = &crsfSpeedNegotiationBuf;
         crsfInitializeFrame(dst);
-        crsfFrameDeviceInfo(dst);
+        crsfFrameSpeedNegotiationResponse(dst, found);
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
-    } else {
-        if (crsfSpeed.hasPendingReply) {
-            bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
-            sbuf_t crsfSpeedNegotiationBuf;
-            sbuf_t *dst = &crsfSpeedNegotiationBuf;
-            crsfInitializeFrame(dst);
-            crsfFrameSpeedNegotiationResponse(dst, found);
-            crsfRxSendTelemetryData(); // prevent overwriting previous data
-            crsfFinalize(dst);
-            crsfRxSendTelemetryData();
-            crsfSpeed.hasPendingReply = false;
-            crsfSpeed.isNewSpeedValid = found;
-            crsfSpeed.confirmationTime = currentTime;
-            return;
-        } else if (crsfSpeed.isNewSpeedValid) {
-            if (currentTime - crsfSpeed.confirmationTime >= 4000) {
-                // delay 4ms before applying the new baudrate
-                crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
-                crsfSpeed.isNewSpeedValid = false;
-                isCrsfV3Running = true;
-                return;
-            }
+        crsfSpeed.hasPendingReply = false;
+        crsfSpeed.isNewSpeedValid = found;
+        crsfSpeed.confirmationTime = currentTimeUs;
+    } else if (crsfSpeed.isNewSpeedValid) {
+        if (cmpTimeUs(currentTimeUs, crsfSpeed.confirmationTime) >= 4000) {
+            // delay 4ms before applying the new baudrate
+            crsfCachedBaudrate = getCrsfDesiredSpeed();
+            crsfRxUpdateBaudrate(crsfCachedBaudrate);
+            crsfSpeed.isNewSpeedValid = false;
+            isCrsfV3Running = true;
         }
+    } else if (!featureIsEnabled(FEATURE_TELEMETRY) && crsfRxUseNegotiatedBaud()) {
+        // Send heartbeat if telemetry is disabled to allow RX to detect baud rate mismatches
+        sbuf_t crsfPayloadBuf;
+        sbuf_t *dst = &crsfPayloadBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameHeartbeat(dst);
+        crsfRxSendTelemetryData(); // prevent overwriting previous data
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
     }
 }
 #endif
@@ -552,6 +584,7 @@ typedef enum {
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
+    CRSF_FRAME_HEARTBEAT_INDEX,
     CRSF_SCHEDULE_COUNT_MAX
 } crsfFrameTypeIndex_e;
 
@@ -621,6 +654,15 @@ static void processCrsf(void)
         crsfFinalize(dst);
     }
 #endif
+
+#if defined(USE_CRSF_V3)
+    if (currentSchedule & BIT(CRSF_FRAME_HEARTBEAT_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameHeartbeat(dst);
+        crsfFinalize(dst);
+    }
+#endif
+
     crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
 }
 
@@ -661,6 +703,14 @@ void initCrsfTelemetry(void)
         crsfSchedule[index++] = BIT(CRSF_FRAME_GPS_INDEX);
     }
 #endif
+
+#if defined(USE_CRSF_V3)
+    while (index < (CRSF_CYCLETIME_US / CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) && index < CRSF_SCHEDULE_COUNT_MAX) {
+        // schedule heartbeat to ensure that telemetry/heartbeat frames are sent at minimum 50Hz
+        crsfSchedule[index++] = BIT(CRSF_FRAME_HEARTBEAT_INDEX);
+    }
+#endif
+
     crsfScheduleCount = (uint8_t)index;
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
@@ -730,6 +780,13 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     if (!crsfTelemetryEnabled) {
         return;
     }
+
+#if defined(USE_CRSF_V3)
+    if (crsfBaudNegotiationInProgress()) {
+        return;
+    }
+#endif
+
     // Give the receiver a chance to send any outstanding telemetry data.
     // This needs to be done at high frequency, to enable the RX to send the telemetry frame
     // in between the RX frames.
