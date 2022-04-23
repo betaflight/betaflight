@@ -961,8 +961,12 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
     bool canUseHorizonMode = true;
-
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive()) && (sensors(SENSOR_ACC))) {
+    const bool useLevelInStage1 = !rxAreFlightChannelsValid() && !failsafeIsActive() && (
+#ifdef USE_GPS_RESCUE
+    (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE) || 
+#endif
+    (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_AUTO_LANDING));
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive() || useLevelInStage1) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 

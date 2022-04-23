@@ -637,7 +637,6 @@ void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
     const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
-    bool allAuxChannelsAreGood = true; 
     // used to record if any non-aux channel is out of range for the timeout period, assume they are good
     rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
     //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
@@ -680,7 +679,7 @@ void detectAndApplySignalLossBehaviour(void)
                 } else {
                     //  then use STAGE 1 failsafe values
                     if (channel < NON_AUX_CHANNEL_COUNT) {
-                        allAuxChannelsAreGood = false;
+                        rxFlightChannelsValid = false;
                         //  declare signal lost after 300ms of at least one bad flight channel
                     }
                     sample = getRxfailValue(channel);
@@ -705,7 +704,7 @@ void detectAndApplySignalLossBehaviour(void)
         }
     }
 
-    if (rxFlightChannelsValid && allAuxChannelsAreGood) {
+    if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe
     } else {

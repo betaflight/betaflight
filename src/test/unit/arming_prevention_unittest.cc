@@ -1109,4 +1109,5 @@ extern "C" {
     bool isMotorProtocolEnabled(void) { return true; }
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
+    bool rxAreFlightChannelsValid(void) { return true; }
 }
