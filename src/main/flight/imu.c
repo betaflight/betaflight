@@ -85,7 +85,8 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_KP_GAIN    25.0     // dcmKpGain value to use during attitude reset
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
-#define GPS_COG_MIN_GROUNDSPEED 500        // 500cm/s minimum groundspeed for a gps heading to be considered valid
+#define GPS_COG_MIN_GROUNDSPEED 200        // 200cm/s minimum groundspeed for a gps based IMU heading to be considered valid
+                                           // Better to have some update than none for GPS Rescue at slow return speeds
 
 float accAverage[XYZ_AXIS_COUNT];
 

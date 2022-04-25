@@ -81,13 +81,13 @@ static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
 int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint32_t GPS_distanceToHomeCm;
+int16_t GPS_directionToHome;        // direction to home or hol point in degrees * 10
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
-float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t nav_takeoff_bearing;
 
-#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
+#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 0.54 km/h 0.335 mph
 
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
@@ -1838,10 +1838,12 @@ void GPS_calculateDistanceAndDirectionToHome(void)
         uint32_t dist;
         int32_t dir;
         GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[GPS_LATITUDE], &GPS_home[GPS_LONGITUDE], &dist, &dir);
-        GPS_distanceToHome = dist / 100;
-        GPS_directionToHome = dir / 100;
+        GPS_distanceToHome = dist / 100; // m/s
+        GPS_distanceToHomeCm = dist; // cm/sec
+        GPS_directionToHome = dir / 10; // degrees * 10 or decidegrees
     } else {
         GPS_distanceToHome = 0;
+        GPS_distanceToHomeCm = 0;
         GPS_directionToHome = 0;
     }
 }
@@ -1851,16 +1853,6 @@ void onGpsNewData(void)
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
-
-    //
-    // Calculate time delta for navigation loop, range 0-1.0f, in seconds
-    //
-    // Time for calculating x,y speed and navigation pids
-    static uint32_t nav_loopTimer;
-    dTnav = (float)(millis() - nav_loopTimer) / 1000.0f;
-    nav_loopTimer = millis();
-    // prevent runup from bad GPS
-    dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {

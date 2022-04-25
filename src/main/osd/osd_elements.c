@@ -1023,7 +1023,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (GPS_distanceToHome > 0) {
-            const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            const int h = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
             element->buff[0] = SYM_OVER_HOME;

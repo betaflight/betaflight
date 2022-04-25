@@ -72,7 +72,7 @@ extern "C" {
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
-    uint16_t GPS_distanceToHome = 0;
+    uint32_t GPS_distanceToHomeCm = 0;
     int16_t GPS_directionToHome = 0;
     acc_t acc = {};
     bool mockIsUpright = false;
@@ -1059,6 +1059,8 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
+    bool failsafeIsReceivingRxData(void) { return false; }
+    bool rxAreFlightChannelsValid(void) { return false; }
     void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
@@ -1109,4 +1111,5 @@ extern "C" {
     bool isMotorProtocolEnabled(void) { return true; }
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
+    float pt1FilterGain(float, float) {return 0.5f;}
 }
