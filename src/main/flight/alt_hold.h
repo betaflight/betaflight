@@ -25,8 +25,8 @@
 #include "pg/pg_ids.h"
 
 #define ALTHOLD_TASK_PERIOD 100         // hz
-#define ALTHOLD_ENTER_PERIOD 500        // ms
-#define ALTHOLD_MAX_EXIT_PERIOD 5000    // ms
+#define ALTHOLD_ENTER_PERIOD 50         // ms
+#define ALTHOLD_MAX_EXIT_PERIOD 3000    // ms
 
 
 typedef struct altholdConfig_s {
@@ -40,7 +40,6 @@ typedef struct altholdConfig_s {
     uint16_t maxThrottle;
 
     uint8_t angleLimit;
-    uint16_t angleSmoothFactor;
 } altholdConfig_t;
 
 PG_DECLARE(altholdConfig_t, altholdConfig);
@@ -68,7 +67,6 @@ typedef struct {
     bool altHoldEnabled;
     uint32_t enterTime;
     uint32_t exitTime;
-    float angleDeflections[3];
     float smoothedAltitude;
 } altHoldState_s;
 
@@ -77,6 +75,5 @@ void initAltHoldState(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float getAltHoldThrottle(void);
 float getAltHoldThrottleFactor(float currentThrottle);
-float getAltHoldAngle(int axis);
 
 #endif

@@ -57,6 +57,11 @@ extern "C" {
         return 1;
     }
 
+    bool failsafeIsActive(void)
+    {
+        return 0;
+    }
+
     #include "flight/alt_hold.h"
 
     extern altHoldState_s altHoldState;

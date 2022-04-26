@@ -588,19 +588,19 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_ALTHOLD_MODE
+    if (ARMING_FLAG(ARMED) && !failsafeIsActive()) {
+        float altHoldThrottle = getAltHoldThrottle();
+        float altHoldThrottleFactor = getAltHoldThrottleFactor(throttle);
+        throttle = throttle * (1.0f - altHoldThrottleFactor) + altHoldThrottle * altHoldThrottleFactor;
+    }
+#endif
+
 #ifdef USE_GPS_RESCUE
     // If gps rescue is active then override the throttle. This prevents things
     // like throttle boost or throttle limit from negatively affecting the throttle.
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
         throttle = gpsRescueGetThrottle();
-    }
-#endif
-
-#ifdef USE_ALTHOLD_MODE
-    if (ARMING_FLAG(ARMED)) {
-        float altHoldThrottle = getAltHoldThrottle();
-        float altHoldThrottleFactor = getAltHoldThrottleFactor(throttle);
-        throttle = throttle * (1.0f - altHoldThrottleFactor) + altHoldThrottle * altHoldThrottleFactor;
     }
 #endif
 
