@@ -76,6 +76,5 @@ void initAltHoldState(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float getAltHoldThrottle(void);
 float getAltHoldThrottleFactor(float currentThrottle);
-float getAltHoldAngle(int axis);
 
 #endif
