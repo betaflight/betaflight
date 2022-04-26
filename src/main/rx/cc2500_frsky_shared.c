@@ -435,6 +435,8 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         protocolState = STATE_STARTING;
 
         break;
+
+    case STATE_STARTING:
     default:
         ret = handlePacket(packet, &protocolState);
 

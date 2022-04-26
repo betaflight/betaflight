@@ -302,6 +302,34 @@ Do not include things you are not using.
 `#pragma once` ([see wiki](https://en.wikipedia.org/wiki/Pragma_once)) is preferred over `#include guards` to avoid multiple includes.
 
 
+# Documentation comments
+
+All new code files, structs, enums, and functions should include a comment at its top describing its purpose.
+All PRs that modify existing items should add a comment if not already present, and update it if applicable due 
+to changes made by the PR. These comments may be ommitted if the item is trivial or self-explanatory.
+
+Example file-level comment:
+
+```c
+/* This file contains code used to send DSHOT commands using the STM timer's burst DMA functionality.
+* It uses DMA to alter timer PWM duty cycle. For an alternative approach, see `drivers/dshot_bitbang.c` 
+for a DSHOT implementation that uses GPIO bitbanging.
+*/
+```
+
+Example enum-level comment:
+```c
+/* 
+* Describes allocation of ELRS telemetry packets, and is associated with time between telemetry
+* packet transmission.
+* See [ELRS: Telemetry Bandwidth](https://www.expresslrs.org/1.0/info/telem-bandwidth/) for more information.
+*/
+typedef enum {
+    TLM_RATIO_NO_TLM = 0,
+    // ..
+```
+
+
 # Other details
 
 No trailing whitespace at the end of lines or at blank lines.

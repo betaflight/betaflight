@@ -34,6 +34,8 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
+
 #include "pg/rx.h"
 
 #include "drivers/serial.h"
@@ -58,7 +60,7 @@
 
 #define CRSF_LINK_STATUS_UPDATE_TIMEOUT_US  250000 // 250ms, 4 Hz mode 1 telemetry
 
-#define CRSF_FRAME_ERROR_COUNT_THRESHOLD    100
+#define CRSF_FRAME_ERROR_COUNT_THRESHOLD    3
 
 STATIC_UNIT_TESTED bool crsfFrameDone = false;
 STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
@@ -362,6 +364,12 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     if (cmpTimeUs(currentTimeUs, crsfFrameStartAtUs) > CRSF_TIME_NEEDED_PER_FRAME_US) {
         // We've received a character after max time needed to complete a frame,
         // so this must be the start of a new frame.
+#if defined(USE_CRSF_V3)
+        if (crsfFramePosition > 0) {
+            // count an error if full valid frame not received within the allowed time.
+            crsfFrameErrorCnt++;
+        }
+#endif
         crsfFramePosition = 0;
     }
 
@@ -456,14 +464,12 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                     crsfFrameErrorCnt++;
 #endif
             }
-        } else {
-#if defined(USE_CRSF_V3)
-            if (crsfFrameErrorCnt < CRSF_FRAME_ERROR_COUNT_THRESHOLD)
-                crsfFrameErrorCnt++;
-#endif
         }
 #if defined(USE_CRSF_V3)
-        if (crsfFrameErrorCnt >= CRSF_FRAME_ERROR_COUNT_THRESHOLD) {
+        if (crsfBaudNegotiationInProgress() || isEepromWriteInProgress()) {
+            // don't count errors when negotiation or eeprom write is in progress
+            crsfFrameErrorCnt = 0;
+        } else if (crsfFrameErrorCnt >= CRSF_FRAME_ERROR_COUNT_THRESHOLD) {
             // fall back to default speed if speed mismatch detected
             setCrsfDefaultSpeed();
             crsfFrameErrorCnt = 0;
@@ -630,11 +636,17 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
+    uint32_t crsfBaudrate = CRSF_BAUDRATE;
+
+#if defined(USE_CRSF_V3)
+    crsfBaudrate = (isMPUSoftReset() && rxConfig->crsf_use_negotiated_baud) ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
+#endif
+
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         crsfDataReceive,
         rxRuntimeState,
-        CRSF_BAUDRATE,
+        crsfBaudrate,
         CRSF_PORT_MODE,
         CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );

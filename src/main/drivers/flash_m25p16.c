@@ -87,6 +87,9 @@ struct {
     // Winbond W25Q16
     // Datasheet: https://www.winbond.com/resource-files/w25q16dv_revi_nov1714_web.pdf
     { 0xEF4015, 104, 50, 32, 256 },
+    // Winbond W25X32
+    // Datasheet: https://www.winbond.com/resource-files/w25x32a_revb_080709.pdf
+    { 0xEF3016, 133, 50, 64, 256 },
     // Winbond W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xEF4016, 133, 50, 64, 256 },
@@ -165,7 +168,6 @@ static bool m25p16_waitForReady(flashDevice_t *fdevice)
  *
  * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
  */
-
 bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
     flashGeometry_t *geometry = &fdevice->geometry;
