@@ -119,18 +119,6 @@ void altHoldReset(altHoldState_s* altHoldState)
     altHoldState->targetAltitude = getCurrentAltitude(altHoldState);
     altHoldState->smoothedAltitude = 0.01f;
 
-    for (int i = FD_ROLL; i <= FD_YAW; i++) {
-        altHoldState->angleDeflections[i] = 0.0f;
-    }
-}
-
-void altHoldProcessDeflection(altHoldState_s* altHoldState)
-{
-    float cf = 0.001f * altholdConfig()->angleSmoothFactor;
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        float measuredDeflection = getRcDeflection(axis);
-        altHoldState->angleDeflections[axis] = (1.0f - cf) * measuredDeflection + cf * altHoldState->angleDeflections[axis];
-    }
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
@@ -184,7 +172,6 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     altHoldProcessTransitions(altHoldState);
-    altHoldProcessDeflection(altHoldState);
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
@@ -252,16 +239,6 @@ float getAltHoldThrottleFactor(float currentThrottle) {
         altHoldState.exitTime = 0;
     }
     return altHoldState.throttleFactor;
-}
-
-float getAltHoldAngle(int axis) {
-    float cf = 0.001f * altholdConfig()->angleSmoothFactor;
-    float angleLimit = altholdConfig()->angleLimit;
-
-    if (cf <= 0.001f) {
-        return angleLimit * getRcDeflection(axis);
-    }
-    return angleLimit * altHoldState.angleDeflections[axis];
 }
 
 #endif

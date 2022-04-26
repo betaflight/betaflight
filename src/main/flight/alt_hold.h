@@ -68,7 +68,6 @@ typedef struct {
     bool altHoldEnabled;
     uint32_t enterTime;
     uint32_t exitTime;
-    float angleDeflections[3];
     float smoothedAltitude;
 } altHoldState_s;
 
