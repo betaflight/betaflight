@@ -90,3 +90,4 @@ void targetValidateConfiguration(void);
 bool isSystemConfigured(void);
 void setRebootRequired(void);
 bool getRebootRequired(void);
+bool isEepromWriteInProgress(void);
