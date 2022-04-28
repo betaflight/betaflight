@@ -131,7 +131,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
 
-    // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
+    // Ideally we'd use a timer to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
     uint32_t nowCycles = getCycleCounter();
     int32_t gyroLastPeriod = cmpTimeCycles(nowCycles, gyro->gyroLastEXTI);
