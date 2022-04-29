@@ -377,8 +377,13 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
     // Everything including F405 and F446
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
+    { DMA_PERIPH_SPI_MOSI,  SPIDEV_1,  { DMA(2, 5, 3), DMA(2, 3, 3) } },
+    { DMA_PERIPH_SPI_MISO,  SPIDEV_1,  { DMA(2, 2, 3), DMA(2, 0, 3) } },
+#else
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_1,  { DMA(2, 3, 3), DMA(2, 5, 3) } },
     { DMA_PERIPH_SPI_MISO,  SPIDEV_1,  { DMA(2, 0, 3), DMA(2, 2, 3) } },
+#endif
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_2,  { DMA(1, 4, 0) } },
     { DMA_PERIPH_SPI_MISO,  SPIDEV_2,  { DMA(1, 3, 0) } },
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_3,  { DMA(1, 5, 0), DMA(1, 7, 0) } },
