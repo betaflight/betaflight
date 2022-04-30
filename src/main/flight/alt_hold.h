@@ -25,8 +25,8 @@
 #include "pg/pg_ids.h"
 
 #define ALTHOLD_TASK_PERIOD 100         // hz
-#define ALTHOLD_ENTER_PERIOD 500        // ms
-#define ALTHOLD_MAX_EXIT_PERIOD 5000    // ms
+#define ALTHOLD_ENTER_PERIOD 50         // ms
+#define ALTHOLD_MAX_EXIT_PERIOD 3000    // ms
 
 
 typedef struct altholdConfig_s {
