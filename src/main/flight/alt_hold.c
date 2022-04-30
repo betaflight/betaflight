@@ -21,8 +21,9 @@
 #ifdef USE_ALTHOLD_MODE
 
 #include "drivers/time.h"
-#include "flight/position.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/position.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "config/config.h"
@@ -131,6 +132,10 @@ void altHoldInit(altHoldState_s* altHoldState)
 
 void altHoldProcessTransitions(altHoldState_s* altHoldState) {
     bool newAltHoldEnabled = FLIGHT_MODE(ALTHOLD_MODE);
+
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) | failsafeIsActive()) {
+        newAltHoldEnabled = false;
+    }
 
     if (newAltHoldEnabled && !altHoldState->altHoldEnabled)
     {
