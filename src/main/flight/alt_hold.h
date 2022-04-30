@@ -40,7 +40,6 @@ typedef struct altholdConfig_s {
     uint16_t maxThrottle;
 
     uint8_t angleLimit;
-    uint16_t angleSmoothFactor;
 } altholdConfig_t;
 
 PG_DECLARE(altholdConfig_t, altholdConfig);

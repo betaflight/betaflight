@@ -36,7 +36,7 @@
 #include "build/debug.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 3);
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
@@ -49,7 +49,6 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .maxThrottle = 65,
 
     .angleLimit = 38,
-    .angleSmoothFactor = 970,
 );
 
 
