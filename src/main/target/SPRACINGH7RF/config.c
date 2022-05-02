@@ -27,6 +27,10 @@
 
 #include "config_helper.h"
 
+#include "pg/pinio.h"
+#include "pg/piniobox.h"
+#include "msp/msp_box.h"
+
 #include "io/serial.h"
 
 static targetSerialPortFunction_t targetSerialPortFunction[] = {
@@ -37,5 +41,8 @@ static targetSerialPortFunction_t targetSerialPortFunction[] = {
 void targetConfiguration(void)
 {
     targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
+
+    pinioConfigMutable()->config[0] = PINIO_CONFIG_MODE_OUT_PP;
+    pinioBoxConfigMutable()->permanentId[0] = findBoxByBoxId(BOXUSER1)->permanentId;
 }
 #endif
