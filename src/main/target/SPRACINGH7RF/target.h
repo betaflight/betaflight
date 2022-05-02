@@ -165,7 +165,7 @@
 #define SPI3_NSS_PIN            PA15
 
 #define USE_I2C
-// I2C1 for external MAG connection on J8
+// I2C1 for external MAG connection on J8, no pull-ups, external pull-ups REQUIRED.
 #define USE_I2C_DEVICE_1
 #define I2C1_SCL                PB8 // J8:5
 #define I2C1_SDA                PB9 // J8:6
