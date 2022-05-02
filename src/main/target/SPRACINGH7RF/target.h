@@ -243,10 +243,10 @@
 #define ADC3_INSTANCE                 ADC3 // ADC3 for monitoring, core temp and vrefint
 
 // 2 Current meter ADC inputs, one on each 4in1ESC connector. NO RSSI input due to on-board SX1280 RF chip.
-#define CURRENT_METER_1_ADC_PIN       PC0 // ADC3_INP10
-#define CURRENT_METER_1_ADC_INSTANCE  ADC3
-#define CURRENT_METER_2_ADC_PIN       PC1 // ADC3_INP10
+#define CURRENT_METER_2_ADC_PIN       PC0 // ADC3_INP10
 #define CURRENT_METER_2_ADC_INSTANCE  ADC3
+#define CURRENT_METER_1_ADC_PIN       PC1 // ADC3_INP11
+#define CURRENT_METER_1_ADC_INSTANCE  ADC3
 #define EXTERNAL1_ADC_PIN             PC2 // ADC3_INP0 - NOT CONNECTED
 #define EXTERNAL1_ADC_INSTANCE        ADC3
 #define VBAT_ADC_PIN                  PC3 // ADC3_INP1
