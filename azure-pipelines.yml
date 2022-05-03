@@ -16,7 +16,7 @@ variables:
   owner: betaflight
   repoName: betaflight-pull-requests
   releaseNotes: This is a build of a community provided pull request. It may be unstable and result in corrupted configurations or data loss. **Use only for testing.**
-  vmImage: 'ubuntu-20.04'
+  vmImage: 'ubuntu-22.04'
 
 name: $(Build.RequestedFor)_$(Build.SourceBranchName)_$(BuildID)
 
