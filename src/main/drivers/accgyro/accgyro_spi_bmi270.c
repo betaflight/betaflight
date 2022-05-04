@@ -294,7 +294,7 @@ busStatus_e bmi270Intcallback(uint32_t arg)
 void bmi270ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
-    // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
+    // Ideally we'd use a timer to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
     uint32_t nowCycles = getCycleCounter();
     gyro->gyroSyncEXTI = gyro->gyroLastEXTI + gyro->gyroDmaMaxDuration;
@@ -338,7 +338,7 @@ static bool bmi270AccRead(accDev_t *acc)
         acc->gyro->dev.txBuf[0] = BMI270_REG_ACC_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, 8, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
@@ -381,7 +381,7 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
     case GYRO_EXTI_INIT:
     {
         // Initialise the tx buffer to all 0x00
-        memset(gyro->dev.txBuf, 0x00, 14);
+        memset(gyro->dev.txBuf, 0x00, 13);
 #ifdef USE_GYRO_EXTI
         // Check that minimum number of interrupts have been detected
 
@@ -392,7 +392,7 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uint32_t)gyro;
                 gyro->dev.txBuf[0] = BMI270_REG_ACC_DATA_X_LSB | 0x80;
-                gyro->segments[0].len = 14;
+                gyro->segments[0].len = 13;
                 gyro->segments[0].callback = bmi270Intcallback;
                 gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
                 gyro->segments[0].u.buffers.rxData = gyro->dev.rxBuf;
@@ -416,7 +416,7 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
         gyro->dev.txBuf[0] = BMI270_REG_GYR_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
-                {.u.buffers = {NULL, NULL}, 8, true, NULL},
+                {.u.buffers = {NULL, NULL}, 7, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = gyro->dev.txBuf;
