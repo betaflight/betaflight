@@ -67,6 +67,9 @@
 
 #define MPU_INQUIRY_MASK   0x7E
 
+// Allow 100ms before attempting to access SPI bus
+#define GYRO_SPI_STARTUP_MS 100
+
 // Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
 #define GYRO_EXTI_DETECT_THRESHOLD 1000
 
@@ -383,6 +386,10 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
     IOHi(gyro->dev.busType_u.spi.csnPin); // Ensure device is disabled, important when two devices are on the same bus.
 
     uint8_t sensor = MPU_NONE;
+
+    // Allow 100ms before attempting to access gyro's SPI bus
+    // Do this once here rather than in each detection routine to speed boot
+    while (millis() < GYRO_SPI_STARTUP_MS);
 
     // It is hard to use hardware to optimize the detection loop here,
     // as hardware type and detection function name doesn't match.
