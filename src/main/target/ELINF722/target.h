@@ -39,10 +39,7 @@
 
 #define USE_ACC_SPI_MPU6500
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_OSD
 #define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_SOFTSERIAL)

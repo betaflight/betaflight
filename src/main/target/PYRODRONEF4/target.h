@@ -29,10 +29,7 @@
 
 #define INVERTER_PIN_UART1        PC3       // PC3 used as sBUS inverter select GPIO
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 // DEFINE SPI USAGE
 #define USE_SPI

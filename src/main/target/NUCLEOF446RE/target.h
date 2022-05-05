@@ -30,7 +30,6 @@
 //#define USE_BEEPER
 //#define BEEPER_PIN                PD12
 
-#define USE_EXTI
 
 #define USE_SPI
 //#define USE_SPI_DEVICE_1
@@ -54,11 +53,8 @@
 #define GYRO_1_SPI_INSTANCE     SPI2
 #define GYRO_1_CS_PIN           PB12
 
-#define USE_EXTI
 
-//#define USE_GYRO_EXTI
 //#define GYRO_1_EXTI_PIN PC13
-//#define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_BARO

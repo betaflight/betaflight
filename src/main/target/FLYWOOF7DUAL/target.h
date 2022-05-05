@@ -20,7 +20,7 @@
 
 #pragma once
 
-#define USE_TARGET_CONFIG					 
+#define USE_TARGET_CONFIG
 #define TARGET_BOARD_IDENTIFIER "FWF7"
 #define USBD_PRODUCT_STRING  "FLYWOOF7DUAL"
 
@@ -32,8 +32,6 @@
 #define BEEPER_PIN              PC14
 #define BEEPER_INVERTED
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC3
 #define GYRO_2_EXTI_PIN         PC4
 
@@ -42,7 +40,6 @@
 #define GYRO_2_CS_PIN                       PB2
 #define GYRO_2_SPI_INSTANCE                 SPI1
 
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO

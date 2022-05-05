@@ -32,13 +32,11 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 
-#if defined(USE_GYRO_EXTI) && defined(USE_MPU_DATA_READY_SIGNAL)
 void lsm6dsoExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
 }
-#endif
 
 bool lsm6dsoAccRead(accDev_t *acc)
 {

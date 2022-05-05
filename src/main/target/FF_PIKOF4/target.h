@@ -45,10 +45,7 @@
 
 /*------------SENSORS--------------*/
 // MPU interrupt
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #if defined(FF_PIKOF4OSD)

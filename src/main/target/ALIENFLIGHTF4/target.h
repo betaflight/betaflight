@@ -37,10 +37,7 @@
 #define INVERTER_PIN_UART2      PC15
 
 // MPU interrupt
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC14
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO_1_CS_PIN           SPI1_NSS_PIN

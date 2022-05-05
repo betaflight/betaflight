@@ -178,7 +178,6 @@ static bool bmp388ReadUP(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp388Calculate(int32_t *pressure, int32_t *temperature);
 
-#ifdef USE_EXTI
 void bmp388_extiHandler(extiCallbackRec_t* cb)
 {
 #ifdef DEBUG
@@ -192,7 +191,6 @@ void bmp388_extiHandler(extiCallbackRec_t* cb)
     uint8_t intStatus = 0;
     busReadRegisterBuffer(&baro->dev, BMP388_INT_STATUS_REG, &intStatus, 1);
 }
-#endif
 
 void bmp388BusInit(const extDevice_t *dev)
 {
@@ -230,7 +228,6 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 {
     delay(20);
 
-#ifdef USE_EXTI
     IO_t baroIntIO = IOGetByTag(config->eocTag);
     if (baroIntIO) {
         IOInit(baroIntIO, OWNER_BARO_EOC, 0);
@@ -238,9 +235,6 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
         EXTIConfig(baroIntIO, &baro->exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
         EXTIEnable(baroIntIO);
     }
-#else
-    UNUSED(config);
-#endif
 
     extDevice_t *dev = &baro->dev;
     bool defaultAddressApplied = false;
@@ -265,7 +259,6 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
 
     busDeviceRegister(dev);
 
-#ifdef USE_EXTI
     if (baroIntIO) {
         uint8_t intCtrlValue = 1 << BMP388_INT_DRDY_EN_BIT |
                                0 << BMP388_INT_FFULL_EN_BIT |
@@ -275,7 +268,6 @@ bool bmp388Detect(const bmp388Config_t *config, baroDev_t *baro)
                                0 << BMP388_INT_OD_BIT;
         busWriteRegister(dev, BMP388_INT_CTRL_REG, intCtrlValue);
     }
-#endif
 
     // read calibration
     busReadRegisterBuffer(dev, BMP388_TRIMMING_NVM_PAR_T1_LSB_REG, (uint8_t *)&bmp388_cal, sizeof(bmp388_calib_param_t));
