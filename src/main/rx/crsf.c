@@ -38,6 +38,7 @@
 
 #include "pg/rx.h"
 
+#include "drivers/persistent.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/system.h"
@@ -639,7 +640,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     uint32_t crsfBaudrate = CRSF_BAUDRATE;
 
 #if defined(USE_CRSF_V3)
-    crsfBaudrate = (isMPUSoftReset() && rxConfig->crsf_use_negotiated_baud) ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
+    crsfBaudrate = rxConfig->crsf_use_negotiated_baud ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
 #endif
 
     serialPort = openSerialPort(portConfig->identifier,
@@ -667,6 +668,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
+    persistentObjectWrite(PERSISTENT_OBJECT_SERIALRX_BAUD, baudrate);
 }
 
 bool crsfRxUseNegotiatedBaud(void)

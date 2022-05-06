@@ -43,6 +43,7 @@
 #include "common/utils.h"
 
 #include "drivers/nvic.h"
+#include "drivers/persistent.h"
 
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -103,10 +104,9 @@ typedef struct {
 
 static crsfSpeedControl_s crsfSpeed = {0};
 
-uint32_t crsfCachedBaudrate __attribute__ ((section (".noinit"))); // Used for retaining negotiated baudrate after soft reset
-
 uint32_t getCrsfCachedBaudrate(void)
 {
+    uint32_t crsfCachedBaudrate = persistentObjectRead(PERSISTENT_OBJECT_SERIALRX_BAUD);
     // check if valid first. return default baudrate if not
     for (unsigned i = 0; i < BAUD_COUNT; i++) {
         if (crsfCachedBaudrate == baudRates[i] && baudRates[i] >= CRSF_BAUDRATE) {
@@ -133,8 +133,7 @@ void setCrsfDefaultSpeed(void)
     crsfSpeed.confirmationTime = 0;
     crsfSpeed.index = BAUD_COUNT;
     isCrsfV3Running = false;
-    crsfCachedBaudrate = getCrsfDesiredSpeed();
-    crsfRxUpdateBaudrate(crsfCachedBaudrate);
+    crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
 }
 
 bool crsfBaudNegotiationInProgress(void)
@@ -470,8 +469,7 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
     } else if (crsfSpeed.isNewSpeedValid) {
         if (cmpTimeUs(currentTimeUs, crsfSpeed.confirmationTime) >= 4000) {
             // delay 4ms before applying the new baudrate
-            crsfCachedBaudrate = getCrsfDesiredSpeed();
-            crsfRxUpdateBaudrate(crsfCachedBaudrate);
+            crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
             crsfSpeed.isNewSpeedValid = false;
             isCrsfV3Running = true;
         }
