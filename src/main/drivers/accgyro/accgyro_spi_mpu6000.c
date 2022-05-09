@@ -138,10 +138,6 @@ uint8_t mpu6000SpiDetect(const extDevice_t *dev)
     spiWriteReg(dev, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
     delay(100);  // datasheet specifies a 100ms delay after reset
 
-    // reset the device signal paths
-    spiWriteReg(dev, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
-    delay(100);  // datasheet specifies a 100ms delay after signal path reset
-
 
     const uint8_t whoAmI = spiReadRegMsk(dev, MPU_RA_WHO_AM_I);
     delayMicroseconds(1); // Ensure CS high time is met which is violated on H7 without this delay
@@ -168,9 +164,14 @@ uint8_t mpu6000SpiDetect(const extDevice_t *dev)
         case MPU6000_REV_D10:
             detectedSensor = MPU_60x0_SPI;
         }
+
+        spiSetClkDivisor(dev, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
+
+        // reset the device signal paths
+        spiWriteReg(dev, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
+        delay(100);  // datasheet specifies a 100ms delay after signal path reset
     }
 
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
     return detectedSensor;
 }
 

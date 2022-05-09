@@ -47,7 +47,7 @@
 static void mpu6500SpiInit(const extDevice_t *dev)
 {
 
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
+    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_INIT_CLK_HZ));
 }
 
 uint8_t mpu6500SpiDetect(const extDevice_t *dev)
@@ -82,7 +82,11 @@ uint8_t mpu6500SpiDetect(const extDevice_t *dev)
         break;
     default:
         mpuDetected = MPU_NONE;
+        return mpuDetected;
     }
+
+    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
+
     return mpuDetected;
 }
 
