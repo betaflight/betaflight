@@ -38,3 +38,8 @@ void crc8_sbuf_append(struct sbuf_s *dst, uint8_t *start, uint8_t poly);
 
 uint8_t crc8_xor_update(uint8_t crc, const void *data, uint32_t length);
 void crc8_xor_sbuf_append(struct sbuf_s *dst, uint8_t *start);
+
+#define FNV_PRIME           16777619
+#define FNV_OFFSET_BASIS    2166136261
+
+uint32_t fnv_update(uint32_t hash, const void *data, uint32_t length);
