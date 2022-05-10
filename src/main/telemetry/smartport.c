@@ -45,6 +45,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#include "drivers/dshot.h"
 
 #include "config/config.h"
 #include "fc/controlrate_profile.h"
@@ -158,7 +159,7 @@ enum
 
 static uint16_t frSkyDataIdTable[MAX_DATAIDS];
 
-#ifdef USE_ESC_SENSOR_TELEMETRY
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
 // number of sensors to send between sending the ESC sensors
 #define ESC_SENSOR_PERIOD 7
 
@@ -175,7 +176,8 @@ typedef struct frSkyTableInfo_s {
 } frSkyTableInfo_t;
 
 static frSkyTableInfo_t frSkyDataIdTableInfo = { frSkyDataIdTable, 0, 0 };
-#ifdef USE_ESC_SENSOR_TELEMETRY
+
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
 static frSkyTableInfo_t frSkyEscDataIdTableInfo = {frSkyEscDataIdTable, 0, 0};
 #endif
 
@@ -421,9 +423,10 @@ static void initSmartPortSensors(void)
     frSkyDataIdTableInfo.size = frSkyDataIdTableInfo.index;
     frSkyDataIdTableInfo.index = 0;
 
-#ifdef USE_ESC_SENSOR_TELEMETRY
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
     frSkyEscDataIdTableInfo.index = 0;
 
+#ifdef USE_ESC_SENSOR_TELEMETRY
     if (telemetryIsSensorEnabled(ESC_SENSOR_VOLTAGE)) {
         ADD_ESC_SENSOR(FSSP_DATAID_VFAS);
     }
@@ -436,10 +439,15 @@ static void initSmartPortSensors(void)
     if (telemetryIsSensorEnabled(ESC_SENSOR_TEMPERATURE)) {
         ADD_ESC_SENSOR(FSSP_DATAID_TEMP);
     }
+#else // USE_DSHOT_TELEMETRY
+    if (telemetryIsSensorEnabled(ESC_SENSOR_RPM)) {
+        ADD_ESC_SENSOR(FSSP_DATAID_RPM);
+    }
+#endif
 
     frSkyEscDataIdTableInfo.size = frSkyEscDataIdTableInfo.index;
     frSkyEscDataIdTableInfo.index = 0;
-#endif
+#endif // USE_ESC_SENSOR_TELEMETRY || USE_DSHOT_TELEMETRY
 }
 
 bool initSmartPortTelemetry(void)
@@ -521,7 +529,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
     static uint8_t t1Cnt = 0;
     static uint8_t t2Cnt = 0;
     static uint8_t skipRequests = 0;
-#ifdef USE_ESC_SENSOR_TELEMETRY
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
     static uint8_t smartPortIdOffset = 0;
 #endif
 
@@ -572,7 +580,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
         // we can send back any data we want, our tables keep track of the order and frequency of each data type we send
         frSkyTableInfo_t * tableInfo = &frSkyDataIdTableInfo;
 
-#ifdef USE_ESC_SENSOR_TELEMETRY
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
         if (smartPortIdCycleCnt >= ESC_SENSOR_PERIOD) {
             // send ESC sensors
             tableInfo = &frSkyEscDataIdTableInfo;
@@ -592,11 +600,11 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             if (tableInfo->index == tableInfo->size) { // end of table reached, loop back
                 tableInfo->index = 0;
             }
-#ifdef USE_ESC_SENSOR_TELEMETRY
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
         }
 #endif
         uint16_t id = tableInfo->table[tableInfo->index];
-#ifdef USE_ESC_SENSOR_TELEMETRY
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
         if (smartPortIdCycleCnt >= ESC_SENSOR_PERIOD) {
             id += smartPortIdOffset;
         }
@@ -653,27 +661,6 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     *clearToSend = false;
                 }
                 break;
-            case FSSP_DATAID_RPM        :
-                escData = getEscSensorData(ESC_SENSOR_COMBINED);
-                if (escData != NULL) {
-                    smartPortSendPackage(id, calcEscRpm(escData->rpm));
-                    *clearToSend = false;
-                }
-                break;
-            case FSSP_DATAID_RPM1       :
-            case FSSP_DATAID_RPM2       :
-            case FSSP_DATAID_RPM3       :
-            case FSSP_DATAID_RPM4       :
-            case FSSP_DATAID_RPM5       :
-            case FSSP_DATAID_RPM6       :
-            case FSSP_DATAID_RPM7       :
-            case FSSP_DATAID_RPM8       :
-                escData = getEscSensorData(id - FSSP_DATAID_RPM1);
-                if (escData != NULL) {
-                    smartPortSendPackage(id, calcEscRpm(escData->rpm));
-                    *clearToSend = false;
-                }
-                break;
             case FSSP_DATAID_TEMP        :
                 escData = getEscSensorData(ESC_SENSOR_COMBINED);
                 if (escData != NULL) {
@@ -696,6 +683,66 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
 #endif
+#if defined(USE_ESC_SENSOR_TELEMETRY) || defined(USE_DSHOT_TELEMETRY)
+            case FSSP_DATAID_RPM        :
+#ifdef USE_ESC_SENSOR_TELEMETRY
+                escData = getEscSensorData(ESC_SENSOR_COMBINED);
+                if (escData != NULL) {
+                    smartPortSendPackage(id, calcEscRpm(escData->rpm));
+                    *clearToSend = false;
+                }
+#endif // USE_ESC_SENSOR_TELEMETRY
+#ifdef USE_DSHOT_TELEMETRY
+#ifdef USE_ESC_SENSOR_TELEMETRY
+                if (useDshotTelemetry && !escData) {
+#else
+                if (useDshotTelemetry) {
+#endif // USE_ESC_SENSOR_TELEMETRY
+                    const unsigned nMotors = getMotorCount();
+                    if (nMotors > 0) {
+                        float eRpmSum = 0;
+                        for (unsigned i = 0; i < nMotors; i++) {
+                            eRpmSum += getDshotTelemetry(i);
+                        }
+                        const uint32_t rpmAvg = eRpmSum * 200.0f / (motorConfig()->motorPoleCount * nMotors);
+                        smartPortSendPackage(id, rpmAvg);
+                        *clearToSend = false;
+                    }
+                }
+#endif // USE_DSHOT_TELEMETRY
+                break;
+            case FSSP_DATAID_RPM1       :
+            case FSSP_DATAID_RPM2       :
+            case FSSP_DATAID_RPM3       :
+            case FSSP_DATAID_RPM4       :
+            case FSSP_DATAID_RPM5       :
+            case FSSP_DATAID_RPM6       :
+            case FSSP_DATAID_RPM7       :
+            case FSSP_DATAID_RPM8       :
+#ifdef USE_ESC_SENSOR_TELEMETRY
+                escData = getEscSensorData(id - FSSP_DATAID_RPM1);
+                if (escData != NULL) {
+                    smartPortSendPackage(id, calcEscRpm(escData->rpm));
+                    *clearToSend = false;
+                }
+#endif // USE_ESC_SENSOR_TELEMETRY
+#ifdef USE_DSHOT_TELEMETRY
+#ifdef USE_ESC_SENSOR_TELEMETRY
+                if (useDshotTelemetry && !escData) {
+#else
+                if (useDshotTelemetry) {
+#endif // USE_ESC_SENSOR_TELEMETRY
+                    const unsigned motorId = id - FSSP_DATAID_RPM1;
+                    if (motorId < getMotorCount()) {
+                        const uint32_t eRpm = getDshotTelemetry(motorId);
+                        const uint32_t rpm = eRpm * 200.0f / motorConfig()->motorPoleCount;
+                        smartPortSendPackage(id, rpm);
+                        *clearToSend = false;
+                    }
+                }
+#endif // USE_DSHOT_TELEMETRY
+            break;
+#endif // USE_ESC_SENSOR_TELEMETRY || USE_DSHOT_TELEMETRY
             case FSSP_DATAID_ALTITUDE   :
                 smartPortSendPackage(id, getEstimatedAltitudeCm()); // in cm according to SmartPort spec
                 *clearToSend = false;
