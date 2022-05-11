@@ -599,10 +599,11 @@ extern "C" {
         return 0.0;
     }
 
-    void pt1FilterInit(pt1Filter_t *filter, float k)
+    void pt1FilterInit(pt1Filter_t *filter, float k, float weight)
     {
         UNUSED(filter);
         UNUSED(k);
+        UNUSED(weight);
     }
 
     float pt1FilterApply(pt1Filter_t *filter, float input)
