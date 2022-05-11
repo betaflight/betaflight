@@ -354,7 +354,7 @@ void accInitFilters(void)
     if (accelerationRuntime.accLpfCutHz) {
         const uint32_t accSampleTimeUs = 1e6 / acc.sampleRateHz;
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accelerationRuntime.accFilter[axis], accelerationRuntime.accLpfCutHz, accSampleTimeUs);
+            biquadFilterInitLPF(&accelerationRuntime.accFilter[axis], accelerationRuntime.accLpfCutHz, accSampleTimeUs, 1.0f);
         }
     }
 }

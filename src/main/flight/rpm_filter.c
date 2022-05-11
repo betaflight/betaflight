@@ -135,7 +135,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config)
     }
 
     for (int i = 0; i < getMotorCount(); i++) {
-        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_filter_lpf_hz, pidLooptime * 1e-6f));
+        pt1FilterInit(&rpmFilters[i], pt1FilterGain(config->rpm_filter_lpf_hz, pidLooptime * 1e-6f), 1.0f);
     }
 
     erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
@@ -153,7 +153,7 @@ static float applyFilter(rpmNotchFilter_t *filter, const int axis, float value)
     }
     for (int motor = 0; motor < getMotorCount(); motor++) {
         for (int i = 0; i < filter->harmonics; i++) {
-            value = biquadFilterApplyDF1Weighted(&filter->notch[axis][motor][i], value);
+            value = filterApplyWeighted(&filter->notch[axis][motor][i], value, FILTER_BIQUAD);
         }
     }
     return value;

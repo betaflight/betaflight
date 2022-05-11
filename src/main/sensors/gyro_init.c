@@ -168,7 +168,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
         case FILTER_PT1:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt1FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain);
+                pt1FilterInit(&lowpassFilter[axis].pt1FilterState, gain, 1.0f);
             }
             ret = true;
             break;
@@ -180,7 +180,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
                 *lowpassFilterApplyFn = (filterApplyFnPtr) biquadFilterApply;
 #endif
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime);
+                    biquadFilterInitLPF(&lowpassFilter[axis].biquadFilterState, lpfHz, looptime, 1.0f);
                 }
                 ret = true;
             }
@@ -188,14 +188,14 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
         case FILTER_PT2:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt2FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt2FilterInit(&lowpassFilter[axis].pt2FilterState, gain);
+                pt2FilterInit(&lowpassFilter[axis].pt2FilterState, gain, 1.0f);
             }
             ret = true;
             break;
         case FILTER_PT3:
             *lowpassFilterApplyFn = (filterApplyFnPtr) pt3FilterApply;
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pt3FilterInit(&lowpassFilter[axis].pt3FilterState, gain);
+                pt3FilterInit(&lowpassFilter[axis].pt3FilterState, gain, 1.0f);
             }
             ret = true;
             break;
