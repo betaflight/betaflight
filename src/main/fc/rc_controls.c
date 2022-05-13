@@ -316,19 +316,19 @@ void processRcStickPositions()
         bool shouldApplyRollAndPitchTrimDelta = false;
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
-            accelerometerTrimsDelta.values.pitch = 2;
+            accelerometerTrimsDelta.values.pitch = 1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_LO + ROL_CE:
-            accelerometerTrimsDelta.values.pitch = -2;
+            accelerometerTrimsDelta.values.pitch = -1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_HI:
-            accelerometerTrimsDelta.values.roll = 2;
+            accelerometerTrimsDelta.values.roll = 1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_LO:
-            accelerometerTrimsDelta.values.roll = -2;
+            accelerometerTrimsDelta.values.roll = -1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         }
