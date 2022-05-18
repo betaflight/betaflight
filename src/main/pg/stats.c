@@ -30,7 +30,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(statsConfig_t, statsConfig, PG_STATS_CONFIG, 3);
 
 PG_RESET_TEMPLATE(statsConfig_t, statsConfig,
-    .stats_min_armed_time_s = STATS_OFF,
+    .stats_min_armed_time_s = 40,
     .stats_total_flights = 0,
     .stats_total_time_s = 0,
     .stats_total_dist_m = 0,
