@@ -39,9 +39,6 @@
 // 10 MHz max SPI frequency
 #define ICM20689_MAX_SPI_CLK_HZ 8000000
 
-// 10 MHz max SPI frequency for intialisation
-#define ICM20689_MAX_SPI_INIT_CLK_HZ 1000000
-
 // Register 0x37 - INT_PIN_CFG / Pin Bypass Enable Configuration
 #define ICM20689_INT_ANYRD_2CLEAR   0x10
 
@@ -82,25 +79,8 @@
  */
 #define ICM20689_PATH_RESET_DELAY_MS 100
 
-static void icm20689SpiInit(const extDevice_t *dev)
-{
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
-    }
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
-
-    hardwareInitialised = true;
-}
-
 uint8_t icm20689SpiDetect(const extDevice_t *dev)
 {
-    icm20689SpiInit(dev);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_INIT_CLK_HZ));
-
     // Note that the following reset is being done repeatedly by each MPU6000
     // compatible device being probed
 
@@ -132,7 +112,6 @@ uint8_t icm20689SpiDetect(const extDevice_t *dev)
 
     // We now know the device is recognised so it's safe to perform device
     // specific register accesses
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 
     // Disable Primary I2C Interface
     spiWriteReg(dev, MPU_RA_USER_CTRL, ICM20689_I2C_IF_DIS);
@@ -168,9 +147,9 @@ bool icm20689SpiAccDetect(accDev_t *acc)
 
 void icm20689GyroInit(gyroDev_t *gyro)
 {
-    mpuGyroInit(gyro);
+    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_INIT_CLK_HZ));
+    mpuGyroInit(gyro);
 
     // Device was already reset during detection so proceed with configuration
 
@@ -187,8 +166,6 @@ void icm20689GyroInit(gyroDev_t *gyro)
 #ifdef USE_MPU_DATA_READY_SIGNAL
     spiWriteReg(&gyro->dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
 #endif
-
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 }
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)

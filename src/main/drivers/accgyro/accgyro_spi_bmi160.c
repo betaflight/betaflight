@@ -108,11 +108,12 @@ uint8_t bmi160Detect(const extDevice_t *dev)
         return BMI_160_SPI;
     }
 
-    /* Toggle CS to activate SPI (see https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi160-ds000.pdf section 3.2.1) */
+    // Toggle CS to activate SPI (see https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi160-ds000.pdf section 3.2.1)
     spiWrite(dev, 0xFF);
+
     delay(100); // Give SPI some time to start up
 
-    /* Check the chip ID */
+    // Check the chip ID
     if (spiReadRegMsk(dev, BMI160_REG_CHIPID) != 0xd1) {
         return MPU_NONE;
     }
@@ -169,7 +170,6 @@ static uint8_t getBmiOsrMode()
  */
 static int32_t BMI160_Config(const extDevice_t *dev)
 {
-
     // Set normal power mode for gyro and accelerometer
     spiWriteReg(dev, BMI160_REG_CMD, BMI160_PMU_CMD_PMU_GYR_NORMAL);
     delay(100); // can take up to 80ms
@@ -445,6 +445,8 @@ void bmi160SpiGyroInit(gyroDev_t *gyro)
 #if defined(USE_GYRO_EXTI)
     bmi160IntExtiInit(gyro);
 #endif
+
+    spiSetClkDivisor(dev, spiCalculateDivider(BMI160_MAX_SPI_CLK_HZ));
 }
 
 void bmi160SpiAccInit(accDev_t *acc)
