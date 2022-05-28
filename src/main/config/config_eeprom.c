@@ -388,6 +388,7 @@ bool loadEEPROM(void)
 
             success = false;
         }
+        *reg->fnv_hash = fnv_update(FNV_OFFSET_BASIS, reg->address, pgSize(reg));
     }
 
     return success;
@@ -395,51 +396,63 @@ bool loadEEPROM(void)
 
 static bool writeSettingsToEEPROM(void)
 {
-    config_streamer_t streamer;
-    config_streamer_init(&streamer);
-
-    config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
+    bool dirtyConfig = !isEEPROMVersionValid() || !isEEPROMStructureValid();
 
     configHeader_t header = {
         .eepromConfigVersion =  EEPROM_CONF_VERSION,
         .magic_be =             0xBE,
     };
 
-    config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
-    uint16_t crc = CRC_START_VALUE;
-    crc = crc16_ccitt_update(crc, (uint8_t *)&header, sizeof(header));
     PG_FOREACH(reg) {
-        const uint16_t regSize = pgSize(reg);
-        configRecord_t record = {
-            .size = sizeof(configRecord_t) + regSize,
-            .pgn = pgN(reg),
-            .version = pgVersion(reg),
-            .flags = 0
-        };
-
-        record.flags |= CR_CLASSICATION_SYSTEM;
-        config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
-        crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
-        config_streamer_write(&streamer, reg->address, regSize);
-        crc = crc16_ccitt_update(crc, reg->address, regSize);
+        if (*reg->fnv_hash != fnv_update(FNV_OFFSET_BASIS, reg->address, pgSize(reg))) {
+            dirtyConfig = true;
+        }
     }
 
-    configFooter_t footer = {
-        .terminator = 0,
-    };
+    // Only write the config if it has changed
+    if (dirtyConfig) {
+        config_streamer_t streamer;
+        config_streamer_init(&streamer);
 
-    config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
-    crc = crc16_ccitt_update(crc, (uint8_t *)&footer, sizeof(footer));
+        config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
 
-    // include inverted CRC in big endian format in the CRC
-    const uint16_t invertedBigEndianCrc = ~(((crc & 0xFF) << 8) | (crc >> 8));
-    config_streamer_write(&streamer, (uint8_t *)&invertedBigEndianCrc, sizeof(crc));
+        config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
+        uint16_t crc = CRC_START_VALUE;
+        crc = crc16_ccitt_update(crc, (uint8_t *)&header, sizeof(header));
+        PG_FOREACH(reg) {
+            const uint16_t regSize = pgSize(reg);
+            configRecord_t record = {
+                .size = sizeof(configRecord_t) + regSize,
+                .pgn = pgN(reg),
+                .version = pgVersion(reg),
+                .flags = 0,
+            };
 
-    config_streamer_flush(&streamer);
 
-    const bool success = config_streamer_finish(&streamer) == 0;
+            record.flags |= CR_CLASSICATION_SYSTEM;
+            config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
+            crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
+            config_streamer_write(&streamer, reg->address, regSize);
+            crc = crc16_ccitt_update(crc, reg->address, regSize);
+        }
 
-    return success;
+        configFooter_t footer = {
+            .terminator = 0,
+        };
+
+        config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
+        crc = crc16_ccitt_update(crc, (uint8_t *)&footer, sizeof(footer));
+
+        // include inverted CRC in big endian format in the CRC
+        const uint16_t invertedBigEndianCrc = ~(((crc & 0xFF) << 8) | (crc >> 8));
+        config_streamer_write(&streamer, (uint8_t *)&invertedBigEndianCrc, sizeof(crc));
+
+        config_streamer_flush(&streamer);
+
+        return (config_streamer_finish(&streamer) == 0);
+    } else {
+        return true;
+    }
 }
 
 void writeConfigToEEPROM(void)

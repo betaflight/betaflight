@@ -54,6 +54,7 @@ typedef struct pgRegistry_s {
         void *ptr;         // Pointer to init template
         pgResetFunc *fn;   // Popinter to pgResetFunc
     } reset;
+    uint32_t *fnv_hash;    // Used to detect if config has changed prior to write
 } pgRegistry_t;
 
 static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_MASK;}
@@ -118,6 +119,7 @@ extern const uint8_t __pg_resetdata_end[];
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
     _type _name ## _System;                                             \
     _type _name ## _Copy;                                               \
+    uint32_t _name ## _fnv_hash;                                        \
     /* Force external linkage for g++. Catch multi registration */      \
     extern const pgRegistry_t _name ## _Registry;                       \
     const pgRegistry_t _name ##_Registry PG_REGISTER_ATTRIBUTES = {     \
@@ -125,6 +127,7 @@ extern const uint8_t __pg_resetdata_end[];
         .length = 1,                                                    \
         .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name ## _System,                         \
+        .fnv_hash = &_name ## _fnv_hash,                                \
         .copy = (uint8_t*)&_name ## _Copy,                              \
         .ptr = 0,                                                       \
         _reset,                                                         \
@@ -149,12 +152,14 @@ extern const uint8_t __pg_resetdata_end[];
 #define PG_REGISTER_ARRAY_I(_type, _length, _name, _pgn, _version, _reset)  \
     _type _name ## _SystemArray[_length];                               \
     _type _name ## _CopyArray[_length];                                 \
+    uint32_t _name ## _fnv_hash;                                        \
     extern const pgRegistry_t _name ##_Registry;                        \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \
         .pgn = _pgn | (_version << 12),                                 \
         .length = _length,                                              \
         .size = (sizeof(_type) * _length) | PGR_SIZE_SYSTEM_FLAG,       \
         .address = (uint8_t*)&_name ## _SystemArray,                    \
+        .fnv_hash = &_name ## _fnv_hash,                                \
         .copy = (uint8_t*)&_name ## _CopyArray,                         \
         .ptr = 0,                                                       \
         _reset,                                                         \
