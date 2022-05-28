@@ -65,6 +65,9 @@
 #define MPU_ADDRESS             0x68
 #endif
 
+// 1 MHz max SPI frequency during device detection
+#define MPU_MAX_SPI_DETECT_CLK_HZ 1000000
+
 #define MPU_INQUIRY_MASK   0x7E
 
 // Allow 100ms before attempting to access SPI bus
@@ -390,6 +393,9 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
     // Allow 100ms before attempting to access gyro's SPI bus
     // Do this once here rather than in each detection routine to speed boot
     while (millis() < GYRO_SPI_STARTUP_MS);
+
+    // Set a slow SPI clock that all potential devices can handle during gyro detection
+    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU_MAX_SPI_DETECT_CLK_HZ));
 
     // It is hard to use hardware to optimize the detection loop here,
     // as hardware type and detection function name doesn't match.

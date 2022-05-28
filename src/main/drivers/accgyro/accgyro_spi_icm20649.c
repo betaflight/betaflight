@@ -42,28 +42,8 @@
 // 8 MHz max SPI frequency
 #define ICM20649_MAX_SPI_CLK_HZ 8000000
 
-static void icm20649SpiInit(const extDevice_t *dev)
-{
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
-    }
-
-    // all registers can be read/written at full speed (7MHz +-10%)
-    // TODO verify that this works at 9MHz and 10MHz on non F7
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
-
-    hardwareInitialised = true;
-}
-
 uint8_t icm20649SpiDetect(const extDevice_t *dev)
 {
-
-    icm20649SpiInit(dev);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
-
     spiWriteReg(dev, ICM20649_RA_REG_BANK_SEL, 0 << 4); // select bank 0 just to be safe
     delay(15);
 
