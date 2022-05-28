@@ -63,6 +63,8 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
+const char CRASH_FLIP_WARNING[] = "> CRASH FLIP <";
+
 void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 {
     const batteryState_e batteryState = getBatteryState();
@@ -132,10 +134,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
     // Warn when in flip over after crash mode
-    if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashActive()) {
-        tfp_sprintf(warningText, "CRASH FLIP");
-        *displayAttr = DISPLAYPORT_ATTR_INFO;
-        return;
+    if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        if (isFlipOverAfterCrashActive()) { // if was armed in crash flip mode
+            tfp_sprintf(warningText, CRASH_FLIP_WARNING);
+            *displayAttr = DISPLAYPORT_ATTR_INFO;
+            return;
+        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crash flip mode is activated
+            tfp_sprintf(warningText, "CRASH FLIP SWITCH");
+            *displayAttr = DISPLAYPORT_ATTR_INFO;
+            return;
+        }
     }
 
 #ifdef USE_LAUNCH_CONTROL
