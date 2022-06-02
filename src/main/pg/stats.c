@@ -35,5 +35,7 @@ PG_RESET_TEMPLATE(statsConfig_t, statsConfig,
     .stats_total_time_s = 0,
     .stats_total_dist_m = 0,
     .stats_mah_used = 0,
+    .stats_extra_total_kaacks = 0,
+    .stats_extra_total_kaack_time = 0,
 );
 #endif

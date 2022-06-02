@@ -33,6 +33,7 @@
 #include "io/gps.h"
 
 #include "pg/stats.h"
+#include "osd/osd.h"
 
 #ifdef USE_BATTERY_CONTINUE
 #include "sensors/battery.h"
@@ -97,15 +98,14 @@ void statsOnDisarm(void)
 #ifdef USE_BATTERY_CONTINUE
             statsConfigMutable()->stats_mah_used = getMAhDrawn();
 #endif
-
-            saveRequired = true;
         }
 
-        if (saveRequired) {
-            /* signal that stats need to be saved but don't execute time consuming flash operation
-               now - let the disarming process complete and then execute the actual save */
-            dispatchAdd(&writeStatsEntry, STATS_SAVE_DELAY_US);
-        }
+#ifdef USE_OSD
+        statsConfigMutable()->stats_extra_total_kaacks += osdGetStats()->extra_kaacks;
+        statsConfigMutable()->stats_extra_total_kaack_time += (osdGetStats()->extra_kaack_time / 1000000);
+#endif // #ifdef USE_OSD
+
+        dispatchAdd(&writeStatsEntry, STATS_SAVE_DELAY_US);
     }
 }
 #endif

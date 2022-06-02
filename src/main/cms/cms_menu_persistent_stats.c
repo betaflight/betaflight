@@ -38,6 +38,8 @@
 uint32_t stats_total_flights;
 uint32_t stats_total_time_s;
 uint32_t stats_total_dist_m;
+uint32_t stats_extra_total_kaacks;
+uint32_t stats_extra_total_kaack_time;
 int8_t stats_min_armed_time_s;
 
 static const void *cmsx_PersistentStats_onEnter(displayPort_t *pDisp)
@@ -48,6 +50,8 @@ static const void *cmsx_PersistentStats_onEnter(displayPort_t *pDisp)
     stats_total_time_s = statsConfig()->stats_total_time_s;
     stats_total_dist_m = statsConfig()->stats_total_dist_m;
     stats_min_armed_time_s = statsConfig()->stats_min_armed_time_s;
+    stats_extra_total_kaacks = statsConfig()->stats_extra_total_kaacks;
+    stats_extra_total_kaack_time = statsConfig()->stats_extra_total_kaack_time;
 
     return NULL;
 }
@@ -61,6 +65,8 @@ static const void *cmsx_PersistentStats_onExit(displayPort_t *pDisp, const OSD_E
     statsConfigMutable()->stats_total_time_s = stats_total_time_s;
     statsConfigMutable()->stats_total_dist_m = stats_total_dist_m;
     statsConfigMutable()->stats_min_armed_time_s = stats_min_armed_time_s;
+    statsConfigMutable()->stats_extra_total_kaacks = stats_extra_total_kaacks;
+    statsConfigMutable()->stats_extra_total_kaack_time = stats_extra_total_kaack_time;
 
     return NULL;
 }
@@ -72,6 +78,8 @@ static const void *cmsx_ResetStats(displayPort_t *pDisplay, const void *ptr)
     stats_total_flights = 0;
     stats_total_time_s = 0;
     stats_total_dist_m = 0;
+    stats_extra_total_kaacks = 0;
+    stats_extra_total_kaack_time = 0;
 
     displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
     displayRedraw(pDisplay);
@@ -83,6 +91,8 @@ static const OSD_Entry cmsx_menuPersistentStatsEntries[] =
 {
     {"-- PERSISTENT STATS --", OME_Label, NULL, NULL},
     {"FLIGHTS", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_flights, 0, UINT32_MAX, 1}},
+    {"KAACKS", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_extra_total_kaacks, 0, UINT32_MAX, 1}},
+    {"KAACK TIME", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_extra_total_kaack_time, 0, UINT32_MAX, 1}},
     {"TIME(sec)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_time_s, 0, UINT32_MAX, 1}},
     {"DIST(m)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_dist_m, 0, UINT32_MAX, 1}},
     {"RESET STATS", OME_Funcall, cmsx_ResetStats, NULL},
