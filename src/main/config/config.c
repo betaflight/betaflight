@@ -220,11 +220,13 @@ static void validateAndFixRatesSettings(void)
 
 void makeStringsUpperCase(void)
 {
+#ifdef USE_OSD
     toUpperCase(pilotConfigMutable()->extra100Throttle, pilotConfig()->extra100Throttle, MAX_NAME_LENGTH);
     toUpperCase(pilotConfigMutable()->extraFcHotWarning, pilotConfig()->extraFcHotWarning, MAX_NAME_LENGTH);
     toUpperCase(pilotConfigMutable()->extraTurtleModeWarning, pilotConfig()->extraTurtleModeWarning, MAX_NAME_LENGTH);
     toUpperCase(pilotConfigMutable()->extraLowBatteryWarning, pilotConfig()->extraLowBatteryWarning, MAX_NAME_LENGTH);
     toUpperCase(pilotConfigMutable()->extraArmedWarning, pilotConfig()->extraArmedWarning, MAX_NAME_LENGTH);
+#endif // #ifdef USE_OSD
 }
 
 static void validateAndFixConfig(void)

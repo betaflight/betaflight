@@ -1513,7 +1513,22 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
 static void osdElementThrottlePosition(osdElementParms_t *element)
 {
+    static bool previousKaack = false;
+
     const uint8_t throttleValue = calculateThrottlePercent();
+
+    if (ARMING_FLAG(ARMED)) {
+        if (100 == throttleValue) {
+            if (!previousKaack) {
+                osdGetStats()->extra_kaacks++;
+            }
+
+            previousKaack = true;
+        } else {
+            previousKaack = false;
+        }
+    }
+
     if (strlen(pilotConfig()->extra100Throttle) == 0 || throttleValue < 100)
     {
         tfp_sprintf(element->buff, "%c%3d", SYM_THR, calculateThrottlePercent());
