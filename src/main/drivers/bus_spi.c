@@ -172,7 +172,7 @@ void spiReadWriteBuf(const extDevice_t *dev, uint8_t *txData, uint8_t *rxData, i
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
             {.u.buffers = {txData, rxData}, len, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -201,7 +201,7 @@ uint8_t spiReadWrite(const extDevice_t *dev, uint8_t data)
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
             {.u.buffers = {&data, &retval}, sizeof(data), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -220,7 +220,7 @@ uint8_t spiReadWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
     busSegment_t segments[] = {
             {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
             {.u.buffers = {&data, &retval}, sizeof(data), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -236,7 +236,7 @@ void spiWrite(const extDevice_t *dev, uint8_t data)
     // This routine blocks so no need to use static data
     busSegment_t segments[] = {
             {.u.buffers = {&data, NULL}, sizeof(data), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -251,7 +251,7 @@ void spiWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t data)
     busSegment_t segments[] = {
             {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
             {.u.buffers = {&data, NULL}, sizeof(data), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -279,7 +279,7 @@ void spiReadRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t l
     busSegment_t segments[] = {
             {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
             {.u.buffers = {NULL, data}, length, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -313,7 +313,7 @@ void spiWriteRegBuf(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint32_t
     busSegment_t segments[] = {
             {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
             {.u.buffers = {data, NULL}, length, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -329,7 +329,7 @@ uint8_t spiReadReg(const extDevice_t *dev, uint8_t reg)
     busSegment_t segments[] = {
             {.u.buffers = {&reg, NULL}, sizeof(reg), false, NULL},
             {.u.buffers = {NULL, &data}, sizeof(data), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(dev, &segments[0]);
@@ -404,13 +404,19 @@ static void spiIrqHandler(const extDevice_t *dev)
     }
 
     // Advance through the segment list
-    nextSegment = bus->curSegment + 1;
+    // OK to discard the volatile qualifier here
+    nextSegment = (busSegment_t *)bus->curSegment + 1;
 
     if (nextSegment->len == 0) {
+        if (!bus->curSegment->negateCS) {
+            // Negate Chip Select if not done so already
+            IOHi(dev->busType_u.spi.csnPin);
+        }
+
         // If a following transaction has been linked, start it
         if (nextSegment->u.link.dev) {
             const extDevice_t *nextDev = nextSegment->u.link.dev;
-            busSegment_t *nextSegments = nextSegment->u.link.segments;
+            busSegment_t *nextSegments = (busSegment_t *)nextSegment->u.link.segments;
             // The end of the segment list has been reached
             bus->curSegment = nextSegments;
             nextSegment->u.link.dev = NULL;
@@ -420,12 +426,20 @@ static void spiIrqHandler(const extDevice_t *dev)
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
         }
     } else {
+        // Do as much processing as possible before asserting CS to avoid violating minimum high time
+        bool negateCS = bus->curSegment->negateCS;
+
         bus->curSegment = nextSegment;
 
         // After the completion of the first segment setup the init structure for the subsequent segment
         if (bus->initSegment) {
             spiInternalInitStream(dev, false);
             bus->initSegment = false;
+        }
+
+        if (negateCS) {
+            // Assert Chip Select - it's costly so only do so if necessary
+            IOLo(dev->busType_u.spi.csnPin);
         }
 
         // Launch the next transfer
@@ -713,10 +727,11 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 
             // Defer this transfer to be triggered upon completion of the current transfer
 
-            // Find the last segment of the current transfer
+            // Find the last segment of the new transfer
             for (endSegment = segments; endSegment->len; endSegment++);
 
-            busSegment_t *endCmpSegment = bus->curSegment;
+            // Safe to discard the volatile qualifier as we're in an atomic block
+            busSegment_t *endCmpSegment = (busSegment_t *)bus->curSegment;
 
             if (endCmpSegment) {
                 while (true) {
@@ -736,16 +751,16 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
                         break;
                     } else {
                         // Follow the link to the next queued segment list
-                        endCmpSegment = endCmpSegment->u.link.segments;
+                        endCmpSegment = (busSegment_t *)endCmpSegment->u.link.segments;
                     }
                 }
-
-                // Record the dev and segments parameters in the terminating segment entry
-                endCmpSegment->u.link.dev = dev;
-                endCmpSegment->u.link.segments = segments;
-
-                return;
             }
+
+            // Record the dev and segments parameters in the terminating segment entry
+            endCmpSegment->u.link.dev = dev;
+            endCmpSegment->u.link.segments = segments;
+
+            return;
         } else {
             // Claim the bus with this list of segments
             bus->curSegment = segments;

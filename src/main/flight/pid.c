@@ -49,6 +49,7 @@
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
 #include "flight/feedforward.h"
+#include "flight/alt_hold.h"
 
 #include "io/gps.h"
 
@@ -439,6 +440,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
 #endif
     angle = constrainf(angle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
+
     const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
     if (FLIGHT_MODE(ANGLE_MODE | GPS_RESCUE_MODE | ALTHOLD_MODE)) {
         // ANGLE mode - control is angle based
@@ -1122,6 +1124,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // no feedforward in launch control
         float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
+
+        // no feedforward in alt-hold
+        if (FLIGHT_MODE(ALTHOLD_MODE)) {
+            feedforwardGain = 0.0f;
+        }
+
         if (feedforwardGain > 0) {
             // halve feedforward in Level mode since stick sensitivity is weaker by about half
             feedforwardGain *= FLIGHT_MODE(ANGLE_MODE) ? 0.5f : 1.0f;

@@ -1,0 +1,24 @@
+changelog:
+  exclude:
+    labels:
+      - "cleanup"
+  categories:
+    - title: Features
+      labels:
+        - "RN: MAJOR FEATURE"
+        - "RN: MINOR FEATURE"
+    - title: Improvements
+      labels:
+        - "RN: IMPROVEMENT"
+        - "RN: SAFETY IMPROVEMENT"
+        - "RN: REFACTORING"
+    - title: Fixes
+      labels: 
+        - "RN: BUGFIX"
+    - title: Targets
+      labels:
+        - "RN: NEW TARGET"
+        - "RN: TARGET UPDATE"
+    - title: Known Issues
+      labels:
+        - BUG

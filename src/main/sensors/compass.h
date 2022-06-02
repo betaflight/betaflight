@@ -62,7 +62,7 @@ typedef struct compassConfig_s {
 PG_DECLARE(compassConfig_t, compassConfig);
 
 bool compassIsHealthy(void);
-void compassUpdate(timeUs_t currentTime);
+uint32_t compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
 void compassPreInit(void);
 void compassStartCalibration(void);

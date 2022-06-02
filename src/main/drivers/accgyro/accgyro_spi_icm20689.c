@@ -36,41 +36,57 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
-
-
 // 10 MHz max SPI frequency
-#define ICM20689_MAX_SPI_CLK_HZ 10000000
+#define ICM20689_MAX_SPI_CLK_HZ 8000000
 
-// 10 MHz max SPI frequency for intialisation
-#define ICM20689_MAX_SPI_INIT_CLK_HZ 1000000
+// Register 0x37 - INT_PIN_CFG / Pin Bypass Enable Configuration
+#define ICM20689_INT_ANYRD_2CLEAR   0x10
 
-static void icm20689SpiInit(const extDevice_t *dev)
-{
-    static bool hardwareInitialised = false;
+// Register 0x68 - SIGNAL_PATH_RESET / Pin Bypass Enable Configuration
+#define ICM20689_ACCEL_RST          0x02
+#define ICM20689_TEMP_RST           0x01
 
-    if (hardwareInitialised) {
-        return;
-    }
+// Register 0x6a - USER_CTRL / User Control
+#define ICM20689_I2C_IF_DIS         0x10
 
+// Register 0x6b - PWR_MGMT_1 / Power Management 1
+#define ICM20689_BIT_RESET          0x80
 
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
+/* Allow CLKSEL setting time to settle when PLL is selected
+ *
+ * Not specified in the ICM-20689 datasheet, but in the ICM-20690 datasheet,
+ *
+ * https://invensense.tdk.com/wp-content/uploads/2016/10/DS-000178-ICM-20690-v1.0.pdf
+ *
+ * says (section 10.11) that the clock selection takes ~20us to settle. Testing
+ * has shown that 60us is required, so double to allow a margin
+ */
+#define ICM20689_CLKSEL_SETTLE_US   120
 
-    hardwareInitialised = true;
-}
+/* Not specified in the ICM-20689 datasheet, but in the MPU-6000 datasheet,
+ *
+ * https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf
+ *
+ * says (section 4.28) suggest a delay of 100ms after a reset
+ */
+#define ICM20689_RESET_DELAY_MS     100
+
+/* Not specified in the ICM-20689 datasheet, but in the MPU-6000 datasheet,
+ *
+ * https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf
+ *
+ * says (section 4.28) suggest a delay of 100ms after a path reset
+ */
+#define ICM20689_PATH_RESET_DELAY_MS 100
 
 uint8_t icm20689SpiDetect(const extDevice_t *dev)
 {
-    icm20689SpiInit(dev);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_INIT_CLK_HZ));
+    // Note that the following reset is being done repeatedly by each MPU6000
+    // compatible device being probed
 
     // reset the device configuration
     spiWriteReg(dev, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
-    delay(100);
-
-    // reset the device signal paths
-    spiWriteReg(dev, MPU_RA_SIGNAL_PATH_RESET, 0x03);
-    delay(100);
+    delay(ICM20689_RESET_DELAY_MS);
 
     uint8_t icmDetected;
 
@@ -91,10 +107,19 @@ uint8_t icm20689SpiDetect(const extDevice_t *dev)
         break;
     default:
         icmDetected = MPU_NONE;
-        break;
+        return icmDetected;
     }
 
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
+    // We now know the device is recognised so it's safe to perform device
+    // specific register accesses
+
+    // Disable Primary I2C Interface
+    spiWriteReg(dev, MPU_RA_USER_CTRL, ICM20689_I2C_IF_DIS);
+
+    // Reset the device signal paths
+    spiWriteReg(dev, MPU_RA_SIGNAL_PATH_RESET, ICM20689_ACCEL_RST | ICM20689_TEMP_RST);
+
+    delay(ICM20689_PATH_RESET_DELAY_MS);
 
     return icmDetected;
 }
@@ -122,34 +147,25 @@ bool icm20689SpiAccDetect(accDev_t *acc)
 
 void icm20689GyroInit(gyroDev_t *gyro)
 {
-    mpuGyroInit(gyro);
+    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_INIT_CLK_HZ));
+    mpuGyroInit(gyro);
 
     // Device was already reset during detection so proceed with configuration
 
     spiWriteReg(&gyro->dev, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
-    delay(15);
+    delayMicroseconds(ICM20689_CLKSEL_SETTLE_US);
     spiWriteReg(&gyro->dev, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
-    delay(15);
     spiWriteReg(&gyro->dev, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
-    delay(15);
     spiWriteReg(&gyro->dev, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
-    delay(15);
-    spiWriteReg(&gyro->dev, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops); // Get Divider Drops
-    delay(100);
+    spiWriteReg(&gyro->dev, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
 
     // Data ready interrupt configuration
-//    spiWriteReg(&gyro->dev, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
-    spiWriteReg(&gyro->dev, MPU_RA_INT_PIN_CFG, 0x10);  // INT_ANYRD_2CLEAR, BYPASS_EN
-
-    delay(15);
+    spiWriteReg(&gyro->dev, MPU_RA_INT_PIN_CFG, ICM20689_INT_ANYRD_2CLEAR);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    spiWriteReg(&gyro->dev, MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
+    spiWriteReg(&gyro->dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
 #endif
-
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 }
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)

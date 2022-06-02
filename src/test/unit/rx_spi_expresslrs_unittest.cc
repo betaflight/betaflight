@@ -45,7 +45,7 @@ extern "C" {
     #include "drivers/rx/rx_sx127x.h"
     #include "drivers/rx/rx_sx1280.h"
 
-    extern uint8_t FHSSsequence[ELRS_NR_SEQUENCE_ENTRIES];
+    extern uint8_t fhssSequence[ELRS_NR_SEQUENCE_ENTRIES];
     extern uint16_t crc14tab[ELRS_CRC_LEN];
 
     extern elrsReceiver_t receiver;
@@ -164,14 +164,14 @@ TEST(RxSpiExpressLrsUnitTest, TestFHSSTable)
         }
     };
 
-    FHSSrandomiseFHSSsequence(UID, ISM2400);
+    fhssGenSequence(UID, ISM2400);
     for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
-        EXPECT_EQ(expectedSequence[0][i], FHSSsequence[i]);
+        EXPECT_EQ(expectedSequence[0][i], fhssSequence[i]);
     }
 
-    FHSSrandomiseFHSSsequence(UID, FCC915);
+    fhssGenSequence(UID, FCC915);
     for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
-        EXPECT_EQ(expectedSequence[1][i], FHSSsequence[i]);
+        EXPECT_EQ(expectedSequence[1][i], fhssSequence[i]);
     }
 }
 
@@ -390,7 +390,8 @@ extern "C" {
     IO_t IOGetByTag(ioTag_t ) { return (IO_t)1; }
     void IOHi(IO_t ) {}
     void IOLo(IO_t ) {}
-    void writeEEPROM(void) {}
+
+    void saveConfigAndNotify(void) {}
 
     void rxSpiCommonIOInit(const rxSpiConfig_t *) {}
     void rxSpiLedBlinkRxLoss(rx_spi_received_e ) {}
@@ -404,11 +405,10 @@ extern "C" {
     bool sx1280IsBusy(void) { return false; }
     void sx1280Config(const sx1280LoraBandwidths_e , const sx1280LoraSpreadingFactors_e , const sx1280LoraCodingRates_e , const uint32_t , const uint8_t , const bool ) {}
     void sx1280StartReceiving(void) {}
-    uint8_t sx1280ISR(uint32_t *timestamp)
-    {
-        *timestamp = 0;
-        return 0;
-    }
+    void sx1280ISR(void) {}
+    bool rxSpiGetExtiState(void) { return false; }
+    void sx1280HandleFromTock(void) {}
+    bool sx1280HandleFromTick(void) { return false; }
     void sx1280TransmitData(const uint8_t *, const uint8_t ) {}
     void sx1280ReceiveData(uint8_t *, const uint8_t ) {}
     void sx1280SetFrequencyReg(const uint32_t ) {}
@@ -469,5 +469,4 @@ extern "C" {
     void getCurrentTelemetryPayload(uint8_t *, uint8_t *, uint8_t **) {}
     void confirmCurrentTelemetryPayload(const bool ) {}
     void updateTelemetryRate(const uint16_t , const uint8_t , const uint8_t ) {}
-
 }

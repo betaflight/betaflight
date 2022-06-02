@@ -21,14 +21,16 @@
 #ifdef USE_ALTHOLD_MODE
 
 #include "drivers/time.h"
-#include "flight/position.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/position.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "config/config.h"
 #include "rx/rx.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/rc.h"
 #include "osd/osd.h"
 #include "common/printf.h"
 #include "common/maths.h"
@@ -36,7 +38,8 @@
 #include "build/debug.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(altholdConfig_t, altholdConfig, PG_ALTHOLD_CONFIG, 4);
+
 
 PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
     .velPidP = 30,
@@ -83,6 +86,22 @@ float simplePidCalculate(simplePid_s* simplePid, float dt, float targetValue, fl
     return output;
 }
 
+static float getCurrentAltitude(altHoldState_s* altHoldState)
+{
+#ifdef USE_BARO
+    if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
+        return 0.01f * baro.BaroAlt;
+    }
+#endif
+    float rawAltitude = 0.01f * getEstimatedAltitudeCm();
+    if (ABS(altHoldState->smoothedAltitude) < 0.01f) {
+        altHoldState->smoothedAltitude = rawAltitude;
+    }
+    float smoothFactor = 0.98f;
+    altHoldState->smoothedAltitude = (1.0f - smoothFactor) * rawAltitude + smoothFactor * altHoldState->smoothedAltitude;
+    return altHoldState->smoothedAltitude;
+}
+
 void altHoldReset(altHoldState_s* altHoldState)
 {
     simplePidInit(&altHoldState->altPid, -50.0f, 50.0f,
@@ -100,7 +119,9 @@ void altHoldReset(altHoldState_s* altHoldState)
     altHoldState->exitTime = 0;
     float externalVelocityEstimation = 0.01f * getEstimatedVario();
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
-    altHoldState->targetAltitude = (float)(0.01f * getEstimatedAltitudeCm());
+    altHoldState->targetAltitude = getCurrentAltitude(altHoldState);
+    altHoldState->smoothedAltitude = 0.01f;
+
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
@@ -113,6 +134,10 @@ void altHoldInit(altHoldState_s* altHoldState)
 
 void altHoldProcessTransitions(altHoldState_s* altHoldState) {
     bool newAltHoldEnabled = FLIGHT_MODE(ALTHOLD_MODE);
+
+    if (FLIGHT_MODE(GPS_RESCUE_MODE) | failsafeIsActive()) {
+        newAltHoldEnabled = false;
+    }
 
     if (newAltHoldEnabled && !altHoldState->altHoldEnabled)
     {
@@ -186,7 +211,7 @@ void altHoldUpdate(altHoldState_s* altHoldState)
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
-    float measuredAltitude = (float)(timeInterval * getEstimatedAltitudeCm());
+    float measuredAltitude = getCurrentAltitude(altHoldState);
 
     t_fp_vector accelerationVector = {{
         acc.accADC[X],

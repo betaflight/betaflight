@@ -133,10 +133,12 @@ typedef struct elrsRfPerfParams_s {
 typedef bool (*elrsRxInitFnPtr)(IO_t resetPin, IO_t busyPin);
 typedef void (*elrsRxConfigFnPtr)(const uint8_t bw, const uint8_t sf, const uint8_t cr, const uint32_t freq, const uint8_t preambleLen, const bool iqInverted);
 typedef void (*elrsRxStartReceivingFnPtr)(void);
-typedef uint8_t (*elrsRxISRFnPtr)(timeUs_t *timeStamp);
+typedef void (*elrsRxISRFnPtr)(void);
+typedef void (*elrsRxHandleFromTockFnPtr)(void);
+typedef bool (*elrsRxBusyTimeoutFnPtr)(void);
 typedef void (*elrsRxTransmitDataFnPtr)(const uint8_t *data, const uint8_t length);
 typedef void (*elrsRxReceiveDataFnPtr)(uint8_t *data, const uint8_t length);
-typedef void (*elrsRxGetRFlinkInfoFnPtr)(int8_t *rssi, int8_t *snr);
+typedef void (*elrsRxgetRfLinkInfoFnPtr)(int8_t *rssi, int8_t *snr);
 typedef void (*elrsRxSetFrequencyFnPtr)(const uint32_t freq);
 typedef void (*elrsRxHandleFreqCorrectionFnPtr)(int32_t offset, const uint32_t freq);
 
@@ -146,12 +148,12 @@ extern elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX];
 void generateCrc14Table(void);
 uint16_t calcCrc14(uint8_t *data, uint8_t len, uint16_t crc);
 
-uint32_t getInitialFreq(const int32_t freqCorrection);
-uint8_t getFHSSNumEntries(void);
-uint8_t FHSSgetCurrIndex(void);
-void FHSSsetCurrIndex(const uint8_t value);
-uint32_t FHSSgetNextFreq(const int32_t freqCorrection);
-void FHSSrandomiseFHSSsequence(const uint8_t UID[], const elrsFreqDomain_e dom);
+uint32_t fhssGetInitialFreq(const int32_t freqCorrection);
+uint8_t fhssGetNumEntries(void);
+uint8_t fhssGetCurrIndex(void);
+void fhssSetCurrIndex(const uint8_t value);
+uint32_t fhssGetNextFreq(const int32_t freqCorrection);
+void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom);
 uint8_t tlmRatioEnumToValue(const elrsTlmRatio_e enumval);
 uint16_t rateEnumToHz(const elrsRfRate_e eRate);
 uint16_t txPowerIndexToValue(const uint8_t index);

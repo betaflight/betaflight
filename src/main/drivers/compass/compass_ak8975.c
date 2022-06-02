@@ -118,39 +118,63 @@ static int16_t parseMag(uint8_t *raw, int16_t gain) {
 
 static bool ak8975Read(magDev_t *mag, int16_t *magData)
 {
-    bool ack;
-    uint8_t status;
-    uint8_t buf[6];
+    static uint8_t buf[6];
+    static uint8_t status;
+    static enum {
+        STATE_READ_STATUS1,
+        STATE_WAIT_STATUS1,
+        STATE_READ_STATUS2,
+        STATE_WAIT_STATUS2,
+        STATE_WAIT_START,
+    } state = STATE_READ_STATUS1;
 
     extDevice_t *dev = &mag->dev;
 
-    ack = busReadRegisterBuffer(dev, AK8975_MAG_REG_ST1, &status, 1);
-    if (!ack || (status & ST1_REG_DATA_READY) == 0) {
-        return false;
+    switch (state) {
+        default:
+        case STATE_READ_STATUS1:
+            busReadRegisterBufferStart(dev, AK8975_MAG_REG_ST1, &status, sizeof(status));
+            state = STATE_WAIT_STATUS1;
+            return false;
+
+        case STATE_WAIT_STATUS1:
+            if ((status & ST1_REG_DATA_READY) == 0) {
+                state = STATE_READ_STATUS1;
+                return false;
+            }
+
+            busReadRegisterBufferStart(dev, AK8975_MAG_REG_HXL, buf, sizeof(buf));
+
+            state = STATE_READ_STATUS2;
+            return false;
+
+        case STATE_READ_STATUS2:
+            busReadRegisterBufferStart(dev, AK8975_MAG_REG_ST2, &status, sizeof(status));
+            state = STATE_WAIT_STATUS2;
+            return false;
+
+        case STATE_WAIT_STATUS2:
+            busWriteRegisterStart(dev, AK8975_MAG_REG_CNTL, CNTL_BIT_16_BIT | CNTL_MODE_ONCE); // start reading again
+
+            if ((status & ST2_REG_DATA_ERROR) || (status & ST2_REG_MAG_SENSOR_OVERFLOW)) {
+                state = STATE_READ_STATUS1;
+                return false;
+            }
+
+            state = STATE_WAIT_START;
+            return false;
+
+        case STATE_WAIT_START:
+
+            magData[X] = -parseMag(buf + 0, mag->magGain[X]);
+            magData[Y] = -parseMag(buf + 2, mag->magGain[Y]);
+            magData[Z] = -parseMag(buf + 4, mag->magGain[Z]);
+
+            state = STATE_READ_STATUS1;
+            return true;
     }
 
-    busReadRegisterBuffer(dev, AK8975_MAG_REG_HXL, buf, 6); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
-
-    ack = busReadRegisterBuffer(dev, AK8975_MAG_REG_ST2, &status, 1);
-    if (!ack) {
-        return false;
-    }
-
-    busWriteRegister(dev, AK8975_MAG_REG_CNTL, CNTL_BIT_16_BIT | CNTL_MODE_ONCE); // start reading again    uint8_t status2 = buf[6];
-
-    if (status & ST2_REG_DATA_ERROR) {
-        return false;
-    }
-
-    if (status & ST2_REG_MAG_SENSOR_OVERFLOW) {
-        return false;
-    }
-
-    magData[X] = -parseMag(buf + 0, mag->magGain[X]);
-    magData[Y] = -parseMag(buf + 2, mag->magGain[Y]);
-    magData[Z] = -parseMag(buf + 4, mag->magGain[Z]);
-
-    return true;
+    return false;
 }
 
 bool ak8975Detect(magDev_t *mag)

@@ -91,32 +91,45 @@ static bool qmc5883lInit(magDev_t *magDev)
 
 static bool qmc5883lRead(magDev_t *magDev, int16_t *magData)
 {
-    uint8_t status;
-    uint8_t buf[6];
-
-    // set magData to zero for case of failed read
-    magData[X] = 0;
-    magData[Y] = 0;
-    magData[Z] = 0;
+    static uint8_t buf[6];
+    static uint8_t status;
+    static enum {
+        STATE_READ_STATUS,
+        STATE_WAIT_STATUS,
+        STATE_WAIT_READ,
+    } state = STATE_READ_STATUS;
 
     extDevice_t *dev = &magDev->dev;
 
-    bool ack = busReadRegisterBuffer(dev, QMC5883L_REG_STATUS, &status, 1);
+    switch (state) {
+        default:
+        case STATE_READ_STATUS:
+            busReadRegisterBufferStart(dev, QMC5883L_REG_STATUS, &status, sizeof(status));
+            state = STATE_WAIT_STATUS;
+            return false;
 
-    if (!ack || (status & 0x04) == 0) {
-        return false;
+        case STATE_WAIT_STATUS:
+            if ((status & 0x04) == 0) {
+                state = STATE_READ_STATUS;
+                return false;
+            }
+
+            busReadRegisterBufferStart(dev, QMC5883L_REG_DATA_OUTPUT_X, buf, sizeof(buf));
+            state = STATE_WAIT_READ;
+            return false;
+
+        case STATE_WAIT_READ:
+
+            magData[X] = (int16_t)(buf[1] << 8 | buf[0]);
+            magData[Y] = (int16_t)(buf[3] << 8 | buf[2]);
+            magData[Z] = (int16_t)(buf[5] << 8 | buf[4]);
+
+            state = STATE_READ_STATUS;
+
+            return true;
     }
 
-    ack = busReadRegisterBuffer(dev, QMC5883L_REG_DATA_OUTPUT_X, buf, 6);
-    if (!ack) {
-        return false;
-    }
-
-    magData[X] = (int16_t)(buf[1] << 8 | buf[0]);
-    magData[Y] = (int16_t)(buf[3] << 8 | buf[2]);
-    magData[Z] = (int16_t)(buf[5] << 8 | buf[4]);
-
-    return true;
+    return false;
 }
 
 bool qmc5883lDetect(magDev_t *magDev)

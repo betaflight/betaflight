@@ -38,6 +38,8 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
+#include "sensors/gyro.h"
+
 // 10 MHz max SPI frequency
 #define BMI270_MAX_SPI_CLK_HZ 10000000
 
@@ -108,7 +110,9 @@ typedef enum {
     BMI270_VAL_ACC_RANGE_8G = 0x02,          // set acc to 8G full scale
     BMI270_VAL_ACC_RANGE_16G = 0x03,         // set acc to 16G full scale
     BMI270_VAL_GYRO_CONF_ODR3200 = 0x0D,     // set gyro sample rate to 3200hz
-    BMI270_VAL_GYRO_CONF_BWP = 0x02,         // set gyro filter in normal mode
+    BMI270_VAL_GYRO_CONF_BWP_OSR4 = 0x00,    // set gyro filter in OSR4 mode
+    BMI270_VAL_GYRO_CONF_BWP_OSR2 = 0x01,    // set gyro filter in OSR2 mode
+    BMI270_VAL_GYRO_CONF_BWP_NORM = 0x02,    // set gyro filter in normal mode
     BMI270_VAL_GYRO_CONF_NOISE_PERF = 0x01,  // set gyro in high performance noise mode
     BMI270_VAL_GYRO_CONF_FILTER_PERF = 0x01, // set gyro in high performance filter mode
 
@@ -162,7 +166,6 @@ static void bmi270EnableSPI(const extDevice_t *dev)
 
 uint8_t bmi270Detect(const extDevice_t *dev)
 {
-    spiSetClkDivisor(dev, spiCalculateDivider(BMI270_MAX_SPI_CLK_HZ));
     bmi270EnableSPI(dev);
 
     if (bmi270RegisterRead(dev, BMI270_REG_CHIP_ID) == BMI270_CHIP_ID) {
@@ -182,6 +185,21 @@ static void bmi270UploadConfig(const extDevice_t *dev)
 
     delay(10);
     bmi270RegisterWrite(dev, BMI270_REG_INIT_CTRL, 1, 1);
+}
+
+static uint8_t getBmiOsrMode()
+{
+    switch(gyroConfig()->gyro_hardware_lpf) {
+        case GYRO_HARDWARE_LPF_NORMAL:
+            return BMI270_VAL_GYRO_CONF_BWP_OSR4;
+        case GYRO_HARDWARE_LPF_OPTION_1:
+            return BMI270_VAL_GYRO_CONF_BWP_OSR2;
+        case GYRO_HARDWARE_LPF_OPTION_2:
+            return BMI270_VAL_GYRO_CONF_BWP_NORM;
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+            return BMI270_VAL_GYRO_CONF_BWP_NORM;
+    }
+    return 0;
 }
 
 static void bmi270Config(gyroDev_t *gyro)
@@ -221,7 +239,7 @@ static void bmi270Config(gyroDev_t *gyro)
     bmi270RegisterWrite(dev, BMI270_REG_ACC_RANGE, BMI270_VAL_ACC_RANGE_16G, 1);
 
     // Configure the gyro
-    bmi270RegisterWrite(dev, BMI270_REG_GYRO_CONF, (BMI270_VAL_GYRO_CONF_FILTER_PERF << 7) | (BMI270_VAL_GYRO_CONF_NOISE_PERF << 6) | (BMI270_VAL_GYRO_CONF_BWP << 4) | BMI270_VAL_GYRO_CONF_ODR3200, 1);
+    bmi270RegisterWrite(dev, BMI270_REG_GYRO_CONF, (BMI270_VAL_GYRO_CONF_FILTER_PERF << 7) | (BMI270_VAL_GYRO_CONF_NOISE_PERF << 6) | (getBmiOsrMode() << 4) | BMI270_VAL_GYRO_CONF_ODR3200, 1);
 
     // Configure the gyro full-range scale
     bmi270RegisterWrite(dev, BMI270_REG_GYRO_RANGE, BMI270_VAL_GYRO_RANGE_2000DPS, 1);
@@ -275,7 +293,7 @@ busStatus_e bmi270Intcallback(uint32_t arg)
 void bmi270ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
-    // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
+    // Ideally we'd use a timer to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
     uint32_t nowCycles = getCycleCounter();
     gyro->gyroSyncEXTI = gyro->gyroLastEXTI + gyro->gyroDmaMaxDuration;
@@ -300,7 +318,7 @@ static void bmi270IntExtiInit(gyroDev_t *gyro)
     IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, bmi270ExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
-    EXTIEnable(mpuIntIO, true);
+    EXTIEnable(mpuIntIO);
 }
 #else
 void bmi270ExtiHandler(extiCallbackRec_t *cb)
@@ -320,7 +338,7 @@ static bool bmi270AccRead(accDev_t *acc)
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 8, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
         segments[0].u.buffers.rxData = acc->gyro->dev.rxBuf;
@@ -398,7 +416,7 @@ static bool bmi270GyroReadRegister(gyroDev_t *gyro)
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 8, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = gyro->dev.txBuf;
         segments[0].u.buffers.rxData = gyro->dev.rxBuf;
@@ -511,11 +529,15 @@ static bool bmi270GyroRead(gyroDev_t *gyro)
 
 static void bmi270SpiGyroInit(gyroDev_t *gyro)
 {
+    extDevice_t *dev = &gyro->dev;
+
     bmi270Config(gyro);
 
 #if defined(USE_GYRO_EXTI)
     bmi270IntExtiInit(gyro);
 #endif
+
+    spiSetClkDivisor(dev, spiCalculateDivider(BMI270_MAX_SPI_CLK_HZ));
 }
 
 static void bmi270SpiAccInit(accDev_t *acc)

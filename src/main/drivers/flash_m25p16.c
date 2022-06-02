@@ -87,6 +87,9 @@ struct {
     // Winbond W25Q16
     // Datasheet: https://www.winbond.com/resource-files/w25q16dv_revi_nov1714_web.pdf
     { 0xEF4015, 104, 50, 32, 256 },
+    // Winbond W25X32
+    // Datasheet: https://www.winbond.com/resource-files/w25x32a_revb_080709.pdf
+    { 0xEF3016, 133, 50, 64, 256 },
     // Winbond W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xEF4016, 133, 50, 64, 256 },
@@ -165,7 +168,6 @@ static bool m25p16_waitForReady(flashDevice_t *fdevice)
  *
  * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
  */
-
 bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
     flashGeometry_t *geometry = &fdevice->geometry;
@@ -284,7 +286,7 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {.u.buffers = {sectorErase, NULL}, fdevice->isLargeFlash ? 5 : 4, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing
@@ -309,7 +311,7 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {.u.buffers = {bulkErase, NULL}, sizeof(bulkErase), true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     spiSequence(fdevice->io.handle.dev, segments);
@@ -337,9 +339,9 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
             {.u.buffers = {pageProgram, NULL}, 0, false, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing
@@ -430,7 +432,7 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
             {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
             {.u.buffers = {readBytes, NULL}, fdevice->isLargeFlash ? 5 : 4, false, NULL},
             {.u.buffers = {NULL, buffer}, length, true, NULL},
-            {.u.buffers = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Patch the readBytes command

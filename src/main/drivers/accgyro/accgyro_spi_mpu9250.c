@@ -44,9 +44,6 @@
 #include "drivers/time.h"
 #include "drivers/system.h"
 
-
-// 1 MHz max SPI frequency for initialisation
-#define MPU9250_MAX_SPI_INIT_CLK_HZ 1000000
 // 20 MHz max SPI frequency
 #define MPU9250_MAX_SPI_CLK_HZ 20000000
 
@@ -110,10 +107,8 @@ bool mpu9250SpiWriteRegisterVerify(const extDevice_t *dev, uint8_t reg, uint8_t 
     return false;
 }
 
-static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
-
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU9250_MAX_SPI_INIT_CLK_HZ)); //low speed for writing to slow registers
-
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro)
+{
     mpu9250SpiWriteRegister(&gyro->dev, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(50);
 
@@ -137,8 +132,6 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
 uint8_t mpu9250SpiDetect(const extDevice_t *dev)
 {
-
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU9250_MAX_SPI_INIT_CLK_HZ)); //low speed
     mpu9250SpiWriteRegister(dev, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 
     uint8_t attemptsRemaining = 20;
@@ -152,8 +145,6 @@ uint8_t mpu9250SpiDetect(const extDevice_t *dev)
             return MPU_NONE;
         }
     } while (attemptsRemaining--);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU9250_MAX_SPI_CLK_HZ));
 
     return MPU_9250_SPI;
 }

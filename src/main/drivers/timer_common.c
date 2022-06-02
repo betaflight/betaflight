@@ -106,7 +106,7 @@ const resourceOwner_t *timerGetOwner(const timerHardware_t *timer)
 #if defined(USE_DSHOT_BITBANG)
     return dshotBitbangTimerGetOwner(timer);
 #else
-    return timerOwner;
+    return &freeOwner;
 #endif
 }
 

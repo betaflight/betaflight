@@ -65,7 +65,13 @@
 #define MPU_ADDRESS             0x68
 #endif
 
+// 1 MHz max SPI frequency during device detection
+#define MPU_MAX_SPI_DETECT_CLK_HZ 1000000
+
 #define MPU_INQUIRY_MASK   0x7E
+
+// Allow 100ms before attempting to access SPI bus
+#define GYRO_SPI_STARTUP_MS 100
 
 // Need to see at least this many interrupts during initialisation to confirm EXTI connectivity
 #define GYRO_EXTI_DETECT_THRESHOLD 1000
@@ -131,7 +137,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
 
-    // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
+    // Ideally we'd use a timer to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
     uint32_t nowCycles = getCycleCounter();
     int32_t gyroLastPeriod = cmpTimeCycles(nowCycles, gyro->gyroLastEXTI);
@@ -173,7 +179,7 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     IOInit(mpuIntIO, OWNER_GYRO_EXTI, 0);
     EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
-    EXTIEnable(mpuIntIO, true);
+    EXTIEnable(mpuIntIO);
 }
 #endif // USE_GYRO_EXTI
 
@@ -221,7 +227,7 @@ bool mpuAccReadSPI(accDev_t *acc)
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = acc->gyro->dev.txBuf;
         segments[0].u.buffers.rxData = &acc->gyro->dev.rxBuf[1];
@@ -298,7 +304,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
-                {.u.buffers = {NULL, NULL}, 0, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
         segments[0].u.buffers.txData = gyro->dev.txBuf;
         segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
@@ -383,6 +389,13 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro, const gyro
     IOHi(gyro->dev.busType_u.spi.csnPin); // Ensure device is disabled, important when two devices are on the same bus.
 
     uint8_t sensor = MPU_NONE;
+
+    // Allow 100ms before attempting to access gyro's SPI bus
+    // Do this once here rather than in each detection routine to speed boot
+    while (millis() < GYRO_SPI_STARTUP_MS);
+
+    // Set a slow SPI clock that all potential devices can handle during gyro detection
+    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU_MAX_SPI_DETECT_CLK_HZ));
 
     // It is hard to use hardware to optimize the detection loop here,
     // as hardware type and detection function name doesn't match.

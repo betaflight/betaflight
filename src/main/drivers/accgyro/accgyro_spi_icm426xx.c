@@ -46,9 +46,6 @@
 // 24 MHz max SPI frequency
 #define ICM426XX_MAX_SPI_CLK_HZ 24000000
 
-// 10 MHz max SPI frequency for intialisation
-#define ICM426XX_MAX_SPI_INIT_CLK_HZ 1000000
-
 #define ICM426XX_RA_PWR_MGMT0                       0x4E
 
 #define ICM426XX_PWR_MGMT0_ACCEL_MODE_LN            (3 << 0)
@@ -95,26 +92,8 @@
 #define ICM426XX_UI_DRDY_INT1_EN_DISABLED           (0 << 3)
 #define ICM426XX_UI_DRDY_INT1_EN_ENABLED            (1 << 3)
 
-static void icm426xxSpiInit(const extDevice_t *dev)
-{
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
-    }
-
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM426XX_MAX_SPI_CLK_HZ));
-
-    hardwareInitialised = true;
-}
-
 uint8_t icm426xxSpiDetect(const extDevice_t *dev)
 {
-    icm426xxSpiInit(dev);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM426XX_MAX_SPI_INIT_CLK_HZ));
-
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
     uint8_t icmDetected = MPU_NONE;
@@ -140,8 +119,6 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
             return MPU_NONE;
         }
     } while (attemptsRemaining--);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM426XX_MAX_SPI_CLK_HZ));
 
     return icmDetected;
 }
@@ -182,13 +159,14 @@ static odrEntry_t icm426xxPkhzToSupportedODRMap[] = {
 
 void icm426xxGyroInit(gyroDev_t *gyro)
 {
+    const extDevice_t *dev = &gyro->dev;
+    spiSetClkDivisor(dev, spiCalculateDivider(ICM426XX_MAX_SPI_CLK_HZ));
+
     mpuGyroInit(gyro);
     gyro->accDataReg = ICM426XX_RA_ACCEL_DATA_X1;
     gyro->gyroDataReg = ICM426XX_RA_GYRO_DATA_X1;
 
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM426XX_MAX_SPI_INIT_CLK_HZ));
-
-    spiWriteReg(&gyro->dev, ICM426XX_RA_PWR_MGMT0, ICM426XX_PWR_MGMT0_TEMP_DISABLE_OFF | ICM426XX_PWR_MGMT0_ACCEL_MODE_LN | ICM426XX_PWR_MGMT0_GYRO_MODE_LN);
+    spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, ICM426XX_PWR_MGMT0_TEMP_DISABLE_OFF | ICM426XX_PWR_MGMT0_ACCEL_MODE_LN | ICM426XX_PWR_MGMT0_GYRO_MODE_LN);
     delay(15);
 
     uint8_t outputDataRate = 0;
@@ -212,31 +190,28 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     }
 
     STATIC_ASSERT(INV_FSR_2000DPS == 3, "INV_FSR_2000DPS must be 3 to generate correct value");
-    spiWriteReg(&gyro->dev, ICM426XX_RA_GYRO_CONFIG0, (3 - INV_FSR_2000DPS) << 5 | (outputDataRate & 0x0F));
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (3 - INV_FSR_2000DPS) << 5 | (outputDataRate & 0x0F));
     delay(15);
 
     STATIC_ASSERT(INV_FSR_16G == 3, "INV_FSR_16G must be 3 to generate correct value");
-    spiWriteReg(&gyro->dev, ICM426XX_RA_ACCEL_CONFIG0, (3 - INV_FSR_16G) << 5 | (outputDataRate & 0x0F));
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (3 - INV_FSR_16G) << 5 | (outputDataRate & 0x0F));
     delay(15);
 
-    spiWriteReg(&gyro->dev, ICM426XX_RA_GYRO_ACCEL_CONFIG0, ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY | ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY);
+    spiWriteReg(dev, ICM426XX_RA_GYRO_ACCEL_CONFIG0, ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY | ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY);
 
-    spiWriteReg(&gyro->dev, ICM426XX_RA_INT_CONFIG, ICM426XX_INT1_MODE_PULSED | ICM426XX_INT1_DRIVE_CIRCUIT_PP | ICM426XX_INT1_POLARITY_ACTIVE_HIGH);
-    spiWriteReg(&gyro->dev, ICM426XX_RA_INT_CONFIG0, ICM426XX_UI_DRDY_INT_CLEAR_ON_SBR);
+    spiWriteReg(dev, ICM426XX_RA_INT_CONFIG, ICM426XX_INT1_MODE_PULSED | ICM426XX_INT1_DRIVE_CIRCUIT_PP | ICM426XX_INT1_POLARITY_ACTIVE_HIGH);
+    spiWriteReg(dev, ICM426XX_RA_INT_CONFIG0, ICM426XX_UI_DRDY_INT_CLEAR_ON_SBR);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    spiWriteReg(&gyro->dev, ICM426XX_RA_INT_SOURCE0, ICM426XX_UI_DRDY_INT1_EN_ENABLED);
+    spiWriteReg(dev, ICM426XX_RA_INT_SOURCE0, ICM426XX_UI_DRDY_INT1_EN_ENABLED);
 
-    uint8_t intConfig1Value = spiReadRegMsk(&gyro->dev, ICM426XX_RA_INT_CONFIG1);
+    uint8_t intConfig1Value = spiReadRegMsk(dev, ICM426XX_RA_INT_CONFIG1);
     // Datasheet says: "User should change setting to 0 from default setting of 1, for proper INT1 and INT2 pin operation"
     intConfig1Value &= ~(1 << ICM426XX_INT_ASYNC_RESET_BIT);
     intConfig1Value |= (ICM426XX_INT_TPULSE_DURATION_8 | ICM426XX_INT_TDEASSERT_DISABLED);
 
-    spiWriteReg(&gyro->dev, ICM426XX_RA_INT_CONFIG1, intConfig1Value);
+    spiWriteReg(dev, ICM426XX_RA_INT_CONFIG1, intConfig1Value);
 #endif
-    //
-
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM426XX_MAX_SPI_CLK_HZ));
 }
 
 bool icm426xxSpiGyroDetect(gyroDev_t *gyro)

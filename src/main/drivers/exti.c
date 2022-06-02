@@ -131,6 +131,8 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
     extiChannelRec_t *rec = &extiChannelRecs[chIdx];
     rec->handler = cb;
 
+    EXTIDisable(io);
+
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
@@ -139,7 +141,6 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         .Pull = IO_CONFIG_GET_PULL(config),
     };
     HAL_GPIO_Init(IO_GPIO(io), &init);
-
 
     if (extiGroupPriority[group] > irqPriority) {
         extiGroupPriority[group] = irqPriority;
@@ -158,10 +159,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 #else
 # warning "Unknown CPU"
 #endif
-
     uint32_t extiLine = IO_EXTI_Line(io);
-
-    EXTI_ClearITPendingBit(extiLine);
 
     EXTI_InitTypeDef EXTIInit;
     EXTIInit.EXTI_Line = extiLine;
@@ -186,7 +184,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 void EXTIRelease(IO_t io)
 {
     // don't forget to match cleanup with config
-    EXTIEnable(io, false);
+    EXTIDisable(io);
 
     const int chIdx = IO_GPIOPinIdx(io);
 
@@ -198,7 +196,7 @@ void EXTIRelease(IO_t io)
     rec->handler = NULL;
 }
 
-void EXTIEnable(IO_t io, bool enable)
+void EXTIEnable(IO_t io)
 {
 #if defined(STM32F1) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint32_t extiLine = IO_EXTI_Line(io);
@@ -207,11 +205,7 @@ void EXTIEnable(IO_t io, bool enable)
         return;
     }
 
-    if (enable) {
-        EXTI_REG_IMR |= extiLine;
-    } else {
-        EXTI_REG_IMR &= ~extiLine;
-    }
+    EXTI_REG_IMR |= extiLine;
 #elif defined(STM32F303xC)
 
     int extiLine = IO_EXTI_Line(io);
@@ -222,15 +216,40 @@ void EXTIEnable(IO_t io, bool enable)
 
     // assume extiLine < 32 (valid for all EXTI pins)
 
-    if (enable) {
-        EXTI_REG_IMR |= 1 << extiLine;
-    } else {
-        EXTI_REG_IMR &= ~(1 << extiLine);
-    }
+    EXTI_REG_IMR |= 1 << extiLine;
 #else
 # error "Unknown CPU"
 #endif
 }
+
+
+void EXTIDisable(IO_t io)
+{
+#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+    uint32_t extiLine = IO_EXTI_Line(io);
+
+    if (!extiLine) {
+        return;
+    }
+
+    EXTI_REG_IMR &= ~extiLine;
+    EXTI_REG_PR = extiLine;
+#elif defined(STM32F303xC)
+
+    int extiLine = IO_EXTI_Line(io);
+
+    if (extiLine < 0) {
+        return;
+    }
+
+    // assume extiLine < 32 (valid for all EXTI pins)
+
+    EXTI_REG_IMR &= ~(1 << extiLine);
+#else
+# error "Unknown CPU"
+#endif
+}
+
 
 #define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
 

@@ -103,19 +103,23 @@
 
 static bool lis3mdlRead(magDev_t * mag, int16_t *magData)
 {
-    uint8_t buf[6];
+    static uint8_t buf[6];
+    static bool pendingRead = true;
 
     extDevice_t *dev = &mag->dev;
 
-    bool ack = busReadRegisterBuffer(dev, LIS3MDL_REG_OUT_X_L, buf, 6);
+    if (pendingRead) {
+        busReadRegisterBufferStart(dev, LIS3MDL_REG_OUT_X_L, buf, sizeof(buf));
 
-    if (!ack) {
+        pendingRead = false;
         return false;
     }
 
     magData[X] = (int16_t)(buf[1] << 8 | buf[0]) / 4;
     magData[Y] = (int16_t)(buf[3] << 8 | buf[2]) / 4;
     magData[Z] = (int16_t)(buf[5] << 8 | buf[4]) / 4;
+
+    pendingRead = true;
 
     return true;
 }

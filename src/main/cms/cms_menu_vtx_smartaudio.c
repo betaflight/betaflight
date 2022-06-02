@@ -610,7 +610,7 @@ static const OSD_Entry saCmsMenuPORFreqEntries[] = {
 
     { "CUR FREQ",     OME_UINT16 | DYNAMIC,  NULL,             &(OSD_UINT16_t){ &saCmsORFreq, 5000, 5999, 0 } },
     { "NEW FREQ",     OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsORFreqNew, 5000, 5999, 1 } },
-    { "SET",          OME_Funcall, saCmsSetPORFreq,  NULL },
+    { "SAVE",         OME_Funcall, saCmsSetPORFreq,  NULL },
 
     { "BACK",         OME_Back,    NULL,             NULL },
     { NULL,           OME_END,     NULL,             NULL }
@@ -633,7 +633,7 @@ static const OSD_Entry saCmsMenuUserFreqEntries[] = {
 
     { "CUR FREQ",      OME_UINT16 | DYNAMIC,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 5000, 5999, 0 } },
     { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 5000, 5999, 1 } },
-    { "SET",           OME_Funcall, saCmsConfigUserFreq, NULL },
+    { "SAVE",          OME_Funcall, saCmsConfigUserFreq, NULL },
 
     { "BACK",          OME_Back,    NULL,             NULL },
     { NULL,            OME_END,     NULL,             NULL }
@@ -706,7 +706,7 @@ static const OSD_Entry saCmsMenuFreqModeEntries[] = {
     { "FREQ",   OME_Submenu | OPTSTRING, (CMSEntryFuncPtr)saCmsUserFreqGetString,  &saCmsMenuUserFreq },
     { "POWER",  OME_TAB | DYNAMIC,     saCmsConfigPowerByGvar,                   &saCmsEntPower },
     { "PIT",    OME_TAB | DYNAMIC,     saCmsConfigPitByGvar,                     &saCmsEntPit },
-    { "SET",    OME_Submenu, cmsMenuChange,                            &saCmsMenuCommence },
+    { "SAVE",   OME_Submenu, cmsMenuChange,                            &saCmsMenuCommence },
     { "CONFIG", OME_Submenu, cmsMenuChange,                            &saCmsMenuConfig },
 
     { "BACK", OME_Back, NULL, NULL },
@@ -723,7 +723,7 @@ static const OSD_Entry saCmsMenuChanModeEntries[] =
     { "(FREQ)", OME_UINT16 | DYNAMIC,  NULL,                   &saCmsEntFreqRef },
     { "POWER",  OME_TAB | DYNAMIC,     saCmsConfigPowerByGvar, &saCmsEntPower },
     { "PIT",    OME_TAB | DYNAMIC,     saCmsConfigPitByGvar,   &saCmsEntPit },
-    { "SET",    OME_Submenu, cmsMenuChange,          &saCmsMenuCommence },
+    { "SAVE",   OME_Submenu, cmsMenuChange,          &saCmsMenuCommence },
     { "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig },
 
     { "BACK",   OME_Back, NULL, NULL },

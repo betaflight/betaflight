@@ -37,8 +37,6 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
-// 1 MHz max SPI frequency for initialisation
-#define MPU6500_MAX_SPI_INIT_CLK_HZ 1000000
 // 20 MHz max SPI frequency
 #define MPU6500_MAX_SPI_CLK_HZ 20000000
 
@@ -46,8 +44,7 @@
 
 static void mpu6500SpiInit(const extDevice_t *dev)
 {
-
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
+    UNUSED(dev);
 }
 
 uint8_t mpu6500SpiDetect(const extDevice_t *dev)
@@ -82,7 +79,11 @@ uint8_t mpu6500SpiDetect(const extDevice_t *dev)
         break;
     default:
         mpuDetected = MPU_NONE;
+        return mpuDetected;
     }
+
+    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
+
     return mpuDetected;
 }
 
@@ -93,9 +94,6 @@ void mpu6500SpiAccInit(accDev_t *acc)
 
 void mpu6500SpiGyroInit(gyroDev_t *gyro)
 {
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU6500_MAX_SPI_INIT_CLK_HZ));
-    delayMicroseconds(1);
-
     mpu6500GyroInit(gyro);
 
     // Disable Primary I2C Interface

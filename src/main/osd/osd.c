@@ -60,6 +60,7 @@
 #include "drivers/sdcard.h"
 #include "drivers/time.h"
 
+#include "fc/core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -67,6 +68,7 @@
 #if defined(USE_DYN_NOTCH_FILTER)
 #include "flight/dyn_notch_filter.h"
 #endif
+#include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/position.h"
@@ -78,6 +80,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
 #include "pg/pg.h"
@@ -1015,6 +1018,10 @@ static timeDelta_t osdShowArmed(void)
     }
     displayWrite(osdDisplayPort, 12, 7, DISPLAYPORT_ATTR_NONE, "ARMED");
 
+    if (isFlipOverAfterCrashActive()) {
+        displayWrite(osdDisplayPort, 8, 8, DISPLAYPORT_ATTR_NONE, CRASH_FLIP_WARNING);
+    }
+
     return ret;
 }
 
@@ -1037,6 +1044,7 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
             resumeRefreshAt = osdShowArmed() + currentTimeUs;
         } else if (isSomeStatEnabled()
                    && !suppressStatsDisplay
+                   && !failsafeIsActive()
                    && (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))
                        || !VISIBLE(osdElementConfig()->item_pos[OSD_WARNINGS]))) { // suppress stats if runaway takeoff triggered disarm and WARNINGS element is visible
             osdStatsEnabled = true;
@@ -1085,8 +1093,9 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 
     if (resumeRefreshAt) {
         if (cmp32(currentTimeUs, resumeRefreshAt) < 0) {
-            // in timeout period, check sticks for activity to resume display.
-            if (IS_HI(THROTTLE) || IS_HI(PITCH)) {
+            // in timeout period, check sticks for activity or CRASH FLIP switch to resume display.
+            if (!ARMING_FLAG(ARMED) &&
+                (IS_HI(THROTTLE) || IS_HI(PITCH) || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH))) {
                 resumeRefreshAt = currentTimeUs;
             }
             return;
@@ -1203,8 +1212,6 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
-        showVisualBeeper = isBeeperOn();
-
         // don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
             break;
@@ -1470,6 +1477,11 @@ bool osdElementVisible(uint16_t value)
 bool osdGetVisualBeeperState(void)
 {
     return showVisualBeeper;
+}
+
+void osdSetVisualBeeperState(bool state)
+{
+    showVisualBeeper = state;
 }
 
 statistic_t *osdGetStats(void)
