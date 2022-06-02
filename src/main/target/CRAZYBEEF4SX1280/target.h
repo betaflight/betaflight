@@ -56,6 +56,7 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_ICM20689
+#define USE_ACCGYRO_BMI270
 
 // *************** OSD/FLASH *****************************
 #define USE_SPI_DEVICE_2
