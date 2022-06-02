@@ -197,15 +197,18 @@ osd_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
 		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/stats.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
 		USE_OSD= \
 		USE_GPS= \
 		USE_RTC_TIME= \
+		USE_PERSISTENT_STATS= \
 		USE_ADC_INTERNAL=
 
 link_quality_unittest_SRC := \
+		$(USER_DIR)/pg/stats.c \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/osd/osd_warnings.c \
@@ -228,6 +231,7 @@ link_quality_unittest_SRC := \
 link_quality_unittest_DEFINES := \
 		USE_OSD= \
 		USE_CRSF_LINK_STATISTICS= \
+		USE_PERSISTENT_STATS= \
 		USE_RX_LINK_QUALITY_INFO=
 
 pg_unittest_SRC := \
