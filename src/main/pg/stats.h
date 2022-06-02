@@ -31,6 +31,8 @@ typedef struct statsConfig_s {
     uint32_t stats_total_dist_m;
     int8_t stats_min_armed_time_s;
     uint32_t stats_mah_used;
+    uint32_t stats_extra_total_kaacks;
+    uint32_t stats_extra_total_kaack_time;
 } statsConfig_t;
 
 PG_DECLARE(statsConfig_t, statsConfig);
