@@ -390,8 +390,8 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_SPI_MISO,  SPIDEV_3,  { DMA(1, 0, 0), DMA(1, 2, 0) } },
 
 #if defined(STM32F411xE) || defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx) || defined(STM32F722xx)
-    { DMA_PERIPH_SPI_MOSI,  SPIDEV_4,  { DMA(2, 1, 4) } },
-    { DMA_PERIPH_SPI_MISO,  SPIDEV_4,  { DMA(2, 0, 4) } },
+    { DMA_PERIPH_SPI_MOSI,  SPIDEV_4,  { DMA(2, 1, 4), DMA(2, 4, 5) } },
+    { DMA_PERIPH_SPI_MISO,  SPIDEV_4,  { DMA(2, 0, 4), DMA(2, 3, 5) } },
 
 #ifdef USE_EXTENDED_SPI_DEVICE
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_5,  { DMA(2, 6, 7) } },

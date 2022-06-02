@@ -290,8 +290,8 @@ void processMspPacket(uint8_t *packet)
         break;
     case CRSF_FRAMETYPE_MSP_REQ:
         FALLTHROUGH;
-    case CRSF_FRAMETYPE_MSP_WRITE: //TODO: MSP_EEPROM_WRITE command is disabled.
-        if (packet[ELRS_MSP_COMMAND_INDEX] != MSP_EEPROM_WRITE && bufferCrsfMspFrame(&packet[ELRS_MSP_PACKET_OFFSET], CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
+    case CRSF_FRAMETYPE_MSP_WRITE:
+        if (bufferCrsfMspFrame(&packet[ELRS_MSP_PACKET_OFFSET], CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
             handleCrsfMspFrameBuffer(&bufferMspResponse);
             mspReplyPending = true;
         }

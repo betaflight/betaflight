@@ -166,7 +166,6 @@ static void bmi270EnableSPI(const extDevice_t *dev)
 
 uint8_t bmi270Detect(const extDevice_t *dev)
 {
-    spiSetClkDivisor(dev, spiCalculateDivider(BMI270_MAX_SPI_CLK_HZ));
     bmi270EnableSPI(dev);
 
     if (bmi270RegisterRead(dev, BMI270_REG_CHIP_ID) == BMI270_CHIP_ID) {
@@ -294,7 +293,7 @@ busStatus_e bmi270Intcallback(uint32_t arg)
 void bmi270ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
-    // Ideally we'd use a time to capture such information, but unfortunately the port used for EXTI interrupt does
+    // Ideally we'd use a timer to capture such information, but unfortunately the port used for EXTI interrupt does
     // not have an associated timer
     uint32_t nowCycles = getCycleCounter();
     gyro->gyroSyncEXTI = gyro->gyroLastEXTI + gyro->gyroDmaMaxDuration;
@@ -530,11 +529,15 @@ static bool bmi270GyroRead(gyroDev_t *gyro)
 
 static void bmi270SpiGyroInit(gyroDev_t *gyro)
 {
+    extDevice_t *dev = &gyro->dev;
+
     bmi270Config(gyro);
 
 #if defined(USE_GYRO_EXTI)
     bmi270IntExtiInit(gyro);
 #endif
+
+    spiSetClkDivisor(dev, spiCalculateDivider(BMI270_MAX_SPI_CLK_HZ));
 }
 
 static void bmi270SpiAccInit(accDev_t *acc)

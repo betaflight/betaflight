@@ -55,6 +55,9 @@
 #define ABS(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
   _x > 0 ? _x : -_x; })
+#define SIGN(x) \
+  __extension__ ({ __typeof__ (x) _x = (x); \
+  (_x > 0) - (_x < 0); })
 
 #define Q12 (1 << 12)
 

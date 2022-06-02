@@ -47,8 +47,6 @@
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
-// 1 MHz max SPI frequency for initialisation
-#define MPU6000_MAX_SPI_INIT_CLK_HZ 1000000
 // 20 MHz max SPI frequency
 #define MPU6000_MAX_SPI_CLK_HZ 20000000
 
@@ -109,8 +107,6 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
 
     mpu6000AccAndGyroInit(gyro);
 
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU6000_MAX_SPI_INIT_CLK_HZ));
-
     // Accel and Gyro DLPF Setting
     spiWriteReg(&gyro->dev, MPU6000_CONFIG, mpuGyroDLPF(gyro));
     delayMicroseconds(1);
@@ -131,17 +127,9 @@ void mpu6000SpiAccInit(accDev_t *acc)
 
 uint8_t mpu6000SpiDetect(const extDevice_t *dev)
 {
-
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU6000_MAX_SPI_INIT_CLK_HZ));
-
     // reset the device configuration
     spiWriteReg(dev, MPU_RA_PWR_MGMT_1, BIT_H_RESET);
     delay(100);  // datasheet specifies a 100ms delay after reset
-
-    // reset the device signal paths
-    spiWriteReg(dev, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
-    delay(100);  // datasheet specifies a 100ms delay after signal path reset
-
 
     const uint8_t whoAmI = spiReadRegMsk(dev, MPU_RA_WHO_AM_I);
     delayMicroseconds(1); // Ensure CS high time is met which is violated on H7 without this delay
@@ -168,16 +156,17 @@ uint8_t mpu6000SpiDetect(const extDevice_t *dev)
         case MPU6000_REV_D10:
             detectedSensor = MPU_60x0_SPI;
         }
+
+        // reset the device signal paths
+        spiWriteReg(dev, MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
+        delay(100);  // datasheet specifies a 100ms delay after signal path reset
     }
 
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
     return detectedSensor;
 }
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 {
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU6000_MAX_SPI_INIT_CLK_HZ));
-
     // Device was already reset during detection so proceed with configuration
 
     // Clock Source PPL with Z axis gyro reference
@@ -211,9 +200,6 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
     spiWriteReg(&gyro->dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
     delayMicroseconds(15);
 #endif
-
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU6000_MAX_SPI_CLK_HZ));
-    delayMicroseconds(1);
 }
 
 bool mpu6000SpiAccDetect(accDev_t *acc)
