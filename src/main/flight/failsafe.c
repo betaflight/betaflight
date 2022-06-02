@@ -124,7 +124,7 @@ bool failsafeIsMonitoring(void)
     return failsafeState.monitoring;
 }
 
-bool failsafeIsActive(void)
+bool failsafeIsActive(void) // real or switch-induced stage 2 failsafe
 {
     return failsafeState.active;
 }
