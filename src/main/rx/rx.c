@@ -568,6 +568,7 @@ static uint16_t calculateChannelMovingAverage(uint8_t chan, uint16_t sample)
 static uint16_t getRxfailValue(uint8_t channel)
 {
     const rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigs(channel);
+    const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
 
     switch (channelFailsafeConfig->mode) {
     case RX_FAILSAFE_MODE_AUTO:
@@ -588,8 +589,11 @@ static uint16_t getRxfailValue(uint8_t channel)
     default:
     case RX_FAILSAFE_MODE_INVALID:
     case RX_FAILSAFE_MODE_HOLD:
-        return rcData[channel];
-
+        if (failsafeAuxSwitch) {
+            return rcRaw[channel]; // current values are allowed through on held channels with switch induced failsafe
+        } else {
+            return rcData[channel]; // last good value
+        }
     case RX_FAILSAFE_MODE_SET:
         return RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step);
     }
@@ -637,13 +641,11 @@ void detectAndApplySignalLossBehaviour(void)
 {
     const uint32_t currentTimeMs = millis();
     const bool failsafeAuxSwitch = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
-    bool allAuxChannelsAreGood = true; 
-    // used to record if any non-aux channel is out of range for the timeout period, assume they are good
     rxFlightChannelsValid = rxSignalReceived && !failsafeAuxSwitch;
     //  set rxFlightChannelsValid false when a packet is bad or we use a failsafe switch
 
     for (int channel = 0; channel < rxChannelCount; channel++) {
-        float sample = rcRaw[channel];
+        float sample = rcRaw[channel]; // sample has latest RC value, rcData has last 'accepted valid' value
         const bool thisChannelValid = rxFlightChannelsValid && isPulseValid(sample);
         // if the whole packet is bad, consider all channels bad
 
@@ -653,38 +655,37 @@ void detectAndApplySignalLossBehaviour(void)
         }
 
        if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
-            // while in failsafe Stage 2, pass incoming flight channel values unless they are bad
-            // this allows GPS Return to detect the 30% requirement for termination
+            // while in failsafe Stage 2, whether Rx loss or switch induced, pass valid incoming flight channel values
+            // this allows GPS Rescue to detect the 30% requirement for termination
             if (channel < NON_AUX_CHANNEL_COUNT) {
                 if (!thisChannelValid) {
                     if (channel == THROTTLE ) {
-                        sample = failsafeConfig()->failsafe_throttle;
+                        sample = failsafeConfig()->failsafe_throttle; // stage 2 failsafe throttle value
                     } else {
                         sample = rxConfig()->midrc;
                     }
                 }
-            } else if (!failsafeAuxSwitch) {
-                // set aux channels as per Stage 1 Configurator values, unless failsafe was initiated by switch
+            } else {
+                //  During Stage 2, set aux channels as per Stage 1 configuration
                 sample = getRxfailValue(channel);
             }
         } else {
             if (failsafeAuxSwitch) {
-                if (channel < NON_AUX_CHANNEL_COUNT) {
-                    sample = getRxfailValue(channel);
-                    //  set RPYT values to Stage 1 values immediately if initiated by switch
-                }
+                sample = getRxfailValue(channel);
+                //  set channels to Stage 1 values immediately failsafe switch is activated
             } else if (!thisChannelValid) {
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
+                    // first 300ms of Stage 1 failsafe
                     sample = rcData[channel];
                     //  HOLD last valid value on bad channel/s for MAX_INVALID_PULSE_TIME_MS (300ms)
                 } else {
-                    //  then use STAGE 1 failsafe values
+                    // remaining Stage 1 failsafe period after 300ms
                     if (channel < NON_AUX_CHANNEL_COUNT) {
-                        allAuxChannelsAreGood = false;
-                        //  declare signal lost after 300ms of at least one bad flight channel
+                        rxFlightChannelsValid = false;
+                        //  declare signal lost after 300ms of any one bad flight channel
                     }
                     sample = getRxfailValue(channel);
-                    //  set all channels to Stage 1 values
+                    // set channels that are invalid for more than 300ms to Stage 1 values
                 }
             }
         }
@@ -701,11 +702,10 @@ void detectAndApplySignalLossBehaviour(void)
         {
             //  set rcData to either validated incoming values, or failsafe-modified values
             rcData[channel] = sample;
-
         }
     }
 
-    if (rxFlightChannelsValid && allAuxChannelsAreGood) {
+    if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
         //  --> start the timer to exit stage 2 failsafe
     } else {
