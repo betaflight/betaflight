@@ -60,9 +60,11 @@ typedef struct {
     float throttle;
     float throttleFactor;
     float targetAltitude;
+    float targetVelocity;
     float measuredAltitude;
     float measuredAccel;
     float velocityEstimationAccel;  // based on acceleration
+    float velocityEstimationVario;  // based on baro / gps
     float startVelocityEstimationAccel;
     bool altHoldEnabled;
     uint32_t enterTime;
