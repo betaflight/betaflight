@@ -20,27 +20,4 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "pg/pg.h"
-
-#define NMEA_CUSTOM_COMMANDS_MAX_LENGTH 64
-
-typedef struct gpsConfig_s {
-    uint8_t provider;
-    uint8_t sbasMode;
-    uint8_t autoConfig;
-    uint8_t autoBaud;
-    uint8_t gps_ublox_acquire_model;
-    uint8_t gps_ublox_flight_model;
-    uint8_t gps_update_rate_hz;
-    bool gps_ublox_use_galileo;
-    bool gps_ublox_full_power;
-    bool gps_set_home_point_once;
-    bool gps_use_3d_speed;
-    bool sbas_integrity;
-    char nmeaCustomCommands[NMEA_CUSTOM_COMMANDS_MAX_LENGTH + 1];
-} gpsConfig_t;
-
-PG_DECLARE(gpsConfig_t, gpsConfig);
+extern CMS_Menu cms_menuGpsLapTimer;

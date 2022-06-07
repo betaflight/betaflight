@@ -139,6 +139,10 @@
 #define SYM_ON_M                    0x9B
 #define SYM_FLY_M                   0x9C
 
+// Lap Timer
+#define SYM_CHECKERED_FLAG          0x79
+#define SYM_LAST_3                  0x7C
+
 // Speed
 #define SYM_SPEED                   0x70
 #define SYM_KPH                     0x9E

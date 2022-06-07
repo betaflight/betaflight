@@ -579,4 +579,9 @@ extern uint8_t __config_end;
 
 #ifndef USE_GPS
 #undef USE_GPS_PLUS_CODES
+#undef USE_GPS_LAP_TIMER
+#endif
+
+#ifndef USE_GPS_LAP_TIMER
+#undef USE_CMS_GPS_LAP_TIMER_MENU
 #endif
