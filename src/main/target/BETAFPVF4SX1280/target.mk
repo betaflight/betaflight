@@ -3,6 +3,10 @@ HSE_VALUE   = 8000000
 FEATURES       += VCP ONBOARDFLASH
 
 TARGET_SRC = \
+			$(ROOT)/lib/main/BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
+			drivers/accgyro/accgyro_spi_bmi270.c \
+			drivers/accgyro/accgyro_spi_mpu6500.c \
+			drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_spi_icm20689.c\
             drivers/barometer/barometer_bmp280.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \
