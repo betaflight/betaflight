@@ -622,10 +622,6 @@ void init(void)
             emfat_init_files();
         }
 #endif
-        // There's no more initialisation to be done, so enable DMA where possible for SPI
-#ifdef USE_SPI
-        spiInitBusDMA();
-#endif
         if (mscStart() == 0) {
              mscWaitForButton();
         } else {
