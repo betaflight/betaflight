@@ -334,14 +334,15 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // Enable the default stats
     osdConfig->enabled_stats = 0; // reset all to off and enable only a few initially
-    osdStatSetState(OSD_STAT_MAX_SPEED, true);
-    osdStatSetState(OSD_STAT_MIN_BATTERY, true);
-    osdStatSetState(OSD_STAT_MIN_RSSI, true);
-    osdStatSetState(OSD_STAT_MAX_CURRENT, true);
-    osdStatSetState(OSD_STAT_USED_MAH, true);
-    osdStatSetState(OSD_STAT_BLACKBOX, true);
-    osdStatSetState(OSD_STAT_BLACKBOX_NUMBER, true);
     osdStatSetState(OSD_STAT_TIMER_2, true);
+    osdStatSetState(OSD_STAT_MIN_BATTERY, true);
+    osdStatSetState(OSD_STAT_MIN_LINK_QUALITY, true);
+    osdStatSetState(OSD_STAT_TOTAL_FLIGHTS, true);
+    osdStatSetState(OSD_STAT_EXTRA_KAACK, true);
+    osdStatSetState(OSD_STAT_EXTRA_KAACK_TOTAL, true);
+    osdStatSetState(OSD_STAT_EXTRA_KAACK_TIME, true);
+    osdStatSetState(OSD_STAT_EXTRA_KAACK_TIME_TOTAL, true);
+    osdStatSetState(OSD_STAT_EXTRA_AVG_THROTTLE, true);
 
     osdConfig->units = UNIT_METRIC;
 
