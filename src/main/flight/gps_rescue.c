@@ -109,7 +109,6 @@ typedef struct {
     float velocityToHomeCmS;
     float ascendStepCm;
     float descendStepCm;
-    int16_t distanceDescendedCm;
     float maxPitchStep;
     float filterK;
 } rescueSensorData_s;
@@ -438,7 +437,9 @@ static void performSanityChecks()
 {
     static timeUs_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
     static int8_t secondsStalled = 0; // Stalled movement detection
-    static int8_t secondsNotLanding = 0; // Stalled landing detection
+    static int8_t secondsNotDescending = 0; // Stalled descent detection
+    static int8_t secondsNotAscending = 0; // Stalled ascent detection
+    static int32_t prevAlitudeCm = 0.0f; // to calculate ascent or descent change
     static int8_t secondsLowSats = 0; // Minimum sat detection
     static int8_t secondsDoingNothing = 0; // Limit on doing nothing
     const timeUs_t currentTimeUs = micros();
@@ -450,7 +451,9 @@ static void performSanityChecks()
         // Initialize internal variables each time GPS Rescue is started
         previousTimeUs = currentTimeUs;
         secondsStalled = 5; // Start the count at 5 to be less forgiving at the beginning
-        secondsNotLanding = 0;
+        secondsNotDescending = 0;
+        secondsNotAscending = 0;
+        prevAlitudeCm = rescueState.sensor.currentAltitudeCm;
         secondsLowSats = 5;  // Start the count at 5 to be less forgiving at the beginning
         secondsDoingNothing = 0;
         return;
@@ -505,14 +508,21 @@ static void performSanityChecks()
         }
     }
 
-
     // These conditions are 'special', in that even with sanity checks off, they should still apply
-    if (rescueState.phase == RESCUE_LANDING) {
-        secondsNotLanding = constrain(secondsNotLanding + ((rescueState.sensor.distanceDescendedCm > (0.5f * rescueState.sensor.descendStepCm)) ? -1 : 1), 0, 10);
-        if (secondsNotLanding == 10) {
+    if (rescueState.phase == RESCUE_ATTAIN_ALT) {
+        secondsNotAscending = constrain(secondsNotAscending + (((rescueState.sensor.currentAltitudeCm - prevAlitudeCm) > (0.5f *  gpsRescueConfig()->ascendRate)) ? -1 : 1), 0, 10);
+        if (secondsNotAscending == 10) {
             {
             rescueState.phase = RESCUE_ABORT;
-            // if we lose the altitude signal, or fail to meet impact criteria, force terminate Landing Mode
+            // if stuck in a tree while climbing, or otherwise can't climb, stop motors and disarm
+            }
+        }
+    } else if (rescueState.phase == RESCUE_LANDING || rescueState.phase == RESCUE_DESCENT) {
+        secondsNotDescending = constrain(secondsNotDescending + (((prevAlitudeCm - rescueState.sensor.currentAltitudeCm) > (0.5f * gpsRescueConfig()->descendRate)) ? -1 : 1), 0, 10);
+        if (secondsNotDescending == 10) {
+            {
+            rescueState.phase = RESCUE_ABORT;
+            // if stuck in a tree while climbing, or don't disarm on impact, or enable GPS rescue on the ground too close
             }
         }
     } else if (rescueState.phase == RESCUE_DO_NOTHING) {
@@ -524,6 +534,7 @@ static void performSanityChecks()
             // this is controversial
         }
     }
+    prevAlitudeCm = rescueState.sensor.currentAltitudeCm;
 
     secondsLowSats = constrain(secondsLowSats + ((rescueState.sensor.numSat < (gpsRescueConfig()->minSats / 2)) ? 1 : -1), 0, 10);
 
@@ -538,7 +549,6 @@ static void sensorUpdate()
 {
     static timeUs_t previousDataTimeUs = 0;
     static float prevDistanceToHomeCm = 0.0f;
-    static int32_t prevAlitudeCm = 0.0f;
     rescueState.sensor.currentAltitudeCm = getEstimatedAltitudeCm();
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, rescueState.sensor.currentAltitudeCm);
     // may be updated more frequently than GPS data
@@ -583,9 +593,6 @@ static void sensorUpdate()
     rescueState.sensor.ascendStepCm = rescueState.sensor.gpsDataIntervalSeconds * gpsRescueConfig()->ascendRate;
     rescueState.sensor.descendStepCm = rescueState.sensor.gpsDataIntervalSeconds * gpsRescueConfig()->descendRate;
     rescueState.sensor.maxPitchStep = rescueState.sensor.gpsDataIntervalSeconds * GPS_RESCUE_MAX_PITCH_RATE;
-    rescueState.sensor.distanceDescendedCm = prevAlitudeCm - rescueState.sensor.currentAltitudeCm;
-    prevAlitudeCm = rescueState.sensor.currentAltitudeCm;
-
 
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);  // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome);  // degrees * 10
