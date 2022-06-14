@@ -47,8 +47,6 @@ PG_RESET_TEMPLATE(altholdConfig_t, altholdConfig,
 
     .minThrottle = 6,
     .maxThrottle = 65,
-
-    .angleLimit = 38,
 );
 
 
@@ -118,7 +116,6 @@ void altHoldReset(altHoldState_s* altHoldState)
     altHoldState->startVelocityEstimationAccel = altHoldState->velocityEstimationAccel - externalVelocityEstimation;
     altHoldState->targetAltitude = getCurrentAltitude(altHoldState);
     altHoldState->smoothedAltitude = 0.01f;
-
 }
 
 void altHoldInit(altHoldState_s* altHoldState)
