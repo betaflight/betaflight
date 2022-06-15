@@ -68,7 +68,6 @@
 #define PARAM_NAME_DTERM_NOTCH_CUTOFF "dterm_notch_cutoff"
 #define PARAM_NAME_VBAT_SAG_COMPENSATION "vbat_sag_compensation"
 #define PARAM_NAME_PID_AT_MIN_THROTTLE "pid_at_min_throttle"
-#define PARAM_NAME_ANTI_GRAVITY_MODE "anti_gravity_mode"
 #define PARAM_NAME_ANTI_GRAVITY_THRESHOLD "anti_gravity_threshold"
 #define PARAM_NAME_ANTI_GRAVITY_GAIN "anti_gravity_gain"
 #define PARAM_NAME_ACC_LIMIT_YAW "acc_limit_yaw"

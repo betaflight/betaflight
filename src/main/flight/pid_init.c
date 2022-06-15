@@ -313,17 +313,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
     pidRuntime.itermRotation = pidProfile->iterm_rotation;
-    pidRuntime.antiGravityMode = pidProfile->antiGravityMode;
 
-    // Calculate the anti-gravity value that will trigger the OSD display.
-    // For classic AG it's either 1.0 for off and > 1.0 for on.
-    // For the new AG it's a continuous floating value so we want to trigger the OSD
-    // display when it exceeds 25% of its possible range. This gives a useful indication
-    // of AG activity without excessive display.
-    pidRuntime.antiGravityOsdCutoff = 0.0f;
-    if (pidRuntime.antiGravityMode == ANTI_GRAVITY_SMOOTH) {
-        pidRuntime.antiGravityOsdCutoff += (pidRuntime.itermAcceleratorGain / 1000.0f) * 0.25f;
-    }
+    // Calculate the anti-gravity value that will trigger the OSD display when its strength exceeds 25% of max.
+    // This gives a useful indication of AG activity without excessive display.
+    pidRuntime.antiGravityOsdCutoff = (pidRuntime.itermAcceleratorGain / 1000.0f) * 0.25f;
 
 #if defined(USE_ITERM_RELAX)
     pidRuntime.itermRelax = pidProfile->iterm_relax;

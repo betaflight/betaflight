@@ -102,11 +102,6 @@ typedef struct pidf_s {
 } pidf_t;
 
 typedef enum {
-    ANTI_GRAVITY_SMOOTH,
-    ANTI_GRAVITY_STEP
-} antiGravityMode_e;
-
-typedef enum {
     ITERM_RELAX_OFF,
     ITERM_RELAX_RP,
     ITERM_RELAX_RPY,
@@ -149,9 +144,7 @@ typedef struct pidProfile_s {
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
 
     // Betaflight PID controller parameters
-    uint8_t  antiGravityMode;             // type of anti gravity method
-    uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
-    uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
+    uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
     uint16_t crash_dthreshold;              // dterm crash value
@@ -279,7 +272,6 @@ typedef struct pidRuntime_s {
     filterApplyFnPtr ptermYawLowpassApplyFn;
     pt1Filter_t ptermYawLowpass;
     bool antiGravityEnabled;
-    uint8_t antiGravityMode;
     pt1Filter_t antiGravityThrottleLpf;
     pt1Filter_t antiGravitySmoothLpf;
     float antiGravityOsdCutoff;
@@ -415,7 +407,6 @@ void pidSetAcroTrainerState(bool newState);
 void pidUpdateTpaFactor(float throttle);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
-bool pidOsdAntiGravityMode(void);
 void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
 

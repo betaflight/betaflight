@@ -1880,7 +1880,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
         sbufWriteU8(dst, 0); // was pidProfile.levelSensitivity
-        sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
+        sbufWriteU16(dst, 0); // was currentPidProfile->itermThrottleThreshold
         sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         sbufWriteU16(dst, 0); // was currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, currentPidProfile->iterm_rotation);
@@ -1910,8 +1910,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->pid[PID_ROLL].F);
         sbufWriteU16(dst, currentPidProfile->pid[PID_PITCH].F);
         sbufWriteU16(dst, currentPidProfile->pid[PID_YAW].F);
-
-        sbufWriteU8(dst, currentPidProfile->antiGravityMode);
+        sbufWriteU8(dst, 0); // was currentPidProfile->antiGravityMode
 #if defined(USE_D_MIN)
         sbufWriteU8(dst, currentPidProfile->d_min[PID_ROLL]);
         sbufWriteU8(dst, currentPidProfile->d_min[PID_PITCH]);
@@ -2971,7 +2970,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
-            currentPidProfile->itermThrottleThreshold = sbufReadU16(src);
+            sbufReadU16(src); // was currentPidProfile->itermAcceleratorGain
             currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 2) {
@@ -3007,8 +3006,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->pid[PID_ROLL].F = sbufReadU16(src);
             currentPidProfile->pid[PID_PITCH].F = sbufReadU16(src);
             currentPidProfile->pid[PID_YAW].F = sbufReadU16(src);
-
-            currentPidProfile->antiGravityMode = sbufReadU8(src);
+            sbufReadU8(src); // was currentPidProfile->antiGravityMode
         }
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.41
