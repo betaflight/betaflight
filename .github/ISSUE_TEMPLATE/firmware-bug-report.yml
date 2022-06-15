@@ -29,19 +29,32 @@ body:
     validations:
       required: true
 
+  - type: markdown
+    attributes:
+      value: |
+        # Flight controller configuration
+
   - type: textarea
     attributes:
-      label: Flight controller configuration
+      label: Diff configuration
       description: |
-        Create a `diff` and post it here in a code block. Put (three backticks) at the start and end of the diff block (instructions  on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/).
-        Use `resource show all` to create a resource allocation list and post it here in a code block. Put (three backticks) at the start and end of the output block.
-      value: |
-        ```
-          # REPLACE THIS LINE BY THE OUTPUT OF YOUR `diff`
-        ```
-        ```
-          # REPLACE THIS LINE BY THE OUTPUT OF YOUR `resource show all`
-        ```
+        Create a `diff` and post it here. Instructions on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/
+        Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
+      placeholder: |
+          # PASTE HERE THE OUTPUT OF `diff` COMMAND IN THE CLI TAB
+      render: txt
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Resources configuration
+      description: |
+        Use `resource show all` to create a resource allocation list and post it here.
+        Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
+      placeholder: |
+          # PASTE HERE THE OUTPUT OF `resource show all` COMMAND IN THE CLI TAB
+      render: txt
     validations:
       required: true
 
