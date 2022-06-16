@@ -54,7 +54,7 @@
 #elif defined(STM32F7)
 #define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
 #define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4) || defined(STM32F3) || defined(STM32F1)
+#elif defined(STM32F4)
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else

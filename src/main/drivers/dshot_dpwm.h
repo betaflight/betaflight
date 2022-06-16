@@ -71,7 +71,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t

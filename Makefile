@@ -653,13 +653,6 @@ targets-by-mcu:
 	done
 	@echo
 
-## targets-f3        : make all F3 targets
-targets-f3:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
-
-targets-f3-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 TARGETS="$(VALID_TARGETS)"
-
 ## targets-f4        : make all F4 targets
 targets-f4:
 	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(VALID_TARGETS)" DO_BUILD=1

@@ -28,7 +28,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#if defined(STM32F4) || defined(STM32F3)
+#if defined(STM32F4)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
 #define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
@@ -39,11 +39,6 @@
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
 #define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#elif defined(STM32F1)
-#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MOSI_CFG      IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz)
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_50MHz)
 #endif
 
 // De facto standard mode
@@ -71,9 +66,7 @@ typedef enum SPIDevice {
     SPIDEV_6
 } SPIDevice;
 
-#if defined(STM32F1)
-#define SPIDEV_COUNT 2
-#elif defined(STM32F3) || defined(STM32F4)
+#if defined(STM32F4)
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4

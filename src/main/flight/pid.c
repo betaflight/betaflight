@@ -89,11 +89,7 @@ pt1Filter_t throttleLpf;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
-#if defined(STM32F1)
-#define PID_PROCESS_DENOM_DEFAULT       8
-#elif defined(STM32F3)
-#define PID_PROCESS_DENOM_DEFAULT       4
-#elif defined(STM32F411xE) || defined(STM32G4) //G4 sometimes cpu overflow when PID rate set to higher than 4k
+#if defined(STM32F411xE)
 #define PID_PROCESS_DENOM_DEFAULT       2
 #else
 #define PID_PROCESS_DENOM_DEFAULT       1

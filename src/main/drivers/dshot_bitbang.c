@@ -762,7 +762,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         bbMotors[motorIndex].pinIndex = pinIndex;
         bbMotors[motorIndex].io = io;
         bbMotors[motorIndex].output = output;
-#if defined(STM32F4) || defined(STM32F3)
+#if defined(STM32F4)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
 #elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
