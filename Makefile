@@ -146,7 +146,7 @@ ifeq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT      := -Og
 
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
-DEBUG_FLAGS            = -ggdb3 -DDEBUG
+DEBUG_FLAGS            = -ggdb3 -gdwarf-5 -DDEBUG
 else
 ifeq ($(DEBUG),INFO)
 DEBUG_FLAGS            = -ggdb3
