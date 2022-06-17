@@ -318,8 +318,6 @@ bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->channelCount = GHST_MAX_NUM_CHANNELS;
-    rxRuntimeState->rxRefreshRate = GHST_TIME_BETWEEN_FRAMES_US;
-
     rxRuntimeState->rcReadRawFn = ghstReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ghstFrameStatus;
     rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
