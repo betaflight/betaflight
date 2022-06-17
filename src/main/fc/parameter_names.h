@@ -71,6 +71,8 @@
 #define PARAM_NAME_ANTI_GRAVITY_MODE "anti_gravity_mode"
 #define PARAM_NAME_ANTI_GRAVITY_THRESHOLD "anti_gravity_threshold"
 #define PARAM_NAME_ANTI_GRAVITY_GAIN "anti_gravity_gain"
+#define PARAM_NAME_ANTI_GRAVITY_THROTTLE_CHANGE_MAX_LIMIT "anti_gravity_throttle_change_max_limit"
+#define PARAM_NAME_ANTI_GRAVITY_PBOOST_MULTIPLIER "anti_gravity_pboost_multiplier"
 #define PARAM_NAME_ACC_LIMIT_YAW "acc_limit_yaw"
 #define PARAM_NAME_ACC_LIMIT "acc_limit"
 #define PARAM_NAME_ITERM_RELAX "iterm_relax"

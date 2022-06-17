@@ -324,6 +324,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     if (pidRuntime.antiGravityMode == ANTI_GRAVITY_SMOOTH) {
         pidRuntime.antiGravityOsdCutoff += (pidRuntime.itermAcceleratorGain / 1000.0f) * 0.25f;
     }
+    pidRuntime.antiGravityThrottleChangeMaxLimit = (float)(pidProfile->antiGravityThrottleChangeMaxLimit) / 100.0f;
+    pidRuntime.antiGravityPboostMultiplier = (float)(pidProfile->antiGravityPboostMultiplier) / 100.0f;
 
 #if defined(USE_ITERM_RELAX)
     pidRuntime.itermRelax = pidProfile->iterm_relax;

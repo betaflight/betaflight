@@ -1379,6 +1379,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_MODE, "%d",      currentPidProfile->antiGravityMode);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_THRESHOLD, "%d", currentPidProfile->itermThrottleThreshold);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_GAIN, "%d",      currentPidProfile->itermAcceleratorGain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_THROTTLE_CHANGE_MAX_LIMIT, "%d", currentPidProfile->antiGravityThrottleChangeMaxLimit);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_PBOOST_MULTIPLIER,         "%d", currentPidProfile->antiGravityPboostMultiplier);
 #ifdef USE_ABSOLUTE_CONTROL
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ABS_CONTROL_GAIN, "%d",       currentPidProfile->abs_control_gain);
 #endif

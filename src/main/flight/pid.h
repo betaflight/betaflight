@@ -152,6 +152,8 @@ typedef struct pidProfile_s {
     uint8_t  antiGravityMode;             // type of anti gravity method
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
+    uint8_t antiGravityThrottleChangeMaxLimit; // Maximum value for the throttle change for Anti Gravity
+    uint8_t antiGravityPboostMultiplier;       // P boost multiplier for Anti Gravity (100 = 1.0)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
     uint16_t crash_dthreshold;              // dterm crash value
@@ -285,6 +287,8 @@ typedef struct pidRuntime_s {
     float antiGravityOsdCutoff;
     float antiGravityThrottleHpf;
     float antiGravityPBoost;
+    float antiGravityThrottleChangeMaxLimit;
+    float antiGravityPboostMultiplier;
     float itermAccelerator;
     uint16_t itermAcceleratorGain;
     pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];

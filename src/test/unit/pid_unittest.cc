@@ -161,13 +161,15 @@ void setDefaultTestSettings(void) {
     pidProfile->throttle_boost = 0;
     pidProfile->throttle_boost_cutoff = 15;
     pidProfile->iterm_rotation = false;
-    pidProfile->iterm_relax = ITERM_RELAX_OFF,
-    pidProfile->iterm_relax_cutoff = 11,
-    pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT,
-    pidProfile->abs_control_gain = 0,
-    pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL,
-    pidProfile->launchControlGain = 40,
-    pidProfile->level_race_mode = false,
+    pidProfile->iterm_relax = ITERM_RELAX_OFF;
+    pidProfile->iterm_relax_cutoff = 11;
+    pidProfile->iterm_relax_type = ITERM_RELAX_SETPOINT;
+    pidProfile->abs_control_gain = 0;
+    pidProfile->launchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+    pidProfile->launchControlGain = 40;
+    pidProfile->level_race_mode = false;
+    pidProfile->antiGravityThrottleChangeMaxLimit = 0;
+    pidProfile->antiGravityPboostMultiplier  = 100;
 
     gyro.targetLooptime = 8000;
 }
