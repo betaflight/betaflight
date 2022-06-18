@@ -182,8 +182,11 @@ maths_unittest_SRC := \
 
 
 motor_output_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/dshot.c
 
+motor_output_unittest_DEFINES := \
+		USE_DSHOT= 
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \

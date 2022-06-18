@@ -921,16 +921,34 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
 }
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
+
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
+#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
-    }
-}
-#endif // USE_ESC_SENSOR
+    } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+    {
+        uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
 
-#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+        for (uint8_t k = 0; k < getMotorCount(); k++) {
+            if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "%3d%c",
+                    osdConvertTemperatureToSelectedUnit(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]),
+                    osdGetTemperatureSymbolForSelectedUnit());
+            } else {
+                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "  0%c", osdGetTemperatureSymbolForSelectedUnit());
+            }
+        }
+    }
+#else
+    {}
+#endif
+}
+
 static void osdElementEscRpm(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpm,element);
@@ -940,6 +958,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
 }
+
 #endif
 
 static void osdElementFlymode(osdElementParms_t *element)
@@ -1612,10 +1631,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_NUMERICAL_VARIO]         = osdElementNumericalVario,
 #endif
     [OSD_COMPASS_BAR]             = osdElementCompassBar,
-#ifdef USE_ESC_SENSOR
-    [OSD_ESC_TMP]                 = osdElementEscTemperature,
-#endif
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+    [OSD_ESC_TMP]                 = osdElementEscTemperature,
     [OSD_ESC_RPM]                 = osdElementEscRpm,
 #endif
     [OSD_REMAINING_TIME_ESTIMATE] = osdElementRemainingTimeEstimate,
@@ -1727,14 +1744,10 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_EFFICIENCY);
     }
 #endif // GPS
-#ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        osdAddActiveElement(OSD_ESC_TMP);
-    }
-#endif
 
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
+        osdAddActiveElement(OSD_ESC_TMP);
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);
     }
@@ -1955,14 +1968,33 @@ void osdUpdateAlarms(void)
     }
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    bool blink;
+
+#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
-        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm) {
-            SET_BLINK(OSD_ESC_TMP);
-        } else {
-            CLR_BLINK(OSD_ESC_TMP);
+        blink = osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm;
+    } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+    {
+        blink = false;
+        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF) {
+            for (uint32_t k = 0; !blink && (k < getMotorCount()); k++) {
+                blink = (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0 &&
+                    dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm;
+            }
         }
+    }
+#else
+    {}
+#endif
+
+    if (blink) {
+        SET_BLINK(OSD_ESC_TMP);
+    } else {
+        CLR_BLINK(OSD_ESC_TMP);
     }
 #endif
 }

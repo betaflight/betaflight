@@ -6145,6 +6145,8 @@ static void cliResource(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
+
+
 static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6159,27 +6161,44 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
         cliPrintLinefeed();
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
-        cliPrintLine("Motor      eRPM      RPM      Hz   Invalid");
-        cliPrintLine("=====   =======   ======   =====   =======");
+        cliPrintLine("Motor    Type   eRPM    RPM     Hz Invalid   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3");
+        cliPrintLine("=====  ====== ====== ====== ====== ======= ====== ====== ====== ====== ====== ====== ======");
 #else
-        cliPrintLine("Motor      eRPM      RPM      Hz");
-        cliPrintLine("=====   =======   ======   =====");
+        cliPrintLine("Motor    Type   eRPM    RPM     Hz   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3");
+        cliPrintLine("=====  ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ======");
 #endif
+
         for (uint8_t i = 0; i < getMotorCount(); i++) {
-            cliPrintf("%5d   %7d   %6d   %5d   ", i,
-                      (int)getDshotTelemetry(i) * 100,
-                      (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount,
-                      (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount / 60);
+            cliPrintf("%5d   %c%c%c%c%c %6d %6d %6d",
+                    i + 1,
+                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) ? 'R' : '-'),
+                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 'T' : '-'),
+                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 'V' : '-'),
+                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 'C' : '-'),
+                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS)) ? 'S' : '-'),
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100,
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount,
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount / 60);
+
 #ifdef USE_DSHOT_TELEMETRY_STATS
             if (isDshotMotorTelemetryActive(i)) {
-                const int calcPercent = getDshotTelemetryMotorInvalidPercent(i);
-                cliPrintLinef("%3d.%02d%%", calcPercent / 100, calcPercent % 100);
+                int32_t calcPercent = getDshotTelemetryMotorInvalidPercent(i);
+                cliPrintf(" %3d.%02d%%", calcPercent / 100, calcPercent % 100);
             } else {
-                cliPrintLine("NO DATA");
+                cliPrint(" NO DATA");
             }
-#else
-            cliPrintLinefeed();
 #endif
+
+            cliPrintLinef(" %6d %3d.%02d %6d %6d %6d %6d %6d",
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE],
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] / 4,
+                    25 * (dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] % 4),
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT],
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_STATE_EVENTS],
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_DEBUG1],
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_DEBUG2],
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_DEBUG3]
+            );
         }
         cliPrintLinefeed();
 
@@ -6203,6 +6222,7 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
         cliPrintLine("Dshot telemetry not enabled");
     }
 }
+
 #endif
 
 static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
