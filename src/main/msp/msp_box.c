@@ -192,7 +192,7 @@ void initActiveBoxIds(void)
 
     bool acceleratorGainsEnabled = false;
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-        if (pidProfiles(i)->itermAcceleratorGain != ITERM_ACCELERATOR_GAIN_OFF) {
+        if (pidProfiles(i)->anti_gravity_gain != ITERM_ACCELERATOR_GAIN_OFF) {
             acceleratorGainsEnabled = true;
         }
     }

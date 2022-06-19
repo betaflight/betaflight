@@ -134,8 +134,7 @@ void targetConfiguration(void)
         pidProfile->feedforward_transition = 0;
 
     /* Anti-Gravity */
-    pidProfile->itermThrottleThreshold = 500;
-    pidProfile->itermAcceleratorGain = 5000;
+    pidProfile->anti_gravity_gain = 35;
 
     pidProfile->levelAngleLimit = 65;
     }
