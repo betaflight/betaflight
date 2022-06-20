@@ -884,10 +884,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidRuntime.antiGravityPBoost *= 0.02f;
     } else {
         pidRuntime.antiGravityPBoost = 0.0f;
+        pidRuntime.itermAccelerator = 0.0f;
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(pidRuntime.itermAccelerator * 1000));
 
-    float agGain = pidRuntime.dT * pidRuntime.itermAccelerator * AG_KI;
+    pidRuntime.itermAccelerator *= AG_KI;
+    DEBUG_SET(DEBUG_ANTI_GRAVITY, 2, lrintf((1 + (pidRuntime.itermAccelerator / pidRuntime.pidCoefficient[FD_PITCH].Ki)) * 1000));
+    // amount of antigravity added relative to user's pitch iTerm coefficient
+
+    pidRuntime.itermAccelerator *= pidRuntime.dT;
 
     // gradually scale back integration when above windup point
     float dynCi = pidRuntime.dT;
@@ -1037,7 +1042,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             axisDynCi = (axis == FD_YAW) ? dynCi : pidRuntime.dT; // only apply windup protection to yaw
         }
 
-        pidData[axis].I = constrainf(previousIterm + (Ki * axisDynCi + agGain) * itermErrorRate, -pidRuntime.itermLimit, pidRuntime.itermLimit);
+        pidData[axis].I = constrainf(previousIterm + (Ki * axisDynCi + pidRuntime.itermAccelerator) * itermErrorRate, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
@@ -1176,7 +1181,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         const float agBoost = 1.0f + (pidRuntime.antiGravityPBoost / agBoostAttenuator);
         if (axis != FD_YAW) {
             pidData[axis].P *= agBoost;
-            DEBUG_SET(DEBUG_ANTI_GRAVITY, axis + 2, lrintf(agBoost * 1000));
+            if (axis == FD_PITCH) {
+                DEBUG_SET(DEBUG_ANTI_GRAVITY, 3, lrintf(agBoost * 1000));
+            }
         }
 
         const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
