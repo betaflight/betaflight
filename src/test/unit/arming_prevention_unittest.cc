@@ -1112,4 +1112,5 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
     float pt1FilterGain(float, float) {return 0.5f;}
+    float getAltHoldThrottle(void) {return 0.2f;}
 }

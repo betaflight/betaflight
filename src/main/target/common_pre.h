@@ -386,6 +386,7 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
+#define USE_ALTHOLD_MODE
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
@@ -430,5 +431,4 @@ extern uint8_t _dmaram_end__;
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_GPS_PLUS_CODES
-#define USE_ALTHOLD_MODE
 #endif

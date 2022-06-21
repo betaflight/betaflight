@@ -72,6 +72,16 @@ extern "C" {
         return 0;
     }
 
+    float getRequiredAltitude(void)
+    {
+        return 10.f;
+    }
+
+    bool needAltitudeControl(void)
+    {
+        return false;
+    }
+
     #include "flight/alt_hold.h"
 
     extern altHoldState_s altHoldState;
