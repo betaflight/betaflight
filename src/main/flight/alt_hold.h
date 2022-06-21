@@ -70,6 +70,7 @@ typedef struct {
     uint32_t enterTime;
     uint32_t exitTime;
     float smoothedAltitude;
+//    bool forcedEnabled;
 } altHoldState_s;
 
 
@@ -77,5 +78,8 @@ void initAltHoldState(void);
 void updateAltHoldState(timeUs_t currentTimeUs);
 float getAltHoldThrottle(void);
 float getAltHoldThrottleFactor(float currentThrottle);
+
+//void setAltHoldTargetMeters(float);
+//void setAltHoldEnableForced(bool);
 
 #endif

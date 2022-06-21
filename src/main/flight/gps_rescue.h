@@ -44,6 +44,7 @@ typedef struct gpsRescue_s {
     uint16_t descendRate;
     uint16_t rescueAltitudeBufferM; //meters
     uint8_t rollMix;
+    uint8_t altHoldControlMode;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
@@ -59,3 +60,7 @@ bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
 bool gpsRescueIsDisabled(void);
 bool gpsRescueDisableMag(void);
+
+bool needAltitudeControl(void);
+float getRequiredAltitude(void);
+

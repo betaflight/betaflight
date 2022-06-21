@@ -38,6 +38,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/alt_hold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
@@ -132,6 +133,11 @@ typedef enum {
     CURRENT_ALT
 } altitudeMode_e;
 
+typedef enum {
+    ALTHOLD_DEFAULT,
+    ALTHOLD_COOL,
+} altholdMode_e;
+
 #define GPS_RESCUE_MAX_YAW_RATE          90     // deg/sec max yaw rate
 #define GPS_RESCUE_MIN_DESCENT_DIST_M    10     // minimum descent distance allowed
 #define GPS_RESCUE_MAX_ITERM_VELOCITY    1000   // max allowed iterm value for velocity
@@ -172,7 +178,8 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .ascendRate = 500,          // cm/s, for altitude corrections on ascent
     .descendRate = 125,         // cm/s, for descent and landing phase, or negative ascent
     .rescueAltitudeBufferM = 10,
-    .rollMix = 100
+    .rollMix = 100,
+    .altHoldControlMode = ALTHOLD_DEFAULT,
 );
 
 static float rescueThrottle;
@@ -287,6 +294,12 @@ static void rescueAttainPosition()
         gpsRescueAngle[AI_ROLL] = 0.0f;
         rescueThrottle = gpsRescueConfig()->throttleHover;
         return;
+     }
+
+     uint8_t altHoldMode = gpsRescueConfig()->altHoldControlMode;
+
+     if (altHoldMode == ALTHOLD_COOL) {
+         rescueThrottle = getAltHoldThrottle();
      }
 
     if (!newGPSData) {
@@ -427,8 +440,11 @@ static void rescueAttainPosition()
 
     throttleAdjustment = throttleP + throttleI + throttleD + tiltAdjustment;
 
-    rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
-    rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
+    if (altHoldMode == ALTHOLD_DEFAULT) {
+        rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
+        rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
+    }
+
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, throttleP);
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, throttleD);
 }
@@ -878,6 +894,23 @@ bool gpsRescueIsAvailable(void)
 bool gpsRescueIsDisabled(void)
 {
     return (!STATE(GPS_FIX_HOME));
+}
+
+bool needAltitudeControl(void)
+{
+    return (
+        rescueState.phase == RESCUE_ATTAIN_ALT ||
+        rescueState.phase == RESCUE_ROTATE ||
+        rescueState.phase == RESCUE_ATTAIN_ALT ||
+        rescueState.phase == RESCUE_FLY_HOME ||
+        rescueState.phase == RESCUE_DESCENT ||
+        rescueState.phase == RESCUE_LANDING
+    );
+}
+
+float getRequiredAltitude(void)
+{
+    return 0.01f * (float)rescueState.intent.targetAltitudeCm;
 }
 
 #ifdef USE_MAG

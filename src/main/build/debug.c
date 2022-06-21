@@ -104,5 +104,4 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GPS_RESCUE_HEADING",
     "GPS_RESCUE_TRACKING",
     "ALTHOLD",
->>>>>>> altHoldThrottle
 };

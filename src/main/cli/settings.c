@@ -386,6 +386,9 @@ static const char * const lookupTableRescueSanityType[] = {
 const char * const lookupTableRescueAltitudeMode[] = {
     "MAX_ALT", "FIXED_ALT", "CURRENT_ALT"
 };
+const char * const lookupTableRescueAltholdMode[] = {
+    "DEFAULT", "COOL",
+};
 #endif
 
 #if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
@@ -542,6 +545,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_GPS_RESCUE
     LOOKUP_TABLE_ENTRY(lookupTableRescueSanityType),
     LOOKUP_TABLE_ENTRY(lookupTableRescueAltitudeMode),
+    LOOKUP_TABLE_ENTRY(lookupTableRescueAltholdMode),
 #endif
 #endif
 #ifdef USE_BLACKBOX
@@ -1046,6 +1050,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_RESCUE_MIN_DTH,         VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDth) },
     { PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, allowArmingWithoutFix) },
     { PARAM_NAME_GPS_RESCUE_ALT_MODE,        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE_ALT_MODE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, altitudeMode) },
+    { PARAM_NAME_GPS_RESCUE_ALTHOLD_MODE,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE_ALTHOLD_MODE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, altHoldControlMode) },
 #ifdef USE_MAG
     { PARAM_NAME_GPS_RESCUE_USE_MAG,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, useMag) },
 #endif

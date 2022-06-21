@@ -24,6 +24,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/position.h"
+#include "flight/gps_rescue.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "config/config.h"
@@ -129,6 +130,7 @@ void altHoldInit(altHoldState_s* altHoldState)
     altHoldState->altHoldEnabled = false;
     altHoldState->throttleFactor = 0.0f;
     altHoldState->velocityEstimationAccel = 0.0f;
+//    altHoldState->forcedEnabled = false;
     altHoldReset(altHoldState);
 }
 
@@ -137,7 +139,13 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
 
     if (FLIGHT_MODE(GPS_RESCUE_MODE) | failsafeIsActive()) {
         newAltHoldEnabled = false;
+        if (needAltitudeControl()) {
+            newAltHoldEnabled = true;
+            altHoldState->targetAltitude = getRequiredAltitude();
+        }
     }
+
+//    newAltHoldEnabled |= forcedEnabled;
 
     if (newAltHoldEnabled && !altHoldState->altHoldEnabled)
     {
@@ -207,7 +215,7 @@ void altHoldUpdateTarget(altHoldState_s* altHoldState)
 void altHoldUpdate(altHoldState_s* altHoldState)
 {
     altHoldProcessTransitions(altHoldState);
-    altHoldUpdateTarget(altHoldState);
+//    altHoldUpdateTarget(altHoldState);
 
     float timeInterval = 1.0f / ALTHOLD_TASK_PERIOD;
 
@@ -236,7 +244,10 @@ void altHoldUpdate(altHoldState_s* altHoldState)
     altHoldState->measuredAltitude = measuredAltitude;
     altHoldState->measuredAccel = measuredAccel;
 
-    float measuredAltitudeExtrapolated = altHoldState->measuredAltitude + 1.0f * altHoldState->velocityEstimationVario;
+    float measuredAltitudeExtrapolated = altHoldState->measuredAltitude;
+    if (ABS(altHoldState->velocityEstimationVario) > 2) {
+        measuredAltitudeExtrapolated += 1.0f * altHoldState->velocityEstimationVario;
+    }
 
     float velocityTarget = simplePidCalculate(&altHoldState->altPid, timeInterval, altHoldState->targetAltitude, measuredAltitudeExtrapolated);
 
@@ -288,5 +299,19 @@ float getAltHoldThrottleFactor(float currentThrottle) {
     }
     return altHoldState.throttleFactor;
 }
+
+//void setAltHoldTargetMeters(float newTarget) {
+//    float newTargetAltitude = altHoldState->targetAltitude + altHoldState->targetVelocity;
+//
+//    newTargetAltitude = MAX(newTargetAltitude, altHoldState->measuredAltitude - 7.0f);
+//    newTargetAltitude = MIN(newTargetAltitude, altHoldState->measuredAltitude + 7.0f);
+//
+//    altHoldState->targetAltitude = newTargetAltitude;
+//}
+//
+//void setAltHoldEnableForced(bool newForcedEnabled) {
+//    altHoldState->forcedEnabled = newForcedEnabled;
+//}
+
 
 #endif

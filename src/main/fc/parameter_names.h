@@ -155,6 +155,7 @@
 #define PARAM_NAME_GPS_RESCUE_MIN_DTH "gps_rescue_min_dth"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
 #define PARAM_NAME_GPS_RESCUE_ALT_MODE "gps_rescue_alt_mode"
+#define PARAM_NAME_GPS_RESCUE_ALTHOLD_MODE "gps_rescue_althold_mode"
 #ifdef USE_MAG
 #define PARAM_NAME_GPS_RESCUE_USE_MAG "gps_rescue_use_mag"
 #endif
