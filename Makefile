@@ -129,8 +129,6 @@ FC_VER := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
 # Search path for sources
 VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
-USBFS_DIR       = $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
-USBPERIPH_SRC   = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 FATFS_DIR       = $(ROOT)/lib/main/FatFS
 FATFS_SRC       = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 
