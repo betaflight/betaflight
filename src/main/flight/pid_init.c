@@ -54,6 +54,7 @@
 
 #define ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF 15  // The anti gravity throttle highpass filter cutoff
 #define ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF 3  // The anti gravity P smoothing filter cutoff
+#define ATTITUDE_CUTOFF_HZ 250
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
@@ -238,6 +239,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     pt1FilterInit(&pidRuntime.antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.antiGravitySmoothLpf, pt1FilterGain(ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF, pidRuntime.dT));
+
+#ifdef USE_ACC
+    const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
+    for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
+        pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
+    }
+#endif
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -393,7 +401,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;
-    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * powf(pidRuntime.thrustLinearization, 2);
+    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * sq(pidRuntime.thrustLinearization);
 #endif
 
 #if defined(USE_D_MIN)

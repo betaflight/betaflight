@@ -52,9 +52,6 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
 
-//#define USE_MPU_DATA_READY_SIGNAL
-#define USE_EXTI
-#define USE_GYRO_EXTI
 
 #if defined(OMNIBUSF7V2)
 #define GYRO_1_SPI_INSTANCE     SPI3

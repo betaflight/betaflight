@@ -141,11 +141,8 @@
 #define USE_MULTI_GYRO
 #undef USE_GYRO_REGISTER_DUMP
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PD4
 #define GYRO_2_EXTI_PIN         PE15
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO_1_CS_PIN           SPI3_NSS_PIN

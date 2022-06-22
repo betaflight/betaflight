@@ -365,7 +365,7 @@ int32_t getSensorValue(uint8_t sensor)
     break;
 
     case EX_GPS_DIRECTION_TO_HOME:
-        return GPS_directionToHome;
+        return GPS_directionToHome / 10;
     break;
 
     case EX_GPS_HEADING:

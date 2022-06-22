@@ -31,11 +31,8 @@
 #define BEEPER_INVERTED
 
 #define USE_MULTI_GYRO
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
 #define GYRO_2_EXTI_PIN         PC14
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_ACC
 #define USE_GYRO

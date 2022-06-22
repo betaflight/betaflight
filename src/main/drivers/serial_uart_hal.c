@@ -81,7 +81,7 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
     uartDevice_t *uartDevice = uartFindDevice(uartPort);
     if (!uartDevice) {
-        return NULL;
+        return;
     }
 
     if (uartDevice->pinSwap) {

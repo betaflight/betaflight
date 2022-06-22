@@ -289,8 +289,6 @@ static const char * const *sensorHardwareNames[] = {
 // Needs to be aligned with mcuTypeId_e
 static const char *mcuTypeNames[] = {
     "SIMULATOR",
-    "F103",
-    "F303",
     "F40X",
     "F411",
     "F446",
@@ -4804,14 +4802,12 @@ static void cliStatus(const char *cmdName, char *cmdline)
         }
     }
 #ifdef USE_SPI
-#ifdef USE_GYRO_EXTI
     if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
         cliPrintf(" locked");
     }
     if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
         cliPrintf(" dma");
     }
-#endif
     if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
         cliPrintf(" shared");
     }
@@ -5201,9 +5197,7 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_RX_SPI_EXPRESSLRS_BUSY, PG_RX_EXPRESSLRS_SPI_CONFIG, rxExpressLrsSpiConfig_t, busyIoTag ),
 #endif
 #endif
-#ifdef USE_GYRO_EXTI
     DEFW( OWNER_GYRO_EXTI,     PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, extiTag, MAX_GYRODEV_COUNT ),
-#endif
     DEFW( OWNER_GYRO_CS,       PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, csnTag, MAX_GYRODEV_COUNT ),
 #ifdef USE_USB_DETECT
     DEFS( OWNER_USB_DETECT,    PG_USB_CONFIG, usbDev_t, detectPin ),
@@ -5248,7 +5242,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 
         for (int index = 0; index < RESOURCE_VALUE_MAX_INDEX(resourceTable[i].maxIndex); index++) {
             const ioTag_t ioTag = *(ioTag_t *)((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
-            ioTag_t ioTagDefault = NULL;
+            ioTag_t ioTagDefault = 0;
             if (defaultConfig) {
                 ioTagDefault = *(ioTag_t *)((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             }

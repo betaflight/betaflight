@@ -43,10 +43,7 @@
 #define GYRO_1_SPI_INSTANCE    SPI1
 #define GYRO_1_ALIGN       CW90_DEG
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA1
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO

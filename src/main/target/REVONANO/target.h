@@ -25,9 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "REVN"
 
 #define USBD_PRODUCT_STRING "Revo Nano"
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8010000"
-#endif
 
 #define LED0_PIN                PC14
 #define LED1_PIN                PC13
@@ -53,10 +50,7 @@
 #define USE_MAG_MPU925X_AK8963
 
 // MPU6500 interrupts
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA15
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_VCP
 #define USE_USB_DETECT

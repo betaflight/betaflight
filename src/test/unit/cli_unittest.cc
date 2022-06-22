@@ -235,15 +235,13 @@ size_t getEEPROMStorageSize() {
 
 void setPrintfSerialPort(struct serialPort_s) {}
 
-static const box_t boxes[] = { { 0, "DUMMYBOX", 0 } };
+static const box_t boxes[] = { { "DUMMYBOX", 0, 0 } };
 const box_t *findBoxByPermanentId(uint8_t) { return &boxes[0]; }
 const box_t *findBoxByBoxId(boxId_e) { return &boxes[0]; }
 
 int8_t unitTestDataArray[3];
 
-void pgResetFn_unitTestData(int8_t *ptr) {
-    ptr = &unitTestDataArray[0];
-}
+void pgResetFn_unitTestData(int8_t *) {}
 
 uint32_t getBeeperOffMask(void) { return 0; }
 uint32_t getPreferredBeeperOffMask(void) { return 0; }

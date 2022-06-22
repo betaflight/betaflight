@@ -115,7 +115,6 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 /*
  * Gyro interrupt service routine
  */
-#ifdef USE_GYRO_EXTI
 #ifdef USE_SPI_GYRO
 // Called in ISR context
 // Gyro read has just completed
@@ -181,7 +180,6 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO);
 }
-#endif // USE_GYRO_EXTI
 
 bool mpuAccRead(accDev_t *acc)
 {
@@ -247,7 +245,7 @@ bool mpuAccReadSPI(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
-        uint16_t *accData = (uint16_t *)acc->gyro->dev.rxBuf;
+        int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
         acc->ADCRaw[X] = __builtin_bswap16(accData[1]);
         acc->ADCRaw[Y] = __builtin_bswap16(accData[2]);
         acc->ADCRaw[Z] = __builtin_bswap16(accData[3]);
@@ -264,13 +262,13 @@ bool mpuAccReadSPI(accDev_t *acc)
 
 bool mpuGyroReadSPI(gyroDev_t *gyro)
 {
-    uint16_t *gyroData = (uint16_t *)gyro->dev.rxBuf;
+    int16_t *gyroData = (int16_t *)gyro->dev.rxBuf;
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {
         // Initialise the tx buffer to all 0xff
         memset(gyro->dev.txBuf, 0xff, 16);
-#ifdef USE_GYRO_EXTI
+
         // Check that minimum number of interrupts have been detected
 
         // We need some offset from the gyro interrupts to ensure sampling after the interrupt
@@ -289,9 +287,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
-        } else
-#endif
-        {
+        } else {
             gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
         }
         break;
@@ -489,11 +485,7 @@ void mpuGyroInit(gyroDev_t *gyro)
 {
     gyro->accDataReg = MPU_RA_ACCEL_XOUT_H;
     gyro->gyroDataReg = MPU_RA_GYRO_XOUT_H;
-#ifdef USE_GYRO_EXTI
     mpuIntExtiInit(gyro);
-#else
-    UNUSED(gyro);
-#endif
 }
 
 uint8_t mpuGyroDLPF(gyroDev_t *gyro)

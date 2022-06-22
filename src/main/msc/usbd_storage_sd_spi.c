@@ -216,7 +216,7 @@ static int8_t STORAGE_Read (uint8_t lun,
 {
 	UNUSED(lun);
 	for (int i = 0; i < blk_len; i++) {
-	    while (sdcard_readBlock(blk_addr + i, buf + (512 * i), NULL, NULL) == 0);
+		while (sdcard_readBlock(blk_addr + i, buf + (512 * i), NULL, 0) == 0);
 		while (sdcard_poll() == 0);
 	}
     mscSetActive();
@@ -236,7 +236,7 @@ static int8_t STORAGE_Write (uint8_t lun,
 {
 	UNUSED(lun);
 	for (int i = 0; i < blk_len; i++) {
-		while (sdcard_writeBlock(blk_addr + i, buf + (i * 512), NULL, NULL) != SDCARD_OPERATION_IN_PROGRESS) {
+		while (sdcard_writeBlock(blk_addr + i, buf + (i * 512), NULL, 0) != SDCARD_OPERATION_IN_PROGRESS) {
 			sdcard_poll();
 		}
 		while (sdcard_poll() == 0);

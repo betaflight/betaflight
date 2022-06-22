@@ -278,9 +278,6 @@
 #define USE_BEEPER
 
 // MPU interrupt
-#define USE_EXTI
-#define USE_MPU_DATA_READY_SIGNAL
-#define USE_GYRO_EXTI
 
 #define USE_ACC
 #define USE_GYRO
@@ -295,13 +292,10 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_BMI270
-
-#if !defined(STM32F411xE)
 #define USE_GYRO_SPI_ICM42605
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-#endif
 
 #ifdef USE_MAG
 #define USE_MAG_DATA_READY_SIGNAL
@@ -372,6 +366,7 @@
 #if (TARGET_FLASH_SIZE > 512)
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
+#define USE_ACCGYRO_BMI160
 
 #define USE_BARO_BMP085
 

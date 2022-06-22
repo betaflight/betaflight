@@ -38,14 +38,23 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
 #include "common/printf.h"
 #include "drivers/flash.h"
+#include "drivers/light_led.h"
 
 #include "io/flashfs.h"
+
+typedef enum {
+    FLASHFS_IDLE,
+    FLASHFS_ERASING,
+} flashfsState_e;
 
 static const flashPartition_t *flashPartition = NULL;
 static const flashGeometry_t *flashGeometry = NULL;
 static uint32_t flashfsSize = 0;
+static flashfsState_e flashfsState = FLASHFS_IDLE;
+static flashSector_t eraseSectorCurrent = 0;
 
 static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
 
@@ -109,17 +118,9 @@ void flashfsEraseCompletely(void)
         if (doFullErase) {
             flashEraseCompletely();
         } else {
-
-            // TODO - the partial sector-based erase needs to be completely reworked.
-            // All calls to flashfsEraseCompletely() currently expect the erase to run
-            // asynchronously and return immediately. The current implementation performs
-            // the erase synchronously and doesn't return until complete. This breaks calls
-            // from MSP and runtime mode-switched erasing.
-
-            for (flashSector_t sectorIndex = flashPartition->startSector; sectorIndex <= flashPartition->endSector; sectorIndex++) {
-                uint32_t sectorAddress = sectorIndex * flashGeometry->sectorSize;
-                flashEraseSector(sectorAddress);
-            }
+            // start asynchronous erase of all sectors
+            eraseSectorCurrent = flashPartition->startSector;
+            flashfsState = FLASHFS_ERASING;
         }
     }
 
@@ -159,9 +160,9 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
  */
 bool flashfsIsReady(void)
 {
-    // Check for flash chip existence first, then check if ready.
+    // Check for flash chip existence first, then check if idle and ready.
 
-    return (flashfsIsSupported() && flashIsReady());
+    return (flashfsIsSupported() && (flashfsState == FLASHFS_IDLE) && flashIsReady());
 }
 
 bool flashfsIsSupported(void)
@@ -343,7 +344,7 @@ uint32_t flashfsGetOffset(void)
  * Returns true if all data in the buffer has been flushed to the device, or false if
  * there is still data to be written (call flush again later).
  */
-bool flashfsFlushAsync(void)
+bool flashfsFlushAsync(bool force)
 {
     uint8_t const * buffers[2];
     uint32_t bufferSizes[2];
@@ -373,7 +374,9 @@ bool flashfsFlushAsync(void)
 #endif
 
     bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
-    if (bufCount) {
+    uint32_t bufferedBytes = bufferSizes[0] + bufferSizes[1];
+
+    if (bufCount && (force || (bufferedBytes >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN))) {
         flashfsWriteBuffers(buffers, bufferSizes, bufCount, false);
     }
 
@@ -404,6 +407,28 @@ void flashfsFlushSync(void)
     while (!flashIsReady());
 }
 
+/**
+ *  Asynchronously erase the flash: Check if ready and then erase sector.
+ */
+void flashfsEraseAsync(void)
+{
+    if (flashfsState == FLASHFS_ERASING) {
+        if ((flashfsIsSupported() && flashIsReady())) {
+            if (eraseSectorCurrent <= flashPartition->endSector) {
+                // Erase sector
+                uint32_t sectorAddress = eraseSectorCurrent * flashGeometry->sectorSize;
+                flashEraseSector(sectorAddress);
+                eraseSectorCurrent++;
+                LED1_TOGGLE;
+            } else {
+                // Done erasing
+                flashfsState = FLASHFS_IDLE;
+                LED1_OFF;
+            }
+        }
+    }
+}
+
 void flashfsSeekAbs(uint32_t offset)
 {
     flashfsFlushSync();
@@ -427,7 +452,7 @@ void flashfsWriteByte(uint8_t byte)
     }
 
     if (flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
-        flashfsFlushAsync();
+        flashfsFlushAsync(false);
     }
 }
 

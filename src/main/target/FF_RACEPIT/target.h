@@ -44,10 +44,8 @@
 
 /*------------SENSORS--------------*/
 // MPU interrupt
-#define USE_EXTI
 #define GYRO_1_INT_EXTI_PIN     PC4
 
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO
