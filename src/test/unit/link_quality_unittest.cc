@@ -480,6 +480,7 @@ extern "C" {
     uint16_t getBatteryAverageCellVoltage() { return  420; }
     int32_t getAmperage() { return 0; }
     int32_t getMAhDrawn() { return 0; }
+    float getWhDrawn() { return 0.0; }
     int32_t getEstimatedAltitudeCm() { return 0; }
     int32_t getEstimatedVario() { return 0; }
     int32_t blackboxGetLogNumber() { return 0; }
