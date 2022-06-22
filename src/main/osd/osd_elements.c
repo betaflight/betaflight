@@ -1175,6 +1175,22 @@ static void osdElementMahDrawn(osdElementParms_t *element)
     tfp_sprintf(element->buff, "%4d%c", getMAhDrawn(), SYM_MAH);
 }
 
+static void osdElementWattHoursDrawn(osdElementParms_t *element)
+{
+    const float batteryVoltage = getBatteryVoltage() / 100.0f;
+    const float wattHoursDrawn = batteryVoltage * getMAhDrawn();
+
+    if (wattHoursDrawn < 1000) {        
+        tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn));
+    } else {
+        float wHDrawn = wattHoursDrawn / 1000.0f;
+        int wattHourWholeNumber = (int)wHDrawn;
+        int wattHourDecimalValue = (int)((wHDrawn - wattHourWholeNumber) * 100);
+
+        tfp_sprintf(element->buff, "%3d.%2dWH", wattHourWholeNumber, wattHourDecimalValue);
+    }
+}
+
 static void osdElementMainBatteryUsage(osdElementParms_t *element)
 {
     // Set length of indicator bar
@@ -1496,6 +1512,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_VTX_CHANNEL,
     OSD_CURRENT_DRAW,
     OSD_MAH_DRAWN,
+    OSD_WATT_HOURS_DRAWN,
     OSD_CRAFT_NAME,
     OSD_ALTITUDE,
     OSD_ROLL_PIDS,
@@ -1582,6 +1599,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
     [OSD_CURRENT_DRAW]            = osdElementCurrentDraw,
     [OSD_MAH_DRAWN]               = osdElementMahDrawn,
+    [OSD_WATT_HOURS_DRAWN]        = osdElementWattHoursDrawn,
 #ifdef USE_GPS
     [OSD_GPS_SPEED]               = osdElementGpsSpeed,
     [OSD_GPS_SATS]                = osdElementGpsSats,
