@@ -171,10 +171,8 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = SBUS_MAX_CHANNEL;
 
     if (rxConfig->sbus_baud_fast) {
-        rxRuntimeState->rxRefreshRate = SBUS_FAST_RX_REFRESH_RATE;
         sbusBaudRate  = SBUS_FAST_BAUDRATE;
     } else {
-        rxRuntimeState->rxRefreshRate = SBUS_RX_REFRESH_RATE;
         sbusBaudRate  = SBUS_BAUDRATE;
     }
 

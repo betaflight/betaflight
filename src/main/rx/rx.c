@@ -930,11 +930,6 @@ uint16_t rxGetUplinkTxPwrMw(void)
 }
 #endif
 
-uint16_t rxGetRefreshRate(void)
-{
-    return rxRuntimeState.rxRefreshRate;
-}
-
 bool isRssiConfigured(void)
 {
     return rssiSource != RSSI_SOURCE_NONE;
