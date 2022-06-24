@@ -248,7 +248,8 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
                         // rssi sent sign-inverted
-                        const uint16_t rssiPercentScaled = scaleRange(-rssiFrame->rssi, GHST_RSSI_DBM_MIN, 0, GHST_RSSI_DBM_MAX, RSSI_MAX_VALUE);
+                        uint16_t rssiPercentScaled = scaleRange(-rssiFrame->rssi, GHST_RSSI_DBM_MIN, GHST_RSSI_DBM_MAX, 0, RSSI_MAX_VALUE);
+                        rssiPercentScaled = MIN(rssiPercentScaled, RSSI_MAX_VALUE);
                         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL);
                     }
 
