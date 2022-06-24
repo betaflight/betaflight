@@ -674,6 +674,7 @@ void detectAndApplySignalLossBehaviour(void)
                 sample = getRxfailValue(channel);
                 //  set channels to Stage 1 values immediately failsafe switch is activated
             } else if (!thisChannelValid) {
+                // everything was normal and this channel was invalid
                 if (cmp32(currentTimeMs, validRxSignalTimeout[channel]) < 0) {
                     // first 300ms of Stage 1 failsafe
                     sample = rcData[channel];
