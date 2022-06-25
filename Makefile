@@ -49,9 +49,6 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyACM*) $(firstword $(wildcard /
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-# Release file naming (no revision to be present if this is 'yes')
-RELEASE ?= no
-
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -306,17 +303,14 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
-ifeq ($(RELEASE),yes)
 TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)
-else
-TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(REVISION)
-endif
 
 #
 # Things we will build
 #
 TARGET_BIN      = $(TARGET_BASENAME).bin
 TARGET_HEX      = $(TARGET_BASENAME).hex
+TARGET_HEX_REV  = $(TARGET_BASENAME)_$(REVISION).hex
 TARGET_DFU      = $(TARGET_BASENAME).dfu
 TARGET_ZIP      = $(TARGET_BASENAME).zip
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
@@ -330,7 +324,7 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 TARGET_EXST_HASH_SECTION_FILE = $(OBJECT_DIR)/$(TARGET)/exst_hash_section.bin
 
 CLEAN_ARTIFACTS := $(TARGET_BIN)
-CLEAN_ARTIFACTS += $(TARGET_HEX)
+CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
@@ -573,6 +567,15 @@ binary:
 
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
+
+TARGETS_REVISION = $(addsuffix _rev,$(VALID_TARGETS))
+## <TARGET>_rev    : build target and add revision to filename
+$(TARGETS_REVISION):
+	$(V0) $(MAKE) hex_rev TARGET=$(subst _rev,,$@)
+
+hex_rev:
+	$(V0) $(MAKE) -j $(TARGET_HEX)
+	$(V0) mv -f $(TARGET_HEX) $(TARGET_HEX_REV)
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
