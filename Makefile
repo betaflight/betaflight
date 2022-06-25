@@ -573,9 +573,10 @@ TARGETS_REVISION = $(addsuffix _rev,$(VALID_TARGETS))
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex_rev TARGET=$(subst _rev,,$@)
 
-hex_rev:
-	$(V0) $(MAKE) -j $(TARGET_HEX)
+hex_rev: hex
 	$(V0) mv -f $(TARGET_HEX) $(TARGET_HEX_REV)
+
+all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
 unbrick_$(TARGET): $(TARGET_HEX)
 	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
