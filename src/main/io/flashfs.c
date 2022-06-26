@@ -38,6 +38,7 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
 #include "common/printf.h"
 #include "drivers/flash.h"
 
@@ -343,7 +344,7 @@ uint32_t flashfsGetOffset(void)
  * Returns true if all data in the buffer has been flushed to the device, or false if
  * there is still data to be written (call flush again later).
  */
-bool flashfsFlushAsync(void)
+bool flashfsFlushAsync(bool force)
 {
     uint8_t const * buffers[2];
     uint32_t bufferSizes[2];
@@ -373,7 +374,9 @@ bool flashfsFlushAsync(void)
 #endif
 
     bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
-    if (bufCount) {
+    uint32_t bufferedBytes = bufferSizes[0] + bufferSizes[1];
+
+    if (bufCount && (force || (bufferedBytes >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN))) {
         flashfsWriteBuffers(buffers, bufferSizes, bufCount, false);
     }
 
@@ -427,7 +430,7 @@ void flashfsWriteByte(uint8_t byte)
     }
 
     if (flashfsTransmitBufferUsed() >= FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN) {
-        flashfsFlushAsync();
+        flashfsFlushAsync(false);
     }
 }
 
