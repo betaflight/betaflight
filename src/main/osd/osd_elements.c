@@ -1766,7 +1766,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.elemPosX = elemPosX;
     element.elemPosY = elemPosY;
     element.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
-    element.buff = (char *)&buff;
+    element.buff = buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
     element.attr = DISPLAYPORT_ATTR_NONE;
@@ -1794,7 +1794,7 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     element.elemPosX = elemPosX;
     element.elemPosY = elemPosY;
     element.type = OSD_TYPE(osdElementConfig()->item_pos[item]);
-    element.buff = (char *)&buff;
+    element.buff = buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
 
