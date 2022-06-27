@@ -90,13 +90,14 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 3);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
+    .fields_disabled_mask = 0, // default log all fields
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
-    .fields_disabled_mask = 0, // default log all fields
-    .mode = BLACKBOX_MODE_NORMAL
+    .mode = BLACKBOX_MODE_NORMAL,
+    .high_resolution = false
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
@@ -380,6 +381,7 @@ STATIC_UNIT_TESTED int8_t blackboxPInterval = 0;
 STATIC_UNIT_TESTED int32_t blackboxSInterval = 0;
 STATIC_UNIT_TESTED int32_t blackboxSlowFrameIterationTimer;
 static bool blackboxLoggedAnyFrames;
+static float blackboxHighResolutionScale;
 
 /*
  * We store voltages in I-frames relative to this, which was the voltage when the blackbox was activated.
@@ -1060,26 +1062,26 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->time = currentTimeUs;
 
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->axisPID_P[i] = pidData[i].P;
-        blackboxCurrent->axisPID_I[i] = pidData[i].I;
-        blackboxCurrent->axisPID_D[i] = pidData[i].D;
-        blackboxCurrent->axisPID_F[i] = pidData[i].F;
-        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
+        blackboxCurrent->axisPID_P[i] = lrintf(pidData[i].P);
+        blackboxCurrent->axisPID_I[i] = lrintf(pidData[i].I);
+        blackboxCurrent->axisPID_D[i] = lrintf(pidData[i].D);
+        blackboxCurrent->axisPID_F[i] = lrintf(pidData[i].F);
+        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i] * blackboxHighResolutionScale);
 #if defined(USE_ACC)
         blackboxCurrent->accADC[i] = lrintf(acc.accADC[i]);
 #endif
 #ifdef USE_MAG
-        blackboxCurrent->magADC[i] = mag.magADC[i];
+        blackboxCurrent->magADC[i] = lrintf(mag.magADC[i]);
 #endif
     }
 
     for (int i = 0; i < 4; i++) {
-        blackboxCurrent->rcCommand[i] = lrintf(rcCommand[i]);
+        blackboxCurrent->rcCommand[i] = lrintf(rcCommand[i] * blackboxHighResolutionScale);
     }
 
     // log the currentPidSetpoint values applied to the PID controller
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->setpoint[i] = lrintf(pidGetPreviousSetpoint(i));
+        blackboxCurrent->setpoint[i] = lrintf(pidGetPreviousSetpoint(i) * blackboxHighResolutionScale);
     }
     // log the final throttle value used in the mixer
     blackboxCurrent->setpoint[3] = lrintf(mixerGetThrottle() * 1000);
@@ -1475,6 +1477,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_RATES_TYPE, "%d",             currentControlRateProfile->rates_type);
 
         BLACKBOX_PRINT_HEADER_LINE("fields_disabled_mask", "%d",            blackboxConfig()->fields_disabled_mask);
+        BLACKBOX_PRINT_HEADER_LINE("blackbox_high_resolution", "%d",        blackboxConfig()->high_resolution);
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_VBAT_SAG_COMPENSATION, "%d",   currentPidProfile->vbat_sag_compensation);
@@ -1974,5 +1977,7 @@ void blackboxInit(void)
         blackboxSetState(BLACKBOX_STATE_DISABLED);
     }
     blackboxSInterval = blackboxIInterval * 256; // S-frame is written every 256*32 = 8192ms, approx every 8 seconds
+
+    blackboxHighResolutionScale = blackboxConfig()->high_resolution ? 10.0f : 1.0f;
 }
 #endif

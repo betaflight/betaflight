@@ -860,13 +860,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
     }
 
-    executeTimeUs = micros() - currentTimeUs;
-
-    if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
-        gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
-    }
-    schedulerSetNextStateTime(gpsStateDurationUs[gpsData.state]);
-
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
@@ -893,6 +886,12 @@ void gpsUpdate(timeUs_t currentTimeUs)
     } else {
         hasFix = false;
     }
+
+    executeTimeUs = micros() - currentTimeUs;
+    if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
+        gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
+    }
+    schedulerSetNextStateTime(gpsStateDurationUs[gpsData.state]);
 }
 
 static void gpsNewData(uint16_t c)

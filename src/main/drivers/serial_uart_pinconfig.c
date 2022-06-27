@@ -53,7 +53,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
         const uartHardware_t *hardware = &uartHardware[hindex];
         const UARTDevice_e device = hardware->device;
 
-#if !(defined(STM32F1) || defined(STM32F4)) // Older CPUs don't support pin swap.
+#if !defined(STM32F4) // Don't support pin swap.
         uartdev->pinSwap = false;
 #endif
         for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
@@ -66,7 +66,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
             }
 
 
-#if !(defined(STM32F1) || defined(STM32F4))
+#if !defined(STM32F4)
             // Check for swapped pins
             if (pSerialPinConfig->ioTagTx[device] && (pSerialPinConfig->ioTagTx[device] == hardware->rxPins[pindex].pin)) {
                 uartdev->tx = hardware->rxPins[pindex];

@@ -146,7 +146,7 @@ ifeq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT      := -Og
 
 LTO_FLAGS             := $(OPTIMISE_DEFAULT)
-DEBUG_FLAGS            = -ggdb3 -DDEBUG
+DEBUG_FLAGS            = -ggdb3 -gdwarf-5 -DDEBUG
 else
 ifeq ($(DEBUG),INFO)
 DEBUG_FLAGS            = -ggdb3
@@ -652,13 +652,6 @@ targets-by-mcu:
 		fi; \
 	done
 	@echo
-
-## targets-f3        : make all F3 targets
-targets-f3:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
-
-targets-f3-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F3 TARGETS="$(VALID_TARGETS)"
 
 ## targets-f4        : make all F4 targets
 targets-f4:

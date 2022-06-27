@@ -292,8 +292,6 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         break;
     }
 
-    rxRuntimeState->rxRefreshRate = 11000;
-
     rxRuntimeState->rcReadRawFn = xBusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = xBusFrameStatus;
 

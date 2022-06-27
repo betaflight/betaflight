@@ -52,7 +52,7 @@
 #define GHST_PORT_MODE                  MODE_RXTX   // bidirectional on single pin
 
 #define GHST_MAX_FRAME_TIME_US          500         // 14 bytes @ 420k = ~450us
-#define GHST_TIME_BETWEEN_FRAMES_US     4500        // fastest frame rate = 222.22Hz, or 4500us
+#define GHST_TIME_BETWEEN_FRAMES_US     2000        // fastest frame rate = 500Hz, or 2000us
 
 #define GHST_RSSI_DBM_MIN (-117)            // Long Range mode value
 #define GHST_RSSI_DBM_MAX (-60)             // Typical RSSI with typical power levels, typical antennas, and a few feet/meters between Tx and Rx
@@ -65,14 +65,20 @@
 
 #define GHST_PAYLOAD_OFFSET offsetof(ghstFrameDef_t, type)
 
+#define GHST_RC_CTR_VAL_12BIT_PRIMARY 2048
+#define GHST_RC_CTR_VAL_12BIT_AUX     (128 << 2)
+
 STATIC_UNIT_TESTED volatile bool ghstFrameAvailable = false;
 STATIC_UNIT_TESTED volatile bool ghstValidatedFrameAvailable = false;
 STATIC_UNIT_TESTED volatile bool ghstTransmittingTelemetry = false;
 
-STATIC_UNIT_TESTED ghstFrame_t ghstIncomingFrame;   // incoming frame, raw, not CRC checked, destination address not checked
-STATIC_UNIT_TESTED ghstFrame_t ghstValidatedFrame;  // validated frame, CRC is ok, destination address is ok, ready for decode
+STATIC_UNIT_TESTED ghstFrame_t ghstFrameBuffer[2];
 
-STATIC_UNIT_TESTED uint32_t ghstChannelData[GHST_MAX_NUM_CHANNELS];
+ghstFrame_t *ghstIncomingFrame  = &ghstFrameBuffer[0];  // incoming frame, raw, not CRC checked, destination address not checked
+ghstFrame_t *ghstValidatedFrame = &ghstFrameBuffer[1];  // validated frame, CRC is ok, destination address is ok, ready for decode
+
+STATIC_UNIT_TESTED uint16_t ghstChannelData[GHST_MAX_NUM_CHANNELS];
+static ghstRfProtocol_e ghstRfProtocol = GHST_RF_PROTOCOL_UNDEFINED;
 
 enum {
     DEBUG_GHST_CRC_ERRORS = 0,
@@ -84,7 +90,7 @@ enum {
 static serialPort_t *serialPort;
 static timeUs_t ghstRxFrameStartAtUs = 0;
 static timeUs_t ghstRxFrameEndAtUs = 0;
-static uint8_t telemetryBuf[GHST_FRAME_SIZE_MAX];
+static uint8_t telemetryBuf[GHST_FRAME_SIZE];
 static uint8_t telemetryBufLen = 0;
 
 /* GHST Protocol
@@ -104,18 +110,14 @@ static uint8_t telemetryBufLen = 0;
  * the Ghost receiver to Betaflight as and when they arrive. Betaflight itself is responsible for
  * determining when a failsafe is necessary based on dropped packets.
  *
-  */
+ */
 
-#define GHST_FRAME_LENGTH_ADDRESS       1
-#define GHST_FRAME_LENGTH_FRAMELENGTH   1
-#define GHST_FRAME_LENGTH_TYPE_CRC      1
 
 // called from telemetry/ghst.c
-void ghstRxWriteTelemetryData(const void *data, int len)
+void ghstRxWriteTelemetryData(const void *const data, const int len)
 {
-    len = MIN(len, (int)sizeof(telemetryBuf));
-    memcpy(telemetryBuf, data, len);
-    telemetryBufLen = len;
+    telemetryBufLen = MIN(len, (int)sizeof(telemetryBuf));
+    memcpy(telemetryBuf, data, telemetryBufLen);
 }
 
 void ghstRxSendTelemetryData(void)
@@ -127,14 +129,21 @@ void ghstRxSendTelemetryData(void)
     }
 }
 
-STATIC_UNIT_TESTED uint8_t ghstFrameCRC(ghstFrame_t *pGhstFrame)
+STATIC_UNIT_TESTED uint8_t ghstFrameCRC(const ghstFrame_t *const pGhstFrame)
 {
     // CRC includes type and payload
     uint8_t crc = crc8_dvb_s2(0, pGhstFrame->frame.type);
-    for (int i = 0; i < pGhstFrame->frame.len - GHST_FRAME_LENGTH_TYPE_CRC - 1; ++i) {
+    for (int i = 0; i < pGhstFrame->frame.len - GHST_FRAME_LENGTH_TYPE - GHST_FRAME_LENGTH_CRC; ++i) {
         crc = crc8_dvb_s2(crc, pGhstFrame->frame.payload[i]);
     }
     return crc;
+}
+
+static void rxSwapFrameBuffers()
+{
+    ghstFrame_t *const tmp = ghstIncomingFrame;
+    ghstIncomingFrame = ghstValidatedFrame;
+    ghstValidatedFrame = tmp;
 }
 
 // Receive ISR callback, called back from serial port
@@ -157,20 +166,26 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
 
     // assume frame is 5 bytes long until we have received the frame length
     // full frame length includes the length of the address and framelength fields
-    const int fullFrameLength = ghstFrameIdx < 3 ? 5 : ghstIncomingFrame.frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
+    const int fullFrameLength = ghstFrameIdx < 3 ? 5 : ghstIncomingFrame->frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
 
-    if (ghstFrameIdx < fullFrameLength) {
-        ghstIncomingFrame.bytes[ghstFrameIdx++] = (uint8_t)c;
+    if (ghstFrameIdx < fullFrameLength && ghstFrameIdx < sizeof(ghstFrame_t)) {
+        ghstIncomingFrame->bytes[ghstFrameIdx++] = (uint8_t)c;
         if (ghstFrameIdx >= fullFrameLength) {
             ghstFrameIdx = 0;
 
             // NOTE: this data is not yet CRC checked, nor do we know whether we are the correct recipient, this is
             // handled in ghstFrameStatus
-            memcpy(&ghstValidatedFrame, &ghstIncomingFrame, sizeof(ghstIncomingFrame));
-            ghstFrameAvailable = true;
 
-            // remember what time the incoming (Rx) packet ended, so that we can ensure a quite bus before sending telemetry
-            ghstRxFrameEndAtUs = microsISR();
+            // Not CRC checked but we are interested just in frame for us
+            // eg. telemetry frames are read back here also, skip them
+            if (ghstIncomingFrame->frame.addr == GHST_ADDR_FC) {
+
+                rxSwapFrameBuffers();
+                ghstFrameAvailable = true;
+
+                // remember what time the incoming (Rx) packet ended, so that we can ensure a quite bus before sending telemetry
+                ghstRxFrameEndAtUs = microsISR();
+            }
         }
     }
 }
@@ -178,7 +193,7 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
 static bool shouldSendTelemetryFrame(void)
 {
     const timeUs_t now = micros();
-    const timeUs_t timeSinceRxFrameEndUs = cmpTimeUs(now, ghstRxFrameEndAtUs);
+    const timeDelta_t timeSinceRxFrameEndUs = cmpTimeUs(now, ghstRxFrameEndAtUs);
     return telemetryBufLen > 0 && timeSinceRxFrameEndUs > GHST_RX_TO_TELEMETRY_MIN_US && timeSinceRxFrameEndUs < GHST_RX_TO_TELEMETRY_MAX_US;
 }
 
@@ -186,29 +201,26 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
     static int16_t crcErrorCount = 0;
+    uint8_t status = RX_FRAME_PENDING;
 
     if (ghstFrameAvailable) {
         ghstFrameAvailable = false;
 
-        const uint8_t crc = ghstFrameCRC(&ghstValidatedFrame);
-        const int fullFrameLength = ghstValidatedFrame.frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
-        if (crc == ghstValidatedFrame.bytes[fullFrameLength - 1] && ghstValidatedFrame.frame.addr == GHST_ADDR_FC) {
+        const uint8_t crc = ghstFrameCRC(ghstValidatedFrame);
+        const int fullFrameLength = ghstValidatedFrame->frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
+        if (crc == ghstValidatedFrame->bytes[fullFrameLength - 1]) {
             ghstValidatedFrameAvailable = true;
-            return RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;            // request callback through ghstProcessFrame to do the decoding  work
-        }
-
-        if (crc != ghstValidatedFrame.bytes[fullFrameLength - 1]) {
+            rxRuntimeState->lastRcFrameTimeUs = ghstRxFrameEndAtUs;
+            status = RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;      // request callback through ghstProcessFrame to do the decoding work
+        } else {
             DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);
+            status = RX_FRAME_DROPPED;                            // frame was invalid
         }
-
-        return RX_FRAME_DROPPED;                            // frame was invalid
+    } else if (checkGhstTelemetryState() && shouldSendTelemetryFrame()) {
+        status = RX_FRAME_PROCESSING_REQUIRED;
     }
 
-    if (shouldSendTelemetryFrame()) {
-        return RX_FRAME_PROCESSING_REQUIRED;
-    }
-
-    return RX_FRAME_PENDING;
+    return status;
 }
 
 static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
@@ -217,38 +229,44 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     // is correct, and the message was actually for us.
 
     UNUSED(rxRuntimeState);
-
     static int16_t unknownFrameCount = 0;
 
     // do we have a telemetry buffer to send?
-    if (shouldSendTelemetryFrame()) {
+    if (checkGhstTelemetryState() && shouldSendTelemetryFrame()) {
         ghstTransmittingTelemetry = true;
         ghstRxSendTelemetryData();
     }
 
     if (ghstValidatedFrameAvailable) {
-        int startIdx = 0;
+        ghstValidatedFrameAvailable = false;
 
-        if (ghstValidatedFrame.frame.type >= GHST_UL_RC_CHANS_HS4_FIRST &&
-            ghstValidatedFrame.frame.type <= GHST_UL_RC_CHANS_HS4_LAST) {
-            const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame.frame.payload;
+        const uint8_t ghstFrameType = ghstValidatedFrame->frame.type;
+        const bool scalingLegacy = ghstFrameType >= GHST_UL_RC_CHANS_HS4_FIRST && ghstFrameType <= GHST_UL_RC_CHANS_HS4_LAST;
+        const bool scaling12bit = ghstFrameType >= GHST_UL_RC_CHANS_HS4_12_FIRST && ghstFrameType <= GHST_UL_RC_CHANS_HS4_12_LAST;
 
-            // all uplink frames contain CH1..4 data (12 bit)
-            ghstChannelData[0] = rcChannels->ch1to4.ch1 >> 1;
-            ghstChannelData[1] = rcChannels->ch1to4.ch2 >> 1;
-            ghstChannelData[2] = rcChannels->ch1to4.ch3 >> 1;
-            ghstChannelData[3] = rcChannels->ch1to4.ch4 >> 1;
+        if ( scaling12bit || scalingLegacy ) {
 
-            switch(ghstValidatedFrame.frame.type) {
-                case GHST_UL_RC_CHANS_HS4_RSSI: {
-                    const ghstPayloadPulsesRssi_t* const rssiFrame = (ghstPayloadPulsesRssi_t*)&ghstValidatedFrame.frame.payload;
+            int startIdx = 0;
+
+            switch (ghstFrameType) {
+                case GHST_UL_RC_CHANS_HS4_RSSI:
+                case GHST_UL_RC_CHANS_HS4_12_RSSI: {
+                    const ghstPayloadPulsesRssi_t* const rssiFrame = (ghstPayloadPulsesRssi_t*)&ghstValidatedFrame->frame.payload;
 
                     DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_RSSI, -rssiFrame->rssi);
                     DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_LQ, rssiFrame->lq);
 
+                    ghstRfProtocol = rssiFrame->rfProtocol;
+                    // Enable telemetry just for modes that support it
+                    setGhstTelemetryState(ghstRfProtocol == GHST_RF_PROTOCOL_NORMAL
+                                       || ghstRfProtocol == GHST_RF_PROTOCOL_RACE
+                                       || ghstRfProtocol == GHST_RF_PROTOCOL_LONGRANGE
+                                       || ghstRfProtocol == GHST_RF_PROTOCOL_RACE250);
+
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
                         // rssi sent sign-inverted
-                        const uint16_t rssiPercentScaled = scaleRange(-rssiFrame->rssi, GHST_RSSI_DBM_MIN, 0, GHST_RSSI_DBM_MAX, RSSI_MAX_VALUE);
+                        uint16_t rssiPercentScaled = scaleRange(-rssiFrame->rssi, GHST_RSSI_DBM_MIN, GHST_RSSI_DBM_MAX, 0, RSSI_MAX_VALUE);
+                        rssiPercentScaled = MIN(rssiPercentScaled, RSSI_MAX_VALUE);
                         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL);
                     }
 
@@ -264,22 +282,55 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                     break;
                 }
 
-                case GHST_UL_RC_CHANS_HS4_5TO8:     startIdx = 4;  break;
-                case GHST_UL_RC_CHANS_HS4_9TO12:    startIdx = 8;  break;
-                case GHST_UL_RC_CHANS_HS4_13TO16:   startIdx = 12; break;
+                case GHST_UL_RC_CHANS_HS4_5TO8:
+                case GHST_UL_RC_CHANS_HS4_12_5TO8:
+                    startIdx = 4;
+                    break;
+
+                case GHST_UL_RC_CHANS_HS4_9TO12:
+                case GHST_UL_RC_CHANS_HS4_12_9TO12:
+                    startIdx = 8;
+                    break;
+
+                case GHST_UL_RC_CHANS_HS4_13TO16:
+                case GHST_UL_RC_CHANS_HS4_12_13TO16:
+                    startIdx = 12;
+                    break;
+
                 default:
                     DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);
                     break;
             }
 
-            if (startIdx > 0)
-            {
-                // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
+            // We need to wait for the first RSSI frame to know ghstRfProtocol
+            if (ghstRfProtocol != GHST_RF_PROTOCOL_UNDEFINED) {
+                const ghstPayloadPulses_t* const rcChannels = (ghstPayloadPulses_t*)&ghstValidatedFrame->frame.payload;
 
-                ghstChannelData[startIdx++] = rcChannels->cha << 3;
-                ghstChannelData[startIdx++] = rcChannels->chb << 3;
-                ghstChannelData[startIdx++] = rcChannels->chc << 3;
-                ghstChannelData[startIdx++] = rcChannels->chd << 3;
+                // all uplink frames contain CH1..4 data (12 bit)
+                ghstChannelData[0] = rcChannels->ch1to4.ch1;
+                ghstChannelData[1] = rcChannels->ch1to4.ch2;
+                ghstChannelData[2] = rcChannels->ch1to4.ch3;
+                ghstChannelData[3] = rcChannels->ch1to4.ch4;
+
+                if (startIdx > 0) {
+                    // remainder of uplink frame contains 4 more channels (8 bit), sent in a round-robin fashion
+                    ghstChannelData[startIdx++] = rcChannels->cha << 2;
+                    ghstChannelData[startIdx++] = rcChannels->chb << 2;
+                    ghstChannelData[startIdx++] = rcChannels->chc << 2;
+                    ghstChannelData[startIdx++] = rcChannels->chd << 2;
+                }
+
+                // Recalculate old scaling to the new one
+                if (scalingLegacy) {
+                    for (int i = 0; i < 4; i++) {
+                        ghstChannelData[i] = ((5 * ghstChannelData[i]) >> 2) - 430;  // Primary
+                        if (startIdx > 4) {
+                            --startIdx;
+                            ghstChannelData[startIdx] = 5 * (ghstChannelData[startIdx] >> 2) - 108; // Aux
+                        }
+                    }
+                }
+
             }
         }
     }
@@ -291,16 +342,30 @@ STATIC_UNIT_TESTED float ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState, u
 {
     UNUSED(rxRuntimeState);
 
-    // derived from original SBus scaling, with slight correction for offset (now symmetrical
-    // around OpenTx 0 value)
-    // scaling is:
-    //      OpenTx   RC     PWM
-    // min  -1024    172    988us
-    // ctr  0        992    1500us
-    // max  1024     1811   2012us
+    // Scaling 12bit channels (8bit channels in brackets)
+    //      OpenTx          RC   PWM (BF)
+    // min  -1024        0(  0)     988us
+    // ctr      0     2048(128)    1500us
+    // max   1024     4096(256)    2012us
     //
 
-    return (5 * ((float)ghstChannelData[chan] + 1) / 8) + 880;
+    // Scaling legacy (nearly 10bit)
+    // derived from original SBus scaling, with slight correction for offset
+    // now symmetrical around OpenTx 0 value
+    // scaling is:
+    //      OpenTx         RC   PWM (BF)
+    // min  -1024     172( 22)     988us
+    // ctr      0     992(124)    1500us
+    // max   1024    1811(226)    2012us
+    //
+
+    float pwm = ghstChannelData[chan];
+
+    if (chan < 4) {
+        pwm = 0.25f * pwm;
+    }
+
+    return pwm + 988;
 }
 
 // UART idle detected (inter-packet)
@@ -313,17 +378,19 @@ static void ghstIdle()
 
 bool ghstRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
-    for (int iChan = 0; iChan < GHST_MAX_NUM_CHANNELS; ++iChan) {
-        ghstChannelData[iChan] = (16 * rxConfig->midrc) / 10 - 1408;
-    }
-
     rxRuntimeState->channelCount = GHST_MAX_NUM_CHANNELS;
-    rxRuntimeState->rxRefreshRate = GHST_TIME_BETWEEN_FRAMES_US;
-
     rxRuntimeState->rcReadRawFn = ghstReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ghstFrameStatus;
     rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
     rxRuntimeState->rcProcessFrameFn = ghstProcessFrame;
+
+    for (int iChan = 0; iChan < rxRuntimeState->channelCount; ++iChan) {
+        if (iChan < 4 ) {
+            ghstChannelData[iChan] = GHST_RC_CTR_VAL_12BIT_PRIMARY;
+        } else {
+            ghstChannelData[iChan] = GHST_RC_CTR_VAL_12BIT_AUX;
+        }
+    }
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

@@ -39,17 +39,13 @@
 #else
 #define ADC_TAG_MAP_COUNT 47
 #endif
-#elif defined(STM32F3)
-#define ADC_TAG_MAP_COUNT 39
 #else
 #define ADC_TAG_MAP_COUNT 10
 #endif
 
 typedef struct adcTagMap_s {
     ioTag_t tag;
-#if !defined(STM32F1) // F1 pins have uniform connection to ADC instances
     uint8_t devices;
-#endif
     uint32_t channel;
 #if defined(STM32H7) || defined(STM32G4)
     uint8_t channelOrdinal;

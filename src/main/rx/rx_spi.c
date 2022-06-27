@@ -269,7 +269,6 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
     }
 
     rxSpiNewPacketAvailable = false;
-    rxRuntimeState->rxRefreshRate = 20000;
 
     rxRuntimeState->rcReadRawFn = rxSpiReadRawRC;
     rxRuntimeState->rcFrameStatusFn = rxSpiFrameStatus;

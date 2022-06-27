@@ -138,11 +138,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
-#if defined(STM32F3)
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)&(transponder->transponderIrDMABuffer);
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-#elif defined(STM32F4)
+#if defined(STM32F4)
     DMA_InitStructure.DMA_Channel = dmaChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&(transponder->transponderIrDMABuffer);
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
@@ -150,11 +146,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_InitStructure.DMA_BufferSize = transponder->dma_buffer_size;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-#if defined(STM32F3)
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-#elif defined(STM32F4)
-
+#if defined(STM32F4)
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
 #endif

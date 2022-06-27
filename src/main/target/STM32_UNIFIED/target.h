@@ -78,6 +78,29 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
+#elif defined(STM32F411SX1280)
+#define TARGET_BOARD_IDENTIFIER "S4SX"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32F411SX1280"
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART6
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
+
+#define USE_INVERTER
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+
 #elif defined(STM32F7X2)
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
@@ -218,6 +241,40 @@
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
 
+// Only enable ELRS support on STM32F411SX1280 target
+#if defined(STM32F411SX1280)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
+#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_EXPRESSLRS
+
+#define USE_RX_EXPRESSLRS
+#define USE_RX_EXPRESSLRS_TELEMETRY
+#define USE_RX_SX1280
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
+#define RX_CHANNELS_AETR
+
+#else // STM32F411SX1280
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define USE_RX_SFHSS_SPI
+#define USE_RX_REDPINE_SPI
+#define USE_RX_FRSKY_SPI_TELEMETRY
+#define USE_RX_CC2500_SPI_PA_LNA
+#define USE_RX_CC2500_SPI_DIVERSITY
+
+#define USE_RX_FLYSKY
+#define USE_RX_FLYSKY_SPI_LED
+
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
+
+#define USE_I2C
+#define I2C_FULL_RECONFIGURABILITY
+
+#define USE_MAG
+#define USE_BARO
+
+#endif // STM32F411SX1280
+
 #define USE_BEEPER
 
 // MPU interrupt
@@ -238,15 +295,12 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_BMI270
-
-#if !defined(STM32F411xE)
 #define USE_GYRO_SPI_ICM42605
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-#endif
 
-#define USE_MAG
+#ifdef USE_MAG
 #define USE_MAG_DATA_READY_SIGNAL
 #define USE_MAG_HMC5883
 #define USE_MAG_SPI_HMC5883
@@ -256,8 +310,9 @@
 #define USE_MAG_MPU925X_AK8963
 #define USE_MAG_SPI_AK8963
 #define USE_MAG_AK8975
+#endif
 
-#define USE_BARO
+#ifdef USE_BARO
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_MS5611
 #define USE_BARO_BMP280
@@ -270,6 +325,7 @@
 #define USE_BARO_SPI_QMP6988
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
+#endif
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI
@@ -292,9 +348,6 @@
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
 
-#define USE_I2C
-#define I2C_FULL_RECONFIGURABILITY
-
 #define USE_VCP
 
 #define USE_SOFTSERIAL1
@@ -309,20 +362,6 @@
 #define USE_ADC
 
 #define USE_RX_SPI
-
-#define USE_RX_FRSKY_SPI_D
-#define USE_RX_FRSKY_SPI_X
-#define USE_RX_SFHSS_SPI
-#define USE_RX_REDPINE_SPI
-#define USE_RX_FRSKY_SPI_TELEMETRY
-#define USE_RX_CC2500_SPI_PA_LNA
-#define USE_RX_CC2500_SPI_DIVERSITY
-
-#define USE_RX_FLYSKY
-#define USE_RX_FLYSKY_SPI_LED
-
-#define USE_RX_SPEKTRUM
-#define USE_RX_SPEKTRUM_TELEMETRY
 
 #define USE_CUSTOM_DEFAULTS
 
@@ -343,6 +382,7 @@
 #define USE_RANGEFINDER_TF
 
 #define USE_RX_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #define USE_RX_SX1280
 #define USE_RX_SX127X
 
