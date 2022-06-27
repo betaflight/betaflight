@@ -25,7 +25,7 @@ jobs:
         run: make arm_sdk_install
 
       - name: Execute Build
-        run: make all RELEASE=${{ inputs.release_build && 'yes' || 'no' }}
+        run: make all
 
       - name: Publish build artifacts
         uses: actions/upload-artifact@v3
