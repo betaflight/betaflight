@@ -137,6 +137,7 @@ void altHoldInit(altHoldState_s* altHoldState)
 void altHoldProcessTransitions(altHoldState_s* altHoldState) {
     bool newAltHoldEnabled = FLIGHT_MODE(ALTHOLD_MODE);
 
+    #ifdef USE_GPS_RESCUE
     if (FLIGHT_MODE(GPS_RESCUE_MODE) | failsafeIsActive()) {
         newAltHoldEnabled = false;
         if (needAltitudeControl()) {
@@ -144,6 +145,7 @@ void altHoldProcessTransitions(altHoldState_s* altHoldState) {
             altHoldState->targetAltitude = getRequiredAltitude();
         }
     }
+    #endif
 
 //    newAltHoldEnabled |= forcedEnabled;
 
