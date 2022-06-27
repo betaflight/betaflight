@@ -21,9 +21,6 @@ TARGET    ?= STM32F405
 # Compile-time options
 OPTIONS   ?=
 
-# compile for OpenPilot BootLoader support
-OPBL      ?= no
-
 # compile for External Storage Bootloader support
 EXST      ?= no
 
@@ -187,12 +184,7 @@ endif
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
-ifeq ($(OPBL),yes)
-TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
-.DEFAULT_GOAL := binary
-else
 .DEFAULT_GOAL := hex
-endif
 
 ifeq ($(CUSTOM_DEFAULTS_EXTENDED),yes)
 TARGET_FLAGS += -DUSE_CUSTOM_DEFAULTS=

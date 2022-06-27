@@ -6,7 +6,6 @@ BASE_ALT_PAIRS    = $(join $(BASE_TARGET_NAMES:=/),$(ALT_TARGET_NAMES))
 ALT_TARGETS       = $(sort $(notdir $(BASE_ALT_PAIRS)))
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 NOBUILD_TARGETS   = $(sort $(filter-out target,$(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.nomk)))))
-OPBL_TARGETS      = $(sort $(filter %_OPBL,$(ALT_TARGETS)))
 VALID_TARGETS     = $(sort $(filter-out $(NOBUILD_TARGETS),$(BASE_TARGETS) $(ALT_TARGETS)))
 
 # For alt targets, returns their base target name.

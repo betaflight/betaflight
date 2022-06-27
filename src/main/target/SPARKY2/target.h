@@ -22,9 +22,6 @@
 #define TARGET_BOARD_IDENTIFIER "SPK2"
 
 #define USBD_PRODUCT_STRING "Sparky 2.0"
-#ifdef OPBL
-    #define USBD_SERIALNUMBER_STRING "0x8020000"
-#endif
 
 #define LED0_PIN                PB5
 #define LED1_PIN                PB4
