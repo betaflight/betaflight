@@ -130,7 +130,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBHID_DIR)/inc \
                    $(USBWRAPPER_DIR)/inc \
                    $(USBMSC_DIR)/inc \
-                   $(USBFS_DIR)/inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
                    $(ROOT)/src/main/vcpf4
