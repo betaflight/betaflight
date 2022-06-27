@@ -43,6 +43,7 @@ extern "C" {
     #include "scheduler/scheduler.h"
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
+    #include "sensors/barometer.h"
     #include "telemetry/telemetry.h"
     #include "flight/gps_rescue.h"
 
@@ -77,6 +78,7 @@ extern "C" {
     acc_t acc = {};
     bool mockIsUpright = false;
     uint8_t activePidLoopDenom = 1;
+    baro_t baro;
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -1112,5 +1114,7 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
     float pt1FilterGain(float, float) {return 0.5f;}
-    float getAltHoldThrottle(void) {return 0.2f;}
+//    float getAltHoldThrottle(void) {return 0.2f;}
+    float getEstimatedVario(void) {return 0.f;}
+    void imuTransformVectorBodyToEarth(t_fp_vector *) {}
 }
