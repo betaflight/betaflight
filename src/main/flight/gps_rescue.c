@@ -296,12 +296,6 @@ static void rescueAttainPosition()
         return;
      }
 
-     uint8_t altHoldMode = gpsRescueConfig()->altHoldControlMode;
-
-     if (altHoldMode == ALTHOLD_COOL) {
-         rescueThrottle = getAltHoldThrottle();
-     }
-
     if (!newGPSData) {
         return;
     }
@@ -440,10 +434,8 @@ static void rescueAttainPosition()
 
     throttleAdjustment = throttleP + throttleI + throttleD + tiltAdjustment;
 
-    if (altHoldMode == ALTHOLD_DEFAULT) {
-        rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
-        rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
-    }
+    rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
+    rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
 
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, throttleP);
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, throttleD);
@@ -527,28 +519,28 @@ static void performSanityChecks()
     // These conditions are 'special', in that even with sanity checks off, they should still apply
     if (rescueState.phase == RESCUE_ATTAIN_ALT) {
         secondsNotAscending = constrain(secondsNotAscending + (((rescueState.sensor.currentAltitudeCm - prevAlitudeCm) > (0.5f *  gpsRescueConfig()->ascendRate)) ? -1 : 1), 0, 10);
-        if (secondsNotAscending == 10) {
-            {
-            rescueState.phase = RESCUE_ABORT;
-            // if stuck in a tree while climbing, or otherwise can't climb, stop motors and disarm
-            }
-        }
+//        if (secondsNotAscending == 10) {
+//            {
+//            rescueState.phase = RESCUE_ABORT;
+//            // if stuck in a tree while climbing, or otherwise can't climb, stop motors and disarm
+//            }
+//        }
     } else if (rescueState.phase == RESCUE_LANDING || rescueState.phase == RESCUE_DESCENT) {
         secondsNotDescending = constrain(secondsNotDescending + (((prevAlitudeCm - rescueState.sensor.currentAltitudeCm) > (0.5f * gpsRescueConfig()->descendRate)) ? -1 : 1), 0, 10);
-        if (secondsNotDescending == 10) {
-            {
-            rescueState.phase = RESCUE_ABORT;
-            // if stuck in a tree while climbing, or don't disarm on impact, or enable GPS rescue on the ground too close
-            }
-        }
+//        if (secondsNotDescending == 10) {
+//            {
+//            rescueState.phase = RESCUE_ABORT;
+//            // if stuck in a tree while climbing, or don't disarm on impact, or enable GPS rescue on the ground too close
+//            }
+//        }
     } else if (rescueState.phase == RESCUE_DO_NOTHING) {
         secondsDoingNothing = MIN(secondsDoingNothing + 1, 10);
-        if (secondsDoingNothing == 10) {
-            rescueState.phase = RESCUE_ABORT;
-            // prevent indefinite flyaways when sanity checks are off, and
-            // time limit the "do nothing" period when a switch initiated failsafe fails sanity checks
-            // this is controversial
-        }
+//        if (secondsDoingNothing == 10) {
+//            rescueState.phase = RESCUE_ABORT;
+//            // prevent indefinite flyaways when sanity checks are off, and
+//            // time limit the "do nothing" period when a switch initiated failsafe fails sanity checks
+//            // this is controversial
+//        }
     }
     prevAlitudeCm = rescueState.sensor.currentAltitudeCm;
 
@@ -872,6 +864,11 @@ float gpsRescueGetYawRate(void)
 
 float gpsRescueGetThrottle(void)
 {
+    uint8_t altHoldMode = gpsRescueConfig()->altHoldControlMode;
+    if (altHoldMode == ALTHOLD_COOL) {
+        return getAltHoldThrottle();
+    }
+
     // Calculated a desired commanded throttle scaled from 0.0 to 1.0 for use in the mixer.
     // We need to compensate for min_check since the throttle value set by gps rescue
     // is based on the raw rcCommand value commanded by the pilot.
