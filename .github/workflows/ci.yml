@@ -1,6 +1,6 @@
 # Builds Betaflight Firmware.
 #
-# After building, artifacts are kept for 7 days.
+# After building, artifacts are kept for 14 days.
 
 name: CI
 
@@ -8,7 +8,7 @@ on:
   workflow_call:
     inputs:
       release_build:
-        description: 'Specifies if it is a debug build or a release build'
+        description: 'Specifies if it is a build that should include commit hash in hex file names or not'
         default: false
         required: false
         type: boolean
@@ -21,15 +21,29 @@ jobs:
       - name: Code Checkout
         uses: actions/checkout@v2
 
-      - name: Prepare environment
+      - name: Toolchain install
         run: make arm_sdk_install
 
-      - name: Execute Build
+      - name: Extra package install
+        run: sudo apt-get install -y libblocksruntime-dev
+
+      - name: Run sanity checks
+        run: make EXTRA_FLAGS=-Werror checks
+
+      - name: Run all unit tests
+        run: make EXTRA_FLAGS=-Werror test-all
+
+      - name: Execute Build (Without Commit Hash)
+        if: inputs.release_build == true
         run: make all
+
+      - name: Execute Build (With Commit Hash)
+        if: inputs.release_build == false
+        run: make all_rev
 
       - name: Publish build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: Assets
           path: ./obj/*.hex
-          retention-days: 7
+          retention-days: 14
