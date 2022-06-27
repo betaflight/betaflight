@@ -210,6 +210,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
         const int fullFrameLength = ghstValidatedFrame->frame.len + GHST_FRAME_LENGTH_ADDRESS + GHST_FRAME_LENGTH_FRAMELENGTH;
         if (crc == ghstValidatedFrame->bytes[fullFrameLength - 1]) {
             ghstValidatedFrameAvailable = true;
+            rxRuntimeState->lastRcFrameTimeUs = ghstRxFrameEndAtUs;
             status = RX_FRAME_COMPLETE | RX_FRAME_PROCESSING_REQUIRED;      // request callback through ghstProcessFrame to do the decoding work
         } else {
             DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);
