@@ -338,7 +338,7 @@ float pidCompensateThrustLinearization(float throttle)
     if (pidRuntime.thrustLinearization != 0.0f) {
         // for whoops where a lot of TL is needed, allow more throttle boost
         const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * powf(throttleReversed, 2);
+        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * sq(throttleReversed);
     }
     return throttle;
 }
@@ -348,7 +348,7 @@ float pidApplyThrustLinearization(float motorOutput)
     if (pidRuntime.thrustLinearization != 0.0f) {
         if (motorOutput > 0.0f) {
             const float motorOutputReversed = (1.0f - motorOutput);
-            motorOutput *= 1.0f + powf(motorOutputReversed, 2) * pidRuntime.thrustLinearization;
+            motorOutput *= 1.0f + sq(motorOutputReversed) * pidRuntime.thrustLinearization;
         }
     }
     return motorOutput;

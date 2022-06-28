@@ -1787,7 +1787,7 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
                 int32_t dir;
                 GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[GPS_LATITUDE], &lastCoord[GPS_LONGITUDE], &dist, &dir);
                 if (gpsConfig()->gps_use_3d_speed) {
-                    dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
+                    dist = sqrtf(sq(gpsSol.llh.altCm - lastAlt) + sq(dist));
                 }
                 GPS_distanceFlownInCm += dist;
             }
