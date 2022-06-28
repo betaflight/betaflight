@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_EXTI
+#if !defined(SIMULATOR_BUILD)
 
 #include "drivers/nvic.h"
 #include "io_impl.h"
@@ -248,3 +248,4 @@ _EXTI_IRQ_HANDLER(EXTI9_5_IRQHandler, 0x03e0);
 _EXTI_IRQ_HANDLER(EXTI15_10_IRQHandler, 0xfc00);
 
 #endif
+

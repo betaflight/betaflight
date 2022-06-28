@@ -1,15 +1,3 @@
-## Important: Feature freeze / release candidate phase for Betaflight 4.3
-
-From 29 November 2021 until the release of Betaflight 4.3.0 (scheduled for early 2022), the project is in a 'feature freeze / release candidate' phase. This means:
-
- 1. Pull requests can still be submitted as normal. Comments / discussions will probably be slower than normal due to shifted priorities;
-
- 2. If your pull request is a fix for an existing bug, or an update for a single target that has a low risk of side effect for other targets, it will be reviewed.  It may be accepted merged into `master` for the 4.3 release, or held over to 4.4;
-
- 3. All other pull requests will be scheduled for 4.4, and discussed / reviewed / merged into `master` after 4.30 has been released. Please keep in mind that this potentially means that you will have to rebase your changes if they are broken by bugfixes made for 4.3.
-
-
-
 ## Important considerations when opening a pull request:
 
 1. Make sure you do not make the changes you want to open a pull request for on the `master` branch of your fork, or open the pull request from the `master` branch of your fork. Some of our integrations will fail if you do this, resulting in your pull request not being accepted. If this is your first pull request, it is probably a good idea to first read up on how opening pull requests work (https://opensource.com/article/19/7/create-pull-request-github is a good introduction);

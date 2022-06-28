@@ -218,7 +218,6 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
     // EXPECT_EQ(NULL, rxRuntimeState.rcFrameStatusFn);
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(20000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 }
@@ -233,7 +232,6 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
     EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeState));
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(20000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 

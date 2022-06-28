@@ -77,8 +77,6 @@ void icm20649AccInit(accDev_t *acc)
     // 1,024 LSB/g 30g
     acc->acc_1G = acc->acc_high_fsr ? 1024 : 2048;
 
-    spiSetClkDivisor(&acc->dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
-
     spiWriteReg(&acc->dev, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
     const uint8_t acc_fsr = acc->acc_high_fsr ? ICM20649_FSR_30G : ICM20649_FSR_16G;
@@ -136,9 +134,7 @@ void icm20649GyroInit(gyroDev_t *gyro)
     spiWriteReg(&gyro->bus, ICM20649_RA_INT_PIN_CFG, 0x11);  // INT_ANYRD_2CLEAR, BYPASS_EN
     delay(15);
 
-#ifdef USE_MPU_DATA_READY_SIGNAL
     spiWriteReg(&gyro->bus, ICM20649_RA_INT_ENABLE_1, 0x01);
-#endif
 }
 
 bool icm20649SpiGyroDetect(gyroDev_t *gyro)

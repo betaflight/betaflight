@@ -115,7 +115,6 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 /*
  * Gyro interrupt service routine
  */
-#ifdef USE_GYRO_EXTI
 #ifdef USE_SPI_GYRO
 // Called in ISR context
 // Gyro read has just completed
@@ -181,7 +180,6 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO);
 }
-#endif // USE_GYRO_EXTI
 
 bool mpuAccRead(accDev_t *acc)
 {
@@ -270,7 +268,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     {
         // Initialise the tx buffer to all 0xff
         memset(gyro->dev.txBuf, 0xff, 16);
-#ifdef USE_GYRO_EXTI
+
         // Check that minimum number of interrupts have been detected
 
         // We need some offset from the gyro interrupts to ensure sampling after the interrupt
@@ -289,9 +287,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
                 // Interrupts are present, but no DMA
                 gyro->gyroModeSPI = GYRO_EXTI_INT;
             }
-        } else
-#endif
-        {
+        } else {
             gyro->gyroModeSPI = GYRO_EXTI_NO_INT;
         }
         break;
@@ -489,11 +485,7 @@ void mpuGyroInit(gyroDev_t *gyro)
 {
     gyro->accDataReg = MPU_RA_ACCEL_XOUT_H;
     gyro->gyroDataReg = MPU_RA_GYRO_XOUT_H;
-#ifdef USE_GYRO_EXTI
     mpuIntExtiInit(gyro);
-#else
-    UNUSED(gyro);
-#endif
 }
 
 uint8_t mpuGyroDLPF(gyroDev_t *gyro)

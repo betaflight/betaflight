@@ -20,9 +20,9 @@
  #pragma once
 
 //#define USE_TARGET_CONFIG
-#define TARGET_BOARD_IDENTIFIER	"VGF4"
-#define TARGET_MANUFACTURER_IDENTIFIER	"VGRC"
-#define USBD_PRODUCT_STRING	"VGOODRCF4"
+#define TARGET_BOARD_IDENTIFIER         "VGF4"
+#define TARGET_MANUFACTURER_IDENTIFIER  "VGRC"
+#define USBD_PRODUCT_STRING             "VGOODRCF4"
 
 #define LED0_PIN                PC14
 #define LED1_PIN                PC15
@@ -35,11 +35,8 @@
 
 #define GYRO_1_ALIGN            CW180_DEG
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PIN      	PC3 
+#define GYRO_1_EXTI_PIN         PC3
 
-#define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_ACC
@@ -47,7 +44,7 @@
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define GYRO_1_CS_PIN   					PA15                      
+#define GYRO_1_CS_PIN                       PA15
 #define GYRO_1_SPI_INSTANCE                 SPI3
 
 //-------------------------------------SPI2 FLASH------------------------------
@@ -119,11 +116,11 @@
 
 //-------------------------------------ADC METERE------------------------------
 #define USE_ADC
-#define ADC_INSTANCE			ADC2
+#define ADC_INSTANCE            ADC2
 #define ADC2_DMA_OPT            1
 #define CURRENT_METER_ADC_PIN   PC0  
-#define VBAT_ADC_PIN			PC1
-#define RSSI_ADC_PIN			PC2
+#define VBAT_ADC_PIN            PC1
+#define RSSI_ADC_PIN            PC2
 
 //---------------------------------VTX&&CAM------------------------------------
 #define USE_PINIO
@@ -133,7 +130,7 @@
 
 //-------------------------------------SPI------------------------------------
 #define USE_SPI
-#define USE_SPI_DEVICE_3		//GYRO
+#define USE_SPI_DEVICE_3        //GYRO
 #define SPI3_SCK_PIN            PB3
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
@@ -143,19 +140,19 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define USE_SPI_DEVICE_1	//OSD
+#define USE_SPI_DEVICE_1    //OSD
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
 //-------------------------------------IIC------------------------------------
-#define USE_I2C				//MAG5883
+#define USE_I2C             //MAG5883
 #define USE_I2C_DEVICE_1
 //#define I2C_DEVICE              (I2CDEV_1)
 #define I2C1_SCL                PB8
 #define I2C1_SDA                PB9
 
-#define USE_I2C				//BMP280
+#define USE_I2C             //BMP280
 #define USE_I2C_DEVICE_2
 //#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                PB10
@@ -164,7 +161,7 @@
 //-------------------------------------FEATURES-------------------------------
 #define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_TELEMETRY )
 
-#define DEFAULT_RX_FEATURE     	FEATURE_RX_SERIAL
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
 

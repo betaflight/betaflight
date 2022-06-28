@@ -154,6 +154,10 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
+#if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)
+#undef USE_RX_MSP_OVERRIDE
+#endif
+
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
@@ -403,11 +407,6 @@ extern uint8_t __config_end;
 
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
-#endif
-
-#if !defined(USE_EXTI)
-#undef USE_RX_SPI
-#undef USE_RANGEFINDER_HCSR04
 #endif
 
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
