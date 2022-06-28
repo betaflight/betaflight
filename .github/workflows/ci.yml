@@ -46,4 +46,4 @@ jobs:
         with:
           name: Assets
           path: ./obj/*.hex
-          retention-days: 14
+          retention-days: 60
