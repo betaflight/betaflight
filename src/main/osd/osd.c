@@ -773,8 +773,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     
     case OSD_STAT_WATT_HOURS_DRAWN:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-            const float wattHoursDrawn = getMAhDrawn() * getBatteryVoltage() / 100000.0f;
-            osdPrintFloat(buff, SYM_NONE, wattHoursDrawn, "", 2, true, SYM_NONE);
+            osdPrintFloat(buff, SYM_NONE, getWhDrawn(), "", 2, true, SYM_NONE);
             osdDisplayStatisticLabel(displayRow, "USED WATT HOURS", buff);
             return true;
         }

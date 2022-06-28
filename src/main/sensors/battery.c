@@ -543,3 +543,16 @@ int32_t getMAhDrawn(void)
 {
     return currentMeter.mAhDrawn;
 }
+
+float getWhDrawn(void)
+{
+    static int32_t mAhDrawnPrev = 0;
+    static float wattHoursDrawn = 0.0; 
+    const int32_t mAhDrawnCurrent = getMAhDrawn();
+
+    wattHoursDrawn += voltageMeter.displayFiltered * (mAhDrawnCurrent - mAhDrawnPrev) / 100000.0f;
+
+    mAhDrawnPrev = mAhDrawnCurrent;
+
+    return wattHoursDrawn;
+}

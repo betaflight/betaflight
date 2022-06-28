@@ -1177,17 +1177,15 @@ static void osdElementMahDrawn(osdElementParms_t *element)
 
 static void osdElementWattHoursDrawn(osdElementParms_t *element)
 {
-    const float batteryVoltage = getBatteryVoltage() / 100.0f;
-    const float wattHoursDrawn = batteryVoltage * getMAhDrawn();
+    const float wattHoursDrawn = getWhDrawn();
 
-    if (wattHoursDrawn < 1000) {        
-        tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn));
+    if (wattHoursDrawn < 1) {        
+        tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
     } else {
-        float wHDrawn = wattHoursDrawn / 1000.0f;
-        int wattHourWholeNumber = (int)wHDrawn;
-        int wattHourDecimalValue = (int)((wHDrawn - wattHourWholeNumber) * 100);
+        int wattHourWholeNumber = (int)wattHoursDrawn;
+        int wattHourDecimalValue = (int)((wattHoursDrawn - wattHourWholeNumber) * 100);
 
-        tfp_sprintf(element->buff, "%3d.%2dWH", wattHourWholeNumber, wattHourDecimalValue);
+        tfp_sprintf(element->buff, wattHourDecimalValue >= 10 ? "%3d.%2dWH" : "%3d.0%1dWH", wattHourWholeNumber, wattHourDecimalValue);
     }
 }
 
