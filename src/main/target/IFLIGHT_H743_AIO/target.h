@@ -120,11 +120,8 @@
 #define USE_ACCGYRO_BMI270
 #define USE_ACCGYRO_LSM6DSO
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PD0
 #define GYRO_2_EXTI_PIN         PD8
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO_1_CS_PIN           SPI1_NSS_PIN

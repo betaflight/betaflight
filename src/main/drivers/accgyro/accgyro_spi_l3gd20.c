@@ -77,7 +77,6 @@
 
 #define BOOT                          ((uint8_t)0x80)
 
-#if defined(USE_MPU_DATA_READY_SIGNAL)
 static void l3gd20ExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
@@ -97,35 +96,34 @@ static void l3gd20IntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO);
 }
-#endif
 
 void l3gd20GyroInit(gyroDev_t *gyro)
 {
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(L3GD20_MAX_SPI_CLK_HZ));
+    extDevice_t *dev = &gyro->dev;
 
-    spiWriteReg(&gyro->dev, CTRL_REG5_ADDR, BOOT);
+    spiSetClkDivisor(dev, spiCalculateDivider(L3GD20_MAX_SPI_CLK_HZ));
+
+    spiWriteReg(dev, CTRL_REG5_ADDR, BOOT);
 
     delayMicroseconds(100);
 
-    spiWriteReg(&gyro->dev, CTRL_REG1_ADDR, MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_3);
+    spiWriteReg(dev, CTRL_REG1_ADDR, MODE_ACTIVE | OUTPUT_DATARATE_3 | AXES_ENABLE | BANDWIDTH_3);
 
     delayMicroseconds(1);
 
-    spiWriteReg(&gyro->dev, CTRL_REG4_ADDR, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
+    spiWriteReg(dev, CTRL_REG4_ADDR, BLOCK_DATA_UPDATE_CONTINUOUS | BLE_MSB | FULLSCALE_2000);
 
     delay(100);
 
-#if defined(USE_MPU_DATA_READY_SIGNAL)
     l3gd20IntExtiInit(gyro);
-#endif
-
 }
 
 static bool l3gd20GyroRead(gyroDev_t *gyro)
 {
     uint8_t buf[6];
+    extDevice_t *dev = &gyro->dev;
 
-    const bool ack = spiReadRegMskBufRB(&gyro->dev, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD,buf, sizeof(buf));
+    const bool ack = spiReadRegMskBufRB(dev, OUT_X_L_ADDR | READ_CMD | MULTIPLEBYTE_CMD,buf, sizeof(buf));
     if (!ack) {
         return false;
     }

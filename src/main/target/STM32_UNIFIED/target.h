@@ -278,9 +278,6 @@
 #define USE_BEEPER
 
 // MPU interrupt
-#define USE_EXTI
-#define USE_MPU_DATA_READY_SIGNAL
-#define USE_GYRO_EXTI
 
 #define USE_ACC
 #define USE_GYRO

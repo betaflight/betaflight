@@ -39,11 +39,8 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
 
-#define USE_MPU_DATA_READY_SIGNAL
 
 // ICM 20689
 #define GYRO_1_CS_PIN           PA4

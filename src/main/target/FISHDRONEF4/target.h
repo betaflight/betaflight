@@ -37,10 +37,7 @@
 
 #define INVERTER_PIN_UART6      PC8
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 // *************** Gyro & ACC **********************
 #define USE_SPI

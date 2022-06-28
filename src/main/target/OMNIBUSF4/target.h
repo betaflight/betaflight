@@ -76,7 +76,6 @@
 #define INVERTER_PIN_UART1      PC0 // DYS F4 Pro; Omnibus F4 AIO (1st gen) have a FIXED inverter on UART1
 #endif
 
-#define USE_EXTI
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
@@ -88,9 +87,7 @@
 #define GYRO_1_SPI_INSTANCE     SPI1
 
 // MPU6000 interrupts
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #if defined(OMNIBUSF4SD)
 #define GYRO_1_ALIGN            CW270_DEG
