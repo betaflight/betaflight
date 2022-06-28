@@ -1,6 +1,5 @@
 # Builds Betaflight Firmware.
 #
-# After building, artifacts are kept for 14 days.
 
 name: CI
 
