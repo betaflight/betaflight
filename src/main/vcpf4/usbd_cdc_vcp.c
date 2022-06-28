@@ -21,11 +21,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include <stdbool.h>
+
 #include "platform.h"
 
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
-#include "stdbool.h"
 #include "drivers/time.h"
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
