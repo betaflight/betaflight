@@ -310,6 +310,7 @@ static void bmi160IntExtiInit(gyroDev_t *gyro)
 static bool bmi160AccRead(accDev_t *acc)
 {
     extDevice_t *dev = &acc->gyro->dev;
+
     switch (acc->gyro->gyroModeSPI) {
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
@@ -366,6 +367,7 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
     {
         // Initialise the tx buffer to all 0x00
         memset(dev->txBuf, 0x00, 14);
+
         // Check that minimum number of interrupts have been detected
 
         // We need some offset from the gyro interrupts to ensure sampling after the interrupt
@@ -377,8 +379,8 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
                 dev->txBuf[1] = BMI160_REG_GYR_DATA_X_LSB | 0x80;
                 gyro->segments[0].len = 14;
                 gyro->segments[0].callback = bmi160Intcallback;
-                gyro->segments[0].u.buffers.txData = dev.txBuf[1];
-                gyro->segments[0].u.buffers.rxData = dev.rxBuf[1];
+                gyro->segments[0].u.buffers.txData = &dev->txBuf[1];
+                gyro->segments[0].u.buffers.rxData = &dev->rxBuf[1];
                 gyro->segments[0].negateCS = true;
                 gyro->gyroModeSPI = GYRO_EXTI_INT_DMA;
             } else {
@@ -400,8 +402,8 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-        segments[0].u.buffers.txData = dev.txBuf[1];
-        segments[0].u.buffers.rxData = dev.rxBuf[1];
+        segments[0].u.buffers.txData = &dev->txBuf[1];
+        segments[0].u.buffers.rxData = &dev->rxBuf[1];
 
         spiSequence(dev, &segments[0]);
 
