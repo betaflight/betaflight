@@ -23,7 +23,7 @@
 #include "pg/pg.h"
 
 #define MAX_MANUFACTURER_ID_LENGTH 4
-#define MAX_BOARD_NAME_LENGTH 20
+#define MAX_BOARD_NAME_LENGTH 24
 #define SIGNATURE_LENGTH 32
 
 // Warning: This configuration is meant to be applied when loading the initial
