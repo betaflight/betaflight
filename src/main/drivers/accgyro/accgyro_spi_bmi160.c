@@ -329,7 +329,7 @@ static bool bmi160AccRead(accDev_t *acc)
         // Wait for completion
         spiWait(&acc->gyro->dev);
 
-        uint16_t *accData = (uint16_t *)dev->rxBuf;
+        int16_t *accData = (int16_t *)dev->rxBuf;
         acc->ADCRaw[X] = accData[1];
         acc->ADCRaw[Y] = accData[2];
         acc->ADCRaw[Z] = accData[3];
@@ -342,7 +342,7 @@ static bool bmi160AccRead(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
-        uint16_t *accData = (uint16_t *)dev->rxBuf;
+        int16_t *accData = (int16_t *)dev->rxBuf;
         acc->ADCRaw[X] = accData[4];
         acc->ADCRaw[Y] = accData[5];
         acc->ADCRaw[Z] = accData[6];
@@ -361,7 +361,7 @@ static bool bmi160AccRead(accDev_t *acc)
 static bool bmi160GyroRead(gyroDev_t *gyro)
 {
     extDevice_t *dev = &gyro->dev;
-    uint16_t *gyroData = (uint16_t *)dev->rxBuf;
+    int16_t *gyroData = (int16_t *)dev->rxBuf;
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {
@@ -377,7 +377,7 @@ static bool bmi160GyroRead(gyroDev_t *gyro)
             if (spiUseDMA(dev)) {
                 dev->callbackArg = (uint32_t)gyro;
                 dev->txBuf[1] = BMI160_REG_GYR_DATA_X_LSB | 0x80;
-                gyro->segments[0].len = 14;
+                gyro->segments[0].len = 13;
                 gyro->segments[0].callback = bmi160Intcallback;
                 gyro->segments[0].u.buffers.txData = &dev->txBuf[1];
                 gyro->segments[0].u.buffers.rxData = &dev->rxBuf[1];
