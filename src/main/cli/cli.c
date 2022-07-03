@@ -289,8 +289,6 @@ static const char * const *sensorHardwareNames[] = {
 // Needs to be aligned with mcuTypeId_e
 static const char *mcuTypeNames[] = {
     "SIMULATOR",
-    "F103",
-    "F303",
     "F40X",
     "F411",
     "F446",
