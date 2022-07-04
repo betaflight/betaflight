@@ -218,7 +218,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
         return;
     }
 
-    if (gpsSol.numSat >= 5) {
+    if (gpsSol.numSat >= gpsConfig()->gpsMinimumSats) {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_3D;
     } else {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_2D;

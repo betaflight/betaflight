@@ -22,6 +22,7 @@ extern "C" {
 #include "platform.h"
 #include "common/utils.h"
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "io/gps.h"
@@ -36,6 +37,8 @@ extern "C" {
 #include "sensors/acceleration.h"
 #include "scheduler/scheduler.h"
 #include "fc/tasks.h"
+
+PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 }
 
 #include "unittest_macros.h"

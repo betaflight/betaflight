@@ -1452,6 +1452,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         // Added in API version 1.43
         sbufWriteU8(dst, gpsConfig()->gps_set_home_point_once);
         sbufWriteU8(dst, gpsConfig()->gps_ublox_use_galileo);
+        // Added in API version 1.45
+        sbufWriteU8(dst, gpsConfig()->gpsRequiredSats);
+        sbufWriteU8(dst, gpsConfig()->gpsMinimumSats);
         break;
 
     case MSP_RAW_GPS:
@@ -1492,7 +1495,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
-        sbufWriteU8(dst,  gpsRescueConfig()->minSats);
+        sbufWriteU8(dst, 0); // not required in API 1.44, gpsRescueConfig()->minSats
+
         // Added in API version 1.43
         sbufWriteU16(dst, gpsRescueConfig()->ascendRate);
         sbufWriteU16(dst, gpsRescueConfig()->descendRate);
@@ -2690,6 +2694,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gpsConfigMutable()->gps_set_home_point_once = sbufReadU8(src);
             gpsConfigMutable()->gps_ublox_use_galileo = sbufReadU8(src);
         }
+        if (sbufBytesRemaining(src) >= 2) {
+            // Added in API version 1.45
+            gpsConfigMutable()->gpsRequiredSats = sbufReadU8(src);
+            gpsConfigMutable()->gpsMinimumSats = sbufReadU8(src);
+        }
+
         break;
 
 #ifdef USE_GPS_RESCUE
@@ -2702,7 +2712,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleHover = sbufReadU16(src);
         gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
-        gpsRescueConfigMutable()->minSats = sbufReadU8(src);
+        sbufReadU8(src);  // not used since 1.43, was gps rescue minSats
         if (sbufBytesRemaining(src) >= 6) {
             // Added in API version 1.43
             gpsRescueConfigMutable()->ascendRate = sbufReadU16(src);

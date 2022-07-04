@@ -63,6 +63,7 @@
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/gps_rescue.h"
+#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -1450,6 +1451,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_NOISE_LPF, "%d",          barometerConfig()->baro_noise_lpf);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_VARIO_LPF, "%d",          barometerConfig()->baro_vario_lpf);
 #endif
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALT_SOURCE, "%d",      positionConfig()->altSource);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALT_PREFER_BARO, "%d", positionConfig()->altPreferBaro);
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
 #endif
@@ -1520,6 +1523,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_PROVIDER, "%d",               gpsConfig()->provider)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_SET_HOME_POINT_ONCE, "%d",    gpsConfig()->gps_set_home_point_once)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_USE_3D_SPEED, "%d",           gpsConfig()->gps_use_3d_speed)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_REQUIRED_SATS, "%d",          gpsConfig()->gpsRequiredSats)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_MINIMUM_SATS, "%d",           gpsConfig()->gpsMinimumSats)
 
 #ifdef USE_GPS_RESCUE
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ANGLE, "%d",           gpsRescueConfig()->angle)
@@ -1543,7 +1548,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCEND_RATE, "%d",    gpsRescueConfig()->descendRate)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER, "%d",  gpsRescueConfig()->throttleHover)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_SANITY_CHECKS, "%d",   gpsRescueConfig()->sanityChecks)
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_SATS, "%d",        gpsRescueConfig()->minSats)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_DTH, "%d",         gpsRescueConfig()->minRescueDth)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, "%d", gpsRescueConfig()->allowArmingWithoutFix)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALT_MODE, "%d",        gpsRescueConfig()->altitudeMode)

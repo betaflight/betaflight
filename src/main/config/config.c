@@ -209,11 +209,11 @@ static void validateAndFixRatesSettings(void)
     }
 }
 
-static void validateAndFixPositionConfig(void)
+static void validateAndFixMinSatsGpsConfig(void)
 {
-    if (positionConfig()->altNumSatsBaroFallback >= positionConfig()->altNumSatsGpsUse) {
-        positionConfigMutable()->altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE;
-        positionConfigMutable()->altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK;
+    if (gpsConfig()->gpsMinimumSats >= gpsConfig()->gpsRequiredSats) {
+        gpsConfigMutable()->gpsRequiredSats = GPS_REQUIRED_SAT_COUNT;
+        gpsConfigMutable()->gpsMinimumSats = GPS_MINIMUM_SAT_COUNT;
     }
 }
 
@@ -603,7 +603,7 @@ static void validateAndFixConfig(void)
     targetValidateConfiguration();
 #endif
 
-    validateAndFixPositionConfig();
+    validateAndFixMinSatsGpsConfig();
 }
 
 void validateAndFixGyroConfig(void)
