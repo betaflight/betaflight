@@ -9,10 +9,6 @@ BASE_TARGET   := $(call get_base_target,$(TARGET))
 # silently ignore if the file is not present. Allows for target specific.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
 
-ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
-OPBL            = yes
-endif
-
 # silently ignore if the file is not present. Allows for target defaults.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
