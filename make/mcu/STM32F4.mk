@@ -138,10 +138,10 @@ VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F411_TARGETS)))
-DEVICE_FLAGS    = -DSTM32F411xE
+DEVICE_FLAGS    = -DSTM32F411xE -finline-limit=20
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
 STARTUP_SRC     = startup_stm32f411xe.s
 else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))

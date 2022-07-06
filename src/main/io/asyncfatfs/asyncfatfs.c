@@ -2141,7 +2141,7 @@ afatfsOperationStatus_e afatfs_fseek(afatfsFilePtr_t file, int32_t offset, afatf
         break;
 
         case AFATFS_SEEK_SET:
-            FALLTHROUGH;
+        break;
     }
 
     // Now we have a SEEK_SET with a positive offset. Begin by seeking to the start of the file
