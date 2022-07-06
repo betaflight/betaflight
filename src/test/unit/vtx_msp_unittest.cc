@@ -111,4 +111,6 @@ extern "C" {
 
     mspDescriptor_t getMspSerialPortDescriptor(const uint8_t ) {return 0;}
     mspDescriptor_t getMspTelemetryDescriptor(void) {return 0;}
+
+    void mspCmsUpdateStatusString(void) {}
 }
