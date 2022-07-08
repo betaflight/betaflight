@@ -54,7 +54,7 @@ jobs:
           path: tools/
           key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
-      - name: Build target (with revision)
+      - name: Build target (without revision)
         if: inputs.release_build == true
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
         
