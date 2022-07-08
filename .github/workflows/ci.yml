@@ -44,7 +44,8 @@ jobs:
       matrix:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Fetch toolchain from cache
         uses: actions/cache@v2
@@ -64,7 +65,7 @@ jobs:
       - name: Publish build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: firmware
+          name: Assets
           path: obj/*.hex
           retention-days: 60
 
