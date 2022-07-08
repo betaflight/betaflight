@@ -1,7 +1,6 @@
 checks: check-target-independence \
 	check-fastdata-usage-correctness \
-	check-platform-included \
-	check-unified-target-naming
+	check-platform-included
 
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
@@ -35,11 +34,3 @@ check-platform-included:
 		echo "$${PLATFORM_NOT_INCLUDED}"; \
 		exit 1; \
 	fi
-
-check-unified-target-naming:
-	$(V1) for target_config in unified_targets/configs/*; do \
-		if [ -f $${target_config} ] && [ $$(sed -n 's/board_name \([A-Z]*\)/\1/p' $${target_config}).config != $$(basename $${target_config}) ]; then \
-			echo "Invalid board name ($$(sed -n 's/board_name \([A-Z]*\)/\1/p' $${target_config})) in Unified Target configuration $${target_config}."; \
-			exit 1; \
-		fi; \
-	done
