@@ -291,3 +291,21 @@ FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float i
     const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
     return filter->movingSum  / denom;
 }
+
+// Simple fixed-point lowpass filter based on integer math
+
+int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal)
+{
+    filter->fp = (filter->fp << filter->beta) - filter->fp;
+    filter->fp += newVal << filter->fpShift;
+    filter->fp >>= filter->beta;
+    int32_t result = filter->fp >> filter->fpShift;
+    return result;
+}
+
+void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift)
+{
+    filter->fp = 0;
+    filter->beta = beta;
+    filter->fpShift = fpShift;
+}

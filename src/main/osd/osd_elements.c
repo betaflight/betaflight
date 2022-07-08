@@ -121,6 +121,7 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 #include "common/unit.h"
+#include "common/filter.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -178,6 +179,9 @@
 
 #define FULL_CIRCLE 360
 #define EFFICIENCY_MINIMUM_SPEED_CM_S 100
+#define EFFICIENCY_CUTOFF_HZ 0.5f
+
+static pt1Filter_t batteryEfficiencyFilt;
 
 #define MOTOR_STOPPED_THRESHOLD_RPM 1000
 
@@ -727,8 +731,8 @@ static void osdElementUpDownReference(osdElementParms_t *element)
             psiB = earthUpinBodyFrame[1]; // calculate the yaw w/re to zenith (use small angle approx for sine)
             direction = UP;
         }
-        int posX = element->elemPosX + round(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
-        int posY = element->elemPosY + round(scaleRangef(thetaB, -M_PIf / 4, M_PIf / 4, -8, 8));
+        int posX = element->elemPosX + lrintf(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
+        int posY = element->elemPosY + lrintf(scaleRangef(thetaB, -M_PIf / 4, M_PIf / 4, -8, 8));
 
         osdDisplayWrite(element, posX, posY, DISPLAYPORT_ATTR_NONE, symbol[direction]);
     }
@@ -779,20 +783,21 @@ static void osdBackgroundCameraFrame(osdElementParms_t *element)
     element->drawElement = false;  // element already drawn
 }
 
+static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
+{
+    unsigned int i;
+    for (i = 0; i < maxSrcLength && src[i]; i++) {
+            dest[i] = toupper((unsigned char)src[i]);
+    }
+    dest[i] = '\0';
+}
+
 static void osdBackgroundCraftName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->name) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
-            if (pilotConfig()->name[i]) {
-                element->buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, pilotConfig()->name, MAX_NAME_LENGTH);
     }
 }
 
@@ -871,15 +876,7 @@ static void osdBackgroundDisplayName(osdElementParms_t *element)
     if (strlen(pilotConfig()->displayName) == 0) {
         strcpy(element->buff, "DISPLAY_NAME");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
-            if (pilotConfig()->displayName[i]) {
-                element->buff[i] = toupper((unsigned char)pilotConfig()->displayName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, pilotConfig()->displayName, MAX_NAME_LENGTH);
     }
 }
 
@@ -897,15 +894,7 @@ static void osdElementRateProfileName(osdElementParms_t *element)
     if (strlen(currentControlRateProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "RATE_%u", getCurrentControlRateProfileIndex() + 1);
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (currentControlRateProfile->profileName[i]) {
-                element->buff[i] = toupper((unsigned char)currentControlRateProfile->profileName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, currentControlRateProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
 
@@ -914,15 +903,7 @@ static void osdElementPidProfileName(osdElementParms_t *element)
     if (strlen(currentPidProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "PID_%u", getCurrentPidProfileIndex() + 1);
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (currentPidProfile->profileName[i]) {
-                element->buff[i] = toupper((unsigned char)currentPidProfile->profileName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, currentPidProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
 #endif
@@ -935,15 +916,7 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
     if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
         tfp_sprintf(element->buff, "OSD_%u", profileIndex);
     } else {
-        unsigned i;
-        for (i = 0; i < OSD_PROFILE_NAME_LENGTH; i++) {
-            if (osdConfig()->profile[profileIndex - 1][i]) {
-                element->buff[i] = toupper((unsigned char)osdConfig()->profile[profileIndex - 1][i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, osdConfig()->profile[profileIndex - 1], OSD_PROFILE_NAME_LENGTH);
     }
 }
 #endif
@@ -1019,7 +992,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (GPS_distanceToHome > 0) {
-            const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            const int h = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
             element->buff[0] = SYM_OVER_HOME;
@@ -1082,12 +1055,9 @@ static void osdElementEfficiency(osdElementParms_t *element)
 {
     int efficiency = 0;
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
-        const int speedX100 = osdGetSpeedToSelectedUnit(gpsSol.groundSpeed * 100); // speed * 100 for improved resolution at slow speeds
-        
-        if (speedX100 > 0) {
-            const int mAmperage = getAmperage() * 10; // Current in mA
-            efficiency = mAmperage * 100 / speedX100; // mAmperage * 100 to cancel out speed * 100 from above
-        }
+        const float speed = (float)osdGetSpeedToSelectedUnit(gpsSol.groundSpeed);
+        const float mAmperage = (float)getAmperage() * 10.f; // Current in mA
+        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed)));
     }
 
     const char unitSymbol = osdConfig()->units == UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
@@ -1846,7 +1816,7 @@ void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
 {
     if (backgroundLayerSupported) {
         displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
-        displayClearScreen(osdDisplayPort);
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
         for (unsigned i = 0; i < activeOsdElementCount; i++) {
             osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
         }
@@ -1858,6 +1828,7 @@ void osdElementsInit(bool backgroundLayerFlag)
 {
     backgroundLayerSupported = backgroundLayerFlag;
     activeOsdElementCount = 0;
+    pt1FilterInit(&batteryEfficiencyFilt, pt1FilterGain(EFFICIENCY_CUTOFF_HZ, 1.0f / osdConfig()->framerate_hz));
 }
 
 void osdSyncBlink() {

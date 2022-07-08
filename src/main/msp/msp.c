@@ -75,6 +75,7 @@
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
+#include "fc/dispatch.h"
 #include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -142,6 +143,7 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 
+#include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -383,6 +385,48 @@ static void mspRebootFn(serialPort_t *serialPort)
     // control should never return here.
     while (true) ;
 }
+
+#define MSP_DISPATCH_DELAY_US 1000000
+
+void mspReboot(dispatchEntry_t* self)
+{
+    UNUSED(self);
+
+    if (ARMING_FLAG(ARMED)) {
+        return;
+    }
+
+    mspRebootFn(NULL);
+}
+
+dispatchEntry_t mspRebootEntry =
+{
+    mspReboot, 0, NULL, false
+};
+
+void writeReadEeprom(dispatchEntry_t* self)
+{
+    UNUSED(self);
+
+    if (ARMING_FLAG(ARMED)) {
+        return;
+    }
+
+    writeEEPROM();
+    readEEPROM();
+
+#ifdef USE_VTX_TABLE
+    if (vtxTableNeedsInit) {
+        vtxTableNeedsInit = false;
+        vtxTableInit();  // Reinitialize and refresh the in-memory copies
+    }
+#endif
+}
+
+dispatchEntry_t writeReadEepromEntry =
+{
+    writeReadEeprom, 0, NULL, false
+};
 
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
@@ -1284,7 +1328,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
-        sbufWriteU8(dst, currentControlRateProfile->dynThrPID);
+        sbufWriteU8(dst, currentControlRateProfile->tpa_rate);
         sbufWriteU8(dst, currentControlRateProfile->thrMid8);
         sbufWriteU8(dst, currentControlRateProfile->thrExpo8);
         sbufWriteU16(dst, currentControlRateProfile->tpa_breakpoint);
@@ -1662,6 +1706,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, blackboxGetRateDenom());
         sbufWriteU16(dst, blackboxGetPRatio());
         sbufWriteU8(dst, blackboxConfig()->sample_rate);
+        // Added in MSP API 1.45
+        sbufWriteU32(dst, blackboxConfig()->fields_disabled_mask);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1669,6 +1715,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
         sbufWriteU16(dst, 0);
         sbufWriteU8(dst, 0);
+        // Added in MSP API 1.45
+        sbufWriteU32(dst, 0);
 #endif
         break;
 
@@ -2193,6 +2241,11 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
 #endif
 
+#if defined(USE_MSP_OVER_TELEMETRY)
+        if (featureIsEnabled(FEATURE_RX_SPI) && srcDesc == getMspTelemetryDescriptor()) {
+            dispatchAdd(&mspRebootEntry, MSP_DISPATCH_DELAY_US);
+        } else
+#endif
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
         }
@@ -2566,7 +2619,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
 
             value = sbufReadU8(src);
-            currentControlRateProfile->dynThrPID = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
+            currentControlRateProfile->tpa_rate = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
             currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
@@ -3030,6 +3083,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         }
         pidInitConfig(currentPidProfile);
+        initEscEndpoints();
         mixerInitProfile();
 
         break;
@@ -3075,15 +3129,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         // ignore how long it takes to avoid confusing the scheduler
         schedulerIgnoreTaskStateTime();
 
-        writeEEPROM();
-        readEEPROM();
-
-#ifdef USE_VTX_TABLE
-        if (vtxTableNeedsInit) {
-            vtxTableNeedsInit = false;
-            vtxTableInit();  // Reinitialize and refresh the in-memory copies
-        }
+#if defined(USE_MSP_OVER_TELEMETRY)
+        if (featureIsEnabled(FEATURE_RX_SPI) && srcDesc == getMspTelemetryDescriptor()) {
+            dispatchAdd(&writeReadEepromEntry, MSP_DISPATCH_DELAY_US);
+        } else
 #endif
+        {
+            writeReadEeprom(NULL);
+        }
 
         break;
 
@@ -3109,6 +3162,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 // sample_rate not specified in MSP, so calculate it from old p_ratio
                 blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
+            }
+
+            // Added in MSP API 1.45
+            if (sbufBytesRemaining(src) >= 4) {
+                blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
             }
         }
         break;
@@ -3681,6 +3739,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadData(src, boardName, MIN(length, MAX_BOARD_NAME_LENGTH));
             if (length > MAX_BOARD_NAME_LENGTH) {
                 sbufAdvance(src, length - MAX_BOARD_NAME_LENGTH);
+                length = MAX_BOARD_NAME_LENGTH;
             }
             boardName[length] = '\0';
             length = sbufReadU8(src);
@@ -3688,6 +3747,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadData(src, manufacturerId, MIN(length, MAX_MANUFACTURER_ID_LENGTH));
             if (length > MAX_MANUFACTURER_ID_LENGTH) {
                 sbufAdvance(src, length - MAX_MANUFACTURER_ID_LENGTH);
+                length = MAX_MANUFACTURER_ID_LENGTH;
             }
             manufacturerId[length] = '\0';
 

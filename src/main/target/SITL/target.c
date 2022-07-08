@@ -243,8 +243,6 @@ void systemInit(void) {
         exit(1);
     }
 
-    // serial can't been slow down
-    rescheduleTask(TASK_SERIAL, 1);
 }
 
 void systemReset(void){
@@ -334,7 +332,7 @@ uint32_t millis(void) {
     return millis64() & 0xFFFFFFFF;
 }
 
-uint32_t clockCyclesToMicros(uint32_t clockCycles)
+int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles;
 }

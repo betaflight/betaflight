@@ -22,9 +22,10 @@
 
 #ifdef USE_CAMERA_CONTROL
 
+#include <math.h>
+
 #include "camera_control.h"
 #include "io.h"
-#include "math.h"
 #include "nvic.h"
 #include "pwm_output.h"
 #include "time.h"
@@ -129,11 +130,7 @@ void cameraControlInit(void)
             return;
         }
 
-        #ifdef STM32F1
-            IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
-        #else
-            IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
-        #endif
+        IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
 
         pwmOutConfig(&cameraControlRuntime.channel, timerHardware, timerClock(TIM6), CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
 

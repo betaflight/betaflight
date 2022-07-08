@@ -86,7 +86,7 @@ float dshotConvertFromExternal(uint16_t externalValue)
 
 uint16_t dshotConvertToExternal(float motorValue)
 {
-    uint16_t externalValue;
+    float externalValue;
 
     if (featureIsEnabled(FEATURE_3D)) {
         if (motorValue == DSHOT_CMD_MOTOR_STOP || motorValue < DSHOT_MIN_THROTTLE) {
@@ -100,7 +100,7 @@ uint16_t dshotConvertToExternal(float motorValue)
         externalValue = (motorValue < DSHOT_MIN_THROTTLE) ? PWM_RANGE_MIN : scaleRangef(motorValue, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE, PWM_RANGE_MIN + 1, PWM_RANGE_MAX);
     }
 
-    return externalValue;
+    return lrintf(externalValue);
 }
 
 FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)

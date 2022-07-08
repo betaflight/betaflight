@@ -22,9 +22,6 @@
 #define TARGET_BOARD_IDENTIFIER "SPK2"
 
 #define USBD_PRODUCT_STRING "Sparky 2.0"
-#ifdef OPBL
-    #define USBD_SERIALNUMBER_STRING "0x8020000"
-#endif
 
 #define LED0_PIN                PB5
 #define LED1_PIN                PB4
@@ -37,10 +34,7 @@
 #define INVERTER_PIN_UART6      PC6
 
 // MPU9250 interrupt
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC5
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO_1_CS_PIN           PC4

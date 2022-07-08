@@ -29,13 +29,14 @@
 
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
 
-#include "config/config.h"
+#include "fc/dispatch.h"
 
 #include "pg/rx_spi.h"
 
@@ -51,21 +52,30 @@
 #include "rx/a7105_flysky.h"
 #include "rx/cc2500_sfhss.h"
 #include "rx/cyrf6936_spektrum.h"
-
+#include "rx/expresslrs.h"
 
 uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
+static void nullProtocolStop(void) {}
+
 typedef bool (*protocolInitFnPtr)(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeState, rxSpiExtiConfig_t *extiConfig);
 typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
 typedef rx_spi_received_e (*protocolProcessFrameFnPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
+typedef void (*protocolStopFnPtr)(void);
 
 static protocolInitFnPtr protocolInit;
 static protocolDataReceivedFnPtr protocolDataReceived;
 static protocolProcessFrameFnPtr protocolProcessFrame;
 static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
+static protocolStopFnPtr protocolStop = nullProtocolStop;
+
+static rxSpiExtiConfig_t extiConfig = {
+    .ioConfig = IOCFG_IN_FLOATING,
+    .trigger = BETAFLIGHT_EXTI_TRIGGER_RISING,
+};
 
 STATIC_UNIT_TESTED float rxSpiReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
 {
@@ -175,6 +185,14 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = spektrumSpiSetRcDataFromPayload;
         break;
 #endif
+#ifdef USE_RX_EXPRESSLRS
+    case RX_SPI_EXPRESSLRS:
+        protocolInit = expressLrsSpiInit;
+        protocolDataReceived = expressLrsDataReceived;
+        protocolSetRcDataFromPayload = expressLrsSetRcDataFromPayload;
+        protocolStop = expressLrsStop;
+        break;
+#endif
     default:
         return false;
     }
@@ -182,10 +200,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
     return true;
 }
 
-/*
+/* Called by scheduler immediately after real-time tasks
  * Returns true if the RX has received new data.
- * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
- * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
 static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
@@ -206,7 +222,10 @@ static uint8_t rxSpiFrameStatus(rxRuntimeState_t *rxRuntimeState)
 
     return status;
 }
-
+/* Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
+ * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
+ *
+ */
 static bool rxSpiProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
@@ -241,11 +260,6 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
         return false;
     }
 
-    rxSpiExtiConfig_t extiConfig = {
-        .ioConfig = IOCFG_IN_FLOATING,
-        .trigger = BETAFLIGHT_EXTI_TRIGGER_RISING,
-    };
-
     ret = protocolInit(rxSpiConfig, rxRuntimeState, &extiConfig);
 
     if (rxSpiExtiConfigured()) {
@@ -255,12 +269,24 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
     }
 
     rxSpiNewPacketAvailable = false;
-    rxRuntimeState->rxRefreshRate = 20000;
 
     rxRuntimeState->rcReadRawFn = rxSpiReadRawRC;
     rxRuntimeState->rcFrameStatusFn = rxSpiFrameStatus;
     rxRuntimeState->rcProcessFrameFn = rxSpiProcessFrame;
 
+    dispatchEnable();
+
     return ret;
 }
+
+void rxSpiEnableExti(void)
+{
+    rxSpiExtiInit(extiConfig.ioConfig, extiConfig.trigger);
+}
+
+void rxSpiStop(void)
+{
+    protocolStop();
+}
+
 #endif

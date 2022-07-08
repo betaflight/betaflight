@@ -207,8 +207,6 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     ibusSyncByte = 0;
 
     rxRuntimeState->channelCount = IBUS_MAX_CHANNEL;
-    rxRuntimeState->rxRefreshRate = 20000; // TODO - Verify speed
-
     rxRuntimeState->rcReadRawFn = ibusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
     rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;

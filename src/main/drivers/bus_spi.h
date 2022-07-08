@@ -28,7 +28,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#if defined(STM32F4) || defined(STM32F3)
+#if defined(STM32F4)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
 #define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
@@ -39,11 +39,6 @@
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
 #define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#elif defined(STM32F1)
-#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MOSI_CFG      IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz)
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_50MHz)
 #endif
 
 // De facto standard mode
@@ -71,9 +66,7 @@ typedef enum SPIDevice {
     SPIDEV_6
 } SPIDevice;
 
-#if defined(STM32F1)
-#define SPIDEV_COUNT 2
-#elif defined(STM32F3) || defined(STM32F4)
+#if defined(STM32F4)
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4
@@ -116,6 +109,8 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 bool spiSetBusInstance(extDevice_t *dev, uint32_t device);
 // Determine the divisor to use for a given bus frequency
 uint16_t spiCalculateDivider(uint32_t freq);
+// Return the SPI clock based on the given divisor
+uint32_t spiCalculateClock(uint16_t spiClkDivisor);
 // Set the clock divisor to be used for accesses by the given device
 void spiSetClkDivisor(const extDevice_t *dev, uint16_t divider);
 // Set the clock phase/polarity to be used for accesses by the given device
@@ -127,10 +122,6 @@ void spiDmaEnable(const extDevice_t *dev, bool enable);
 void spiSequence(const extDevice_t *dev, busSegment_t *segments);
 // Wait for DMA completion
 void spiWait(const extDevice_t *dev);
-// Indicate that the bus on which this device resides may initiate DMA transfers from interrupt context
-void spiSetAtomicWait(const extDevice_t *dev);
-// Wait for DMA completion and claim the bus driver - use this when waiting for a prior access to complete before starting a new one
-void spiWaitClaim(const extDevice_t *dev);
 // Return true if DMA engine is busy
 bool spiIsBusy(const extDevice_t *dev);
 

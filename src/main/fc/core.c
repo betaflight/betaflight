@@ -440,7 +440,7 @@ void disarm(flightLogDisarmReason_e reason)
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
-        if (flipOverAfterCrashActive || isLaunchControlActive()) {
+        if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || isLaunchControlActive()) {
             osdSuppressStats(true);
         }
 #endif
@@ -744,12 +744,6 @@ bool isAirmodeActivated()
  */
 bool processRx(timeUs_t currentTimeUs)
 {
-    timeDelta_t frameAgeUs;
-    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
-
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
-    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
-
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
         return false;
     }
@@ -767,7 +761,6 @@ bool processRx(timeUs_t currentTimeUs)
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();
     }
-    failsafeUpdateState();
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
@@ -968,7 +961,6 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
     bool canUseHorizonMode = true;
-
     if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive()) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -1004,10 +996,10 @@ void processRxModes(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
+        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));
     } else {
         LED1_OFF;
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
+        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / 10.0f));
     }
 
     if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {

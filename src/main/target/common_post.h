@@ -108,6 +108,9 @@
 #undef USE_TELEMETRY_CRSF
 #undef USE_CRSF_LINK_STATISTICS
 #undef USE_CRSF_V3
+#endif
+
+#if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF)
 #undef USE_RX_RSSI_DBM
 #endif
 
@@ -149,6 +152,10 @@
 
 #if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
 #undef USE_MSP_OVER_TELEMETRY
+#endif
+
+#if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)
+#undef USE_RX_MSP_OVERRIDE
 #endif
 
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
@@ -400,11 +407,6 @@ extern uint8_t __config_end;
 
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
-#endif
-
-#if !defined(USE_EXTI)
-#undef USE_RX_SPI
-#undef USE_RANGEFINDER_HCSR04
 #endif
 
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)

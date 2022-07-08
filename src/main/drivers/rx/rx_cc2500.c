@@ -50,20 +50,12 @@ void cc2500ReadFifo(uint8_t *dpbuffer, uint8_t len)
 
 void cc2500WriteCommand(uint8_t command, uint8_t data)
 {
-    // Burst writes require an interbyte gap, see fig. 7, pg. 22 in https://www.ti.com/lit/ds/symlink/cc2500.pdf
-    // As such gaps can't be inserted if DMA is being used, inhibit DMA on this bus for the duration of this call
-    rxSpiDmaEnable(false);
     rxSpiWriteCommand(command, data);
-    rxSpiDmaEnable(true);
 }
 
 void cc2500WriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length)
 {
-    // Burst writes require an interbyte gap, see fig. 7, pg. 22 in https://www.ti.com/lit/ds/symlink/cc2500.pdf
-    // As such gaps can't be inserted if DMA is being used, inhibit DMA on this bus for the duration of this call
-    rxSpiDmaEnable(false);
     rxSpiWriteCommandMulti(command, data, length);
-    rxSpiDmaEnable(true);
 }
 
 void cc2500WriteFifo(uint8_t *dpbuffer, uint8_t len)
@@ -116,6 +108,10 @@ void cc2500SetPower(uint8_t power)
 
 uint8_t cc2500Reset(void)
 {
+    // Writes require an interbyte gap, see fig. 7, pg. 22 in https://www.ti.com/lit/ds/symlink/cc2500.pdf
+    // As such gaps can't be inserted if DMA is being used, inhibit DMA for this device
+    rxSpiDmaEnable(false);
+
     cc2500Strobe(CC2500_SRES);
     delayMicroseconds(1000); // 1000us
     // CC2500_SetTxRxMode(TXRX_OFF);

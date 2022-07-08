@@ -147,7 +147,7 @@ VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
@@ -216,6 +216,28 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
 STARTUP_SRC         = startup_stm32h723xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(H730xB_TARGETS)))
+DEVICE_FLAGS       += -DSTM32H730xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h730_128m.ld
+STARTUP_SRC         = startup_stm32h730xx.s
+DEFAULT_TARGET_FLASH := 128
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+
+ifeq ($(TARGET_FLASH),)
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
+endif
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE      := 1024
+# TARGET_FLASH now becomes the amount of MEMORY-MAPPED address space that is occupied by the firmware
+# and the maximum size of the data stored on the external flash device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h730_exst.ld
+LD_SCRIPTS          = $(LINKER_DIR)/stm32_h730_common.ld $(LINKER_DIR)/stm32_h730_common_post.ld
+endif
+
 
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H750xx

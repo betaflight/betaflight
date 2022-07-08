@@ -226,7 +226,6 @@
 #define USE_TIMER
 #define USE_PWM_OUTPUT
 #define USE_MOTOR
-#define USE_EXTI
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04

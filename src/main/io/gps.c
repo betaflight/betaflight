@@ -43,6 +43,7 @@
 #include "drivers/light_led.h"
 #include "drivers/time.h"
 
+#include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/serial.h"
@@ -80,13 +81,13 @@ static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
 int32_t GPS_home[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint32_t GPS_distanceToHomeCm;
+int16_t GPS_directionToHome;        // direction to home or hol point in degrees * 10
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
-float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 int16_t nav_takeoff_bearing;
 
-#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 5.4Km/h 3.35mph
+#define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 0.54 km/h 0.335 mph
 
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
@@ -766,7 +767,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 {
     static gpsState_e gpsStateDurationUs[GPS_STATE_COUNT];
     timeUs_t executeTimeUs;
-    gpsState_e gpsCurState = gpsData.state;
+    gpsState_e gpsCurrentState = gpsData.state;
 
     // read out available GPS bytes
     if (gpsPort) {
@@ -859,24 +860,38 @@ void gpsUpdate(timeUs_t currentTimeUs)
             break;
     }
 
-    executeTimeUs = micros() - currentTimeUs;
-
-    if (executeTimeUs > gpsStateDurationUs[gpsCurState]) {
-        gpsStateDurationUs[gpsCurState] = executeTimeUs;
-    }
-    schedulerSetNextStateTime(gpsStateDurationUs[gpsData.state]);
-
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
     if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
         DISABLE_STATE(GPS_FIX_HOME);
     }
+
+    uint8_t minSats = 5;
+
 #if defined(USE_GPS_RESCUE)
     if (gpsRescueIsConfigured()) {
         updateGPSRescueState();
+        minSats = gpsRescueConfig()->minSats;
     }
 #endif
+
+    static bool hasFix = false;
+    if (STATE(GPS_FIX)) {
+        if (gpsIsHealthy() && gpsSol.numSat >= minSats && !hasFix) {
+            // ready beep sequence on fix or requirements for gps rescue met.
+            beeper(BEEPER_READY_BEEP);
+            hasFix = true;
+        }
+    } else {
+        hasFix = false;
+    }
+
+    executeTimeUs = micros() - currentTimeUs;
+    if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
+        gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
+    }
+    schedulerSetNextStateTime(gpsStateDurationUs[gpsData.state]);
 }
 
 static void gpsNewData(uint16_t c)
@@ -1487,25 +1502,26 @@ static bool UBLOX_parse_gps(void)
         gpsSol.llh.lon = _buffer.pvt.lon;
         gpsSol.llh.lat = _buffer.pvt.lat;
         gpsSol.llh.altCm = _buffer.pvt.hMSL / 10;  //alt in cm
-        if (next_fix) {
-            ENABLE_STATE(GPS_FIX);
-        } else {
-            DISABLE_STATE(GPS_FIX);
-        }
+        gpsSetFixState(next_fix);
         _new_position = true;
         gpsSol.numSat = _buffer.pvt.numSV;
         gpsSol.hdop = _buffer.pvt.pDOP;
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
-        gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headVeh / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
         if (!rtcHasTime() && (_buffer.pvt.valid & NAV_VALID_DATE) && (_buffer.pvt.valid & NAV_VALID_TIME)) {
-            rtcTime_t temp_time = (_buffer.pvt.sec + _buffer.pvt.min * 60 + _buffer.pvt.hour * 3600 + _buffer.pvt.day * 86400 +
-                                    (_buffer.pvt.year - 70) * 31536000 + ((_buffer.pvt.year - 69) / 4) * 86400 -
-                                    ((_buffer.pvt.year - 1) / 100) * 86400 + ((_buffer.pvt.year + 299) / 400) * 86400) * 1000L;
-            rtcSet(&temp_time);
+            dateTime_t dt;
+            dt.year = _buffer.pvt.year;
+            dt.month = _buffer.pvt.month;
+            dt.day = _buffer.pvt.day;
+            dt.hours = _buffer.pvt.hour;
+            dt.minutes = _buffer.pvt.min;
+            dt.seconds = _buffer.pvt.sec;
+            dt.millis = (_buffer.pvt.nano > 0) ? _buffer.pvt.nano / 1000 : 0; //up to 5ms of error
+            rtcSetDateTime(&dt);
         }
 #endif
         break;
@@ -1771,7 +1787,7 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
                 int32_t dir;
                 GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &lastCoord[GPS_LATITUDE], &lastCoord[GPS_LONGITUDE], &dist, &dir);
                 if (gpsConfig()->gps_use_3d_speed) {
-                    dist = sqrtf(powf(gpsSol.llh.altCm - lastAlt, 2.0f) + powf(dist, 2.0f));
+                    dist = sqrtf(sq(gpsSol.llh.altCm - lastAlt) + sq(dist));
                 }
                 GPS_distanceFlownInCm += dist;
             }
@@ -1821,10 +1837,12 @@ void GPS_calculateDistanceAndDirectionToHome(void)
         uint32_t dist;
         int32_t dir;
         GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[GPS_LATITUDE], &GPS_home[GPS_LONGITUDE], &dist, &dir);
-        GPS_distanceToHome = dist / 100;
-        GPS_directionToHome = dir / 100;
+        GPS_distanceToHome = dist / 100; // m/s
+        GPS_distanceToHomeCm = dist; // cm/sec
+        GPS_directionToHome = dir / 10; // degrees * 10 or decidegrees
     } else {
         GPS_distanceToHome = 0;
+        GPS_distanceToHomeCm = 0;
         GPS_directionToHome = 0;
     }
 }
@@ -1834,16 +1852,6 @@ void onGpsNewData(void)
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
-
-    //
-    // Calculate time delta for navigation loop, range 0-1.0f, in seconds
-    //
-    // Time for calculating x,y speed and navigation pids
-    static uint32_t nav_loopTimer;
-    dTnav = (float)(millis() - nav_loopTimer) / 1000.0f;
-    nav_loopTimer = millis();
-    // prevent runup from bad GPS
-    dTnav = MIN(dTnav, 1.0f);
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {

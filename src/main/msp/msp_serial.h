@@ -68,16 +68,14 @@ typedef enum {
 } mspPendingSystemRequest_e;
 
 #define MSP_PORT_INBUF_SIZE 192
+#define MSP_PORT_OUTBUF_SIZE_MIN 320
+
 #ifdef USE_FLASHFS
-#ifdef STM32F1
-#define MSP_PORT_DATAFLASH_BUFFER_SIZE 1024
-#else
 #define MSP_PORT_DATAFLASH_BUFFER_SIZE 4096
-#endif
 #define MSP_PORT_DATAFLASH_INFO_SIZE 16
 #define MSP_PORT_OUTBUF_SIZE (MSP_PORT_DATAFLASH_BUFFER_SIZE + MSP_PORT_DATAFLASH_INFO_SIZE)
 #else
-#define MSP_PORT_OUTBUF_SIZE 320 // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1.
+#define MSP_PORT_OUTBUF_SIZE MSP_PORT_OUTBUF_SIZE_MIN // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1.
 #endif
 
 typedef struct __attribute__((packed)) {

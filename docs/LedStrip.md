@@ -72,6 +72,13 @@ The BEACON profile is used to find a lost quad, it flashes all LEDs white once p
 4. Type ```save``` followed by enter to save the race color to be used.
 
 
+###### BRIGHTNESS: The brightness can be configured using the CLI:
+1. Open the CLI.
+2. Type ```get ledstrip_brightness``` followed by enter to display the current brightness.
+3. Type ```set ledstrip_brightness=x``` where x is the brightness in percentage between 5 and 100.
+4. Type ```save``` followed by enter to save the brightness level to be used.
+
+
 ## Supported hardware
 
 Only strips of 32 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter, but only the first 32 are used.
@@ -89,6 +96,8 @@ It could be possible to be able to specify the timings required via CLI if users
   * Fits well under motors on mini 250 quads.
 * [Adafruit NeoPixel Stick](https://www.adafruit.com/products/1426) (works well)
   * Measured current consumption in all white mode ~ 350 mA.
+* [Aliexpress SK6812 RBGWW strip](https://www.aliexpress.com/wholesale?SearchText=rgbw+sk6812) (works well)
+  * Alternative [Adafruit NeoPixel Stick RGBW](https://www.adafruit.com/product/2869)
 
 
 ### WS2811 vs WS2812
@@ -96,6 +105,8 @@ It could be possible to be able to specify the timings required via CLI if users
 The [WS2811](https://cdn-shop.adafruit.com/datasheets/WS2811.pdf) is a LED driver IC which is connected to an RGB LED. It accepts data in the form of 8 bits each of Red-Green-Blue.
 
 The [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812.pdf) is integrated into the package of a 50:50 LED rather than as a separate device. It accepts data in the form of 8 bits each of Green-Red-Blue.
+
+With the [SK6812](https://cdn-shop.adafruit.com/product-files/1138/SK6812+LED+datasheet+.pdf) also GRBW variants are supported, which have a fourth (white) channel and such provide a much cleaner white color.
 
 It is thus possible, depending on the LED board/strip being used that either Red-Green-Blue or Green-Red-Blue encoding may be required. This may be controlled by setting the following.
 
@@ -107,8 +118,14 @@ or
 ```
 set ledstrip_grb_rgb = GRB
 ```
+or
+
+```
+set ledstrip_grb_rgb = GRBW
+```
 
 Then confirm the required setting by simply setting an LED to be green. If it lights up red, you have the wrong setting.
+Afterwards check if the second LED also lights up red - if not, you might have 4-color SK6812 LEDs and would have to select GRBW.
 
 ## Connections
 
@@ -136,7 +153,7 @@ The led strip feature can be configured via the GUI.
 GUI:
 Enable the Led Strip feature via the GUI under setup.
 
-Configure the LEDs from the Led Strip tab in the cleanflight GUI.
+Configure the LEDs from the Led Strip tab in the Betaflight GUI.
 First setup how the LEDs are laid out so that you can visualize it later as you configure and so the flight controller knows how many LEDs there are available.
 
 There is a step by step guide on how to use the GUI to configure the Led Strip feature using the GUI http://blog.oscarliang.net/setup-rgb-led-cleanflight/ which was published early 2015 by Oscar Liang which may or may not be up-to-date by the time you read this.
@@ -191,7 +208,7 @@ And each LED has overlays:
 * `T` - `T`hrust state.
 * `B` - `B`link (flash twice) mode.
 * `O` - Lars`O`n Scanner (Cylon Effect).
-* `N` - Blink on la`N`ding (throttle < 50%).
+* `V` - `V`TX Frequency.
 
 `cc` specifies the color number (0 based index).
 
@@ -274,14 +291,28 @@ Note: this mode requires a current sensor. If you don't have the actual device y
 
 This mode blinks the current LED, alternatively from black to the current active color.
 
-#### Blink on landing
-
-This mode blinks the current LED, alternatively from black to the current active color, when throttle is below 50% and the craft is armed.
-
 #### Larson Scanner (Cylon Effect)
 
 The Larson Scanner replicates the scanning "eye" effect seen on the mechanical Cylons and on Kitt from Knight Rider.
 This overlay dims all of the LEDs it is assigned to and brightens certain ones at certain times in accordance with the animation. The animation is active regardless of arm state. 
+
+#### VTX Frequency
+
+This overlay makes the LED color dependent on the current channel of the VTX, in case it is equipped with SmartAudio or IRC Tramp.
+The color is selected according to the following table:
+
+ Frequency range | Default color | Color index
+ --- | --- | ---
+ <= 5672 | White | 1
+ |> 5672 <= 5711 | Red | 2
+ |> 5711 <= 5750 | Orange | 3
+ |> 5750 <= 5789 | Yellow | 4
+ |> 5789 <= 5829 | Green | 6
+ |> 5829 <= 5867 | Blue | 10
+ |> 5867 <= 5906 | Dark violet | 11
+ |> 5906 | Deep pink | 13
+
+The default color can be changed by double-clicking the color and moving the Hue slider or by using the color command in the CLI.
 
 #### Flight Mode & Orientation
 
@@ -354,7 +385,7 @@ Note: Armed State cannot be used with Flight Mode.
 
 #### Thrust state
 
-This mode fades the LED current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at the same time.  Thrust should normally be combined with Color or Mode/Orientation.
+This mode fades the current LED color to the previous/next color in the HSB color space depending on throttle stick position.  When the throttle is in the middle position the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and throttle at the same time.  Thrust should normally be combined with Color or Mode/Orientation.
 
 #### Thrust ring state
 
@@ -445,7 +476,7 @@ Mode Colors can be configured using the cli `mode_color` command.
 - No arguments: lists all mode colors
 - arguments: mode, function, color
 
-First 7 groups of ModeIndexes are :
+First 8 groups of ModeIndexes are :
 
 | mode | name        |
 |------|-------------|
@@ -456,6 +487,7 @@ First 7 groups of ModeIndexes are :
 | 4    | mag         |
 | 5    | baro        |
 | 6    | special     |
+| 7    | channel     |
 
 Modes 0 to 5 functions:
 
@@ -483,11 +515,14 @@ Mode 6 use these functions:
  
 The ColorIndex is picked from the colors array ("palette").
 
+Mode 7 is used along with Thrust state to make the LED color dependent on a channel different from the throttle.
+
 Examples (using the default colors):
 
 - set armed color to red: ```mode_color 6 1 2```
 - set disarmed color to yellow: ```mode_color 6 0 4```
 - set Headfree mode 'south' to Cyan: ```mode_color 1 2 8```
+- set color dependent on AUX 1 in Thrust state: ```mode_color 7 0 4```
 
 ## Positioning
 

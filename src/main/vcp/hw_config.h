@@ -32,13 +32,6 @@
 /* Includes ------------------------------------------------------------------*/
 //#include "platform_config.h"
 #include "usb_type.h"
-#ifdef STM32F303
-#include "stm32f30x.h"
-#endif
-
-#ifdef STM32F10X
-#include "stm32f10x.h"
-#endif
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -53,9 +46,6 @@ void Set_USBClock(void);
 void Enter_LowPowerMode(void);
 void Leave_LowPowerMode(void);
 void USB_Interrupts_Config(void);
-#ifdef STM32F10X
-void USB_Interrupts_Disable(void);
-#endif
 void USB_Cable_Config(FunctionalState NewState);
 void Get_SerialNum(void);
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);  // HJI

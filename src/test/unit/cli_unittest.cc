@@ -235,7 +235,7 @@ size_t getEEPROMStorageSize() {
 
 void setPrintfSerialPort(struct serialPort_s) {}
 
-static const box_t boxes[] = { { 0, "DUMMYBOX", 0 } };
+static const box_t boxes[] = { { "DUMMYBOX", 0, 0 } };
 const box_t *findBoxByPermanentId(uint8_t) { return &boxes[0]; }
 const box_t *findBoxByBoxId(boxId_e) { return &boxes[0]; }
 

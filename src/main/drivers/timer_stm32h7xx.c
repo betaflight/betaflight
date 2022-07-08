@@ -38,8 +38,8 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM3,  .rcc = RCC_APB1L(TIM3),  .inputIrq = TIM3_IRQn},
     { .TIMx = TIM4,  .rcc = RCC_APB1L(TIM4),  .inputIrq = TIM4_IRQn},
     { .TIMx = TIM5,  .rcc = RCC_APB1L(TIM5),  .inputIrq = TIM5_IRQn},
-    { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = 0},
-    { .TIMx = TIM7,  .rcc = RCC_APB1L(TIM7),  .inputIrq = 0},
+    { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = TIM6_DAC_IRQn},
+    { .TIMx = TIM7,  .rcc = RCC_APB1L(TIM7),  .inputIrq = TIM7_IRQn},
     { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),   .inputIrq = TIM8_CC_IRQn},
     { .TIMx = TIM12, .rcc = RCC_APB1L(TIM12), .inputIrq = TIM8_BRK_TIM12_IRQn},
     { .TIMx = TIM13, .rcc = RCC_APB1L(TIM13), .inputIrq = TIM8_UP_TIM13_IRQn},
@@ -173,7 +173,7 @@ uint32_t timerClock(TIM_TypeDef *tim)
     // "Ratio between clock timer and pclk"
     // (Tables are the same, just D2 or CD difference)
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #define PERIPH_PRESCALER(bus) ((RCC->D2CFGR & RCC_D2CFGR_D2PPRE ## bus) >> RCC_D2CFGR_D2PPRE ## bus ## _Pos)
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define PERIPH_PRESCALER(bus) ((RCC->CDCFGR2 & RCC_CDCFGR2_CDPPRE ## bus) >> RCC_CDCFGR2_CDPPRE ## bus ## _Pos)

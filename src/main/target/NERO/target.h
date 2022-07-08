@@ -36,10 +36,7 @@
 #define BEEPER_INVERTED
 
 // MPU6500 interrupt
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PB2
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO_1_CS_PIN           PC4
 #define GYRO_1_SPI_INSTANCE     SPI1

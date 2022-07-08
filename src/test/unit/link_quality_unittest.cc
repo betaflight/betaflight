@@ -45,6 +45,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -78,7 +79,6 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     float motor[8];
     acc_t acc;
-    float accAverage[XYZ_AXIS_COUNT];
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -86,6 +86,7 @@ extern "C" {
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
     timeUs_t simulationTime = 0;
 
@@ -494,6 +495,7 @@ extern "C" {
     bool areMotorsRunning(void){ return true; }
     bool pidOsdAntiGravityActive(void) { return false; }
     bool failsafeIsActive(void) { return false; }
+    bool failsafeIsReceivingRxData(void) { return true; }
     bool gpsIsHealthy(void) { return true; }
     bool gpsRescueIsConfigured(void) { return false; }
     int8_t calculateThrottlePercent(void) { return 0; }
@@ -501,6 +503,7 @@ extern "C" {
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
     void failsafeOnRxSuspend(uint32_t ) {}
     void failsafeOnRxResume(void) {}
+    uint32_t failsafeFailurePeriodMs(void) { return 400; }
     void featureDisableImmediate(uint32_t) { }
     bool rxMspFrameComplete(void) { return false; }
     bool isPPMDataBeingReceived(void) { return false; }
@@ -512,6 +515,7 @@ extern "C" {
     bool taskUpdateRxMainInProgress() { return true; }
     void schedulerIgnoreTaskStateTime(void) { }
     void schedulerIgnoreTaskExecRate(void) { }
+    bool schedulerGetIgnoreTaskExecTime() { return false; }
     void schedulerIgnoreTaskExecTime(void) { }
     void schedulerSetNextStateTime(timeDelta_t) {}
 

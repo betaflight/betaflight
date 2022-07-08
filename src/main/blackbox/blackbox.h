@@ -59,10 +59,11 @@ typedef enum FlightLogEvent {
 } FlightLogEvent;
 
 typedef struct blackboxConfig_s {
+    uint32_t fields_disabled_mask;
     uint8_t sample_rate; // sample rate
     uint8_t device;
-    uint32_t fields_disabled_mask;
     uint8_t mode;
+    uint8_t high_resolution;
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);

@@ -34,78 +34,7 @@
 
 #include "pg/pg_ids.h"
 
-// Backward compatibility for exisiting targets
-
-// F1 targets don't explicitly define pins.
-
-#ifdef STM32F1
-#ifdef USE_UART1
-#ifndef UART1_RX_PIN
-#define UART1_RX_PIN        PA10
-#endif
-#ifndef UART1_TX_PIN
-#define UART1_TX_PIN        PA9
-#endif
-#endif // USE_UART1
-
-#ifdef USE_UART2
-#ifndef UART2_RX_PIN
-#define UART2_RX_PIN        PA3
-#endif
-#ifndef UART2_TX_PIN
-#define UART2_TX_PIN        PA2
-#endif
-#endif // USE_UART2
-#endif // STM32F1
-
-// XXX Is there an F3 target that does not define UART pins?
-
-#ifdef STM32F3
-#ifdef USE_UART1
-#ifndef UART1_TX_PIN
-#define UART1_TX_PIN        PA9
-#endif
-#ifndef UART1_RX_PIN
-#define UART1_RX_PIN        PA10
-#endif
-#endif
-
-#ifdef USE_UART2
-#ifndef UART2_TX_PIN
-#define UART2_TX_PIN        PD5
-#endif
-#ifndef UART2_RX_PIN
-#define UART2_RX_PIN        PD6
-#endif
-#endif
-
-#ifdef USE_UART3
-#ifndef UART3_TX_PIN
-#define UART3_TX_PIN        PB10
-#endif
-#ifndef UART3_RX_PIN
-#define UART3_RX_PIN        PB11
-#endif
-#endif
-
-#ifdef USE_UART4
-#ifndef UART4_TX_PIN
-#define UART4_TX_PIN        PC10
-#endif
-#ifndef UART4_RX_PIN
-#define UART4_RX_PIN        PC11
-#endif
-#endif
-
-#ifdef USE_UART5
-#ifndef UART5_TX_PIN
-#define UART5_TX_PIN        PC12
-#endif
-#ifndef UART5_RX_PIN
-#define UART5_RX_PIN        PD2
-#endif
-#endif
-#endif // STM32F3
+// Backward compatibility for existing targets
 
 // Default pin (NONE).
 

@@ -1,18 +1,16 @@
-# Builds the Betaflight firmware
+# Builds Betaflight Firmware.
 #
-# After building, artifacts are released to a separate repository.
 
 name: CI
 
-on:
-  push:
-    branches:
-      - master
-      - '*-maintenance'
-  pull_request:
-    branches:
-      - master
-      - '*-maintenance'
+on: 
+  workflow_call:
+    inputs:
+      release_build:
+        description: 'Specifies if it is a build that should include commit hash in hex file names or not'
+        default: false
+        required: false
+        type: boolean
 
 jobs:
   setup:
@@ -55,14 +53,20 @@ jobs:
           path: tools/
           key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
-      - name: Build target
+      - name: Build target (with revision)
+        if: inputs.release_build == true
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
+        
+      - name: Build target (with revision)
+        if: inputs.release_build == false
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
         uses: actions/upload-artifact@v2
         with:
           name: firmware
           path: obj/*.hex
+          retention-days: 60
 
   test:
     name: Test

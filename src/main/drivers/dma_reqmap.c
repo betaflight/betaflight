@@ -61,15 +61,13 @@ typedef struct dmaTimerMapping_s {
 #define REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, DMA_REQUEST_ ## periph ## device ## _ ## dir }
 #define REQMAP_TIMUP(periph, timno) { DMA_PERIPH_TIMUP, timno - 1, DMA_REQUEST_ ## TIM ## timno ## _UP }
 
-// Resolve UART/USART mess, also map UART6 requests to LPUART1 requests
+// Resolve UART/USART mess
 #define DMA_REQUEST_UART1_RX DMA_REQUEST_USART1_RX
 #define DMA_REQUEST_UART1_TX DMA_REQUEST_USART1_TX
 #define DMA_REQUEST_UART2_RX DMA_REQUEST_USART2_RX
 #define DMA_REQUEST_UART2_TX DMA_REQUEST_USART2_TX
 #define DMA_REQUEST_UART3_RX DMA_REQUEST_USART3_RX
 #define DMA_REQUEST_UART3_TX DMA_REQUEST_USART3_TX
-#define DMA_REQUEST_UART9_RX DMA_REQUEST_LPUART1_RX
-#define DMA_REQUEST_UART9_TX DMA_REQUEST_LPUART1_TX
 
 // Resolve our preference for MOSI/MISO rather than TX/RX
 #define DMA_REQUEST_SPI1_MOSI DMA_REQUEST_SPI1_TX
@@ -112,8 +110,10 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 4, RX),
     REQMAP_DIR(UART, 5, TX),
     REQMAP_DIR(UART, 5, RX),
-    REQMAP_DIR(UART, 9, TX),
-    REQMAP_DIR(UART, 9, RX),
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, LPUARTDEV_1, DMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, LPUARTDEV_1, DMA_REQUEST_LPUART1_RX },
+#endif
 #endif
 
 #ifdef USE_TIMER
@@ -218,6 +218,8 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define DMA_REQUEST_UART3_TX DMA_REQUEST_USART3_TX
 #define DMA_REQUEST_UART6_RX DMA_REQUEST_USART6_RX
 #define DMA_REQUEST_UART6_TX DMA_REQUEST_USART6_TX
+#define DMA_REQUEST_UART10_RX DMA_REQUEST_USART10_RX
+#define DMA_REQUEST_UART10_TX DMA_REQUEST_USART10_TX
 
 // Resolve our preference for MOSI/MISO rather than TX/RX
 #define DMA_REQUEST_SPI1_MOSI DMA_REQUEST_SPI1_TX
@@ -250,7 +252,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_ADC
     REQMAP(ADC, 1),
     REQMAP(ADC, 2),
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
     REQMAP(ADC, 3),
 #endif
 #endif
@@ -272,6 +274,16 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 7, RX),
     REQMAP_DIR(UART, 8, TX),
     REQMAP_DIR(UART, 8, RX),
+#if defined(STM32H7A3xxQ)
+    REQMAP_DIR(UART, 9, TX),
+    REQMAP_DIR(UART, 9, RX),
+    REQMAP_DIR(UART, 10, TX),
+    REQMAP_DIR(UART, 10, RX),
+#endif
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, LPUARTDEV_1, BDMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, LPUARTDEV_1, BDMA_REQUEST_LPUART1_RX },
+#endif
 #endif
 
 #ifdef USE_TIMER
@@ -365,16 +377,21 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 #ifdef USE_SPI
     // Everything including F405 and F446
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx)
+    { DMA_PERIPH_SPI_MOSI,  SPIDEV_1,  { DMA(2, 5, 3), DMA(2, 3, 3) } },
+    { DMA_PERIPH_SPI_MISO,  SPIDEV_1,  { DMA(2, 2, 3), DMA(2, 0, 3) } },
+#else
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_1,  { DMA(2, 3, 3), DMA(2, 5, 3) } },
     { DMA_PERIPH_SPI_MISO,  SPIDEV_1,  { DMA(2, 0, 3), DMA(2, 2, 3) } },
+#endif
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_2,  { DMA(1, 4, 0) } },
     { DMA_PERIPH_SPI_MISO,  SPIDEV_2,  { DMA(1, 3, 0) } },
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_3,  { DMA(1, 5, 0), DMA(1, 7, 0) } },
     { DMA_PERIPH_SPI_MISO,  SPIDEV_3,  { DMA(1, 0, 0), DMA(1, 2, 0) } },
 
 #if defined(STM32F411xE) || defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F765xx) || defined(STM32F722xx)
-    { DMA_PERIPH_SPI_MOSI,  SPIDEV_4,  { DMA(2, 1, 4) } },
-    { DMA_PERIPH_SPI_MISO,  SPIDEV_4,  { DMA(2, 0, 4) } },
+    { DMA_PERIPH_SPI_MOSI,  SPIDEV_4,  { DMA(2, 1, 4), DMA(2, 4, 5) } },
+    { DMA_PERIPH_SPI_MISO,  SPIDEV_4,  { DMA(2, 0, 4), DMA(2, 3, 5) } },
 
 #ifdef USE_EXTENDED_SPI_DEVICE
     { DMA_PERIPH_SPI_MOSI,  SPIDEV_5,  { DMA(2, 6, 7) } },
@@ -447,93 +464,6 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     { TIM8, TC(CH3), { DMA(2, 2, 0), DMA(2, 4, 7) } },
     { TIM8, TC(CH4), { DMA(2, 7, 7) } },
 };
-#undef TC
-#undef DMA
-
-#else // STM32F3
-    // The embedded ADC24_DMA_REMAP conditional should be removed
-    // when (and if) F3 is going generic.
-#define DMA(d, c) { DMA_CODE(d, 0, c), (dmaResource_t *)DMA ## d ## _Channel ## c }
-static const dmaPeripheralMapping_t dmaPeripheralMapping[18] = {
-#ifdef USE_SPI
-    { DMA_PERIPH_SPI_MOSI,  SPIDEV_1, { DMA(1, 3) } },
-    { DMA_PERIPH_SPI_MISO,  SPIDEV_1, { DMA(1, 2) } },
-    { DMA_PERIPH_SPI_MOSI,  SPIDEV_2, { DMA(1, 5) } },
-    { DMA_PERIPH_SPI_MISO,  SPIDEV_2, { DMA(1, 4) } },
-    { DMA_PERIPH_SPI_MOSI,  SPIDEV_3, { DMA(2, 2) } },
-    { DMA_PERIPH_SPI_MISO,  SPIDEV_3, { DMA(2, 1) } },
-#endif
-
-#ifdef USE_ADC
-    { DMA_PERIPH_ADC,     ADCDEV_1, { DMA(1, 1) } },
-#ifdef ADC24_DMA_REMAP
-    { DMA_PERIPH_ADC,     ADCDEV_2, { DMA(2, 3) } },
-#else
-    { DMA_PERIPH_ADC,     ADCDEV_2, { DMA(2, 1) } },
-#endif
-    { DMA_PERIPH_ADC,     ADCDEV_3, { DMA(2, 5) } },
-#ifdef ADC24_DMA_REMAP
-    { DMA_PERIPH_ADC,     ADCDEV_4, { DMA(2, 4) } },
-#else
-    { DMA_PERIPH_ADC,     ADCDEV_4, { DMA(2, 2) } },
-#endif
-#endif
-
-#ifdef USE_UART
-    { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(1, 4) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_1, { DMA(1, 5) } },
-
-    { DMA_PERIPH_UART_TX, UARTDEV_2, { DMA(1, 7) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_2, { DMA(1, 6) } },
-    { DMA_PERIPH_UART_TX, UARTDEV_3, { DMA(1, 2) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_3, { DMA(1, 3) } },
-    { DMA_PERIPH_UART_TX, UARTDEV_4, { DMA(2, 5) } },
-    { DMA_PERIPH_UART_RX, UARTDEV_4, { DMA(2, 3) } },
-};
-#endif
-
-#define TC(chan) DEF_TIM_CHANNEL(CH_ ## chan)
-
-static const dmaTimerMapping_t dmaTimerMapping[] = {
-    // Generated from 'timer_def.h'
-    { TIM1, TC(CH1), { DMA(1, 2) } },
-    { TIM1, TC(CH2), { DMA(1, 3) } },
-    { TIM1, TC(CH3), { DMA(1, 6) } },
-    { TIM1, TC(CH4), { DMA(1, 4) } },
-
-    { TIM2, TC(CH1), { DMA(1, 5) } },
-    { TIM2, TC(CH2), { DMA(1, 7) } },
-    { TIM2, TC(CH3), { DMA(1, 1) } },
-    { TIM2, TC(CH4), { DMA(1, 7) } },
-
-    { TIM3, TC(CH1), { DMA(1, 6) } },
-    { TIM3, TC(CH3), { DMA(1, 2) } },
-    { TIM3, TC(CH4), { DMA(1, 3) } },
-
-    { TIM4, TC(CH1), { DMA(1, 1) } },
-    { TIM4, TC(CH2), { DMA(1, 4) } },
-    { TIM4, TC(CH3), { DMA(1, 5) } },
-
-    { TIM8, TC(CH1), { DMA(2, 3) } },
-    { TIM8, TC(CH2), { DMA(2, 5) } },
-    { TIM8, TC(CH3), { DMA(2, 1) } },
-    { TIM8, TC(CH4), { DMA(2, 2) } },
-
-    { TIM15, TC(CH1), { DMA(1, 5) } },
-
-#ifdef REMAP_TIM16_DMA
-    { TIM16, TC(CH1), { DMA(1, 6) } },
-#else
-    { TIM16, TC(CH1), { DMA(1, 3) } },
-#endif
-
-#ifdef REMAP_TIM17_DMA
-    { TIM17, TC(CH1), { DMA(1, 7) } },
-#else
-    { TIM17, TC(CH1), { DMA(1, 1) } },
-#endif
-};
-
 #undef TC
 #undef DMA
 #endif

@@ -144,6 +144,7 @@ void processRcStickPositions()
     // an extra guard for disarming through switch to prevent that one frame can disarm it
     static uint8_t rcDisarmTicks;
     static bool doNotRepeat;
+    static bool pendingApplyRollAndPitchTrimDeltaSave = false;
 
     // checking sticks positions
     uint8_t stTmp = 0;
@@ -176,7 +177,8 @@ void processRcStickPositions()
             resetTryingToArm();
             // Disarming via ARM BOX
             resetArmingDisabled();
-            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
+            const bool switchFailsafe = (failsafeIsActive() && (IS_RC_MODE_ACTIVE(BOXFAILSAFE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)));
+            if (ARMING_FLAG(ARMED) && (failsafeIsReceivingRxData() || switchFailsafe)) {
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
                     disarm(DISARM_REASON_SWITCH);
@@ -306,22 +308,28 @@ void processRcStickPositions()
         rollAndPitchTrims_t accelerometerTrimsDelta;
         memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
 
+        if (pendingApplyRollAndPitchTrimDeltaSave && ((rcSticks & THR_MASK) != THR_HI)) {
+            saveConfigAndNotify();
+            pendingApplyRollAndPitchTrimDeltaSave = false;
+            return;
+        }
+
         bool shouldApplyRollAndPitchTrimDelta = false;
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
-            accelerometerTrimsDelta.values.pitch = 2;
+            accelerometerTrimsDelta.values.pitch = 1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_LO + ROL_CE:
-            accelerometerTrimsDelta.values.pitch = -2;
+            accelerometerTrimsDelta.values.pitch = -1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_HI:
-            accelerometerTrimsDelta.values.roll = 2;
+            accelerometerTrimsDelta.values.roll = 1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_LO:
-            accelerometerTrimsDelta.values.roll = -2;
+            accelerometerTrimsDelta.values.roll = -1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         }
@@ -329,7 +337,9 @@ void processRcStickPositions()
 #if defined(USE_ACC)
             applyAccelerometerTrimsDelta(&accelerometerTrimsDelta);
 #endif
-            saveConfigAndNotify();
+            pendingApplyRollAndPitchTrimDeltaSave = true;
+
+            beeperConfirmationBeeps(1);
 
             repeatAfter(STICK_AUTOREPEAT_MS);
 

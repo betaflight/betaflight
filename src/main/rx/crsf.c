@@ -34,8 +34,11 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config.h"
+
 #include "pg/rx.h"
 
+#include "drivers/persistent.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/system.h"
@@ -48,7 +51,7 @@
 
 #include "telemetry/crsf.h"
 
-#define CRSF_TIME_NEEDED_PER_FRAME_US   1100 // 700 ms + 400 ms for potential ad-hoc request
+#define CRSF_TIME_NEEDED_PER_FRAME_US   1750 // a maximally sized 64byte payload will take ~1550us, round up to 1750.
 #define CRSF_TIME_BETWEEN_FRAMES_US     6667 // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
 
 #define CRSF_DIGITAL_CHANNEL_MIN 172
@@ -58,7 +61,7 @@
 
 #define CRSF_LINK_STATUS_UPDATE_TIMEOUT_US  250000 // 250ms, 4 Hz mode 1 telemetry
 
-#define CRSF_FRAME_ERROR_COUNT_THRESHOLD    100
+#define CRSF_FRAME_ERROR_COUNT_THRESHOLD    3
 
 STATIC_UNIT_TESTED bool crsfFrameDone = false;
 STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
@@ -275,12 +278,12 @@ static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsP
 {
     const crsfLinkStatisticsTx_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
-    int16_t rssiDbm = -1 * stats.uplink_RSSI;
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
         const uint16_t rssiPercentScaled = scaleRange(stats.uplink_RSSI_percentage, 0, 100, 0, RSSI_MAX_VALUE);
         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 #ifdef USE_RX_RSSI_DBM
+    int16_t rssiDbm = -1 * stats.uplink_RSSI;
     if (rxConfig()->crsf_use_rx_snr) {
         rssiDbm = stats.uplink_SNR;
     }
@@ -362,6 +365,12 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     if (cmpTimeUs(currentTimeUs, crsfFrameStartAtUs) > CRSF_TIME_NEEDED_PER_FRAME_US) {
         // We've received a character after max time needed to complete a frame,
         // so this must be the start of a new frame.
+#if defined(USE_CRSF_V3)
+        if (crsfFramePosition > 0) {
+            // count an error if full valid frame not received within the allowed time.
+            crsfFrameErrorCnt++;
+        }
+#endif
         crsfFramePosition = 0;
     }
 
@@ -456,14 +465,12 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                     crsfFrameErrorCnt++;
 #endif
             }
-        } else {
-#if defined(USE_CRSF_V3)
-            if (crsfFrameErrorCnt < CRSF_FRAME_ERROR_COUNT_THRESHOLD)
-                crsfFrameErrorCnt++;
-#endif
         }
 #if defined(USE_CRSF_V3)
-        if (crsfFrameErrorCnt >= CRSF_FRAME_ERROR_COUNT_THRESHOLD) {
+        if (crsfBaudNegotiationInProgress() || isEepromWriteInProgress()) {
+            // don't count errors when negotiation or eeprom write is in progress
+            crsfFrameErrorCnt = 0;
+        } else if (crsfFrameErrorCnt >= CRSF_FRAME_ERROR_COUNT_THRESHOLD) {
             // fall back to default speed if speed mismatch detected
             setCrsfDefaultSpeed();
             crsfFrameErrorCnt = 0;
@@ -619,8 +626,6 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     }
 
     rxRuntimeState->channelCount = CRSF_MAX_CHANNEL;
-    rxRuntimeState->rxRefreshRate = CRSF_TIME_BETWEEN_FRAMES_US; //!!TODO this needs checking
-
     rxRuntimeState->rcReadRawFn = crsfReadRawRC;
     rxRuntimeState->rcFrameStatusFn = crsfFrameStatus;
     rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
@@ -630,11 +635,17 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         return false;
     }
 
+    uint32_t crsfBaudrate = CRSF_BAUDRATE;
+
+#if defined(USE_CRSF_V3)
+    crsfBaudrate = rxConfig->crsf_use_negotiated_baud ? getCrsfCachedBaudrate() : CRSF_BAUDRATE;
+#endif
+
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         crsfDataReceive,
         rxRuntimeState,
-        CRSF_BAUDRATE,
+        crsfBaudrate,
         CRSF_PORT_MODE,
         CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );
@@ -655,6 +666,12 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
+    persistentObjectWrite(PERSISTENT_OBJECT_SERIALRX_BAUD, baudrate);
+}
+
+bool crsfRxUseNegotiatedBaud(void)
+{
+    return rxConfig()->crsf_use_negotiated_baud;
 }
 #endif
 

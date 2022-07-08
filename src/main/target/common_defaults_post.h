@@ -89,36 +89,6 @@
 
 // Backward compatibility for exisiting targets
 
-#ifdef STM32F1
-#ifndef I2C1_SCL
-#define I2C1_SCL PB8
-#endif
-#ifndef I2C1_SDA
-#define I2C1_SDA PB9
-#endif
-#ifndef I2C2_SCL
-#define I2C2_SCL PB10
-#endif
-#ifndef I2C2_SDA
-#define I2C2_SDA PB11
-#endif
-#endif // STM32F1
-
-#ifdef STM32F3
-#ifndef I2C1_SCL
-#define I2C1_SCL PB6
-#endif
-#ifndef I2C1_SDA
-#define I2C1_SDA PB7
-#endif
-#ifndef I2C2_SCL
-#define I2C2_SCL PA9
-#endif
-#ifndef I2C2_SDA
-#define I2C2_SDA PA10
-#endif
-#endif // STM32F3
-
 #ifdef STM32F4
 #ifndef I2C1_SCL
 #define I2C1_SCL PB6
@@ -334,11 +304,27 @@
 #define RX_CC2500_SPI_ANT_SEL_PIN NONE
 #endif
 #endif
+
+#if defined(USE_RX_EXPRESSLRS)
+#if !defined(RX_EXPRESSLRS_SPI_RESET_PIN)
+#define RX_EXPRESSLRS_SPI_RESET_PIN NONE
+#endif
+
+#if !defined(RX_EXPRESSLRS_SPI_BUSY_PIN)
+#define RX_EXPRESSLRS_SPI_BUSY_PIN NONE
+#endif
+
+#if !defined(RX_EXPRESSLRS_TIMER_INSTANCE)
+#define RX_EXPRESSLRS_TIMER_INSTANCE NULL
+#endif
+
+#endif
+
 #endif
 
 // gyro hardware
 
-#if !defined(GYRO_1_SPI_INSTANCE)
+#if !defined(GYRO_1_SPI_INSTANCE) && !defined(SIMULATOR_BUILD)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
 

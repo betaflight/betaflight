@@ -150,12 +150,9 @@ static void w25n01g_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
         extDevice_t *dev = io->handle.dev;
 
         busSegment_t segments[] = {
-                {&command, NULL, sizeof(command), true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {&command, NULL}, sizeof(command), true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -178,12 +175,9 @@ static void w25n01g_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t c
         uint8_t cmd[] = { command, 0, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -208,8 +202,8 @@ static uint8_t w25n01g_readRegister(flashDeviceIO_t *io, uint8_t reg)
         uint8_t in[3];
 
         busSegment_t segments[] = {
-                {cmd, in, sizeof(cmd), true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, in}, sizeof(cmd), true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing
@@ -243,8 +237,8 @@ static void w25n01g_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data
         uint8_t cmd[3] = { W25N01G_INSTRUCTION_WRITE_STATUS_REG, reg, data };
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing
@@ -414,13 +408,10 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
         uint8_t cmd[] = { W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, columnAddress >> 8, columnAddress & 0xff };
 
          busSegment_t segments[] = {
-                 {cmd, NULL, sizeof(cmd), false, NULL},
-                 {(uint8_t *)data, NULL, length, true, NULL},
-                 {NULL, NULL, 0, true, NULL},
+                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
+                 {.u.buffers = {(uint8_t *)data, NULL}, length, true, NULL},
+                 {.u.link = {NULL, NULL}, 0, true, NULL},
          };
-
-         // Ensure any prior DMA has completed before continuing
-         spiWaitClaim(dev);
 
          spiSequence(dev, &segments[0]);
 
@@ -448,13 +439,10 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
         extDevice_t *dev = fdevice->io.handle.dev;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), false, NULL},
-                {(uint8_t *)data, NULL, length, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
+                {.u.buffers = {(uint8_t *)data, NULL}, length, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -694,13 +682,10 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
         cmd[3] = 0;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), false, NULL},
-                {NULL, buffer, length, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
+                {.u.buffers = {NULL, buffer}, length, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -762,9 +747,9 @@ int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
         cmd[3] = 0;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), false, NULL},
-                {NULL, buffer, length, true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
+                {.u.buffers = {NULL, buffer}, length, true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing
@@ -826,7 +811,7 @@ busStatus_e w25n01g_readBBLUTCallback(uint32_t arg)
 {
     cb_context_t *cb_context = (cb_context_t *)arg;
     flashDevice_t *fdevice = cb_context->fdevice;
-    uint8_t *rxData = fdevice->io.handle.dev->bus->curSegment->rxData;
+    uint8_t *rxData = fdevice->io.handle.dev->bus->curSegment->u.buffers.rxData;
 
 
     cb_context->bblut->pba = (rxData[0] << 16)|rxData[1];
@@ -862,13 +847,10 @@ void w25n01g_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
         cb_context.lutindex = 0;
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), false, NULL},
-                {NULL, in, sizeof(in), true, w25n01g_readBBLUTCallback},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
+                {.u.buffers = {NULL, in}, sizeof(in), true, w25n01g_readBBLUTCallback},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWaitClaim(dev);
 
         spiSequence(dev, &segments[0]);
 
@@ -905,8 +887,8 @@ void w25n01g_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
         uint8_t cmd[5] = { W25N01G_INSTRUCTION_BB_MANAGEMENT, lba >> 8, lba, pba >> 8, pba };
 
         busSegment_t segments[] = {
-                {cmd, NULL, sizeof(cmd), true, NULL},
-                {NULL, NULL, 0, true, NULL},
+                {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
+                {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
         // Ensure any prior DMA has completed before continuing

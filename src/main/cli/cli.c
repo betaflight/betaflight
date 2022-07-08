@@ -146,6 +146,7 @@ bool cliMode = false;
 #include "pg/rx.h"
 #include "pg/rx_pwm.h"
 #include "pg/rx_spi_cc2500.h"
+#include "pg/rx_spi_expresslrs.h"
 #include "pg/serial_uart.h"
 #include "pg/sdio.h"
 #include "pg/timerio.h"
@@ -176,12 +177,8 @@ bool cliMode = false;
 
 static serialPort_t *cliPort = NULL;
 
-#ifdef STM32F1
-#define CLI_IN_BUFFER_SIZE 128
-#else
 // Space required to set array parameters
 #define CLI_IN_BUFFER_SIZE 256
-#endif
 #define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t *cliWriter = NULL;
@@ -292,8 +289,6 @@ static const char * const *sensorHardwareNames[] = {
 // Needs to be aligned with mcuTypeId_e
 static const char *mcuTypeNames[] = {
     "SIMULATOR",
-    "F103",
-    "F303",
     "F40X",
     "F411",
     "F446",
@@ -309,6 +304,7 @@ static const char *mcuTypeNames[] = {
     "H7A3",
     "H723/H725",
     "G474",
+    "H730",
 };
 
 static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
@@ -4727,7 +4723,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
 static const char *getMcuTypeById(mcuTypeId_e id)
 {
-    if (id < MCU_TYPE_UNKNOWN) {
+    if (id < ARRAYLEN(mcuTypeNames)) {
         return mcuTypeNames[id];
     } else {
         return "UNKNOWN";
@@ -4806,14 +4802,12 @@ static void cliStatus(const char *cmdName, char *cmdline)
         }
     }
 #ifdef USE_SPI
-#ifdef USE_GYRO_EXTI
     if (gyroActiveDev()->gyroModeSPI != GYRO_EXTI_NO_INT) {
         cliPrintf(" locked");
     }
     if (gyroActiveDev()->gyroModeSPI == GYRO_EXTI_INT_DMA) {
         cliPrintf(" dma");
     }
-#endif
     if (spiGetExtDeviceCount(&gyroActiveDev()->dev) > 1) {
         cliPrintf(" shared");
     }
@@ -4924,23 +4918,23 @@ static void cliTasks(const char *cmdName, char *cmdline)
         taskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            int taskFrequency = taskInfo.averageDeltaTimeUs == 0 ? 0 : lrintf(1e6f / taskInfo.averageDeltaTimeUs);
+            int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTimeUs == 0 ? 0 : (taskInfo.averageExecutionTimeUs * taskFrequency) / 1000;
+            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
+                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
                         maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
                         taskInfo.totalExecutionTimeUs / 1000,
                         taskInfo.lateCount, taskInfo.runCount, taskInfo.execTime);
 #else
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d",
-                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTimeUs,
+                        taskFrequency, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10,
                         maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10,
                         taskInfo.totalExecutionTimeUs / 1000);
 #endif
@@ -5198,10 +5192,12 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_RX_SPI_CC2500_ANT_SEL, PG_RX_CC2500_SPI_CONFIG, rxCc2500SpiConfig_t, antSelIoTag ),
 #endif
 #endif
+#if defined(USE_RX_EXPRESSLRS)
+    DEFS( OWNER_RX_SPI_EXPRESSLRS_RESET, PG_RX_EXPRESSLRS_SPI_CONFIG, rxExpressLrsSpiConfig_t, resetIoTag ),
+    DEFS( OWNER_RX_SPI_EXPRESSLRS_BUSY, PG_RX_EXPRESSLRS_SPI_CONFIG, rxExpressLrsSpiConfig_t, busyIoTag ),
 #endif
-#ifdef USE_GYRO_EXTI
+#endif
     DEFW( OWNER_GYRO_EXTI,     PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, extiTag, MAX_GYRODEV_COUNT ),
-#endif
     DEFW( OWNER_GYRO_CS,       PG_GYRO_DEVICE_CONFIG, gyroDeviceConfig_t, csnTag, MAX_GYRODEV_COUNT ),
 #ifdef USE_USB_DETECT
     DEFS( OWNER_USB_DETECT,    PG_USB_CONFIG, usbDev_t, detectPin ),
@@ -5246,7 +5242,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 
         for (int index = 0; index < RESOURCE_VALUE_MAX_INDEX(resourceTable[i].maxIndex); index++) {
             const ioTag_t ioTag = *(ioTag_t *)((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
-            ioTag_t ioTagDefault = NULL;
+            ioTag_t ioTagDefault = 0;
             if (defaultConfig) {
                 ioTagDefault = *(ioTag_t *)((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             }
@@ -5658,7 +5654,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
     const timerHardware_t *timer = NULL;
     pch = strtok_r(NULL, " ", &saveptr);
     if (entry) {
-        index = atoi(pch) - 1;
+        index = pch ? (atoi(pch) - 1) : -1;
         if (index < 0 || index >= entry->maxIndex || (entry->presenceMask != MASK_IGNORED && !(entry->presenceMask & BIT(index + 1)))) {
             cliPrintErrorLinef(cmdName, "BAD INDEX: '%s'", pch ? pch : "");
             return;
@@ -6156,8 +6152,8 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
     if (useDshotTelemetry) {
         cliPrintLinef("Dshot reads: %u", dshotTelemetryState.readCount);
         cliPrintLinef("Dshot invalid pkts: %u", dshotTelemetryState.invalidPacketCount);
-        uint32_t directionChangeCycles = dshotDMAHandlerCycleCounters.changeDirectionCompletedAt - dshotDMAHandlerCycleCounters.irqAt;
-        uint32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
+        int32_t directionChangeCycles = cmp32(dshotDMAHandlerCycleCounters.changeDirectionCompletedAt, dshotDMAHandlerCycleCounters.irqAt);
+        int32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
         cliPrintLinef("Dshot directionChange cycles: %u, micros: %u", directionChangeCycles, directionChangeDurationUs);
         cliPrintLinefeed();
 

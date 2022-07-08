@@ -261,6 +261,10 @@ void init(void)
 
     systemInit();
 
+    // Initialize task data as soon as possible. Has to be done before tasksInit(),
+    // and any init code that may try to modify task behaviour before tasksInit().
+    tasksInitData();
+
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
@@ -421,7 +425,7 @@ void init(void)
 #endif
     LED2_ON;
 
-#ifdef USE_EXTI
+#if !defined(SIMULATOR_BUILD)
     EXTIInit();
 #endif
 
@@ -878,12 +882,6 @@ void init(void)
     cmsInit();
 #endif
 
-#ifdef USE_TELEMETRY
-    if (featureIsEnabled(FEATURE_TELEMETRY)) {
-        telemetryInit();
-    }
-#endif
-
 #if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
     displayPort_t *osdDisplayPort = NULL;
     osdDisplayPortDevice_e osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_NONE;
@@ -966,6 +964,13 @@ void init(void)
         dashboardResetPageCycling();
         dashboardEnablePageCycling();
 #endif
+    }
+#endif
+
+#ifdef USE_TELEMETRY
+    // Telemetry will initialise displayport and register with CMS by itself.
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
+        telemetryInit();
     }
 #endif
 

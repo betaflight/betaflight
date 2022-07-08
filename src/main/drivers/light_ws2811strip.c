@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "common/maths.h"
 
 #ifdef USE_LED_STRIP
 
@@ -56,9 +57,7 @@
 #define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 DMA_RW_AXI __attribute__((aligned(32))) uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
 #else
-#if defined(STM32F1) || defined(STM32F3)
-uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#elif defined(STM32F7)
+#if defined(STM32F7)
 FAST_DATA_ZERO_INIT uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #elif defined(STM32H7)
 DMA_RAM uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
@@ -139,8 +138,8 @@ void ws2811LedStripEnable(void)
 
         const hsvColor_t hsv_black = { 0, 0, 0 };
         setStripColor(&hsv_black);
-        // RGB or GRB ordering doesn't matter for black
-        ws2811UpdateStrip(LED_RGB, 100);
+        // RGB or GRB ordering doesn't matter for black, use 4-channel LED configuraton to make sure all channels are zero
+        ws2811UpdateStrip(LED_GRBW, 100);
 
         ws2811Initialised = true;
     }
@@ -153,23 +152,34 @@ bool isWS2811LedStripReady(void)
 
 STATIC_UNIT_TESTED void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex)
 {
-
+    uint32_t bits_per_led;
     uint32_t packed_colour;
 
     switch (ledFormat) {
         case LED_RGB: // WS2811 drivers use RGB format
             packed_colour = (color->rgb.r << 16) | (color->rgb.g << 8) | (color->rgb.b);
+            bits_per_led = 24;
             break;
+
+        case LED_GRBW: // SK6812 drivers use this
+        {
+            /* reconstruct white channel from RGB, making the intensity a bit nonlinear, but thats fine for this use case */
+            uint8_t white = MIN(MIN(color->rgb.r, color->rgb.g), color->rgb.b);
+            packed_colour = (color->rgb.g << 24) | (color->rgb.r << 16) | (color->rgb.b << 8) | (white);
+            bits_per_led = 32;
+            break;
+        }
 
         case LED_GRB: // WS2812 drivers use GRB format
         default:
             packed_colour = (color->rgb.g << 16) | (color->rgb.r << 8) | (color->rgb.b);
+            bits_per_led = 24;
         break;
     }
 
     unsigned dmaBufferOffset = 0;
-    for (int index = 23; index >= 0; index--) {
-        ledStripDMABuffer[ledIndex * WS2811_BITS_PER_LED + dmaBufferOffset++] = (packed_colour & (1 << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
+    for (int index = bits_per_led-1; index >= 0; index--) {
+        ledStripDMABuffer[ledIndex * bits_per_led + dmaBufferOffset++] = (packed_colour & (1 << index)) ? BIT_COMPARE_1 : BIT_COMPARE_0;
     }
 }
 

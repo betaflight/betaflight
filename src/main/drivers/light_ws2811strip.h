@@ -26,11 +26,11 @@
 
 #define WS2811_LED_STRIP_LENGTH    32
 
-#define WS2811_BITS_PER_LED        24
+#define WS2811_BITS_PER_LED_MAX    32
 
 #if defined(USE_WS2811_SINGLE_COLOUR)
 #define WS2811_DATA_BUFFER_SIZE    1
-#define WS2811_DMA_BUFFER_SIZE     (WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED)
+#define WS2811_DMA_BUFFER_SIZE     (WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX)
 // Do 2 extra iterations of the DMA transfer with the output set to low to generate the > 50us delay.
 #define WS2811_DELAY_ITERATIONS    2
 #else
@@ -38,7 +38,7 @@
 // for 50us delay
 #define WS2811_DELAY_BUFFER_LENGTH 42
 // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
-#define WS2811_DMA_BUFFER_SIZE     (WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED + WS2811_DELAY_BUFFER_LENGTH)
+#define WS2811_DMA_BUFFER_SIZE     (WS2811_DATA_BUFFER_SIZE * WS2811_BITS_PER_LED_MAX + WS2811_DELAY_BUFFER_LENGTH)
 #endif
 
 #ifdef USE_LEDSTRIP_CACHE_MGMT
@@ -51,11 +51,7 @@
 #define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
 #else
-#if defined(STM32F1) || defined(STM32F3)
-extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#else
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#endif
 #endif
 
 #define WS2811_TIMER_MHZ           48
@@ -64,7 +60,8 @@ extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 // Enumeration to match the string options defined in lookupLedStripFormatRGB in settings.c
 typedef enum {
     LED_GRB,
-    LED_RGB
+    LED_RGB,
+    LED_GRBW
 } ledStripFormatRGB_e;
 
 void ws2811LedStripInit(ioTag_t ioTag);

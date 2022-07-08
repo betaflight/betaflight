@@ -106,7 +106,9 @@ blackbox_encoding_unittest_SRC :=  \
 
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/typeconversion.c
@@ -192,6 +194,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
@@ -226,6 +229,8 @@ link_quality_unittest_DEFINES := \
 		USE_RX_LINK_QUALITY_INFO=
 
 pg_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/pg/pg.c
 
 
@@ -233,7 +238,9 @@ rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/fc/rc_adjustments.c \
 		$(USER_DIR)/fc/rc_modes.c
 
@@ -253,7 +260,9 @@ rx_ibus_unittest_SRC := \
 
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/rx/rx.c \
 		$(USER_DIR)/pg/pg.c \
@@ -278,13 +287,17 @@ scheduler_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c
 
+scheduler_unittest_DEFINES := \
+		USE_OSD= 
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
 		$(USER_DIR)/sensors/boardalignment.c \
 		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/sensor_alignment.c \
 		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
@@ -304,7 +317,6 @@ telemetry_crsf_unittest_SRC := \
 
 telemetry_crsf_unittest_DEFINES := \
 		FLASH_SIZE=128 \
-		STM32F10X_MD= \
 		__TARGET__="TEST" \
 		__REVISION__="revision"
 
@@ -375,8 +387,10 @@ rcdevice_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c \
 
 pid_unittest_SRC :=  \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/fc/controlrate_profile.c \
 		$(USER_DIR)/fc/runtime_config.c \
@@ -415,8 +429,38 @@ rx_spi_spektrum_unittest_SRC := \
 		$(USER_DIR)/rx/cyrf6936_spektrum.c
 
 rx_spi_spektrum_unittest_DEFINES := \
-		USE_RX_SPI \
-		USE_RX_SPEKTRUM
+		USE_RX_SPI= \
+		USE_RX_SPEKTRUM=
+
+rx_spi_expresslrs_unittest_SRC := \
+        $(USER_DIR)/pg/rx_spi_expresslrs.c \
+		$(USER_DIR)/rx/expresslrs_common.c \
+		$(USER_DIR)/rx/expresslrs.c \
+		$(USER_DIR)/build/atomic.c \
+
+rx_spi_expresslrs_unittest_DEFINES := \
+		USE_RX_SPI= \
+		USE_RX_EXPRESSLRS= \
+		USE_RX_SX1280= \
+		USE_RX_SX127X= \
+
+rx_spi_expresslrs_telemetry_unittest_SRC := \
+		$(USER_DIR)/rx/crsf.c \
+		$(USER_DIR)/telemetry/crsf.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/rx/expresslrs_telemetry.c \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/telemetry/msp_shared.c \
+
+rx_spi_expresslrs_telemetry_unittest_DEFINES := \
+		USE_RX_EXPRESSLRS= \
+		USE_GPS= \
+		USE_MSP_OVER_TELEMETRY= \
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
@@ -455,7 +499,8 @@ COMMON_FLAGS = \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \
 	-Wno-c99-extensions \
-	-Wno-reorder
+	-Wno-reorder \
+	-pipe
 
 CC_VERSION = $(shell $(CC) -dumpversion)
 CXX_VERSION = $(shell $(CXX) -dumpversion)

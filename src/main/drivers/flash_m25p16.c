@@ -87,6 +87,9 @@ struct {
     // Winbond W25Q16
     // Datasheet: https://www.winbond.com/resource-files/w25q16dv_revi_nov1714_web.pdf
     { 0xEF4015, 104, 50, 32, 256 },
+    // Winbond W25X32
+    // Datasheet: https://www.winbond.com/resource-files/w25x32a_revb_080709.pdf
+    { 0xEF3016, 133, 50, 64, 256 },
     // Winbond W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xEF4016, 133, 50, 64, 256 },
@@ -165,7 +168,6 @@ static bool m25p16_waitForReady(flashDevice_t *fdevice)
  *
  * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
  */
-
 bool m25p16_detect(flashDevice_t *fdevice, uint32_t chipID)
 {
     flashGeometry_t *geometry = &fdevice->geometry;
@@ -257,7 +259,7 @@ busStatus_e m25p16_callbackReady(uint32_t arg)
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;
 
-    uint8_t readyPoll = dev->bus->curSegment->rxData[1];
+    uint8_t readyPoll = dev->bus->curSegment->u.buffers.rxData[1];
 
     if (readyPoll & M25P16_STATUS_FLAG_WRITE_IN_PROGRESS) {
         return BUS_BUSY;
@@ -281,14 +283,14 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
     STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { M25P16_INSTRUCTION_WRITE_ENABLE };
 
     busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
-            {writeEnable, NULL, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
-            {sectorErase, NULL, fdevice->isLargeFlash ? 5 : 4, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
+            {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
+            {.u.buffers = {sectorErase, NULL}, fdevice->isLargeFlash ? 5 : 4, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
+    spiWait(fdevice->io.handle.dev);
 
     m25p16_setCommandAddress(&sectorErase[1], address, fdevice->isLargeFlash);
 
@@ -306,14 +308,11 @@ static void m25p16_eraseCompletely(flashDevice_t *fdevice)
     STATIC_DMA_DATA_AUTO uint8_t bulkErase[] = { M25P16_INSTRUCTION_BULK_ERASE };
 
     busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
-            {writeEnable, NULL, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
-            {bulkErase, NULL, sizeof(bulkErase), true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
+            {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
+            {.u.buffers = {bulkErase, NULL}, sizeof(bulkErase), true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
-
-    // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
 
     spiSequence(fdevice->io.handle.dev, segments);
 
@@ -337,23 +336,23 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     STATIC_DMA_DATA_AUTO uint8_t pageProgram[5] = { M25P16_INSTRUCTION_PAGE_PROGRAM };
 
     static busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
-            {writeEnable, NULL, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
-            {pageProgram, NULL, 0, false, NULL},
-            {NULL, NULL, 0, true, NULL},
-            {NULL, NULL, 0, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
+            {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
+            {.u.buffers = {pageProgram, NULL}, 0, false, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
+    spiWait(fdevice->io.handle.dev);
 
     // Patch the pageProgram segment
     segments[PAGE_PROGRAM].len = fdevice->isLargeFlash ? 5 : 4;
     m25p16_setCommandAddress(&pageProgram[1], fdevice->currentWriteAddress, fdevice->isLargeFlash);
 
     // Patch the data segments
-    segments[DATA1].txData = (uint8_t *)buffers[0];
+    segments[DATA1].u.buffers.txData = (uint8_t *)buffers[0];
     segments[DATA1].len = bufferSizes[0];
     fdevice->callbackArg = bufferSizes[0];
 
@@ -361,12 +360,12 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
         segments[DATA1].negateCS = true;
         segments[DATA1].callback = m25p16_callbackWriteComplete;
         // Mark segment following data as being of zero length
-        segments[DATA2].txData = (uint8_t *)NULL;
+        segments[DATA2].u.buffers.txData = (uint8_t *)NULL;
         segments[DATA2].len = 0;
     } else if (bufferCount == 2) {
         segments[DATA1].negateCS = false;
         segments[DATA1].callback = NULL;
-        segments[DATA2].txData = (uint8_t *)buffers[1];
+        segments[DATA2].u.buffers.txData = (uint8_t *)buffers[1];
         segments[DATA2].len = bufferSizes[1];
         fdevice->callbackArg += bufferSizes[1];
         segments[DATA2].negateCS = true;
@@ -427,13 +426,13 @@ static int m25p16_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *b
     STATIC_DMA_DATA_AUTO uint8_t readBytes[5] = { M25P16_INSTRUCTION_READ_BYTES };
 
     // Ensure any prior DMA has completed before continuing
-    spiWaitClaim(fdevice->io.handle.dev);
+    spiWait(fdevice->io.handle.dev);
 
     busSegment_t segments[] = {
-            {readStatus, readyStatus, sizeof(readStatus), true, m25p16_callbackReady},
-            {readBytes, NULL, fdevice->isLargeFlash ? 5 : 4, false, NULL},
-            {NULL, buffer, length, true, NULL},
-            {NULL, NULL, 0, true, NULL},
+            {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
+            {.u.buffers = {readBytes, NULL}, fdevice->isLargeFlash ? 5 : 4, false, NULL},
+            {.u.buffers = {NULL, buffer}, length, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
     // Patch the readBytes command

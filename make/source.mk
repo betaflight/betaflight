@@ -222,7 +222,6 @@ endif
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
 
-ifneq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
@@ -370,11 +369,11 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c
 
 
 # F4 and F7 optimizations
-ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_i2c_hal.c \
             drivers/bus_spi_ll.c \
@@ -386,8 +385,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_hal_init.c
-endif #!F3
-endif #!F1
 
 # check if target.mk supplied
 SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)

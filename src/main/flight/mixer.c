@@ -366,9 +366,9 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
                 motorOutput = (motorOutput < motorRangeMin) ? mixerRuntime.disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
             }
 #endif
-            motorOutput = constrain(motorOutput, mixerRuntime.disarmMotorOutput, motorRangeMax);
+            motorOutput = constrainf(motorOutput, mixerRuntime.disarmMotorOutput, motorRangeMax);
         } else {
-            motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
+            motorOutput = constrainf(motorOutput, motorRangeMin, motorRangeMax);
         }
         motor[i] = motorOutput;
     }
@@ -517,6 +517,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     // use scaled throttle, without dynamic idle throttle offset, as the input to antigravity
     pidUpdateAntiGravityThrottleFilter(throttle);
+
+    // and for TPA
+    pidUpdateTpaFactor(throttle);
 
 #ifdef USE_DYN_LPF
     // keep the changes to dynamic lowpass clean, without unnecessary dynamic changes

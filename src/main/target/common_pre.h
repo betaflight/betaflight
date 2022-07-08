@@ -28,24 +28,9 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-#ifdef STM32F1
-#define MINIMAL_CLI
-// Using RX DMA disables the use of receive callbacks
-#define USE_UART1_RX_DMA
-#define USE_UART1_TX_DMA
-#endif
-
-#ifdef STM32F3
-#define MINIMAL_CLI
-#define USE_DSHOT
-#define USE_DYN_NOTCH_FILTER
-#define USE_CCM_CODE
-#endif
-
 #ifdef STM32F4
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA
-#define USE_LATE_TASK_STATISTICS
 #endif
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -63,6 +48,7 @@
 #define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#define USE_LATE_TASK_STATISTICS
 
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define USE_OVERCLOCK
@@ -71,7 +57,7 @@
 
 #ifdef STM32F7
 #define USE_ITCM_RAM
-#define ITCM_RAM_OPTIMISATION "-O2"
+#define ITCM_RAM_OPTIMISATION "-O2", "-freorder-blocks-algorithm=simple"
 #define USE_FAST_DATA
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
@@ -155,6 +141,13 @@
 #define DEFAULT_CPU_OVERCLOCK 1
 #else
 #define DEFAULT_CPU_OVERCLOCK 0
+#endif
+
+#if defined(STM32H7)
+// Move ISRs to fast ram to avoid flash latency.
+#define FAST_IRQ_HANDLER FAST_CODE
+#else
+#define FAST_IRQ_HANDLER
 #endif
 
 
@@ -282,7 +275,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_GHST
 #define USE_TELEMETRY_SRXL
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 12))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 12))
 #define USE_CMS
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
@@ -290,14 +283,14 @@ extern uint8_t _dmaram_end__;
 #define USE_LED_STRIP
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 11))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 11))
 #define USE_VTX_COMMON
 #define USE_VTX_CONTROL
 #define USE_VTX_SMARTAUDIO
 #define USE_VTX_TRAMP
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 10))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 10))
 #define USE_VIRTUAL_CURRENT_METER
 #define USE_CAMERA_CONTROL
 #define USE_ESC_SENSOR
@@ -305,39 +298,39 @@ extern uint8_t _dmaram_end__;
 #define USE_RCDEVICE
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 9))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 9))
 #define USE_GYRO_LPF2
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 8))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 8))
 #define USE_LAUNCH_CONTROL
 #define USE_DYN_LPF
 #define USE_D_MIN
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 7))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 7))
 #define USE_THROTTLE_BOOST
 #define USE_INTEGRATED_YAW_CONTROL
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 6))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 6))
 #define USE_ITERM_RELAX
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
 #define USE_TPA_MODE
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 5))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 5))
 #define USE_PWM
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 4))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 4))
 #define USE_HUFFMAN
 #define USE_PINIO
 #define USE_PINIOBOX
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 3))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 3))
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
@@ -351,14 +344,14 @@ extern uint8_t _dmaram_end__;
 #endif
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 2))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 2))
 #define USE_TELEMETRY_HOTT
 #define USE_TELEMETRY_LTM
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256) || (FEATURE_CUT_LEVEL < 1))
+#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 1))
 #define USE_BOARD_INFO
 #define USE_EXTENDED_CMS_MENUS
 #define USE_RTC_TIME
@@ -413,7 +406,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_MSP_OVERRIDE
 #define USE_SIMPLIFIED_TUNING
 #define USE_RX_LINK_UPLINK_POWER
-#define USE_GPS_PLUS_CODES
 #define USE_CRSF_V3
 #endif
 
@@ -423,4 +415,5 @@ extern uint8_t _dmaram_end__;
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
+#define USE_GPS_PLUS_CODES
 #endif

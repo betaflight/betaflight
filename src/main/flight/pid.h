@@ -310,6 +310,7 @@ typedef struct pidRuntime_s {
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
+    float tpaFactor;
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
@@ -390,6 +391,10 @@ typedef struct pidRuntime_s {
     float feedforwardJitterFactor;
     float feedforwardBoostFactor;
 #endif
+
+#ifdef USE_ACC
+    pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
@@ -411,6 +416,7 @@ void pidSetItermAccelerator(float newItermAccelerator);
 bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
+void pidUpdateTpaFactor(float throttle);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 bool pidOsdAntiGravityMode(void);
@@ -435,8 +441,8 @@ void applyItermRelax(const int axis, const float iterm,
 void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
-    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint);
-float calcHorizonLevelStrength(void);
+    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint, float horizonLevelStrength);
+float calcHorizonLevelStrength();
 #endif
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);

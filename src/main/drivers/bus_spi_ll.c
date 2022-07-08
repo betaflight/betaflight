@@ -225,26 +225,20 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 static bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
 #if defined(STM32H7)
-    int txLen = len;
-    int rxLen = len;
-
-    LL_SPI_SetTransferSize(instance, txLen);
+    LL_SPI_SetTransferSize(instance, len);
     LL_SPI_Enable(instance);
     LL_SPI_StartMasterTransfer(instance);
-    while (txLen || rxLen) {
-        if (txLen && LL_SPI_IsActiveFlag_TXP(instance)) {
-            uint8_t b = txData ? *(txData++) : 0xFF;
-            LL_SPI_TransmitData8(instance, b);
-            txLen--;
-        }
+    while (len) {
+        while (!LL_SPI_IsActiveFlag_TXP(instance));
+        uint8_t b = txData ? *(txData++) : 0xFF;
+        LL_SPI_TransmitData8(instance, b);
 
-        if (rxLen && LL_SPI_IsActiveFlag_RXP(instance)) {
-            uint8_t b = LL_SPI_ReceiveData8(instance);
-            if (rxData) {
-                *(rxData++) = b;
-            }
-            rxLen--;
+        while (!LL_SPI_IsActiveFlag_RXP(instance));
+        b = LL_SPI_ReceiveData8(instance);
+        if (rxData) {
+            *(rxData++) = b;
         }
+        --len;
     }
     while (!LL_SPI_IsActiveFlag_EOT(instance));
     LL_SPI_ClearFlag_TXTF(instance);
@@ -296,7 +290,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     STATIC_DMA_DATA_AUTO uint8_t dummyRxByte;
     busDevice_t *bus = dev->bus;
 
-    busSegment_t *segment = bus->curSegment;
+    busSegment_t *segment = (busSegment_t *)bus->curSegment;
 
     if (preInit) {
         // Prepare the init structure for the next segment to reduce inter-segment interval
@@ -309,7 +303,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 
     int len = segment->len;
 
-    uint8_t *txData = segment->txData;
+    uint8_t *txData = segment->u.buffers.txData;
     LL_DMA_InitTypeDef *initTx = bus->initTx;
 
     if (txData) {
@@ -337,7 +331,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 #if !defined(STM32G4) && !defined(STM32H7) 
     if (dev->bus->dmaRx) {
 #endif
-        uint8_t *rxData = segment->rxData;
+        uint8_t *rxData = segment->u.buffers.rxData;
         LL_DMA_InitTypeDef *initRx = bus->initRx;
 
         if (rxData) {
@@ -373,9 +367,6 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 void spiInternalStartDMA(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-
-    // Assert Chip Select
-    IOLo(dev->busType_u.spi.csnPin);
 
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
@@ -539,7 +530,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 }
 
 // DMA transfer setup and start
-void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
+void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
@@ -549,7 +540,6 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     uint32_t segmentCount = 0;
 
     bus->initSegment = true;
-    bus->curSegment = segments;
 
     // Switch bus speed
 #if !defined(STM32H7)
@@ -591,47 +581,47 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
      */
 
     // Check that any reads are cache aligned and of multiple cache lines in length
-    for (busSegment_t *checkSegment = bus->curSegment; checkSegment->len; checkSegment++) {
+    for (busSegment_t *checkSegment = (busSegment_t *)bus->curSegment; checkSegment->len; checkSegment++) {
         // Check there is no receive data as only transmit DMA is available
-        if ((checkSegment->rxData) && (bus->dmaRx == (dmaChannelDescriptor_t *)NULL)) {
+        if ((checkSegment->u.buffers.rxData) && (bus->dmaRx == (dmaChannelDescriptor_t *)NULL)) {
             dmaSafe = false;
             break;
         }
 #ifdef STM32H7
         // Check if RX data can be DMAed
-        if ((checkSegment->rxData) &&
+        if ((checkSegment->u.buffers.rxData) &&
             // DTCM can't be accessed by DMA1/2 on the H7
-            (IS_DTCM(checkSegment->rxData) ||
+            (IS_DTCM(checkSegment->u.buffers.rxData) ||
              // Memory declared as DMA_RAM will have an address between &_dmaram_start__ and &_dmaram_end__
-             (((checkSegment->rxData < &_dmaram_start__) || (checkSegment->rxData >= &_dmaram_end__)) &&
-             (((uint32_t)checkSegment->rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1)))))) {
+             (((checkSegment->u.buffers.rxData < &_dmaram_start__) || (checkSegment->u.buffers.rxData >= &_dmaram_end__)) &&
+             (((uint32_t)checkSegment->u.buffers.rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1)))))) {
             dmaSafe = false;
             break;
         }
         // Check if TX data can be DMAed
-        else if ((checkSegment->txData) && IS_DTCM(checkSegment->txData)) {
+        else if ((checkSegment->u.buffers.txData) && IS_DTCM(checkSegment->u.buffers.txData)) {
             dmaSafe = false;
             break;
         }
 #elif defined(STM32F7)
-        if ((checkSegment->rxData) &&
+        if ((checkSegment->u.buffers.rxData) &&
             // DTCM is accessible and uncached on the F7
-            (!IS_DTCM(checkSegment->rxData) &&
-            (((uint32_t)checkSegment->rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1))))) {
+            (!IS_DTCM(checkSegment->u.buffers.rxData) &&
+            (((uint32_t)checkSegment->u.buffers.rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1))))) {
             dmaSafe = false;
             break;
         }
 #elif defined(STM32G4)
         // Check if RX data can be DMAed
-        if ((checkSegment->rxData) &&
+        if ((checkSegment->u.buffers.rxData) &&
             // CCM can't be accessed by DMA1/2 on the G4
-            IS_CCM(checkSegment->rxData)) {
+            IS_CCM(checkSegment->u.buffers.rxData)) {
             dmaSafe = false;
             break;
         }
-        if ((checkSegment->txData) &&
+        if ((checkSegment->u.buffers.txData) &&
             // CCM can't be accessed by DMA1/2 on the G4
-            IS_CCM(checkSegment->txData)) {
+            IS_CCM(checkSegment->u.buffers.txData)) {
             dmaSafe = false;
             break;
         }
@@ -642,22 +632,31 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     }
 
     // Use DMA if possible
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen > 8))) {
+    // If there are more than one segments, or a single segment with negateCS negated then force DMA irrespective of length
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8) || !bus->curSegment->negateCS)) {
         // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
+
+        // Assert Chip Select
+        IOLo(dev->busType_u.spi.csnPin);
 
         // Start the transfers
         spiInternalStartDMA(dev);
     } else {
+        busSegment_t *lastSegment = NULL;
+        bool segmentComplete;
+
         // Manually work through the segment list performing a transfer for each
         while (bus->curSegment->len) {
-            // Assert Chip Select
-            IOLo(dev->busType_u.spi.csnPin);
+            if (!lastSegment || lastSegment->negateCS) {
+                // Assert Chip Select if necessary - it's costly so only do so if necessary
+                IOLo(dev->busType_u.spi.csnPin);
+            }
 
             spiInternalReadWriteBufPolled(
                     bus->busType_u.spi.instance,
-                    bus->curSegment->txData,
-                    bus->curSegment->rxData,
+                    bus->curSegment->u.buffers.txData,
+                    bus->curSegment->u.buffers.rxData,
                     bus->curSegment->len);
 
             if (bus->curSegment->negateCS) {
@@ -665,15 +664,17 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
                 IOHi(dev->busType_u.spi.csnPin);
             }
 
+            segmentComplete = true;
             if (bus->curSegment->callback) {
                 switch(bus->curSegment->callback(dev->callbackArg)) {
                 case BUS_BUSY:
                     // Repeat the last DMA segment
-                    bus->curSegment--;
+                    segmentComplete = false;
                     break;
 
                 case BUS_ABORT:
                     bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+                    segmentComplete = false;
                     return;
 
                 case BUS_READY:
@@ -682,15 +683,25 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
                     break;
                 }
             }
-            bus->curSegment++;
+            if (segmentComplete) {
+                lastSegment = (busSegment_t *)bus->curSegment;
+                bus->curSegment++;
+            }
+        }
+
+        if (lastSegment && !lastSegment->negateCS) {
+            // Negate Chip Select if not done so already
+            IOHi(dev->busType_u.spi.csnPin);
         }
 
         // If a following transaction has been linked, start it
-        if (bus->curSegment->txData) {
-            const extDevice_t *nextDev = (const extDevice_t *)bus->curSegment->txData;
-            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->rxData;
-            bus->curSegment->txData = NULL;
-            spiSequenceStart(nextDev, nextSegments);
+        if (bus->curSegment->u.link.dev) {
+            const extDevice_t *nextDev = bus->curSegment->u.link.dev;
+            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->u.link.segments;
+            busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
+            bus->curSegment = nextSegments;
+            endSegment->u.link.dev = NULL;
+            spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;

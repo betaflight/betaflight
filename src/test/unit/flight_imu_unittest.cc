@@ -72,7 +72,7 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-const float sqrt2over2 = sqrt(2) / 2.0f;
+const float sqrt2over2 = sqrtf(2) / 2.0f;
 
 TEST(FlightImuTest, TestCalculateRotationMatrix)
 {
@@ -254,4 +254,5 @@ void schedulerIgnoreTaskExecTime(void) {}
 void schedulerIgnoreTaskStateTime(void) {}
 void schedulerSetNextStateTime(timeDelta_t) {}
 bool schedulerGetIgnoreTaskExecTime() { return false; }
+float gyroGetFilteredDownsampled(int) { return 0.0f; }
 }

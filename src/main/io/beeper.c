@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdbool.h"
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -45,6 +45,10 @@
 
 #ifdef USE_GPS
 #include "io/gps.h"
+#endif
+
+#ifdef USE_OSD
+#include "osd/osd.h"
 #endif
 
 #include "pg/beeper.h"
@@ -435,6 +439,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
     }
 
+#if defined(USE_OSD)
+    static bool beeperWasOn = false;
+    if (beeperIsOn && !beeperWasOn) {
+        osdSetVisualBeeperState(true);
+    }
+    beeperWasOn = beeperIsOn;
+#endif
+    
     beeperProcessCommand(currentTimeUs);
 }
 

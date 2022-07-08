@@ -145,13 +145,27 @@ static void bbOutputDataInit(uint32_t *buffer, uint16_t portMask, bool inverted)
         setMask = portMask;
     }
 
-    int bitpos;
+    int symbol_index;
 
-    for (bitpos = 0; bitpos < 16; bitpos++) {
-        buffer[bitpos * 3 + 0] |= setMask ; // Always set all ports
-        buffer[bitpos * 3 + 1] = 0;          // Reset bits are port dependent
-        buffer[bitpos * 3 + 2] |= resetMask; // Always reset all ports
+    for (symbol_index = 0; symbol_index < MOTOR_DSHOT_FRAME_BITS; symbol_index++) {
+        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 0] |= setMask ; // Always set all ports
+        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 1] = 0;          // Reset bits are port dependent
+        buffer[symbol_index * MOTOR_DSHOT_STATE_PER_SYMBOL + 2] |= resetMask; // Always reset all ports
     }
+
+    //
+    // output one more 'bit' that keeps the line level at idle to allow the ESC to sample the last bit
+    //
+    // Avoid CRC errors in the case of bi-directional d-shot.  CRC errors can occur if the output is
+    // transitioned to an input before the signal has been sampled by the ESC as the sampled voltage
+    // may be somewhere between logic-high and logic-low depending on how the motor output line is
+    // driven or floating.  On some MCUs it's observed that the voltage momentarily drops low on transition
+    // to input.
+
+    int hold_bit_index = MOTOR_DSHOT_FRAME_BITS * MOTOR_DSHOT_STATE_PER_SYMBOL;
+    buffer[hold_bit_index + 0] |= resetMask; // Always reset all ports
+    buffer[hold_bit_index + 1] = 0;          // Never any change
+    buffer[hold_bit_index + 2] = 0;          // Never any change
 }
 
 static void bbOutputDataSet(uint32_t *buffer, int pinNumber, uint16_t value, bool inverted)
@@ -291,7 +305,7 @@ static void bbSetupDma(bbPort_t *bbPort)
     bbDMA_ITConfig(bbPort);
 }
 
-void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
+FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
     dbgPinHi(0);
 
@@ -585,7 +599,7 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
 
 static void bbWrite(uint8_t motorIndex, float value)
 {
-    bbWriteInt(motorIndex, value);
+    bbWriteInt(motorIndex, lrintf(value));
 }
 
 static void bbUpdateComplete(void)
@@ -622,8 +636,14 @@ static void bbUpdateComplete(void)
                 bbPort->inputActive = false;
                 bbSwitchToOutput(bbPort);
             }
-        }
+        } else
 #endif
+        {
+#if defined(STM32G4)
+            // Using circular mode resets the counter one short, so explicitly reload
+            bbSwitchToOutput(bbPort);
+#endif
+        }
 
         bbDMA_Cmd(bbPort, ENABLE);
     }
@@ -667,7 +687,7 @@ static void bbPostInit()
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
 
         if (!bbMotorConfig(bbMotors[motorIndex].io, motorIndex, motorPwmProtocol, bbMotors[motorIndex].output)) {
-            return NULL;
+            return;
         }
 
 
@@ -742,10 +762,10 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         bbMotors[motorIndex].pinIndex = pinIndex;
         bbMotors[motorIndex].io = io;
         bbMotors[motorIndex].output = output;
-#if defined(STM32F4) || defined(STM32F3)
+#if defined(STM32F4)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
 #elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
-        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, bbPuPdMode);
+        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
 #endif
 
         IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));

@@ -326,25 +326,25 @@ static const OSD_Entry cmsx_menuSimplifiedTuningEntries[] =
     { "PID TUNING",        OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_pids_mode, PID_SIMPLIFIED_TUNING_MODE_COUNT - 1, lookupTableSimplifiedTuningPidsMode } },
 
     { "-- BASIC --",       OME_Label, NULL, NULL},
-    { "D GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "P&I GAINS",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pi_gain,           SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "FF GAINS",          OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "D GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_d_gain,            SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "P&I GAINS",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pi_gain,           SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "FF GAINS",          OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_feedforward_gain,  SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "-- EXPERT --",      OME_Label, NULL, NULL},
 #ifdef USE_D_MIN
-    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "D MAX",             OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dmin_ratio,        SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 #endif
-    { "I GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "I GAINS",           OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_i_gain,            SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
-    { "PITCH:ROLL D",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "PITCH:ROLL P,I&FF", OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pitch_pi_gain,     SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
-    { "MASTER MULT",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "PITCH:ROLL D",      OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_roll_pitch_ratio,  SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "PITCH:ROLL P,I&FF", OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_pitch_pi_gain,     SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "MASTER MULT",       OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_master_multiplier, SIMPLIFIED_TUNING_PIDS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "-- SIMPLIFIED FILTER --", OME_Label, NULL, NULL},
     { "GYRO TUNING",       OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_gyro_filter,  1, lookupTableOffOn } },
-    { "GYRO MULT",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "GYRO MULT",         OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_gyro_filter_multiplier,  SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
     { "DTERM TUNING",      OME_TAB,   NULL, &(OSD_TAB_t)   { &cmsx_simplified_dterm_filter, 1, lookupTableOffOn } },
-    { "DTERM MULT",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
+    { "DTERM MULT",        OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_simplified_dterm_filter_multiplier, SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX, 5, 10 } },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
@@ -410,7 +410,7 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
 
     { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1} },
     { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1} },
-    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,         0,  100,  1, 10} },
+    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.tpa_rate,         0,  100,  1, 10} },
     { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10} },
 
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
@@ -500,6 +500,7 @@ static CMS_Menu cmsx_menuLaunchControl = {
 static uint8_t  cmsx_angleStrength;
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonTransition;
+static uint8_t  cmsx_levelAngleLimit;
 static uint8_t  cmsx_throttleBoost;
 static uint8_t  cmsx_thrustLinearization;
 static uint16_t cmsx_itermAcceleratorGain;
@@ -541,6 +542,7 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
     cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
     cmsx_horizonTransition = pidProfile->pid[PID_LEVEL].D;
+    cmsx_levelAngleLimit =   pidProfile->levelAngleLimit;
 
     cmsx_itermAcceleratorGain   = pidProfile->itermAcceleratorGain;
     cmsx_itermThrottleThreshold = pidProfile->itermThrottleThreshold;
@@ -590,6 +592,7 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
     pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
     pidProfile->pid[PID_LEVEL].D = cmsx_horizonTransition;
+    pidProfile->levelAngleLimit  = cmsx_levelAngleLimit;
 
     pidProfile->itermAcceleratorGain   = cmsx_itermAcceleratorGain;
     pidProfile->itermThrottleThreshold = cmsx_itermThrottleThreshold;
@@ -642,6 +645,8 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }    },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }    },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }    },
+    { "ANGLE LIMIT", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_levelAngleLimit,        10,    90,   1  }    },
+
     { "AG GAIN",     OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_itermAcceleratorGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 10 }    },
     { "AG THR",      OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_itermThrottleThreshold, 20,   1000,  1  }    },
 #ifdef USE_THROTTLE_BOOST

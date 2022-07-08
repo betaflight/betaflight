@@ -197,9 +197,16 @@ extern "C" {
     void IOHi() {}
     void IOLo() {}
     void IOInit() {}
+    bool IORead(IO_t ) { return true; }
     void IOGetByTag() {}
+    void IORelease(IO_t) {}
     bool busBusy(const extDevice_t*, bool*) {return false;}
     void busDeviceRegister(const extDevice_t*) {}
     bool busReadRegisterBufferStart(const extDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
     bool busWriteRegisterStart(const extDevice_t*, uint8_t, uint8_t) {return true;}
+    void EXTIHandlerInit(extiCallbackRec_t *, extiHandlerCallback *) {}
+    void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t) {}
+    void EXTIRelease(IO_t) {}
+    void EXTIEnable(IO_t) {}
+    void EXTIDisable(IO_t) {}
 }

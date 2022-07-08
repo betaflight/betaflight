@@ -179,7 +179,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 
     int len = segment->len;
 
-    uint8_t *txData = segment->txData;
+    uint8_t *txData = segment->u.buffers.txData;
     DMA_InitTypeDef *initTx = bus->initTx;
 
     if (txData) {
@@ -193,7 +193,7 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     initTx->DMA_BufferSize = len;
 
     if (dev->bus->dmaRx) {
-        uint8_t *rxData = segment->rxData;
+        uint8_t *rxData = segment->u.buffers.rxData;
         DMA_InitTypeDef *initRx = bus->initRx;
 
         if (rxData) {
@@ -215,9 +215,6 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 
 void spiInternalStartDMA(const extDevice_t *dev)
 {
-    // Assert Chip Select
-    IOLo(dev->busType_u.spi.csnPin);
-
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
     DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
@@ -320,7 +317,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 }
 
 // DMA transfer setup and start
-void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
+void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;
@@ -329,7 +326,6 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     uint32_t segmentCount = 0;
 
     dev->bus->initSegment = true;
-    dev->bus->curSegment = segments;
 
     SPI_Cmd(instance, DISABLE);
 
@@ -356,10 +352,10 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
     SPI_Cmd(instance, ENABLE);
 
     // Check that any there are no attempts to DMA to/from CCD SRAM
-    for (busSegment_t *checkSegment = bus->curSegment; checkSegment->len; checkSegment++) {
+    for (busSegment_t *checkSegment = (busSegment_t *)bus->curSegment; checkSegment->len; checkSegment++) {
         // Check there is no receive data as only transmit DMA is available
-        if (((checkSegment->rxData) && (IS_CCM(checkSegment->rxData) || (bus->dmaRx == (dmaChannelDescriptor_t *)NULL))) ||
-            ((checkSegment->txData) && IS_CCM(checkSegment->txData))) {
+        if (((checkSegment->u.buffers.rxData) && (IS_CCM(checkSegment->u.buffers.rxData) || (bus->dmaRx == (dmaChannelDescriptor_t *)NULL))) ||
+            ((checkSegment->u.buffers.txData) && IS_CCM(checkSegment->u.buffers.txData))) {
             dmaSafe = false;
             break;
         }
@@ -368,22 +364,30 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
         xferLen += checkSegment->len;
     }
     // Use DMA if possible
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen > 8))) {
+    // If there are more than one segments, or a single segment with negateCS negated then force DMA irrespective of length
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8) || !bus->curSegment->negateCS)) {
         // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
+
+        // Assert Chip Select
+        IOLo(dev->busType_u.spi.csnPin);
 
         // Start the transfers
         spiInternalStartDMA(dev);
     } else {
+        busSegment_t *lastSegment = NULL;
+
         // Manually work through the segment list performing a transfer for each
         while (bus->curSegment->len) {
-            // Assert Chip Select
-            IOLo(dev->busType_u.spi.csnPin);
+            if (!lastSegment || lastSegment->negateCS) {
+                // Assert Chip Select if necessary - it's costly so only do so if necessary
+                IOLo(dev->busType_u.spi.csnPin);
+            }
 
             spiInternalReadWriteBufPolled(
                     bus->busType_u.spi.instance,
-                    bus->curSegment->txData,
-                    bus->curSegment->rxData,
+                    bus->curSegment->u.buffers.txData,
+                    bus->curSegment->u.buffers.rxData,
                     bus->curSegment->len);
 
             if (bus->curSegment->negateCS) {
@@ -408,15 +412,23 @@ void spiSequenceStart(const extDevice_t *dev, busSegment_t *segments)
                     break;
                 }
             }
+            lastSegment = (busSegment_t *)bus->curSegment;
             bus->curSegment++;
         }
 
+        if (lastSegment && !lastSegment->negateCS) {
+            // Negate Chip Select if not done so already
+            IOHi(dev->busType_u.spi.csnPin);
+        }
+
         // If a following transaction has been linked, start it
-        if (bus->curSegment->txData) {
-            const extDevice_t *nextDev = (const extDevice_t *)bus->curSegment->txData;
-            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->rxData;
-            bus->curSegment->txData = NULL;
-            spiSequenceStart(nextDev, nextSegments);
+        if (bus->curSegment->u.link.dev) {
+            const extDevice_t *nextDev = bus->curSegment->u.link.dev;
+            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->u.link.segments;
+            busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
+            bus->curSegment = nextSegments;
+            endSegment->u.link.dev = NULL;
+            spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
