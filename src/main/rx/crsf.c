@@ -229,22 +229,15 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
     lastLinkStatisticsFrameUs = currentTimeUs;
     int16_t rssiDbm = -1 * (stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1);
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
-        if (rxConfig()->crsf_use_rx_snr) {
-            // -10dB of SNR mapped to 0 RSSI (fail safe is likely to happen at this measure)
-            //   0dB of SNR mapped to 20 RSSI (default alarm)
-            //  41dB of SNR mapped to 99 RSSI (SNR can climb to around 60, but showing that is not very meaningful)
-            const uint16_t rsnrPercentScaled = constrain((stats.uplink_SNR + 10) * 20, 0, RSSI_MAX_VALUE);
-            setRssi(rsnrPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
-#ifdef USE_RX_RSSI_DBM
-            rssiDbm = stats.uplink_SNR;
-#endif
-        } else {
-            const uint16_t rssiPercentScaled = scaleRange(rssiDbm, CRSF_RSSI_MIN, 0, 0, RSSI_MAX_VALUE);
-            setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
-        }
+        const uint16_t rssiPercentScaled = scaleRange(rssiDbm, CRSF_RSSI_MIN, CRSF_RSSI_MAX, 0, RSSI_MAX_VALUE);
+        setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 #ifdef USE_RX_RSSI_DBM
     setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+#endif
+
+#ifdef USE_RX_RSNR
+    setRsnr(stats.uplink_SNR);
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -284,10 +277,11 @@ static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsP
     }
 #ifdef USE_RX_RSSI_DBM
     int16_t rssiDbm = -1 * stats.uplink_RSSI;
-    if (rxConfig()->crsf_use_rx_snr) {
-        rssiDbm = stats.uplink_SNR;
-    }
     setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+#endif
+
+#ifdef USE_RX_RSNR
+    setRsnr(stats.uplink_SNR);
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -312,11 +306,10 @@ static void crsfCheckRssi(uint32_t currentTimeUs)
         if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #ifdef USE_RX_RSSI_DBM
-            if (rxConfig()->crsf_use_rx_snr) {
-                setRssiDbmDirect(CRSF_SNR_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
-            } else {
-                setRssiDbmDirect(CRSF_RSSI_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
-            }
+            setRssiDbmDirect(CRSF_RSSI_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+#endif
+#ifdef USE_RX_RSNR
+            setRsnrDirect(CRSF_SNR_MIN);
 #endif
         }
 #ifdef USE_RX_LINK_QUALITY_INFO

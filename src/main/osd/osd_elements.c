@@ -1384,6 +1384,13 @@ static void osdElementRssiDbm(osdElementParms_t *element)
 }
 #endif // USE_RX_RSSI_DBM
 
+#ifdef USE_RX_RSNR
+static void osdElementRsnr(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRsnr());
+}
+#endif // USE_RX_RSNR
+
 #ifdef USE_OSD_STICK_OVERLAY
 static void osdBackgroundStickOverlay(osdElementParms_t *element)
 {
@@ -1598,6 +1605,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RX_RSSI_DBM
     OSD_RSSI_DBM_VALUE,
 #endif
+#ifdef USE_RX_RSNR
+    OSD_RSNR_VALUE,
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
@@ -1724,6 +1734,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_RX_RSSI_DBM
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
+#endif
+#ifdef USE_RX_RSNR
+    [OSD_RSNR_VALUE]              = osdElementRsnr,
 #endif
     [OSD_RC_CHANNELS]             = osdElementRcChannels,
 #ifdef USE_GPS

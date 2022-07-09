@@ -76,7 +76,8 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
-static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,20]
+static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,0]
+static int16_t rsnr = CRSF_SNR_MIN;        // range: [-30,20]
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 static pt1Filter_t frameErrFilter;
@@ -876,6 +877,11 @@ int16_t getRssiDbm(void)
     return rssiDbm;
 }
 
+int16_t getRsnr(void)
+{
+    return rsnr;
+}
+
 #define RSSI_SAMPLE_COUNT_DBM 16
 
 static int16_t updateRssiDbmSamples(int16_t value)
@@ -906,6 +912,28 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
     }
 
     rssiDbm = newRssiDbm;
+}
+
+static int16_t updateRsnrSamples(int16_t value)
+{
+    static int16_t samplessnr[RSSI_SAMPLE_COUNT_DBM];
+    static uint8_t samplesnrIndex = 0;
+    static int sumsnr = 0;
+
+    sumsnr += value - samplessnr[samplesnrIndex];
+    samplessnr[samplesnrIndex] = value;
+    samplesnrIndex = (samplesnrIndex + 1) % RSSI_SAMPLE_COUNT_DBM;
+    return sumsnr / RSSI_SAMPLE_COUNT_DBM;
+}
+
+void setRsnr(int16_t rsnrValue)
+{
+    rsnr = updateRsnrSamples(rsnrValue);
+}
+
+void setRsnrDirect(int16_t newRsnr)
+{
+    rsnr = newRsnr;
 }
 
 #ifdef USE_RX_LINK_QUALITY_INFO

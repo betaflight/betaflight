@@ -948,6 +948,9 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
 #ifdef USE_RX_RSSI_DBM
         setRssiDbmDirect(-130, RSSI_SOURCE_RX_PROTOCOL);
 #endif
+#ifdef USE_RX_RSNR
+        setRsnrDirect(-30);
+#endif
 #ifdef USE_RX_LINK_QUALITY_INFO
         setLinkQualityDirect(0);
 #endif
@@ -1015,6 +1018,10 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
 #ifdef USE_RX_RSSI_DBM
             setRssiDbm(receiver.rssiFiltered, RSSI_SOURCE_RX_PROTOCOL);
 #endif
+#ifdef USE_RX_RSNR
+            //TODO: LPfilter snr?
+            setRsnr(receiver.snr/4);
+#endif
 #ifdef USE_RX_LINK_QUALITY_INFO
             setLinkQualityDirect(receiver.uplinkLQ);
 #endif
@@ -1025,6 +1032,9 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
 #ifdef USE_RX_RSSI_DBM
             setRssiDbmDirect(-130, RSSI_SOURCE_RX_PROTOCOL);
+#endif
+#ifdef USE_RX_RSNR
+            setRsnrDirect(-30);
 #endif
 #ifdef USE_RX_LINK_QUALITY_INFO
             setLinkQualityDirect(0);

@@ -81,6 +81,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #ifdef USE_RX_RSSI_DBM
     {"RSSI DBM",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RSSI_DBM_VALUE]},
 #endif
+#ifdef USE_RX_RSNR
+    {"RSNR",               OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RSNR_VALUE]},
+#endif
     {"BATTERY VOLTAGE",    OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE]},
     {"BATTERY USAGE",      OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE]},
     {"AVG CELL VOLTAGE",   OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE]},
@@ -184,6 +187,7 @@ static CMS_Menu menuOsdActiveElems = {
 static uint8_t osdConfig_rssi_alarm;
 static uint16_t osdConfig_link_quality_alarm;
 static int16_t osdConfig_rssi_dbm_alarm;
+static int16_t osdConfig_rsnr_alarm;
 static uint16_t osdConfig_cap_alarm;
 static uint16_t osdConfig_alt_alarm;
 static uint16_t osdConfig_distance_alarm;
@@ -197,6 +201,7 @@ static const void *menuAlarmsOnEnter(displayPort_t *pDisp)
     osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
     osdConfig_link_quality_alarm = osdConfig()->link_quality_alarm;
     osdConfig_rssi_dbm_alarm = osdConfig()->rssi_dbm_alarm;
+    osdConfig_rsnr_alarm = osdConfig()->rsnr_alarm;
     osdConfig_cap_alarm = osdConfig()->cap_alarm;
     osdConfig_alt_alarm = osdConfig()->alt_alarm;
     osdConfig_distance_alarm = osdConfig()->distance_alarm;
@@ -214,6 +219,7 @@ static const void *menuAlarmsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
     osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
     osdConfigMutable()->link_quality_alarm = osdConfig_link_quality_alarm;
     osdConfigMutable()->rssi_dbm_alarm = osdConfig_rssi_dbm_alarm;
+    osdConfigMutable()->rsnr_alarm = osdConfig_rsnr_alarm;
     osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
     osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
     osdConfigMutable()->distance_alarm = osdConfig_distance_alarm;
@@ -229,6 +235,7 @@ const OSD_Entry menuAlarmsEntries[] =
     {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}},
     {"LINK QUALITY", OME_UINT16,  NULL, &(OSD_UINT16_t){&osdConfig_link_quality_alarm, 5, 300, 5}},
     {"RSSI DBM", OME_INT16,  NULL, &(OSD_INT16_t){&osdConfig_rssi_dbm_alarm, CRSF_RSSI_MIN, CRSF_SNR_MAX, 5}},
+    {"RSNR", OME_INT16,  NULL, &(OSD_INT16_t){&osdConfig_rsnr_alarm, CRSF_SNR_MIN, CRSF_SNR_MAX, 5}},
     {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}},
     {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}},
     {"MAX DISTANCE", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_distance_alarm, 0, UINT16_MAX, 10}},

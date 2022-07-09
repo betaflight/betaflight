@@ -365,6 +365,7 @@ extern uint8_t _dmaram_end__;
 #define USE_CRSF_CMS_TELEMETRY
 #define USE_CRSF_LINK_STATISTICS
 #define USE_RX_RSSI_DBM
+#define USE_RX_RSNR
 #endif
 
 #if (TARGET_FLASH_SIZE > 256)
