@@ -708,12 +708,11 @@ FAST_CODE void scheduler(void)
         }
     }
 
-#if !defined(UNIT_TEST)
-    DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - schedulerStartTimeUs - taskExecutionTimeUs); // time spent in scheduler
-#endif
-
 #if defined(UNIT_TEST)
     readSchedulerLocals(selectedTask, selectedTaskDynamicPriority);
+    UNUSED(taskExecutionTimeUs);
+#else
+    DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - schedulerStartTimeUs - taskExecutionTimeUs); // time spent in scheduler
 #endif
 
     scheduleCount++;

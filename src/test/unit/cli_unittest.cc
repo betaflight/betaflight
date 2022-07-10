@@ -241,9 +241,7 @@ const box_t *findBoxByBoxId(boxId_e) { return &boxes[0]; }
 
 int8_t unitTestDataArray[3];
 
-void pgResetFn_unitTestData(int8_t *ptr) {
-    ptr = &unitTestDataArray[0];
-}
+void pgResetFn_unitTestData(int8_t *) {}
 
 uint32_t getBeeperOffMask(void) { return 0; }
 uint32_t getPreferredBeeperOffMask(void) { return 0; }
