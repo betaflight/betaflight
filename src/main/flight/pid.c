@@ -910,11 +910,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // This is done to avoid DTerm spikes that occur with dynamically
         // calculated deltaT whenever another task causes the PID
         // loop execution to be delayed.
-        previousRawGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // Log the unfiltered D for ROLL and PITCH
         if (axis != FD_YAW) {
             const float delta = (previousRawGyroRateDterm[axis] - gyroRateDterm[axis]) * pidRuntime.pidFrequency / D_LPF_RAW_SCALE;
+            previousRawGyroRateDterm[axis] = gyroRateDterm[axis];
             DEBUG_SET(DEBUG_D_LPF, axis, lrintf(delta));
         }
 
