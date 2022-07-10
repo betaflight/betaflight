@@ -40,10 +40,7 @@
 #define GYRO_1_CS_PIN           PB12
 #define GYRO_1_SPI_INSTANCE     SPI2
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000

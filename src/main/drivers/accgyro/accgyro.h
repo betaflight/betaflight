@@ -109,14 +109,12 @@ typedef struct gyroDev_s {
     sensor_align_e gyroAlign;
     gyroRateKHz_e gyroRateKHz;
     gyroModeSPI_e gyroModeSPI;
-#ifdef USE_GYRO_EXTI
     uint32_t detectedEXTI;
     uint32_t gyroLastEXTI;
     uint32_t gyroSyncEXTI;
     int32_t gyroShortPeriod;
     int32_t gyroDmaMaxDuration;
     busSegment_t segments[2];
-#endif
     volatile bool dataReady;
     bool gyro_high_fsr;
     uint8_t hardware_lpf;

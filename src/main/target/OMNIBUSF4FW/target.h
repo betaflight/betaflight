@@ -84,11 +84,8 @@
 #define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
 
 // MPU6000 interrupts
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
 #define GYRO_2_EXTI_PIN         NONE
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_MAG
 #define MAG_I2C_INSTANCE        (I2CDEV_1)

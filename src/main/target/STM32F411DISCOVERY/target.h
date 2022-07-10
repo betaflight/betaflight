@@ -47,10 +47,7 @@
 #define GYRO_1_CS_PIN           PE3
 #define GYRO_1_ALIGN            CW180_DEG
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PE1
-#define USE_MPU_DATA_READY_SIGNAL
 
 // Acc
 #define USE_ACC

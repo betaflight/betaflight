@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "msp/msp.h"
+
 #define MSP_TLM_INBUF_SIZE MSP_PORT_INBUF_SIZE
 #define MSP_TLM_OUTBUF_SIZE MSP_PORT_OUTBUF_SIZE_MIN
 
@@ -27,6 +29,9 @@
 typedef void (*mspResponseFnPtr)(uint8_t *payload, const uint8_t payloadSize);
 
 void initSharedMsp(void);
+
+// get descriptor for MSP over telemetry
+mspDescriptor_t getMspTelemetryDescriptor(void);
 
 // receives telemetry payload with msp and handles it.
 bool handleMspFrame(uint8_t *const payload, uint8_t const payloadLength, uint8_t *const skipsBeforeResponse);

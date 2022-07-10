@@ -41,16 +41,8 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 // @todo this is not strictly correct for F4/F7, where sector sizes are variable
 #if !defined(FLASH_PAGE_SIZE)
-// F1
-# if defined(STM32F10X_MD)
-#  define FLASH_PAGE_SIZE                 (0x400)
-# elif defined(STM32F10X_HD)
-#  define FLASH_PAGE_SIZE                 (0x800)
-// F3
-# elif defined(STM32F303xC)
-#  define FLASH_PAGE_SIZE                 (0x800)
 // F4
-# elif defined(STM32F40_41xxx)
+#if defined(STM32F40_41xxx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
 # elif defined (STM32F411xE)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
@@ -111,11 +103,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH)
     // NOP
 #elif defined(CONFIG_IN_FLASH)
-#if defined(STM32F10X)
-    FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-#elif defined(STM32F303)
-    FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
-#elif defined(STM32F4)
+#if defined(STM32F4)
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 #elif defined(STM32F7)
     // NOP
@@ -506,11 +494,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     }
 #else // !STM32H7 && !STM32F7 && !STM32G4
     if (c->address % FLASH_PAGE_SIZE == 0) {
-#if defined(STM32F4)
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
-#else // STM32F3, STM32F1
-        const FLASH_Status status = FLASH_ErasePage(c->address);
-#endif
         if (status != FLASH_COMPLETE) {
             return -1;
         }

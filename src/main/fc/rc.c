@@ -208,7 +208,7 @@ float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs
 float applyActualRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
-    expof = rcCommandfAbs * (powf(rcCommandf, 5) * expof + rcCommandf * (1 - expof));
+    expof = rcCommandfAbs * (power5(rcCommandf) * expof + rcCommandf * (1 - expof));
 
     const float centerSensitivity = currentControlRateProfile->rcRates[axis] * 10.0f;
     const float stickMovement = MAX(0, currentControlRateProfile->rates[axis] * 10.0f - centerSensitivity);

@@ -25,7 +25,7 @@
 
 /* Include(s) -------------------------------------------------------------------------------------------------------*/
 
-#include "stdbool.h"
+#include <stdbool.h>
 #include <string.h>
 
 #include "platform.h"
@@ -1216,7 +1216,7 @@ SD_Error_t SD_GetStatus(void)
     }
     else
     {
-        ErrorState = SD_CARD_ERROR;
+        ErrorState = SD_ERROR;
     }
 
     return ErrorState;

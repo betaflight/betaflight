@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define EEPROM_CONF_VERSION 173
+#define EEPROM_CONF_VERSION 174
 
 bool isEEPROMVersionValid(void);
 bool isEEPROMStructureValid(void);

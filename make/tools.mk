@@ -14,9 +14,9 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR ?= $(TOOLS_DIR)/gcc-arm-none-eabi-9-2020-q2-update
+ARM_SDK_DIR ?= $(TOOLS_DIR)/gcc-arm-11.2-2022.02-x86_64-arm-none-eabi
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
-GCC_REQUIRED_VERSION ?= 9.3.1
+GCC_REQUIRED_VERSION ?= 11.2
 
 .PHONY: arm_sdk_version
 
@@ -26,19 +26,18 @@ arm_sdk_version:
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
-ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2020q2/gcc-arm-none-eabi-9-2020-q2-update
+# source: https://developer.arm.com/downloads/-/gnu-rm
 
-# source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 ifeq ($(OSFAMILY), linux)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-x86_64-linux.tar.bz2
+  ARM_SDK_URL  := https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-arm-none-eabi.tar.xz
 endif
 
 ifeq ($(OSFAMILY), macosx)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
+  ARM_SDK_URL  := https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-darwin-x86_64-arm-none-eabi.tar.xz
 endif
 
 ifeq ($(OSFAMILY), windows)
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
+  ARM_SDK_URL  := https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-mingw-w64-i686-arm-none-eabi.zip
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
@@ -53,7 +52,7 @@ arm_sdk_install: arm_sdk_download $(SDK_INSTALL_MARKER)
 $(SDK_INSTALL_MARKER):
 ifneq ($(OSFAMILY), windows)
         # binary only release so just extract it
-	$(V1) tar -C $(TOOLS_DIR) -xjf "$(DL_DIR)/$(ARM_SDK_FILE)"
+	$(V1) tar -C $(TOOLS_DIR) -xf "$(DL_DIR)/$(ARM_SDK_FILE)"
 else
 	$(V1) unzip -q -d $(ARM_SDK_DIR) "$(DL_DIR)/$(ARM_SDK_FILE)"
 endif
@@ -261,7 +260,7 @@ zip_clean:
 
 ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
   ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
-else ifeq (,$(findstring _install,$(MAKECMDGOALS)))
+else ifeq (,$(filter %_install test% clean% %-print checks help, $(MAKECMDGOALS)))
   GCC_VERSION = $(shell arm-none-eabi-gcc -dumpversion)
   ifeq ($(GCC_VERSION),)
     $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)

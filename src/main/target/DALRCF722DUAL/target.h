@@ -30,8 +30,6 @@
 #define BEEPER_PIN              PC13
 #define BEEPER_INVERTED
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PB10
 #define GYRO_2_EXTI_PIN         PC4
 
@@ -40,7 +38,6 @@
 #define GYRO_2_CS_PIN                       PA4
 #define GYRO_2_SPI_INSTANCE                 SPI1
 
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO

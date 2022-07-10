@@ -127,7 +127,7 @@ STATIC_UNIT_TESTED mspPacket_t requestPacket;
 STATIC_UNIT_TESTED mspPacket_t responsePacket;
 static uint8_t lastRequestVersion; // MSP version of last request. Temporary solution. It's better to keep it in requestPacket.
 
-static mspDescriptor_t mspSharedDescriptor;
+static mspDescriptor_t mspSharedDescriptor = -1;
 
 void initSharedMsp(void)
 {
@@ -135,6 +135,11 @@ void initSharedMsp(void)
     responsePacket.buf.end = ARRAYEND(responseBuffer);
 
     mspSharedDescriptor = mspDescriptorAlloc();
+}
+
+mspDescriptor_t getMspTelemetryDescriptor(void)
+{
+    return mspSharedDescriptor;
 }
 
 static void processMspPacket(void)

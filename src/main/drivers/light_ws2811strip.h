@@ -51,11 +51,7 @@
 #define WS2811_DMA_BUF_CACHE_ALIGN_LENGTH (WS2811_DMA_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUF_CACHE_ALIGN_LENGTH];
 #else
-#if defined(STM32F1) || defined(STM32F3)
-extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#else
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#endif
 #endif
 
 #define WS2811_TIMER_MHZ           48

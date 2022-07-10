@@ -142,7 +142,6 @@ typedef struct rxRuntimeState_s {
     rxProvider_t        rxProvider;
     SerialRXType        serialrxProvider;
     uint8_t             channelCount; // number of RC channels as reported by current input driver
-    uint16_t            rxRefreshRate;
     rcReadRawDataFnPtr  rcReadRawFn;
     rcFrameStatusFnPtr  rcFrameStatusFn;
     rcProcessFrameFnPtr rcProcessFrameFn;
@@ -216,8 +215,6 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRange
 
 void suspendRxSignal(void);
 void resumeRxSignal(void);
-
-uint16_t rxGetRefreshRate(void);
 
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
 

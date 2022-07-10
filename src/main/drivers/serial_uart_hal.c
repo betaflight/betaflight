@@ -76,12 +76,12 @@ static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
     return NULL;
 }
 
-#if !(defined(STM32F1) || defined(STM32F4))
+#if !(defined(STM32F4))
 static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
     uartDevice_t *uartDevice = uartFindDevice(uartPort);
     if (!uartDevice) {
-        return NULL;
+        return;
     }
 
     if (uartDevice->pinSwap) {

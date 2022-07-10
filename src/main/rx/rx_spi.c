@@ -29,13 +29,14 @@
 
 #include "common/utils.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/io.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/rx/rx_nrf24l01.h"
 
-#include "config/config.h"
+#include "fc/dispatch.h"
 
 #include "pg/rx_spi.h"
 
@@ -268,11 +269,12 @@ bool rxSpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeStat
     }
 
     rxSpiNewPacketAvailable = false;
-    rxRuntimeState->rxRefreshRate = 20000;
 
     rxRuntimeState->rcReadRawFn = rxSpiReadRawRC;
     rxRuntimeState->rcFrameStatusFn = rxSpiFrameStatus;
     rxRuntimeState->rcProcessFrameFn = rxSpiProcessFrame;
+
+    dispatchEnable();
 
     return ret;
 }

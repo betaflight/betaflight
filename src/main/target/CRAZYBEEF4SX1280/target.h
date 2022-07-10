@@ -43,10 +43,7 @@
 #define GYRO_1_SPI_INSTANCE    SPI1
 #define GYRO_1_ALIGN       CW90_DEG
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA1
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_GYRO
@@ -56,6 +53,7 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_ICM20689
+#define USE_ACCGYRO_BMI270
 
 // *************** OSD/FLASH *****************************
 #define USE_SPI_DEVICE_2

@@ -161,7 +161,7 @@ static void taskBatteryAlerts(timeUs_t currentTimeUs)
 #ifdef USE_ACC
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
-    accUpdate(currentTimeUs, &accelerometerConfigMutable()->accelerometerTrims);
+    accUpdate(currentTimeUs);
 }
 #endif
 

@@ -57,6 +57,7 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
     PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
+    PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
 
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -72,7 +73,7 @@ extern "C" {
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
-    uint16_t GPS_distanceToHome = 0;
+    uint32_t GPS_distanceToHomeCm = 0;
     int16_t GPS_directionToHome = 0;
     acc_t acc = {};
     bool mockIsUpright = false;
@@ -1059,6 +1060,8 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
+    bool failsafeIsReceivingRxData(void) { return false; }
+    bool rxAreFlightChannelsValid(void) { return false; }
     void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}
@@ -1109,4 +1112,5 @@ extern "C" {
     bool isMotorProtocolEnabled(void) { return true; }
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
+    float pt1FilterGain(float, float) {return 0.5f;}
 }

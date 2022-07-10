@@ -57,8 +57,6 @@ void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxConfig);
 
-    rxRuntimeState->rxRefreshRate = 20000;
-
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
     switch (rxRuntimeState->rxProvider) {
     default:

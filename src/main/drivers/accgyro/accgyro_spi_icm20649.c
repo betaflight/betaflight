@@ -42,28 +42,8 @@
 // 8 MHz max SPI frequency
 #define ICM20649_MAX_SPI_CLK_HZ 8000000
 
-static void icm20649SpiInit(const extDevice_t *dev)
-{
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
-    }
-
-    // all registers can be read/written at full speed (7MHz +-10%)
-    // TODO verify that this works at 9MHz and 10MHz on non F7
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
-
-    hardwareInitialised = true;
-}
-
 uint8_t icm20649SpiDetect(const extDevice_t *dev)
 {
-
-    icm20649SpiInit(dev);
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
-
     spiWriteReg(dev, ICM20649_RA_REG_BANK_SEL, 0 << 4); // select bank 0 just to be safe
     delay(15);
 
@@ -96,8 +76,6 @@ void icm20649AccInit(accDev_t *acc)
     // 2,048 LSB/g 16g
     // 1,024 LSB/g 30g
     acc->acc_1G = acc->acc_high_fsr ? 1024 : 2048;
-
-    spiSetClkDivisor(&acc->dev, spiCalculateDivider(ICM20649_MAX_SPI_CLK_HZ));
 
     spiWriteReg(&acc->dev, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
@@ -156,9 +134,7 @@ void icm20649GyroInit(gyroDev_t *gyro)
     spiWriteReg(&gyro->bus, ICM20649_RA_INT_PIN_CFG, 0x11);  // INT_ANYRD_2CLEAR, BYPASS_EN
     delay(15);
 
-#ifdef USE_MPU_DATA_READY_SIGNAL
     spiWriteReg(&gyro->bus, ICM20649_RA_INT_ENABLE_1, 0x01);
-#endif
 }
 
 bool icm20649SpiGyroDetect(gyroDev_t *gyro)
