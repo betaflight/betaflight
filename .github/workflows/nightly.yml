@@ -33,15 +33,16 @@ jobs:
     needs: ci
     runs-on: ubuntu-22.04
     steps:
+      - name: Code Checkout
+        uses: actions/checkout@v2
+        
       - name: Fetch build artifacts
         uses: actions/download-artifact@v2
-        with:
-          path: assets/
 
       - name: Select release notes
         id: notes
         run: |
-          set -- assets/*.hex
+          set -- Assets/*.hex
           echo "::set-output name=notes::$(test -e "$1" && echo '${{ env.debug_release_notes }}' || echo '${{ env.release_notes }}')"
 
       - name: Get current date
@@ -54,7 +55,7 @@ jobs:
           token: ${{ secrets.REPO_TOKEN }}
           repository: ${{ env.repo_nightly }}
           tag_name: v${{ steps.date.outputs.today }}.${{ github.run_number }}
-          files: assets/*.hex
+          files: Assets/*.hex
           draft: false
           prerelease: false
           fail_on_unmatched_files: true
