@@ -7,7 +7,7 @@ on:
 jobs:
   artifacts-url-comments:
     name: Add artifact links to PR and issues
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Add artifact links to PR and issues
         uses: tonyhallett/artifacts-url-comments@v1.1.0

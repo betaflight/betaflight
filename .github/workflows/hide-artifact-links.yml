@@ -7,7 +7,7 @@ on:
 jobs:
   hide-artifacts-link-comments:
     name: Hide artifact links
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Hide comments
         uses: int128/hide-comment-action@v1
