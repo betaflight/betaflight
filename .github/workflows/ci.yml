@@ -26,10 +26,10 @@ jobs:
         run: echo "::set-output name=targets::$(make targets-ci-print | jq -R -c 'split(" ")')"
 
       - name: Cache build toolchain
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-toolchain
         with:
-          path: tools/
+          path: tools
           key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
       - name: Download and install toolchain
@@ -39,7 +39,7 @@ jobs:
   build:
     name: Build
     needs: setup
-    runs-on:  ubuntu-22.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
@@ -48,10 +48,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Fetch toolchain from cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-toolchain
         with:
-          path: tools/
+          path: tools
           key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
       - name: Build target (without revision)

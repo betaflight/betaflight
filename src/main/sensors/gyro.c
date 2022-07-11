@@ -291,7 +291,7 @@ static FAST_CODE_NOINLINE void handleOverflow(timeUs_t currentTimeUs)
     }
 }
 
-static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void checkForOverflow(timeUs_t currentTimeUs)
 {
     // check for overflow to handle Yaw Spin To The Moon (YSTTM)
     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
@@ -346,7 +346,7 @@ static FAST_CODE_NOINLINE void handleYawSpin(timeUs_t currentTimeUs)
     }
 }
 
-static FAST_CODE void checkForYawSpin(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void checkForYawSpin(timeUs_t currentTimeUs)
 {
     // if not in overflow mode, handle yaw spins above threshold
 #ifdef USE_GYRO_OVERFLOW_CHECK
