@@ -223,6 +223,8 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
                     motorDmaOutput_t *const motor = getMotorDmaOutput(i);
                     motor->protocolControl.requestTelemetry = true;
                     motorGetVTable().writeInt(i, command);
+                } else {
+                    motorGetVTable().writeInt(i, DSHOT_CMD_MOTOR_STOP);
                 }
             }
 

@@ -245,7 +245,7 @@ bool mpuAccReadSPI(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
-        uint16_t *accData = (uint16_t *)acc->gyro->dev.rxBuf;
+        int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
         acc->ADCRaw[X] = __builtin_bswap16(accData[1]);
         acc->ADCRaw[Y] = __builtin_bswap16(accData[2]);
         acc->ADCRaw[Z] = __builtin_bswap16(accData[3]);
@@ -262,7 +262,7 @@ bool mpuAccReadSPI(accDev_t *acc)
 
 bool mpuGyroReadSPI(gyroDev_t *gyro)
 {
-    uint16_t *gyroData = (uint16_t *)gyro->dev.rxBuf;
+    int16_t *gyroData = (int16_t *)gyro->dev.rxBuf;
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
     {

@@ -289,8 +289,6 @@ static const char * const *sensorHardwareNames[] = {
 // Needs to be aligned with mcuTypeId_e
 static const char *mcuTypeNames[] = {
     "SIMULATOR",
-    "F103",
-    "F303",
     "F40X",
     "F411",
     "F446",
@@ -5244,7 +5242,7 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 
         for (int index = 0; index < RESOURCE_VALUE_MAX_INDEX(resourceTable[i].maxIndex); index++) {
             const ioTag_t ioTag = *(ioTag_t *)((const uint8_t *)currentConfig + resourceTable[i].stride * index + resourceTable[i].offset);
-            ioTag_t ioTagDefault = NULL;
+            ioTag_t ioTagDefault = 0;
             if (defaultConfig) {
                 ioTagDefault = *(ioTag_t *)((const uint8_t *)defaultConfig + resourceTable[i].stride * index + resourceTable[i].offset);
             }

@@ -55,6 +55,10 @@ There's a dedicated Slack chat channel here:
 
 https://slack.betaflight.com/
 
+And a Discord server here:
+
+https://discord.gg/n4E6ak4u3c
+
 We also have a Facebook Group. Join us to get a place to talk about Betaflight, ask configuration questions, or just hang out with fellow pilots.
 
 https://www.facebook.com/groups/betaflightgroup/

@@ -46,10 +46,6 @@
 #define TARGET_BOARD_IDENTIFIER "REVO"
 #define USBD_PRODUCT_STRING     "Revolution"
 
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000"
-#endif
-
 #endif
 
 #define LED0_PIN                PB5

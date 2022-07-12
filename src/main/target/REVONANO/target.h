@@ -25,9 +25,6 @@
 #define TARGET_BOARD_IDENTIFIER "REVN"
 
 #define USBD_PRODUCT_STRING "Revo Nano"
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8010000"
-#endif
 
 #define LED0_PIN                PC14
 #define LED1_PIN                PC13

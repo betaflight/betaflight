@@ -21,9 +21,6 @@ TARGET    ?= STM32F405
 # Compile-time options
 OPTIONS   ?=
 
-# compile for OpenPilot BootLoader support
-OPBL      ?= no
-
 # compile for External Storage Bootloader support
 EXST      ?= no
 
@@ -187,12 +184,7 @@ endif
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
-ifeq ($(OPBL),yes)
-TARGET_FLAGS := -DOPBL $(TARGET_FLAGS)
-.DEFAULT_GOAL := binary
-else
 .DEFAULT_GOAL := hex
-endif
 
 ifeq ($(CUSTOM_DEFAULTS_EXTENDED),yes)
 TARGET_FLAGS += -DUSE_CUSTOM_DEFAULTS=
@@ -237,7 +229,7 @@ CC_DEBUG_OPTIMISATION   := $(OPTIMISE_DEFAULT)
 CC_DEFAULT_OPTIMISATION := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
-CC_NO_OPTIMISATION      := 
+CC_NO_OPTIMISATION      :=
 
 #
 # Added after GCC version update, remove once the warnings have been fixed
@@ -248,12 +240,11 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
-              -std=gnu11 \
-              -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -std=gnu17 \
+              -Wall -Wextra -Werror -Wpedantic -Wunsafe-loop-optimizations -Wdouble-promotion \
               -ffunction-sections \
               -fdata-sections \
               -fno-common \
-              -pedantic \
               $(TEMPORARY_FLAGS) \
               $(DEVICE_FLAGS) \
               -D_GNU_SOURCE \
@@ -263,7 +254,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
-              -save-temps=obj \
+              -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
 
@@ -340,7 +331,7 @@ ifeq ($(EXST),no)
 $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
-	
+
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
@@ -364,8 +355,8 @@ $(TARGET_BIN): $(TARGET_UNPATCHED_BIN)
 	$(V1) dd if=$(TARGET_UNPATCHED_BIN) of=$(TARGET_BIN) conv=notrunc
 
 	@echo "Generating MD5 hash of binary" "$(STDOUT)"
-	$(V1) openssl dgst -md5 $(TARGET_BIN) > $(TARGET_UNPATCHED_BIN).md5 
-	
+	$(V1) openssl dgst -md5 $(TARGET_BIN) > $(TARGET_UNPATCHED_BIN).md5
+
 	@echo "Patching MD5 hash into binary" "$(STDOUT)"
 	$(V1) cat $(TARGET_UNPATCHED_BIN).md5 | awk '{printf("%08x: %s",(1024*$(FIRMWARE_SIZE))-16,$$2);}' | xxd -r - $(TARGET_BIN)
 	$(V1) echo $(FIRMWARE_SIZE) | awk '{printf("-s 0x%08x -l 16 -c 16 %s",(1024*$$1)-16,"$(TARGET_BIN)");}' | xargs xxd
@@ -378,10 +369,10 @@ $(TARGET_BIN): $(TARGET_UNPATCHED_BIN)
 	@echo "Extracting HASH section from unpatched EXST elf $(TARGET_ELF)" "$(STDOUT)"
 	$(OBJCOPY) $(TARGET_ELF) $(TARGET_EXST_ELF).tmp --dump-section .exst_hash=$(TARGET_EXST_HASH_SECTION_FILE) -j .exst_hash
 	rm $(TARGET_EXST_ELF).tmp
-	
+
 	@echo "Patching MD5 hash into HASH section" "$(STDOUT)"
 	$(V1) cat $(TARGET_UNPATCHED_BIN).md5 | awk '{printf("%08x: %s",64-16,$$2);}' | xxd -r - $(TARGET_EXST_HASH_SECTION_FILE)
-	
+
 # For some currently unknown reason, OBJCOPY, with only input/output files, will generate a file around 2GB for the H730 unless we remove an unused-section
 # As a workaround drop the ._user_heap_stack section, which is only used during build to show errors if there's not enough space for the heap/stack. 
 # The issue can be seen with `readelf -S $(TARGET_EXST_ELF)' vs `readelf -S $(TARGET_ELF)`
@@ -631,6 +622,9 @@ targets:
 	@echo "targets-group-2:     $(words $(GROUP_2_TARGETS)) targets"
 	@echo "targets-group-rest:  $(words $(GROUP_OTHER_TARGETS)) targets"
 	@echo "total in all groups  $(words $(CI_TARGETS)) targets"
+
+targets-ci-print:
+	@echo $(CI_TARGETS)
 
 ## target-mcu        : print the MCU type of the target
 target-mcu:

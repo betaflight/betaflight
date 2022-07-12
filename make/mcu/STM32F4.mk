@@ -2,16 +2,6 @@
 # F4 Make file include
 #
 
-ifeq ($(OPBL),yes)
-ifeq ($(TARGET), $(filter $(TARGET),$(F405_TARGETS)))
-LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f405_opbl.ld
-else ifeq ($(TARGET), $(filter $(TARGET),$(F411_TARGETS)))
-LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f411_opbl.ld
-else
-$(error No OPBL linker script specified for $(TARGET`))
-endif
-endif
-
 #CMSIS
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_DIR      := $(ROOT)/lib/main/STM32F4/Drivers/CMSIS
@@ -148,10 +138,10 @@ VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F411_TARGETS)))
-DEVICE_FLAGS    = -DSTM32F411xE
+DEVICE_FLAGS    = -DSTM32F411xE -finline-limit=20
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
 STARTUP_SRC     = startup_stm32f411xe.s
 else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))
