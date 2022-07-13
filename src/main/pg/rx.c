@@ -47,7 +47,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .spektrum_sat_bind_autoreset = 1,
         .midrc = RX_MID_USEC,
         .mincheck = 1050,
-        .maxcheck = 1900,
+        .maxcheck = 1950,
         .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
         .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
         .rssi_src_frame_errors = false,
