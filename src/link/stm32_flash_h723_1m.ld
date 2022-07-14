@@ -27,7 +27,7 @@ ENTRY(Reset_Handler)
 0x38000000 to 0x38003FFF   16K SRAM4, D3 domain, unused
 0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain, unused
 
-0x08000000 to 0x08010000 1024K full flash
+0x08000000 to 0x080FFFFF 1024K full flash
 
 0x08000000 to 0x0801FFFF  128K isr vector, startup code
 0x08020000 to 0x0803FFFF  128K config
