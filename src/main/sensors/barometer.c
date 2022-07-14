@@ -456,12 +456,11 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BARO, 2, baroPressure);
             DEBUG_SET(DEBUG_BARO, 3, baroPressureSum);
 
-            sleepTime = baro.dev.ut_delay;
             break;
     }
 
     // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
-    if (sleepTime != baro.dev.ut_delay) {
+    if (state != BARO_STATE_PRESSURE_START) {
         schedulerIgnoreTaskExecRate();
     }
 
