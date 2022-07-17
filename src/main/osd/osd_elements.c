@@ -1148,7 +1148,7 @@ static void osdElementWattHoursDrawn(osdElementParms_t *element)
 {
     const float wattHoursDrawn = getWhDrawn();
 
-    if (wattHoursDrawn < 1) {        
+    if (wattHoursDrawn < 1.0f) {        
         tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
     } else {
         int wattHourWholeNumber = (int)wattHoursDrawn;
