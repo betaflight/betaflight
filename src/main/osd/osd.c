@@ -188,6 +188,7 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
+    OSD_STAT_WATT_HOURS_DRAWN
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
@@ -766,6 +767,14 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
             tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
             osdDisplayStatisticLabel(displayRow, "USED MAH", buff);
+            return true;
+        }
+        break;
+
+    case OSD_STAT_WATT_HOURS_DRAWN:
+        if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+            osdPrintFloat(buff, SYM_NONE, getWhDrawn(), "", 2, true, SYM_NONE);
+            osdDisplayStatisticLabel(displayRow, "USED WATT HOURS", buff);
             return true;
         }
         break;
