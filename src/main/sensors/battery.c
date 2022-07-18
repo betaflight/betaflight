@@ -18,9 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdbool.h"
-#include "stdint.h"
-#include "math.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 

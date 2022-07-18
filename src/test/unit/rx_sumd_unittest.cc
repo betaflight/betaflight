@@ -163,7 +163,6 @@ TEST_F(SumdRxInitUnitTest, Test_SumdRxNotEnabled)
     EXPECT_FALSE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(11000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 }
@@ -178,7 +177,6 @@ TEST_F(SumdRxInitUnitTest, Test_SumdRxEnabled)
     EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(11000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 

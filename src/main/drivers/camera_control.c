@@ -22,9 +22,10 @@
 
 #ifdef USE_CAMERA_CONTROL
 
+#include <math.h>
+
 #include "camera_control.h"
 #include "io.h"
-#include "math.h"
 #include "nvic.h"
 #include "pwm_output.h"
 #include "time.h"

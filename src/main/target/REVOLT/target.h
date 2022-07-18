@@ -91,10 +91,7 @@
 
 #define GYRO_1_ALIGN            CW0_DEG
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 /*----------Flash Config--------*/
 #define FLASH_CS_PIN            PB3

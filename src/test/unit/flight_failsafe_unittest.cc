@@ -513,46 +513,17 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage1OrStage2Drop)
     // deactivate the failsafe switch
     deactivateBoxFailsafe();
 
-    // receivingRxData is immediately true
-    // we go directly to failsafe monitoring mode, via Landing
-    // because the switch also forces rxFlightChannelsValid false, emulating real failsafe
-    // we have two delays to deal with before we can re-arm
-
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
-    // handle the first delay in rxDataRecoveryPeriod
-    sysTickUptime += PERIOD_RXDATA_RECOVERY;
-    failsafeOnValidDataReceived();
-
-    // when 
-    failsafeUpdateState();
-
-    // we should still be in failsafe monitoring mode
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-
-    // handle the second delay
-    sysTickUptime += PERIOD_RXDATA_RECOVERY;
-    failsafeOnValidDataReceived();
-
-    // when 
-    failsafeUpdateState();
-
-    // we should still be in failsafe monitoring mode
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-
-    // one tick later
+    // by next evaluation we should be out of failsafe
     sysTickUptime ++;
+    // receivingRxData is immediately true because signal exists
+    failsafeOnValidDataReceived();
 
-    // when
+    // when 
     failsafeUpdateState();
 
     // we should now have exited failsafe
@@ -647,34 +618,10 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
-    // handle the first delay in rxDataRecoveryPeriod
-    sysTickUptime += PERIOD_RXDATA_RECOVERY;
-    failsafeOnValidDataReceived();
-
-    // when 
-    failsafeUpdateState();
-
-    // we should still be in failsafe monitoring mode
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
-
-    // handle the second delay
-    sysTickUptime += PERIOD_RXDATA_RECOVERY;
-    failsafeOnValidDataReceived();
-
-    // when 
-    failsafeUpdateState();
-
-    // we should still be in failsafe monitoring mode
-    EXPECT_TRUE(failsafeIsActive());
-    EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
     // one tick later
     sysTickUptime ++;
+    failsafeOnValidDataReceived();
 
     // when
     failsafeUpdateState();

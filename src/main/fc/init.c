@@ -425,7 +425,7 @@ void init(void)
 #endif
     LED2_ON;
 
-#ifdef USE_EXTI
+#if !defined(SIMULATOR_BUILD)
     EXTIInit();
 #endif
 

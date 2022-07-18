@@ -85,7 +85,6 @@ extern "C" {
     linkQualitySource_e linkQualitySource;
 
     acc_t acc;
-    float accAverage[XYZ_AXIS_COUNT];
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);

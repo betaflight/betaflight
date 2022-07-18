@@ -324,7 +324,7 @@
 
 // gyro hardware
 
-#if !defined(GYRO_1_SPI_INSTANCE)
+#if !defined(GYRO_1_SPI_INSTANCE) && !defined(SIMULATOR_BUILD)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
 

@@ -31,9 +31,6 @@
 #define BEEPER_INVERTED
 //#define BEEPER_PWM_HZ           1100
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
-#define USE_MPU_DATA_READY_SIGNAL                   
 
 #define USE_ACC
 #define USE_GYRO

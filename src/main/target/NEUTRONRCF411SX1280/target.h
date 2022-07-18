@@ -56,10 +56,7 @@
 #define USE_ACC_SPI_ICM42688P
 #define USE_ACCGYRO_LSM6DSO
 #define USE_ACCGYRO_BMI270
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN        PB6
-#define USE_MPU_DATA_READY_SIGNAL
 #define GYRO_1_CS_PIN          SPI1_NSS_PIN
 #define GYRO_1_SPI_INSTANCE    SPI1
 #define GYRO_1_ALIGN           CW90_DEG

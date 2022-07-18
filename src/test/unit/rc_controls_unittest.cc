@@ -626,6 +626,7 @@ void dashboardEnablePageCycling() {}
 
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
+bool failsafeIsReceivingRxData() { return true; }
 
 uint8_t getCurrentControlRateProfileIndex(void) {
     return 0;

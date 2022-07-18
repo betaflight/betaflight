@@ -44,10 +44,7 @@
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PA1
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -82,9 +79,9 @@
 #define USE_RX_SX1280
 
 #define RX_SPI_LED_INVERTED
-#define RX_SPI_BIND_PIN			PB2
-#define RX_SPI_EXTI_PIN             	PC14
-#define RX_SPI_LED_PIN              	PB9
+#define RX_SPI_BIND_PIN                 PB2
+#define RX_SPI_EXTI_PIN                 PC14
+#define RX_SPI_LED_PIN                  PB9
 #define RX_EXPRESSLRS_SPI_RESET_PIN     PA8
 #define RX_EXPRESSLRS_SPI_BUSY_PIN      PA13
 #define RX_EXPRESSLRS_TIMER_INSTANCE    TIM3
@@ -120,7 +117,7 @@
 #define DEFAULT_FEATURES                (FEATURE_OSD | FEATURE_TELEMETRY )
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
-#define CURRENT_METER_SCALE_DEFAULT 	179
+#define CURRENT_METER_SCALE_DEFAULT     179
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

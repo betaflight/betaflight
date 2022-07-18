@@ -1,7 +1,7 @@
 # Building in Ubuntu
 
 Building for Ubuntu platform is remarkably easy.
-This document is tested and based on the latest Ubuntu 20.04.03 LTS release and can also be used for WSL(2).
+This document is tested and based on the latest Ubuntu 22.04 LTS release and can also be used for WSL(2).
 
 ### Clone betaflight repository and install toolchain
 
@@ -16,8 +16,7 @@ This document is tested and based on the latest Ubuntu 20.04.03 LTS release and 
 Navigate to your local betaflight repository and use the following steps to pull the latest changes and rebuild your version of betaflight:
 
     $ git pull
-    $ make clean TARGET=MATEKF405
-    $ make TARGET=MATEKF405 [OPTIONS=RANGEFINDER] [DEBUG=DBG]
+    $ make MATEKF405 [OPTIONS=RANGEFINDER] [DEBUG=DBG]
 
 Using the optional OPTIONS parameters you can specify options like RANGEFINDER.
 Using the optional DEBUG parameter you can specify the debugger.
@@ -31,13 +30,13 @@ Make sure to remove `obj/` and `make clean`, before building again.
     $ sudo apt update && apt upgrade
     $ sudo apt install libatomic1 npm
     $ sudo npm install -g gulp-cli yarn
-    $ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh
+    $ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     $ source ~/.bashrc
-    $ nvm install v14.18.2 (for exact version please check link below)
+    $ nvm install v16.15.1 (for exact version please check link below)
 
 See [Betaflight Configurator Development](https://github.com/betaflight/betaflight-configurator#development) for how to build the Betaflight Configurator.
 
-### Flashing a target with Betaflight Configurator on Ubuntu 20.04
+### Flashing a target with Betaflight Configurator on Ubuntu 22.04
 
 In most Linux distributions the user won't have access to serial interfaces by default. Flashing a target requires configuration of usb for dfu mode. To add this access right type the following command in a terminal:
 

@@ -82,8 +82,6 @@ uint8_t mpu6500SpiDetect(const extDevice_t *dev)
         return mpuDetected;
     }
 
-    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
-
     return mpuDetected;
 }
 
@@ -94,13 +92,15 @@ void mpu6500SpiAccInit(accDev_t *acc)
 
 void mpu6500SpiGyroInit(gyroDev_t *gyro)
 {
+    extDevice_t *dev = &gyro->dev;
+
     mpu6500GyroInit(gyro);
 
     // Disable Primary I2C Interface
-    spiWriteReg(&gyro->dev, MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
+    spiWriteReg(dev, MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
     delay(100);
 
-    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
+    spiSetClkDivisor(dev, spiCalculateDivider(MPU6500_MAX_SPI_CLK_HZ));
     delayMicroseconds(1);
 }
 
