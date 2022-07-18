@@ -47,6 +47,9 @@
 #define USE_ACC
 #define USE_GYRO
 // MPU interrupts
+//#define USE_EXTI
+//#define USE_GYRO_EXTI
+//#define USE_MPU_DATA_READY_SIGNAL
 
 // For debugging with NUC405RG
 #define USE_FAKE_ACC

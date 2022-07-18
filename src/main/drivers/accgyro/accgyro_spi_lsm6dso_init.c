@@ -147,6 +147,7 @@ static void lsm6dsoConfig(gyroDev_t *gyro)
     lsm6dsoWriteRegisterBits(dev, LSM6DSO_REG_CTRL9_XL, LSM6DSO_MASK_CTRL9_XL, LSM6DSO_VAL_CTRL9_XL_I3C_DISABLE, 1);
 }
 
+#if defined(USE_GYRO_EXTI) && defined(USE_MPU_DATA_READY_SIGNAL)
 static void lsm6dsoIntExtiInit(gyroDev_t *gyro)
 {
     if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
@@ -160,6 +161,7 @@ static void lsm6dsoIntExtiInit(gyroDev_t *gyro)
     EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
     EXTIEnable(mpuIntIO);
 }
+#endif
 
 static void lsm6dsoSpiGyroInit(gyroDev_t *gyro)
 {
@@ -167,7 +169,9 @@ static void lsm6dsoSpiGyroInit(gyroDev_t *gyro)
 
     lsm6dsoConfig(gyro);
 
+#if defined(USE_GYRO_EXTI) && defined(USE_MPU_DATA_READY_SIGNAL)
     lsm6dsoIntExtiInit(gyro);
+#endif
 
     spiSetClkDivisor(dev, spiCalculateDivider(LSM6DSO_MAX_SPI_CLK_HZ));
 }

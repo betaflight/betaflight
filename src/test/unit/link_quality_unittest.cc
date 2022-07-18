@@ -79,6 +79,7 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     float motor[8];
     acc_t acc;
+    float accAverage[XYZ_AXIS_COUNT];
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -479,7 +480,6 @@ extern "C" {
     uint16_t getBatteryAverageCellVoltage() { return  420; }
     int32_t getAmperage() { return 0; }
     int32_t getMAhDrawn() { return 0; }
-    float getWhDrawn() { return 0.0; }
     int32_t getEstimatedAltitudeCm() { return 0; }
     int32_t getEstimatedVario() { return 0; }
     int32_t blackboxGetLogNumber() { return 0; }

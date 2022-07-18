@@ -21,12 +21,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include <stdbool.h>
-
 #include "platform.h"
 
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
+#include "stdbool.h"
 #include "drivers/time.h"
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
@@ -44,7 +43,7 @@ __IO uint32_t bDeviceState = UNCONNECTED; /* USB device status */
 
 /* This is the buffer for data received from the MCU to APP (i.e. MCU TX, APP RX) */
 extern uint8_t APP_Rx_Buffer[];
-extern volatile uint32_t APP_Rx_ptr_out;
+extern uint32_t APP_Rx_ptr_out;
 /* Increment this buffer position or roll it back to
  start address when writing received data
  in the buffer APP_Rx_Buffer. */
@@ -190,8 +189,12 @@ uint32_t CDC_Send_FreeBytes(void)
 {
     /*
         return the bytes free in the circular buffer
+
+        functionally equivalent to:
+        (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
+        but without the impact of the condition check.
     */
-    return (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE + APP_Rx_ptr_out - APP_Rx_ptr_in);
+    return ((APP_Rx_ptr_out - APP_Rx_ptr_in) + (-((int)(APP_Rx_ptr_out <= APP_Rx_ptr_in)) & APP_RX_DATA_SIZE)) - 1;
 }
 
 /**
@@ -208,13 +211,15 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
         could just check for: USB_CDC_ZLP, but better to be safe
         and wait for any existing transmission to complete.
     */
-    for (uint32_t i = 0; i < Len; i++) {
-        while ((APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE == APP_Rx_ptr_out || APP_Rx_ptr_out == APP_RX_DATA_SIZE || USB_Tx_State != 0) {
-            delay(1);
-        }
+    while (USB_Tx_State != 0);
 
+    for (uint32_t i = 0; i < Len; i++) {
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
+
+        while (CDC_Send_FreeBytes() == 0) {
+            delay(1);
+        }
     }
 
     return USBD_OK;

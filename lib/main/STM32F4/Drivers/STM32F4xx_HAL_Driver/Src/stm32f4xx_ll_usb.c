@@ -71,27 +71,6 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-
-/** @defgroup USB_OTG_GRSTCTL_AHBIDL_TIMEOUT_MS AHB master idle timeout
-  * @{
-  */
-#define USB_OTG_GRSTCTL_AHBIDL_TIMEOUT_MS  ((uint32_t)50U)
-
-/** @defgroup USB_OTG_GRSTCTL_CSRST_TIMEOUT_MS Core soft reset timeout
-  * @{
-  */
-#define USB_OTG_GRSTCTL_CSRST_TIMEOUT_MS  ((uint32_t)10U)
-
-/** @defgroup USB_OTG_GRSTCTL_TXFFLSH_TIMEOUT_MS Tx FIFO flush timeout
-  * @{
-  */
-#define USB_OTG_GRSTCTL_TXFFLSH_TIMEOUT_MS  ((uint32_t)5U)
-
-/** @defgroup USB_OTG_GRSTCTL_RXFFLSH_TIMEOUT_MS Rx FIFO flush timeout
-  * @{
-  */
-#define USB_OTG_GRSTCTL_RXFFLSH_TIMEOUT_MS  ((uint32_t)5U)
-
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -371,21 +350,18 @@ HAL_StatusTypeDef USB_DevInit (USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
   */
 HAL_StatusTypeDef USB_FlushTxFifo (USB_OTG_GlobalTypeDef *USBx, uint32_t num )
 {
-  uint32_t tickstart;
-
-  USBx->GRSTCTL = (USB_OTG_GRSTCTL_TXFFLSH | (num << 6));
-
-  /* Get tick */
-  tickstart = HAL_GetTick();
-
-  /* Wait for AHB master IDLE state. */
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH)
+  uint32_t count = 0;
+  
+  USBx->GRSTCTL = ( USB_OTG_GRSTCTL_TXFFLSH |(uint32_t)( num << 6)); 
+  
+  do
   {
-    if ((HAL_GetTick() - tickstart) > USB_OTG_GRSTCTL_TXFFLSH_TIMEOUT_MS)
+    if (++count > 200000)
     {
       return HAL_TIMEOUT;
     }
   }
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_TXFFLSH) == USB_OTG_GRSTCTL_TXFFLSH);
   
   return HAL_OK;
 }
@@ -398,22 +374,19 @@ HAL_StatusTypeDef USB_FlushTxFifo (USB_OTG_GlobalTypeDef *USBx, uint32_t num )
   */
 HAL_StatusTypeDef USB_FlushRxFifo(USB_OTG_GlobalTypeDef *USBx)
 {
-  uint32_t tickstart;
-
+  uint32_t count = 0;
+  
   USBx->GRSTCTL = USB_OTG_GRSTCTL_RXFFLSH;
-
-  /* Get tick */
-  tickstart = HAL_GetTick();
-
-  /* Wait for AHB master IDLE state. */
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH)
+  
+  do
   {
-    if ((HAL_GetTick() - tickstart) > USB_OTG_GRSTCTL_RXFFLSH_TIMEOUT_MS)
+    if (++count > 200000)
     {
       return HAL_TIMEOUT;
     }
   }
-
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_RXFFLSH) == USB_OTG_GRSTCTL_RXFFLSH);
+  
   return HAL_OK;
 }
 
@@ -1222,36 +1195,34 @@ HAL_StatusTypeDef USB_EP0_OutStart(USB_OTG_GlobalTypeDef *USBx, uint8_t dma, uin
   */
 static HAL_StatusTypeDef USB_CoreReset(USB_OTG_GlobalTypeDef *USBx)
 {
-  uint32_t tickstart;
-  
-  /* Get tick */
-  tickstart = HAL_GetTick();
+  uint32_t count = 0U;
 
   /* Wait for AHB master IDLE state. */
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U)
+  do
   {
-    if ((HAL_GetTick() - tickstart) > USB_OTG_GRSTCTL_AHBIDL_TIMEOUT_MS)
+    if (++count > 200000U)
     {
       return HAL_TIMEOUT;
     }
   }
-
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U);
+  
   /* Core Soft Reset */
+  count = 0U;
   USBx->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
 
-  /* Get tick */
-  tickstart = HAL_GetTick();
-
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST)
+  do
   {
-    if ((HAL_GetTick() - tickstart) > USB_OTG_GRSTCTL_CSRST_TIMEOUT_MS)
+    if (++count > 200000U)
     {
       return HAL_TIMEOUT;
     }
   }
-
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);
+  
   return HAL_OK;
 }
+
 
 /**
   * @brief  USB_HostInit : Initializes the USB OTG controller registers 

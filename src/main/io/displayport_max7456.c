@@ -86,12 +86,12 @@ static int screenSize(const displayPort_t *displayPort)
     return maxScreenSize;
 }
 
-static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, const char *text)
+static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, const char *s)
 {
     UNUSED(displayPort);
     UNUSED(attr);
 
-    max7456Write(x, y, text);
+    max7456Write(x, y, s);
 
     return 0;
 }

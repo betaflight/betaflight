@@ -49,8 +49,6 @@
 #define YAW_SPIN_RECOVERY_THRESHOLD_MAX 1950
 #endif
 
-#define GYRO_IMU_DOWNSAMPLE_CUTOFF_HZ 200
-
 typedef union gyroLowpassFilter_u {
     pt1Filter_t pt1FilterState;
     biquadFilter_t biquadFilterState;
@@ -129,7 +127,7 @@ typedef struct gyro_s {
 #ifdef USE_GYRO_OVERFLOW_CHECK
     uint8_t overflowAxisMask;
 #endif
-    pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
+
 } gyro_t;
 
 extern gyro_t gyro;
@@ -204,7 +202,7 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 
 void gyroUpdate(void);
 void gyroFiltering(timeUs_t currentTimeUs);
-float gyroGetFilteredDownsampled(int axis);
+bool gyroGetAccumulationAverage(float *accumulation);
 void gyroStartCalibration(bool isFirstArmingCalibration);
 bool isFirstArmingGyroCalibrationRunning(void);
 bool gyroIsCalibrationComplete(void);

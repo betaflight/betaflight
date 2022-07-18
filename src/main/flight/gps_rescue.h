@@ -26,12 +26,12 @@ typedef struct gpsRescue_s {
     uint16_t initialAltitudeM; //meters
     uint16_t descentDistanceM; //meters
     uint16_t rescueGroundspeed; //centimeters per second
-    uint8_t throttleP, throttleI, throttleD;
-    uint8_t yawP;
+    uint16_t throttleP, throttleI, throttleD;
+    uint16_t yawP;
     uint16_t throttleMin;
     uint16_t throttleMax;
     uint16_t throttleHover;
-    uint8_t velP, velI, velD;
+    uint16_t velP, velI, velD;
     uint8_t minSats;
     uint16_t minRescueDth; //meters
     uint8_t sanityChecks;
@@ -43,12 +43,11 @@ typedef struct gpsRescue_s {
     uint16_t ascendRate;
     uint16_t descendRate;
     uint16_t rescueAltitudeBufferM; //meters
-    uint8_t rollMix;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
 
-extern float gpsRescueAngle[ANGLE_INDEX_COUNT]; //NOTE: ANGLES ARE IN CENTIDEGREES
+extern int32_t gpsRescueAngle[ANGLE_INDEX_COUNT]; //NOTE: ANGLES ARE IN CENTIDEGREES
 
 void updateGPSRescueState(void);
 void rescueNewGpsData(void);

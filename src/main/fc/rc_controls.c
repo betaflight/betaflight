@@ -177,8 +177,7 @@ void processRcStickPositions()
             resetTryingToArm();
             // Disarming via ARM BOX
             resetArmingDisabled();
-            const bool switchFailsafe = (failsafeIsActive() && (IS_RC_MODE_ACTIVE(BOXFAILSAFE) || IS_RC_MODE_ACTIVE(BOXGPSRESCUE)));
-            if (ARMING_FLAG(ARMED) && (failsafeIsReceivingRxData() || switchFailsafe)) {
+            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
                     disarm(DISARM_REASON_SWITCH);

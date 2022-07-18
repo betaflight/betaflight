@@ -188,7 +188,6 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
-    OSD_STAT_WATT_HOURS_DRAWN,
 };
 
 // Group elements in a number of groups to reduce task scheduling overhead
@@ -770,14 +769,6 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             return true;
         }
         break;
-    
-    case OSD_STAT_WATT_HOURS_DRAWN:
-        if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-            osdPrintFloat(buff, SYM_NONE, getWhDrawn(), "", 2, true, SYM_NONE);
-            osdDisplayStatisticLabel(displayRow, "USED WATT HOURS", buff);
-            return true;
-        }
-        break;
 
 #ifdef USE_BLACKBOX
     case OSD_STAT_BLACKBOX:
@@ -1131,7 +1122,7 @@ void osdProcessStats3()
        && (VISIBLE(osdElementConfig()->item_pos[OSD_G_FORCE]) || osdStatGetState(OSD_STAT_MAX_G_FORCE))) {
             // only calculate the G force if the element is visible or the stat is enabled
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            const float a = acc.accADC[axis];
+            const float a = accAverage[axis];
             osdGForce += a * a;
         }
         osdGForce = sqrtf(osdGForce) * acc.dev.acc_1G_rec;

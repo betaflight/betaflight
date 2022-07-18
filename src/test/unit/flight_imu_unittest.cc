@@ -254,5 +254,4 @@ void schedulerIgnoreTaskExecTime(void) {}
 void schedulerIgnoreTaskStateTime(void) {}
 void schedulerSetNextStateTime(timeDelta_t) {}
 bool schedulerGetIgnoreTaskExecTime() { return false; }
-float gyroGetFilteredDownsampled(int) { return 0.0f; }
 }

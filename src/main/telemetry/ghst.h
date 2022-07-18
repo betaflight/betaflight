@@ -29,5 +29,5 @@
 
 void initGhstTelemetry(void);
 bool checkGhstTelemetryState(void);
-void setGhstTelemetryState(bool state);
 void handleGhstTelemetry(timeUs_t currentTimeUs);
+

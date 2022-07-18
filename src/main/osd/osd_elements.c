@@ -783,21 +783,20 @@ static void osdBackgroundCameraFrame(osdElementParms_t *element)
     element->drawElement = false;  // element already drawn
 }
 
-static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
-{
-    unsigned int i;
-    for (i = 0; i < maxSrcLength && src[i]; i++) {
-            dest[i] = toupper((unsigned char)src[i]);
-    }
-    dest[i] = '\0';
-}
-
 static void osdBackgroundCraftName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->name) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
     } else {
-        toUpperCase(element->buff, pilotConfig()->name, MAX_NAME_LENGTH);
+        unsigned i;
+        for (i = 0; i < MAX_NAME_LENGTH; i++) {
+            if (pilotConfig()->name[i]) {
+                element->buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
     }
 }
 
@@ -876,7 +875,15 @@ static void osdBackgroundDisplayName(osdElementParms_t *element)
     if (strlen(pilotConfig()->displayName) == 0) {
         strcpy(element->buff, "DISPLAY_NAME");
     } else {
-        toUpperCase(element->buff, pilotConfig()->displayName, MAX_NAME_LENGTH);
+        unsigned i;
+        for (i = 0; i < MAX_NAME_LENGTH; i++) {
+            if (pilotConfig()->displayName[i]) {
+                element->buff[i] = toupper((unsigned char)pilotConfig()->displayName[i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
     }
 }
 
@@ -894,7 +901,15 @@ static void osdElementRateProfileName(osdElementParms_t *element)
     if (strlen(currentControlRateProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "RATE_%u", getCurrentControlRateProfileIndex() + 1);
     } else {
-        toUpperCase(element->buff, currentControlRateProfile->profileName, MAX_PROFILE_NAME_LENGTH);
+        unsigned i;
+        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
+            if (currentControlRateProfile->profileName[i]) {
+                element->buff[i] = toupper((unsigned char)currentControlRateProfile->profileName[i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
     }
 }
 
@@ -903,7 +918,15 @@ static void osdElementPidProfileName(osdElementParms_t *element)
     if (strlen(currentPidProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "PID_%u", getCurrentPidProfileIndex() + 1);
     } else {
-        toUpperCase(element->buff, currentPidProfile->profileName, MAX_PROFILE_NAME_LENGTH);
+        unsigned i;
+        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
+            if (currentPidProfile->profileName[i]) {
+                element->buff[i] = toupper((unsigned char)currentPidProfile->profileName[i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
     }
 }
 #endif
@@ -916,7 +939,15 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
     if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
         tfp_sprintf(element->buff, "OSD_%u", profileIndex);
     } else {
-        toUpperCase(element->buff, osdConfig()->profile[profileIndex - 1], OSD_PROFILE_NAME_LENGTH);
+        unsigned i;
+        for (i = 0; i < OSD_PROFILE_NAME_LENGTH; i++) {
+            if (osdConfig()->profile[profileIndex - 1][i]) {
+                element->buff[i] = toupper((unsigned char)osdConfig()->profile[profileIndex - 1][i]);
+            } else {
+                break;
+            }
+        }
+        element->buff[i] = '\0';
     }
 }
 #endif
@@ -992,7 +1023,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (GPS_distanceToHome > 0) {
-            const int h = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
+            const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
             element->buff[0] = SYM_OVER_HOME;
@@ -1142,20 +1173,6 @@ static void osdElementLogStatus(osdElementParms_t *element)
 static void osdElementMahDrawn(osdElementParms_t *element)
 {
     tfp_sprintf(element->buff, "%4d%c", getMAhDrawn(), SYM_MAH);
-}
-
-static void osdElementWattHoursDrawn(osdElementParms_t *element)
-{
-    const float wattHoursDrawn = getWhDrawn();
-
-    if (wattHoursDrawn < 1.0f) {        
-        tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
-    } else {
-        int wattHourWholeNumber = (int)wattHoursDrawn;
-        int wattHourDecimalValue = (int)((wattHoursDrawn - wattHourWholeNumber) * 100);
-
-        tfp_sprintf(element->buff, wattHourDecimalValue >= 10 ? "%3d.%2dWH" : "%3d.0%1dWH", wattHourWholeNumber, wattHourDecimalValue);
-    }
 }
 
 static void osdElementMainBatteryUsage(osdElementParms_t *element)
@@ -1479,7 +1496,6 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_VTX_CHANNEL,
     OSD_CURRENT_DRAW,
     OSD_MAH_DRAWN,
-    OSD_WATT_HOURS_DRAWN,
     OSD_CRAFT_NAME,
     OSD_ALTITUDE,
     OSD_ROLL_PIDS,
@@ -1566,7 +1582,6 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
     [OSD_CURRENT_DRAW]            = osdElementCurrentDraw,
     [OSD_MAH_DRAWN]               = osdElementMahDrawn,
-    [OSD_WATT_HOURS_DRAWN]        = osdElementWattHoursDrawn,
 #ifdef USE_GPS
     [OSD_GPS_SPEED]               = osdElementGpsSpeed,
     [OSD_GPS_SATS]                = osdElementGpsSats,

@@ -77,7 +77,9 @@ static FAST_DATA_ZERO_INIT bool yawSpinDetected;
 static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 #endif
 
-static FAST_DATA_ZERO_INIT float gyroFilteredDownsampled[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT float gyroPrevious[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT int accumulatedMeasurementCount;
 
 static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
 
@@ -291,7 +293,7 @@ static FAST_CODE_NOINLINE void handleOverflow(timeUs_t currentTimeUs)
     }
 }
 
-static FAST_CODE_NOINLINE void checkForOverflow(timeUs_t currentTimeUs)
+static FAST_CODE void checkForOverflow(timeUs_t currentTimeUs)
 {
     // check for overflow to handle Yaw Spin To The Moon (YSTTM)
     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
@@ -346,7 +348,7 @@ static FAST_CODE_NOINLINE void handleYawSpin(timeUs_t currentTimeUs)
     }
 }
 
-static FAST_CODE_NOINLINE void checkForYawSpin(timeUs_t currentTimeUs)
+static FAST_CODE void checkForYawSpin(timeUs_t currentTimeUs)
 {
     // if not in overflow mode, handle yaw spins above threshold
 #ifdef USE_GYRO_OVERFLOW_CHECK
@@ -524,8 +526,11 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 
     if (!overflowDetected) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            gyroFilteredDownsampled[axis] = pt1FilterApply(&gyro.imuGyroFilter[axis], gyro.gyroADCf[axis]);
+            // integrate using trapezium rule to avoid bias
+            accumulatedMeasurements[axis] += 0.5f * (gyroPrevious[axis] + gyro.gyroADCf[axis]) * gyro.targetLooptime;
+            gyroPrevious[axis] = gyro.gyroADCf[axis];
         }
+        accumulatedMeasurementCount++;
     }
 
 #if !defined(USE_GYRO_OVERFLOW_CHECK) && !defined(USE_YAW_SPIN_RECOVERY)
@@ -533,9 +538,23 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 #endif
 }
 
-float gyroGetFilteredDownsampled(int axis)
+bool gyroGetAccumulationAverage(float *accumulationAverage)
 {
-    return gyroFilteredDownsampled[axis];
+    if (accumulatedMeasurementCount) {
+        // If we have gyro data accumulated, calculate average rate that will yield the same rotation
+        const timeUs_t accumulatedMeasurementTimeUs = accumulatedMeasurementCount * gyro.targetLooptime;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulationAverage[axis] = accumulatedMeasurements[axis] / accumulatedMeasurementTimeUs;
+            accumulatedMeasurements[axis] = 0.0f;
+        }
+        accumulatedMeasurementCount = 0;
+        return true;
+    } else {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulationAverage[axis] = 0.0f;
+        }
+        return false;
+    }
 }
 
 int16_t gyroReadSensorTemperature(gyroSensor_t gyroSensor)

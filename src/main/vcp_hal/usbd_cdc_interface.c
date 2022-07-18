@@ -47,8 +47,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include <stdbool.h>
-
 #include "platform.h"
 
 #include "build/atomic.h"
@@ -58,6 +56,7 @@
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
+#include "stdbool.h"
 
 #include "drivers/nvic.h"
 #include "drivers/serial_usb_vcp.h"

@@ -85,6 +85,7 @@ extern "C" {
     linkQualitySource_e linkQualitySource;
 
     acc_t acc;
+    float accAverage[XYZ_AXIS_COUNT];
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -100,7 +101,6 @@ extern "C" {
     uint16_t simulationBatteryVoltage;
     uint32_t simulationBatteryAmperage;
     uint32_t simulationMahDrawn;
-    float simulationWhDrawn;
     int32_t simulationAltitude;
     int32_t simulationVerticalSpeed;
     uint16_t simulationCoreTemperature;
@@ -129,7 +129,6 @@ void setDefaultSimulationState()
     simulationBatteryVoltage = 1680;
     simulationBatteryAmperage = 0;
     simulationMahDrawn = 0;
-    simulationWhDrawn = 0;
     simulationAltitude = 0;
     simulationVerticalSpeed = 0;
     simulationCoreTemperature = 0;
@@ -1322,10 +1321,6 @@ extern "C" {
 
     int32_t getMAhDrawn() {
         return simulationMahDrawn;
-    }
-
-    float getWhDrawn() {
-        return simulationWhDrawn;
     }
 
     int32_t getEstimatedAltitudeCm() {

@@ -101,7 +101,7 @@ void failsafeReset(void)
     failsafeState.throttleLowPeriod = 0;
     failsafeState.landingShouldBeFinishedAt = 0;
     failsafeState.receivingRxDataPeriod = 0;
-    failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
+    failsafeState.receivingRxDataPeriodPreset = 0;
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
 }
@@ -142,9 +142,6 @@ static bool failsafeShouldHaveCausedLandingByNow(void)
 bool failsafeIsReceivingRxData(void)
 {
     return (failsafeState.rxLinkState == FAILSAFE_RXLINK_UP);
-    // False with failsafe switch or when no valid packets for 100ms or any flight channel invalid for 300ms,
-    // stays false until after recovery period expires
-    // Link down is the trigger for the various failsafe stage 2 outcomes.
 }
 
 void failsafeOnRxSuspend(uint32_t usSuspendPeriod)
@@ -177,10 +174,8 @@ void failsafeOnValidDataReceived(void)
         // using the BST flag since no other suitable name....
     }
 
-    if (cmp32(failsafeState.validRxDataReceivedAt, failsafeState.validRxDataFailedAt) > (int32_t)failsafeState.receivingRxDataPeriodPreset) {
-        // receivingRxDataPeriodPreset is rxDataRecoveryPeriod unless set to zero to allow immediate control recovery after switch induced failsafe
+    if (cmp32(failsafeState.validRxDataReceivedAt, failsafeState.validRxDataFailedAt) > (int32_t)failsafeState.rxDataRecoveryPeriod){
         // rxDataRecoveryPeriod defaults to 1.0s with minimum of PERIOD_RXDATA_RECOVERY (200ms)
-        // link is not considered 'up', after it has been 'down', until that recovery period has expired
         failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;
         unsetArmingDisabled(ARMING_DISABLED_BST);
     }
@@ -224,7 +219,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
     }
 
     bool receivingRxData = failsafeIsReceivingRxData();
-    // true when FAILSAFE_RXLINK_UP
+    // should be true when FAILSAFE_RXLINK_UP
     // FAILSAFE_RXLINK_UP is set in failsafeOnValidDataReceived
     // failsafeOnValidDataReceived runs from detectAndApplySignalLossBehaviour
 
@@ -233,7 +228,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
     if (failsafeSwitchIsOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_STAGE2)) {
-        // Aux switch set to failsafe stage2 emulates immediate loss of signal without waiting
+        // Aux switch set to failsafe stage2 emulates loss of signal without waiting
         failsafeOnValidDataFailed();
         receivingRxData = false;
     }
@@ -325,13 +320,9 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
                             failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
-                            //  allow re-arming 1 second after Rx recovery
+                            //  allow re-arming 3 seconds after Rx recovery
                             break;
 #endif
-                    }
-                    if (failsafeSwitchIsOn) {
-                        failsafeState.receivingRxDataPeriodPreset = 0;
-                        // allow immediate recovery if failsafe is triggered by a switch
                     }
                 }
                 reprocessState = true;
@@ -347,9 +338,6 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     }
                     if (failsafeShouldHaveCausedLandingByNow() || crashRecoveryModeActive() || !armed) {
                         // to manually disarm while Landing, aux channels must be enabled
-                        // note also that disarming via arm box must be possible during failsafe in rc_controls.c
-                        // this should be blocked during signal not received periods, to avoid false disarms
-                        // but should be allowed otherwise, eg after signal recovers, or during switch initiated failsafe
                         failsafeState.phase = FAILSAFE_LANDED;
                         reprocessState = true;
                     }
@@ -358,7 +346,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 #ifdef USE_GPS_RESCUE
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
-                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || !failsafeSwitchIsOn) {
+                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold)) {
                         //  this test requires stick inputs to be received during GPS Rescue see PR #7936 for rationale
                         failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                         reprocessState = true;
@@ -385,8 +373,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_MONITORING:
-                // receivingRxData is true when we get valid Rx Data and the recovery period has expired
-                // for switch initiated failsafes, the recovery period is zero
+                // Monitoring the rx link, allow rearming when it has become good for > `receivingRxDataPeriodPreset` time.
                 if (receivingRxData) {
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now
@@ -399,7 +386,9 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_RECOVERED:
-                // Entering IDLE, terminating failsafe, reset throttle low timer
+                // Entering IDLE with the requirement that throttle first must be at min_check for failsafe_throttle_low_delay period.
+                // This is to prevent that JustDisarm is activated on the next iteration.
+                // Because that would have the effect of shutting down failsafe handling on intermittent connections.
                 failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                 failsafeState.phase = FAILSAFE_IDLE;
                 failsafeState.active = false;

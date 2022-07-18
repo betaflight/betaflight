@@ -147,25 +147,25 @@ bool icm20689SpiAccDetect(accDev_t *acc)
 
 void icm20689GyroInit(gyroDev_t *gyro)
 {
-    extDevice_t *dev = &gyro->dev;
-
-    spiSetClkDivisor(dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
+    spiSetClkDivisor(&gyro->dev, spiCalculateDivider(ICM20689_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
 
     // Device was already reset during detection so proceed with configuration
 
-    spiWriteReg(dev, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    spiWriteReg(&gyro->dev, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delayMicroseconds(ICM20689_CLKSEL_SETTLE_US);
-    spiWriteReg(dev, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
-    spiWriteReg(dev, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
-    spiWriteReg(dev, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
-    spiWriteReg(dev, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
+    spiWriteReg(&gyro->dev, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    spiWriteReg(&gyro->dev, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    spiWriteReg(&gyro->dev, MPU_RA_CONFIG, mpuGyroDLPF(gyro));
+    spiWriteReg(&gyro->dev, MPU_RA_SMPLRT_DIV, gyro->mpuDividerDrops);
 
     // Data ready interrupt configuration
-    spiWriteReg(dev, MPU_RA_INT_PIN_CFG, ICM20689_INT_ANYRD_2CLEAR);
+    spiWriteReg(&gyro->dev, MPU_RA_INT_PIN_CFG, ICM20689_INT_ANYRD_2CLEAR);
 
-    spiWriteReg(dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+#ifdef USE_MPU_DATA_READY_SIGNAL
+    spiWriteReg(&gyro->dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+#endif
 }
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)

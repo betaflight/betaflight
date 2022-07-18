@@ -91,7 +91,9 @@ void mpu6500GyroInit(gyroDev_t *gyro)
 #endif
     delay(15);
 
-    busWriteRegister(&gyro->dev, MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
+#ifdef USE_MPU_DATA_READY_SIGNAL
+    busWriteRegister(dev, MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
+#endif
     delay(15);
 }
 

@@ -46,6 +46,7 @@ static bool isEOCConnected = false;
 #define BMP085_DATA_FRAME_SIZE 3
 static uint8_t sensor_data[BMP085_DATA_FRAME_SIZE];
 
+#ifdef USE_EXTI
 static IO_t eocIO;
 static extiCallbackRec_t exti;
 
@@ -54,6 +55,7 @@ static void bmp085ExtiHandler(extiCallbackRec_t* cb)
     UNUSED(cb);
     isConversionComplete = true;
 }
+#endif
 
 typedef struct {
     int16_t ac1;
@@ -159,6 +161,7 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
     bmp085InitXclrIO(config);
     BMP085_ON;   // enable baro
 
+#ifdef USE_EXTI
     // EXTI interrupt for barometer EOC
 
     eocIO = IOGetByTag(config->eocTag);
@@ -166,6 +169,9 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
     EXTIHandlerInit(&exti, bmp085ExtiHandler);
     EXTIConfig(eocIO, &exti, NVIC_PRIO_BARO_EXTI, IOCFG_IN_FLOATING, BETAFLIGHT_EXTI_TRIGGER_RISING);
     EXTIEnable(eocIO);
+#else
+    UNUSED(config);
+#endif
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
@@ -206,10 +212,12 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
         }
     }
 
+#ifdef USE_EXTI
     if (eocIO) {
         IORelease(eocIO);
         EXTIRelease(eocIO);
     }
+#endif
 
     BMP085_OFF;
 
@@ -389,6 +397,7 @@ static bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config
 {
     UNUSED(config);
 
+#ifdef USE_EXTI
     if (!bmp085InitDone && eocIO) {
         // EOC should be low at this point. If not, assume EOC is not working
         if (IORead(eocIO)) {
@@ -404,6 +413,9 @@ static bool bmp085TestEOCConnected(baroDev_t *baro, const bmp085Config_t *config
             return true;
         }
     }
+#else
+    UNUSED(baro);
+#endif
 
     return false; // assume EOC is not connected
 }

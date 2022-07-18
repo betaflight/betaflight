@@ -27,6 +27,7 @@
 
 // Exported symbols
 extern bool canUseGPSHeading;
+extern float accAverage[XYZ_AXIS_COUNT];
 
 typedef struct {
     float w,x,y,z;
@@ -56,7 +57,6 @@ typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
     uint8_t small_angle;
-    uint8_t imu_process_denom;
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);

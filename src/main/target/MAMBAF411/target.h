@@ -41,7 +41,10 @@
 
 // ******* GYRO and ACC ********
 
+#define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PB0
+#define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1

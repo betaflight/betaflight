@@ -37,7 +37,10 @@
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
 
+#define USE_EXTI
+#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN           PC4
+#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_ACC
 #define USE_GYRO

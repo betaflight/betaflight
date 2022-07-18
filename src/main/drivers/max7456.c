@@ -498,13 +498,12 @@ void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
     }
 }
 
-void max7456Write(uint8_t x, uint8_t y, const char *text)
+void max7456Write(uint8_t x, uint8_t y, const char *buff)
 {
     if (y < VIDEO_LINES_PAL) {
         uint8_t *buffer = getActiveLayerBuffer();
-        const uint32_t bufferYOffset = y * CHARS_PER_LINE;
-        for (int i = 0, bufferXOffset = x; text[i] && bufferXOffset < CHARS_PER_LINE; i++, bufferXOffset++) {
-            buffer[bufferYOffset + bufferXOffset] = text[i];
+        for (int i = 0; buff[i] && x + i < CHARS_PER_LINE; i++) {
+            buffer[y * CHARS_PER_LINE + x + i] = buff[i];
         }
     }
 }

@@ -61,7 +61,6 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
-#include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/piniobox.h"
@@ -127,10 +126,6 @@ static void taskMain(timeUs_t currentTimeUs)
 #ifdef USE_SDCARD
     afatfs_poll();
 #endif
-
-#ifdef USE_FLASHFS
-    flashfsEraseAsync();
-#endif
 }
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
@@ -166,7 +161,7 @@ static void taskBatteryAlerts(timeUs_t currentTimeUs)
 #ifdef USE_ACC
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
-    accUpdate(currentTimeUs);
+    accUpdate(currentTimeUs, &accelerometerConfigMutable()->accelerometerTrims);
 }
 #endif
 
