@@ -38,6 +38,9 @@ typedef struct currentMeter_s {
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
     int32_t amperageLatest;     // current read by current sensor in centiampere (1/100th A) (unfiltered)
     int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
+#ifdef USE_BATTERY_CONTINUE
+    int32_t mAhDrawnOffset;     // mAh offset
+#endif
 } currentMeter_t;
 
 // WARNING - do not mix usage of CURRENT_SENSOR_* and CURRENT_METER_*, they are separate concerns.
