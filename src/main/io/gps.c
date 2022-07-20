@@ -681,7 +681,8 @@ void gpsInitUblox(void)
                         }
                         break;
                     case 12:
-                        ubloxSetNavRate(0xC8, 1, 1); // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
+                        ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle)
+//                        ubloxSetNavRate(0xC8, 1, 1); // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
                         break;
                     case 13:
                         ubloxSetSbas();
