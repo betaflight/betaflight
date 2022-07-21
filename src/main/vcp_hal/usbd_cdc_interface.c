@@ -408,17 +408,11 @@ uint32_t CDC_Receive_BytesAvailable(void)
 
 uint32_t CDC_Send_FreeBytes(void)
 {
-    /*
-        return the bytes free in the circular buffer
-
-        functionally equivalent to:
-        (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
-        but without the impact of the condition check.
-    */
+    // return the bytes free in the circular buffer
     uint32_t freeBytes;
 
     ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
-        freeBytes = ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
+        freeBytes = APP_RX_DATA_SIZE - rxAvailable;
     }
 
     return freeBytes;

@@ -187,7 +187,7 @@ static serialPort_t *cliPort = NULL;
 
 static bufWriter_t *cliWriter = NULL;
 static bufWriter_t *cliErrorWriter = NULL;
-static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_OUT_BUFFER_SIZE];
+static uint8_t cliWriteBuffer[sizeof(bufWriter_t) + CLI_OUT_BUFFER_SIZE];
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
