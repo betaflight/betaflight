@@ -135,7 +135,6 @@
 #define PARAM_NAME_GPS_RESCUE_INITIAL_ALT "gps_rescue_initial_alt"
 #define PARAM_NAME_GPS_RESCUE_DESCENT_DIST "gps_rescue_descent_dist"
 #define PARAM_NAME_GPS_RESCUE_LANDING_ALT "gps_rescue_landing_alt"
-#define PARAM_NAME_GPS_RESCUE_LANDING_DIST "gps_rescue_landing_dist"
 #define PARAM_NAME_GPS_RESCUE_GROUND_SPEED "gps_rescue_ground_speed"
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_P "gps_rescue_throttle_p"
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_I "gps_rescue_throttle_i"
