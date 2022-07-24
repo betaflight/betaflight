@@ -1922,7 +1922,7 @@ void osdUpdateAlarms(void)
             CLR_BLINK(OSD_HOME_DIST);
         }
     } else {
-        CLR_BLINK(OSD_HOME_DIST);;
+        CLR_BLINK(OSD_HOME_DIST);
     }
 #endif
 

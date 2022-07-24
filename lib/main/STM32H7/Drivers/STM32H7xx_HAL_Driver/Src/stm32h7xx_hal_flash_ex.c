@@ -1819,7 +1819,7 @@ static void FLASH_OB_SharedRAM_Config(uint32_t SharedRamConfig)
   */
 static uint32_t FLASH_OB_SharedRAM_GetConfig(void)
 {
-  return (FLASH->OPTSR2_CUR & FLASH_OPTSR2_TCM_AXI_SHARED);;
+  return (FLASH->OPTSR2_CUR & FLASH_OPTSR2_TCM_AXI_SHARED);
 }
 #endif /* FLASH_OPTSR2_TCM_AXI_SHARED */
 
@@ -1846,7 +1846,7 @@ static void FLASH_OB_CPUFreq_BoostConfig(uint32_t FreqBoost)
   */
 static uint32_t FLASH_OB_CPUFreq_GetBoost(void)
 {
-  return (FLASH->OPTSR2_CUR & FLASH_OPTSR2_CPUFREQ_BOOST);;
+  return (FLASH->OPTSR2_CUR & FLASH_OPTSR2_CPUFREQ_BOOST);
 }
 #endif /* FLASH_OPTSR2_CPUFREQ_BOOST */
 

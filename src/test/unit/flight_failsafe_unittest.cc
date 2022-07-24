@@ -207,7 +207,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
     EXPECT_FALSE(isArmingDisabled());
 
     // simulate an Rx loss for the stage 1 duration
-    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);;
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);
     failsafeOnValidDataFailed();
     failsafeUpdateState();
 
@@ -342,7 +342,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     EXPECT_FALSE(isArmingDisabled());
 
     // simulate an Rx loss for the stage 1 duration
-    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);;
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);
     failsafeOnValidDataFailed();
     failsafeUpdateState();
 
@@ -671,7 +671,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     EXPECT_FALSE(isArmingDisabled());
 
     // simulate an Rx loss for the stage 1 duration
-    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);;
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);
     failsafeOnValidDataFailed();
     failsafeUpdateState();
 
