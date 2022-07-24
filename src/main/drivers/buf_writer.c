@@ -24,15 +24,14 @@
 
 #include "buf_writer.h"
 
-bufWriter_t *bufWriterInit(uint8_t *b, int total_size, bufWrite_t writer, void *arg)
+void bufWriterInit(bufWriter_t *b, uint8_t *data, int size, bufWrite_t writer, void *arg)
 {
     bufWriter_t *buf = (bufWriter_t *)b;
     buf->writer = writer;
     buf->arg = arg;
     buf->at = 0;
-    buf->capacity = total_size - sizeof(*buf);
-
-    return buf;
+    buf->capacity = size;
+    buf->data = data;
 }
 
 void bufWriterAppend(bufWriter_t *b, uint8_t ch)
