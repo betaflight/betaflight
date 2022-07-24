@@ -181,9 +181,10 @@ static serialPort_t *cliPort = NULL;
 #define CLI_IN_BUFFER_SIZE 256
 #define CLI_OUT_BUFFER_SIZE 64
 
+static bufWriter_t cliWriterDesc;
 static bufWriter_t *cliWriter = NULL;
 static bufWriter_t *cliErrorWriter = NULL;
-static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_OUT_BUFFER_SIZE];
+static uint8_t cliWriteBuffer[CLI_OUT_BUFFER_SIZE];
 
 static char cliBuffer[CLI_IN_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
@@ -6863,8 +6864,8 @@ void cliEnter(serialPort_t *serialPort)
     cliMode = true;
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
-    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
-    cliErrorWriter = cliWriter;
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
 
 #ifndef MINIMAL_CLI
     cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
