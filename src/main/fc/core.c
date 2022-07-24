@@ -361,7 +361,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_RPM_FILTER
         // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
-        // If the RPM filter is anabled and any motor isn't providing telemetry, then disable arming
+        // If the RPM filter is enabled and any motor isn't providing telemetry, then disable arming
         if (isRpmFilterEnabled() && !isDshotTelemetryActive()) {
             setArmingDisabled(ARMING_DISABLED_RPMFILTER);
         } else {

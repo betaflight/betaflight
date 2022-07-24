@@ -20,7 +20,11 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include "common/axis.h"
+#include "common/time.h"
+
 #include "pg/pg.h"
 
 typedef struct rpmFilterConfig_s
@@ -36,8 +40,8 @@ typedef struct rpmFilterConfig_s
 
 PG_DECLARE(rpmFilterConfig_t, rpmFilterConfig);
 
-void  rpmFilterInit(const rpmFilterConfig_t *config);
-float rpmFilterGyro(const int axis, float value);
-void  rpmFilterUpdate(void);
+void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs);
+void rpmFilterUpdate(void);
+float rpmFilterApply(const int axis, float value);
 bool isRpmFilterEnabled(void);
-float rpmMinMotorFrequency(void);
+float getMinMotorFrequency(void);
