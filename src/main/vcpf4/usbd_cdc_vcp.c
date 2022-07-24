@@ -191,7 +191,7 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 
 uint32_t CDC_Send_FreeBytes(void)
 {
-    return APP_RX_DATA_SIZE - CDC_Receive_BytesAvailable();;
+    return APP_RX_DATA_SIZE - CDC_Receive_BytesAvailable();
 }
 
 /**

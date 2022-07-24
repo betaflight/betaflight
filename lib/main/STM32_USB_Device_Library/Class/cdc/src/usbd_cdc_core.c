@@ -186,7 +186,7 @@ __ALIGN_BEGIN uint8_t CmdBuff[CDC_CMD_PACKET_SZE] __ALIGN_END ;
 
 volatile uint32_t APP_Rx_ptr_in  = 0;
 volatile uint32_t APP_Rx_ptr_out = 0;
-volatile uint32_t APP_Rx_length  = 0;
+uint32_t APP_Rx_length  = 0;
 
 uint8_t  USB_Tx_State = USB_CDC_IDLE;
 
@@ -641,7 +641,7 @@ uint8_t  usbd_cdc_DataIn (void *pdev, uint8_t epnum)
             DCD_EP_Tx(pdev, CDC_IN_EP, (uint8_t*)&APP_Rx_Buffer[APP_Rx_ptr_out], USB_Tx_length);
 
             // Advance the out pointer
-            APP_Rx_ptr_out = (APP_Rx_ptr_out + USB_Tx_length) % APP_RX_DATA_SIZE;;
+            APP_Rx_ptr_out = (APP_Rx_ptr_out + USB_Tx_length) % APP_RX_DATA_SIZE;
             APP_Rx_length -= USB_Tx_length;
 
             return USBD_OK;
