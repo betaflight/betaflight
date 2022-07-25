@@ -231,6 +231,45 @@
 #define TARGET_IO_PORTF 0xffff
 #define TARGET_IO_PORTG 0xffff
 
+#elif defined(STM32H723)
+#define TARGET_BOARD_IDENTIFIER "SH72"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32H723"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
+#define USE_I2C_DEVICE_5
+
+#define USE_UART1
+#define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define USE_UART6
+#define USE_UART7
+#define USE_UART8
+#define USE_UART9
+#define USE_LPUART1
+
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 10)
+
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
+#define USE_SPI_DEVICE_6
+
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0xffff
+#define TARGET_IO_PORTG 0xffff
+
 #elif !defined(UNIT_TEST)
 
 #error "No resources defined for this Unified Target."
@@ -278,6 +317,9 @@
 #define USE_BEEPER
 
 // MPU interrupt
+#define USE_EXTI
+#define USE_MPU_DATA_READY_SIGNAL
+#define USE_GYRO_EXTI
 
 #define USE_ACC
 #define USE_GYRO
@@ -366,7 +408,6 @@
 #if (TARGET_FLASH_SIZE > 512)
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
-#define USE_ACCGYRO_BMI160
 
 #define USE_BARO_BMP085
 
