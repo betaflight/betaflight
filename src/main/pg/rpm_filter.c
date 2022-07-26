@@ -18,16 +18,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include <stdbool.h>
+#ifdef USE_RPM_FILTER
 
-#include "common/time.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-#include "pg/rpm_filter.h"
+#include "rpm_filter.h"
 
-void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs);
-void rpmFilterUpdate(void);
-float rpmFilterApply(const int axis, float value);
-bool isRpmFilterEnabled(void);
-float getMinMotorFrequency(void);
+PG_REGISTER_WITH_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 5);
+
+PG_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig,
+    .rpm_filter_harmonics = 3,
+    .rpm_filter_min_hz = 100,
+    .rpm_filter_fade_range_hz = 50,
+    .rpm_filter_q = 500,
+    .rpm_filter_lpf_hz = 150
+);
+
+#endif // USE_RPM_FILTER

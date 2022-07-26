@@ -20,14 +20,19 @@
 
 #pragma once
 
-#include <stdbool.h>
+#include <stdint.h>
 
-#include "common/time.h"
+#include "pg/pg.h"
 
-#include "pg/rpm_filter.h"
+typedef struct rpmFilterConfig_s
+{
+    uint8_t  rpm_filter_harmonics;     // how many harmonics should be covered with notches? 0 means filter off
+    uint8_t  rpm_filter_min_hz;        // minimum frequency of the notches
+    uint16_t rpm_filter_fade_range_hz; // range in which to gradually turn off notches down to minHz
+    uint16_t rpm_filter_q;             // q of the notches
 
-void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs);
-void rpmFilterUpdate(void);
-float rpmFilterApply(const int axis, float value);
-bool isRpmFilterEnabled(void);
-float getMinMotorFrequency(void);
+    uint16_t rpm_filter_lpf_hz;        // the cutoff of the lpf on reported motor rpm
+
+} rpmFilterConfig_t;
+
+PG_DECLARE(rpmFilterConfig_t, rpmFilterConfig);

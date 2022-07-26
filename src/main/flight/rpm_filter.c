@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_RPM_FILTER)
+#ifdef USE_RPM_FILTER
 
 #include "build/debug.h"
 
@@ -76,19 +76,6 @@ FAST_DATA_ZERO_INIT static float erpmToHz;
 FAST_DATA_ZERO_INIT static int notchUpdatesPerIteration;
 FAST_DATA_ZERO_INIT static int motorIndex;
 FAST_DATA_ZERO_INIT static int harmonicIndex;
-
-
-PG_REGISTER_WITH_RESET_FN(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 5);
-
-void pgResetFn_rpmFilterConfig(rpmFilterConfig_t *config)
-{
-    config->rpm_filter_harmonics = 3;
-    config->rpm_filter_min_hz = 100;
-    config->rpm_filter_fade_range_hz = 50;
-    config->rpm_filter_q = 500;
-
-    config->rpm_filter_lpf_hz = 150;
-}
 
 
 void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
@@ -209,4 +196,4 @@ float getMinMotorFrequency(void)
     return minMotorFrequencyHz;
 }
 
-#endif
+#endif // USE_RPM_FILTER
