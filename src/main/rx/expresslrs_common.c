@@ -40,7 +40,7 @@ STATIC_UNIT_TESTED uint16_t crc14tab[ELRS_CRC_LEN] = {0};
 
 static uint8_t volatile fhssIndex = 0;
 STATIC_UNIT_TESTED uint8_t fhssSequence[ELRS_NR_SEQUENCE_ENTRIES] = {0};
-static uint8_t seqCount = 0;
+static uint16_t seqCount = 0;
 static uint8_t syncChannel = 0;
 static uint32_t freqSpread = 0;
 
@@ -194,7 +194,7 @@ void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
     freqSpread = (fhssConfig->freqStop - fhssConfig->freqStart) * ELRS_FREQ_SPREAD_SCALE / MAX((fhssConfig->freqCount - 1), 1);
 
     // initialize the sequence array
-    for (uint8_t i = 0; i < seqCount; i++) {
+    for (uint16_t i = 0; i < seqCount; i++) {
         if (i % fhssConfig->freqCount == 0) {
             fhssSequence[i] = syncChannel;
         } else if (i % fhssConfig->freqCount == syncChannel) {
