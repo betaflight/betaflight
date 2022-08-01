@@ -45,6 +45,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#include "drivers/dshot.h"
 
 #include "config/config.h"
 #include "fc/controlrate_profile.h"
@@ -656,7 +657,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_RPM        :
                 escData = getEscSensorData(ESC_SENSOR_COMBINED);
                 if (escData != NULL) {
-                    smartPortSendPackage(id, calcEscRpm(escData->rpm));
+                    smartPortSendPackage(id, erpmToRpm(escData->rpm));
                     *clearToSend = false;
                 }
                 break;
@@ -670,7 +671,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_RPM8       :
                 escData = getEscSensorData(id - FSSP_DATAID_RPM1);
                 if (escData != NULL) {
-                    smartPortSendPackage(id, calcEscRpm(escData->rpm));
+                    smartPortSendPackage(id, erpmToRpm(escData->rpm));
                     *clearToSend = false;
                 }
                 break;

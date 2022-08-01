@@ -95,6 +95,7 @@ typedef struct dshotTelemetryState_s {
     uint32_t readCount;
     dshotTelemetryMotorState_t motorState[MAX_SUPPORTED_MOTORS];
     uint32_t inputBuffer[MAX_GCR_EDGES];
+    uint32_t averageRpm;
 } dshotTelemetryState_t;
 
 extern dshotTelemetryState_t dshotTelemetryState;
@@ -105,6 +106,8 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 #endif
 
 uint16_t getDshotTelemetry(uint8_t index);
+uint32_t erpmToRpm(uint16_t erpm);
+uint32_t getDshotAverageRpm(void);
 bool isDshotMotorTelemetryActive(uint8_t motorIndex);
 bool isDshotTelemetryActive(void);
 

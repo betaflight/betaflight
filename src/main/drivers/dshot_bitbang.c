@@ -495,6 +495,9 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
 
 static bool bbUpdateStart(void)
 {
+    uint32_t totalErpm;
+    uint32_t totalMotorsWithErpmData;
+
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -506,6 +509,9 @@ static bool bbUpdateStart(void)
         if (cmpTimeUs(currentUs, lastSendUs) < (timeDelta_t)(40 + 2 * dshotFrameUs)) {
             return false;
         }
+
+        totalErpm = 0;
+        totalMotorsWithErpmData = 0;
 
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
             dshotTelemetryType_t type;
@@ -543,6 +549,10 @@ static bool bbUpdateStart(void)
             dshotTelemetryState.readCount++;
 
             if (value != DSHOT_TELEMETRY_INVALID) {
+                if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
+                    totalErpm += value;
+                    totalMotorsWithErpmData++;
+                }
                 dshotUpdateTelemetryData(motorIndex, type, value);
                 if (motorIndex < 4) {
                     DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, value);
@@ -553,6 +563,11 @@ static bool bbUpdateStart(void)
 #ifdef USE_DSHOT_TELEMETRY_STATS
             updateDshotTelemetryQuality(&dshotTelemetryQuality[motorIndex], value != DSHOT_TELEMETRY_INVALID, currentTimeMs);
 #endif
+        }
+
+        // Calculate average when possible
+        if (totalMotorsWithErpmData > 0) {
+            dshotTelemetryState.averageRpm = erpmToRpm(totalErpm / totalMotorsWithErpmData);
         }
     }
 #endif

@@ -165,7 +165,6 @@ bool cliMode = false;
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
@@ -6169,6 +6168,9 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 #endif
 
         for (uint8_t i = 0; i < getMotorCount(); i++) {
+            const uint16_t erpm = getDshotTelemetry(i);
+            const uint16_t rpm = erpmToRpm(erpm);
+
             cliPrintf("%5d   %c%c%c%c%c %6d %6d %6d",
                     i + 1,
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) ? 'R' : '-'),
@@ -6176,9 +6178,7 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 'V' : '-'),
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 'C' : '-'),
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS)) ? 'S' : '-'),
-                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100,
-                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount,
-                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount / 60);
+                    erpm * 100, rpm, rpm / 60);
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
             if (isDshotMotorTelemetryActive(i)) {

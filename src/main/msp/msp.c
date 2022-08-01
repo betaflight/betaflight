@@ -139,7 +139,6 @@
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
@@ -1211,7 +1210,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
 #ifdef USE_DSHOT_TELEMETRY
             if (motorConfig()->dev.useDshotTelemetry) {
-                rpm = getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount;
+                rpm = erpmToRpm(getDshotTelemetry(i));
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
 
@@ -1247,7 +1246,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
             if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
                 escSensorData_t *escData = getEscSensorData(i);
                 if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
-                    rpm = calcEscRpm(escData->rpm);
+                    rpm = erpmToRpm(escData->rpm);
                     rpmDataAvailable = true;
                 }
                 escTemperature = escData->temperature;
