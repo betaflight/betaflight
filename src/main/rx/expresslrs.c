@@ -76,7 +76,7 @@ static uint8_t bindingRateIndex = 0;
 static bool connectionHasModelMatch = false;
 static uint8_t txPower = 0;
 static uint8_t wideSwitchIndex = 0;
-
+static uint8_t currTlmDenom = 1;
 static simpleLowpassFilter_t rssiFilter;
 
 static volatile DMA_DATA uint8_t dmaBuffer[ELRS_RX_TX_BUFF_SIZE];
@@ -280,7 +280,7 @@ static void unpackChannelDataHybridWide(uint16_t *rcData, const uint8_t *payload
     } else {
         uint8_t bins;
         uint16_t switchValue;
-        if (tlmRatioEnumToValue(receiver.modParams->tlmInterval) < 8) {
+        if (currTlmDenom < 8) {
             bins = 63;
             switchValue = switchByte & 0x3F; // 6-bit
         } else {
@@ -377,8 +377,8 @@ bool expressLrsIsFhssReq(void)
 
 bool expressLrsTelemRespReq(void)
 {
-    uint8_t modresult = (receiver.nonceRX + 1) % tlmRatioEnumToValue(receiver.modParams->tlmInterval);
-    if (receiver.inBindingMode || (receiver.connectionState == ELRS_DISCONNECTED) || (receiver.modParams->tlmInterval == TLM_RATIO_NO_TLM) || (modresult != 0)) {
+    uint8_t modresult = (receiver.nonceRX + 1) % currTlmDenom;
+    if (receiver.inBindingMode || (receiver.connectionState == ELRS_DISCONNECTED) || (currTlmDenom == 1) || (modresult != 0)) {
         return false; // don't bother sending tlm if disconnected or TLM is off
     } else {
         return true;
@@ -662,9 +662,8 @@ static bool processRFSyncPacket(volatile uint8_t *packet, const uint32_t timeSta
     receiver.lastSyncPacketMs = timeStampMs;
 
     // Will change the packet air rate in loop() if this changes
-    receiver.nextRateIndex = (packet[3] & 0xC0) >> 6;
-    uint8_t tlmRateIn = (packet[3] & 0x38) >> 3;
-    uint8_t switchEncMode = ((packet[3] & 0x06) >> 1) - 1; //spi implementation uses 0 based index for hybrid
+    receiver.nextRateIndex = ((packet[3] & 0xE0) >> 5) - 3;
+    uint8_t switchEncMode = ((packet[3] & 0x03) >> 0) - 1; //spi implementation uses 0 based index for hybrid
 
     // Update switch mode encoding immediately
     if (switchEncMode != rxExpressLrsSpiConfig()->switchMode) {
@@ -673,8 +672,10 @@ static bool processRFSyncPacket(volatile uint8_t *packet, const uint32_t timeSta
     }
 
     // Update TLM ratio
-    if (receiver.modParams->tlmInterval != tlmRateIn) {
-        receiver.modParams->tlmInterval = tlmRateIn;
+    uint8_t tlmRateIn = ((packet[3] & 0x1C) >> 2) + TLM_RATIO_NO_TLM;
+    uint8_t tlmDenom = tlmRatioEnumToValue(tlmRateIn);
+    if (currTlmDenom != tlmDenom) {
+        currTlmDenom = tlmDenom;
         telemBurstValid = false;
     }
 
@@ -730,7 +731,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         if (receiver.connectionState == ELRS_CONNECTED && connectionHasModelMatch) {
             if (rxExpressLrsSpiConfig()->switchMode == SM_HYBRID_WIDE) {
                 wideSwitchIndex = hybridWideNonceToSwitchIndex(receiver.nonceRX);
-                if ((tlmRatioEnumToValue(receiver.modParams->tlmInterval) < 8) || wideSwitchIndex == 7) {
+                if ((currTlmDenom < 8) || wideSwitchIndex == 7) {
                     confirmCurrentTelemetryPayload((dmaBuffer[6] & 0x40) >> 6);
                 }
             } else {
@@ -776,8 +777,7 @@ static void updateTelemetryBurst(void)
     telemBurstValid = true;
 
     uint32_t hz = rateEnumToHz(receiver.modParams->enumRate);
-    uint32_t ratiodiv = tlmRatioEnumToValue(receiver.modParams->tlmInterval);
-    telemetryBurstMax = TELEM_MIN_LINK_INTERVAL * hz / ratiodiv / 1000U;
+    telemetryBurstMax = TELEM_MIN_LINK_INTERVAL * hz / currTlmDenom / 1000U;
 
     // Reserve one slot for LINK telemetry
     if (telemetryBurstMax > 1) {
@@ -787,7 +787,7 @@ static void updateTelemetryBurst(void)
     }
 
     // Notify the sender to adjust its expected throughput
-    updateTelemetryRate(hz, ratiodiv, telemetryBurstMax);
+    updateTelemetryRate(hz, currTlmDenom, telemetryBurstMax);
 }
 
 /* If not connected will rotate through the RF modes looking for sync

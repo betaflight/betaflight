@@ -56,8 +56,8 @@ elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
     {
         {0, RATE_200HZ, SX127x_BW_500_00_KHZ, SX127x_SF_6, SX127x_CR_4_7, 5000, TLM_RATIO_1_64, 4, 8},
         {1, RATE_100HZ, SX127x_BW_500_00_KHZ, SX127x_SF_7, SX127x_CR_4_7, 10000, TLM_RATIO_1_64, 4, 8},
-        {2, RATE_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_NO_TLM, 4, 10},
-        {3, RATE_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_NO_TLM, 2, 10}
+        {2, RATE_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_1_16, 4, 10},
+        {3, RATE_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_1_8, 2, 10}
     },
 #endif
 #ifdef USE_RX_SX1280
@@ -65,7 +65,7 @@ elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
         {0, RATE_500HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF5, SX1280_LORA_CR_LI_4_6, 2000, TLM_RATIO_1_128, 4, 12},
         {1, RATE_250HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF6, SX1280_LORA_CR_LI_4_7, 4000, TLM_RATIO_1_64, 4, 14},
         {2, RATE_150HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF7, SX1280_LORA_CR_LI_4_7, 6666, TLM_RATIO_1_32, 4, 12},
-        {3, RATE_50HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_6, 20000, TLM_RATIO_NO_TLM, 2, 12}
+        {3, RATE_50HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_6, 20000, TLM_RATIO_1_16, 2, 12}
     },
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
@@ -472,34 +472,14 @@ void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
 
 uint8_t tlmRatioEnumToValue(const elrsTlmRatio_e enumval)
 {
-    switch (enumval) {
-    case TLM_RATIO_NO_TLM:
+    // !! TLM_RATIO_STD/TLM_RATIO_DISARMED should be converted by the caller !!
+    if (enumval == TLM_RATIO_NO_TLM) {
         return 1;
-        break;
-    case TLM_RATIO_1_2:
-        return 2;
-        break;
-    case TLM_RATIO_1_4:
-        return 4;
-        break;
-    case TLM_RATIO_1_8:
-        return 8;
-        break;
-    case TLM_RATIO_1_16:
-        return 16;
-        break;
-    case TLM_RATIO_1_32:
-        return 32;
-        break;
-    case TLM_RATIO_1_64:
-        return 64;
-        break;
-    case TLM_RATIO_1_128:
-        return 128;
-        break;
-    default:
-        return 0;
     }
+
+    // 1 << (8 - (enumval - TLM_RATIO_NO_TLM))
+    // 1_128 = 128, 1_64 = 64, 1_32 = 32, etc
+    return 1 << (8 + TLM_RATIO_NO_TLM - enumval);
 }
 
 uint16_t rateEnumToHz(const elrsRfRate_e eRate)
