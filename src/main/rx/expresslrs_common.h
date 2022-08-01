@@ -31,6 +31,8 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
+#include "rx/expresslrs_telemetry.h"
+
 #define ELRS_CRC_LEN 256
 #define ELRS_CRC14_POLY 0x2E57
 
@@ -82,8 +84,8 @@ typedef enum {
 } elrsFreqDomain_e;
 
 typedef enum {
-    SM_HYBRID = 0,
-    SM_HYBRID_WIDE = 1
+    SM_HYBRID_WIDE = 0,
+    SM_HYBRID = 1
 } elrsSwitchMode_e;
 
 typedef enum {
@@ -125,12 +127,12 @@ typedef struct elrsModSettings_s {
 typedef struct elrsRfPerfParams_s {
     int8_t index;
     elrsRfRate_e enumRate;        // Max value of 16 since only 4 bits have been assigned in the sync package.
-    int32_t sensitivity;            // expected RF sensitivity based on
-    uint32_t toa;                   // time on air in microseconds
-    uint32_t disconnectTimeoutMs;   // Time without a packet before receiver goes to disconnected (ms)
-    uint32_t rxLockTimeoutMs;       // Max time to go from tentative -> connected state on receiver (ms)
-    uint32_t syncPktIntervalDisconnected; // how often to send the SYNC_PACKET packet (ms) when there is no response from RX
-    uint32_t syncPktIntervalConnected;    // how often to send the SYNC_PACKET packet (ms) when there we have a connection
+    int16_t sensitivity;            // expected RF sensitivity based on
+    uint16_t toa;                   // time on air in microseconds
+    uint16_t disconnectTimeoutMs;   // Time without a packet before receiver goes to disconnected (ms)
+    uint16_t rxLockTimeoutMs;       // Max time to go from tentative -> connected state on receiver (ms)
+    uint16_t syncPktIntervalDisconnected; // how often to send the SYNC_PACKET packet (ms) when there is no response from RX
+    uint16_t syncPktIntervalConnected;    // how often to send the SYNC_PACKET packet (ms) when there we have a connection
 } elrsRfPerfParams_t;
 
 typedef struct elrsFhssConfig_s {
@@ -139,6 +141,56 @@ typedef struct elrsFhssConfig_s {
     uint32_t freqStop;
     uint8_t freqCount;
 } elrsFhssConfig_t;
+
+typedef struct elrsOtaPacket_s {
+    // The packet type must always be the low two bits of the first byte of the
+    // packet to match the same placement in OTA_Packet8_s
+    uint8_t type: 2,
+            crcHigh: 6;
+    union {
+        /** PACKET_TYPE_RCDATA **/
+        struct {
+            uint8_t ch[5];
+            uint8_t switches : 7,
+                    ch4 : 1;
+        } rc;
+        /** PACKET_TYPE_MSP **/
+        struct {
+            uint8_t packageIndex;
+            uint8_t payload[ELRS_MSP_BYTES_PER_CALL];
+        } msp_ul;
+        /** PACKET_TYPE_SYNC **/
+        struct {
+            uint8_t fhssIndex;
+            uint8_t nonce;
+            uint8_t switchEncMode : 1,
+                    newTlmRatio : 3,
+                    rateIndex : 4;
+            uint8_t UID3;
+            uint8_t UID4;
+            uint8_t UID5;
+        } sync;
+        /** PACKET_TYPE_TLM **/
+        struct {
+            uint8_t type : ELRS_TELEMETRY_SHIFT,
+                    packageIndex : (8 - ELRS_TELEMETRY_SHIFT);
+            union {
+                struct {
+                    uint8_t uplink_RSSI_1 : 7,
+                            antenna : 1;
+                    uint8_t uplink_RSSI_2 : 7,
+                            modelMatch : 1;
+                    uint8_t lq : 7,
+                            mspConfirm : 1;
+                    int8_t SNR;
+                    uint8_t free;
+                } ul_link_stats;
+                uint8_t payload[ELRS_TELEMETRY_BYTES_PER_CALL];
+            };
+        } tlm_dl;
+    };
+    uint8_t crcLow;
+} __attribute__ ((__packed__)) elrsOtaPacket_t;
 
 typedef bool (*elrsRxInitFnPtr)(IO_t resetPin, IO_t busyPin);
 typedef void (*elrsRxConfigFnPtr)(const uint8_t bw, const uint8_t sf, const uint8_t cr, const uint32_t freq, const uint8_t preambleLen, const bool iqInverted);
@@ -180,5 +232,7 @@ uint8_t lqGet(void);
 uint16_t convertSwitch1b(const uint16_t val);
 uint16_t convertSwitch3b(const uint16_t val);
 uint16_t convertSwitchNb(const uint16_t val, const uint16_t max);
-uint16_t convertAnalog(const uint16_t val);
 uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce);
+
+uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex);
+uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex);

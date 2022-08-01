@@ -190,7 +190,7 @@ void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
     seed = ((long)UID[2] << 24) + ((long)UID[3] << 16) + ((long)UID[4] << 8) + UID[5];
     fhssConfig = &fhssConfigs[dom];
     seqCount = (256 / MAX(fhssConfig->freqCount, 1)) * fhssConfig->freqCount;
-    syncChannel = fhssConfig->freqCount / 2;
+    syncChannel = (fhssConfig->freqCount / 2) + 1;
     freqSpread = (fhssConfig->freqStop - fhssConfig->freqStart) * ELRS_FREQ_SPREAD_SCALE / MAX((fhssConfig->freqCount - 1), 1);
 
     // initialize the sequence array
@@ -348,11 +348,6 @@ uint16_t convertSwitchNb(const uint16_t val, const uint16_t max)
     return (val > max) ? 1500 : val * 1000 / max + 1000;
 }
 
-uint16_t convertAnalog(const uint16_t val)
-{
-    return CRSF_RC_CHANNEL_SCALE_LEGACY * val + 881;
-}
-
 uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
 {
     // Returns the sequence (0 to 7, then 0 to 7 rotated left by 1):
@@ -363,6 +358,52 @@ uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
     // regardless of the TLM ratio
     // Index 7 also can never fall on a telemetry slot
     return ((nonce & 0x07) + ((nonce >> 3) & 0x01)) % 8;
+}
+
+uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
+{
+    switch (airRate) {
+    case 0:
+        return 0;
+    case 1:
+        return currentIndex;
+    case 2:
+        return 1;
+    case 3:
+        return 2;
+    case 4:
+        return 3;
+    default:
+        return currentIndex;
+    }
+}
+
+uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex)
+{
+    switch (airRate) {
+    case 0:
+        return currentIndex;
+    case 1:
+        return currentIndex;
+    case 2:
+        return currentIndex;
+    case 3:
+        return currentIndex;
+    case 4:
+        return 0;
+    case 5:
+        return currentIndex;
+    case 6:
+        return 1;
+    case 7:
+        return 2;
+    case 8:
+        return currentIndex;
+    case 9:
+        return 3;
+    default:
+        return currentIndex;
+    }
 }
 
 #endif /* USE_RX_EXPRESSLRS */
