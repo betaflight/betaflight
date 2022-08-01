@@ -78,6 +78,7 @@ static uint8_t txPower = 0;
 static uint8_t wideSwitchIndex = 0;
 static uint8_t currTlmDenom = 1;
 static simpleLowpassFilter_t rssiFilter;
+static meanAccumulator_t snrFilter;
 
 static volatile DMA_DATA uint8_t dmaBuffer[ELRS_RX_TX_BUFF_SIZE];
 static volatile DMA_DATA uint8_t telemetryPacket[ELRS_RX_TX_BUFF_SIZE];
@@ -387,7 +388,7 @@ static void expressLrsSendTelemResp(void)
         otaPkt.tlm_dl.ul_link_stats.antenna = 0;
         otaPkt.tlm_dl.ul_link_stats.modelMatch = connectionHasModelMatch;
         otaPkt.tlm_dl.ul_link_stats.lq = receiver.uplinkLQ;
-        otaPkt.tlm_dl.ul_link_stats.SNR = receiver.snr;
+        otaPkt.tlm_dl.ul_link_stats.SNR = meanAccumulatorMean(&snrFilter, -16);
 #ifdef USE_MSP_OVER_TELEMETRY
         otaPkt.tlm_dl.ul_link_stats.mspConfirm = getCurrentMspConfirm() ? 1 : 0;
 #else
@@ -518,6 +519,7 @@ static void tentativeConnection(const uint32_t timeStampMs)
     pl.offsetUs = 0;
     pl.previousRawOffsetUs = 0;
     expressLrsPhaseLockReset(); //also resets PFD
+    meanAccumulatorInit(&snrFilter);
     receiver.rfModeCycledAtMs = timeStampMs; // give another 3 sec for lock to occur
 
     // The caller MUST call hwTimer.resume(). It is not done here because
@@ -742,6 +744,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
 
     // Store the LQ/RSSI/Antenna
     receiver.getRfLinkInfo(&receiver.rssi, &receiver.snr);
+    meanAccumulatorAdd(&snrFilter, receiver.snr);
     // Received a packet, that's the definition of LQ
     lqIncrease();
 
@@ -1089,7 +1092,7 @@ rx_spi_received_e expressLrsDataReceived(uint8_t *payloadBuffer)
 
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 0, lostConnectionCounter);
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 1, receiver.rssiFiltered);
-    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 2, receiver.snr);
+    DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 2, receiver.snr / 4);
     DEBUG_SET(DEBUG_RX_EXPRESSLRS_SPI, 3, receiver.uplinkLQ);
 
     receiver.inBindingMode ? rxSpiLedBlinkBind() : rxSpiLedBlinkRxLoss(rfPacketStatus);
