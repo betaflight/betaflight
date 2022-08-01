@@ -35,6 +35,7 @@
 #define ELRS_CRC14_POLY 0x2E57
 
 #define ELRS_NR_SEQUENCE_ENTRIES 256
+#define ELRS_FREQ_SPREAD_SCALE 256
 
 #define ELRS_RX_TX_BUFF_SIZE 8
 
@@ -131,6 +132,13 @@ typedef struct elrsRfPerfParams_s {
     uint32_t syncPktIntervalDisconnected; // how often to send the SYNC_PACKET packet (ms) when there is no response from RX
     uint32_t syncPktIntervalConnected;    // how often to send the SYNC_PACKET packet (ms) when there we have a connection
 } elrsRfPerfParams_t;
+
+typedef struct elrsFhssConfig_s {
+    uint8_t  domain;
+    uint32_t freqStart;
+    uint32_t freqStop;
+    uint8_t freqCount;
+} elrsFhssConfig_t;
 
 typedef bool (*elrsRxInitFnPtr)(IO_t resetPin, IO_t busyPin);
 typedef void (*elrsRxConfigFnPtr)(const uint8_t bw, const uint8_t sf, const uint8_t cr, const uint32_t freq, const uint8_t preambleLen, const bool iqInverted);
