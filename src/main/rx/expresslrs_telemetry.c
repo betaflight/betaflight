@@ -122,10 +122,6 @@ uint8_t getCurrentTelemetryPayload(uint8_t *outData)
         break;
     case ELRS_SENDING:
         bytesLastPayload = MIN((uint8_t)(length - currentOffset), ELRS_TELEMETRY_BYTES_PER_CALL);
-        for (unsigned n = 0; n < bytesLastPayload; ++n)
-        {
-            outData[n] = data[currentOffset + n];
-        }
         // If this is the last data chunk, and there has been at least one other packet
         // skip the blank packet needed for WAIT_UNTIL_NEXT_CONFIRM
         if (currentPackage > 1 && (currentOffset + bytesLastPayload) >= length) {
@@ -133,6 +129,8 @@ uint8_t getCurrentTelemetryPayload(uint8_t *outData)
         } else {
             packageIndex = currentPackage;
         }
+        memcpy(outData, &data[currentOffset], bytesLastPayload);
+
         break;
     default:
         packageIndex = 0;
@@ -255,9 +253,8 @@ void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* const re
 
     if (acceptData) {
         uint8_t len = MIN((uint8_t)(mspLength - mspCurrentOffset), ELRS_MSP_BYTES_PER_CALL);
-        for (unsigned i = 0; i < len; i++) {
-            mspData[mspCurrentOffset++] = receiveData[i];
-        }
+        memcpy(&mspData[mspCurrentOffset], (const uint8_t*) receiveData, len);
+        mspCurrentOffset += len;
         mspConfirm = !mspConfirm;
     }
 }
