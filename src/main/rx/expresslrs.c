@@ -587,6 +587,7 @@ static void unpackBindPacket(volatile uint8_t *packet)
 
     receiver.UID = rxExpressLrsSpiConfigMutable()->UID;
     crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
+    crcInitializer ^= ELRS_OTA_VERSION_ID;
     receiver.inBindingMode = false;
     receiver.configChanged = true; //after initialize as it sets it to false
 }
@@ -900,6 +901,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
         receiver.inBindingMode = false;
         receiver.UID = rxExpressLrsSpiConfig()->UID;
         crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
+        crcInitializer ^= ELRS_OTA_VERSION_ID;
     } else {
         receiver.inBindingMode = true;
         receiver.UID = BindingUID;

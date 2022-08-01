@@ -187,7 +187,7 @@ Approach:
 */
 void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
 {
-    seed = ((long)UID[2] << 24) + ((long)UID[3] << 16) + ((long)UID[4] << 8) + UID[5];
+    seed = (((long)UID[2] << 24) + ((long)UID[3] << 16) + ((long)UID[4] << 8) + UID[5]) ^ ELRS_OTA_VERSION_ID;
     fhssConfig = &fhssConfigs[dom];
     seqCount = (256 / MAX(fhssConfig->freqCount, 1)) * fhssConfig->freqCount;
     syncChannel = (fhssConfig->freqCount / 2) + 1;

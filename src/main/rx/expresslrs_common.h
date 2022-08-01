@@ -33,6 +33,8 @@
 
 #include "rx/expresslrs_telemetry.h"
 
+#define ELRS_OTA_VERSION_ID 3
+
 #define ELRS_CRC_LEN 256
 #define ELRS_CRC14_POLY 0x2E57
 
