@@ -159,10 +159,11 @@ void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue)
             // A 0th packet is always requred so the reciver can
             // differentiate a new send from a resend, if this is
             // the first packet acked, send another, else IDLE
-            if (currentPackage == 1)
+            if (currentPackage == 1) {
                 nextSenderState = ELRS_WAIT_UNTIL_NEXT_CONFIRM;
-            else
+            } else {
                 nextSenderState = ELRS_SENDER_IDLE;
+            }
         }
 
         currentPackage++;

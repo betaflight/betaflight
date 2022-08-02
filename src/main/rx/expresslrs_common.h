@@ -147,8 +147,8 @@ typedef struct elrsFhssConfig_s {
 typedef struct elrsOtaPacket_s {
     // The packet type must always be the low two bits of the first byte of the
     // packet to match the same placement in OTA_Packet8_s
-    uint8_t type: 2,
-            crcHigh: 6;
+    uint8_t type : 2,
+            crcHigh : 6;
     union {
         /** PACKET_TYPE_RCDATA **/
         struct {

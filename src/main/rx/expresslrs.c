@@ -600,7 +600,7 @@ static void processRFMspPacket(volatile elrsOtaPacket_t const * const otaPktPtr)
     // Always examine MSP packets for bind information if in bind mode
     // [1] is the package index, first packet of the MSP
     if (receiver.inBindingMode && otaPktPtr->msp_ul.packageIndex == 1 && otaPktPtr->msp_ul.payload[0] == ELRS_MSP_BIND) {
-        unpackBindPacket((uint8_t *)&otaPktPtr->msp_ul.payload[1]); //onELRSBindMSP
+        unpackBindPacket((uint8_t *) &otaPktPtr->msp_ul.payload[1]); //onELRSBindMSP
         return;
     }
 
@@ -687,7 +687,7 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
 
 static bool validatePacketCrcStd(volatile elrsOtaPacket_t * const otaPktPtr)
 {
-    uint16_t const inCRC = ((uint16_t)otaPktPtr->crcHigh << 8) + otaPktPtr->crcLow;
+    uint16_t const inCRC = ((uint16_t) otaPktPtr->crcHigh << 8) + otaPktPtr->crcLow;
     // For smHybrid the CRC only has the packet type in byte 0
     // For smWide the FHSS slot is added to the CRC in byte 0 on PACKET_TYPE_RCDATAs
     if (otaPktPtr->type == ELRS_RC_DATA_PACKET && rxExpressLrsSpiConfig()->switchMode == SM_HYBRID_WIDE) {
@@ -727,7 +727,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
             } else {
                 confirmCurrentTelemetryPayload(otaPktPtr->rc.switches & (1 << 6));
             }
-            memcpy((uint8_t *)payload, (uint8_t *)dmaBuffer, ELRS_RX_TX_BUFF_SIZE); // stick data handling is done in expressLrsSetRcDataFromPayload
+            memcpy((uint8_t *) payload, (uint8_t *) dmaBuffer, ELRS_RX_TX_BUFF_SIZE); // stick data handling is done in expressLrsSetRcDataFromPayload
         }
         break;
     case ELRS_MSP_DATA_PACKET:
