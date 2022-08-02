@@ -1447,6 +1447,8 @@ static bool blackboxWriteSysinfo(void)
 #endif
 #ifdef USE_BARO
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_HARDWARE, "%d",           barometerConfig()->baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_NOISE_LPF, "%d",          barometerConfig()->baro_noise_lpf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_VARIO_LPF, "%d",          barometerConfig()->baro_vario_lpf);
 #endif
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);

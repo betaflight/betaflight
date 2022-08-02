@@ -186,7 +186,7 @@ static bool isCalibrating(void)
         || (sensors(SENSOR_ACC) && !accIsCalibrationComplete())
 #endif
 #ifdef USE_BARO
-        || (sensors(SENSOR_BARO) && !baroIsCalibrationComplete())
+        || (sensors(SENSOR_BARO) && !baroIsCalibrated())
 #endif
 #ifdef USE_MAG
         || (sensors(SENSOR_MAG) && !compassIsCalibrationComplete())

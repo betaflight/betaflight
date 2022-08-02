@@ -82,7 +82,7 @@ int32_t getAmperage(void)
     return amperage;
 }
 
-int32_t getEstimatedVario(void)
+int16_t getEstimatedVario(void)
 {
     return estimatedVario;
 }

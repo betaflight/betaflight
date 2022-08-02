@@ -81,7 +81,7 @@ bool sensorsAutodetect(void)
 #endif
 
 #ifdef USE_BARO
-    baroDetect(&baro.dev, barometerConfig()->baro_hardware);
+    baroInit();
 #endif
 
 #ifdef USE_RANGEFINDER
