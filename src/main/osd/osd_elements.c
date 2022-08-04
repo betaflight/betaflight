@@ -1443,6 +1443,35 @@ static void osdElementWarnings(osdElementParms_t *element)
     } else {
         CLR_BLINK(OSD_WARNINGS);
     }
+
+    #ifdef USE_CRAFTNAME_MSGS
+    // Injects data into the CraftName variable for systems which limit
+    // the available MSP data field in their OSD.
+    if (osdConfig()->osd_craftname_msgs == true) {
+        // if warning is not set, or blink is off, then display LQ & RSSI
+        if (blinkState || (strlen(element->buff) == 0)) {
+            #ifdef USE_RX_LINK_QUALITY_INFO
+            // replicate the LQ functionality without the special font symbols
+            uint16_t osdLinkQuality = 0;
+            if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
+                osdLinkQuality = rxGetLinkQuality();
+                const uint8_t osdRfMode = rxGetRfMode();
+                tfp_sprintf(element->buff, "LQ %2d:%03d %3d", osdRfMode, osdLinkQuality, getRssiDbm());
+            } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
+                osdLinkQuality = rxGetLinkQuality();
+                tfp_sprintf(element->buff, "LQ %03d %3d", osdLinkQuality, getRssiDbm());
+            } else { // 0-9
+                osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
+                if (osdLinkQuality >= 10) {
+                    osdLinkQuality = 9;
+                }
+                tfp_sprintf(element->buff, "LQ %1d", osdLinkQuality);
+            }
+            #endif // USE_RX_LINK_QUALITY_INFO
+        }
+        strncpy(pilotConfigMutable()->name, element->buff, MAX_NAME_LENGTH);
+    }
+    #endif // USE_CRAFTNAME_MSGS
 }
 
 // Define the order in which the elements are drawn.

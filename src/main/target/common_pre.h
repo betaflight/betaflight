@@ -407,6 +407,7 @@ extern uint8_t _dmaram_end__;
 #define USE_SIMPLIFIED_TUNING
 #define USE_RX_LINK_UPLINK_POWER
 #define USE_CRSF_V3
+#define USE_CRAFTNAME_MSGS
 #endif
 
 #if (TARGET_FLASH_SIZE > 512)

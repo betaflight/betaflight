@@ -1438,6 +1438,10 @@ const clivalue_t valueTable[] = {
     { "osd_menu_background",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CMS_BACKGROUND }, PG_OSD_CONFIG, offsetof(osdConfig_t, cms_background_type) },
 #endif // end of #ifdef USE_OSD
 
+#ifdef USE_CRAFTNAME_MSGS
+    { "osd_craftname_msgs",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_craftname_msgs) },
+#endif //USE_CRAFTNAME_MSGS
+
 // PG_SYSTEM_CONFIG
 #if defined(STM32F4) || defined(STM32G4)
     { "system_hse_mhz",             VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, hseMhz) },
