@@ -424,8 +424,10 @@ static void updatePhaseLock(void)
         pl.offsetUs = simpleLPFilterUpdate(&pl.offsetFilter, pl.rawOffsetUs);
         pl.offsetDeltaUs = simpleLPFilterUpdate(&pl.offsetDxFilter, pl.rawOffsetUs - pl.previousRawOffsetUs);
 
-        if (receiver.timerState == ELRS_TIM_LOCKED && lqPeriodIsSet()) {
-            if (receiver.nonceRX % 8 == 0) { //limit rate of freq offset adjustment slightly
+        if (receiver.timerState == ELRS_TIM_LOCKED) {
+            // limit rate of freq offset adjustment, use slot 1 because
+            // telemetry can fall on slot 1 and will never get here
+            if (receiver.nonceRX % 8 == 1) {
                 if (pl.offsetUs > 0) {
                     expressLrsTimerIncreaseFrequencyOffset();
                 } else if (pl.offsetUs < 0) {
