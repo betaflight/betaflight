@@ -129,7 +129,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_FAIL_SAFE) && failsafeIsActive()) {
         tfp_sprintf(warningText, "FAIL SAFE");
         *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -161,7 +161,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
         // Blink the message if the throttle is within 10% of the launch setting
         if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
-            *blinking = true;;
+            *blinking = true;
         }
 
         *displayAttr = DISPLAYPORT_ATTR_INFO;
@@ -173,7 +173,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(warningText, "RSSI LOW");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #ifdef USE_RX_RSSI_DBM
@@ -181,7 +181,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() < osdConfig()->rssi_dbm_alarm)) {
         tfp_sprintf(warningText, "RSSI DBM");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_RX_RSSI_DBM
@@ -191,7 +191,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
         tfp_sprintf(warningText, "LINK QUALITY");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_RX_LINK_QUALITY_INFO
@@ -199,7 +199,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
         tfp_sprintf(warningText, " LAND NOW");
         *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -211,7 +211,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
        !gpsRescueIsAvailable()) {
         tfp_sprintf(warningText, "RESCUE N/A");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -224,7 +224,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
             tfp_sprintf(warningText, "RESCUE OFF");
             *displayAttr = DISPLAYPORT_ATTR_WARNING;
-            *blinking = true;;
+            *blinking = true;
             return;
         }
     }
@@ -235,7 +235,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         tfp_sprintf(warningText, "HEADFREE");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -244,7 +244,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
         tfp_sprintf(warningText, "CORE %c: %3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_ADC_INTERNAL
@@ -296,7 +296,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (escWarningCount > 0) {
             tfp_sprintf(warningText, "%s", escWarningMsg);
             *displayAttr = DISPLAYPORT_ATTR_WARNING;
-            *blinking = true;;
+            *blinking = true;
             return;
         }
     }
@@ -305,7 +305,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
         tfp_sprintf(warningText, "LOW BATTERY");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -314,7 +314,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
         tfp_sprintf(warningText, "RCSMOOTHING");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_RC_SMOOTHING_FILTER
@@ -323,7 +323,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
         tfp_sprintf(warningText, "OVER CAP");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 

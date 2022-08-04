@@ -456,7 +456,7 @@ HAL_StatusTypeDef HAL_CRYP_Init(CRYP_HandleTypeDef *hcryp)
   }
 #endif /* (USE_HAL_CRYP_REGISTER_CALLBACKS) */
 
-  /* Set the key size(This bit field is ‘don’t care’ in the DES or TDES modes) data type and Algorithm */
+  /* Set the key size(This bit field is ï¿½donï¿½t careï¿½ in the DES or TDES modes) data type and Algorithm */
   MODIFY_REG(hcryp->Instance->CR, CRYP_CR_DATATYPE | CRYP_CR_KEYSIZE | CRYP_CR_ALGOMODE,
              hcryp->Init.DataType | hcryp->Init.KeySize | hcryp->Init.Algorithm);
 #if !defined (CRYP_VER_2_2)
@@ -567,7 +567,7 @@ HAL_StatusTypeDef HAL_CRYP_SetConfig(CRYP_HandleTypeDef *hcryp, CRYP_ConfigTypeD
     hcryp->Init.B0           = pConf->B0;
     hcryp->Init.DataWidthUnit = pConf->DataWidthUnit;
 
-    /* Set the key size(This bit field is ‘don’t care’ in the DES or TDES modes) data type, AlgoMode and operating mode*/
+    /* Set the key size(This bit field is ï¿½donï¿½t careï¿½ in the DES or TDES modes) data type, AlgoMode and operating mode*/
     MODIFY_REG(hcryp->Instance->CR, CRYP_CR_DATATYPE | CRYP_CR_KEYSIZE | CRYP_CR_ALGOMODE,
                hcryp->Init.DataType | hcryp->Init.KeySize | hcryp->Init.Algorithm);
 
@@ -853,7 +853,7 @@ HAL_StatusTypeDef HAL_CRYP_UnRegisterCallback(CRYP_HandleTypeDef *hcryp, HAL_CRY
   else
   {
     /* Update the error code */
-    hcryp->ErrorCode |= HAL_CRYP_ERROR_INVALID_CALLBACK;;
+    hcryp->ErrorCode |= HAL_CRYP_ERROR_INVALID_CALLBACK;
     /* Return error status */
     status =  HAL_ERROR;
   }
@@ -4240,8 +4240,8 @@ static void CRYP_GCMCCM_SetPayloadPhase_IT(CRYP_HandleTypeDef *hcryp)
   }
   else if ((hcryp->Size % 16U) != 0U)
   {
-	/* Set padding only in case of input fifo interrupt */
-	if ((hcryp->Instance->IMSCR & CRYP_IMSCR_INIM)!= 0x0U)
+    /* Set padding only in case of input fifo interrupt */
+    if ((hcryp->Instance->IMSCR & CRYP_IMSCR_INIM)!= 0x0U)
  {
     /* Compute the number of padding bytes in last block of payload */
     npblb = ((((uint32_t)hcryp->Size / 16U) + 1U) * 16U) - (uint32_t)(hcryp->Size);
@@ -4292,7 +4292,7 @@ static void CRYP_GCMCCM_SetPayloadPhase_IT(CRYP_HandleTypeDef *hcryp)
 
     /* Disable the input FIFO Interrupt */
     __HAL_CRYP_DISABLE_IT(hcryp, CRYP_IT_INI);
-	}
+    }
 
     /*Read the output block from the output FIFO */
     if ((hcryp->Instance->SR & CRYP_FLAG_OFNE) != 0x0U)

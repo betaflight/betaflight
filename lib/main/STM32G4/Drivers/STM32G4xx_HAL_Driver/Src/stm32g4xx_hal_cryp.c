@@ -930,7 +930,7 @@ HAL_StatusTypeDef HAL_CRYP_UnRegisterCallback(CRYP_HandleTypeDef *hcryp, HAL_CRY
   else
   {
     /* Update the error code */
-    hcryp->ErrorCode |= HAL_CRYP_ERROR_INVALID_CALLBACK;;
+    hcryp->ErrorCode |= HAL_CRYP_ERROR_INVALID_CALLBACK;
     /* Return error status */
     status =  HAL_ERROR;
   }

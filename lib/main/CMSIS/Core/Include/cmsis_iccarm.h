@@ -182,7 +182,7 @@ __IAR_FT uint16_t __iar_uint16_read(void const *ptr)
 #pragma language=extended
 __IAR_FT void __iar_uint16_write(void const *ptr, uint16_t val)
 {
-  *(__packed uint16_t*)(ptr) = val;;
+  *(__packed uint16_t*)(ptr) = val;
 }
 #pragma language=restore
 #define __UNALIGNED_UINT16_WRITE(PTR,VAL) __iar_uint16_write(PTR,VAL)
@@ -204,7 +204,7 @@ __IAR_FT uint32_t __iar_uint32_read(void const *ptr)
 #pragma language=extended
 __IAR_FT void __iar_uint32_write(void const *ptr, uint32_t val)
 {
-  *(__packed uint32_t*)(ptr) = val;;
+  *(__packed uint32_t*)(ptr) = val;
 }
 #pragma language=restore
 #define __UNALIGNED_UINT32_WRITE(PTR,VAL) __iar_uint32_write(PTR,VAL)

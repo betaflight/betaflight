@@ -217,7 +217,7 @@ static int32_t BMI160_Config(const extDevice_t *dev)
 static int32_t BMI160_do_foc(const extDevice_t *dev)
 {
     // assume sensor is mounted on top
-    uint8_t val = 0x7D;;
+    uint8_t val = 0x7D;
     spiWriteReg(dev, BMI160_REG_FOC_CONF, val);
 
     // Start FOC
