@@ -62,7 +62,7 @@ static uint16_t mspConfFreq = 0;
 static uint8_t mspConfBand = 0;
 static uint8_t mspConfChannel = 0;
 static uint16_t mspConfPower = 0;
-static uint8_t mspConfPitMode = 0; 
+static uint8_t mspConfPitMode = 0;
 static bool mspVtxConfigChanged = false;
 static timeUs_t mspVtxLastTimeUs = 0;
 static bool prevLowPowerDisarmedState = false;
@@ -98,9 +98,9 @@ void setMspVtxDeviceStatusReady(const int descriptor)
     }
 }
 
-STATIC_UNIT_TESTED void prepareMspFrame(uint8_t *mspFrame)
+void prepareMspFrame(uint8_t *mspFrame)
 {
-    mspFrame[0] = VTXDEV_MSP; 
+    mspFrame[0] = VTXDEV_MSP;
     mspFrame[1] = vtxSettingsConfig()->band;
     mspFrame[2] = vtxSettingsConfig()->channel;
     mspFrame[3] = isLowPowerDisarmed() ? 1 : vtxSettingsConfig()->power; // index based

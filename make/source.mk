@@ -201,7 +201,7 @@ COMMON_SRC = \
             io/vtx_tramp.c \
             io/vtx_control.c \
             io/vtx_msp.c \
-            cms/cms_menu_vtx_msp.c \
+            cms/cms_menu_vtx_msp.c
 
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
@@ -363,7 +363,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             osd/osd_warnings.c \
             rx/rx_bind.c \
             io/vtx_msp.c \
-            cms/cms_menu_vtx_msp.c \
+            cms/cms_menu_vtx_msp.c
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \

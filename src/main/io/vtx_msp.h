@@ -32,6 +32,4 @@ typedef enum {
 
 bool vtxMspInit(void);
 void setMspVtxDeviceStatusReady(const int descriptor);
-#ifdef UNIT_TEST
-STATIC_UNIT_TESTED void prepareMspFrame(uint8_t *mspFrame);
-#endif
+void prepareMspFrame(uint8_t *mspFrame);

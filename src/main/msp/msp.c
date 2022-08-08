@@ -2032,7 +2032,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
             sbufWriteU8(dst, 0);
 #endif
 #ifdef USE_VTX_MSP
-            setMspVtxDeviceStatusReady(srcDesc);        
+            setMspVtxDeviceStatusReady(srcDesc);
 #endif
         }
         break;

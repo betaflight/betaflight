@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
-#include <drivers/vtx_table.h>
 
 #include "platform.h"
 
@@ -35,6 +34,7 @@
 #include "cms/cms_types.h"
 
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_table.h"
 
 #include "config/config.h"
 
@@ -241,15 +241,15 @@ static const void *mspCmsOnEnter(displayPort_t *pDisp)
 }
 
 static const OSD_Entry mspCmsMenuCommenceEntries[] = {
-    { "CONFIRM", OME_Label,   NULL,          NULL },
+    { "CONFIRM", OME_Label,   NULL,           NULL },
     { "YES",     OME_Funcall, mspCmsCommence, NULL },
-    { "NO",    OME_Back, NULL, NULL },
-    { NULL,      OME_END, NULL, NULL }
+    { "NO",      OME_Back,    NULL,           NULL },
+    { NULL,      OME_END,     NULL,           NULL }
 };
 
 static CMS_Menu mspCmsMenuCommence = {
 #ifdef CMS_MENU_DEBUG
-    .GUARD_text = "XVTXMSC",
+    .GUARD_text = "XVTXMSPC",
     .GUARD_type = OME_MENU,
 #endif
     .onEnter = NULL,
@@ -260,18 +260,16 @@ static CMS_Menu mspCmsMenuCommence = {
 
 static const OSD_Entry mspMenuEntries[] =
 {
-    { "- MSP -", OME_Label, NULL, NULL },
-
-    { "",       OME_Label | DYNAMIC,   NULL,         mspCmsStatusString },
-    { "PIT",    OME_TAB,     mspCmsSetPitMode,     &mspCmsEntPitMode },
-    { "BAND",   OME_TAB,     mspCmsConfigBand,     &mspCmsEntBand },
-    { "CHAN",   OME_TAB,     mspCmsConfigChan,     &mspCmsEntChan },
-    { "(FREQ)", OME_UINT16 | DYNAMIC,  NULL,         &mspCmsEntFreqRef },
-    { "POWER",  OME_TAB,     mspCmsConfigPower,    &mspCmsEntPower },
-    { "SAVE",   OME_Submenu, cmsMenuChange,          &mspCmsMenuCommence },
-
-    { "BACK",   OME_Back, NULL, NULL },
-    { NULL,     OME_END, NULL, NULL }
+    { "- MSP -", OME_Label,             NULL,              NULL },
+    { "",        OME_Label | DYNAMIC,   NULL,              mspCmsStatusString },
+    { "PIT",     OME_TAB,               mspCmsSetPitMode,  &mspCmsEntPitMode },
+    { "BAND",    OME_TAB,               mspCmsConfigBand,  &mspCmsEntBand },
+    { "CHAN",    OME_TAB,               mspCmsConfigChan,  &mspCmsEntChan },
+    { "(FREQ)",  OME_UINT16 | DYNAMIC,  NULL,              &mspCmsEntFreqRef },
+    { "POWER",   OME_TAB,               mspCmsConfigPower, &mspCmsEntPower },
+    { "SAVE",    OME_Submenu,           cmsMenuChange,     &mspCmsMenuCommence },
+    { "BACK",    OME_Back,              NULL,              NULL },
+    { NULL,      OME_END,               NULL,              NULL }
 };
 
 CMS_Menu cmsx_menuVtxMsp = {
