@@ -394,47 +394,56 @@ void uartConfigureDma(uartDevice_t *uartdev)
 }
 #endif
 
-#define UART_IRQHandler(type, number, dev)                    \
-    FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)                  \
-    {                                                         \
-        uartPort_t *uartPort = &(uartDevmap[UARTDEV_ ## dev]->port); \
-        uartIrqHandler(uartPort);                                    \
+#define UART_IRQHandler(type, number, dev) \
+    FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void) \
+    { \
+        uartPort_t *uartPort = &(uartDevmap[dev]->port); \
+        uartIrqHandler(uartPort); \
     }
 
 #ifdef USE_UART1
-UART_IRQHandler(USART, 1, 1) // USART1 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART2
-UART_IRQHandler(USART, 2, 2) // USART2 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 2, UARTDEV_2) // USART2 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART3
-UART_IRQHandler(USART, 3, 3) // USART3 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 3, UARTDEV_3) // USART3 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART4
-UART_IRQHandler(UART, 4, 4)  // UART4 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 4, UARTDEV_4)  // UART4 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART5
-UART_IRQHandler(UART, 5, 5)  // UART5 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 5, UARTDEV_5)  // UART5 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART6
-UART_IRQHandler(USART, 6, 6) // USART6 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 6, UARTDEV_6) // USART6 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART7
-UART_IRQHandler(UART, 7, 7)  // UART7 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 7, UARTDEV_7)  // UART7 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART8
-UART_IRQHandler(UART, 8, 8)  // UART8 Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 8, UARTDEV_8)  // UART8 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART9
-UART_IRQHandler(LPUART, 1, 9) // UART9 (implemented with LPUART1) Rx/Tx IRQ Handler
+UART_IRQHandler(UART, 9, UARTDEV_9)  // UART9 Rx/Tx IRQ Handler
 #endif
+
+#ifdef USE_UART10
+UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_LPUART1
+UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
+#endif
+
 
 #endif // USE_UART

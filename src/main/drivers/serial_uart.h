@@ -41,6 +41,8 @@ typedef enum {
     UARTDEV_9 = 8,
     UARTDEV_10 = 9,
     LPUARTDEV_1 = 10,
+
+    MAX_UARTDEV = LPUARTDEV_1,
 } UARTDevice_e;
 
 typedef struct uartPort_s {

@@ -23,6 +23,8 @@
 #include "drivers/io.h"
 #include "drivers/io_types.h"
 #include "drivers/resource.h"
+// TODO(hertz@): uncomment and use UARTDevice_e::MAX_UARTDEV
+// #include "drivers/serial_uart.h"
 
 #include "pg/pg.h"
 
