@@ -103,6 +103,12 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
                     detected = true;
                 }
 #endif
+
+#ifdef USE_FLASH_M25P16
+                if (!detected && m25p16_detect(&flashDevice, chipID)) {
+                    detected = true;
+                }
+#endif
             }
 
             if (offset == 1) {
