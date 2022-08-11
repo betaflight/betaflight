@@ -155,7 +155,8 @@
 #define PG_RX_EXPRESSLRS_SPI_CONFIG 555
 #define PG_SCHEDULER_CONFIG         556
 #define PG_MSP_CONFIG               557
-#define PG_BETAFLIGHT_END           557
+#define PG_SOFTSERIAL_PIN_CONFIG    558
+#define PG_BETAFLIGHT_END           558
 
 
 // OSD configuration (subject to change)
