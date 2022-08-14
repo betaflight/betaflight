@@ -90,20 +90,7 @@ typedef struct serialPort_s {
     uint8_t identifier;
 } serialPort_t;
 
-// TODO(hertz@): adjust this to include all the UARTDevice_e elements + necessary SOFTSERIALS
-// # define SERIAL_PORT_MAX_INDEX MAX_UARTDEV
-# define SERIAL_PORT_MAX_INDEX 11
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
-# ifdef USE_SOFTSERIAL2
-#  define SOFTSERIAL_COUNT 2
-# else
-#  define SOFTSERIAL_COUNT 1
-# endif
-#else
-// avoid zero-sized arrays when no software serials are enabled
-# define SOFTSERIAL_COUNT 1
-#endif
-
+#define SERIAL_PORT_MAX_INDEX 11
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
     ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
@@ -112,12 +99,19 @@ typedef struct serialPinConfig_s {
 
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
-typedef struct softDSserialPinConfig_s {
+#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+# ifdef USE_SOFTSERIAL2
+#  define SOFTSERIAL_COUNT 2
+# else
+#  define SOFTSERIAL_COUNT 1
+# endif
+typedef struct softSerialPinConfig_s {
     ioTag_t ioTagTx[SOFTSERIAL_COUNT];
     ioTag_t ioTagRx[SOFTSERIAL_COUNT];
 } softSerialPinConfig_t;
 
 PG_DECLARE(softSerialPinConfig_t, softSerialPinConfig);
+#endif
 
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);

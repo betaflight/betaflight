@@ -242,7 +242,7 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
     }
 }
 
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL1)
+#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 typedef struct softSerialDefaultPin_s {
     serialPortIdentifier_e ident;
     ioTag_t rxIO, txIO;
