@@ -105,6 +105,7 @@ const elrsFhssConfig_t fhssConfigs[] = {
 #endif
 #ifdef USE_RX_SX1280
     {ISM2400, FREQ_HZ_TO_REG_VAL_24(2400400000), FREQ_HZ_TO_REG_VAL_24(2479400000), 80},
+    {CE2400,  FREQ_HZ_TO_REG_VAL_24(2400400000), FREQ_HZ_TO_REG_VAL_24(2479400000), 80},
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
     {0},

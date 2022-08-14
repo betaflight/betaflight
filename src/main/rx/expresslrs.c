@@ -300,11 +300,18 @@ static uint8_t minLqForChaos(void)
     return interval * ((interval * numfhss + 99) / (interval * numfhss));
 }
 
+static bool domainIsTeam24()
+{
+  const elrsFreqDomain_e domain = rxExpressLrsSpiConfig()->domain;
+  return (domain == ISM2400) || (domain == CE2400);
+}
+
 static void setRfLinkRate(const uint8_t index)
 {
 #if defined(USE_RX_SX1280) && defined(USE_RX_SX127X)
-    receiver.modParams = (rxExpressLrsSpiConfig()->domain == ISM2400) ? &airRateConfig[1][index] : &airRateConfig[0][index];
-    receiver.rfPerfParams = (rxExpressLrsSpiConfig()->domain == ISM2400) ? &rfPerfConfig[1][index] : &rfPerfConfig[0][index];
+    const uint8_t domainIdx = domainIsTeam24() ? 1 : 0;
+    receiver.modParams = &airRateConfig[domainIdx][index];
+    receiver.rfPerfParams = &rfPerfConfig[domainIdx][index];
 #else
     receiver.modParams = &airRateConfig[0][index];
     receiver.rfPerfParams = &rfPerfConfig[0][index];
@@ -314,6 +321,10 @@ static void setRfLinkRate(const uint8_t index)
     receiver.cycleIntervalMs = ((uint32_t)11U * fhssGetNumEntries() * receiver.modParams->fhssHopInterval * receiver.modParams->interval) / (10U * 1000U);
 
     receiver.config(receiver.modParams->bw, receiver.modParams->sf, receiver.modParams->cr, receiver.currentFreq, receiver.modParams->preambleLen, receiver.UID[5] & 0x01);
+#if defined(USE_RX_SX1280)
+    if (rxExpressLrsSpiConfig()->domain == CE2400)
+      sx1280SetOutputPower(10);
+#endif
 
     expressLrsUpdateTimerInterval(receiver.modParams->interval);
 
@@ -651,7 +662,7 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
     receiver.lastSyncPacketMs = timeStampMs;
 
     // Will change the packet air rate in loop() if this changes
-    receiver.nextRateIndex = (rxExpressLrsSpiConfig()->domain == ISM2400) ? airRateIndexToIndex24(otaPktPtr->sync.rateIndex, receiver.rateIndex) : airRateIndexToIndex900(otaPktPtr->sync.rateIndex, receiver.rateIndex);
+    receiver.nextRateIndex = domainIsTeam24() ? airRateIndexToIndex24(otaPktPtr->sync.rateIndex, receiver.rateIndex) : airRateIndexToIndex900(otaPktPtr->sync.rateIndex, receiver.rateIndex);
     uint8_t switchEncMode = otaPktPtr->sync.switchEncMode;
 
     // Update switch mode encoding immediately
@@ -877,6 +888,8 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 #endif
 #ifdef USE_RX_SX1280
     case ISM2400:
+        FALLTHROUGH;
+    case CE2400:
         configureReceiverForSX1280();
         bindingRateIndex = ELRS_BINDING_RATE_24;
         break;
@@ -1062,7 +1075,7 @@ void expressLrsDoTelem(void)
     expressLrsHandleTelemetryUpdate();
     expressLrsSendTelemResp();
     
-    if (rxExpressLrsSpiConfig()->domain != ISM2400 && !receiver.didFhss && !expressLrsTelemRespReq() && lqPeriodIsSet()) {
+    if (!domainIsTeam24() && !receiver.didFhss && !expressLrsTelemRespReq() && lqPeriodIsSet()) {
         // TODO No need to handle this on SX1280, but will on SX127x
         // TODO this needs to be DMA aswell, SX127x unlikely to work right now
         receiver.handleFreqCorrection(receiver.freqOffset, receiver.currentFreq); //corrects for RX freq offset

@@ -425,6 +425,7 @@ extern "C" {
     }
     void sx1280AdjustFrequency(int32_t , const uint32_t ) {}
     bool sx1280Init(IO_t , IO_t ) { return true; }
+    void sx1280SetOutputPower(const int8_t ) {}
 
     void sx127xConfig(const sx127xBandwidth_e , const sx127xSpreadingFactor_e , const sx127xCodingRate_e , const uint32_t , const uint8_t , const bool ) {}
     void sx127xStartReceiving(void) {}

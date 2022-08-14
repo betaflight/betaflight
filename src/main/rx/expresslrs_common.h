@@ -79,6 +79,7 @@ typedef enum {
 #endif
 #ifdef USE_RX_SX1280
     ISM2400,
+    CE2400,
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
     NONE,
