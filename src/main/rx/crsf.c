@@ -401,6 +401,12 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                     }
                     break;
 
+#if defined(USE_TELEMETRY_CRSF)
+                case CRSF_FRAMETYPE_PID_ERRORS:
+                    crsfSchedulePIDErrorResponse();
+                    break;
+#endif
+
 #if defined(USE_TELEMETRY_CRSF) && defined(USE_MSP_OVER_TELEMETRY)
                 case CRSF_FRAMETYPE_MSP_REQ:
                 case CRSF_FRAMETYPE_MSP_WRITE: {

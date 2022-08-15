@@ -267,6 +267,7 @@ typedef struct pidRuntime_s {
     float pidFrequency;
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
+    float currentPidError[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermNotchApplyFn;
     biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpassApplyFn;
@@ -441,6 +442,7 @@ float calcHorizonLevelStrength();
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
+float pidGetCurrentPidError(int axis);
 float pidGetDT();
 float pidGetPidFrequency();
 float pidGetFeedforwardBoostFactor();

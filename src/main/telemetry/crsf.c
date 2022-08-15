@@ -50,6 +50,7 @@
 
 #include "flight/imu.h"
 #include "flight/position.h"
+#include "flight/pid.h"
 
 #include "io/displayport_crsf.h"
 #include "io/gps.h"
@@ -79,6 +80,7 @@
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
+static bool pidErrorResponsePending;
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 
 #if defined(USE_MSP_OVER_TELEMETRY)
@@ -416,6 +418,27 @@ void crsfFrameDeviceInfo(sbuf_t *dst)
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
+/*
+0x6A PID errors
+Payload:
+uint8_t     Frametype (0x6A)
+uint32_t    Roll PID error
+uint32_t    Pitch PID error
+uint32_t    Yaw PID error
+*/
+float tmpPidError;
+void crsfFramePIDErrors(sbuf_t *dst)
+{
+    sbufWriteU8(dst, CRSF_FRAMETYPE_PID_ERRORS);
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        tmpPidError = pidGetCurrentPidError(i);
+        sbufWriteU8(dst, ((uint8_t *)&tmpPidError)[0]);
+        sbufWriteU8(dst, ((uint8_t *)&tmpPidError)[1]);
+        sbufWriteU8(dst, ((uint8_t *)&tmpPidError)[2]);
+        sbufWriteU8(dst, ((uint8_t *)&tmpPidError)[3]);
+    }
+}
+
 
 #if defined(USE_CRSF_V3)
 void crsfFrameSpeedNegotiationResponse(sbuf_t *dst, bool reply)
@@ -669,6 +692,11 @@ void crsfScheduleDeviceInfoResponse(void)
     deviceInfoReplyPending = true;
 }
 
+void crsfSchedulePIDErrorResponse(void)
+{
+    pidErrorResponsePending = true;
+}
+
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
@@ -680,6 +708,7 @@ void initCrsfTelemetry(void)
     }
 
     deviceInfoReplyPending = false;
+    pidErrorResponsePending = false;
 #if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
 #endif
@@ -743,7 +772,6 @@ void crsfProcessDisplayPortCmd(uint8_t *frameStart)
     }
 
 }
-
 #endif
 
 #if defined(USE_CRSF_V3)
@@ -806,6 +834,17 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfFrameDeviceInfo(dst);
         crsfFinalize(dst);
         deviceInfoReplyPending = false;
+        crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
+        return;
+    }
+
+    if (pidErrorResponsePending) {
+        sbuf_t crsfPayloadBuf;
+        sbuf_t *dst = &crsfPayloadBuf;
+        crsfInitializeFrame(dst);
+        crsfFramePIDErrors(dst);
+        crsfFinalize(dst);
+        pidErrorResponsePending = false;
         crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
         return;
     }
@@ -881,6 +920,9 @@ int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
         break;
     case CRSF_FRAMETYPE_FLIGHT_MODE:
         crsfFrameFlightMode(sbuf);
+        break;
+    case CRSF_FRAMETYPE_PID_ERRORS:
+        crsfFramePIDErrors(sbuf);
         break;
 #if defined(USE_GPS)
     case CRSF_FRAMETYPE_GPS:

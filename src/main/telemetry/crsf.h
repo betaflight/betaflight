@@ -34,6 +34,7 @@ void setCrsfDefaultSpeed(void);
 bool checkCrsfTelemetryState(void);
 void handleCrsfTelemetry(timeUs_t currentTimeUs);
 void crsfScheduleDeviceInfoResponse(void);
+void crsfSchedulePIDErrorResponse(void);
 void crsfScheduleMspResponse(uint8_t requestOriginID);
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 void crsfProcessCommand(uint8_t *frameStart);
