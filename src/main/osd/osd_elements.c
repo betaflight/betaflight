@@ -1469,7 +1469,7 @@ static void osdElementWarnings(osdElementParms_t *element)
             }
             #endif // USE_RX_LINK_QUALITY_INFO
         }
-        strncpy(pilotConfigMutable()->name, element->buff, MAX_NAME_LENGTH);
+        strncpy(pilotConfigMutable()->name, element->buff, MAX_NAME_LENGTH - 1);
     }
     #endif // USE_CRAFTNAME_MSGS
 }
