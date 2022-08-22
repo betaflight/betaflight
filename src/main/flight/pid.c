@@ -1004,22 +1004,19 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate I component
         float Ki = pidRuntime.pidCoefficient[axis].Ki;
-        float axisDynCi = pidRuntime.dT;
 #ifdef USE_LAUNCH_CONTROL
         // if launch control is active override the iterm gains and apply iterm windup protection to all axes
         if (launchControlActive) {
             Ki = pidRuntime.launchControlKi;
-            axisDynCi = dynCi;
         } else
 #endif
         {
             if (axis == FD_YAW) {
-                axisDynCi = dynCi; // only apply windup protection to yaw
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
 
-        pidData[axis].I = constrainf(previousIterm + (Ki * axisDynCi + pidRuntime.itermAccelerator) * itermErrorRate, -pidRuntime.itermLimit, pidRuntime.itermLimit);
+        pidData[axis].I = constrainf(previousIterm + (Ki * dynCi + pidRuntime.itermAccelerator) * itermErrorRate, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
