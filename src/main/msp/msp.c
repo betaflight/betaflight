@@ -2544,9 +2544,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         break;
 
-    case MSP_SET_PID_CONTROLLER:
-        break;
-
     case MSP_SET_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
             currentPidProfile->pid[i].P = sbufReadU8(src);

@@ -150,7 +150,7 @@
 #define MSP_SONAR_ALTITUDE              58 //out message get sonar altitude [cm]
 
 #define MSP_PID_CONTROLLER              59
-#define MSP_SET_PID_CONTROLLER          60
+// DEPRECATED - #define MSP_SET_PID_CONTROLLER          60
 
 #define MSP_ARMING_CONFIG               61
 #define MSP_SET_ARMING_CONFIG           62
