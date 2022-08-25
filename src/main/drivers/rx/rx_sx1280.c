@@ -423,8 +423,7 @@ void sx1280SetMode(const sx1280OperatingModes_e opMode)
         buf[2] = 0xFF; // TODO dynamic timeout based on expected onairtime
         sx1280WriteCommandBurst(SX1280_RADIO_SET_TX, buf, 3);
         break;
-    case SX1280_MODE_CAD:
-        break;
+    case SX1280_MODE_CAD: // not implemented yet
     default:
         break;
     }

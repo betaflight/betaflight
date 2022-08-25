@@ -445,11 +445,9 @@ bool mixerModeIsFixedWing(mixerMode_e mixerMode)
     case MIXER_AIRPLANE:
     case MIXER_CUSTOM_AIRPLANE:
         return true;
-
         break;
     default:
         return false;
-
         break;
     }
 }
