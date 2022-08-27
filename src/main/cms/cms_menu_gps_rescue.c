@@ -53,8 +53,7 @@ static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 static uint16_t gpsRescueConfig_throttleP, gpsRescueConfig_throttleI, gpsRescueConfig_throttleD;
 static uint16_t gpsRescueConfig_velP, gpsRescueConfig_velI, gpsRescueConfig_velD;
 static uint16_t gpsRescueConfig_yawP;
-static uint16_t gpsRescueConfig_targetLandingAltitudeM;
-static uint16_t gpsRescueConfig_targetLandingDistanceM;
+static uint8_t gpsRescueConfig_targetLandingAltitudeM;
 static uint8_t gpsRescueConfig_altitudeMode;
 static uint16_t gpsRescueConfig_ascendRate;
 static uint16_t gpsRescueConfig_descendRate;
@@ -137,7 +136,6 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
     gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
     gpsRescueConfig_minRescueDth = gpsRescueConfig()->minRescueDth;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
-    gpsRescueConfig_targetLandingDistanceM = gpsRescueConfig()->targetLandingDistanceM;
     gpsRescueConfig_targetLandingAltitudeM = gpsRescueConfig()->targetLandingAltitudeM;
     gpsRescueConfig_altitudeMode = gpsRescueConfig()->altitudeMode;
     gpsRescueConfig_ascendRate = gpsRescueConfig()->ascendRate;
@@ -161,7 +159,6 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
     gpsRescueConfigMutable()->minRescueDth = gpsRescueConfig_minRescueDth;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
-    gpsRescueConfigMutable()->targetLandingDistanceM = gpsRescueConfig_targetLandingDistanceM;
     gpsRescueConfigMutable()->targetLandingAltitudeM = gpsRescueConfig_targetLandingAltitudeM;
     gpsRescueConfigMutable()->altitudeMode = gpsRescueConfig_altitudeMode;
     gpsRescueConfigMutable()->ascendRate = gpsRescueConfig_ascendRate;
@@ -174,19 +171,18 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
 {
     {"--- GPS RESCUE ---", OME_Label, NULL, NULL},
 
-    { "ANGLE",             OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_angle, 0, 200 ,1 } },
-    { "MIN DIST HOME   M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minRescueDth, 25, 1000 ,1 } },
-    { "INITAL ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialAltitudeM, 5, 100, 1 } },
+    { "ANGLE",             OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_angle, 0, 60, 1 } },
+    { "MIN DIST HOME   M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_minRescueDth, 20, 1000, 1 } },
+    { "INITAL ALT      M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_initialAltitudeM, 2, 100, 1 } },
     { "ALTITUDE MODE"    , OME_TAB | REBOOT_REQUIRED, NULL, &(OSD_TAB_t) { &gpsRescueConfig_altitudeMode, 2, lookupTableRescueAltitudeMode} },
-    { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 15, 500, 1 } },
-    { "LANDING ALT     M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_targetLandingAltitudeM, 3, 10, 1 } },
-    { "LANDING DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_targetLandingDistanceM, 3, 15, 1 } },
-    { "GROUND SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_rescueGroundspeed, 30, 3000, 1 } },
+    { "DESCENT DIST    M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descentDistanceM, 10, 500, 1 } },
+    { "LANDING ALT     M", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_targetLandingAltitudeM, 3, 15, 1 } },
+    { "GROUND SPEED CM/S", OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_rescueGroundspeed, 250, 3000, 1 } },
     { "THROTTLE MIN",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMin, 1000, 2000, 1 } },
     { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMax, 1000, 2000, 1 } },
     { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleHover, 1000, 2000, 1 } },
-    { "ASCEND RATE",       OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 100, 2500, 1 } },
-    { "DESCEND RATE",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 50, 500, 1 } },
+    { "ASCEND RATE",       OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 50, 2500, 1 } },
+    { "DESCEND RATE",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
     { "ARM WITHOUT FIX",   OME_Bool | REBOOT_REQUIRED,  NULL, &gpsRescueConfig_allowArmingWithoutFix },
     { "MIN SATELITES",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },
     { "GPS RESCUE PID",    OME_Submenu, cmsMenuChange, &cms_menuGpsRescuePid},
