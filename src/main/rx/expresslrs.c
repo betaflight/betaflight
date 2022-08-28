@@ -399,7 +399,7 @@ static void expressLrsSendTelemResp(void)
         otaPkt.tlm_dl.ul_link_stats.antenna = 0;
         otaPkt.tlm_dl.ul_link_stats.modelMatch = connectionHasModelMatch;
         otaPkt.tlm_dl.ul_link_stats.lq = receiver.uplinkLQ;
-        otaPkt.tlm_dl.ul_link_stats.SNR = meanAccumulatorMean(&snrFilter, -16);
+        otaPkt.tlm_dl.ul_link_stats.SNR = meanAccumulatorCalc(&snrFilter, -16);
 #ifdef USE_MSP_OVER_TELEMETRY
         otaPkt.tlm_dl.ul_link_stats.mspConfirm = getCurrentMspConfirm() ? 1 : 0;
 #else
@@ -703,7 +703,7 @@ static bool validatePacketCrcStd(volatile elrsOtaPacket_t * const otaPktPtr)
     uint16_t const inCRC = ((uint16_t) otaPktPtr->crcHigh << 8) + otaPktPtr->crcLow;
     // For smHybrid the CRC only has the packet type in byte 0
     // For smWide the FHSS slot is added to the CRC in byte 0 on PACKET_TYPE_RCDATAs
-    if (otaPktPtr->type == ELRS_RC_DATA_PACKET && rxExpressLrsSpiConfig()->switchMode == SM_HYBRID_WIDE) {
+    if (otaPktPtr->type == ELRS_RC_DATA_PACKET && rxExpressLrsSpiConfig()->switchMode == SM_WIDE) {
         otaPktPtr->crcHigh = (receiver.nonceRX % receiver.modParams->fhssHopInterval) + 1;
     } else {
         otaPktPtr->crcHigh = 0;
@@ -732,7 +732,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         // Must be fully connected to process RC packets, prevents processing RC
         // during sync, where packets can be received before connection
         if (receiver.connectionState == ELRS_CONNECTED && connectionHasModelMatch) {
-            if (rxExpressLrsSpiConfig()->switchMode == SM_HYBRID_WIDE) {
+            if (rxExpressLrsSpiConfig()->switchMode == SM_WIDE) {
                 wideSwitchIndex = hybridWideNonceToSwitchIndex(receiver.nonceRX);
                 if ((currTlmDenom < 8) || wideSwitchIndex == 7) {
                     confirmCurrentTelemetryPayload((otaPktPtr->rc.switches & 0x40) >> 6);
@@ -1055,7 +1055,7 @@ void expressLrsSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     if (rcData && payload) {
         volatile elrsOtaPacket_t * const otaPktPtr = (elrsOtaPacket_t * const) payload;
-        rxExpressLrsSpiConfig()->switchMode == SM_HYBRID_WIDE ? unpackChannelDataHybridWide(rcData, otaPktPtr) : unpackChannelDataHybridSwitch8(rcData, otaPktPtr);
+        rxExpressLrsSpiConfig()->switchMode == SM_WIDE ? unpackChannelDataHybridWide(rcData, otaPktPtr) : unpackChannelDataHybridSwitch8(rcData, otaPktPtr);
     }
 }
 

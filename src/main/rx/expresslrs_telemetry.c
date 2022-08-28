@@ -252,7 +252,7 @@ void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* const re
         mspCurrentPackage++;
     }
 
-    if (acceptData) {
+    if (acceptData && (receiveData != NULL)) {
         uint8_t len = MIN((uint8_t)(mspLength - mspCurrentOffset), ELRS_MSP_BYTES_PER_CALL);
         memcpy(&mspData[mspCurrentOffset], (const uint8_t*) receiveData, len);
         mspCurrentOffset += len;

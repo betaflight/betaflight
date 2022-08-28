@@ -258,7 +258,7 @@ TEST(RxSpiExpressLrsUnitTest, TestInitUnbound)
     expressLrsSpiInit(&injectedConfig, &config, &extiConfig);
     EXPECT_EQ(16, config.channelCount);
     receiver = empty;
-    rxExpressLrsSpiConfigMutable()->switchMode = SM_HYBRID_WIDE;
+    rxExpressLrsSpiConfigMutable()->switchMode = SM_WIDE;
     expressLrsSpiInit(&injectedConfig, &config, &extiConfig);
     EXPECT_EQ(16, config.channelCount);
 }
@@ -478,6 +478,6 @@ extern "C" {
     void updateTelemetryRate(const uint16_t , const uint8_t , const uint8_t ) {}
 
     void meanAccumulatorAdd(meanAccumulator_t * , const int8_t ) {};
-    int8_t meanAccumulatorMean(meanAccumulator_t * , const int8_t defaultValue) { return defaultValue; };
+    int8_t meanAccumulatorCalc(meanAccumulator_t * , const int8_t defaultValue) { return defaultValue; };
     void meanAccumulatorInit(meanAccumulator_t * ) {};
 }

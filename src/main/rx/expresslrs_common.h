@@ -87,7 +87,7 @@ typedef enum {
 } elrsFreqDomain_e;
 
 typedef enum {
-    SM_HYBRID_WIDE = 0,
+    SM_WIDE = 0,
     SM_HYBRID = 1
 } elrsSwitchMode_e;
 

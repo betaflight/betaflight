@@ -316,7 +316,7 @@ void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal)
     filter->count++;
 }
 
-int8_t meanAccumulatorMean(meanAccumulator_t *filter, const int8_t defaultValue)
+int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue)
 {
     if (filter->count) {
         int8_t retVal = filter->accumulator / filter->count;
