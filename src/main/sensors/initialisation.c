@@ -32,6 +32,8 @@
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
+#include "flight/position.h"
+#include "flight/gps_rescue.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -45,6 +47,7 @@
 #include "sensors/initialisation.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
+
 
 // requestedSensors is not actually used
 uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
@@ -83,6 +86,9 @@ bool sensorsAutodetect(void)
 #ifdef USE_BARO
     baroInit();
 #endif
+
+positionInit();
+gpsRescueInit();
 
 #ifdef USE_RANGEFINDER
     rangefinderInit();

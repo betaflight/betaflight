@@ -48,6 +48,7 @@ PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
 
 extern float gpsRescueAngle[ANGLE_INDEX_COUNT]; //NOTE: ANGLES ARE IN CENTIDEGREES
 
+void gpsRescueInit(void);
 void updateGPSRescueState(void);
 void rescueNewGpsData(void);
 

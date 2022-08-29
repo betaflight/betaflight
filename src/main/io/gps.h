@@ -199,7 +199,7 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 
-#define TASK_GPS_RATE       100
+#define TASK_GPS_RATE       120
 #define TASK_GPS_RATE_FAST  1000
 
 void gpsInit(void);

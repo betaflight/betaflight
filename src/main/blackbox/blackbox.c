@@ -1448,11 +1448,12 @@ static bool blackboxWriteSysinfo(void)
 #endif
 #ifdef USE_BARO
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_HARDWARE, "%d",           barometerConfig()->baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_NOISE_LPF, "%d",          barometerConfig()->baro_noise_lpf);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_BARO_VARIO_LPF, "%d",          barometerConfig()->baro_vario_lpf);
 #endif
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALT_SOURCE, "%d",      positionConfig()->altSource);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALT_PREFER_BARO, "%d", positionConfig()->altPreferBaro);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_SOURCE, "%d",      positionConfig()->altitude_source);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_PREFER_BARO, "%d", positionConfig()->altitude_prefer_baro);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_LPF, "%d",         positionConfig()->altitude_lpf);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POSITION_ALTITUDE_D_LPF, "%d",       positionConfig()->altitude_d_lpf);
+
 #ifdef USE_MAG
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_MAG_HARDWARE, "%d",           compassConfig()->mag_hardware);
 #endif

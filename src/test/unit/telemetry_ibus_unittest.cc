@@ -73,7 +73,7 @@ uint16_t getVbat(void)
 
 extern "C" {
 static int32_t amperage = 100;
-static int32_t estimatedVario = 0;
+static int16_t estimatedVario = 0;
 static uint8_t batteryRemaining = 0;
 static throttleStatus_e throttleStatus = THROTTLE_HIGH;
 static uint32_t definedFeatures = 0;

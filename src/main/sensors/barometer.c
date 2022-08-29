@@ -59,12 +59,10 @@
 
 baro_t baro;                        // barometer access functions
 
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 3);
 
 void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 {
-    barometerConfig->baro_noise_lpf = 50;
-    barometerConfig->baro_vario_lpf = 10;
     barometerConfig->baro_hardware = BARO_DEFAULT;
 
     // For backward compatibility; ceate a valid default value for bus parameters
@@ -145,7 +143,6 @@ static int32_t baroPressure = 0;
 static int32_t baroTemperature = 0;
 static float baroGroundAltitude = 0.0f;
 static float baroAltitudeRaw = 0.0f;
-static pt2Filter_t baroUpsampleLpf;
 
 
 #define CALIBRATING_BARO_CYCLES 100 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
@@ -161,20 +158,6 @@ void baroPreInit(void)
         spiPreinitRegister(barometerConfig()->baro_spi_csn, IOCFG_IPU, 1);
     }
 #endif
-}
-
-static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse);
-
-void baroInit(void)
-{
-    baroDetect(&baro.dev, barometerConfig()->baro_hardware);
-
-    const float cutoffHz = barometerConfig()->baro_noise_lpf / 100.0f;
-    const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
-    const float gain = pt2FilterGain(cutoffHz, sampleTimeS);
-    pt2FilterInit(&baroUpsampleLpf, gain);
-
-    baroReady = true;
 }
 
 static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
@@ -311,6 +294,12 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     return true;
 }
 
+void baroInit(void)
+{
+    baroDetect(&baro.dev, barometerConfig()->baro_hardware);
+    baroReady = true;
+}
+
 bool baroIsCalibrated(void)
 {
     return baroCalibrated;
@@ -432,6 +421,12 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 
             performBaroCalibrationCycle();
 
+            if (baroIsCalibrated()) {
+                baro.BaroAlt = baroAltitudeRaw - baroGroundAltitude;
+            } else {
+                baro.BaroAlt = 0.0f;
+            }
+
             DEBUG_SET(DEBUG_BARO, 1, baro.baroTemperature);
             DEBUG_SET(DEBUG_BARO, 2, baroAltitudeRaw - baroGroundAltitude);
 
@@ -461,15 +456,9 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
     return sleepTime;
 }
 
-// baroAltitudeRaw will get updated in the BARO task while baroUpsampleAltitude() will run in the ALTITUDE task.
-float baroUpsampleAltitude(void)
+// baroAltitude samples baro.BaroAlt the ALTITUDE task rate
+float getBaroAltitude(void)
 {
-    const float baroAltitudeRawFiltered = pt2FilterApply(&baroUpsampleLpf, baroAltitudeRaw);
-    if (baroIsCalibrated()) {
-        baro.BaroAlt = baroAltitudeRawFiltered - baroGroundAltitude;
-    } else {
-        baro.BaroAlt = 0.0f;
-    }
     DEBUG_SET(DEBUG_BARO, 3, baro.BaroAlt); // cm
     return baro.BaroAlt;
 }

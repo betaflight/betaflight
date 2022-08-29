@@ -34,8 +34,6 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
-#define PARAM_NAME_BARO_NOISE_LPF "baro_noise_lpf"
-#define PARAM_NAME_BARO_VARIO_LPF "baro_vario_lpf"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE "rc_smoothing_auto_factor_throttle"
@@ -119,8 +117,10 @@
 #define PARAM_NAME_RPM_FILTER_MIN_HZ "rpm_filter_min_hz"
 #define PARAM_NAME_RPM_FILTER_FADE_RANGE_HZ "rpm_filter_fade_range_hz"
 #define PARAM_NAME_RPM_FILTER_LPF_HZ "rpm_filter_lpf_hz"
-#define PARAM_NAME_POSITION_ALT_SOURCE "position_alt_source"
-#define PARAM_NAME_POSITION_ALT_PREFER_BARO "position_alt_prefer_baro"
+#define PARAM_NAME_POSITION_ALTITUDE_SOURCE "altitude_source"
+#define PARAM_NAME_POSITION_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
+#define PARAM_NAME_POSITION_ALTITUDE_LPF "altitude_lpf"
+#define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
