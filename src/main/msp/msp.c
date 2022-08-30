@@ -1468,7 +1468,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 
     case MSP_COMP_GPS:
         sbufWriteU16(dst, GPS_distanceToHome);
-        sbufWriteU16(dst, GPS_directionToHome);
+        sbufWriteU16(dst, GPS_directionToHome / 10); // resolution increased in Betaflight 4.4 by factor of 10, this maintains backwards compatibility for DJI OSD
         sbufWriteU8(dst, GPS_update & 1);
         break;
 
