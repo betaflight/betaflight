@@ -272,7 +272,7 @@ static void rescueAttainPosition()
     case RESCUE_DO_NOTHING:
         gpsRescueAngle[AI_PITCH] = 0.0f;
         gpsRescueAngle[AI_ROLL] = 0.0f;
-        rescueThrottle = gpsRescueConfig()->throttleHover;
+        rescueThrottle = gpsRescueConfig()->throttleHover - 50;
         return;
     default:
         break;
@@ -458,9 +458,11 @@ static void performSanityChecks()
         }
     }
 
-    // Check if crash recovery mode is active
+    // If crash recovery is triggered during a rescue, immediately disarm, ignoring the crash flip recovery settings.
     if (crashRecoveryModeActive()) {
-        rescueState.failure = RESCUE_CRASH_FLIP_DETECTED;
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        disarm(DISARM_REASON_CRASH_PROTECTION);
+        rescueStop();
     }
 
     // Check if GPS comms are healthy
@@ -639,6 +641,15 @@ static bool checkGPSRescueIsAvailable(void)
     return result;
 }
 
+void disarmOnImpact(void)
+{
+    if (rescueState.sensor.accMagnitude > 2.0f) {
+        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+        disarm(DISARM_REASON_GPS_RESCUE);
+        rescueStop();
+    }
+}
+
 void updateGPSRescueState(void)
 // this runs a lot faster than the GPS Data update rate, and runs whether or not rescue is active
 {
@@ -780,11 +791,7 @@ void updateGPSRescueState(void)
             rescueState.intent.targetAltitudeCm -= rescueState.sensor.descendStepCm;
             // take one step off target altitude every time we get new GPS data
         }
-        if (rescueState.sensor.accMagnitude > 2.0f) {
-            setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            disarm(DISARM_REASON_GPS_RESCUE);
-            rescueState.phase = RESCUE_COMPLETE;
-        }
+        disarmOnImpact();
         break;
 
     case RESCUE_COMPLETE:
@@ -798,6 +805,7 @@ void updateGPSRescueState(void)
         break;
 
     case RESCUE_DO_NOTHING:
+        disarmOnImpact();
         break;
 
     default:
