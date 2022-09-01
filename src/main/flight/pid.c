@@ -32,6 +32,7 @@
 #include "common/filter.h"
 
 #include "config/config_reset.h"
+#include "config/feature.h"
 #include "config/simplified_tuning.h"
 
 #include "drivers/pwm_output.h"
@@ -42,6 +43,7 @@
 #include "fc/core.h"
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/gps_rescue.h"
