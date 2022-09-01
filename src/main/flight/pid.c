@@ -427,7 +427,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength()
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
-                                                        float currentPidSetpoint, float horizonLevelStrength) {
+    float currentPidSetpoint, float horizonLevelStrength) {
     const float levelAngleLimit = pidProfile->levelAngleLimit;
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
@@ -436,7 +436,21 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
 #endif
     angle = constrainf(angle, -levelAngleLimit, levelAngleLimit);
-    const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
+    float rawangle = ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
+    if ( isUpsidedown() && featureIsEnabled(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3D) ){
+        if (axis == PITCH){
+            rawangle *=-1;
+        }
+            else{ //ROLL
+                if (rawangle < 0){
+                    rawangle = rawangle + 180;
+                }
+                else{
+                    rawangle = rawangle - 180;
+                }
+            }
+     }
+    const float errorAngle = angle - rawangle;
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         // ANGLE mode - control is angle based
         const float setpointCorrection = errorAngle * pidRuntime.levelGain;
