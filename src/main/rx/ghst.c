@@ -129,6 +129,11 @@ void ghstRxSendTelemetryData(void)
     }
 }
 
+uint8_t ghstRxGetTelemetryBufLen(void)
+{
+    return telemetryBufLen;
+}
+
 STATIC_UNIT_TESTED uint8_t ghstFrameCRC(const ghstFrame_t *const pGhstFrame)
 {
     // CRC includes type and payload
@@ -331,6 +336,24 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                     }
                 }
 
+            }
+        } else {
+            switch(ghstFrameType) {
+
+#if defined(USE_TELEMETRY_GHST) && defined(USE_MSP_OVER_TELEMETRY)
+            case GHST_UL_MSP_REQ:
+            case GHST_UL_MSP_WRITE: {
+                static uint8_t mspFrameCounter = 0;
+                DEBUG_SET(DEBUG_GHST_MSP, 0, ++mspFrameCounter);
+                if (handleMspFrame(ghstValidatedFrame->frame.payload, ghstValidatedFrame->frame.len - GHST_FRAME_LENGTH_CRC - GHST_FRAME_LENGTH_TYPE, NULL)) {
+                    ghstScheduleMspResponse();
+                }
+                break;
+            }
+#endif
+            default:
+                DEBUG_SET(DEBUG_GHST, DEBUG_GHST_UNKNOWN_FRAMES, ++unknownFrameCount);
+                break;
             }
         }
     }
