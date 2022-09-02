@@ -130,6 +130,8 @@
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
 
+#define USE_RANGEFINDER
+
 #elif defined(STM32F745)
 #define TARGET_BOARD_IDENTIFIER "S745"
 
