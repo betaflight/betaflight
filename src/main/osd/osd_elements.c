@@ -992,6 +992,13 @@ static void osdElementFlymode(osdElementParms_t *element)
     }
 }
 
+static void osdElementReadyMode(osdElementParms_t *element)
+{
+    if (IS_RC_MODE_ACTIVE(BOXREADY) && !ARMING_FLAG(ARMED)) {
+        strcpy(element->buff, "READY"); 
+    }
+}
+
 #ifdef USE_ACC
 static void osdElementGForce(osdElementParms_t *element)
 {
@@ -1559,6 +1566,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_MAIN_BATT_USAGE,
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
+    OSD_READY_MODE,
 #ifdef USE_VARIO
     OSD_NUMERICAL_VARIO,
 #endif
@@ -1644,6 +1652,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_PIDRATE_PROFILE]         = osdElementPidRateProfile,
     [OSD_WARNINGS]                = osdElementWarnings,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
+    [OSD_READY_MODE]              = osdElementReadyMode,
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,

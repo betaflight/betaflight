@@ -163,6 +163,7 @@ typedef enum {
     OSD_TX_UPLINK_POWER,
     OSD_WATT_HOURS_DRAWN,
     OSD_AUX_VALUE,
+    OSD_READY_MODE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
