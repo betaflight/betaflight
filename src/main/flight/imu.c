@@ -710,3 +710,8 @@ bool isUpright(void)
     return true;
 #endif
 }
+
+bool isUpsidedown(void)
+{
+  return !sensors(SENSOR_ACC) || (attitudeIsEstablished && getCosTiltAngle() < 0);
+}
