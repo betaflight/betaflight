@@ -22,6 +22,7 @@
 
 #include "common/time.h"
 
+#define TASK_ALTITUDE_RATE_HZ 120
 #define POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE 10
 #define POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK 7
 
@@ -34,6 +35,6 @@ typedef struct positionConfig_s {
 PG_DECLARE(positionConfig_t, positionConfig);
 
 bool isAltitudeOffset(void);
-void calculateEstimatedAltitude(timeUs_t currentTimeUs);
+void calculateEstimatedAltitude();
 int32_t getEstimatedAltitudeCm(void);
 int16_t getEstimatedVario(void);

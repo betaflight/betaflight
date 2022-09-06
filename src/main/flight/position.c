@@ -29,6 +29,7 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "fc/runtime_config.h"
 
@@ -46,6 +47,11 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+static int32_t estimatedAltitudeCm = 0;                // in cm
+#ifdef USE_BARO
+    static pt2Filter_t baroDerivativeLpf;
+#endif
+
 typedef enum {
     DEFAULT = 0,
     BARO_ONLY,
@@ -60,30 +66,13 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK,
 );
 
-static int32_t estimatedAltitudeCm = 0;                // in cm
-
-#define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
-
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;                   // in cm/s
 
-int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
-    static float vel = 0;
-    static int32_t lastBaroAlt = 0;
-
-    int32_t baroVel = 0;
-
-    baroVel = (baroAlt - lastBaroAlt) * 1000000.0f / dTime;
-    lastBaroAlt = baroAlt;
-
-    baroVel = constrain(baroVel, -1500.0f, 1500.0f);
-    baroVel = applyDeadband(baroVel, 10.0f);
-
-    vel = vel * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_cf_vel) + baroVel * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_cf_vel));
-    int32_t vel_tmp = lrintf(vel);
-    vel_tmp = applyDeadband(vel_tmp, 5.0f);
-
-    return constrain(vel_tmp, SHRT_MIN, SHRT_MAX);
+int16_t calculateEstimatedVario(float baroAltVelocity)
+{
+    baroAltVelocity = applyDeadband(baroAltVelocity, 10.0f); // cm/s, so ignore climb rates less than 0.1 m/s
+    return constrain(lrintf(baroAltVelocity), -1500, 1500);
 }
 #endif
 
@@ -91,35 +80,38 @@ int16_t calculateEstimatedVario(int32_t baroAlt, const uint32_t dTime) {
 static bool altitudeOffsetSetBaro = false;
 static bool altitudeOffsetSetGPS = false;
 
-void calculateEstimatedAltitude(timeUs_t currentTimeUs)
+void calculateEstimatedAltitude()
 {
-    static timeUs_t previousTimeUs = 0;
-    static int32_t baroAltOffset = 0;
-    static int32_t gpsAltOffset = 0;
+    static float baroAltOffset = 0;
+    static float gpsAltOffset = 0;
 
-    const uint32_t dTime = currentTimeUs - previousTimeUs;
-    if (dTime < BARO_UPDATE_FREQUENCY_40HZ) {
-        schedulerIgnoreTaskExecTime();
-        return;
-    }
-    previousTimeUs = currentTimeUs;
-
-    int32_t baroAlt = 0;
-    int32_t gpsAlt = 0;
+    float baroAlt = 0;
+    float baroAltVelocity = 0;
+    float gpsAlt = 0;
     uint8_t gpsNumSat = 0;
 
 #if defined(USE_GPS) && defined(USE_VARIO)
-    int16_t gpsVertSpeed = 0;
+    float gpsVertSpeed = 0;
 #endif
     float gpsTrust = 0.3; //conservative default
     bool haveBaroAlt = false;
     bool haveGpsAlt = false;
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
-        if (!baroIsCalibrationComplete()) {
-            performBaroCalibrationCycle();
-        } else {
-            baroAlt = baroCalculateAltitude();
+        static float lastBaroAlt = 0;
+        static bool initBaroFilter = false;
+        if (!initBaroFilter) {
+            const float cutoffHz = barometerConfig()->baro_vario_lpf / 100.0f;
+            const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+            const float gain = pt2FilterGain(cutoffHz, sampleTimeS);
+            pt2FilterInit(&baroDerivativeLpf, gain);
+            initBaroFilter = true;
+        }
+        baroAlt = baroUpsampleAltitude();
+        const float baroAltVelocityRaw = (baroAlt - lastBaroAlt) * TASK_ALTITUDE_RATE_HZ; // cm/s
+        baroAltVelocity = pt2FilterApply(&baroDerivativeLpf, baroAltVelocityRaw);
+        lastBaroAlt = baroAlt;
+        if (baroIsCalibrated()) {
             haveBaroAlt = true;
         }
     }
@@ -185,7 +177,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
         }
 #ifdef USE_VARIO
         // baro is a better source for vario, so ignore gpsVertSpeed
-        estimatedVario = calculateEstimatedVario(baroAlt, dTime);
+        estimatedVario = calculateEstimatedVario(baroAltVelocity);
 #endif
     } else if (haveGpsAlt && (positionConfig()->altSource == GPS_ONLY || positionConfig()->altSource == DEFAULT )) {
         estimatedAltitudeCm = gpsAlt;
@@ -195,11 +187,9 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     } else if (haveBaroAlt && (positionConfig()->altSource == BARO_ONLY || positionConfig()->altSource == DEFAULT)) {
         estimatedAltitudeCm = baroAlt;
 #ifdef USE_VARIO
-        estimatedVario = calculateEstimatedVario(baroAlt, dTime);
+        estimatedVario = calculateEstimatedVario(baroAltVelocity); // cm/s
 #endif
     }
-
-
 
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
     DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);

@@ -43,6 +43,7 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
+    #include "flight/position.h"
 
     #include "io/gps.h"
 
@@ -202,57 +203,64 @@ TEST(FlightImuTest, TestSmallAngle)
 // STUBS
 
 extern "C" {
-boxBitmask_t rcModeActivationMask;
-float rcCommand[4];
-float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    boxBitmask_t rcModeActivationMask;
+    float rcCommand[4];
+    float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-gyro_t gyro;
-acc_t acc;
-mag_t mag;
+    gyro_t gyro;
+    acc_t acc;
+    mag_t mag;
 
-gpsSolutionData_t gpsSol;
-int16_t GPS_verticalSpeedInCmS;
+    gpsSolutionData_t gpsSol;
+    int16_t GPS_verticalSpeedInCmS;
 
-uint8_t debugMode;
-int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode;
+    int16_t debug[DEBUG16_VALUE_COUNT];
 
-uint8_t stateFlags;
-uint16_t flightModeFlags;
-uint8_t armingFlags;
+    uint8_t stateFlags;
+    uint16_t flightModeFlags;
+    uint8_t armingFlags;
 
-pidProfile_t *currentPidProfile;
+    pidProfile_t *currentPidProfile;
 
-uint16_t enableFlightMode(flightModeFlags_e mask)
-{
-    return flightModeFlags |= (mask);
-}
+    uint16_t enableFlightMode(flightModeFlags_e mask) {
+        return flightModeFlags |= (mask);
+    }
 
-uint16_t disableFlightMode(flightModeFlags_e mask)
-{
-    return flightModeFlags &= ~(mask);
-}
+    uint16_t disableFlightMode(flightModeFlags_e mask) {
+        return flightModeFlags &= ~(mask);
+    }
 
-bool sensors(uint32_t mask)
-{
-    return mask & SENSOR_ACC;
-};
+    bool sensors(uint32_t mask) {
+        return mask & SENSOR_ACC;
+    };
 
-uint32_t millis(void) { return 0; }
-uint32_t micros(void) { return 0; }
+    uint32_t millis(void) { return 0; }
+    uint32_t micros(void) { return 0; }
 
-bool compassIsHealthy(void) { return true; }
-bool baroIsCalibrationComplete(void) { return true; }
-void performBaroCalibrationCycle(void) {}
-int32_t baroCalculateAltitude(void) { return 0; }
-bool gyroGetAccumulationAverage(float *) { return false; }
-bool accGetAccumulationAverage(float *) { return false; }
-void mixerSetThrottleAngleCorrection(int) {};
-bool gpsRescueIsRunning(void) { return false; }
-bool isFixedWing(void) { return false; }
-void pinioBoxTaskControl(void) {}
-void schedulerIgnoreTaskExecTime(void) {}
-void schedulerIgnoreTaskStateTime(void) {}
-void schedulerSetNextStateTime(timeDelta_t) {}
-bool schedulerGetIgnoreTaskExecTime() { return false; }
-float gyroGetFilteredDownsampled(int) { return 0.0f; }
+    bool compassIsHealthy(void) { return true; }
+    bool baroIsCalibrated(void) { return true; }
+    void performBaroCalibrationCycle(void) {}
+    float baroCalculateAltitude(void) { return 0; }
+    bool gyroGetAccumulationAverage(float *) { return false; }
+    bool accGetAccumulationAverage(float *) { return false; }
+    void mixerSetThrottleAngleCorrection(int) {};
+    bool gpsRescueIsRunning(void) { return false; }
+    bool isFixedWing(void) { return false; }
+    void pinioBoxTaskControl(void) {}
+    void schedulerIgnoreTaskExecTime(void) {}
+    void schedulerIgnoreTaskStateTime(void) {}
+    void schedulerSetNextStateTime(timeDelta_t) {}
+    bool schedulerGetIgnoreTaskExecTime() { return false; }
+    float gyroGetFilteredDownsampled(int) { return 0.0f; }
+    float baroUpsampleAltitude()  { return 0.0f; }
+    float pt2FilterGain(float, float)  { return 0.0f; }
+
+    void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
+        UNUSED(baroDerivativeLpf);
+    }
+    float pt2FilterApply(pt2Filter_t *baroDerivativeLpf, float) {
+        UNUSED(baroDerivativeLpf);
+        return 0.0f;
+    }
 }
