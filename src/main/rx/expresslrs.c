@@ -333,7 +333,7 @@ static void setRfLinkRate(const uint8_t index)
     telemBurstValid = false;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    rxSetRfMode((uint8_t)RATE_4HZ - (uint8_t)receiver.modParams->enumRate);
+    rxSetRfMode((uint8_t)receiver.modParams->enumRate);
 #endif
 }
 

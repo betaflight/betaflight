@@ -53,18 +53,18 @@ static uint32_t freqSpread = 0;
 elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
 #ifdef USE_RX_SX127X
     {
-        {0, RATE_200HZ, SX127x_BW_500_00_KHZ, SX127x_SF_6, SX127x_CR_4_7, 5000, TLM_RATIO_1_64, 4, 8},
-        {1, RATE_100HZ, SX127x_BW_500_00_KHZ, SX127x_SF_7, SX127x_CR_4_7, 10000, TLM_RATIO_1_64, 4, 8},
-        {2, RATE_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_1_16, 4, 10},
-        {3, RATE_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_1_8, 2, 10}
+        {0, RATE_LORA_200HZ, SX127x_BW_500_00_KHZ, SX127x_SF_6, SX127x_CR_4_7, 5000, TLM_RATIO_1_64, 4, 8},
+        {1, RATE_LORA_100HZ, SX127x_BW_500_00_KHZ, SX127x_SF_7, SX127x_CR_4_7, 10000, TLM_RATIO_1_64, 4, 8},
+        {2, RATE_LORA_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_1_16, 4, 10},
+        {3, RATE_LORA_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_1_8, 2, 10}
     },
 #endif
 #ifdef USE_RX_SX1280
     {
-        {0, RATE_500HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF5, SX1280_LORA_CR_LI_4_6, 2000, TLM_RATIO_1_128, 4, 12},
-        {1, RATE_250HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF6, SX1280_LORA_CR_LI_4_7, 4000, TLM_RATIO_1_64, 4, 14},
-        {2, RATE_150HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF7, SX1280_LORA_CR_LI_4_7, 6666, TLM_RATIO_1_32, 4, 12},
-        {3, RATE_50HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF8, SX1280_LORA_CR_LI_4_7, 20000, TLM_RATIO_1_16, 2, 12}
+        {0, RATE_LORA_500HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF5, SX1280_LORA_CR_LI_4_6, 2000, TLM_RATIO_1_128, 4, 12},
+        {1, RATE_LORA_250HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF6, SX1280_LORA_CR_LI_4_7, 4000, TLM_RATIO_1_64, 4, 14},
+        {2, RATE_LORA_150HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF7, SX1280_LORA_CR_LI_4_7, 6666, TLM_RATIO_1_32, 4, 12},
+        {3, RATE_LORA_50HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF8, SX1280_LORA_CR_LI_4_7, 20000, TLM_RATIO_1_16, 2, 12}
     },
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
@@ -75,18 +75,18 @@ elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
 elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX] = {
 #ifdef USE_RX_SX127X
     {
-        {0, RATE_200HZ, -112, 4380, 3000, 2500, 600, 5000},
-        {1, RATE_100HZ, -117, 8770, 3500, 2500, 600, 5000},
-        {2, RATE_50HZ, -120, 17540, 4000, 2500, 600, 5000},
-        {3, RATE_25HZ, -123, 17540, 6000, 4000, 0, 5000}
+        {0, RATE_LORA_200HZ, -112, 4380, 3000, 2500, 600, 5000},
+        {1, RATE_LORA_100HZ, -117, 8770, 3500, 2500, 600, 5000},
+        {2, RATE_LORA_50HZ, -120, 17540, 4000, 2500, 600, 5000},
+        {3, RATE_LORA_25HZ, -123, 17540, 6000, 4000, 0, 5000}
     },
 #endif
 #ifdef USE_RX_SX1280
     {
-        {0, RATE_500HZ, -105, 1665, 2500, 2500, 3, 5000},
-        {1, RATE_250HZ, -108, 3300, 3000, 2500, 6, 5000},
-        {2, RATE_150HZ, -112, 5871, 3500, 2500, 10, 5000},
-        {3, RATE_50HZ, -115, 10798, 4000, 2500, 0, 5000}
+        {0, RATE_LORA_500HZ, -105, 1665, 2500, 2500, 3, 5000},
+        {1, RATE_LORA_250HZ, -108, 3300, 3000, 2500, 6, 5000},
+        {2, RATE_LORA_150HZ, -112, 5871, 3500, 2500, 10, 5000},
+        {3, RATE_LORA_50HZ, -115, 10798, 4000, 2500, 0, 5000}
     },
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
@@ -234,14 +234,14 @@ uint8_t tlmRatioEnumToValue(const elrsTlmRatio_e enumval)
 uint16_t rateEnumToHz(const elrsRfRate_e eRate)
 {
     switch (eRate) {
-    case RATE_500HZ: return 500;
-    case RATE_250HZ: return 250;
-    case RATE_200HZ: return 200;
-    case RATE_150HZ: return 150;
-    case RATE_100HZ: return 100;
-    case RATE_50HZ: return 50;
-    case RATE_25HZ: return 25;
-    case RATE_4HZ: return 4;
+    case RATE_LORA_500HZ: return 500;
+    case RATE_LORA_250HZ: return 250;
+    case RATE_LORA_200HZ: return 200;
+    case RATE_LORA_150HZ: return 150;
+    case RATE_LORA_100HZ: return 100;
+    case RATE_LORA_50HZ: return 50;
+    case RATE_LORA_25HZ: return 25;
+    case RATE_LORA_4HZ: return 4;
     default: return 1;
     }
 }

@@ -105,14 +105,20 @@ typedef enum {
 } elrsTlmRatio_e;
 
 typedef enum {
-    RATE_500HZ = 0,
-    RATE_250HZ = 1,
-    RATE_200HZ = 2,
-    RATE_150HZ = 3,
-    RATE_100HZ = 4,
-    RATE_50HZ = 5,
-    RATE_25HZ = 6,
-    RATE_4HZ = 7,
+    RATE_LORA_4HZ = 0,
+    RATE_LORA_25HZ,
+    RATE_LORA_50HZ,
+    RATE_LORA_100HZ,
+    RATE_LORA_100HZ_8CH,
+    RATE_LORA_150HZ,
+    RATE_LORA_200HZ,
+    RATE_LORA_250HZ,
+    RATE_LORA_333HZ_8CH,
+    RATE_LORA_500HZ,
+    RATE_DVDA_250HZ,
+    RATE_DVDA_500HZ,
+    RATE_FLRC_500HZ,
+    RATE_FLRC_1000HZ,
 } elrsRfRate_e; // Max value of 16 since only 4 bits have been assigned in the sync package.
 
 typedef struct elrsModSettings_s {
