@@ -47,9 +47,16 @@ else
 ifeq ($(TARGET), STM32G47X)
 G47X_TARGETS += $(TARGET)
 
-else # STM32H743
+else
+ifeq ($(TARGET), STM32H743)
 H743xI_TARGETS += $(TARGET)
 
+else
+ifeq ($(TARGET), STM32H723)
+    H723xG_TARGETS += $(TARGET)
+endif
+
+endif
 endif
 endif
 endif
@@ -57,7 +64,7 @@ endif
 endif
 endif
 
-ifeq ($(TARGET), $(filter $(TARGET), STM32F405 STM32F745 STM32H743))
+ifeq ($(TARGET), $(filter $(TARGET), STM32F405 STM32F745 STM32H743 STM32H723))
 # Use a full block (16 kB) of flash for custom defaults - with 1 MB flash we have more than we know how to use anyway
 
 CUSTOM_DEFAULTS_EXTENDED = yes
