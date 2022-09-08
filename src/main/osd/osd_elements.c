@@ -1905,9 +1905,9 @@ void osdUpdateAlarms(void)
     }
 
 #ifdef USE_GPS
-    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < 5)
+    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < gpsConfig()->gpsMinimumSats)
 #ifdef USE_GPS_RESCUE
-            || ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured())
+            || ((gpsSol.numSat < gpsConfig()->gpsRequiredSats) && gpsRescueIsConfigured())
 #endif
             ) {
         SET_BLINK(OSD_GPS_SATS);

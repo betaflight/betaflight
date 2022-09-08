@@ -100,7 +100,6 @@ typedef struct {
     float distanceToHomeM;
     uint16_t groundSpeedCmS;  //cm/s
     int16_t directionToHome;
-    uint8_t numSat;
     float accMagnitude;
     bool healthy;
     float errorAngle;
@@ -157,7 +156,6 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleMax = 1600,
     .throttleHover = 1275,
     .sanityChecks = RESCUE_SANITY_FS_ONLY,
-    .minSats = 8,
     .minRescueDth = 30,
     .allowArmingWithoutFix = false,
     .useMag = GPS_RESCUE_USE_MAG,
@@ -522,7 +520,7 @@ static void performSanityChecks()
     }
     prevAltitudeCm = rescueState.sensor.currentAltitudeCm;
 
-    secondsLowSats += rescueState.sensor.numSat < (gpsRescueConfig()->minSats / 2) ? 1 : -1;
+    secondsLowSats += gpsSol.numSat < (gpsConfig()->gpsMinimumSats) ? 1 : -1;
     secondsLowSats = constrain(secondsLowSats, 0, 10);
 
     if (secondsLowSats == 10) {
@@ -558,7 +556,6 @@ static void sensorUpdate()
     rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm / 100.0f;
     rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed; // cm/s
     rescueState.sensor.directionToHome = GPS_directionToHome;
-    rescueState.sensor.numSat = gpsSol.numSat;
     rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) * 0.1f;
     // both attitude and direction are in degrees * 10, errorAngle is degrees
     if (rescueState.sensor.errorAngle <= -180) {
@@ -591,12 +588,14 @@ static void sensorUpdate()
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, rescueState.sensor.velocityToHomeCmS);
 }
 
-// This function checks the following conditions to determine if GPS rescue is available:
+// This function flashes "RESCUE N/A" in the OSD if:
 // 1. sensor healthy - GPS data is being received.
-// 2. GPS has a valid fix.
-// 3. GPS number of satellites is less than the minimum configured for GPS rescue.
-// Note: this function does not take into account the distance from homepoint etc. (gps_rescue_min_dth) and
-// is also independent of the gps_rescue_sanity_checks configuration
+// 2. GPS has a 3D fix.
+// 3. GPS number of satellites is greater than or equal to the minimum configured satellite count.
+// Note 1: cannot arm without the required number of sats; 
+// hence this flashing indicates that after having enough sats, we now have below the minimum and the rescue likely would fail
+// Note 2: this function does not take into account the distance from homepoint etc. (gps_rescue_min_dth).
+// The sanity checks are independent, this just provides the OSD warning
 static bool checkGPSRescueIsAvailable(void)
 {
     static timeUs_t previousTimeUs = 0; // Last time LowSat was checked
@@ -628,7 +627,7 @@ static bool checkGPSRescueIsAvailable(void)
         noGPSfix = false;
     }
 
-    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < gpsRescueConfig()->minSats) ? 1 : -1), 0, 2);
+    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < gpsConfig()->gpsMinimumSats) ? 1 : -1), 0, 2);
     if (secondsLowSats == 2) {
         lowsats = true;
         result = false;

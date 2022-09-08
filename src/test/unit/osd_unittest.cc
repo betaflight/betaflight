@@ -1190,6 +1190,8 @@ TEST_F(OsdTest, TestGpsElements)
 {
     // given
     osdElementConfigMutable()->item_pos[OSD_GPS_SATS] = OSD_POS(2, 4) | OSD_PROFILE_1_FLAG;
+    gpsConfigMutable()->gpsMinimumSats = GPS_MINIMUM_SAT_COUNT;
+    gpsConfigMutable()->gpsRequiredSats = GPS_REQUIRED_SAT_COUNT;
 
     sensorsSet(SENSOR_GPS);
     osdAnalyzeActiveElements();

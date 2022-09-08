@@ -38,7 +38,7 @@
 #include "config/config.h"
 
 #include "flight/gps_rescue.h"
-
+#include "io/gps.h"
 
 static uint16_t gpsRescueConfig_angle; //degrees
 static uint16_t gpsRescueConfig_initialAltitudeM; //meters
@@ -47,7 +47,7 @@ static uint16_t gpsRescueConfig_rescueGroundspeed; // centimeters per second
 static uint16_t gpsRescueConfig_throttleMin;
 static uint16_t gpsRescueConfig_throttleMax;
 static uint16_t gpsRescueConfig_throttleHover;
-static uint8_t gpsRescueConfig_minSats;
+static uint8_t gpsConfig_gpsMinimumSats;
 static uint16_t gpsRescueConfig_minRescueDth; //meters
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 static uint16_t gpsRescueConfig_throttleP, gpsRescueConfig_throttleI, gpsRescueConfig_throttleD;
@@ -133,7 +133,7 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
     gpsRescueConfig_throttleMin = gpsRescueConfig()->throttleMin  ;
     gpsRescueConfig_throttleMax = gpsRescueConfig()->throttleMax;
     gpsRescueConfig_throttleHover = gpsRescueConfig()->throttleHover;
-    gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
+    gpsConfig_gpsMinimumSats = gpsConfig()->gpsMinimumSats;
     gpsRescueConfig_minRescueDth = gpsRescueConfig()->minRescueDth;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
     gpsRescueConfig_targetLandingAltitudeM = gpsRescueConfig()->targetLandingAltitudeM;
@@ -156,7 +156,7 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     gpsRescueConfigMutable()->throttleMin = gpsRescueConfig_throttleMin;
     gpsRescueConfigMutable()->throttleMax = gpsRescueConfig_throttleMax;
     gpsRescueConfigMutable()->throttleHover = gpsRescueConfig_throttleHover;
-    gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
+    gpsConfigMutable()->gpsMinimumSats = gpsConfig_gpsMinimumSats;
     gpsRescueConfigMutable()->minRescueDth = gpsRescueConfig_minRescueDth;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
     gpsRescueConfigMutable()->targetLandingAltitudeM = gpsRescueConfig_targetLandingAltitudeM;
@@ -184,7 +184,7 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     { "ASCEND RATE",       OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_ascendRate, 50, 2500, 1 } },
     { "DESCEND RATE",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_descendRate, 25, 500, 1 } },
     { "ARM WITHOUT FIX",   OME_Bool | REBOOT_REQUIRED,  NULL, &gpsRescueConfig_allowArmingWithoutFix },
-    { "MIN SATELITES",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },
+    { "MIN SATELITES",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsConfig_gpsMinimumSats, 4, 50, 1 } },
     { "GPS RESCUE PID",    OME_Submenu, cmsMenuChange, &cms_menuGpsRescuePid},
 
     {"BACK", OME_Back, NULL, NULL},
