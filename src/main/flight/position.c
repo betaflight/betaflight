@@ -81,7 +81,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 4
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = DEFAULT,
     .altitude_prefer_baro = 100,
-    .altitude_lpf = 400,
+    .altitude_lpf = 300,
     .altitude_d_lpf = 100,
 );
 
