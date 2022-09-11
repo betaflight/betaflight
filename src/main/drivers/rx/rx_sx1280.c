@@ -360,7 +360,7 @@ void sx1280Config(const sx1280LoraBandwidths_e bw, const sx1280LoraSpreadingFact
 
     sx1280ConfigLoraDefaults();
     sx1280SetOutputPower(13); //default is max power (12.5dBm for SX1280 RX)
-    sx1280SetMode(SX1280_MODE_STDBY_XOSC); 
+    sx1280SetMode(SX1280_MODE_STDBY_RC); 
     sx1280ClearIrqStatus(SX1280_IRQ_RADIO_ALL);
     sx1280ConfigLoraModParams(bw, sf, cr);
     sx1280SetPacketParams(preambleLength, SX1280_LORA_PACKET_IMPLICIT, 8, SX1280_LORA_CRC_OFF, (sx1280LoraIqModes_e)((uint8_t)!iqInverted << 6)); // TODO don't make static etc.
@@ -530,8 +530,8 @@ void sx1280StartReceiving(void)
 void sx1280GetLastPacketStats(int8_t *rssi, int8_t *snr)
 {
     *rssi = -(int8_t)(packetStats[0] / 2);
-    *snr = ((int8_t) packetStats[1]) / 4;
-    int8_t negOffset = (*snr < 0) ? *snr : 0;
+    *snr = (int8_t) packetStats[1];
+    int8_t negOffset = (*snr < 0) ? (*snr / 4) : 0;
     *rssi += negOffset;
 }
 

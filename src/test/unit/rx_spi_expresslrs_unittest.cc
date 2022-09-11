@@ -105,71 +105,84 @@ TEST(RxSpiExpressLrsUnitTest, TestCrc14)
     }
 }
 
+static void printFhssSequence(uint8_t *seq)
+{
+    for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
+        printf("%d, ", seq[i]);
+        if (i % 10 == 9) {
+            printf("\n");
+        }
+    }
+    printf("\n\n");
+}
+
 TEST(RxSpiExpressLrsUnitTest, TestFHSSTable)
 {
     const uint8_t UID[6] = {1, 2, 3, 4, 5, 6};
 
     const uint8_t expectedSequence[2][ELRS_NR_SEQUENCE_ENTRIES] = {
         {
-            40, 43, 39, 18, 52, 19, 36, 7, 1, 12,
-            71, 5, 42, 46, 50, 28, 49, 33, 76, 51, 
-            60, 70, 47, 61, 0, 55, 72, 37, 53, 25,
-            3, 11, 41, 13, 35, 27, 9, 75, 48, 77, 
-            73, 74, 69, 58, 14, 31, 10, 59, 66, 4, 
-            78, 17, 44, 54, 29, 57, 21, 64, 22, 67, 
-            62, 56, 15, 79, 6, 34, 23, 30, 32, 2, 
-            68, 8, 63, 65, 45, 20, 24, 26, 16, 38, 
-            40, 8, 52, 29, 57, 10, 6, 26, 19, 75, 
-            21, 24, 1, 9, 50, 32, 69, 67, 2, 59, 
-            28, 48, 77, 60, 41, 49, 68, 4, 5, 3, 
-            44, 78, 58, 31, 16, 62, 35, 45, 73, 11, 
-            33, 46, 42, 36, 64, 7, 34, 53, 17, 25, 
-            37, 38, 54, 55, 15, 76, 18, 43, 23, 12, 
-            39, 51, 22, 79, 74, 63, 27, 66, 65, 47, 
-            70, 0, 30, 61, 13, 56, 14, 72, 71, 20, 
-            40, 71, 68, 12, 57, 45, 10, 53, 21, 15, 
-            69, 26, 54, 55, 73, 47, 35, 77, 1, 31, 
-            20, 0, 38, 76, 5, 60, 6, 79, 3, 16, 
-            50, 17, 52, 62, 18, 46, 28, 39, 29, 51, 
-            43, 34, 49, 56, 32, 61, 74, 58, 25, 44, 
-            2, 19, 65, 4, 13, 67, 11, 30, 66, 64, 
-            36, 24, 75, 33, 59, 7, 41, 70, 48, 14, 
-            42, 37, 8, 23, 78, 63, 22, 9, 72, 27
+            41, 39, 72, 45, 76, 48, 3, 79, 55, 66,
+            68, 13, 65, 20, 15, 43, 21, 54, 46, 37,
+            60, 29, 50, 40, 34, 61, 69, 64, 10, 70,
+            16, 2, 0, 38, 36, 30, 47, 8, 59, 35,
+            4, 71, 73, 11, 9, 51, 32, 1, 18, 12,
+            22, 26, 49, 25, 6, 7, 77, 62, 42, 57,
+            53, 74, 14, 31, 28, 75, 78, 23, 24, 27,
+            17, 44, 67, 33, 19, 5, 52, 56, 58, 63,
+            41, 24, 21, 5, 58, 3, 70, 76, 59, 67,
+            15, 78, 26, 10, 2, 27, 7, 23, 48, 31,
+            72, 13, 56, 45, 51, 50, 44, 54, 39, 53,
+            22, 71, 9, 47, 55, 36, 49, 43, 4, 40,
+            52, 25, 60, 28, 34, 74, 6, 29, 62, 14,
+            8, 0, 19, 17, 79, 46, 42, 77, 37, 18,
+            66, 38, 30, 75, 32, 63, 1, 33, 69, 12,
+            61, 57, 35, 65, 11, 64, 20, 73, 68, 16,
+            41, 75, 76, 17, 26, 22, 25, 60, 53, 43,
+            72, 50, 38, 24, 79, 77, 49, 33, 15, 8,
+            14, 59, 42, 64, 1, 30, 29, 35, 39, 56,
+            40, 36, 74, 18, 47, 73, 62, 13, 61, 58,
+            44, 71, 0, 37, 19, 16, 48, 63, 65, 20,
+            69, 54, 52, 70, 31, 3, 12, 21, 57, 10,
+            5, 7, 28, 55, 27, 6, 11, 9, 78, 45,
+            68, 66, 2, 67, 51, 32, 34, 23, 4, 46
         },
         {
-            20, 37, 1, 3, 7, 26, 36, 29, 15, 35, 
-            33, 24, 10, 34, 13, 31, 22, 9, 28, 23, 
-            17, 38, 6, 27, 0, 32, 11, 5, 18, 25, 
-            2, 4, 12, 19, 16, 8, 30, 14, 21, 39, 
-            20, 2, 14, 7, 13, 33, 32, 28, 21, 11, 
-            25, 17, 22, 9, 3, 4, 0, 31, 35, 38, 
-            10, 34, 26, 39, 36, 6, 19, 16, 30, 27, 
-            15, 24, 18, 1, 23, 37, 29, 8, 12, 5, 
-            20, 19, 24, 29, 27, 2, 22, 14, 0, 3, 
-            23, 13, 12, 35, 4, 25, 38, 18, 33, 36, 
-            21, 16, 5, 31, 9, 32, 11, 1, 6, 7, 
-            10, 15, 26, 34, 39, 37, 28, 17, 30, 8, 
-            20, 7, 4, 24, 19, 16, 8, 13, 15, 10, 
-            14, 36, 34, 0, 17, 12, 28, 21, 39, 22, 
-            3, 2, 32, 33, 27, 6, 37, 18, 31, 38, 
-            23, 25, 26, 30, 9, 1, 35, 5, 11, 29, 
-            20, 1, 35, 22, 0, 10, 11, 27, 18, 37, 
-            21, 31, 9, 19, 30, 17, 5, 38, 29, 36, 
-            3, 2, 25, 34, 23, 6, 15, 4, 16, 26, 
-            12, 24, 14, 13, 39, 8, 32, 7, 28, 33, 
-            20, 36, 13, 5, 39, 37, 15, 8, 9, 4, 
-            22, 12, 1, 6, 32, 25, 17, 18, 27, 28, 
-            23, 19, 26, 3, 38, 16, 2, 34, 14, 30, 
-            10, 11, 7, 0, 35, 24, 21, 33, 31, 29 
+            21, 7, 12, 6, 11, 27, 35, 9, 18, 28,
+            13, 1, 24, 32, 30, 38, 14, 5, 2, 23,
+            37, 26, 17, 3, 25, 29, 39, 36, 0, 4,
+            33, 10, 16, 31, 34, 22, 8, 19, 15, 20,
+            21, 33, 11, 13, 26, 6, 1, 7, 2, 0,
+            9, 28, 19, 18, 23, 10, 29, 14, 25, 3,
+            30, 15, 35, 38, 5, 39, 22, 8, 20, 24,
+            34, 27, 37, 36, 31, 12, 4, 16, 32, 17,
+            21, 20, 30, 37, 11, 5, 26, 3, 18, 32,
+            35, 13, 38, 9, 15, 2, 16, 34, 22, 29,
+            7, 24, 10, 39, 28, 8, 31, 1, 23, 0,
+            12, 36, 19, 4, 27, 17, 6, 25, 33, 14,
+            21, 8, 32, 16, 15, 20, 30, 29, 5, 7,
+            31, 33, 28, 9, 36, 34, 13, 1, 0, 12,
+            35, 26, 25, 39, 22, 19, 11, 2, 37, 23,
+            10, 14, 6, 3, 17, 27, 18, 38, 4, 24,
+            21, 12, 25, 32, 9, 8, 6, 28, 38, 17,
+            2, 31, 10, 16, 20, 24, 13, 22, 39, 29,
+            26, 5, 7, 18, 19, 11, 14, 30, 35, 4,
+            37, 15, 0, 34, 33, 23, 27, 1, 36, 3,
+            21, 36, 5, 31, 17, 32, 10, 34, 1, 3,
+            7, 2, 28, 38, 13, 4, 22, 29, 0, 23,
+            20, 26, 25, 16, 30, 11, 35, 6, 19, 24,
+            8, 18, 33, 15, 37, 12, 14, 39, 27, 9
         }
     };
 
     fhssGenSequence(UID, ISM2400);
+    printFhssSequence(fhssSequence);
     for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
         EXPECT_EQ(expectedSequence[0][i], fhssSequence[i]);
     }
 
     fhssGenSequence(UID, FCC915);
+    printFhssSequence(fhssSequence);
     for (int i = 0; i < ELRS_NR_SEQUENCE_ENTRIES; i++) {
         EXPECT_EQ(expectedSequence[1][i], fhssSequence[i]);
     }
@@ -194,13 +207,13 @@ TEST(RxSpiExpressLrsUnitTest, TestInitUnbound)
     EXPECT_EQ(0, receiver.lastValidPacketMs);
 
     const uint32_t initialFrequencies[7] = {
-        FREQ_HZ_TO_REG_VAL_900(433920000), 
-        FREQ_HZ_TO_REG_VAL_900(921500000), 
-        FREQ_HZ_TO_REG_VAL_900(433925000), 
-        FREQ_HZ_TO_REG_VAL_900(866425000),
-        FREQ_HZ_TO_REG_VAL_900(866425000),
-        FREQ_HZ_TO_REG_VAL_900(915500000), 
-        FREQ_HZ_TO_REG_VAL_24(2440400000)
+        FREQ_HZ_TO_REG_VAL_900(434420000), 
+        FREQ_HZ_TO_REG_VAL_900(922100000), 
+        FREQ_HZ_TO_REG_VAL_900(434450000), 
+        FREQ_HZ_TO_REG_VAL_900(867783300),
+        FREQ_HZ_TO_REG_VAL_900(866949900),
+        FREQ_HZ_TO_REG_VAL_900(916100000), 
+        FREQ_HZ_TO_REG_VAL_24(2441400000)
     };
 
     for (int i = 0; i < 7; i++) {
@@ -245,7 +258,7 @@ TEST(RxSpiExpressLrsUnitTest, TestInitUnbound)
     expressLrsSpiInit(&injectedConfig, &config, &extiConfig);
     EXPECT_EQ(16, config.channelCount);
     receiver = empty;
-    rxExpressLrsSpiConfigMutable()->switchMode = SM_HYBRID_WIDE;
+    rxExpressLrsSpiConfigMutable()->switchMode = SM_WIDE;
     expressLrsSpiInit(&injectedConfig, &config, &extiConfig);
     EXPECT_EQ(16, config.channelCount);
 }
@@ -363,13 +376,6 @@ TEST(RxSpiExpressLrsUnitTest, Test4bSwitchDecode)
     EXPECT_EQ(1500, convertSwitchNb(255, 15));
 }
 
-TEST(RxSpiExpressLrsUnitTest, TestAnalogDecode)
-{
-    EXPECT_EQ(988, convertAnalog(172));
-    EXPECT_EQ(1500, convertAnalog(992));
-    EXPECT_EQ(2012, convertAnalog(1811));
-}
-
 // STUBS
 
 extern "C" {
@@ -419,6 +425,7 @@ extern "C" {
     }
     void sx1280AdjustFrequency(int32_t , const uint32_t ) {}
     bool sx1280Init(IO_t , IO_t ) { return true; }
+    void sx1280SetOutputPower(const int8_t ) {}
 
     void sx127xConfig(const sx127xBandwidth_e , const sx127xSpreadingFactor_e , const sx127xCodingRate_e , const uint32_t , const uint8_t , const bool ) {}
     void sx127xStartReceiving(void) {}
@@ -464,9 +471,13 @@ extern "C" {
     void initTelemetry(void) {}
     bool getNextTelemetryPayload(uint8_t *, uint8_t **) { return false; }
 
-    void setTelemetryDataToTransmit(const uint8_t , uint8_t* , const uint8_t ) {}
+    void setTelemetryDataToTransmit(const uint8_t , uint8_t* ) {}
     bool isTelemetrySenderActive(void) { return false; }
-    void getCurrentTelemetryPayload(uint8_t *, uint8_t *, uint8_t **) {}
+    uint8_t getCurrentTelemetryPayload(uint8_t * ) { return 0; }
     void confirmCurrentTelemetryPayload(const bool ) {}
     void updateTelemetryRate(const uint16_t , const uint8_t , const uint8_t ) {}
+
+    void meanAccumulatorAdd(meanAccumulator_t * , const int8_t ) {};
+    int8_t meanAccumulatorCalc(meanAccumulator_t * , const int8_t defaultValue) { return defaultValue; };
+    void meanAccumulatorInit(meanAccumulator_t * ) {};
 }
