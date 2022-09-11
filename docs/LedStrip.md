@@ -14,7 +14,7 @@ The STATUS profile is used to display all the information mentioned below, i.e. 
 
 Addressable LED strips can be used to show information from the flight controller system, the current implementation supports the following:
 
-* Up to 32 LEDs. (Support for more than 32 LEDs is possible, it just requires additional development.)
+* Up to 220 LEDs.
 * Indicators showing pitch/roll stick positions.
 * Heading/Orientation lights.
 * Flight mode specific color schemes.
@@ -81,7 +81,7 @@ The BEACON profile is used to find a lost quad, it flashes all LEDs white once p
 
 ## Supported hardware
 
-Only strips of 32 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 32 LEDs it does not matter, but only the first 32 are used.
+Only strips of 220 WS2811/WS2812 LEDs are supported currently.  If the strip is longer than 220 LEDs it does not matter, but only the first 220 are used.
 
 WS2812 LEDs require an 800khz signal and precise timings and thus requires the use of a dedicated hardware timer.
 
