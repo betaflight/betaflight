@@ -117,6 +117,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx.h"
 #include "io/vtx_control.h"
+#include "io/vtx_msp.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
@@ -837,6 +838,10 @@ void init(void)
 
 #if defined(USE_VTX_COMMON)
     vtxCommonInit();
+#endif
+
+#ifdef USE_VTX_MSP
+    vtxMspInit();
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO

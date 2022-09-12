@@ -462,6 +462,23 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
 
+vtx_msp_unittest_SRC := \
+        $(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+        $(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/drivers/vtx_common.c \
+		$(USER_DIR)/drivers/vtx_table.c \
+		$(USER_DIR)/pg/vtx_table.c \
+		$(USER_DIR)/io/vtx_control.c \
+		$(USER_DIR)/io/vtx.c \
+		$(USER_DIR)/io/vtx_msp.c \
+
+vtx_msp_unittest_DEFINES := \
+		USE_VTX_COMMON= \
+		USE_VTX_CONTROL= \
+		USE_VTX_TABLE= \
+		USE_VTX_MSP=
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.

@@ -271,9 +271,9 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 }
 
 #ifdef USE_TELEMETRY
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP)
 #else
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP)
 #endif
 
 bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
@@ -301,6 +301,13 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
         }
 
         uint8_t bitCount = BITCOUNT(portConfig->functionMask);
+
+#ifdef USE_VTX_MSP
+        if ((portConfig->functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial
+            return false;
+        }
+#endif
+
         if (bitCount > 1) {
             // shared
             if (bitCount > 2) {
