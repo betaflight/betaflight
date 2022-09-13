@@ -689,9 +689,9 @@ void descend(void)
         rescueState.intent.altitudeStep *= descentAttenuator;
     }
 
-    rescueState.intent.descentSpeedModifier = constrainf(rescueState.sensor.currentAltitudeCm / 4000.0f, 0.0f, 1.0f);
+    rescueState.intent.descentSpeedModifier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
     rescueState.intent.targetAltitudeCm += rescueState.intent.altitudeStep * (1.0f + (2.0f * rescueState.intent.descentSpeedModifier));
-    // increase descent rate to max of 3x default above 40m, 2x above 20m, 1.166 at 5m, default at ground level.
+    // increase descent rate to max of 3x default above 5m, 2x above 25m, 1.2 at 5m, default by ground level.
 }
 
 void altitudeAchieved(void)

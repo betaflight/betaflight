@@ -36,6 +36,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
+    #include "flight/position.h"
     #include "flight/servos.h"
     #include "io/beeper.h"
     #include "io/gps.h"
@@ -59,6 +60,7 @@ extern "C" {
     PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -1113,5 +1115,23 @@ extern "C" {
     bool isMotorProtocolEnabled(void) { return true; }
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
-    float pt1FilterGain(float, float) {return 0.5f;}
+    float getAltitude(void) { return 3000.0f; }
+    float pt1FilterGain(float, float) { return 0.5f; }
+    float pt2FilterGain(float, float)  { return 0.1f; }
+    float pt3FilterGain(float, float)  { return 0.1f; }
+    void pt2FilterInit(pt2Filter_t *throttleDLpf, float) {
+        UNUSED(throttleDLpf);
+    }
+    float pt2FilterApply(pt2Filter_t *throttleDLpf, float) {
+        UNUSED(throttleDLpf);
+        return 0.0f;
+    }
+    void pt3FilterInit(pt3Filter_t *pitchLpf, float) {
+        UNUSED(pitchLpf);
+    }
+    float pt3FilterApply(pt3Filter_t *pitchLpf, float) {
+        UNUSED(pitchLpf);
+        return 0.0f;
+    }
+
 }
