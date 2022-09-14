@@ -797,7 +797,6 @@ void updateGPSRescueState(void)
             // once , gradually increase target velocity and roll angle
             rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed * angleToHome;
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->angle * angleToHome;
-            rescueState.intent.rollAngleLimitDeg = gpsRescueConfig()->angle * angleToHome; 
             if (rescueState.sensor.absErrorAngle < 10.0f) {
                 // enter fly home phase with full forward velocity target and full angle values
                 rescueState.phase = RESCUE_FLY_HOME;
@@ -805,13 +804,16 @@ void updateGPSRescueState(void)
                 rescueState.intent.yawAttenuator = 1.0f;
                 rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed;
                 rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->angle;
-                rescueState.intent.rollAngleLimitDeg = gpsRescueConfig()->angle; 
             }
         }
         break;
 
     case RESCUE_FLY_HOME:
         // fly home with full control on all axes, pitching forward to gain speed
+        // gradually open up the roll limits up as we get underway
+        if (rescueState.intent.rollAngleLimitDeg < gpsRescueConfig()->angle) {
+            rescueState.intent.rollAngleLimitDeg += 0.05f;
+        } 
         if (newGPSData) {
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
                 rescueState.phase = RESCUE_DESCENT;
