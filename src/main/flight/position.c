@@ -93,6 +93,7 @@ void calculateEstimatedAltitude()
 {
     float baroAltCm = 0;
     float gpsAltCm = 0;
+    float altitudeToFilterCm = 0.0f;
 
     float gpsTrust = 0.3; //conservative default
     bool haveBaroAlt = false;
@@ -158,25 +159,26 @@ void calculateEstimatedAltitude()
     // This won't be very accurate, but all we need is a 3D fix.
     // Note that without the 3D fix, GPS trust will be zero, and on getting a 3D fix, will depend on hDOP
 
-    static float gpsAltOffsetCm = 0;
+    static float gpsAltOffsetCm = 0.0f;
     if (ARMING_FLAG(ARMED)) {
-        gpsAltCm -= gpsAltOffsetCm; // while armed, use the last offset value from the disarm period
+        altitudeToFilterCm = gpsAltCm - gpsAltOffsetCm;; // use zeroed GPS altitude while armed
         if (!altitudeOffsetSetGPS && haveBaroAlt && haveGpsAlt) {
-            // if we get a 3D fix after not getting a decent altitude offset, zero GPS to the Baro reading
+            // if we get a 3D fix after arming but without an altitude offset, zero GPS to the Baro reading
             gpsAltOffsetCm = gpsAltCm - baroAltCm; // set GPS to Baro altitude once we get a GPS fix
             altitudeOffsetSetGPS = true;
         }
     } else {
         gpsAltOffsetCm = gpsAltCm; // while disarmed, keep capturing current altitude, to zero any offset once armed
+        altitudeToFilterCm = 0.0f; // while disarmed, force altitudeTofilter to zero, but leave gpsAltCm alone
         altitudeOffsetSetGPS = (haveGpsAlt && gpsConfig()->gpsRequiredSats);
-        // if no 3D fix and not enough sats, set the GPS offset flag to false, and use baro to correct once we get a fix
+        // if no 3D fix and not enough sats, set the GPS offset flag to false, use whatever offset we have, and later use baro to correct once we get a fix
     }
 #endif
 
     // *** adjust gpsTrust, favouring Baro increasingly when there is a discrepancy of more than a meter
     // favour GPS if Baro reads negative, this happens due to ground effects
     float gpsTrustModifier = gpsTrust;
-    const float absDifferenceM = fabsf(gpsAltCm - baroAltCm) * positionConfig()->altitude_prefer_baro / 10000.0f;
+    const float absDifferenceM = fabsf(altitudeToFilterCm - baroAltCm) * positionConfig()->altitude_prefer_baro / 10000.0f;
     if (absDifferenceM > 1.0f && baroAltCm > -100.0f) { // significant difference, and baro altitude not negative
         gpsTrustModifier /=  absDifferenceM;
     }
@@ -185,22 +187,25 @@ void calculateEstimatedAltitude()
     // *** If we have  a GPS with 3D fix and a Baro signal, blend them
     if (haveGpsAlt && haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
         if (ARMING_FLAG(ARMED)) {
-            estimatedAltitudeCm = gpsAltCm * gpsTrustModifier + baroAltCm * (1 - gpsTrustModifier);
-        } else {
-            estimatedAltitudeCm = gpsAltCm;
-            //absolute GPS altitude is shown before arming, ignoring baro (I have no clue why this is)
+            altitudeToFilterCm = altitudeToFilterCm * gpsTrustModifier + baroAltCm * (1 - gpsTrustModifier);
         }
 
-    // *** If we have a GPS but no baro, and are in Default or GPS_ONLY modes, use GPS values
-    } else if (haveGpsAlt && (positionConfig()->altitude_source == GPS_ONLY || positionConfig()->altitude_source == DEFAULT )) {
-        estimatedAltitudeCm = gpsAltCm;
-
-    // *** If we have a Baro, and can work with it in Default or Baro Only modes
+    // *** if we only have a Baro, use it if in Default or Baro Only modes, but not if in GPS_only mode
     } else if (haveBaroAlt && (positionConfig()->altitude_source == BARO_ONLY || positionConfig()->altitude_source == DEFAULT)) {
-        estimatedAltitudeCm = baroAltCm;
+        altitudeToFilterCm = baroAltCm;
+        gpsAltCm = baroAltCm; // gpsAltCm will be shown in OSD or sensors while disarmed.  If no GPS it will show baro.
+
+    // we only have a Baro, but settings say don't use it, or, we have neither GPS nor Baro data; lock altitude solid at zero so the user knows
+    } else {
+        altitudeToFilterCm = 0.0f;
+        gpsAltCm = 0.0f;
     }
 
-    estimatedAltitudeCm = pt2FilterApply(&altitudeLpf, estimatedAltitudeCm);
+    estimatedAltitudeCm = pt2FilterApply(&altitudeLpf, altitudeToFilterCm);
+
+    if (!ARMING_FLAG(ARMED)) {
+         estimatedAltitudeCm = gpsAltCm; // show un-filtered values of GPS or Baro in OSD and Sensors tab while disarmed
+    }
 
     static float previousEstimatedAltitudeCm = 0;
     const float altitudeDerivativeRaw = (estimatedAltitudeCm - previousEstimatedAltitudeCm) * TASK_ALTITUDE_RATE_HZ; // cm/s
