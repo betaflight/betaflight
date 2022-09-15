@@ -179,7 +179,9 @@ void calculateEstimatedAltitude()
     // favour GPS if Baro reads negative, this happens due to ground effects
     float gpsTrustModifier = gpsTrust;
     const float absDifferenceM = fabsf(altitudeToFilterCm - baroAltCm) * positionConfig()->altitude_prefer_baro / 10000.0f;
-    if (absDifferenceM > 1.0f && baroAltCm > -100.0f) { // significant difference, and baro altitude not negative
+    if (absDifferenceM > 1.0f) { // when there is a large difference, favour Baro
+        // warning: "ground effect" in last 10cm of descent causes abrupt increase in pressure
+        // this is interpreted as an abrupt fall in altitude and could cause motors to increase just as we hit ground, leading to bouncing
         gpsTrustModifier /=  absDifferenceM;
     }
     // eg if discrepancy is 3m and GPS trust was 0.9, it would now be 0.3
