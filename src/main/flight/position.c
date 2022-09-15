@@ -184,18 +184,14 @@ void calculateEstimatedAltitude()
     }
     // eg if discrepancy is 3m and GPS trust was 0.9, it would now be 0.3
 
-    // *** If we have  a GPS with 3D fix and a Baro signal, blend them
-    if (haveGpsAlt && haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
-        if (ARMING_FLAG(ARMED)) {
+    if (haveGpsAlt && !(positionConfig()->altitude_source == BARO_ONLY)) {
+        if (haveBaroAlt) { // have a baro signal, and are in GPS_ONLY or DEFAULT modes, so mix GPS and Baro
             altitudeToFilterCm = altitudeToFilterCm * gpsTrustModifier + baroAltCm * (1 - gpsTrustModifier);
+            // if we have no Baro signal, then altitudeToFilterCm and baroAltCm carry existing GPS altitude values through
         }
-
-    // *** if we only have a Baro, use it if in Default or Baro Only modes, but not if in GPS_only mode
     } else if (haveBaroAlt && (positionConfig()->altitude_source == BARO_ONLY || positionConfig()->altitude_source == DEFAULT)) {
-        altitudeToFilterCm = baroAltCm;
-        gpsAltCm = baroAltCm; // gpsAltCm will be shown in OSD or sensors while disarmed.  If no GPS it will show baro.
-
-    // we only have a Baro, but settings say don't use it, or, we have neither GPS nor Baro data; lock altitude solid at zero so the user knows
+        altitudeToFilterCm = baroAltCm; // ignore GPS altitude because we want Baro only
+        gpsAltCm = baroAltCm; // it's the gpsAltCm value that is shown in OSD before arming, so with no GPS we show Baro values
     } else {
         altitudeToFilterCm = 0.0f;
         gpsAltCm = 0.0f;
