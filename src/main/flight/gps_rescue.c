@@ -804,10 +804,10 @@ void updateGPSRescueState(void)
             rescueState.intent.yawAttenuator += 0.02f;
         }
         if (rescueState.intent.rollAngleLimitDeg < gpsRescueConfig()->angle) { // gradually acquire full roll authority
-            rescueState.intent.rollAngleLimitDeg += 0.05f;
+            rescueState.intent.rollAngleLimitDeg += 1;
         } 
         if (rescueState.intent.pitchAngleLimitDeg < gpsRescueConfig()->angle) { // gradually acquire full pitch authority
-            rescueState.intent.pitchAngleLimitDeg += 0.05f;
+            rescueState.intent.pitchAngleLimitDeg += 1;
         } 
         if (newGPSData) {
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
