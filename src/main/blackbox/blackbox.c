@@ -1528,14 +1528,14 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_MINIMUM_SATS, "%d",           gpsConfig()->gpsMinimumSats)
 
 #ifdef USE_GPS_RESCUE
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_START_DIST, "%d",         gpsRescueConfig()->minRescueDth)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_MIN_START_DIST, "%d",  gpsRescueConfig()->minRescueDth)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ALT_MODE, "%d",        gpsRescueConfig()->altitudeMode)
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB, "%d",      gpsRescueConfig()->rescueAltitudeBufferM)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB, "%d",   gpsRescueConfig()->rescueAltitudeBufferM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ASCEND_RATE, "%d",     gpsRescueConfig()->ascendRate)
 
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_RETURN_ALT, "%d",     gpsRescueConfig()->initialAltitudeM)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_RETURN_ALT, "%d",      gpsRescueConfig()->initialAltitudeM)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_RETURN_SPEED, "%d",    gpsRescueConfig()->rescueGroundspeed)
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_PITCH_ANGLE_MAX, "%d",    gpsRescueConfig()->angle)
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_PITCH_ANGLE_MAX, "%d", gpsRescueConfig()->angle)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_ROLL_MIX, "%d",        gpsRescueConfig()->rollMix)
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_GPS_RESCUE_DESCENT_DIST, "%d",    gpsRescueConfig()->descentDistanceM)

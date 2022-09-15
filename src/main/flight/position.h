@@ -26,8 +26,8 @@
 typedef struct positionConfig_s {
     uint8_t altitude_source;
     uint8_t altitude_prefer_baro;
-    uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for baro smoothing
-    uint16_t altitude_d_lpf;                // lowpass for (value / 100) Hz baro derivative smoothing
+    uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for altitude smoothing
+    uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);

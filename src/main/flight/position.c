@@ -74,7 +74,7 @@ typedef enum {
     DEFAULT = 0,
     BARO_ONLY,
     GPS_ONLY
-} altitude_source_e;
+} altitudeSource_e;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 4);
 

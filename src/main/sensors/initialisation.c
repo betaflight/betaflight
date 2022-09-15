@@ -32,8 +32,6 @@
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
-#include "flight/position.h"
-#include "flight/gps_rescue.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -86,9 +84,6 @@ bool sensorsAutodetect(void)
 #ifdef USE_BARO
     baroInit();
 #endif
-
-positionInit();
-gpsRescueInit();
 
 #ifdef USE_RANGEFINDER
     rangefinderInit();

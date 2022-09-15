@@ -131,10 +131,10 @@ typedef enum {
 } altitudeMode_e;
 
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
-#define GPS_RESCUE_MIN_DESCENT_DIST_M    5     // minimum descent distance allowed
-#define GPS_RESCUE_MAX_ITERM_VELOCITY    1000   // max allowed iterm value for velocity
-#define GPS_RESCUE_MAX_ITERM_THROTTLE    200    // max allowed iterm value for throttle
-#define GPS_RESCUE_MAX_PITCH_RATE        3000   // max allowed change in pitch per second in degrees * 100
+#define GPS_RESCUE_MIN_DESCENT_DIST_M    5      // minimum descent distance
+#define GPS_RESCUE_MAX_ITERM_VELOCITY    1000   // max iterm value for velocity
+#define GPS_RESCUE_MAX_ITERM_THROTTLE    200    // max iterm value for throttle
+#define GPS_RESCUE_MAX_PITCH_RATE        3000   // max change in pitch per second in degrees * 100
 
 #ifdef USE_MAG
 #define GPS_RESCUE_USE_MAG              true
@@ -344,7 +344,7 @@ static void rescueAttainPosition()
     // the faster the return speed, the more accurate the IMU will be, but the consequences of IMU error at the start are greater
     // A compass (magnetometer) is vital for accurate GPS rescue at slow speeds
 
-    // if the quad is pointing 180 degrees wrong at failsafe time, it will take 2s to rotate fully at 90 deg/s max rate
+    // if the quad is pointing 180 degrees wrong at failsafe time, it will take 1s to rotate fully at 180 deg/s max rate
     // this gives the level mode controller time to adjust pitch and roll during the yaw
     // we need a relatively gradual trajectory change for attitude.values.yaw to update effectively
 
@@ -356,7 +356,7 @@ static void rescueAttainPosition()
         const float rollMixAttenuator = constrainf(1.0f - ABS(rescueYaw) * 0.01f, 0.0f, 1.0f);
         // attenuate roll as yaw rate increases, no roll at 100 deg/s of yaw
         const float rollAdjustment = - rescueYaw * gpsRescueConfig()->rollMix * rollMixAttenuator;
-        // mix in the desired amount of roll; 1:1 yaw:roll when rollMix = 100 and yaw angles are small
+        // add the desired amount of roll; 1:1 yaw:roll when rollMix = 100 and yaw angles are small
         // when gpsRescueConfig()->rollMix is zero, there is no roll adjustment
         // rollAdjustment is degrees * 100
         // note that the roll element has the same sign as the yaw element *before* GET_DIRECTION
@@ -455,7 +455,7 @@ static void performSanityChecks()
         previousTimeUs = currentTimeUs;
         prevAltitudeCm = rescueState.sensor.currentAltitudeCm;
         prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
-        secondsLowSats = 5;  // Start the count at 5 to be less forgiving at the beginning
+        secondsLowSats = 0;
         secondsDoingNothing = 0;
         return;
     }
@@ -698,8 +698,8 @@ void altitudeAchieved(void)
 {
     rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
     rescueState.intent.altitudeStep = 0;
-    rescueState.intent.updateYaw = true; // allow yaw updating
     rescueState.phase = RESCUE_ROTATE;
+    rescueState.intent.updateYaw = true;
 }
 
 void updateGPSRescueState(void)
@@ -755,21 +755,21 @@ void updateGPSRescueState(void)
             rescueState.intent.secondsFailing = 0; // reset the sanity check timer for the climb
             rescueState.intent.targetLandingAltitudeCm = 100.0f * gpsRescueConfig()->targetLandingAltitudeM;
             startedLow = (rescueState.sensor.currentAltitudeCm <= rescueState.intent.returnAltitudeCm);
-            rescueState.intent.updateYaw = false; // point the nose to home at all times during the rescue
+            rescueState.intent.updateYaw = false; // don't rotate until climb complete
+            rescueState.intent.yawAttenuator = 0.0f;
             rescueState.intent.targetVelocityCmS = 0; // zero forward velocity while climbing
-            rescueState.intent.pitchAngleLimitDeg = 0; // flat on pitch
-            rescueState.intent.rollAngleLimitDeg = 0; // flat on roll also
+            rescueState.intent.pitchAngleLimitDeg = 0; // no pitch
+            rescueState.intent.rollAngleLimitDeg = 0; // no roll until flying home
             rescueState.intent.altitudeStep = 0;
             rescueState.intent.descentSpeedModifier = 0.0f;
-            rescueState.intent.yawAttenuator = 0.0f;
+
         }
         break;
 
     case RESCUE_ATTAIN_ALT:
-        // gradually increment the target altitude until the final target altitude value is set
-        // also require that the final target altitude has been achieved before moving on
+        // gradually increment the target altitude until the craft reaches target altitude
+        // note that this can mean the target altitude may increase above returnAltitude if the craft lags target
         // sanity check will abort if altitude gain is blocked for a cumulative period
-        // TO DO: if overshoots are a problem after craft achieves target altitude changes, adjust termination threshold with current vertical velocity 
         if (startedLow) {
             if (rescueState.intent.targetAltitudeCm < rescueState.intent.returnAltitudeCm) {
                 rescueState.intent.altitudeStep = rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->ascendRate;
@@ -787,32 +787,27 @@ void updateGPSRescueState(void)
         break;
 
     case RESCUE_ROTATE:
-        // gradually acquire yaw and roll authority over 50 iterations, or about half a second
-        if (rescueState.intent.yawAttenuator < 1.0f) {
+        if (rescueState.intent.yawAttenuator < 1.0f) { // gradually acquire yaw authority over 50 iterations, or about half a second
             rescueState.intent.yawAttenuator += 0.02f;
         }
         // 
-        if (rescueState.sensor.absErrorAngle < 90.0f) {
-            const float angleToHome = 1.0f - (rescueState.sensor.absErrorAngle / 90.0f);
-            // once , gradually increase target velocity and roll angle
-            rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed * angleToHome;
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->angle * angleToHome;
-            if (rescueState.sensor.absErrorAngle < 10.0f) {
-                // enter fly home phase with full forward velocity target and full angle values
-                rescueState.phase = RESCUE_FLY_HOME;
-                rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
-                rescueState.intent.yawAttenuator = 1.0f;
-                rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed;
-                rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->angle;
-            }
+        if (rescueState.sensor.absErrorAngle < 10.0f) {
+            // enter fly home phase
+            rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed;
+            rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
+            rescueState.phase = RESCUE_FLY_HOME;
         }
         break;
 
     case RESCUE_FLY_HOME:
-        // fly home with full control on all axes, pitching forward to gain speed
-        // gradually open up the roll limits up as we get underway
-        if (rescueState.intent.rollAngleLimitDeg < gpsRescueConfig()->angle) {
+        if (rescueState.intent.yawAttenuator < 1.0f) { // be sure to get full yaw authority
+            rescueState.intent.yawAttenuator += 0.02f;
+        }
+        if (rescueState.intent.rollAngleLimitDeg < gpsRescueConfig()->angle) { // gradually acquire full roll authority
             rescueState.intent.rollAngleLimitDeg += 0.05f;
+        } 
+        if (rescueState.intent.pitchAngleLimitDeg < gpsRescueConfig()->angle) { // gradually acquire full pitch authority
+            rescueState.intent.pitchAngleLimitDeg += 0.05f;
         } 
         if (newGPSData) {
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
