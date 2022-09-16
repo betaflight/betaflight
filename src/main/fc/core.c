@@ -509,7 +509,15 @@ void tryArm(void)
             return;
         }
 
+#if defined(USE_ESC_SENSOR) && defined(USE_DSHOT_TELEMETRY)
+        // Try to activate extended DSHOT telemetry only if no esc sensor exists and dshot telemetry is active
+        if (isMotorProtocolDshot() && !featureIsEnabled(FEATURE_ESC_SENSOR) && motorConfig()->dev.useDshotTelemetry) {
+            dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);
+        }
+#endif
+
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
+            // Set motor spin direction
             if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                 flipOverAfterCrashActive = false;
                 if (!featureIsEnabled(FEATURE_3D)) {

@@ -195,6 +195,8 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     case DSHOT_CMD_SAVE_SETTINGS:
     case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
     case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
+    case DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE:
+    case DSHOT_CMD_EXTENDED_TELEMETRY_DISABLE:
         repeats = 10;
         break;
     case DSHOT_CMD_BEACON1:
@@ -209,6 +211,11 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
     }
 
     if (commandType == DSHOT_CMD_TYPE_BLOCKING) {
+        // Fake command in queue. Blocking commands are launched from cli, and no inline commands are running
+        for (uint8_t i = 0; i < motorDeviceCount(); i++) {
+            commandQueue[commandQueueTail].command[i] = (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP;
+        }
+
         delayMicroseconds(DSHOT_INITIAL_DELAY_US - DSHOT_COMMAND_DELAY_US);
         for (; repeats; repeats--) {
             delayMicroseconds(DSHOT_COMMAND_DELAY_US);
@@ -219,18 +226,19 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
                    cmpTimeUs(timeoutUs, micros()) > 0);
 #endif
             for (uint8_t i = 0; i < motorDeviceCount(); i++) {
-                if ((i == index) || (index == ALL_MOTORS)) {
-                    motorDmaOutput_t *const motor = getMotorDmaOutput(i);
-                    motor->protocolControl.requestTelemetry = true;
-                    motorGetVTable().writeInt(i, command);
-                } else {
-                    motorGetVTable().writeInt(i, DSHOT_CMD_MOTOR_STOP);
-                }
+                motorDmaOutput_t *const motor = getMotorDmaOutput(i);
+                motor->protocolControl.requestTelemetry = true;
+                motorGetVTable().writeInt(i, (i == index || index == ALL_MOTORS) ? command : DSHOT_CMD_MOTOR_STOP);
             }
 
             motorGetVTable().updateComplete();
         }
         delayMicroseconds(delayAfterCommandUs);
+
+        // Clean fake command in queue. When running blocking commands are launched from cli, and no inline commands are running
+        for (uint8_t i = 0; i < motorDeviceCount(); i++) {
+            commandQueue[commandQueueTail].command[i] = DSHOT_CMD_MOTOR_STOP;
+        }
     } else if (commandType == DSHOT_CMD_TYPE_INLINE) {
         dshotCommandControl_t *commandControl = addCommand();
         if (commandControl) {
