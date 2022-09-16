@@ -408,11 +408,6 @@ static void spiIrqHandler(const extDevice_t *dev)
     nextSegment = (busSegment_t *)bus->curSegment + 1;
 
     if (nextSegment->len == 0) {
-        if (!bus->curSegment->negateCS) {
-            // Negate Chip Select if not done so already
-            IOHi(dev->busType_u.spi.csnPin);
-        }
-
         // If a following transaction has been linked, start it
         if (nextSegment->u.link.dev) {
             const extDevice_t *nextDev = nextSegment->u.link.dev;
