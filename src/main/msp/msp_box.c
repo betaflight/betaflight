@@ -205,6 +205,13 @@ void initActiveBoxIds(void)
         BME(BOXHORIZON);
         BME(BOXHEADFREE);
         BME(BOXHEADADJ);
+        BME(BOXFPVANGLEMIX);
+        if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
+            BME(BOXCALIB);
+        }
+#if defined(USE_ACRO_TRAINER) && defined(USE_ACC)
+        BME(BOXACROTRAINER);
+#endif // USE_ACRO_TRAINER
     }
 
 #ifdef USE_MAG
@@ -246,8 +253,6 @@ void initActiveBoxIds(void)
 #endif
 #endif
 
-    BME(BOXFPVANGLEMIX);
-
     if (featureIsEnabled(FEATURE_3D)) {
         BME(BOX3D);
     }
@@ -262,10 +267,6 @@ void initActiveBoxIds(void)
 
     if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);
-    }
-
-    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
-        BME(BOXCALIB);
     }
 
     BME(BOXOSD);
@@ -322,12 +323,6 @@ void initActiveBoxIds(void)
 #if defined(USE_PID_AUDIO)
     BME(BOXPIDAUDIO);
 #endif
-
-#if defined(USE_ACRO_TRAINER) && defined(USE_ACC)
-    if (sensors(SENSOR_ACC)) {
-        BME(BOXACROTRAINER);
-    }
-#endif // USE_ACRO_TRAINER
 
 #ifdef USE_LAUNCH_CONTROL
     BME(BOXLAUNCHCONTROL);
