@@ -46,6 +46,9 @@
 #include "pg/pg_ids.h"
 
 #include "scheduler/scheduler.h"
+#ifdef USE_BATTERY_CONTINUE
+#include "pg/stats.h"
+#endif
 
 #include "sensors/battery.h"
 
@@ -541,5 +544,24 @@ int32_t getAmperageLatest(void)
 
 int32_t getMAhDrawn(void)
 {
+#ifdef USE_BATTERY_CONTINUE
+    return currentMeter.mAhDrawn + currentMeter.mAhDrawnOffset;
+#else
     return currentMeter.mAhDrawn;
+#endif
 }
+
+#ifdef USE_BATTERY_CONTINUE
+bool hasUsedMAh()
+{
+    return batteryConfig()->isBatteryContinueEnabled
+          && !(ARMING_FLAG(ARMED) || ARMING_FLAG(WAS_EVER_ARMED)) && (getBatteryState() == BATTERY_OK)
+          && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage
+          && statsConfig()->stats_mah_used > 0;
+}
+
+void setMAhDrawn(uint32_t mAhDrawn)
+{
+    currentMeter.mAhDrawnOffset = mAhDrawn;
+}
+#endif

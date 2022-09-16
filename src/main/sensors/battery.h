@@ -71,6 +71,10 @@ typedef struct batteryConfig_s {
     uint8_t vbatDurationForWarning;         // Period voltage has to sustain before the battery state is set to BATTERY_WARNING (in 0.1 s)
     uint8_t vbatDurationForCritical;        // Period voltage has to sustain before the battery state is set to BATTERY_CRIT (in 0.1 s)
     uint8_t vbatSagLpfPeriod;               // Period of the cutoff frequency for the Vbat sag and PID compensation filter (in 0.1 s)
+
+#ifdef USE_BATTERY_CONTINUE
+    bool isBatteryContinueEnabled;
+#endif
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);
@@ -116,6 +120,10 @@ bool isAmperageConfigured(void);
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
+#ifdef USE_BATTERY_CONTINUE
+bool hasUsedMAh();
+void setMAhDrawn(uint32_t mAhDrawn);
+#endif
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 

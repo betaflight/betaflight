@@ -421,4 +421,5 @@ extern uint8_t _dmaram_end__;
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_GPS_PLUS_CODES
+#define USE_BATTERY_CONTINUE
 #endif
