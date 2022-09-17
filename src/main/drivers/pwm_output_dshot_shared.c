@@ -187,6 +187,8 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 #endif
     const timeUs_t currentUs = micros();
     dshotTelemetryType_t type;
+    uint32_t totalErpm = 0;
+    uint32_t totalMotorsWithErpmData = 0;
 
     for (int i = 0; i < dshotPwmDevice.count; i++) {
         timeDelta_t usSinceInput = cmpTimeUs(currentUs, inputStampUs);
@@ -220,6 +222,10 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                 bool validTelemetryPacket = false;
 #endif
                 if (value != DSHOT_TELEMETRY_INVALID) {
+                    if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
+                        totalErpm += value;
+                        totalMotorsWithErpmData++;
+                    }
                     dshotUpdateTelemetryData(value, type, value);
                     if (i < 4) {
                         DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, value);
@@ -239,6 +245,10 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
             }
         }
         pwmDshotSetDirectionOutput(&dmaMotors[i]);
+    }
+
+    if (totalMotorsWithErpmData > 0) {
+        dshotTelemetryState.averageRpm = erpmToRpm(totalErpm / totalMotorsWithErpmData);
     }
     inputStampUs = 0;
     dshotEnableChannels(dshotPwmDevice.count);

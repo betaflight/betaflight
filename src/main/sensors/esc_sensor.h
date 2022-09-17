@@ -54,5 +54,3 @@ void startEscDataRead(uint8_t *frameBuffer, uint8_t frameLength);
 uint8_t getNumberEscBytesRead(void);
 
 uint8_t calculateCrc8(const uint8_t *Buf, const uint8_t BufLen);
-
-int calcEscRpm(int erpm);

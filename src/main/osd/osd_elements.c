@@ -159,7 +159,6 @@
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_GPS_PLUS_CODES
@@ -259,12 +258,12 @@ static int getEscRpm(int i)
 {
 #ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
-        return 100.0f / (motorConfig()->motorPoleCount / 2.0f) * getDshotTelemetry(i);
+        return erpmToRpm(getDshotTelemetry(i));
     }
 #endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return calcEscRpm(getEscSensorData(i)->rpm);
+        return erpmToRpm(getEscSensorData(i)->rpm);
     }
 #endif
     return 0;

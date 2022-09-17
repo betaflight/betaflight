@@ -40,6 +40,8 @@
 #include "drivers/dshot_command.h"
 #include "drivers/nvic.h"
 
+#include "flight/mixer.h"
+
 #include "rx/rx.h"
 #include "dshot.h"
 
@@ -186,6 +188,17 @@ FAST_CODE void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t
     if ((type == DSHOT_TELEMETRY_TYPE_TEMPERATURE) && (value > dshotTelemetryState.motorState[motorIndex].maxTemp)) {
         dshotTelemetryState.motorState[motorIndex].maxTemp = value;
     }
+}
+
+uint32_t erpmToRpm(uint16_t erpm)
+{
+    //  rpm = (erpm * 100) / (motorConfig()->motorPoleCount / 2)
+    return (erpm * 200) / motorConfig()->motorPoleCount;
+}
+
+uint32_t getDshotAverageRpm(void)
+{
+    return dshotTelemetryState.averageRpm;
 }
 
 #endif // USE_DSHOT_TELEMETRY

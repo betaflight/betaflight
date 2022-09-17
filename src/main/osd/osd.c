@@ -94,7 +94,6 @@
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -502,19 +501,14 @@ static void osdResetStats(void)
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
 static int32_t getAverageEscRpm(void)
 {
-#ifdef USE_DSHOT_TELEMETRY
-    if (motorConfig()->dev.useDshotTelemetry) {
-        uint32_t rpm = 0;
-        for (int i = 0; i < getMotorCount(); i++) {
-            rpm += getDshotTelemetry(i);
-        }
-        rpm = rpm / getMotorCount();
-        return rpm * 100 * 2 / motorConfig()->motorPoleCount;
-    }
-#endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return calcEscRpm(osdEscDataCombined->rpm);
+        return erpmToRpm(osdEscDataCombined->rpm);
+    }
+#endif
+#ifdef USE_DSHOT_TELEMETRY
+    if (motorConfig()->dev.useDshotTelemetry) {
+        return getDshotAverageRpm();
     }
 #endif
     return 0;
