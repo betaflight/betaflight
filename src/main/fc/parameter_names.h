@@ -34,8 +34,6 @@
 #define PARAM_NAME_ACC_LPF_HZ "acc_lpf_hz"
 #define PARAM_NAME_MAG_HARDWARE "mag_hardware"
 #define PARAM_NAME_BARO_HARDWARE "baro_hardware"
-#define PARAM_NAME_BARO_NOISE_LPF "baro_noise_lpf"
-#define PARAM_NAME_BARO_VARIO_LPF "baro_vario_lpf"
 #define PARAM_NAME_RC_SMOOTHING "rc_smoothing"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR "rc_smoothing_auto_factor"
 #define PARAM_NAME_RC_SMOOTHING_AUTO_FACTOR_THROTTLE "rc_smoothing_auto_factor_throttle"
@@ -119,8 +117,10 @@
 #define PARAM_NAME_RPM_FILTER_MIN_HZ "rpm_filter_min_hz"
 #define PARAM_NAME_RPM_FILTER_FADE_RANGE_HZ "rpm_filter_fade_range_hz"
 #define PARAM_NAME_RPM_FILTER_LPF_HZ "rpm_filter_lpf_hz"
-#define PARAM_NAME_POSITION_ALT_SOURCE "position_alt_source"
-#define PARAM_NAME_POSITION_ALT_PREFER_BARO "position_alt_prefer_baro"
+#define PARAM_NAME_POSITION_ALTITUDE_SOURCE "altitude_source"
+#define PARAM_NAME_POSITION_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
+#define PARAM_NAME_POSITION_ALTITUDE_LPF "altitude_lpf"
+#define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
@@ -136,12 +136,27 @@
 #define PARAM_NAME_GPS_MINIMUM_SATS "gps_minimum_sats"
 
 #ifdef USE_GPS_RESCUE
-#define PARAM_NAME_GPS_RESCUE_ANGLE "gps_rescue_angle"
-#define PARAM_NAME_GPS_RESCUE_ALT_BUFFER "gps_rescue_alt_buffer"
-#define PARAM_NAME_GPS_RESCUE_INITIAL_ALT "gps_rescue_initial_alt"
+#define PARAM_NAME_GPS_RESCUE_MIN_START_DIST "gps_rescue_min_start_dist"
+#define PARAM_NAME_GPS_RESCUE_ALT_MODE "gps_rescue_alt_mode"
+#define PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB "gps_rescue_initial_climb"
+#define PARAM_NAME_GPS_RESCUE_ASCEND_RATE "gps_rescue_ascend_rate"
+
+#define PARAM_NAME_GPS_RESCUE_RETURN_ALT "gps_rescue_return_alt"
+#define PARAM_NAME_GPS_RESCUE_RETURN_SPEED "gps_rescue_ground_speed"
+#define PARAM_NAME_GPS_RESCUE_PITCH_ANGLE_MAX "gps_rescue_pitch_angle_max"
+#define PARAM_NAME_GPS_RESCUE_ROLL_MIX "gps_rescue_roll_mix"
+
 #define PARAM_NAME_GPS_RESCUE_DESCENT_DIST "gps_rescue_descent_dist"
+#define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
 #define PARAM_NAME_GPS_RESCUE_LANDING_ALT "gps_rescue_landing_alt"
-#define PARAM_NAME_GPS_RESCUE_GROUND_SPEED "gps_rescue_ground_speed"
+
+#define PARAM_NAME_GPS_RESCUE_THROTTLE_MIN "gps_rescue_throttle_min"
+#define PARAM_NAME_GPS_RESCUE_THROTTLE_MAX "gps_rescue_throttle_max"
+#define PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER "gps_rescue_throttle_hover"
+
+#define PARAM_NAME_GPS_RESCUE_SANITY_CHECKS "gps_rescue_sanity_checks"
+#define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
+
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_P "gps_rescue_throttle_p"
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_I "gps_rescue_throttle_i"
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_D "gps_rescue_throttle_d"
@@ -149,16 +164,7 @@
 #define PARAM_NAME_GPS_RESCUE_VELOCITY_I "gps_rescue_velocity_i"
 #define PARAM_NAME_GPS_RESCUE_VELOCITY_D "gps_rescue_velocity_d"
 #define PARAM_NAME_GPS_RESCUE_YAW_P "gps_rescue_yaw_p"
-#define PARAM_NAME_GPS_RESCUE_ROLL_MIX "gps_rescue_roll_mix"
-#define PARAM_NAME_GPS_RESCUE_THROTTLE_MIN "gps_rescue_throttle_min"
-#define PARAM_NAME_GPS_RESCUE_THROTTLE_MAX "gps_rescue_throttle_max"
-#define PARAM_NAME_GPS_RESCUE_ASCEND_RATE "gps_rescue_ascend_rate"
-#define PARAM_NAME_GPS_RESCUE_DESCEND_RATE "gps_rescue_descend_rate"
-#define PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER "gps_rescue_throttle_hover"
-#define PARAM_NAME_GPS_RESCUE_SANITY_CHECKS "gps_rescue_sanity_checks"
-#define PARAM_NAME_GPS_RESCUE_MIN_DTH "gps_rescue_min_dth"
-#define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
-#define PARAM_NAME_GPS_RESCUE_ALT_MODE "gps_rescue_alt_mode"
+
 #ifdef USE_MAG
 #define PARAM_NAME_GPS_RESCUE_USE_MAG "gps_rescue_use_mag"
 #endif

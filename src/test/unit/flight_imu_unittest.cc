@@ -256,6 +256,7 @@ extern "C" {
     float gyroGetFilteredDownsampled(int) { return 0.0f; }
     float baroUpsampleAltitude()  { return 0.0f; }
     float pt2FilterGain(float, float)  { return 0.0f; }
+    float getBaroAltitude(void) { return 3000.0f; }
 
     void pt2FilterInit(pt2Filter_t *baroDerivativeLpf, float) {
         UNUSED(baroDerivativeLpf);

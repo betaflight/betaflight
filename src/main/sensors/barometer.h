@@ -43,8 +43,6 @@ typedef struct barometerConfig_s {
     uint8_t baro_i2c_device;
     uint8_t baro_i2c_address;
     uint8_t baro_hardware;                  // Barometer hardware to use
-    uint16_t baro_noise_lpf;                // lowpass cutoff (value / 100) Hz for baro smoothing
-    uint16_t baro_vario_lpf;                // lowpass for (value / 100) Hz baro derivative smoothing
     ioTag_t baro_eoc_tag;
     ioTag_t baro_xclr_tag;
 } barometerConfig_t;
@@ -72,5 +70,5 @@ void baroSetGroundLevel(void);
 uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
 bool isBaroSampleReady(void);
-float baroUpsampleAltitude(void);
+float getBaroAltitude(void);
 void performBaroCalibrationCycle(void);
