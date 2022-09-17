@@ -96,6 +96,10 @@
         type 2: Graphical bar showing battery used (grows as used)
         type 3: Numeric % of remaining battery
         type 4: Numeric % or used battery
+
+    VTX_CHANNEL
+        type 1: Contains Band:Channel:Power:Pit
+        type 2: Contains only Power
 */
 
 #include <stdbool.h>
@@ -1442,12 +1446,20 @@ static void osdElementVtxChannel(osdElementParms_t *element)
         vtxStatusIndicator = 'P';
     }
 
-    if (vtxStatus & VTX_STATUS_LOCKED) {
-        tfp_sprintf(element->buff, "-:-:-:L");
-    } else if (vtxStatusIndicator) {
-        tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
-    } else {
-        tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
+switch (element->type) {
+    case OSD_ELEMENT_TYPE_2:
+            tfp_sprintf(element->buff, "%s", vtxPowerLabel);
+        break;
+
+    default:
+        if (vtxStatus & VTX_STATUS_LOCKED) {
+            tfp_sprintf(element->buff, "-:-:-:L");
+        } else if (vtxStatusIndicator) {
+            tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
+        } else {
+            tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
+        }
+        break;
     }
 }
 #endif // USE_VTX_COMMON
