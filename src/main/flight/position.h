@@ -32,7 +32,6 @@ typedef struct positionConfig_s {
 
 PG_DECLARE(positionConfig_t, positionConfig);
 
-bool isAltitudeOffset(void);
 void calculateEstimatedAltitude();
 void positionInit(void);
 int32_t getEstimatedAltitudeCm(void);
