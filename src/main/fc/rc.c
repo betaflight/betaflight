@@ -705,23 +705,18 @@ void initRcProcessing(void)
     case RATES_TYPE_BETAFLIGHT:
     default:
         applyRates = applyBetaflightRates;
-
         break;
     case RATES_TYPE_RACEFLIGHT:
         applyRates = applyRaceFlightRates;
-
         break;
     case RATES_TYPE_KISS:
         applyRates = applyKissRates;
-
         break;
     case RATES_TYPE_ACTUAL:
         applyRates = applyActualRates;
-
         break;
     case RATES_TYPE_QUICK:
         applyRates = applyQuickRates;
-
         break;
     }
 

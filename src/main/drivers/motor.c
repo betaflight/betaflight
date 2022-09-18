@@ -111,7 +111,6 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     case PWM_TYPE_MULTISHOT:
     case PWM_TYPE_BRUSHED:
         enabled = true;
-
         break;
 
 #ifdef USE_DSHOT
@@ -121,11 +120,9 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     case PWM_TYPE_PROSHOT1000:
         enabled = true;
         isDshot = true;
-
         break;
 #endif
     default:
-
         break;
     }
 

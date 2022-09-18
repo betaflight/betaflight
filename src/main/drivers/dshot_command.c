@@ -160,18 +160,14 @@ bool dshotStreamingCommandsAreEnabled(void)
 static bool dshotCommandsAreEnabled(dshotCommandType_e commandType)
 {
     bool ret = false;
-
     switch (commandType) {
     case DSHOT_CMD_TYPE_BLOCKING:
         ret = !motorIsEnabled();
-
         break;
     case DSHOT_CMD_TYPE_INLINE:
         ret = dshotStreamingCommandsAreEnabled();
-
         break;
     default:
-
         break;
     }
 
