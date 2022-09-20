@@ -75,13 +75,14 @@ static uint16_t batteryCriticalVoltage;
 static uint16_t batteryWarningHysteresisVoltage;
 static uint16_t batteryCriticalHysteresisVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
-//
+
 static currentMeter_t currentMeter;
 static voltageMeter_t voltageMeter;
 
 static batteryState_e batteryState;
 static batteryState_e voltageState;
 static batteryState_e consumptionState;
+static float wattHoursDrawn;
 
 #ifndef DEFAULT_CURRENT_METER_SOURCE
 #ifdef USE_VIRTUAL_CURRENT_METER
@@ -197,7 +198,6 @@ static bool isVoltageFromBat(void)
 void batteryUpdatePresence(void)
 {
 
-
     if ((voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()) {
         // Battery has just been connected - calculate cells, warning voltages and reset state
 
@@ -232,7 +232,16 @@ void batteryUpdatePresence(void)
         batteryCriticalVoltage = 0;
         batteryWarningHysteresisVoltage = 0;
         batteryCriticalHysteresisVoltage = 0;
+        wattHoursDrawn = 0.0;
     }
+}
+
+void batteryUpdateWhDrawn(void) 
+{
+    static int32_t mAhDrawnPrev = 0;
+    const int32_t mAhDrawnCurrent = getMAhDrawn();
+    wattHoursDrawn += voltageMeter.displayFiltered * (mAhDrawnCurrent - mAhDrawnPrev) / 100000.0f;
+    mAhDrawnPrev = mAhDrawnCurrent;
 }
 
 static void batteryUpdateVoltageState(void)
@@ -317,6 +326,7 @@ void batteryUpdateStates(timeUs_t currentTimeUs)
     batteryUpdateConsumptionState();
     batteryUpdateLVC(currentTimeUs);
     batteryState = MAX(voltageState, consumptionState);
+    batteryUpdateWhDrawn();
 }
 
 const lowVoltageCutoff_t *getLowVoltageCutoff(void)
@@ -353,6 +363,11 @@ void batteryInit(void)
     //
     batteryState = BATTERY_INIT;
     batteryCellCount = 0;
+
+    //
+    // Consumption
+    //
+    wattHoursDrawn = 0;
 
     //
     // voltage
@@ -565,3 +580,8 @@ void setMAhDrawn(uint32_t mAhDrawn)
     currentMeter.mAhDrawnOffset = mAhDrawn;
 }
 #endif
+
+float getWhDrawn(void)
+{
+    return wattHoursDrawn;
+}
