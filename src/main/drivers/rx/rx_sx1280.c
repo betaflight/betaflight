@@ -596,7 +596,7 @@ static void sx1280IrqGetStatus(extiCallbackRec_t *cb)
     STATIC_DMA_DATA_AUTO uint8_t irqStatus[sizeof(irqStatusCmd)];
 
     static busSegment_t segments[] = {
-            {.u.buffers = {irqStatusCmd, irqStatus}, sizeof(irqStatusCmd), false, sx1280IrqStatusRead},
+            {.u.buffers = {irqStatusCmd, irqStatus}, sizeof(irqStatusCmd), true, sx1280IrqStatusRead},
             {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -639,7 +639,7 @@ static void sx1280IrqClearStatus(extiCallbackRec_t *cb)
     irqCmd[2] = (uint8_t)((uint16_t)SX1280_IRQ_RADIO_ALL & 0x00FF);
 
     static busSegment_t segments[] = {
-            {.u.buffers = {irqCmd, NULL}, sizeof(irqCmd), false, sx1280IrqCmdComplete},
+            {.u.buffers = {irqCmd, NULL}, sizeof(irqCmd), true, sx1280IrqCmdComplete},
             {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -672,7 +672,7 @@ static void sx1280ProcessIrq(extiCallbackRec_t *cb)
         STATIC_DMA_DATA_AUTO uint8_t bufStatus[sizeof(cmdBufStatusCmd)];
 
         static busSegment_t segments[] = {
-            {.u.buffers = {cmdBufStatusCmd, bufStatus}, sizeof(cmdBufStatusCmd), false, sx1280GotFIFOAddr},
+            {.u.buffers = {cmdBufStatusCmd, bufStatus}, sizeof(cmdBufStatusCmd), true, sx1280GotFIFOAddr},
             {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
@@ -683,7 +683,7 @@ static void sx1280ProcessIrq(extiCallbackRec_t *cb)
         STATIC_DMA_DATA_AUTO uint8_t irqSetRxCmd[] = {SX1280_RADIO_SET_RX, 0, 0xff, 0xff};
 
         static busSegment_t segments[] = {
-            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), false, sx1280EnableIRQs},
+            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), true, sx1280EnableIRQs},
             {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
@@ -751,7 +751,7 @@ static void sx1280GetPacketStats(extiCallbackRec_t *cb)
     STATIC_DMA_DATA_AUTO uint8_t stats[sizeof(getStatsCmd)];
 
     static busSegment_t segments[] = {
-            {.u.buffers = {getStatsCmd, stats}, sizeof(getStatsCmd), false, sx1280GetStatsCmdComplete},
+            {.u.buffers = {getStatsCmd, stats}, sizeof(getStatsCmd), true, sx1280GetStatsCmdComplete},
             {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -816,7 +816,7 @@ static void sx1280SetFrequency(extiCallbackRec_t *cb)
     setFreqCmd[3] = (uint8_t)(currentFreq & 0xFF);
 
     static busSegment_t segments[] = {
-            {.u.buffers = {setFreqCmd, NULL}, sizeof(setFreqCmd), false, sx1280SetFreqComplete},
+            {.u.buffers = {setFreqCmd, NULL}, sizeof(setFreqCmd), true, sx1280SetFreqComplete},
             {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -853,7 +853,7 @@ static void sx1280StartReceivingDMA(extiCallbackRec_t *cb)
     STATIC_DMA_DATA_AUTO uint8_t irqSetRxCmd[] = {SX1280_RADIO_SET_RX, 0, 0xff, 0xff};
 
     static busSegment_t segments[] = {
-            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), false, sx1280EnableIRQs},
+            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), true, sx1280EnableIRQs},
             {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
@@ -924,7 +924,7 @@ static void sx1280StartTransmittingDMA(extiCallbackRec_t *cb)
     STATIC_DMA_DATA_AUTO uint8_t irqSetRxCmd[] = {SX1280_RADIO_SET_TX, 0, 0xff, 0xff};
 
     static busSegment_t segments[] = {
-            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), false, sx1280EnableIRQs},
+            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), true, sx1280EnableIRQs},
             {.u.link = {NULL, NULL}, 0, true, NULL},
     };
 
