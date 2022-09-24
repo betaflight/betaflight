@@ -495,9 +495,6 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
 
 static bool bbUpdateStart(void)
 {
-    uint32_t totalErpm;
-    uint32_t totalMotorsWithErpmData;
-
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -510,11 +507,7 @@ static bool bbUpdateStart(void)
             return false;
         }
 
-        totalErpm = 0;
-        totalMotorsWithErpmData = 0;
-
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-            dshotTelemetryType_t type;
 #ifdef USE_DSHOT_CACHE_MGMT
             // Only invalidate the buffer once. If all motors are on a common port they'll share a buffer.
             bool invalidated = false;
@@ -529,46 +522,42 @@ static bool bbUpdateStart(void)
             }
 #endif
 
-            // Get dshot telemetry type to decode
-            type = dshot_get_telemetry_type_to_decode(motorIndex);
-
 #ifdef STM32F4
-            uint32_t value = decode_bb_bitband(
+            uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
                 bbMotors[motorIndex].bbPort->portInputCount - bbDMA_Count(bbMotors[motorIndex].bbPort),
-                bbMotors[motorIndex].pinIndex, &type);
+                bbMotors[motorIndex].pinIndex);
 #else
-            uint32_t value = decode_bb(
+            uint32_t rawValue = decode_bb(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
                 bbMotors[motorIndex].bbPort->portInputCount - bbDMA_Count(bbMotors[motorIndex].bbPort),
-                bbMotors[motorIndex].pinIndex, &type);
+                bbMotors[motorIndex].pinIndex);
 #endif
-            if (value == DSHOT_TELEMETRY_NOEDGE) {
+            if (rawValue == DSHOT_TELEMETRY_NOEDGE) {
                 continue;
             }
             dshotTelemetryState.readCount++;
 
-            if (value != DSHOT_TELEMETRY_INVALID) {
-                if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
-                    totalErpm += value;
-                    totalMotorsWithErpmData++;
+            if (rawValue != DSHOT_TELEMETRY_INVALID) {
+                // Check EDT enable or store raw value
+                if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(motorIndex) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
+                    dshotTelemetryState.motorState[motorIndex].telemetryTypes = DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
+                } else {
+                    dshotTelemetryState.motorState[motorIndex].rawValue = rawValue;
                 }
-                dshotUpdateTelemetryData(motorIndex, type, value);
+
                 if (motorIndex < 4) {
-                    DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, value);
+                    DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, rawValue);
                 }
             } else {
                 dshotTelemetryState.invalidPacketCount++;
             }
 #ifdef USE_DSHOT_TELEMETRY_STATS
-            updateDshotTelemetryQuality(&dshotTelemetryQuality[motorIndex], value != DSHOT_TELEMETRY_INVALID, currentTimeMs);
+            updateDshotTelemetryQuality(&dshotTelemetryQuality[motorIndex], rawValue != DSHOT_TELEMETRY_INVALID, currentTimeMs);
 #endif
         }
 
-        // Calculate average when possible
-        if (totalMotorsWithErpmData > 0) {
-            dshotTelemetryState.averageRpm = erpmToRpm(totalErpm / totalMotorsWithErpmData);
-        }
+        dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
     }
 #endif
     for (int i = 0; i < usedMotorPorts; i++) {

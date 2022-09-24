@@ -127,7 +127,7 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 void dshotEnableChannels(uint8_t motorCount);
 
 
-static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count, dshotTelemetryType_t *type)
+static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
 {
     uint32_t value = 0;
     uint32_t oldValue = buffer[0];
@@ -170,7 +170,7 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count, dshotTe
         return DSHOT_TELEMETRY_INVALID;
     }
 
-    return dshot_decode_telemetry_value(decodedValue >> 4, type);
+    return decodedValue >> 4;
 }
 
 #endif
@@ -186,9 +186,6 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
     const timeMs_t currentTimeMs = millis();
 #endif
     const timeUs_t currentUs = micros();
-    dshotTelemetryType_t type;
-    uint32_t totalErpm = 0;
-    uint32_t totalMotorsWithErpmData = 0;
 
     for (int i = 0; i < dshotPwmDevice.count; i++) {
         timeDelta_t usSinceInput = cmpTimeUs(currentUs, inputStampUs);
@@ -208,27 +205,26 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
             TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif
 
-            uint16_t value;
+            uint16_t rawValue;
 
             if (edges > MIN_GCR_EDGES) {
                 dshotTelemetryState.readCount++;
 
-                // Get dshot telemetry type to decode
-                type = dshot_get_telemetry_type_to_decode(i);
-
-                value = decodeTelemetryPacket(dmaMotors[i].dmaBuffer, edges, &type);
+                rawValue = decodeTelemetryPacket(dmaMotors[i].dmaBuffer, edges);
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 bool validTelemetryPacket = false;
 #endif
-                if (value != DSHOT_TELEMETRY_INVALID) {
-                    if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
-                        totalErpm += value;
-                        totalMotorsWithErpmData++;
+                if (rawValue != DSHOT_TELEMETRY_INVALID) {
+                    // Check EDT enable or store raw value
+                    if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(i) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
+                        dshotTelemetryState.motorState[i].telemetryTypes = DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
+                    } else {
+                        dshotTelemetryState.motorState[i].rawValue = rawValue;
                     }
-                    dshotUpdateTelemetryData(value, type, value);
+
                     if (i < 4) {
-                        DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, value);
+                        DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, rawValue);
                     }
 #ifdef USE_DSHOT_TELEMETRY_STATS
                     validTelemetryPacket = true;
@@ -247,9 +243,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
         pwmDshotSetDirectionOutput(&dmaMotors[i]);
     }
 
-    if (totalMotorsWithErpmData > 0) {
-        dshotTelemetryState.averageRpm = erpmToRpm(totalErpm / totalMotorsWithErpmData);
-    }
+    dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
     inputStampUs = 0;
     dshotEnableChannels(dshotPwmDevice.count);
     return true;

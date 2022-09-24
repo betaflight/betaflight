@@ -54,7 +54,8 @@ typedef struct dshotTelemetryQuality_s {
 extern dshotTelemetryQuality_t dshotTelemetryQuality[MAX_SUPPORTED_MOTORS];
 #endif // USE_DSHOT_TELEMETRY_STATS
 
-#define DSHOT_EXTENDED_TELEMETRY_MASK   (~(1<<DSHOT_TELEMETRY_TYPE_eRPM))
+#define DSHOT_NORMAL_TELEMETRY_MASK     (1 << DSHOT_TELEMETRY_TYPE_eRPM)
+#define DSHOT_EXTENDED_TELEMETRY_MASK   (~DSHOT_NORMAL_TELEMETRY_MASK)
 
 typedef enum dshotTelemetryType_e {
     DSHOT_TELEMETRY_TYPE_eRPM           = 0,
@@ -67,6 +68,12 @@ typedef enum dshotTelemetryType_e {
     DSHOT_TELEMETRY_TYPE_STATE_EVENTS   = 7,
     DSHOT_TELEMETRY_TYPE_COUNT          = 8
 } dshotTelemetryType_t;
+
+typedef enum dshotRawValueState_e {
+    DSHOT_RAW_VALUE_STATE_INVALID = 0,
+    DSHOT_RAW_VALUE_STATE_NOT_PROCESSED = 1,
+    DSHOT_RAW_VALUE_STATE_PROCESSED = 2
+} dshotRawValueState_t;
 
 typedef struct dshotProtocolControl_s {
     uint16_t value;
@@ -83,8 +90,9 @@ uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb);
 extern bool useDshotTelemetry;
 
 typedef struct dshotTelemetryMotorState_s {
-    uint8_t telemetryTypes;
+    uint16_t rawValue;
     uint16_t telemetryData[DSHOT_TELEMETRY_TYPE_COUNT];
+    uint8_t telemetryTypes;
     uint8_t maxTemp;
 } dshotTelemetryMotorState_t;
 
@@ -96,6 +104,7 @@ typedef struct dshotTelemetryState_s {
     dshotTelemetryMotorState_t motorState[MAX_SUPPORTED_MOTORS];
     uint32_t inputBuffer[MAX_GCR_EDGES];
     uint32_t averageRpm;
+    dshotRawValueState_t rawValueState;
 } dshotTelemetryState_t;
 
 extern dshotTelemetryState_t dshotTelemetryState;
@@ -114,9 +123,4 @@ bool isDshotTelemetryActive(void);
 int16_t getDshotTelemetryMotorInvalidPercent(uint8_t motorIndex);
 
 void validateAndfixMotorOutputReordering(uint8_t *array, const unsigned size);
-
-dshotTelemetryType_t dshot_get_telemetry_type_to_decode(uint8_t motorIndex);
-uint32_t dshot_decode_telemetry_value(uint32_t value, dshotTelemetryType_t *type);
 void dshotCleanTelemetryData(void);
-void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint16_t value);
-

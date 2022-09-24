@@ -24,8 +24,8 @@
 
 
 
-uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t mask, dshotTelemetryType_t *type);
-uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type);
+uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t mask);
+uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit);
 
 
 #endif
