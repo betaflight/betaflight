@@ -117,5 +117,6 @@ void validateAndfixMotorOutputReordering(uint8_t *array, const unsigned size);
 
 dshotTelemetryType_t dshot_get_telemetry_type_to_decode(uint8_t motorIndex);
 uint32_t dshot_decode_telemetry_value(uint32_t value, dshotTelemetryType_t *type);
+void dshotCleanTelemetryData(void);
 void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint16_t value);
 

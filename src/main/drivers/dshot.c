@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -176,6 +177,11 @@ dshotTelemetryType_t dshot_get_telemetry_type_to_decode(uint8_t motorIndex)
     }
 
     return type;
+}
+
+void dshotCleanTelemetryData(void)
+{
+    memset(dshotTelemetryState.motorState, 0, MAX_SUPPORTED_MOTORS * sizeof(dshotTelemetryMotorState_t));
 }
 
 FAST_CODE void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint16_t value)
