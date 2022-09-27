@@ -445,22 +445,20 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     throttle += pidGetAirmodeThrottleOffset();
     float airmodeThrottleChange = 0;
 #endif
+    
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
 
-    if (motorMixRange > 1.0f) {
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motorMix[i] /= motorMixRange;
-        }
-        // Get the maximum correction by setting offset to center when airmode enabled
-        if (airmodeEnabled) {
-            throttle = 0.5f;
-        }
-    } else {
-        if (airmodeEnabled || throttle > 0.5f) {
-            throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
+    for (int i = 0; i < mixerRuntime.motorCount; i++) {
+        motorMix[i] /= motorMixNormalizationFactor;
+    }
+
+    if (airmodeEnabled || throttle > 0.5f) {
+        float normalizedMotorMixMin = motorMixMin / motorMixNormalizationFactor;
+        float normalizedMotorMixMax = motorMixMax / motorMixNormalizationFactor;
+        throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
 #ifdef USE_AIRMODE_LPF
-            airmodeThrottleChange = constrainf(unadjustedThrottle, -motorMixMin, 1.0f - motorMixMax) - unadjustedThrottle;
+        airmodeThrottleChange = constrainf(unadjustedThrottle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax) - unadjustedThrottle;
 #endif
-        }
     }
 
 #ifdef USE_AIRMODE_LPF
