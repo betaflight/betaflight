@@ -1148,8 +1148,8 @@ static void osdElementEfficiency(osdElementParms_t *element)
 #ifdef USE_GPS_LAP_TIMER
 static void osdElementGpsLapTimeCurrent(osdElementParms_t *element)
 {
-    uint32_t lapTimeSeconds = gpsLapTimerData.currentLapTime / 1000;
-    uint32_t lapTimeDecimals = (gpsLapTimerData.currentLapTime % 1000) / 10;
+    uint32_t lapTimeSeconds = (gpsLapTimerData.timeOfLastLap - gpsSol.time) / 1000;
+    uint32_t lapTimeDecimals = ((gpsLapTimerData.timeOfLastLap - gpsSol.time) % 1000) / 10;
     tfp_sprintf(element->buff, "%c%3u.%02u", SYM_TOTAL_DISTANCE, lapTimeSeconds, lapTimeDecimals);
 }
 

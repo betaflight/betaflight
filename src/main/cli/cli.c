@@ -565,6 +565,13 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
                 } else if (full) {
                     cliPrintf(" 0 %u", var->config.u32Max);
                 }
+            } else if ((var->type & VALUE_TYPE_MASK) == VAR_INT32) {
+                cliPrintf("%d", (int32_t)value);
+                if ((int32_t)value > var->config.d32Max || (int32_t)value < -var->config.d32Max) {
+                    valueIsCorrupted = true;
+                } else if (full) {
+                    cliPrintf(" 0 %u", var->config.u32Max);
+                }
             } else {
                 int min;
                 int max;
@@ -806,7 +813,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 
             break;
         case VAR_INT32:
-            cliPrintLinef("Allowed range: %d - %d", var->config.minmax.min, var->config.minmax.max);
+            cliPrintLinef("Allowed range: %d - %d", -var->config.d32Max, var->config.d32Max);
 
             break;
         case VAR_UINT8:
@@ -4436,6 +4443,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                     // INT32s are limited to being symmetric, so we test both bounds with the same magnitude
                     if (value <= val->config.d32Max && value >= -val->config.d32Max) {
                         cliSetVar(val, value);
+                        valueChanged = true;
                     }
                 } else {
                     int value = atoi(eqptr);

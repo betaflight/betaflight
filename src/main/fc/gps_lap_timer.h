@@ -33,6 +33,7 @@ typedef struct gpsLapTimerData_s {
     uint32_t distToPoint;
     int32_t dirToPoint;
     bool timerRunning;
+    uint32_t timeOfLastLap;
 } gpsLapTimerData_t;
 
 typedef struct gpsLapTimerConfig_s {
