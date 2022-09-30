@@ -218,6 +218,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
         .anti_gravity_cutoff_hz = 5,
         .anti_gravity_p_gain = 100,
+        .airmode_transitioned_throttle = 50,
     );
 
 #ifndef USE_D_MIN
@@ -306,7 +307,7 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
     static float previousThrottle = 0.0f;
     const float throttleInv = 1.0f - throttle;
     float throttleDerivative = fabsf(throttle - previousThrottle) * pidRuntime.pidFrequency;
-    DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(throttleDerivative * 100)); 
+    DEBUG_SET(DEBUG_ANTI_GRAVITY, 0, lrintf(throttleDerivative * 100));
     throttleDerivative *= throttleInv * throttleInv;
     // generally focus on the low throttle period
     if (throttle > previousThrottle) {
@@ -318,7 +319,7 @@ void pidUpdateAntiGravityThrottleFilter(float throttle)
     // lower cutoff suppresses peaks relative to troughs and prolongs the effects
     // PT2 smoothing of throttle derivative.
     // 6 is a typical value for the peak boost factor with default cutoff of 6Hz
-    DEBUG_SET(DEBUG_ANTI_GRAVITY, 1, lrintf(throttleDerivative * 100)); 
+    DEBUG_SET(DEBUG_ANTI_GRAVITY, 1, lrintf(throttleDerivative * 100));
     pidRuntime.antiGravityThrottleD = throttleDerivative;
 }
 
@@ -352,6 +353,19 @@ float pidApplyThrustLinearization(float motorOutput)
     return motorOutput;
 }
 #endif
+
+float calcAirmodePercent(float throttle)
+{
+    return MIN(throttle / pidRuntime.airmodeTransitionedThrottle, 1.0);;
+}
+
+float airmodeTransition(float startThrottle, float airmodeThrottle)
+{
+    float airmodePercent = calcAirmodePercent(startThrottle);
+    float outputThrottle = startThrottle * (1.0 - airmodePercent) + airmodeThrottle * airmodePercent;
+
+    return outputThrottle;
+}
 
 #if defined(USE_ACC)
 // calculate the stick deflection while applying level mode expo

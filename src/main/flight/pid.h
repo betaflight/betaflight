@@ -223,6 +223,8 @@ typedef struct pidProfile_s {
 
     uint8_t anti_gravity_cutoff_hz;
     uint8_t anti_gravity_p_gain;
+
+    uint8_t airmode_transitioned_throttle;  // Throttle level above which airmode is totally turned on
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -390,6 +392,8 @@ typedef struct pidRuntime_s {
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
 #endif
+
+    float airmodeTransitionedThrottle;
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
@@ -421,6 +425,9 @@ bool pidAntiGravityEnabled(void);
 float pidApplyThrustLinearization(float motorValue);
 float pidCompensateThrustLinearization(float throttle);
 #endif
+
+float calcAirmodePercent(float throttle);
+float airmodeTransition(float startThrottle, float airmodeThrottle);
 
 #ifdef USE_AIRMODE_LPF
 void pidUpdateAirmodeLpf(float currentOffset);
