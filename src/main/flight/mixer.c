@@ -424,9 +424,11 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 #endif
 
 static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled) {
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? 1.0 * motorMixRange : 1.0f;
     const float motorMixDelta = 0.5f * motorMixRange;
 
+    float minMotor = 1000.0;
+    float maxMotor = -1000.0;
     for (int i = 0; i < mixerRuntime.motorCount; ++i) {
         if (airmodeEnabled || throttle > 0.5f) {
             if (mixerConfig()->mixer_type == MIXER_LINEAR) {
@@ -435,7 +437,21 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
                 motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + ABS(motorMix[i]), motorMix[i] - ABS(motorMix[i]));
             }
         }
-        motorMix[i] /= motorMixNormalizationFactor;
+        if (airmodeEnabled || throttle > 0.5f) {
+            if (motorMix[i] > maxMotor) {
+                maxMotor = motorMix[i];
+            }
+            if (motorMix[i] < minMotor) {
+                minMotor = motorMix[i];
+            }
+            
+            if (minMotor + throttle < 0.0) {
+                throttle = -minMotor * motorMixNormalizationFactor;
+            } else if (maxMotor + throttle > 1.0) {
+                throttle = 1.0 - maxMotor * motorMixNormalizationFactor;
+            }
+        }
+        motorMix[i] *= motorMixNormalizationFactor;
     }
 }
 
@@ -446,15 +462,15 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     float airmodeThrottleChange = 0;
 #endif
     
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? 1.0 / motorMixRange : 1.0f;
 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-        motorMix[i] /= motorMixNormalizationFactor;
+        motorMix[i] *= motorMixNormalizationFactor;
     }
 
     if (airmodeEnabled || throttle > 0.5f) {
-        float normalizedMotorMixMin = motorMixMin / motorMixNormalizationFactor;
-        float normalizedMotorMixMax = motorMixMax / motorMixNormalizationFactor;
+        float normalizedMotorMixMin = motorMixMin * motorMixNormalizationFactor;
+        float normalizedMotorMixMax = motorMixMax * motorMixNormalizationFactor;
         throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
 #ifdef USE_AIRMODE_LPF
         airmodeThrottleChange = constrainf(unadjustedThrottle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax) - unadjustedThrottle;
