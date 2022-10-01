@@ -425,7 +425,7 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 #endif
 
 static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled) {
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? 1.0 * motorMixRange : 1.0f;
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? 1.0 / motorMixRange : 1.0f;
     const float motorMixDelta = 0.5f * motorMixRange;
     const float preAirmodeThrottle = throttle;
     float preMotorAdjustments[MAX_SUPPORTED_MOTORS];
