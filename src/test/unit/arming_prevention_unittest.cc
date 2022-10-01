@@ -1099,7 +1099,6 @@ extern "C" {
     bool crashRecoveryModeActive(void) { return false; }
     int32_t getEstimatedAltitudeCm(void) { return 0; }
     bool gpsIsHealthy() { return false; }
-    bool isAltitudeOffset(void) { return false; }
     float getCosTiltAngle(void) { return 0.0f; }
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}

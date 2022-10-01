@@ -428,7 +428,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
             }
 
             DEBUG_SET(DEBUG_BARO, 1, baro.baroTemperature);
-            DEBUG_SET(DEBUG_BARO, 2, baroAltitudeRaw - baroGroundAltitude);
+            DEBUG_SET(DEBUG_BARO, 2, baro.BaroAlt);
 
             baroSampleReady = true;
 
@@ -459,7 +459,6 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 // baroAltitude samples baro.BaroAlt the ALTITUDE task rate
 float getBaroAltitude(void)
 {
-    DEBUG_SET(DEBUG_BARO, 3, baro.BaroAlt); // cm
     return baro.BaroAlt;
 }
 
