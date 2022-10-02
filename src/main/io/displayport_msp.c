@@ -76,7 +76,7 @@ static int grab(displayPort_t *displayPort)
 
 static int release(displayPort_t *displayPort)
 {
-    uint8_t subcmd[] = { 1 };
+    uint8_t subcmd[] = { MSP_DP_RELEASE };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
@@ -85,14 +85,14 @@ static int clearScreen(displayPort_t *displayPort, displayClearOption_e options)
 {
     UNUSED(options);
 
-    uint8_t subcmd[] = { 2 };
+    uint8_t subcmd[] = { MSP_DP_CLEAR_SCREEN };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
 static bool drawScreen(displayPort_t *displayPort)
 {
-    uint8_t subcmd[] = { 4 };
+    uint8_t subcmd[] = { MSP_DP_DRAW_SCREEN };
     output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 
     return 0;
@@ -113,7 +113,7 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
         len = MSP_OSD_MAX_STRING_LENGTH;
     }
 
-    buf[0] = 3;
+    buf[0] = MSP_DP_WRITE_STRING;
     buf[1] = row;
     buf[2] = col;
     buf[3] = displayPortProfileMsp()->attrValues[attr] & ~DISPLAYPORT_MSP_ATTR_BLINK & DISPLAYPORT_MSP_ATTR_MASK;
