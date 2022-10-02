@@ -15,8 +15,6 @@ env:
 name: Nightly
 
 on:
-  schedule:
-    - cron: "0 1 * * *"
   push:
     branches:
       - master
