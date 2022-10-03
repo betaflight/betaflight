@@ -719,7 +719,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
     const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
 
-    if (ABS(earthUpinBodyFrame[2]) < SINE_25_DEG && ABS(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
+    if (ABS(earthUpinBodyFrame[2]) < SINE_25_DEG && ABS(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
         char *symbol[2] = {"U", "D"}; // character buffer
@@ -888,6 +888,12 @@ static void osdElementTotalFlights(osdElementParms_t *element)
 {
     const int32_t total_flights = statsConfig()->stats_total_flights;
     tfp_sprintf(element->buff, "#%d", total_flights);
+}
+
+static void osdElementTotalPacks(osdElementParms_t *element)
+{
+    const int32_t total_packs = statsConfig()->stats_total_packs + 1;
+    tfp_sprintf(element->buff, "#%d", total_packs);
 }
 #endif
 
@@ -1600,6 +1606,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_CAMERA_FRAME,
 #ifdef USE_PERSISTENT_STATS
     OSD_TOTAL_FLIGHTS,
+    OSD_TOTAL_PACKS,
 #endif
 };
 
@@ -1716,6 +1723,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_PERSISTENT_STATS
     [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
+    [OSD_TOTAL_PACKS]             = osdElementTotalPacks,
 #endif
 };
 
@@ -1782,6 +1790,7 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PERSISTENT_STATS
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
+    osdAddActiveElement(OSD_TOTAL_PACKS);
 #endif
 }
 

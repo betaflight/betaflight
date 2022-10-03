@@ -165,6 +165,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"RC CHANNELS",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RC_CHANNELS]},
     {"CAMERA FRAME",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CAMERA_FRAME]},
     {"TOTAL FLIGHTS",      OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_TOTAL_FLIGHTS]},
+    {"TOTAL PACKS",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_TOTAL_PACKS]},
     {"BACK",               OME_Back,    NULL, NULL},
     {NULL,                 OME_END,     NULL, NULL}
 };
