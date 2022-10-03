@@ -43,11 +43,12 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
+#include "sensors/gyro.h"
+
 // 24 MHz max SPI frequency
 #define ICM426XX_MAX_SPI_CLK_HZ 24000000
 
 #define ICM426XX_RA_PWR_MGMT0                       0x4E
-
 #define ICM426XX_PWR_MGMT0_ACCEL_MODE_LN            (3 << 0)
 #define ICM426XX_PWR_MGMT0_GYRO_MODE_LN             (3 << 2)
 #define ICM426XX_PWR_MGMT0_TEMP_DISABLE_OFF         (0 << 5)
@@ -56,8 +57,23 @@
 #define ICM426XX_RA_GYRO_CONFIG0                    0x4F
 #define ICM426XX_RA_ACCEL_CONFIG0                   0x50
 
-#define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52
+#define ICM426XX_RA_GYRO_CONFIG_STATIC3             0x0C
+#define ICM426XX_RA_GYRO_CONFIG_STATIC4             0x0D
+#define ICM426XX_RA_GYRO_CONFIG_STATIC5             0x0E
+#define ICM426XX_RA_ACCEL_CONFIG_STATIC2            0x03
+#define ICM426XX_RA_ACCEL_CONFIG_STATIC3            0x04
+#define ICM426XX_RA_ACCEL_CONFIG_STATIC4            0x05
 
+#define ICM426XX_AAF_258HZ_DELT                     6
+#define ICM426XX_AAF_258HZ_BITSHIFT                 10
+#define ICM426XX_AAF_536HZ_DELT                     12
+#define ICM426XX_AAF_536HZ_BITSHIFT                 8
+#define ICM426XX_AAF_997HZ_DELT                     21
+#define ICM426XX_AAF_997HZ_BITSHIFT                 6
+#define ICM426XX_AAF_1962HZ_DELT                    37
+#define ICM426XX_AAF_1962HZ_BITSHIFT                4
+
+#define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52
 #define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (14 << 4)
 #define ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY        (14 << 0)
 
@@ -145,12 +161,12 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     return true;
 }
 
-typedef struct odrEntry_s {
-    uint8_t khz;
-    uint8_t odr; // See GYRO_ODR in datasheet.
-} odrEntry_t;
+typedef struct odrConfig_s {
+    uint8_t odr;            // ODR: Output data rate (gyro sample rate in kHz)
+    uint8_t odr_idx;        // See GYRO_ODR in datasheet
+} odrConfig_t;
 
-static odrEntry_t icm426xxPkhzToSupportedODRMap[] = {
+static odrConfig_t odrConfigLUT[] = {
     { 8, 3 },
     { 4, 4 },
     { 2, 5 },
@@ -170,15 +186,15 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, ICM426XX_PWR_MGMT0_TEMP_DISABLE_OFF | ICM426XX_PWR_MGMT0_ACCEL_MODE_LN | ICM426XX_PWR_MGMT0_GYRO_MODE_LN);
     delay(15);
 
-    uint8_t outputDataRate = 0;
+    uint8_t odrIdx = 0;
     bool supportedODRFound = false;
 
     if (gyro->gyroRateKHz) {
-        uint8_t gyroSyncDenominator = gyro->mpuDividerDrops + 1; // rebuild it in here, see gyro_sync.c
-        uint8_t desiredODRKhz = 8 / gyroSyncDenominator;
-        for (uint32_t i = 0; i < ARRAYLEN(icm426xxPkhzToSupportedODRMap); i++) {
-            if (icm426xxPkhzToSupportedODRMap[i].khz == desiredODRKhz) {
-                outputDataRate = icm426xxPkhzToSupportedODRMap[i].odr;
+        const uint8_t gyroSyncDenominator = gyro->mpuDividerDrops + 1; // rebuild it in here, see gyro_sync.c
+        const uint8_t desiredODR = 8 / gyroSyncDenominator;
+        for (unsigned i = 0; i < ARRAYLEN(odrConfigLUT); i++) {
+            if (odrConfigLUT[i].odr == desiredODR) {
+                odrIdx = odrConfigLUT[i].odr_idx;
                 supportedODRFound = true;
                 break;
             }
@@ -186,18 +202,51 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     }
 
     if (!supportedODRFound) {
-        outputDataRate = 6;
+        odrIdx = 6;
         gyro->gyroRateKHz = GYRO_RATE_1_kHz;
     }
 
     STATIC_ASSERT(INV_FSR_2000DPS == 3, "INV_FSR_2000DPS must be 3 to generate correct value");
-    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (3 - INV_FSR_2000DPS) << 5 | (outputDataRate & 0x0F));
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (3 - INV_FSR_2000DPS) << 5 | (odrIdx & 0x0F));
     delay(15);
 
     STATIC_ASSERT(INV_FSR_16G == 3, "INV_FSR_16G must be 3 to generate correct value");
-    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (3 - INV_FSR_16G) << 5 | (outputDataRate & 0x0F));
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (3 - INV_FSR_16G) << 5 | (odrIdx & 0x0F));
     delay(15);
 
+    // Select desired AAF settings
+    uint8_t aafDelt = 0;
+    uint8_t aafBitshift = 0;
+    switch (gyroConfig()->gyro_hardware_lpf) {
+        case GYRO_HARDWARE_LPF_NORMAL:  // 258 Hz
+            aafDelt = ICM426XX_AAF_258HZ_DELT;
+            aafBitshift = ICM426XX_AAF_258HZ_BITSHIFT;
+            break;
+        case GYRO_HARDWARE_LPF_OPTION_1:  // 536 Hz
+            aafDelt = ICM426XX_AAF_536HZ_DELT;
+            aafBitshift = ICM426XX_AAF_536HZ_BITSHIFT;
+            break;
+        case GYRO_HARDWARE_LPF_OPTION_2:  // 997 Hz
+            aafDelt = ICM426XX_AAF_997HZ_DELT;
+            aafBitshift = ICM426XX_AAF_997HZ_BITSHIFT;
+            break;
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:  // 1962 Hz
+            aafDelt = ICM426XX_AAF_1962HZ_DELT;
+            aafBitshift = ICM426XX_AAF_1962HZ_BITSHIFT;
+            break;
+    }
+
+    // Configure gyro Anti-Alias Filter (see section 5.3 "ANTI-ALIAS FILTER")
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC3, aafDelt);
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC4, sq(aafDelt) & 0xFF);
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC5, (sq(aafDelt) >> 8) | (aafBitshift << 4));
+
+    // Configure acc Anti-Alias Filter for 1kHz sample rate (see tasks.c)
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC2, ICM426XX_AAF_258HZ_DELT << 1);
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC3, sq(ICM426XX_AAF_258HZ_DELT) & 0xFF);
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC4, (sq(ICM426XX_AAF_258HZ_DELT) >> 8) | (ICM426XX_AAF_258HZ_BITSHIFT << 4));
+
+    // Configure gyro and acc UI Filters
     spiWriteReg(dev, ICM426XX_RA_GYRO_ACCEL_CONFIG0, ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY | ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY);
 
     spiWriteReg(dev, ICM426XX_RA_INT_CONFIG, ICM426XX_INT1_MODE_PULSED | ICM426XX_INT1_DRIVE_CIRCUIT_PP | ICM426XX_INT1_POLARITY_ACTIVE_HIGH);
