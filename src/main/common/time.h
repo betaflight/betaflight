@@ -44,6 +44,7 @@ typedef uint32_t timeUs_t;
 #define TIMEZONE_OFFSET_MINUTES_MAX 780   // +13 hours
 
 static inline timeDelta_t cmpTimeUs(timeUs_t a, timeUs_t b) { return (timeDelta_t)(a - b); }
+static inline int32_t cmpTimeCycles(uint32_t a, uint32_t b) { return (int32_t)(a - b); }
 
 #define FORMATTED_DATE_TIME_BUFSIZE 30
 
@@ -87,7 +88,7 @@ bool dateTimeFormatLocalShort(char *buf, dateTime_t *dt);
 void dateTimeUTCToLocal(dateTime_t *utcDateTime, dateTime_t *localDateTime);
 // dateTimeSplitFormatted splits a formatted date into its date
 // and time parts. Note that the string pointed by formatted will
-// be modifed and will become invalid after calling this function.
+// be modified and will become invalid after calling this function.
 bool dateTimeSplitFormatted(char *formatted, char **date, char **time);
 
 bool rtcHasTime(void);

@@ -311,7 +311,7 @@ void ws2811LedStripInit(ioTag_t ioTag) {
     UNUSED(ioTag);
 }
 
-void ws2811UpdateStrip(ledStripFormatRGB_e) {}
+void ws2811UpdateStrip(ledStripFormatRGB_e, uint8_t) {}
 
 void setLedValue(uint16_t index, const uint8_t value) {
     UNUSED(index);
@@ -395,7 +395,9 @@ bool isFlipOverAfterCrashActive(void) { return false; }
 
 void ws2811LedStripEnable(void) { }
 
-void setUsedLedCount(unsigned) { };
+void setUsedLedCount(unsigned) { }
 void pinioBoxTaskControl(void) {}
-void ignoreTaskTime(void) {}
+void schedulerIgnoreTaskExecTime(void) {}
+bool schedulerGetIgnoreTaskExecTime() { return false; }
+void schedulerSetNextStateTime(timeDelta_t) {}
 }

@@ -24,29 +24,7 @@
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
 
-#define DEBUG_SET(mode, index, value) {if (debugMode == (mode)) {debug[(index)] = (value);}}
-
-#define DEBUG_SECTION_TIMES
-
-#ifdef DEBUG_SECTION_TIMES
-extern uint32_t sectionTimes[2][4];
-
-#define TIME_SECTION_BEGIN(index) { \
-    extern uint32_t sectionTimes[2][4]; \
-    sectionTimes[0][index] = micros(); \
-}
-
-#define TIME_SECTION_END(index) { \
-    extern uint32_t sectionTimes[2][4]; \
-    sectionTimes[1][index] = micros(); \
-    debug[index] = sectionTimes[1][index] - sectionTimes[0][index]; \
-}
-#else
-
-#define TIME_SECTION_BEGIN(index) {}
-#define TIME_SECTION_END(index) {}
-
-#endif
+#define DEBUG_SET(mode, index, value) do { if (debugMode == (mode)) { debug[(index)] = (value); } } while (0)
 
 typedef enum {
     DEBUG_NONE,
@@ -107,14 +85,25 @@ typedef enum {
     DEBUG_BARO,
     DEBUG_GPS_RESCUE_THROTTLE_PID,
     DEBUG_DYN_IDLE,
-    DEBUG_FF_LIMIT,
-    DEBUG_FF_INTERPOLATED,
+    DEBUG_FEEDFORWARD_LIMIT,
+    DEBUG_FEEDFORWARD,
     DEBUG_BLACKBOX_OUTPUT,
     DEBUG_GYRO_SAMPLE,
     DEBUG_RX_TIMING,
     DEBUG_D_LPF,
     DEBUG_VTX_TRAMP,
     DEBUG_GHST,
+    DEBUG_GHST_MSP,
+    DEBUG_SCHEDULER_DETERMINISM,
+    DEBUG_TIMING_ACCURACY,
+    DEBUG_RX_EXPRESSLRS_SPI,
+    DEBUG_RX_EXPRESSLRS_PHASELOCK,
+    DEBUG_RX_STATE_TIME,
+    DEBUG_GPS_RESCUE_VELOCITY,
+    DEBUG_GPS_RESCUE_HEADING,
+    DEBUG_GPS_RESCUE_TRACKING,
+    DEBUG_ATTITUDE,
+    DEBUG_VTX_MSP,
     DEBUG_COUNT
 } debugType_e;
 

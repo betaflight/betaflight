@@ -46,7 +46,7 @@
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
-#include "drivers/accgyro/accgyro_spi_icm42605.h"
+#include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -124,7 +124,7 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
-        .acc_lpf_hz = 10,
+        .acc_lpf_hz = 25, // ATTITUDE/IMU runs at 100Hz (acro) or 500Hz (level modes) so we need to set 50 Hz (or lower) to avoid aliasing
         .acc_hardware = ACC_DEFAULT,
         .acc_high_fsr = false,
     );
@@ -268,10 +268,21 @@ retry:
         FALLTHROUGH;
 #endif
 
-#ifdef USE_ACC_SPI_ICM42605
+#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P)
     case ACC_ICM42605:
-        if (icm42605SpiAccDetect(dev)) {
-            accHardware = ACC_ICM42605;
+    case ACC_ICM42688P:
+        if (icm426xxSpiAccDetect(dev)) {
+            switch (dev->mpuDetectionResult.sensor) {
+            case ICM_42605_SPI:
+                accHardware = ACC_ICM42605;
+                break;
+            case ICM_42688P_SPI:
+                accHardware = ACC_ICM42688P;
+                break;
+            default:
+                accHardware = ACC_NONE;
+                break;
+            }
             break;
         }
         FALLTHROUGH;
@@ -341,9 +352,9 @@ void accInitFilters(void)
     // the filter initialization is not defined (sample rate = 0)
     accelerationRuntime.accLpfCutHz = (acc.sampleRateHz) ? accelerometerConfig()->acc_lpf_hz : 0;
     if (accelerationRuntime.accLpfCutHz) {
-        const uint32_t accSampleTimeUs = 1e6 / acc.sampleRateHz;
+        const float k = pt2FilterGain(accelerationRuntime.accLpfCutHz, 1.0f / acc.sampleRateHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accelerationRuntime.accFilter[axis], accelerationRuntime.accLpfCutHz, accSampleTimeUs);
+            pt2FilterInit(&accelerationRuntime.accFilter[axis], k);
         }
     }
 }
@@ -352,12 +363,12 @@ bool accInit(uint16_t accSampleRateHz)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
-    acc.dev.bus = *gyroSensorBus();
+    acc.dev.gyro = gyroActiveDev();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
 
     // Copy alignment from active gyro, as all production boards use acc-gyro-combi chip.
-    // Exceptions are STM32F3DISCOVERY and STM32F411DISCOVERY, and (may be) handled in future enhancement.
+    // Exception is STM32F411DISCOVERY, and (may be) handled in future enhancement.
 
     sensor_align_e alignment = gyroDeviceConfig(0)->alignment;
     const sensorAlignment_t* customAlignment = &gyroDeviceConfig(0)->customAlignment;

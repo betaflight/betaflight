@@ -81,18 +81,15 @@ void pwmChannelDMAStart(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t *pDa
     case TIM_CHANNEL_1:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t)pData, (uint32_t)&htim->Instance->CCR1, Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC1);
-    break;
-
+        break;
     case TIM_CHANNEL_2:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t)pData, (uint32_t)&htim->Instance->CCR2, Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC2);
         break;
-
     case TIM_CHANNEL_3:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t)pData, (uint32_t)&htim->Instance->CCR3,Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC3);
         break;
-
     case TIM_CHANNEL_4:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t)pData, (uint32_t)&htim->Instance->CCR4, Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC4);
@@ -110,15 +107,12 @@ void pwmChannelDMAStop(TIM_HandleTypeDef *htim, uint32_t Channel)
     case TIM_CHANNEL_1:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
         break;
-
     case TIM_CHANNEL_2:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC2);
         break;
-
     case TIM_CHANNEL_3:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC3);
         break;
-
     case TIM_CHANNEL_4:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
         break;
@@ -210,7 +204,7 @@ void pwmCompleteDshotMotorUpdate(void)
     }
 }
 
-static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+FAST_IRQ_HANDLER static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
 
@@ -267,6 +261,25 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     if (dmaRef == NULL) {
         return false;
+    }
+
+    dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
+
+    bool dmaIsConfigured = false;
+#ifdef USE_DSHOT_DMAR
+    if (useBurstDshot) {
+        const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
+        if (owner->owner == OWNER_TIMUP && owner->resourceIndex == timerGetTIMNumber(timerHardware->tim)) {
+            dmaIsConfigured = true;
+        } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim))) {
+            return false;
+        }
+    } else
+#endif
+    {
+        if (!dmaAllocate(dmaIdentifier, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex))) {
+            return false;
+        }
     }
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
@@ -364,17 +377,16 @@ P    -    High -     High -
         motor->timerDmaIndex = timerDmaIndex(timerHardware->channel);
     }
 
-    dmaIdentifier_e identifier = dmaGetIdentifier(dmaRef);
-
+    if (!dmaIsConfigured) {
+        dmaEnable(dmaIdentifier);
 #ifdef USE_DSHOT_DMAR
-    if (useBurstDshot) {
-        dmaInit(identifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim));
-        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, timerIndex);
-    } else
+        if (useBurstDshot) {
+            dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, timerIndex);
+        } else
 #endif
-    {
-        dmaInit(identifier, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
-        dmaSetHandler(identifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motorIndex);
+        {
+            dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motorIndex);
+        }
     }
 
 #ifdef USE_DSHOT_DMAR
@@ -404,9 +416,12 @@ P    -    High -     High -
         /* Link hdma_tim to hdma[TIM_DMA_ID_UPDATE] (update) */
         __HAL_LINKDMA(&motor->timer->timHandle, hdma[TIM_DMA_ID_UPDATE], motor->timer->hdma_tim);
 
-        /* Initialize TIMx DMA handle */
-        result = HAL_DMA_Init(motor->timer->timHandle.hdma[TIM_DMA_ID_UPDATE]);
-
+        if (!dmaIsConfigured) {
+            /* Initialize TIMx DMA handle */
+            result = HAL_DMA_Init(motor->timer->timHandle.hdma[TIM_DMA_ID_UPDATE]);
+        } else {
+            result = HAL_OK;
+        }
     } else
 #endif
     {

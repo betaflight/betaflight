@@ -47,14 +47,15 @@ static int release(displayPort_t *displayPort)
     return 0;
 }
 
-static int clearScreen(displayPort_t *displayPort)
+static int clearScreen(displayPort_t *displayPort, displayClearOption_e options)
 {
     UNUSED(displayPort);
+    UNUSED(options);
     frskyOsdClearScreen();
     return 0;
 }
 
-static int drawScreen(displayPort_t *displayPort)
+static bool drawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     frskyOsdUpdate();

@@ -26,7 +26,7 @@
 #define DEFAULT_FEATURES 0
 #endif
 #ifndef DEFAULT_RX_FEATURE
-#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
 #endif
 
 typedef enum {
@@ -53,7 +53,7 @@ typedef enum {
     //FEATURE_SOFTSPI = 1 << 26, (removed)
     FEATURE_ESC_SENSOR = 1 << 27,
     FEATURE_ANTI_GRAVITY = 1 << 28,
-    FEATURE_DYNAMIC_FILTER = 1 << 29,
+    //FEATURE_DYNAMIC_FILTER = 1 << 29, (removed)
 } features_e;
 
 typedef struct featureConfig_s {

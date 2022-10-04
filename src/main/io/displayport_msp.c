@@ -54,7 +54,7 @@ static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len
         return 0;
     }
 #endif
-    return mspSerialPush(displayPortProfileMsp()->displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY);
+    return mspSerialPush(displayPortProfileMsp()->displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY, MSP_V1);
 }
 
 static int heartbeat(displayPort_t *displayPort)
@@ -64,7 +64,9 @@ static int heartbeat(displayPort_t *displayPort)
     // heartbeat is used to:
     // a) ensure display is not released by MW OSD software
     // b) prevent OSD Slave boards from displaying a 'disconnected' status.
-    return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
+    output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
+
+    return 0;
 }
 
 static int grab(displayPort_t *displayPort)
@@ -74,22 +76,26 @@ static int grab(displayPort_t *displayPort)
 
 static int release(displayPort_t *displayPort)
 {
-    uint8_t subcmd[] = { 1 };
+    uint8_t subcmd[] = { MSP_DP_RELEASE };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int clearScreen(displayPort_t *displayPort)
+static int clearScreen(displayPort_t *displayPort, displayClearOption_e options)
 {
-    uint8_t subcmd[] = { 2 };
+    UNUSED(options);
+
+    uint8_t subcmd[] = { MSP_DP_CLEAR_SCREEN };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int drawScreen(displayPort_t *displayPort)
+static bool drawScreen(displayPort_t *displayPort)
 {
-    uint8_t subcmd[] = { 4 };
-    return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
+    uint8_t subcmd[] = { MSP_DP_DRAW_SCREEN };
+    output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
+
+    return 0;
 }
 
 static int screenSize(const displayPort_t *displayPort)
@@ -107,7 +113,7 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
         len = MSP_OSD_MAX_STRING_LENGTH;
     }
 
-    buf[0] = 3;
+    buf[0] = MSP_DP_WRITE_STRING;
     buf[1] = row;
     buf[2] = col;
     buf[3] = displayPortProfileMsp()->attrValues[attr] & ~DISPLAYPORT_MSP_ATTR_BLINK & DISPLAYPORT_MSP_ATTR_MASK;

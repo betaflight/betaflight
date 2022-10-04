@@ -108,6 +108,9 @@
 #undef USE_TELEMETRY_CRSF
 #undef USE_CRSF_LINK_STATISTICS
 #undef USE_CRSF_V3
+#endif
+
+#if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF)
 #undef USE_RX_RSSI_DBM
 #endif
 
@@ -151,6 +154,10 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
+#if !defined(USE_RX_MSP) && defined(USE_RX_MSP_OVERRIDE)
+#undef USE_RX_MSP_OVERRIDE
+#endif
+
 /* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
 #if !defined(USE_VTX_COMMON) || !defined(USE_VTX_CONTROL)
 #undef USE_VTX_COMMON
@@ -158,6 +165,7 @@
 #undef USE_VTX_TRAMP
 #undef USE_VTX_SMARTAUDIO
 #undef USE_VTX_TABLE
+#undef USE_VTX_MSP
 #endif
 
 #if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X) || defined(USE_RX_REDPINE_SPI)
@@ -244,7 +252,7 @@
 #define USE_I2C_GYRO
 #endif
 
-#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605)
+#if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
 #define USE_SPI_GYRO
 #endif
 
@@ -302,7 +310,7 @@
 
 #if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
-#undef USE_GYRO_DATA_ANALYSE
+#undef USE_DYN_NOTCH_FILTER
 #endif
 
 #ifndef USE_CMS
@@ -400,11 +408,6 @@ extern uint8_t __config_end;
 
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
-#endif
-
-#if !defined(USE_EXTI)
-#undef USE_RX_SPI
-#undef USE_RANGEFINDER_HCSR04
 #endif
 
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)

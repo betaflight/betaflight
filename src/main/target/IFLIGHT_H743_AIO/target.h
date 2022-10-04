@@ -120,11 +120,8 @@
 #define USE_ACCGYRO_BMI270
 #define USE_ACCGYRO_LSM6DSO
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PD0
 #define GYRO_2_EXTI_PIN         PD8
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO_1_CS_PIN           SPI1_NSS_PIN
@@ -144,6 +141,7 @@
 #define USE_FLASH_W25M             // Stacked die support
 #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128 iFlight_Beast_H7_55A_V1 version uses 16Mbit Winbond W25Q128FV Flash
 #define FLASH_CS_PIN            SPI3_NSS_PIN
 #define FLASH_SPI_INSTANCE      SPI3
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
@@ -170,10 +168,6 @@
 
 #define USE_ADC
 #define USE_ADC_INTERNAL
-
-#define ADC1_INSTANCE               ADC1
-#define ADC2_INSTANCE               ADC2
-#define ADC3_INSTANCE               ADC3
 
 #define RSSI_ADC_PIN                PC5
 #define VBAT_ADC_PIN                PC3

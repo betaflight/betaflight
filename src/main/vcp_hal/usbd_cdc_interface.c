@@ -47,6 +47,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include <stdbool.h>
+
 #include "platform.h"
 
 #include "build/atomic.h"
@@ -56,7 +58,6 @@
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
-#include "stdbool.h"
 
 #include "drivers/nvic.h"
 #include "drivers/serial_usb_vcp.h"
@@ -209,7 +210,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_SET_LINE_CODING:
-    if (pbuf && (length == sizeof (*plc))) {
+    if (pbuf && (length == sizeof(*plc))) {
         LineCoding.bitrate    = plc->bitrate;
         LineCoding.format     = plc->format;
         LineCoding.paritytype = plc->paritytype;
@@ -224,7 +225,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_GET_LINE_CODING:
-    if (pbuf && (length == sizeof (*plc))) {
+    if (pbuf && (length == sizeof(*plc))) {
         plc->bitrate = LineCoding.bitrate;
         plc->format = LineCoding.format;
         plc->paritytype = LineCoding.paritytype;
@@ -234,7 +235,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 
   case CDC_SET_CONTROL_LINE_STATE:
     // If a callback is provided, tell the upper driver of changes in DTR/RTS state
-    if (pbuf && (length == sizeof (uint16_t))) {
+    if (pbuf && (length == sizeof(uint16_t))) {
          if (ctrlLineStateCb) {
              ctrlLineStateCb(ctrlLineStateCbContext, *((uint16_t *)pbuf));
          }

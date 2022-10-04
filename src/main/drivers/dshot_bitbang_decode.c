@@ -28,10 +28,14 @@ uint16_t bbBuffer[134];
 #define BITBAND_SRAM_BASE  0x22000000
 #define BITBAND_SRAM(a,b) ((BITBAND_SRAM_BASE + (((a)-BITBAND_SRAM_REF)<<5) + ((b)<<2)))  // Convert SRAM address
 
+
+
 typedef struct bitBandWord_s {
     uint32_t value;
     uint32_t junk[15];
 } bitBandWord_t;
+
+
 
 #ifdef DEBUG_BBDECODE
 uint32_t sequence[MAX_GCR_EDGES];
@@ -39,7 +43,7 @@ int sequenceIndex = 0;
 #endif
 
 
-static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t count, uint32_t bit)
+static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type)
 {
 #ifndef DEBUG_BBDECODE
     UNUSED(buffer);
@@ -69,26 +73,16 @@ static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t coun
             bbBuffer[i] = !!(buffer[i] & (1 << bit));
         }
 #endif
-        value = BB_INVALID;
+        value = DSHOT_TELEMETRY_INVALID;
     } else {
-        value = decodedValue >> 4;
-
-        if (value == 0x0fff) {
-            return 0;
-        }
-        // Convert value to 16 bit from the GCR telemetry format (eeem mmmm mmmm)
-        value = (value & 0x000001ff) << ((value & 0xfffffe00) >> 9);
-        if (!value) {
-            return BB_INVALID;
-        }
-        // Convert period to erpm * 100
-        value = (1000000 * 60 / 100 + value / 2) / value;
+        value = dshot_decode_telemetry_value(decodedValue >> 4, type);
     }
+
     return value;
 }
 
 
-uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
+uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type)
 {
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
@@ -115,7 +109,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         // not returning telemetry is ok if the esc cpu is
         // overburdened.  in that case no edge will be found and
         // BB_NOEDGE indicates the condition to caller
-        return BB_NOEDGE;
+        return DSHOT_TELEMETRY_NOEDGE;
     }
 
     int remaining = MIN(count - (p - b), (unsigned int)MAX_VALID_BBSAMPLES);
@@ -181,13 +175,13 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     }
 
     if (bits < 18) {
-        return BB_NOEDGE;
+        return DSHOT_TELEMETRY_NOEDGE;
     }
 
     // length of last sequence has to be inferred since the last bit with inverted dshot is high
     const int nlen = 21 - bits;
     if (nlen < 0) {
-        value = BB_INVALID;
+        return DSHOT_TELEMETRY_NOEDGE;
     }
 
 #ifdef DEBUG_BBDECODE
@@ -198,10 +192,11 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         value <<= nlen;
         value |= 1 << (nlen - 1);
     }
-    return decode_bb_value(value, buffer, count, bit);
+
+    return decode_bb_value(value, buffer, count, bit, type);
 }
 
-FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
+FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type)
 {
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
@@ -235,7 +230,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         // not returning telemetry is ok if the esc cpu is
         // overburdened.  in that case no edge will be found and
         // BB_NOEDGE indicates the condition to caller
-        return BB_NOEDGE;
+        return DSHOT_TELEMETRY_NOEDGE;
     }
 
     int remaining = MIN(count - (p - buffer), (unsigned int)MAX_VALID_BBSAMPLES);
@@ -273,7 +268,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 
     // length of last sequence has to be inferred since the last bit with inverted dshot is high
     if (bits < 18) {
-        return BB_NOEDGE;
+        return DSHOT_TELEMETRY_NOEDGE;
     }
 
     const int nlen = 21 - bits;
@@ -283,13 +278,15 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 #endif
 
     if (nlen < 0) {
-        value = BB_INVALID;
+        return DSHOT_TELEMETRY_NOEDGE;
     }
+
     if (nlen > 0) {
         value <<= nlen;
         value |= 1 << (nlen - 1);
     }
-    return decode_bb_value(value, buffer, count, bit);
+
+    return decode_bb_value(value, buffer, count, bit, type);
 }
 
 #endif

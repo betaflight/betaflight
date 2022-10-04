@@ -108,8 +108,6 @@ typedef struct sbusFrameData_s {
     bool done;
 } sbusFrameData_t;
 
-static timeUs_t lastRcFrameTimeUs = 0;
-
 // Receive ISR callback
 static void sbusDataReceive(uint16_t c, void *data)
 {
@@ -154,15 +152,10 @@ static uint8_t sbusFrameStatus(rxRuntimeState_t *rxRuntimeState)
     const uint8_t frameStatus = sbusChannelsDecode(rxRuntimeState, &sbusFrameData->frame.frame.channels);
 
     if (!(frameStatus & (RX_FRAME_FAILSAFE | RX_FRAME_DROPPED))) {
-        lastRcFrameTimeUs = sbusFrameData->startAtUs;
+        rxRuntimeState->lastRcFrameTimeUs = sbusFrameData->startAtUs;
     }
 
     return frameStatus;
-}
-
-static timeUs_t sbusFrameTimeUs(void)
-{
-    return lastRcFrameTimeUs;
 }
 
 bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
@@ -178,15 +171,13 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     rxRuntimeState->channelCount = SBUS_MAX_CHANNEL;
 
     if (rxConfig->sbus_baud_fast) {
-        rxRuntimeState->rxRefreshRate = SBUS_FAST_RX_REFRESH_RATE;
         sbusBaudRate  = SBUS_FAST_BAUDRATE;
     } else {
-        rxRuntimeState->rxRefreshRate = SBUS_RX_REFRESH_RATE;
         sbusBaudRate  = SBUS_BAUDRATE;
     }
 
     rxRuntimeState->rcFrameStatusFn = sbusFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = sbusFrameTimeUs;
+    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

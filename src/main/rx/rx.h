@@ -142,13 +142,13 @@ typedef struct rxRuntimeState_s {
     rxProvider_t        rxProvider;
     SerialRXType        serialrxProvider;
     uint8_t             channelCount; // number of RC channels as reported by current input driver
-    uint16_t            rxRefreshRate;
     rcReadRawDataFnPtr  rcReadRawFn;
     rcFrameStatusFnPtr  rcFrameStatusFn;
     rcProcessFrameFnPtr rcProcessFrameFn;
     rcGetFrameTimeUsFn *rcFrameTimeUsFn;
     uint16_t            *channelData;
     void                *frameData;
+    timeUs_t            lastRcFrameTimeUs;
 } rxRuntimeState_t;
 
 typedef enum {
@@ -174,7 +174,9 @@ extern linkQualitySource_e linkQualitySource;
 extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
 
 void rxInit(void);
+void rxProcessPending(bool state);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
+void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
@@ -211,9 +213,9 @@ uint16_t rxGetUplinkTxPwrMw(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
-void suspendRxPwmPpmSignal(void);
-void resumeRxPwmPpmSignal(void);
-
-uint16_t rxGetRefreshRate(void);
+void suspendRxSignal(void);
+void resumeRxSignal(void);
 
 timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
+
+timeUs_t rxFrameTimeUs(void);

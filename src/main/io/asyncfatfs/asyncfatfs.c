@@ -514,7 +514,7 @@ typedef struct afatfs_t {
 } afatfs_t;
 
 #ifdef STM32H7
-static DMA_RW_AXI uint8_t afatfs_cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS] __attribute__((aligned(32)));
+static DMA_DATA_ZERO_INIT uint8_t afatfs_cache[AFATFS_SECTOR_SIZE * AFATFS_NUM_CACHE_SECTORS] __attribute__((aligned(32)));
 #endif
 
 static afatfs_t afatfs;
@@ -2141,7 +2141,7 @@ afatfsOperationStatus_e afatfs_fseek(afatfsFilePtr_t file, int32_t offset, afatf
         break;
 
         case AFATFS_SEEK_SET:
-            FALLTHROUGH;
+        break;
     }
 
     // Now we have a SEEK_SET with a positive offset. Begin by seeking to the start of the file
@@ -2294,7 +2294,7 @@ static afatfsOperationStatus_e afatfs_extendSubdirectoryContinue(afatfsFile_t *d
             }
 
             // Seek back to the beginning of the cluster
-            afatfs_assert(afatfs_fseekAtomic(directory, -AFATFS_SECTOR_SIZE * (afatfs.sectorsPerCluster - 1)));
+            afatfs_assert(afatfs_fseekAtomic(directory, -AFATFS_SECTOR_SIZE * ((int32_t)afatfs.sectorsPerCluster - 1)));
             opState->phase = AFATFS_EXTEND_SUBDIRECTORY_PHASE_SUCCESS;
             goto doMore;
         break;

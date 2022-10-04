@@ -24,6 +24,12 @@
 
 #include "pg/displayport_profiles.h"
 
+// MSP Display Port commands
+#define MSP_DP_RELEASE      1
+#define MSP_DP_CLEAR_SCREEN 2
+#define MSP_DP_WRITE_STRING 3
+#define MSP_DP_DRAW_SCREEN  4
+
 // MSP displayport V2 attribute byte bit functions
 #define DISPLAYPORT_MSP_ATTR_VERSION BIT(7) // Format indicator; must be zero for V2 (and V1)
 #define DISPLAYPORT_MSP_ATTR_BLINK   BIT(6) // Device local blink

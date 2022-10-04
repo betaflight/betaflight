@@ -42,7 +42,7 @@ static IO_t ws2811IO = IO_NONE;
 static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
 
-void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+FAST_IRQ_HANDLER void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
     TIM_DMACmd(&TimHandle, timerChannel, DISABLE);
@@ -80,7 +80,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     uint32_t dmaChannel = timerHardware->dmaChannel;
 #endif
 
-    if (dmaRef == NULL) {
+    if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_LED_STRIP, 0)) {
         return false;
     }
     TimHandle.Instance = timer;
@@ -138,7 +138,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&TimHandle, hdma[dmaIndex], hdma_tim);
 
-    dmaInit(dmaGetIdentifier(dmaRef), OWNER_LED_STRIP, 0);
+    dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaIndex);
 
     /* Initialize TIMx DMA handle */

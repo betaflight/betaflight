@@ -40,7 +40,7 @@ An Example: With TPA = 50 (or .5 in the GUI) and `tpa_breakpoint` = 1500 (assume
 * At full throttle (2000) the full amount of dampening set in TPA is applied. (50% reduction in this example)
 * TPA can lead into increase of rotation rate when more throttle applied. You can get faster flips and rolls when more throttle applied due to coupling of PID's and rates. Only the PID controllers MWREWRITE and LUX are using a linear TPA implementation, where no rotation rates are affected when TPA is being used.
 
-![tpa example chart](https://cloud.githubusercontent.com/assets/1668170/6053290/655255dc-ac92-11e4-9491-1a58d868c131.png "TPA Example Chart")
+![tpa example chart](https://user-images.githubusercontent.com/15355893/165317342-9639a7f8-1a05-4584-9b80-3faa2da565cb.png "TPA Example Chart")
 
 
 **How and Why to use this?**

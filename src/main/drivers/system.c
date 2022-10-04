@@ -35,7 +35,7 @@
 
 #include "system.h"
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 // See "RM CoreSight Architecture Specification"
 // B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
 // "E1.2.11  LAR, Lock Access Register"
@@ -67,9 +67,11 @@ void cycleCounterInit(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
 #if defined(DWT_LAR_UNLOCK_VALUE)
-#if defined(STM32F7) || defined(STM32H7)
+#if defined(STM32H7)
+    ITM->LAR = DWT_LAR_UNLOCK_VALUE;
+#elif defined(STM32F7)
     DWT->LAR = DWT_LAR_UNLOCK_VALUE;
-#elif defined(STM32F3) || defined(STM32F4)
+#elif defined(STM32F4)
     // Note: DWT_Type does not contain LAR member.
 #define DWT_LAR
     __O uint32_t *DWTLAR = (uint32_t *)(DWT_BASE + 0x0FB0);
@@ -146,14 +148,25 @@ uint32_t micros(void)
     return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
-inline uint32_t getCycleCounter(void)
+uint32_t getCycleCounter(void)
 {
     return DWT->CYCCNT;
 }
 
-uint32_t clockCyclesToMicros(uint32_t clockCycles)
+int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles / usTicks;
+}
+
+// Note that this conversion is signed as this is used for periods rather than absolute timestamps
+int32_t clockCyclesTo10thMicros(int32_t clockCycles)
+{
+    return 10 * clockCycles / (int32_t)usTicks;
+}
+
+uint32_t clockMicrosToCycles(uint32_t micros)
+{
+    return micros * usTicks;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -265,13 +278,27 @@ void initialiseMemorySections(void)
 #endif
 
 #ifdef USE_FAST_DATA
-    /* Load FAST_DATA variable intializers into DTCM RAM */
+    /* Load FAST_DATA variable initializers into DTCM RAM */
     extern uint8_t _sfastram_data;
     extern uint8_t _efastram_data;
     extern uint8_t _sfastram_idata;
     memcpy(&_sfastram_data, &_sfastram_idata, (size_t) (&_efastram_data - &_sfastram_data));
 #endif
 }
+
+#ifdef STM32H7
+void initialiseD2MemorySections(void)
+{
+    /* Load DMA_DATA variable intializers into D2 RAM */
+    extern uint8_t _sdmaram_bss;
+    extern uint8_t _edmaram_bss;
+    extern uint8_t _sdmaram_data;
+    extern uint8_t _edmaram_data;
+    extern uint8_t _sdmaram_idata;
+    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
+    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
+}
+#endif
 
 static void unusedPinInit(IO_t io)
 {

@@ -272,7 +272,7 @@ void arm_correlate_fast_q15(
       x0 = *__SIMD32(px);
       /* read x[1], x[2] samples */
       x1 = _SIMD32_OFFSET(px + 1);
-	  px += 2U;
+      px += 2U;
 
       /* Apply loop unrolling and compute 4 MACs simultaneously. */
       k = srcBLen >> 2U;
@@ -317,7 +317,7 @@ void arm_correlate_fast_q15(
 
         /* Read x[5], x[6] */
         x1 = _SIMD32_OFFSET(px + 3);
-		px += 4U;
+        px += 4U;
 
         /* acc2 +=  x[4] * y[2] + x[5] * y[3] */
         acc2 = __SMLAD(x0, c0, acc2);
@@ -350,7 +350,7 @@ void arm_correlate_fast_q15(
 
         /* Read x[7] */
         x3 = *__SIMD32(px);
-		px++;
+        px++;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -369,7 +369,7 @@ void arm_correlate_fast_q15(
 
         /* Read x[9] */
         x2 = _SIMD32_OFFSET(px + 1);
-		px += 2U;
+        px += 2U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -407,7 +407,7 @@ void arm_correlate_fast_q15(
 
         /* Read x[10] */
         x3 = _SIMD32_OFFSET(px + 2);
-		px += 3U;
+        px += 3U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x1, c0, acc0);
@@ -816,24 +816,24 @@ void arm_correlate_fast_q15(
       acc3 = 0;
 
       /* read x[0], x[1], x[2] samples */
-	  a = *px;
-	  b = *(px + 1);
+      a = *px;
+      b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  x0 = __PKHBT(a, b, 16);
-	  a = *(px + 2);
-	  x1 = __PKHBT(b, a, 16);
+      x0 = __PKHBT(a, b, 16);
+      a = *(px + 2);
+      x1 = __PKHBT(b, a, 16);
 
 #else
 
-	  x0 = __PKHBT(b, a, 16);
-	  a = *(px + 2);
-	  x1 = __PKHBT(a, b, 16);
+      x0 = __PKHBT(b, a, 16);
+      a = *(px + 2);
+      x1 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-	  px += 2U;
+      px += 2U;
 
       /* Apply loop unrolling and compute 4 MACs simultaneously. */
       k = srcBLen >> 2U;
@@ -844,18 +844,18 @@ void arm_correlate_fast_q15(
       {
         /* Read the first two inputB samples using SIMD:
          * y[0] and y[1] */
-		  a = *py;
-		  b = *(py + 1);
+          a = *py;
+          b = *(py + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		  c0 = __PKHBT(a, b, 16);
+          c0 = __PKHBT(a, b, 16);
 
 #else
 
-		  c0 = __PKHBT(b, a, 16);
+          c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* acc0 +=  x[0] * y[0] + x[1] * y[1] */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -864,22 +864,22 @@ void arm_correlate_fast_q15(
         acc1 = __SMLAD(x1, c0, acc1);
 
         /* Read x[2], x[3], x[4] */
-	  	a = *px;
-	  	b = *(px + 1);
+        a = *px;
+        b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  	x2 = __PKHBT(a, b, 16);
-	  	a = *(px + 2);
-	  	x3 = __PKHBT(b, a, 16);
+        x2 = __PKHBT(a, b, 16);
+        a = *(px + 2);
+        x3 = __PKHBT(b, a, 16);
 
 #else
 
-	  	x2 = __PKHBT(b, a, 16);
-	  	a = *(px + 2);
-	  	x3 = __PKHBT(a, b, 16);
+        x2 = __PKHBT(b, a, 16);
+        a = *(px + 2);
+        x3 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* acc2 +=  x[2] * y[0] + x[3] * y[1] */
         acc2 = __SMLAD(x2, c0, acc2);
@@ -888,20 +888,20 @@ void arm_correlate_fast_q15(
         acc3 = __SMLAD(x3, c0, acc3);
 
         /* Read y[2] and y[3] */
-		  a = *(py + 2);
-		  b = *(py + 3);
+          a = *(py + 2);
+          b = *(py + 3);
 
-		  py += 4U;
+          py += 4U;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		  c0 = __PKHBT(a, b, 16);
+          c0 = __PKHBT(a, b, 16);
 
 #else
 
-		  c0 = __PKHBT(b, a, 16);
+          c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* acc0 +=  x[2] * y[2] + x[3] * y[3] */
         acc0 = __SMLAD(x2, c0, acc0);
@@ -910,24 +910,24 @@ void arm_correlate_fast_q15(
         acc1 = __SMLAD(x3, c0, acc1);
 
         /* Read x[4], x[5], x[6] */
-	  	a = *(px + 2);
-	  	b = *(px + 3);
+        a = *(px + 2);
+        b = *(px + 3);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  	x0 = __PKHBT(a, b, 16);
-	  	a = *(px + 4);
-	  	x1 = __PKHBT(b, a, 16);
+        x0 = __PKHBT(a, b, 16);
+        a = *(px + 4);
+        x1 = __PKHBT(b, a, 16);
 
 #else
 
-	  	x0 = __PKHBT(b, a, 16);
-	  	a = *(px + 4);
-	  	x1 = __PKHBT(a, b, 16);
+        x0 = __PKHBT(b, a, 16);
+        a = *(px + 4);
+        x1 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-		px += 4U;
+        px += 4U;
 
         /* acc2 +=  x[4] * y[2] + x[5] * y[3] */
         acc2 = __SMLAD(x0, c0, acc2);
@@ -959,22 +959,22 @@ void arm_correlate_fast_q15(
 #endif /*      #ifdef  ARM_MATH_BIG_ENDIAN     */
 
         /* Read x[7] */
-		a = *px;
-		b = *(px + 1);
+        a = *px;
+        b = *(px + 1);
 
-		px++;;
+        px++;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		x3 = __PKHBT(a, b, 16);
+        x3 = __PKHBT(a, b, 16);
 
 #else
 
-		x3 = __PKHBT(b, a, 16);
+        x3 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-		px++;
+        px++;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -986,38 +986,38 @@ void arm_correlate_fast_q15(
       if (k == 2U)
       {
         /* Read y[4], y[5] */
-		  a = *py;
-		  b = *(py + 1);
+          a = *py;
+          b = *(py + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		  c0 = __PKHBT(a, b, 16);
+          c0 = __PKHBT(a, b, 16);
 
 #else
 
-		  c0 = __PKHBT(b, a, 16);
+          c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* Read x[7], x[8], x[9] */
-	  	a = *px;
-	  	b = *(px + 1);
+        a = *px;
+        b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  	x3 = __PKHBT(a, b, 16);
-	  	a = *(px + 2);
-	  	x2 = __PKHBT(b, a, 16);
+        x3 = __PKHBT(a, b, 16);
+        a = *(px + 2);
+        x2 = __PKHBT(b, a, 16);
 
 #else
 
-	  	x3 = __PKHBT(b, a, 16);
-	  	a = *(px + 2);
-	  	x2 = __PKHBT(a, b, 16);
+        x3 = __PKHBT(b, a, 16);
+        a = *(px + 2);
+        x2 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-		px += 2U;
+        px += 2U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -1029,38 +1029,38 @@ void arm_correlate_fast_q15(
       if (k == 3U)
       {
         /* Read y[4], y[5] */
-		  a = *py;
-		  b = *(py + 1);
+          a = *py;
+          b = *(py + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		  c0 = __PKHBT(a, b, 16);
+          c0 = __PKHBT(a, b, 16);
 
 #else
 
-		  c0 = __PKHBT(b, a, 16);
+          c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-		py += 2U;
+        py += 2U;
 
         /* Read x[7], x[8], x[9] */
-	  	a = *px;
-	  	b = *(px + 1);
+        a = *px;
+        b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  	x3 = __PKHBT(a, b, 16);
-	  	a = *(px + 2);
-	  	x2 = __PKHBT(b, a, 16);
+        x3 = __PKHBT(a, b, 16);
+        a = *(px + 2);
+        x2 = __PKHBT(b, a, 16);
 
 #else
 
-	  	x3 = __PKHBT(b, a, 16);
-	  	a = *(px + 2);
-	  	x2 = __PKHBT(a, b, 16);
+        x3 = __PKHBT(b, a, 16);
+        a = *(px + 2);
+        x2 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -1079,19 +1079,19 @@ void arm_correlate_fast_q15(
 #endif /*      #ifdef  ARM_MATH_BIG_ENDIAN     */
 
         /* Read x[10] */
-		b = *(px + 3);
+        b = *(px + 3);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		x3 = __PKHBT(a, b, 16);
+        x3 = __PKHBT(a, b, 16);
 
 #else
 
-		x3 = __PKHBT(b, a, 16);
+        x3 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-		px += 3U;
+        px += 3U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x1, c0, acc0);

@@ -1,0 +1,17 @@
+name: Hide artifact links comments
+
+on:
+  pull_request_target:
+    types: [synchronize, reopened]
+
+jobs:
+  hide-artifacts-link-comments:
+    name: Hide artifact links
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Hide comments
+        uses: int128/hide-comment-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          starts-with: "**Do you want to test this code? Here you have an automated build:**"
+          ends-with: "_**WARNING:** It may be unstable. Use only for testing! See: https://www.youtube.com/watch?v=I1uN9CN30gw for instructions for unified targets!_"

@@ -76,12 +76,10 @@ static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 #endif
 
-static timeUs_t lastRcFrameTimeUs = 0;
-
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c, void *data)
 {
-    UNUSED(data);
+    rxRuntimeState_t *const rxRuntimeState = (rxRuntimeState_t *const)data;
 
     static timeUs_t spekTimeLast = 0;
     static uint8_t spekFramePosition = 0;
@@ -99,7 +97,7 @@ static void spektrumDataReceive(uint16_t c, void *data)
         if (spekFramePosition < SPEK_FRAME_SIZE) {
             rcFrameComplete = false;
         } else {
-            lastRcFrameTimeUs = now;
+            rxRuntimeState->lastRcFrameTimeUs = now;
             rcFrameComplete = true;
         }
     }
@@ -344,11 +342,6 @@ void srxlRxWriteTelemetryData(const void *data, int len)
 }
 #endif
 
-static timeUs_t spektrumFrameTimeUsFn(void)
-{
-    return lastRcFrameTimeUs;
-}
-
 bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     rxRuntimeStatePtr = rxRuntimeState;
@@ -381,7 +374,6 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         spekHiRes = true;
         resolution = 2048;
         rxRuntimeState->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
-        rxRuntimeState->rxRefreshRate = 11000;
         break;
     case SERIALRX_SPEKTRUM1024:
         // 10 bit frames
@@ -390,13 +382,12 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         spekHiRes = false;
         resolution = 1024;
         rxRuntimeState->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
-        rxRuntimeState->rxRefreshRate = 22000;
         break;
     }
 
     rxRuntimeState->rcReadRawFn = spektrumReadRawRC;
     rxRuntimeState->rcFrameStatusFn = spektrumFrameStatus;
-    rxRuntimeState->rcFrameTimeUsFn = spektrumFrameTimeUsFn;
+    rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;
 #if defined(USE_TELEMETRY_SRXL)
     rxRuntimeState->rcProcessFrameFn = spektrumProcessFrame;
 #endif
@@ -404,7 +395,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         spektrumDataReceive,
-        NULL,
+        rxRuntimeState,
         SPEKTRUM_BAUDRATE,
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) |

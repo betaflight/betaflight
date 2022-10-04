@@ -20,6 +20,8 @@
 
 #pragma once
 
+#define USE_LATE_TASK_STATISTICS
+
 #ifdef FURYF4OSD
 #define TARGET_BOARD_IDENTIFIER "FY4O"
 #define USBD_PRODUCT_STRING     "FuryF4OSD"
@@ -38,10 +40,7 @@
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 
 // MPU6000 interrupts
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1
@@ -158,4 +157,4 @@
 #define TARGET_IO_PORTD         (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(11) )
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(11) )

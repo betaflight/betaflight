@@ -89,36 +89,6 @@
 
 // Backward compatibility for exisiting targets
 
-#ifdef STM32F1
-#ifndef I2C1_SCL
-#define I2C1_SCL PB8
-#endif
-#ifndef I2C1_SDA
-#define I2C1_SDA PB9
-#endif
-#ifndef I2C2_SCL
-#define I2C2_SCL PB10
-#endif
-#ifndef I2C2_SDA
-#define I2C2_SDA PB11
-#endif
-#endif // STM32F1
-
-#ifdef STM32F3
-#ifndef I2C1_SCL
-#define I2C1_SCL PB6
-#endif
-#ifndef I2C1_SDA
-#define I2C1_SDA PB7
-#endif
-#ifndef I2C2_SCL
-#define I2C2_SCL PA9
-#endif
-#ifndef I2C2_SDA
-#define I2C2_SDA PA10
-#endif
-#endif // STM32F3
-
 #ifdef STM32F4
 #ifndef I2C1_SCL
 #define I2C1_SCL PB6
@@ -224,6 +194,17 @@
 #define SPI4_MOSI_PIN   NONE
 #endif
 
+#ifdef USE_SPI_DEVICE_5
+#define SPI5_SCK_PIN    NONE
+#define SPI5_MISO_PIN   NONE
+#define SPI5_MOSI_PIN   NONE
+#endif
+
+#ifdef USE_SPI_DEVICE_6
+#define SPI6_SCK_PIN    NONE
+#define SPI6_MISO_PIN   NONE
+#define SPI6_MOSI_PIN   NONE
+#endif
 #else
 
 // Pin defaults for backward compatibility
@@ -323,11 +304,27 @@
 #define RX_CC2500_SPI_ANT_SEL_PIN NONE
 #endif
 #endif
+
+#if defined(USE_RX_EXPRESSLRS)
+#if !defined(RX_EXPRESSLRS_SPI_RESET_PIN)
+#define RX_EXPRESSLRS_SPI_RESET_PIN NONE
+#endif
+
+#if !defined(RX_EXPRESSLRS_SPI_BUSY_PIN)
+#define RX_EXPRESSLRS_SPI_BUSY_PIN NONE
+#endif
+
+#if !defined(RX_EXPRESSLRS_TIMER_INSTANCE)
+#define RX_EXPRESSLRS_TIMER_INSTANCE NULL
+#endif
+
+#endif
+
 #endif
 
 // gyro hardware
 
-#if !defined(GYRO_1_SPI_INSTANCE)
+#if !defined(GYRO_1_SPI_INSTANCE) && !defined(SIMULATOR_BUILD)
 #define GYRO_1_SPI_INSTANCE     NULL
 #endif
 
@@ -554,6 +551,22 @@
 #endif
 #ifndef SPI4_RX_DMA_OPT
 #define SPI4_RX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#endif
+#ifdef USE_SPI_DEVICE_5
+#ifndef SPI5_TX_DMA_OPT
+#define SPI5_TX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#ifndef SPI5_RX_DMA_OPT
+#define SPI5_RX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#endif
+#ifdef USE_SPI_DEVICE_6
+#ifndef SPI6_TX_DMA_OPT
+#define SPI6_TX_DMA_OPT (DMA_OPT_UNUSED)
+#endif
+#ifndef SPI6_RX_DMA_OPT
+#define SPI6_RX_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 #endif
 #endif

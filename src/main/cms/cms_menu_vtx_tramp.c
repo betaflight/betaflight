@@ -248,10 +248,10 @@ static const void *trampCmsOnEnter(displayPort_t *pDisp)
 }
 
 static const OSD_Entry trampCmsMenuCommenceEntries[] = {
-    { "CONFIRM", OME_Label,   NULL,          NULL, 0 },
-    { "YES",     OME_Funcall, trampCmsCommence, NULL, 0 },
-    { "NO",    OME_Back, NULL, NULL, 0 },
-    { NULL,      OME_END, NULL, NULL, 0 }
+    { "CONFIRM", OME_Label,   NULL,          NULL },
+    { "YES",     OME_Funcall, trampCmsCommence, NULL },
+    { "NO",    OME_Back, NULL, NULL },
+    { NULL,      OME_END, NULL, NULL }
 };
 
 static CMS_Menu trampCmsMenuCommence = {
@@ -267,19 +267,19 @@ static CMS_Menu trampCmsMenuCommence = {
 
 static const OSD_Entry trampMenuEntries[] =
 {
-    { "- TRAMP -", OME_Label, NULL, NULL, 0 },
+    { "- TRAMP -", OME_Label, NULL, NULL },
 
-    { "",       OME_Label,   NULL,                   trampCmsStatusString,  DYNAMIC },
-    { "PIT",    OME_TAB,     trampCmsSetPitMode,     &trampCmsEntPitMode,   0 },
-    { "BAND",   OME_TAB,     trampCmsConfigBand,     &trampCmsEntBand,      0 },
-    { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan,      0 },
-    { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
-    { "POWER",  OME_TAB,     trampCmsConfigPower,    &trampCmsEntPower,     0 },
-    { "T(C)",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
-    { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
+    { "",       OME_Label | DYNAMIC,   NULL,         trampCmsStatusString },
+    { "PIT",    OME_TAB,     trampCmsSetPitMode,     &trampCmsEntPitMode },
+    { "BAND",   OME_TAB,     trampCmsConfigBand,     &trampCmsEntBand },
+    { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan },
+    { "(FREQ)", OME_UINT16 | DYNAMIC,  NULL,         &trampCmsEntFreqRef },
+    { "POWER",  OME_TAB,     trampCmsConfigPower,    &trampCmsEntPower },
+    { "T(C)",   OME_INT16 | DYNAMIC,   NULL,         &trampCmsEntTemp },
+    { "SAVE",   OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence },
 
-    { "BACK",   OME_Back, NULL, NULL, 0 },
-    { NULL,     OME_END, NULL, NULL, 0 }
+    { "BACK",   OME_Back, NULL, NULL },
+    { NULL,     OME_END, NULL, NULL }
 };
 
 CMS_Menu cmsx_menuVtxTramp = {

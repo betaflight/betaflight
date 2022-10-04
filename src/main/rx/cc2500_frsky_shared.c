@@ -155,6 +155,8 @@ const cc2500RegisterConfigElement_t cc2500FrskyXLbtV2Config[] =
 };
 
 static void initialise() {
+    rxSpiStartupSpeed();
+
     cc2500Reset();
 
     cc2500ApplyRegisterConfig(cc2500FrskyBaseConfig, sizeof(cc2500FrskyBaseConfig));
@@ -197,6 +199,8 @@ static void initialise() {
         calData[c][1] = cc2500ReadReg(CC2500_24_FSCAL2);
         calData[c][2] = cc2500ReadReg(CC2500_25_FSCAL1);
     }
+
+    rxSpiNormalSpeed();
 }
 
 void initialiseData(bool inBindState)
@@ -335,8 +339,13 @@ static bool getBind(uint8_t *packet)
                     if (packet[5] == 0x00) {
                         rxCc2500SpiConfigMutable()->bindTxId[0] = packet[3];
                         rxCc2500SpiConfigMutable()->bindTxId[1] = packet[4];
-                        rxCc2500SpiConfigMutable()->bindTxId[2] = packet[11];
-                        rxCc2500SpiConfigMutable()->rxNum = packet[12];
+                        if (spiProtocol == RX_SPI_FRSKY_D) {
+                            rxCc2500SpiConfigMutable()->bindTxId[2] = packet[17];
+                            rxCc2500SpiConfigMutable()->rxNum = 0;
+                        } else {
+                            rxCc2500SpiConfigMutable()->bindTxId[2] = packet[11];
+                            rxCc2500SpiConfigMutable()->rxNum = packet[12];
+                        }
                     }
                     for (uint8_t n = 0; n < 5; n++) {
                          rxCc2500SpiConfigMutable()->bindHopData[packet[5] + n] = (packet[5] + n) >= 47 ? 0 : packet[6 + n];
@@ -426,6 +435,8 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         protocolState = STATE_STARTING;
 
         break;
+
+    case STATE_STARTING:
     default:
         ret = handlePacket(packet, &protocolState);
 
@@ -487,6 +498,7 @@ bool frSkySpiInit(const rxSpiConfig_t *rxSpiConfig, rxRuntimeState_t *rxRuntimeS
 
         handlePacket = frSkyDHandlePacket;
         setRcData = frSkyDSetRcData;
+        packetLength = FRSKY_RX_D8_LENGTH;
         frSkyDInit();
 
         break;

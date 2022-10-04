@@ -49,9 +49,10 @@ static int crsfGrab(displayPort_t *displayPort)
     return displayPort->grabCount = 1;
 }
 
-static int crsfClearScreen(displayPort_t *displayPort)
+static int crsfClearScreen(displayPort_t *displayPort, displayClearOption_e options)
 {
     UNUSED(displayPort);
+    UNUSED(options);
     memset(crsfScreen.buffer, ' ', sizeof(crsfScreen.buffer));
     crsfScreen.updated = false;
     crsfScreen.reset = true;
@@ -62,10 +63,10 @@ static int crsfClearScreen(displayPort_t *displayPort)
 static int crsfRelease(displayPort_t *displayPort)
 {
     displayPort->grabCount = 0;
-    return crsfClearScreen(displayPort);
+    return crsfClearScreen(displayPort, DISPLAY_CLEAR_WAIT);
 }
 
-static int crsfDrawScreen(displayPort_t *displayPort)
+static bool crsfDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;
@@ -84,7 +85,7 @@ static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row,
     if (row >= crsfScreen.rows || col >= crsfScreen.cols) {
         return 0;
     }
-    const size_t truncLen = MIN((int)strlen(s), crsfScreen.cols-col);  // truncate at colCount
+    const size_t truncLen = MIN(strlen(s), (size_t)(crsfScreen.cols - col));  // truncate at colCount
     char *rowStart = &crsfScreen.buffer[row * crsfScreen.cols + col];
     crsfScreen.updated |= memcmp(rowStart, s, truncLen);
     if (crsfScreen.updated) {

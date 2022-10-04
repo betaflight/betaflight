@@ -41,10 +41,7 @@
 
 // ******* GYRO and ACC ********
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1
@@ -115,7 +112,7 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC3
-#define ADC3_DMA_OPT            0
+#define ADC3_DMA_OPT            1
 
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_PIN            PC2

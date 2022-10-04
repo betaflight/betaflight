@@ -129,7 +129,7 @@ TEST(CrossFireTest, TestCrsfFrameStatus)
     memset(crsfFrame.frame.payload, 0, CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE);
     const uint8_t crc = crsfFrameCRC();
     crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
-
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
     const uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_FALSE(crsfFrameDone);
@@ -166,7 +166,7 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
 {
     crsfFrameDone = true;
     crsfFrame.frame.deviceAddress = CRSF_ADDRESS_CRSF_RECEIVER;
-    crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;;
+    crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
     crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     // 16 11-bit channels packed into 22 bytes of data
     crsfFrame.frame.payload[0]  = 0xFF; // bits 0-7
@@ -357,8 +357,9 @@ const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NU
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};
-void crsfScheduleMspResponse(void) {};
+void crsfScheduleMspResponse(uint8_t ) {};
 bool bufferMspFrame(uint8_t *, int) {return true;}
 bool isBatteryVoltageAvailable(void) { return true; }
 bool isAmperageAvailable(void) { return true; }
+timeUs_t rxFrameTimeUs(void) { return 0; }
 }

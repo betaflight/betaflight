@@ -43,6 +43,7 @@ typedef enum {
     ACC_ICM20649,
     ACC_ICM20689,
     ACC_ICM42605,
+    ACC_ICM42688P,
     ACC_BMI160,
     ACC_BMI270,
     ACC_LSM6DSO,
@@ -85,8 +86,7 @@ bool accIsCalibrationComplete(void);
 bool accHasBeenCalibrated(void);
 void accStartCalibration(void);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
-void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims);
-bool accGetAccumulationAverage(float *accumulation);
+void accUpdate(timeUs_t currentTimeUs);
 union flightDynamicsTrims_u;
 void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
 void accInitFilters(void);

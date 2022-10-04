@@ -67,11 +67,7 @@ static void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
     if (beeperIO && timer) {
         beeperPwm.io = beeperIO;
         IOInit(beeperPwm.io, OWNER_BEEPER, 0);
-#if defined(STM32F1)
-        IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
-#else
         IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
-#endif
         freqBeep = frequency;
         pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
 

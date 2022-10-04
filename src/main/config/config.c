@@ -54,6 +54,7 @@
 #include "flight/pid_init.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#include "flight/position.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -96,13 +97,13 @@ static bool configIsDirty; /* someone indicated that the config is modified and 
 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
 
+static bool eepromWriteInProgress = false;
+
 pidProfile_t *currentPidProfile;
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
-
-#define DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME HZ_TO_INTERVAL_US(2000)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
 
@@ -111,7 +112,7 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .displayName = { 0 },
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
@@ -124,9 +125,13 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     .hseMhz = SYSTEM_HSE_VALUE,  // Only used for F4 and G4 targets
     .configurationState = CONFIGURATION_STATE_DEFAULTS_BARE,
-    .schedulerOptimizeRate = SCHEDULER_OPTIMIZE_RATE_AUTO,
     .enableStickArming = false,
 );
+
+bool isEepromWriteInProgress(void)
+{
+    return eepromWriteInProgress;
+}
 
 uint8_t getCurrentPidProfileIndex(void)
 {
@@ -159,7 +164,6 @@ void resetConfig(void)
 
 static void activateConfig(void)
 {
-    schedulerOptimizeRate(systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_ON || (systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_AUTO && motorConfig()->dev.useDshotTelemetry));
     loadPidProfile();
     loadControlRateProfile();
 
@@ -188,7 +192,7 @@ static void activateConfig(void)
 
 static void adjustFilterLimit(uint16_t *parm, uint16_t resetValue)
 {
-    if (*parm > FILTER_FREQUENCY_MAX) {
+    if (*parm > LPF_MAX_HZ) {
         *parm = resetValue;
     }
 }
@@ -202,6 +206,14 @@ static void validateAndFixRatesSettings(void)
             controlRateProfilesMutable(profileIndex)->rates[axis] = constrain(controlRateProfilesMutable(profileIndex)->rates[axis], 0, ratesSettingLimits[ratesType].srate_limit);
             controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
         }
+    }
+}
+
+static void validateAndFixMinSatsGpsConfig(void)
+{
+    if (gpsConfig()->gpsMinimumSats >= gpsConfig()->gpsRequiredSats) {
+        gpsConfigMutable()->gpsRequiredSats = GPS_REQUIRED_SAT_COUNT;
+        gpsConfigMutable()->gpsMinimumSats = GPS_MINIMUM_SAT_COUNT;
     }
 }
 
@@ -245,9 +257,9 @@ static void validateAndFixConfig(void)
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
         // Fix filter settings to handle cases where an older configurator was used that
         // allowed higher cutoff limits from previous firmware versions.
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass_hz, FILTER_FREQUENCY_MAX);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lowpass2_hz, FILTER_FREQUENCY_MAX);
-        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, FILTER_FREQUENCY_MAX);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lpf1_static_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_lpf2_static_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, LPF_MAX_HZ);
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff, 0);
 
         // Prevent invalid notch cutoff
@@ -257,8 +269,8 @@ static void validateAndFixConfig(void)
 
 #ifdef USE_DYN_LPF
         //Prevent invalid dynamic lowpass
-        if (pidProfilesMutable(i)->dyn_lpf_dterm_min_hz > pidProfilesMutable(i)->dyn_lpf_dterm_max_hz) {
-            pidProfilesMutable(i)->dyn_lpf_dterm_min_hz = 0;
+        if (pidProfilesMutable(i)->dterm_lpf1_dyn_min_hz > pidProfilesMutable(i)->dterm_lpf1_dyn_max_hz) {
+            pidProfilesMutable(i)->dterm_lpf1_dyn_min_hz = 0;
         }
 #endif
 
@@ -272,7 +284,7 @@ static void validateAndFixConfig(void)
 
         // If the d_min value for any axis is >= the D gain then reset d_min to 0 for consistent Configurator behavior
         for (unsigned axis = 0; axis <= FD_YAW; axis++) {
-            if (pidProfilesMutable(i)->d_min[axis] >= pidProfilesMutable(i)->pid[axis].D) {
+            if (pidProfilesMutable(i)->d_min[axis] > pidProfilesMutable(i)->pid[axis].D) {
                 pidProfilesMutable(i)->d_min[axis] = 0;
             }
         }
@@ -466,17 +478,13 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_ESC_SENSOR);
 #endif
 
-#ifndef USE_GYRO_DATA_ANALYSE
-    featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-#endif
-
 #if !defined(USE_ADC)
     featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
 
 #if defined(USE_BEEPER)
 #ifdef USE_TIMER
-    if (beeperDevConfig()->frequency && !timerGetByTag(beeperDevConfig()->ioTag)) {
+    if (beeperDevConfig()->frequency && !timerGetConfiguredByTag(beeperDevConfig()->ioTag)) {
         beeperDevConfigMutable()->frequency = 0;
     }
 #endif
@@ -506,18 +514,22 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON) || systemConfig()->schedulerOptimizeRate == SCHEDULER_OPTIMIZE_RATE_OFF)
-        && motorConfig()->dev.useDshotTelemetry) {
-        motorConfigMutable()->dev.useDshotTelemetry = false;
-    }
+    bool nChannelTimerUsed = false;
+    for (unsigned i = 0; i < getMotorCount(); i++) {
+        const ioTag_t tag = motorConfig()->dev.ioTags[i];
+        if (tag) {
+            const timerHardware_t *timer = timerGetConfiguredByTag(tag);
+            if (timer && timer->output & TIMER_OUTPUT_N_CHANNEL) {
+                nChannelTimerUsed = true;
 
-#if defined(USE_DYN_IDLE)
-    if (!isRpmFilterEnabled()) {
-        for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
-            pidProfilesMutable(i)->dyn_idle_min_rpm = 0;
+                break;
+            }
         }
     }
-#endif // USE_DYN_IDLE
+
+    if ((!configuredMotorProtocolDshot || (motorConfig()->dev.useDshotBitbang == DSHOT_BITBANG_OFF && (motorConfig()->dev.useBurstDshot == DSHOT_DMAR_ON || nChannelTimerUsed))) && motorConfig()->dev.useDshotTelemetry) {
+        motorConfigMutable()->dev.useDshotTelemetry = false;
+    }
 #endif // USE_DSHOT_TELEMETRY
 #endif // USE_DSHOT
 
@@ -590,17 +602,19 @@ static void validateAndFixConfig(void)
     // This should be done at the end of the validation
     targetValidateConfiguration();
 #endif
+
+    validateAndFixMinSatsGpsConfig();
 }
 
 void validateAndFixGyroConfig(void)
 {
     // Fix gyro filter settings to handle cases where an older configurator was used that
     // allowed higher cutoff limits from previous firmware versions.
-    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass_hz, FILTER_FREQUENCY_MAX);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_lowpass2_hz, FILTER_FREQUENCY_MAX);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_1, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_lpf1_static_hz, LPF_MAX_HZ);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_lpf2_static_hz, LPF_MAX_HZ);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_1, LPF_MAX_HZ);
     adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_1, 0);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_2, FILTER_FREQUENCY_MAX);
+    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_2, LPF_MAX_HZ);
     adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_2, 0);
 
     // Prevent invalid notch cutoff
@@ -612,8 +626,8 @@ void validateAndFixGyroConfig(void)
     }
 #ifdef USE_DYN_LPF
     //Prevent invalid dynamic lowpass filter
-    if (gyroConfig()->dyn_lpf_gyro_min_hz > gyroConfig()->dyn_lpf_gyro_max_hz) {
-        gyroConfigMutable()->dyn_lpf_gyro_min_hz = 0;
+    if (gyroConfig()->gyro_lpf1_dyn_min_hz > gyroConfig()->gyro_lpf1_dyn_max_hz) {
+        gyroConfigMutable()->gyro_lpf1_dyn_min_hz = 0;
     }
 #endif
 
@@ -622,6 +636,16 @@ void validateAndFixGyroConfig(void)
 
         // check for looptime restrictions based on motor protocol. Motor times have safety margin
         float motorUpdateRestriction;
+
+#if defined(STM32F411xE)
+        /* If bidirectional DSHOT is being used on an F411 then force DSHOT300. The motor update restrictions then applied
+         * will automatically consider the loop time and adjust pid_process_denom appropriately
+         */
+        if (motorConfig()->dev.useDshotTelemetry && (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_DSHOT600)) {
+            motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+        }
+#endif
+
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
@@ -670,14 +694,6 @@ void validateAndFixGyroConfig(void)
         }
     }
 
-#ifdef USE_GYRO_DATA_ANALYSE
-    // Disable dynamic filter if gyro loop is less than 2KHz
-    const uint32_t configuredLooptime = (gyro.sampleRateHz > 0) ? (pidConfig()->pid_process_denom * 1e6 / gyro.sampleRateHz) : 0;
-    if (configuredLooptime > DYNAMIC_FILTER_MAX_SUPPORTED_LOOP_TIME) {
-        featureDisableImmediate(FEATURE_DYNAMIC_FILTER);
-    }
-#endif
-
 #ifdef USE_BLACKBOX
 #ifndef USE_FLASHFS
     if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
@@ -708,7 +724,7 @@ void validateAndFixGyroConfig(void)
 
 bool readEEPROM(void)
 {
-    suspendRxPwmPpmSignal();
+    suspendRxSignal();
 
     // Sanity check, read flash
     bool success = loadEEPROM();
@@ -719,7 +735,7 @@ bool readEEPROM(void)
 
     activateConfig();
 
-    resumeRxPwmPpmSignal();
+    resumeRxSignal();
 
     return success;
 }
@@ -728,16 +744,19 @@ void writeUnmodifiedConfigToEEPROM(void)
 {
     validateAndFixConfig();
 
-    suspendRxPwmPpmSignal();
-
+    suspendRxSignal();
+    eepromWriteInProgress = true;
     writeConfigToEEPROM();
-
-    resumeRxPwmPpmSignal();
+    eepromWriteInProgress = false;
+    resumeRxSignal();
     configIsDirty = false;
 }
 
 void writeEEPROM(void)
 {
+#ifdef USE_RX_SPI
+    rxSpiStop(); // some rx spi protocols use hardware timer, which needs to be stopped before writing to eeprom
+#endif
     systemConfigMutable()->configurationState = CONFIGURATION_STATE_CONFIGURED;
 
     writeUnmodifiedConfigToEEPROM();
@@ -773,6 +792,9 @@ void ensureEEPROMStructureIsValid(void)
 
 void saveConfigAndNotify(void)
 {
+    // The write to EEPROM will cause a big delay in the current task, so ignore
+    schedulerIgnoreTaskExecTime();
+
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(1);
@@ -815,6 +837,9 @@ void changePidProfileFromCellCount(uint8_t cellCount)
 
 void changePidProfile(uint8_t pidProfileIndex)
 {
+    // The config switch will cause a big enough delay in the current task to upset the scheduler
+    schedulerIgnoreTaskExecTime();
+
     if (pidProfileIndex < PID_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         loadPidProfile();

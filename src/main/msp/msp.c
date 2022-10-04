@@ -29,6 +29,7 @@
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
+#include "blackbox/blackbox_io.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -74,6 +75,7 @@
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
 #include "fc/core.h"
+#include "fc/dispatch.h"
 #include "fc/rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -103,6 +105,7 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
+#include "io/vtx_msp.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
@@ -116,6 +119,7 @@
 
 #include "pg/beeper.h"
 #include "pg/board.h"
+#include "pg/dyn_notch.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
@@ -135,11 +139,11 @@
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 
+#include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -382,6 +386,48 @@ static void mspRebootFn(serialPort_t *serialPort)
     while (true) ;
 }
 
+#define MSP_DISPATCH_DELAY_US 1000000
+
+void mspReboot(dispatchEntry_t* self)
+{
+    UNUSED(self);
+
+    if (ARMING_FLAG(ARMED)) {
+        return;
+    }
+
+    mspRebootFn(NULL);
+}
+
+dispatchEntry_t mspRebootEntry =
+{
+    mspReboot, 0, NULL, false
+};
+
+void writeReadEeprom(dispatchEntry_t* self)
+{
+    UNUSED(self);
+
+    if (ARMING_FLAG(ARMED)) {
+        return;
+    }
+
+    writeEEPROM();
+    readEEPROM();
+
+#ifdef USE_VTX_TABLE
+    if (vtxTableNeedsInit) {
+        vtxTableNeedsInit = false;
+        vtxTableInit();  // Reinitialize and refresh the in-memory copies
+    }
+#endif
+}
+
+dispatchEntry_t writeReadEepromEntry =
+{
+    writeReadEeprom, 0, NULL, false
+};
+
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
     uint8_t flags = 0;
@@ -521,7 +567,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 #ifdef USE_HUFFMAN
         // compress in 256-byte chunks
         const uint16_t READ_BUFFER_SIZE = 256;
-        uint8_t readBuffer[READ_BUFFER_SIZE];
+        // This may be DMAable, so make it cache aligned
+        __attribute__ ((aligned(32))) uint8_t readBuffer[READ_BUFFER_SIZE];
 
         huffmanState_t state = {
             .bytesWritten = 0,
@@ -1006,9 +1053,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
-static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
+static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
+
+#if !defined(USE_VTX_COMMON) || !defined(USE_VTX_MSP)
+    UNUSED(srcDesc);
+#endif
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
@@ -1159,14 +1210,35 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 
 #ifdef USE_DSHOT_TELEMETRY
             if (motorConfig()->dev.useDshotTelemetry) {
-                rpm = (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount;
+                rpm = erpmToRpm(getDshotTelemetry(i));
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
+
+
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 if (isDshotMotorTelemetryActive(i)) {
                     invalidPct = getDshotTelemetryMotorInvalidPercent(i);
                 }
 #endif
+
+
+                // Provide extended dshot telemetry
+                if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
+                    // Temperature Celsius [0, 1, ..., 255] in degree Celsius, just like Blheli_32 and KISS
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                        escTemperature = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
+                    }
+
+                    // Current -> 0-255A step 1A
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
+                        escCurrent = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
+                    }
+
+                    // Voltage -> 0-63,75V step 0,25V
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
+                    	escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
+                    }
+                }
             }
 #endif
 
@@ -1174,7 +1246,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
                 escSensorData_t *escData = getEscSensorData(i);
                 if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
-                    rpm = calcEscRpm(escData->rpm);
+                    rpm = erpmToRpm(escData->rpm);
                     rpmDataAvailable = true;
                 }
                 escTemperature = escData->temperature;
@@ -1281,7 +1353,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
-        sbufWriteU8(dst, currentControlRateProfile->dynThrPID);
+        sbufWriteU8(dst, currentControlRateProfile->tpa_rate);
         sbufWriteU8(dst, currentControlRateProfile->thrMid8);
         sbufWriteU8(dst, currentControlRateProfile->thrExpo8);
         sbufWriteU16(dst, currentControlRateProfile->tpa_breakpoint);
@@ -1379,9 +1451,10 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #endif
         break;
 
-#if defined(USE_ESC_SENSOR)
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
+    // Used by DJI FPV
     case MSP_ESC_SENSOR_DATA:
+#if defined(USE_ESC_SENSOR)
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
@@ -1389,12 +1462,23 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
                 sbufWriteU8(dst, escData->temperature);
                 sbufWriteU16(dst, escData->rpm);
             }
-        } else {
+        } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+        if (motorConfig()->dev.useDshotTelemetry) {
+            sbufWriteU8(dst, getMotorCount());
+            for (int i = 0; i < getMotorCount(); i++) {
+                sbufWriteU8(dst, dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]);
+                sbufWriteU16(dst, getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount);
+            }
+        }
+        else
+#endif
+        {
             unsupportedCommand = true;
         }
 
         break;
-#endif
 
 #ifdef USE_GPS
     case MSP_GPS_CONFIG:
@@ -1405,6 +1489,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         // Added in API version 1.43
         sbufWriteU8(dst, gpsConfig()->gps_set_home_point_once);
         sbufWriteU8(dst, gpsConfig()->gps_ublox_use_galileo);
+        // Added in API version 1.45
+        sbufWriteU8(dst, gpsConfig()->gpsRequiredSats);
+        sbufWriteU8(dst, gpsConfig()->gpsMinimumSats);
         break;
 
     case MSP_RAW_GPS:
@@ -1421,7 +1508,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 
     case MSP_COMP_GPS:
         sbufWriteU16(dst, GPS_distanceToHome);
-        sbufWriteU16(dst, GPS_directionToHome);
+        sbufWriteU16(dst, GPS_directionToHome / 10); // resolution increased in Betaflight 4.4 by factor of 10, this maintains backwards compatibility for DJI OSD
         sbufWriteU8(dst, GPS_update & 1);
         break;
 
@@ -1445,7 +1532,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->throttleMax);
         sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
-        sbufWriteU8(dst,  gpsRescueConfig()->minSats);
+        sbufWriteU8(dst, 0); // not required in API 1.44, gpsRescueConfig()->minSats
+
         // Added in API version 1.43
         sbufWriteU16(dst, gpsRescueConfig()->ascendRate);
         sbufWriteU16(dst, gpsRescueConfig()->descendRate);
@@ -1659,6 +1747,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, blackboxGetRateDenom());
         sbufWriteU16(dst, blackboxGetPRatio());
         sbufWriteU8(dst, blackboxConfig()->sample_rate);
+        // Added in MSP API 1.45
+        sbufWriteU32(dst, blackboxConfig()->fields_disabled_mask);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1666,6 +1756,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, 0);
         sbufWriteU16(dst, 0);
         sbufWriteU8(dst, 0);
+        // Added in MSP API 1.45
+        sbufWriteU32(dst, 0);
 #endif
         break;
 
@@ -1746,8 +1838,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 
         break;
     case MSP_FILTER_CONFIG :
-        sbufWriteU8(dst, gyroConfig()->gyro_lowpass_hz);
-        sbufWriteU16(dst, currentPidProfile->dterm_lowpass_hz);
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf1_static_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf1_static_hz);
         sbufWriteU16(dst, currentPidProfile->yaw_lowpass_hz);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1);
@@ -1755,21 +1847,21 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->dterm_notch_cutoff);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
-        sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
+        sbufWriteU8(dst, currentPidProfile->dterm_lpf1_type);
         sbufWriteU8(dst, gyroConfig()->gyro_hardware_lpf);
         sbufWriteU8(dst, 0); // DEPRECATED: gyro_32khz_hardware_lpf
-        sbufWriteU16(dst, gyroConfig()->gyro_lowpass_hz);
-        sbufWriteU16(dst, gyroConfig()->gyro_lowpass2_hz);
-        sbufWriteU8(dst, gyroConfig()->gyro_lowpass_type);
-        sbufWriteU8(dst, gyroConfig()->gyro_lowpass2_type);
-        sbufWriteU16(dst, currentPidProfile->dterm_lowpass2_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf1_static_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf2_static_hz);
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf1_type);
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf2_type);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf2_static_hz);
         // Added in MSP API 1.41
-        sbufWriteU8(dst, currentPidProfile->dterm_filter2_type);
+        sbufWriteU8(dst, currentPidProfile->dterm_lpf2_type);
 #if defined(USE_DYN_LPF)
-        sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_min_hz);
-        sbufWriteU16(dst, gyroConfig()->dyn_lpf_gyro_max_hz);
-        sbufWriteU16(dst, currentPidProfile->dyn_lpf_dterm_min_hz);
-        sbufWriteU16(dst, currentPidProfile->dyn_lpf_dterm_max_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf1_dyn_min_hz);
+        sbufWriteU16(dst, gyroConfig()->gyro_lpf1_dyn_max_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf1_dyn_min_hz);
+        sbufWriteU16(dst, currentPidProfile->dterm_lpf1_dyn_max_hz);
 #else
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1777,11 +1869,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
 #endif
         // Added in MSP API 1.42
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
         sbufWriteU8(dst, 0);  // DEPRECATED 1.43: dyn_notch_range
         sbufWriteU8(dst, 0);  // DEPRECATED 1.44: dyn_notch_width_percent
-        sbufWriteU16(dst, 0); // DEPRECATED 1.44: dyn_notch_q
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_min_hz);
+        sbufWriteU16(dst, dynNotchConfig()->dyn_notch_q);
+        sbufWriteU16(dst, dynNotchConfig()->dyn_notch_min_hz);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -1789,30 +1881,28 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0);
 #endif
 #if defined(USE_RPM_FILTER)
-        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_harmonics);
-        sbufWriteU8(dst, rpmFilterConfig()->gyro_rpm_notch_min);
+        sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_harmonics);
+        sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_min_hz);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
         // Added in MSP API 1.43
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_max_hz);
+        sbufWriteU16(dst, dynNotchConfig()->dyn_notch_max_hz);
 #else
         sbufWriteU16(dst, 0);
 #endif
 #if defined(USE_DYN_LPF)
         // Added in MSP API 1.44
-        sbufWriteU8(dst, currentPidProfile->dyn_lpf_curve_expo);
+        sbufWriteU8(dst, currentPidProfile->dterm_lpf1_dyn_expo);
 #else
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
-        sbufWriteU8(dst, gyroConfig()->dyn_notch_count);
-        sbufWriteU16(dst, gyroConfig()->dyn_notch_bandwidth_hz);
+#if defined(USE_DYN_NOTCH_FILTER)
+        sbufWriteU8(dst, dynNotchConfig()->dyn_notch_count);
 #else
         sbufWriteU8(dst, 0);
-        sbufWriteU16(dst, 0);
 #endif
 
         break;
@@ -1822,7 +1912,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, 0); // was pidProfile.yaw_p_limit
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // was vbatPidCompensation
-        sbufWriteU8(dst, currentPidProfile->feedforwardTransition);
+#if defined(USE_FEEDFORWARD)
+        sbufWriteU8(dst, currentPidProfile->feedforward_transition);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, 0); // was low byte of currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
@@ -1831,8 +1925,8 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
         sbufWriteU8(dst, 0); // was pidProfile.levelSensitivity
-        sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
-        sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
+        sbufWriteU16(dst, 0); // was currentPidProfile->itermThrottleThreshold
+        sbufWriteU16(dst, currentPidProfile->anti_gravity_gain);
         sbufWriteU16(dst, 0); // was currentPidProfile->dtermSetpointWeight
         sbufWriteU8(dst, currentPidProfile->iterm_rotation);
         sbufWriteU8(dst, 0); // was currentPidProfile->smart_feedforward
@@ -1861,8 +1955,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->pid[PID_ROLL].F);
         sbufWriteU16(dst, currentPidProfile->pid[PID_PITCH].F);
         sbufWriteU16(dst, currentPidProfile->pid[PID_YAW].F);
-
-        sbufWriteU8(dst, currentPidProfile->antiGravityMode);
+        sbufWriteU8(dst, 0); // was currentPidProfile->antiGravityMode
 #if defined(USE_D_MIN)
         sbufWriteU8(dst, currentPidProfile->d_min[PID_ROLL]);
         sbufWriteU8(dst, currentPidProfile->d_min[PID_PITCH]);
@@ -1901,11 +1994,16 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #if defined(USE_FEEDFORWARD)
         sbufWriteU8(dst, currentPidProfile->feedforward_averaging);
         sbufWriteU8(dst, currentPidProfile->feedforward_smooth_factor);
+        sbufWriteU8(dst, currentPidProfile->feedforward_boost);
+        sbufWriteU8(dst, currentPidProfile->feedforward_max_rate_limit);
+        sbufWriteU8(dst, currentPidProfile->feedforward_jitter_factor);
 #else
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, currentPidProfile->feedforward_boost);
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
         sbufWriteU8(dst, currentPidProfile->vbat_sag_compensation);
 #else
@@ -1969,7 +2067,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, 0);
             sbufWriteU8(dst, 0);
 #endif
-
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -2010,6 +2110,133 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
     }
     return !unsupportedCommand;
 }
+
+
+#ifdef USE_SIMPLIFIED_TUNING
+// Reads simplified PID tuning values from MSP buffer
+static void readSimplifiedPids(pidProfile_t* pidProfile, sbuf_t *src)
+{
+    pidProfile->simplified_pids_mode = sbufReadU8(src);
+    pidProfile->simplified_master_multiplier = sbufReadU8(src);
+    pidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
+    pidProfile->simplified_i_gain = sbufReadU8(src);
+    pidProfile->simplified_d_gain = sbufReadU8(src);
+    pidProfile->simplified_pi_gain = sbufReadU8(src);
+#ifdef USE_D_MIN
+    pidProfile->simplified_dmin_ratio = sbufReadU8(src);
+#else
+    sbufReadU8(src);
+#endif
+    pidProfile->simplified_feedforward_gain = sbufReadU8(src);
+    pidProfile->simplified_pitch_pi_gain = sbufReadU8(src);
+    sbufReadU32(src); // reserved for future use
+    sbufReadU32(src); // reserved for future use
+}
+
+// Writes simplified PID tuning values to MSP buffer
+static void writeSimplifiedPids(const pidProfile_t *pidProfile, sbuf_t *dst)
+{
+    sbufWriteU8(dst, pidProfile->simplified_pids_mode);
+    sbufWriteU8(dst, pidProfile->simplified_master_multiplier);
+    sbufWriteU8(dst, pidProfile->simplified_roll_pitch_ratio);
+    sbufWriteU8(dst, pidProfile->simplified_i_gain);
+    sbufWriteU8(dst, pidProfile->simplified_d_gain);
+    sbufWriteU8(dst, pidProfile->simplified_pi_gain);
+#ifdef USE_D_MIN
+    sbufWriteU8(dst, pidProfile->simplified_dmin_ratio);
+#else
+    sbufWriteU8(dst, 0);
+#endif
+    sbufWriteU8(dst, pidProfile->simplified_feedforward_gain);
+    sbufWriteU8(dst, pidProfile->simplified_pitch_pi_gain);
+    sbufWriteU32(dst, 0); // reserved for future use
+    sbufWriteU32(dst, 0); // reserved for future use
+}
+
+// Reads simplified Dterm Filter values from MSP buffer
+static void readSimplifiedDtermFilters(pidProfile_t* pidProfile, sbuf_t *src)
+{
+    pidProfile->simplified_dterm_filter = sbufReadU8(src);
+    pidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
+    pidProfile->dterm_lpf1_static_hz = sbufReadU16(src);
+    pidProfile->dterm_lpf2_static_hz = sbufReadU16(src);
+#if defined(USE_DYN_LPF)
+    pidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16(src);
+    pidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16(src);
+#else
+    sbufReadU16(src);
+    sbufReadU16(src);
+#endif
+    sbufReadU32(src); // reserved for future use
+    sbufReadU32(src); // reserved for future use
+}
+
+// Writes simplified Dterm Filter values into MSP buffer
+static void writeSimplifiedDtermFilters(const pidProfile_t* pidProfile, sbuf_t *dst)
+{
+    sbufWriteU8(dst, pidProfile->simplified_dterm_filter);
+    sbufWriteU8(dst, pidProfile->simplified_dterm_filter_multiplier);
+    sbufWriteU16(dst, pidProfile->dterm_lpf1_static_hz);
+    sbufWriteU16(dst, pidProfile->dterm_lpf2_static_hz);
+#if defined(USE_DYN_LPF)
+    sbufWriteU16(dst, pidProfile->dterm_lpf1_dyn_min_hz);
+    sbufWriteU16(dst, pidProfile->dterm_lpf1_dyn_max_hz);
+#else
+    sbufWriteU16(dst, 0);
+    sbufWriteU16(dst, 0);
+#endif
+    sbufWriteU32(dst, 0); // reserved for future use
+    sbufWriteU32(dst, 0); // reserved for future use
+}
+
+// Writes simplified Gyro Filter values from MSP buffer
+static void readSimplifiedGyroFilters(gyroConfig_t *gyroConfig, sbuf_t *src)
+{
+    gyroConfig->simplified_gyro_filter = sbufReadU8(src);
+    gyroConfig->simplified_gyro_filter_multiplier = sbufReadU8(src);
+    gyroConfig->gyro_lpf1_static_hz = sbufReadU16(src);
+    gyroConfig->gyro_lpf2_static_hz = sbufReadU16(src);
+#if defined(USE_DYN_LPF)
+    gyroConfig->gyro_lpf1_dyn_min_hz = sbufReadU16(src);
+    gyroConfig->gyro_lpf1_dyn_max_hz = sbufReadU16(src);
+#else
+    sbufReadU16(src);
+    sbufReadU16(src);
+#endif
+    sbufReadU32(src); // reserved for future use
+    sbufReadU32(src); // reserved for future use
+}
+
+// Writes simplified Gyro Filter values into MSP buffer
+static void writeSimplifiedGyroFilters(const gyroConfig_t *gyroConfig, sbuf_t *dst)
+{
+    sbufWriteU8(dst, gyroConfig->simplified_gyro_filter);
+    sbufWriteU8(dst, gyroConfig->simplified_gyro_filter_multiplier);
+    sbufWriteU16(dst, gyroConfig->gyro_lpf1_static_hz);
+    sbufWriteU16(dst, gyroConfig->gyro_lpf2_static_hz);
+#if defined(USE_DYN_LPF)
+    sbufWriteU16(dst, gyroConfig->gyro_lpf1_dyn_min_hz);
+    sbufWriteU16(dst, gyroConfig->gyro_lpf1_dyn_max_hz);
+#else
+    sbufWriteU16(dst, 0);
+    sbufWriteU16(dst, 0);
+#endif
+    sbufWriteU32(dst, 0); // reserved for future use
+    sbufWriteU32(dst, 0); // reserved for future use
+}
+
+// writes results of simplified PID tuning values to MSP buffer
+static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
+{
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        sbufWriteU8(dst, pidProfile->pid[i].P);
+        sbufWriteU8(dst, pidProfile->pid[i].I);
+        sbufWriteU8(dst, pidProfile->pid[i].D);
+        sbufWriteU8(dst, pidProfile->d_min[i]);
+        sbufWriteU16(dst, pidProfile->pid[i].F);
+    }
+}
+#endif // USE_SIMPLIFIED_TUNING
 
 static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
@@ -2056,6 +2283,11 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
 #endif
 
+#if defined(USE_MSP_OVER_TELEMETRY)
+        if (featureIsEnabled(FEATURE_RX_SPI) && srcDesc == getMspTelemetryDescriptor()) {
+            dispatchAdd(&mspRebootEntry, MSP_DISPATCH_DELAY_US);
+        } else
+#endif
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
         }
@@ -2115,6 +2347,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 
@@ -2131,6 +2366,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif // USE_VTX_TABLE
@@ -2139,20 +2377,82 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
     // Added in MSP API 1.44
     case MSP_SIMPLIFIED_TUNING:
         {
-            sbufWriteU8(dst, currentPidProfile->simplified_pids_mode);
-            sbufWriteU8(dst, currentPidProfile->simplified_master_multiplier);
-            sbufWriteU8(dst, currentPidProfile->simplified_roll_pitch_ratio);
-            sbufWriteU8(dst, currentPidProfile->simplified_i_gain);
-            sbufWriteU8(dst, currentPidProfile->simplified_pd_ratio);
-            sbufWriteU8(dst, currentPidProfile->simplified_pd_gain);
-            sbufWriteU8(dst, currentPidProfile->simplified_dmin_ratio);
-            sbufWriteU8(dst, currentPidProfile->simplified_feedforward_gain);
+            writeSimplifiedPids(currentPidProfile, dst);
+            writeSimplifiedDtermFilters(currentPidProfile, dst);
+            writeSimplifiedGyroFilters(gyroConfig(), dst);
+        }
+        break;
 
-            sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter);
-            sbufWriteU8(dst, currentPidProfile->simplified_dterm_filter_multiplier);
+    case MSP_CALCULATE_SIMPLIFIED_PID:
+        {
+            pidProfile_t tempPidProfile = *currentPidProfile;
+            readSimplifiedPids(&tempPidProfile, src);
+            applySimplifiedTuningPids(&tempPidProfile);
+            writePidfs(&tempPidProfile, dst);
+        }
+        break;
 
-            sbufWriteU8(dst, gyroConfig()->simplified_gyro_filter);
-            sbufWriteU8(dst, gyroConfig()->simplified_gyro_filter_multiplier);
+    case MSP_CALCULATE_SIMPLIFIED_DTERM:
+        {
+            pidProfile_t tempPidProfile = *currentPidProfile;
+            readSimplifiedDtermFilters(&tempPidProfile, src);
+            applySimplifiedTuningDtermFilters(&tempPidProfile);
+            writeSimplifiedDtermFilters(&tempPidProfile, dst);
+        }
+        break;
+
+    case MSP_CALCULATE_SIMPLIFIED_GYRO:
+        {
+            gyroConfig_t tempGyroConfig = *gyroConfig();
+            readSimplifiedGyroFilters(&tempGyroConfig, src);
+            applySimplifiedTuningGyroFilters(&tempGyroConfig);
+            writeSimplifiedGyroFilters(&tempGyroConfig, dst);
+        }
+        break;
+
+    case MSP_VALIDATE_SIMPLIFIED_TUNING:
+        {
+            pidProfile_t tempPidProfile = *currentPidProfile;
+            applySimplifiedTuningPids(&tempPidProfile);
+            bool result = true;
+
+            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+                result = result &&
+                    tempPidProfile.pid[i].P == currentPidProfile->pid[i].P &&
+                    tempPidProfile.pid[i].I == currentPidProfile->pid[i].I &&
+                    tempPidProfile.pid[i].D == currentPidProfile->pid[i].D &&
+                    tempPidProfile.d_min[i] == currentPidProfile->d_min[i] &&
+                    tempPidProfile.pid[i].F == currentPidProfile->pid[i].F;
+            }
+
+            sbufWriteU8(dst, result);
+
+            gyroConfig_t tempGyroConfig = *gyroConfig();
+            applySimplifiedTuningGyroFilters(&tempGyroConfig);
+            result =
+                tempGyroConfig.gyro_lpf1_static_hz == gyroConfig()->gyro_lpf1_static_hz &&
+                tempGyroConfig.gyro_lpf2_static_hz == gyroConfig()->gyro_lpf2_static_hz;
+
+#if defined(USE_DYN_LPF)
+            result = result &&
+                tempGyroConfig.gyro_lpf1_dyn_min_hz == gyroConfig()->gyro_lpf1_dyn_min_hz &&
+                tempGyroConfig.gyro_lpf1_dyn_max_hz == gyroConfig()->gyro_lpf1_dyn_max_hz;
+#endif
+
+            sbufWriteU8(dst, result);
+
+            applySimplifiedTuningDtermFilters(&tempPidProfile);
+            result =
+                tempPidProfile.dterm_lpf1_static_hz == currentPidProfile->dterm_lpf1_static_hz &&
+                tempPidProfile.dterm_lpf2_static_hz == currentPidProfile->dterm_lpf2_static_hz;
+
+#if defined(USE_DYN_LPF)
+            result = result &&
+                tempPidProfile.dterm_lpf1_dyn_min_hz == currentPidProfile->dterm_lpf1_dyn_min_hz &&
+                tempPidProfile.dterm_lpf1_dyn_max_hz == currentPidProfile->dterm_lpf1_dyn_max_hz;
+#endif
+
+            sbufWriteU8(dst, result);
         }
         break;
 #endif
@@ -2367,7 +2667,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             }
 
             value = sbufReadU8(src);
-            currentControlRateProfile->dynThrPID = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
+            currentControlRateProfile->tpa_rate = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
             currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
@@ -2439,6 +2739,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gpsConfigMutable()->gps_set_home_point_once = sbufReadU8(src);
             gpsConfigMutable()->gps_ublox_use_galileo = sbufReadU8(src);
         }
+        if (sbufBytesRemaining(src) >= 2) {
+            // Added in API version 1.45
+            gpsConfigMutable()->gpsRequiredSats = sbufReadU8(src);
+            gpsConfigMutable()->gpsMinimumSats = sbufReadU8(src);
+        }
+
         break;
 
 #ifdef USE_GPS_RESCUE
@@ -2451,7 +2757,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         gpsRescueConfigMutable()->throttleMax = sbufReadU16(src);
         gpsRescueConfigMutable()->throttleHover = sbufReadU16(src);
         gpsRescueConfigMutable()->sanityChecks = sbufReadU8(src);
-        gpsRescueConfigMutable()->minSats = sbufReadU8(src);
+        sbufReadU8(src);  // not used since 1.43, was gps rescue minSats
         if (sbufBytesRemaining(src) >= 6) {
             // Added in API version 1.43
             gpsRescueConfigMutable()->ascendRate = sbufReadU16(src);
@@ -2611,8 +2917,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         break;
     case MSP_SET_FILTER_CONFIG:
-        gyroConfigMutable()->gyro_lowpass_hz = sbufReadU8(src);
-        currentPidProfile->dterm_lowpass_hz = sbufReadU16(src);
+        gyroConfigMutable()->gyro_lpf1_static_hz = sbufReadU8(src);
+        currentPidProfile->dterm_lpf1_static_hz = sbufReadU16(src);
         currentPidProfile->yaw_lowpass_hz = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
@@ -2625,25 +2931,25 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 1) {
-            currentPidProfile->dterm_filter_type = sbufReadU8(src);
+            currentPidProfile->dterm_lpf1_type = sbufReadU8(src);
         }
         if (sbufBytesRemaining(src) >= 10) {
             gyroConfigMutable()->gyro_hardware_lpf = sbufReadU8(src);
             sbufReadU8(src); // DEPRECATED: gyro_32khz_hardware_lpf
-            gyroConfigMutable()->gyro_lowpass_hz = sbufReadU16(src);
-            gyroConfigMutable()->gyro_lowpass2_hz = sbufReadU16(src);
-            gyroConfigMutable()->gyro_lowpass_type = sbufReadU8(src);
-            gyroConfigMutable()->gyro_lowpass2_type = sbufReadU8(src);
-            currentPidProfile->dterm_lowpass2_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_static_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf2_static_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_type = sbufReadU8(src);
+            gyroConfigMutable()->gyro_lpf2_type = sbufReadU8(src);
+            currentPidProfile->dterm_lpf2_static_hz = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 9) {
             // Added in MSP API 1.41
-            currentPidProfile->dterm_filter2_type = sbufReadU8(src);
+            currentPidProfile->dterm_lpf2_type = sbufReadU8(src);
 #if defined(USE_DYN_LPF)
-            gyroConfigMutable()->dyn_lpf_gyro_min_hz = sbufReadU16(src);
-            gyroConfigMutable()->dyn_lpf_gyro_max_hz = sbufReadU16(src);
-            currentPidProfile->dyn_lpf_dterm_min_hz = sbufReadU16(src);
-            currentPidProfile->dyn_lpf_dterm_max_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_dyn_min_hz = sbufReadU16(src);
+            gyroConfigMutable()->gyro_lpf1_dyn_max_hz = sbufReadU16(src);
+            currentPidProfile->dterm_lpf1_dyn_min_hz = sbufReadU16(src);
+            currentPidProfile->dterm_lpf1_dyn_max_hz = sbufReadU16(src);
 #else
             sbufReadU16(src);
             sbufReadU16(src);
@@ -2653,11 +2959,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         if (sbufBytesRemaining(src) >= 8) {
             // Added in MSP API 1.42
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
             sbufReadU8(src); // DEPRECATED 1.43: dyn_notch_range
             sbufReadU8(src); // DEPRECATED 1.44: dyn_notch_width_percent
-            sbufReadU16(src); // DEPRECATED 1.44: dyn_notch_q
-            gyroConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
+            dynNotchConfigMutable()->dyn_notch_q = sbufReadU16(src);
+            dynNotchConfigMutable()->dyn_notch_min_hz = sbufReadU16(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
@@ -2665,34 +2971,32 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU16(src);
 #endif
 #if defined(USE_RPM_FILTER)
-            rpmFilterConfigMutable()->gyro_rpm_notch_harmonics = sbufReadU8(src);
-            rpmFilterConfigMutable()->gyro_rpm_notch_min = sbufReadU8(src);
+            rpmFilterConfigMutable()->rpm_filter_harmonics = sbufReadU8(src);
+            rpmFilterConfigMutable()->rpm_filter_min_hz = sbufReadU8(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
         }
         if (sbufBytesRemaining(src) >= 2) {
-#if defined(USE_GYRO_DATA_ANALYSE)
+#if defined(USE_DYN_NOTCH_FILTER)
             // Added in MSP API 1.43
-            gyroConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
+            dynNotchConfigMutable()->dyn_notch_max_hz = sbufReadU16(src);
 #else
             sbufReadU16(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 4) {
+        if (sbufBytesRemaining(src) >= 2) {
             // Added in MSP API 1.44
 #if defined(USE_DYN_LPF)
-            currentPidProfile->dyn_lpf_curve_expo = sbufReadU8(src);
+            currentPidProfile->dterm_lpf1_dyn_expo = sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif
-#if defined(USE_GYRO_DATA_ANALYSE)
-            gyroConfigMutable()->dyn_notch_count = sbufReadU8(src);
-            gyroConfigMutable()->dyn_notch_bandwidth_hz = sbufReadU16(src);
+#if defined(USE_DYN_NOTCH_FILTER)
+            dynNotchConfigMutable()->dyn_notch_count = sbufReadU8(src);
 #else
             sbufReadU8(src);
-            sbufReadU16(src);
 #endif
         }
 
@@ -2709,7 +3013,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         sbufReadU16(src); // was pidProfile.yaw_p_limit
         sbufReadU8(src); // reserved
         sbufReadU8(src); // was vbatPidCompensation
-        currentPidProfile->feedforwardTransition = sbufReadU8(src);
+#if defined(USE_FEEDFORWARD)
+        currentPidProfile->feedforward_transition = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         sbufReadU8(src); // was low byte of currentPidProfile->dtermSetpointWeight
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
@@ -2721,8 +3029,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
-            currentPidProfile->itermThrottleThreshold = sbufReadU16(src);
-            currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
+            sbufReadU16(src); // was currentPidProfile->itermAcceleratorGain
+            currentPidProfile->anti_gravity_gain = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 2) {
             sbufReadU16(src); // was currentPidProfile->dtermSetpointWeight
@@ -2757,8 +3065,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             currentPidProfile->pid[PID_ROLL].F = sbufReadU16(src);
             currentPidProfile->pid[PID_PITCH].F = sbufReadU16(src);
             currentPidProfile->pid[PID_YAW].F = sbufReadU16(src);
-
-            currentPidProfile->antiGravityMode = sbufReadU8(src);
+            sbufReadU8(src); // was currentPidProfile->antiGravityMode
         }
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.41
@@ -2801,16 +3108,22 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 5) {
+        if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.44
 #if defined(USE_FEEDFORWARD)
             currentPidProfile->feedforward_averaging = sbufReadU8(src);
             currentPidProfile->feedforward_smooth_factor = sbufReadU8(src);
+            currentPidProfile->feedforward_boost = sbufReadU8(src);
+            currentPidProfile->feedforward_max_rate_limit = sbufReadU8(src);
+            currentPidProfile->feedforward_jitter_factor = sbufReadU8(src);
 #else
             sbufReadU8(src);
             sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
 #endif
-            currentPidProfile->feedforward_boost = sbufReadU8(src);
+
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
             currentPidProfile->vbat_sag_compensation = sbufReadU8(src);
 #else
@@ -2823,6 +3136,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         }
         pidInitConfig(currentPidProfile);
+        initEscEndpoints();
+        mixerInitProfile();
 
         break;
     case MSP_SET_SENSOR_CONFIG:
@@ -2863,15 +3178,18 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             return MSP_RESULT_ERROR;
         }
 
-        writeEEPROM();
-        readEEPROM();
+        // This is going to take some time and won't be done where real-time performance is needed so
+        // ignore how long it takes to avoid confusing the scheduler
+        schedulerIgnoreTaskStateTime();
 
-#ifdef USE_VTX_TABLE
-        if (vtxTableNeedsInit) {
-            vtxTableNeedsInit = false;
-            vtxTableInit();  // Reinitialize and refresh the in-memory copies
-        }
+#if defined(USE_MSP_OVER_TELEMETRY)
+        if (featureIsEnabled(FEATURE_RX_SPI) && srcDesc == getMspTelemetryDescriptor()) {
+            dispatchAdd(&writeReadEepromEntry, MSP_DISPATCH_DELAY_US);
+        } else
 #endif
+        {
+            writeReadEeprom(NULL);
+        }
 
         break;
 
@@ -2897,6 +3215,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 // sample_rate not specified in MSP, so calculate it from old p_ratio
                 blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
+            }
+
+            // Added in MSP API 1.45
+            if (sbufBytesRemaining(src) >= 4) {
+                blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
             }
         }
         break;
@@ -2993,6 +3316,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 sbufReadU8(src);
 #endif
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -3040,6 +3366,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 
@@ -3064,6 +3393,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -3114,23 +3446,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_SIMPLIFIED_TUNING
     // Added in MSP API 1.44
     case MSP_SET_SIMPLIFIED_TUNING:
-        currentPidProfile->simplified_pids_mode = sbufReadU8(src);
-        currentPidProfile->simplified_master_multiplier = sbufReadU8(src);
-        currentPidProfile->simplified_roll_pitch_ratio = sbufReadU8(src);
-        currentPidProfile->simplified_i_gain = sbufReadU8(src);
-        currentPidProfile->simplified_pd_ratio = sbufReadU8(src);
-        currentPidProfile->simplified_pd_gain = sbufReadU8(src);
-        currentPidProfile->simplified_dmin_ratio = sbufReadU8(src);
-        currentPidProfile->simplified_feedforward_gain = sbufReadU8(src);
-
-        currentPidProfile->simplified_dterm_filter = sbufReadU8(src);
-        currentPidProfile->simplified_dterm_filter_multiplier = sbufReadU8(src);
-
-        gyroConfigMutable()->simplified_gyro_filter = sbufReadU8(src);
-        gyroConfigMutable()->simplified_gyro_filter_multiplier = sbufReadU8(src);
-
-        applySimplifiedTuning(currentPidProfile);
-
+        {
+            readSimplifiedPids(currentPidProfile, src);
+            readSimplifiedDtermFilters(currentPidProfile, src);
+            readSimplifiedGyroFilters(gyroConfigMutable(), src);
+            applySimplifiedTuning(currentPidProfile, gyroConfigMutable());
+        }
         break;
 #endif
 
@@ -3180,7 +3501,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
-        flashfsEraseCompletely();
+        blackboxEraseAll();
 
         break;
 #endif
@@ -3480,6 +3801,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadData(src, boardName, MIN(length, MAX_BOARD_NAME_LENGTH));
             if (length > MAX_BOARD_NAME_LENGTH) {
                 sbufAdvance(src, length - MAX_BOARD_NAME_LENGTH);
+                length = MAX_BOARD_NAME_LENGTH;
             }
             boardName[length] = '\0';
             length = sbufReadU8(src);
@@ -3487,6 +3809,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadData(src, manufacturerId, MIN(length, MAX_MANUFACTURER_ID_LENGTH));
             if (length > MAX_MANUFACTURER_ID_LENGTH) {
                 sbufAdvance(src, length - MAX_MANUFACTURER_ID_LENGTH);
+                length = MAX_MANUFACTURER_ID_LENGTH;
             }
             manufacturerId[length] = '\0';
 
@@ -3788,7 +4111,7 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
 
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
-    } else if (mspProcessOutCommand(cmdMSP, dst)) {
+    } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
     } else if ((ret = mspFcProcessOutCommandWithArg(srcDesc, cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;

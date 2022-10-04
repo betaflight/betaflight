@@ -38,6 +38,7 @@
 #include "drivers/display.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"
+#include "drivers/dshot.h"
 
 #include "fc/core.h"
 #include "fc/rc.h"
@@ -62,6 +63,8 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+
+const char CRASH_FLIP_WARNING[] = "> CRASH FLIP <";
 
 void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 {
@@ -127,15 +130,21 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_FAIL_SAFE) && failsafeIsActive()) {
         tfp_sprintf(warningText, "FAIL SAFE");
         *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
     // Warn when in flip over after crash mode
-    if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && isFlipOverAfterCrashActive()) {
-        tfp_sprintf(warningText, "CRASH FLIP");
-        *displayAttr = DISPLAYPORT_ATTR_INFO;
-        return;
+    if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        if (isFlipOverAfterCrashActive()) { // if was armed in crash flip mode
+            tfp_sprintf(warningText, CRASH_FLIP_WARNING);
+            *displayAttr = DISPLAYPORT_ATTR_INFO;
+            return;
+        } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crash flip mode is activated
+            tfp_sprintf(warningText, "CRASH FLIP SWITCH");
+            *displayAttr = DISPLAYPORT_ATTR_INFO;
+            return;
+        }
     }
 
 #ifdef USE_LAUNCH_CONTROL
@@ -153,7 +162,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
         // Blink the message if the throttle is within 10% of the launch setting
         if ( calculateThrottlePercent() >= MAX(currentPidProfile->launchControlThrottlePercent - 10, 0)) {
-            *blinking = true;;
+            *blinking = true;
         }
 
         *displayAttr = DISPLAYPORT_ATTR_INFO;
@@ -165,7 +174,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_RSSI) && (getRssiPercent() < osdConfig()->rssi_alarm)) {
         tfp_sprintf(warningText, "RSSI LOW");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #ifdef USE_RX_RSSI_DBM
@@ -173,7 +182,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_RSSI_DBM) && (getRssiDbm() < osdConfig()->rssi_dbm_alarm)) {
         tfp_sprintf(warningText, "RSSI DBM");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_RX_RSSI_DBM
@@ -183,7 +192,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
         tfp_sprintf(warningText, "LINK QUALITY");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_RX_LINK_QUALITY_INFO
@@ -191,7 +200,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
         tfp_sprintf(warningText, " LAND NOW");
         *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -203,7 +212,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
        !gpsRescueIsAvailable()) {
         tfp_sprintf(warningText, "RESCUE N/A");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -216,7 +225,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
             tfp_sprintf(warningText, "RESCUE OFF");
             *displayAttr = DISPLAYPORT_ATTR_WARNING;
-            *blinking = true;;
+            *blinking = true;
             return;
         }
     }
@@ -227,7 +236,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         tfp_sprintf(warningText, "HEADFREE");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -236,7 +245,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
         tfp_sprintf(warningText, "CORE %c: %3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_ADC_INTERNAL
@@ -264,7 +273,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
             const char motorNumber = '1' + i;
             // if everything is OK just display motor number else R, T or C
             char warnFlag = motorNumber;
-            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && calcEscRpm(escData->rpm) <= osdConfig()->esc_rpm_alarm) {
+            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF && erpmToRpm(escData->rpm) <= (uint32_t)osdConfig()->esc_rpm_alarm) {
                 warnFlag = 'R';
             }
             if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && escData->temperature >= osdConfig()->esc_temp_alarm) {
@@ -288,16 +297,74 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (escWarningCount > 0) {
             tfp_sprintf(warningText, "%s", escWarningMsg);
             *displayAttr = DISPLAYPORT_ATTR_WARNING;
-            *blinking = true;;
+            *blinking = true;
             return;
         }
     }
 #endif // USE_ESC_SENSOR
 
+#if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
+    // Show esc error
+    if (osdWarnGetState(OSD_WARNING_ESC_FAIL)) {
+        uint32_t dshotEscErrorLengthMotorBegin;
+        uint32_t dshotEscErrorLength = 0;
+
+        // Write 'ESC'
+        warningText[dshotEscErrorLength++] = 'E';
+        warningText[dshotEscErrorLength++] = 'S';
+        warningText[dshotEscErrorLength++] = 'C';
+
+        for (uint8_t k = 0; k < getMotorCount(); k++) {
+            // Skip if no extended telemetry at all
+            if ((dshotTelemetryState.motorState[k].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) == 0) {
+                continue;
+            }
+
+            // Remember text index before writing warnings
+            dshotEscErrorLengthMotorBegin = dshotEscErrorLength;
+
+            // Write ESC nr
+            warningText[dshotEscErrorLength++] = ' ';
+            warningText[dshotEscErrorLength++] = '0' + k + 1;
+
+            // Add esc warnings
+            if (ARMING_FLAG(ARMED) && osdConfig()->esc_rpm_alarm != ESC_RPM_ALARM_OFF
+                    && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_eRPM)) != 0
+                    && (dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM] * 100 * 2 / motorConfig()->motorPoleCount) <= osdConfig()->esc_rpm_alarm) {
+                warningText[dshotEscErrorLength++] = 'R';
+            }
+            if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF
+                    && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0
+                    && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm) {
+                warningText[dshotEscErrorLength++] = 'T';
+            }
+            if (ARMING_FLAG(ARMED) && osdConfig()->esc_current_alarm != ESC_CURRENT_ALARM_OFF
+                    && (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0
+                    && dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] >= osdConfig()->esc_current_alarm) {
+                warningText[dshotEscErrorLength++] = 'C';
+            }
+
+            // If no esc warning data undo esc nr (esc telemetry data types depends on the esc hw/sw)
+            if (dshotEscErrorLengthMotorBegin + 2 == dshotEscErrorLength)
+                dshotEscErrorLength = dshotEscErrorLengthMotorBegin;
+        }
+
+        // If warning exists then notify, otherwise clear warning message
+        if (dshotEscErrorLength > 3) {
+            warningText[dshotEscErrorLength] = 0;        // End string
+            *displayAttr = DISPLAYPORT_ATTR_WARNING;
+            *blinking = true;
+            return;
+        } else {
+            warningText[0] = 0;
+        }
+    }
+#endif
+
     if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
         tfp_sprintf(warningText, "LOW BATTERY");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 
@@ -306,7 +373,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
         tfp_sprintf(warningText, "RCSMOOTHING");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
 #endif // USE_RC_SMOOTHING_FILTER
@@ -315,9 +382,18 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
         tfp_sprintf(warningText, "OVER CAP");
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
-        *blinking = true;;
+        *blinking = true;
         return;
     }
+
+#ifdef USE_BATTERY_CONTINUE
+    // Show warning if battery is not fresh and battery continue is active
+    if (hasUsedMAh()) {
+        tfp_sprintf(warningText, "BATTERY CONTINUE");
+        *displayAttr = DISPLAYPORT_ATTR_INFO;
+        return;
+    }
+#endif // USE_BATTERY_CONTINUE
 
     // Show warning if battery is not fresh
     if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !(ARMING_FLAG(ARMED) || ARMING_FLAG(WAS_EVER_ARMED)) && (getBatteryState() == BATTERY_OK)
@@ -331,6 +407,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_VISUAL_BEEPER) && osdGetVisualBeeperState()) {
         tfp_sprintf(warningText, "  * * * *");
         *displayAttr = DISPLAYPORT_ATTR_INFO;
+        osdSetVisualBeeperState(false);
         return;
     }
 

@@ -169,7 +169,7 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
         return NULL;
     }
 
-    displayClearScreen(pDisplay);
+    displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
     displayWrite(pDisplay, 5, 3, DISPLAYPORT_ATTR_INFO, "ERASING FLASH...");
     displayRedraw(pDisplay);
 
@@ -180,7 +180,7 @@ static const void *cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
     }
 
     beeper(BEEPER_BLACKBOX_ERASE);
-    displayClearScreen(pDisplay);
+    displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
     displayRedraw(pDisplay);
 
     // Update storage device status to show new used space amount
@@ -226,11 +226,11 @@ static const void *cmsx_Blackbox_onExit(displayPort_t *pDisp, const OSD_Entry *s
 // Check before erase flash
 #ifdef USE_FLASHFS
 static const OSD_Entry menuEraseFlashCheckEntries[] = {
-    { "CONFIRM ERASE", OME_Label, NULL, NULL, 0},
-    { "YES",           OME_Funcall, cmsx_EraseFlash, NULL,                                                    0 },
+    { "CONFIRM ERASE", OME_Label, NULL, NULL},
+    { "YES",           OME_Funcall, cmsx_EraseFlash, NULL },
 
-    { "NO",            OME_Back, NULL, NULL, 0 },
-    { NULL,            OME_END, NULL, NULL, 0 }
+    { "NO",            OME_Back, NULL, NULL },
+    { NULL,            OME_END, NULL, NULL }
 };
 
 static CMS_Menu cmsx_menuEraseFlashCheck = {
@@ -247,21 +247,21 @@ static CMS_Menu cmsx_menuEraseFlashCheck = {
 
 static const OSD_Entry cmsx_menuBlackboxEntries[] =
 {
-    { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
-    { "(PID FREQ)",  OME_String,  NULL,            &cmsx_pidFreq,                                             0 },
-    { "SAMPLERATE",  OME_TAB,     NULL,            &cmsx_BlackboxRateTable,                                   REBOOT_REQUIRED },
-    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 REBOOT_REQUIRED },
-    { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
-    { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
-    { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "DEBUG MODE",  OME_TAB,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames }, REBOOT_REQUIRED },
+    { "-- BLACKBOX --", OME_Label, NULL, NULL},
+    { "(PID FREQ)",  OME_String,  NULL,            &cmsx_pidFreq },
+    { "SAMPLERATE",  OME_TAB | REBOOT_REQUIRED,     NULL,            &cmsx_BlackboxRateTable },
+    { "DEVICE",      OME_TAB | REBOOT_REQUIRED,     NULL,            &cmsx_BlackboxDeviceTable },
+    { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus },
+    { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed },
+    { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree },
+    { "DEBUG MODE",  OME_TAB | REBOOT_REQUIRED,     NULL,            &(OSD_TAB_t)   { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames } },
 
 #ifdef USE_FLASHFS
-    { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck,                                 0 },
+    { "ERASE FLASH", OME_Submenu, cmsMenuChange,   &cmsx_menuEraseFlashCheck },
 #endif // USE_FLASHFS
 
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuBlackbox = {

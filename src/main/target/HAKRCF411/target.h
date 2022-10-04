@@ -42,7 +42,7 @@
 
 // XXX CAMERA_CONTROL_PIN is deprecated.
 // XXX Target maintainer must create a valid timerHardware[] array entry for PB5 with TIM_USE_CAMERA_CONTROL
-//#define CAMERA_CONTROL_PIN 	PB5
+//#define CAMERA_CONTROL_PIN    PB5
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -51,10 +51,7 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PB2
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
 #define USE_ACC

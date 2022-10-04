@@ -23,7 +23,7 @@
 #define DSHOT_MAX_COMMAND 47
 
 /*
-  DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
+  DshotSettingRequest (KISS24). Spin direction, 3d and save Settings require 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
 
   3D Mode:
   0 = stop
@@ -45,6 +45,8 @@ typedef enum {
     DSHOT_CMD_3D_MODE_ON,
     DSHOT_CMD_SETTINGS_REQUEST, // Currently not implemented
     DSHOT_CMD_SAVE_SETTINGS,
+    DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE,
+    DSHOT_CMD_EXTENDED_TELEMETRY_DISABLE,
     DSHOT_CMD_SPIN_DIRECTION_NORMAL = 20,
     DSHOT_CMD_SPIN_DIRECTION_REVERSED = 21,
     DSHOT_CMD_LED0_ON, // BLHeli32 only

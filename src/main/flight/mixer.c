@@ -105,7 +105,6 @@ static FAST_DATA_ZERO_INIT float motorRangeMax;
 static FAST_DATA_ZERO_INIT float motorOutputRange;
 static FAST_DATA_ZERO_INIT int8_t motorOutputMixSign;
 
-
 static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
@@ -220,7 +219,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 
 #ifdef USE_DYN_IDLE
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
-            const float maxIncrease = isAirmodeActivated() ? mixerRuntime.dynIdleMaxIncrease : 0.04f;
+            const float maxIncrease = isAirmodeActivated() ? mixerRuntime.dynIdleMaxIncrease : 0.05f;
             float minRps = rpmMinMotorFrequency();
             DEBUG_SET(DEBUG_DYN_IDLE, 3, (minRps * 10));
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
@@ -233,11 +232,10 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             mixerRuntime.dynIdleI += rpsError * mixerRuntime.dynIdleIGain;
             mixerRuntime.dynIdleI = constrainf(mixerRuntime.dynIdleI, 0.0f, maxIncrease);
             motorRangeMinIncrease = constrainf((dynIdleP + mixerRuntime.dynIdleI + dynIdleD), 0.0f, maxIncrease);
-
             DEBUG_SET(DEBUG_DYN_IDLE, 0, (MAX(-1000.0f, dynIdleP * 10000)));
             DEBUG_SET(DEBUG_DYN_IDLE, 1, (mixerRuntime.dynIdleI * 10000));
             DEBUG_SET(DEBUG_DYN_IDLE, 2, (dynIdleD * 10000));
-       } else {
+        } else {
             motorRangeMinIncrease = 0;
         }
 #endif
@@ -368,9 +366,9 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
                 motorOutput = (motorOutput < motorRangeMin) ? mixerRuntime.disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
             }
 #endif
-            motorOutput = constrain(motorOutput, mixerRuntime.disarmMotorOutput, motorRangeMax);
+            motorOutput = constrainf(motorOutput, mixerRuntime.disarmMotorOutput, motorRangeMax);
         } else {
-            motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
+            motorOutput = constrainf(motorOutput, motorRangeMin, motorRangeMax);
         }
         motor[i] = motorOutput;
     }
@@ -447,22 +445,20 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     throttle += pidGetAirmodeThrottleOffset();
     float airmodeThrottleChange = 0;
 #endif
+    
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
 
-    if (motorMixRange > 1.0f) {
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motorMix[i] /= motorMixRange;
-        }
-        // Get the maximum correction by setting offset to center when airmode enabled
-        if (airmodeEnabled) {
-            throttle = 0.5f;
-        }
-    } else {
-        if (airmodeEnabled || throttle > 0.5f) {
-            throttle = constrainf(throttle, -motorMixMin, 1.0f - motorMixMax);
+    for (int i = 0; i < mixerRuntime.motorCount; i++) {
+        motorMix[i] /= motorMixNormalizationFactor;
+    }
+
+    if (airmodeEnabled || throttle > 0.5f) {
+        float normalizedMotorMixMin = motorMixMin / motorMixNormalizationFactor;
+        float normalizedMotorMixMax = motorMixMax / motorMixNormalizationFactor;
+        throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
 #ifdef USE_AIRMODE_LPF
-            airmodeThrottleChange = constrainf(unadjustedThrottle, -motorMixMin, 1.0f - motorMixMax) - unadjustedThrottle;
+        airmodeThrottleChange = constrainf(unadjustedThrottle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax) - unadjustedThrottle;
 #endif
-        }
     }
 
 #ifdef USE_AIRMODE_LPF
@@ -520,6 +516,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // use scaled throttle, without dynamic idle throttle offset, as the input to antigravity
     pidUpdateAntiGravityThrottleFilter(throttle);
 
+    // and for TPA
+    pidUpdateTpaFactor(throttle);
+
 #ifdef USE_DYN_LPF
     // keep the changes to dynamic lowpass clean, without unnecessary dynamic changes
     updateDynLpfCutoffs(currentTimeUs, throttle);
@@ -537,9 +536,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     mixerThrottle = throttle;
 
 #ifdef USE_DYN_IDLE
-    // Apply digital idle throttle offset when stick is at zero after all other adjustments are complete
+    // Set min throttle offset of 1% when stick is at zero and dynamic idle is active
     if (mixerRuntime.dynIdleMinRps > 0.0f) {
-        throttle = MAX(throttle, mixerRuntime.idleThrottleOffset);
+        throttle = MAX(throttle, 0.01f);
     }
 #endif
 

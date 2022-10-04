@@ -62,7 +62,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   44 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   45 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
@@ -285,8 +285,12 @@
 #define MSP_VTXTABLE_POWERLEVEL  138    //out message         vtxTable powerLevel data
 #define MSP_MOTOR_TELEMETRY      139    //out message         Per-motor telemetry data (RPM, packet stats, ESC temp, etc.)
 
-#define MSP_SIMPLIFIED_TUNING       140    //out message         Simplified tuning values and enabled state
-#define MSP_SET_SIMPLIFIED_TUNING   141    //in message          Set simplified tuning positions and apply the calculated tuning
+#define MSP_SIMPLIFIED_TUNING             140    //out message    Simplified tuning values and enabled state
+#define MSP_SET_SIMPLIFIED_TUNING         141    //in message     Set simplified tuning positions and apply the calculated tuning
+#define MSP_CALCULATE_SIMPLIFIED_PID      142    //out message    Requests calculations of PID values based on sliders. Sends the calculated values back. But don't save anything to the firmware
+#define MSP_CALCULATE_SIMPLIFIED_GYRO     143    //out message    Requests calculations of gyro filter values based on sliders. Sends the calculated values back. But don't save anything to the firmware
+#define MSP_CALCULATE_SIMPLIFIED_DTERM    144    //out message    Requests calculations of gyro filter values based on sliders. Sends the calculated values back. But don't save anything to the firmware
+#define MSP_VALIDATE_SIMPLIFIED_TUNING    145    //out message    Returns an array of true/false showing which simpligfied tuning groups are matching with value and which are not
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -311,9 +315,9 @@
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 #define MSP_SET_LED_STRIP_MODECOLOR 221 //in  message         Set LED strip mode_color settings
 #define MSP_SET_MOTOR_CONFIG     222    //out message         Motor configuration (min/max throttle, etc)
-#define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration
+#define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration including from 1.44 minSats
 //DEPRECATED - #define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
-#define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed, sanityChecks and minSats
+#define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed and sanityChecks
 #define MSP_SET_GPS_RESCUE_PIDS  226    //in message          GPS Rescues's throttleP and velocity PIDS + yaw P
 #define MSP_SET_VTXTABLE_BAND    227    //in message          set vtxTable band/channel data (one band at a time)
 #define MSP_SET_VTXTABLE_POWERLEVEL 228 //in message          set vtxTable powerLevel data (one powerLevel at a time)

@@ -124,6 +124,7 @@
 #undef USE_VTX_CONTROL
 #undef USE_VTX_SMARTAUDIO
 #undef USE_VTX_TRAMP
+#undef USE_VTX_MSP
 #undef USE_CAMERA_CONTROL
 #undef USE_BRUSHED_ESC_AUTODETECT
 #undef USE_GPS_RESCUE
@@ -188,6 +189,10 @@ typedef struct {
 typedef struct {
     void* test;
 } DMA_Channel_TypeDef;
+
+typedef struct {
+    void* test;
+} DMA_InitTypeDef;
 
 uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );

@@ -47,7 +47,6 @@
 
 #define USE_ACC
 #define USE_GYRO
-#define USE_EXTI
 
 // MPU6000
 #define USE_ACC_SPI_MPU6000
@@ -60,9 +59,7 @@
 #define GYRO_1_SPI_INSTANCE     SPI4
 #define GYRO_1_ALIGN            CW270_DEG
 
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PE1
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_VCP
 #define USE_USB_DETECT

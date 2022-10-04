@@ -214,7 +214,7 @@ void blackboxDeviceFlush(void)
          * devices will progressively write in the background without Blackbox calling anything.
          */
     case BLACKBOX_DEVICE_FLASH:
-        flashfsFlushAsync();
+        flashfsFlushAsync(false);
         break;
 #endif // USE_FLASHFS
 
@@ -237,7 +237,7 @@ bool blackboxDeviceFlushForce(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        return flashfsFlushAsync();
+        return flashfsFlushAsync(true);
 #endif // USE_FLASHFS
 
 #ifdef USE_SDCARD
@@ -374,6 +374,11 @@ void blackboxEraseAll(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_FLASH:
+        /* Stop the recorder as if blackbox_mode = ALWAYS it will attempt to resume writing after
+         * the erase and leave a corrupted first log.
+         * Possible enhancement here is to restart logging after erase.
+         */
+        blackboxInit();
         flashfsEraseCompletely();
         break;
     default:
@@ -730,7 +735,7 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
              * that the Blackbox header writing code doesn't have to guess about the best time to ask flashfs to
              * flush, and doesn't stall waiting for a flush that would otherwise not automatically be called.
              */
-            flashfsFlushAsync();
+            flashfsFlushAsync(true);
         }
         return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif // USE_FLASHFS

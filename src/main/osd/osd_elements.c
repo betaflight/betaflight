@@ -96,6 +96,10 @@
         type 2: Graphical bar showing battery used (grows as used)
         type 3: Numeric % of remaining battery
         type 4: Numeric % or used battery
+
+    VTX_CHANNEL
+        type 1: Contains Band:Channel:Power:Pit
+        type 2: Contains only Power
 */
 
 #include <stdbool.h>
@@ -121,6 +125,7 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 #include "common/unit.h"
+#include "common/filter.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -158,7 +163,6 @@
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_GPS_PLUS_CODES
@@ -178,6 +182,9 @@
 
 #define FULL_CIRCLE 360
 #define EFFICIENCY_MINIMUM_SPEED_CM_S 100
+#define EFFICIENCY_CUTOFF_HZ 0.5f
+
+static pt1Filter_t batteryEfficiencyFilt;
 
 #define MOTOR_STOPPED_THRESHOLD_RPM 1000
 
@@ -219,6 +226,7 @@ static uint8_t activeOsdElementArray[OSD_ITEM_COUNT];
 static bool backgroundLayerSupported = false;
 
 // Blink control
+#define OSD_BLINK_FREQUENCY_HZ 2
 static bool blinkState = true;
 static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 #define SET_BLINK(item) (blinkBits[(item) / 32] |= (1 << ((item) % 32)))
@@ -254,12 +262,12 @@ static int getEscRpm(int i)
 {
 #ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
-        return 100.0f / (motorConfig()->motorPoleCount / 2.0f) * getDshotTelemetry(i);
+        return erpmToRpm(getDshotTelemetry(i));
     }
 #endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return calcEscRpm(getEscSensorData(i)->rpm);
+        return erpmToRpm(getEscSensorData(i)->rpm);
     }
 #endif
     return 0;
@@ -726,8 +734,8 @@ static void osdElementUpDownReference(osdElementParms_t *element)
             psiB = earthUpinBodyFrame[1]; // calculate the yaw w/re to zenith (use small angle approx for sine)
             direction = UP;
         }
-        int posX = element->elemPosX + round(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
-        int posY = element->elemPosY + round(scaleRangef(thetaB, -M_PIf / 4, M_PIf / 4, -8, 8));
+        int posX = element->elemPosX + lrintf(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
+        int posY = element->elemPosY + lrintf(scaleRangef(thetaB, -M_PIf / 4, M_PIf / 4, -8, 8));
 
         osdDisplayWrite(element, posX, posY, DISPLAYPORT_ATTR_NONE, symbol[direction]);
     }
@@ -778,20 +786,21 @@ static void osdBackgroundCameraFrame(osdElementParms_t *element)
     element->drawElement = false;  // element already drawn
 }
 
+static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
+{
+    unsigned int i;
+    for (i = 0; i < maxSrcLength && src[i]; i++) {
+            dest[i] = toupper((unsigned char)src[i]);
+    }
+    dest[i] = '\0';
+}
+
 static void osdBackgroundCraftName(osdElementParms_t *element)
 {
     if (strlen(pilotConfig()->name) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
-            if (pilotConfig()->name[i]) {
-                element->buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, pilotConfig()->name, MAX_NAME_LENGTH);
     }
 }
 
@@ -870,15 +879,7 @@ static void osdBackgroundDisplayName(osdElementParms_t *element)
     if (strlen(pilotConfig()->displayName) == 0) {
         strcpy(element->buff, "DISPLAY_NAME");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
-            if (pilotConfig()->displayName[i]) {
-                element->buff[i] = toupper((unsigned char)pilotConfig()->displayName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, pilotConfig()->displayName, MAX_NAME_LENGTH);
     }
 }
 
@@ -896,15 +897,7 @@ static void osdElementRateProfileName(osdElementParms_t *element)
     if (strlen(currentControlRateProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "RATE_%u", getCurrentControlRateProfileIndex() + 1);
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (currentControlRateProfile->profileName[i]) {
-                element->buff[i] = toupper((unsigned char)currentControlRateProfile->profileName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, currentControlRateProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
 
@@ -913,15 +906,7 @@ static void osdElementPidProfileName(osdElementParms_t *element)
     if (strlen(currentPidProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "PID_%u", getCurrentPidProfileIndex() + 1);
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (currentPidProfile->profileName[i]) {
-                element->buff[i] = toupper((unsigned char)currentPidProfile->profileName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, currentPidProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
 #endif
@@ -934,29 +919,39 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
     if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
         tfp_sprintf(element->buff, "OSD_%u", profileIndex);
     } else {
-        unsigned i;
-        for (i = 0; i < OSD_PROFILE_NAME_LENGTH; i++) {
-            if (osdConfig()->profile[profileIndex - 1][i]) {
-                element->buff[i] = toupper((unsigned char)osdConfig()->profile[profileIndex - 1][i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, osdConfig()->profile[profileIndex - 1], OSD_PROFILE_NAME_LENGTH);
     }
 }
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
+
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
+#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
-    }
-}
-#endif // USE_ESC_SENSOR
+    } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+    {
+        uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
 
-#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+        for (uint8_t k = 0; k < getMotorCount(); k++) {
+            if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "%3d%c",
+                    osdConvertTemperatureToSelectedUnit(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]),
+                    osdGetTemperatureSymbolForSelectedUnit());
+            } else {
+                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "  0%c", osdGetTemperatureSymbolForSelectedUnit());
+            }
+        }
+    }
+#else
+    {}
+#endif
+}
+
 static void osdElementEscRpm(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpm,element);
@@ -966,6 +961,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
 }
+
 #endif
 
 static void osdElementFlymode(osdElementParms_t *element)
@@ -1018,7 +1014,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (GPS_distanceToHome > 0) {
-            const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            const int h = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
             element->buff[0] = SYM_OVER_HOME;
@@ -1081,12 +1077,9 @@ static void osdElementEfficiency(osdElementParms_t *element)
 {
     int efficiency = 0;
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
-        const int speedX100 = osdGetSpeedToSelectedUnit(gpsSol.groundSpeed * 100); // speed * 100 for improved resolution at slow speeds
-        
-        if (speedX100 > 0) {
-            const int mAmperage = getAmperage() * 10; // Current in mA
-            efficiency = mAmperage * 100 / speedX100; // mAmperage * 100 to cancel out speed * 100 from above
-        }
+        const float speed = (float)osdGetSpeedToSelectedUnit(gpsSol.groundSpeed);
+        const float mAmperage = (float)getAmperage() * 10.f; // Current in mA
+        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed)));
     }
 
     const char unitSymbol = osdConfig()->units == UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
@@ -1171,6 +1164,20 @@ static void osdElementLogStatus(osdElementParms_t *element)
 static void osdElementMahDrawn(osdElementParms_t *element)
 {
     tfp_sprintf(element->buff, "%4d%c", getMAhDrawn(), SYM_MAH);
+}
+
+static void osdElementWattHoursDrawn(osdElementParms_t *element)
+{
+    const float wattHoursDrawn = getWhDrawn();
+
+    if (wattHoursDrawn < 1.0f) {        
+        tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
+    } else {
+        int wattHourWholeNumber = (int)wattHoursDrawn;
+        int wattHourDecimalValue = (int)((wattHoursDrawn - wattHourWholeNumber) * 100);
+
+        tfp_sprintf(element->buff, wattHourDecimalValue >= 10 ? "%3d.%2dWH" : "%3d.0%1dWH", wattHourWholeNumber, wattHourDecimalValue);
+    }
 }
 
 static void osdElementMainBatteryUsage(osdElementParms_t *element)
@@ -1453,12 +1460,20 @@ static void osdElementVtxChannel(osdElementParms_t *element)
         vtxStatusIndicator = 'P';
     }
 
-    if (vtxStatus & VTX_STATUS_LOCKED) {
-        tfp_sprintf(element->buff, "-:-:-:L");
-    } else if (vtxStatusIndicator) {
-        tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
-    } else {
-        tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
+switch (element->type) {
+    case OSD_ELEMENT_TYPE_2:
+            tfp_sprintf(element->buff, "%s", vtxPowerLabel);
+        break;
+
+    default:
+        if (vtxStatus & VTX_STATUS_LOCKED) {
+            tfp_sprintf(element->buff, "-:-:-:L");
+        } else if (vtxStatusIndicator) {
+            tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
+        } else {
+            tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
+        }
+        break;
     }
 }
 #endif // USE_VTX_COMMON
@@ -1477,6 +1492,35 @@ static void osdElementWarnings(osdElementParms_t *element)
     } else {
         CLR_BLINK(OSD_WARNINGS);
     }
+
+    #ifdef USE_CRAFTNAME_MSGS
+    // Injects data into the CraftName variable for systems which limit
+    // the available MSP data field in their OSD.
+    if (osdConfig()->osd_craftname_msgs == true) {
+        // if warning is not set, or blink is off, then display LQ & RSSI
+        if (blinkState || (strlen(element->buff) == 0)) {
+            #ifdef USE_RX_LINK_QUALITY_INFO
+            // replicate the LQ functionality without the special font symbols
+            uint16_t osdLinkQuality = 0;
+            if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
+                osdLinkQuality = rxGetLinkQuality();
+                const uint8_t osdRfMode = rxGetRfMode();
+                tfp_sprintf(element->buff, "LQ %2d:%03d %3d", osdRfMode, osdLinkQuality, getRssiDbm());
+            } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
+                osdLinkQuality = rxGetLinkQuality();
+                tfp_sprintf(element->buff, "LQ %03d %3d", osdLinkQuality, getRssiDbm());
+            } else { // 0-9
+                osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
+                if (osdLinkQuality >= 10) {
+                    osdLinkQuality = 9;
+                }
+                tfp_sprintf(element->buff, "LQ %1d", osdLinkQuality);
+            }
+            #endif // USE_RX_LINK_QUALITY_INFO
+        }
+        strncpy(pilotConfigMutable()->name, element->buff, MAX_NAME_LENGTH - 1);
+    }
+    #endif // USE_CRAFTNAME_MSGS
 }
 
 // Define the order in which the elements are drawn.
@@ -1499,6 +1543,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_VTX_CHANNEL,
     OSD_CURRENT_DRAW,
     OSD_MAH_DRAWN,
+    OSD_WATT_HOURS_DRAWN,
     OSD_CRAFT_NAME,
     OSD_ALTITUDE,
     OSD_ROLL_PIDS,
@@ -1586,6 +1631,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
     [OSD_CURRENT_DRAW]            = osdElementCurrentDraw,
     [OSD_MAH_DRAWN]               = osdElementMahDrawn,
+    [OSD_WATT_HOURS_DRAWN]        = osdElementWattHoursDrawn,
 #ifdef USE_GPS
     [OSD_GPS_SPEED]               = osdElementGpsSpeed,
     [OSD_GPS_SATS]                = osdElementGpsSats,
@@ -1618,10 +1664,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_NUMERICAL_VARIO]         = osdElementNumericalVario,
 #endif
     [OSD_COMPASS_BAR]             = osdElementCompassBar,
-#ifdef USE_ESC_SENSOR
-    [OSD_ESC_TMP]                 = osdElementEscTemperature,
-#endif
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+    [OSD_ESC_TMP]                 = osdElementEscTemperature,
     [OSD_ESC_RPM]                 = osdElementEscRpm,
 #endif
     [OSD_REMAINING_TIME_ESTIMATE] = osdElementRemainingTimeEstimate,
@@ -1677,7 +1721,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_EFFICIENCY]              = osdElementEfficiency,
 #endif
 #ifdef USE_PERSISTENT_STATS
-    [OSD_TOTAL_FLIGHTS]   = osdElementTotalFlights,
+    [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
 #endif
     [OSD_AUX_VALUE]               = osdElementAuxValue,
 };
@@ -1734,14 +1778,10 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_EFFICIENCY);
     }
 #endif // GPS
-#ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        osdAddActiveElement(OSD_ESC_TMP);
-    }
-#endif
 
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
+        osdAddActiveElement(OSD_ESC_TMP);
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);
     }
@@ -1810,44 +1850,49 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     }
 }
 
-#define OSD_BLINK_FREQUENCY_HZ 2.5f
+static uint8_t activeElement = 0;
 
-void osdDrawActiveElements(displayPort_t *osdDisplayPort)
+uint8_t osdGetActiveElement()
 {
-    static unsigned blinkLoopCounter = 0;
+    return activeElement;
+}
 
-#ifdef USE_GPS
-    static bool lastGpsSensorState;
-    // Handle the case that the GPS_SENSOR may be delayed in activation
-    // or deactivate if communication is lost with the module.
-    const bool currentGpsSensorState = sensors(SENSOR_GPS);
-    if (lastGpsSensorState != currentGpsSensorState) {
-        lastGpsSensorState = currentGpsSensorState;
-        osdAnalyzeActiveElements();
-    }
-#endif // USE_GPS
+uint8_t osdGetActiveElementCount()
+{
+    return activeOsdElementCount;
+}
 
-    // synchronize the blinking with the OSD task loop
-    if (++blinkLoopCounter >= lrintf(osdConfig()->task_frequency / OSD_DRAW_FREQ_DENOM / (OSD_BLINK_FREQUENCY_HZ * 2))) {
-        blinkState = !blinkState;
-        blinkLoopCounter = 0;
+// Return true if there are more elements to draw
+bool osdDrawNextActiveElement(displayPort_t *osdDisplayPort, timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+    bool retval = true;
+
+    if (activeElement >= activeOsdElementCount) {
+        return false;
     }
 
-    for (unsigned i = 0; i < activeOsdElementCount; i++) {
-        if (!backgroundLayerSupported) {
-            // If the background layer isn't supported then we
-            // have to draw the element's static layer as well.
-            osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
-        }
-        osdDrawSingleElement(osdDisplayPort, activeOsdElementArray[i]);
+    if (!backgroundLayerSupported) {
+        // If the background layer isn't supported then we
+        // have to draw the element's static layer as well.
+        osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[activeElement]);
     }
+
+    osdDrawSingleElement(osdDisplayPort, activeOsdElementArray[activeElement]);
+
+    if (++activeElement >= activeOsdElementCount) {
+        activeElement = 0;
+        retval = false;
+    }
+
+    return retval;
 }
 
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
 {
     if (backgroundLayerSupported) {
         displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
-        displayClearScreen(osdDisplayPort);
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
         for (unsigned i = 0; i < activeOsdElementCount; i++) {
             osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
         }
@@ -1859,6 +1904,18 @@ void osdElementsInit(bool backgroundLayerFlag)
 {
     backgroundLayerSupported = backgroundLayerFlag;
     activeOsdElementCount = 0;
+    pt1FilterInit(&batteryEfficiencyFilt, pt1FilterGain(EFFICIENCY_CUTOFF_HZ, 1.0f / osdConfig()->framerate_hz));
+}
+
+void osdSyncBlink() {
+    static int blinkCount = 0;
+
+    // If the OSD blink is due a transition, do so
+    // Task runs at osdConfig()->framerate_hz Hz, so this will cycle at 2Hz
+    if (++blinkCount == ((osdConfig()->framerate_hz / OSD_BLINK_FREQUENCY_HZ) / 2)) {
+        blinkCount = 0;
+        blinkState = !blinkState;
+    }
 }
 
 void osdResetAlarms(void)
@@ -1895,9 +1952,9 @@ void osdUpdateAlarms(void)
     }
 
 #ifdef USE_GPS
-    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < 5)
+    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < gpsConfig()->gpsMinimumSats)
 #ifdef USE_GPS_RESCUE
-            || ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured())
+            || ((gpsSol.numSat < gpsConfig()->gpsRequiredSats) && gpsRescueIsConfigured())
 #endif
             ) {
         SET_BLINK(OSD_GPS_SATS);
@@ -1941,18 +1998,37 @@ void osdUpdateAlarms(void)
             CLR_BLINK(OSD_HOME_DIST);
         }
     } else {
-        CLR_BLINK(OSD_HOME_DIST);;
+        CLR_BLINK(OSD_HOME_DIST);
     }
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    bool blink;
+
+#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
-        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm) {
-            SET_BLINK(OSD_ESC_TMP);
-        } else {
-            CLR_BLINK(OSD_ESC_TMP);
+        blink = osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm;
+    } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+    {
+        blink = false;
+        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF) {
+            for (uint32_t k = 0; !blink && (k < getMotorCount()); k++) {
+                blink = (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0 &&
+                    dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm;
+            }
         }
+    }
+#else
+    {}
+#endif
+
+    if (blink) {
+        SET_BLINK(OSD_ESC_TMP);
+    } else {
+        CLR_BLINK(OSD_ESC_TMP);
     }
 #endif
 }

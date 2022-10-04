@@ -76,7 +76,7 @@ static void checkForBootLoaderRequest(void)
     if (bootloaderRequest != RESET_BOOTLOADER_REQUEST_ROM) {
         return;
     }
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
 
     __SYSCFG_CLK_ENABLE();
     SYSCFG->MEMRMP |= SYSCFG_MEM_BOOT_ADD0 ;

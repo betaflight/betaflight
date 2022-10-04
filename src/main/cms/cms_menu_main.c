@@ -62,6 +62,11 @@
 
 #include "cms_menu_main.h"
 
+#ifdef USE_BATTERY_CONTINUE
+#include "sensors/battery.h"
+#include "pg/stats.h"
+#endif
+
 #define CALIBRATION_STATUS_MAX_LENGTH 9
 
 #define CALIBRATION_STATUS_REQUIRED "REQUIRED"
@@ -72,32 +77,36 @@
 static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 #endif
 
+#ifdef USE_BATTERY_CONTINUE
+static char batteryContinueAmount[18];
+#endif
+
 // Features
 
 static const OSD_Entry menuFeaturesEntries[] =
 {
-    {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
+    {"--- FEATURES ---", OME_Label, NULL, NULL},
 
 #if defined(USE_BLACKBOX)
-    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
+    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox},
 #endif
 #if defined(USE_VTX_CONTROL)
-#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
-    {"VTX", OME_Funcall, cmsSelectVtx, NULL, 0},
+#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP) || defined(USE_VTX_MSP)
+    {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
 #ifdef USE_LED_STRIP
-    {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
+    {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip},
 #endif // LED_STRIP
-    {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower, 0},
+    {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower},
 #ifdef USE_CMS_FAILSAFE_MENU
-    {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe, 0},
+    {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe},
 #endif
 #ifdef USE_PERSISTENT_STATS
-    {"PERSISTENT STATS", OME_Submenu, cmsMenuChange, &cmsx_menuPersistentStats, 0},
+    {"PERSISTENT STATS", OME_Submenu, cmsMenuChange, &cmsx_menuPersistentStats},
 #endif
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
 static CMS_Menu cmsx_menuFeatures = {
@@ -121,26 +130,50 @@ static const void *cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
 }
 
 
+#ifdef USE_BATTERY_CONTINUE
+#define SETUP_POPUP_MAX_ENTRIES 2   // Increase as new entries are added
+#else
 #define SETUP_POPUP_MAX_ENTRIES 1   // Increase as new entries are added
+#endif
 
 static OSD_Entry setupPopupMenuEntries[SETUP_POPUP_MAX_ENTRIES + 3];
+
+#ifdef USE_BATTERY_CONTINUE
+static const void *cmsRestoreMah(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+
+    setMAhDrawn(statsConfig()->stats_mah_used);
+    statsConfigMutable()->stats_mah_used = 0;
+
+    cmsMenuExit(pDisp, (void *)CMS_EXIT);
+
+    return NULL;
+}
+#endif
 
 static bool setupPopupMenuBuild(void)
 {
     uint8_t menuIndex = 0;
     updateArmingStatus();
 
-    cmsAddMenuEntry(&setupPopupMenuEntries[menuIndex], "-- SETUP MENU --", OME_Label, NULL, NULL, 0);
+    cmsAddMenuEntry(&setupPopupMenuEntries[menuIndex], "-- SETUP MENU --", OME_Label, NULL, NULL);
 
     // Add menu entries for uncompleted setup tasks
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC) && (getArmingDisableFlags() & ARMING_DISABLED_ACC_CALIBRATION)) {
-        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "CALIBRATE ACC", OME_Funcall, cmsCalibrateAccMenu, accCalibrationStatus, DYNAMIC);
+        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "CALIBRATE ACC", OME_Funcall | DYNAMIC, cmsCalibrateAccMenu, accCalibrationStatus);
     }
 #endif
 
-    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "EXIT", OME_Back, NULL, NULL, DYNAMIC);
-    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "NULL", OME_END, NULL, NULL, 0);
+#ifdef USE_BATTERY_CONTINUE
+    if (hasUsedMAh()) {
+        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], batteryContinueAmount, OME_Funcall | DYNAMIC, cmsRestoreMah, NULL);
+    }
+#endif
+
+    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "EXIT", OME_Back | DYNAMIC, NULL, NULL);
+    cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "NULL", OME_END, NULL, NULL);
 
     return (menuIndex > 2);  // return true if any setup items were added
 }
@@ -153,6 +186,11 @@ static const void *setupPopupMenuOnDisplayUpdate(displayPort_t *pDisp, const OSD
 #if defined(USE_ACC)
     // Update the ACC calibration status message.
     tfp_sprintf(accCalibrationStatus, accIsCalibrationComplete() ? accHasBeenCalibrated() ? CALIBRATION_STATUS_COMPLETE : CALIBRATION_STATUS_REQUIRED : CALIBRATION_STATUS_ACTIVE);
+#endif
+#ifdef USE_BATTERY_CONTINUE
+    if (hasUsedMAh()) {
+        tfp_sprintf(batteryContinueAmount, "RESTORE %5d MAH", statsConfig()->stats_mah_used);
+    }
 #endif
 
     return NULL;
@@ -181,17 +219,17 @@ static const void *mainMenuOnEnter(displayPort_t *pDisp)
 
 static const OSD_Entry menuMainEntries[] =
 {
-    {"-- MAIN --",  OME_Label, NULL, NULL, 0},
+    {"-- MAIN --",  OME_Label, NULL, NULL},
 
-    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
-    {"FEATURES",    OME_Submenu,  cmsMenuChange, &cmsx_menuFeatures, 0},
+    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu},
+    {"FEATURES",    OME_Submenu,  cmsMenuChange, &cmsx_menuFeatures},
 #ifdef USE_OSD
-    {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
+    {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd},
 #endif
-    {"FC&FIRMWARE", OME_Submenu,  cmsMenuChange, &cmsx_menuFirmware, 0},
-    {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
-    {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0},
+    {"FC&FIRMWARE", OME_Submenu,  cmsMenuChange, &cmsx_menuFirmware},
+    {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc},
+    {"SAVE/EXIT",   OME_Funcall,  cmsx_SaveExitMenu, NULL},
+    {NULL, OME_END, NULL, NULL},
 };
 
 CMS_Menu cmsx_menuMain = {

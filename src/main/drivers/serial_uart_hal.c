@@ -64,6 +64,33 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 }
 
+static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
+{
+    for (uint32_t i = 0; i < UARTDEV_COUNT_MAX; i++) {
+        uartDevice_t *candidate = uartDevmap[i];
+
+        if (&candidate->port == uartPort) {
+            return candidate;
+        }
+    }
+    return NULL;
+}
+
+#if !(defined(STM32F4))
+static void uartConfigurePinSwap(uartPort_t *uartPort)
+{
+    uartDevice_t *uartDevice = uartFindDevice(uartPort);
+    if (!uartDevice) {
+        return;
+    }
+
+    if (uartDevice->pinSwap) {
+        uartDevice->port.Handle.AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_SWAP_INIT;
+        uartDevice->port.Handle.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+    }
+}
+#endif
+
 // XXX uartReconfigure does not handle resource management properly.
 
 void uartReconfigure(uartPort_t *uartPort)
@@ -91,6 +118,9 @@ void uartReconfigure(uartPort_t *uartPort)
 
 
     usartConfigurePinInversion(uartPort);
+#if !(defined(STM32F1) || defined(STM32F4))
+    uartConfigurePinSwap(uartPort);
+#endif
 
 #ifdef TARGET_USART_CONFIG
     void usartTargetConfigure(uartPort_t *);
@@ -271,7 +301,7 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 }
 #endif
 
-void uartIrqHandler(uartPort_t *s)
+FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
     UART_HandleTypeDef *huart = &s->Handle;
     /* UART in mode Receiver ---------------------------------------------------*/

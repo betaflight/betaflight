@@ -259,7 +259,7 @@ protected:
             .thrMid8 = 0,
             .thrExpo8 = 0,
             .rates = {0, 0, 0},
-            .dynThrPID = 0,
+            .tpa_rate = 0,
             .rcExpo[FD_YAW] = 0,
             .tpa_breakpoint = 0
     };
@@ -287,7 +287,7 @@ protected:
         controlRateConfig.rates[0] = 0;
         controlRateConfig.rates[1] = 0;
         controlRateConfig.rates[2] = 0;
-        controlRateConfig.dynThrPID = 0;
+        controlRateConfig.tpa_rate = 0;
         controlRateConfig.tpa_breakpoint = 0;
 
         PG_RESET(adjustmentRanges);
@@ -365,7 +365,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
             .thrMid8 = 0,
             .thrExpo8 = 0,
             .rates = {0,0,0},
-            .dynThrPID = 0,
+            .tpa_rate = 0,
             .rcExpo[FD_YAW] = 0,
             .tpa_breakpoint = 0
     };
@@ -543,7 +543,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 {
     // given
     pidProfile_t pidProfile;
-    memset(&pidProfile, 0, sizeof (pidProfile));
+    memset(&pidProfile, 0, sizeof(pidProfile));
     pidProfile.pid[PID_PITCH].P = 0;
     pidProfile.pid[PID_PITCH].I = 10;
     pidProfile.pid[PID_PITCH].D = 20;
@@ -555,7 +555,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     pidProfile.pid[PID_YAW].D = 27;
     // and
     controlRateConfig_t controlRateConfig;
-    memset(&controlRateConfig, 0, sizeof (controlRateConfig));
+    memset(&controlRateConfig, 0, sizeof(controlRateConfig));
 
     const timedAdjustmentState_t *adjustmentState1 = configureStepwiseAdjustment(AUX1 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_PITCH_ROLL_P_INDEX);
     const timedAdjustmentState_t *adjustmentState2 = configureStepwiseAdjustment(AUX2 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_PITCH_ROLL_I_INDEX);
@@ -626,6 +626,7 @@ void dashboardEnablePageCycling() {}
 
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
+bool failsafeIsReceivingRxData() { return true; }
 
 uint8_t getCurrentControlRateProfileIndex(void) {
     return 0;
@@ -656,4 +657,5 @@ void setLedProfile(uint8_t profile) { UNUSED(profile); }
 uint8_t getLedProfile(void) { return 0; }
 void compassStartCalibration(void) {}
 void pinioBoxTaskControl(void) {}
+void schedulerIgnoreTaskExecTime(void) {}
 }

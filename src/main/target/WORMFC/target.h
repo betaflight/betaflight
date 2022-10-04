@@ -62,14 +62,11 @@
 #define BEEPER_INVERTED
 
 // MPU6500 interrupt
-#define USE_EXTI
 #if defined(PIRXF4)
 #define GYRO_1_EXTI_PIN         PC5
 #else
 #define GYRO_1_EXTI_PIN         PC4
 #endif
-#define USE_MPU_DATA_READY_SIGNAL
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #if defined(PIRXF4)
 #define GYRO_1_CS_PIN          PC4

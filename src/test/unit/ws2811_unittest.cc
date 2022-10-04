@@ -32,6 +32,8 @@ extern "C" {
 
 extern "C" {
     void updateLEDDMABuffer(ledStripFormatRGB_e ledFormat, rgbColor24bpp_t *color, unsigned ledIndex);
+    void schedulerIgnoreTaskExecTime(void) {}
+    void schedulerIgnoreTaskStateTime(void) {}
 }
 
 TEST(WS2812, updateDMABuffer) {
@@ -89,3 +91,4 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag) {
 
 void ws2811LedStripDMAEnable(void) {}
 }
+

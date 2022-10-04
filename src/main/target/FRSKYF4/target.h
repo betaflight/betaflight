@@ -42,10 +42,7 @@
 
 #define GYRO_1_ALIGN            CW270_DEG
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_BARO
 #define USE_BARO_BMP280

@@ -410,7 +410,7 @@ HAL_StatusTypeDef HAL_ETHEx_GetTxVLANConfig(ETH_HandleTypeDef *heth, uint32_t VL
     pVlanConfig->VLANTagControl = READ_BIT(heth->Instance->MACVIR, (ETH_MACVIR_VLP | ETH_MACVIR_VLC));
   }
 
-  return HAL_OK;;
+  return HAL_OK;
 }
 
 /**

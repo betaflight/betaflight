@@ -33,11 +33,7 @@
 
 #define INVERTER_PIN_UART2      PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
-#define USE_EXTI
 #define MAG_INT_EXTI            PC14
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-//#define DEBUG_MAG_DATA_READY_INTERRUPT
 #define USE_MAG_DATA_READY_SIGNAL
 
 // SPI2

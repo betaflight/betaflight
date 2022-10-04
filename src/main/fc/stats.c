@@ -34,6 +34,9 @@
 
 #include "pg/stats.h"
 
+#ifdef USE_BATTERY_CONTINUE
+#include "sensors/battery.h"
+#endif
 
 #define STATS_SAVE_DELAY_US 500000 // Let disarming complete and save stats after this time
 
@@ -91,6 +94,9 @@ void statsOnDisarm(void)
             statsConfigMutable()->stats_total_flights += 1;    // arm / flight counter
             statsConfigMutable()->stats_total_time_s += dtS;
             statsConfigMutable()->stats_total_dist_m += (DISTANCE_FLOWN_CM - arm_distance_cm) / 100;
+#ifdef USE_BATTERY_CONTINUE
+            statsConfigMutable()->stats_mah_used = getMAhDrawn();
+#endif
 
             saveRequired = true;
         }

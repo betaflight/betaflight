@@ -73,7 +73,7 @@ static const void *cmsx_ResetStats(displayPort_t *pDisplay, const void *ptr)
     stats_total_time_s = 0;
     stats_total_dist_m = 0;
 
-    displayClearScreen(pDisplay);
+    displayClearScreen(pDisplay, DISPLAY_CLEAR_WAIT);
     displayRedraw(pDisplay);
 
     return NULL;
@@ -81,16 +81,16 @@ static const void *cmsx_ResetStats(displayPort_t *pDisplay, const void *ptr)
 
 static const OSD_Entry cmsx_menuPersistentStatsEntries[] =
 {
-    {"-- PERSISTENT STATS --", OME_Label, NULL, NULL, 0},
-    {"FLIGHTS", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_flights, 0, UINT32_MAX, 1}, 0},
-    {"TIME(sec)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_time_s, 0, UINT32_MAX, 1}, 0},
-    {"DIST(m)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_dist_m, 0, UINT32_MAX, 1}, 0},
-    {"RESET STATS", OME_Funcall, cmsx_ResetStats, NULL, 0},
-    {"--- SETTINGS ---", OME_Label, NULL, NULL, 0},
-    {"MIN ARMED TIME(sec)", OME_INT8, NULL, &(OSD_INT8_t){ &stats_min_armed_time_s, -1, INT8_MAX, 1}, 0},
+    {"-- PERSISTENT STATS --", OME_Label, NULL, NULL},
+    {"FLIGHTS", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_flights, 0, UINT32_MAX, 1}},
+    {"TIME(sec)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_time_s, 0, UINT32_MAX, 1}},
+    {"DIST(m)", OME_UINT32, NULL, &(OSD_UINT32_t){ &stats_total_dist_m, 0, UINT32_MAX, 1}},
+    {"RESET STATS", OME_Funcall, cmsx_ResetStats, NULL},
+    {"--- SETTINGS ---", OME_Label, NULL, NULL},
+    {"MIN ARMED TIME(sec)", OME_INT8, NULL, &(OSD_INT8_t){ &stats_min_armed_time_s, -1, INT8_MAX, 1}},
 
-    {"BACK", OME_Back, NULL, NULL, 0},
-    { NULL, OME_END, NULL, NULL, 0}
+    {"BACK", OME_Back, NULL, NULL},
+    { NULL, OME_END, NULL, NULL}
 };
 
 CMS_Menu cmsx_menuPersistentStats = {

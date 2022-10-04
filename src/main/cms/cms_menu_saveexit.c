@@ -36,12 +36,12 @@
 
 static const OSD_Entry cmsx_menuSaveExitEntries[] =
 {
-    { "-- SAVE/EXIT --", OME_Label, NULL, NULL, 0},
-    { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT, 0},
-    { "SAVE&EXIT",       OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVE, 0},
-    { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT, 0},
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "-- SAVE/EXIT --", OME_Label, NULL, NULL},
+    { "EXIT",            OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT},
+    { "SAVE&EXIT",       OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVE},
+    { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 static CMS_Menu cmsx_menuSaveExit = {
@@ -57,11 +57,11 @@ static CMS_Menu cmsx_menuSaveExit = {
 
 static const OSD_Entry cmsx_menuSaveExitRebootEntries[] =
 {
-    { "-- SAVE/EXIT (REBOOT REQD)", OME_Label, NULL, NULL, 0},
-    { "EXIT&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_EXITREBOOT, 0},
-    { "SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT, 0},
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
+    { "-- SAVE/EXIT (REBOOT REQD)", OME_Label, NULL, NULL},
+    { "EXIT&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_EXITREBOOT},
+    { "SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
 };
 
 static CMS_Menu cmsx_menuSaveExitReboot = {

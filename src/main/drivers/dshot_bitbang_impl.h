@@ -51,6 +51,7 @@
 #define MOTOR_DSHOT_BIT_PER_SYMBOL         1
 
 #define MOTOR_DSHOT_STATE_PER_SYMBOL       3  // Initial high, 0/1, low
+#define MOTOR_DSHOT_BIT_HOLD_STATES        3  // 3 extra states at the end of transmission required to allow ESC to sample the last bit correctly.
 
 #define MOTOR_DSHOT_FRAME_BITS             16
 
@@ -62,15 +63,15 @@
 
 #define MOTOR_DSHOT_GCR_CHANGE_INTERVAL_NS(rate) (MOTOR_DSHOT_CHANGE_INTERVAL_NS(rate) * 5 / 4)
 
-#define MOTOR_DSHOT_BUF_LENGTH            ((MOTOR_DSHOT_FRAME_BITS / MOTOR_DSHOT_BIT_PER_SYMBOL) * MOTOR_DSHOT_STATE_PER_SYMBOL)
+#define MOTOR_DSHOT_BUF_LENGTH            (((MOTOR_DSHOT_FRAME_BITS / MOTOR_DSHOT_BIT_PER_SYMBOL) * MOTOR_DSHOT_STATE_PER_SYMBOL) + MOTOR_DSHOT_BIT_HOLD_STATES)
 #ifdef USE_DSHOT_CACHE_MGMT
 // MOTOR_DSHOT_BUF_LENGTH is multiples of uint32_t
 // Number of bytes required for buffer
-#define MOTOR_DSHOT_BUF_BYTES              (MOTOR_DSHOT_BUF_LENGTH * sizeof (uint32_t))
+#define MOTOR_DSHOT_BUF_BYTES              (MOTOR_DSHOT_BUF_LENGTH * sizeof(uint32_t))
 // Number of bytes required to cache align buffer
 #define MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES  ((MOTOR_DSHOT_BUF_BYTES + 0x20) & ~0x1f)
 // Size of array to create a cache aligned buffer
-#define MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH (MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES / sizeof (uint32_t))
+#define MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH (MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES / sizeof(uint32_t))
 #else
 #define MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH MOTOR_DSHOT_BUF_LENGTH
 #endif
@@ -209,7 +210,7 @@ extern uint8_t bbPuPdMode;
 extern uint32_t bbOutputBuffer[MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH * MAX_SUPPORTED_MOTOR_PORTS];
 
 // DMA input buffer
-// (30us + <frame time> + <slack>) / <input sampling clock perid>
+// (30us + <frame time> + <slack>) / <input sampling clock period>
 // <frame time> = <DShot symbol time> * 16
 // Temporary size for DS600
 // <frame time> = 26us
@@ -221,11 +222,11 @@ extern uint32_t bbOutputBuffer[MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH * MAX_SUPPORTE
 #ifdef USE_DSHOT_CACHE_MGMT
 // Each sample is a uint16_t
 // Number of bytes required for buffer
-#define DSHOT_BB_PORT_IP_BUF_BYTES              (DSHOT_BB_PORT_IP_BUF_LENGTH * sizeof (uint16_t))
+#define DSHOT_BB_PORT_IP_BUF_BYTES              (DSHOT_BB_PORT_IP_BUF_LENGTH * sizeof(uint16_t))
 // Number of bytes required to cache align buffer
 #define DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES  ((DSHOT_BB_PORT_IP_BUF_BYTES + 0x20) & ~0x1f)
 // Size of array to create a cache aligned buffer
-#define DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_LENGTH (DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES / sizeof (uint16_t))
+#define DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_LENGTH (DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES / sizeof(uint16_t))
 #else
 #define DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_LENGTH DSHOT_BB_PORT_IP_BUF_LENGTH
 #endif

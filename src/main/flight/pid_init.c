@@ -46,14 +46,13 @@
 #include "pid_init.h"
 
 #if defined(USE_D_MIN)
-#define D_MIN_RANGE_HZ 80    // Biquad lowpass input cutoff to peak D around propwash frequencies
-#define D_MIN_LOWPASS_HZ 10  // PT1 lowpass cutoff to smooth the boost effect
-#define D_MIN_GAIN_FACTOR 0.00005f
-#define D_MIN_SETPOINT_GAIN_FACTOR 0.00005f
+#define D_MIN_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
+#define D_MIN_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
+#define D_MIN_GAIN_FACTOR 0.00008f
+#define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
-#define ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF 15  // The anti gravity throttle highpass filter cutoff
-#define ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF 3  // The anti gravity P smoothing filter cutoff
+#define ATTITUDE_CUTOFF_HZ 250
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
@@ -95,38 +94,38 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            biquadFilterInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH, 1.0f);
         }
     } else {
         pidRuntime.dtermNotchApplyFn = nullFilterApply;
     }
 
     //1st Dterm Lowpass Filter
-    uint16_t dterm_lowpass_hz = pidProfile->dterm_lowpass_hz;
+    uint16_t dterm_lpf1_init_hz = pidProfile->dterm_lpf1_static_hz;
 
 #ifdef USE_DYN_LPF
-    if (pidProfile->dyn_lpf_dterm_min_hz) {
-        dterm_lowpass_hz = pidProfile->dyn_lpf_dterm_min_hz;
+    if (pidProfile->dterm_lpf1_dyn_min_hz) {
+        dterm_lpf1_init_hz = pidProfile->dterm_lpf1_dyn_min_hz;
     }
 #endif
 
-    if (dterm_lowpass_hz > 0) {
-        switch (pidProfile->dterm_filter_type) {
+    if (dterm_lpf1_init_hz > 0) {
+        switch (pidProfile->dterm_lpf1_type) {
         case FILTER_PT1:
             pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt1FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt1FilterInit(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(dterm_lowpass_hz, pidRuntime.dT));
+                pt1FilterInit(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             }
             break;
         case FILTER_BIQUAD:
-            if (pidProfile->dterm_lowpass_hz < pidFrequencyNyquist) {
+            if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
 #ifdef USE_DYN_LPF
                 pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
 #else
                 pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApply;
 #endif
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                    biquadFilterInitLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, dterm_lowpass_hz, targetPidLooptime);
+                    biquadFilterInitLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, dterm_lpf1_init_hz, targetPidLooptime);
                 }
             } else {
                 pidRuntime.dtermLowpassApplyFn = nullFilterApply;
@@ -135,13 +134,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         case FILTER_PT2:
             pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt2FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt2FilterInit(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(dterm_lowpass_hz, pidRuntime.dT));
+                pt2FilterInit(&pidRuntime.dtermLowpass[axis].pt2Filter, pt2FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             }
             break;
         case FILTER_PT3:
             pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)pt3FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt3FilterInit(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(dterm_lowpass_hz, pidRuntime.dT));
+                pt3FilterInit(&pidRuntime.dtermLowpass[axis].pt3Filter, pt3FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             }
             break;
         default:
@@ -153,19 +152,19 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     //2nd Dterm Lowpass Filter
-    if (pidProfile->dterm_lowpass2_hz > 0) {
-        switch (pidProfile->dterm_filter2_type) {
+    if (pidProfile->dterm_lpf2_static_hz > 0) {
+        switch (pidProfile->dterm_lpf2_type) {
         case FILTER_PT1:
             pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt1FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt1FilterInit(&pidRuntime.dtermLowpass2[axis].pt1Filter, pt1FilterGain(pidProfile->dterm_lowpass2_hz, pidRuntime.dT));
+                pt1FilterInit(&pidRuntime.dtermLowpass2[axis].pt1Filter, pt1FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             }
             break;
         case FILTER_BIQUAD:
-            if (pidProfile->dterm_lowpass2_hz < pidFrequencyNyquist) {
+            if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
                 pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                    biquadFilterInitLPF(&pidRuntime.dtermLowpass2[axis].biquadFilter, pidProfile->dterm_lowpass2_hz, targetPidLooptime);
+                    biquadFilterInitLPF(&pidRuntime.dtermLowpass2[axis].biquadFilter, pidProfile->dterm_lpf2_static_hz, targetPidLooptime);
                 }
             } else {
                 pidRuntime.dtermLowpassApplyFn = nullFilterApply;
@@ -174,13 +173,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         case FILTER_PT2:
             pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt2FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt2FilterInit(&pidRuntime.dtermLowpass2[axis].pt2Filter, pt2FilterGain(pidProfile->dterm_lowpass2_hz, pidRuntime.dT));
+                pt2FilterInit(&pidRuntime.dtermLowpass2[axis].pt2Filter, pt2FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             }
             break;
         case FILTER_PT3:
             pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)pt3FilterApply;
             for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                pt3FilterInit(&pidRuntime.dtermLowpass2[axis].pt3Filter, pt3FilterGain(pidProfile->dterm_lowpass2_hz, pidRuntime.dT));
+                pt3FilterInit(&pidRuntime.dtermLowpass2[axis].pt3Filter, pt3FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             }
             break;
         default:
@@ -224,8 +223,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     // in-flight adjustments and transition from 0 to > 0 in flight the feature
     // won't work because the filter wasn't initialized.
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        biquadFilterInitLPF(&pidRuntime.dMinRange[axis], D_MIN_RANGE_HZ, targetPidLooptime);
-        pt1FilterInit(&pidRuntime.dMinLowpass[axis], pt1FilterGain(D_MIN_LOWPASS_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMinRange[axis], pt2FilterGain(D_MIN_RANGE_HZ, pidRuntime.dT));
+        pt2FilterInit(&pidRuntime.dMinLowpass[axis], pt2FilterGain(D_MIN_LOWPASS_HZ, pidRuntime.dT));
      }
 #endif
 
@@ -236,10 +235,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 
-    pt1FilterInit(&pidRuntime.antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.antiGravitySmoothLpf, pt1FilterGain(ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF, pidRuntime.dT));
+#ifdef USE_ACC
+    const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
+    for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
+        pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
+    }
+#endif
 
-    pidRuntime.ffBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
+    pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -276,11 +279,6 @@ void pidUpdateFeedforwardLpf(uint16_t filterCutoff)
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
-    if (pidProfile->feedforwardTransition == 0) {
-        pidRuntime.feedforwardTransition = 0;
-    } else {
-        pidRuntime.feedforwardTransition = 100.0f / pidProfile->feedforwardTransition;
-    }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pidRuntime.pidCoefficient[axis].Kp = PTERM_SCALE * pidProfile->pid[axis].P;
         pidRuntime.pidCoefficient[axis].Ki = ITERM_SCALE * pidProfile->pid[axis].I;
@@ -306,7 +304,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
         pidRuntime.itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
     }
-    pidRuntime.itermAcceleratorGain = pidProfile->itermAcceleratorGain;
+    pidRuntime.antiGravityGain = pidProfile->anti_gravity_gain;
     pidRuntime.crashTimeLimitUs = pidProfile->crash_time * 1000;
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
     pidRuntime.crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
@@ -320,17 +318,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
     pidRuntime.itermRotation = pidProfile->iterm_rotation;
-    pidRuntime.antiGravityMode = pidProfile->antiGravityMode;
 
-    // Calculate the anti-gravity value that will trigger the OSD display.
-    // For classic AG it's either 1.0 for off and > 1.0 for on.
-    // For the new AG it's a continuous floating value so we want to trigger the OSD
-    // display when it exceeds 25% of its possible range. This gives a useful indication
-    // of AG activity without excessive display.
-    pidRuntime.antiGravityOsdCutoff = 0.0f;
-    if (pidRuntime.antiGravityMode == ANTI_GRAVITY_SMOOTH) {
-        pidRuntime.antiGravityOsdCutoff += (pidRuntime.itermAcceleratorGain / 1000.0f) * 0.25f;
-    }
+    // Calculate the anti-gravity value that will trigger the OSD display when its strength exceeds 25% of max.
+    // This gives a useful indication of AG activity without excessive display.
+    pidRuntime.antiGravityOsdCutoff = (pidRuntime.antiGravityGain / 10.0f) * 0.25f;
+    pidRuntime.antiGravityPGain = ((float)(pidProfile->anti_gravity_p_gain) / 100.0f) * ANTIGRAVITY_KP;
 
 #if defined(USE_ITERM_RELAX)
     pidRuntime.itermRelax = pidProfile->iterm_relax;
@@ -357,8 +349,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_DYN_LPF
-    if (pidProfile->dyn_lpf_dterm_min_hz > 0) {
-        switch (pidProfile->dterm_filter_type) {
+    if (pidProfile->dterm_lpf1_dyn_min_hz > 0) {
+        switch (pidProfile->dterm_lpf1_type) {
         case FILTER_PT1:
             pidRuntime.dynLpfFilter = DYN_LPF_PT1;
             break;
@@ -378,9 +370,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     } else {
         pidRuntime.dynLpfFilter = DYN_LPF_NONE;
     }
-    pidRuntime.dynLpfMin = pidProfile->dyn_lpf_dterm_min_hz;
-    pidRuntime.dynLpfMax = pidProfile->dyn_lpf_dterm_max_hz;
-    pidRuntime.dynLpfCurveExpo = pidProfile->dyn_lpf_curve_expo;
+    pidRuntime.dynLpfMin = pidProfile->dterm_lpf1_dyn_min_hz;
+    pidRuntime.dynLpfMax = pidProfile->dterm_lpf1_dyn_max_hz;
+    pidRuntime.dynLpfCurveExpo = pidProfile->dterm_lpf1_dyn_expo;
 #endif
 
 #ifdef USE_LAUNCH_CONTROL
@@ -400,7 +392,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;
-    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * powf(pidRuntime.thrustLinearization, 2);
+    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * sq(pidRuntime.thrustLinearization);
 #endif
 
 #if defined(USE_D_MIN)
@@ -422,14 +414,18 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_FEEDFORWARD
-    pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
-    if (pidProfile->feedforward_smooth_factor) {
-        pidRuntime.ffSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) / 100.0f;
+    if (pidProfile->feedforward_transition == 0) {
+        pidRuntime.feedforwardTransitionFactor = 0;
     } else {
-        // set automatically according to boost amount, limit to 0.5 for auto
-        pidRuntime.ffSmoothFactor = MAX(0.5f, 1.0f - ((float)pidProfile->feedforward_boost) * 2.0f / 100.0f);
+        pidRuntime.feedforwardTransitionFactor = 100.0f / pidProfile->feedforward_transition;
     }
-    pidRuntime.ffJitterFactor = pidProfile->feedforward_jitter_factor;
+    pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
+    pidRuntime.feedforwardSmoothFactor = 1.0f;
+    if (pidProfile->feedforward_smooth_factor) {
+        pidRuntime.feedforwardSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) / 100.0f;
+    }
+    pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
+    pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
     feedforwardInit(pidProfile);
 #endif
 

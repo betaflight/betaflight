@@ -109,13 +109,6 @@ void Set_System(void)
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_14);
 
 #endif /* STM32F37X  && STM32F303xC)*/
-#if defined(STM32F10X)
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-#endif
 
     // Initialise callbacks
     ctrlLineStateCb = NULL;
@@ -203,30 +196,6 @@ void USB_Interrupts_Config(void)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_USB_WUP);
     NVIC_Init(&NVIC_InitStructure);
 }
-
-#ifdef STM32F10X
-
-/*******************************************************************************
- * Function Name  : USB_Interrupts_Disable
- * Description    : Disables the USB interrupts
- * Input          : None.
- * Return         : None.
- *******************************************************************************/
-void USB_Interrupts_Disable(void)
-{
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    /* Disable the USB interrupt */
-    NVIC_InitStructure.NVIC_IRQChannel    = USB_LP_CAN1_RX0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    /* Disable the USB Wake-up interrupt */
-    NVIC_InitStructure.NVIC_IRQChannel    = USBWakeUp_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
-    NVIC_Init(&NVIC_InitStructure);
-}
-#endif
 
 /*******************************************************************************
  * Function Name  : USB_Cable_Config

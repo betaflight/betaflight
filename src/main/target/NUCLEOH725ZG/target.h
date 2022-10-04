@@ -41,9 +41,9 @@
 // Nucleo-H7A3 has one button (The blue USER button).
 // Force two buttons to look at the single button so config reset on button works
 #define USE_BUTTONS
-#define	BUTTON_A_PIN            PC13
+#define BUTTON_A_PIN            PC13
 #define BUTTON_A_PIN_INVERTED // Active high
-#define	BUTTON_B_PIN            PC13
+#define BUTTON_B_PIN            PC13
 #define BUTTON_B_PIN_INVERTED // Active high
 
 #define USE_BEEPER
@@ -211,6 +211,8 @@
 #define USE_ACC_SPI_MPU9250
 #define USE_GYRO_SPI_ICM42605
 #define USE_ACC_SPI_ICM42605
+#define USE_GYRO_SPI_ICM42688P
+#define USE_ACC_SPI_ICM42688P
 
 #define GYRO_1_CS_PIN           PD15
 #define GYRO_1_SPI_INSTANCE     SPI1
@@ -233,7 +235,6 @@
 #define USE_TIMER
 #define USE_PWM_OUTPUT
 #define USE_MOTOR
-#define USE_EXTI
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
@@ -248,10 +249,6 @@
 #define USE_I2C_OLED_DISPLAY
 
 #define USE_ADC
-
-#define ADC1_INSTANCE ADC1
-#define ADC2_INSTANCE ADC2
-#define ADC3_INSTANCE ADC3
 
 // DMA stream assignmnets
 #define VBAT_ADC_PIN            PB1  // ADC1

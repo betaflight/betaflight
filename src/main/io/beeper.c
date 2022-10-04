@@ -18,8 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdbool.h"
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -47,7 +47,13 @@
 #include "io/gps.h"
 #endif
 
+#ifdef USE_OSD
+#include "osd/osd.h"
+#endif
+
 #include "pg/beeper.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -352,8 +358,8 @@ void beeperWarningBeeps(uint8_t beepCount)
 static void beeperGpsStatus(void)
 {
     if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_GPS_STATUS))) {
-        // if GPS fix then beep out number of satellites
-        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+        // if GPS 3D fix and at least the minimum number available, then beep out number of satellites
+        if (STATE(GPS_FIX) && gpsSol.numSat > gpsConfig()->gpsMinimumSats) {
             uint8_t i = 0;
             do {
                 beep_multiBeeps[i++] = 5;
@@ -390,6 +396,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     if (beeperNextToggleTime > currentTimeUs) {
+        schedulerIgnoreTaskExecTime();
         return;
     }
 
@@ -432,6 +439,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
     }
 
+#if defined(USE_OSD)
+    static bool beeperWasOn = false;
+    if (beeperIsOn && !beeperWasOn) {
+        osdSetVisualBeeperState(true);
+    }
+    beeperWasOn = beeperIsOn;
+#endif
+    
     beeperProcessCommand(currentTimeUs);
 }
 

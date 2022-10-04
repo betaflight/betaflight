@@ -22,25 +22,7 @@
 
 // Configuration constants
 
-#if defined(STM32F1)
-#define UARTDEV_COUNT_MAX 3
-#define UARTHARDWARE_MAX_PINS 3
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#elif defined(STM32F3)
-#define UARTDEV_COUNT_MAX 5
-#define UARTHARDWARE_MAX_PINS 4
-#ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
-#endif
-#ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE     256
-#endif
-#elif defined(STM32F4)
+#if defined(STM32F4)
 #define UARTDEV_COUNT_MAX 6
 #define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
@@ -67,7 +49,7 @@
 #endif
 #endif
 #elif defined(STM32H7)
-#define UARTDEV_COUNT_MAX 8
+#define UARTDEV_COUNT_MAX 11 // UARTs 1 to 10 + LPUART1
 #define UARTHARDWARE_MAX_PINS 5
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     128
@@ -80,7 +62,7 @@
 #endif
 #endif
 #elif defined(STM32G4)
-#define UARTDEV_COUNT_MAX 9  // UART1~5 + UART9 (Implemented with LPUART1)
+#define UARTDEV_COUNT_MAX 11  // UARTs 1 to 5 + LPUART1 (index 10)
 #define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     128
@@ -222,6 +204,9 @@ typedef struct uartDevice_s {
     uartPinDef_t tx;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
+#if !defined(STM32F4) // Don't support pin swap.
+    bool pinSwap;
+#endif
 } uartDevice_t;
 
 extern uartDevice_t *uartDevmap[];
@@ -240,10 +225,10 @@ void uartConfigureDma(uartDevice_t *uartdev);
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
 
-#if defined(STM32F3) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define UART_REG_RXD(base) ((base)->RDR)
 #define UART_REG_TXD(base) ((base)->TDR)
-#elif defined(STM32F1) || defined(STM32F4)
+#elif defined(STM32F4)
 #define UART_REG_RXD(base) ((base)->DR)
 #define UART_REG_TXD(base) ((base)->DR)
 #endif

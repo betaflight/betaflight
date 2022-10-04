@@ -27,10 +27,6 @@
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
 
-#ifdef DEBUG_SECTION_TIMES
-uint32_t sectionTimes[2][4];
-#endif
-
 // Please ensure that these names are aligned with the enum values defined in 'debug.h' - for OSD be sure the name is unique with 12 chars.
 const char * const debugModeNames[DEBUG_COUNT] = {
     "NONE",
@@ -91,12 +87,23 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "BARO",
     "GPS_RESCUE_THROTTLE_PID",
     "DYN_IDLE",
-    "FF_LIMIT",
-    "FF_INTERPOLATED",
+    "FEEDFORWARD_LIMIT",
+    "FEEDFORWARD",
     "BLACKBOX_OUTPUT",
     "GYRO_SAMPLE",
     "RX_TIMING",
     "D_LPF",
     "VTX_TRAMP",
     "GHST",
+    "GHST_MSP",
+    "SCHEDULER_DETERMINISM",
+    "TIMING_ACCURACY",
+    "RX_EXPRESSLRS_SPI",
+    "RX_EXPRESSLRS_PHASELOCK",
+    "RX_STATE_TIME",
+    "GPS_RESCUE_VELOCITY",
+    "GPS_RESCUE_HEADING",
+    "GPS_RESCUE_TRACKING",
+    "ATTITUDE",
+    "VTX_MSP"
 };

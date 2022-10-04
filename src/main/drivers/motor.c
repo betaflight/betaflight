@@ -111,7 +111,6 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     case PWM_TYPE_MULTISHOT:
     case PWM_TYPE_BRUSHED:
         enabled = true;
-
         break;
 
 #ifdef USE_DSHOT
@@ -121,11 +120,9 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
     case PWM_TYPE_PROSHOT1000:
         enabled = true;
         isDshot = true;
-
         break;
 #endif
     default:
-
         break;
     }
 
@@ -328,8 +325,13 @@ timeMs_t motorGetMotorEnableTimeMs(void)
 #ifdef USE_DSHOT_BITBANG
 bool isDshotBitbangActive(const motorDevConfig_t *motorDevConfig)
 {
+#ifdef STM32F4
     return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
         (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->useDshotTelemetry && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
+#else
+    return motorDevConfig->useDshotBitbang == DSHOT_BITBANG_ON ||
+        (motorDevConfig->useDshotBitbang == DSHOT_BITBANG_AUTO && motorDevConfig->motorPwmProtocol != PWM_TYPE_PROSHOT1000);
+#endif
 }
 #endif
 

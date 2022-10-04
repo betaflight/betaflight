@@ -145,11 +145,8 @@
 #define USE_MULTI_GYRO
 #undef USE_GYRO_REGISTER_DUMP
 
-#define USE_EXTI
-#define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PD4
 #define GYRO_2_EXTI_PIN         PE15
-#define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 
@@ -214,10 +211,6 @@
 
 #define USE_ADC
 #define USE_ADC_INTERNAL // ADC3
-
-#define ADC1_INSTANCE ADC1
-#define ADC2_INSTANCE ADC2 // ADC2 not used
-#define ADC3_INSTANCE ADC3 // ADC3 only for core temp and vrefint
 
 #define RSSI_ADC_PIN            PC0  // ADC123
 #define VBAT_ADC_PIN            PC4  // ADC123

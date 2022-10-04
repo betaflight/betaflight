@@ -42,17 +42,6 @@
 
 #include "pg/adc.h"
 
-// XXX Instance and DMA stream defs will be gone in unified target
-
-#ifndef ADC1_INSTANCE
-#define ADC1_INSTANCE NULL
-#endif
-#ifndef ADC2_INSTANCE
-#define ADC2_INSTANCE NULL
-#endif
-#ifndef ADC3_INSTANCE
-#define ADC3_INSTANCE NULL
-#endif
 #ifndef ADC1_DMA_STREAM
 #define ADC1_DMA_STREAM NULL
 #endif
@@ -65,25 +54,25 @@
 
 const adcDevice_t adcHardware[ADCDEV_COUNT] = {
     {
-        .ADCx = ADC1_INSTANCE,
+        .ADCx = ADC1,
         .rccADC = RCC_AHB1(ADC12),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
         .channel = DMA_REQUEST_ADC1,
 #endif
     },
-    { .ADCx = ADC2_INSTANCE,
+    { .ADCx = ADC2,
         .rccADC = RCC_AHB1(ADC12),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
         .channel = DMA_REQUEST_ADC2,
 #endif
     },
-#if defined(ADC3)
+#if !(defined(STM32H7A3xx) || defined(STM32H7A3xxQ))
     // ADC3 is not available on all H7 MCUs, e.g. H7A3
     // On H743 and H750, ADC3 can be serviced by BDMA also, but we settle for DMA1 or 2 (for now).
     {
-        .ADCx = ADC3_INSTANCE,
+        .ADCx = ADC3,
         .rccADC = RCC_AHB4(ADC3),
 #if !defined(USE_DMA_SPEC)
         .dmaResource = (dmaResource_t *)ADC3_DMA_STREAM,
@@ -95,7 +84,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
 
 adcDevice_t adcDevice[ADCDEV_COUNT];
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_3
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_2
@@ -110,15 +99,26 @@ const adcTagMap_t adcTagMap[] = {
     // Keep these at the beginning for easy indexing by ADC_TAG_MAP_{VREFINT,TEMPSENSOR}
 #define ADC_TAG_MAP_VREFINT    0
 #define ADC_TAG_MAP_TEMPSENSOR 1
+#define ADC_TAG_MAP_VBAT4      2
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
-    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 },
-    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 17 },
-#elif defined(STM32H723xx) || defined(STM32H725xx)
-    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 },
-    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 19 },
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) // RM0468 Rev 2 Table 240. ADC interconnection
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    18 }, // 18 VREFINT
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 17 }, // 17 VSENSE
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VBAT,       16 }, // 16 VBAT/4
+#elif defined(STM32H743xx) || defined(STM32H750xx) // RM0433 Rev 7 Table 205. ADC interconnection
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    19 }, // 19 VREFINT
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 18 }, // 18 VSENSE
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VBAT,       17 }, // 17 VBAT/4
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) // RM0455 Rev 5 187. ADC interconnection
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VREFINT,    19 }, // 19 VREFINT
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_TEMPSENSOR, 18 }, // 18 VSENSE
+    { DEFIO_TAG_E__NONE, ADC_DEVICE_FOR_INTERNAL,   ADC_CHANNEL_VBAT,       17 }, // 17 VBAT/4
+#elif
+#error MCU not defined
 #endif
-#endif
+
+#endif // USE_ADC_INTERNAL
+
 #if defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
     // See DS13195 Rev 6 Page 51/52
     { DEFIO_TAG_E__PC0,  ADC_DEVICES_12,  ADC_CHANNEL_10, 10 },
@@ -214,7 +214,7 @@ void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 
     // Enable circular DMA.
     // ADC3 of H72X and H73X has a special way of doing this.
-#if defined(STM32H723xx) || defined(STM32H725xx)
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
     if (adcdev->ADCx == ADC3) {
         hadc->Init.DMAContinuousRequests = ENABLE;
     } else
@@ -251,10 +251,10 @@ int adcFindTagMapEntry(ioTag_t tag)
 }
 
 // H743, H750 and H7A3 seems to use 16-bit precision value,
-// while H723 and H725 seems to use 12-bit precision value.
+// while H723, H725 and H730 seems to use 12-bit precision value.
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define VREFINT_CAL_SHIFT 4
-#elif defined(STM32H723xx) || defined(STM32H725xx)
+#elif defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
 #define VREFINT_CAL_SHIFT 0
 #else
 #error Unknown MCU
@@ -281,18 +281,22 @@ void adcInit(const adcConfig_t *config)
 
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
+        adcOperatingConfig[ADC_BATTERY].adcDevice = config->vbat.device;
     }
 
     if (config->rssi.enabled) {
         adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
+        adcOperatingConfig[ADC_RSSI].adcDevice = config->rssi.device;
     }
 
     if (config->external1.enabled) {
         adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
+        adcOperatingConfig[ADC_EXTERNAL1].adcDevice = config->external1.device;
     }
 
     if (config->current.enabled) {
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+        adcOperatingConfig[ADC_CURRENT].adcDevice = config->current.device;
     }
 
 #ifdef USE_ADC_INTERNAL
@@ -303,13 +307,22 @@ void adcInit(const adcConfig_t *config)
         int map;
         int dev;
 
+#ifdef USE_ADC_INTERNAL
         if (i == ADC_TEMPSENSOR) {
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ffs(adcTagMap[map].devices) - 1;
         } else if (i == ADC_VREFINT) {
             map = ADC_TAG_MAP_VREFINT;
             dev = ffs(adcTagMap[map].devices) - 1;
+        } else if (i == ADC_VBAT4) {
+            map = ADC_TAG_MAP_VBAT4;
+            dev = ffs(adcTagMap[map].devices) - 1;
         } else {
+#else
+        {
+#endif
+            dev = ADC_CFG_TO_DEV(adcOperatingConfig[i].adcDevice);
+
             if (!adcOperatingConfig[i].tag) {
                 continue;
             }
@@ -322,24 +335,30 @@ void adcInit(const adcConfig_t *config)
             // Found a tag map entry for this input pin
             // Find an ADC device that can handle this input pin
 
-            for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!adcDevice[dev].ADCx
+            bool useConfiguredDevice = (dev != ADCINVALID) && (adcTagMap[map].devices & (1 << dev));
+
+            if (!useConfiguredDevice) {
+                // If the ADC was configured to use a specific device, but that device was not active, then try and find another active instance that works for the pin.
+
+                for (dev = 0; dev < ADCDEV_COUNT; dev++) {
+                    if (!adcDevice[dev].ADCx
 #ifndef USE_DMA_SPEC
-                     || !adcDevice[dev].dmaResource
+                        || !adcDevice[dev].dmaResource
 #endif
-                   ) {
-                    // Instance not activated
+                    ) {
+                        // Instance not activated
+                        continue;
+                    }
+                    if (adcTagMap[map].devices & (1 << dev)) {
+                        // Found an activated ADC instance for this input pin
+                        break;
+                    }
+                }
+
+                if (dev == ADCDEV_COUNT) {
+                    // No valid device found, go next channel.
                     continue;
                 }
-                if (adcTagMap[map].devices & (1 << dev)) {
-                    // Found an activated ADC instance for this input pin
-                    break;
-                }
-            }
-
-            if (dev == ADCDEV_COUNT) {
-                // No valid device found, go next channel.
-                continue;
             }
         }
 
@@ -384,7 +403,7 @@ void adcInit(const adcConfig_t *config)
     for (int dev = 0; dev < ADCDEV_COUNT; dev++) {
         adcDevice_t *adc = &adcDevice[dev];
 
-        if (!(adc->ADCx && adc->channelBits)) {
+        if (!adc->channelBits) {
             continue;
         }
 
@@ -436,19 +455,23 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
-        dmaIdentifier_e dmaIdentifier;
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 
-        if (!dmaSpec) {
+        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
         adc->DmaHandle.Instance                 = dmaSpec->ref;
         adc->DmaHandle.Init.Request             = dmaSpec->channel;
-        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 #else
-        dmaIdentifier = dmaGetIdentifier(adc->dmaResource);
+        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(adc->dmaResource);
+
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+            return;
+        }
+
         adc->DmaHandle.Instance                 = (DMA_ARCH_TYPE *)adc->dmaResource;
         adc->DmaHandle.Init.Request             = adc->channel;
 #endif
@@ -462,9 +485,9 @@ void adcInit(const adcConfig_t *config)
 
         // Deinitialize  & Initialize the DMA for new transfer
 
-        // dmaInit must be called before calling HAL_DMA_Init,
+        // dmaEnable must be called before calling HAL_DMA_Init,
         // to enable clock for associated DMA if not already done so.
-        dmaInit(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev));
+        dmaEnable(dmaIdentifier);
 
         HAL_DMA_DeInit(&adc->DmaHandle);
         HAL_DMA_Init(&adc->DmaHandle);
@@ -495,7 +518,7 @@ void adcInit(const adcConfig_t *config)
 
         adcDevice_t *adc = &adcDevice[dev];
 
-        if (!(adc->ADCx && adc->channelBits)) {
+        if (!adc->channelBits) {
             continue;
         }
 
@@ -514,7 +537,7 @@ void adcGetChannelValues(void)
     // Transfer values in conversion buffer into adcValues[]
     // Cache coherency should be maintained by MPU facility
 
-    for (int i = 0; i < ADC_CHANNEL_INTERNAL; i++) {
+    for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }

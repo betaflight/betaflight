@@ -28,7 +28,6 @@ bool simulatedAirmodeEnabled = true;
 float simulatedSetpointRate[3] = { 0,0,0 };
 float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
-float simulatedThrottlePIDAttenuation = 1.0f;
 float simulatedMotorMixRange = 0.0f;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -78,7 +77,6 @@ extern "C" {
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
-    float getThrottlePIDAttenuation(void) { return simulatedThrottlePIDAttenuation; }
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
     bool isAirmodeActivated() { return simulatedAirmodeEnabled; }
@@ -101,7 +99,10 @@ extern "C" {
     {
         UNUSED(newRcFrame);
         UNUSED(feedforwardAveraging);
-        return simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+        const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
+        float setpointDelta = simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+        setpointDelta *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1;
+        return setpointDelta;
     }
     bool shouldApplyFeedforwardLimits(int axis)
     {
@@ -131,20 +132,18 @@ void setDefaultTestSettings(void) {
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->pidSumLimitYaw = PIDSUM_LIMIT_YAW;
     pidProfile->yaw_lowpass_hz = 0;
-    pidProfile->dterm_lowpass_hz = 100;
-    pidProfile->dterm_lowpass2_hz = 0;
+    pidProfile->dterm_lpf1_static_hz = 100;
+    pidProfile->dterm_lpf2_static_hz = 0;
     pidProfile->dterm_notch_hz = 260;
     pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->dterm_filter_type = FILTER_BIQUAD;
+    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
     pidProfile->itermWindupPointPercent = 50;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->levelAngleLimit = 55;
-    pidProfile->feedforwardTransition = 100;
+    pidProfile->feedforward_transition = 100;
     pidProfile->yawRateAccelLimit = 100;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->antiGravityMode = ANTI_GRAVITY_SMOOTH;
-    pidProfile->itermThrottleThreshold = 250;
-    pidProfile->itermAcceleratorGain = 1000;
+    pidProfile->anti_gravity_gain = 10;
     pidProfile->crash_time = 500;
     pidProfile->crash_delay = 0;
     pidProfile->crash_recovery_angle = 10;
@@ -177,7 +176,7 @@ timeUs_t currentTestTime(void) {
 
 void resetTest(void) {
     loopIter = 0;
-    simulatedThrottlePIDAttenuation = 1.0f;
+    pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
 
     pidStabilisationState(PID_STABILISATION_OFF);
@@ -221,7 +220,7 @@ void setStickPosition(int axis, float stickRatio) {
 
 // All calculations will have 10% tolerance
 float calculateTolerance(float input) {
-    return fabs(input * 0.1f);
+    return fabsf(input * 0.1f);
 }
 
 TEST(pidControllerTest, testInitialisation)
@@ -323,8 +322,8 @@ TEST(pidControllerTest, testPidLoop) {
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
-    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
     EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
     simulatedMotorMixRange = 0;
 
@@ -340,8 +339,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
-    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
     EXPECT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
@@ -374,39 +373,39 @@ TEST(pidControllerTest, testPidLevel) {
     float currentPidSetpoint = 30;
     rollAndPitchTrims_t angleTrim = { { 0, 0 } };
 
-    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
     EXPECT_FLOAT_EQ(0, currentPidSetpoint);
-    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
     EXPECT_FLOAT_EQ(0, currentPidSetpoint);
 
     // Test attitude response
     setStickPosition(FD_ROLL, 1.0f);
     setStickPosition(FD_PITCH, -1.0f);
-    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(275, currentPidSetpoint);
-    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(-275, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(244.07211, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(-244.07211, currentPidSetpoint);
 
     setStickPosition(FD_ROLL, -0.5f);
     setStickPosition(FD_PITCH, 0.5f);
-    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(-137.5, currentPidSetpoint);
-    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(137.5, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(-93.487915, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(93.487915, currentPidSetpoint);
 
     attitude.values.roll = -275;
     attitude.values.pitch = 275;
-    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(0, currentPidSetpoint);
-    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(0, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(-12.047981, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(12.047981, currentPidSetpoint);
 
     // Disable ANGLE_MODE
     disableFlightMode(ANGLE_MODE);
-    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(0, currentPidSetpoint);
-    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(0, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(11.07958, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(12.047981, currentPidSetpoint);
 
     // Test level mode expo
     enableFlightMode(ANGLE_MODE);
@@ -416,10 +415,10 @@ TEST(pidControllerTest, testPidLevel) {
     setStickPosition(FD_PITCH, -0.5f);
     currentControlRateProfile->levelExpo[FD_ROLL] = 50;
     currentControlRateProfile->levelExpo[FD_PITCH] = 26;
-    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(85.9375, currentPidSetpoint);
-    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint);
-    EXPECT_FLOAT_EQ(-110.6875, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(76.208672, currentPidSetpoint);
+    currentPidSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpoint, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(-98.175163, currentPidSetpoint);
 }
 
 
@@ -432,18 +431,18 @@ TEST(pidControllerTest, testPidHorizon) {
     // Test full stick response
     setStickPosition(FD_ROLL, 1.0f);
     setStickPosition(FD_PITCH, -1.0f);
-    EXPECT_FLOAT_EQ(0, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(0.0f, calcHorizonLevelStrength());
 
     // Expect full rate output on full stick
     // Test zero stick response
     setStickPosition(FD_ROLL, 0);
     setStickPosition(FD_PITCH, 0);
-    EXPECT_FLOAT_EQ(1, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(1.0f, calcHorizonLevelStrength());
 
     // Test small stick response
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
-    EXPECT_NEAR(0.82, calcHorizonLevelStrength(), calculateTolerance(0.82));
+    EXPECT_NEAR(0.811f, calcHorizonLevelStrength(), calculateTolerance(0.82));
 }
 
 TEST(pidControllerTest, testMixerSaturation) {
@@ -458,12 +457,12 @@ TEST(pidControllerTest, testMixerSaturation) {
     simulatedMotorMixRange = 2.0f;
     pidController(pidProfile, currentTestTime());
 
-    // Expect no iterm accumulation for yaw
-    EXPECT_FLOAT_EQ(150, pidData[FD_ROLL].I);
-    EXPECT_FLOAT_EQ(-150, pidData[FD_PITCH].I);
+    // Expect no iterm accumulation for all axes
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
-    // Test itermWindup limit (note: windup limit now only affects yaw)
+    // Test itermWindup limit
     // First store values without exceeding iterm windup limit
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -484,10 +483,10 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
     setStickPosition(FD_YAW, 0.1f);
-    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
+    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 2) / 100.0f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, rollTestIterm);
-    EXPECT_FLOAT_EQ(pidData[FD_PITCH].I, pitchTestIterm);
+    EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
+    EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
     EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
 }
 

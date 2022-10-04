@@ -33,12 +33,6 @@ typedef enum {
     CONFIGURATION_STATE_CONFIGURED,
 } configurationState_e;
 
-typedef enum {
-    SCHEDULER_OPTIMIZE_RATE_OFF = 0,
-    SCHEDULER_OPTIMIZE_RATE_ON,
-    SCHEDULER_OPTIMIZE_RATE_AUTO,
-} schedulerOptimizeRate_e;
-
 typedef struct pilotConfig_s {
     char name[MAX_NAME_LENGTH + 1];
     char displayName[MAX_NAME_LENGTH + 1];
@@ -57,7 +51,6 @@ typedef struct systemConfig_s {
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
     uint8_t hseMhz;                 // Only used for F4 and G4 targets
     uint8_t configurationState;     // The state of the configuration (defaults / configured)
-    uint8_t schedulerOptimizeRate;
     uint8_t enableStickArming; // boolean that determines whether stick arming can be used
 } systemConfig_t;
 
@@ -82,8 +75,6 @@ bool isConfigDirty(void);
 uint8_t getCurrentPidProfileIndex(void);
 void changePidProfile(uint8_t pidProfileIndex);
 void changePidProfileFromCellCount(uint8_t cellCount);
-struct pidProfile_s;
-void resetPidProfile(struct pidProfile_s *profile);
 
 uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
@@ -99,3 +90,4 @@ void targetValidateConfiguration(void);
 bool isSystemConfigured(void);
 void setRebootRequired(void);
 bool getRebootRequired(void);
+bool isEepromWriteInProgress(void);

@@ -249,7 +249,6 @@ static void servoConfigureOutput(void)
     case MIXER_CUSTOM_AIRPLANE:
     case MIXER_CUSTOM_TRI:
         loadCustomServoMixer();
-
         break;
     default:
         break;

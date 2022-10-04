@@ -48,14 +48,15 @@ static int displayPortTestRelease(displayPort_t *displayPort)
     return 0;
 }
 
-static int displayPortTestClearScreen(displayPort_t *displayPort)
+static int displayPortTestClearScreen(displayPort_t *displayPort, displayClearOption_e options)
 {
     UNUSED(displayPort);
+    UNUSED(options);
     memset(testDisplayPortBuffer, ' ', UNITTEST_DISPLAYPORT_BUFFER_LEN);
     return 0;
 }
 
-static int displayPortTestDrawScreen(displayPort_t *displayPort)
+static bool displayPortTestDrawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;

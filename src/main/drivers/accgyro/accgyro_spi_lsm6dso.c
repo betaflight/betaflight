@@ -32,13 +32,11 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 
-#if defined(USE_GYRO_EXTI) && defined(USE_MPU_DATA_READY_SIGNAL)
 void lsm6dsoExtiHandler(extiCallbackRec_t *cb)
 {
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
 }
-#endif
 
 bool lsm6dsoAccRead(accDev_t *acc)
 {
@@ -54,8 +52,8 @@ bool lsm6dsoAccRead(accDev_t *acc)
 
     uint8_t lsm6dso_rx_buf[BUFFER_SIZE];
 
-    const busDevice_t *busdev = &acc->bus;
-    busReadRegisterBuffer(busdev, LSM6DSO_REG_OUTX_L_A, lsm6dso_rx_buf, BUFFER_SIZE);
+    extDevice_t *dev = &acc->gyro->dev;
+    busReadRegisterBuffer(dev, LSM6DSO_REG_OUTX_L_A, lsm6dso_rx_buf, BUFFER_SIZE);
 
     acc->ADCRaw[X] = (int16_t)((lsm6dso_rx_buf[IDX_ACCEL_XOUT_H] << 8) | lsm6dso_rx_buf[IDX_ACCEL_XOUT_L]);
     acc->ADCRaw[Y] = (int16_t)((lsm6dso_rx_buf[IDX_ACCEL_YOUT_H] << 8) | lsm6dso_rx_buf[IDX_ACCEL_YOUT_L]);
@@ -78,8 +76,8 @@ bool lsm6dsoGyroRead(gyroDev_t *gyro)
 
     uint8_t lsm6dso_rx_buf[BUFFER_SIZE];
 
-    const busDevice_t *busdev = &gyro->bus;
-    busReadRegisterBuffer(busdev, LSM6DSO_REG_OUTX_L_G, lsm6dso_rx_buf, BUFFER_SIZE);
+    extDevice_t *dev = &gyro->dev;
+    busReadRegisterBuffer(dev, LSM6DSO_REG_OUTX_L_G, lsm6dso_rx_buf, BUFFER_SIZE);
 
     gyro->gyroADCRaw[X] = (int16_t)((lsm6dso_rx_buf[IDX_GYRO_XOUT_H] << 8) | lsm6dso_rx_buf[IDX_GYRO_XOUT_L]);
     gyro->gyroADCRaw[Y] = (int16_t)((lsm6dso_rx_buf[IDX_GYRO_YOUT_H] << 8) | lsm6dso_rx_buf[IDX_GYRO_YOUT_L]);

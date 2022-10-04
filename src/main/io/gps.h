@@ -79,10 +79,11 @@ typedef enum {
     UBLOX_ACK_IDLE = 0,
     UBLOX_ACK_WAITING,
     UBLOX_ACK_GOT_ACK,
-    UBLOX_ACK_GOT_NACK,
-    UBLOX_ACK_GOT_TIMEOUT
+    UBLOX_ACK_GOT_NACK
 } ubloxAckState_e;
 
+#define GPS_REQUIRED_SAT_COUNT 8
+#define GPS_MINIMUM_SAT_COUNT 4
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsConfig_s {
@@ -95,6 +96,8 @@ typedef struct gpsConfig_s {
     uint8_t gps_set_home_point_once;
     uint8_t gps_use_3d_speed;
     uint8_t sbas_integrity;
+    uint8_t gpsRequiredSats;
+    uint8_t gpsMinimumSats;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);
@@ -120,16 +123,6 @@ typedef struct gpsSolutionData_s {
     uint8_t numSat;
 } gpsSolutionData_t;
 
-typedef enum {
-    GPS_MESSAGE_STATE_IDLE = 0,
-    GPS_MESSAGE_STATE_INIT,
-    GPS_MESSAGE_STATE_SBAS,
-    GPS_MESSAGE_STATE_GNSS,
-    GPS_MESSAGE_STATE_INITIALIZED,
-    GPS_MESSAGE_STATE_PEDESTRIAN_TO_AIRBORNE,
-    GPS_MESSAGE_STATE_ENTRY_COUNT
-} gpsMessageState_e;
-
 typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
@@ -140,11 +133,12 @@ typedef struct gpsData_s {
     uint32_t state_ts;              // timestamp for last state_position increment
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
     uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
-    gpsMessageState_e messageState;
 
     uint8_t ackWaitingMsgId;        // Message id when waiting for ACK
     uint8_t ackTimeoutCounter;      // Ack timeout counter
     ubloxAckState_e ackState;
+    bool ubloxUsePVT;
+    bool ubloxUseSAT;
 } gpsData_t;
 
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
@@ -152,11 +146,11 @@ extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 
 extern int32_t GPS_home[2];
 extern uint16_t GPS_distanceToHome;        // distance to home point in meters
+extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
 extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
 extern int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
-extern float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
 extern int16_t nav_takeoff_bearing;
 
@@ -168,17 +162,45 @@ typedef enum {
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
+#define GPS_SV_MAXSATS_LEGACY   16
+#define GPS_SV_MAXSATS_M8N      32
+#define GPS_SV_MAXSATS_M9N      42
+
 extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;
 extern uint32_t GPS_svInfoReceivedCount;
-extern uint8_t GPS_numCh;                  // Number of channels
-extern uint8_t GPS_svinfo_chn[16];         // Channel number
-extern uint8_t GPS_svinfo_svid[16];        // Satellite ID
-extern uint8_t GPS_svinfo_quality[16];     // Bitfield Qualtity
-extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Strength)
+extern uint8_t GPS_numCh;                               // Number of channels
+extern uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS_M8N];      // When NumCh is 16 or less: Channel number
+                                                        // When NumCh is more than 16: GNSS Id
+                                                        //   0 = GPS, 1 = SBAS, 2 = Galileo, 3 = BeiDou
+                                                        //   4 = IMES, 5 = QZSS, 6 = Glonass
+extern uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS_M8N];     // Satellite ID
+extern uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS_M8N];  // When NumCh is 16 or less: Bitfield Qualtity
+                                                        // When NumCh is more than 16: flags
+                                                        //   bits 2..0: signal quality indicator
+                                                        //     0 = no signal
+                                                        //     1 = searching signal
+                                                        //     2 = signal acquired
+                                                        //     3 = signal detected but unusable
+                                                        //     4 = code locked and time synchronized
+                                                        //     5,6,7 = code and carrier locked and time synchronized
+                                                        //   bit 3:
+                                                        //     1 = signal currently being used for navigaion
+                                                        //   bits 5..4: signal health flag
+                                                        //     0 = unknown
+                                                        //     1 = healthy
+                                                        //     2 = unhealthy
+                                                        //   bit 6:
+                                                        //     1 = differential correction data available for this SV
+                                                        //   bit 7:
+                                                        //     1 = carrier smoothed pseudorange used
+extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Ratio (Signal Strength)
 
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
+
+#define TASK_GPS_RATE       120
+#define TASK_GPS_RATE_FAST  1000
 
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);

@@ -60,6 +60,7 @@ EXCLUDES        = \
                 stm32h7xx_hal_smartcard_ex.c \
                 stm32h7xx_hal_smbus.c \
                 stm32h7xx_hal_spdifrx.c \
+                stm32h7xx_hal_spi.c \
                 stm32h7xx_hal_sram.c \
                 stm32h7xx_hal_swpmi.c \
                 stm32h7xx_hal_usart.c \
@@ -85,7 +86,6 @@ EXCLUDES        = \
                 stm32h7xx_ll_rcc.c \
                 stm32h7xx_ll_rng.c \
                 stm32h7xx_ll_rtc.c \
-                stm32h7xx_ll_spi.c \
                 stm32h7xx_ll_swpmi.c \
                 stm32h7xx_ll_usart.c \
                 stm32h7xx_ll_utils.c
@@ -147,7 +147,7 @@ VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
@@ -217,6 +217,28 @@ STARTUP_SRC         = startup_stm32h723xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
+else ifeq ($(TARGET),$(filter $(TARGET),$(H730xB_TARGETS)))
+DEVICE_FLAGS       += -DSTM32H730xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h730_128m.ld
+STARTUP_SRC         = startup_stm32h730xx.s
+DEFAULT_TARGET_FLASH := 128
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+
+ifeq ($(TARGET_FLASH),)
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
+endif
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE      := 1024
+# TARGET_FLASH now becomes the amount of MEMORY-MAPPED address space that is occupied by the firmware
+# and the maximum size of the data stored on the external flash device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h730_exst.ld
+LD_SCRIPTS          = $(LINKER_DIR)/stm32_h730_common.ld $(LINKER_DIR)/stm32_h730_common_post.ld
+endif
+
+
 else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
@@ -282,7 +304,7 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_hal.c \
             drivers/serial_uart_stm32h7xx.c \
             drivers/bus_quadspi_hal.c \
-            drivers/bus_spi_hal.c \
+            drivers/bus_spi_ll.c \
             drivers/dma_stm32h7xx.c \
             drivers/dshot_bitbang.c \
             drivers/dshot_bitbang_decode.c \

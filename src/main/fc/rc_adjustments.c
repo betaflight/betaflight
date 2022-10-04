@@ -61,6 +61,8 @@
 
 #include "rc_adjustments.h"
 
+#include "scheduler/scheduler.h"
+
 #define ADJUSTMENT_RANGE_COUNT_INVALID -1
 
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
@@ -416,11 +418,13 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         currentPidProfile->pid[PID_YAW].F = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_F, newValue);
         break;
+#if defined(USE_FEEDFORWARD)
     case ADJUSTMENT_FEEDFORWARD_TRANSITION:
-        newValue = constrain(currentPidProfile->feedforwardTransition + delta, 1, 100); // FIXME magic numbers repeated in cli.c
-        currentPidProfile->feedforwardTransition = newValue;
+        newValue = constrain(currentPidProfile->feedforward_transition + delta, 1, 100); // FIXME magic numbers repeated in cli.c
+        currentPidProfile->feedforward_transition = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_FEEDFORWARD_TRANSITION, newValue);
         break;
+#endif
     default:
         newValue = -1;
         break;
@@ -577,11 +581,13 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
         currentPidProfile->pid[PID_YAW].F = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_F, newValue);
         break;
+#if defined(USE_FEEDFORWARD)
     case ADJUSTMENT_FEEDFORWARD_TRANSITION:
         newValue = constrain(value, 1, 100); // FIXME magic numbers repeated in cli.c
-        currentPidProfile->feedforwardTransition = newValue;
+        currentPidProfile->feedforward_transition = newValue;
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_FEEDFORWARD_TRANSITION, newValue);
         break;
+#endif
     default:
         newValue = -1;
         break;
@@ -653,6 +659,9 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
 
 static void calcActiveAdjustmentRanges(void)
 {
+    // This initialisation upsets the scheduler task duration estimation
+    schedulerIgnoreTaskExecTime();
+
     adjustmentRange_t defaultAdjustmentRange;
     memset(&defaultAdjustmentRange, 0, sizeof(defaultAdjustmentRange));
 
@@ -830,6 +839,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 
     // Recalculate the new active adjustments if required
     if (stepwiseAdjustmentCount == ADJUSTMENT_RANGE_COUNT_INVALID) {
+        // This can take up to 30us and is only call when not armed so ignore this timing as it doesn't impact flight
+        schedulerIgnoreTaskExecTime();
         calcActiveAdjustmentRanges();
     }
 

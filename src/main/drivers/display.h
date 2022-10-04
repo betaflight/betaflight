@@ -59,6 +59,19 @@ typedef enum {
     DISPLAY_BACKGROUND_COUNT    // must be the last entry
 } displayPortBackground_e;
 
+typedef enum {
+    // Display drivers that can perform screen clearing in the background, e.g. via DMA, should do so.
+    // use `displayCheckReady` function to check if the screen clear has been completed.
+    DISPLAY_CLEAR_NONE = 0,
+
+    // * when set, the display driver should block until the screen clear has completed, use in synchronous cases
+    //   only, e.g. where the screen is cleared and the display is immediately drawn to.
+    // * when NOT set, return immediately and do not block unless screen is a simple operation or cannot
+    //   be performed in the background.  As with any long delay, waiting can cause task starvation which
+    //   can result in RX loss.
+    DISPLAY_CLEAR_WAIT = 1 << 0,
+} displayClearOption_e;
+
 struct displayCanvas_s;
 struct osdCharacter_s;
 struct displayPortVTable_s;
@@ -87,8 +100,8 @@ typedef struct displayPort_s {
 typedef struct displayPortVTable_s {
     int (*grab)(displayPort_t *displayPort);
     int (*release)(displayPort_t *displayPort);
-    int (*clearScreen)(displayPort_t *displayPort);
-    int (*drawScreen)(displayPort_t *displayPort);
+    int (*clearScreen)(displayPort_t *displayPort, displayClearOption_e options);
+    bool (*drawScreen)(displayPort_t *displayPort);
     int (*screenSize)(const displayPort_t *displayPort);
     int (*writeString)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, const char *text);
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, uint8_t c);
@@ -112,14 +125,14 @@ void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
 void displayReleaseAll(displayPort_t *instance);
 bool displayIsGrabbed(const displayPort_t *instance);
-void displayClearScreen(displayPort_t *instance);
-void displayDrawScreen(displayPort_t *instance);
+void displayClearScreen(displayPort_t *instance, displayClearOption_e options);
+bool displayDrawScreen(displayPort_t *instance);
 int displayScreenSize(const displayPort_t *instance);
 void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
-int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *s);
+int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, uint8_t c);
 bool displayIsTransferInProgress(const displayPort_t *instance);
-void displayHeartbeat(displayPort_t *instance);
+bool displayHeartbeat(displayPort_t *instance);
 void displayRedraw(displayPort_t *instance);
 bool displayIsSynced(const displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);

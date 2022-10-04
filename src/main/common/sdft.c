@@ -35,13 +35,13 @@ static FAST_DATA_ZERO_INIT complex_t twiddle[SDFT_BIN_COUNT];
 static void applySqrt(const sdft_t *sdft, float *data);
 
 
-void sdftInit(sdft_t *sdft, const uint8_t startBin, const uint8_t endBin, const uint8_t numBatches)
+void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numBatches)
 {
     if (!isInitialized) {
         rPowerN = powf(SDFT_R, SDFT_SAMPLE_SIZE);
         const float c = 2.0f * M_PIf / (float)SDFT_SAMPLE_SIZE;
         float phi = 0.0f;
-        for (uint8_t i = 0; i < SDFT_BIN_COUNT; i++) {
+        for (int i = 0; i < SDFT_BIN_COUNT; i++) {
             phi = c * i;
             twiddle[i] = SDFT_R * (cos_approx(phi) + _Complex_I * sin_approx(phi));
         }
@@ -49,52 +49,55 @@ void sdftInit(sdft_t *sdft, const uint8_t startBin, const uint8_t endBin, const 
     }
 
     sdft->idx = 0;
-    sdft->startBin = startBin;
-    sdft->endBin = endBin;
-    sdft->numBatches = numBatches;
-    sdft->batchSize = (sdft->endBin - sdft->startBin + 1) / sdft->numBatches + 1;
 
-    for (uint8_t i = 0; i < SDFT_SAMPLE_SIZE; i++) {
+    // Add 1 bin on either side outside of range (if possible) to get proper windowing up to range limits
+    sdft->startBin = constrain(startBin - 1, 0, SDFT_BIN_COUNT - 1);
+    sdft->endBin = constrain(endBin + 1, sdft->startBin, SDFT_BIN_COUNT - 1);
+
+    sdft->numBatches = MAX(numBatches, 1);
+    sdft->batchSize = (sdft->endBin - sdft->startBin) / sdft->numBatches + 1;  // batchSize = ceil(numBins / numBatches)
+
+    for (int i = 0; i < SDFT_SAMPLE_SIZE; i++) {
         sdft->samples[i] = 0.0f;
     }
 
-    for (uint8_t i = 0; i < SDFT_BIN_COUNT; i++) {
+    for (int i = 0; i < SDFT_BIN_COUNT; i++) {
         sdft->data[i] = 0.0f;
     }
 }
 
 
 // Add new sample to frequency spectrum
-FAST_CODE void sdftPush(sdft_t *sdft, const float *sample)
+FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 {
-    const float delta = *sample - rPowerN * sdft->samples[sdft->idx];
+    const float delta = sample - rPowerN * sdft->samples[sdft->idx];
     
-    sdft->samples[sdft->idx] = *sample;
+    sdft->samples[sdft->idx] = sample;
     sdft->idx = (sdft->idx + 1) % SDFT_SAMPLE_SIZE;
 
-    for (uint8_t i = sdft->startBin; i <= sdft->endBin; i++) {
+    for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
 }
 
 
 // Add new sample to frequency spectrum in parts
-FAST_CODE void sdftPushBatch(sdft_t* sdft, const float *sample, const uint8_t *batchIdx)
+FAST_CODE void sdftPushBatch(sdft_t* sdft, const float sample, const int batchIdx)
 {
-    const uint8_t batchStart = sdft->batchSize * *batchIdx;
-    uint8_t batchEnd = batchStart;
+    const int batchStart = sdft->batchSize * batchIdx;
+    int batchEnd = batchStart;
 
-    const float delta = *sample - rPowerN * sdft->samples[sdft->idx];
+    const float delta = sample - rPowerN * sdft->samples[sdft->idx];
 
-    if (*batchIdx == sdft->numBatches - 1) {
-        sdft->samples[sdft->idx] = *sample;
+    if (batchIdx == sdft->numBatches - 1) {
+        sdft->samples[sdft->idx] = sample;
         sdft->idx = (sdft->idx + 1) % SDFT_SAMPLE_SIZE;
         batchEnd += sdft->endBin - batchStart + 1;
     } else {
         batchEnd += sdft->batchSize;
     }
 
-    for (uint8_t i = batchStart; i < batchEnd; i++) {
+    for (int i = batchStart; i < batchEnd; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
 }
@@ -106,7 +109,7 @@ FAST_CODE void sdftMagSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
-    for (uint8_t i = sdft->startBin; i <= sdft->endBin; i++) {
+    for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         re = crealf(sdft->data[i]);
         im = cimagf(sdft->data[i]);
         output[i] = re * re + im * im;
@@ -130,7 +133,7 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
-    for (uint8_t i = (sdft->startBin + 1); i < sdft->endBin; i++) {
+    for (int i = (sdft->startBin + 1); i < sdft->endBin; i++) {
         val = sdft->data[i] - 0.5f * (sdft->data[i - 1] + sdft->data[i + 1]); // multiply by 2 to save one multiplication
         re = crealf(val);
         im = cimagf(val);
@@ -150,7 +153,7 @@ FAST_CODE void sdftWindow(const sdft_t *sdft, float *output)
 // Apply square root to the whole sdft range
 static FAST_CODE void applySqrt(const sdft_t *sdft, float *data)
 {
-    for (uint8_t i = sdft->startBin; i <= sdft->endBin; i++) {
+    for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         data[i] = sqrtf(data[i]);
     }
 }

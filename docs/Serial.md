@@ -100,27 +100,30 @@ Other devices can be added starting from id 50.
 
 ### 2. Serial Port Function
 
-| Function                     | Value |
-| ---------------------------- | ----- |
-| FUNCTION_NONE                | 0     |
-| FUNCTION_MSP                 | 1     |
-| FUNCTION_GPS                 | 2     |
-| FUNCTION_TELEMETRY_FRSKY_HUB | 4     |
-| FUNCTION_TELEMETRY_HOTT      | 8     |
-| FUNCTION_TELEMETRY_LTM       | 16    |
-| FUNCTION_TELEMETRY_SMARTPORT | 32    |
-| FUNCTION_RX_SERIAL           | 64    |
-| FUNCTION_BLACKBOX            | 128   |
-| FUNCTION_TELEMETRY_MAVLINK   | 512   |
-| FUNCTION_ESC_SENSOR          | 1024  |
-| FUNCTION_VTX_SMARTAUDIO      | 2048  |
-| FUNCTION_TELEMETRY_IBUS      | 4096  |
-| FUNCTION_VTX_TRAMP           | 8192  |
-| FUNCTION_RCDEVICE            | 16384 |
-| FUNCTION_LIDAR_TF            | 32768 |
-| FUNCTION_FRSKY_OSD           | 65536 |
+| Function                     | Value  | Bit |
+| ---------------------------- | ------ | --- |
+| FUNCTION_NONE                | 0      | 0   |
+| FUNCTION_MSP                 | 1      | 1 << 0 |
+| FUNCTION_GPS                 | 2      | 1 << 1 |
+| FUNCTION_TELEMETRY_FRSKY_HUB | 4      | 1 << 2 |
+| FUNCTION_TELEMETRY_HOTT      | 8      | 1 << 3 |
+| FUNCTION_TELEMETRY_LTM       | 16     | 1 << 4 |
+| FUNCTION_TELEMETRY_SMARTPORT | 32     | 1 << 5 |
+| FUNCTION_RX_SERIAL           | 64     | 1 << 6 |
+| FUNCTION_BLACKBOX            | 128    | 1 << 7 |
+| NOT USED                     | 256    | 1 << 8 |
+| FUNCTION_TELEMETRY_MAVLINK   | 512    | 1 << 9 |
+| FUNCTION_ESC_SENSOR          | 1024   | 1 << 10 |
+| FUNCTION_VTX_SMARTAUDIO      | 2048   | 1 << 11 |
+| FUNCTION_TELEMETRY_IBUS      | 4096   | 1 << 12 |
+| FUNCTION_VTX_TRAMP           | 8192   | 1 << 13 |
+| FUNCTION_RCDEVICE            | 16384  | 1 << 14 |
+| FUNCTION_LIDAR_TF            | 32768  | 1 << 15 |
+| FUNCTION_FRSKY_OSD           | 65536  | 1 << 16 |
+| FUNCTION_VTX_MSP             | 131072 | 1 << 17 |
 
 Note: `FUNCTION_FRSKY_OSD` = `(1<<16)` requires 17 bits.
+Note2: We can use up to 32 bits (1<<32) here.
 
 ### 3. MSP Baudrates
 

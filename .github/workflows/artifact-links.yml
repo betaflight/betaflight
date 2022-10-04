@@ -1,0 +1,20 @@
+name: Artifact links comments creator
+on:
+  workflow_run:
+    workflows: ["PR"]
+    types: [completed]
+
+jobs:
+  artifacts-url-comments:
+    name: Add artifact links to PR and issues
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Add artifact links to PR and issues
+        uses: tonyhallett/artifacts-url-comments@v1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          prefix: "**Do you want to test this code? Here you have an automated build:**"
+          suffix: "_**WARNING:** It may be unstable. Use only for testing! See: https://www.youtube.com/watch?v=I1uN9CN30gw for instructions for unified targets!_"
+          format: name
+          addTo: pullandissues
