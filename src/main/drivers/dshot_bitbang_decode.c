@@ -43,7 +43,7 @@ int sequenceIndex = 0;
 #endif
 
 
-static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type)
+static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t count, uint32_t bit)
 {
 #ifndef DEBUG_BBDECODE
     UNUSED(buffer);
@@ -75,14 +75,14 @@ static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t coun
 #endif
         value = DSHOT_TELEMETRY_INVALID;
     } else {
-        value = dshot_decode_telemetry_value(decodedValue >> 4, type);
+        value = decodedValue >> 4;
     }
 
     return value;
 }
 
 
-uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type)
+uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
@@ -193,10 +193,10 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit, dsh
         value |= 1 << (nlen - 1);
     }
 
-    return decode_bb_value(value, buffer, count, bit, type);
+    return decode_bb_value(value, buffer, count, bit);
 }
 
-FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit, dshotTelemetryType_t *type)
+FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
@@ -286,7 +286,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit, d
         value |= 1 << (nlen - 1);
     }
 
-    return decode_bb_value(value, buffer, count, bit, type);
+    return decode_bb_value(value, buffer, count, bit);
 }
 
 #endif
