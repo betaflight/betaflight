@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <float.h>
 
 #include "platform.h"
 
@@ -424,18 +425,40 @@ static void updateDynLpfCutoffs(timeUs_t currentTimeUs, float throttle)
 #endif
 
 static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnabled) {
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
-    const float motorMixDelta = 0.5f * motorMixRange;
+    float airmodeTransitionPercent = 1.0f;
+    float motorDeltaScale = 0.5f;
+
+    if (!airmodeEnabled && throttle < 0.5f) {
+        // this scales the motor mix authority to be 0.5 at 0 throttle, and 1.0 at 0.5 throttle as airmode off intended for things to work.
+        // also lays the groundwork for how an airmode percent would work.
+        airmodeTransitionPercent = scaleRangef(throttle, 0.0f, 0.5f, 0.5f, 1.0f); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
+        motorDeltaScale *= airmodeTransitionPercent; // this should be half of the motor authority allowed
+    }
+
+    const float motorMixNormalizationFactor = motorMixRange > 1.0 ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
+
+    const float motorMixDelta = motorDeltaScale * motorMixRange;
+
+    float minMotor = FLT_MAX;
+    float maxMotor = FLT_MIN;
 
     for (int i = 0; i < mixerRuntime.motorCount; ++i) {
-        if (airmodeEnabled || throttle > 0.5f) {
-            if (mixerConfig()->mixer_type == MIXER_LINEAR) {
-                motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + motorMixDelta, motorMix[i] - motorMixDelta);
-            } else {
-                motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + ABS(motorMix[i]), motorMix[i] - ABS(motorMix[i]));
-            }
+        if (mixerConfig()->mixer_type == MIXER_LINEAR) {
+            motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + motorMixDelta, motorMix[i] - motorMixDelta);
+        } else {
+            motorMix[i] = scaleRangef(throttle, 0.0f, 1.0f, motorMix[i] + ABS(motorMix[i]), motorMix[i] - ABS(motorMix[i]));
         }
-        motorMix[i] /= motorMixNormalizationFactor;
+        motorMix[i] *= motorMixNormalizationFactor;
+
+        maxMotor = MAX(motorMix[i], maxMotor);
+        minMotor = MIN(motorMix[i], minMotor);
+    }
+
+    // correct throttle so it won't clip any outputs
+    if (minMotor + throttle < 0.0f) {
+        throttle = -minMotor;
+    } else if (maxMotor + throttle > 1.0f) {
+        throttle = 1.0f - maxMotor;
     }
 }
 
@@ -443,25 +466,28 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
 #ifdef USE_AIRMODE_LPF
     const float unadjustedThrottle = throttle;
     throttle += pidGetAirmodeThrottleOffset();
-    float airmodeThrottleChange = 0;
+    float airmodeThrottleChange = 0.0f;
 #endif
-    
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? motorMixRange : 1.0f;
+    float airmodeTransitionPercent = 1.0f;
+
+    if (!airmodeEnabled && throttle < 0.5f) {
+        // this scales the motor mix authority to be 0.5 at 0 throttle, and 1.0 at 0.5 throttle as airmode off intended for things to work.
+        // also lays the groundwork for how an airmode percent would work.
+        airmodeTransitionPercent = scaleRangef(throttle, 0.0f, 0.5f, 0.5f, 1.0f); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
+    }
+
+    const float motorMixNormalizationFactor = motorMixRange > 1.0 ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-        motorMix[i] /= motorMixNormalizationFactor;
+        motorMix[i] *= motorMixNormalizationFactor;
     }
 
-    if (airmodeEnabled || throttle > 0.5f) {
-        float normalizedMotorMixMin = motorMixMin / motorMixNormalizationFactor;
-        float normalizedMotorMixMax = motorMixMax / motorMixNormalizationFactor;
-        throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
-#ifdef USE_AIRMODE_LPF
-        airmodeThrottleChange = constrainf(unadjustedThrottle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax) - unadjustedThrottle;
-#endif
-    }
+    const float normalizedMotorMixMin = motorMixMin * motorMixNormalizationFactor;
+    const float normalizedMotorMixMax = motorMixMax * motorMixNormalizationFactor;
+    throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
 
 #ifdef USE_AIRMODE_LPF
+    airmodeThrottleChange = constrainf(unadjustedThrottle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax) - unadjustedThrottle;
     pidUpdateAirmodeLpf(airmodeThrottleChange);
 #endif
 }
@@ -532,7 +558,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
-    // send throttle value to blackbox, including scaling and throttle boost, but not TL compensation, dyn idle or airmode 
+    // send throttle value to blackbox, including scaling and throttle boost, but not TL compensation, dyn idle or airmode
     mixerThrottle = throttle;
 
 #ifdef USE_DYN_IDLE
