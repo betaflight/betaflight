@@ -503,7 +503,7 @@ static uint8_t  cmsx_horizonTransition;
 static uint8_t  cmsx_levelAngleLimit;
 static uint8_t  cmsx_throttleBoost;
 static uint8_t  cmsx_thrustLinearization;
-static uint16_t cmsx_antiGravityGain;
+static uint8_t  cmsx_antiGravityGain;
 static uint8_t  cmsx_motorOutputLimit;
 static int8_t   cmsx_autoProfileCellCount;
 #ifdef USE_D_MIN
@@ -644,7 +644,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }    },
     { "ANGLE LIMIT", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_levelAngleLimit,        10,    90,   1  }    },
 
-    { "AG GAIN",     OME_UINT8,  NULL, &(OSD_UINT16_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 10 }    },
+    { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 1, 100 }    },
 #ifdef USE_THROTTLE_BOOST
     { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }    },
 #endif
