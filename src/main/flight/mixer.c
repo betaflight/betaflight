@@ -454,12 +454,8 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
         minMotor = MIN(motorMix[i], minMotor);
     }
 
-    // correct throttle so it won't clip any outputs
-    if (minMotor + throttle < 0.0f) {
-        throttle = -minMotor;
-    } else if (maxMotor + throttle > 1.0f) {
-        throttle = 1.0f - maxMotor;
-    }
+    // constrain throttle so it won't clip any outputs
+    throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
 }
 
 static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled) {
