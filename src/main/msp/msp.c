@@ -3029,7 +3029,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
-            sbufReadU16(src); // was currentPidProfile->itermAcceleratorGain
+            sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
             currentPidProfile->anti_gravity_gain = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 2) {
