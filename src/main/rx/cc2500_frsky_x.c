@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef USE_RX_FRSKY_SPI_X
+#if defined(USE_RX_FRSKY_SPI_X) && defined(USE_SERIALRX)
 
 #include "build/build_config.h"
 #include "build/debug.h"
