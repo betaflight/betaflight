@@ -57,25 +57,31 @@
 #define ICM426XX_RA_GYRO_CONFIG0                    0x4F
 #define ICM426XX_RA_ACCEL_CONFIG0                   0x50
 
+// --- Registers for gyro and acc Anti-Alias Filter ---------
 #define ICM426XX_RA_GYRO_CONFIG_STATIC3             0x0C
 #define ICM426XX_RA_GYRO_CONFIG_STATIC4             0x0D
 #define ICM426XX_RA_GYRO_CONFIG_STATIC5             0x0E
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC2            0x03
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC3            0x04
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC4            0x05
-
+// --- Settings for AAF (section 5.3) -----------------------
 #define ICM426XX_AAF_258HZ_DELT                     6
+#define ICM426XX_AAF_258HZ_DELTSQR                  36
 #define ICM426XX_AAF_258HZ_BITSHIFT                 10
 #define ICM426XX_AAF_536HZ_DELT                     12
+#define ICM426XX_AAF_536HZ_DELTSQR                  144
 #define ICM426XX_AAF_536HZ_BITSHIFT                 8
 #define ICM426XX_AAF_997HZ_DELT                     21
+#define ICM426XX_AAF_997HZ_DELTSQR                  440
 #define ICM426XX_AAF_997HZ_BITSHIFT                 6
 #define ICM426XX_AAF_1962HZ_DELT                    37
+#define ICM426XX_AAF_1962HZ_DELTSQR                 1376
 #define ICM426XX_AAF_1962HZ_BITSHIFT                4
-
+// --- Register & setting for gyro and acc UI Filter --------
 #define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52
 #define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (14 << 4)
 #define ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY        (14 << 0)
+// ----------------------------------------------------------
 
 #define ICM426XX_RA_GYRO_DATA_X1                    0x25
 #define ICM426XX_RA_ACCEL_DATA_X1                   0x1F
@@ -102,7 +108,6 @@
 #define ICM426XX_INT_TPULSE_DURATION_BIT            6
 #define ICM426XX_INT_TPULSE_DURATION_100            (0 << ICM426XX_INT_TPULSE_DURATION_BIT)
 #define ICM426XX_INT_TPULSE_DURATION_8              (1 << ICM426XX_INT_TPULSE_DURATION_BIT)
-
 
 #define ICM426XX_RA_INT_SOURCE0                     0x65
 #define ICM426XX_UI_DRDY_INT1_EN_DISABLED           (0 << 3)
@@ -214,37 +219,42 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (3 - INV_FSR_16G) << 5 | (odrIdx & 0x0F));
     delay(15);
 
-    // Select desired AAF settings
+    // Get desired settings for the gyro Anti-Alias Filter
     uint8_t aafDelt = 0;
+    uint16_t aafDeltSqr = 0;
     uint8_t aafBitshift = 0;
     switch (gyroConfig()->gyro_hardware_lpf) {
         case GYRO_HARDWARE_LPF_NORMAL:  // 258 Hz
             aafDelt = ICM426XX_AAF_258HZ_DELT;
+            aafDeltSqr = ICM426XX_AAF_258HZ_DELTSQR;
             aafBitshift = ICM426XX_AAF_258HZ_BITSHIFT;
             break;
         case GYRO_HARDWARE_LPF_OPTION_1:  // 536 Hz
             aafDelt = ICM426XX_AAF_536HZ_DELT;
+            aafDeltSqr = ICM426XX_AAF_536HZ_DELTSQR;
             aafBitshift = ICM426XX_AAF_536HZ_BITSHIFT;
             break;
         case GYRO_HARDWARE_LPF_OPTION_2:  // 997 Hz
             aafDelt = ICM426XX_AAF_997HZ_DELT;
+            aafDeltSqr = ICM426XX_AAF_997HZ_DELTSQR;
             aafBitshift = ICM426XX_AAF_997HZ_BITSHIFT;
             break;
         case GYRO_HARDWARE_LPF_EXPERIMENTAL:  // 1962 Hz
             aafDelt = ICM426XX_AAF_1962HZ_DELT;
+            aafDeltSqr = ICM426XX_AAF_1962HZ_DELTSQR;
             aafBitshift = ICM426XX_AAF_1962HZ_BITSHIFT;
             break;
     }
 
     // Configure gyro Anti-Alias Filter (see section 5.3 "ANTI-ALIAS FILTER")
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC3, aafDelt);
-    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC4, sq(aafDelt) & 0xFF);
-    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC5, (sq(aafDelt) >> 8) | (aafBitshift << 4));
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC4, aafDeltSqr & 0xFF);
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC5, (aafDeltSqr >> 8) | (aafBitshift << 4));
 
     // Configure acc Anti-Alias Filter for 1kHz sample rate (see tasks.c)
     spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC2, ICM426XX_AAF_258HZ_DELT << 1);
-    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC3, sq(ICM426XX_AAF_258HZ_DELT) & 0xFF);
-    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC4, (sq(ICM426XX_AAF_258HZ_DELT) >> 8) | (ICM426XX_AAF_258HZ_BITSHIFT << 4));
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC3, ICM426XX_AAF_258HZ_DELTSQR & 0xFF);
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC4, (ICM426XX_AAF_258HZ_DELTSQR >> 8) | (ICM426XX_AAF_258HZ_BITSHIFT << 4));
 
     // Configure gyro and acc UI Filters
     spiWriteReg(dev, ICM426XX_RA_GYRO_ACCEL_CONFIG0, ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY | ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY);
