@@ -32,10 +32,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Code Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         
       - name: Fetch build artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
 
       - name: Select release notes
         id: notes
