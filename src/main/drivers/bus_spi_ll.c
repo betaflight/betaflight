@@ -36,6 +36,9 @@
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
+// Use DMA if possible if this many bytes are to be transferred
+#define SPI_DMA_THRESHOLD 8
+
 #ifndef SPI2_SCK_PIN
 #define SPI2_NSS_PIN    PB12
 #define SPI2_SCK_PIN    PB13
@@ -632,8 +635,10 @@ void spiSequenceStart(const extDevice_t *dev)
     }
 
     // Use DMA if possible
-    // If there are more than one segments, or a single segment with negateCS negated then force DMA irrespective of length
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8) || !bus->curSegment->negateCS)) {
+    // If there are more than one segments, or a single segment with negateCS negated in the list terminator then force DMA irrespective of length
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) ||
+                                   (xferLen >= SPI_DMA_THRESHOLD) ||
+                                   !bus->curSegment[segmentCount].negateCS)) {
         // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
 
