@@ -34,6 +34,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
 #include "pg/pg.h"
@@ -99,7 +100,7 @@ static const uint8_t mavRates[] = {
     [MAV_DATA_STREAM_EXTRA2] = 10 //2Hz
 };
 
-#define MAXSTREAMS (sizeof(mavRates) / sizeof(mavRates[0]))
+#define MAXSTREAMS ARRAYLEN(mavRates)
 
 static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;

@@ -115,7 +115,7 @@ static uint8_t serialPortCount;
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
-#define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
+#define BAUD_RATE_COUNT ARRAYLEN(baudRates) 
 
 serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier)
 {

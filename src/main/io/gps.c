@@ -127,7 +127,7 @@ static const gpsInitData_t gpsInitData[] = {
     { GPS_BAUDRATE_9600,      BAUD_9600, "$PUBX,41,1,0003,0001,9600,0*16\r\n", "" }
 };
 
-#define GPS_INIT_DATA_ENTRY_COUNT (sizeof(gpsInitData) / sizeof(gpsInitData[0]))
+#define GPS_INIT_DATA_ENTRY_COUNT ARRAYLEN(gpsInitData)
 
 #define DEFAULT_BAUD_RATE_INDEX 0
 
