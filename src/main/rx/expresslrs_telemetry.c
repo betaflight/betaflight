@@ -205,7 +205,8 @@ static volatile bool mspConfirm;
 STATIC_UNIT_TESTED volatile bool mspReplyPending;
 STATIC_UNIT_TESTED volatile bool deviceInfoReplyPending;
 
-void mspReceiverResetState(void) {
+void mspReceiverResetState(void)
+{
     mspCurrentOffset = 0;
     mspCurrentPackage = 1;
     mspConfirm = false;

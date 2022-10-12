@@ -1900,7 +1900,8 @@ void osdElementsInit(bool backgroundLayerFlag)
     pt1FilterInit(&batteryEfficiencyFilt, pt1FilterGain(EFFICIENCY_CUTOFF_HZ, 1.0f / osdConfig()->framerate_hz));
 }
 
-void osdSyncBlink() {
+void osdSyncBlink()
+{
     static int blinkCount = 0;
 
     // If the OSD blink is due a transition, do so

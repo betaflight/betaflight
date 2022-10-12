@@ -151,39 +151,49 @@ bool busWriteRegister(const extDevice_t*, uint8_t, uint8_t) {return true;}
 bool busWriteRegisterStart(const extDevice_t*, uint8_t, uint8_t) {return true;}
 void busDeviceRegister(const extDevice_t*) {}
 
-uint16_t spiCalculateDivider() {
+uint16_t spiCalculateDivider()
+{
     return 2;
 }
 
-void spiSetClkDivisor() {
+void spiSetClkDivisor()
+{
 }
 
-void spiPreinitByIO(IO_t) {
+void spiPreinitByIO(IO_t)
+{
 }
 
-void IOConfigGPIO() {
+void IOConfigGPIO()
+{
 }
 
-void IOHi() {
+void IOHi()
+{
 }
 
-IO_t IOGetByTag(ioTag_t) {
+IO_t IOGetByTag(ioTag_t)
+{
     return IO_NONE;
 }
 
-void IOInit() {
+void IOInit()
+{
 }
 
-void EXTIHandlerInit(extiCallbackRec_t *, extiHandlerCallback *) {
+void EXTIHandlerInit(extiCallbackRec_t *, extiHandlerCallback *)
+{
 }
 
-void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t) {
+void EXTIConfig(IO_t, extiCallbackRec_t *, int, ioConfig_t, extiTrigger_t)
+{
 }
 
-void EXTIEnable(IO_t) {
-}
-void EXTIDisable(IO_t) {
-}
+void EXTIEnable(IO_t)
+{}
+
+void EXTIDisable(IO_t)
+{}
 
 
 } // extern "C"

@@ -61,7 +61,8 @@ extern "C" {
 }
 
 static int16_t gyroTemperature;
-int16_t gyroGetTemperature(void) {
+int16_t gyroGetTemperature(void)
+{
     return gyroTemperature;
 }
 
@@ -135,7 +136,8 @@ uint16_t getBatteryVoltage(void)
     return testBatteryVoltage;
 }
 
-uint8_t getBatteryCellCount(void) {
+uint8_t getBatteryCellCount(void)
+{
     return testBatteryCellCount;
 }
 
@@ -185,7 +187,8 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 }
 
 
-bool telemetryIsSensorEnabled(sensor_e sensor) {
+bool telemetryIsSensorEnabled(sensor_e sensor)
+{
     UNUSED(sensor);
     return true;
 }

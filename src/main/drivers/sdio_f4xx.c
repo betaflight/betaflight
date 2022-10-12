@@ -690,12 +690,14 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     return ErrorState;
 }
 
-SD_Error_t SD_CheckWrite(void) {
+SD_Error_t SD_CheckWrite(void)
+{
     if (SD_Handle.TXCplt != 0) return SD_BUSY;
     return SD_OK;
 }
 
-SD_Error_t SD_CheckRead(void) {
+SD_Error_t SD_CheckRead(void)
+{
     if (SD_Handle.RXCplt != 0) return SD_BUSY;
     return SD_OK;
 }
@@ -1724,7 +1726,8 @@ SD_Error_t SD_Init(void)
 /**
   * @brief  This function handles SD card interrupt request.
   */
-void SDIO_IRQHandler(void) {
+void SDIO_IRQHandler(void)
+{
     // Check for SDIO interrupt flags
     if ((SDIO->STA & SDIO_STA_DATAEND) != 0) {
         SDIO->ICR = SDIO_ICR_DATAENDC;

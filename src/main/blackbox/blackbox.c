@@ -998,7 +998,8 @@ static void stopInTestMode(void)
  * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
-static bool inMotorTestMode(void) {
+static bool inMotorTestMode(void)
+{
     static uint32_t resetTime = 0;
 
     if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
@@ -1959,11 +1960,13 @@ uint8_t blackboxGetRateDenom(void)
 
 }
 
-uint16_t blackboxGetPRatio(void) {
+uint16_t blackboxGetPRatio(void)
+{
     return blackboxIInterval / blackboxPInterval;
 }
 
-uint8_t blackboxCalculateSampleRate(uint16_t pRatio) {
+uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
+{
     return LOG2(32000 / (targetPidLooptime * pRatio));
 }
 

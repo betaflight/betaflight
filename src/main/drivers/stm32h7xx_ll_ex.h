@@ -47,14 +47,16 @@ __STATIC_INLINE uint32_t LL_EX_DMA_Stream_to_Stream(DMA_Stream_TypeDef *DMAx_Str
 
 #undef DMA_STREAM_MASK
 
-__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Stream_TypeDef *DMAx_Streamy, LL_DMA_InitTypeDef *DMA_InitStruct) {
+__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Stream_TypeDef *DMAx_Streamy, LL_DMA_InitTypeDef *DMA_InitStruct)
+{
     DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
     const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
 
     return LL_DMA_Init(DMA, Stream, DMA_InitStruct);
 }
 
-__STATIC_INLINE uint32_t LL_EX_DMA_DeInit(DMA_Stream_TypeDef *DMAx_Streamy) {
+__STATIC_INLINE uint32_t LL_EX_DMA_DeInit(DMA_Stream_TypeDef *DMAx_Streamy)
+{
     DMA_TypeDef *DMA = LL_EX_DMA_Stream_to_DMA(DMAx_Streamy);
     const uint32_t Stream = LL_EX_DMA_Stream_to_Stream(DMAx_Streamy);
 

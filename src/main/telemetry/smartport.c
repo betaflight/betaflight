@@ -507,7 +507,8 @@ void checkSmartPortTelemetryState(void)
 }
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-static void smartPortSendMspResponse(uint8_t *data, const uint8_t dataSize) {
+static void smartPortSendMspResponse(uint8_t *data, const uint8_t dataSize)
+{
     smartPortPayload_t payload;
     payload.frameId = FSSP_MSPS_FRAME;
     memcpy(&payload.valueId, data, MIN(dataSize,SMARTPORT_MSP_PAYLOAD_SIZE));

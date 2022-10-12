@@ -32,7 +32,8 @@ extern "C" {
     extern const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT];
 }
 
-TEST(TimerDefinitionTest, Test_counterMismatch) {
+TEST(TimerDefinitionTest, Test_counterMismatch)
+{
     for (const timerHardware_t &t : timerHardware)
         EXPECT_EQ(&t - timerHardware, t.def_tim_counter)
             << "Counter mismatch in timerHardware (in target.c) at position "
@@ -43,7 +44,8 @@ TEST(TimerDefinitionTest, Test_counterMismatch) {
             << " array element appears to be " << &t - timerHardware - 1 << '.';
 }
 
-TEST(TimerDefinitionTest, Test_duplicatePin) {
+TEST(TimerDefinitionTest, Test_duplicatePin)
+{
     std::set<TestPinEnum> usedPins;
     for (const timerHardware_t &t : timerHardware)
         EXPECT_TRUE(usedPins.emplace(t.pin).second)
@@ -56,7 +58,8 @@ TEST(TimerDefinitionTest, Test_duplicatePin) {
 
 #if !defined(USE_TIMER_MGMT)
 namespace {
-std::string writeUsedTimers(const std::bitset<TEST_TIMER_SIZE> &tset) {
+std::string writeUsedTimers(const std::bitset<TEST_TIMER_SIZE> &tset)
+{
     std::stringstream used_timers;
     if (tset.any()) {
         unsigned int timer{0};

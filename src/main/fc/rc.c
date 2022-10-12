@@ -733,7 +733,8 @@ rcSmoothingFilter_t *getRcSmoothingData(void)
     return &rcSmoothingData;
 }
 
-bool rcSmoothingInitializationComplete(void) {
+bool rcSmoothingInitializationComplete(void)
+{
     return rcSmoothingData.filterInitialized;
 }
 #endif // USE_RC_SMOOTHING_FILTER

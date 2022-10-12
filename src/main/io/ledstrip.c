@@ -1047,7 +1047,8 @@ void updateRequiredOverlay(void)
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_INDICATOR) << timIndicator;
 }
 
-static void applyStatusProfile(timeUs_t now) {
+static void applyStatusProfile(timeUs_t now)
+{
 
     // apply all layers; triggered timed functions has to update timers
     // test all led timers, setting corresponding bits

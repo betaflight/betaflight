@@ -265,7 +265,8 @@ static const pllConfig_t overclockLevels[] = {
   { 480, RCC_PLLP_DIV2, 10 }, // 240 MHz
 };
 
-void SystemInitOC(void) {
+void SystemInitOC(void)
+{
     uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
 
     if (currentOverclockLevel >= ARRAYLEN(overclockLevels)) {

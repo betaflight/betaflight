@@ -34,7 +34,8 @@
 extern const struct transponderVTable arcitimerTansponderVTable;
 static uint16_t dmaBufferOffset;
 
-void transponderIrInitArcitimer(transponder_t *transponder){
+void transponderIrInitArcitimer(transponder_t *transponder)
+{
     // from drivers/transponder_ir.h
     transponder->gap_toggles        = TRANSPONDER_GAP_TOGGLES_ARCITIMER;
     transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER;

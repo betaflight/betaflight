@@ -342,35 +342,43 @@ portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunctio
 
 bool airmodeIsEnabled(void) {return airMode;}
 
-int32_t getAmperage(void) {
+int32_t getAmperage(void)
+{
     return testAmperage;
 }
 
-uint16_t getBatteryVoltage(void) {
+uint16_t getBatteryVoltage(void)
+{
     return testBatteryVoltage;
 }
 
-uint16_t getLegacyBatteryVoltage(void) {
+uint16_t getLegacyBatteryVoltage(void)
+{
     return (testBatteryVoltage + 5) / 10;
 }
 
-uint16_t getBatteryAverageCellVoltage(void) {
+uint16_t getBatteryAverageCellVoltage(void)
+{
     return 0;
 }
 
-batteryState_e getBatteryState(void) {
+batteryState_e getBatteryState(void)
+{
     return BATTERY_OK;
 }
 
-uint8_t calculateBatteryPercentageRemaining(void) {
+uint8_t calculateBatteryPercentageRemaining(void)
+{
     return 67;
 }
 
-int32_t getEstimatedAltitudeCm(void) {
+int32_t getEstimatedAltitudeCm(void)
+{
 	return gpsSol.llh.altCm;    // function returns cm not m.
 }
     
-int32_t getMAhDrawn(void){
+int32_t getMAhDrawn(void)
+{
   return testmAhDrawn;
 }
 
