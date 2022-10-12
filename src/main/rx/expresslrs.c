@@ -127,11 +127,11 @@ static bool phaseLockEprHaveBothEvents(void)
 
 static int32_t phaseLockEprResult(void)
 {
-    if (!phaseLockEprHaveBothEvents()) {
-        return 0;
+    if (phaseLockEprHaveBothEvents()) {
+        return (int32_t)(eprState.eventAtUs[EPR_SECOND] - eprState.eventAtUs[EPR_FIRST]);
     }
 
-    return (int32_t)(eprState.eventAtUs[EPR_SECOND] - eprState.eventAtUs[EPR_FIRST]);
+    return 0;
 }
 
 static void phaseLockEprReset(void)
@@ -872,15 +872,10 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
     switch (rxExpressLrsSpiConfig()->domain) {
 #ifdef USE_RX_SX127X
     case AU433:
-        FALLTHROUGH;
     case AU915:
-        FALLTHROUGH;
     case EU433:
-        FALLTHROUGH;
     case EU868:
-        FALLTHROUGH;
     case IN866:
-        FALLTHROUGH;
     case FCC915:
         configureReceiverForSX127x();
         bindingRateIndex = ELRS_BINDING_RATE_900;

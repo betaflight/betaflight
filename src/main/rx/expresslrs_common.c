@@ -275,11 +275,10 @@ static linkQuality_t lq;
 
 void lqIncrease(void)
 {
-    if (lqPeriodIsSet()) {
-        return;
+    if (!lqPeriodIsSet()) {
+        lq.array[lq.index] |= lq.mask;
+        lq.value += 1;
     }
-    lq.array[lq.index] |= lq.mask;
-    lq.value += 1;
 }
 
 void lqNewPeriod(void)
@@ -327,20 +326,13 @@ uint16_t convertSwitch1b(const uint16_t val)
 uint16_t convertSwitch3b(const uint16_t val) 
 {
     switch (val) {
-    case 0:
-        return 1000;
-    case 1:
-        return 1275;
-    case 2:
-        return 1425;
-    case 3:
-        return 1575;
-    case 4:
-        return 1725;
-    case 5:
-        return 2000;
-    default:
-        return 1500;
+    case 0: return 1000;
+    case 1: return 1275;
+    case 2: return 1425;
+    case 3: return 1575;
+    case 4: return 1725;
+    case 5: return 2000;
+    default: return 1500;
     }
 }
 
