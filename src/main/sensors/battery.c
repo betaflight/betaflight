@@ -568,7 +568,7 @@ int32_t getMAhDrawn(void)
 }
 
 #ifdef USE_BATTERY_CONTINUE
-bool hasUsedMAh()
+bool hasUsedMAh(void)
 {
     return batteryConfig()->isBatteryContinueEnabled
           && !(ARMING_FLAG(ARMED) || ARMING_FLAG(WAS_EVER_ARMED)) && (getBatteryState() == BATTERY_OK)

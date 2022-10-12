@@ -179,7 +179,7 @@ typedef enum {
 
 static rxState_e rxState = RX_STATE_CHECK;
 
-bool taskUpdateRxMainInProgress()
+bool taskUpdateRxMainInProgress(void)
 {
     return (rxState != RX_STATE_CHECK);
 }
@@ -310,8 +310,9 @@ static bool taskAltitudeCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
 
     return false;
  }
- static void taskCalculateAltitude()
+ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
     calculateEstimatedAltitude();
 }
 #endif // USE_BARO || USE_GPS

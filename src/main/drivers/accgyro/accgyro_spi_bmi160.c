@@ -148,7 +148,7 @@ static void BMI160_Init(const extDevice_t *dev)
     BMI160InitDone = true;
 }
 
-static uint8_t getBmiOsrMode()
+static uint8_t getBmiOsrMode(void)
 {
     switch(gyroConfig()->gyro_hardware_lpf) {
         case GYRO_HARDWARE_LPF_NORMAL:

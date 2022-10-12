@@ -245,7 +245,7 @@ extern "C" {
     void rxPwmInit(const rxConfig_t *, rxRuntimeState_t *) {}
     void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
     void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
-    bool taskUpdateRxMainInProgress() { return true; }
+    bool taskUpdateRxMainInProgress(void) { return true; }
     float pt1FilterGain(float f_cut, float dT)
     {
         UNUSED(f_cut);

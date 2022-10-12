@@ -135,7 +135,7 @@ throttleStatus_e calculateThrottleStatus(void)
     doNotRepeat = false; \
 }
 
-void processRcStickPositions()
+void processRcStickPositions(void)
 {
     // time the sticks are maintained
     static int16_t rcDelayMs;

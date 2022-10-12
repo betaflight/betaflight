@@ -209,18 +209,18 @@ void rescueNewGpsData(void)
     newGPSData = true;
 }
 
-static void rescueStart()
+static void rescueStart(void)
 {
     rescueState.phase = RESCUE_INITIALIZE;
 }
 
-static void rescueStop()
+static void rescueStop(void)
 {
     rescueState.phase = RESCUE_IDLE;
 }
 
 // Things that need to run when GPS Rescue is enabled, and while armed, but while there is no Rescue in place
-static void setReturnAltitude()
+static void setReturnAltitude(void)
 {
     // Hold maxAltitude at zero while disarmed, but if set_home_point_once is true, hold maxAlt until power cycled
     if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
@@ -254,7 +254,7 @@ static void setReturnAltitude()
     }
 }
 
-static void rescueAttainPosition()
+static void rescueAttainPosition(void)
 {
     // runs at 100hz, but only updates RPYT settings when new GPS Data arrives and when not in idle phase.
     static float previousVelocityError = 0.0f;
@@ -424,7 +424,7 @@ static void rescueAttainPosition()
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, rescueState.intent.targetVelocityCmS);
 }
 
-static void performSanityChecks()
+static void performSanityChecks(void)
 {
     static timeUs_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
     static float prevAltitudeCm = 0.0f; // to calculate ascent or descent change
@@ -549,7 +549,7 @@ static void performSanityChecks()
     DEBUG_SET(DEBUG_RTH, 3, (rescueState.intent.secondsFailing * 100 + secondsLowSats));
 }
 
-static void sensorUpdate()
+static void sensorUpdate(void)
 {
     static float prevDistanceToHomeCm = 0.0f;
     const timeUs_t currentTimeUs = micros();

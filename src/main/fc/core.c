@@ -746,7 +746,7 @@ uint8_t calculateThrottlePercentAbs(void)
 
 static bool airmodeIsActivated;
 
-bool isAirmodeActivated()
+bool isAirmodeActivated(void)
 {
     return airmodeIsActivated;
 }
@@ -1314,12 +1314,12 @@ timeUs_t getLastDisarmTimeUs(void)
     return lastDisarmTimeUs;
 }
 
-bool isTryingToArm()
+bool isTryingToArm(void)
 {
     return (tryingToArm != ARMING_DELAYED_DISARMED);
 }
 
-void resetTryingToArm()
+void resetTryingToArm(void)
 {
     tryingToArm = ARMING_DELAYED_DISARMED;
 }

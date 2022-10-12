@@ -80,7 +80,7 @@ int lockMainPID(void)
 #define RAD2DEG (180.0 / M_PI)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
-void sendMotorUpdate()
+void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
@@ -293,28 +293,28 @@ void indicateFailure(failureMode_e mode, int repeatCount)
 
 // Time part
 // Thanks ArduPilot
-uint64_t nanos64_real()
+uint64_t nanos64_real(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec*1e9 + ts.tv_nsec) - (start_time.tv_sec*1e9 + start_time.tv_nsec);
 }
 
-uint64_t micros64_real()
+uint64_t micros64_real(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return 1.0e6*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
-uint64_t millis64_real()
+uint64_t millis64_real(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return 1.0e3*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
 
-uint64_t micros64()
+uint64_t micros64(void)
 {
     static uint64_t last = 0;
     static uint64_t out = 0;
@@ -327,7 +327,7 @@ uint64_t micros64()
 //    return micros64_real();
 }
 
-uint64_t millis64()
+uint64_t millis64(void)
 {
     static uint64_t last = 0;
     static uint64_t out = 0;

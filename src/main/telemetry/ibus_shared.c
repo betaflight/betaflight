@@ -177,7 +177,7 @@ static uint8_t getSensorLength(uint8_t sensorType)
     return IBUS_2BYTE_SESNSOR;
 }
 
-static uint8_t transmitIbusPacket()
+static uint8_t transmitIbusPacket(void)
 {
     unsigned frameLength = sendBuffer[0];
     if (frameLength == INVALID_IBUS_ADDRESS) {
@@ -209,12 +209,12 @@ static void setIbusSensorType(ibusAddress_t address)
     sendBuffer[3] = sensorLength;
 }
 
-static uint16_t getVoltage()
+static uint16_t getVoltage(void)
 {
     return (telemetryConfig()->report_cell_voltage ? getBatteryAverageCellVoltage() : getBatteryVoltage());
 }
 
-static uint16_t getTemperature()
+static uint16_t getTemperature(void)
 {
     uint16_t temperature = gyroGetTemperature() * 10;
 #if defined(USE_BARO)
@@ -226,7 +226,7 @@ static uint16_t getTemperature()
 }
 
 
-static uint16_t getFuel()
+static uint16_t getFuel(void)
 {
     uint16_t fuel = 0;
     if (batteryConfig()->batteryCapacity > 0) {
@@ -237,7 +237,7 @@ static uint16_t getFuel()
     return fuel;
 }
 
-static uint16_t getRPM()
+static uint16_t getRPM(void)
 {
     uint16_t rpm = 0;
     if (ARMING_FLAG(ARMED)) {
@@ -250,7 +250,7 @@ static uint16_t getRPM()
     return rpm;
 }
 
-static uint16_t getMode()
+static uint16_t getMode(void)
 {
     uint16_t flightMode = 1; //Acro
     if (FLIGHT_MODE(ANGLE_MODE)) {

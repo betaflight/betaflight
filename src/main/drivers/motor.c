@@ -166,7 +166,7 @@ uint16_t motorConvertToExternal(float motorValue)
     return motorDevice->vTable.convertMotorToExternal(motorValue);
 }
 
-void motorPostInit()
+void motorPostInit(void)
 {
     motorDevice->vTable.postInit();
 }

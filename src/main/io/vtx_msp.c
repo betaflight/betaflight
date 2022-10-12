@@ -354,7 +354,7 @@ static const vtxVTable_t mspVTable = {
     .serializeCustomDeviceStatus = NULL,
 };
 
-bool vtxMspInit()
+bool vtxMspInit(void)
 {
     // don't bother setting up this device if we don't have MSP vtx enabled
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_MSP);

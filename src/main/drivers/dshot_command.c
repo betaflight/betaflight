@@ -77,7 +77,7 @@ void dshotSetPidLoopTime(uint32_t pidLoopTime)
     dshotCommandPidLoopTimeUs = pidLoopTime;
 }
 
-static FAST_CODE bool dshotCommandQueueFull()
+static FAST_CODE bool dshotCommandQueueFull(void)
 {
     return (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1) == commandQueueTail;
 }
@@ -129,7 +129,7 @@ static FAST_CODE uint32_t dshotCommandCyclesFromTime(timeUs_t delayUs)
     return (delayUs + dshotCommandPidLoopTimeUs - 1) / dshotCommandPidLoopTimeUs;
 }
 
-static dshotCommandControl_t* addCommand()
+static dshotCommandControl_t* addCommand(void)
 {
     int newHead = (commandQueueHead + 1) % (DSHOT_MAX_COMMANDS + 1);
     if (newHead == commandQueueTail) {

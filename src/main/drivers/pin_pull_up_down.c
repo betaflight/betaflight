@@ -46,7 +46,7 @@ static void initPin(const pinPullUpDownConfig_t* config, resourceOwner_e owner, 
     }
 }
 
-void pinPullupPulldownInit()
+void pinPullupPulldownInit(void)
 {
     for (uint8_t i = 0; i < PIN_PULL_UP_DOWN_COUNT; i++) {
         initPin(pinPullupConfig(i), OWNER_PULLUP, i);

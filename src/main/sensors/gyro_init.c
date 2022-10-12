@@ -205,7 +205,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 }
 
 #ifdef USE_DYN_LPF
-static void dynLpfFilterInit()
+static void dynLpfFilterInit(void)
 {
     if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
         switch (gyroConfig()->gyro_lpf1_type) {

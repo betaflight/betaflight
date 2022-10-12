@@ -586,7 +586,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 }
 #endif // USE_ACC
 
-bool shouldInitializeGPSHeading()
+bool shouldInitializeGPSHeading(void)
 {
     static bool initialized = false;
 

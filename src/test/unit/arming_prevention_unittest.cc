@@ -1011,7 +1011,7 @@ TEST(ArmingPreventionTest, Paralyze)
     // expect
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXVTXPITMODE));
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXBEEPERON));
-    
+
     // given
     // try exiting paralyze mode and ensure arming and pit mode are still disabled
     rcData[AUX2] = 1000;
@@ -1098,7 +1098,7 @@ extern "C" {
     float scaleRangef(float, float, float, float, float) { return 0.0f; }
     bool crashRecoveryModeActive(void) { return false; }
     int32_t getEstimatedAltitudeCm(void) { return 0; }
-    bool gpsIsHealthy() { return false; }
+    bool gpsIsHealthy(void) { return false; }
     float getCosTiltAngle(void) { return 0.0f; }
     void pidSetItermReset(bool) {}
     void applyAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
