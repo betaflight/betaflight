@@ -52,7 +52,8 @@
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
 
-#ifdef USE_RX_SPI
+#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
+
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
@@ -78,6 +79,7 @@
 
 // MPU interrupt
 
+#if !defined(CLOUD_BUILD)
 #define USE_ACC
 #define USE_GYRO
 
@@ -121,6 +123,7 @@
 #define USE_BARO_SPI_QMP6988
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
+#endif
 #endif
 
 #define USE_SDCARD

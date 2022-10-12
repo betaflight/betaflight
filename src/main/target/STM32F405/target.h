@@ -55,7 +55,7 @@
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
 
-#ifdef USE_RX_SPI
+#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
@@ -81,6 +81,7 @@
 
 // MPU interrupt
 
+#if !defined(CLOUD_BUILD)
 #define USE_ACC
 #define USE_GYRO
 
@@ -126,40 +127,6 @@
 #define USE_BARO_SPI_DPS310
 #endif
 
-#define USE_SDCARD
-#define USE_SDCARD_SPI
-#define USE_SDCARD_SDIO
-
-#define USE_FLASHFS
-#define USE_FLASH_TOOLS
-#define USE_FLASH_M25P16
-#define USE_FLASH_W25N01G          // 1Gb NAND flash support
-#define USE_FLASH_W25M             // Stacked die support
-#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
-
-#define USE_MAX7456
-
-#define USE_SPI
-#define SPI_FULL_RECONFIGURABILITY
-
-#define USE_VCP
-
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
-
-#define USE_USB_DETECT
-
-#define USE_ESCSERIAL
-
-#define USE_ADC
-
-#define USE_RX_SPI
-
-#define USE_CUSTOM_DEFAULTS
 
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
@@ -180,3 +147,41 @@
 #define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #define USE_RX_SX1280
 #define USE_RX_SX127X
+
+#define USE_RX_SPI
+#define USE_MAX7456
+
+#define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G          // 1Gb NAND flash support
+#define USE_FLASH_W25M             // Stacked die support
+#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+
+#endif // cloud_build
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
+
+#define USE_FLASHFS
+#define USE_FLASH_TOOLS
+
+#define USE_SPI
+#define SPI_FULL_RECONFIGURABILITY
+
+#define USE_VCP
+
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define UNIFIED_SERIAL_PORT_COUNT       3
+
+#define USE_USB_DETECT
+
+#define USE_ESCSERIAL
+
+#define USE_ADC
+
+#define USE_CUSTOM_DEFAULTS
+

@@ -51,7 +51,7 @@
 // to be supplied when the board is configured for the first time
 #define USE_UNIFIED_TARGET
 
-#ifdef USE_RX_SPI
+#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
@@ -70,12 +70,14 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-#define USE_MAG
-#define USE_BARO
-
 #define USE_BEEPER
 
 // MPU interrupt
+
+#if !defined(CLOUD_BUILD)
+
+#define USE_MAG
+#define USE_BARO
 
 #define USE_ACC
 #define USE_GYRO
@@ -122,10 +124,6 @@
 #define USE_BARO_SPI_DPS310
 #endif
 
-#define USE_SDCARD
-#define USE_SDCARD_SPI
-#define USE_SDCARD_SDIO
-
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
@@ -136,6 +134,14 @@
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
 
 #define USE_MAX7456
+
+#define USE_RX_SPI
+
+#endif // cloud_build
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
@@ -152,7 +158,5 @@
 #define USE_ESCSERIAL
 
 #define USE_ADC
-
-#define USE_RX_SPI
 
 #define USE_CUSTOM_DEFAULTS
