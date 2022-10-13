@@ -884,13 +884,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
     DEBUG_SET(DEBUG_ANTI_GRAVITY, 2, lrintf((1 + (pidRuntime.itermAccelerator / pidRuntime.pidCoefficient[FD_PITCH].Ki)) * 1000));
     // amount of antigravity added relative to user's pitch iTerm coefficient
-    pidRuntime.itermAccelerator *= pidRuntime.dT;
     // used later to increase iTerm
 
     // iTerm windup (attenuation of iTerm if motorMix range is large)
-    float dynCi = pidRuntime.dT;
+    float dynCi = 1.0;
     if (pidRuntime.itermWindupPointInv > 1.0f) {
-        dynCi *= constrainf((1.0f - getMotorMixRange()) * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
+        dynCi = constrainf((1.0f - getMotorMixRange()) * pidRuntime.itermWindupPointInv, 0.0f, 1.0f);
     }
 
     // Precalculate gyro delta for D-term here, this allows loop unrolling
@@ -1016,8 +1015,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
-
-        pidData[axis].I = constrainf(previousIterm + (Ki * dynCi + pidRuntime.itermAccelerator) * itermErrorRate, -pidRuntime.itermLimit, pidRuntime.itermLimit);
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+        pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;

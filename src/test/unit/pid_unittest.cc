@@ -498,6 +498,29 @@ TEST(pidControllerTest, testMixerSaturation)
     EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
     EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
     EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
+
+    // Test that the added i term gain from Anti Gravity
+    // is also affected by itermWindup
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    simulatedMotorMixRange = 2.0f;
+    const bool prevAgState = pidRuntime.antiGravityEnabled;
+    const float prevAgTrhottleD = pidRuntime.antiGravityThrottleD;
+    pidRuntime.antiGravityEnabled = true;
+    pidRuntime.antiGravityThrottleD = 1.0;
+    pidController(pidProfile, currentTestTime());
+    pidRuntime.antiGravityEnabled = prevAgState;
+    pidRuntime.antiGravityThrottleD = prevAgTrhottleD;
+
+    // Expect no iterm accumulation for all axes
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 }
 
 // TODO - Add more scenarios
