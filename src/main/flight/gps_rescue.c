@@ -16,6 +16,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "platform.h"
@@ -351,7 +352,7 @@ static void rescueAttainPosition()
     rescueYaw = constrainf(rescueYaw, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
     // rescueYaw is the yaw rate in deg/s to correct the heading error
 
-    const float rollMixAttenuator = constrainf(1.0f - ABS(rescueYaw) * 0.01f, 0.0f, 1.0f);
+    const float rollMixAttenuator = constrainf(1.0f - fabsf(rescueYaw) * 0.01f, 0.0f, 1.0f);
     // less roll at higher yaw rates, no roll at 100 deg/s of yaw
     const float rollAdjustment = -rescueYaw * gpsRescueConfig()->rollMix * rollMixAttenuator;
     // if rollMix = 100, the roll:yaw ratio is 1:1 at small angles, reducing linearly to zero when the yaw rate is 100 deg/s

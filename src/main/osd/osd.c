@@ -220,7 +220,7 @@ int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatStr
     }
 
     value *= multiplier;
-    const int scaledValueAbs = ABS(round ? lrintf(value) : value);
+    const int scaledValueAbs = abs(round ? (int)lrintf(value) : (int)value);
     const int integerPart = scaledValueAbs / multiplier;
     const int fractionalPart = scaledValueAbs % multiplier;
 

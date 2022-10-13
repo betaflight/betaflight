@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "platform.h"
@@ -463,7 +464,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         // During initial training process all samples.
                         // During retraining check samples to determine if they vary by more than the limit percentage.
                         if (rcSmoothingData.filterInitialized) {
-                            const float percentChange = (ABS(currentRxRefreshRate - rcSmoothingData.averageFrameTimeUs) / (float)rcSmoothingData.averageFrameTimeUs) * 100;
+                            const float percentChange = (abs(currentRxRefreshRate - rcSmoothingData.averageFrameTimeUs) / (float)rcSmoothingData.averageFrameTimeUs) * 100;
                             if (percentChange < RC_SMOOTHING_RX_RATE_CHANGE_PERCENT) {
                                 // We received a sample that wasn't more than the limit percent so reset the accumulation
                                 // During retraining we need a contiguous block of samples that are all significantly different than the current average
@@ -601,7 +602,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
 
-        float tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
+        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
         if (axis == ROLL || axis == PITCH) {
             if (tmp > rcControlsConfig()->deadband) {
                 tmp -= rcControlsConfig()->deadband;
