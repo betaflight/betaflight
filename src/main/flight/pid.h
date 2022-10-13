@@ -68,6 +68,13 @@
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
 #define DTERM_LPF2_HZ_DEFAULT 150
 
+#define TPA_MAX 100
+
+typedef enum {
+    TPA_MODE_PD,
+    TPA_MODE_D
+} tpaMode_e;
+
 typedef enum {
     PID_ROLL,
     PID_PITCH,
@@ -223,15 +230,18 @@ typedef struct pidProfile_s {
 
     uint8_t anti_gravity_cutoff_hz;
     uint8_t anti_gravity_p_gain;
+    uint8_t tpa_rate;                       // Percent reduction in P or D at full throttle
+    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
-    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+    uint8_t pid_process_denom;                   // Processing denominator for PID controller vs gyro sampling rate
     uint8_t runaway_takeoff_prevention;          // off, on - enables pidsum runaway disarm logic
     uint16_t runaway_takeoff_deactivate_delay;   // delay in ms for "in-flight" conditions before deactivation (successful flight)
     uint8_t runaway_takeoff_deactivate_throttle; // minimum throttle percent required during deactivation phase
+    uint8_t tpaMode;                             // Controls which PID terms TPA effects
 } pidConfig_t;
 
 PG_DECLARE(pidConfig_t, pidConfig);
@@ -390,6 +400,8 @@ typedef struct pidRuntime_s {
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
 #endif
+    uint8_t tpa_rate;
+    uint16_t tpa_breakpoint;
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;

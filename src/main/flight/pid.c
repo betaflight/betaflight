@@ -31,6 +31,7 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
+#include "config/config.h"
 #include "config/config_reset.h"
 #include "config/simplified_tuning.h"
 
@@ -87,7 +88,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 4);
 
 #if defined(STM32F411xE)
 #define PID_PROCESS_DENOM_DEFAULT       2
@@ -100,11 +101,13 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
     .runaway_takeoff_prevention = true,
     .runaway_takeoff_deactivate_throttle = 20,  // throttle level % needed to accumulate deactivation time
-    .runaway_takeoff_deactivate_delay = 500     // Accumulated time (in milliseconds) before deactivation in successful takeoff
+    .runaway_takeoff_deactivate_delay = 500,    // Accumulated time (in milliseconds) before deactivation in successful takeoff
+    .tpaMode = TPA_MODE_D
 );
 #else
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
-    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT
+    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
+    .tpaMode = TPA_MODE_D
 );
 #endif
 
@@ -117,7 +120,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 4);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 5);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -218,6 +221,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
         .anti_gravity_cutoff_hz = 5,
         .anti_gravity_p_gain = 100,
+        .tpa_rate = 65,
+        .tpa_breakpoint = 1350,
     );
 
 #ifndef USE_D_MIN
@@ -289,8 +294,12 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    const float tpaBreakpoint = (currentControlRateProfile->tpa_breakpoint - 1000) / 1000.0f;
-    float tpaRate = currentControlRateProfile->tpa_rate / 100.0f;
+    pidProfile_t *currentPidProfile;
+
+    currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
+    const float tpaBreakpoint = (currentPidProfile->tpa_breakpoint - 1000) / 1000.0f;
+    float tpaRate = currentPidProfile->tpa_rate / 100.0f;
+
     if (throttle > tpaBreakpoint) {
         if (throttle < 1.0f) {
             tpaRate *= (throttle - tpaBreakpoint) / (1.0f - tpaBreakpoint);
@@ -825,7 +834,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
 #ifdef USE_TPA_MODE
-    const float tpaFactorKp = (currentControlRateProfile->tpaMode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
+    const float tpaFactorKp = (pidConfig()->tpaMode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
 #else
     const float tpaFactorKp = pidRuntime.tpaFactor;
 #endif
