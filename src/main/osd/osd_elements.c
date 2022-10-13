@@ -1478,6 +1478,11 @@ switch (element->type) {
 }
 #endif // USE_VTX_COMMON
 
+static void osdElementAuxValue(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
+}
+
 static void osdElementWarnings(osdElementParms_t *element)
 {
     bool elementBlinking = false;
@@ -1601,6 +1606,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_PERSISTENT_STATS
     OSD_TOTAL_FLIGHTS,
 #endif
+    OSD_AUX_VALUE,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1717,6 +1723,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PERSISTENT_STATS
     [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
 #endif
+    [OSD_AUX_VALUE]               = osdElementAuxValue,
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)

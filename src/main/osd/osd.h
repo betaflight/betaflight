@@ -162,6 +162,7 @@ typedef enum {
     OSD_UP_DOWN_REFERENCE,
     OSD_TX_UPLINK_POWER,
     OSD_WATT_HOURS_DRAWN,
+    OSD_AUX_VALUE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -308,6 +309,9 @@ typedef struct osdConfig_s {
     #ifdef USE_CRAFTNAME_MSGS
     uint8_t osd_craftname_msgs;               // Insert LQ/RSSI-dBm and warnings into CraftName
     #endif //USE_CRAFTNAME_MSGS
+    uint8_t aux_channel;
+    uint16_t aux_scale;
+    uint8_t aux_symbol;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -343,6 +347,7 @@ extern float osdGForce;
 #ifdef USE_ESC_SENSOR
 extern escSensorData_t *osdEscDataCombined;
 #endif
+extern uint16_t osdAuxValue;
 
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
