@@ -124,11 +124,8 @@
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
 #endif
-#endif
 
-#define USE_SDCARD
-#define USE_SDCARD_SPI
-#define USE_SDCARD_SDIO
+#define USE_RX_SPI
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
@@ -140,6 +137,12 @@
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
 
 #define USE_MAX7456
+
+#endif
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
@@ -156,7 +159,5 @@
 #define USE_ESCSERIAL
 
 #define USE_ADC
-
-#define USE_RX_SPI
 
 #define USE_CUSTOM_DEFAULTS
