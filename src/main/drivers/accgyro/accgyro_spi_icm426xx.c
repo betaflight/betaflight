@@ -31,7 +31,7 @@
 #if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
 
 #include "common/axis.h"
-#include "common/maths.h"
+#include "common/utils.h"
 #include "build/debug.h"
 
 #include "drivers/accgyro/accgyro.h"
@@ -208,7 +208,7 @@ void icm426xxGyroInit(gyroDev_t *gyro)
 
     // Get desired output data rate
     uint8_t odrConfig;
-    const uint8_t decim = LOG2_8BIT(gyro->mpuDividerDrops + 1);
+    const unsigned decim = llog2(gyro->mpuDividerDrops + 1);
     if (gyro->gyroRateKHz && decim < ODR_CONFIG_COUNT) {
         odrConfig = odrLUT[decim];
     } else {
