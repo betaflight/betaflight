@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 #include <stdlib.h>
 
 #include "platform.h"
@@ -292,10 +293,7 @@ static void sendSatalliteSignalQualityAsTemperature2(uint8_t cycleNum)
     }
     int16_t data;
     if (telemetryConfig()->frsky_unit == UNIT_IMPERIAL) {
-        float tmp = (satellite - 32) / 1.8f;
-        // Round the value
-        tmp += (tmp < 0) ? -0.5f : 0.5f;
-        data = tmp;
+        data = lrintf((satellite - 32) / 1.8f);
     } else {
         data = satellite;
     }

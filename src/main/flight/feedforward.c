@@ -197,10 +197,10 @@ FAST_CODE_NOINLINE float applyFeedforwardLimit(int axis, float value, float Kp, 
 {
     switch (axis) {
     case FD_ROLL:
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(value));
         break;
     case FD_PITCH:
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(value));
         break;
     }
 
@@ -213,7 +213,7 @@ FAST_CODE_NOINLINE float applyFeedforwardLimit(int axis, float value, float Kp, 
     }
 
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(value));
     }
 
     return value;

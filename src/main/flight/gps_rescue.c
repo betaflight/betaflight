@@ -333,8 +333,8 @@ static void rescueAttainPosition()
 
     rescueThrottle = gpsRescueConfig()->throttleHover + throttleAdjustment;
     rescueThrottle = constrainf(rescueThrottle, gpsRescueConfig()->throttleMin, gpsRescueConfig()->throttleMax);
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, throttleP);
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, throttleD);
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 0, lrintf(throttleP));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 1, lrintf(throttleD));
 
     /**
         Heading / yaw controller
@@ -410,8 +410,8 @@ static void rescueAttainPosition()
         pitchAdjustment = movingAvgPitchAdjustment;
         // pitchAdjustment is the absolute Pitch angle adjustment value in degrees * 100
         // it gets added to the normal level mode Pitch adjustments in pid.c
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, velocityP);
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, velocityD);
+        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(velocityP));
+        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(velocityD));
     }
 
     const float pitchAdjustmentFiltered = pt3FilterApply(&pitchLpf, pitchAdjustment);
@@ -421,8 +421,8 @@ static void rescueAttainPosition()
     gpsRescueAngle[AI_PITCH] = constrainf(pitchAdjustmentFiltered, -pitchAngleLimit, pitchAngleLimit);
     // this angle gets added to the normal pitch Angle Mode control values in pid.c - will be seen in pitch setpoint
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, rescueState.intent.targetVelocityCmS);
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, rescueState.intent.targetVelocityCmS);
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVelocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS));
 }
 
 static void performSanityChecks()
@@ -562,8 +562,8 @@ static void sensorUpdate()
 
     rescueState.sensor.currentAltitudeCm = getAltitude();
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, rescueState.sensor.currentAltitudeCm);
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, rescueState.sensor.currentAltitudeCm);
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS); // groundspeed cm/s
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse); // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw); // degrees * 10
@@ -610,8 +610,8 @@ static void sensorUpdate()
 
     rescueState.sensor.maxPitchStep = rescueState.sensor.gpsDataIntervalSeconds * GPS_RESCUE_MAX_PITCH_RATE;
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, rescueState.sensor.velocityToHomeCmS);
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, rescueState.sensor.velocityToHomeCmS);
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(rescueState.sensor.velocityToHomeCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.velocityToHomeCmS));
 
 }
 
@@ -853,9 +853,9 @@ void updateGPSRescueState(void)
         break;
     }
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, rescueState.intent.targetAltitudeCm);
-    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 3, rescueState.intent.targetAltitudeCm);
-    DEBUG_SET(DEBUG_RTH, 0, rescueState.intent.maxAltitudeCm);
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
+    DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 3, lrintf(rescueState.intent.targetAltitudeCm));
+    DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.intent.maxAltitudeCm));
 
     performSanityChecks();
     rescueAttainPosition();
