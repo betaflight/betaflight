@@ -230,7 +230,7 @@ void rangefinderUpdate(void)
     }
 }
 
-bool isSurfaceAltitudeValid()
+bool isSurfaceAltitudeValid(void)
 {
 
     /*

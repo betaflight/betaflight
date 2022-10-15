@@ -301,7 +301,7 @@ static uint8_t minLqForChaos(void)
     return interval * ((interval * numfhss + 99) / (interval * numfhss));
 }
 
-static bool domainIsTeam24()
+static bool domainIsTeam24(void)
 {
   const elrsFreqDomain_e domain = rxExpressLrsSpiConfig()->domain;
   return (domain == ISM2400) || (domain == CE2400);

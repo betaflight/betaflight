@@ -143,7 +143,7 @@ static const displayPortVTable_t srxlVTable = {
     .layerCopy = NULL,
 };
 
-static displayPort_t *displayPortSrxlInit()
+static displayPort_t *displayPortSrxlInit(void)
 {
     srxlDisplayPort.device = NULL;
     displayInit(&srxlDisplayPort, &srxlVTable, DISPLAYPORT_DEVICE_TYPE_SRXL);

@@ -317,7 +317,7 @@ static int flashfsGetDirtyDataBuffers(uint8_t const *buffers[], uint32_t bufferS
 }
 
 
-static bool flashfsNewData()
+static bool flashfsNewData(void)
 {
     return dataWritten;
 }

@@ -539,7 +539,7 @@ bool spiSetBusInstance(extDevice_t *dev, uint32_t device)
     return true;
 }
 
-void spiInitBusDMA()
+void spiInitBusDMA(void)
 {
     uint32_t device;
 #if defined(STM32F4) && defined(USE_DSHOT_BITBANG)

@@ -514,7 +514,7 @@ extern "C" {
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
     void pinioBoxTaskControl(void) { }
-    bool taskUpdateRxMainInProgress() { return true; }
+    bool taskUpdateRxMainInProgress(void) { return true; }
     void schedulerIgnoreTaskStateTime(void) { }
     void schedulerIgnoreTaskExecRate(void) { }
     bool schedulerGetIgnoreTaskExecTime() { return false; }

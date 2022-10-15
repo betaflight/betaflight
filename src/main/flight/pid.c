@@ -262,22 +262,22 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 #ifdef USE_FEEDFORWARD
-float pidGetFeedforwardTransitionFactor()
+float pidGetFeedforwardTransitionFactor(void)
 {
     return pidRuntime.feedforwardTransitionFactor;
 }
 
-float pidGetFeedforwardSmoothFactor()
+float pidGetFeedforwardSmoothFactor(void)
 {
     return pidRuntime.feedforwardSmoothFactor;
 }
 
-float pidGetFeedforwardJitterFactor()
+float pidGetFeedforwardJitterFactor(void)
 {
     return pidRuntime.feedforwardJitterFactor;
 }
 
-float pidGetFeedforwardBoostFactor()
+float pidGetFeedforwardBoostFactor(void)
 {
     return pidRuntime.feedforwardBoostFactor;
 }
@@ -377,7 +377,7 @@ static float getLevelModeRcDeflection(uint8_t axis)
 }
 
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
-STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength()
+STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 {
     // start with 1.0 at center stick, 0.0 at max stick deflection:
     float horizonLevelStrength = 1.0f - MAX(fabsf(getLevelModeRcDeflection(FD_ROLL)), fabsf(getLevelModeRcDeflection(FD_PITCH)));
@@ -636,7 +636,7 @@ static void rotateVector(float v[XYZ_AXIS_COUNT], float rotation[XYZ_AXIS_COUNT]
     }
 }
 
-STATIC_UNIT_TESTED void rotateItermAndAxisError()
+STATIC_UNIT_TESTED void rotateItermAndAxisError(void)
 {
     if (pidRuntime.itermRotation
 #if defined(USE_ABSOLUTE_CONTROL)
@@ -778,7 +778,7 @@ void pidUpdateAirmodeLpf(float currentOffset)
     pidRuntime.airmodeThrottleLpf1.state = constrainf(pidRuntime.airmodeThrottleLpf1.state, -pidRuntime.airmodeThrottleOffsetLimit, pidRuntime.airmodeThrottleOffsetLimit);
 }
 
-float pidGetAirmodeThrottleOffset()
+float pidGetAirmodeThrottleOffset(void)
 {
     return pidRuntime.airmodeThrottleLpf1.state;
 }
@@ -1278,12 +1278,12 @@ float pidGetPreviousSetpoint(int axis)
     return pidRuntime.previousPidSetpoint[axis];
 }
 
-float pidGetDT()
+float pidGetDT(void)
 {
     return pidRuntime.dT;
 }
 
-float pidGetPidFrequency()
+float pidGetPidFrequency(void)
 {
     return pidRuntime.pidFrequency;
 }

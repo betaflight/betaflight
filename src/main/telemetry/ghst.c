@@ -219,7 +219,7 @@ static uint8_t ghstSchedule[GHST_SCHEDULE_COUNT_MAX];
 
 static bool mspReplyPending;
 
-void ghstScheduleMspResponse()
+void ghstScheduleMspResponse(void)
 {
     mspReplyPending = true;
 }

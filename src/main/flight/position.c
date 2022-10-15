@@ -85,7 +85,7 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS)
-void calculateEstimatedAltitude()
+void calculateEstimatedAltitude(void)
 {
     static bool wasArmed = false;
     static bool useZeroedGpsAltitude = false; // whether a zero for the GPS altitude value exists
