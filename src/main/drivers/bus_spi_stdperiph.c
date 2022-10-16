@@ -418,11 +418,12 @@ void spiSequenceStart(const extDevice_t *dev)
 
         // If a following transaction has been linked, start it
         if (bus->curSegment->u.link.dev) {
-            const extDevice_t *nextDev = bus->curSegment->u.link.dev;
-            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->u.link.segments;
             busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
+            const extDevice_t *nextDev = endSegment->u.link.dev;
+            busSegment_t *nextSegments = (busSegment_t *)endSegment->u.link.segments;
             bus->curSegment = nextSegments;
             endSegment->u.link.dev = NULL;
+            endSegment->u.link.segments = NULL;
             spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
