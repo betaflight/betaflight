@@ -105,7 +105,7 @@ typedef enum {
     BMI270_VAL_PWR_CONF = 0x02,              // disable advanced power save, enable FIFO self-wake
     BMI270_VAL_ACC_CONF_ODR800 = 0x0B,       // set acc sample rate to 800hz
     BMI270_VAL_ACC_CONF_ODR1600 = 0x0C,      // set acc sample rate to 1600hz
-    BMI270_VAL_ACC_CONF_BWP = 0x02,          // set acc filter in normal mode
+    BMI270_VAL_ACC_CONF_BWP = 0x01,          // set acc filter in osr2 mode (only in high performance mode)
     BMI270_VAL_ACC_CONF_HP = 0x01,           // set acc in high performance mode
     BMI270_VAL_ACC_RANGE_8G = 0x02,          // set acc to 8G full scale
     BMI270_VAL_ACC_RANGE_16G = 0x03,         // set acc to 16G full scale
@@ -196,10 +196,13 @@ static uint8_t getBmiOsrMode(void)
             return BMI270_VAL_GYRO_CONF_BWP_OSR2;
         case GYRO_HARDWARE_LPF_OPTION_2:
             return BMI270_VAL_GYRO_CONF_BWP_NORM;
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
         case GYRO_HARDWARE_LPF_EXPERIMENTAL:
             return BMI270_VAL_GYRO_CONF_BWP_NORM;
+#endif
+        default:
+            return BMI270_VAL_GYRO_CONF_BWP_OSR4;
     }
-    return 0;
 }
 
 static void bmi270Config(gyroDev_t *gyro)
