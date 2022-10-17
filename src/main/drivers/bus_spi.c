@@ -415,6 +415,7 @@ static void spiIrqHandler(const extDevice_t *dev)
             // The end of the segment list has been reached
             bus->curSegment = nextSegments;
             nextSegment->u.link.dev = NULL;
+            nextSegment->u.link.segments = NULL;
             spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete
