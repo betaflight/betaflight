@@ -24,6 +24,8 @@
  * Copyright: INAVFLIGHT OU
  */
 
+// See datasheet at https://www.infineon.com/dgdl/Infineon-DPS310-DataSheet-v01_02-EN.pdf?fileId=5546d462576f34750157750826c42242
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -179,6 +181,8 @@ static bool deviceConfigure(const extDevice_t *dev)
         return false;
     }
 
+    // See section 8.11, Calibration Coefficients (COEF), of datasheet
+
     // 0x11 c0 [3:0] + 0x10 c0 [11:4]
     baroState.calib.c0 = getTwosComplement(((uint32_t)coef[0] << 4) | (((uint32_t)coef[1] >> 4) & 0x0F), 12);
 
@@ -195,7 +199,7 @@ static bool deviceConfigure(const extDevice_t *dev)
     baroState.calib.c01 = getTwosComplement(((uint32_t)coef[8] << 8) | (uint32_t)coef[9], 16);
 
     // 0x1A c11 [15:8] + 0x1B c11 [7:0]
-    baroState.calib.c11 = getTwosComplement(((uint32_t)coef[8] << 8) | (uint32_t)coef[9], 16);
+    baroState.calib.c11 = getTwosComplement(((uint32_t)coef[10] << 8) | (uint32_t)coef[11], 16);
 
     // 0x1C c20 [15:8] + 0x1D c20 [7:0]
     baroState.calib.c20 = getTwosComplement(((uint32_t)coef[12] << 8) | (uint32_t)coef[13], 16);
@@ -263,10 +267,13 @@ static bool dps310GetUP(baroDev_t *baro)
     const float c21 = baroState.calib.c21;
     const float c30 = baroState.calib.c30;
 
+    // See section 4.9.1, How to Calculate Compensated Pressure Values, of datasheet
+    baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * c30)) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * c21);
+
     const float c0 = baroState.calib.c0;
     const float c1 = baroState.calib.c1;
 
-    baroState.pressure = c00 + Praw_sc * (c10 + Praw_sc * (c20 + Praw_sc * c30)) + Traw_sc * c01 + Traw_sc * Praw_sc * (c11 + Praw_sc * c21);
+    // See section 4.9.2, How to Calculate Compensated Temperature Values, of datasheet
     baroState.temperature = c0 * 0.5f + c1 * Traw_sc;
 
     return true;
