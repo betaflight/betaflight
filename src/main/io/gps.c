@@ -870,7 +870,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (sensors(SENSOR_GPS)) {
         updateGpsIndicator(currentTimeUs);
     }
+
     if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
+        // clear the home fix icon between arms if the user configuration is to reset home point between arms
         DISABLE_STATE(GPS_FIX_HOME);
     }
 
@@ -880,15 +882,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-    static bool hasFix = false;
-    if (STATE(GPS_FIX_HOME)) {
-        if (gpsIsHealthy() && gpsSol.numSat >= gpsConfig()->gpsRequiredSats && !hasFix) {
-            // ready beep sequence on fix or requirements for gps rescue met.
+    static bool hasBeeped = false;
+    if (!ARMING_FLAG(ARMED)) {
+        // while disarmed, beep when requirements for a home fix are met
+        // ?? should we also beep if home fix requirements first appear after arming?
+        if (!hasBeeped && STATE(GPS_FIX) && gpsSol.numSat >= gpsConfig()->gpsRequiredSats) {
             beeper(BEEPER_READY_BEEP);
-            hasFix = true;
+            hasBeeped = true;
         }
-    } else {
-        hasFix = false;
     }
 
     executeTimeUs = micros() - currentTimeUs;
@@ -1806,18 +1807,22 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
 }
 
 void GPS_reset_home_position(void)
+// runs, if GPS is defined, on arming via tryArm() in core.c, and on gyro cal via processRcStickPositions() in rc_controls.c
 {
     if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
         if (STATE(GPS_FIX) && gpsSol.numSat >= gpsConfig()->gpsRequiredSats) {
-            // requires the full sat count to say we have a home fix
+            // those checks are always true for tryArm, but may not be true for gyro cal
             GPS_home[GPS_LATITUDE] = gpsSol.llh.lat;
             GPS_home[GPS_LONGITUDE] = gpsSol.llh.lon;
             GPS_calc_longitude_scaling(gpsSol.llh.lat);
-            // need an initial value for distance and bearing calcs, and to set ground altitude
             ENABLE_STATE(GPS_FIX_HOME);
+            // no point beeping success here since:
+            // when triggered by tryArm, the arming beep is modified to indicate the GPS home fix status on arming, and
+            // when triggered by gyro cal, the gyro cal beep takes priority over the GPS beep, so we won't hear the GPS beep
+            // PS: to test for gyro cal, check for !ARMED, since we cannot be here while disarmed other than via gyro cal
         }
     }
-    GPS_calculateDistanceFlownVerticalSpeed(true); //Initialize
+    GPS_calculateDistanceFlownVerticalSpeed(true); // Initialize
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
