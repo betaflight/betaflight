@@ -1019,7 +1019,6 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
             setRssiDbm(receiver.rssiFiltered, RSSI_SOURCE_RX_PROTOCOL);
 #endif
 #ifdef USE_RX_RSNR
-            //TODO: LPfilter snr?
             setRsnr(receiver.snr/4);
 #endif
 #ifdef USE_RX_LINK_QUALITY_INFO

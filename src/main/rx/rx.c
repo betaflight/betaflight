@@ -81,6 +81,7 @@ static int16_t rsnr = CRSF_SNR_MIN;        // range: [-30,20]
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 static pt1Filter_t frameErrFilter;
+static pt1Filter_t rsnrFilter;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 static uint16_t linkQuality = 0;
@@ -362,6 +363,8 @@ void rxInit(void)
 
     // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
     pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US/1000000.0));
+
+    pt1FilterInit(&rsnrFilter, 0.25f);  //just a bit of filtering to remove excessive jumpiness
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeState.channelCount);
 }
@@ -914,21 +917,9 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
     rssiDbm = newRssiDbm;
 }
 
-static int16_t updateRsnrSamples(int16_t value)
-{
-    static int16_t samplessnr[RSSI_SAMPLE_COUNT_DBM];
-    static uint8_t samplesnrIndex = 0;
-    static int sumsnr = 0;
-
-    sumsnr += value - samplessnr[samplesnrIndex];
-    samplessnr[samplesnrIndex] = value;
-    samplesnrIndex = (samplesnrIndex + 1) % RSSI_SAMPLE_COUNT_DBM;
-    return sumsnr / RSSI_SAMPLE_COUNT_DBM;
-}
-
 void setRsnr(int16_t rsnrValue)
 {
-    rsnr = updateRsnrSamples(rsnrValue);
+    rsnr = pt1FilterApply(&rsnrFilter, rsnrValue);
 }
 
 void setRsnrDirect(int16_t newRsnr)
