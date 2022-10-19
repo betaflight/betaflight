@@ -209,14 +209,6 @@ static void validateAndFixRatesSettings(void)
     }
 }
 
-static void validateAndFixMinSatsGpsConfig(void)
-{
-    if (gpsConfig()->gpsMinimumSats >= gpsConfig()->gpsRequiredSats) {
-        gpsConfigMutable()->gpsRequiredSats = GPS_REQUIRED_SAT_COUNT;
-        gpsConfigMutable()->gpsMinimumSats = GPS_MINIMUM_SAT_COUNT;
-    }
-}
-
 static void validateAndFixConfig(void)
 {
 #if !defined(USE_QUAD_MIXER_ONLY)
@@ -602,8 +594,6 @@ static void validateAndFixConfig(void)
     // This should be done at the end of the validation
     targetValidateConfiguration();
 #endif
-
-    validateAndFixMinSatsGpsConfig();
 }
 
 void validateAndFixGyroConfig(void)

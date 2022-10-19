@@ -273,7 +273,7 @@ typedef enum {
 
 gpsData_t gpsData;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .provider = GPS_UBLOX,
@@ -285,8 +285,6 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .gps_set_home_point_once = false,
     .gps_use_3d_speed = false,
     .sbas_integrity = false,
-    .gpsRequiredSats = GPS_REQUIRED_SAT_COUNT,
-    .gpsMinimumSats = GPS_MINIMUM_SAT_COUNT
 );
 
 static void shiftPacketLog(void)
@@ -764,7 +762,7 @@ void gpsInitHardware(void)
 static void updateGpsIndicator(timeUs_t currentTimeUs)
 {
     static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsConfig()->gpsRequiredSats)) {
+    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) {
         GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
@@ -886,7 +884,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (!ARMING_FLAG(ARMED)) {
         // while disarmed, beep when requirements for a home fix are met
         // ?? should we also beep if home fix requirements first appear after arming?
-        if (!hasBeeped && STATE(GPS_FIX) && gpsSol.numSat >= gpsConfig()->gpsRequiredSats) {
+        if (!hasBeeped && STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
             beeper(BEEPER_READY_BEEP);
             hasBeeped = true;
         }
@@ -1810,7 +1808,7 @@ void GPS_reset_home_position(void)
 // runs, if GPS is defined, on arming via tryArm() in core.c, and on gyro cal via processRcStickPositions() in rc_controls.c
 {
     if (!STATE(GPS_FIX_HOME) || !gpsConfig()->gps_set_home_point_once) {
-        if (STATE(GPS_FIX) && gpsSol.numSat >= gpsConfig()->gpsRequiredSats) {
+        if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
             // those checks are always true for tryArm, but may not be true for gyro cal
             GPS_home[GPS_LATITUDE] = gpsSol.llh.lat;
             GPS_home[GPS_LONGITUDE] = gpsSol.llh.lon;
@@ -1860,7 +1858,7 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 
 void onGpsNewData(void)
 {
-    if (!(STATE(GPS_FIX) && gpsSol.numSat >= gpsConfig()->gpsMinimumSats)) {
+    if (!(STATE(GPS_FIX) && gpsSol.numSat >= GPS_MIN_SAT_COUNT)) {
         // if we don't have a 3D fix and the minimum sats, don't give data to GPS rescue
         return;
     }

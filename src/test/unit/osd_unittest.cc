@@ -93,7 +93,7 @@ extern "C" {
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
-    
+
     timeUs_t simulationTime = 0;
     batteryState_e simulationBatteryState;
     uint8_t simulationBatteryCellCount;
@@ -1193,8 +1193,6 @@ TEST_F(OsdTest, TestGpsElements)
 {
     // given
     osdElementConfigMutable()->item_pos[OSD_GPS_SATS] = OSD_POS(2, 4) | OSD_PROFILE_1_FLAG;
-    gpsConfigMutable()->gpsMinimumSats = GPS_MINIMUM_SAT_COUNT;
-    gpsConfigMutable()->gpsRequiredSats = GPS_REQUIRED_SAT_COUNT;
 
     sensorsSet(SENSOR_GPS);
     osdAnalyzeActiveElements();

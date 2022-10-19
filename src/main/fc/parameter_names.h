@@ -133,8 +133,6 @@
 #define PARAM_NAME_GPS_UBLOX_MODE "gps_ublox_mode"
 #define PARAM_NAME_GPS_SET_HOME_POINT_ONCE "gps_set_home_point_once"
 #define PARAM_NAME_GPS_USE_3D_SPEED "gps_use_3d_speed"
-#define PARAM_NAME_GPS_REQUIRED_SATS "gps_required_sats"
-#define PARAM_NAME_GPS_MINIMUM_SATS "gps_minimum_sats"
 
 #ifdef USE_GPS_RESCUE
 #define PARAM_NAME_GPS_RESCUE_MIN_START_DIST "gps_rescue_min_start_dist"
@@ -156,6 +154,7 @@
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER "gps_rescue_throttle_hover"
 
 #define PARAM_NAME_GPS_RESCUE_SANITY_CHECKS "gps_rescue_sanity_checks"
+#define PARAM_NAME_GPS_RESCUE_MIN_SATS "gps_rescue_min_sats"
 #define PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX "gps_rescue_allow_arming_without_fix"
 
 #define PARAM_NAME_GPS_RESCUE_THROTTLE_P "gps_rescue_throttle_p"

@@ -310,7 +310,7 @@ void mavlinkSendPosition(void)
         gpsFixType = 1;
     }
     else {
-        if (gpsSol.numSat < gpsConfig()->gpsMinimumSats) {
+        if (gpsSol.numSat < GPS_MIN_SAT_COUNT) {
             gpsFixType = 2;
         }
         else {

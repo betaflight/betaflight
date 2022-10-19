@@ -38,7 +38,6 @@
 #include "config/config.h"
 
 #include "flight/gps_rescue.h"
-#include "io/gps.h"
 
 static uint16_t gpsRescueConfig_minRescueDth; //meters
 static uint8_t gpsRescueConfig_altitudeMode;
@@ -57,7 +56,7 @@ static uint16_t gpsRescueConfig_throttleMin;
 static uint16_t gpsRescueConfig_throttleMax;
 static uint16_t gpsRescueConfig_throttleHover;
 
-static uint8_t gpsConfig_gpsRequiredSats;
+static uint8_t gpsRescueConfig_minSats;
 static uint8_t gpsRescueConfig_allowArmingWithoutFix;
 
 static uint8_t gpsRescueConfig_throttleP, gpsRescueConfig_throttleI, gpsRescueConfig_throttleD;
@@ -150,7 +149,7 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
     gpsRescueConfig_throttleMax = gpsRescueConfig()->throttleMax;
     gpsRescueConfig_throttleHover = gpsRescueConfig()->throttleHover;
 
-    gpsConfig_gpsRequiredSats = gpsConfig()->gpsRequiredSats;
+    gpsRescueConfig_minSats = gpsRescueConfig()->minSats;
     gpsRescueConfig_allowArmingWithoutFix = gpsRescueConfig()->allowArmingWithoutFix;
 
     return NULL;
@@ -178,7 +177,7 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
     gpsRescueConfigMutable()->throttleMax = gpsRescueConfig_throttleMax;
     gpsRescueConfigMutable()->throttleHover = gpsRescueConfig_throttleHover;
 
-    gpsConfigMutable()->gpsRequiredSats = gpsConfig_gpsRequiredSats;
+    gpsRescueConfigMutable()->minSats = gpsRescueConfig_minSats;
     gpsRescueConfigMutable()->allowArmingWithoutFix = gpsRescueConfig_allowArmingWithoutFix;
 
     return NULL;
@@ -205,7 +204,7 @@ const OSD_Entry cmsx_menuGpsRescueEntries[] =
     { "THROTTLE MAX",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleMax, 1000, 2000, 1 } },
     { "THROTTLE HOV",      OME_UINT16 | REBOOT_REQUIRED, NULL, &(OSD_UINT16_t){ &gpsRescueConfig_throttleHover, 1000, 2000, 1 } },
 
-    { "SATS REQUIRED",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsConfig_gpsRequiredSats, 4, 50, 1 } },
+    { "SATS REQUIRED",     OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_minSats, 5, 50, 1 } },
     { "ARM WITHOUT FIX",   OME_Bool | REBOOT_REQUIRED,  NULL, &gpsRescueConfig_allowArmingWithoutFix },
 
     { "GPS RESCUE PID",    OME_Submenu, cmsMenuChange, &cms_menuGpsRescuePid},

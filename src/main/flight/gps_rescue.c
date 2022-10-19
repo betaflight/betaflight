@@ -167,6 +167,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
     .allowArmingWithoutFix = false,
     .sanityChecks = RESCUE_SANITY_FS_ONLY,
+    .minSats = 8,
 
     .throttleP = 15,
     .throttleI = 15,
@@ -507,7 +508,7 @@ static void performSanityChecks(void)
         }
     }
 
-    secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < gpsConfig()->gpsMinimumSats)) ? 1 : -1;
+    secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)) ? 1 : -1;
     secondsLowSats = constrain(secondsLowSats, 0, 10);
 
     if (secondsLowSats == 10) {
@@ -654,7 +655,7 @@ static bool checkGPSRescueIsAvailable(void)
         noGPSfix = false;
     }
 
-    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < gpsConfig()->gpsMinimumSats) ? 1 : -1), 0, 2);
+    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < GPS_MIN_SAT_COUNT) ? 1 : -1), 0, 2);
     if (secondsLowSats == 2) {
         lowsats = true;
         result = false;
