@@ -249,32 +249,23 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #endif
 
-#if (TARGET_FLASH_SIZE > 256)
 #define PID_PROFILE_COUNT 4
 #define CONTROL_RATE_PROFILE_COUNT  4
-#elif (TARGET_FLASH_SIZE > 128)
-#define PID_PROFILE_COUNT 3
-#define CONTROL_RATE_PROFILE_COUNT  4
-#else
-#define PID_PROFILE_COUNT 2
-#define CONTROL_RATE_PROFILE_COUNT  3
-#endif
 
-#if (TARGET_FLASH_SIZE > 64)
 #define USE_ACRO_TRAINER
 #define USE_BLACKBOX
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #define USE_SERVOS
+
 #if (!defined(CLOUD_BUILD))
 #define USE_TELEMETRY
 #define USE_TELEMETRY_FRSKY_HUB
 #define USE_TELEMETRY_SMARTPORT
 #endif
-#endif
 
-#if (TARGET_FLASH_SIZE > 128)
+
 #define USE_GYRO_OVERFLOW_CHECK
 #define USE_YAW_SPIN_RECOVERY
 #define USE_DSHOT_DMAR
@@ -376,16 +367,10 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_RSSI_DBM
 #endif
 
-#endif // TARGET_FLASH_SIZE > 128
-
 #if (TARGET_FLASH_SIZE > 256)
 #define USE_AIRMODE_LPF
 #define USE_CANVAS
 #define USE_FRSKYOSD
-#define USE_GPS
-#define USE_GPS_NMEA
-#define USE_GPS_UBLOX
-#define USE_GPS_RESCUE
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
@@ -424,15 +409,26 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_JETIEXBUS
 #define USE_TELEMETRY_MAVLINK
 #define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
+
+#define USE_GPS
+#define USE_GPS_NMEA
+#define USE_GPS_UBLOX
+#define USE_GPS_RESCUE
 #endif
 #endif
 
 #if (TARGET_FLASH_SIZE > 512)
+
 #define USE_ESCSERIAL_SIMONK
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
-#define USE_GPS_PLUS_CODES
 #define USE_BATTERY_CONTINUE
+
+#if !defined(CLOUD_BUILD)
+#define USE_GPS_PLUS_CODES
 #endif
+
+#endif
+
