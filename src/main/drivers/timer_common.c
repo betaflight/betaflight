@@ -160,7 +160,7 @@ const timerHardware_t *timerAllocate(ioTag_t ioTag, resourceOwner_e owner, uint8
 
 ioTag_t timerioTagGetByUsage(timerUsageFlag_e usageFlag, uint8_t index)
 {
-#if !defined(USE_UNIFIED_TARGET) && USABLE_TIMER_CHANNEL_COUNT > 0
+#if USABLE_TIMER_CHANNEL_COUNT > 0
     uint8_t currentIndex = 0;
     for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if ((timerHardware[i].usageFlags & usageFlag) == usageFlag) {

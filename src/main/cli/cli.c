@@ -4962,7 +4962,7 @@ static void cliTasks(const char *cmdName, char *cmdline)
 
 static void printVersion(const char *cmdName, bool printBoardInfo)
 {
-#if !(defined(USE_CUSTOM_DEFAULTS) && defined(USE_UNIFIED_TARGET))
+#if !(defined(USE_CUSTOM_DEFAULTS))
     UNUSED(cmdName);
     UNUSED(printBoardInfo);
 #endif
@@ -4997,15 +4997,11 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
             cliPrintHashLine("config: YES");
         }
     } else {
-#if defined(USE_UNIFIED_TARGET)
         cliPrintError(cmdName, "NO CONFIG FOUND");
-#else
-        cliPrintHashLine("NO CUSTOM DEFAULTS FOUND");
-#endif // USE_UNIFIED_TARGET
     }
 #endif // USE_CUSTOM_DEFAULTS
 
-#if defined(USE_UNIFIED_TARGET) && defined(USE_BOARD_INFO)
+#if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
         cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
     }

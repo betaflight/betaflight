@@ -41,10 +41,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-// Treat the target as unified, and expect manufacturer id / board name
-// to be supplied when the board is configured for the first time
-#define USE_UNIFIED_TARGET
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 #define RX_SPI_DEFAULT_PROTOCOL RX_SPI_EXPRESSLRS
 

@@ -495,12 +495,6 @@
 #endif
 
 #ifdef USE_ADC
-#if !defined(USE_UNIFIED_TARGET) && !defined(ADC_INSTANCE)
-#define ADC_INSTANCE ADC1
-#ifndef ADC1_DMA_OPT
-#define ADC1_DMA_OPT 1
-#endif
-#endif
 
 #if !defined(ADC1_DMA_OPT)
 #define ADC1_DMA_OPT (DMA_OPT_UNUSED)
