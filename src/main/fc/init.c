@@ -767,7 +767,9 @@ void init(void)
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         gpsInit();
+#ifdef USE_GPS_RESCUE
         gpsRescueInit();
+#endif
     }
 #endif
 
