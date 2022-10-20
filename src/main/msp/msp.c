@@ -983,10 +983,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdFlags);
 
 #ifdef USE_MAX7456
-        // send video system (AUTO/PAL/NTSC)
+        // send video system (AUTO/PAL/NTSC/HD)
         sbufWriteU8(dst, vcdProfile()->video_system);
 #else
-        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, VIDEO_SYSTEM_HD);
 #endif
 
 #ifdef USE_OSD
@@ -1053,6 +1053,14 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdConfig()->camera_frame_height);
 
 #endif // USE_OSD
+        break;
+    }
+
+    case MSP_OSD_CANVAS: {
+#ifdef USE_OSD
+        sbufWriteU8(dst, osdConfig()->canvas_cols);
+        sbufWriteU8(dst, osdConfig()->canvas_rows);
+#endif
         break;
     }
 
@@ -1236,7 +1244,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
                     // Voltage -> 0-63,75V step 0,25V
                     if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
-                    	escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
+                        escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
                     }
                 }
             }
@@ -4161,6 +4169,16 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             if (!displayWriteFontCharacter(osdDisplayPort, addr, &chr)) {
                 return MSP_RESULT_ERROR;
             }
+        }
+        break;
+
+    case MSP_SET_OSD_CANVAS:
+        {
+            osdConfigMutable()->canvas_cols = sbufReadU8(src);
+            osdConfigMutable()->canvas_rows = sbufReadU8(src);
+
+            // An HD VTX has communicated it's canvas size, so we must be in HD mode
+            vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
         }
         break;
 #endif // OSD

@@ -1537,6 +1537,15 @@ static void osdElementWarnings(osdElementParms_t *element)
     #endif // USE_CRAFTNAME_MSGS
 }
 
+#ifdef USE_MSP_DISPLAYPORT
+static void osdElementSys(osdElementParms_t *element)
+{
+    UNUSED(element);
+
+    // Nothing to render for a system element
+}
+#endif
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -1625,6 +1634,15 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_TOTAL_FLIGHTS,
 #endif
     OSD_AUX_VALUE,
+    OSD_SYS_GOGGLE_VOLTAGE,
+    OSD_SYS_VTX_VOLTAGE,
+    OSD_SYS_BITRATE,
+    OSD_SYS_DELAY,
+    OSD_SYS_DISTANCE,
+    OSD_SYS_LQ,
+    OSD_SYS_GOGGLE_DVR,
+    OSD_SYS_VTX_DVR,
+    OSD_SYS_WARNINGS,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1746,6 +1764,17 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
 #endif
     [OSD_AUX_VALUE]               = osdElementAuxValue,
+#ifdef USE_MSP_DISPLAYPORT
+    [OSD_SYS_GOGGLE_VOLTAGE]      = osdElementSys,
+    [OSD_SYS_VTX_VOLTAGE]         = osdElementSys,
+    [OSD_SYS_BITRATE]             = osdElementSys,
+    [OSD_SYS_DELAY]               = osdElementSys,
+    [OSD_SYS_DISTANCE]            = osdElementSys,
+    [OSD_SYS_LQ]                  = osdElementSys,
+    [OSD_SYS_GOGGLE_DVR]          = osdElementSys,
+    [OSD_SYS_VTX_DVR]             = osdElementSys,
+    [OSD_SYS_WARNINGS]            = osdElementSys,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -1839,9 +1868,13 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_ATTR_NONE;
 
     // Call the element drawing function
-    osdElementDrawFunction[item](&element);
-    if (element.drawElement) {
-        osdDisplayWrite(&element, elemPosX, elemPosY, element.attr, buff);
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_SYS_WARNINGS)) {
+        displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
+    } else {
+        osdElementDrawFunction[item](&element);
+        if (element.drawElement) {
+            osdDisplayWrite(&element, elemPosX, elemPosY, element.attr, buff);
+        }
     }
 }
 

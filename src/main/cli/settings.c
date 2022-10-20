@@ -385,7 +385,7 @@ const char * const lookupTableRescueAltitudeMode[] = {
 
 #if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
 static const char * const lookupTableVideoSystem[] = {
-    "AUTO", "PAL", "NTSC"
+    "AUTO", "PAL", "NTSC", "HD"
 };
 #endif
 
@@ -1429,6 +1429,18 @@ const clivalue_t valueTable[] = {
     { "osd_efficiency_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_EFFICIENCY]) },
     { "osd_total_flights_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_TOTAL_FLIGHTS]) },
     { "osd_aux_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AUX_VALUE]) },
+
+#ifdef USE_MSP_DISPLAYPORT
+    { "osd_sys_goggle_voltage_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_GOGGLE_VOLTAGE]) },
+    { "osd_sys_vtx_voltage_pos",    VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_VTX_VOLTAGE]) },
+    { "osd_sys_bitrate_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_BITRATE]) },
+    { "osd_sys_delay_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_DELAY]) },
+    { "osd_sys_distance_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_DISTANCE]) },
+    { "osd_sys_lq_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_LQ]) },
+    { "osd_sys_goggle_dvr_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_GOGGLE_DVR]) },
+    { "osd_sys_vtx_dvr_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_VTX_DVR]) },
+    { "osd_sys_warnings_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_WARNINGS]) },
+#endif
 
     // OSD stats enabled flags are stored as bitmapped values inside a 32bit parameter
     { "osd_stat_bitmask",     VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},

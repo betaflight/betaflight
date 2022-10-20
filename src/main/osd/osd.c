@@ -147,9 +147,9 @@ static bool backgroundLayerSupported = false;
 escSensorData_t *osdEscDataCombined;
 #endif
 
-STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
+STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 11);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 12);
 
 PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 1);
 
@@ -398,6 +398,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_channel = 1;
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
+
+    osdConfig->canvas_cols = OSD_HD_COLS;
+    osdConfig->canvas_rows = OSD_HD_ROWS;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
@@ -840,13 +843,13 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #ifdef USE_ESC_SENSOR
     case OSD_STAT_MAX_ESC_TEMP:
     {
-    	uint16_t ix = 0;
-    	if (stats.max_esc_temp_ix > 0) {
-    		ix = tfp_sprintf(buff, "%d ", stats.max_esc_temp_ix);
-    	}
-    	tfp_sprintf(buff + ix, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
-    	osdDisplayStatisticLabel(displayRow, "MAX ESC TEMP", buff);
-    	return true;
+        uint16_t ix = 0;
+        if (stats.max_esc_temp_ix > 0) {
+            ix = tfp_sprintf(buff, "%d ", stats.max_esc_temp_ix);
+        }
+        tfp_sprintf(buff + ix, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
+        osdDisplayStatisticLabel(displayRow, "MAX ESC TEMP", buff);
+        return true;
     }
 #endif
 
