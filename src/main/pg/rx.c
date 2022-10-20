@@ -56,6 +56,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rssi_offset = 0,
         .rssi_invert = 0,
         .rssi_src_frame_lpf_period = 30,
+        .rssi_smoothing = 125,
         .fpvCamAngleDegrees = 0,
         .airModeActivateThreshold = 25,
         .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,

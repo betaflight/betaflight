@@ -201,9 +201,11 @@ uint16_t rxGetLinkQuality(void);
 void setLinkQualityDirect(uint16_t linkqualityValue);
 uint16_t rxGetLinkQualityPercent(void);
 
+#ifdef USE_RX_RSSI_DBM
 int16_t getRssiDbm(void);
 void setRssiDbm(int16_t newRssiDbm, rssiSource_e source);
 void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source);
+#endif //USE_RX_RSSI_DBM
 
 int16_t getRsnr(void);
 void setRsnr(int16_t newRsnr);

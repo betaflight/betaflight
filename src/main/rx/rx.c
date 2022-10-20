@@ -76,12 +76,22 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
+#ifdef USE_RX_RSSI_DBM
 static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,0]
+#endif //USE_RX_RSSI_DBM
+#ifdef USE_RX_RSNR
 static int16_t rsnr = CRSF_SNR_MIN;        // range: [-30,20]
+#endif //USE_RX_RSNR
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 static pt1Filter_t frameErrFilter;
+static pt1Filter_t rssiFilter;
+#ifdef USE_RX_RSSI_DBM
+static pt1Filter_t rssiDbmFilter;
+#endif //USE_RX_RSSI_DBM
+#ifdef USE_RX_RSNR
 static pt1Filter_t rsnrFilter;
+#endif //USE_RX_RSNR
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 static uint16_t linkQuality = 0;
@@ -364,7 +374,16 @@ void rxInit(void)
     // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
     pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US/1000000.0));
 
-    pt1FilterInit(&rsnrFilter, 0.25f);  //just a bit of filtering to remove excessive jumpiness
+    float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
+    pt1FilterInit(&rssiFilter, k);  //just a bit of filtering to remove excessive jumpiness
+
+#ifdef USE_RX_RSSI_DBM
+    pt1FilterInit(&rssiDbmFilter, k);  //just a bit of filtering to remove excessive jumpiness
+#endif //USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+    pt1FilterInit(&rsnrFilter, k);  //just a bit of filtering to remove excessive jumpiness
+#endif //USE_RX_RSNR
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeState.channelCount);
 }
@@ -770,20 +789,6 @@ void setRssiDirect(uint16_t newRssi, rssiSource_e source)
     rssi = newRssi;
 }
 
-#define RSSI_SAMPLE_COUNT 16
-
-static uint16_t updateRssiSamples(uint16_t value)
-{
-    static uint16_t samples[RSSI_SAMPLE_COUNT];
-    static uint8_t sampleIndex = 0;
-    static unsigned sum = 0;
-
-    sum += value - samples[sampleIndex];
-    samples[sampleIndex] = value;
-    sampleIndex = (sampleIndex + 1) % RSSI_SAMPLE_COUNT;
-    return sum / RSSI_SAMPLE_COUNT;
-}
-
 void setRssi(uint16_t rssiValue, rssiSource_e source)
 {
     if (source != rssiSource) {
@@ -794,8 +799,7 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
     if (source == RSSI_SOURCE_FRAME_ERRORS) {
         rssi = pt1FilterApply(&frameErrFilter, rssiValue);
     } else {
-        // calculate new sample mean
-        rssi = updateRssiSamples(rssiValue);
+        rssi = pt1FilterApply(&rssiFilter, rssiValue);
     }
 }
 
@@ -875,28 +879,10 @@ uint8_t getRssiPercent(void)
     return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
 }
 
+#ifdef USE_RX_RSSI_DBM
 int16_t getRssiDbm(void)
 {
     return rssiDbm;
-}
-
-int16_t getRsnr(void)
-{
-    return rsnr;
-}
-
-#define RSSI_SAMPLE_COUNT_DBM 16
-
-static int16_t updateRssiDbmSamples(int16_t value)
-{
-    static int16_t samplesdbm[RSSI_SAMPLE_COUNT_DBM];
-    static uint8_t sampledbmIndex = 0;
-    static int sumdbm = 0;
-
-    sumdbm += value - samplesdbm[sampledbmIndex];
-    samplesdbm[sampledbmIndex] = value;
-    sampledbmIndex = (sampledbmIndex + 1) % RSSI_SAMPLE_COUNT_DBM;
-    return sumdbm / RSSI_SAMPLE_COUNT_DBM;
 }
 
 void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
@@ -905,7 +891,7 @@ void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
         return;
     }
 
-    rssiDbm = updateRssiDbmSamples(rssiDbmValue);
+    rssiDbm = pt1FilterApply(&rssiDbmFilter, rssiDbmValue);
 }
 
 void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
@@ -915,6 +901,13 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
     }
 
     rssiDbm = newRssiDbm;
+}
+#endif //USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+int16_t getRsnr(void)
+{
+    return rsnr;
 }
 
 void setRsnr(int16_t rsnrValue)
@@ -926,6 +919,7 @@ void setRsnrDirect(int16_t newRsnr)
 {
     rsnr = newRsnr;
 }
+#endif //USE_RX_RSNR
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 uint16_t rxGetLinkQuality(void)
