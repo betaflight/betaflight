@@ -22,7 +22,8 @@
 
 #include "common/time.h"
 
-#define TASK_ALTITUDE_RATE_HZ 120
+#define TASK_ALTITUDE_RATE_HZ 100
+
 typedef struct positionConfig_s {
     uint8_t altitude_source;
     uint8_t altitude_prefer_baro;

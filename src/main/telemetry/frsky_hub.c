@@ -219,9 +219,9 @@ static void sendTemperature1(void)
         data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
     }
 #elif defined(USE_BARO)
-    data = (baro.baroTemperature + 50)/ 100; // Airmamaf
+    data = lrintf(baro.temperature / 100.0f); // Airmamaf
 #else
-    data = gyroGetTemperature() / 10;
+    data = lrintf(gyroGetTemperature() / 10.0f);
 #endif
     frSkyHubWriteFrame(ID_TEMPRATURE1, data);
 }

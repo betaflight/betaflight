@@ -217,7 +217,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"magADC",      2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(MAG)},
 #endif
 #ifdef USE_BARO
-    {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(BARO)},
+    {"baroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(BARO)},
 #endif
 #ifdef USE_RANGEFINDER
     {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(RANGEFINDER)},
@@ -319,7 +319,7 @@ typedef struct blackboxMainState_s {
     int32_t amperageLatest;
 
 #ifdef USE_BARO
-    int32_t BaroAlt;
+    int32_t baroAlt;
 #endif
 #ifdef USE_MAG
     int16_t magADC[XYZ_AXIS_COUNT];
@@ -614,7 +614,7 @@ static void writeIntraframe(void)
 
 #ifdef USE_BARO
     if (testBlackboxCondition(CONDITION(BARO))) {
-        blackboxWriteSignedVB(blackboxCurrent->BaroAlt);
+        blackboxWriteSignedVB(blackboxCurrent->baroAlt);
     }
 #endif
 
@@ -762,7 +762,7 @@ static void writeInterframe(void)
 
 #ifdef USE_BARO
     if (testBlackboxCondition(CONDITION(BARO))) {
-        deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
+        deltas[optionalFieldCount++] = blackboxCurrent->baroAlt - blackboxLast->baroAlt;
     }
 #endif
 
@@ -1101,7 +1101,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->amperageLatest = getAmperageLatest();
 
 #ifdef USE_BARO
-    blackboxCurrent->BaroAlt = baro.BaroAlt;
+    blackboxCurrent->baroAlt = baro.altitude;
 #endif
 
 #ifdef USE_RANGEFINDER
