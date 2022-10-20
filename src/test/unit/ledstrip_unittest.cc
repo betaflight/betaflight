@@ -396,8 +396,6 @@ bool sensors(uint32_t mask)
     return false;
 };
 
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
-
 bool isArmingDisabled(void) { return false; }
 
 uint8_t getRssiPercent(void) { return 0; }
