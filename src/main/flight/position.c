@@ -112,9 +112,9 @@ void calculateEstimatedAltitude(void)
         // On loss of 3D fix, gpsAltCm remains at the last value, haveGpsAlt becomes false, and gpsTrust goes to zero.
         gpsAltCm = gpsSol.llh.altCm; // static, so hold last altitude value if 3D fix is lost to prevent fly to moon
         haveGpsAlt = true; // stays false if no 3D fix
-        if (gpsSol.hdop != 0) {
-            gpsTrust = 100.0f / gpsSol.hdop;
-            // *** TO DO - investigate if we should use vDOP or vACC with UBlox units; this hDOP value is actually pDOP in UBLox code !!!
+        if (gpsSol.dop.hdop != 0) {
+            gpsTrust = 100.0f / gpsSol.dop.hdop;
+            // *** TO DO - investigate if we should use vDOP or vACC with UBlox units;
         }
         // always use at least 10% of other sources besides gps if available
         gpsTrust = MIN(gpsTrust, 0.9f);
