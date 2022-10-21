@@ -392,7 +392,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->osd_craftname_msgs = false;   // Insert LQ/RSSI-dBm and warnings into CraftName
     #endif //USE_CRAFTNAME_MSGS
 
-    osdConfig->aux_channel = 0;
+    osdConfig->aux_channel = 1;
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 }
