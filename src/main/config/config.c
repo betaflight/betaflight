@@ -57,6 +57,7 @@
 #include "flight/position.h"
 
 #include "io/beeper.h"
+#include "io/displayport_msp.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
@@ -585,15 +586,17 @@ static void validateAndFixConfig(void)
     }
 
 #ifdef USE_MSP_DISPLAYPORT
-    // validate that displayport_msp_serial is referencing a valid UART that actually has MSP enabled
-    if (displayPortProfileMsp()->displayPortSerial != SERIAL_PORT_NONE) {
-        const serialPortConfig_t *portConfig = serialFindPortConfiguration(displayPortProfileMsp()->displayPortSerial);
-        if (!portConfig || !(portConfig->functionMask & FUNCTION_MSP)
-#ifndef USE_MSP_PUSH_OVER_VCP
-            || (portConfig->identifier == SERIAL_PORT_USB_VCP)
-#endif
-            ) {
-            displayPortProfileMspMutable()->displayPortSerial = SERIAL_PORT_NONE;
+    // Find the first serial port on which MSP Displayport is enabled
+    displayPortMspSetSerial(SERIAL_PORT_NONE);
+
+    for (uint8_t serialPort  = 0; serialPort < SERIAL_PORT_COUNT; serialPort++) {
+        const serialPortConfig_t *portConfig = &serialConfig()->portConfigs[serialPort];
+
+        if (portConfig &&
+            (portConfig->identifier != SERIAL_PORT_USB_VCP) &&
+            ((portConfig->functionMask & FUNCTION_MSP_DISPLAYPORT) == FUNCTION_MSP_DISPLAYPORT)) {
+            displayPortMspSetSerial(portConfig->identifier);
+            break;
         }
     }
 #endif

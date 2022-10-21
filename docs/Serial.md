@@ -105,22 +105,23 @@ Other devices can be added starting from id 50.
 | FUNCTION_NONE                | 0      | 0   |
 | FUNCTION_MSP                 | 1      | 1 << 0 |
 | FUNCTION_GPS                 | 2      | 1 << 1 |
-| FUNCTION_TELEMETRY_FRSKY_HUB | 4      | 1 << 2 |
-| FUNCTION_TELEMETRY_HOTT      | 8      | 1 << 3 |
-| FUNCTION_TELEMETRY_LTM       | 16     | 1 << 4 |
-| FUNCTION_TELEMETRY_SMARTPORT | 32     | 1 << 5 |
-| FUNCTION_RX_SERIAL           | 64     | 1 << 6 |
-| FUNCTION_BLACKBOX            | 128    | 1 << 7 |
+| FUNCTION\_TELEMETRY\_FRSKY_HUB | 4      | 1 << 2 |
+| FUNCTION\_TELEMETRY\_HOTT      | 8      | 1 << 3 |
+| FUNCTION\_TELEMETRY\_LTM       | 16     | 1 << 4 |
+| FUNCTION\_TELEMETRY\_SMARTPORT | 32     | 1 << 5 |
+| FUNCTION\_RX_SERIAL           | 64     | 1 << 6 |
+| FUNCTION\_BLACKBOX            | 128    | 1 << 7 |
 | NOT USED                     | 256    | 1 << 8 |
-| FUNCTION_TELEMETRY_MAVLINK   | 512    | 1 << 9 |
-| FUNCTION_ESC_SENSOR          | 1024   | 1 << 10 |
-| FUNCTION_VTX_SMARTAUDIO      | 2048   | 1 << 11 |
-| FUNCTION_TELEMETRY_IBUS      | 4096   | 1 << 12 |
-| FUNCTION_VTX_TRAMP           | 8192   | 1 << 13 |
-| FUNCTION_RCDEVICE            | 16384  | 1 << 14 |
-| FUNCTION_LIDAR_TF            | 32768  | 1 << 15 |
-| FUNCTION_FRSKY_OSD           | 65536  | 1 << 16 |
-| FUNCTION_VTX_MSP             | 131072 | 1 << 17 |
+| FUNCTION\_ELEMETRY\_MAVLINK   | 512    | 1 << 9 |
+| FUNCTION\_ESC\_SENSOR          | 1024   | 1 << 10 |
+| FUNCTION\_VTX\_SMARTAUDIO      | 2048   | 1 << 11 |
+| FUNCTION\_TELEMETRY\_IBUS      | 4096   | 1 << 12 |
+| FUNCTION\_VTX\_TRAMP           | 8192   | 1 << 13 |
+| FUNCTION\_RCDEVICE            | 16384  | 1 << 14 |
+| FUNCTION\_LIDAR\_TF            | 32768  | 1 << 15 |
+| FUNCTION\_FRSKY\_OSD           | 65536  | 1 << 16 |
+| FUNCTION\_VTX\_MSP             | 131072 | 1 << 17 |
+| FUNCTION\_MSP\_DISPLAYPORT     | 262145 | (1 << 18) \| FUNCTION\_MSP |
 
 Note: `FUNCTION_FRSKY_OSD` = `(1<<16)` requires 17 bits.
 Note2: We can use up to 32 bits (1<<32) here.

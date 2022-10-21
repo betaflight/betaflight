@@ -22,6 +22,8 @@
 
 #include "drivers/display.h"
 
+#include "io/serial.h"
+
 #include "pg/displayport_profiles.h"
 
 // MSP Display Port commands
@@ -36,3 +38,5 @@
 #define DISPLAYPORT_MSP_ATTR_MASK    (~(DISPLAYPORT_MSP_ATTR_VERSION|DISPLAYPORT_MSP_ATTR_BLINK))
 
 struct displayPort_s *displayPortMspInit(void);
+void displayPortMspSetSerial(serialPortIdentifier_e serialPort);
+
