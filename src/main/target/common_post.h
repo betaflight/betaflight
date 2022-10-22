@@ -265,15 +265,7 @@
 // Should be set to zero for generic targets to ensure USB is working
 // when unconfigured for targets with non-standard crystal.
 // Can be set at runtime with with CLI parameter 'system_hse_value'.
-#if !defined(STM32F4) || defined(USE_UNIFIED_TARGET)
 #define SYSTEM_HSE_VALUE 0
-#else
-#ifdef TARGET_XTAL_MHZ
-#define SYSTEM_HSE_VALUE TARGET_XTAL_MHZ
-#else
-#define SYSTEM_HSE_VALUE (HSE_VALUE/1000000U)
-#endif
-#endif // !STM32F4 || USE_UNIFIED_TARGET
 
 // Number of pins that needs pre-init
 #ifdef USE_SPI
@@ -357,8 +349,6 @@
 
 #if defined(USE_TIMER_MGMT)
 #undef USED_TIMERS
-#else
-#undef USE_UNIFIED_TARGET
 #endif
 
 #if !defined(USE_RANGEFINDER)

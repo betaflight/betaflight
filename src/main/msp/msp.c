@@ -663,9 +663,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
         targetCapabilities |= BIT(TARGET_HAS_SOFTSERIAL);
 #endif
-#if defined(USE_UNIFIED_TARGET)
         targetCapabilities |= BIT(TARGET_IS_UNIFIED);
-#endif
 #if defined(USE_FLASH_BOOT_LOADER)
         targetCapabilities |= BIT(TARGET_HAS_FLASH_BOOTLOADER);
 #endif

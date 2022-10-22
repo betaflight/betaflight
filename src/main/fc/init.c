@@ -684,11 +684,7 @@ void init(void)
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
-        if (true
-#if defined(USE_UNIFIED_TARGET)
-            && isSystemConfigured()
-#endif
-            ) {
+        if (isSystemConfigured()) {
             indicateFailure(FAILURE_MISSING_ACC, 2);
         }
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);

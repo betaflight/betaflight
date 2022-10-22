@@ -30,6 +30,14 @@
 
 #define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
 
+#ifndef BOARD_NAME
+#define BOARD_NAME       FC_FIRMWARE_NAME 
+#endif
+
+#ifndef MANUFACTURER_ID
+#define MANUFACTURER_ID  FC_FIRMWARE_IDENTIFIER 
+#endif
+
 extern const char* const targetName;
 
 #define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.

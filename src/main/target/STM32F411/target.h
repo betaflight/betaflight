@@ -46,11 +46,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-
-// Treat the target as unified, and expect manufacturer id / board name
-// to be supplied when the board is configured for the first time
-#define USE_UNIFIED_TARGET
-
 #if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X

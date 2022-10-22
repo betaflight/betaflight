@@ -33,7 +33,7 @@ PG_REGISTER_ARRAY_WITH_RESET_FN(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIO
 
 void pgResetFn_timerIOConfig(timerIOConfig_t *config)
 {
-#if defined(USE_TIMER_MGMT) && !defined(USE_UNIFIED_TARGET)
+#if defined(USE_TIMER_MGMT) && USABLE_TIMER_CHANNEL_COUNT > 0
     unsigned configIndex = 0;
     for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *configuredTimer = &timerHardware[timerIndex];

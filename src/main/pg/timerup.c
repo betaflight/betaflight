@@ -37,7 +37,7 @@ void pgResetFn_timerUpConfig(timerUpConfig_t *config)
         config[timno].dmaopt = DMA_OPT_UNUSED;
     }
 
-#if !defined(USE_UNIFIED_TARGET)
+#if USABLE_TIMER_CHANNEL_COUNT > 0
     // Scan target timerHardware and extract dma option for TIMUP
     for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         const timerHardware_t *timhw = &timerHardware[i];

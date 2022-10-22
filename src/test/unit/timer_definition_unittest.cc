@@ -27,7 +27,7 @@ extern "C" {
 #include <string>
 #include "gtest/gtest.h"
 
-#if !defined(USE_UNIFIED_TARGET)
+#if USABLE_TIMER_CHANNEL_COUNT > 0
 extern "C" {
     extern const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT];
 }
@@ -110,4 +110,4 @@ extern "C" {
 
     void bstInit(int) {}
 }
-#endif // USE_UNIFIED_TARGET
+#endif // USABLE_TIMER_CHANNEL_COUNT > 0
