@@ -490,7 +490,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 #if defined(USE_GPS)
-    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > gpsConfig()->gpsMinimumSats && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
+    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
         useCOG = true;

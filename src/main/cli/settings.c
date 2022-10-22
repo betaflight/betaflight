@@ -1009,8 +1009,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_UBLOX_MODE,             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_UBLOX_MODE }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_ublox_mode) },
     { PARAM_NAME_GPS_SET_HOME_POINT_ONCE,    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_set_home_point_once) },
     { PARAM_NAME_GPS_USE_3D_SPEED,           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, gps_use_3d_speed) },
-    { PARAM_NAME_GPS_REQUIRED_SATS,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = {5, 50}, PG_GPS_CONFIG, offsetof(gpsConfig_t, gpsRequiredSats) },
-    { PARAM_NAME_GPS_MINIMUM_SATS,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = {4, 50}, PG_GPS_CONFIG, offsetof(gpsConfig_t, gpsMinimumSats) },
 
 #ifdef USE_GPS_RESCUE
     // PG_GPS_RESCUE
@@ -1033,6 +1031,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_RESCUE_THROTTLE_HOVER,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleHover) },
 
     { PARAM_NAME_GPS_RESCUE_SANITY_CHECKS,   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE_SANITY_CHECK }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, sanityChecks) },
+    { PARAM_NAME_GPS_RESCUE_MIN_SATS,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 50 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minSats) },
     { PARAM_NAME_GPS_RESCUE_ALLOW_ARMING_WITHOUT_FIX, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, allowArmingWithoutFix) },
 
     { PARAM_NAME_GPS_RESCUE_THROTTLE_P,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleP) },

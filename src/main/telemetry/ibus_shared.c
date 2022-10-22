@@ -307,9 +307,8 @@ static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
 
     uint16_t gpsFixType = 0;
     uint16_t sats = 0;
-    uint8_t minSats = gpsConfig()->gpsMinimumSats;
     if (sensors(SENSOR_GPS)) {
-        gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < minSats ? 2 : 3);
+        gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < GPS_MIN_SAT_COUNT ? 2 : 3);
         sats = gpsSol.numSat;
         if (STATE(GPS_FIX) || sensorType == IBUS_SENSOR_TYPE_GPS_STATUS) {
             result = true;

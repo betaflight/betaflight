@@ -359,7 +359,7 @@ static void beeperGpsStatus(void)
 {
     if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_GPS_STATUS))) {
         // if GPS 3D fix and at least the minimum number available, then beep out number of satellites
-        if (STATE(GPS_FIX) && gpsSol.numSat > gpsConfig()->gpsMinimumSats) {
+        if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
             uint8_t i = 0;
             do {
                 beep_multiBeeps[i++] = 5;

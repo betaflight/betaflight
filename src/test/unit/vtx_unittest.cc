@@ -22,26 +22,33 @@ extern "C" {
     #include "build/debug.h"
     #include "common/maths.h"
     #include "common/streambuf.h"
+
     #include "config/feature.h"
     #include "config/config.h"
+
     #include "fc/controlrate_profile.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/servos.h"
+    #include "flight/gps_rescue.h"
+
     #include "io/beeper.h"
     #include "io/gps.h"
     #include "io/vtx.h"
+
     #include "pg/motor.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
     #include "rx/rx.h"
+
     #include "scheduler/scheduler.h"
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
@@ -61,7 +68,7 @@ extern "C" {
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
     PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
-    PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_CONFIG, 0);
 
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];

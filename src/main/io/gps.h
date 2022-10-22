@@ -28,6 +28,7 @@
 #define GPS_DEGREES_DIVIDER 10000000L
 #define GPS_X 1
 #define GPS_Y 0
+#define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
 
 typedef enum {
     GPS_LATITUDE,
@@ -82,8 +83,6 @@ typedef enum {
     UBLOX_ACK_GOT_NACK
 } ubloxAckState_e;
 
-#define GPS_REQUIRED_SAT_COUNT 8
-#define GPS_MINIMUM_SAT_COUNT 4
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
 typedef struct gpsConfig_s {
@@ -96,8 +95,6 @@ typedef struct gpsConfig_s {
     uint8_t gps_set_home_point_once;
     uint8_t gps_use_3d_speed;
     uint8_t sbas_integrity;
-    uint8_t gpsRequiredSats;
-    uint8_t gpsMinimumSats;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);

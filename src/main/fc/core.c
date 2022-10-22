@@ -345,7 +345,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_GPS_RESCUE
         if (gpsRescueIsConfigured()) {
-            if (gpsRescueConfig()->allowArmingWithoutFix || (STATE(GPS_FIX) && (gpsSol.numSat >= gpsConfig()->gpsRequiredSats)) ||
+            if (gpsRescueConfig()->allowArmingWithoutFix || (STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) ||
             ARMING_FLAG(WAS_EVER_ARMED) || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
@@ -577,7 +577,7 @@ void tryArm(void)
         GPS_reset_home_position();
         //beep to indicate arming
         if (featureIsEnabled(FEATURE_GPS)) {
-            if (STATE(GPS_FIX) && gpsSol.numSat >= gpsConfig()->gpsRequiredSats) {
+            if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
                 beeper(BEEPER_ARMING_GPS_NO_FIX);
