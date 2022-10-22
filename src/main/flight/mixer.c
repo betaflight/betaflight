@@ -437,7 +437,7 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
         motorDeltaScale *= airmodeTransitionPercent; // this should be half of the motor authority allowed
     }
 
-    const float motorMixNormalizationFactor = motorMixRange > 1.0 ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
 
     const float motorMixDelta = motorDeltaScale * motorMixRange;
 
@@ -475,7 +475,7 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
         airmodeTransitionPercent = scaleRangef(throttle, 0.0f, 0.5f, 0.5f, 1.0f); // 0.5 throttle is full transition, and 0.0 throttle is 50% airmodeTransitionPercent
     }
 
-    const float motorMixNormalizationFactor = motorMixRange > 1.0 ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? airmodeTransitionPercent / motorMixRange : airmodeTransitionPercent;
 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         motorMix[i] *= motorMixNormalizationFactor;
