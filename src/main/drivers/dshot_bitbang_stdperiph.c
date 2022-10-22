@@ -71,12 +71,6 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     {
         IOWrite(bbMotor->io, 0);
     }
-
-#if defined(STM32F4)
-    IOConfigGPIO(bbMotor->io, IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode));
-#else
-#error MCU dependent code required
-#endif
 }
 
 void bbTimerChannelInit(bbPort_t *bbPort)
