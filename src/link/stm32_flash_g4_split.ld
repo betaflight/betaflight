@@ -128,7 +128,8 @@ SECTIONS
     KEEP (*(.custom_defaults_end_address))
     . = ALIGN(4);
     __custom_defaults_internal_start = .;
-    *(.custom_defaults);
+    KEEP (*(.custom_defaults))
+    . = ALIGN(4);
   } >FLASH_CUSTOM_DEFAULTS
 
   PROVIDE_HIDDEN (__custom_defaults_start = DEFINED(USE_CUSTOM_DEFAULTS_EXTENDED) ? ORIGIN(FLASH_CUSTOM_DEFAULTS_EXTENDED) : __custom_defaults_internal_start);

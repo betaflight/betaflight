@@ -30,8 +30,10 @@
 
 #define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
 
-#ifndef BOARD_NAME
-#define BOARD_NAME       FC_FIRMWARE_NAME 
+#ifndef __BOARD__
+#define BOARD_NAME       FC_FIRMWARE_NAME
+#else
+#define BOARD_NAME       __BOARD__
 #endif
 
 #ifndef MANUFACTURER_ID
