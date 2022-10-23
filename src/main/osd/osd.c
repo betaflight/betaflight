@@ -1116,8 +1116,10 @@ STATIC_UNIT_TESTED bool osdProcessStats1(timeUs_t currentTimeUs)
     }
 
     if (VISIBLE(osdElementConfig()->item_pos[OSD_AUX_VALUE])) {
+        const uint8_t auxChannel = osdConfig()->aux_channel + NON_AUX_CHANNEL_COUNT - 1;
         if (currentTimeUs > osdAuxRefreshTimeUs) {
-            osdAuxValue = (constrain(rcData[osdConfig()->aux_channel - 1], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * osdConfig()->aux_scale / (PWM_RANGE_MAX - PWM_RANGE_MIN);
+            // aux channel start after main channels
+            osdAuxValue = (constrain(rcData[auxChannel], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * osdConfig()->aux_scale / PWM_RANGE;
             osdAuxRefreshTimeUs = currentTimeUs + REFRESH_1S;
         }
     }
