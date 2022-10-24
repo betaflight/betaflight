@@ -895,6 +895,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
         }
     }
 
+    DEBUG_SET(DEBUG_GPS_DOP, 0, gpsSol.numSat);
+    DEBUG_SET(DEBUG_GPS_DOP, 1, gpsSol.dop.pdop);
+    DEBUG_SET(DEBUG_GPS_DOP, 2, gpsSol.dop.hdop);
+    DEBUG_SET(DEBUG_GPS_DOP, 3, gpsSol.dop.vdop);
+
     executeTimeUs = micros() - currentTimeUs;
     if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
         gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
