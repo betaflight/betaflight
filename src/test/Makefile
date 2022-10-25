@@ -18,7 +18,6 @@ OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
 include $(ROOT)/make/system-id.mk
-include $(ROOT)/make/targets_list.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -351,20 +350,6 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
-timer_definition_unittest_EXPAND := yes
-
-# SITL is a simulator with empty timerHardware and many hearders in target.c.
-timer_definition_unittest_BLACKLIST := SITL
-
-timer_definition_unittest_SRC = \
-		$(TARGET_DIR)/$(TARGET)/target.c
-
-timer_definition_unittest_DEFINES = \
-		TARGET=$1
-
-timer_definition_unittest_INCLUDE_DIRS = \
-		$(TEST_DIR)/timer_definition_unittest.include
-
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
 		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
@@ -596,13 +581,9 @@ endif
 TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
-TESTS_TARGET_SPECIFIC_EXPANDED = $(foreach test,$(TESTS_TARGET_SPECIFIC),$(foreach \
-		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
-TESTS_ALL = $(TESTS) $(TESTS_TARGET_SPECIFIC_EXPANDED)
-TESTS_REPRESENTATIVE = $(TESTS) $(foreach test,$(TESTS_TARGET_SPECIFIC), \
-		$(test).$(word 1,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS))))
+TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -799,10 +780,3 @@ endif
 
 $(foreach test,$(TESTS_ALL),$(if $($(basename $(test))_SRC),,$(error \
 	Test 'unit/$(basename $(test)).cc' has no '$(basename $(test))_SRC' variable defined)))
-$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS_ALL)),,$(error \
-	Variable '$(var)' has no 'unit/$(var:_SRC=).cc' test)))
-
-
-target_list:
-	@echo ========== VALID_TARGETS ==========
-	@echo $(VALID_TARGETS)
