@@ -294,23 +294,7 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-static bool taskAltitudeCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-#if defined(USE_BARO)
-    if (isBaroSampleReady()) {
-        return true;
-    }
-#endif
-
-    if (currentDeltaTimeUs > getTask(TASK_ALTITUDE)->attribute->desiredPeriodUs) {
-        return true;
-    }
-
-    return false;
- }
- static void taskCalculateAltitude(timeUs_t currentTimeUs)
+static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     calculateEstimatedAltitude();
@@ -395,7 +379,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, taskAltitudeCheck, taskCalculateAltitude, TASK_PERIOD_HZ(TASK_ALTITUDE_RATE_HZ), TASK_PRIORITY_LOW),
+    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskCalculateAltitude, TASK_PERIOD_HZ(TASK_ALTITUDE_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_DASHBOARD

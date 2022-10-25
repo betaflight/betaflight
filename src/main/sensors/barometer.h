@@ -22,7 +22,6 @@
 
 #include "pg/pg.h"
 #include "drivers/barometer/barometer.h"
-#include "flight/position.h"
 
 typedef enum {
     BARO_DEFAULT = 0,
@@ -49,15 +48,13 @@ typedef struct barometerConfig_s {
 
 PG_DECLARE(barometerConfig_t, barometerConfig);
 
-// #define TASK_BARO_DENOM       3
-// #define TASK_BARO_RATE_HZ     (TASK_ALTITUDE_RATE_HZ / TASK_BARO_DENOM)
-#define TASK_BARO_RATE_HZ        40
+#define TASK_BARO_RATE_HZ 40                // Will be overwritten by the baro device driver
 
 typedef struct baro_s {
     baroDev_t dev;
-    float BaroAlt;
-    int32_t baroTemperature;             // Use temperature for telemetry
-    int32_t baroPressure;                // Use pressure for telemetry
+    float altitude;
+    int32_t temperature;                    // Use temperature for telemetry
+    int32_t pressure;                       // Use pressure for telemetry
 } baro_t;
 
 extern baro_t baro;
@@ -69,6 +66,4 @@ void baroStartCalibration(void);
 void baroSetGroundLevel(void);
 uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
-bool isBaroSampleReady(void);
 float getBaroAltitude(void);
-void performBaroCalibrationCycle(void);

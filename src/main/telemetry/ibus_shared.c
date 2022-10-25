@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
 #include "platform.h"
 #include "telemetry/telemetry.h"
@@ -219,7 +220,7 @@ static uint16_t getTemperature(void)
     uint16_t temperature = gyroGetTemperature() * 10;
 #if defined(USE_BARO)
     if (sensors(SENSOR_BARO)) {
-        temperature = (uint16_t) ((baro.baroTemperature + 50) / 10);
+        temperature = lrintf(baro.temperature / 10.0f);
     }
 #endif
     return temperature + IBUS_TEMPERATURE_OFFSET;
@@ -424,10 +425,10 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
 #ifdef USE_BARO
         case IBUS_SENSOR_TYPE_ALT:
         case IBUS_SENSOR_TYPE_ALT_MAX:
-            value.int32 = baro.BaroAlt;
+            value.int32 = baro.altitude;
             break;
         case IBUS_SENSOR_TYPE_PRES:
-            value.uint32 = baro.baroPressure | (((uint32_t)getTemperature()) << 19);
+            value.uint32 = baro.pressure | (((uint32_t)getTemperature()) << 19);
             break;
 #endif
 #endif //defined(TELEMETRY_IBUS_EXTENDED)
