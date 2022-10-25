@@ -357,15 +357,13 @@ timer_definition_unittest_EXPAND := yes
 timer_definition_unittest_BLACKLIST := SITL
 
 timer_definition_unittest_SRC = \
-		$(TARGET_DIR)/$(call get_base_target,$1)/target.c
+		$(TARGET_DIR)/$(TARGET)/target.c
 
 timer_definition_unittest_DEFINES = \
-		TARGET=$1 \
-		BASE_TARGET=$(call get_base_target,$1)
+		TARGET=$1
 
 timer_definition_unittest_INCLUDE_DIRS = \
-		$(TEST_DIR)/timer_definition_unittest.include \
-		$(TARGET_DIR)/$(call get_base_target,$1)
+		$(TEST_DIR)/timer_definition_unittest.include
 
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
@@ -730,7 +728,7 @@ $1_SRC = $(addsuffix .o,$(call $(basename $1)_SRC,$(call target,$1)))
 $1_OBJS = $$(patsubst \
 	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
 	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
-	$(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
+	$(TARGET_DIR)/$(TARGET)/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
 $1_DEFINES = $(call $(basename $1)_DEFINES,$(call target,$1))
 $1_INCLUDE_DIRS = $(call $(basename $1)_INCLUDE_DIRS,$(call target,$1))
 endif
@@ -760,7 +758,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 
 ifneq ($1,$(basename $1))
 # per-target tests may compile files from the target directory
-$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -806,15 +804,5 @@ $(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filt
 
 
 target_list:
-	@echo ========== BASE TARGETS ==========
-	@echo $(BASE_TARGETS)
-	@echo ========== ALT TARGETS ==========
-	@echo $(ALT_TARGETS)
 	@echo ========== VALID_TARGETS ==========
 	@echo $(VALID_TARGETS)
-	@echo ========== BASE/ALT PAIRS ==========
-	@echo $(BASE_ALT_PAIRS)
-	@echo ========== ALT/BASE MAPPING ==========
-	@echo $(foreach target,$(ALT_TARGETS),$(target)\>$(call get_base_target,$(target)))
-	@echo ========== ALT/BASE FULL MAPPING ==========
-	@echo $(foreach target,$(VALID_TARGETS),$(target)\>$(call get_base_target,$(target)))
