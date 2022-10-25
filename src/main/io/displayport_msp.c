@@ -43,6 +43,7 @@
 #include "pg/vcd.h"
 
 static displayPort_t mspDisplayPort;
+static serialPortIdentifier_e displayPortSerial;
 
 static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
@@ -54,7 +55,7 @@ static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len
         return 0;
     }
 #endif
-    return mspSerialPush(displayPortProfileMsp()->displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY, MSP_V1);
+    return mspSerialPush(displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY, MSP_V1);
 }
 
 static int heartbeat(displayPort_t *displayPort)
@@ -190,5 +191,9 @@ displayPort_t *displayPortMspInit(void)
 
     redraw(&mspDisplayPort);
     return &mspDisplayPort;
+}
+
+void displayPortMspSetSerial(serialPortIdentifier_e serialPort) {
+    displayPortSerial = serialPort;
 }
 #endif // USE_MSP_DISPLAYPORT

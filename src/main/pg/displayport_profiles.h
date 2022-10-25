@@ -28,7 +28,6 @@ typedef struct displayPortProfile_s {
     bool invert;
     uint8_t blackBrightness;
     uint8_t whiteBrightness;
-    int8_t displayPortSerial;  // serialPortIdentifier_e
 
     // For attribute-rich OSDs
 
