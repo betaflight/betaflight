@@ -372,10 +372,7 @@ extern uint8_t _dmaram_end__;
 #define USE_CANVAS
 #define USE_FRSKYOSD
 #define USE_GYRO_DLPF_EXPERIMENTAL
-#define USE_OSD
-#define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_MULTI_GYRO
-#define USE_OSD_ADJUSTMENTS
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
@@ -385,8 +382,6 @@ extern uint8_t _dmaram_end__;
 #define USE_VARIO
 #define USE_RX_LINK_QUALITY_INFO
 #define USE_ESC_SENSOR_TELEMETRY
-#define USE_OSD_PROFILES
-#define USE_OSD_STICK_OVERLAY
 #define USE_CMS_FAILSAFE_MENU
 #define USE_CMS_GPS_RESCUE_MENU
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
@@ -414,6 +409,15 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
+
+#define USE_OSD
+#endif
+
+#ifdef USE_OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_OSD_ADJUSTMENTS
+#define USE_OSD_PROFILES
+#define USE_OSD_STICK_OVERLAY
 #endif
 #endif
 
