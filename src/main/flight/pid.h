@@ -232,6 +232,8 @@ typedef struct pidProfile_s {
     uint8_t anti_gravity_p_gain;
     uint8_t tpa_rate;                       // Percent reduction in P or D at full throttle
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
+    uint8_t ztpa_pid_percent;               // Amount to attenuate P, I and D by at zero throttle, linearly increasing attenuation below airmode throttle point
+    uint8_t ztpa_throttle_threshold;        // Throttle threshold below which to attenuate P, I and D linearly towards the attenuation amount at zero throttle
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -316,6 +318,10 @@ typedef struct pidRuntime_s {
     bool zeroThrottleItermReset;
     bool levelRaceMode;
     float tpaFactor;
+    bool ztpaShouldApply;
+    float ztpaPidPercent;
+    float ztpaThrottleThreshold;
+    float ztpaAttenuation;
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
@@ -424,6 +430,7 @@ bool crashRecoveryModeActive(void);
 void pidAcroTrainerInit(void);
 void pidSetAcroTrainerState(bool newState);
 void pidUpdateTpaFactor(float throttle);
+void ztpaUpdate(float throttle);
 void pidUpdateAntiGravityThrottleFilter(float throttle);
 bool pidOsdAntiGravityActive(void);
 void pidSetAntiGravityState(bool newState);

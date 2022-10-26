@@ -430,6 +430,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
+    pidRuntime.ztpaShouldApply = pidProfile->ztpa_pid_percent < 100;
+    pidRuntime.ztpaPidPercent = (float)pidProfile->ztpa_pid_percent / 100.0f;
+    pidRuntime.ztpaThrottleThreshold = (float)pidProfile->ztpa_throttle_threshold / 100.0f;
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

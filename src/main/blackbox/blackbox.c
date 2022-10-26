@@ -1379,10 +1379,12 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ITERM_RELAX_CUTOFF, "%d",     currentPidProfile->iterm_relax_cutoff);
 #endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PID_AT_MIN_THROTTLE, "%d",    currentPidProfile->pidAtMinThrottle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ZTPA_PID_PERCENT, "%d",       currentPidProfile->ztpa_pid_percent);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ZTPA_THROTTLE_THRESHOLD, "%d", currentPidProfile->ztpa_throttle_threshold);
 
         // Betaflight PID controller parameters
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_GAIN, "%d",      currentPidProfile->anti_gravity_gain);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, "%d",    currentPidProfile->anti_gravity_cutoff_hz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ, "%d", currentPidProfile->anti_gravity_cutoff_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANTI_GRAVITY_P_GAIN, "%d",    currentPidProfile->anti_gravity_p_gain);
 
 #ifdef USE_ABSOLUTE_CONTROL

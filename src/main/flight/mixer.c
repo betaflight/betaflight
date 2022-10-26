@@ -549,6 +549,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     updateDynLpfCutoffs(currentTimeUs, throttle);
 #endif
 
+    // send throttle value to attenuate PIDs with when low
+    ztpaUpdate(throttle);
+
     // apply throttle boost when throttle moves quickly
 #if defined(USE_THROTTLE_BOOST)
     if (throttleBoost > 0.0f) {
@@ -628,7 +631,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
-        && !airmodeEnabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE)   // disable motor_stop while GPS Rescue is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         // motor_stop handling

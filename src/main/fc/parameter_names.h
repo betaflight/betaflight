@@ -69,6 +69,8 @@
 #define PARAM_NAME_DTERM_NOTCH_CUTOFF "dterm_notch_cutoff"
 #define PARAM_NAME_VBAT_SAG_COMPENSATION "vbat_sag_compensation"
 #define PARAM_NAME_PID_AT_MIN_THROTTLE "pid_at_min_throttle"
+#define PARAM_NAME_ZTPA_PID_PERCENT "ztpa_pid_percent"
+#define PARAM_NAME_ZTPA_THROTTLE_THRESHOLD "ztpa_throttle_threshold"
 #define PARAM_NAME_ANTI_GRAVITY_GAIN "anti_gravity_gain"
 #define PARAM_NAME_ANTI_GRAVITY_CUTOFF_HZ "anti_gravity_cutoff_hz"
 #define PARAM_NAME_ANTI_GRAVITY_P_GAIN "anti_gravity_p_gain"

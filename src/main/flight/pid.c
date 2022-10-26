@@ -121,7 +121,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 #define LAUNCH_CONTROL_YAW_ITERM_LIMIT 50 // yaw iterm windup limit when launch mode is "FULL" (all axes)
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 5);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 6);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -140,6 +140,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .dterm_notch_cutoff = 0,
         .itermWindupPointPercent = 85,
         .pidAtMinThrottle = PID_STABILISATION_ON,
+        .ztpa_pid_percent = 100,
+        .ztpa_throttle_threshold = 10,
         .levelAngleLimit = 55,
         .feedforward_transition = 0,
         .yawRateAccelLimit = 0,
@@ -309,6 +311,18 @@ void pidUpdateTpaFactor(float throttle)
         tpaRate = 0.0f;
     }
     pidRuntime.tpaFactor = 1.0f - tpaRate;
+}
+
+void ztpaUpdate(float throttle)
+{
+    if (pidRuntime.ztpaShouldApply && throttle < pidRuntime.ztpaThrottleThreshold) {
+        const float throttlePosition = throttle / pidRuntime.ztpaThrottleThreshold;
+        const float pidStartPercent = pidRuntime.ztpaPidPercent;
+        const float pidAttenuation = 1.0f - pidStartPercent;
+        pidRuntime.ztpaAttenuation = pidStartPercent + pidAttenuation * throttlePosition;
+    } else {
+        pidRuntime.ztpaAttenuation = 1.0f;
+    }
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
@@ -1025,7 +1039,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 pidRuntime.itermAccelerator = 0.0f; // no antigravity on yaw iTerm
             }
         }
-        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
+        const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate * pidRuntime.ztpaAttenuation;
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate pidSetpointDelta
@@ -1164,8 +1178,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 
+        // attenuate P and D at low throttle
+        // I accumulation is blocked, so the basic value won't change, otherwise would drop very fast to zero
+        pidData[axis].P *= pidRuntime.ztpaAttenuation;
+        pidData[axis].D *= pidRuntime.ztpaAttenuation;
+
         // calculating the PID sum
-        const float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
+        float pidSum = pidData[axis].P + pidData[axis].I + pidData[axis].D + pidData[axis].F;
 #ifdef USE_INTEGRATED_YAW_CONTROL
         if (axis == FD_YAW && pidRuntime.useIntegratedYaw) {
             pidData[axis].Sum += pidSum * pidRuntime.dT * 100.0f;
