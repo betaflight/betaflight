@@ -124,6 +124,9 @@
 #include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
+#ifdef USE_RX_EXPRESSLRS
+#include "pg/rx_spi_expresslrs.h"
+#endif
 #include "pg/usb.h"
 #include "pg/vcd.h"
 #include "pg/vtx_table.h"
@@ -1613,6 +1616,15 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         sbufWriteU8(dst, rxConfig()->rc_smoothing_mode);
 #else
         sbufWriteU8(dst, 0);
+#endif
+
+        // Added in MSP API 1.45
+#ifdef USE_RX_EXPRESSLRS
+        sbufWriteData(dst, rxExpressLrsSpiConfig()->UID, sizeof(rxExpressLrsSpiConfig()->UID));
+#else
+        uint8_t emptyUid[6];
+        memset(emptyUid, 0, sizeof(emptyUid));
+        sbufWriteData(dst, &emptyUid, sizeof(emptyUid));
 #endif
         break;
     case MSP_FAILSAFE_CONFIG:
@@ -3621,6 +3633,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
             sbufReadU8(src);
 #endif
+        }
+        if (sbufBytesRemaining(src) >= 6) {
+            // Added in MSP API 1.45
+#ifdef USE_RX_EXPRESSLRS
+            sbufReadData(src, rxExpressLrsSpiConfigMutable()->UID, 6);
+#else
+            uint8_t emptyUid[6];
+            sbufReadData(src, emptyUid, 6);
+#endif        
         }
         break;
     case MSP_SET_FAILSAFE_CONFIG:
