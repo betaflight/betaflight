@@ -19,7 +19,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 The following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
 
-1. Read the [hardware specification](https://github.com/betaflight/betaflight/blob/master/docs/Manafacturer%20Design%20Guidelines.md)
+1. Read the [hardware specification](https://github.com/betaflight/betaflight/blob/master/docs/Manufacturer%20Design%20Guidelines.md)
 
 2. No new F3 based targets will be accepted;
 
