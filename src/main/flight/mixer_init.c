@@ -365,6 +365,9 @@ void mixerInitProfile(void)
     pt1FilterInit(&mixerRuntime.rpmLimiterThrottleScaleOffsetFilter, pt1FilterGain(2.0f, pidGetDT()));
     mixerResetRpmLimiter();
 #endif
+
+    mixerRuntime.ezLandingThreshold = currentPidProfile->ez_landing_threshold / 100.0f;
+    mixerRuntime.ezLandingLimit = 1.0f - currentPidProfile->ez_landing_limit / 100.0f;
 }
 
 #ifdef USE_RPM_LIMIT
