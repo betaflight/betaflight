@@ -406,11 +406,13 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
 
 #define USE_GPS
+#define USE_OSD
+#endif
+
+#ifdef USE_GPS
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
-
-#define USE_OSD
 #endif
 
 #ifdef USE_OSD
