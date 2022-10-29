@@ -227,6 +227,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_rate_lower = 20,
         .tpa_breakpoint_lower = 1050,
         .tpa_breakpoint_lower_fade = 1,
+        .ez_landing_threshold = 25,
+        .ez_landing_limit = 10,
     );
 
 #ifndef USE_D_MIN

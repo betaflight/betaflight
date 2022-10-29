@@ -260,6 +260,21 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
         motorOutputMixSign = 1;
+
+        // easy landing code, limits motor output when sticks and throttle are below threshold
+        const float throttlePercent = throttle / 1000.0f;
+        if (mixerRuntime.ezLandingThreshold && throttlePercent < mixerRuntime.ezLandingThreshold) { // throttle low
+            float ezLandAttenuator = 0.0f;
+            float maxDeflection = getMaxRcDeflectionAbs();
+            if (maxDeflection < mixerRuntime.ezLandingThreshold) { // all sticks, including throttle, under threshold
+                ezLandAttenuator = fmaxf(maxDeflection, throttlePercent); // value range 0 -> threshold
+                ezLandAttenuator /= mixerRuntime.ezLandingThreshold; // normalised 0 - 1
+                ezLandAttenuator = 1.0f - ezLandAttenuator; // 1 -> 0
+                ezLandAttenuator *= mixerRuntime.ezLandingLimit; // eg 0.9 -> 0.0 if limit is 10
+            }
+            const float motorRange = motorRangeMax - mixerRuntime.motorOutputLow;
+            motorRangeMax -= ezLandAttenuator * motorRange; // available motor range limited to 15% if threshold is 15
+        }
     }
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);

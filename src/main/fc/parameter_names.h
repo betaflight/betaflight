@@ -58,6 +58,8 @@
 #define PARAM_NAME_TPA_BREAKPOINT_LOWER "tpa_breakpoint_lower"
 #define PARAM_NAME_TPA_BREAKPOINT_LOWER_FADE "tpa_breakpoint_lower_fade"
 #define PARAM_NAME_TPA_MODE "tpa_mode"
+#define PARAM_NAME_EZ_LANDING_THRESHOLD "ez_landing_threshold"
+#define PARAM_NAME_EZ_LANDING_LIMIT "ez_landing_limit"
 #define PARAM_NAME_THROTTLE_LIMIT_TYPE "throttle_limit_type"
 #define PARAM_NAME_THROTTLE_LIMIT_PERCENT "throttle_limit_percent"
 #define PARAM_NAME_GYRO_CAL_ON_FIRST_ARM "gyro_cal_on_first_arm"

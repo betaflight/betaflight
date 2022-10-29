@@ -240,6 +240,8 @@ typedef struct pidProfile_s {
     uint8_t tpa_rate_lower;                 // Percent reduction in P or D at zero throttle
     uint16_t tpa_breakpoint_lower;          // Breakpoint where lower TPA is deactivated
     uint8_t tpa_breakpoint_lower_fade;      // off, on - if on lower TPA is only active until tpa_breakpoint_lower is reached the first time
+    uint8_t ez_landing_threshold;           // Threshold stick position below which motor output is limited
+    uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

@@ -61,6 +61,7 @@ typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCom
 
 static float rawSetpoint[XYZ_AXIS_COUNT];
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
+static float maxRcDeflectionAbs;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
@@ -138,6 +139,11 @@ float getRcDeflectionRaw(int axis)
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
+}
+
+float getMaxRcDeflectionAbs(void)
+{
+    return maxRcDeflectionAbs;
 }
 
 #define THROTTLE_LOOKUP_LENGTH 12
@@ -620,6 +626,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 FAST_CODE void processRcCommand(void)
 {
     if (isRxDataNew) {
+        maxRcDeflectionAbs = 0.0f;
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
             float angleRate;
@@ -646,6 +653,7 @@ FAST_CODE void processRcCommand(void)
                 rcDeflection[axis] = rcCommandf;
                 const float rcCommandfAbs = fabsf(rcCommandf);
                 rcDeflectionAbs[axis] = rcCommandfAbs;
+                maxRcDeflectionAbs = fmaxf(maxRcDeflectionAbs, rcCommandfAbs);
 
                 angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
             }
