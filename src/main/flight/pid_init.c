@@ -441,6 +441,13 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.tpaLowBreakpoint = MIN(pidRuntime.tpaLowBreakpoint, pidRuntime.tpaBreakpoint);
     pidRuntime.tpaLowMultiplier = pidProfile->tpa_low_rate / (100.0f * pidRuntime.tpaLowBreakpoint);
     pidRuntime.tpaLowAlways = pidProfile->tpa_low_always;
+
+    pidRuntime.useEzLanding = pidProfile->ez_landing_threshold && pidProfile->ez_landing_limit;
+    pidRuntime.useEzDisarm = pidRuntime.useEzLanding && pidProfile->ez_landing_disarm_threshold > 0;
+    pidRuntime.ezLandingThreshold = pidProfile->ez_landing_threshold / 100.0f;
+    pidRuntime.ezLandingLimit = pidProfile->ez_landing_limit;
+    pidRuntime.ezLandingDisarmThreshold = pidProfile->ez_landing_disarm_threshold / 10.0f;
+
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)

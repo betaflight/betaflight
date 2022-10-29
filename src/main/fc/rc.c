@@ -63,7 +63,6 @@ static float rawSetpoint[XYZ_AXIS_COUNT];
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static float maxRcDeflectionAbs;
-
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
@@ -141,11 +140,6 @@ float getRcDeflectionRaw(int axis)
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
-}
-
-float getMaxRcDeflectionAbs(void)
-{
-    return maxRcDeflectionAbs;
 }
 
 #define THROTTLE_LOOKUP_LENGTH 12
@@ -660,12 +654,15 @@ FAST_CODE void processRcCommand(void)
                 angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
             }
 
+
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
             DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
 
 #ifdef USE_FEEDFORWARD
         calculateFeedforward(&pidRuntime, axis);
 #endif // USE_FEEDFORWARD
+
+        calcEzLandingLimit(maxRcDeflectionAbs);
 
         }
         // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
