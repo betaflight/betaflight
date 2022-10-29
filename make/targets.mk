@@ -1,16 +1,10 @@
-include $(ROOT)/make/targets_list.mk
+BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
+VALID_TARGETS     = $(sort $(BASE_TARGETS))
 
-ifeq ($(filter $(TARGET),$(NOBUILD_TARGETS)), $(TARGET))
-ALTERNATES    := $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/$(TARGET)/*.mk)))))
-$(error The target specified, $(TARGET), cannot be built. Use one of the ALT targets: $(ALTERNATES))
-endif
-
-BASE_TARGET   := $(call get_base_target,$(TARGET))
-# silently ignore if the file is not present. Allows for target specific.
--include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
+CI_TARGETS := $(VALID_TARGETS)
 
 # silently ignore if the file is not present. Allows for target defaults.
--include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
+-include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
 F4_TARGETS      := $(F405_TARGETS) $(F411_TARGETS) $(F446_TARGETS)
 F7_TARGETS      := $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
@@ -43,10 +37,6 @@ SIMULATOR_BUILD = yes
 
 else
 $(error Unknown target MCU specified.)
-endif
-
-ifneq ($(BASE_TARGET), $(TARGET))
-TARGET_FLAGS  	:= $(TARGET_FLAGS) -D$(BASE_TARGET)
 endif
 
 TARGET_FLAGS  	:= $(TARGET_FLAGS) -D$(TARGET_MCU)
