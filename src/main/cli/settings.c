@@ -1276,6 +1276,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_EZ_LANDING_THRESHOLD,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_threshold) },
     { PARAM_NAME_EZ_LANDING_LIMIT,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 75 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_limit) },
     { PARAM_NAME_EZ_LANDING_SPEED,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_speed) },
+    { PARAM_NAME_EZ_DISARM_THRESHOLD,       VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, ez_landing_disarm_threshold) },
 
 #ifdef USE_WING
     { PARAM_NAME_SPA_ROLL_CENTER,    VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_center[FD_ROLL]) },
