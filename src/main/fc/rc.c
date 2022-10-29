@@ -63,7 +63,6 @@ static float rawSetpoint[XYZ_AXIS_COUNT];
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static float maxRcDeflectionAbs;
-
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 

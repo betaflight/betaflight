@@ -89,7 +89,6 @@ extern "C" {
     bool gyroOverflowDetected(void) { return false; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
-    float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
     float getFeedforward(int axis) {
         return simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
     }
