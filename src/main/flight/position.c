@@ -49,7 +49,11 @@
 
 static float displayAltitudeCm = 0.0f;
 static float zeroedAltitudeCm = 0.0f;
+
+#if defined(USE_BARO) || defined(USE_GPS)
 static float zeroedAltitudeDerivative = 0.0f;
+#endif
+
 static pt2Filter_t altitudeLpf;
 static pt2Filter_t altitudeDerivativeLpf;
 #ifdef USE_VARIO
