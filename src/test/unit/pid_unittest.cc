@@ -33,6 +33,7 @@ float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
 float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
+float simulatedMaxRcDeflectionAbs = 0.0f;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
@@ -82,6 +83,7 @@ extern "C" {
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
+    float mixerGetRcThrottle(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
     bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
@@ -173,6 +175,7 @@ void resetTest(void)
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
+    simulatedMaxRcDeflectionAbs = 0.0f;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -272,15 +275,41 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 
+    // Loop 2a - Expecting zero since there is no error
+    // Do a test with no maxRcDeflectionAbs to check that ezLanding attenuates pids
+    simulatedMaxRcDeflectionAbs = 0.0f;
+    sendMaxDeflectionAbs(simulatedMaxRcDeflectionAbs);
     // Add some rotation on ROLL to generate error
     gyro.gyroADCf[FD_ROLL] = 100;
     pidController(pidProfile, currentTestTime());
 
-    // Loop 2 - Expect PID loop reaction to ROLL error
+    // Loop 1 - Expect PID loop reaction to ROLL error of 1/10th that of the next test
+    EXPECT_NEAR(-12.81, pidData[FD_ROLL].P, calculateTolerance(-12.81));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+    EXPECT_NEAR(-0.78, pidData[FD_ROLL].I, calculateTolerance(-0.78));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+    EXPECT_NEAR(-19.8, pidData[FD_ROLL].D, calculateTolerance(-19.8));
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    // Add a simulated maxRcDeflectionAbs to defeat ezLanding
+    simulatedMaxRcDeflectionAbs = 0.5f;
+    sendMaxDeflectionAbs(simulatedMaxRcDeflectionAbs);
+    // Keep the same rotation on ROLL to generate error
+    gyro.gyroADCf[FD_ROLL] = 100;
+    pidController(pidProfile, currentTestTime());
+
+    // Loop 2b - Expect PID loop reaction to ROLL error
     EXPECT_NEAR(-128.1, pidData[FD_ROLL].P, calculateTolerance(-128.1));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-7.8, pidData[FD_ROLL].I, calculateTolerance(-7.8));
+    EXPECT_NEAR(-8.6, pidData[FD_ROLL].I, calculateTolerance(-8.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
     EXPECT_NEAR(-198.4, pidData[FD_ROLL].D, calculateTolerance(-198.4));
@@ -835,6 +864,8 @@ TEST(pidControllerTest, testLaunchControl)
     // The launchControlGain is indirectly tested since when launch control is active the
     // the gain overrides the PID settings. If the logic to use launchControlGain wasn't
     // working then any I calculations would be incorrect.
+    
+    // Launch control requires stick deflection which should offset ezLanding
 
     resetTest();
     unitLaunchControlActive = true;

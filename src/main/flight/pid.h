@@ -358,6 +358,9 @@ typedef struct pidRuntime_s {
     float tpaLowBreakpoint;
     float tpaLowMultiplier;
     bool tpaLowAlways;
+    bool useEzLanding;
+    float ezLandingThreshold;
+    float ezLandingLimit;
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
