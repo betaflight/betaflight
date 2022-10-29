@@ -891,10 +891,11 @@ void init(void)
 
 #if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
     displayPort_t *osdDisplayPort = NULL;
-    osdDisplayPortDevice_e osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_NONE;
 #endif
 
 #if defined(USE_OSD)
+    osdDisplayPortDevice_e osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_NONE;
+
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (featureIsEnabled(FEATURE_OSD)) {
