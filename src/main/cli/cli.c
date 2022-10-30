@@ -3117,10 +3117,10 @@ static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void printName(dumpFlags_t dumpMask, const pilotConfig_t *pilotConfig)
+static void printCraftName(dumpFlags_t dumpMask, const pilotConfig_t *pilotConfig)
 {
-    const bool equalsDefault = strlen(pilotConfig->name) == 0;
-    cliDumpPrintLinef(dumpMask, equalsDefault, "\r\n# name: %s", equalsDefault ? emptyName : pilotConfig->name);
+    const bool equalsDefault = strlen(pilotConfig->craftName) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "\r\n# name: %s", equalsDefault ? emptyName : pilotConfig->craftName);
 }
 
 #if defined(USE_BOARD_INFO)
@@ -6286,7 +6286,7 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
         }
 
         if (!(dumpMask & HARDWARE_ONLY)) {
-            printName(dumpMask, &pilotConfig_Copy);
+            printCraftName(dumpMask, &pilotConfig_Copy);
         }
 
 #ifdef USE_RESOURCE_MGMT
