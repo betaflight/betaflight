@@ -253,6 +253,12 @@ void pt1FilterInit(pt1Filter_t *filter, float k)
     UNUSED(k);
 }
 
+void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
+{
+    UNUSED(filter);
+    UNUSED(k);
+}
+
 float pt1FilterApply(pt1Filter_t *filter, float input)
 {
     UNUSED(filter);
