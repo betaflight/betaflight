@@ -378,15 +378,17 @@ void rxInit(void)
     // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
     pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US/1000000.0));
 
+    // Configurable amount of filtering to remove excessive jumpiness of the values on the osd
     float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
-    pt1FilterInit(&rssiFilter, k);  //just a bit of filtering to remove excessive jumpiness
+
+    pt1FilterInit(&rssiFilter, k);  
 
 #ifdef USE_RX_RSSI_DBM
-    pt1FilterInit(&rssiDbmFilter, k);  //just a bit of filtering to remove excessive jumpiness
+    pt1FilterInit(&rssiDbmFilter, k);
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
-    pt1FilterInit(&rsnrFilter, k);  //just a bit of filtering to remove excessive jumpiness
+    pt1FilterInit(&rsnrFilter, k);
 #endif //USE_RX_RSNR
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeState.channelCount);
