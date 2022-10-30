@@ -76,11 +76,15 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
+static uint16_t rssiRaw = 0;               // range: [0;1023]
+static timeUs_t lastRssiSmoothingUs = 0;
 #ifdef USE_RX_RSSI_DBM
 static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,0]
+static int16_t rssiDbmRaw = CRSF_RSSI_MIN; // range: [-130,0]
 #endif //USE_RX_RSSI_DBM
 #ifdef USE_RX_RSNR
 static int16_t rsnr = CRSF_SNR_MIN;        // range: [-30,20]
+static int16_t rsnrRaw = CRSF_SNR_MIN;     // range: [-30,20]
 #endif //USE_RX_RSNR
 static timeUs_t lastMspRssiUpdateUs = 0;
 
@@ -787,6 +791,7 @@ void setRssiDirect(uint16_t newRssi, rssiSource_e source)
     }
 
     rssi = newRssi;
+    rssiRaw = newRssi;
 }
 
 void setRssi(uint16_t rssiValue, rssiSource_e source)
@@ -797,9 +802,9 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
 
     // Filter RSSI value
     if (source == RSSI_SOURCE_FRAME_ERRORS) {
-        rssi = pt1FilterApply(&frameErrFilter, rssiValue);
+        rssiRaw = pt1FilterApply(&frameErrFilter, rssiValue);
     } else {
-        rssi = pt1FilterApply(&rssiFilter, rssiValue);
+        rssiRaw = rssiValue;
     }
 }
 
@@ -860,6 +865,37 @@ void updateRSSI(timeUs_t currentTimeUs)
     default:
         break;
     }
+
+    if (cmpTimeUs(currentTimeUs, lastRssiSmoothingUs) > 250000) { // 0.25s
+        lastRssiSmoothingUs = currentTimeUs;
+    } else {
+        if (lastRssiSmoothingUs != currentTimeUs) { // avoid div by 0
+            float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
+            float factor = ((currentTimeUs - lastRssiSmoothingUs) / 1000000.0f) / (1.0f / 4.0f);
+            float k2  = (k * factor) / ((k * factor) - k + 1);
+
+            if (rssi != rssiRaw) {
+                pt1FilterUpdateCutoff(&rssiFilter, k2);
+                rssi = pt1FilterApply(&rssiFilter, rssiRaw);
+            }
+
+#ifdef USE_RX_RSSI_DBM
+            if (rssiDbm != rssiDbmRaw) {
+                pt1FilterUpdateCutoff(&rssiDbmFilter, k2);
+                rssiDbm = pt1FilterApply(&rssiDbmFilter, rssiDbmRaw);
+            }
+#endif //USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+            if (rsnr != rsnrRaw) {
+                pt1FilterUpdateCutoff(&rsnrFilter, k2);
+                rsnr = pt1FilterApply(&rsnrFilter, rsnrRaw);
+            }
+#endif //USE_RX_RSNR
+
+            lastRssiSmoothingUs = currentTimeUs;
+        }
+    }
 }
 
 uint16_t getRssi(void)
@@ -891,7 +927,7 @@ void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
         return;
     }
 
-    rssiDbm = pt1FilterApply(&rssiDbmFilter, rssiDbmValue);
+    rssiDbmRaw = rssiDbmValue;
 }
 
 void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
@@ -901,6 +937,7 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
     }
 
     rssiDbm = newRssiDbm;
+    rssiDbmRaw = newRssiDbm;
 }
 #endif //USE_RX_RSSI_DBM
 
@@ -912,12 +949,13 @@ int16_t getRsnr(void)
 
 void setRsnr(int16_t rsnrValue)
 {
-    rsnr = pt1FilterApply(&rsnrFilter, rsnrValue);
+    rsnrRaw = rsnrValue;
 }
 
 void setRsnrDirect(int16_t newRsnr)
 {
     rsnr = newRsnr;
+    rsnrRaw = newRsnr;
 }
 #endif //USE_RX_RSNR
 
