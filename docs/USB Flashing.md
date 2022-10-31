@@ -16,6 +16,12 @@ This assigns the device to the plugdev group(a standard group in Ubuntu). To che
 sudo usermod -a -G plugdev <username>
 ```
 
+If the logs show `failed to open serial port` after flashing you might want to check if your account is in the `dialout` group. If not you can add yourself to the group as below, again replacing `<username>` with your username:
+```
+sudo usermod -a -G dialout <username>
+```
+This is necessary so that your account has the rights to access serial ports. 
+
 If you see your ttyUSB device disappear right after the board is connected, chances are that the ModemManager service (that handles network connectivity for you) thinks it is a GSM modem. If this happens, you can issue the following command to disable the service:
 ```
 sudo systemctl stop ModemManager.service 
@@ -23,7 +29,7 @@ sudo systemctl stop ModemManager.service
 
 If your system lacks the systemctl command, use any equivalent command that works on your system to disable services. You can likely add your device ID to a blacklist configuration file to stop ModemManager from touching the device, if you need it for cellural networking, but that is beyond the scope of cleanflight documentation.
 
-If you see the ttyUSB device appear and immediately disappear from the list in Cleanflight Configurator when you plug in your flight controller via USB, chances are that NetworkManager thinks your board is a GSM modem and hands it off to the ModemManager daemon as the flight controllers are not known to the blacklisted
+If you see the ttyUSB device appear and immediately disappear from the list in Cleanflight Configurator when you plug in your flight controller via USB, chances are that NetworkManager thinks your board is a GSM modem and hands it off to the ModemManager daemon as the flight controllers are not known to the blacklisted.
 
 
 ## Platform Specific: Windows
