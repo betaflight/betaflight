@@ -195,6 +195,11 @@
 #undef USE_ADC_INTERNAL
 #endif
 
+#ifdef USE_FLASH
+#define USE_FLASHFS
+#define USE_FLASH_TOOLS
+#endif
+
 #if defined(USE_FLASH_W25M512)
 #define USE_FLASH_W25M
 #define USE_FLASH_M25P16
