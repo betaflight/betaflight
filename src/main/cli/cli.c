@@ -2484,7 +2484,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 #endif
 }
 
-
+#ifdef USE_FLASH_TOOLS
 static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -2520,8 +2520,6 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
     cliPrintLine("Done.");
 }
-
-#ifdef USE_FLASH_TOOLS
 
 static void cliFlashVerify(const char *cmdName, char *cmdline)
 {
@@ -2583,7 +2581,6 @@ static void cliFlashRead(const char *cmdName, char *cmdline)
         cliPrintLinefeed();
     }
 }
-
 #endif
 #endif
 
