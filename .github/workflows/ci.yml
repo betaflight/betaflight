@@ -23,8 +23,7 @@ jobs:
 
       - name: Get all official build targets
         id: get-targets
-        run: echo "::set-output name=targets::$(make targets-ci-print | jq -R -c 'split(" ")')"
-
+        run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
       - name: Cache build toolchain
         uses: actions/cache@v3
         id: cache-toolchain
@@ -45,7 +44,7 @@ jobs:
         target: ${{ fromJson(needs.setup.outputs.targets) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Fetch toolchain from cache
         uses: actions/cache@v3

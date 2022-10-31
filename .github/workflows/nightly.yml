@@ -41,11 +41,11 @@ jobs:
         id: notes
         run: |
           set -- Assets/*.hex
-          echo "::set-output name=notes::$(test -e "$1" && echo '${{ env.debug_release_notes }}' || echo '${{ env.release_notes }}')"
+          echo "notes=$(test -e "$1" && echo '${{ env.debug_release_notes }}' || echo '${{ env.release_notes }}')" >> $GITHUB_OUTPUT
 
       - name: Get current date
         id: date
-        run: echo "::set-output name=today::$(date '+%Y%m%d')"
+        run: echo "today=$(date '+%Y%m%d')" >> $GITHUB_OUTPUT
 
       - name: Release
         uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v0.1.14
