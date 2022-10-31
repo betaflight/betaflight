@@ -2451,8 +2451,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 
 #endif
 
-#ifdef USE_FLASH_CHIP
-
+#ifdef USE_FLASHFS
 static void cliFlashInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -2474,17 +2473,15 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
         }
         cliPrintLinef("  %d: %s %u %u", index, flashPartitionGetTypeName(partition->type), partition->startSector, partition->endSector);
     }
-#ifdef USE_FLASHFS
+
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
 
     cliPrintLinef("FlashFS size=%u, usedSize=%u",
             FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
             flashfsGetOffset()
     );
-#endif
 }
 
-#ifdef USE_FLASH_TOOLS
 static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -2521,6 +2518,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliPrintLine("Done.");
 }
 
+#ifdef USE_FLASH_TOOLS
 static void cliFlashVerify(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
