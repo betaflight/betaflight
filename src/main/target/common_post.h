@@ -76,7 +76,6 @@
 #define BARO_EOC_PIN NONE
 #endif
 
-
 #if !defined(USE_SERIAL_RX)
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_IBUS
@@ -104,22 +103,12 @@
 #undef USE_SERIALRX_FPORT
 #endif
 
-#if !defined(USE_SERIALRX_CRSF)
-#undef USE_TELEMETRY_CRSF
-#undef USE_CRSF_LINK_STATISTICS
-#undef USE_CRSF_V3
-#endif
-
 #if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF)
 #undef USE_RX_RSSI_DBM
 #endif
 
 #if !defined(USE_SERIALRX_GHST)
 #undef USE_TELEMETRY_GHST
-#endif
-
-#if !defined(USE_TELEMETRY_CRSF) || !defined(USE_CMS)
-#undef USE_CRSF_CMS_TELEMETRY
 #endif
 
 #if !defined(USE_SERIALRX_JETIEXBUS)

@@ -362,9 +362,12 @@ extern uint8_t _dmaram_end__;
 #define USE_RTC_TIME
 #define USE_RX_MSP
 #define USE_ESC_SENSOR_INFO
+#define USE_RX_RSSI_DBM
+
+#if !defined(CLOUD_BUILD)
 #define USE_CRSF_CMS_TELEMETRY
 #define USE_CRSF_LINK_STATISTICS
-#define USE_RX_RSSI_DBM
+#endif
 #endif
 
 #if (TARGET_FLASH_SIZE > 256)
@@ -435,6 +438,25 @@ extern uint8_t _dmaram_end__;
 #if !defined(CLOUD_BUILD)
 #define USE_GPS_PLUS_CODES
 #endif
+
+#endif
+
+#if defined(CLOUD_BUILD)
+
+// Handle the CRSF co-dependency requirements
+#if defined(USE_TELEMETRY_CRSF) 
+
+#if defined(USE_CMS)
+#define USE_CRSF_CMS_TELEMETRY
+#define USE_CRSF_LINK_STATISTICS
+#endif 
+
+#if !defined(USE_SERIALRX_CRSF)
+#define USE_SERIALRX_CRSF
+#define USE_SERIAL_RX
+#endif 
+
+#endif // CRSF co-dependency requirements.
 
 #endif
 
