@@ -311,7 +311,7 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
 
         if (bitCount > 1) {
             // shared
-            if (bitCount > 2) {
+            if (bitCount > (BITCOUNT(FUNCTION_MSP | ALL_FUNCTIONS_SHARABLE_WITH_MSP))) {
                 return false;
             }
 
