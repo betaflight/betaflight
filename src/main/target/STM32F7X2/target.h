@@ -134,11 +134,14 @@
 
 #define USE_MAX7456
 
-#endif
-
 #define USE_SDCARD
+
+#endif // CLOUD_BUILD
+
+#ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
+#endif
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
