@@ -126,6 +126,11 @@ void prepareMspFrame(uint8_t *mspFrame)
 
 static void mspCrsfPush(const uint8_t mspCommand, const uint8_t *mspFrame, const uint8_t mspFrameSize)
 {
+#ifndef USE_TELEMETRY_CRSF
+    UNUSED(mspCommand);
+    UNUSED(mspFrame);
+    UNUSED(mspFrameSize);
+#else
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
@@ -157,6 +162,7 @@ static void mspCrsfPush(const uint8_t mspCommand, const uint8_t *mspFrame, const
     crsfRxSendTelemetryData(); //give the FC a chance to send outstanding telemetry
     crsfRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
     crsfRxSendTelemetryData();
+#endif
 }
 
 static uint16_t packetCounter = 0;
