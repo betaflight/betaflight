@@ -586,7 +586,7 @@ static void validateAndFixConfig(void)
 
         if (portConfig &&
             (portConfig->identifier != SERIAL_PORT_USB_VCP) &&
-            ((portConfig->functionMask & FUNCTION_MSP_DISPLAYPORT) == FUNCTION_MSP_DISPLAYPORT)) {
+            ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
             displayPortMspSetSerial(portConfig->identifier);
             break;
         }
