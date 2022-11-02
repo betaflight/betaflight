@@ -1500,7 +1500,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
         // Added in API version 1.44    
-        sbufWriteU16(dst, gpsSol.hdop);
+        sbufWriteU16(dst, gpsSol.dop.hdop);
         break;
 
     case MSP_COMP_GPS:

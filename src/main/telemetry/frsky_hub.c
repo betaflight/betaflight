@@ -288,8 +288,8 @@ static void sendSatalliteSignalQualityAsTemperature2(uint8_t cycleNum)
 {
     uint16_t satellite = gpsSol.numSat;
 
-    if (gpsSol.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) { // Every 1s
-        satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
+    if (gpsSol.dop.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) { // Every 1s
+        satellite = constrain(gpsSol.dop.hdop, 0, GPS_MAX_HDOP_VAL);
     }
     int16_t data;
     if (telemetryConfig()->frsky_unit == UNIT_IMPERIAL) {

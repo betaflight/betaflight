@@ -796,7 +796,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 #ifdef USE_GPS
                 if (sensors(SENSOR_GPS)) {
                     // satellite accuracy HDOP: 0 = worst [HDOP > 5.5m], 9 = best [HDOP <= 1.0m]
-                    uint16_t hdop = constrain(scaleRange(gpsSol.hdop, 100, 550, 9, 0), 0, 9) * 100;
+                    uint16_t hdop = constrain(scaleRange(gpsSol.dop.hdop, 100, 550, 9, 0), 0, 9) * 100;
                     smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + hdop + gpsSol.numSat);
                     *clearToSend = false;
                 } else if (featureIsEnabled(FEATURE_GPS)) {
