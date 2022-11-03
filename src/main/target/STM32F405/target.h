@@ -154,11 +154,14 @@
 #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
 
-#endif // cloud_build
-
 #define USE_SDCARD
+
+#endif // CLOUD_BUILD
+
+#ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
+#endif
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
