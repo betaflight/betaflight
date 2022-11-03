@@ -510,7 +510,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
     return sleepTime;
 }
 
-float getBaroAltitude(void)
+float baroGetAltitudeCm(void)
 {
     return baro.altitude;
 }

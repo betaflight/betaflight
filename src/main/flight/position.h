@@ -20,15 +20,12 @@
 
 #pragma once
 
-#include "common/time.h"
-
 #define TASK_ALTITUDE_RATE_HZ 100
 
 typedef struct positionConfig_s {
     uint8_t altitude_source;
-    uint8_t altitude_prefer_baro;
-    uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for altitude smoothing
-    uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
+    uint8_t altitude_fuse_ratio;    // ratio (value / 100) for complementary filter (GPS <--> baro)
+    uint16_t altitude_vario_lpf;    // lowpass for (value / 100) Hz for vario smoothing
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);
@@ -37,6 +34,8 @@ float getAltitudeCm(void);
 float getAltitudeDerivative(void);
 void calculateEstimatedAltitude(void);
 void positionInit(void);
+void positionUpdate(void);
+float getAltitudeCm(void);
 int32_t getEstimatedAltitudeCm(void);
 float getAltitudeAsl(void);
 int16_t getEstimatedVario(void);

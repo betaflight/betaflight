@@ -436,7 +436,8 @@ extern "C" {
     bool schedulerGetIgnoreTaskExecTime() { return false; }
     float gyroGetFilteredDownsampled(int) { return 0.0f; }
     float baroUpsampleAltitude()  { return 0.0f; }
-    float getBaroAltitude(void) { return 3000.0f; }
+    float pt2FilterGain(float, float)  { return 0.0f; }
+    float baroGetAltitudeCm(void) { return 3000.0f; }
     float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
 }

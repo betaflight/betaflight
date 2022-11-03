@@ -279,14 +279,6 @@ static void taskUpdateMag(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS)
-static void taskCalculateAltitude(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-    calculateEstimatedAltitude();
-}
-#endif // USE_BARO || USE_GPS
-
 #if defined(USE_RANGEFINDER)
 void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
@@ -301,6 +293,14 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
     rangefinderProcess(getCosTiltAngle());
 }
 #endif
+
+#if defined(USE_BARO) || defined(USE_GPS)
+static void taskUpdateAltitude(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+    positionUpdate();
+}
+#endif // USE_BARO || USE_GPS
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
@@ -395,7 +395,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
-    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskCalculateAltitude, TASK_PERIOD_HZ(TASK_ALTITUDE_RATE_HZ), TASK_PRIORITY_LOW),
+    [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskUpdateAltitude, TASK_PERIOD_HZ(TASK_ALTITUDE_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_DASHBOARD

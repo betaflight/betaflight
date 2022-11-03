@@ -138,7 +138,7 @@ void gpsRescueInit(void)
     rescueState.intent.velocityPidCutoffModifier = 1.0f;
     gain = pt1FilterGain(cutoffHz, 1.0f);
     pt1FilterInit(&velocityDLpf, gain);
-    cutoffHz *= 4.0f; 
+    cutoffHz *= 4.0f;
     gain = pt3FilterGain(cutoffHz, taskIntervalSeconds);
     pt3FilterInit(&velocityUpsampleLpf, gain);
 }

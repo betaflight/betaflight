@@ -157,9 +157,8 @@
 #define PARAM_NAME_RPM_FILTER_LPF_HZ "rpm_filter_lpf_hz"
 
 #define PARAM_NAME_ALTITUDE_SOURCE "altitude_source"
-#define PARAM_NAME_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
-#define PARAM_NAME_ALTITUDE_LPF "altitude_lpf"
-#define PARAM_NAME_ALTITUDE_D_LPF "altitude_d_lpf"
+#define PARAM_NAME_POSITION_ALTITUDE_FUSE_RATIO "altitude_fuse_ratio"
+#define PARAM_NAME_POSITION_ALTITUDE_VARIO_LPF "altitude_vario_lpf"
 
 #define PARAM_NAME_HOVER_THROTTLE "hover_throttle"
 #define PARAM_NAME_LANDING_ALTITUDE "landing_altitude_m"
