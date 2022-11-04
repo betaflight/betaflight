@@ -72,9 +72,13 @@ For example on [this target](https://github.com/betaflight/unified-targets/blob/
     #define USE_GYRO_SPI_MPU6500
     #define USE_ACC_SPI_MPU6000
     #define USE_ACC_SPI_MPU6500
+    #define USE_MAX7456
 
     board_name NOX
     manufacturer_id AIRB
+
+
+For more information see reference at the [Hardware specification]https://github.com/betaflight/betaflight/blob/master/docs/Manufacturer%20Design%20Guidelines.md#42 Definitions for unified targets
 
 
 ### 2.4. Add the board and manufacturer information
