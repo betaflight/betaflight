@@ -18,26 +18,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "pg/position.h"
+#if defined(USE_BARO) || defined(USE_GPS)
 
-#define TASK_ALTITUDE_RATE_HZ 100
+#include "flight/position.h"
 
-typedef enum {
-    ALTITUDE_SOURCE_DEFAULT = 0,
-    ALTITUDE_SOURCE_BARO_ONLY,
-    ALTITUDE_SOURCE_GPS_ONLY
-} altitudeSource_e;
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-float getAltitudeCm(void);
-float getAltitudeDerivative(void);
-void calculateEstimatedAltitude(void);
-void positionInit(void);
-void positionUpdate(void);
-float getAltitudeCm(void);
-int32_t getEstimatedAltitudeCm(void);
-float getAltitudeAsl(void);
-int16_t getEstimatedVario(void);
-bool isAltitudeAvailable(void);
+#include "position.h"
 
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 5);
+
+PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
+    .altitude_source = ALTITUDE_SOURCE_DEFAULT,
+    .altitude_fuse_ratio = 25,
+    .altitude_vario_lpf = 100,
+);
+
+#endif // defined(USE_BARO) || defined(USE_GPS)

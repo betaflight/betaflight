@@ -20,24 +20,14 @@
 
 #pragma once
 
-#include "pg/position.h"
+#include <stdint.h>
 
-#define TASK_ALTITUDE_RATE_HZ 100
+#include "pg/pg.h"
 
-typedef enum {
-    ALTITUDE_SOURCE_DEFAULT = 0,
-    ALTITUDE_SOURCE_BARO_ONLY,
-    ALTITUDE_SOURCE_GPS_ONLY
-} altitudeSource_e;
+typedef struct positionConfig_s {
+    uint8_t altitude_source;
+    uint8_t altitude_fuse_ratio;    // ratio (value / 100) for complementary filter (GPS <--> baro)
+    uint16_t altitude_vario_lpf;    // lowpass for (value / 100) Hz for vario smoothing
+} positionConfig_t;
 
-float getAltitudeCm(void);
-float getAltitudeDerivative(void);
-void calculateEstimatedAltitude(void);
-void positionInit(void);
-void positionUpdate(void);
-float getAltitudeCm(void);
-int32_t getEstimatedAltitudeCm(void);
-float getAltitudeAsl(void);
-int16_t getEstimatedVario(void);
-bool isAltitudeAvailable(void);
-
+PG_DECLARE(positionConfig_t, positionConfig);

@@ -36,19 +36,10 @@
 
 #include "io/gps.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
 
 #include "position.h"
-
-typedef enum {
-    DEFAULT = 0,
-    BARO_ONLY,
-    GPS_ONLY
-} altitudeSource_e;
 
 #ifdef USE_GPS
 static pt2Filter_t gpsUpsampleLpf;
@@ -121,14 +112,6 @@ void positionInit(void)
 #endif
 }
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 6);
-
-PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
-    .altitude_source = DEFAULT,
-    .altitude_fuse_ratio = 25,
-    .altitude_vario_lpf = 100,
-);
-
 void positionUpdate(void)
 {
     // ***  UPSAMPLE SENSOR DATA  ***
@@ -155,10 +138,10 @@ void positionUpdate(void)
             wasArmed = false;
         }
 
-        if (isGpsAvailable && positionConfig()->altitude_source != BARO_ONLY) {
+        if (isGpsAvailable && positionConfig()->altitude_source != ALTITUDE_SOURCE_BARO_ONLY) {
             gpsAltGroundCm = gpsAltCm;      // watch for valid GPS altitude data to zero GPS altitude with
             displayAltitudeCm = gpsAltCm;   // estimatedAltitude shows most recent ASL GPS altitude in OSD and sensors, while disarmed
-        } else if (isBaroAvailable && positionConfig()->altitude_source != GPS_ONLY) {
+        } else if (isBaroAvailable && positionConfig()->altitude_source != ALTITUDE_SOURCE_GPS_ONLY) {
             displayAltitudeCm = baroAltCm;
         }
 
@@ -176,7 +159,7 @@ void positionUpdate(void)
         }
 
         switch (positionConfig()->altitude_source) {
-            case DEFAULT:
+            case ALTITUDE_SOURCE_DEFAULT:
 #if defined(USE_GPS) && defined(USE_BARO)
                 // Fuse GPS and baro for more precise altitude
                 if (isGpsAvailable && isBaroAvailable) {  // Complementary filter
@@ -191,10 +174,10 @@ void positionUpdate(void)
                     altitudeCm = baroAltCm;
                 }
                 break;
-            case GPS_ONLY:
+            case ALTITUDE_SOURCE_GPS_ONLY:
                 altitudeCm = gpsAltCm - gpsAltGroundCm;
                 break;
-            case BARO_ONLY:
+            case ALTITUDE_SOURCE_BARO_ONLY:
                 altitudeCm = baroAltCm;
                 break;
             default:
