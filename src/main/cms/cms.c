@@ -897,9 +897,11 @@ void cmsMenuOpen(void)
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
         displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
+#ifdef USE_OSD
         if (osdConfig()->cms_background_type != DISPLAY_BACKGROUND_TRANSPARENT) {
             displaySetBackgroundType(pCurrentDisplay, (displayPortBackground_e)osdConfig()->cms_background_type); // set the background type if not transparent
         }
+#endif
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
@@ -911,7 +913,9 @@ void cmsMenuOpen(void)
             displaySetBackgroundType(pCurrentDisplay, DISPLAY_BACKGROUND_TRANSPARENT); // reset previous displayPort to transparent
             displayRelease(pCurrentDisplay);
             pCurrentDisplay = pNextDisplay;
+#ifdef USE_OSD
             displaySetBackgroundType(pCurrentDisplay, (displayPortBackground_e)osdConfig()->cms_background_type); // set the background type if not transparent
+#endif
         } else {
             return;
         }
