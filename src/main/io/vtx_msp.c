@@ -92,7 +92,11 @@ static bool isLowPowerDisarmed(void)
 void setMspVtxDeviceStatusReady(const int descriptor)
 {
     if (mspVtxStatus != MSP_VTX_STATUS_READY && vtxTableConfig()->bands && vtxTableConfig()->channels && vtxTableConfig()->powerLevels) {
+#if defined(USE_MSP_OVER_TELEMETRY)
         if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor || getMspTelemetryDescriptor() == descriptor) {
+#else
+        if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor) {
+#endif
             mspVtxStatus = MSP_VTX_STATUS_READY;
         }
     }
@@ -214,7 +218,11 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_VTX_MSP, 0, packetCounter);
     DEBUG_SET(DEBUG_VTX_MSP, 1, isCrsfPortConfig(portConfig));
     DEBUG_SET(DEBUG_VTX_MSP, 2, isLowPowerDisarmed());
+#if defined(USE_MSP_OVER_TELEMETRY)
     DEBUG_SET(DEBUG_VTX_MSP, 3, isCrsfPortConfig(portConfig) ? getMspTelemetryDescriptor() : getMspSerialPortDescriptor(mspVtxPortIdentifier));
+#else
+    DEBUG_SET(DEBUG_VTX_MSP, 3, getMspSerialPortDescriptor(mspVtxPortIdentifier));
+#endif
 }
 
 static vtxDevType_e vtxMspGetDeviceType(const vtxDevice_t *vtxDevice)
