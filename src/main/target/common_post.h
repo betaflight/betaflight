@@ -266,7 +266,8 @@
 // Number of pins that needs pre-init
 #ifdef USE_SPI
 #ifndef SPI_PREINIT_COUNT
-#define SPI_PREINIT_COUNT 16 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+// 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+#define SPI_PREINIT_COUNT 16 
 #endif
 #endif
 
@@ -394,6 +395,11 @@ extern uint8_t __config_end;
 
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#endif
+
+#if defined(USE_RX_EXPRESSLRS) && defined(STM32F411)
+#define RX_SPI_DEFAULT_PROTOCOL          RX_SPI_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #endif
 
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
