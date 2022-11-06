@@ -13,7 +13,7 @@ Version Change Register
 | Draft 0.3 | 12 June 2022 | Update Visual Media and Tables |
 | Draft 0.4 | 21 October 2022 | Update format, add information |
 | Draft 0.5 | 24 October 2022 | Add additional information |
-| Draft 0.6 | 04 November 2022 | Add cloud build information |
+| Draft 0.6 | 06 November 2022 | Add cloud build information |
 
 
 Thank you for considering or continuing your development of Betaflight capable flight control hardware.  
@@ -395,9 +395,9 @@ As reference please choose the defines for your target from this list as applica
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
 
-#define USE_FLASH_M25P16
+#define USE_FLASH_M25P16           // 16MB Micron M25P16
 #define USE_FLASH_W25N01G          // 1Gb NAND flash support
-#define USE_FLASH_W25M             // Stacked die support
+#define USE_FLASH_W25M             // 16, 32, 64 or 128MB Winbond stacked die support
 #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
@@ -405,6 +405,18 @@ As reference please choose the defines for your target from this list as applica
 #define USE_MAX7456
 
 #define USE_SDCARD
+```
+
+### 4.2.1 SX1280 based targets defines
+
+For SPI based SX1280 target designs add the following defines:
+
+```
+#define USE_RX_SPI
+#define USE_RX_EXPRESSLRS
+#define USE_RX_EXPRESSLRS_TELEMETRY
+#define USE_RX_SX1280
+#define RX_CHANNELS_AETR
 ```
 
 
