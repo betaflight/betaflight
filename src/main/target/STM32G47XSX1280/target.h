@@ -65,9 +65,6 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-#define USE_MAG
-#define USE_BARO
-
 #define USE_BEEPER
 
 #if !defined(CLOUD_BUILD)
@@ -76,6 +73,8 @@
 
 #define USE_ACC
 #define USE_GYRO
+#define USE_MAG
+#define USE_BARO
 
 #define USE_ACC_MPU6500
 #define USE_GYRO_MPU6500
