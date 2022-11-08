@@ -2020,6 +2020,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 #else
         sbufWriteU8(dst, 0);
 #endif
+        sbufWriteU8(dst, currentPidProfile->tpa_mode);
         sbufWriteU8(dst, currentPidProfile->tpa_rate);
         sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
         break;
@@ -3168,10 +3169,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 3) {
+        if (sbufBytesRemaining(src) >= 4) {
             // Added in API 1.45
-            value = sbufReadU8(src);
-            currentPidProfile->tpa_rate = MIN(value, TPA_MAX);
+            currentPidProfile->tpa_mode = sbufReadU8(src);
+            currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
             currentPidProfile->tpa_breakpoint = sbufReadU16(src);
         }
 
