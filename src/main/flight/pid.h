@@ -198,7 +198,7 @@ typedef struct pidProfile_s {
     uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 
-    uint8_t dyn_idle_min_rpm;                   // minimum motor speed enforced by the dynamic idle controller
+    uint8_t dyn_idle_min_rpm;               // minimum motor speed enforced by the dynamic idle controller
     uint8_t dyn_idle_p_gain;                // P gain during active control of rpm
     uint8_t dyn_idle_i_gain;                // I gain during active control of rpm
     uint8_t dyn_idle_d_gain;                // D gain for corrections around rapid changes in rpm
