@@ -46,7 +46,7 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
+#if defined(USE_RX_SPI) && !defined(CLOUD_BUILD)
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
