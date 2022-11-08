@@ -24,3 +24,9 @@
 #define MSP2_SEND_DSHOT_COMMAND             0x3003
 #define MSP2_GET_VTX_DEVICE_STATUS          0x3004
 #define MSP2_GET_OSD_WARNINGS               0x3005  // returns active OSD warning message text
+#define MSP2_GET_TEXT                       0x3006
+#define MSP2_SET_TEXT                       0x3007
+
+// MSP2_SET_TEXT and MSP2_GET_TEXT variable types
+#define MSP2TEXT_PILOT_NAME                      1
+#define MSP2TEXT_CRAFT_NAME                      2

@@ -362,10 +362,13 @@ extern uint8_t _dmaram_end__;
 #define USE_RTC_TIME
 #define USE_RX_MSP
 #define USE_ESC_SENSOR_INFO
-#define USE_CRSF_CMS_TELEMETRY
-#define USE_CRSF_LINK_STATISTICS
 #define USE_RX_RSSI_DBM
 #define USE_RX_RSNR
+
+#if !defined(CLOUD_BUILD)
+#define USE_CRSF_CMS_TELEMETRY
+#define USE_CRSF_LINK_STATISTICS
+#endif
 #endif
 
 #if (TARGET_FLASH_SIZE > 256)
@@ -407,11 +410,13 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
 
 #define USE_GPS
+#define USE_OSD
+#endif
+
+#ifdef USE_GPS
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
-
-#define USE_OSD
 #endif
 
 #ifdef USE_OSD
@@ -437,3 +442,17 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
+#if defined(CLOUD_BUILD)
+
+// Handle the CRSF co-dependency requirements
+#if defined(USE_TELEMETRY_CRSF) 
+
+// if both CRSF and CMS then enable CMS telemtry and link statistics
+#if defined(USE_CMS)
+#define USE_CRSF_CMS_TELEMETRY
+#define USE_CRSF_LINK_STATISTICS
+#endif 
+
+#endif // CRSF co-dependency requirements.
+
+#endif

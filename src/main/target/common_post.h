@@ -195,10 +195,14 @@
 #undef USE_ADC_INTERNAL
 #endif
 
+#ifdef USE_FLASH
+#define USE_FLASHFS
+#define USE_FLASH_TOOLS
+#endif
+
 #if defined(USE_FLASH_W25M512)
 #define USE_FLASH_W25M
 #define USE_FLASH_M25P16
-#define USE_FLASH_W25M
 #endif
 
 #if defined(USE_FLASH_W25M02G)
@@ -232,19 +236,11 @@
 #define USE_USB_ADVANCED_PROFILES
 #endif
 
-#if defined(USE_MAX7456)
-#define USE_OSD
-#endif
-
 #if !defined(USE_OSD)
 #undef USE_RX_LINK_QUALITY_INFO
 #undef USE_OSD_PROFILES
 #undef USE_OSD_STICK_OVERLAY
 #undef USE_RX_LINK_UPLINK_POWER
-#endif
-
-#if defined(USE_GPS_RESCUE)
-#define USE_GPS
 #endif
 
 // Generate USE_SPI_GYRO or USE_I2C_GYRO
@@ -270,7 +266,8 @@
 // Number of pins that needs pre-init
 #ifdef USE_SPI
 #ifndef SPI_PREINIT_COUNT
-#define SPI_PREINIT_COUNT 16 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+// 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+#define SPI_PREINIT_COUNT 16 
 #endif
 #endif
 
@@ -398,6 +395,11 @@ extern uint8_t __config_end;
 
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#endif
+
+#if defined(USE_RX_EXPRESSLRS) && defined(STM32F411)
+#define RX_SPI_DEFAULT_PROTOCOL          RX_SPI_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #endif
 
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)

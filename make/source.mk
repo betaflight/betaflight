@@ -449,6 +449,12 @@ SRC += $(MSC_SRC)
 endif
 # end target specific make file checks
 
+ifneq ($(BOARD),)
+SRC += board/$(BOARD)/board.c
+INCLUDE_DIRS += $(ROOT)/src/main/board/$(BOARD)
+TARGET_FLAGS := -D'__BOARD__="$(BOARD)"' $(TARGET_FLAGS)
+endif
+
 # Search path and source files for the ST stdperiph library
 VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 

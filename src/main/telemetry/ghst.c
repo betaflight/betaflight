@@ -224,6 +224,7 @@ void ghstScheduleMspResponse(void)
     mspReplyPending = true;
 }
 
+#if defined(USE_MSP_OVER_TELEMETRY)
 static void ghstSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
 {
     sbuf_t ghstPayloadBuf;
@@ -241,6 +242,7 @@ static void ghstSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
     }
     ghstFinalize(dst);  // crc
 }
+#endif
 
 static void processGhst(void)
 {

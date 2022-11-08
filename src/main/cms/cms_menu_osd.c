@@ -108,7 +108,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #endif
     {"ANTI GRAVITY",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ANTI_GRAVITY]},
     {"FLY MODE",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_FLYMODE]},
-    {"NAME",               OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME]},
+    {"CRAFT NAME",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME]},
     {"THROTTLE",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS]},
 #ifdef USE_VTX_CONTROL
     {"VTX CHAN",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL]},
@@ -164,7 +164,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"STICK OVERLAY LEFT", OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_LEFT]},
     {"STICK OVERLAY RIGHT",OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_STICK_OVERLAY_RIGHT]},
 #endif
-    {"DISPLAY NAME",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_DISPLAY_NAME]},
+    {"PILOT NAME",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PILOT_NAME]},
     {"RC CHANNELS",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_RC_CHANNELS]},
     {"CAMERA FRAME",       OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CAMERA_FRAME]},
     {"TOTAL FLIGHTS",      OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_TOTAL_FLIGHTS]},

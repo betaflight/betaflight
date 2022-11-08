@@ -125,10 +125,6 @@
 #define USE_BARO_SPI_DPS310
 #endif
 
-#define USE_SDCARD
-#define USE_SDCARD_SPI
-#define USE_SDCARD_SDIO
-
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
@@ -162,7 +158,14 @@
 
 #define USE_RX_SPI
 
-#endif // cloud_build  
+#define USE_SDCARD
+
+#endif // CLOUD_BUILD
+
+#ifdef USE_SDCARD
+#define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
+#endif
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY

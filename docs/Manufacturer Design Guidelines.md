@@ -13,6 +13,7 @@ Version Change Register
 | Draft 0.3 | 12 June 2022 | Update Visual Media and Tables |
 | Draft 0.4 | 21 October 2022 | Update format, add information |
 | Draft 0.5 | 24 October 2022 | Add additional information |
+| Draft 0.6 | 06 November 2022 | Add cloud build information |
 
 
 Thank you for considering or continuing your development of Betaflight capable flight control hardware.  
@@ -349,6 +350,74 @@ Looptime and Performance Recommendation Table:
 Additionally, there are no RC ecosystems that are actively developing a supported SPI Rx solution (ExpressLRS 3.0 and later do not support SPI; FrSky does not support SPI Rx over any protocol, and other SPI Rx solutions have been fully deprecated).
 
 Note that the use of gyros such as the BMI270 lowers the gyro loop rate from 8kHz to 3.2kHz and is therefore advantageous for F411 designs.
+
+
+## 4.2 Definitions for unified targets
+
+As reference please choose the defines for your target from this list as applicable for the target to select appropiate harware for the cloud build.
+
+```
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_MPU6500
+#define USE_GYRO_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define USE_ACC_SPI_ICM20689
+#define USE_GYRO_SPI_ICM20689
+#define USE_ACCGYRO_LSM6DSO
+#define USE_ACCGYRO_BMI270
+#define USE_GYRO_SPI_ICM42605
+#define USE_ACC_SPI_ICM42605
+#define USE_GYRO_SPI_ICM42688P
+#define USE_ACC_SPI_ICM42688P
+
+#define USE_MAG_DATA_READY_SIGNAL
+#define USE_MAG_HMC5883
+#define USE_MAG_SPI_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
+#define USE_MAG_AK8963
+#define USE_MAG_MPU925X_AK8963
+#define USE_MAG_SPI_AK8963
+#define USE_MAG_AK8975
+
+#define USE_BARO_MS5611
+#define USE_BARO_SPI_MS5611
+#define USE_BARO_BMP280
+#define USE_BARO_SPI_BMP280
+#define USE_BARO_BMP388
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_LPS
+#define USE_BARO_SPI_LPS
+#define USE_BARO_QMP6988
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_DPS310
+#define USE_BARO_SPI_DPS310
+
+#define USE_FLASH_M25P16           // 16MB Micron M25P16
+#define USE_FLASH_W25N01G          // 1Gb NAND flash support
+#define USE_FLASH_W25M             // 16, 32, 64 or 128MB Winbond stacked die support
+#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+
+#define USE_MAX7456
+
+#define USE_SDCARD
+```
+
+### 4.2.1 SX1280 based targets defines
+
+For SPI based SX1280 target designs add the following defines:
+
+```
+#define USE_RX_SPI
+#define USE_RX_EXPRESSLRS
+#define USE_RX_EXPRESSLRS_TELEMETRY
+#define USE_RX_SX1280
+#define RX_CHANNELS_AETR
+```
 
 
 # 5 Information for Marketing Purposes

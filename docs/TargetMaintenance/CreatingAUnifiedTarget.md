@@ -62,7 +62,7 @@ These instructions explain how to create a Unified Target configuration for an e
 
 - edit the file from the previous step, and add #defines for accelerometer, barometer, gyro and magnetometer hardware drivers to be included for the cloud build API.
 
-For example on [this target](https://github.com/betaflight/unified-targets/blob/master/configs/default/AIRB-NOX.config) it will look like:
+For example on [this target](https://github.com/betaflight/unified-targets/blob/master/configs/default/AIRB-NOX.config) this will look like:
 
     # Betaflight / STM32F411 (S411) 4.1.0 Oct 16 2019 / 11:57:34 (c37a7c91a) MSP API: 1.42
 
@@ -72,9 +72,13 @@ For example on [this target](https://github.com/betaflight/unified-targets/blob/
     #define USE_GYRO_SPI_MPU6500
     #define USE_ACC_SPI_MPU6000
     #define USE_ACC_SPI_MPU6500
+    #define USE_MAX7456
 
     board_name NOX
     manufacturer_id AIRB
+
+
+For more information see reference at the [Hardware specification](https://github.com/betaflight/betaflight/blob/master/docs/Manufacturer%20Design%20Guidelines.md#42-definitions-for-unified-targets)
 
 
 ### 2.4. Add the board and manufacturer information
@@ -96,6 +100,7 @@ For example on [this target](https://github.com/betaflight/unified-targets/blob/
 |STM32F7X2|STM32F722|
 |STM32F745|STM32F745|
 |STM32H743|STM32H743|
+|STM32H750|STM32H750|
 
 - find and install the firmware (4.0 or newer) for the Unified Target identified above. The firmware is available from the board type drop-down in configurator. Be aware that after flashing this firmware, the LEDs on your board will not be working - this is normal.
 

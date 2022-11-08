@@ -50,9 +50,8 @@ stm32.mak
 .vagrant
 ubuntu*.log
 
-
 # EEPROM image file (created by SITL)
 eeprom.bin
 
-# Target scratch space used for automated build API
-/src/main/target/AUTOMATED_BUILD/
+# board scratch space used for automated build API, and developers
+/src/main/board

@@ -63,7 +63,9 @@
 #define LOG_IGNORED      '!'
 #define LOG_SKIPPED      '>'
 #define LOG_NMEA_GGA     'g'
+#define LOG_NMEA_GSA     's'
 #define LOG_NMEA_RMC     'r'
+#define LOG_UBLOX_DOP    'D'
 #define LOG_UBLOX_SOL    'O'
 #define LOG_UBLOX_STATUS 'S'
 #define LOG_UBLOX_SVINFO 'I'
@@ -142,6 +144,7 @@ enum {
     MSG_ACK_ACK = 0x01,
     MSG_POSLLH = 0x2,
     MSG_STATUS = 0x3,
+    MSG_DOP = 0x4,
     MSG_SOL = 0x6,
     MSG_PVT = 0x7,
     MSG_VELNED = 0x12,
@@ -890,6 +893,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
         }
     }
 
+    DEBUG_SET(DEBUG_GPS_DOP, 0, gpsSol.numSat);
+    DEBUG_SET(DEBUG_GPS_DOP, 1, gpsSol.dop.pdop);
+    DEBUG_SET(DEBUG_GPS_DOP, 2, gpsSol.dop.hdop);
+    DEBUG_SET(DEBUG_GPS_DOP, 3, gpsSol.dop.vdop);
+
     executeTimeUs = micros() - currentTimeUs;
     if (executeTimeUs > gpsStateDurationUs[gpsCurrentState]) {
         gpsStateDurationUs[gpsCurrentState] = executeTimeUs;
@@ -963,6 +971,7 @@ bool gpsIsHealthy(void)
 #define FRAME_GGA  1
 #define FRAME_RMC  2
 #define FRAME_GSV  3
+#define FRAME_GSA  4
 
 
 // This code is used for parsing NMEA data
@@ -1042,7 +1051,9 @@ typedef struct gpsDataNmea_s {
     uint8_t numSat;
     int32_t altitudeCm;
     uint16_t speed;
+    uint16_t pdop;
     uint16_t hdop;
+    uint16_t vdop;
     uint16_t ground_course;
     uint32_t time;
     uint32_t date;
@@ -1076,6 +1087,8 @@ static bool gpsNewFrameNMEA(char c)
                     gps_frame = FRAME_RMC;
                 } else if (0 == strcmp(string, "GPGSV")) {
                     gps_frame = FRAME_GSV;
+                } else if (0 == strcmp(string, "GPGSA")) {
+                    gps_frame = FRAME_GSA;
                 }
             }
 
@@ -1103,9 +1116,6 @@ static bool gpsNewFrameNMEA(char c)
                             break;
                         case 7:
                             gps_Msg.numSat = grab_fields(string, 0);
-                            break;
-                        case 8:
-                            gps_Msg.hdop = grab_fields(string, 1) * 100;          // hdop
                             break;
                         case 9:
                             gps_Msg.altitudeCm = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
@@ -1177,6 +1187,20 @@ static bool gpsNewFrameNMEA(char c)
                     GPS_svInfoReceivedCount++;
 
                     break;
+
+                case FRAME_GSA:
+                    switch (param) {
+                        case 15:
+                            gps_Msg.pdop = grab_fields(string, 1) * 100;        // pDOP
+                            break;
+                        case 16:
+                            gps_Msg.hdop = grab_fields(string, 1) * 100;        // hDOP
+                            break;
+                        case 17:
+                            gps_Msg.vdop = grab_fields(string, 1) * 100;        // vDOP
+                            break;
+                    }
+                    break;
             }
 
             param++;
@@ -1196,15 +1220,20 @@ static bool gpsNewFrameNMEA(char c)
                     GPS_packetCount++;
                     switch (gps_frame) {
                     case FRAME_GGA:
-                      *gpsPacketLogChar = LOG_NMEA_GGA;
-                      frameOK = 1;
-                      if (STATE(GPS_FIX)) {
+                        *gpsPacketLogChar = LOG_NMEA_GGA;
+                        frameOK = 1;
+                        if (STATE(GPS_FIX)) {
                             gpsSol.llh.lat = gps_Msg.latitude;
                             gpsSol.llh.lon = gps_Msg.longitude;
                             gpsSol.numSat = gps_Msg.numSat;
                             gpsSol.llh.altCm = gps_Msg.altitudeCm;
-                            gpsSol.hdop = gps_Msg.hdop;
                         }
+                        break;
+                    case FRAME_GSA:
+                        *gpsPacketLogChar = LOG_NMEA_GSA;
+                        gpsSol.dop.pdop = gps_Msg.pdop;
+                        gpsSol.dop.hdop = gps_Msg.hdop;
+                        gpsSol.dop.vdop = gps_Msg.vdop;
                         break;
                     case FRAME_RMC:
                         *gpsPacketLogChar = LOG_NMEA_RMC;
@@ -1263,6 +1292,17 @@ typedef struct {
     uint32_t time_to_first_fix;
     uint32_t uptime;            // milliseconds
 } ubx_nav_status;
+
+typedef struct {
+    uint32_t itow;              // GPS Millisecond Time of Week
+    uint16_t gdop;              // Geometric DOP
+    uint16_t pdop;              // Position DOP
+    uint16_t tdop;              // Time DOP
+    uint16_t vdop;              // Vertical DOP
+    uint16_t hdop;              // Horizontal DOP
+    uint16_t ndop;              // Northing DOP
+    uint16_t edop;              // Easting DOP
+} ubx_nav_dop;
 
 typedef struct {
     uint32_t time;
@@ -1435,6 +1475,7 @@ static bool _new_speed;
 static union {
     ubx_nav_posllh posllh;
     ubx_nav_status status;
+    ubx_nav_dop dop;
     ubx_nav_solution solution;
     ubx_nav_velned velned;
     ubx_nav_pvt pvt;
@@ -1476,13 +1517,18 @@ static bool UBLOX_parse_gps(void)
         if (!next_fix)
             DISABLE_STATE(GPS_FIX);
         break;
+    case MSG_DOP:
+        *gpsPacketLogChar = LOG_UBLOX_DOP;
+        gpsSol.dop.pdop = _buffer.dop.pdop;
+        gpsSol.dop.hdop = _buffer.dop.hdop;
+        gpsSol.dop.vdop = _buffer.dop.vdop;
+        break;
     case MSG_SOL:
         *gpsPacketLogChar = LOG_UBLOX_SOL;
         next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
         if (!next_fix)
             DISABLE_STATE(GPS_FIX);
         gpsSol.numSat = _buffer.solution.satellites;
-        gpsSol.hdop = _buffer.solution.position_DOP;
 #ifdef USE_RTC_TIME
         //set clock, when gps time is available
         if(!rtcHasTime() && (_buffer.solution.fix_status & NAV_STATUS_TIME_SECOND_VALID) && (_buffer.solution.fix_status & NAV_STATUS_TIME_WEEK_VALID)) {
@@ -1508,7 +1554,6 @@ static bool UBLOX_parse_gps(void)
         gpsSetFixState(next_fix);
         _new_position = true;
         gpsSol.numSat = _buffer.pvt.numSV;
-        gpsSol.hdop = _buffer.pvt.pDOP;
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10

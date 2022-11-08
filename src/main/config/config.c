@@ -106,11 +106,11 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 2);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
-    .name = { 0 },
-    .displayName = { 0 },
+    .craftName = { 0 },
+    .pilotName = { 0 },
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
@@ -586,7 +586,7 @@ static void validateAndFixConfig(void)
 
         if (portConfig &&
             (portConfig->identifier != SERIAL_PORT_USB_VCP) &&
-            ((portConfig->functionMask & FUNCTION_MSP_DISPLAYPORT) == FUNCTION_MSP_DISPLAYPORT)) {
+            ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
             displayPortMspSetSerial(portConfig->identifier);
             break;
         }

@@ -316,7 +316,7 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     groundCourseBcd = dec2bcd(gpsSol.groundCourse);
 
     // HDOP
-    hdop = gpsSol.hdop / 10;
+    hdop = gpsSol.dop.hdop / 10;
     hdop = (hdop > 99) ? 99 : hdop;
     hdopBcd = dec2bcd(hdop);
 

@@ -142,10 +142,14 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 
-#endif // cloud_build
-
 #define USE_SDCARD
+
+#endif // CLOUD_BUILD
+
+#ifdef USE_SDCARD
 #define USE_SDCARD_SPI
+#endif
+
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY

@@ -17,6 +17,7 @@
 
 # The target to build, see VALID_TARGETS below
 TARGET    ?= STM32F405
+BOARD     ?= 
 
 # Compile-time options
 OPTIONS   ?=
@@ -99,6 +100,11 @@ FEATURES        =
 # used to disable features based on flash space shortage (larger number => more features disabled)
 FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
+
+ifneq ($(BOARD),)
+# silently ignore if the file is not present. Allows for target defaults.
+-include $(ROOT)/src/main/board/$(BOARD)/board.mk
+endif
 
 include $(ROOT)/make/targets.mk
 

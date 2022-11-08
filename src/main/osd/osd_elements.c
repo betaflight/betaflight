@@ -797,10 +797,10 @@ static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
 
 static void osdBackgroundCraftName(osdElementParms_t *element)
 {
-    if (strlen(pilotConfig()->name) == 0) {
+    if (strlen(pilotConfig()->craftName) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
     } else {
-        toUpperCase(element->buff, pilotConfig()->name, MAX_NAME_LENGTH);
+        toUpperCase(element->buff, pilotConfig()->craftName, MAX_NAME_LENGTH);
     }
 }
 
@@ -874,12 +874,12 @@ static void osdElementDisarmed(osdElementParms_t *element)
     }
 }
 
-static void osdBackgroundDisplayName(osdElementParms_t *element)
+static void osdBackgroundPilotName(osdElementParms_t *element)
 {
-    if (strlen(pilotConfig()->displayName) == 0) {
-        strcpy(element->buff, "DISPLAY_NAME");
+    if (strlen(pilotConfig()->pilotName) == 0) {
+        strcpy(element->buff, "PILOT_NAME");
     } else {
-        toUpperCase(element->buff, pilotConfig()->displayName, MAX_NAME_LENGTH);
+        toUpperCase(element->buff, pilotConfig()->pilotName, MAX_NAME_LENGTH);
     }
 }
 
@@ -1066,7 +1066,7 @@ static void osdElementGpsSats(osdElementParms_t *element)
         int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
             element->buff[pos++] = ' ';
-            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.hdop / 100.0f, "", 1, true, SYM_NONE);
+            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.hdop / 100.0f, "", 1, true, SYM_NONE);
         }
     }
 }
@@ -1532,7 +1532,7 @@ static void osdElementWarnings(osdElementParms_t *element)
             }
             #endif // USE_RX_LINK_QUALITY_INFO
         }
-        strncpy(pilotConfigMutable()->name, element->buff, MAX_NAME_LENGTH - 1);
+        strncpy(pilotConfigMutable()->craftName, element->buff, MAX_NAME_LENGTH - 1);
     }
     #endif // USE_CRAFTNAME_MSGS
 }
@@ -1586,7 +1586,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_ACC
     OSD_FLIP_ARROW,
 #endif
-    OSD_DISPLAY_NAME,
+    OSD_PILOT_NAME,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
 #endif
@@ -1721,7 +1721,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_LEFT]      = osdElementStickOverlay,
     [OSD_STICK_OVERLAY_RIGHT]     = osdElementStickOverlay,
 #endif
-    [OSD_DISPLAY_NAME]            = NULL,  // only has background
+    [OSD_PILOT_NAME]              = NULL,  // only has background
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
 #endif
@@ -1759,7 +1759,7 @@ const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundStickOverlay,
     [OSD_STICK_OVERLAY_RIGHT]     = osdBackgroundStickOverlay,
 #endif
-    [OSD_DISPLAY_NAME]            = osdBackgroundDisplayName,
+    [OSD_PILOT_NAME]              = osdBackgroundPilotName,
 };
 
 static void osdAddActiveElement(osd_items_e element)

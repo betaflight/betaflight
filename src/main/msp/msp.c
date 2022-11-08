@@ -945,6 +945,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 #define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
+#define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
 
         uint8_t osdFlags = 0;
 #if defined(USE_OSD)
@@ -963,6 +964,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
             break;
         case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
             osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
+            if (displayIsReady) {
+                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
+            }
+
+            break;
+        case OSD_DISPLAYPORT_DEVICE_MSP:
+            osdFlags |= OSD_FLAGS_OSD_MSP_DEVICE;
             if (displayIsReady) {
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
@@ -1139,15 +1147,6 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 #else
                 sbufWriteU16(dst, 0);
 #endif
-            }
-        }
-        break;
-
-    case MSP_NAME:
-        {
-            const int nameLen = strlen(pilotConfig()->name);
-            for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, pilotConfig()->name[i]);
             }
         }
         break;
@@ -1501,7 +1500,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
         // Added in API version 1.44    
-        sbufWriteU16(dst, gpsSol.hdop);
+        sbufWriteU16(dst, gpsSol.dop.hdop);
         break;
 
     case MSP_COMP_GPS:
@@ -2499,6 +2498,38 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
 
         break;
+
+    case MSP2_GET_TEXT:
+        {
+            // type byte, then length byte followed by the actual characters
+            const uint8_t textType = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+
+            char* textVar;
+
+            switch (textType) {
+                case MSP2TEXT_PILOT_NAME:
+                    textVar = pilotConfigMutable()->pilotName;
+                    break;
+
+                case MSP2TEXT_CRAFT_NAME:
+                    textVar = pilotConfigMutable()->craftName;
+                    break;
+
+                default:
+                    return MSP_RESULT_ERROR;
+            }
+
+            const uint8_t textLength = strlen(textVar);
+
+            //  type byte, then length byte followed by the actual characters
+            sbufWriteU8(dst, textType);
+            sbufWriteU8(dst, textLength);
+            for (unsigned int i = 0; i < textLength; i++) {
+                sbufWriteU8(dst, textVar[i]);
+            }
+        }
+        break;
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -3781,16 +3812,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
-    case MSP_SET_NAME:
-        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
-        for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            pilotConfigMutable()->name[i] = sbufReadU8(src);
-        }
-#ifdef USE_OSD
-        osdAnalyzeActiveElements();
-#endif
-        break;
-
 #ifdef USE_RTC_TIME
     case MSP_SET_RTC:
         {
@@ -3861,6 +3882,40 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         break;
 #endif
+
+    case MSP2_SET_TEXT:
+        {
+            // type byte, then length byte followed by the actual characters
+            const uint8_t textType = sbufReadU8(src);
+
+            char* textVar;
+            const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
+            switch (textType) {
+                case MSP2TEXT_PILOT_NAME:
+                    textVar = pilotConfigMutable()->pilotName;
+                    break;
+
+                case MSP2TEXT_CRAFT_NAME:
+                    textVar = pilotConfigMutable()->craftName;
+                    break;
+
+                default:
+                    return MSP_RESULT_ERROR;
+            }
+
+            memset(textVar, 0, strlen(textVar));
+            for (unsigned int i = 0; i < textLength; i++) {
+                textVar[i] = sbufReadU8(src);
+            }
+
+#ifdef USE_OSD
+            if (textType == MSP2TEXT_PILOT_NAME || textType == MSP2TEXT_CRAFT_NAME) {
+                osdAnalyzeActiveElements();
+            }
+#endif
+        }
+        break;
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;

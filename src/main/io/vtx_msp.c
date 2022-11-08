@@ -92,7 +92,11 @@ static bool isLowPowerDisarmed(void)
 void setMspVtxDeviceStatusReady(const int descriptor)
 {
     if (mspVtxStatus != MSP_VTX_STATUS_READY && vtxTableConfig()->bands && vtxTableConfig()->channels && vtxTableConfig()->powerLevels) {
+#if defined(USE_MSP_OVER_TELEMETRY)
         if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor || getMspTelemetryDescriptor() == descriptor) {
+#else
+        if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor) {
+#endif
             mspVtxStatus = MSP_VTX_STATUS_READY;
         }
     }
@@ -126,6 +130,11 @@ void prepareMspFrame(uint8_t *mspFrame)
 
 static void mspCrsfPush(const uint8_t mspCommand, const uint8_t *mspFrame, const uint8_t mspFrameSize)
 {
+#ifndef USE_TELEMETRY_CRSF
+    UNUSED(mspCommand);
+    UNUSED(mspFrame);
+    UNUSED(mspFrameSize);
+#else
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
@@ -157,6 +166,7 @@ static void mspCrsfPush(const uint8_t mspCommand, const uint8_t *mspFrame, const
     crsfRxSendTelemetryData(); //give the FC a chance to send outstanding telemetry
     crsfRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
     crsfRxSendTelemetryData();
+#endif
 }
 
 static uint16_t packetCounter = 0;
@@ -208,7 +218,11 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_VTX_MSP, 0, packetCounter);
     DEBUG_SET(DEBUG_VTX_MSP, 1, isCrsfPortConfig(portConfig));
     DEBUG_SET(DEBUG_VTX_MSP, 2, isLowPowerDisarmed());
+#if defined(USE_MSP_OVER_TELEMETRY)
     DEBUG_SET(DEBUG_VTX_MSP, 3, isCrsfPortConfig(portConfig) ? getMspTelemetryDescriptor() : getMspSerialPortDescriptor(mspVtxPortIdentifier));
+#else
+    DEBUG_SET(DEBUG_VTX_MSP, 3, getMspSerialPortDescriptor(mspVtxPortIdentifier));
+#endif
 }
 
 static vtxDevType_e vtxMspGetDeviceType(const vtxDevice_t *vtxDevice)
