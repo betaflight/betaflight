@@ -416,11 +416,6 @@ void spiSequenceStart(const extDevice_t *dev)
             bus->curSegment++;
         }
 
-        if (lastSegment && !lastSegment->negateCS) {
-            // Negate Chip Select if not done so already
-            IOHi(dev->busType_u.spi.csnPin);
-        }
-
         // If a following transaction has been linked, start it
         if (bus->curSegment->u.link.dev) {
             const extDevice_t *nextDev = bus->curSegment->u.link.dev;
