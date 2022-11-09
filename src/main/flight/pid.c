@@ -89,7 +89,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
 #if defined(STM32F411xE)
 #define PID_PROCESS_DENOM_DEFAULT       2
@@ -103,12 +103,10 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .runaway_takeoff_prevention = true,
     .runaway_takeoff_deactivate_throttle = 20,  // throttle level % needed to accumulate deactivation time
     .runaway_takeoff_deactivate_delay = 500,    // Accumulated time (in milliseconds) before deactivation in successful takeoff
-    .tpaMode = TPA_MODE_D
 );
 #else
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
-    .tpaMode = TPA_MODE_D
 );
 #endif
 
@@ -222,6 +220,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .simplified_dterm_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT,
         .anti_gravity_cutoff_hz = 5,
         .anti_gravity_p_gain = 100,
+        .tpa_mode = TPA_MODE_D,
         .tpa_rate = 65,
         .tpa_breakpoint = 1350,
     );
@@ -835,7 +834,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
 
 #ifdef USE_TPA_MODE
-    const float tpaFactorKp = (pidConfig()->tpaMode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
+    const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
 #else
     const float tpaFactorKp = pidRuntime.tpaFactor;
 #endif
