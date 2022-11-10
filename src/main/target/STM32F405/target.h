@@ -17,170 +17,141 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "S405"
-
-#define USBD_PRODUCT_STRING     "Betaflight STM32F405"
-
-#define USE_I2C_DEVICE_1
-#define USE_I2C_DEVICE_2
-#define USE_I2C_DEVICE_3
-
-#define USE_UART1
-#define USE_UART2
-#define USE_UART3
-#define USE_UART4
-#define USE_UART5
-#define USE_UART6
-
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 6)
-
-#define USE_INVERTER
-
-#define USE_SPI_DEVICE_1
-#define USE_SPI_DEVICE_2
-#define USE_SPI_DEVICE_3
-
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
-#define TARGET_IO_PORTE 0xffff
-#define TARGET_IO_PORTF 0xffff
-
-
-#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
-#define USE_RX_FRSKY_SPI_D
-#define USE_RX_FRSKY_SPI_X
-#define USE_RX_SFHSS_SPI
-#define USE_RX_REDPINE_SPI
-#define USE_RX_FRSKY_SPI_TELEMETRY
-#define USE_RX_CC2500_SPI_PA_LNA
-#define USE_RX_CC2500_SPI_DIVERSITY
-
-#define USE_RX_FLYSKY
-#define USE_RX_FLYSKY_SPI_LED
-
-#define USE_RX_SPEKTRUM
-#define USE_RX_SPEKTRUM_TELEMETRY
-#endif
+#define TARGET_BOARD_IDENTIFIER "HKF4"
+#define USBD_PRODUCT_STRING  "HAKRCF405"
 
 #define USE_I2C
-#define I2C_FULL_RECONFIGURABILITY
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
+#define USE_I2C_PULLUP
 
-#define USE_MAG
 #define USE_BARO
-
-#define USE_BEEPER
-
-// MPU interrupt
-
-#if !defined(CLOUD_BUILD)
-#define USE_ACC
-#define USE_GYRO
-
-#define USE_ACC_MPU6500
-#define USE_GYRO_MPU6500
-#define USE_ACC_SPI_MPU6000
-#define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define USE_ACC_SPI_ICM20689
-#define USE_GYRO_SPI_ICM20689
-#define USE_ACCGYRO_LSM6DSO
-#define USE_ACCGYRO_BMI270
-#define USE_GYRO_SPI_ICM42605
-#define USE_GYRO_SPI_ICM42688P
-#define USE_ACC_SPI_ICM42605
-#define USE_ACC_SPI_ICM42688P
-
-#ifdef USE_MAG
-#define USE_MAG_DATA_READY_SIGNAL
-#define USE_MAG_HMC5883
-#define USE_MAG_SPI_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_LIS3MDL
-#define USE_MAG_AK8963
-#define USE_MAG_MPU925X_AK8963
-#define USE_MAG_SPI_AK8963
-#define USE_MAG_AK8975
-#endif
-
-#ifdef USE_BARO
-#define USE_BARO_MS5611
-#define USE_BARO_SPI_MS5611
-#define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
-#define USE_BARO_SPI_LPS
-#define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
-#define USE_BARO_DPS310
-#define USE_BARO_SPI_DPS310
-#endif
-
-
-#define USE_ACC_MPU6050
-#define USE_GYRO_MPU6050
-#define USE_ACCGYRO_BMI160
-
 #define USE_BARO_BMP085
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_QMP6988
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
+#define DEFAULT_BARO_QMP6988
 
-#define USE_VTX_RTC6705
-#define USE_VTX_RTC6705_SOFTSPI
-
-#define USE_TRANSPONDER
-
-#define USE_RANGEFINDER
-#define USE_RANGEFINDER_HCSR04
-#define USE_RANGEFINDER_TF
-
-#define USE_RX_EXPRESSLRS
-#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
-#define USE_RX_SX1280
-#define USE_RX_SX127X
-
-#define USE_RX_SPI
-#define USE_MAX7456
-
-#define USE_FLASH_M25P16
-#define USE_FLASH_W25N01G          // 1Gb NAND flash support
-#define USE_FLASH_W25M             // Stacked die support
-#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
-
-#define USE_SDCARD
-
-#endif // CLOUD_BUILD
-
-#ifdef USE_SDCARD
-#define USE_SDCARD_SPI
-#define USE_SDCARD_SDIO
-#endif
-
-#define USE_FLASHFS
-#define USE_FLASH_TOOLS
+// XXX CAMERA_CONTROL_PIN is deprecated.
+// XXX Target maintainer must create a valid timerHardware[] array entry for PA5 with TIM_USE_CAMERA_CONTROL
+//#define CAMERA_CONTROL_PIN PA5
 
 #define USE_SPI
-#define SPI_FULL_RECONFIGURABILITY
+#define USE_SPI_DEVICE_1
+
+#define SPI1_SCK_PIN            PB3
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
+
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
+#define USE_MPU_DATA_READY_SIGNAL
+
+#define USE_GYRO
+#define USE_ACC
+
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+
+#define USE_GYRO_SPI_ICM20689
+#define GYRO_1_ALIGN      CW270_DEG
+
+#define USE_ACC_SPI_ICM20689
+
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+
+#define USE_GYRO_SPI_MPU6000
+
+#define USE_ACC_SPI_MPU6000
+
+#define LED0_PIN                PC13
 
 #define USE_VCP
+
+#define USE_UART1
+#define UART1_RX_PIN            PB7
+#define UART1_TX_PIN            PA9
+
+#define USE_UART2
+#define UART2_RX_PIN            PA3
+#define UART2_TX_PIN            PA2
+
+#define USE_UART3
+#define UART3_RX_PIN            PB11
+#define UART3_TX_PIN            PB10
+
+#define USE_UART4
+#define UART4_RX_PIN            PA1
+#define UART4_TX_PIN            PA0
+
+#define USE_UART5   
+#define UART5_RX_PIN            PD2  
+#define UART5_TX_PIN            PC12  
 
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define UNIFIED_SERIAL_PORT_COUNT       3
+#define SERIAL_PORT_COUNT       8
 
-#define USE_USB_DETECT
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define USE_ESCSERIAL
+#define USE_BEEPER
+#define BEEPER_PIN              PC14
+#define BEEPER_INVERTED
+
+#define USE_SPI_DEVICE_2
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PC3
+
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define FLASH_CS_PIN           PB12
+#define FLASH_SPI_INSTANCE     SPI2
+
+#define USE_SPI_DEVICE_3
+#define SPI3_SCK_PIN            PC10
+#define SPI3_MISO_PIN           PC11 
+#define SPI3_MOSI_PIN           PB5
+
+#define USE_OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PA15 
 
 #define USE_ADC
+#define ADC_INSTANCE            ADC1  // Default added
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0 
 
-#define USE_CUSTOM_DEFAULTS
+#define VBAT_ADC_PIN            PC1
+#define CURRENT_METER_ADC_PIN   PC2
+#define RSSI_ADC_PIN            PC0  
+ 
+#define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
+
+#define ENABLE_DSHOT_DMAR       DSHOT_DMAR_ON
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_PIN PA3
+
+#define INVERTER_PIN_UART1      PB4 
+
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
+
+
+#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USED_TIMERS             (TIM_N(1)|TIM_N(3)|TIM_N(4)|TIM_N(8)|TIM_N(12))
 
