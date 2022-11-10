@@ -1151,6 +1151,15 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         }
         break;
 
+case MSP_NAME:
+        {
+            const int nameLen = strlen(pilotConfig()->craftName);
+            for (int i = 0; i < nameLen; i++) {
+                sbufWriteU8(dst, pilotConfig()->craftName[i]);
+            }
+        }
+        break;
+
 #ifdef USE_SERVOS
     case MSP_SERVO:
         sbufWriteData(dst, &servo, MAX_SUPPORTED_SERVOS * 2);
@@ -3812,6 +3821,16 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         }
         break;
 #endif
+
+    case MSP_SET_NAME:
+        memset(pilotConfigMutable()->craftName, 0, ARRAYLEN(pilotConfig()->craftName));
+        for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
+            pilotConfigMutable()->craftName[i] = sbufReadU8(src);
+        }
+#ifdef USE_OSD
+        osdAnalyzeActiveElements();
+#endif
+        break;
 
 #ifdef USE_RTC_TIME
     case MSP_SET_RTC:
