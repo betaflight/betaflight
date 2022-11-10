@@ -89,6 +89,7 @@ COMMON_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
+            flight/alt_ctrl\
             flight/position.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
