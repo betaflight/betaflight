@@ -79,7 +79,10 @@ static uint8_t txPower = 0;
 static uint8_t wideSwitchIndex = 0;
 static uint8_t currTlmDenom = 1;
 static simpleLowpassFilter_t rssiFilter;
-static meanAccumulator_t snrFilter;
+#ifdef USE_RX_RSNR
+static simpleLowpassFilter_t rsnrFilter;
+#endif //USE_RX_RSNR
+static meanAccumulator_t snrFilter; //for dyn power purposes
 
 static volatile DMA_DATA uint8_t dmaBuffer[ELRS_RX_TX_BUFF_SIZE];
 static volatile DMA_DATA uint8_t telemetryPacket[ELRS_RX_TX_BUFF_SIZE];
@@ -89,6 +92,9 @@ static volatile uint8_t *payload;
 static void rssiFilterReset(void)
 {
     simpleLPFilterInit(&rssiFilter, 2, 5);
+#ifdef USE_RX_RSNR
+    simpleLPFilterInit(&rsnrFilter, 2, 5);
+#endif //USE_RX_RSNR
 }
 
 #define PACKET_HANDLING_TO_TOCK_ISR_DELAY_US 250
@@ -568,6 +574,9 @@ static void initializeReceiver(void)
     receiver.configChanged = false;
     receiver.rssi = 0;
     receiver.rssiFiltered = 0;
+#ifdef USE_RX_RSNR
+    receiver.rsnrFiltered = 0;
+#endif //USE_RX_RSNR
     receiver.snr = 0;
     receiver.uplinkLQ = 0;
     receiver.rateIndex = receiver.inBindingMode ? bindingRateIndex : rxExpressLrsSpiConfig()->rateIndex;
@@ -948,6 +957,9 @@ static void handleConnectionStateUpdate(const uint32_t timeStampMs)
 #ifdef USE_RX_RSSI_DBM
         setRssiDbmDirect(-130, RSSI_SOURCE_RX_PROTOCOL);
 #endif
+#ifdef USE_RX_RSNR
+        setRsnrDirect(-30);
+#endif
 #ifdef USE_RX_LINK_QUALITY_INFO
         setLinkQualityDirect(0);
 #endif
@@ -1015,6 +1027,10 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
 #ifdef USE_RX_RSSI_DBM
             setRssiDbm(receiver.rssiFiltered, RSSI_SOURCE_RX_PROTOCOL);
 #endif
+#ifdef USE_RX_RSNR
+            receiver.rsnrFiltered = simpleLPFilterUpdate(&rsnrFilter, receiver.snr/4);
+            setRsnr(receiver.rsnrFiltered);
+#endif
 #ifdef USE_RX_LINK_QUALITY_INFO
             setLinkQualityDirect(receiver.uplinkLQ);
 #endif
@@ -1025,6 +1041,9 @@ static void handleLinkStatsUpdate(const uint32_t timeStampMs)
             setRssiDirect(0, RSSI_SOURCE_RX_PROTOCOL);
 #ifdef USE_RX_RSSI_DBM
             setRssiDbmDirect(-130, RSSI_SOURCE_RX_PROTOCOL);
+#endif
+#ifdef USE_RX_RSNR
+            setRsnrDirect(-30);
 #endif
 #ifdef USE_RX_LINK_QUALITY_INFO
             setLinkQualityDirect(0);

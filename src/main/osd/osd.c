@@ -149,7 +149,7 @@ escSensorData_t *osdEscDataCombined;
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(31,31), OSD_POS_MAX_incorrect);
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 10);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 11);
 
 PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 1);
 
@@ -185,6 +185,7 @@ const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT] = {
     OSD_STAT_MIN_LINK_QUALITY,
     OSD_STAT_MAX_FFT,
     OSD_STAT_MIN_RSSI_DBM,
+    OSD_STAT_MIN_RSNR,
     OSD_STAT_TOTAL_FLIGHTS,
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
@@ -344,6 +345,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdWarnSetState(OSD_WARNING_RSSI, false);
     osdWarnSetState(OSD_WARNING_LINK_QUALITY, false);
     osdWarnSetState(OSD_WARNING_RSSI_DBM, false);
+    osdWarnSetState(OSD_WARNING_RSNR, false);
     // turn off the over mah capacity warning
     osdWarnSetState(OSD_WARNING_OVER_CAP, false);
 
@@ -370,6 +372,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
         osdConfig->profile[i][0] = '\0';
     }
     osdConfig->rssi_dbm_alarm = -60;
+    osdConfig->rsnr_alarm = 4;
     osdConfig->gps_sats_show_hdop = false;
 
     for (int i = 0; i < OSD_RCCHANNELS_COUNT; i++) {
@@ -501,7 +504,8 @@ static void osdResetStats(void)
     stats.max_esc_temp    = 0;
     stats.max_esc_rpm     = 0;
     stats.min_link_quality = (linkQualitySource == LQ_SOURCE_NONE) ? 99 : 100; // percent
-    stats.min_rssi_dbm = CRSF_SNR_MAX;
+    stats.min_rssi_dbm = CRSF_RSSI_MAX;
+    stats.min_rsnr = CRSF_SNR_MAX;
 }
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
@@ -578,6 +582,13 @@ static void osdUpdateStats(void)
     value = getRssiDbm();
     if (stats.min_rssi_dbm > value) {
         stats.min_rssi_dbm = value;
+    }
+#endif
+
+#ifdef USE_RX_RSNR
+    value = getRsnr();
+    if (stats.min_rsnr > value) {
+        stats.min_rsnr = value;
     }
 #endif
 
@@ -873,6 +884,13 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MIN_RSSI_DBM:
         tfp_sprintf(buff, "%3d", stats.min_rssi_dbm);
         osdDisplayStatisticLabel(displayRow, "MIN RSSI DBM", buff);
+        return true;
+#endif
+
+#ifdef USE_RX_RSNR
+    case OSD_STAT_MIN_RSNR:
+        tfp_sprintf(buff, "%3d", stats.min_rsnr);
+        osdDisplayStatisticLabel(displayRow, "MIN RSNR", buff);
         return true;
 #endif
 

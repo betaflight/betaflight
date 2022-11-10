@@ -362,6 +362,7 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_MSP
 #define USE_ESC_SENSOR_INFO
 #define USE_RX_RSSI_DBM
+#define USE_RX_RSNR
 
 #if !defined(CLOUD_BUILD)
 #define USE_CRSF_CMS_TELEMETRY

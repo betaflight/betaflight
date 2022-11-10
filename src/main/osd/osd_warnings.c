@@ -186,6 +186,15 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 #endif // USE_RX_RSSI_DBM
+#ifdef USE_RX_RSNR
+    // rsnr
+    if (osdWarnGetState(OSD_WARNING_RSNR) && (getRsnr() < osdConfig()->rsnr_alarm)) {
+        tfp_sprintf(warningText, "RSNR LOW");
+        *displayAttr = DISPLAYPORT_ATTR_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif // USE_RX_RSNR
 
 #ifdef USE_RX_LINK_QUALITY_INFO
     // Link Quality
