@@ -452,5 +452,5 @@ void SystemClock_Config(void)
   HAL_RCCEx_CRSConfig(&pInit);
 
   /* Configure Flash prefetch, Instruction cache, Data cache and wait state */
-  FLASH->ACR = FLASH_ACR_DBG_SWEN | FLASH_ACR_PRFTEN | FLASH_ACR_ICEN |FLASH_ACR_DCEN |FLASH_ACR_LATENCY_4WS;
+  FLASH->ACR = FLASH_ACR_DBG_SWEN | FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_4WS;
 }
