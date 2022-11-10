@@ -12,12 +12,13 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 
-static int32_t TFMINI_Altitude = 0;
+//static int32_t TFMINI_Altitude = 0;
 //static int32_t TFMINI_estimatedAltitude = 0;
 
-void alt_ctrl_run(timeUs_t currentTimeUs, float z_ref)
+void alt_ctrl_run(uint32_t z_ref)
 {
-    if (sensors(SENSOR_RANGEFINDER) && rangefinderProcess(getCosTiltAngle())) {
-        TFMINI_Altitude = rangefinderGetLatestAltitude();
-    }
+    // static timeUs_t previousTimeUs = 0;
+    //  const uint32_t dTime = currentTimeUs - previousTimeUs;
+
+    z_ref = rangefinderGetLatestAltitude();
 }
