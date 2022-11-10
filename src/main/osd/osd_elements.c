@@ -1532,7 +1532,8 @@ static void osdElementWarnings(osdElementParms_t *element)
             }
             #endif // USE_RX_LINK_QUALITY_INFO
         }
-        strncpy(pilotConfigMutable()->craftName, element->buff, MAX_NAME_LENGTH - 1);
+	// Use the old "name" instead of "craftName" because older MSP implementations rely on this field.
+        strncpy(pilotConfigMutable()->name, element->buff, MAX_NAME_LENGTH - 1);
     }
     #endif // USE_CRAFTNAME_MSGS
 }
