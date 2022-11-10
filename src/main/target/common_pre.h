@@ -103,7 +103,6 @@
 #endif
 
 #ifdef STM32G4
-#define USE_FAST_RAM
 #define USE_DSHOT
 #define USE_DSHOT_BITBANG
 #define USE_DSHOT_TELEMETRY

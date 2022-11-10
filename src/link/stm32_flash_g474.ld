@@ -26,8 +26,8 @@ MEMORY
  * Allow normal RAM overflow to occupy start of CCM, and only reserve 2560 bytes for  vector table and stack in CCM
  * CCM is aligned to a 512 byte boundary
  */
-    RAM (xrw)         : ORIGIN = 0x20000000, LENGTH = 128512
-    CCM (xrw)         : ORIGIN = 0x2001F600, LENGTH = 2560
+    RAM (xrw)         : ORIGIN = 0x20000000, LENGTH = 124K
+    CCM (xrw)         : ORIGIN = 0x2001F000, LENGTH = 4K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
