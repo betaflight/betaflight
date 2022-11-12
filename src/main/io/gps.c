@@ -877,12 +877,6 @@ void gpsUpdate(timeUs_t currentTimeUs)
         DISABLE_STATE(GPS_FIX_HOME);
     }
 
-#if defined(USE_GPS_RESCUE)
-    if (gpsRescueIsConfigured()) {
-        updateGPSRescueState();
-    }
-#endif
-
     static bool hasBeeped = false;
     if (!ARMING_FLAG(ARMED)) {
         // while disarmed, beep when requirements for a home fix are met
@@ -1914,7 +1908,7 @@ void onGpsNewData(void)
     }
 
 #ifdef USE_GPS_RESCUE
-    rescueNewGpsData();
+    gpsRescueNewGpsData();
 #endif
 }
 

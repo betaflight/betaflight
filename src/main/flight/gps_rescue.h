@@ -21,11 +21,13 @@
 
 #include "pg/pg.h"
 
+#define TASK_GPS_RESCUE_RATE_HZ 100 // synced to altitude task rate
+
 typedef struct gpsRescue_s {
-    uint16_t angle; //degrees
-    uint16_t initialAltitudeM; //meters
-    uint16_t descentDistanceM; //meters
-    uint16_t rescueGroundspeed; //centimeters per second
+    uint16_t angle; // degrees
+    uint16_t initialAltitudeM; // meters
+    uint16_t descentDistanceM; // meters
+    uint16_t rescueGroundspeed; // centimeters per second
     uint8_t throttleP, throttleI, throttleD;
     uint8_t yawP;
     uint16_t throttleMin;
@@ -33,25 +35,25 @@ typedef struct gpsRescue_s {
     uint16_t throttleHover;
     uint8_t minSats;
     uint8_t velP, velI, velD;
-    uint16_t minRescueDth; //meters
+    uint16_t minRescueDth; // meters
     uint8_t sanityChecks;
     uint8_t allowArmingWithoutFix;
     uint8_t useMag;
-    uint8_t targetLandingAltitudeM; //meters
+    uint8_t targetLandingAltitudeM; // meters
     uint8_t altitudeMode;
     uint16_t ascendRate;
     uint16_t descendRate;
-    uint16_t rescueAltitudeBufferM; //meters
+    uint16_t rescueAltitudeBufferM; // meters
     uint8_t rollMix;
 } gpsRescueConfig_t;
 
 PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
 
-extern float gpsRescueAngle[ANGLE_INDEX_COUNT]; //NOTE: ANGLES ARE IN CENTIDEGREES
+extern float gpsRescueAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void gpsRescueInit(void);
-void updateGPSRescueState(void);
-void rescueNewGpsData(void);
+void gpsRescueUpdate(void);
+void gpsRescueNewGpsData(void);
 
 float gpsRescueGetYawRate(void);
 float gpsRescueGetThrottle(void);

@@ -53,10 +53,11 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/position.h"
+#include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/position.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -249,6 +250,18 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     schedulerSetNextStateTime(rxStateDurationFractionUs[rxState] >> RX_TASK_DECAY_SHIFT);
 }
 
+#ifdef USE_GPS_RESCUE
+static void taskGpsRescue(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (gpsRescueIsConfigured()) {
+        gpsRescueUpdate();
+    } else {
+        schedulerIgnoreTaskStateTime();
+    }
+}
+#endif
 
 #ifdef USE_BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)
@@ -278,6 +291,14 @@ static void taskUpdateMag(timeUs_t currentTimeUs)
 }
 #endif
 
+#if defined(USE_BARO) || defined(USE_GPS)
+static void taskCalculateAltitude(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+    calculateEstimatedAltitude();
+}
+#endif // USE_BARO || USE_GPS
+
 #if defined(USE_RANGEFINDER)
 void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
@@ -292,14 +313,6 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
     rangefinderProcess(getCosTiltAngle());
 }
 #endif
-
-#if defined(USE_BARO) || defined(USE_GPS)
-static void taskCalculateAltitude(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-    calculateEstimatedAltitude();
-}
-#endif // USE_BARO || USE_GPS
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
@@ -337,6 +350,7 @@ task_t tasks[TASK_COUNT];
 
 // Task ID data in .data (initialised data)
 task_attribute_t task_attributes[TASK_COUNT] = {
+
     [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
@@ -355,10 +369,12 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_GYRO] = DEFINE_TASK("GYRO", NULL, NULL, taskGyroSample, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
     [TASK_FILTER] = DEFINE_TASK("FILTER", NULL, NULL, taskFiltering, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
     [TASK_PID] = DEFINE_TASK("PID", NULL, NULL, taskMainPidLoop, TASK_GYROPID_DESIRED_PERIOD, TASK_PRIORITY_REALTIME),
+
 #ifdef USE_ACC
     [TASK_ACCEL] = DEFINE_TASK("ACC", NULL, NULL, taskUpdateAccelerometer, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM),
     [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
 #endif
+
     [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH), // If event-based scheduling doesn't work, fallback to periodic scheduling
     [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH),
 
@@ -368,6 +384,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 
 #ifdef USE_GPS
     [TASK_GPS] = DEFINE_TASK("GPS", NULL, NULL, gpsUpdate, TASK_PERIOD_HZ(TASK_GPS_RATE), TASK_PRIORITY_MEDIUM), // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
+#endif
+
+#ifdef USE_GPS_RESCUE
+    [TASK_GPS_RESCUE] = DEFINE_TASK("GPS_RESCUE", NULL, NULL, taskGpsRescue, TASK_PERIOD_HZ(TASK_GPS_RESCUE_RATE_HZ), TASK_PRIORITY_MEDIUM),
 #endif
 
 #ifdef USE_MAG
@@ -514,6 +534,10 @@ void tasksInit(void)
 
 #ifdef USE_GPS
     setTaskEnabled(TASK_GPS, featureIsEnabled(FEATURE_GPS));
+#endif
+
+#ifdef USE_GPS_RESCUE
+    setTaskEnabled(TASK_GPS_RESCUE, featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_MAG

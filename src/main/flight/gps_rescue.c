@@ -206,7 +206,7 @@ void gpsRescueInit(void)
 /*
  If we have new GPS data, update home heading if possible and applicable.
 */
-void rescueNewGpsData(void)
+void gpsRescueNewGpsData(void)
 {
     newGPSData = true;
 }
@@ -298,7 +298,7 @@ static void rescueAttainPosition(void)
     /**
         Altitude (throttle) controller
     */
-    // currentAltitudeCm is updated at TASK_GPS_RATE since GPS initiates updateGPSRescueState()
+    // currentAltitudeCm is updated at TASK_GPS_RESCUE_RATE_HZ
     const float altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) * 0.01f;
     // height above target in metres (negative means too low)
     // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
@@ -709,7 +709,7 @@ void altitudeAchieved(void)
     rescueState.phase = RESCUE_ROTATE;
 }
 
-void updateGPSRescueState(void)
+void gpsRescueUpdate(void)
 // this runs a lot faster than the GPS Data update rate, and runs whether or not rescue is active
 {
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
