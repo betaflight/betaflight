@@ -246,6 +246,7 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
+
 #endif
 
 #define PID_PROFILE_COUNT 4
@@ -352,6 +353,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_LTM
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
+
 #endif
 #endif
 
