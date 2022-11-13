@@ -21,4 +21,9 @@ void alt_ctrl_run(uint32_t z_ref)
     //  const uint32_t dTime = currentTimeUs - previousTimeUs;
 
     z_ref = rangefinderGetLatestAltitude();
+
+    if(z_ref == 100)
+    {
+            rcData[THROTTLE] = 1300;
+    }
 }
