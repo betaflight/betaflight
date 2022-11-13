@@ -46,7 +46,7 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#if defined(USE_RX_SPI) && !defined(CLOUD_BUILD)
+#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
 #define USE_RX_SFHSS_SPI
@@ -60,14 +60,13 @@
 
 #define USE_RX_SPEKTRUM
 #define USE_RX_SPEKTRUM_TELEMETRY
-#endif
+
+#endif // defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
 #define USE_BEEPER
-
-// MPU interrupt
 
 #if !defined(CLOUD_BUILD)
 
@@ -91,33 +90,6 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-
-#ifdef USE_MAG
-#define USE_MAG_DATA_READY_SIGNAL
-#define USE_MAG_HMC5883
-#define USE_MAG_SPI_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_LIS3MDL
-#define USE_MAG_AK8963
-#define USE_MAG_MPU925X_AK8963
-#define USE_MAG_SPI_AK8963
-#define USE_MAG_AK8975
-#endif
-
-#ifdef USE_BARO
-#define USE_BARO_MS5611
-#define USE_BARO_SPI_MS5611
-#define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
-#define USE_BARO_SPI_LPS
-#define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
-#define USE_BARO_DPS310
-#define USE_BARO_SPI_DPS310
-#endif
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS

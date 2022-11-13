@@ -24,6 +24,44 @@
 
 #include "build/version.h"
 
+
+/*
+    BEGIN HARDWARE INCLUSIONS
+    
+    Simplified options for the moment, i.e. adding USE_MAG or USE_BARO and the entire driver suite is added.
+    In the future we can move to specific drivers being added only - to save flash space.
+*/
+
+#if defined(USE_MAG) && !defined(USE_FAKE_MAG)
+#define USE_MAG_DATA_READY_SIGNAL
+#define USE_MAG_HMC5883
+#define USE_MAG_SPI_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
+#define USE_MAG_AK8963
+#define USE_MAG_MPU925X_AK8963
+#define USE_MAG_SPI_AK8963
+#define USE_MAG_AK8975
+#endif
+
+#if defined(USE_BARO) && !defined(USE_FAKE_BARO)
+#define USE_BARO_MS5611
+#define USE_BARO_SPI_MS5611
+#define USE_BARO_BMP280
+#define USE_BARO_SPI_BMP280
+#define USE_BARO_BMP388
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_LPS
+#define USE_BARO_SPI_LPS
+#define USE_BARO_QMP6988
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_DPS310
+#define USE_BARO_SPI_DPS310
+#define USE_BARO_BMP085
+#endif
+
+/* END HARDWARE INCLUSIONS */
+
 #if defined(USE_VTX_RTC6705_SOFTSPI)
 #define USE_VTX_RTC6705
 #endif
@@ -47,8 +85,7 @@
 #endif
 #endif
 
-// XXX Remove USE_BARO_BMP280 and USE_BARO_MS5611 if USE_I2C is not defined.
-// XXX This should go away buy editing relevant target.h files
+// Remove USE_BARO_BMP280 and USE_BARO_MS5611 if USE_I2C is not defined.
 #if !defined(USE_I2C)
 #if defined(USE_BARO_BMP280)
 #undef USE_BARO_BMP280
@@ -58,16 +95,6 @@
 #endif
 #endif
 
-#if !defined(USE_MAG)
-#undef USE_MAG_DATA_READY_SIGNAL
-#undef USE_MAG_HMC5883
-#undef USE_MAG_SPI_HMC5883
-#undef USE_MAG_QMC5883
-#undef USE_MAG_LIS3MDL
-#undef USE_MAG_AK8963
-#undef USE_MAG_SPI_AK8963
-#endif
-
 #if !defined(USE_BARO) && !defined(USE_GPS)
 #undef USE_VARIO
 #endif
@@ -75,7 +102,6 @@
 #if defined(USE_BARO) && !defined(BARO_EOC_PIN)
 #define BARO_EOC_PIN NONE
 #endif
-
 
 #if !defined(USE_SERIAL_RX)
 #undef USE_SERIALRX_CRSF
@@ -206,8 +232,8 @@
 #endif
 
 #if defined(USE_FLASH_W25M02G)
-#define USE_FLASH_W25N01G
 #define USE_FLASH_W25M
+#define USE_FLASH_W25N01G
 #endif
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)
