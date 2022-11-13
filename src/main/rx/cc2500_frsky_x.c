@@ -227,9 +227,10 @@ static void buildTelemetryFrame(uint8_t *packet)
                 outFrameMarker->raw = responseToSend.raw & SEQUENCE_MARKER_REMOTE_PART;
                 outFrameMarker->data.packetSequenceId = localPacketId;
 
+#if defined(USE_TELEMETRY_SMARTPORT)
                 frame[6] = appendSmartPortData(&frame[7]);
                 memcpy(&telemetryTxBuffer[localPacketId], &frame[6], TELEMETRY_FRAME_SIZE);
-
+#endif
                 localPacketId = (localPacketId + 1) % TELEMETRY_SEQUENCE_LENGTH;
             }
         }
@@ -240,10 +241,12 @@ static void buildTelemetryFrame(uint8_t *packet)
     frame[14]=lcrc;
 }
 
+#if defined(USE_TELEMETRY_SMARTPORT)
 static bool frSkyXReadyToSend(void)
 {
     return true;
 }
+#endif
 
 #if defined(USE_TELEMETRY_SMARTPORT)
 static void frSkyXTelemetrySendByte(uint8_t c)
