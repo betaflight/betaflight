@@ -60,6 +60,25 @@
 #define USE_BARO_BMP085
 #endif
 
+#if defined(USE_RX_SPI) 
+
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define USE_RX_SFHSS_SPI
+#define USE_RX_REDPINE_SPI
+#define USE_RX_FRSKY_SPI_TELEMETRY
+#define USE_RX_CC2500_SPI_PA_LNA
+#define USE_RX_CC2500_SPI_DIVERSITY
+
+#define USE_RX_FLYSKY
+#define USE_RX_FLYSKY_SPI_LED
+
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
+
+#endif // defined(USE_RX_SPI)
+
+
 /* END HARDWARE INCLUSIONS */
 
 #if defined(USE_VTX_RTC6705_SOFTSPI)
