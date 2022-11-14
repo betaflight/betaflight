@@ -50,34 +50,16 @@
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
 
-
-#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
-#define USE_RX_FRSKY_SPI_D
-#define USE_RX_FRSKY_SPI_X
-#define USE_RX_SFHSS_SPI
-#define USE_RX_REDPINE_SPI
-#define USE_RX_FRSKY_SPI_TELEMETRY
-#define USE_RX_CC2500_SPI_PA_LNA
-#define USE_RX_CC2500_SPI_DIVERSITY
-
-#define USE_RX_FLYSKY
-#define USE_RX_FLYSKY_SPI_LED
-
-#define USE_RX_SPEKTRUM
-#define USE_RX_SPEKTRUM_TELEMETRY
-#endif
-
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
+
+#define USE_BEEPER
+
+#if !defined(CLOUD_BUILD)
 
 #define USE_MAG
 #define USE_BARO
 
-#define USE_BEEPER
-
-// MPU interrupt
-
-#if !defined(CLOUD_BUILD)
 #define USE_ACC
 #define USE_GYRO
 
@@ -95,40 +77,9 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-
-#ifdef USE_MAG
-#define USE_MAG_DATA_READY_SIGNAL
-#define USE_MAG_HMC5883
-#define USE_MAG_SPI_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_LIS3MDL
-#define USE_MAG_AK8963
-#define USE_MAG_MPU925X_AK8963
-#define USE_MAG_SPI_AK8963
-#define USE_MAG_AK8975
-#endif
-
-#ifdef USE_BARO
-#define USE_BARO_MS5611
-#define USE_BARO_SPI_MS5611
-#define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
-#define USE_BARO_SPI_LPS
-#define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
-#define USE_BARO_DPS310
-#define USE_BARO_SPI_DPS310
-#endif
-
-
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
-
-#define USE_BARO_BMP085
 
 #define USE_VTX_RTC6705
 #define USE_VTX_RTC6705_SOFTSPI
@@ -147,6 +98,8 @@
 #define USE_RX_SPI
 #define USE_MAX7456
 
+#define USE_FLASHFS
+#define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
 #define USE_FLASH_W25N01G          // 1Gb NAND flash support
 #define USE_FLASH_W25M             // Stacked die support
@@ -162,9 +115,6 @@
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
 #endif
-
-#define USE_FLASHFS
-#define USE_FLASH_TOOLS
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
