@@ -123,6 +123,5 @@
 #endif
 
 #include "target.h"
-#include "target/common_deprecated_post.h"
 #include "target/common_post.h"
 #include "target/common_defaults_post.h"
