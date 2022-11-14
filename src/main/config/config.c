@@ -419,7 +419,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RX_PPM);
 #endif
 
-#ifndef USE_SERIAL_RX
+#ifndef USE_SERIALRX
     featureDisableImmediate(FEATURE_RX_SERIAL);
 #endif
 

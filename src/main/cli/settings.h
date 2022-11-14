@@ -48,7 +48,7 @@ typedef enum {
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
     TABLE_SERIAL_RX,
 #endif
 #ifdef USE_RX_SPI

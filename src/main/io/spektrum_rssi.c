@@ -19,7 +19,7 @@
  */
 
 #include "platform.h"
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
 #if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
 
 #include "config/feature.h"
@@ -213,4 +213,4 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[])
 #endif // USE_SPEKTRUM_FAKE_RSSI
 }
 #endif // USE_SPEKTRUM_REAL_RSSI || USE_SPEKTRUM_FAKE_RSSI
-#endif // USE_SERIAL_RX
+#endif // USE_SERIALRX
