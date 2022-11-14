@@ -28,7 +28,7 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-#if (!defined(CLOUD_BUILD))
+#if !defined(CLOUD_BUILD) && !defined(SITL)
 #define USE_DSHOT
 #endif
 
