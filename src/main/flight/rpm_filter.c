@@ -161,10 +161,11 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
         // update notch
         biquadFilterUpdate(template, frequencyHz, rpmFilter.looptimeUs, rpmFilter.q, FILTER_NOTCH, weight);
 
-        // copy notch properties to corresponding notches (clones) on PITCH and YAW
+        // copy notch properties to corresponding notches on PITCH and YAW
         for (int axis = 1; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilter_t *clone = &rpmFilter.notch[axis][motorIndex][harmonicIndex];
-            memcpy(clone, template, sizeof(biquadFilter_t));
+            biquadFilter_t *src = template;
+            biquadFilter_t *dst = &rpmFilter.notch[axis][motorIndex][harmonicIndex];
+            memcpy(dst, src, sizeof(biquadFilter_t));
         }
 
         // cycle through all notches on ROLL (takes RPM_FILTER_DURATION_S at max.)
