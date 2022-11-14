@@ -239,7 +239,7 @@ extern uint8_t _dmaram_end__;
 
 #if (!defined(CLOUD_BUILD))
 #define USE_PPM
-#define USE_SERIAL_RX
+#define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_GHST       // ImmersionRC Ghost Protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
