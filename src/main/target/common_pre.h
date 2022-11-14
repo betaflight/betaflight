@@ -28,14 +28,21 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
+#if !defined(CLOUD_BUILD) && !defined(SITL)
+#define USE_DSHOT
+#endif
+
+#ifdef USE_DSHOT
+#define USE_DSHOT_BITBANG
+#define USE_DSHOT_TELEMETRY
+#define USE_DSHOT_TELEMETRY_STATS
+#endif
+
 #ifdef STM32F4
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA
 #endif
-#define USE_DSHOT
-#define USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
-#define USE_DSHOT_TELEMETRY_STATS
+
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
@@ -59,10 +66,6 @@
 #define USE_ITCM_RAM
 #define ITCM_RAM_OPTIMISATION "-O2", "-freorder-blocks-algorithm=simple"
 #define USE_FAST_DATA
-#define USE_DSHOT
-#define USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
-#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
@@ -80,12 +83,13 @@
 #endif // STM32F7
 
 #ifdef STM32H7
+
+#ifdef USE_DSHOT
+#define USE_DSHOT_CACHE_MGMT
+#endif
+
 #define USE_ITCM_RAM
 #define USE_FAST_DATA
-#define USE_DSHOT
-#define USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
-#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
@@ -98,15 +102,10 @@
 #define USE_USB_MSC
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
-#define USE_DSHOT_CACHE_MGMT
 #define USE_LATE_TASK_STATISTICS
 #endif
 
 #ifdef STM32G4
-#define USE_DSHOT
-#define USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
-#define USE_DSHOT_TELEMETRY_STATS
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_OVERCLOCK
@@ -246,7 +245,13 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
-
+#define USE_TELEMETRY
+#define USE_TELEMETRY_FRSKY_HUB
+#define USE_TELEMETRY_SMARTPORT
+#define USE_SERIALRX_FPORT      // FrSky FPort
+#define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_GHST
+#define USE_TELEMETRY_SRXL
 #endif
 
 #define PID_PROFILE_COUNT 4
@@ -259,22 +264,11 @@ extern uint8_t _dmaram_end__;
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #define USE_SERVOS
 
-#if (!defined(CLOUD_BUILD))
-#define USE_TELEMETRY
-#define USE_TELEMETRY_FRSKY_HUB
-#define USE_TELEMETRY_SMARTPORT
-#endif
-
-
 #define USE_GYRO_OVERFLOW_CHECK
 #define USE_YAW_SPIN_RECOVERY
-#define USE_DSHOT_DMAR
 
-#if (!defined(CLOUD_BUILD))
-#define USE_SERIALRX_FPORT      // FrSky FPort
-#define USE_TELEMETRY_CRSF
-#define USE_TELEMETRY_GHST
-#define USE_TELEMETRY_SRXL
+#ifdef USE_DSHOT
+#define USE_DSHOT_DMAR
 #endif
 
 #if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 12))
