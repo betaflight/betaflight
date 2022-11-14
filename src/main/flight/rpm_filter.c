@@ -21,7 +21,6 @@
 
 #include <float.h>
 #include <math.h>
-#include <string.h>
 
 #include "platform.h"
 
@@ -163,9 +162,13 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
 
         // copy notch properties to corresponding notches on PITCH and YAW
         for (int axis = 1; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilter_t *src = template;
-            biquadFilter_t *dst = &rpmFilter.notch[axis][motorIndex][harmonicIndex];
-            memcpy(dst, src, sizeof(biquadFilter_t));
+            biquadFilter_t *dest = &rpmFilter.notch[axis][motorIndex][harmonicIndex];
+            dest->b0 = template->b0;
+            dest->b1 = template->b1;
+            dest->b2 = template->b2;
+            dest->a1 = template->a1;
+            dest->a2 = template->a2;
+            dest->weight = template->weight;
         }
 
         // cycle through all notches on ROLL (takes RPM_FILTER_DURATION_S at max.)
@@ -178,6 +181,8 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
 
 FAST_CODE float rpmFilterApply(const int axis, float value)
 {
+    // Iterate over all notches on axis and apply each one to value.
+    // Order of application doesn't matter because biquads are linear time-invariant filters.
     for (int i = 0; i < rpmFilter.numHarmonics; i++) {
         for (int motor = 0; motor < getMotorCount(); motor++) {
             value = biquadFilterApplyDF1Weighted(&rpmFilter.notch[axis][motor][i], value);
