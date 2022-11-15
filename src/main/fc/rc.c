@@ -46,6 +46,8 @@
 #include "flight/gps_rescue.h"
 #include "flight/pid_init.h"
 
+#include "io/beeper.h"
+
 #include "pg/rx.h"
 
 #include "rx/rx.h"
@@ -672,6 +674,14 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)) && (!FLIGHT_MODE(GPS_RESCUE_MODE)))) {
             rcCommand[YAW] = rcCommandBuff.Z;
         }
+    }
+
+    if(!IS_RC_MODE_ACTIVE(BOXRANGEFINDER))
+    {
+        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
+    }else{
+        //rcCommand[THROTTLE] = 1300;
+         beeper(BEEPER_ALL);
     }
 }
 
