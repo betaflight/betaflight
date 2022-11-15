@@ -119,3 +119,12 @@ typedef struct simpleLowpassFilter_s {
 
 int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal);
 void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift);
+
+typedef struct meanAccumulator_s {
+    int32_t accumulator;
+    int32_t count;
+} meanAccumulator_t;
+
+void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal);
+int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue);
+void meanAccumulatorInit(meanAccumulator_t *filter);

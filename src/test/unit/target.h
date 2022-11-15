@@ -33,7 +33,7 @@
 #define USE_BARO
 #define USE_GPS
 #define USE_DASHBOARD
-#define USE_SERIAL_RX
+#define USE_SERIALRX
 #define USE_RX_MSP
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol

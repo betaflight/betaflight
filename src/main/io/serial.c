@@ -115,7 +115,7 @@ static uint8_t serialPortCount;
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
-#define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
+#define BAUD_RATE_COUNT ARRAYLEN(baudRates) 
 
 serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e identifier)
 {
@@ -205,7 +205,8 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
     return NULL;
 }
 
-serialPortUsage_t *findSerialPortUsageByPort(serialPort_t *serialPort) {
+serialPortUsage_t *findSerialPortUsageByPort(serialPort_t *serialPort)
+{
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsage_t *candidate = &serialPortUsageList[index];
@@ -271,9 +272,9 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 }
 
 #ifdef USE_TELEMETRY
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK | FUNCTION_VTX_MSP)
 #else
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | FUNCTION_VTX_MSP)
 #endif
 
 bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
@@ -301,9 +302,16 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
         }
 
         uint8_t bitCount = BITCOUNT(portConfig->functionMask);
+
+#ifdef USE_VTX_MSP
+        if ((portConfig->functionMask & FUNCTION_VTX_MSP) && bitCount == 1) { // VTX MSP has to be shared with RX or MSP serial
+            return false;
+        }
+#endif
+
         if (bitCount > 1) {
             // shared
-            if (bitCount > 2) {
+            if (bitCount > (BITCOUNT(FUNCTION_MSP | ALL_FUNCTIONS_SHARABLE_WITH_MSP))) {
                 return false;
             }
 

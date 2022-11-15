@@ -271,25 +271,25 @@ timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
 }
 
 // Called by tasks executing what are known to be short states
-void schedulerIgnoreTaskStateTime()
+void schedulerIgnoreTaskStateTime(void)
 {
     ignoreCurrentTaskExecRate = true;
     ignoreCurrentTaskExecTime = true;
 }
 
 // Called by tasks with state machines to only count one state as determining rate
-void schedulerIgnoreTaskExecRate()
+void schedulerIgnoreTaskExecRate(void)
 {
     ignoreCurrentTaskExecRate = true;
 }
 
 // Called by tasks without state machines executing in what is known to be a shorter time than peak
-void schedulerIgnoreTaskExecTime()
+void schedulerIgnoreTaskExecTime(void)
 {
     ignoreCurrentTaskExecTime = true;
 }
 
-bool schedulerGetIgnoreTaskExecTime()
+bool schedulerGetIgnoreTaskExecTime(void)
 {
     return ignoreCurrentTaskExecTime;
 }
@@ -365,7 +365,7 @@ FAST_CODE void schedulerSetNextStateTime(timeDelta_t nextStateTime)
     taskNextStateTime = nextStateTime;
 }
 
-FAST_CODE timeDelta_t schedulerGetNextStateTime()
+FAST_CODE timeDelta_t schedulerGetNextStateTime(void)
 {
     return currentTask->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT;
 }

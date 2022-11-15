@@ -22,7 +22,6 @@
 
 #include "pg/pg.h"
 #include "drivers/barometer/barometer.h"
-#include "flight/position.h"
 
 typedef enum {
     BARO_DEFAULT = 0,
@@ -43,23 +42,19 @@ typedef struct barometerConfig_s {
     uint8_t baro_i2c_device;
     uint8_t baro_i2c_address;
     uint8_t baro_hardware;                  // Barometer hardware to use
-    uint16_t baro_noise_lpf;                // lowpass cutoff (value / 100) Hz for baro smoothing
-    uint16_t baro_vario_lpf;                // lowpass for (value / 100) Hz baro derivative smoothing
     ioTag_t baro_eoc_tag;
     ioTag_t baro_xclr_tag;
 } barometerConfig_t;
 
 PG_DECLARE(barometerConfig_t, barometerConfig);
 
-// #define TASK_BARO_DENOM       3
-// #define TASK_BARO_RATE_HZ     (TASK_ALTITUDE_RATE_HZ / TASK_BARO_DENOM)
-#define TASK_BARO_RATE_HZ        40
+#define TASK_BARO_RATE_HZ 40                // Will be overwritten by the baro device driver
 
 typedef struct baro_s {
     baroDev_t dev;
-    float BaroAlt;
-    int32_t baroTemperature;             // Use temperature for telemetry
-    int32_t baroPressure;                // Use pressure for telemetry
+    float altitude;
+    int32_t temperature;                    // Use temperature for telemetry
+    int32_t pressure;                       // Use pressure for telemetry
 } baro_t;
 
 extern baro_t baro;
@@ -71,6 +66,4 @@ void baroStartCalibration(void);
 void baroSetGroundLevel(void);
 uint32_t baroUpdate(timeUs_t currentTimeUs);
 bool isBaroReady(void);
-bool isBaroSampleReady(void);
-float baroUpsampleAltitude(void);
-void performBaroCalibrationCycle(void);
+float getBaroAltitude(void);

@@ -129,28 +129,34 @@ i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 static volatile uint16_t i2cErrorCount = 0;
 
-void I2C1_ER_IRQHandler(void) {
+void I2C1_ER_IRQHandler(void)
+{
     i2c_er_handler(I2CDEV_1);
 }
 
-void I2C1_EV_IRQHandler(void) {
+void I2C1_EV_IRQHandler(void)
+{
     i2c_ev_handler(I2CDEV_1);
 }
 
-void I2C2_ER_IRQHandler(void) {
+void I2C2_ER_IRQHandler(void)
+{
     i2c_er_handler(I2CDEV_2);
 }
 
-void I2C2_EV_IRQHandler(void) {
+void I2C2_EV_IRQHandler(void)
+{
     i2c_ev_handler(I2CDEV_2);
 }
 
 #ifdef STM32F4
-void I2C3_ER_IRQHandler(void) {
+void I2C3_ER_IRQHandler(void)
+{
     i2c_er_handler(I2CDEV_3);
 }
 
-void I2C3_EV_IRQHandler(void) {
+void I2C3_EV_IRQHandler(void)
+{
     i2c_ev_handler(I2CDEV_3);
 }
 #endif
@@ -284,8 +290,8 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     return i2cReadBuffer(device, addr_, reg_, len, buf) && i2cWait(device);
 }
 
-static void i2c_er_handler(I2CDevice device) {
-
+static void i2c_er_handler(I2CDevice device)
+{
     I2C_TypeDef *I2Cx = i2cDevice[device].hardware->reg;
 
     i2cState_t *state = &i2cDevice[device].state;
@@ -317,8 +323,8 @@ static void i2c_er_handler(I2CDevice device) {
     state->busy = 0;
 }
 
-void i2c_ev_handler(I2CDevice device) {
-
+void i2c_ev_handler(I2CDevice device)
+{
     I2C_TypeDef *I2Cx = i2cDevice[device].hardware->reg;
 
     i2cState_t *state = &i2cDevice[device].state;

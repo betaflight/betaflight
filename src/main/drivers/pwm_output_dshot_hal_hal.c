@@ -81,18 +81,15 @@ void pwmChannelDMAStart(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t *pDa
     case TIM_CHANNEL_1:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t)pData, (uint32_t)&htim->Instance->CCR1, Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC1);
-    break;
-
+        break;
     case TIM_CHANNEL_2:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t)pData, (uint32_t)&htim->Instance->CCR2, Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC2);
         break;
-
     case TIM_CHANNEL_3:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t)pData, (uint32_t)&htim->Instance->CCR3,Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC3);
         break;
-
     case TIM_CHANNEL_4:
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t)pData, (uint32_t)&htim->Instance->CCR4, Length);
         __HAL_TIM_ENABLE_DMA(htim, TIM_DMA_CC4);
@@ -110,15 +107,12 @@ void pwmChannelDMAStop(TIM_HandleTypeDef *htim, uint32_t Channel)
     case TIM_CHANNEL_1:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
         break;
-
     case TIM_CHANNEL_2:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC2);
         break;
-
     case TIM_CHANNEL_3:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC3);
         break;
-
     case TIM_CHANNEL_4:
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
         break;
@@ -300,7 +294,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 #endif
 
-    motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, pupMode);
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_LOW, pupMode);
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
 

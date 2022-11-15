@@ -189,7 +189,8 @@ static int32_t applyMedianFilter(int32_t newReading)
     return medianFilterReady ? quickMedianFilter5(filterSamples) : newReading;
 }
 
-static int16_t computePseudoSnr(int32_t newReading) {
+static int16_t computePseudoSnr(int32_t newReading)
+{
     #define SNR_SAMPLES 5
     static int16_t snrSamples[SNR_SAMPLES];
     static uint8_t snrSampleIndex = 0;
@@ -229,7 +230,8 @@ void rangefinderUpdate(void)
     }
 }
 
-bool isSurfaceAltitudeValid() {
+bool isSurfaceAltitudeValid(void)
+{
 
     /*
      * Preconditions: raw and calculated altidude > 0
@@ -336,7 +338,8 @@ int32_t rangefinderGetLatestAltitude(void)
     return rangefinder.calculatedAltitude;
 }
 
-int32_t rangefinderGetLatestRawAltitude(void) {
+int32_t rangefinderGetLatestRawAltitude(void)
+{
     return rangefinder.rawAltitude;
 }
 

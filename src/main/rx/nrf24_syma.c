@@ -150,14 +150,14 @@ STATIC_UNIT_TESTED bool symaCheckBindPacket(const uint8_t *packet)
 STATIC_UNIT_TESTED uint16_t symaConvertToPwmUnsigned(uint8_t val)
 {
     uint32_t ret = val;
-    ret = ret * (PWM_RANGE_MAX - PWM_RANGE_MIN) / UINT8_MAX + PWM_RANGE_MIN;
+    ret = ret * PWM_RANGE / UINT8_MAX + PWM_RANGE_MIN;
     return (uint16_t)ret;
 }
 
 STATIC_UNIT_TESTED uint16_t symaConvertToPwmSigned(uint8_t val)
 {
     int32_t ret = val & 0x7f;
-    ret = (ret * (PWM_RANGE_MAX - PWM_RANGE_MIN)) / (2 * INT8_MAX);
+    ret = ret * PWM_RANGE / (2 * INT8_MAX);
     if (val & 0x80) {// sign bit set
         ret = -ret;
     }

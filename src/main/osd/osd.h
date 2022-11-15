@@ -149,7 +149,7 @@ typedef enum {
     OSD_FLIGHT_DIST,
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
-    OSD_DISPLAY_NAME,
+    OSD_PILOT_NAME,
     OSD_ESC_RPM_FREQ,
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
@@ -161,6 +161,10 @@ typedef enum {
     OSD_TOTAL_FLIGHTS,
     OSD_UP_DOWN_REFERENCE,
     OSD_TX_UPLINK_POWER,
+    OSD_WATT_HOURS_DRAWN,
+    OSD_AUX_VALUE,
+    OSD_READY_MODE,
+    OSD_RSNR_VALUE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -200,6 +204,8 @@ typedef enum {
     OSD_STAT_TOTAL_TIME,
     OSD_STAT_TOTAL_DIST,
     OSD_STAT_MIN_RSSI_DBM,
+    OSD_STAT_WATT_HOURS_DRAWN,
+    OSD_STAT_MIN_RSNR,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
@@ -245,6 +251,7 @@ typedef enum {
     OSD_WARNING_LINK_QUALITY,
     OSD_WARNING_RSSI_DBM,
     OSD_WARNING_OVER_CAP,
+    OSD_WARNING_RSNR,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -259,9 +266,9 @@ typedef enum {
 // Make sure the number of warnings do not exceed the available 32bit storage
 STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 
-#define ESC_RPM_ALARM_OFF -1
-#define ESC_TEMP_ALARM_OFF INT8_MIN
-#define ESC_CURRENT_ALARM_OFF -1
+#define ESC_RPM_ALARM_OFF         -1
+#define ESC_TEMP_ALARM_OFF         0
+#define ESC_CURRENT_ALARM_OFF     -1
 
 #define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
 
@@ -282,7 +289,7 @@ typedef struct osdConfig_s {
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;
     uint32_t enabled_stats;
-    int8_t esc_temp_alarm;
+    uint8_t esc_temp_alarm;
     int16_t esc_rpm_alarm;
     int16_t esc_current_alarm;
     uint8_t core_temp_alarm;
@@ -292,6 +299,7 @@ typedef struct osdConfig_s {
     char profile[OSD_PROFILE_COUNT][OSD_PROFILE_NAME_LENGTH + 1];
     uint16_t link_quality_alarm;
     int16_t rssi_dbm_alarm;
+    int16_t rsnr_alarm;
     uint8_t gps_sats_show_hdop;
     int8_t rcChannels[OSD_RCCHANNELS_COUNT];  // RC channel values to display, -1 if none
     uint8_t displayPortDevice;                // osdDisplayPortDevice_e
@@ -306,6 +314,9 @@ typedef struct osdConfig_s {
     #ifdef USE_CRAFTNAME_MSGS
     uint8_t osd_craftname_msgs;               // Insert LQ/RSSI-dBm and warnings into CraftName
     #endif //USE_CRAFTNAME_MSGS
+    uint8_t aux_channel;
+    uint16_t aux_scale;
+    uint8_t aux_symbol;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
@@ -326,10 +337,12 @@ typedef struct statistic_s {
     int32_t max_altitude;
     int16_t max_distance;
     float max_g_force;
+    int16_t max_esc_temp_ix;
     int16_t max_esc_temp;
     int32_t max_esc_rpm;
     uint16_t min_link_quality;
     int16_t min_rssi_dbm;
+    int16_t min_rsnr;
 } statistic_t;
 
 extern timeUs_t resumeRefreshAt;
@@ -340,6 +353,7 @@ extern float osdGForce;
 #ifdef USE_ESC_SENSOR
 extern escSensorData_t *osdEscDataCombined;
 #endif
+extern uint16_t osdAuxValue;
 
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);
 bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);

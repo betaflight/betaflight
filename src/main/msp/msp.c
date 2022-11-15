@@ -105,6 +105,7 @@
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
+#include "io/vtx_msp.h"
 
 #include "msp/msp_box.h"
 #include "msp/msp_protocol.h"
@@ -123,6 +124,9 @@
 #include "pg/motor.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
+#ifdef USE_RX_EXPRESSLRS
+#include "pg/rx_spi_expresslrs.h"
+#endif
 #include "pg/usb.h"
 #include "pg/vcd.h"
 #include "pg/vtx_table.h"
@@ -138,7 +142,6 @@
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
@@ -663,9 +666,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
         targetCapabilities |= BIT(TARGET_HAS_SOFTSERIAL);
 #endif
-#if defined(USE_UNIFIED_TARGET)
         targetCapabilities |= BIT(TARGET_IS_UNIFIED);
-#endif
 #if defined(USE_FLASH_BOOT_LOADER)
         targetCapabilities |= BIT(TARGET_HAS_FLASH_BOOTLOADER);
 #endif
@@ -944,6 +945,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_FRSKYOSD (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 #define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
+#define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
 
         uint8_t osdFlags = 0;
 #if defined(USE_OSD)
@@ -962,6 +964,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
             break;
         case OSD_DISPLAYPORT_DEVICE_FRSKYOSD:
             osdFlags |= OSD_FLAGS_OSD_HARDWARE_FRSKYOSD;
+            if (displayIsReady) {
+                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
+            }
+
+            break;
+        case OSD_DISPLAYPORT_DEVICE_MSP:
+            osdFlags |= OSD_FLAGS_OSD_MSP_DEVICE;
             if (displayIsReady) {
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
@@ -1053,9 +1062,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
-static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
+static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
+
+#if !defined(USE_VTX_COMMON) || !defined(USE_VTX_MSP)
+    UNUSED(srcDesc);
+#endif
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
@@ -1138,11 +1151,11 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         }
         break;
 
-    case MSP_NAME:
+case MSP_NAME:
         {
-            const int nameLen = strlen(pilotConfig()->name);
+            const int nameLen = strlen(pilotConfig()->craftName);
             for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, pilotConfig()->name[i]);
+                sbufWriteU8(dst, pilotConfig()->craftName[i]);
             }
         }
         break;
@@ -1206,14 +1219,35 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 
 #ifdef USE_DSHOT_TELEMETRY
             if (motorConfig()->dev.useDshotTelemetry) {
-                rpm = (int)getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount;
+                rpm = erpmToRpm(getDshotTelemetry(i));
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
+
+
 #ifdef USE_DSHOT_TELEMETRY_STATS
                 if (isDshotMotorTelemetryActive(i)) {
                     invalidPct = getDshotTelemetryMotorInvalidPercent(i);
                 }
 #endif
+
+
+                // Provide extended dshot telemetry
+                if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
+                    // Temperature Celsius [0, 1, ..., 255] in degree Celsius, just like Blheli_32 and KISS
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                        escTemperature = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
+                    }
+
+                    // Current -> 0-255A step 1A
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
+                        escCurrent = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
+                    }
+
+                    // Voltage -> 0-63,75V step 0,25V
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
+                    	escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
+                    }
+                }
             }
 #endif
 
@@ -1221,7 +1255,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
                 escSensorData_t *escData = getEscSensorData(i);
                 if (!rpmDataAvailable) {  // We want DSHOT telemetry RPM data (if available) to have precedence
-                    rpm = calcEscRpm(escData->rpm);
+                    rpm = erpmToRpm(escData->rpm);
                     rpmDataAvailable = true;
                 }
                 escTemperature = escData->temperature;
@@ -1328,10 +1362,10 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
-        sbufWriteU8(dst, currentControlRateProfile->tpa_rate);
+        sbufWriteU8(dst, 0);   // was currentControlRateProfile->tpa_rate
         sbufWriteU8(dst, currentControlRateProfile->thrMid8);
         sbufWriteU8(dst, currentControlRateProfile->thrExpo8);
-        sbufWriteU16(dst, currentControlRateProfile->tpa_breakpoint);
+        sbufWriteU16(dst, 0);   // was currentControlRateProfile->tpa_breakpoint
         sbufWriteU8(dst, currentControlRateProfile->rcExpo[FD_YAW]);
         sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_YAW]);
         sbufWriteU8(dst, currentControlRateProfile->rcRates[FD_PITCH]);
@@ -1426,9 +1460,10 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #endif
         break;
 
-#if defined(USE_ESC_SENSOR)
     // Deprecated in favor of MSP_MOTOR_TELEMETY as of API version 1.42
+    // Used by DJI FPV
     case MSP_ESC_SENSOR_DATA:
+#if defined(USE_ESC_SENSOR)
         if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
@@ -1436,12 +1471,23 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
                 sbufWriteU8(dst, escData->temperature);
                 sbufWriteU16(dst, escData->rpm);
             }
-        } else {
+        } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+        if (motorConfig()->dev.useDshotTelemetry) {
+            sbufWriteU8(dst, getMotorCount());
+            for (int i = 0; i < getMotorCount(); i++) {
+                sbufWriteU8(dst, dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]);
+                sbufWriteU16(dst, getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount);
+            }
+        }
+        else
+#endif
+        {
             unsupportedCommand = true;
         }
 
         break;
-#endif
 
 #ifdef USE_GPS
     case MSP_GPS_CONFIG:
@@ -1463,12 +1509,12 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
         // Added in API version 1.44    
-        sbufWriteU16(dst, gpsSol.hdop);
+        sbufWriteU16(dst, gpsSol.dop.hdop);
         break;
 
     case MSP_COMP_GPS:
         sbufWriteU16(dst, GPS_distanceToHome);
-        sbufWriteU16(dst, GPS_directionToHome);
+        sbufWriteU16(dst, GPS_directionToHome / 10); // resolution increased in Betaflight 4.4 by factor of 10, this maintains backwards compatibility for DJI OSD
         sbufWriteU8(dst, GPS_update & 1);
         break;
 
@@ -1493,6 +1539,7 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, gpsRescueConfig()->throttleHover);
         sbufWriteU8(dst,  gpsRescueConfig()->sanityChecks);
         sbufWriteU8(dst,  gpsRescueConfig()->minSats);
+
         // Added in API version 1.43
         sbufWriteU16(dst, gpsRescueConfig()->ascendRate);
         sbufWriteU16(dst, gpsRescueConfig()->descendRate);
@@ -1577,6 +1624,15 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, rxConfig()->rc_smoothing_mode);
 #else
         sbufWriteU8(dst, 0);
+#endif
+
+        // Added in MSP API 1.45
+#ifdef USE_RX_EXPRESSLRS
+        sbufWriteData(dst, rxExpressLrsSpiConfig()->UID, sizeof(rxExpressLrsSpiConfig()->UID));
+#else
+        uint8_t emptyUid[6];
+        memset(emptyUid, 0, sizeof(emptyUid));
+        sbufWriteData(dst, &emptyUid, sizeof(emptyUid));
 #endif
         break;
     case MSP_FAILSAFE_CONFIG:
@@ -1973,6 +2029,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
 #else
         sbufWriteU8(dst, 0);
 #endif
+        sbufWriteU8(dst, currentPidProfile->tpa_mode);
+        sbufWriteU8(dst, currentPidProfile->tpa_rate);
+        sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
         break;
     case MSP_SENSOR_CONFIG:
 #if defined(USE_ACC)
@@ -2026,7 +2085,9 @@ static bool mspProcessOutCommand(int16_t cmdMSP, sbuf_t *dst)
             sbufWriteU8(dst, 0);
             sbufWriteU8(dst, 0);
 #endif
-
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -2304,6 +2365,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 
@@ -2320,6 +2384,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif // USE_VTX_TABLE
@@ -2441,6 +2508,38 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
 
         break;
+
+    case MSP2_GET_TEXT:
+        {
+            // type byte, then length byte followed by the actual characters
+            const uint8_t textType = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+
+            char* textVar;
+
+            switch (textType) {
+                case MSP2TEXT_PILOT_NAME:
+                    textVar = pilotConfigMutable()->pilotName;
+                    break;
+
+                case MSP2TEXT_CRAFT_NAME:
+                    textVar = pilotConfigMutable()->craftName;
+                    break;
+
+                default:
+                    return MSP_RESULT_ERROR;
+            }
+
+            const uint8_t textLength = strlen(textVar);
+
+            //  type byte, then length byte followed by the actual characters
+            sbufWriteU8(dst, textType);
+            sbufWriteU8(dst, textLength);
+            for (unsigned int i = 0; i < textLength; i++) {
+                sbufWriteU8(dst, textVar[i]);
+            }
+        }
+        break;
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -2617,11 +2716,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 currentControlRateProfile->rates[i] = sbufReadU8(src);
             }
 
-            value = sbufReadU8(src);
-            currentControlRateProfile->tpa_rate = MIN(value, CONTROL_RATE_CONFIG_TPA_MAX);
+            sbufReadU8(src);    // tpa_rate is moved to PID profile
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
-            currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
+            sbufReadU16(src);   // tpa_breakpoint is moved to PID profile
 
             if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcExpo[FD_YAW] = sbufReadU8(src);
@@ -2974,7 +3072,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
-            sbufReadU16(src); // was currentPidProfile->itermAcceleratorGain
+            sbufReadU16(src); // was currentPidProfile->itermThrottleThreshold
             currentPidProfile->anti_gravity_gain = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src) >= 2) {
@@ -3080,6 +3178,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
+        if (sbufBytesRemaining(src) >= 4) {
+            // Added in API 1.45
+            currentPidProfile->tpa_mode = sbufReadU8(src);
+            currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
+            currentPidProfile->tpa_breakpoint = sbufReadU16(src);
+        }
+
         pidInitConfig(currentPidProfile);
         initEscEndpoints();
         mixerInitProfile();
@@ -3261,6 +3366,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 sbufReadU8(src);
 #endif
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -3308,6 +3416,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 
@@ -3332,6 +3443,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             } else {
                 return MSP_RESULT_ERROR;
             }
+#ifdef USE_VTX_MSP
+            setMspVtxDeviceStatusReady(srcDesc);
+#endif
         }
         break;
 #endif
@@ -3561,6 +3675,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
+        if (sbufBytesRemaining(src) >= 6) {
+            // Added in MSP API 1.45
+#ifdef USE_RX_EXPRESSLRS
+            sbufReadData(src, rxExpressLrsSpiConfigMutable()->UID, 6);
+#else
+            uint8_t emptyUid[6];
+            sbufReadData(src, emptyUid, 6);
+#endif        
+        }
         break;
     case MSP_SET_FAILSAFE_CONFIG:
         failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
@@ -3700,9 +3823,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
     case MSP_SET_NAME:
-        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
+        memset(pilotConfigMutable()->craftName, 0, ARRAYLEN(pilotConfig()->craftName));
         for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            pilotConfigMutable()->name[i] = sbufReadU8(src);
+            pilotConfigMutable()->craftName[i] = sbufReadU8(src);
         }
 #ifdef USE_OSD
         osdAnalyzeActiveElements();
@@ -3779,6 +3902,40 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         break;
 #endif
+
+    case MSP2_SET_TEXT:
+        {
+            // type byte, then length byte followed by the actual characters
+            const uint8_t textType = sbufReadU8(src);
+
+            char* textVar;
+            const uint8_t textLength = MIN(MAX_NAME_LENGTH, sbufReadU8(src));
+            switch (textType) {
+                case MSP2TEXT_PILOT_NAME:
+                    textVar = pilotConfigMutable()->pilotName;
+                    break;
+
+                case MSP2TEXT_CRAFT_NAME:
+                    textVar = pilotConfigMutable()->craftName;
+                    break;
+
+                default:
+                    return MSP_RESULT_ERROR;
+            }
+
+            memset(textVar, 0, strlen(textVar));
+            for (unsigned int i = 0; i < textLength; i++) {
+                textVar[i] = sbufReadU8(src);
+            }
+
+#ifdef USE_OSD
+            if (textType == MSP2TEXT_PILOT_NAME || textType == MSP2TEXT_CRAFT_NAME) {
+                osdAnalyzeActiveElements();
+            }
+#endif
+        }
+        break;
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
@@ -4047,7 +4204,7 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
 
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
-    } else if (mspProcessOutCommand(cmdMSP, dst)) {
+    } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
     } else if ((ret = mspFcProcessOutCommandWithArg(srcDesc, cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;

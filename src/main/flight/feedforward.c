@@ -48,7 +48,8 @@ typedef struct laggedMovingAverageCombined_s {
 } laggedMovingAverageCombined_t;
 laggedMovingAverageCombined_t  setpointDeltaAvg[XYZ_AXIS_COUNT];
 
-void feedforwardInit(const pidProfile_t *pidProfile) {
+void feedforwardInit(const pidProfile_t *pidProfile)
+{
     const float feedforwardMaxRateScale = pidProfile->feedforward_max_rate_limit * 0.01f;
     averagingCount = pidProfile->feedforward_averaging + 1;
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -58,7 +59,8 @@ void feedforwardInit(const pidProfile_t *pidProfile) {
     }
 }
 
-FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging) {
+FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging)
+{
 
     if (newRcFrame) {
 
@@ -191,13 +193,14 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
     return setpointDelta[axis]; // the value used by the PID code
 }
 
-FAST_CODE_NOINLINE float applyFeedforwardLimit(int axis, float value, float Kp, float currentPidSetpoint) {
+FAST_CODE_NOINLINE float applyFeedforwardLimit(int axis, float value, float Kp, float currentPidSetpoint)
+{
     switch (axis) {
     case FD_ROLL:
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(value));
         break;
     case FD_PITCH:
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(value));
         break;
     }
 
@@ -210,7 +213,7 @@ FAST_CODE_NOINLINE float applyFeedforwardLimit(int axis, float value, float Kp, 
     }
 
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, value);
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(value));
     }
 
     return value;

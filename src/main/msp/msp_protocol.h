@@ -317,7 +317,7 @@
 #define MSP_SET_MOTOR_CONFIG     222    //out message         Motor configuration (min/max throttle, etc)
 #define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration
 //DEPRECATED - #define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
-#define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed, sanityChecks and minSats
+#define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed and sanityChecks
 #define MSP_SET_GPS_RESCUE_PIDS  226    //in message          GPS Rescues's throttleP and velocity PIDS + yaw P
 #define MSP_SET_VTXTABLE_BAND    227    //in message          set vtxTable band/channel data (one band at a time)
 #define MSP_SET_VTXTABLE_POWERLEVEL 228 //in message          set vtxTable powerLevel data (one powerLevel at a time)

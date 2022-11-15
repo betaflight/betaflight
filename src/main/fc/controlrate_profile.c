@@ -37,7 +37,7 @@
 
 controlRateConfig_t *currentControlRateProfile;
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 4);
+PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 5);
 
 void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
 {
@@ -45,8 +45,6 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
         RESET_CONFIG(controlRateConfig_t, &controlRateConfig[i],
             .thrMid8 = 50,
             .thrExpo8 = 0,
-            .tpa_rate = 65,
-            .tpa_breakpoint = 1350,
             .rates_type = RATES_TYPE_ACTUAL,
             .rcRates[FD_ROLL] = 7,
             .rcRates[FD_PITCH] = 7,
@@ -62,7 +60,6 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .rate_limit[FD_ROLL] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
             .rate_limit[FD_PITCH] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
             .rate_limit[FD_YAW] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
-            .tpaMode = TPA_MODE_D,
             .profileName = { 0 },
             .quickRatesRcExpo = 0,
             .levelExpo[FD_ROLL] = 0,
@@ -94,7 +91,8 @@ void changeControlRateProfile(uint8_t controlRateProfileIndex)
     initRcProcessing();
 }
 
-void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex) {
+void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex)
+{
     if ((dstControlRateProfileIndex < CONTROL_RATE_PROFILE_COUNT && srcControlRateProfileIndex < CONTROL_RATE_PROFILE_COUNT)
         && dstControlRateProfileIndex != srcControlRateProfileIndex
     ) {

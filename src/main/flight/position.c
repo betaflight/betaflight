@@ -47,167 +47,178 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-static int32_t estimatedAltitudeCm = 0;                // in cm
-#ifdef USE_BARO
-    static pt2Filter_t baroDerivativeLpf;
+static float displayAltitudeCm = 0.0f;
+static float zeroedAltitudeCm = 0.0f;
+
+#if defined(USE_BARO) || defined(USE_GPS)
+static float zeroedAltitudeDerivative = 0.0f;
 #endif
+
+static pt2Filter_t altitudeLpf;
+static pt2Filter_t altitudeDerivativeLpf;
+#ifdef USE_VARIO
+static int16_t estimatedVario = 0; // in cm/s
+#endif
+
+void positionInit(void)
+{
+    const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+
+    const float altitudeCutoffHz = positionConfig()->altitude_lpf / 100.0f;
+    const float altitudeGain = pt2FilterGain(altitudeCutoffHz, sampleTimeS);
+    pt2FilterInit(&altitudeLpf, altitudeGain);
+
+    const float altitudeDerivativeCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
+    const float altitudeDerivativeGain = pt2FilterGain(altitudeDerivativeCutoffHz, sampleTimeS);
+    pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
+}
 
 typedef enum {
     DEFAULT = 0,
     BARO_ONLY,
     GPS_ONLY
-} altSource_e;
+} altitudeSource_e;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 4);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
-    .altSource = DEFAULT,
-    .altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE,
-    .altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK,
+    .altitude_source = DEFAULT,
+    .altitude_prefer_baro = 100, // percentage 'trust' of baro data
+    .altitude_lpf = 300,
+    .altitude_d_lpf = 100,
 );
 
-#ifdef USE_VARIO
-static int16_t estimatedVario = 0;                   // in cm/s
-
-int16_t calculateEstimatedVario(float baroAltVelocity)
-{
-    baroAltVelocity = applyDeadband(baroAltVelocity, 10.0f); // cm/s, so ignore climb rates less than 0.1 m/s
-    return constrain(lrintf(baroAltVelocity), -1500, 1500);
-}
-#endif
-
 #if defined(USE_BARO) || defined(USE_GPS)
-static bool altitudeOffsetSetBaro = false;
-static bool altitudeOffsetSetGPS = false;
-
-void calculateEstimatedAltitude()
+void calculateEstimatedAltitude(void)
 {
-    static float baroAltOffset = 0;
-    static float gpsAltOffset = 0;
+    static bool wasArmed = false;
+    static bool useZeroedGpsAltitude = false; // whether a zero for the GPS altitude value exists
+    static float gpsAltCm = 0.0f; // will hold last value on transient loss of 3D fix
+    static float gpsAltOffsetCm = 0.0f;
+    static float baroAltOffsetCm = 0.0f;
+    static float newBaroAltOffsetCm = 0.0f;
 
-    float baroAlt = 0;
-    float baroAltVelocity = 0;
-    float gpsAlt = 0;
-    uint8_t gpsNumSat = 0;
+    float baroAltCm = 0.0f;
+    float gpsTrust = 0.3f; // if no hDOP value, use 0.3
+    bool haveBaroAlt = false; // true if baro exists and has been calibrated on power up
+    bool haveGpsAlt = false; // true if GPS is connected and while it has a 3D fix, set each run to false
 
-#if defined(USE_GPS) && defined(USE_VARIO)
-    float gpsVertSpeed = 0;
-#endif
-    float gpsTrust = 0.3; //conservative default
-    bool haveBaroAlt = false;
-    bool haveGpsAlt = false;
+    // *** Get sensor data
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
-        static float lastBaroAlt = 0;
-        static bool initBaroFilter = false;
-        if (!initBaroFilter) {
-            const float cutoffHz = barometerConfig()->baro_vario_lpf / 100.0f;
-            const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
-            const float gain = pt2FilterGain(cutoffHz, sampleTimeS);
-            pt2FilterInit(&baroDerivativeLpf, gain);
-            initBaroFilter = true;
-        }
-        baroAlt = baroUpsampleAltitude();
-        const float baroAltVelocityRaw = (baroAlt - lastBaroAlt) * TASK_ALTITUDE_RATE_HZ; // cm/s
-        baroAltVelocity = pt2FilterApply(&baroDerivativeLpf, baroAltVelocityRaw);
-        lastBaroAlt = baroAlt;
-        if (baroIsCalibrated()) {
-            haveBaroAlt = true;
-        }
+        baroAltCm = getBaroAltitude();
+        haveBaroAlt = true; // false only if there is no sensor on the board, or it has failed
     }
 #endif
-
 #ifdef USE_GPS
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-        gpsAlt = gpsSol.llh.altCm;
-        gpsNumSat = gpsSol.numSat;
-#ifdef USE_VARIO
-        gpsVertSpeed = GPS_verticalSpeedInCmS;
-#endif
-        haveGpsAlt = true;
-
-        if (gpsSol.hdop != 0) {
-            gpsTrust = 100.0 / gpsSol.hdop;
+        // GPS_FIX means a 3D fix, which requires min 4 sats.
+        // On loss of 3D fix, gpsAltCm remains at the last value, haveGpsAlt becomes false, and gpsTrust goes to zero.
+        gpsAltCm = gpsSol.llh.altCm; // static, so hold last altitude value if 3D fix is lost to prevent fly to moon
+        haveGpsAlt = true; // stays false if no 3D fix
+        if (gpsSol.dop.hdop != 0) {
+            gpsTrust = 100.0f / gpsSol.dop.hdop;
+            // *** TO DO - investigate if we should use vDOP or vACC with UBlox units;
         }
         // always use at least 10% of other sources besides gps if available
         gpsTrust = MIN(gpsTrust, 0.9f);
     }
 #endif
 
-    if (ARMING_FLAG(ARMED) && !altitudeOffsetSetBaro) {
-        baroAltOffset = baroAlt;
-        altitudeOffsetSetBaro = true;
-    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetBaro) {
-        altitudeOffsetSetBaro = false;
-    }
-
-    baroAlt -= baroAltOffset;
-
-    int goodGpsSats = 0;
-    int badGpsSats = -1;
-
-    if (haveBaroAlt) {
-        goodGpsSats = positionConfig()->altNumSatsGpsUse;
-        badGpsSats = positionConfig()->altNumSatsBaroFallback;
-    }
-
-    if (ARMING_FLAG(ARMED)) {
-        if (!altitudeOffsetSetGPS && gpsNumSat >= goodGpsSats) {
-            gpsAltOffset = gpsAlt - baroAlt;
-            altitudeOffsetSetGPS = true;
-        } else if (gpsNumSat <= badGpsSats) {
-            altitudeOffsetSetGPS = false;
+    //  ***  DISARMED  ***
+    if (!ARMING_FLAG(ARMED)) {
+        if (wasArmed) { // things to run once, on disarming, after being armed
+            useZeroedGpsAltitude = false; // reset, and wait for valid GPS data to zero the GPS signal
+            wasArmed = false;
         }
-    } else if (!ARMING_FLAG(ARMED) && altitudeOffsetSetGPS) {
-        altitudeOffsetSetGPS = false;
-    }
 
-    gpsAlt -= gpsAltOffset;
+        newBaroAltOffsetCm = 0.2f * baroAltCm + 0.8f * newBaroAltOffsetCm; // smooth some recent baro samples
+        displayAltitudeCm = baroAltCm - baroAltOffsetCm; // if no GPS altitude, show un-smoothed Baro altitude in OSD and sensors tab, using most recent offset.
 
-    if (!altitudeOffsetSetGPS) {
-        haveGpsAlt = false;
-        gpsTrust = 0.0f;
-    }
+        if (haveGpsAlt) { // watch for valid GPS altitude data to get a zero value from
+            gpsAltOffsetCm = gpsAltCm; // update the zero offset value with the most recent valid gps altitude reading
+            useZeroedGpsAltitude = true; // we can use this offset to zero the GPS altitude on arming
+            if (!(positionConfig()->altitude_source == BARO_ONLY)) {
+                displayAltitudeCm = gpsAltCm; // estimatedAltitude shows most recent ASL GPS altitude in OSD and sensors, while disarmed
+            }
+        }
+        zeroedAltitudeCm = 0.0f; // always hold relativeAltitude at zero while disarmed
 
-    if (haveGpsAlt && haveBaroAlt && positionConfig()->altSource == DEFAULT) {
-        if (ARMING_FLAG(ARMED)) {
-            estimatedAltitudeCm = gpsAlt * gpsTrust + baroAlt * (1 - gpsTrust);
+    //  ***  ARMED  ***
+    } else {
+        if (!wasArmed) { // things to run once, on arming, after being disarmed
+            baroAltOffsetCm = newBaroAltOffsetCm;
+            wasArmed = true;
+        }
+
+        baroAltCm -= baroAltOffsetCm; // use smoothed baro with most recent zero from disarm period
+
+        if (haveGpsAlt) { // update relativeAltitude with every new gpsAlt value, or hold the previous value until 3D lock recovers
+            if (!useZeroedGpsAltitude && haveBaroAlt) { // armed without zero offset, can use baro values to zero later
+                gpsAltOffsetCm = gpsAltCm - baroAltCm; // not very accurate
+                useZeroedGpsAltitude = true;
+            }
+            if (useZeroedGpsAltitude) { // normal situation
+                zeroedAltitudeCm = gpsAltCm - gpsAltOffsetCm; // now that we have a GPS offset value, we can use it to zero relativeAltitude
+            }
         } else {
-            estimatedAltitudeCm = gpsAlt; //absolute altitude is shown before arming, ignore baro
+            gpsTrust = 0.0f;
+            // TO DO - smoothly reduce GPS trust, rather than immediately dropping to zero for what could be only a very brief loss of 3D fix 
         }
-#ifdef USE_VARIO
-        // baro is a better source for vario, so ignore gpsVertSpeed
-        estimatedVario = calculateEstimatedVario(baroAltVelocity);
-#endif
-    } else if (haveGpsAlt && (positionConfig()->altSource == GPS_ONLY || positionConfig()->altSource == DEFAULT )) {
-        estimatedAltitudeCm = gpsAlt;
-#if defined(USE_VARIO) && defined(USE_GPS)
-        estimatedVario = gpsVertSpeed;
-#endif
-    } else if (haveBaroAlt && (positionConfig()->altSource == BARO_ONLY || positionConfig()->altSource == DEFAULT)) {
-        estimatedAltitudeCm = baroAlt;
-#ifdef USE_VARIO
-        estimatedVario = calculateEstimatedVario(baroAltVelocity); // cm/s
-#endif
+
+        // Empirical mixing of GPS and Baro altitudes
+        if (useZeroedGpsAltitude && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == GPS_ONLY)) {
+            if (haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
+                // mix zeroed GPS with Baro altitude data, if Baro data exists if are in default altitude control mode 
+                const float absDifferenceM = fabsf(zeroedAltitudeCm - baroAltCm) / 100.0f * positionConfig()->altitude_prefer_baro / 100.0f;
+                if (absDifferenceM > 1.0f) { // when there is a large difference, favour Baro
+                    gpsTrust /=  absDifferenceM;
+                }
+                zeroedAltitudeCm = zeroedAltitudeCm * gpsTrust + baroAltCm * (1.0f - gpsTrust);
+            }
+        } else if (haveBaroAlt && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == BARO_ONLY)) {
+            zeroedAltitudeCm = baroAltCm; // use Baro if no GPS data, or we want Baro only
+        }
     }
 
-    DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, baroAlt);
-    DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAlt);
-#ifdef USE_VARIO
-    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
-#endif
-}
+      zeroedAltitudeCm = pt2FilterApply(&altitudeLpf, zeroedAltitudeCm);
+      // NOTE: this filter must receive 0 as its input, for the whole disarmed time, to ensure correct zeroed values on arming
 
-bool isAltitudeOffset(void)
-{
-    return altitudeOffsetSetBaro || altitudeOffsetSetGPS;
-}
+    if (wasArmed) {
+        displayAltitudeCm = zeroedAltitudeCm; // while armed, show filtered relative altitude in OSD / sensors tab
+    }
+
+    // *** calculate Vario signal
+    static float previousZeroedAltitudeCm = 0.0f;
+    zeroedAltitudeDerivative = (zeroedAltitudeCm - previousZeroedAltitudeCm) * TASK_ALTITUDE_RATE_HZ; // cm/s
+    previousZeroedAltitudeCm = zeroedAltitudeCm;
+
+    zeroedAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, zeroedAltitudeDerivative);
+
+#ifdef USE_VARIO
+    estimatedVario = lrintf(zeroedAltitudeDerivative);
+    estimatedVario = applyDeadband(estimatedVario, 10); // ignore climb rates less than 0.1 m/s
+    estimatedVario = constrain(estimatedVario, -1500, 1500);
 #endif
+ 
+    // *** set debugs
+    DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
+    DEBUG_SET(DEBUG_ALTITUDE, 1, gpsAltCm);
+    DEBUG_SET(DEBUG_ALTITUDE, 2, displayAltitudeCm);
+    DEBUG_SET(DEBUG_ALTITUDE, 3, zeroedAltitudeCm);
+    DEBUG_SET(DEBUG_RTH, 1, displayAltitudeCm);
+    DEBUG_SET(DEBUG_BARO, 3, baroAltCm);
+}
+#endif //defined(USE_BARO) || defined(USE_GPS)
 
 int32_t getEstimatedAltitudeCm(void)
 {
-    return estimatedAltitudeCm;
+    return lrintf(displayAltitudeCm);
+}
+
+float getAltitude(void)
+{
+    return zeroedAltitudeCm;
 }
 
 #ifdef USE_VARIO

@@ -22,11 +22,46 @@
 #include <iostream>
 
 extern "C" {
-    #include "drivers/dshot.h"
+#include "drivers/dshot.h"
+#include "build/atomic.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
+
+extern "C" {
+
+bool featureIsEnabled(uint8_t f);
+float getDigitalIdleOffset(const motorConfig_t *motorConfig);
+float scaleRangef(float a, float b, float c, float d, float e);
+
+// Mocking functions
+
+bool featureIsEnabled(uint8_t f)
+{
+    UNUSED(f);
+    return true;
+}
+
+float getDigitalIdleOffset(const motorConfig_t *motorConfig)
+{
+    UNUSED(motorConfig);
+    return 0;
+}
+
+float scaleRangef(float a, float b, float c, float d, float e)
+{
+    UNUSED(a);
+    UNUSED(b);
+    UNUSED(c);
+    UNUSED(d);
+    UNUSED(e);
+    return 0;
+}
+
+}
+
+// Tests
 
 TEST(MotorOutputUnittest, TestFixMotorOutputReordering)
 {

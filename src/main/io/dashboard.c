@@ -108,7 +108,7 @@ typedef struct pageEntry_s {
 } pageEntry_t;
 
 static const char tickerCharacters[] = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
-#define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
+#define TICKER_CHARACTER_COUNT ARRAYLEN(tickerCharacters)
 
 typedef enum {
     PAGE_STATE_FLAG_NONE = 0,
@@ -257,7 +257,7 @@ static void drawRxChannel(uint8_t channelIndex, uint8_t width)
 {
     LCDprint(rcChannelLetters[channelIndex]);
 
-    const uint32_t percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
+    const uint32_t percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / PWM_RANGE;
     drawHorizonalPercentageBar(width - 1, percentage);
 }
 
@@ -364,7 +364,7 @@ static void showRateProfilePage(void)
     i2c_OLED_send_string(dev, lineBuffer);
 }
 
-#define SATELLITE_COUNT (sizeof(GPS_svinfo_cno) / sizeof(GPS_svinfo_cno[0]))
+#define SATELLITE_COUNT ARRAYLEN(GPS_svinfo_cno)
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef USE_GPS

@@ -1,1 +1,0 @@
-#FPVM_BETAFLIGHTF7 Target file

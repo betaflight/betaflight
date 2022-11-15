@@ -28,6 +28,7 @@
 #define GPS_DEGREES_DIVIDER 10000000L
 #define GPS_X 1
 #define GPS_Y 0
+#define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
 
 typedef enum {
     GPS_LATITUDE,
@@ -110,12 +111,19 @@ typedef struct gpsLocation_s {
     int32_t altCm;                  // altitude in 0.01m
 } gpsLocation_t;
 
+/* Accuracy of position estimation = device accuracy * DOP */
+typedef struct gpsDilution_s {
+    uint16_t pdop;                  // positional DOP - 3D (* 100)
+    uint16_t hdop;                  // horizontal DOP - 2D (* 100)
+    uint16_t vdop;                  // vertical DOP   - 1D (* 100)
+} gpsDilution_t;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
-    uint16_t speed3d;              // speed in 0.1m/s
+    gpsDilution_t dop;
+    uint16_t speed3d;               // speed in 0.1m/s
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
-    uint16_t hdop;                  // generic HDOP value (*100)
     uint8_t numSat;
 } gpsSolutionData_t;
 

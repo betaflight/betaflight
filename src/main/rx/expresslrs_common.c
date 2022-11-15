@@ -40,10 +40,9 @@ STATIC_UNIT_TESTED uint16_t crc14tab[ELRS_CRC_LEN] = {0};
 
 static uint8_t volatile fhssIndex = 0;
 STATIC_UNIT_TESTED uint8_t fhssSequence[ELRS_NR_SEQUENCE_ENTRIES] = {0};
-static const uint32_t *fhssFreqs;
-static uint8_t numFreqs = 0; // The number of FHSS frequencies in the table
-static uint8_t seqCount = 0;
+static uint16_t seqCount = 0;
 static uint8_t syncChannel = 0;
+static uint32_t freqSpread = 0;
 
 #define MS_TO_US(ms) (ms * 1000)
 
@@ -54,18 +53,18 @@ static uint8_t syncChannel = 0;
 elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
 #ifdef USE_RX_SX127X
     {
-        {0, RATE_200HZ, SX127x_BW_500_00_KHZ, SX127x_SF_6, SX127x_CR_4_7, 5000, TLM_RATIO_1_64, 4, 8},
-        {1, RATE_100HZ, SX127x_BW_500_00_KHZ, SX127x_SF_7, SX127x_CR_4_7, 10000, TLM_RATIO_1_64, 4, 8},
-        {2, RATE_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_NO_TLM, 4, 10},
-        {3, RATE_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_NO_TLM, 2, 10}
+        {0, RATE_LORA_200HZ, SX127x_BW_500_00_KHZ, SX127x_SF_6, SX127x_CR_4_7, 5000, TLM_RATIO_1_64, 4, 8},
+        {1, RATE_LORA_100HZ, SX127x_BW_500_00_KHZ, SX127x_SF_7, SX127x_CR_4_7, 10000, TLM_RATIO_1_64, 4, 8},
+        {2, RATE_LORA_50HZ, SX127x_BW_500_00_KHZ, SX127x_SF_8, SX127x_CR_4_7, 20000, TLM_RATIO_1_16, 4, 10},
+        {3, RATE_LORA_25HZ, SX127x_BW_500_00_KHZ, SX127x_SF_9, SX127x_CR_4_7, 40000, TLM_RATIO_1_8, 2, 10}
     },
 #endif
 #ifdef USE_RX_SX1280
     {
-        {0, RATE_500HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF5, SX1280_LORA_CR_LI_4_6, 2000, TLM_RATIO_1_128, 4, 12},
-        {1, RATE_250HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF6, SX1280_LORA_CR_LI_4_7, 4000, TLM_RATIO_1_64, 4, 14},
-        {2, RATE_150HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF7, SX1280_LORA_CR_LI_4_7, 6666, TLM_RATIO_1_32, 4, 12},
-        {3, RATE_50HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF9, SX1280_LORA_CR_LI_4_6, 20000, TLM_RATIO_NO_TLM, 2, 12}
+        {0, RATE_LORA_500HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF5, SX1280_LORA_CR_LI_4_6, 2000, TLM_RATIO_1_128, 4, 12},
+        {1, RATE_LORA_250HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF6, SX1280_LORA_CR_LI_4_7, 4000, TLM_RATIO_1_64, 4, 14},
+        {2, RATE_LORA_150HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF7, SX1280_LORA_CR_LI_4_7, 6666, TLM_RATIO_1_32, 4, 12},
+        {3, RATE_LORA_50HZ, SX1280_LORA_BW_0800, SX1280_LORA_SF8, SX1280_LORA_CR_LI_4_7, 20000, TLM_RATIO_1_16, 2, 12}
     },
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
@@ -76,18 +75,18 @@ elrsModSettings_t airRateConfig[][ELRS_RATE_MAX] = {
 elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX] = {
 #ifdef USE_RX_SX127X
     {
-        {0, RATE_200HZ, -112, 4380, 3000, 2500, 600, 5000},
-        {1, RATE_100HZ, -117, 8770, 3500, 2500, 600, 5000},
-        {2, RATE_50HZ, -120, 17540, 4000, 2500, 600, 5000},
-        {3, RATE_25HZ, -123, 17540, 6000, 4000, 0, 5000}
+        {0, RATE_LORA_200HZ, -112, 4380, 3000, 2500, 600, 5000},
+        {1, RATE_LORA_100HZ, -117, 8770, 3500, 2500, 600, 5000},
+        {2, RATE_LORA_50HZ, -120, 17540, 4000, 2500, 600, 5000},
+        {3, RATE_LORA_25HZ, -123, 17540, 6000, 4000, 0, 5000}
     },
 #endif
 #ifdef USE_RX_SX1280
     {
-        {0, RATE_500HZ, -105, 1665, 2500, 2500, 3, 5000},
-        {1, RATE_250HZ, -108, 3300, 3000, 2500, 6, 5000},
-        {2, RATE_150HZ, -112, 5871, 3500, 2500, 10, 5000},
-        {3, RATE_50HZ, -117, 18443, 4000, 2500, 0, 5000}
+        {0, RATE_LORA_500HZ, -105, 1665, 2500, 2500, 3, 5000},
+        {1, RATE_LORA_250HZ, -108, 3300, 3000, 2500, 6, 5000},
+        {2, RATE_LORA_150HZ, -112, 5871, 3500, 2500, 10, 5000},
+        {3, RATE_LORA_50HZ, -115, 10798, 4000, 2500, 0, 5000}
     },
 #endif
 #if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
@@ -95,234 +94,25 @@ elrsRfPerfParams_t rfPerfConfig[][ELRS_RATE_MAX] = {
 #endif
 };
 
+const elrsFhssConfig_t fhssConfigs[] = {
 #ifdef USE_RX_SX127X
-const uint32_t fhssFreqsAU433[] = {
-    FREQ_HZ_TO_REG_VAL_900(433420000),
-    FREQ_HZ_TO_REG_VAL_900(433920000),
-    FREQ_HZ_TO_REG_VAL_900(434420000)};
-
-const uint32_t fhssFreqsAU915[] = {
-    FREQ_HZ_TO_REG_VAL_900(915500000),
-    FREQ_HZ_TO_REG_VAL_900(916100000),
-    FREQ_HZ_TO_REG_VAL_900(916700000),
-    FREQ_HZ_TO_REG_VAL_900(917300000),
-
-    FREQ_HZ_TO_REG_VAL_900(917900000),
-    FREQ_HZ_TO_REG_VAL_900(918500000),
-    FREQ_HZ_TO_REG_VAL_900(919100000),
-    FREQ_HZ_TO_REG_VAL_900(919700000),
-
-    FREQ_HZ_TO_REG_VAL_900(920300000),
-    FREQ_HZ_TO_REG_VAL_900(920900000),
-    FREQ_HZ_TO_REG_VAL_900(921500000),
-    FREQ_HZ_TO_REG_VAL_900(922100000),
-
-    FREQ_HZ_TO_REG_VAL_900(922700000),
-    FREQ_HZ_TO_REG_VAL_900(923300000),
-    FREQ_HZ_TO_REG_VAL_900(923900000),
-    FREQ_HZ_TO_REG_VAL_900(924500000),
-
-    FREQ_HZ_TO_REG_VAL_900(925100000),
-    FREQ_HZ_TO_REG_VAL_900(925700000),
-    FREQ_HZ_TO_REG_VAL_900(926300000),
-    FREQ_HZ_TO_REG_VAL_900(926900000)};
-
-/* Frequency bands taken from https://wetten.overheid.nl/BWBR0036378/2016-12-28#Bijlagen
- * Note: these frequencies fall in the license free H-band, but in combination with 500kHz 
- * LoRa modem bandwidth used by ExpressLRS (EU allows up to 125kHz modulation BW only) they
- * will never pass RED certification and they are ILLEGAL to use. 
- * 
- * Therefore we simply maximize the usage of available spectrum so laboratory testing of the software won't disturb existing
- * 868MHz ISM band traffic too much.
- */
-const uint32_t fhssFreqsEU868[] = {
-    FREQ_HZ_TO_REG_VAL_900(863275000), // band H1, 863 - 865MHz, 0.1% duty cycle or CSMA techniques, 25mW EIRP
-    FREQ_HZ_TO_REG_VAL_900(863800000),
-    FREQ_HZ_TO_REG_VAL_900(864325000),
-    FREQ_HZ_TO_REG_VAL_900(864850000),
-    FREQ_HZ_TO_REG_VAL_900(865375000), // Band H2, 865 - 868.6MHz, 1.0% dutycycle or CSMA, 25mW EIRP
-    FREQ_HZ_TO_REG_VAL_900(865900000),
-    FREQ_HZ_TO_REG_VAL_900(866425000),
-    FREQ_HZ_TO_REG_VAL_900(866950000),
-    FREQ_HZ_TO_REG_VAL_900(867475000),
-    FREQ_HZ_TO_REG_VAL_900(868000000),
-    FREQ_HZ_TO_REG_VAL_900(868525000), // Band H3, 868.7-869.2MHz, 0.1% dutycycle or CSMA, 25mW EIRP
-    FREQ_HZ_TO_REG_VAL_900(869050000),
-    FREQ_HZ_TO_REG_VAL_900(869575000)};
-
-/**
- * India currently delicensed the 865-867 MHz band with a maximum of 1W Transmitter power,
- * 4Watts Effective Radiated Power and 200Khz carrier bandwidth as per
- * https://dot.gov.in/sites/default/files/Delicensing%20in%20865-867%20MHz%20band%20%5BGSR%20564%20%28E%29%5D_0.pdf .
- * There is currently no mention of Direct-sequence spread spectrum,
- * So these frequencies are a subset of Regulatory_Domain_EU_868 frequencies.
- */
-const uint32_t fhssFreqsIN866[] = {
-    FREQ_HZ_TO_REG_VAL_900(865375000),
-    FREQ_HZ_TO_REG_VAL_900(865900000),
-    FREQ_HZ_TO_REG_VAL_900(866425000),
-    FREQ_HZ_TO_REG_VAL_900(866950000)};
-
-/* Frequency band G, taken from https://wetten.overheid.nl/BWBR0036378/2016-12-28#Bijlagen
- * Note: As is the case with the 868Mhz band, these frequencies only comply to the license free portion
- * of the spectrum, nothing else. As such, these are likely illegal to use. 
- */
-const uint32_t fhssFreqsEU433[] = {
-    FREQ_HZ_TO_REG_VAL_900(433100000),
-    FREQ_HZ_TO_REG_VAL_900(433925000),
-    FREQ_HZ_TO_REG_VAL_900(434450000)};
-
-/* Very definitely not fully checked. An initial pass at increasing the hops
-*/
-const uint32_t fhssFreqsFCC915[] = {
-    FREQ_HZ_TO_REG_VAL_900(903500000),
-    FREQ_HZ_TO_REG_VAL_900(904100000),
-    FREQ_HZ_TO_REG_VAL_900(904700000),
-    FREQ_HZ_TO_REG_VAL_900(905300000),
-
-    FREQ_HZ_TO_REG_VAL_900(905900000),
-    FREQ_HZ_TO_REG_VAL_900(906500000),
-    FREQ_HZ_TO_REG_VAL_900(907100000),
-    FREQ_HZ_TO_REG_VAL_900(907700000),
-
-    FREQ_HZ_TO_REG_VAL_900(908300000),
-    FREQ_HZ_TO_REG_VAL_900(908900000),
-    FREQ_HZ_TO_REG_VAL_900(909500000),
-    FREQ_HZ_TO_REG_VAL_900(910100000),
-
-    FREQ_HZ_TO_REG_VAL_900(910700000),
-    FREQ_HZ_TO_REG_VAL_900(911300000),
-    FREQ_HZ_TO_REG_VAL_900(911900000),
-    FREQ_HZ_TO_REG_VAL_900(912500000),
-
-    FREQ_HZ_TO_REG_VAL_900(913100000),
-    FREQ_HZ_TO_REG_VAL_900(913700000),
-    FREQ_HZ_TO_REG_VAL_900(914300000),
-    FREQ_HZ_TO_REG_VAL_900(914900000),
-
-    FREQ_HZ_TO_REG_VAL_900(915500000), // as per AU..
-    FREQ_HZ_TO_REG_VAL_900(916100000),
-    FREQ_HZ_TO_REG_VAL_900(916700000),
-    FREQ_HZ_TO_REG_VAL_900(917300000),
-
-    FREQ_HZ_TO_REG_VAL_900(917900000),
-    FREQ_HZ_TO_REG_VAL_900(918500000),
-    FREQ_HZ_TO_REG_VAL_900(919100000),
-    FREQ_HZ_TO_REG_VAL_900(919700000),
-
-    FREQ_HZ_TO_REG_VAL_900(920300000),
-    FREQ_HZ_TO_REG_VAL_900(920900000),
-    FREQ_HZ_TO_REG_VAL_900(921500000),
-    FREQ_HZ_TO_REG_VAL_900(922100000),
-
-    FREQ_HZ_TO_REG_VAL_900(922700000),
-    FREQ_HZ_TO_REG_VAL_900(923300000),
-    FREQ_HZ_TO_REG_VAL_900(923900000),
-    FREQ_HZ_TO_REG_VAL_900(924500000),
-
-    FREQ_HZ_TO_REG_VAL_900(925100000),
-    FREQ_HZ_TO_REG_VAL_900(925700000),
-    FREQ_HZ_TO_REG_VAL_900(926300000),
-    FREQ_HZ_TO_REG_VAL_900(926900000)};
+    {AU433,  FREQ_HZ_TO_REG_VAL_900(433420000), FREQ_HZ_TO_REG_VAL_900(434420000), 3},
+    {AU915,  FREQ_HZ_TO_REG_VAL_900(915500000), FREQ_HZ_TO_REG_VAL_900(926900000), 20},
+    {EU433,  FREQ_HZ_TO_REG_VAL_900(433100000), FREQ_HZ_TO_REG_VAL_900(434450000), 3},
+    {EU868,  FREQ_HZ_TO_REG_VAL_900(865275000), FREQ_HZ_TO_REG_VAL_900(869575000), 13},
+    {IN866,  FREQ_HZ_TO_REG_VAL_900(865375000), FREQ_HZ_TO_REG_VAL_900(866950000), 4},
+    {FCC915, FREQ_HZ_TO_REG_VAL_900(903500000), FREQ_HZ_TO_REG_VAL_900(926900000), 40},
 #endif
 #ifdef USE_RX_SX1280
-const uint32_t fhssFreqsISM2400[] = {
-    FREQ_HZ_TO_REG_VAL_24(2400400000),
-    FREQ_HZ_TO_REG_VAL_24(2401400000),
-    FREQ_HZ_TO_REG_VAL_24(2402400000),
-    FREQ_HZ_TO_REG_VAL_24(2403400000),
-    FREQ_HZ_TO_REG_VAL_24(2404400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2405400000),
-    FREQ_HZ_TO_REG_VAL_24(2406400000),
-    FREQ_HZ_TO_REG_VAL_24(2407400000),
-    FREQ_HZ_TO_REG_VAL_24(2408400000),
-    FREQ_HZ_TO_REG_VAL_24(2409400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2410400000),
-    FREQ_HZ_TO_REG_VAL_24(2411400000),
-    FREQ_HZ_TO_REG_VAL_24(2412400000),
-    FREQ_HZ_TO_REG_VAL_24(2413400000),
-    FREQ_HZ_TO_REG_VAL_24(2414400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2415400000),
-    FREQ_HZ_TO_REG_VAL_24(2416400000),
-    FREQ_HZ_TO_REG_VAL_24(2417400000),
-    FREQ_HZ_TO_REG_VAL_24(2418400000),
-    FREQ_HZ_TO_REG_VAL_24(2419400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2420400000),
-    FREQ_HZ_TO_REG_VAL_24(2421400000),
-    FREQ_HZ_TO_REG_VAL_24(2422400000),
-    FREQ_HZ_TO_REG_VAL_24(2423400000),
-    FREQ_HZ_TO_REG_VAL_24(2424400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2425400000),
-    FREQ_HZ_TO_REG_VAL_24(2426400000),
-    FREQ_HZ_TO_REG_VAL_24(2427400000),
-    FREQ_HZ_TO_REG_VAL_24(2428400000),
-    FREQ_HZ_TO_REG_VAL_24(2429400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2430400000),
-    FREQ_HZ_TO_REG_VAL_24(2431400000),
-    FREQ_HZ_TO_REG_VAL_24(2432400000),
-    FREQ_HZ_TO_REG_VAL_24(2433400000),
-    FREQ_HZ_TO_REG_VAL_24(2434400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2435400000),
-    FREQ_HZ_TO_REG_VAL_24(2436400000),
-    FREQ_HZ_TO_REG_VAL_24(2437400000),
-    FREQ_HZ_TO_REG_VAL_24(2438400000),
-    FREQ_HZ_TO_REG_VAL_24(2439400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2440400000),
-    FREQ_HZ_TO_REG_VAL_24(2441400000),
-    FREQ_HZ_TO_REG_VAL_24(2442400000),
-    FREQ_HZ_TO_REG_VAL_24(2443400000),
-    FREQ_HZ_TO_REG_VAL_24(2444400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2445400000),
-    FREQ_HZ_TO_REG_VAL_24(2446400000),
-    FREQ_HZ_TO_REG_VAL_24(2447400000),
-    FREQ_HZ_TO_REG_VAL_24(2448400000),
-    FREQ_HZ_TO_REG_VAL_24(2449400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2450400000),
-    FREQ_HZ_TO_REG_VAL_24(2451400000),
-    FREQ_HZ_TO_REG_VAL_24(2452400000),
-    FREQ_HZ_TO_REG_VAL_24(2453400000),
-    FREQ_HZ_TO_REG_VAL_24(2454400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2455400000),
-    FREQ_HZ_TO_REG_VAL_24(2456400000),
-    FREQ_HZ_TO_REG_VAL_24(2457400000),
-    FREQ_HZ_TO_REG_VAL_24(2458400000),
-    FREQ_HZ_TO_REG_VAL_24(2459400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2460400000),
-    FREQ_HZ_TO_REG_VAL_24(2461400000),
-    FREQ_HZ_TO_REG_VAL_24(2462400000),
-    FREQ_HZ_TO_REG_VAL_24(2463400000),
-    FREQ_HZ_TO_REG_VAL_24(2464400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2465400000),
-    FREQ_HZ_TO_REG_VAL_24(2466400000),
-    FREQ_HZ_TO_REG_VAL_24(2467400000),
-    FREQ_HZ_TO_REG_VAL_24(2468400000),
-    FREQ_HZ_TO_REG_VAL_24(2469400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2470400000),
-    FREQ_HZ_TO_REG_VAL_24(2471400000),
-    FREQ_HZ_TO_REG_VAL_24(2472400000),
-    FREQ_HZ_TO_REG_VAL_24(2473400000),
-    FREQ_HZ_TO_REG_VAL_24(2474400000),
-
-    FREQ_HZ_TO_REG_VAL_24(2475400000),
-    FREQ_HZ_TO_REG_VAL_24(2476400000),
-    FREQ_HZ_TO_REG_VAL_24(2477400000),
-    FREQ_HZ_TO_REG_VAL_24(2478400000),
-    FREQ_HZ_TO_REG_VAL_24(2479400000)};
+    {ISM2400, FREQ_HZ_TO_REG_VAL_24(2400400000), FREQ_HZ_TO_REG_VAL_24(2479400000), 80},
+    {CE2400,  FREQ_HZ_TO_REG_VAL_24(2400400000), FREQ_HZ_TO_REG_VAL_24(2479400000), 80},
 #endif
+#if !defined(USE_RX_SX127X) && !defined(USE_RX_SX1280)
+    {0},
+#endif
+};
+
+const elrsFhssConfig_t *fhssConfig;
 
 void generateCrc14Table(void)
 {
@@ -344,54 +134,14 @@ uint16_t calcCrc14(uint8_t *data, uint8_t len, uint16_t crc)
     return crc & 0x3FFF;
 }
 
-static void initializeFhssFrequencies(const elrsFreqDomain_e dom) {
-    switch (dom) {
-#ifdef USE_RX_SX127X
-    case AU433:
-        fhssFreqs = fhssFreqsAU433;
-        numFreqs = sizeof(fhssFreqsAU433) / sizeof(uint32_t);
-        break;
-    case AU915:
-        fhssFreqs = fhssFreqsAU915;
-        numFreqs = sizeof(fhssFreqsAU915) / sizeof(uint32_t);
-        break;
-    case EU433:
-        fhssFreqs = fhssFreqsEU433;
-        numFreqs = sizeof(fhssFreqsEU433) / sizeof(uint32_t);
-        break;
-    case EU868:
-        fhssFreqs = fhssFreqsEU868;
-        numFreqs = sizeof(fhssFreqsEU868) / sizeof(uint32_t);
-        break;
-    case IN866:
-        fhssFreqs = fhssFreqsIN866;
-        numFreqs = sizeof(fhssFreqsIN866) / sizeof(uint32_t);
-        break;
-    case FCC915:
-        fhssFreqs = fhssFreqsFCC915;
-        numFreqs = sizeof(fhssFreqsFCC915) / sizeof(uint32_t);
-        break;
-#endif
-#ifdef USE_RX_SX1280
-    case ISM2400:
-        fhssFreqs = fhssFreqsISM2400;
-        numFreqs = sizeof(fhssFreqsISM2400) / sizeof(uint32_t);
-        break;
-#endif
-    default:
-        fhssFreqs = NULL;
-        numFreqs = 0;
-    }
-}
-
 uint32_t fhssGetInitialFreq(const int32_t freqCorrection)
 {
-    return fhssFreqs[syncChannel] - freqCorrection;
+    return fhssConfig->freqStart + (syncChannel * freqSpread / ELRS_FREQ_SPREAD_SCALE) - freqCorrection;
 }
 
 uint8_t fhssGetNumEntries(void)
 {
-    return numFreqs;
+    return fhssConfig->freqCount;
 }
 
 uint8_t fhssGetCurrIndex(void)
@@ -407,7 +157,8 @@ void fhssSetCurrIndex(const uint8_t value)
 uint32_t fhssGetNextFreq(const int32_t freqCorrection)
 {
     fhssIndex = (fhssIndex + 1) % seqCount;
-    return fhssFreqs[fhssSequence[fhssIndex]] - freqCorrection;
+    uint32_t freq = fhssConfig->freqStart + (freqSpread * fhssSequence[fhssIndex] / ELRS_FREQ_SPREAD_SCALE) - freqCorrection;
+    return freq;
 }
 
 static uint32_t seed = 0;
@@ -437,30 +188,28 @@ Approach:
 */
 void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
 {
-    seed = ((long)UID[2] << 24) + ((long)UID[3] << 16) + ((long)UID[4] << 8) + UID[5];
-
-    initializeFhssFrequencies(dom);
-
-    seqCount = (256 / MAX(numFreqs, 1)) * numFreqs;
-
-    syncChannel = numFreqs / 2;
+    seed = (((long)UID[2] << 24) + ((long)UID[3] << 16) + ((long)UID[4] << 8) + UID[5]) ^ ELRS_OTA_VERSION_ID;
+    fhssConfig = &fhssConfigs[dom];
+    seqCount = (256 / MAX(fhssConfig->freqCount, 1)) * fhssConfig->freqCount;
+    syncChannel = (fhssConfig->freqCount / 2) + 1;
+    freqSpread = (fhssConfig->freqStop - fhssConfig->freqStart) * ELRS_FREQ_SPREAD_SCALE / MAX((fhssConfig->freqCount - 1), 1);
 
     // initialize the sequence array
-    for (uint8_t i = 0; i < seqCount; i++) {
-        if (i % numFreqs == 0) {
+    for (uint16_t i = 0; i < seqCount; i++) {
+        if (i % fhssConfig->freqCount == 0) {
             fhssSequence[i] = syncChannel;
-        } else if (i % numFreqs == syncChannel) {
+        } else if (i % fhssConfig->freqCount == syncChannel) {
             fhssSequence[i] = 0;
         } else {
-            fhssSequence[i] = i % numFreqs;
+            fhssSequence[i] = i % fhssConfig->freqCount;
         }
     }
 
-    for (uint8_t i = 0; i < seqCount; i++) {
+    for (uint16_t i = 0; i < seqCount; i++) {
         // if it's not the sync channel
-        if (i % numFreqs != 0) {
-            uint8_t offset = (i / numFreqs) * numFreqs; // offset to start of current block
-            uint8_t rand = rngN(numFreqs - 1) + 1; // random number between 1 and numFreqs
+        if (i % fhssConfig->freqCount != 0) {
+            uint8_t offset = (i / fhssConfig->freqCount) * fhssConfig->freqCount; // offset to start of current block
+            uint8_t rand = rngN(fhssConfig->freqCount - 1) + 1; // random number between 1 and numFreqs
 
             // switch this entry and another random entry in the same block
             uint8_t temp = fhssSequence[i];
@@ -472,47 +221,27 @@ void fhssGenSequence(const uint8_t UID[], const elrsFreqDomain_e dom)
 
 uint8_t tlmRatioEnumToValue(const elrsTlmRatio_e enumval)
 {
-    switch (enumval) {
-    case TLM_RATIO_NO_TLM:
+    // !! TLM_RATIO_STD/TLM_RATIO_DISARMED should be converted by the caller !!
+    if (enumval == TLM_RATIO_NO_TLM) {
         return 1;
-        break;
-    case TLM_RATIO_1_2:
-        return 2;
-        break;
-    case TLM_RATIO_1_4:
-        return 4;
-        break;
-    case TLM_RATIO_1_8:
-        return 8;
-        break;
-    case TLM_RATIO_1_16:
-        return 16;
-        break;
-    case TLM_RATIO_1_32:
-        return 32;
-        break;
-    case TLM_RATIO_1_64:
-        return 64;
-        break;
-    case TLM_RATIO_1_128:
-        return 128;
-        break;
-    default:
-        return 0;
     }
+
+    // 1 << (8 - (enumval - TLM_RATIO_NO_TLM))
+    // 1_128 = 128, 1_64 = 64, 1_32 = 32, etc
+    return 1 << (8 + TLM_RATIO_NO_TLM - enumval);
 }
 
 uint16_t rateEnumToHz(const elrsRfRate_e eRate)
 {
     switch (eRate) {
-    case RATE_500HZ: return 500;
-    case RATE_250HZ: return 250;
-    case RATE_200HZ: return 200;
-    case RATE_150HZ: return 150;
-    case RATE_100HZ: return 100;
-    case RATE_50HZ: return 50;
-    case RATE_25HZ: return 25;
-    case RATE_4HZ: return 4;
+    case RATE_LORA_500HZ: return 500;
+    case RATE_LORA_250HZ: return 250;
+    case RATE_LORA_200HZ: return 200;
+    case RATE_LORA_150HZ: return 150;
+    case RATE_LORA_100HZ: return 100;
+    case RATE_LORA_50HZ: return 50;
+    case RATE_LORA_25HZ: return 25;
+    case RATE_LORA_4HZ: return 4;
     default: return 1;
     }
 }
@@ -546,11 +275,10 @@ static linkQuality_t lq;
 
 void lqIncrease(void)
 {
-    if (lqPeriodIsSet()) {
-        return;
+    if (!lqPeriodIsSet()) {
+        lq.array[lq.index] |= lq.mask;
+        lq.value += 1;
     }
-    lq.array[lq.index] |= lq.mask;
-    lq.value += 1;
 }
 
 void lqNewPeriod(void)
@@ -598,31 +326,19 @@ uint16_t convertSwitch1b(const uint16_t val)
 uint16_t convertSwitch3b(const uint16_t val) 
 {
     switch (val) {
-    case 0:
-        return 1000;
-    case 1:
-        return 1275;
-    case 2:
-        return 1425;
-    case 3:
-        return 1575;
-    case 4:
-        return 1725;
-    case 5:
-        return 2000;
-    default:
-        return 1500;
+    case 0: return 1000;
+    case 1: return 1275;
+    case 2: return 1425;
+    case 3: return 1575;
+    case 4: return 1725;
+    case 5: return 2000;
+    default: return 1500;
     }
 }
 
 uint16_t convertSwitchNb(const uint16_t val, const uint16_t max)
 {
     return (val > max) ? 1500 : val * 1000 / max + 1000;
-}
-
-uint16_t convertAnalog(const uint16_t val)
-{
-    return CRSF_RC_CHANNEL_SCALE_LEGACY * val + 881;
 }
 
 uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
@@ -635,6 +351,52 @@ uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
     // regardless of the TLM ratio
     // Index 7 also can never fall on a telemetry slot
     return ((nonce & 0x07) + ((nonce >> 3) & 0x01)) % 8;
+}
+
+uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
+{
+    switch (airRate) {
+    case 0:
+        return 0;
+    case 1:
+        return currentIndex;
+    case 2:
+        return 1;
+    case 3:
+        return 2;
+    case 4:
+        return 3;
+    default:
+        return currentIndex;
+    }
+}
+
+uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex)
+{
+    switch (airRate) {
+    case 0:
+        return currentIndex;
+    case 1:
+        return currentIndex;
+    case 2:
+        return currentIndex;
+    case 3:
+        return currentIndex;
+    case 4:
+        return 0;
+    case 5:
+        return currentIndex;
+    case 6:
+        return 1;
+    case 7:
+        return 2;
+    case 8:
+        return currentIndex;
+    case 9:
+        return 3;
+    default:
+        return currentIndex;
+    }
 }
 
 #endif /* USE_RX_EXPRESSLRS */

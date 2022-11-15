@@ -34,5 +34,5 @@ void setGhstTelemetryState(bool state);
 void handleGhstTelemetry(timeUs_t currentTimeUs);
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-void ghstScheduleMspResponse();
+void ghstScheduleMspResponse(void);
 #endif

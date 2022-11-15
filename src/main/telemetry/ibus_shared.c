@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
 #include "platform.h"
 #include "telemetry/telemetry.h"
@@ -139,7 +140,8 @@ static uint8_t getSensorID(ibusAddress_t address)
 }
 
 #if defined(USE_TELEMETRY_IBUS_EXTENDED)
-static const uint8_t* getSensorStruct(uint8_t sensorType, uint8_t* itemCount){
+static const uint8_t* getSensorStruct(uint8_t sensorType, uint8_t* itemCount)
+{
     const uint8_t* structure = 0;
     if (sensorType == IBUS_SENSOR_TYPE_GPS_FULL) {
         structure = FULL_GPS_IDS;
@@ -176,7 +178,7 @@ static uint8_t getSensorLength(uint8_t sensorType)
     return IBUS_2BYTE_SESNSOR;
 }
 
-static uint8_t transmitIbusPacket()
+static uint8_t transmitIbusPacket(void)
 {
     unsigned frameLength = sendBuffer[0];
     if (frameLength == INVALID_IBUS_ADDRESS) {
@@ -208,24 +210,24 @@ static void setIbusSensorType(ibusAddress_t address)
     sendBuffer[3] = sensorLength;
 }
 
-static uint16_t getVoltage()
+static uint16_t getVoltage(void)
 {
     return (telemetryConfig()->report_cell_voltage ? getBatteryAverageCellVoltage() : getBatteryVoltage());
 }
 
-static uint16_t getTemperature()
+static uint16_t getTemperature(void)
 {
     uint16_t temperature = gyroGetTemperature() * 10;
 #if defined(USE_BARO)
     if (sensors(SENSOR_BARO)) {
-        temperature = (uint16_t) ((baro.baroTemperature + 50) / 10);
+        temperature = lrintf(baro.temperature / 10.0f);
     }
 #endif
     return temperature + IBUS_TEMPERATURE_OFFSET;
 }
 
 
-static uint16_t getFuel()
+static uint16_t getFuel(void)
 {
     uint16_t fuel = 0;
     if (batteryConfig()->batteryCapacity > 0) {
@@ -236,7 +238,7 @@ static uint16_t getFuel()
     return fuel;
 }
 
-static uint16_t getRPM()
+static uint16_t getRPM(void)
 {
     uint16_t rpm = 0;
     if (ARMING_FLAG(ARMED)) {
@@ -249,7 +251,7 @@ static uint16_t getRPM()
     return rpm;
 }
 
-static uint16_t getMode()
+static uint16_t getMode(void)
 {
     uint16_t flightMode = 1; //Acro
     if (FLIGHT_MODE(ANGLE_MODE)) {
@@ -307,7 +309,7 @@ static bool setGPS(uint8_t sensorType, ibusTelemetry_s* value)
     uint16_t gpsFixType = 0;
     uint16_t sats = 0;
     if (sensors(SENSOR_GPS)) {
-        gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < 5 ? 2 : 3);
+        gpsFixType = !STATE(GPS_FIX) ? 1 : (gpsSol.numSat < GPS_MIN_SAT_COUNT ? 2 : 3);
         sats = gpsSol.numSat;
         if (STATE(GPS_FIX) || sensorType == IBUS_SENSOR_TYPE_GPS_STATUS) {
             result = true;
@@ -423,10 +425,10 @@ static void setValue(uint8_t* bufferPtr, uint8_t sensorType, uint8_t length)
 #ifdef USE_BARO
         case IBUS_SENSOR_TYPE_ALT:
         case IBUS_SENSOR_TYPE_ALT_MAX:
-            value.int32 = baro.BaroAlt;
+            value.int32 = baro.altitude;
             break;
         case IBUS_SENSOR_TYPE_PRES:
-            value.uint32 = baro.baroPressure | (((uint32_t)getTemperature()) << 19);
+            value.uint32 = baro.pressure | (((uint32_t)getTemperature()) << 19);
             break;
 #endif
 #endif //defined(TELEMETRY_IBUS_EXTENDED)

@@ -325,7 +325,7 @@ static bool spektrumProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     return true;
 }
 
-bool srxlTelemetryBufferEmpty()
+bool srxlTelemetryBufferEmpty(void)
 {
   if (telemetryBufLen == 0) {
       return true;

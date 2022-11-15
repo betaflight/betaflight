@@ -93,13 +93,14 @@ extern "C" {
     PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
-    
+
     timeUs_t simulationTime = 0;
     batteryState_e simulationBatteryState;
     uint8_t simulationBatteryCellCount;
     uint16_t simulationBatteryVoltage;
     uint32_t simulationBatteryAmperage;
     uint32_t simulationMahDrawn;
+    float simulationWhDrawn;
     int32_t simulationAltitude;
     int32_t simulationVerticalSpeed;
     uint16_t simulationCoreTemperature;
@@ -128,6 +129,7 @@ void setDefaultSimulationState()
     simulationBatteryVoltage = 1680;
     simulationBatteryAmperage = 0;
     simulationMahDrawn = 0;
+    simulationWhDrawn = 0;
     simulationAltitude = 0;
     simulationVerticalSpeed = 0;
     simulationCoreTemperature = 0;
@@ -188,7 +190,8 @@ void doTestArm(bool testEmpty = true)
 /*
  * Auxiliary function. Test is there're stats that must be shown
  */
-bool isSomeStatEnabled(void) {
+bool isSomeStatEnabled(void)
+{
     return (osdConfigMutable()->enabled_stats != 0);
 }
 
@@ -1320,6 +1323,10 @@ extern "C" {
 
     int32_t getMAhDrawn() {
         return simulationMahDrawn;
+    }
+
+    float getWhDrawn() {
+        return simulationWhDrawn;
     }
 
     int32_t getEstimatedAltitudeCm() {

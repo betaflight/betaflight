@@ -72,6 +72,13 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#if !defined(USE_GYRO_L3G4200D) && !defined(USE_GYRO_MPU3050) && !defined(USE_GYRO_MPU6050) && \
+    !defined(USE_GYRO_MPU6500) && !defined(USE_GYRO_SPI_ICM20689) && !defined(USE_GYRO_SPI_MPU6000) && \
+    !defined(USE_GYRO_SPI_MPU6500) && !defined(USE_GYRO_SPI_MPU9250) && !defined(USE_GYRO_L3GD20) && \
+    !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) && !defined(USE_FAKE_GYRO)
+#error At least one USE_GYRO device definition required
+#endif
+
 #ifdef USE_MULTI_GYRO
 #define ACTIVE_GYRO ((gyro.gyroToUse == GYRO_CONFIG_USE_GYRO_2) ? &gyro.gyroSensor2 : &gyro.gyroSensor1)
 #else
@@ -205,7 +212,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 }
 
 #ifdef USE_DYN_LPF
-static void dynLpfFilterInit()
+static void dynLpfFilterInit(void)
 {
     if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
         switch (gyroConfig()->gyro_lpf1_type) {
@@ -274,7 +281,8 @@ void gyroInitFilters(void)
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)
-void gyroInitSlewLimiter(gyroSensor_t *gyroSensor) {
+void gyroInitSlewLimiter(gyroSensor_t *gyroSensor)
+{
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         gyroSensor->gyroDev.gyroADCRawPrevious[axis] = 0;

@@ -18,12 +18,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
 #if defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY)
 
-#define BB_NOEDGE 0xfffe
-#define BB_INVALID 0xffff
+
 
 uint32_t decode_bb(uint16_t buffer[], uint32_t count, uint32_t mask);
 uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit);
+
 
 #endif

@@ -153,26 +153,33 @@ bool busRawWriteRegister(const extDevice_t*, uint8_t, uint8_t) {return true;}
 bool busRawWriteRegisterStart(const extDevice_t*, uint8_t, uint8_t) {return true;}
 void busDeviceRegister(const extDevice_t*) {}
 
-uint16_t spiCalculateDivider() {
+uint16_t spiCalculateDivider()
+{
     return 2;
 }
 
-void spiSetClkDivisor() {
+void spiSetClkDivisor()
+{
 }
 
-void spiPreinitByIO() {
+void spiPreinitByIO()
+{
 }
 
-void IOConfigGPIO() {
+void IOConfigGPIO()
+{
 }
 
-void IOHi() {
+void IOHi()
+{
 }
 
-void IOInit() {
+void IOInit()
+{
 }
 
-void IORelease() {
+void IORelease()
+{
 }
 
 }

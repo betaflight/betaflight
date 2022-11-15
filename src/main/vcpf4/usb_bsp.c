@@ -30,11 +30,13 @@
 #include "../drivers/nvic.h"
 #include "../drivers/io.h"
 
-void USB_OTG_BSP_ConfigVBUS(USB_OTG_CORE_HANDLE *pdev) {
+void USB_OTG_BSP_ConfigVBUS(USB_OTG_CORE_HANDLE *pdev)
+{
     (void)pdev;
 }
 
-void USB_OTG_BSP_DriveVBUS(USB_OTG_CORE_HANDLE *pdev,uint8_t state) {
+void USB_OTG_BSP_DriveVBUS(USB_OTG_CORE_HANDLE *pdev,uint8_t state)
+{
     (void)pdev;
     (void)state;
 }

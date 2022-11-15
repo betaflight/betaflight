@@ -113,7 +113,7 @@ void failsafeOnRxSuspend(uint32_t ) {}
 void failsafeOnRxResume(void) {}
 bool failsafeIsActive(void) { return false; }
 bool failsafeIsReceivingRxData(void) { return true; }
-bool taskUpdateRxMainInProgress() { return true; }
+bool taskUpdateRxMainInProgress(void) { return true; }
 void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 uint16_t flightModeFlags = 0;
@@ -199,11 +199,13 @@ bool rxMspInit(rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, rcReadRaw
     return true;
 }
 
-bool featureIsEnabled(uint32_t) {
+bool featureIsEnabled(uint32_t)
+{
     return false;
 }
 
-void featureDisableImmediate(uint32_t) {
+void featureDisableImmediate(uint32_t)
+{
 }
 
 bool rxMspFrameComplete(void)
@@ -246,6 +248,12 @@ float pt1FilterGain(float f_cut, float dT)
 }
 
 void pt1FilterInit(pt1Filter_t *filter, float k)
+{
+    UNUSED(filter);
+    UNUSED(k);
+}
+
+void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
 {
     UNUSED(filter);
     UNUSED(k);

@@ -250,7 +250,7 @@ static void trampResetReceiver(void)
 }
 
 // returns completed response code or 0
-static char trampReceive()
+static char trampReceive(void)
 {
     if (!trampSerialPort) {
         return 0;
@@ -688,12 +688,12 @@ bool vtxTrampInit(void)
     return true;
 }
 
-uint16_t vtxTrampGetCurrentActualPower()
+uint16_t vtxTrampGetCurrentActualPower(void)
 {
     return trampCurActPower;
 }
 
-uint16_t vtxTrampGetCurrentTemp()
+uint16_t vtxTrampGetCurrentTemp(void)
 {
     return trampCurTemp;
 }

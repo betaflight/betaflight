@@ -116,6 +116,9 @@ typedef enum {
 #ifdef USE_GPS
     TASK_GPS,
 #endif
+#ifdef USE_GPS_RESCUE
+    TASK_GPS_RESCUE,
+#endif
 #ifdef USE_MAG
     TASK_COMPASS,
 #endif
@@ -161,19 +164,15 @@ typedef enum {
 #ifdef USE_CAMERA_CONTROL
     TASK_CAMCTRL,
 #endif
-
 #ifdef USE_RCDEVICE
     TASK_RCDEVICE,
 #endif
-
 #ifdef USE_ADC_INTERNAL
     TASK_ADC_INTERNAL,
 #endif
-
 #ifdef USE_PINIOBOX
     TASK_PINIOBOX,
 #endif
-
 #ifdef USE_CRSF_V3
     TASK_SPEED_NEGOTIATION,
 #endif
@@ -236,7 +235,7 @@ void schedulerResetTaskStatistics(taskId_e taskId);
 void schedulerResetTaskMaxExecutionTime(taskId_e taskId);
 void schedulerResetCheckFunctionMaxExecutionTime(void);
 void schedulerSetNextStateTime(timeDelta_t nextStateTime);
-timeDelta_t schedulerGetNextStateTime();
+timeDelta_t schedulerGetNextStateTime(void);
 void schedulerInit(void);
 void scheduler(void);
 timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTimeUs);

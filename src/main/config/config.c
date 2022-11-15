@@ -57,6 +57,7 @@
 #include "flight/position.h"
 
 #include "io/beeper.h"
+#include "io/displayport_msp.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
@@ -105,11 +106,11 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 2);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
-    .name = { 0 },
-    .displayName = { 0 },
+    .craftName = { 0 },
+    .pilotName = { 0 },
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
@@ -206,14 +207,6 @@ static void validateAndFixRatesSettings(void)
             controlRateProfilesMutable(profileIndex)->rates[axis] = constrain(controlRateProfilesMutable(profileIndex)->rates[axis], 0, ratesSettingLimits[ratesType].srate_limit);
             controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
         }
-    }
-}
-
-static void validateAndFixPositionConfig(void)
-{
-    if (positionConfig()->altNumSatsBaroFallback >= positionConfig()->altNumSatsGpsUse) {
-        positionConfigMutable()->altNumSatsGpsUse = POSITION_DEFAULT_ALT_NUM_SATS_GPS_USE;
-        positionConfigMutable()->altNumSatsBaroFallback = POSITION_DEFAULT_ALT_NUM_SATS_BARO_FALLBACK;
     }
 }
 
@@ -426,7 +419,7 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RX_PPM);
 #endif
 
-#ifndef USE_SERIAL_RX
+#ifndef USE_SERIALRX
     featureDisableImmediate(FEATURE_RX_SERIAL);
 #endif
 
@@ -585,15 +578,17 @@ static void validateAndFixConfig(void)
     }
 
 #ifdef USE_MSP_DISPLAYPORT
-    // validate that displayport_msp_serial is referencing a valid UART that actually has MSP enabled
-    if (displayPortProfileMsp()->displayPortSerial != SERIAL_PORT_NONE) {
-        const serialPortConfig_t *portConfig = serialFindPortConfiguration(displayPortProfileMsp()->displayPortSerial);
-        if (!portConfig || !(portConfig->functionMask & FUNCTION_MSP)
-#ifndef USE_MSP_PUSH_OVER_VCP
-            || (portConfig->identifier == SERIAL_PORT_USB_VCP)
-#endif
-            ) {
-            displayPortProfileMspMutable()->displayPortSerial = SERIAL_PORT_NONE;
+    // Find the first serial port on which MSP Displayport is enabled
+    displayPortMspSetSerial(SERIAL_PORT_NONE);
+
+    for (uint8_t serialPort  = 0; serialPort < SERIAL_PORT_COUNT; serialPort++) {
+        const serialPortConfig_t *portConfig = &serialConfig()->portConfigs[serialPort];
+
+        if (portConfig &&
+            (portConfig->identifier != SERIAL_PORT_USB_VCP) &&
+            ((portConfig->functionMask & (FUNCTION_VTX_MSP | FUNCTION_MSP)) == (FUNCTION_VTX_MSP | FUNCTION_MSP))) {
+            displayPortMspSetSerial(portConfig->identifier);
+            break;
         }
     }
 #endif
@@ -602,8 +597,6 @@ static void validateAndFixConfig(void)
     // This should be done at the end of the validation
     targetValidateConfiguration();
 #endif
-
-    validateAndFixPositionConfig();
 }
 
 void validateAndFixGyroConfig(void)

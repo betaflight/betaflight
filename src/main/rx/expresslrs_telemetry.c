@@ -31,6 +31,7 @@
 
 #ifdef USE_RX_EXPRESSLRS
 
+#include "common/maths.h"
 #include "config/feature.h"
 #include "fc/runtime_config.h"
 
@@ -65,10 +66,10 @@ static crsfFrameType_e payloadTypes[] = {
 STATIC_UNIT_TESTED uint8_t tlmSensors = 0;
 STATIC_UNIT_TESTED uint8_t currentPayloadIndex;
 
-static uint8_t *data;
-static uint8_t length;
-static uint8_t bytesPerCall;
+static uint8_t *data = NULL;
+static uint8_t length = 0;
 static uint8_t currentOffset;
+static uint8_t bytesLastPayload;
 static uint8_t currentPackage;
 static bool waitUntilTelemetryConfirm;
 static uint16_t waitCount;
@@ -77,33 +78,26 @@ static volatile stubbornSenderState_e senderState;
 
 static void telemetrySenderResetState(void)
 {
-    data = 0;
+    bytesLastPayload = 0;
     currentOffset = 0;
-    currentPackage = 0;
-    length = 0;
+    currentPackage = 1;
     waitUntilTelemetryConfirm = true;
     waitCount = 0;
     // 80 corresponds to UpdateTelemetryRate(ANY, 2, 1), which is what the TX uses in boost mode
     maxWaitCount = 80;
     senderState = ELRS_SENDER_IDLE;
-    bytesPerCall = 1;
 }
 
 /***
  * Queues a message to send, will abort the current message if one is currently being transmitted
  ***/
-void setTelemetryDataToTransmit(const uint8_t lengthToTransmit, uint8_t* dataToTransmit, const uint8_t bpc)
+void setTelemetryDataToTransmit(const uint8_t lengthToTransmit, uint8_t* dataToTransmit)
 {
-    if (lengthToTransmit / bpc >= ELRS_TELEMETRY_MAX_PACKAGES) {
-        return;
-    }
-
     length = lengthToTransmit;
     data = dataToTransmit;
     currentOffset = 0;
     currentPackage = 1;
     waitCount = 0;
-    bytesPerCall = bpc;
     senderState = (senderState == ELRS_SENDER_IDLE) ? ELRS_SENDING : ELRS_RESYNC_THEN_SEND;
 }
 
@@ -112,33 +106,37 @@ bool isTelemetrySenderActive(void)
     return senderState != ELRS_SENDER_IDLE;
 }
 
-void getCurrentTelemetryPayload(uint8_t *packageIndex, uint8_t *count, uint8_t **currentData)
+/***
+ * Copy up to maxLen bytes from the current package to outData
+ * packageIndex
+ ***/
+uint8_t getCurrentTelemetryPayload(uint8_t *outData)
 {
+    uint8_t packageIndex;
+
+    bytesLastPayload = 0;
     switch (senderState) {
     case ELRS_RESYNC:
     case ELRS_RESYNC_THEN_SEND:
-        *packageIndex = ELRS_TELEMETRY_MAX_PACKAGES;
-        *count = 0;
-        *currentData = 0;
+        packageIndex = ELRS_TELEMETRY_MAX_PACKAGES;
         break;
     case ELRS_SENDING:
-        *currentData = data + currentOffset;
-        *packageIndex = currentPackage;
-        if (bytesPerCall > 1) {
-            if (currentOffset + bytesPerCall <= length) {
-                *count = bytesPerCall;
-            } else {
-                *count = length - currentOffset;
-            }
+        bytesLastPayload = MIN((uint8_t)(length - currentOffset), ELRS_TELEMETRY_BYTES_PER_CALL);
+        // If this is the last data chunk, and there has been at least one other packet
+        // skip the blank packet needed for WAIT_UNTIL_NEXT_CONFIRM
+        if (currentPackage > 1 && (currentOffset + bytesLastPayload) >= length) {
+            packageIndex = 0;
         } else {
-            *count = 1;
+            packageIndex = currentPackage;
         }
+        memcpy(outData, &data[currentOffset], bytesLastPayload);
+
         break;
     default:
-        *count = 0;
-        *currentData = 0;
-        *packageIndex = 0;
+        packageIndex = 0;
     }
+
+    return packageIndex;
 }
 
 void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue)
@@ -156,15 +154,21 @@ void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue)
             break;
         }
 
-        currentOffset += bytesPerCall;
+        currentOffset += bytesLastPayload;
+        if (currentOffset >= length) {
+            // A 0th packet is always requred so the reciver can
+            // differentiate a new send from a resend, if this is
+            // the first packet acked, send another, else IDLE
+            if (currentPackage == 1) {
+                nextSenderState = ELRS_WAIT_UNTIL_NEXT_CONFIRM;
+            } else {
+                nextSenderState = ELRS_SENDER_IDLE;
+            }
+        }
+
         currentPackage++;
         waitUntilTelemetryConfirm = !waitUntilTelemetryConfirm;
         waitCount = 0;
-
-        if (currentOffset >= length) {
-            nextSenderState = ELRS_WAIT_UNTIL_NEXT_CONFIRM;
-        }
-
         break;
 
     case ELRS_RESYNC:
@@ -191,10 +195,9 @@ void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue)
 }
 
 #ifdef USE_MSP_OVER_TELEMETRY
-static uint8_t *mspData;
+static uint8_t *mspData = NULL;
 static volatile bool finishedData;
-static volatile uint8_t mspLength;
-static volatile uint8_t mspBytesPerCall;
+static volatile uint8_t mspLength = 0;
 static volatile uint8_t mspCurrentOffset;
 static volatile uint8_t mspCurrentPackage;
 static volatile bool mspConfirm;
@@ -202,12 +205,10 @@ static volatile bool mspConfirm;
 STATIC_UNIT_TESTED volatile bool mspReplyPending;
 STATIC_UNIT_TESTED volatile bool deviceInfoReplyPending;
 
-void mspReceiverResetState(void) {
-    mspData = 0;
-    mspBytesPerCall = 1;
+void mspReceiverResetState(void)
+{
     mspCurrentOffset = 0;
-    mspCurrentPackage = 0;
-    mspLength = 0;
+    mspCurrentPackage = 1;
     mspConfirm = false;
     mspReplyPending = false;
     deviceInfoReplyPending = false;
@@ -218,24 +219,18 @@ bool getCurrentMspConfirm(void)
     return mspConfirm;
 }
 
-void setMspDataToReceive(const uint8_t maxLength, uint8_t* dataToReceive, const uint8_t bpc)
+void setMspDataToReceive(const uint8_t maxLength, uint8_t* dataToReceive)
 {
     mspLength = maxLength;
     mspData = dataToReceive;
     mspCurrentPackage = 1;
     mspCurrentOffset = 0;
     finishedData = false;
-    mspBytesPerCall = bpc;
 }
 
-void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* receiveData)
+void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* const receiveData)
 {
-    if  (packageIndex == 0 && mspCurrentPackage > 1) {
-        finishedData = true;
-        mspConfirm = !mspConfirm;
-        return;
-    }
-
+    // Resync
     if (packageIndex == ELRS_MSP_MAX_PACKAGES) {
         mspConfirm = !mspConfirm;
         mspCurrentPackage = 1;
@@ -248,17 +243,22 @@ void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* receiveD
         return;
     }
 
-    if (packageIndex == mspCurrentPackage) {
-        for (uint8_t i = 0; i < mspBytesPerCall; i++) {
-            mspData[mspCurrentOffset++] = *(receiveData + i);
-        }
-
+    bool acceptData = false;
+    if (packageIndex == 0 && mspCurrentPackage > 1) {
+        // PackageIndex 0 (the final packet) can also contain data
+        acceptData = true;
+        finishedData = true;
+    } else if (packageIndex == mspCurrentPackage) {
+        acceptData = true;
         mspCurrentPackage++;
-        mspConfirm = !mspConfirm;
-        return;
     }
 
-    return;
+    if (acceptData && (receiveData != NULL)) {
+        uint8_t len = MIN((uint8_t)(mspLength - mspCurrentOffset), ELRS_MSP_BYTES_PER_CALL);
+        memcpy(&mspData[mspCurrentOffset], (const uint8_t*) receiveData, len);
+        mspCurrentOffset += len;
+        mspConfirm = !mspConfirm;
+    }
 }
 
 bool hasFinishedMspData(void)
@@ -289,7 +289,6 @@ void processMspPacket(uint8_t *packet)
         deviceInfoReplyPending = true;
         break;
     case CRSF_FRAMETYPE_MSP_REQ:
-        FALLTHROUGH;
     case CRSF_FRAMETYPE_MSP_WRITE:
         if (bufferCrsfMspFrame(&packet[ELRS_MSP_PACKET_OFFSET], CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
             handleCrsfMspFrameBuffer(&bufferMspResponse);

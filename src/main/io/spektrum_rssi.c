@@ -19,7 +19,7 @@
  */
 
 #include "platform.h"
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
 #if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
 
 #include "config/feature.h"
@@ -50,7 +50,8 @@ static uint16_t spek_fade_last_sec_count = 0; // Stores the fade count at the la
 #endif
 
 // Linear mapping and interpolation function
-int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max) {
+int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
+{
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
@@ -90,7 +91,8 @@ static const dbm_table_t dbmTable[] = {
     {SPEKTRUM_RSSI_MIN, 0}};
 
 // Convert dBm to Range %
-static int8_t dBm2range (int8_t dBm) {
+static int8_t dBm2range (int8_t dBm)
+{
     int8_t  retval = dbmTable[0].reportAs;
 
     dBm = constrain(dBm, SPEKTRUM_RSSI_MIN, SPEKTRUM_RSSI_MAX);
@@ -107,7 +109,8 @@ static int8_t dBm2range (int8_t dBm) {
 }
 #endif
 
-void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
+void spektrumHandleRSSI(volatile uint8_t spekFrame[])
+{
 #ifdef USE_SPEKTRUM_REAL_RSSI
     static int8_t spek_last_rssi = SPEKTRUM_RSSI_MAX;
     static uint8_t spek_fade_count = 0;
@@ -210,4 +213,4 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[]) {
 #endif // USE_SPEKTRUM_FAKE_RSSI
 }
 #endif // USE_SPEKTRUM_REAL_RSSI || USE_SPEKTRUM_FAKE_RSSI
-#endif // USE_SERIAL_RX
+#endif // USE_SERIALRX

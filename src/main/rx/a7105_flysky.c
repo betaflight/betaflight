@@ -209,7 +209,8 @@ static void checkRSSI(void)
     setRssiDirect(tmp, RSSI_SOURCE_RX_PROTOCOL);
 }
 
-static bool isValidPacket(const uint8_t *packet) {
+static bool isValidPacket(const uint8_t *packet)
+{
     const flySky2ARcDataPkt_t *rcPacket = (const flySky2ARcDataPkt_t*) packet;
     return (rcPacket->rxId == rxId && rcPacket->txId == txId);
 }

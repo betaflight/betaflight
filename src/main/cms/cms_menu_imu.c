@@ -246,6 +246,8 @@ static uint8_t cmsx_simplified_dterm_filter;
 static uint8_t cmsx_simplified_dterm_filter_multiplier;
 static uint8_t cmsx_simplified_gyro_filter;
 static uint8_t cmsx_simplified_gyro_filter_multiplier;
+static uint8_t cmsx_tpa_rate;
+static uint16_t cmsx_tpa_breakpoint;
 
 static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
 {
@@ -410,8 +412,6 @@ static const OSD_Entry cmsx_menuRateProfileEntries[] =
 
     { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,           0,  100,  1} },
     { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,          0,  100,  1} },
-    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.tpa_rate,         0,  100,  1, 10} },
-    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10} },
 
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
@@ -503,7 +503,7 @@ static uint8_t  cmsx_horizonTransition;
 static uint8_t  cmsx_levelAngleLimit;
 static uint8_t  cmsx_throttleBoost;
 static uint8_t  cmsx_thrustLinearization;
-static uint16_t cmsx_antiGravityGain;
+static uint8_t  cmsx_antiGravityGain;
 static uint8_t  cmsx_motorOutputLimit;
 static int8_t   cmsx_autoProfileCellCount;
 #ifdef USE_D_MIN
@@ -529,6 +529,9 @@ static uint8_t cmsx_feedforward_averaging;
 static uint8_t cmsx_feedforward_smooth_factor;
 static uint8_t cmsx_feedforward_jitter_factor;
 #endif
+
+static uint8_t cmsx_tpa_rate;
+static uint16_t cmsx_tpa_breakpoint;
 
 static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 {
@@ -575,6 +578,8 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     cmsx_vbat_sag_compensation = pidProfile->vbat_sag_compensation;
 #endif
+    cmsx_tpa_rate = pidProfile->tpa_rate;
+    cmsx_tpa_breakpoint = pidProfile->tpa_breakpoint;
 
     return NULL;
 }
@@ -624,6 +629,8 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     pidProfile->vbat_sag_compensation = cmsx_vbat_sag_compensation;
 #endif
+    pidProfile->tpa_rate = cmsx_tpa_rate;
+    pidProfile->tpa_breakpoint = cmsx_tpa_breakpoint;
 
     initEscEndpoints();
     return NULL;
@@ -644,7 +651,7 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }    },
     { "ANGLE LIMIT", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_levelAngleLimit,        10,    90,   1  }    },
 
-    { "AG GAIN",     OME_UINT8,  NULL, &(OSD_UINT16_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 10 }    },
+    { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 1, 100 }    },
 #ifdef USE_THROTTLE_BOOST
     { "THR BOOST",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_throttleBoost,          0,    100,   1  }    },
 #endif
@@ -674,6 +681,9 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     { "VBAT_SAG_COMP", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_vbat_sag_compensation, 0, 150, 1 } },
 #endif
+
+    { "TPA RATE",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate,          0,  100,  1, 10} },
+    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_tpa_breakpoint, 1000, 2000, 10} },
 
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}

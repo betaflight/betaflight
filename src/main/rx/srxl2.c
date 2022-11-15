@@ -167,7 +167,8 @@ bool srxl2ProcessHandshake(const Srxl2Header* header)
     return true;
 }
 
-void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntimeState_t *rxRuntimeState) {
+void srxl2ProcessChannelData(const Srxl2ChannelDataHeader* channelData, rxRuntimeState_t *rxRuntimeState)
+{
     globalResult = RX_FRAME_COMPLETE;
 
     if (channelData->rssi >= 0) {
@@ -301,7 +302,7 @@ static void srxl2DataReceive(uint16_t character, void *data)
     }
 }
 
-static void srxl2Idle()
+static void srxl2Idle(void)
 {
     if (transmittingTelemetry) { // Transmitting telemetry triggers idle interrupt as well. We dont want to change buffers then
         transmittingTelemetry = false;

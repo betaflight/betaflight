@@ -37,6 +37,9 @@
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
+// Use DMA if possible if this many bytes are to be transferred
+#define SPI_DMA_THRESHOLD 8
+
 static SPI_InitTypeDef defaultInit = {
     .SPI_Mode = SPI_Mode_Master,
     .SPI_Direction = SPI_Direction_2Lines_FullDuplex,
@@ -364,8 +367,10 @@ void spiSequenceStart(const extDevice_t *dev)
         xferLen += checkSegment->len;
     }
     // Use DMA if possible
-    // If there are more than one segments, or a single segment with negateCS negated then force DMA irrespective of length
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8) || !bus->curSegment->negateCS)) {
+    // If there are more than one segments, or a single segment with negateCS negated in the list terminator then force DMA irrespective of length
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) ||
+                                   (xferLen >= SPI_DMA_THRESHOLD) ||
+                                   !bus->curSegment[segmentCount].negateCS)) {
         // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
 
@@ -416,18 +421,14 @@ void spiSequenceStart(const extDevice_t *dev)
             bus->curSegment++;
         }
 
-        if (lastSegment && !lastSegment->negateCS) {
-            // Negate Chip Select if not done so already
-            IOHi(dev->busType_u.spi.csnPin);
-        }
-
         // If a following transaction has been linked, start it
         if (bus->curSegment->u.link.dev) {
-            const extDevice_t *nextDev = bus->curSegment->u.link.dev;
-            busSegment_t *nextSegments = (busSegment_t *)bus->curSegment->u.link.segments;
             busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
+            const extDevice_t *nextDev = endSegment->u.link.dev;
+            busSegment_t *nextSegments = (busSegment_t *)endSegment->u.link.segments;
             bus->curSegment = nextSegments;
             endSegment->u.link.dev = NULL;
+            endSegment->u.link.segments = NULL;
             spiSequenceStart(nextDev);
         } else {
             // The end of the segment list has been reached, so mark transactions as complete

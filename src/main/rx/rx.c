@@ -76,10 +76,26 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
-static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,20]
+static uint16_t rssiRaw = 0;               // range: [0;1023]
+static timeUs_t lastRssiSmoothingUs = 0;
+#ifdef USE_RX_RSSI_DBM
+static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,0]
+static int16_t rssiDbmRaw = CRSF_RSSI_MIN; // range: [-130,0]
+#endif //USE_RX_RSSI_DBM
+#ifdef USE_RX_RSNR
+static int16_t rsnr = CRSF_SNR_MIN;        // range: [-30,20]
+static int16_t rsnrRaw = CRSF_SNR_MIN;     // range: [-30,20]
+#endif //USE_RX_RSNR
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 static pt1Filter_t frameErrFilter;
+static pt1Filter_t rssiFilter;
+#ifdef USE_RX_RSSI_DBM
+static pt1Filter_t rssiDbmFilter;
+#endif //USE_RX_RSSI_DBM
+#ifdef USE_RX_RSNR
+static pt1Filter_t rsnrFilter;
+#endif //USE_RX_RSNR
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 static uint16_t linkQuality = 0;
@@ -144,7 +160,8 @@ void pgResetFn_rxFailsafeChannelConfigs(rxFailsafeChannelConfig_t *rxFailsafeCha
     }
 }
 
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig) {
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig)
+{
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         rxChannelRangeConfig->min = PWM_RANGE_MIN;
@@ -181,7 +198,7 @@ STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
             pulseDuration <= rxConfig()->rx_max_usec;
 }
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
 static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
 {
     bool enabled = false;
@@ -307,7 +324,7 @@ void rxInit(void)
     default:
 
         break;
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
     case RX_PROVIDER_SERIAL:
         {
             const bool enabled = serialRxInit(rxConfig(), &rxRuntimeState);
@@ -360,6 +377,19 @@ void rxInit(void)
 
     // Setup source frame RSSI filtering to take averaged values every FRAME_ERR_RESAMPLE_US
     pt1FilterInit(&frameErrFilter, pt1FilterGain(GET_FRAME_ERR_LPF_FREQUENCY(rxConfig()->rssi_src_frame_lpf_period), FRAME_ERR_RESAMPLE_US/1000000.0));
+
+    // Configurable amount of filtering to remove excessive jumpiness of the values on the osd
+    float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
+
+    pt1FilterInit(&rssiFilter, k);  
+
+#ifdef USE_RX_RSSI_DBM
+    pt1FilterInit(&rssiDbmFilter, k);
+#endif //USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+    pt1FilterInit(&rsnrFilter, k);
+#endif //USE_RX_RSNR
 
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeState.channelCount);
 }
@@ -763,20 +793,7 @@ void setRssiDirect(uint16_t newRssi, rssiSource_e source)
     }
 
     rssi = newRssi;
-}
-
-#define RSSI_SAMPLE_COUNT 16
-
-static uint16_t updateRssiSamples(uint16_t value)
-{
-    static uint16_t samples[RSSI_SAMPLE_COUNT];
-    static uint8_t sampleIndex = 0;
-    static unsigned sum = 0;
-
-    sum += value - samples[sampleIndex];
-    samples[sampleIndex] = value;
-    sampleIndex = (sampleIndex + 1) % RSSI_SAMPLE_COUNT;
-    return sum / RSSI_SAMPLE_COUNT;
+    rssiRaw = newRssi;
 }
 
 void setRssi(uint16_t rssiValue, rssiSource_e source)
@@ -787,10 +804,9 @@ void setRssi(uint16_t rssiValue, rssiSource_e source)
 
     // Filter RSSI value
     if (source == RSSI_SOURCE_FRAME_ERRORS) {
-        rssi = pt1FilterApply(&frameErrFilter, rssiValue);
+        rssiRaw = pt1FilterApply(&frameErrFilter, rssiValue);
     } else {
-        // calculate new sample mean
-        rssi = updateRssiSamples(rssiValue);
+        rssiRaw = rssiValue;
     }
 }
 
@@ -851,6 +867,37 @@ void updateRSSI(timeUs_t currentTimeUs)
     default:
         break;
     }
+
+    if (cmpTimeUs(currentTimeUs, lastRssiSmoothingUs) > 250000) { // 0.25s
+        lastRssiSmoothingUs = currentTimeUs;
+    } else {
+        if (lastRssiSmoothingUs != currentTimeUs) { // avoid div by 0
+            float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
+            float factor = ((currentTimeUs - lastRssiSmoothingUs) / 1000000.0f) / (1.0f / 4.0f);
+            float k2  = (k * factor) / ((k * factor) - k + 1);
+
+            if (rssi != rssiRaw) {
+                pt1FilterUpdateCutoff(&rssiFilter, k2);
+                rssi = pt1FilterApply(&rssiFilter, rssiRaw);
+            }
+
+#ifdef USE_RX_RSSI_DBM
+            if (rssiDbm != rssiDbmRaw) {
+                pt1FilterUpdateCutoff(&rssiDbmFilter, k2);
+                rssiDbm = pt1FilterApply(&rssiDbmFilter, rssiDbmRaw);
+            }
+#endif //USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+            if (rsnr != rsnrRaw) {
+                pt1FilterUpdateCutoff(&rsnrFilter, k2);
+                rsnr = pt1FilterApply(&rsnrFilter, rsnrRaw);
+            }
+#endif //USE_RX_RSNR
+
+            lastRssiSmoothingUs = currentTimeUs;
+        }
+    }
 }
 
 uint16_t getRssi(void)
@@ -870,23 +917,10 @@ uint8_t getRssiPercent(void)
     return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
 }
 
+#ifdef USE_RX_RSSI_DBM
 int16_t getRssiDbm(void)
 {
     return rssiDbm;
-}
-
-#define RSSI_SAMPLE_COUNT_DBM 16
-
-static int16_t updateRssiDbmSamples(int16_t value)
-{
-    static int16_t samplesdbm[RSSI_SAMPLE_COUNT_DBM];
-    static uint8_t sampledbmIndex = 0;
-    static int sumdbm = 0;
-
-    sumdbm += value - samplesdbm[sampledbmIndex];
-    samplesdbm[sampledbmIndex] = value;
-    sampledbmIndex = (sampledbmIndex + 1) % RSSI_SAMPLE_COUNT_DBM;
-    return sumdbm / RSSI_SAMPLE_COUNT_DBM;
 }
 
 void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
@@ -895,7 +929,7 @@ void setRssiDbm(int16_t rssiDbmValue, rssiSource_e source)
         return;
     }
 
-    rssiDbm = updateRssiDbmSamples(rssiDbmValue);
+    rssiDbmRaw = rssiDbmValue;
 }
 
 void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
@@ -905,7 +939,27 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
     }
 
     rssiDbm = newRssiDbm;
+    rssiDbmRaw = newRssiDbm;
 }
+#endif //USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+int16_t getRsnr(void)
+{
+    return rsnr;
+}
+
+void setRsnr(int16_t rsnrValue)
+{
+    rsnrRaw = rsnrValue;
+}
+
+void setRsnrDirect(int16_t newRsnr)
+{
+    rsnr = newRsnr;
+    rsnrRaw = newRsnr;
+}
+#endif //USE_RX_RSNR
 
 #ifdef USE_RX_LINK_QUALITY_INFO
 uint16_t rxGetLinkQuality(void)

@@ -17,6 +17,7 @@
 
 # The target to build, see VALID_TARGETS below
 TARGET    ?= STM32F405
+BOARD     ?= 
 
 # Compile-time options
 OPTIONS   ?=
@@ -100,12 +101,9 @@ FEATURES        =
 FEATURE_CUT_LEVEL_SUPPLIED := $(FEATURE_CUT_LEVEL)
 FEATURE_CUT_LEVEL =
 
-# The list of targets to build for 'pre-push'
-ifeq ($(OSFAMILY), macosx)
-# SITL is not buildable on MacOS
-PRE_PUSH_TARGET_LIST ?= $(UNIFIED_TARGETS) STM32F4DISCOVERY_DEBUG test-representative
-else
-PRE_PUSH_TARGET_LIST ?= $(UNIFIED_TARGETS) SITL STM32F4DISCOVERY_DEBUG test-representative
+ifneq ($(BOARD),)
+# silently ignore if the file is not present. Allows for target defaults.
+-include $(ROOT)/src/main/board/$(BOARD)/board.mk
 endif
 
 include $(ROOT)/make/targets.mk
@@ -181,7 +179,7 @@ else ifneq ($(FEATURE_CUT_LEVEL),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFEATURE_CUT_LEVEL=$(FEATURE_CUT_LEVEL)
 endif
 
-TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
+TARGET_DIR     = $(ROOT)/src/main/target/$(TARGET)
 TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
 .DEFAULT_GOAL := hex
@@ -236,12 +234,15 @@ CC_NO_OPTIMISATION      :=
 #
 TEMPORARY_FLAGS :=
 
+EXTRA_WARNING_FLAGS := -Wold-style-definition
+
 CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
               -Wall -Wextra -Werror -Wpedantic -Wunsafe-loop-optimizations -Wdouble-promotion \
+              $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
               -fno-common \
@@ -447,31 +448,6 @@ all: $(CI_TARGETS)
 ## all_all : Build all targets (including legacy / unsupported)
 all_all: $(VALID_TARGETS)
 
-## unified : build all Unified Targets
-unified: $(UNIFIED_TARGETS)
-
-## unified_zip : build all Unified Targets as zip files (for posting on GitHub)
-unified_zip: $(addsuffix _clean,$(UNIFIED_TARGETS)) $(addsuffix _zip,$(UNIFIED_TARGETS))
-
-## legacy : Build legacy targets
-legacy: $(LEGACY_TARGETS)
-
-## unsupported : Build unsupported targets
-unsupported: $(UNSUPPORTED_TARGETS)
-
-## pre-push : The minimum verification that should be run before pushing, to check if CI has a chance of succeeding
-pre-push:
-	$(MAKE) $(addsuffix _clean,$(PRE_PUSH_TARGET_LIST)) $(PRE_PUSH_TARGET_LIST) EXTRA_FLAGS=-Werror
-
-## targets-group-1   : build some targets
-targets-group-1: $(GROUP_1_TARGETS)
-
-## targets-group-2   : build some targets
-targets-group-2: $(GROUP_2_TARGETS)
-
-## targets-group-rest: build the rest of the targets (not listed in the other groups)
-targets-group-rest: $(GROUP_OTHER_TARGETS)
-
 $(VALID_TARGETS):
 	$(V0) @echo "Building $@" && \
 	$(MAKE) hex TARGET=$@ && \
@@ -610,18 +586,7 @@ help: Makefile make/tools.mk
 targets:
 	@echo "Valid targets:       $(VALID_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
-	@echo "Unified targets:     $(UNIFIED_TARGETS)"
-	@echo "Legacy targets:      $(LEGACY_TARGETS)"
-	@echo "Unsupported targets: $(UNSUPPORTED_TARGETS)"
 	@echo "Default target:      $(TARGET)"
-	@echo "targets-group-1:     $(GROUP_1_TARGETS)"
-	@echo "targets-group-2:     $(GROUP_2_TARGETS)"
-	@echo "targets-group-rest:  $(GROUP_OTHER_TARGETS)"
-
-	@echo "targets-group-1:     $(words $(GROUP_1_TARGETS)) targets"
-	@echo "targets-group-2:     $(words $(GROUP_2_TARGETS)) targets"
-	@echo "targets-group-rest:  $(words $(GROUP_OTHER_TARGETS)) targets"
-	@echo "total in all groups  $(words $(CI_TARGETS)) targets"
 
 targets-ci-print:
 	@echo $(CI_TARGETS)

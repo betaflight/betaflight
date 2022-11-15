@@ -51,6 +51,7 @@ extern "C" {
     #include "telemetry/hott.h"
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
 
     uint16_t testBatteryVoltage = 0;
     int32_t testAmperage = 0;
@@ -183,7 +184,8 @@ baro_t baro;
 int32_t getEstimatedAltitudeCm() { return 0; }
 int16_t getEstimatedVario() { return 0; }
 
-uint32_t millis(void) {
+uint32_t millis(void)
+{
     return fixedMillis;
 }
 
@@ -255,7 +257,8 @@ bool telemetryDetermineEnabledState(portSharing_e)
     return true;
 }
 
-bool telemetryIsSensorEnabled(sensor_e sensor) {
+bool telemetryIsSensorEnabled(sensor_e sensor)
+{
     UNUSED(sensor);
     return true;
 }
@@ -290,11 +293,13 @@ uint16_t getLegacyBatteryVoltage(void)
     return (testBatteryVoltage + 5) / 10;
 }
 
-int32_t getAmperage(void) {
+int32_t getAmperage(void)
+{
     return testAmperage;
 }
 
-int32_t getMAhDrawn(void) {
+int32_t getMAhDrawn(void)
+{
     return testMAhDrawn;
 }
 

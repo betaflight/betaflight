@@ -18,7 +18,6 @@ OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
 include $(ROOT)/make/system-id.mk
-include $(ROOT)/make/targets_list.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -182,8 +181,11 @@ maths_unittest_SRC := \
 
 
 motor_output_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/dshot.c
 
+motor_output_unittest_DEFINES := \
+		USE_DSHOT= 
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -348,22 +350,6 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
-timer_definition_unittest_EXPAND := yes
-
-# SITL is a simulator with empty timerHardware and many hearders in target.c.
-timer_definition_unittest_BLACKLIST := SITL
-
-timer_definition_unittest_SRC = \
-		$(TARGET_DIR)/$(call get_base_target,$1)/target.c
-
-timer_definition_unittest_DEFINES = \
-		TARGET=$1 \
-		BASE_TARGET=$(call get_base_target,$1)
-
-timer_definition_unittest_INCLUDE_DIRS = \
-		$(TEST_DIR)/timer_definition_unittest.include \
-		$(TARGET_DIR)/$(call get_base_target,$1)
-
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
 		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
@@ -461,6 +447,23 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_RX_EXPRESSLRS= \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
+
+vtx_msp_unittest_SRC := \
+        $(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+        $(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/drivers/vtx_common.c \
+		$(USER_DIR)/drivers/vtx_table.c \
+		$(USER_DIR)/pg/vtx_table.c \
+		$(USER_DIR)/io/vtx_control.c \
+		$(USER_DIR)/io/vtx.c \
+		$(USER_DIR)/io/vtx_msp.c \
+
+vtx_msp_unittest_DEFINES := \
+		USE_VTX_COMMON= \
+		USE_VTX_CONTROL= \
+		USE_VTX_TABLE= \
+		USE_VTX_MSP=
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
@@ -578,13 +581,9 @@ endif
 TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
-TESTS_TARGET_SPECIFIC_EXPANDED = $(foreach test,$(TESTS_TARGET_SPECIFIC),$(foreach \
-		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
-TESTS_ALL = $(TESTS) $(TESTS_TARGET_SPECIFIC_EXPANDED)
-TESTS_REPRESENTATIVE = $(TESTS) $(foreach test,$(TESTS_TARGET_SPECIFIC), \
-		$(test).$(word 1,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS))))
+TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -710,7 +709,7 @@ $1_SRC = $(addsuffix .o,$(call $(basename $1)_SRC,$(call target,$1)))
 $1_OBJS = $$(patsubst \
 	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
 	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
-	$(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
+	$(TARGET_DIR)/$(TARGET)/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
 $1_DEFINES = $(call $(basename $1)_DEFINES,$(call target,$1))
 $1_INCLUDE_DIRS = $(call $(basename $1)_INCLUDE_DIRS,$(call target,$1))
 endif
@@ -740,7 +739,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 
 ifneq ($1,$(basename $1))
 # per-target tests may compile files from the target directory
-$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -781,20 +780,3 @@ endif
 
 $(foreach test,$(TESTS_ALL),$(if $($(basename $(test))_SRC),,$(error \
 	Test 'unit/$(basename $(test)).cc' has no '$(basename $(test))_SRC' variable defined)))
-$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS_ALL)),,$(error \
-	Variable '$(var)' has no 'unit/$(var:_SRC=).cc' test)))
-
-
-target_list:
-	@echo ========== BASE TARGETS ==========
-	@echo $(BASE_TARGETS)
-	@echo ========== ALT TARGETS ==========
-	@echo $(ALT_TARGETS)
-	@echo ========== VALID_TARGETS ==========
-	@echo $(VALID_TARGETS)
-	@echo ========== BASE/ALT PAIRS ==========
-	@echo $(BASE_ALT_PAIRS)
-	@echo ========== ALT/BASE MAPPING ==========
-	@echo $(foreach target,$(ALT_TARGETS),$(target)\>$(call get_base_target,$(target)))
-	@echo ========== ALT/BASE FULL MAPPING ==========
-	@echo $(foreach target,$(VALID_TARGETS),$(target)\>$(call get_base_target,$(target)))

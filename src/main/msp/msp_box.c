@@ -100,6 +100,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXMSPOVERRIDE, .boxName = "MSP OVERRIDE", .permanentId = 50},
     { .boxId = BOXSTICKCOMMANDDISABLE, .boxName = "STICK COMMANDS DISABLE", .permanentId = 51},
     { .boxId = BOXBEEPERMUTE, .boxName = "BEEPER MUTE", .permanentId = 52},
+    { .boxId = BOXREADY, .boxName = "READY", .permanentId = 53}
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -205,6 +206,13 @@ void initActiveBoxIds(void)
         BME(BOXHORIZON);
         BME(BOXHEADFREE);
         BME(BOXHEADADJ);
+        BME(BOXFPVANGLEMIX);
+        if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
+            BME(BOXCALIB);
+        }
+#if defined(USE_ACRO_TRAINER) && defined(USE_ACC)
+        BME(BOXACROTRAINER);
+#endif // USE_ACRO_TRAINER
     }
 
 #ifdef USE_MAG
@@ -246,8 +254,6 @@ void initActiveBoxIds(void)
 #endif
 #endif
 
-    BME(BOXFPVANGLEMIX);
-
     if (featureIsEnabled(FEATURE_3D)) {
         BME(BOX3D);
     }
@@ -262,10 +268,6 @@ void initActiveBoxIds(void)
 
     if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);
-    }
-
-    if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
-        BME(BOXCALIB);
     }
 
     BME(BOXOSD);
@@ -290,7 +292,7 @@ void initActiveBoxIds(void)
     BME(BOXCAMERA3);
 #endif
 
-#if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
+#if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP) || defined(USE_VTX_MSP)
     BME(BOXVTXPITMODE);
     BME(BOXVTXCONTROLDISABLE);
 #endif
@@ -323,12 +325,6 @@ void initActiveBoxIds(void)
     BME(BOXPIDAUDIO);
 #endif
 
-#if defined(USE_ACRO_TRAINER) && defined(USE_ACC)
-    if (sensors(SENSOR_ACC)) {
-        BME(BOXACROTRAINER);
-    }
-#endif // USE_ACRO_TRAINER
-
 #ifdef USE_LAUNCH_CONTROL
     BME(BOXLAUNCHCONTROL);
 #endif
@@ -340,6 +336,7 @@ void initActiveBoxIds(void)
 #endif
 
     BME(BOXSTICKCOMMANDDISABLE);
+    BME(BOXREADY);
 
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)

@@ -33,7 +33,8 @@
 static uint16_t dmaBufferOffset;
 extern const struct transponderVTable ilapTansponderVTable;
 
-void transponderIrInitIlap(transponder_t *transponder){
+void transponderIrInitIlap(transponder_t *transponder)
+{
     // from drivers/transponder_ir.h
     transponder->gap_toggles        = TRANSPONDER_GAP_TOGGLES_ILAP;
     transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE_ILAP;

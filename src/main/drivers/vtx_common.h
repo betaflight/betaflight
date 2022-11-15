@@ -36,7 +36,7 @@
 
 #endif
 
-#if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
+#if defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP) || defined(USE_VTX_MSP)
 
 #define VTX_SETTINGS_FREQCMD
 
@@ -52,6 +52,7 @@ typedef enum {
     // 2 reserved
     VTXDEV_SMARTAUDIO  = 3,
     VTXDEV_TRAMP       = 4,
+    VTXDEV_MSP         = 5,
     VTXDEV_UNKNOWN     = 0xFF,
 } vtxDevType_e;
 

@@ -79,7 +79,7 @@ extern "C" {
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
-    bool isAirmodeActivated() { return simulatedAirmodeEnabled; }
+    bool isAirmodeActivated(void) { return simulatedAirmodeEnabled; }
     float getRcDeflectionAbs(int axis) { return fabsf(simulatedRcDeflection[axis]); }
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
@@ -118,7 +118,8 @@ pidProfile_t *pidProfile;
 int loopIter = 0;
 
 // Always use same defaults for testing in future releases even when defaults change
-void setDefaultTestSettings(void) {
+void setDefaultTestSettings(void)
+{
     pgResetAll();
     pidProfile = pidProfilesMutable(1);
     pidProfile->pid[PID_ROLL]  =  { 40, 40, 30, 65 };
@@ -170,11 +171,13 @@ void setDefaultTestSettings(void) {
     gyro.targetLooptime = 8000;
 }
 
-timeUs_t currentTestTime(void) {
+timeUs_t currentTestTime(void)
+{
     return targetPidLooptime * loopIter++;
 }
 
-void resetTest(void) {
+void resetTest(void)
+{
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
@@ -212,14 +215,16 @@ void resetTest(void) {
     }
 }
 
-void setStickPosition(int axis, float stickRatio) {
+void setStickPosition(int axis, float stickRatio)
+{
     simulatedPrevSetpointRate[axis] = simulatedSetpointRate[axis];
     simulatedSetpointRate[axis] = 1998.0f * stickRatio;
     simulatedRcDeflection[axis] = stickRatio;
 }
 
 // All calculations will have 10% tolerance
-float calculateTolerance(float input) {
+float calculateTolerance(float input)
+{
     return fabsf(input * 0.1f);
 }
 
@@ -235,7 +240,8 @@ TEST(pidControllerTest, testInitialisation)
     }
 }
 
-TEST(pidControllerTest, testStabilisationDisabled) {
+TEST(pidControllerTest, testStabilisationDisabled)
+{
     ENABLE_ARMING_FLAG(ARMED);
     // Run few loops to make sure there is no error building up when stabilisation disabled
 
@@ -255,7 +261,8 @@ TEST(pidControllerTest, testStabilisationDisabled) {
     }
 }
 
-TEST(pidControllerTest, testPidLoop) {
+TEST(pidControllerTest, testPidLoop)
+{
     // Make sure to start with fresh values
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -322,8 +329,8 @@ TEST(pidControllerTest, testPidLoop) {
     // Simulate Iterm behaviour during mixer saturation
     simulatedMotorMixRange = 1.2f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
-    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
     EXPECT_NEAR(-8.8, pidData[FD_YAW].I, calculateTolerance(-8.8));
     simulatedMotorMixRange = 0;
 
@@ -339,8 +346,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
-    EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
+    EXPECT_NEAR(-23.5, pidData[FD_ROLL].I, calculateTolerance(-23.5));
+    EXPECT_NEAR(19.6, pidData[FD_PITCH].I, calculateTolerance(19.6));
     EXPECT_NEAR(-10.6, pidData[FD_YAW].I, calculateTolerance(-10.6));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
@@ -362,7 +369,8 @@ TEST(pidControllerTest, testPidLoop) {
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 }
 
-TEST(pidControllerTest, testPidLevel) {
+TEST(pidControllerTest, testPidLevel)
+{
     // Make sure to start with fresh values
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -422,7 +430,8 @@ TEST(pidControllerTest, testPidLevel) {
 }
 
 
-TEST(pidControllerTest, testPidHorizon) {
+TEST(pidControllerTest, testPidHorizon)
+{
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
@@ -445,7 +454,8 @@ TEST(pidControllerTest, testPidHorizon) {
     EXPECT_NEAR(0.811f, calcHorizonLevelStrength(), calculateTolerance(0.82));
 }
 
-TEST(pidControllerTest, testMixerSaturation) {
+TEST(pidControllerTest, testMixerSaturation)
+{
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
@@ -457,12 +467,12 @@ TEST(pidControllerTest, testMixerSaturation) {
     simulatedMotorMixRange = 2.0f;
     pidController(pidProfile, currentTestTime());
 
-    // Expect no iterm accumulation for yaw
-    EXPECT_FLOAT_EQ(150, pidData[FD_ROLL].I);
-    EXPECT_FLOAT_EQ(-150, pidData[FD_PITCH].I);
+    // Expect no iterm accumulation for all axes
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 
-    // Test itermWindup limit (note: windup limit now only affects yaw)
+    // Test itermWindup limit
     // First store values without exceeding iterm windup limit
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
@@ -483,15 +493,39 @@ TEST(pidControllerTest, testMixerSaturation) {
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
     setStickPosition(FD_YAW, 0.1f);
-    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 1) / 100.0f;
+    simulatedMotorMixRange = (pidProfile->itermWindupPointPercent + 2) / 100.0f;
     pidController(pidProfile, currentTestTime());
-    EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, rollTestIterm);
-    EXPECT_FLOAT_EQ(pidData[FD_PITCH].I, pitchTestIterm);
+    EXPECT_LT(pidData[FD_ROLL].I, rollTestIterm);
+    EXPECT_GE(pidData[FD_PITCH].I, pitchTestIterm);
     EXPECT_LT(pidData[FD_YAW].I, yawTestIterm);
+
+    // Test that the added i term gain from Anti Gravity
+    // is also affected by itermWindup
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, 1.0f);
+    simulatedMotorMixRange = 2.0f;
+    const bool prevAgState = pidRuntime.antiGravityEnabled;
+    const float prevAgTrhottleD = pidRuntime.antiGravityThrottleD;
+    pidRuntime.antiGravityEnabled = true;
+    pidRuntime.antiGravityThrottleD = 1.0;
+    pidController(pidProfile, currentTestTime());
+    pidRuntime.antiGravityEnabled = prevAgState;
+    pidRuntime.antiGravityThrottleD = prevAgTrhottleD;
+
+    // Expect no iterm accumulation for all axes
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
 }
 
 // TODO - Add more scenarios
-TEST(pidControllerTest, testCrashRecoveryMode) {
+TEST(pidControllerTest, testCrashRecoveryMode)
+{
     resetTest();
     pidProfile->crash_recovery = PID_CRASH_RECOVERY_ON;
     pidInit(pidProfile);
@@ -516,7 +550,8 @@ TEST(pidControllerTest, testCrashRecoveryMode) {
     // Add additional verifications
 }
 
-TEST(pidControllerTest, testFeedForward) {
+TEST(pidControllerTest, testFeedForward)
+{
     resetTest();
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
@@ -561,7 +596,8 @@ TEST(pidControllerTest, testFeedForward) {
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
 }
 
-TEST(pidControllerTest, testItermRelax) {
+TEST(pidControllerTest, testItermRelax)
+{
     resetTest();
     pidProfile->iterm_relax = ITERM_RELAX_RP;
     ENABLE_ARMING_FLAG(ARMED);
@@ -635,7 +671,8 @@ TEST(pidControllerTest, testItermRelax) {
 }
 
 // TODO - Add more tests
-TEST(pidControllerTest, testAbsoluteControl) {
+TEST(pidControllerTest, testAbsoluteControl)
+{
     resetTest();
     pidProfile->abs_control_gain = 10;
     pidInit(pidProfile);
@@ -663,11 +700,13 @@ TEST(pidControllerTest, testAbsoluteControl) {
     EXPECT_NEAR(-79.2, currentPidSetpoint, calculateTolerance(-79.2));
 }
 
-TEST(pidControllerTest, testDtermFiltering) {
+TEST(pidControllerTest, testDtermFiltering)
+{
 // TODO
 }
 
-TEST(pidControllerTest, testItermRotationHandling) {
+TEST(pidControllerTest, testItermRotationHandling)
+{
     resetTest();
     pidInit(pidProfile);
 
@@ -709,7 +748,8 @@ TEST(pidControllerTest, testItermRotationHandling) {
     EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
 }
 
-TEST(pidControllerTest, testLaunchControl) {
+TEST(pidControllerTest, testLaunchControl)
+{
     // The launchControlGain is indirectly tested since when launch control is active the
     // the gain overrides the PID settings. If the logic to use launchControlGain wasn't
     // working then any I calculations would be incorrect.

@@ -144,7 +144,7 @@ STATIC_UNIT_TESTED uint8_t ghstFrameCRC(const ghstFrame_t *const pGhstFrame)
     return crc;
 }
 
-static void rxSwapFrameBuffers()
+static void rxSwapFrameBuffers(void)
 {
     ghstFrame_t *const tmp = ghstIncomingFrame;
     ghstIncomingFrame = ghstValidatedFrame;
@@ -392,7 +392,7 @@ STATIC_UNIT_TESTED float ghstReadRawRC(const rxRuntimeState_t *rxRuntimeState, u
 }
 
 // UART idle detected (inter-packet)
-static void ghstIdle()
+static void ghstIdle(void)
 {
     if (ghstTransmittingTelemetry) {
         ghstTransmittingTelemetry = false;

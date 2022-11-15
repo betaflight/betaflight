@@ -167,7 +167,7 @@ const cc2500RegisterConfigElement_t cc2500RedPineConfig[] =
     { CC2500_3E_PATABLE, 0xFF }
 };
 
-static void initialise()
+static void initialise(void)
 {
     cc2500Reset();
 

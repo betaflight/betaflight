@@ -76,7 +76,8 @@ void A7105Config(const uint8_t *regsTable, uint8_t size)
     }
 }
 
-bool A7105RxTxFinished(timeUs_t *timeStamp) {
+bool A7105RxTxFinished(timeUs_t *timeStamp)
+{
     bool result = false;
 
     if (consumeExti && rxSpiPollExti()) {

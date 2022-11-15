@@ -68,6 +68,9 @@ typedef struct elrsReceiver_s {
     int8_t rssi;
     int8_t snr;
     int8_t rssiFiltered;
+#ifdef USE_RX_RSNR
+    int8_t rsnrFiltered;
+#endif //USE_RX_RSNR
 
     uint8_t uplinkLQ;
 

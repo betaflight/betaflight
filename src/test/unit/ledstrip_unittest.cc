@@ -27,6 +27,7 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/color.h"
+    #include "common/utils.h"
 
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
@@ -165,7 +166,7 @@ TEST(LedStripTest, parseLedStripConfig)
     };
 
     // when
-    for (uint8_t index = 0; index < (sizeof(ledStripConfigCommands) / sizeof(ledStripConfigCommands[0])); index++) {
+    for (uint8_t index = 0; index < ARRAYLEN(ledStripConfigCommands); index++) {
         EXPECT_TRUE(parseLedStripConfig(index, ledStripConfigCommands[index]));
     }
 
@@ -303,42 +304,50 @@ float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
-batteryState_e getBatteryState(void) {
+batteryState_e getBatteryState(void)
+{
     return BATTERY_OK;
 }
 
-void ws2811LedStripInit(ioTag_t ioTag) {
+void ws2811LedStripInit(ioTag_t ioTag)
+{
     UNUSED(ioTag);
 }
 
 void ws2811UpdateStrip(ledStripFormatRGB_e, uint8_t) {}
 
-void setLedValue(uint16_t index, const uint8_t value) {
+void setLedValue(uint16_t index, const uint8_t value)
+{
     UNUSED(index);
     UNUSED(value);
 }
 
-void setLedHsv(uint16_t index, const hsvColor_t *color) {
+void setLedHsv(uint16_t index, const hsvColor_t *color)
+{
     UNUSED(index);
     UNUSED(color);
 }
 
-void getLedHsv(uint16_t index, hsvColor_t *color) {
+void getLedHsv(uint16_t index, hsvColor_t *color)
+{
     UNUSED(index);
     UNUSED(color);
 }
 
 
-void scaleLedValue(uint16_t index, const uint8_t scalePercent) {
+void scaleLedValue(uint16_t index, const uint8_t scalePercent)
+{
     UNUSED(index);
     UNUSED(scalePercent);
 }
 
-void setStripColor(const hsvColor_t *color) {
+void setStripColor(const hsvColor_t *color)
+{
     UNUSED(color);
 }
 
-void setStripColors(const hsvColor_t *colors) {
+void setStripColors(const hsvColor_t *colors)
+{
     UNUSED(colors);
 }
 
@@ -355,14 +364,16 @@ uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }
 
 bool shouldSoundBatteryAlarm(void) { return false; }
-bool featureIsEnabled(uint32_t mask) {
+bool featureIsEnabled(uint32_t mask)
+{
     UNUSED(mask);
     return false;
 }
 
 void tfp_sprintf(char *, char*, ...) { }
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
+int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax)
+{
     UNUSED(x);
     UNUSED(srcMin);
     UNUSED(srcMax);
@@ -384,8 +395,6 @@ bool sensors(uint32_t mask)
     UNUSED(mask);
     return false;
 };
-
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
 
 bool isArmingDisabled(void) { return false; }
 

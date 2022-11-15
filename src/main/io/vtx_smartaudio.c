@@ -512,6 +512,9 @@ static void saSendFrame(uint8_t *buf, int len)
         for (int i = 0 ; i < len ; i++) {
             serialWrite(smartAudioSerialPort, buf[i]);
         }
+        #ifdef USE_AKK_SMARTAUDIO
+        serialWrite(smartAudioSerialPort, 0x00); // AKK/RDQ SmartAudio devices can expect an extra byte due to manufacturing errors.
+        #endif // USE_AKK_SMARTAUDIO
 
         saStat.pktsent++;
     } else {

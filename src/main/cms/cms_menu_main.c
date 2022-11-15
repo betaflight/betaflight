@@ -62,6 +62,11 @@
 
 #include "cms_menu_main.h"
 
+#ifdef USE_BATTERY_CONTINUE
+#include "sensors/battery.h"
+#include "pg/stats.h"
+#endif
+
 #define CALIBRATION_STATUS_MAX_LENGTH 9
 
 #define CALIBRATION_STATUS_REQUIRED "REQUIRED"
@@ -70,6 +75,10 @@
 
 #if defined(USE_ACC)
 static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
+#endif
+
+#ifdef USE_BATTERY_CONTINUE
+static char batteryContinueAmount[18];
 #endif
 
 // Features
@@ -82,7 +91,7 @@ static const OSD_Entry menuFeaturesEntries[] =
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox},
 #endif
 #if defined(USE_VTX_CONTROL)
-#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
+#if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP) || defined(USE_VTX_MSP)
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},
 #endif
 #endif // VTX_CONTROL
@@ -121,9 +130,27 @@ static const void *cmsx_SaveExitMenu(displayPort_t *pDisplay, const void *ptr)
 }
 
 
+#ifdef USE_BATTERY_CONTINUE
+#define SETUP_POPUP_MAX_ENTRIES 2   // Increase as new entries are added
+#else
 #define SETUP_POPUP_MAX_ENTRIES 1   // Increase as new entries are added
+#endif
 
 static OSD_Entry setupPopupMenuEntries[SETUP_POPUP_MAX_ENTRIES + 3];
+
+#ifdef USE_BATTERY_CONTINUE
+static const void *cmsRestoreMah(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+
+    setMAhDrawn(statsConfig()->stats_mah_used);
+    statsConfigMutable()->stats_mah_used = 0;
+
+    cmsMenuExit(pDisp, (void *)CMS_EXIT);
+
+    return NULL;
+}
+#endif
 
 static bool setupPopupMenuBuild(void)
 {
@@ -136,6 +163,12 @@ static bool setupPopupMenuBuild(void)
 #if defined(USE_ACC)
     if (sensors(SENSOR_ACC) && (getArmingDisableFlags() & ARMING_DISABLED_ACC_CALIBRATION)) {
         cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], "CALIBRATE ACC", OME_Funcall | DYNAMIC, cmsCalibrateAccMenu, accCalibrationStatus);
+    }
+#endif
+
+#ifdef USE_BATTERY_CONTINUE
+    if (hasUsedMAh()) {
+        cmsAddMenuEntry(&setupPopupMenuEntries[++menuIndex], batteryContinueAmount, OME_Funcall | DYNAMIC, cmsRestoreMah, NULL);
     }
 #endif
 
@@ -153,6 +186,11 @@ static const void *setupPopupMenuOnDisplayUpdate(displayPort_t *pDisp, const OSD
 #if defined(USE_ACC)
     // Update the ACC calibration status message.
     tfp_sprintf(accCalibrationStatus, accIsCalibrationComplete() ? accHasBeenCalibrated() ? CALIBRATION_STATUS_COMPLETE : CALIBRATION_STATUS_REQUIRED : CALIBRATION_STATUS_ACTIVE);
+#endif
+#ifdef USE_BATTERY_CONTINUE
+    if (hasUsedMAh()) {
+        tfp_sprintf(batteryContinueAmount, "RESTORE %5d MAH", statsConfig()->stats_mah_used);
+    }
 #endif
 
     return NULL;

@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "platform.h"
@@ -98,7 +99,9 @@ static imuRuntimeConfig_t imuRuntimeConfig;
 
 float rMat[3][3];
 
+#if defined(USE_ACC)
 STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
+#endif
 
 // quaternion of sensor frame relative to earth frame
 STATIC_UNIT_TESTED quaternion q = QUATERNION_INITIALIZE;
@@ -133,7 +136,8 @@ static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *q
     quatProd->zz = quat->z * quat->z;
 }
 
-STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
+STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
+{
     imuQuaternionComputeProducts(&q, &qP);
 
     rMat[0][0] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
@@ -488,7 +492,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 #if defined(USE_GPS)
-    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
+    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
         useCOG = true;
@@ -585,7 +589,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 }
 #endif // USE_ACC
 
-bool shouldInitializeGPSHeading()
+bool shouldInitializeGPSHeading(void)
 {
     static bool initialized = false;
 
@@ -655,7 +659,7 @@ void imuSetHasNewData(uint32_t dt)
 
 bool imuQuaternionHeadfreeOffsetSet(void)
 {
-    if ((ABS(attitude.values.roll) < 450)  && (ABS(attitude.values.pitch) < 450)) {
+    if ((abs(attitude.values.roll) < 450)  && (abs(attitude.values.pitch) < 450)) {
         const float yaw = -atan2_approx((+2.0f * (qP.wz + qP.xy)), (+1.0f - 2.0f * (qP.yy + qP.zz)));
 
         offset.w = cos_approx(yaw/2);

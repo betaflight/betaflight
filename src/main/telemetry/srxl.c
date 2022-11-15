@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -193,16 +194,9 @@ uint16_t getMotorAveragePeriod(void)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (useDshotTelemetry) {
-        uint16_t motors = getMotorCount();
-
-        if (motors > 0) {
-            for (int motor = 0; motor < motors; motor++) {
-                rpm += getDshotTelemetry(motor);
-            }
-            rpm = 100.0f / (motorConfig()->motorPoleCount / 2.0f) * rpm;  // convert erpm freq to RPM.
-            rpm /= motors;           // Average combined rpm
-        }
+    // Calculate this way when no rpm from esc data
+    if (useDshotTelemetry && rpm == 0) {
+        rpm = getDshotAverageRpm();
     }
 #endif
 
@@ -249,7 +243,7 @@ bool srxlFrameRpm(sbuf_t *dst, timeUs_t currentTimeUs)
 static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
 {
     int32_t absgps, deg, min;
-    absgps = ABS(mwiigps);
+    absgps = abs(mwiigps);
     deg = absgps / GPS_DEGREES_DIVIDER;
     absgps = (absgps - deg * GPS_DEGREES_DIVIDER) * 60;     // absgps = Minutes left * 10^7
     min = absgps / GPS_DEGREES_DIVIDER;                     // minutes left
@@ -302,7 +296,7 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     uint16_t altitudeLoBcd, groundCourseBcd, hdop;
     uint8_t hdopBcd, gpsFlags;
 
-    if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < 6) {
+    if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < GPS_MIN_SAT_COUNT) {
         return false;
     }
 
@@ -315,14 +309,14 @@ bool srxlFrameGpsLoc(sbuf_t *dst, timeUs_t currentTimeUs)
     longitudeBcd = (dec2bcd(coordinate.dddmm) << 16) | dec2bcd(coordinate.mmmm);
 
     // altitude (low order)
-    altitudeLo = ABS(gpsSol.llh.altCm) / 10;
+    altitudeLo = abs(gpsSol.llh.altCm) / 10;
     altitudeLoBcd = dec2bcd(altitudeLo % 100000);
 
     // Ground course
     groundCourseBcd = dec2bcd(gpsSol.groundCourse);
 
     // HDOP
-    hdop = gpsSol.hdop / 10;
+    hdop = gpsSol.dop.hdop / 10;
     hdop = (hdop > 99) ? 99 : hdop;
     hdopBcd = dec2bcd(hdop);
 
@@ -370,7 +364,7 @@ bool srxlFrameGpsStat(sbuf_t *dst, timeUs_t currentTimeUs)
     uint8_t numSatBcd, altitudeHighBcd;
     bool timeProvided = false;
 
-    if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < 6) {
+    if (!featureIsEnabled(FEATURE_GPS) || !STATE(GPS_FIX) || gpsSol.numSat < GPS_MIN_SAT_COUNT) {
         return false;
     }
 
