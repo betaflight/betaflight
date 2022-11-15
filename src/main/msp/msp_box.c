@@ -233,7 +233,7 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef USE_RANGEFINDER
-    if (feature(FEATURE_RANGEFINDER)) { // XXX && sensors(SENSOR_RANGEFINDER)?
+    if (featureIsEnabled(FEATURE_RANGEFINDER)) { // XXX && sensors(SENSOR_RANGEFINDER)?
         BME(BOXRANGEFINDER);
     }
 #endif
