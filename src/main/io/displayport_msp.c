@@ -60,7 +60,7 @@ static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len
 
 static int heartbeat(displayPort_t *displayPort)
 {
-    uint8_t subcmd[] = { 0 };
+    uint8_t subcmd[] = { MSP_DP_HEARTBEAT };
 
     // heartbeat is used to:
     // a) ensure display is not released by MW OSD software
@@ -128,6 +128,18 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
     return output(displayPort, MSP_DISPLAYPORT, buf, len + 4);
 }
 
+static int writeSys(displayPort_t *displayPort, uint8_t col, uint8_t row, displayPortSystemElement_e systemElement)
+{
+    uint8_t syscmd[4];
+
+    syscmd[0] = MSP_DP_SYS;
+    syscmd[1] = row;
+    syscmd[2] = col;
+    syscmd[3] = systemElement;
+
+    return output(displayPort, MSP_DISPLAYPORT, syscmd, sizeof(syscmd));
+}
+
 static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, uint8_t c)
 {
     char buf[2];
@@ -169,6 +181,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .clearScreen = clearScreen,
     .drawScreen = drawScreen,
     .screenSize = screenSize,
+    .writeSys = writeSys,
     .writeString = writeString,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,

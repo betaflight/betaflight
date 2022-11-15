@@ -62,7 +62,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   45 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   46 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
@@ -234,6 +234,9 @@
 
 #define MSP_SET_TX_INFO                 186 // in message           Used to send runtime information from TX lua scripts to the firmware
 #define MSP_TX_INFO                     187 // out message          Used by TX lua scripts to read information from the firmware
+
+#define MSP_SET_OSD_CANVAS              188 // in message           Set osd canvas size COLSxROWS
+#define MSP_OSD_CANVAS                  189 // out message          Get osd canvas size COLSxROWS
 
 //
 // Multwii original MSP commands

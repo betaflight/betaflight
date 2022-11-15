@@ -155,7 +155,8 @@ bool cmsDisplayPortSelect(displayPort_t *instance)
 //   30 cols x 13 rows
 // HoTT Telemetry Screen
 //   21 cols x 8 rows
-//
+// HD
+//   53 cols x 20 rows
 // Spektrum SRXL Telemtry Textgenerator
 //   13 cols x 9 rows, top row printed as a Bold Heading
 //   Needs the "smallScreen" adaptions

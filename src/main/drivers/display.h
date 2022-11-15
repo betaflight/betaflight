@@ -39,6 +39,20 @@ typedef enum {
 
 #define DISPLAYPORT_ATTR_BLINK  0x80 // Device local blink bit or'ed into displayPortAttr_e
 
+// System elements rendered by VTX or Goggles
+typedef enum {
+    DISPLAYPORT_SYS_GOGGLE_VOLTAGE = 0,
+    DISPLAYPORT_SYS_VTX_VOLTAGE = 1,
+    DISPLAYPORT_SYS_BITRATE = 2,
+    DISPLAYPORT_SYS_DELAY = 3,
+    DISPLAYPORT_SYS_DISTANCE = 4,
+    DISPLAYPORT_SYS_LQ = 5,
+    DISPLAYPORT_SYS_GOGGLE_DVR = 6,
+    DISPLAYPORT_SYS_VTX_DVR = 7,
+    DISPLAYPORT_SYS_WARNINGS = 8,
+    DISPLAYPORT_SYS_COUNT,
+} displayPortSystemElement_e;
+
 typedef enum {
     DISPLAYPORT_LAYER_FOREGROUND,
     DISPLAYPORT_LAYER_BACKGROUND,
@@ -103,6 +117,7 @@ typedef struct displayPortVTable_s {
     int (*clearScreen)(displayPort_t *displayPort, displayClearOption_e options);
     bool (*drawScreen)(displayPort_t *displayPort);
     int (*screenSize)(const displayPort_t *displayPort);
+    int (*writeSys)(displayPort_t *displayPort, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement);
     int (*writeString)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, const char *text);
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, uint8_t c);
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
@@ -129,6 +144,7 @@ void displayClearScreen(displayPort_t *instance, displayClearOption_e options);
 bool displayDrawScreen(displayPort_t *instance);
 int displayScreenSize(const displayPort_t *instance);
 void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
+int displaySys(displayPort_t *instance, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, uint8_t c);
 bool displayIsTransferInProgress(const displayPort_t *instance);
