@@ -481,6 +481,8 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavCustomMode = 0;      //Stabilize
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
+    if ( FLIGHT_MODE(RANGEFINDER_MODE))
+        mavCustomMode = 2; // Alt Hold
 
     uint8_t mavSystemState = 0;
     if (ARMING_FLAG(ARMED)) {
