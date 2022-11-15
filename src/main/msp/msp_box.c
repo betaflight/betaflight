@@ -69,7 +69,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXOSD, .boxName = "OSD DISABLE", .permanentId = 19 },
     { .boxId = BOXTELEMETRY, .boxName = "TELEMETRY", .permanentId = 20 },
 //    { .boxId = BOXGTUNE, .boxName = "GTUNE", .permanentId = 21 }, (removed)
-//    { .boxId = BOXRANGEFINDER, .boxName = "RANGEFINDER", .permanentId = 22 }, (removed)
+    { .boxId = BOXRANGEFINDER, .boxName = "RANGEFINDER", .permanentId = 22 }, //(removed)
     { .boxId = BOXSERVO1, .boxName = "SERVO1", .permanentId = 23 },
     { .boxId = BOXSERVO2, .boxName = "SERVO2", .permanentId = 24 },
     { .boxId = BOXSERVO3, .boxName = "SERVO3", .permanentId = 25 },
@@ -232,6 +232,11 @@ void initActiveBoxIds(void)
     }
 #endif
 
+#ifdef USE_RANGEFINDER
+    if (feature(FEATURE_RANGEFINDER)) { // XXX && sensors(SENSOR_RANGEFINDER)?
+        BME(BOXRANGEFINDER);
+    }
+#endif
     BME(BOXFAILSAFE);
 
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
