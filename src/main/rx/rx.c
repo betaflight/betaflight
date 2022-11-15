@@ -303,7 +303,7 @@ void rxInit(void)
 
     rcData[THROTTLE] = (featureIsEnabled(FEATURE_3D)) ? rxConfig()->midrc : rxConfig()->rx_min_usec;
 
-    // Initialize ARM switch to OFF position when arming via switch is defined
+   // Initialize ARM switch to OFF position when arming via switch is defined
     // TODO - move to rc_mode.c
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *modeActivationCondition = modeActivationConditions(i);
