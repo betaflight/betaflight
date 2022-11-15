@@ -1314,7 +1314,7 @@ case MSP_NAME:
             if (isBlinking) {
                 displayAttr |= DISPLAYPORT_ATTR_BLINK;
             }
-            sbufWriteU8(dst, displayAttr);  // see displayPortAttr_e
+            sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
             sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
             for (unsigned i = 0; i < warningsLen; i++) {
                 sbufWriteU8(dst, warningsBuffer[i]);

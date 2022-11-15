@@ -75,7 +75,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     static unsigned armingDisabledDisplayIndex;
 
     warningText[0] = '\0';
-    *displayAttr = DISPLAYPORT_ATTR_NONE;
+    *displayAttr = DISPLAYPORT_ATTR_NORMAL;
     *blinking = false;
 
     // Cycle through the arming disabled reasons
