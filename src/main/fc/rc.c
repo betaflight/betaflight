@@ -680,7 +680,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     {
         DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
     }else{
-        //rcCommand[THROTTLE] = 1300;
+        rcCommand[THROTTLE] = 1300;
         ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
          beeper(BEEPER_ALL);
     }
