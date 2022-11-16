@@ -1,6 +1,6 @@
 # DisplayPort MSP Extensions
 
-Betaflight supports what is sometimes referred to as Canvas Mode whereby the OSD can sent arbitrary character strings to be displayed at given screen coordinates. 
+Betaflight supports what is sometimes referred to as Canvas Mode whereby the OSD can send arbitrary character strings to be displayed at given screen coordinates.
 
 ## DisplayPort MSP commands
 
