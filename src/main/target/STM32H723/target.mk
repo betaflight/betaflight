@@ -17,7 +17,7 @@ RX_SRC = \
     drivers/rx/rx_sx127x.c \
     drivers/rx/rx_sx1280.c \
 
-H743xI_TARGETS += $(TARGET)
+H723xG_TARGETS += $(TARGET)
 
 CUSTOM_DEFAULTS_EXTENDED = yes
 
