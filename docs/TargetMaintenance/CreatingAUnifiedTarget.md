@@ -66,8 +66,6 @@ For example on [this target](https://github.com/betaflight/unified-targets/blob/
 
     # Betaflight / STM32F411 (S411) 4.1.0 Oct 16 2019 / 11:57:34 (c37a7c91a) MSP API: 1.42
 
-    #define USE_BARO_SPI_BMP280
-    #define USE_BARO_BMP280
     #define USE_GYRO_SPI_MPU6000
     #define USE_GYRO_SPI_MPU6500
     #define USE_ACC_SPI_MPU6000
