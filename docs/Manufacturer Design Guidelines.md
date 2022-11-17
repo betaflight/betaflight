@@ -14,7 +14,7 @@ Version Change Register
 | Draft 0.4 | 21 October 2022 | Update format, add information |
 | Draft 0.5 | 24 October 2022 | Add additional information |
 | Draft 0.6 | 06 November 2022 | Add cloud build information |
-[ Draft 0.7 | 15 November 2022 | Remove off-board hardware defines ]
+| Draft 0.7 | 17 November 2022 | Remove off-board hardware defines |
 
 
 Thank you for considering or continuing your development of Betaflight capable flight control hardware.  
@@ -317,6 +317,7 @@ For legacy ESCs that are only capable of OneShot and Multishot utilization, end 
 
 # 4 Reference Tables
 
+
 ## 4.1 Rated Looptime and Performance
 
 Rated Performance of specific MCU, IMU, and ESC DShot Protocol Combinations
@@ -355,47 +356,93 @@ Note that the use of gyros such as the BMI270 lowers the gyro loop rate from 8kH
 
 ## 4.2 Definitions for unified targets
 
-As reference please choose the defines for your target from this list as applicable for the target to select appropiate harware for the cloud build.
-
-```
-#define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6000
-#define USE_GYRO_SPI_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define USE_GYRO_SPI_ICM20689
-#define USE_ACC_SPI_ICM20689
-#define USE_ACCGYRO_BMI270
-#define USE_GYRO_SPI_ICM42605
-#define USE_ACC_SPI_ICM42605
-#define USE_GYRO_SPI_ICM42688P
-#define USE_ACC_SPI_ICM42688P
-
-#define USE_FLASH_M25P16           // 16MB Micron M25P16
-#define USE_FLASH_W25N01G          // 1Gb NAND flash support
-#define USE_FLASH_W25M             // 16, 32, 64 or 128MB Winbond stacked die support
-#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
-
-#define USE_MAX7456
-
-#define USE_SDCARD
-```
+As reference please choose the defines for your target from this list as applicable for the target to select appropiate hardware for the cloud build.
 
 
-### 4.2.1 SX1280 based targets defines
+### 4.2.1 Defines for GYRO and ACC
+
+Define at least one gyro and one accelerometer.
+
+    #define USE_GYRO_SPI_MPU6000
+    #define USE_ACC_SPI_MPU6000
+    #define USE_GYRO_SPI_MPU6500
+    #define USE_ACC_SPI_MPU6500
+    #define USE_GYRO_SPI_ICM20689
+    #define USE_ACC_SPI_ICM20689
+    #define USE_ACCGYRO_BMI270
+    #define USE_GYRO_SPI_ICM42605
+    #define USE_ACC_SPI_ICM42605
+    #define USE_GYRO_SPI_ICM42688P
+    #define USE_ACC_SPI_ICM42688P
+
+
+### 4.2.2 Defines for FLASH
+
+Define correct flash driver(s) only if physical present on the board.
+
+    #define USE_FLASH_M25P16           // 16MB Micron M25P16
+    #define USE_FLASH_W25N01G          // 1Gb NAND flash support
+    #define USE_FLASH_W25M             // 16, 32, 64 or 128MB Winbond stacked die support
+    #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
+    #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+    #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+
+
+### 4.2.3 Defines for BARO
+
+Define a barometer only if physical present on the board.
+
+
+    #define USE_BARO_MS5611
+    #define USE_BARO_SPI_MS5611
+    #define USE_BARO_BMP280
+    #define USE_BARO_SPI_BMP280
+    #define USE_BARO_BMP388
+    #define USE_BARO_SPI_BMP388
+    #define USE_BARO_LPS
+    #define USE_BARO_SPI_LPS
+    #define USE_BARO_QMP6988
+    #define USE_BARO_SPI_QMP6988
+    #define USE_BARO_DPS310
+    #define USE_BARO_SPI_DPS310
+
+
+### 4.2.4 Defines for MAG
+
+Define a magnetometer only if physical present of the board.
+
+    #define USE_MAG_DATA_READY_SIGNAL
+    #define USE_MAG_HMC5883
+    #define USE_MAG_SPI_HMC5883
+    #define USE_MAG_QMC5883
+    #define USE_MAG_LIS3MDL
+    #define USE_MAG_AK8963
+    #define USE_MAG_MPU925X_AK8963
+    #define USE_MAG_SPI_AK8963
+    #define USE_MAG_AK8975
+
+
+### 4.2.5 Defines for SX1280
 
 For SPI based SX1280 target designs add the following defines:
 
-```
-#define USE_RX_SPI
-#define USE_RX_EXPRESSLRS
-#define USE_RX_EXPRESSLRS_TELEMETRY
-#define USE_RX_SX1280
-#define RX_CHANNELS_AETR
-```
+    #define USE_RX_SPI
+    #define USE_RX_EXPRESSLRS
+    #define USE_RX_EXPRESSLRS_TELEMETRY
+    #define USE_RX_SX1280
+    #define RX_CHANNELS_AETR
 
-### 4.2.2 Usage of the cloud build API
+
+### 4.2.6 Defines for OSD
+
+    #define USE_MAX7456
+
+### 4.2.7 Defines for SDCARD
+
+    #define USE_SDCARD
+
+
+## 4.3 Usage of the cloud build API
 
 See reference to [cloud build API](https://github.com/betaflight/betaflight/blob/master/docs/Cloud%20build%20API.md)
 
