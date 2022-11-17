@@ -271,7 +271,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
     }else{
         ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
-        throttle = 0.4;
+        throttle = 0.35;
         //beeper(BEEPER_ALL);
     }
 }
