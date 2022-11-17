@@ -265,6 +265,15 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
     }
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
+
+    if(!IS_RC_MODE_ACTIVE(BOXRANGEFINDER))
+    {
+        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
+    }else{
+        ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
+         throttle = 0.3;
+        //beeper(BEEPER_ALL);
+    }
 }
 
 #define CRASH_FLIP_DEADBAND 20
