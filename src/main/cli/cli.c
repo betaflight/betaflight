@@ -1414,7 +1414,9 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
     bool enableBaudCb = false;
     int port1PinioDtr = 0;
     bool port1ResetOnDtr = false;
+#ifdef USE_PWM_OUTPUT
     bool escSensorPassthrough = false;
+#endif
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
@@ -1423,7 +1425,9 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
         switch (index) {
         case 0:
             if (strcasestr(tok, "esc_sensor")) {
+#ifdef USE_PWM_OUTPUT
                 escSensorPassthrough = true;
+#endif
                 const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
                 ports[0].id = portConfig->identifier;
             } else {
@@ -4937,11 +4941,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
         MSP_API_VERSION_STRING
     );
 
-#ifdef FEATURE_CUT_LEVEL
-    cliPrintLinef(" / FEATURE CUT LEVEL %d", FEATURE_CUT_LEVEL);
-#else
     cliPrintLinefeed();
-#endif
 
 #if defined(USE_CUSTOM_DEFAULTS)
     if (hasCustomDefaults()) {

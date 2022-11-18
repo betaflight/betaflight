@@ -70,6 +70,8 @@ void motorWriteAll(float *values)
         }
         motorDevice->vTable.updateComplete();
     }
+#else
+    UNUSED(values);
 #endif
 }
 

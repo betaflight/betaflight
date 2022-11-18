@@ -379,6 +379,10 @@
 #undef BEEPER_PWM_HZ
 #endif
 
+#if defined(USE_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER)
+#define USE_PWM_OUTPUT
+#endif
+
 #if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
 #define USE_TIMER_DMA
 #else
