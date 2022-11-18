@@ -4941,11 +4941,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
         MSP_API_VERSION_STRING
     );
 
-#ifdef FEATURE_CUT_LEVEL
-    cliPrintLinef(" / FEATURE CUT LEVEL %d", FEATURE_CUT_LEVEL);
-#else
     cliPrintLinefeed();
-#endif
 
 #if defined(USE_CUSTOM_DEFAULTS)
     if (hasCustomDefaults()) {
