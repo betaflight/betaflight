@@ -258,7 +258,37 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_GHST
 #define USE_TELEMETRY_SRXL
 
+#define USE_SERVOS
+
+#define USE_VTX
+
+#define USE_TELEMETRY_HOTT
+#define USE_TELEMETRY_LTM
+#define USE_SERIALRX_SUMH       // Graupner legacy protocol
+#define USE_SERIALRX_XBUS       // JR
+#define USE_CRSF_CMS_TELEMETRY
+#define USE_CRSF_LINK_STATISTICS
+
+#define USE_SERIALRX_JETIEXBUS
+#define USE_TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS_EXTENDED
+#define USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_MAVLINK
+#define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
+
+#define USE_GPS
+#define USE_OSD
+
 #endif // !defined(CLOUD_BUILD)
+
+#if defined(USE_VTX)
+#define USE_VTX_COMMON
+#define USE_VTX_CONTROL
+#define USE_VTX_SMARTAUDIO
+#define USE_VTX_TRAMP
+#define USE_VTX_MSP
+#define USE_VTX_TABLE
+#endif
 
 #define USE_HUFFMAN
 
@@ -270,7 +300,6 @@ extern uint8_t _dmaram_end__;
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
-#define USE_SERVOS
 
 #define USE_GYRO_OVERFLOW_CHECK
 #define USE_YAW_SPIN_RECOVERY
@@ -279,53 +308,31 @@ extern uint8_t _dmaram_end__;
 #define USE_DSHOT_DMAR
 #endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 12))
 #define USE_CMS
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_LED_STRIP
-#endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 11))
-#define USE_VTX_COMMON
-#define USE_VTX_CONTROL
-#define USE_VTX_SMARTAUDIO
-#define USE_VTX_TRAMP
-#define USE_VTX_MSP
-#endif
-
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 10))
 #define USE_VIRTUAL_CURRENT_METER
 #define USE_CAMERA_CONTROL
 #define USE_ESC_SENSOR
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_RCDEVICE
-#endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 9))
 #define USE_GYRO_LPF2
-#endif
-
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 8))
 #define USE_LAUNCH_CONTROL
 #define USE_DYN_LPF
 #define USE_D_MIN
-#endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 7))
 #define USE_THROTTLE_BOOST
 #define USE_INTEGRATED_YAW_CONTROL
-#endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 6))
 #define USE_ITERM_RELAX
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
 #define USE_TPA_MODE
-#endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 3))
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
@@ -335,21 +342,10 @@ extern uint8_t _dmaram_end__;
 #define USE_SPEKTRUM_VTX_CONTROL
 #define USE_SPEKTRUM_VTX_TELEMETRY
 #define USE_SPEKTRUM_CMS_TELEMETRY
+#endif
+
 #define USE_PIN_PULL_UP_DOWN
-#endif
-#endif
 
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 2))
-#if (!defined(CLOUD_BUILD))
-#define USE_TELEMETRY_HOTT
-#define USE_TELEMETRY_LTM
-#define USE_SERIALRX_SUMH       // Graupner legacy protocol
-#define USE_SERIALRX_XBUS       // JR
-
-#endif
-#endif
-
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 1))
 #define USE_BOARD_INFO
 #define USE_EXTENDED_CMS_MENUS
 #define USE_RTC_TIME
@@ -358,13 +354,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_RSSI_DBM
 #define USE_RX_RSNR
 
-#if !defined(CLOUD_BUILD)
-#define USE_CRSF_CMS_TELEMETRY
-#define USE_CRSF_LINK_STATISTICS
-#endif
-#endif
-
-#if (TARGET_FLASH_SIZE > 256)
 #define USE_AIRMODE_LPF
 #define USE_CANVAS
 #define USE_FRSKYOSD
@@ -382,7 +371,6 @@ extern uint8_t _dmaram_end__;
 #define USE_CMS_FAILSAFE_MENU
 #define USE_CMS_GPS_RESCUE_MENU
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
-#define USE_VTX_TABLE
 #define USE_PERSISTENT_STATS
 #define USE_PROFILE_NAMES
 #define USE_FEEDFORWARD
@@ -393,18 +381,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RX_LINK_UPLINK_POWER
 #define USE_CRSF_V3
 #define USE_CRAFTNAME_MSGS
-
-#if (!defined(CLOUD_BUILD))
-#define USE_SERIALRX_JETIEXBUS
-#define USE_TELEMETRY_IBUS
-#define USE_TELEMETRY_IBUS_EXTENDED
-#define USE_TELEMETRY_JETIEXBUS
-#define USE_TELEMETRY_MAVLINK
-#define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
-
-#define USE_GPS
-#define USE_OSD
-#endif
 
 #ifdef USE_GPS
 #define USE_GPS_NMEA
@@ -417,7 +393,6 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
 #define USE_OSD_STICK_OVERLAY
-#endif
 #endif
 
 #if (TARGET_FLASH_SIZE > 512)
