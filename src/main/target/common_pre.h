@@ -224,10 +224,7 @@ extern uint8_t _dmaram_end__;
 #define DMA_RAM_RW
 #endif
 
-#define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
-
 #define USE_MOTOR
-#define USE_PWM_OUTPUT
 #define USE_DMA
 #define USE_TIMER
 
@@ -236,8 +233,16 @@ extern uint8_t _dmaram_end__;
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_IMU_CALC
 
-#if (!defined(CLOUD_BUILD))
+#if !defined(CLOUD_BUILD)
+
 #define USE_PPM
+
+#define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
+#define USE_PWM
+
+#define USE_PINIO
+#define USE_PINIOBOX
+
 #define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_GHST       // ImmersionRC Ghost Protocol
@@ -252,7 +257,10 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_GHST
 #define USE_TELEMETRY_SRXL
-#endif
+
+#endif // !defined(CLOUD_BUILD)
+
+#define USE_HUFFMAN
 
 #define PID_PROFILE_COUNT 4
 #define CONTROL_RATE_PROFILE_COUNT  4
@@ -315,16 +323,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
 #define USE_TPA_MODE
-#endif
-
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 5))
-#define USE_PWM
-#endif
-
-#if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 4))
-#define USE_HUFFMAN
-#define USE_PINIO
-#define USE_PINIOBOX
 #endif
 
 #if ((TARGET_FLASH_SIZE > 256 && !defined(FEATURE_CUT_LEVEL)) || (FEATURE_CUT_LEVEL < 3))
