@@ -400,10 +400,12 @@ void redpineSetRcData(uint16_t *rcData, const uint8_t *packet)
 {
     if (packet[CHANNEL_START] == VTX_STATUS_FRAME && packet[CHANNEL_START + 1] == 0) {
         if (!ARMING_FLAG(ARMED)) {
+#ifdef USE_VTX
             vtxSettingsConfigMutable()->band = packet[5] + 1;
             vtxSettingsConfigMutable()->channel = packet[6];
             vtxSettingsConfigMutable()->power = packet[7];
             saveConfigAndNotify();
+#endif
         }
     } else {
         uint16_t channelValue;
