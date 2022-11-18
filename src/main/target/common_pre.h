@@ -278,6 +278,7 @@ extern uint8_t _dmaram_end__;
 
 #define USE_GPS
 #define USE_OSD
+#define USE_LED_STRIP
 
 #endif // !defined(CLOUD_BUILD)
 
@@ -312,7 +313,6 @@ extern uint8_t _dmaram_end__;
 #define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
 #define USE_OSD_OVER_MSP_DISPLAYPORT
-#define USE_LED_STRIP
 
 #define USE_VIRTUAL_CURRENT_METER
 #define USE_CAMERA_CONTROL
