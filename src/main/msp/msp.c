@@ -241,7 +241,7 @@ static bool mspIsMspArmingEnabled(void)
 static uint8_t mspPassthroughMode;
 static uint8_t mspPassthroughArgument;
 
-#ifdef USE_ESCSERIAL
+#if defined(USE_ESCSERIAL) && defined(USE_SERIAL_4WAY_BLHELI_INTERFACE)
 static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
     escEnablePassthrough(serialPort, &motorConfig()->dev, mspPassthroughArgument, mspPassthroughMode);
@@ -330,7 +330,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
         }
         FALLTHROUGH;
 #endif // USE_ESCSERIAL
-#endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
+#endif // USE_SERIAL_4WAY_BLHELI_INTERFACE
     default:
         sbufWriteU8(dst, 0);
     }
