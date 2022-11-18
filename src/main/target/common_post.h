@@ -245,17 +245,16 @@
 #define USE_FLASH_TOOLS
 #endif
 
-#if defined(USE_FLASH_W25M512)
-#define USE_FLASH_W25M
+#if defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)
 #define USE_FLASH_M25P16
 #endif
 
 #if defined(USE_FLASH_W25M02G)
-#define USE_FLASH_W25M
 #define USE_FLASH_W25N01G
 #endif
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)
+#define USE_FLASH_W25M
 #define USE_FLASH_CHIP
 #endif
 
