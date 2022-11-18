@@ -43,6 +43,7 @@ extern "C" {
     #include "io/gps.h"
     #include "io/vtx.h"
 
+    #include "pg/gps_rescue.h"
     #include "pg/motor.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"

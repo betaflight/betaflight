@@ -26,6 +26,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -44,20 +45,11 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "rx/rx.h"
 
 #include "sensors/acceleration.h"
 
 #include "gps_rescue.h"
-
-typedef enum {
-    RESCUE_SANITY_OFF = 0,
-    RESCUE_SANITY_ON,
-    RESCUE_SANITY_FS_ONLY
-} gpsRescueSanity_e;
 
 typedef enum {
     RESCUE_IDLE,
@@ -125,60 +117,12 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
-typedef enum {
-    MAX_ALT,
-    FIXED_ALT,
-    CURRENT_ALT
-} altitudeMode_e;
-
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
 #define GPS_RESCUE_MIN_DESCENT_DIST_M    5      // minimum descent distance
 #define GPS_RESCUE_MAX_ITERM_VELOCITY    1000   // max iterm value for velocity
 #define GPS_RESCUE_MAX_ITERM_THROTTLE    200    // max iterm value for throttle
 #define GPS_RESCUE_MAX_PITCH_RATE        3000   // max change in pitch per second in degrees * 100
 #define GPS_RESCUE_DISARM_THRESHOLD      2.0f   // disarm threshold in G's
-
-#ifdef USE_MAG
-#define GPS_RESCUE_USE_MAG              true
-#else
-#define GPS_RESCUE_USE_MAG              false
-#endif
-
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 3);
-
-PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
-    .minRescueDth = 30,
-    .altitudeMode = MAX_ALT,
-    .rescueAltitudeBufferM = 10,
-    .ascendRate = 500,          // cm/s, for altitude corrections on ascent
-
-    .initialAltitudeM = 30,
-    .rescueGroundspeed = 500,
-    .angle = 40,
-    .rollMix = 150,
-
-    .descentDistanceM = 20,
-    .descendRate = 100,         // cm/s, minimum for descent and landing phase, or for descending if starting high ascent
-    .targetLandingAltitudeM = 4,
-
-    .throttleMin = 1100,
-    .throttleMax = 1600,
-    .throttleHover = 1275,
-
-    .allowArmingWithoutFix = false,
-    .sanityChecks = RESCUE_SANITY_FS_ONLY,
-    .minSats = 8,
-
-    .throttleP = 15,
-    .throttleI = 15,
-    .throttleD = 15,
-    .velP = 8,
-    .velI = 30,
-    .velD = 20,
-    .yawP = 20,
-
-    .useMag = GPS_RESCUE_USE_MAG
-);
 
 static float rescueThrottle;
 static float rescueYaw;
@@ -242,13 +186,13 @@ static void setReturnAltitude(void)
         const float initialAltitudeCm = gpsRescueConfig()->initialAltitudeM * 100.0f;
         const float rescueAltitudeBufferCm = gpsRescueConfig()->rescueAltitudeBufferM * 100.0f;
         switch (gpsRescueConfig()->altitudeMode) {
-            case FIXED_ALT:
+            case GPS_RESCUE_ALT_MODE_FIXED:
                 rescueState.intent.returnAltitudeCm = initialAltitudeCm;
                 break;
-            case CURRENT_ALT:
+            case GPS_RESCUE_ALT_MODE_CURRENT:
                 rescueState.intent.returnAltitudeCm = rescueState.sensor.currentAltitudeCm + rescueAltitudeBufferCm;
                 break;
-            case MAX_ALT:
+            case GPS_RESCUE_ALT_MODE_MAX:
             default:
                 rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + rescueAltitudeBufferCm;
                 break;
