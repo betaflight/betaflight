@@ -105,7 +105,6 @@ typedef struct {
     float velocityToHomeCmS;
     float alitutudeStepCm;
     float maxPitchStep;
-    float filterK;
     float absErrorAngle;
 } rescueSensorData_s;
 
@@ -130,21 +129,27 @@ float       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 bool        magForceDisable = false;
 static bool newGPSData = false;
 static pt2Filter_t throttleDLpf;
+static pt2Filter_t velocityDLpf;
 static pt3Filter_t pitchLpf;
 
 rescueState_s rescueState;
 
 void gpsRescueInit(void)
 {
-    const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+    const float sampleTimeS = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ);
+    float cutoffHz, gain;
 
-    const float throttleDCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
-    const float throttleDCutoffGain = pt2FilterGain(throttleDCutoffHz, sampleTimeS);
-    pt2FilterInit(&throttleDLpf, throttleDCutoffGain);
+    cutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
+    gain = pt2FilterGain(cutoffHz, sampleTimeS);
+    pt2FilterInit(&throttleDLpf, gain);
 
-    const float pitchCutoffHz = 4.0f;
-    const float pitchCutoffGain = pt3FilterGain(pitchCutoffHz, sampleTimeS);
-    pt3FilterInit(&pitchLpf, pitchCutoffGain);
+    cutoffHz = 0.8f;
+    gain = pt2FilterGain(cutoffHz, 1.0f);
+    pt2FilterInit(&velocityDLpf, gain);
+
+    cutoffHz = 4.0f;
+    gain = pt3FilterGain(cutoffHz, sampleTimeS);
+    pt3FilterInit(&pitchLpf, gain);
 }
 
 /*
@@ -205,7 +210,6 @@ static void rescueAttainPosition(void)
     // runs at 100hz, but only updates RPYT settings when new GPS Data arrives and when not in idle phase.
     static float previousVelocityError = 0.0f;
     static float velocityI = 0.0f;
-    static float previousVelocityD = 0.0f;      // for smoothing
     static float previousPitchAdjustment = 0.0f;
     static float throttleI = 0.0f;
     static float previousAltitudeError = 0.0f;
@@ -222,7 +226,6 @@ static void rescueAttainPosition(void)
         // Initialize internal variables each time GPS Rescue is started
         previousVelocityError = 0.0f;
         velocityI = 0.0f;
-        previousVelocityD = 0.0f;
         previousPitchAdjustment = 0.0f;
         throttleI = 0.0f;
         previousAltitudeError = 0.0f;
@@ -335,9 +338,9 @@ static void rescueAttainPosition(void)
         // D component
         float velocityD = ((velocityError - previousVelocityError) / sampleIntervalNormaliseFactor);
         previousVelocityError = velocityError;
-        // simple first order filter on derivative with k = 0.5 for 200ms steps
-        velocityD = previousVelocityD + rescueState.sensor.filterK * (velocityD - previousVelocityD);
-        previousVelocityD = velocityD;
+        const float gain = pt2FilterGain(0.8f, HZ_TO_INTERVAL(gpsGetSampleRateHz()));
+        pt2FilterUpdateCutoff(&velocityDLpf, gain);
+        velocityD = pt2FilterApply(&velocityDLpf, velocityD);
         velocityD *= gpsRescueConfig()->velD;
 
         const float velocityIAttenuator = rescueState.intent.targetVelocityCmS / gpsRescueConfig()->rescueGroundspeed;
@@ -545,9 +548,6 @@ static void sensorUpdate(void)
     rescueState.sensor.gpsDataIntervalSeconds = constrainf(gpsDataIntervalUs * 0.000001f, 0.01f, 1.0f);
     // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
     previousGPSDataTimeUs = currentTimeUs;
-
-    rescueState.sensor.filterK = pt1FilterGain(0.8, rescueState.sensor.gpsDataIntervalSeconds);
-    // 0.8341 for 1hz, 0.5013 for 5hz, 0.3345 for 10hz, 0.1674 for 25Hz, etc
 
     rescueState.sensor.velocityToHomeCmS = (prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds;
     // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
