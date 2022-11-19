@@ -9,6 +9,8 @@
 
 #include "drivers/time.h"
 
+static bool WifiDetect(wifiDev_t *dev);
+static bool wifi_init();
 
 static serialPort_t *wifiSerialPort = NULL;
 

@@ -20,10 +20,10 @@ struct wifiDev_s;
 typedef enum {
     WIFI_NONE        = 0,
     WIFI_ATK_MW8266D      = 1,
-} wifiType_t;
+} wifiType_e;
 
-typedef struct wifiDev_s{
-    wifiType_t dev;
+typedef struct wifiDev_s {
+    wifiType_e dev;
     timeMs_t delayMs;
 
     timeMs_t lastValidResponseTimeMs;
@@ -33,9 +33,9 @@ typedef struct wifiDev_s{
     // wifiOpReadFuncPtr read;
 } wifiDev_t;
 
-static bool WifiDetect(wifiDev_t *dev);
+//PG_DECLARE(wifiDev_t, wifiDev);
+
 bool wifiATK8266Detect(wifiDev_t *dev);
 
-static bool wifi_init();
 void atk_8266_send_InitCmd();
 void wifiUpdate(wifiDev_t *dev);
