@@ -100,6 +100,7 @@
 #include "flight/pid_init.h"
 #include "flight/position.h"
 #include "flight/servos.h"
+#include "flight/wifi.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -979,6 +980,13 @@ void init(void)
     // Telemetry will initialise displayport and register with CMS by itself.
     if (featureIsEnabled(FEATURE_TELEMETRY)) {
         telemetryInit();
+    }
+#endif
+
+#ifdef USE_WIFI_ESP8266
+    if(!Wifi_init()) //wifi Init;
+    {
+        break;
     }
 #endif
 
