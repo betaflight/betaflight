@@ -15,13 +15,13 @@ static serialPort_t *wifiSerialPort = NULL;
 wifiDev_t wifiDev;
 
 static char wificmd01[] = "AT";
-static char wificmd02[] = "AT+CWMODE=1";
-//static char wificmd03[] = "AT+CWJAP="Xiaomi12","11111111a"";
-static char wificmd04[] = "AT";
-static char wificmd05[] = "AT";
-static char wificmd06[] = "AT";
+// static char wificmd02[] = "AT+CWMODE=1";
+// static char wificmd03[] = "AT+CWJAP="Xiaomi12","11111111a"";
+// static char wificmd04[] = "AT";
+// static char wificmd05[] = "AT";
+// static char wificmd06[] = "AT";
 
-bool wifi_init()
+static bool wifi_init()
 {
     if(!wifiATK8266Detect(&wifiDev.dev))
     {
@@ -40,6 +40,7 @@ void atk_8266_send_InitCmd()
 
 static bool WifiDetect(wifiDev_t *dev)
 {
+    UNUSED(dev);
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_WIFI_ESP8266);
 
     if (!portConfig) {
@@ -57,14 +58,7 @@ static bool WifiDetect(wifiDev_t *dev)
 
 bool wifiATK8266Detect(wifiDev_t *dev)
 {
-    if(WifiDetect(dev))
-    {
-        return true;
-    }
-    else{
-        return false;
-    }
-    
+    return WifiDetect(dev);
 }
 
 void wifiUpdate(wifiDev_t *dev)
