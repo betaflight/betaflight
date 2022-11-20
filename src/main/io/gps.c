@@ -413,7 +413,7 @@ void gpsInitNmea(void)
                serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
                 // special initialization for NMEA ATGM336 and similar GPS recivers - should be done only once
                if (!atgmRestartDone) {
-                   atgmRestartDone = 1;
+                   atgmRestartDone = true;
                    serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
                    serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart 
                }
