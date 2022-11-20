@@ -374,6 +374,7 @@ void gpsInit(void)
 #ifdef USE_GPS_NMEA
 void gpsInitNmea(void)
 {
+    static uint8_t atgmRestartDone = 0;
 #if !defined(GPS_NMEA_TX_ONLY)
     uint32_t now;
 #endif
@@ -410,6 +411,12 @@ void gpsInitNmea(void)
                gpsData.state_position++;
            } else if (gpsData.state_position < 2) {
                serialPrint(gpsPort, "$PSRF103,00,6,00,0*23\r\n");
+                // special initialization for NMEA ATGM336 and similar GPS recivers - should be done only once
+               if (!atgmRestartDone) {
+                   atgmRestartDone = 1;
+                   serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
+                   serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart 
+               }
                gpsData.state_position++;
            } else
 #else
