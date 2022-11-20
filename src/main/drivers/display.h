@@ -31,13 +31,14 @@ typedef enum {
 } displayPortDeviceType_e;
 
 typedef enum {
-    DISPLAYPORT_ATTR_NONE = 0,
+    DISPLAYPORT_ATTR_NORMAL = 0,
     DISPLAYPORT_ATTR_INFO,
     DISPLAYPORT_ATTR_WARNING,
     DISPLAYPORT_ATTR_CRITICAL,
-} displayPortAttr_e;
+    DISPLAYPORT_ATTR_COUNT,
+} displayPortSeverity_e;
 
-#define DISPLAYPORT_ATTR_BLINK  0x80 // Device local blink bit or'ed into displayPortAttr_e
+#define DISPLAYPORT_ATTR_BLINK  0x80 // Device local blink bit or'ed into displayPortSeverity_e
 
 // System elements rendered by VTX or Goggles
 typedef enum {

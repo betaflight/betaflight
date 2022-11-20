@@ -117,7 +117,7 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
     buf[0] = MSP_DP_WRITE_STRING;
     buf[1] = row;
     buf[2] = col;
-    buf[3] = displayPortProfileMsp()->attrValues[attr] & ~DISPLAYPORT_MSP_ATTR_BLINK & DISPLAYPORT_MSP_ATTR_MASK;
+    buf[3] = displayPortProfileMsp()->fontSelection[attr] & ~DISPLAYPORT_MSP_ATTR_BLINK & DISPLAYPORT_MSP_ATTR_MASK;
 
     if (attr & DISPLAYPORT_ATTR_BLINK) {
         buf[3] |= DISPLAYPORT_MSP_ATTR_BLINK;
@@ -146,7 +146,7 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
 
     buf[0] = c;
     buf[1] = 0;
-    return writeString(displayPort, col, row, attr, buf); //!!TODO - check if there is a direct MSP command to do this
+    return writeString(displayPort, col, row, attr, buf);
 }
 
 static bool isTransferInProgress(const displayPort_t *displayPort)

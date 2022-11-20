@@ -41,7 +41,7 @@ typedef enum {
 // MSP displayport V2 attribute byte bit functions
 #define DISPLAYPORT_MSP_ATTR_VERSION BIT(7) // Format indicator; must be zero for V2 (and V1)
 #define DISPLAYPORT_MSP_ATTR_BLINK   BIT(6) // Device local blink
-#define DISPLAYPORT_MSP_ATTR_FONT    (BIT(0) | BIT(1)) // Select bank of 256 characters as per displayPortAttr_e
+#define DISPLAYPORT_MSP_ATTR_FONT    (BIT(0) | BIT(1)) // Select bank of 256 characters as per displayPortSeverity_e
 #define DISPLAYPORT_MSP_ATTR_MASK    (~(DISPLAYPORT_MSP_ATTR_VERSION | DISPLAYPORT_MSP_ATTR_BLINK | DISPLAYPORT_MSP_ATTR_FONT))
 
 struct displayPort_s *displayPortMspInit(void);
