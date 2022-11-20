@@ -331,7 +331,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
     return crc;
 }
 
-#ifdef USE_CRSF_V3
+#if defined(USE_CRSF_V3) || defined(UNIT_TEST)
 STATIC_UNIT_TESTED uint8_t crsfFrameCmdCRC(void)
 {
     // CRC includes type and payload
