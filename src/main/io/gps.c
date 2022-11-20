@@ -374,7 +374,7 @@ void gpsInit(void)
 #ifdef USE_GPS_NMEA
 void gpsInitNmea(void)
 {
-    static uint8_t atgmRestartDone = 0;
+    static bool atgmRestartDone = false;
 #if !defined(GPS_NMEA_TX_ONLY)
     uint32_t now;
 #endif
