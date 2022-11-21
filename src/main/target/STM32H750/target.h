@@ -156,5 +156,4 @@
 
 #define USE_ADC
 
-#define USE_FLASH_CHIP
 #define CONFIG_IN_SDCARD
