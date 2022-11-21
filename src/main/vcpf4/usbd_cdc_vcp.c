@@ -23,9 +23,11 @@
 
 #include "platform.h"
 
+#include "build/atomic.h"
+
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
-#include "stdbool.h"
+#include "drivers/nvic.h"
 #include "drivers/time.h"
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
@@ -47,7 +49,7 @@ extern volatile uint32_t APP_Rx_ptr_out;
 /* Increment this buffer position or roll it back to
  start address when writing received data
  in the buffer APP_Rx_Buffer. */
-extern uint32_t APP_Rx_ptr_in;
+extern volatile uint32_t APP_Rx_ptr_in;
 
 /*
     APP TX is the circular buffer for data that is transmitted from the APP (host)
@@ -187,10 +189,7 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 
 uint32_t CDC_Send_FreeBytes(void)
 {
-    /*
-        return the bytes free in the circular buffer
-    */
-    return (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE + APP_Rx_ptr_out - APP_Rx_ptr_in);
+    return APP_RX_DATA_SIZE - CDC_Receive_BytesAvailable();
 }
 
 /**
@@ -207,8 +206,11 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
         could just check for: USB_CDC_ZLP, but better to be safe
         and wait for any existing transmission to complete.
     */
+    while (USB_Tx_State != 0);
+
     for (uint32_t i = 0; i < Len; i++) {
-        while ((APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE == APP_Rx_ptr_out || APP_Rx_ptr_out == APP_RX_DATA_SIZE || USB_Tx_State != 0) {
+        // Stall if the ring buffer is full
+        while (((APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE) == APP_Rx_ptr_out) {
             delay(1);
         }
 
@@ -230,7 +232,7 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 {
     uint32_t count = 0;
 
-    while (APP_Tx_ptr_out != APP_Tx_ptr_in && count < len) {
+    while (APP_Tx_ptr_out != APP_Tx_ptr_in && (count < len)) {
         recvBuf[count] = APP_Tx_Buffer[APP_Tx_ptr_out];
         APP_Tx_ptr_out = (APP_Tx_ptr_out + 1) % APP_TX_DATA_SIZE;
         count++;
@@ -241,7 +243,7 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 uint32_t CDC_Receive_BytesAvailable(void)
 {
     /* return the bytes available in the receive circular buffer */
-    return APP_Tx_ptr_out > APP_Tx_ptr_in ? APP_TX_DATA_SIZE - APP_Tx_ptr_out + APP_Tx_ptr_in : APP_Tx_ptr_in - APP_Tx_ptr_out;
+    return (APP_Tx_ptr_in + APP_TX_DATA_SIZE - APP_Tx_ptr_out) % APP_TX_DATA_SIZE;
 }
 
 /**

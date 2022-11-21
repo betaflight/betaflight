@@ -327,7 +327,7 @@ uint8_t serialRead(serialPort_t *){return 0;}
 
 void bufWriterAppend(bufWriter_t *, uint8_t ch){ printf("%c", ch); }
 void serialWriteBufShim(void *, const uint8_t *, int) {}
-bufWriter_t *bufWriterInit(uint8_t *, int, bufWrite_t, void *) {return NULL;}
+void bufWriterInit(bufWriter_t *, uint8_t *, int, bufWrite_t, void *) { }
 void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}
