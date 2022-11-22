@@ -85,7 +85,6 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-#define USE_RX_SPI
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
@@ -98,6 +97,9 @@
 #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+
+#define USE_RX_SPI
+#define USE_RX_CC2500
 
 #define USE_MAX7456
 

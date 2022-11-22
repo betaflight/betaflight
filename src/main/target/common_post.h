@@ -60,7 +60,7 @@
 #define USE_BARO_BMP085
 #endif
 
-#if defined(USE_RX_SPI) 
+#if defined(USE_RX_CC2500)
 
 #define USE_RX_FRSKY_SPI_D
 #define USE_RX_FRSKY_SPI_X
@@ -76,7 +76,7 @@
 #define USE_RX_SPEKTRUM
 #define USE_RX_SPEKTRUM_TELEMETRY
 
-#endif // defined(USE_RX_SPI)
+#endif // defined(USE_RX_CC2500)
 
 
 /* END HARDWARE INCLUSIONS */

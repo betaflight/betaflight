@@ -80,6 +80,9 @@
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
 
+#define USE_RX_SPI
+#define USE_RX_CC2500
+
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
@@ -90,8 +93,6 @@
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
 
 #define USE_MAX7456
-
-#define USE_RX_SPI
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
