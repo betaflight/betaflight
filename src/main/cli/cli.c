@@ -2448,7 +2448,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 
 #endif
 
-#ifdef USE_FLASHFS
+#ifdef USE_FLASH_CHIP
 static void cliFlashInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -2470,15 +2470,18 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
         }
         cliPrintLinef("  %d: %s %u %u", index, flashPartitionGetTypeName(partition->type), partition->startSector, partition->endSector);
     }
-
+#ifdef USE_FLASHFS
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
 
     cliPrintLinef("FlashFS size=%u, usedSize=%u",
             FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
             flashfsGetOffset()
     );
+#endif
 }
+#endif // USE_FLASH_CHIP
 
+#ifdef USE_FLASHFS
 static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6506,10 +6509,12 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
         "\t<->[name]", cliFeature),
+#ifdef USE_FLASH_CHIP
 #ifdef USE_FLASHFS
     CLI_COMMAND_DEF("flash_erase", "erase flash chip", NULL, cliFlashErase),
+#endif
     CLI_COMMAND_DEF("flash_info", "show flash chip info", NULL, cliFlashInfo),
-#ifdef USE_FLASH_TOOLS
+#if defined(USE_FLASH_TOOLS) && defined(USE_FLASHFS)
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_scan", "scan flash device for errors", NULL, cliFlashVerify),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
