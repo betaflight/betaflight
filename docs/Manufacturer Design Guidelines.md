@@ -375,7 +375,6 @@ Define at least one gyro and one accelerometer.
     #define USE_GYRO_SPI_ICM42688P
     #define USE_ACC_SPI_ICM42688P
 
-
 ### 4.2.2 Defines for FLASH
 
 Define correct flash driver(s) only if physical present on the board.
@@ -387,11 +386,9 @@ Define correct flash driver(s) only if physical present on the board.
     #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
     #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
 
-
 ### 4.2.3 Defines for BARO
 
 Define a barometer only if physical present on the board.
-
 
     #define USE_BARO_MS5611
     #define USE_BARO_SPI_MS5611
@@ -405,7 +402,6 @@ Define a barometer only if physical present on the board.
     #define USE_BARO_SPI_QMP6988
     #define USE_BARO_DPS310
     #define USE_BARO_SPI_DPS310
-
 
 ### 4.2.4 Defines for MAG
 
@@ -421,7 +417,6 @@ Define a magnetometer only if physical present of the board.
     #define USE_MAG_SPI_AK8963
     #define USE_MAG_AK8975
 
-
 ### 4.2.5 Defines for SX1280
 
 For SPI based SX1280 target designs add the following defines:
@@ -432,7 +427,6 @@ For SPI based SX1280 target designs add the following defines:
     #define USE_RX_SX1280
     #define RX_CHANNELS_AETR
 
-
 ### 4.2.6 Defines for OSD
 
     #define USE_MAX7456
@@ -441,6 +435,12 @@ For SPI based SX1280 target designs add the following defines:
 
     #define USE_SDCARD
 
+### 4.2.8 Defines for CC2500
+
+For SPI based CC2500 target designs add the following defines:
+
+    #define USE_RX_SPI
+    #define USR_RX_CC2500
 
 ## 4.3 Usage of the cloud build API
 

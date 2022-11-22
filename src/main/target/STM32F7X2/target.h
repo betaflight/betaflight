@@ -76,8 +76,6 @@
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
 
-#define USE_RX_SPI
-
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
@@ -88,6 +86,9 @@
 #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
 
 #define USE_MAX7456
+
+#define USE_RX_SPI
+#define USE_RX_CC2500
 
 #define USE_SDCARD
 

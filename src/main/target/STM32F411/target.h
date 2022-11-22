@@ -86,6 +86,7 @@
 #define USE_MAX7456
 
 #define USE_RX_SPI
+#define USE_RX_CC2500
 
 #define USE_SDCARD
 
