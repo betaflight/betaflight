@@ -329,6 +329,11 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #endif
 
+
+#if defined(USE_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER)
+#define USE_PWM_OUTPUT
+#endif
+
 #if !defined(USE_PWM_OUTPUT)
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE // implementation requires USE_PWM_OUTPUT to find motor outputs.
 #endif
@@ -376,10 +381,6 @@
 #ifndef USE_BEEPER
 #undef BEEPER_PIN
 #undef BEEPER_PWM_HZ
-#endif
-
-#if defined(USE_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER)
-#define USE_PWM_OUTPUT
 #endif
 
 #if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
