@@ -2462,7 +2462,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
     for (uint8_t index = 0; index < FLASH_MAX_PARTITIONS; index++) {
         const flashPartition_t *partition;
         if (index == 0) {
-            cliPrintLine("Paritions:");
+            cliPrintLine("Partitions:");
         }
         partition = flashPartitionFindByIndex(index);
         if (!partition) {
