@@ -503,7 +503,7 @@ const char * const lookupTableSimplifiedTuningPidsMode[] = {
 };
 
 static const char* const lookupTableMixerType[] = {
-    "LEGACY", "LINEAR", "DYNAMIC",
+    "LEGACY", "LINEAR", "DYNAMIC", "EZLANDING_THROTTLE", "EZLANDING_CLIP" 
 };
 
 #ifdef USE_OSD

@@ -97,6 +97,21 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
+static float calcEzLandStrength(float throttlePercent, float maxDeflection)
+{
+    // easy landing code, limits motor output when sticks and throttle are below threshold
+    float ezLandAttenuator = 0.0f;
+    if (throttlePercent < mixerRuntime.ezLandingThreshold
+            && maxDeflection < mixerRuntime.ezLandingThreshold) { // throttle low
+        // all sticks, including throttle, under threshold
+        ezLandAttenuator = fmaxf(maxDeflection, throttlePercent); // value range 0 -> threshold
+        ezLandAttenuator /= mixerRuntime.ezLandingThreshold; // normalised 0 - 1
+        ezLandAttenuator = 1.0f - ezLandAttenuator; // 1 -> 0
+        ezLandAttenuator *= mixerRuntime.ezLandingLimit; // eg 0.9 -> 0.0 if limit is 10
+    }
+    return constrainf(ezLandAttenuator, 0.0f, 1.0f);
+}
+
 static FAST_DATA_ZERO_INIT float throttle = 0;
 static FAST_DATA_ZERO_INIT float mixerThrottle = 0;
 static FAST_DATA_ZERO_INIT float motorOutputMin;
@@ -255,28 +270,17 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
-
         motorRangeMin = mixerRuntime.motorOutputLow + motorRangeMinIncrease * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
         motorOutputMin = motorRangeMin;
         motorOutputRange = motorRangeMax - motorRangeMin;
         motorOutputMixSign = 1;
-
-        // easy landing code, limits motor output when sticks and throttle are below threshold
-        const float throttlePercent = throttle / 1000.0f;
-        if (mixerRuntime.ezLandingThreshold && throttlePercent < mixerRuntime.ezLandingThreshold) { // throttle low
-            float ezLandAttenuator = 0.0f;
-            float maxDeflection = getMaxRcDeflectionAbs();
-            if (maxDeflection < mixerRuntime.ezLandingThreshold) { // all sticks, including throttle, under threshold
-                ezLandAttenuator = fmaxf(maxDeflection, throttlePercent); // value range 0 -> threshold
-                ezLandAttenuator /= mixerRuntime.ezLandingThreshold; // normalised 0 - 1
-                ezLandAttenuator = 1.0f - ezLandAttenuator; // 1 -> 0
-                ezLandAttenuator *= mixerRuntime.ezLandingLimit; // eg 0.9 -> 0.0 if limit is 10
-            }
-            const float motorRange = motorRangeMax - mixerRuntime.motorOutputLow;
-            motorRangeMax -= ezLandAttenuator * motorRange; // available motor range limited to 15% if threshold is 15
-        }
     }
 
+    if (mixerConfig()->mixer_type == MIXER_EZLANDING_CLIP) {
+        const float motorRange = motorRangeMax - mixerRuntime.motorOutputLow;
+        const float throttlePercentage = throttle/1000.f;
+        motorRangeMax -= calcEzLandStrength(throttlePercentage, getMaxRcDeflectionAbs()) * motorRange;
+    }
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
 }
 
@@ -438,6 +442,8 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
             motor[i] = motor_disarmed[i];
         }
     }
+    DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);
+    // DEBUG_ESLANDING 0 is the ez_landing coeffiecient 2 is the throttle limit
 }
 
 static float applyThrottleLimit(float throttle)
@@ -515,6 +521,50 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
 
     // constrain throttle so it won't clip any outputs
     throttle = constrainf(throttle, -minMotor, 1.0f - maxMotor);
+}
+
+static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
+{
+    // Calculate the 'airmode throttle' as usual
+    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f;
+
+    for (int i = 0; i < mixerRuntime.motorCount; i++) {
+        motorMix[i] *= motorMixNormalizationFactor;
+    }
+
+    const float normalizedMotorMixMin = motorMixMin * motorMixNormalizationFactor;
+    const float normalizedMotorMixMax = motorMixMax * motorMixNormalizationFactor;
+    motorMixRange *= motorMixNormalizationFactor;
+
+    const float airmodeThrottle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
+
+    // Calculate throttle limit based on stick positions
+    float throttleLimit = 1.0f - calcEzLandStrength(0.0, getMaxRcDeflectionAbs());
+
+    // Log ezLandCoefficient if throttle was zero
+    DEBUG_SET(DEBUG_EZLANDING, 3, MIN(1, throttleLimit/fabsf(normalizedMotorMixMin)) * 10000U);
+
+    // Use the largest of throttle and limit calculated from stick positions
+    throttleLimit = fmaxf(throttle, throttleLimit);
+
+    // Log actual throttle limit
+    DEBUG_SET(DEBUG_EZLANDING, 2, throttleLimit * 10000U);
+    if (airmodeThrottle > throttleLimit) {
+        // Scale down motor mix from PIDs so that the limit is respected
+        const float ezLandCoefficient = throttleLimit / fabsf(normalizedMotorMixMin);
+        for (int i = 0; i < mixerRuntime.motorCount; i++) {
+            motorMix[i] *= ezLandCoefficient;
+        }
+        throttle = throttleLimit;
+        // Hack to make anti windup recognize the reduced authority range
+        motorMixRange /= ezLandCoefficient;
+        // end of hack
+        DEBUG_SET(DEBUG_EZLANDING, 0, ezLandCoefficient * 10000U);
+    } else {
+        throttle = airmodeThrottle;
+        DEBUG_SET(DEBUG_EZLANDING, 0, 10000U);
+        // DEBUG_EZLANDING 1 is the adjusted throttle
+    }
 }
 
 static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
@@ -680,10 +730,23 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
     motorMixRange = motorMixMax - motorMixMin;
-    if (mixerConfig()->mixer_type > MIXER_LEGACY) {
-        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
-    } else {
+
+    switch (mixerConfig()->mixer_type)
+    {
+    case MIXER_LEGACY:
         applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        break;
+    case MIXER_LINEAR:
+    case MIXER_DYNAMIC:
+        applyMixerAdjustmentLinear(motorMix, airmodeEnabled);
+        break;
+    case MIXER_EZLANDING_THROTTLE:
+        applyMixerAdjustmentEzLand(motorMix, motorMixMin, motorMixMax);
+        break;
+    case MIXER_EZLANDING_CLIP:
+    default:
+        applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
+        break;
     }
 
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
