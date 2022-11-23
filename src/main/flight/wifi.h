@@ -13,6 +13,7 @@
 #include "drivers/io_types.h"
 
 struct wifiDev_s;
+struct wififind_s;
 // typedef void (*wifiOpInitFuncPtr)(struct wifiDev_s * dev);
 // typedef void (*wifiOpStartFuncPtr)(struct wifiDev_s * dev);
 // typedef int32_t (*wifiOpReadFuncPtr)(struct wifiDev_s * dev);
@@ -23,7 +24,6 @@ typedef enum {
 } wifiType_e;
 
 typedef struct wifiDev_s {
-    wifiType_e dev;
     timeMs_t delayMs;
 
     timeMs_t lastValidResponseTimeMs;
@@ -33,9 +33,14 @@ typedef struct wifiDev_s {
     // wifiOpReadFuncPtr read;
 } wifiDev_t;
 
-//PG_DECLARE(wifiDev_t, wifiDev);
+typedef struct wififind_s{
+    wifiDev_t dev;
+} wififind_t;
 
+//PG_DECLARE(wifiDev_t, wifiDev);
+bool WifiDetect(wifiDev_t *dev);
+bool wifi_init(void);
 bool wifiATK8266Detect(wifiDev_t *dev);
 
-void atk_8266_send_InitCmd();
+void atk_8266_send_InitCmd(void);
 void wifiUpdate(wifiDev_t *dev);

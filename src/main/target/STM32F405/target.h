@@ -101,12 +101,13 @@
 #define FLASH_SPI_INSTANCE      SPI3
 
 // *************** SD Card **************************
-#define USE_SDCARD
-#define USE_SDCARD_SPI
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-#define SDCARD_SPI_INSTANCE     SPI3
-#define SDCARD_SPI_CS_PIN       PC1
-#define SPI3_TX_DMA_OPT                     1     // DMA 1 Stream 7 Channel 0
+#define USE_BLACKBOX
+//#define USE_SDCARD
+//#define USE_SDCARD_SPI
+//#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+// #define SDCARD_SPI_INSTANCE     SPI3
+// #define SDCARD_SPI_CS_PIN       PC1
+// #define SPI3_TX_DMA_OPT                     1     // DMA 1 Stream 7 Channel 0
 
 // *************** OSD *****************************
 #define USE_SPI_DEVICE_2
@@ -161,6 +162,10 @@
 #define CURRENT_METER_ADC_PIN   PC4
 #define RSSI_ADC_PIN            PB1
 
+// *************** WIFI *****************************
+#define USE_WIFI_ESP8266
+
+// *************** RANGEFINDER *****************************
 //TFMINI rangefinder
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_TF

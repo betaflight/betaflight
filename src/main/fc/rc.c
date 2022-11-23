@@ -45,6 +45,7 @@
 #include "flight/feedforward.h"
 #include "flight/gps_rescue.h"
 #include "flight/pid_init.h"
+#include "flight/wifi.h"
 
 #include "io/beeper.h"
 
@@ -676,14 +677,15 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         }
     }
 
-    // if(!IS_RC_MODE_ACTIVE(BOXRANGEFINDER))
-    // {
-    //     DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
-    // }else{
-    //     rcCommand[THROTTLE] = 1300;
-    //     ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
-    //      beeper(BEEPER_ALL);
-    // }
+    if(!IS_RC_MODE_ACTIVE(BOXRANGEFINDER))  //rx
+    {
+        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
+    }else{
+        rcCommand[THROTTLE] = 1300;
+        ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
+        //atk_8266_send_InitCmd();
+        //beeper(BEEPER_ALL);
+    }
 }
 
 void resetYawAxis(void)

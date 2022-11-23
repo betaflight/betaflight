@@ -83,6 +83,11 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 
+#define WIFI_STA_SSID       "226"
+#define WIFI_STA_PASSWORD   "226226226"
+#define WIFI_SERVER_IP      "192.168.124.31"
+#define WIFI_SERVER_PORT    "8087"
+
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
@@ -98,7 +103,8 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
+    .high_resolution = false,
+    .provider = WIFI_ESP8266
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
@@ -295,7 +301,8 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SHUTTING_DOWN,
     BLACKBOX_STATE_START_ERASE,
     BLACKBOX_STATE_ERASING,
-    BLACKBOX_STATE_ERASED
+    BLACKBOX_STATE_ERASED,
+    BLACKBOX_STATE_WIFI_ENABLE,
 } BlackboxState;
 
 
@@ -329,6 +336,18 @@ typedef struct blackboxMainState_s {
 #endif
     uint16_t rssi;
 } blackboxMainState_t;
+
+#define WIFI_STA_SSID       "NeSC"
+#define WIFI_STA_PASSWORD   "nesc2022"
+#define WIFI_SERVER_IP      "192.168.124.31"
+#define WIFI_SERVER_PORT    "8087"
+
+typedef struct blackboxwifi_s
+{
+    uint32_t state_position;  //wifi
+    uint32_t state_ts;
+
+}blackboxwifi_t;
 
 typedef struct blackboxGpsState_s {
     int32_t GPS_home[2];
@@ -401,6 +420,8 @@ static blackboxMainState_t blackboxHistoryRing[3];
 static blackboxMainState_t* blackboxHistory[3];
 
 static bool blackboxModeActivationConditionPresent = false;
+
+static blackboxwifi_t blackboxwifi;
 
 /**
  * Return true if it is safe to edit the Blackbox configuration.
@@ -546,6 +567,8 @@ static void blackboxSetState(BlackboxState newState)
     case BLACKBOX_STATE_SHUTTING_DOWN:
         xmitState.u.startTime = millis();
         break;
+    case BLACKBOX_STATE_WIFI_ENABLE:  //wifi driver init
+        xmitState.u.startTime = millis();
     default:
         ;
     }
@@ -1902,6 +1925,8 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         }
     break;
 #endif
+    case BLACKBOX_STATE_WIFI_ENABLE:
+        wifiInitHardware();
     default:
         break;
     }
@@ -1975,6 +2000,8 @@ uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
  */
 void blackboxInit(void)
 {
+    blackboxwifi.state_position = 0;
+    blackboxwifi.state_ts = millis();
     blackboxResetIterationTimers();
 
     // an I-frame is written every 32ms
@@ -1988,12 +2015,88 @@ void blackboxInit(void)
     }
 
     if (blackboxConfig()->device) {
-        blackboxSetState(BLACKBOX_STATE_STOPPED);
+//        blackboxSetState(BLACKBOX_STATE_STOPPED);
+        blackboxDeviceOpen();
+        blackboxSetState(BLACKBOX_STATE_WIFI_ENABLE);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
     }
     blackboxSInterval = blackboxIInterval * 256; // S-frame is written every 256*32 = 8192ms, approx every 8 seconds
 
     blackboxHighResolutionScale = blackboxConfig()->high_resolution ? 10.0f : 1.0f;
+
 }
+
+void wifiInitHardware(void)
+{
+    switch (blackboxconfig()->provider)
+    {
+    case WIFI_ESP8266:
+#ifdef USE_WIFI_ESP8266
+        wifiInitHardware_Esp8266();
+#endif
+        break;
+    
+    default:
+        break;
+    }
+}
+
+void wifiInitHardware_Esp8266(void)
+{
+    uint32_t nowtime;
+    switch (blackboxState)
+    {
+    case BLACKBOX_STATE_WIFI_ENABLE:
+        nowtime = millis();
+           if (nowtime - blackboxwifi.state_ts < 1000) {
+               return;
+           }
+           blackboxwifi.state_ts = now;
+           if (blackboxwifi.state_position < 1) {
+//               serialSetBaudRate(blackboxPort, 115200);
+               serialPrint(blackboxPort, "AT\r\n");
+               delay(20);
+               blackboxwifi.state_position++;
+           } else if (blackboxwifi.state_position < 2) {
+               // print our wifi_esp8266 init string
+               serialPrint(blackboxPort, "AT+CWMODE=1\r\n");
+               blackboxPort.state_position++;
+//              while(serialRead(blackboxPort) == "OK");
+           } else if (blackboxwifi.state_position < 3)
+           {
+               serialPrint(blackboxPort, "AT+RST\r\n");
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               blackboxPort.state_position++;
+           } else if (blackboxwifi.state_position < 4)
+           {
+               serialPrint(blackboxPort, "AT+CWJAP=\"Xiaomi12\",\"11111111a\"\r\n");
+               delay(1000);
+               serialPrint(blackboxPort,"AT+CIPMUX=0");
+               delay(200);
+               serialPrint(blackboxPort,"AT+CIPSTART=\"TCP\",\"***.**.***.***\",8081\r\n");
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               serialPrint(blackboxPort,"AT+CIPMODE=1\r\n");
+               delay(200);
+               serialPrint(blackboxPort,"AT+CIPSEND\r\n");
+               serialPrint(blackboxPort,"Connect Success!\r\n")
+               blackboxPort.state_position++;
+           } else {
+               // we're now (hopefully) at the correct rate, next state will switch to it
+               gpsSetState(BLACKBOX_STATE_STOPPED);
+           }
+        break;
+    
+    default:
+        break;
+    }
+}
+
 #endif

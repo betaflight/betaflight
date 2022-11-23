@@ -57,6 +57,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/wifi.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"

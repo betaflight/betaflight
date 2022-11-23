@@ -9,38 +9,44 @@
 
 #include "drivers/time.h"
 
-static bool WifiDetect(wifiDev_t *dev);
-static bool wifi_init();
 
 static serialPort_t *wifiSerialPort = NULL;
 
-wifiDev_t wifiDev;
+wififind_t wifiDev;
 
-static char wificmd01[] = "AT";
-// static char wificmd02[] = "AT+CWMODE=1";
+static uint8_t wificmd01[] = {0x01, 0x56, 0x07, 0x0D, 0x0A};
+static char wificmd02[] = "AT+CWMODE=1";
 // static char wificmd03[] = "AT+CWJAP="Xiaomi12","11111111a"";
 // static char wificmd04[] = "AT";
 // static char wificmd05[] = "AT";
 // static char wificmd06[] = "AT";
 
-static bool wifi_init()
+bool wifi_init(void)
 {
     if(!wifiATK8266Detect(&wifiDev.dev))
     {
         return false;
     }
 
-    wifiDev.lastValidResponseTimeMs = millis();
+    
+    wifiDev.dev.lastValidResponseTimeMs = millis();
 
     return true;
 }
 
-void atk_8266_send_InitCmd()
+void atk_8266_send_InitCmd(void)
 {
     serialWriteBuf(wifiSerialPort, wificmd01, sizeof(wificmd01));
+    //serialPrint(wifiSerialPort, wificmd02);
 }
 
-static bool WifiDetect(wifiDev_t *dev)
+
+bool wifiATK8266Detect(wifiDev_t *dev)
+{
+    return WifiDetect(dev);
+}
+
+bool WifiDetect(wifiDev_t *dev)
 {
     UNUSED(dev);
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_WIFI_ESP8266);
@@ -49,18 +55,13 @@ static bool WifiDetect(wifiDev_t *dev)
         return false;
     }
 
-    wifiSerialPort = openSerialPort(portConfig->identifier, FUNCTION_WIFI_ESP8266, NULL, NULL, 115200, MODE_RXTX, 0);
+    wifiSerialPort = openSerialPort(SERIAL_PORT_UART4, FUNCTION_WIFI_ESP8266, NULL, NULL, 115200, MODE_RXTX, 0);
 
     if (wifiSerialPort == NULL) {
         return false;
     }
 
     return true;
-}
-
-bool wifiATK8266Detect(wifiDev_t *dev)
-{
-    return WifiDetect(dev);
 }
 
 void wifiUpdate(wifiDev_t *dev)
