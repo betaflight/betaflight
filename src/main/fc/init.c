@@ -180,19 +180,6 @@
 void targetPreInit(void);
 #endif
 
-// #ifdef USE_WIFI_ESP8266
-// static bool wifi_Init(void);
-// static bool wifi_Init(void)
-// {
-//     if(wifi_init())
-//     {
-//         return true;
-//     }else{
-//         return false;
-//     }
-// }
-// #endif
-
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
@@ -996,26 +983,6 @@ void init(void)
         telemetryInit();
     }
 #endif
-
-// #ifdef USE_WIFI_ESP8266
-//     if(!wifi_init()) //wifi Init;
-//     {
-//         LED0_OFF;
-//         LED1_OFF;
-//         delay(500);
-//         LED0_ON;
-//         LED1_ON;
-//         delay(500);
-//         LED0_OFF;
-//         LED1_OFF;
-//         delay(500);
-//         LED0_ON;
-//         LED1_ON;
-//         delay(500);
-//         LED0_OFF;
-//         LED1_OFF;
-//     }
-// #endif
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 

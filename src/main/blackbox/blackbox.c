@@ -337,10 +337,10 @@ typedef struct blackboxMainState_s {
     uint16_t rssi;
 } blackboxMainState_t;
 
-#define WIFI_STA_SSID       "NeSC"
-#define WIFI_STA_PASSWORD   "nesc2022"
-#define WIFI_SERVER_IP      "192.168.124.31"
-#define WIFI_SERVER_PORT    "8087"
+// #define WIFI_STA_SSID       "NeSC"
+// #define WIFI_STA_PASSWORD   "nesc2022"
+// #define WIFI_SERVER_IP      "192.168.124.31"
+// #define WIFI_SERVER_PORT    "8087"
 
 typedef struct blackboxwifi_s
 {
@@ -420,6 +420,8 @@ static blackboxMainState_t blackboxHistoryRing[3];
 static blackboxMainState_t* blackboxHistory[3];
 
 static bool blackboxModeActivationConditionPresent = false;
+
+static serialPort_t *blackboxPort = NULL;
 
 static blackboxwifi_t blackboxwifi;
 
@@ -2016,7 +2018,31 @@ void blackboxInit(void)
 
     if (blackboxConfig()->device) {
 //        blackboxSetState(BLACKBOX_STATE_STOPPED);
-        blackboxDeviceOpen();
+        const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
+        baudRate_e baudRateIndex;
+        portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
+
+        if (!portConfig) {
+            return;
+        }
+
+        //             blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
+        baudRateIndex = portConfig->blackbox_baudrateIndex;
+
+        //             if (baudRates[baudRateIndex] == 230400) {
+        //                 /*
+        //                 * OpenLog's 230400 baud rate is very inaccurate, so it requires a larger inter-character gap in
+        //                 * order to maintain synchronization.
+        //                 */
+        //                 portOptions |= SERIAL_STOPBITS_2;
+        //             } else {
+        portOptions |= SERIAL_STOPBITS_1;
+        //             }
+
+        blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
+                        MODE_RXTX, portOptions);
+
+        //blackboxDeviceOpen();
         blackboxSetState(BLACKBOX_STATE_WIFI_ENABLE);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
@@ -2029,7 +2055,7 @@ void blackboxInit(void)
 
 void wifiInitHardware(void)
 {
-    switch (blackboxconfig()->provider)
+    switch (blackboxConfig()->provider)
     {
     case WIFI_ESP8266:
 #ifdef USE_WIFI_ESP8266
@@ -2052,7 +2078,7 @@ void wifiInitHardware_Esp8266(void)
            if (nowtime - blackboxwifi.state_ts < 1000) {
                return;
            }
-           blackboxwifi.state_ts = now;
+           blackboxwifi.state_ts = nowtime;
            if (blackboxwifi.state_position < 1) {
 //               serialSetBaudRate(blackboxPort, 115200);
                serialPrint(blackboxPort, "AT\r\n");
@@ -2061,7 +2087,7 @@ void wifiInitHardware_Esp8266(void)
            } else if (blackboxwifi.state_position < 2) {
                // print our wifi_esp8266 init string
                serialPrint(blackboxPort, "AT+CWMODE=1\r\n");
-               blackboxPort.state_position++;
+               blackboxwifi.state_position++;
 //              while(serialRead(blackboxPort) == "OK");
            } else if (blackboxwifi.state_position < 3)
            {
@@ -2070,7 +2096,7 @@ void wifiInitHardware_Esp8266(void)
                delay(1000);
                delay(1000);
                delay(1000);
-               blackboxPort.state_position++;
+               blackboxwifi.state_position++;
            } else if (blackboxwifi.state_position < 4)
            {
                serialPrint(blackboxPort, "AT+CWJAP=\"Xiaomi12\",\"11111111a\"\r\n");
@@ -2086,11 +2112,11 @@ void wifiInitHardware_Esp8266(void)
                serialPrint(blackboxPort,"AT+CIPMODE=1\r\n");
                delay(200);
                serialPrint(blackboxPort,"AT+CIPSEND\r\n");
-               serialPrint(blackboxPort,"Connect Success!\r\n")
-               blackboxPort.state_position++;
+               serialPrint(blackboxPort,"Connect Success!\r\n");
+               blackboxwifi.state_position++;
            } else {
                // we're now (hopefully) at the correct rate, next state will switch to it
-               gpsSetState(BLACKBOX_STATE_STOPPED);
+               blackboxSetState(BLACKBOX_STATE_STOPPED);
            }
         break;
     

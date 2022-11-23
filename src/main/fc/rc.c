@@ -683,7 +683,6 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
     }else{
         rcCommand[THROTTLE] = 1300;
         ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
-        //atk_8266_send_InitCmd();
         //beeper(BEEPER_ALL);
     }
 }

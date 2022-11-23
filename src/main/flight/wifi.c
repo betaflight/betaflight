@@ -15,7 +15,7 @@ static serialPort_t *wifiSerialPort = NULL;
 wififind_t wifiDev;
 
 static uint8_t wificmd01[] = {0x01, 0x56, 0x07, 0x0D, 0x0A};
-static char wificmd02[] = "AT+CWMODE=1";
+//static char wificmd02[] = "AT+CWMODE=1";
 // static char wificmd03[] = "AT+CWJAP="Xiaomi12","11111111a"";
 // static char wificmd04[] = "AT";
 // static char wificmd05[] = "AT";
@@ -69,20 +69,11 @@ void wifiUpdate(wifiDev_t *dev)
     UNUSED(dev);
     static timeMs_t lastFrameReceivedMs = 0;
     const timeMs_t timeNowMs = millis();
-
+    UNUSED(lastFrameReceivedMs);
     if(wifiSerialPort == NULL){
         return;
     }
-    // while (serialRxBytesWaiting(wifiSerialPort))
-    // {
-    //     uint8_t c = serialRead(wifiSerialPort);
-
-    // }
 
     lastFrameReceivedMs = timeNowMs;
-
-    // if (timeNowMs - lastFrameReceivedMs > TF_TIMEOUT_MS) {
-    atk_8266_send_InitCmd();
-    // }
 
 }
