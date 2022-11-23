@@ -29,6 +29,10 @@
 
 static bool doRxBind(bool doBind)
 {
+#if !defined(USE_SERIALRX_SRXL2) && !defined(USE_RX_FRSKY_SPI) && !defined(USE_RX_SFHSS_SPI) && !defined(USE_RX_FLYSKY) && !defined(USE_RX_SPEKTRUM) && !defined(USE_RX_EXPRESSLRS)
+    UNUSED(doBind);
+#endif
+
     switch (rxRuntimeState.rxProvider) {
     default:
         return false;
