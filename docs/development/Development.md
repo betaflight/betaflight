@@ -127,3 +127,30 @@ For Linux/BSD/OSX: `git config --global core.excludesfile '~/.gitignore'`
 For Windows: `git config --global core.excludesfile '%USERPROFILE%\.gitignore'`
 
 When you `git config --global --get core.excludesfile` a second time, you should get a file location back.
+
+### Custom Defaults - for developers
+
+As all targets are now MCU based (and cloud built), this poses a problem for developers in flashing and running a fully baked "hex" using the standard debugger. The board scratch space (located at the /src/main/board directory) allows developers to setup their environment like they were running a fully baked unified target.
+
+Once setup, you can simply execute make with `make BOARD=XXX` where XXX is the sub directory name under /src/main/board.
+
+Example board.c (so that custom defaults are placed in the resultant build file):
+```
+#include "board.h"
+
+const char __attribute__ ((section(".custom_defaults"), used, aligned(4))) customDefaults[] = 
+    "# Betaflight\n"
+    "board_name NERO\n"
+    "\0";
+
+```
+board.h allows for any defines that you are working on as developers rather than specify via command line in EXTRA_FLAGS (as the cloud build system does).
+
+board.mk allows for any additional source files, and to specify the target.
+
+e.g. 
+```
+TARGET := STM32F7X2
+
+```
+
