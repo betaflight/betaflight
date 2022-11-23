@@ -1168,6 +1168,24 @@ case MSP_NAME:
         }
         break;
 
+    case MSP_PID_PROFILE_NAME:
+        {
+            const int nameLen = strlen(currentPidProfile->profileName);
+            for (int i = 0; i < nameLen; i++) {
+                sbufWriteU8(dst, currentPidProfile->profileName[i]);
+            }
+        }
+        break;
+
+    case MSP_RATE_PROFILE_NAME:
+        {
+            const int nameLen = strlen(currentControlRateProfile->profileName);
+            for (int i = 0; i < nameLen; i++) {
+                sbufWriteU8(dst, currentControlRateProfile->profileName[i]);
+            }
+        }
+        break;
+
 #ifdef USE_SERVOS
     case MSP_SERVO:
         sbufWriteData(dst, &servo, MAX_SUPPORTED_SERVOS * 2);
@@ -3838,6 +3856,20 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #ifdef USE_OSD
         osdAnalyzeActiveElements();
 #endif
+        break;
+
+    case MSP_SET_PID_PROFILE_NAME:
+        ARRAY_ZERO(currentPidProfile->profileName);
+        for (unsigned int i = 0; i < MIN(MAX_PROFILE_NAME_LENGTH, dataSize); i++) {
+            currentPidProfile->profileName[i] = sbufReadU8(src);
+        }
+        break;
+
+    case MSP_SET_RATE_PROFILE_NAME:
+        ARRAY_ZERO(currentControlRateProfile->profileName);
+        for (unsigned int i = 0; i < MIN(MAX_RATE_PROFILE_NAME_LENGTH, dataSize); i++) {
+            currentControlRateProfile->profileName[i] = sbufReadU8(src);
+        }
         break;
 
 #ifdef USE_RTC_TIME
