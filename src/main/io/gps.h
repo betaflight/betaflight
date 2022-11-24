@@ -20,10 +20,13 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "common/axis.h"
 #include "common/time.h"
 
-#include "pg/pg.h"
+#include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L
 #define GPS_X 1
@@ -84,20 +87,6 @@ typedef enum {
 } ubloxAckState_e;
 
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
-
-typedef struct gpsConfig_s {
-    gpsProvider_e provider;
-    sbasMode_e sbasMode;
-    gpsAutoConfig_e autoConfig;
-    gpsAutoBaud_e autoBaud;
-    uint8_t gps_ublox_use_galileo;
-    ubloxMode_e gps_ublox_mode;
-    uint8_t gps_set_home_point_once;
-    uint8_t gps_use_3d_speed;
-    uint8_t sbas_integrity;
-} gpsConfig_t;
-
-PG_DECLARE(gpsConfig_t, gpsConfig);
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
