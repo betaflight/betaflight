@@ -24,6 +24,7 @@
 #include "build/build_config.h"
 #include "common/time.h"
 #include "pg/pg.h"
+#include "drivers/serial.h"
 
 typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_NONE = 0,

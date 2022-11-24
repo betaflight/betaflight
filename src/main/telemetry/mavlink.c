@@ -68,6 +68,7 @@
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "sensors/rangefinder.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
@@ -81,7 +82,7 @@
 
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
 #define TELEMETRY_MAVLINK_MAXRATE 50
-#define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
+#define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE) //200000us=200ms
 
 extern uint16_t rssi; // FIXME dependency on mw.c
 
@@ -106,6 +107,7 @@ static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
 static uint32_t lastMavlinkMessage = 0;
+static uint32_t mavlinkstate_position = 0;
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
@@ -169,7 +171,7 @@ void configureMAVLinkTelemetryPort(void)
     baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for minimOSD
-        baudRateIndex = BAUD_57600;
+        baudRateIndex = BAUD_115200;
     }
 
     mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED);
@@ -179,6 +181,11 @@ void configureMAVLinkTelemetryPort(void)
     }
 
     mavlinkTelemetryEnabled = true;
+    if(mavlinkstate_position < 1)
+    {
+        WifiInitHardware_Esp8266();
+        mavlinkstate_position++;
+    }
 }
 
 void checkMAVLinkTelemetryState(void)
@@ -271,7 +278,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
     mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
-        // time_boot_ms Timestamp (milliseconds since system boot)
+        // time_boot_ms Timestamp (milliseconds since system boot) 
         millis(),
         // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
         0,
@@ -415,7 +422,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     }
 #endif
 
-    mavAltitude = getEstimatedAltitudeCm() / 100.0;
+    mavAltitude = rangefinderGetLatestAltitude() / 100.0;
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s
@@ -555,4 +562,119 @@ void handleMAVLinkTelemetry(void)
     }
 }
 
+void WifiInitHardware_Esp8266(void)
+{
+    uint32_t nowtime;
+    uint8_t c;
+    #ifdef USE_WIFI_ESP8266
+        nowtime = millis();
+        serialPrint(mavlinkPort, "AT\r\n");
+        delay(10);
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'O')
+        {
+            if(millis()-nowtime > 200){
+                serialPrint(mavlinkPort, "wait1\r\n");
+                break;
+            }
+        };
+        c = 0;
+
+        serialPrint(mavlinkPort, "AT+CWMODE=1\r\n");
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'O')
+        { 
+            if(millis()-nowtime > 500){
+                serialPrint(mavlinkPort, "wait2\r\n");     
+                break;               
+            }  
+        };
+        c = 0;
+
+        serialPrint(mavlinkPort, "AT+RST\r\n");
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'O')
+        {
+            if(millis()-nowtime > 200){
+                serialPrint(mavlinkPort, "wait3\r\n");
+                break;
+            }
+        };
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        c = 0;
+
+        serialPrint(mavlinkPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'W')
+        {
+            if(millis()-nowtime > 1000){
+                serialPrint(mavlinkPort, "wait4\r\n");
+                break;
+            }      
+        };
+        c = 0;
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        delay(1000);
+        delay(1000);
+
+        serialPrint(mavlinkPort,"AT+CIPMUX=0\r\n");
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'O')
+        {
+            if(millis()-nowtime > 2000){
+                serialPrint(mavlinkPort, "wait5\r\n");
+                break;
+            }
+        };
+        delay(200);
+        c = 0;
+
+
+        serialPrint(mavlinkPort,"AT+CIPSTART=\"TCP\",\"192.168.31.154\",8086\r\n");
+        delay(1000);
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'O')
+        {
+            if(millis()-nowtime > 1000){
+                serialPrint(mavlinkPort, "wait6\r\n");
+                break;
+            }
+        };
+        delay(1000);
+        c = 0;
+
+        serialPrint(mavlinkPort,"AT+CIPMODE=1\r\n");
+        nowtime = millis();
+        c = serialRead(mavlinkPort);
+        while(c != 'O')
+        {
+            if(millis()-nowtime > 2000){
+                serialPrint(mavlinkPort, "wait7\r\n");
+                break;
+            }
+        };
+        delay(200);
+        c = 0;
+
+        serialPrint(mavlinkPort,"AT+CIPSEND\r\n");
+        delay(200);
+
+        serialPrint(mavlinkPort,"Connect Success!\r\n");
+        nowtime = millis();
+#endif
+}
 #endif

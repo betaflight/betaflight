@@ -48,6 +48,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#include "drivers/serial.h"
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
@@ -1768,211 +1769,34 @@ STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
  */
 void blackboxUpdate(timeUs_t currentTimeUs)
 {
-    static BlackboxState cacheFlushNextState;
+    //static BlackboxState cacheFlushNextState;
+    UNUSED(currentTimeUs);
 
-    switch (blackboxState) {
-    case BLACKBOX_STATE_STOPPED:
-        if (ARMING_FLAG(ARMED)) {
-            blackboxOpen();
-            blackboxStart();
-        }
-#ifdef USE_FLASHFS
-        if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
-            blackboxSetState(BLACKBOX_STATE_START_ERASE);
-        }
-#endif
-        break;
-    case BLACKBOX_STATE_PREPARE_LOG_FILE:
-        if (blackboxDeviceBeginLog()) {
-            blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
-        }
-        break;
-    case BLACKBOX_STATE_SEND_HEADER:
-        blackboxReplenishHeaderBudget();
-        //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
-
-        /*
-         * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
-         * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
-         */
-        if (millis() > xmitState.u.startTime + 100) {
-            if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
-                for (int i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
-                    blackboxWrite(blackboxHeader[xmitState.headerIndex]);
-                    blackboxHeaderBudget--;
+    if(IS_RC_MODE_ACTIVE(BOXBLACKBOX))
+    {
+        ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);  
+        switch (blackboxState) {
+            case BLACKBOX_STATE_STOPPED:
+                if (ARMING_FLAG(ARMED)) {
+                    // blackboxOpen();
+                    // blackboxStart();
+                    serialPrint(blackboxPort,"blackboxopen and blackboxStart\r\n");
+                    //serialTxBytesFree(blackboxPort);
                 }
-                if (blackboxHeader[xmitState.headerIndex] == '\0') {
-                    blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
-                }
-            }
-        }
-        break;
-    case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
-        blackboxReplenishHeaderBudget();
-        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-        if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
-                &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
-#ifdef USE_GPS
-            if (featureIsEnabled(FEATURE_GPS) && isFieldEnabled(FIELD_SELECT(GPS))) {
-                blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
-            } else
-#endif
-                blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
-        }
-        break;
-#ifdef USE_GPS
-    case BLACKBOX_STATE_SEND_GPS_H_HEADER:
-        blackboxReplenishHeaderBudget();
-        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-        if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAYLEN(blackboxGpsHFields),
-                NULL, NULL) && isFieldEnabled(FIELD_SELECT(GPS))) {
-            blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
-        }
-        break;
-    case BLACKBOX_STATE_SEND_GPS_G_HEADER:
-        blackboxReplenishHeaderBudget();
-        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-        if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAYLEN(blackboxGpsGFields),
-                &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition) && isFieldEnabled(FIELD_SELECT(GPS))) {
-            blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
-        }
-        break;
-#endif
-    case BLACKBOX_STATE_SEND_SLOW_HEADER:
-        blackboxReplenishHeaderBudget();
-        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-        if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
-                NULL, NULL)) {
-            cacheFlushNextState = BLACKBOX_STATE_SEND_SYSINFO;
-            blackboxSetState(BLACKBOX_STATE_CACHE_FLUSH);
-        }
-        break;
-    case BLACKBOX_STATE_SEND_SYSINFO:
-        blackboxReplenishHeaderBudget();
-        //On entry of this state, xmitState.headerIndex is 0
-
-        //Keep writing chunks of the system info headers until it returns true to signal completion
-        if (blackboxWriteSysinfo()) {
-            /*
-             * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
-             * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
-             * could wipe out the end of the header if we weren't careful)
-             */
-            cacheFlushNextState = BLACKBOX_STATE_RUNNING;
-            blackboxSetState(BLACKBOX_STATE_CACHE_FLUSH);
-        }
-        break;
-    case BLACKBOX_STATE_CACHE_FLUSH:
-        // Flush the cache and wait until all possible entries have been written to the media
-        if (blackboxDeviceFlushForceComplete()) {
-            blackboxSetState(cacheFlushNextState);
-        }
-        break;
-    case BLACKBOX_STATE_PAUSED:
-        // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-        if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
-            // Write a log entry so the decoder is aware that our large time/iteration skip is intended
-            flightLogEvent_loggingResume_t resume;
-
-            resume.logIteration = blackboxIteration;
-            resume.currentTime = currentTimeUs;
-
-            blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
-            blackboxSetState(BLACKBOX_STATE_RUNNING);
-
-            blackboxLogIteration(currentTimeUs);
-        }
-        // Keep the logging timers ticking so our log iteration continues to advance
-        blackboxAdvanceIterationTimers();
-        break;
-    case BLACKBOX_STATE_RUNNING:
-        // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
-        // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
-        if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX) && !startedLoggingInTestMode) {
-            blackboxSetState(BLACKBOX_STATE_PAUSED);
-        } else {
-            blackboxLogIteration(currentTimeUs);
-        }
-        blackboxAdvanceIterationTimers();
-        break;
-    case BLACKBOX_STATE_SHUTTING_DOWN:
-        //On entry of this state, startTime is set
-        /*
-         * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
-         * since releasing the port clears the Tx buffer.
-         *
-         * Don't wait longer than it could possibly take if something funky happens.
-         */
-        if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlushForce())) {
-            blackboxDeviceClose();
-            blackboxSetState(BLACKBOX_STATE_STOPPED);
-        }
-        break;
-#ifdef USE_FLASHFS
-    case BLACKBOX_STATE_START_ERASE:
-        blackboxEraseAll();
-        blackboxSetState(BLACKBOX_STATE_ERASING);
-        beeper(BEEPER_BLACKBOX_ERASE);
-        break;
-    case BLACKBOX_STATE_ERASING:
-        if (isBlackboxErased()) {
-            //Done erasing
-            blackboxSetState(BLACKBOX_STATE_ERASED);
-            beeper(BEEPER_BLACKBOX_ERASE);
-        }
-        break;
-    case BLACKBOX_STATE_ERASED:
-        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
-            blackboxSetState(BLACKBOX_STATE_STOPPED);
-        }
-    break;
-#endif
-    case BLACKBOX_STATE_WIFI_ENABLE:
-        wifiInitHardware();
-    default:
-        break;
-    }
-
-    // Did we run out of room on the device? Stop!
-    if (isBlackboxDeviceFull()) {
-#ifdef USE_FLASHFS
-        if (blackboxState != BLACKBOX_STATE_ERASING
-            && blackboxState != BLACKBOX_STATE_START_ERASE
-            && blackboxState != BLACKBOX_STATE_ERASED)
-#endif
-        {
-            blackboxSetState(BLACKBOX_STATE_STOPPED);
-            // ensure we reset the test mode flag if we stop due to full memory card
-            if (startedLoggingInTestMode) {
-                startedLoggingInTestMode = false;
-            }
-        }
-    } else { // Only log in test mode if there is room!
-        switch (blackboxConfig()->mode) {
-        case BLACKBOX_MODE_MOTOR_TEST:
-            // Handle Motor Test Mode
-            if (inMotorTestMode()) {
-                if (blackboxState==BLACKBOX_STATE_STOPPED) {
-                    startInTestMode();
-                }
-            } else {
-                if (blackboxState!=BLACKBOX_STATE_STOPPED) {
-                    stopInTestMode();
-                }
-            }
-
+                blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
             break;
-        case BLACKBOX_MODE_ALWAYS_ON:
-            if (blackboxState==BLACKBOX_STATE_STOPPED) {
-                startInTestMode();
+            case BLACKBOX_STATE_PREPARE_LOG_FILE:
+                serialPrint(blackboxPort,"BLACKBOX_STATE_PREPARE_LOG_FILE\r\n");
+                blackboxSetState(BLACKBOX_STATE_STOPPED);
+            break;
+            case BLACKBOX_STATE_WIFI_ENABLE:
+                wifiInitHardware();
+            default:
+                break;
             }
-
-            break;
-        case BLACKBOX_MODE_NORMAL:
-        default:
-
-            break;
-        }
+    } else
+    {
+        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);   
     }
 }
 
@@ -2002,7 +1826,7 @@ uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
  */
 void blackboxInit(void)
 {
-    blackboxwifi.state_position = 0;
+    blackboxwifi.state_position = 7;
     blackboxwifi.state_ts = millis();
     blackboxResetIterationTimers();
 
@@ -2040,7 +1864,7 @@ void blackboxInit(void)
         //             }
 
         blackboxPort = openSerialPort(portConfig->identifier, FUNCTION_BLACKBOX, NULL, NULL, baudRates[baudRateIndex],
-                        MODE_RXTX, portOptions);
+                        MODE_TX, portOptions);
 
         //blackboxDeviceOpen();
         blackboxSetState(BLACKBOX_STATE_WIFI_ENABLE);
@@ -2071,6 +1895,8 @@ void wifiInitHardware(void)
 void wifiInitHardware_Esp8266(void)
 {
     uint32_t nowtime;
+    uint8_t c;
+//    char *d="wait";
     switch (blackboxState)
     {
     case BLACKBOX_STATE_WIFI_ENABLE:
@@ -2082,38 +1908,150 @@ void wifiInitHardware_Esp8266(void)
            if (blackboxwifi.state_position < 1) {
 //               serialSetBaudRate(blackboxPort, 115200);
                serialPrint(blackboxPort, "AT\r\n");
-               delay(20);
+               delay(10);
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'O')
+               {
+                // *d = (char)serialRead(blackboxPort);
+                // serialPrint(blackboxPort, d);
+                if(millis()-nowtime > 200){
+                    serialPrint(blackboxPort, "wait1\r\n");
+                    break;
+                    }
+               };
+               c = 0;
                blackboxwifi.state_position++;
            } else if (blackboxwifi.state_position < 2) {
                // print our wifi_esp8266 init string
                serialPrint(blackboxPort, "AT+CWMODE=1\r\n");
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'O')
+               {
+                //c = serialRead(blackboxPort);
+                
+                if(millis()-nowtime > 500){
+                    serialPrint(blackboxPort, "wait2\r\n");     
+                    break;               
+                }  
+               };
+               c = 0;
                blackboxwifi.state_position++;
 //              while(serialRead(blackboxPort) == "OK");
            } else if (blackboxwifi.state_position < 3)
            {
                serialPrint(blackboxPort, "AT+RST\r\n");
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'O')
+               {
+                //c = serialRead(blackboxPort);
+                
+                if(millis()-nowtime > 200){
+                    serialPrint(blackboxPort, "wait3\r\n");
+                    break;
+                }
+               };
                delay(1000);
                delay(1000);
                delay(1000);
                delay(1000);
+//               delay(1000);
+               c = 0;
                blackboxwifi.state_position++;
            } else if (blackboxwifi.state_position < 4)
            {
-               serialPrint(blackboxPort, "AT+CWJAP=\"Xiaomi12\",\"11111111a\"\r\n");
+               serialPrint(blackboxPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'W')
+               {
+                //c = serialRead(blackboxPort);
+                
+                if(millis()-nowtime > 1000){
+                    serialPrint(blackboxPort, "wait4\r\n");
+                    break;
+                }      
+               };
+               c = 0;
                delay(1000);
-               serialPrint(blackboxPort,"AT+CIPMUX=0");
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+               delay(1000);
+//               delay(1000);
+               serialPrint(blackboxPort,"AT+CIPMUX=0\r\n");
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'O')
+               {
+                //c = serialRead(blackboxPort);
+                
+                if(millis()-nowtime > 2000){
+                    serialPrint(blackboxPort, "wait5\r\n");
+                    break;
+                }
+               };
                delay(200);
-               serialPrint(blackboxPort,"AT+CIPSTART=\"TCP\",\"***.**.***.***\",8081\r\n");
+               c = 0;
+
+
+               serialPrint(blackboxPort,"AT+CIPSTART=\"TCP\",\"192.168.31.154\",8086\r\n");
+               //delay(1000);
+               delay(1000);
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'O')
+               {
+                //c = serialRead(blackboxPort);
+                if(millis()-nowtime > 1000){
+                    serialPrint(blackboxPort, "wait6\r\n");
+                    break;
+                }
+               };
                delay(1000);
                delay(1000);
-               delay(1000);
-               delay(1000);
-               delay(1000);
+               c = 0;
+
+
                serialPrint(blackboxPort,"AT+CIPMODE=1\r\n");
+               nowtime = millis();
+               c = serialRead(blackboxPort);
+               while(c != 'O')
+               {
+                //c = serialRead(blackboxPort);
+                
+                if(millis()-nowtime > 2000){
+                    //serialPrint(blackboxPort, "success!!!");
+                    break;
+                }
+               };
                delay(200);
+               c = 0;
+
+
                serialPrint(blackboxPort,"AT+CIPSEND\r\n");
+               //nowtime = millis();
+               delay(200);
+            //    c = serialRead(blackboxPort);
+            //    while(c == 'O')
+            //    {
+            //     c = serialRead(blackboxPort);
+            //     if(millis()-nowtime > 20)
+            //         break;
+            //    };
+            //    c = 0;
+
+
                serialPrint(blackboxPort,"Connect Success!\r\n");
+               nowtime = millis();
                blackboxwifi.state_position++;
+               //blackboxSetState(BLACKBOX_STATE_STOPPED);
            } else {
                // we're now (hopefully) at the correct rate, next state will switch to it
                blackboxSetState(BLACKBOX_STATE_STOPPED);
@@ -2121,6 +2059,7 @@ void wifiInitHardware_Esp8266(void)
         break;
     
     default:
+        blackboxSetState(BLACKBOX_STATE_STOPPED);
         break;
     }
 }

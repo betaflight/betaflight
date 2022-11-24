@@ -101,7 +101,7 @@
 #define FLASH_SPI_INSTANCE      SPI3
 
 // *************** SD Card **************************
-#define USE_BLACKBOX
+//#define USE_BLACKBOX
 //#define USE_SDCARD
 //#define USE_SDCARD_SPI
 //#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -164,6 +164,9 @@
 
 // *************** WIFI *****************************
 #define USE_WIFI_ESP8266
+
+// *************** TELEMETER_MAVLINK *****************************
+#define USE_TELEMETRY_MAVLINK
 
 // *************** RANGEFINDER *****************************
 //TFMINI rangefinder

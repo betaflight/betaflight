@@ -1152,6 +1152,7 @@ static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
 
 static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 {
+    static uint16_t wifiTime = 0;
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();
@@ -1164,14 +1165,19 @@ static FAST_CODE_NOINLINE void subTaskPidSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_BLACKBOX
-    if (!cliMode && blackboxConfig()->device) {
-        blackboxUpdate(currentTimeUs);
+    if(wifiTime == 500)
+    {
+        if (!cliMode && blackboxConfig()->device) {
+            blackboxUpdate(currentTimeUs);
+        }
+        wifiTime = 0;
     }
 #else
     UNUSED(currentTimeUs);
 #endif
 
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
+    wifiTime++;
 }
 
 #ifdef USE_TELEMETRY
