@@ -195,12 +195,14 @@ STATIC_UNIT_TESTED void ghstDataReceive(uint16_t c, void *data)
     }
 }
 
+#ifdef USE_TELEMETRY_GHST
 static bool shouldSendTelemetryFrame(void)
 {
     const timeUs_t now = micros();
     const timeDelta_t timeSinceRxFrameEndUs = cmpTimeUs(now, ghstRxFrameEndAtUs);
     return telemetryBufLen > 0 && timeSinceRxFrameEndUs > GHST_RX_TO_TELEMETRY_MIN_US && timeSinceRxFrameEndUs < GHST_RX_TO_TELEMETRY_MAX_US;
 }
+#endif
 
 STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
@@ -221,8 +223,12 @@ STATIC_UNIT_TESTED uint8_t ghstFrameStatus(rxRuntimeState_t *rxRuntimeState)
             DEBUG_SET(DEBUG_GHST, DEBUG_GHST_CRC_ERRORS, ++crcErrorCount);
             status = RX_FRAME_DROPPED;                            // frame was invalid
         }
-    } else if (checkGhstTelemetryState() && shouldSendTelemetryFrame()) {
-        status = RX_FRAME_PROCESSING_REQUIRED;
+    } else {
+#ifdef USE_TELEMETRY_GHST
+        if (checkGhstTelemetryState() && shouldSendTelemetryFrame()) {
+            status = RX_FRAME_PROCESSING_REQUIRED;
+        }
+#endif
     }
 
     return status;
@@ -236,11 +242,13 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     UNUSED(rxRuntimeState);
     static int16_t unknownFrameCount = 0;
 
+#ifdef USE_TELEMETRY_GHST
     // do we have a telemetry buffer to send?
     if (checkGhstTelemetryState() && shouldSendTelemetryFrame()) {
         ghstTransmittingTelemetry = true;
         ghstRxSendTelemetryData();
     }
+#endif
 
     if (ghstValidatedFrameAvailable) {
         ghstValidatedFrameAvailable = false;
@@ -262,11 +270,14 @@ static bool ghstProcessFrame(const rxRuntimeState_t *rxRuntimeState)
                     DEBUG_SET(DEBUG_GHST, DEBUG_GHST_RX_LQ, rssiFrame->lq);
 
                     ghstRfProtocol = rssiFrame->rfProtocol;
+
+#ifdef USE_TELEMETRY_GHST
                     // Enable telemetry just for modes that support it
                     setGhstTelemetryState(ghstRfProtocol == GHST_RF_PROTOCOL_NORMAL
                                        || ghstRfProtocol == GHST_RF_PROTOCOL_RACE
                                        || ghstRfProtocol == GHST_RF_PROTOCOL_LONGRANGE
                                        || ghstRfProtocol == GHST_RF_PROTOCOL_RACE250);
+#endif
 
                     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL) {
                         // rssi sent sign-inverted

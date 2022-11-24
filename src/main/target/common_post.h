@@ -167,6 +167,10 @@
 #undef USE_CRSF_CMS_TELEMETRY
 #endif
 
+#if !defined(USE_TELEMETRY_CRSF)
+#undef USE_CRSF_V3
+#endif
+
 #if !defined(USE_SERIALRX_JETIEXBUS)
 #undef USE_TELEMETRY_JETIEXBUS
 #endif
