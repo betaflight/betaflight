@@ -259,6 +259,9 @@
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)
 #define USE_FLASH_W25M
+#endif
+
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25Q128FV)
 #define USE_FLASH_CHIP
 #endif
 
