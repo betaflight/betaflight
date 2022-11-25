@@ -1035,23 +1035,182 @@ typedef struct gpsDataNmea_s {
     uint32_t date;
 } gpsDataNmea_t;
 
-static bool gpsNewFrameNMEA(char c)
+static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
 {
-    static gpsDataNmea_t gps_msg;
-
-    bool isFrameOk = false;
-    static uint8_t param = 0, offset = 0, parity = 0;
-    static char string[15];
-    static uint8_t checksum_param, gps_frame = NO_FRAME;
     static uint8_t svMessageNum = 0;
     uint8_t svSatNum = 0, svPacketIdx = 0, svSatParam = 0;
 
+    switch (gpsFrame) {
+
+        case FRAME_GGA:        //************* GPGGA FRAME parsing
+            switch (idx) {
+    //          case 1:             // Time information
+    //              break;
+                case 2:
+                    data->latitude = GPS_coord_to_degrees(str);
+                    break;
+                case 3:
+                    if (str[0] == 'S') data->latitude *= -1;
+                    break;
+                case 4:
+                    data->longitude = GPS_coord_to_degrees(str);
+                    break;
+                case 5:
+                    if (str[0] == 'W') data->longitude *= -1;
+                    break;
+                case 6:
+                    gpsSetFixState(str[0] > '0');
+                    break;
+                case 7:
+                    data->numSat = grab_fields(str, 0);
+                    break;
+                case 9:
+                    data->altitudeCm = grab_fields(str, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
+                    break;
+            }
+            break;
+
+        case FRAME_RMC:        //************* GPRMC FRAME parsing
+            switch (idx) {
+                case 1:
+                    data->time = grab_fields(str, 2); // UTC time hhmmss.ss
+                    break;
+                case 7:
+                    data->speed = ((grab_fields(str, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
+                    break;
+                case 8:
+                    data->ground_course = (grab_fields(str, 1));      // ground course deg * 10
+                    break;
+                case 9:
+                    data->date = grab_fields(str, 0); // date dd/mm/yy
+                    break;
+            }
+            break;
+
+        case FRAME_GSV:
+            switch (idx) {
+                /*case 1:
+                    // Total number of messages of this type in this cycle
+                    break; */
+                case 2:
+                    // Message number
+                    svMessageNum = grab_fields(str, 0);
+                    break;
+                case 3:
+                    // Total number of SVs visible
+                    GPS_numCh = MIN(grab_fields(str, 0), GPS_SV_MAXSATS_LEGACY);
+                    break;
+            }
+            if (idx < 4)
+                break;
+
+            svPacketIdx = (idx - 4) / 4 + 1; // satellite number in packet, 1-4
+            svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
+            svSatParam  = idx - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
+
+            if (svSatNum > GPS_SV_MAXSATS_LEGACY)
+                break;
+
+            switch (svSatParam) {
+                case 1:
+                    // SV PRN number
+                    GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
+                    GPS_svinfo_svid[svSatNum - 1] = grab_fields(str, 0);
+                    break;
+                /*case 2:
+                    // Elevation, in degrees, 90 maximum
+                    break;
+                case 3:
+                    // Azimuth, degrees from True North, 000 through 359
+                    break; */
+                case 4:
+                    // SNR, 00 through 99 dB (null when not tracking)
+                    GPS_svinfo_cno[svSatNum - 1] = grab_fields(str, 0);
+                    GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
+                    break;
+            }
+
+            GPS_svInfoReceivedCount++;
+            break;
+
+        case FRAME_GSA:
+            switch (idx) {
+                case 15:
+                    data->pdop = grab_fields(str, 2);  // pDOP * 100
+                    break;
+                case 16:
+                    data->hdop = grab_fields(str, 2);  // hDOP * 100
+                    break;
+                case 17:
+                    data->vdop = grab_fields(str, 2);  // vDOP * 100
+                    break;
+            }
+            break;
+    }
+}
+
+static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *data, uint8_t gpsFrame)
+{
+    switch (gpsFrame) {
+
+        case FRAME_GGA:
+            *gpsPacketLogChar = LOG_NMEA_GGA;
+            if (STATE(GPS_FIX)) {
+                sol->llh.lat = data->latitude;
+                sol->llh.lon = data->longitude;
+                sol->numSat = data->numSat;
+                sol->llh.altCm = data->altitudeCm;
+            }
+            return true;
+
+        case FRAME_GSA:
+            *gpsPacketLogChar = LOG_NMEA_GSA;
+            sol->dop.pdop = data->pdop;
+            sol->dop.hdop = data->hdop;
+            sol->dop.vdop = data->vdop;
+            return true;
+
+        case FRAME_RMC:
+            *gpsPacketLogChar = LOG_NMEA_RMC;
+            sol->groundSpeed = data->speed;
+            sol->groundCourse = data->ground_course;
+#ifdef USE_RTC_TIME
+            // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
+            if(!rtcHasTime() && data->date != 0 && data->time != 0) {
+                dateTime_t temp_time;
+                temp_time.year = (data->date % 100) + 2000;
+                temp_time.month = (data->date / 100) % 100;
+                temp_time.day = (data->date / 10000) % 100;
+                temp_time.hours = (data->time / 1000000) % 100;
+                temp_time.minutes = (data->time / 10000) % 100;
+                temp_time.seconds = (data->time / 100) % 100;
+                temp_time.millis = (data->time & 100) * 10;
+                rtcSetDateTime(&temp_time);
+            }
+#endif
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+static bool gpsNewFrameNMEA(char c)
+{
+    static gpsDataNmea_t gps_msg;
+    static char string[15];
+    static uint8_t param = 0, offset = 0, parity = 0;
+    static uint8_t checksum_param, gps_frame = NO_FRAME;
+    bool isFrameOk = false;
+
     switch (c) {
+
         case '$':
             param = 0;
             offset = 0;
             parity = 0;
             break;
+
         case ',':
         case '*':
             string[offset] = 0;
@@ -1068,116 +1227,8 @@ static bool gpsNewFrameNMEA(char c)
                 }
             }
 
-            switch (gps_frame) {
-                case FRAME_GGA:        //************* GPGGA FRAME parsing
-                    switch (param) {
-            //          case 1:             // Time information
-            //              break;
-                        case 2:
-                            gps_msg.latitude = GPS_coord_to_degrees(string);
-                            break;
-                        case 3:
-                            if (string[0] == 'S')
-                                gps_msg.latitude *= -1;
-                            break;
-                        case 4:
-                            gps_msg.longitude = GPS_coord_to_degrees(string);
-                            break;
-                        case 5:
-                            if (string[0] == 'W')
-                                gps_msg.longitude *= -1;
-                            break;
-                        case 6:
-                            gpsSetFixState(string[0] > '0');
-                            break;
-                        case 7:
-                            gps_msg.numSat = grab_fields(string, 0);
-                            break;
-                        case 9:
-                            gps_msg.altitudeCm = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
-                            break;
-                    }
-                    break;
-                case FRAME_RMC:        //************* GPRMC FRAME parsing
-                    switch (param) {
-                        case 1:
-                            gps_msg.time = grab_fields(string, 2); // UTC time hhmmss.ss
-                            break;
-                        case 7:
-                            gps_msg.speed = ((grab_fields(string, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
-                            break;
-                        case 8:
-                            gps_msg.ground_course = (grab_fields(string, 1));      // ground course deg * 10
-                            break;
-                        case 9:
-                            gps_msg.date = grab_fields(string, 0); // date dd/mm/yy
-                            break;
-                    }
-                    break;
-                case FRAME_GSV:
-                    switch (param) {
-                      /*case 1:
-                            // Total number of messages of this type in this cycle
-                            break; */
-                        case 2:
-                            // Message number
-                            svMessageNum = grab_fields(string, 0);
-                            break;
-                        case 3:
-                            // Total number of SVs visible
-                            GPS_numCh = grab_fields(string, 0);
-                            if (GPS_numCh > GPS_SV_MAXSATS_LEGACY) {
-                                GPS_numCh = GPS_SV_MAXSATS_LEGACY;
-                            }
-                            break;
-                    }
-                    if (param < 4)
-                        break;
-
-                    svPacketIdx = (param - 4) / 4 + 1; // satellite number in packet, 1-4
-                    svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
-                    svSatParam  = param - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
-
-                    if (svSatNum > GPS_SV_MAXSATS_LEGACY)
-                        break;
-
-                    switch (svSatParam) {
-                        case 1:
-                            // SV PRN number
-                            GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
-                            GPS_svinfo_svid[svSatNum - 1] = grab_fields(string, 0);
-                            break;
-                      /*case 2:
-                            // Elevation, in degrees, 90 maximum
-                            break;
-                        case 3:
-                            // Azimuth, degrees from True North, 000 through 359
-                            break; */
-                        case 4:
-                            // SNR, 00 through 99 dB (null when not tracking)
-                            GPS_svinfo_cno[svSatNum - 1] = grab_fields(string, 0);
-                            GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
-                            break;
-                    }
-
-                    GPS_svInfoReceivedCount++;
-
-                    break;
-
-                case FRAME_GSA:
-                    switch (param) {
-                        case 15:
-                            gps_msg.pdop = grab_fields(string, 2);  // pDOP * 100
-                            break;
-                        case 16:
-                            gps_msg.hdop = grab_fields(string, 2);  // hDOP * 100
-                            break;
-                        case 17:
-                            gps_msg.vdop = grab_fields(string, 2);  // vDOP * 100
-                            break;
-                    }
-                    break;
-            }
+            // parse string and write data into gps_msg
+            parseFieldNmea(&gps_msg, string, gps_frame, param);
 
             param++;
             offset = 0;
@@ -1186,6 +1237,7 @@ static bool gpsNewFrameNMEA(char c)
             else
                 parity ^= c;
             break;
+
         case '\r':
         case '\n':
             if (checksum_param) {   //parity checksum
@@ -1194,55 +1246,22 @@ static bool gpsNewFrameNMEA(char c)
                 if (checksum == parity) {
                     *gpsPacketLogChar = LOG_IGNORED;
                     GPS_packetCount++;
-                    switch (gps_frame) {
-                    case FRAME_GGA:
-                        *gpsPacketLogChar = LOG_NMEA_GGA;
-                        isFrameOk = true;
-                        if (STATE(GPS_FIX)) {
-                            gpsSol.llh.lat = gps_msg.latitude;
-                            gpsSol.llh.lon = gps_msg.longitude;
-                            gpsSol.numSat = gps_msg.numSat;
-                            gpsSol.llh.altCm = gps_msg.altitudeCm;
-                        }
-                        break;
-                    case FRAME_GSA:
-                        *gpsPacketLogChar = LOG_NMEA_GSA;
-                        gpsSol.dop.pdop = gps_msg.pdop;
-                        gpsSol.dop.hdop = gps_msg.hdop;
-                        gpsSol.dop.vdop = gps_msg.vdop;
-                        break;
-                    case FRAME_RMC:
-                        *gpsPacketLogChar = LOG_NMEA_RMC;
-                        gpsSol.groundSpeed = gps_msg.speed;
-                        gpsSol.groundCourse = gps_msg.ground_course;
-#ifdef USE_RTC_TIME
-                        // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
-                        if(!rtcHasTime() && gps_msg.date != 0 && gps_msg.time != 0) {
-                            dateTime_t temp_time;
-                            temp_time.year = (gps_msg.date % 100) + 2000;
-                            temp_time.month = (gps_msg.date / 100) % 100;
-                            temp_time.day = (gps_msg.date / 10000) % 100;
-                            temp_time.hours = (gps_msg.time / 1000000) % 100;
-                            temp_time.minutes = (gps_msg.time / 10000) % 100;
-                            temp_time.seconds = (gps_msg.time / 100) % 100;
-                            temp_time.millis = (gps_msg.time & 100) * 10;
-                            rtcSetDateTime(&temp_time);
-                        }
-#endif
-                        break;
-                    } // end switch
+                    isFrameOk = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);  // // write gps_msg into gpsSol
                 } else {
                     *gpsPacketLogChar = LOG_ERROR;
                 }
             }
             checksum_param = 0;
             break;
+
         default:
             if (offset < 15)
                 string[offset++] = c;
             if (!checksum_param)
                 parity ^= c;
+            break;
     }
+
     return isFrameOk;
 }
 #endif // USE_GPS_NMEA
