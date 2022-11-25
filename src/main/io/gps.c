@@ -138,15 +138,15 @@ typedef enum {
     CLASS_CFG = 0x06,
     MSG_ACK_NACK = 0x00,
     MSG_ACK_ACK = 0x01,
-    MSG_POSLLH = 0x2,
-    MSG_STATUS = 0x3,
-    MSG_DOP = 0x4,
-    MSG_SOL = 0x6,
-    MSG_PVT = 0x7,
+    MSG_POSLLH = 0x02,
+    MSG_STATUS = 0x03,
+    MSG_DOP = 0x04,
+    MSG_SOL = 0x06,
+    MSG_PVT = 0x07,
     MSG_VELNED = 0x12,
     MSG_SVINFO = 0x30,
     MSG_SAT = 0x35,
-    MSG_CFG_MSG = 0x1,
+    MSG_CFG_MSG = 0x01,
     MSG_CFG_PRT = 0x00,
     MSG_CFG_RATE = 0x08,
     MSG_CFG_SET_RATE = 0x01,
@@ -671,12 +671,15 @@ void gpsInitUblox(void)
                         }
                         break;
                     case 12:
-                        ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle) (for 5Hz use 0xC8)
+                        ubloxSetMessageRate(CLASS_NAV, MSG_DOP, 1); // set DOP MSG rate
                         break;
                     case 13:
-                        ubloxSetSbas();
+                        ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle) (for 5Hz use 0xC8)
                         break;
                     case 14:
+                        ubloxSetSbas();
+                        break;
+                    case 15:
                         if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
                             ubloxSendPollMessage(MSG_CFG_GNSS);
                         } else {
@@ -697,7 +700,7 @@ void gpsInitUblox(void)
                     }
                     break;
                 case UBLOX_ACK_GOT_ACK:
-                    if (gpsData.state_position == 14) {
+                    if (gpsData.state_position == 15) {
                         // ublox should be initialised, try receiving
                         gpsSetState(GPS_STATE_RECEIVING_DATA);
                     } else {
@@ -1161,6 +1164,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
                 sol->numSat = data->numSat;
                 sol->llh.altCm = data->altitudeCm;
             }
+            // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
             return true;
 
         case FRAME_GSA:
@@ -1168,7 +1172,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
             sol->dop.pdop = data->pdop;
             sol->dop.hdop = data->hdop;
             sol->dop.vdop = data->vdop;
-            return true;
+            return false;
 
         case FRAME_RMC:
             *gpsPacketLogChar = LOG_NMEA_RMC;
@@ -1188,7 +1192,7 @@ static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *da
                 rtcSetDateTime(&temp_time);
             }
 #endif
-            return true;
+            return false;
 
         default:
             return false;
