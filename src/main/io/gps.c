@@ -1055,15 +1055,15 @@ static bool gpsNewFrameNMEA(char c)
         case ',':
         case '*':
             string[offset] = 0;
-            if (param == 0) {       //frame identification
+            if (param == 0) {  // frame identification (5 chars, e.g. "GPGGA", "GNGGA", "GLGGA", ...)
                 gps_frame = NO_FRAME;
-                if (0 == strcmp(string, "GPGGA") || 0 == strcmp(string, "GNGGA")) {
+                if (strcmp(&string[2], "GGA") == 0) {
                     gps_frame = FRAME_GGA;
-                } else if (0 == strcmp(string, "GPRMC") || 0 == strcmp(string, "GNRMC")) {
+                } else if (strcmp(&string[2], "RMC") == 0) {
                     gps_frame = FRAME_RMC;
-                } else if (0 == strcmp(string, "GPGSV")) {
+                } else if (strcmp(&string[2], "GSV") == 0) {
                     gps_frame = FRAME_GSV;
-                } else if (0 == strcmp(string, "GPGSA")) {
+                } else if (strcmp(&string[2], "GSA") == 0) {
                     gps_frame = FRAME_GSA;
                 }
             }
@@ -1167,13 +1167,13 @@ static bool gpsNewFrameNMEA(char c)
                 case FRAME_GSA:
                     switch (param) {
                         case 15:
-                            gps_msg.pdop = grab_fields(string, 1) * 100;        // pDOP
+                            gps_msg.pdop = grab_fields(string, 2);  // pDOP * 100
                             break;
                         case 16:
-                            gps_msg.hdop = grab_fields(string, 1) * 100;        // hDOP
+                            gps_msg.hdop = grab_fields(string, 2);  // hDOP * 100
                             break;
                         case 17:
-                            gps_msg.vdop = grab_fields(string, 1) * 100;        // vDOP
+                            gps_msg.vdop = grab_fields(string, 2);  // vDOP * 100
                             break;
                     }
                     break;
