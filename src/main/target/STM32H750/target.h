@@ -37,6 +37,7 @@
 #define USE_UART6
 #define USE_UART7
 #define USE_UART8
+#define USE_LP_UART1
 
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 8)
 
@@ -44,6 +45,8 @@
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
 #define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
+#define USE_SPI_DEVICE_6
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -51,23 +54,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
-
-#if defined(USE_RX_SPI) || !defined(CLOUD_BUILD)
-
-#define USE_RX_FRSKY_SPI_D
-#define USE_RX_FRSKY_SPI_X
-#define USE_RX_SFHSS_SPI
-#define USE_RX_REDPINE_SPI
-#define USE_RX_FRSKY_SPI_TELEMETRY
-#define USE_RX_CC2500_SPI_PA_LNA
-#define USE_RX_CC2500_SPI_DIVERSITY
-
-#define USE_RX_FLYSKY
-#define USE_RX_FLYSKY_SPI_LED
-
-#define USE_RX_SPEKTRUM
-#define USE_RX_SPEKTRUM_TELEMETRY
-#endif
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
@@ -130,6 +116,7 @@
 #define USE_RX_SX127X
 
 #define USE_RX_SPI
+#define USE_RX_CC2500
 
 #define USE_SDCARD
 
