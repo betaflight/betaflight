@@ -249,15 +249,15 @@
 #define USE_FLASH_TOOLS
 #endif
 
-#if defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)
+#if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)) && !defined(USE_FLASH_M25P16)
 #define USE_FLASH_M25P16
 #endif
 
-#if defined(USE_FLASH_W25M02G)
+#if defined(USE_FLASH_W25M02G) && !defined(USE_FLASH_W25N01G)
 #define USE_FLASH_W25N01G
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)
+#if (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)) && !defined(USE_FLASH_W25M)
 #define USE_FLASH_W25M
 #endif
 
