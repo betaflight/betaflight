@@ -309,8 +309,12 @@ static uint8_t minLqForChaos(void)
 
 static bool domainIsTeam24(void)
 {
-  const elrsFreqDomain_e domain = rxExpressLrsSpiConfig()->domain;
-  return (domain == ISM2400) || (domain == CE2400);
+#ifdef USE_RX_SX1280
+    const elrsFreqDomain_e domain = rxExpressLrsSpiConfig()->domain;
+    return (domain == ISM2400) || (domain == CE2400);
+#else 
+    return false;
+#endif
 }
 
 static void setRfLinkRate(const uint8_t index)
