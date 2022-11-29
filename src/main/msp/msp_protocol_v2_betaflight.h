@@ -30,3 +30,5 @@
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
 #define MSP2TEXT_CRAFT_NAME                      2
+#define MSP2TEXT_PID_PROFILE_NAME                3
+#define MSP2TEXT_RATE_PROFILE_NAME               4
