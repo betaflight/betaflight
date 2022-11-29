@@ -233,7 +233,66 @@ extern uint8_t _dmaram_end__;
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_IMU_CALC
 
-#if !defined(CLOUD_BUILD)
+#if !defined(CLOUD_BUILD) && !defined(SITL)
+
+#define USE_MAG
+#define USE_BARO
+
+#define USE_ACC
+#define USE_GYRO
+
+#define USE_ACC_MPU6500
+#define USE_GYRO_MPU6500
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define USE_ACC_SPI_ICM20689
+#define USE_GYRO_SPI_ICM20689
+#define USE_ACCGYRO_LSM6DSO
+#define USE_ACCGYRO_BMI270
+#define USE_GYRO_SPI_ICM42605
+#define USE_GYRO_SPI_ICM42688P
+#define USE_ACC_SPI_ICM42605
+#define USE_ACC_SPI_ICM42688P
+
+#if defined(STM32F405) || defined(STM32F745) || defined(STM32G4) || defined(STM32H7)
+#define USE_ACC_MPU6050
+#define USE_GYRO_MPU6050
+#define USE_ACCGYRO_BMI160
+#endif
+
+#define USE_FLASHFS
+#define USE_FLASH_TOOLS
+#define USE_FLASH_M25P16
+#define USE_FLASH_W25N01G          // 1Gb NAND flash support
+#define USE_FLASH_W25M             // Stacked die support
+#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+
+#define USE_MAX7456
+
+#define USE_RX_SPI
+#define USE_RX_CC2500
+
+#define USE_SDCARD
+
+#if defined(STM32F405) || defined(STM32F745) || defined(STM32H7)
+#define USE_VTX_RTC6705
+#define USE_VTX_RTC6705_SOFTSPI
+
+#define USE_TRANSPONDER
+
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define USE_RANGEFINDER_TF
+
+#define USE_RX_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
+#define USE_RX_SX1280
+#define USE_RX_SX127X
+#endif
 
 #define USE_PPM
 
@@ -281,6 +340,13 @@ extern uint8_t _dmaram_end__;
 #define USE_LED_STRIP
 
 #endif // !defined(CLOUD_BUILD)
+
+#if defined(USE_SDCARD)
+#define USE_SDCARD_SPI
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#define USE_SDCARD_SDIO
+#endif
+#endif
 
 #if defined(USE_VTX)
 #define USE_VTX_COMMON
