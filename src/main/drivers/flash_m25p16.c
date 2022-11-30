@@ -87,6 +87,9 @@ struct {
     // Winbond W25Q16
     // Datasheet: https://www.winbond.com/resource-files/w25q16dv_revi_nov1714_web.pdf
     { 0xEF4015, 104, 50, 32, 256 },
+    // Winbond W25Q80
+    // Datasheet: https://www.winbond.com/resource-files/w25q80dv%20dl_revh_10022015.pdf
+    { 0xEF4014, 104, 50, 16, 256 },
     // Winbond W25X32
     // Datasheet: https://www.winbond.com/resource-files/w25x32a_revb_080709.pdf
     { 0xEF3016, 133, 50, 64, 256 },
