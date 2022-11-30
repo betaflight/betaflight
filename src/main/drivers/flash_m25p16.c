@@ -84,6 +84,9 @@ struct {
     // Micron N25Q128
     // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_1_8v_65nm.pdf
     { 0x20ba18, 108, 54, 256, 256 },
+    // Winbond W25Q80
+    // Datasheet: https://www.winbond.com/resource-files/w25q80dv%20dl_revh_10022015.pdf
+    { 0xEF4014, 104, 50, 16, 256 },
     // Winbond W25Q16
     // Datasheet: https://www.winbond.com/resource-files/w25q16dv_revi_nov1714_web.pdf
     { 0xEF4015, 104, 50, 32, 256 },
