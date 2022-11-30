@@ -631,7 +631,6 @@ void WifiInitHardware_Esp8266(void)
 //             c = 0;
 //             wifi_uart_baud++;
 //             return;
-// //            serialPrint(mavlinkPort, "AT+RST\r\n");
 //         }
 
         serialPrint(mavlinkPort, "AT+RST\r\n");
