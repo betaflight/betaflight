@@ -83,7 +83,7 @@ static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 
 // Maximum ratings
 
-#define TF_MINI_RANGE_MIN 40
+#define TF_MINI_RANGE_MIN 10
 #define TF_MINI_RANGE_MAX 1200
 
 #define TF_02_RANGE_MIN 40
@@ -223,7 +223,7 @@ void lidarTFUpdate(rangefinderDev_t *dev)
         }
     }
 
-    // If valid frame hasn't been received for more than a timeout, resend command.
+    // If valid frame hasn't been received for more than a timet, resend command.
 
     if (timeNowMs - lastFrameReceivedMs > TF_TIMEOUT_MS) {
         lidarTFSendCommand();

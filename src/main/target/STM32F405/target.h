@@ -166,6 +166,7 @@
 #define USE_WIFI_ESP8266
 
 // *************** TELEMETER_MAVLINK *****************************
+#define USE_TELEMETRY
 #define USE_TELEMETRY_MAVLINK
 
 // *************** RANGEFINDER *****************************

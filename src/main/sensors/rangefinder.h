@@ -43,7 +43,7 @@ typedef struct rangefinder_s {
     rangefinderDev_t dev;
     float maxTiltCos;
     int32_t rawAltitude;
-    int32_t calculatedAltitude;
+    float calculatedAltitude;
     timeMs_t lastValidResponseTimeMs;
 
     bool snrThresholdReached;
@@ -54,7 +54,7 @@ typedef struct rangefinder_s {
 void rangefinderResetDynamicThreshold(void);
 bool rangefinderInit(void);
 
-int32_t rangefinderGetLatestAltitude(void);
+float rangefinderGetLatestAltitude(void);
 int32_t rangefinderGetLatestRawAltitude(void);
 
 void rangefinderUpdate(void);

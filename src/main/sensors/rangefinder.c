@@ -323,8 +323,8 @@ bool rangefinderProcess(float cosTiltAngle)
         rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
     }
 
-    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
-    DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
+ //   DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
+ //   DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
 
     return true;
 }
@@ -333,7 +333,7 @@ bool rangefinderProcess(float cosTiltAngle)
  * Get the latest altitude that was computed, or RANGEFINDER_OUT_OF_RANGE if sonarCalculateAltitude
  * has never been called.
  */
-int32_t rangefinderGetLatestAltitude(void)
+float rangefinderGetLatestAltitude(void)
 {
     return rangefinder.calculatedAltitude;
 }
