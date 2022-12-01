@@ -300,7 +300,6 @@ extern uint8_t _dmaram_end__;
 #define USE_PWM
 
 #define USE_PINIO
-#define USE_PINIOBOX
 
 #define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
@@ -346,6 +345,11 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 #define USE_SDCARD_SDIO
 #endif
+#endif
+
+#if defined(USE_PINIO)
+#define USE_PINIOBOX
+#define USE_PIN_PULL_UP_DOWN
 #endif
 
 #if defined(USE_VTX)
@@ -410,15 +414,17 @@ extern uint8_t _dmaram_end__;
 #define USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 
-#define USE_PIN_PULL_UP_DOWN
-
 #define USE_BOARD_INFO
 #define USE_EXTENDED_CMS_MENUS
 #define USE_RTC_TIME
-#define USE_RX_MSP
 #define USE_ESC_SENSOR_INFO
+
+#define USE_RX_MSP
 #define USE_RX_RSSI_DBM
 #define USE_RX_RSNR
+#define USE_RX_LINK_QUALITY_INFO
+#define USE_RX_MSP_OVERRIDE
+#define USE_RX_LINK_UPLINK_POWER
 
 #define USE_AIRMODE_LPF
 #define USE_CANVAS
@@ -432,7 +438,6 @@ extern uint8_t _dmaram_end__;
 #define USE_HOTT_TEXTMODE
 #define USE_LED_STRIP_STATUS_MODE
 #define USE_VARIO
-#define USE_RX_LINK_QUALITY_INFO
 #define USE_ESC_SENSOR_TELEMETRY
 #define USE_CMS_FAILSAFE_MENU
 #define USE_CMS_GPS_RESCUE_MENU
@@ -442,9 +447,7 @@ extern uint8_t _dmaram_end__;
 #define USE_FEEDFORWARD
 #define USE_CUSTOM_BOX_NAMES
 #define USE_BATTERY_VOLTAGE_SAG_COMPENSATION
-#define USE_RX_MSP_OVERRIDE
 #define USE_SIMPLIFIED_TUNING
-#define USE_RX_LINK_UPLINK_POWER
 #define USE_CRSF_V3
 #define USE_CRAFTNAME_MSGS
 
