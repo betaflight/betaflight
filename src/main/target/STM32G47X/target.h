@@ -54,54 +54,6 @@
 
 #define USE_BEEPER
 
-#if !defined(CLOUD_BUILD)
-
-#define USE_MAG
-#define USE_BARO
-
-#define USE_ACC
-#define USE_GYRO
-
-#define USE_ACC_MPU6500
-#define USE_GYRO_MPU6500
-#define USE_ACC_SPI_MPU6000
-#define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define USE_ACC_SPI_ICM20689
-#define USE_GYRO_SPI_ICM20689
-#define USE_ACCGYRO_LSM6DSO
-#define USE_ACCGYRO_BMI270
-#define USE_GYRO_SPI_ICM42605
-#define USE_GYRO_SPI_ICM42688P
-#define USE_ACC_SPI_ICM42605
-#define USE_ACC_SPI_ICM42688P
-#define USE_ACC_MPU6050
-#define USE_GYRO_MPU6050
-#define USE_ACCGYRO_BMI160
-
-#define USE_RX_SPI
-#define USE_RX_CC2500
-
-#define USE_FLASHFS
-#define USE_FLASH_TOOLS
-#define USE_FLASH_M25P16
-#define USE_FLASH_W25N01G          // 1Gb NAND flash support
-#define USE_FLASH_W25M             // Stacked die support
-#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
-
-#define USE_MAX7456
-
-#define USE_RANGEFINDER
-#define USE_RANGEFINDER_HCSR04
-#define USE_RANGEFINDER_TF
-
-#define USE_SDCARD
-
-#endif // CLOUD_BUILD
-
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #endif
