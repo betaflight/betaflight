@@ -112,16 +112,16 @@ static void setProfileIndexString(char *profileString, int profileIndex, const c
 }
 
 static char pidProfileNames[PID_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
-static const char* pidProfileNamePtrs[PID_PROFILE_COUNT];
+static const char *pidProfileNamePtrs[PID_PROFILE_COUNT];
 
 static char rateProfileNames[CONTROL_RATE_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
-static const char* rateProfileNamePtrs[CONTROL_RATE_PROFILE_COUNT];
+static const char *rateProfileNamePtrs[CONTROL_RATE_PROFILE_COUNT];
 
 static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    for (int i=0; i<PID_PROFILE_COUNT; i++) {
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) {
         setProfileIndexString(pidProfileNames[i], i, pidProfiles(i)->profileName);
         pidProfileNamePtrs[i] = pidProfileNames[i];
     }
@@ -129,7 +129,7 @@ static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
     pidProfileIndex = getCurrentPidProfileIndex();
     tmpPidProfileIndex = pidProfileIndex;
 
-    for (int i=0; i<CONTROL_RATE_PROFILE_COUNT; i++) {
+    for (int i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
         setProfileIndexString(rateProfileNames[i], i, controlRateProfilesMutable(i)->profileName);
         rateProfileNamePtrs[i] = rateProfileNames[i];
     }
