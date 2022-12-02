@@ -2533,6 +2533,14 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     textVar = pilotConfigMutable()->craftName;
                     break;
 
+                case MSP2TEXT_PID_PROFILE_NAME:
+                    textVar = currentPidProfile->profileName;
+                    break;
+
+                case MSP2TEXT_RATE_PROFILE_NAME:
+                    textVar = currentControlRateProfile->profileName;
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
@@ -3925,6 +3933,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
                 case MSP2TEXT_CRAFT_NAME:
                     textVar = pilotConfigMutable()->craftName;
+                    break;
+
+                case MSP2TEXT_PID_PROFILE_NAME:
+                    textVar = currentPidProfile->profileName;
+                    break;
+
+                case MSP2TEXT_RATE_PROFILE_NAME:
+                    textVar = currentControlRateProfile->profileName;
                     break;
 
                 default:
