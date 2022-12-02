@@ -64,15 +64,18 @@
 //
 // PID
 //
+
+#define PROFILE_INDEX_STRING_ADDITIONAL_SIZE 5 // Additional symbols for setProfileIndexString(): "2 (NAMENAME)\0"
+
 static uint8_t tmpPidProfileIndex;
 static uint8_t pidProfileIndex;
-static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + 5];
+static char pidProfileIndexString[MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static uint8_t tempPid[3][3];
 static uint16_t tempPidF[3];
 
 static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
-static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + 5];
+static char rateProfileIndexString[MAX_RATE_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
 static controlRateConfig_t rateProfile;
 
 static const char * const osdTableThrottleLimitType[] = {
@@ -85,7 +88,7 @@ static const char * const osdTableGyroToUse[] = {
 };
 #endif
 
-static void setProfileIndexString(char *profileString, int profileIndex, char *profileName)
+static void setProfileIndexString(char *profileString, int profileIndex, const char *profileName)
 {
     int charIndex = 0;
     profileString[charIndex++] = '1' + profileIndex;
@@ -108,15 +111,31 @@ static void setProfileIndexString(char *profileString, int profileIndex, char *p
     profileString[charIndex] = '\0';
 }
 
+static char pidProfileNames[PID_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+static const char *pidProfileNamePtrs[PID_PROFILE_COUNT];
+
+static char rateProfileNames[CONTROL_RATE_PROFILE_COUNT][MAX_PROFILE_NAME_LENGTH + PROFILE_INDEX_STRING_ADDITIONAL_SIZE];
+static const char *rateProfileNamePtrs[CONTROL_RATE_PROFILE_COUNT];
+
 static const void *cmsx_menuImu_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
+    for (int i = 0; i < PID_PROFILE_COUNT; i++) {
+        setProfileIndexString(pidProfileNames[i], i, pidProfiles(i)->profileName);
+        pidProfileNamePtrs[i] = pidProfileNames[i];
+    }
+
     pidProfileIndex = getCurrentPidProfileIndex();
-    tmpPidProfileIndex = pidProfileIndex + 1;
+    tmpPidProfileIndex = pidProfileIndex;
+
+    for (int i = 0; i < CONTROL_RATE_PROFILE_COUNT; i++) {
+        setProfileIndexString(rateProfileNames[i], i, controlRateProfilesMutable(i)->profileName);
+        rateProfileNamePtrs[i] = rateProfileNames[i];
+    }
 
     rateProfileIndex = getCurrentControlRateProfileIndex();
-    tmpRateProfileIndex = rateProfileIndex + 1;
+    tmpRateProfileIndex = rateProfileIndex;
 
     return NULL;
 }
@@ -137,7 +156,7 @@ static const void *cmsx_profileIndexOnChange(displayPort_t *displayPort, const v
     UNUSED(displayPort);
     UNUSED(ptr);
 
-    pidProfileIndex = tmpPidProfileIndex - 1;
+    pidProfileIndex = tmpPidProfileIndex;
     changePidProfile(pidProfileIndex);
 
     return NULL;
@@ -148,7 +167,7 @@ static const void *cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, con
     UNUSED(displayPort);
     UNUSED(ptr);
 
-    rateProfileIndex = tmpRateProfileIndex - 1;
+    rateProfileIndex = tmpRateProfileIndex;
     changeControlRateProfile(rateProfileIndex);
 
     return NULL;
@@ -1013,7 +1032,7 @@ static const OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- PROFILE --", OME_Label, NULL, NULL},
 
-    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, PID_PROFILE_COUNT, 1}},
+    {"PID PROF",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, PID_PROFILE_COUNT-1, pidProfileNamePtrs}},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
 #ifdef USE_SIMPLIFIED_TUNING
     {"SIMPLIFIED TUNING",   OME_Submenu, cmsMenuChange,                 &cmsx_menuSimplifiedTuning},
@@ -1021,7 +1040,7 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile},
 
-    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, CONTROL_RATE_PROFILE_COUNT, 1}},
+    {"RATE PROF", OME_TAB,   cmsx_rateProfileIndexOnChange, &(OSD_TAB_t){&tmpRateProfileIndex, CONTROL_RATE_PROFILE_COUNT-1, rateProfileNamePtrs}},
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal},
