@@ -183,7 +183,7 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     }
 #endif
 
-#ifdef USE_FLASH_W25M512
+#if defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25M)
     if (w25m_detect(&flashDevice, chipID)) {
         return true;
     }
