@@ -26,6 +26,6 @@
 #include "flight/pid.h"
 
 void feedforwardInit(const pidProfile_t *pidProfile);
-float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging);
+float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging, const float setpoint);
 float applyFeedforwardLimit(int axis, float value, float Kp, float currentPidSetpoint);
 bool shouldApplyFeedforwardLimits(int axis);

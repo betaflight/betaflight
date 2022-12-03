@@ -59,7 +59,7 @@ void feedforwardInit(const pidProfile_t *pidProfile)
     }
 }
 
-FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging)
+FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging, const float setpoint)
 {
 
     if (newRcFrame) {
@@ -74,7 +74,6 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         const float rxInterval = getCurrentRxRefreshRate() * 1e-6f; // 0.0066 for 150hz RC Link.
         const float rxRate = 1.0f / rxInterval; // eg 150 for a 150Hz RC link
 
-        const float setpoint = getRawSetpoint(axis);
         const float absSetpointPercent = fabsf(setpoint) / feedforwardMaxRate[axis];
 
         float rcCommandDelta = getRcCommandDelta(axis);

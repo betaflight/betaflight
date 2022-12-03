@@ -95,10 +95,11 @@ extern "C" {
         return value;
     }
     void feedforwardInit(const pidProfile_t) { }
-    float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging)
+    float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging, const float setpoint)
     {
         UNUSED(newRcFrame);
         UNUSED(feedforwardAveraging);
+        UNUSED(setpoint);
         const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
         float setpointDelta = simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
         setpointDelta *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1;
