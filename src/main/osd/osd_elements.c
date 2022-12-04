@@ -1874,7 +1874,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_ATTR_NONE;
 
     // Call the element drawing function
-    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item <= DISPLAYPORT_SYS_FAN_SPEED)) {
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_ITEM_COUNT)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
     } else {
         osdElementDrawFunction[item](&element);
