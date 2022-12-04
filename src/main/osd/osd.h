@@ -73,12 +73,12 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 // Character coordinate
 #define OSD_POSITION_BITS       5       // 5 bits gives a range 0-31
 #define OSD_POSITION_BIT_XHD    10      // extra bit used to extend X range in a backward compatible manner for HD displays
-#define OSD_POSITIION_XHD_MASK  (1 << OSD_POSITION_BIT_XHD)
+#define OSD_POSITION_XHD_MASK   (1 << OSD_POSITION_BIT_XHD)
 #define OSD_POSITION_XY_MASK    ((1 << OSD_POSITION_BITS) - 1)
 #define OSD_TYPE_MASK           0xC000  // bits 14-15
-#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((x << (OSD_POSITION_BIT_XHD - OSD_POSITION_BITS)) & OSD_POSITIION_XHD_MASK) | \
+#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((x << (OSD_POSITION_BIT_XHD - OSD_POSITION_BITS)) & OSD_POSITION_XHD_MASK) | \
                        ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
-#define OSD_X(x)      ((x & OSD_POSITION_XY_MASK) | ((x & OSD_POSITION_BIT_XHD) >> (OSD_POSITION_BIT_XHD - OSD_POSITION_BITS)))
+#define OSD_X(x)      ((x & OSD_POSITION_XY_MASK) | ((x & OSD_POSITION_XHD_MASK) >> (OSD_POSITION_BIT_XHD - OSD_POSITION_BITS)))
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 #define OSD_TYPE(x)   ((x & OSD_TYPE_MASK) >> 14)
 
