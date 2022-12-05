@@ -1725,6 +1725,8 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_SYS_GOGGLE_DVR,
     OSD_SYS_VTX_DVR,
     OSD_SYS_WARNINGS,
+    OSD_SYS_VTX_TEMP,
+    OSD_SYS_FAN_SPEED,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1856,6 +1858,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_GOGGLE_DVR]          = osdElementSys,
     [OSD_SYS_VTX_DVR]             = osdElementSys,
     [OSD_SYS_WARNINGS]            = osdElementSys,
+    [OSD_SYS_VTX_TEMP]            = osdElementSys,
+    [OSD_SYS_FAN_SPEED]           = osdElementSys,
 #endif
 };
 
@@ -1950,7 +1954,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_ATTR_NORMAL;
 
     // Call the element drawing function
-    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_SYS_WARNINGS)) {
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_ITEM_COUNT)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
     } else {
         osdElementDrawFunction[item](&element);
