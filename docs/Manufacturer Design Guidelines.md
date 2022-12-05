@@ -379,7 +379,7 @@ Define at least one gyro and one accelerometer.
 
 Define correct flash driver(s) only if physical present on the board.
 
-    #define USE_FLASH_M25P16           // 16MB Micron M25P16
+    #define USE_FLASH_M25P16           // 16MB Micron M25P16 and others (https://github.com/betaflight/betaflight/blob/master/src/main/drivers/flash_m25p16.c#L68)
     #define USE_FLASH_W25N01G          // 1Gb NAND flash support
     #define USE_FLASH_W25M             // 16, 32, 64 or 128MB Winbond stacked die support
     #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
