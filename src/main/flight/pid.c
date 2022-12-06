@@ -947,7 +947,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #if defined(USE_ACC)
         if ((levelMode == LEVEL_MODE_R && axis == FD_ROLL)
             || (levelMode == LEVEL_MODE_RP && (axis == FD_ROLL || axis ==  FD_PITCH)) ) {
-            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
+            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, getRawSetpoint(axis), horizonLevelStrength);
             DEBUG_SET(DEBUG_ATTITUDE, axis - FD_ROLL + 2, currentPidSetpoint);
         }
 #endif
