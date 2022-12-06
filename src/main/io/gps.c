@@ -1553,6 +1553,9 @@ static bool UBLOX_parse_gps(void)
         gpsSetFixState(next_fix);
         _new_position = true;
         gpsSol.numSat = _buffer.pvt.numSV;
+        gpsSol.acc.hAcc = _buffer.pvt.hAcc;
+        gpsSol.acc.vAcc = _buffer.pvt.vAcc;
+        gpsSol.acc.sAcc = _buffer.pvt.sAcc;
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10

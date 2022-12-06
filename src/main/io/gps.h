@@ -100,16 +100,24 @@ typedef struct gpsLocation_s {
     int32_t altCm;                  // altitude in 0.01m
 } gpsLocation_t;
 
-/* Accuracy of position estimation = device accuracy * DOP */
+/* A value below 100 means great accuracy is possible with GPS satellite constellation */
 typedef struct gpsDilution_s {
     uint16_t pdop;                  // positional DOP - 3D (* 100)
     uint16_t hdop;                  // horizontal DOP - 2D (* 100)
     uint16_t vdop;                  // vertical DOP   - 1D (* 100)
 } gpsDilution_t;
 
+/* Only available on U-blox protocol */
+typedef struct gpsAccuracy_s {
+    uint32_t hAcc;                  // horizontal accuracy in mm
+    uint32_t vAcc;                  // vertical accuracy in mm
+    uint32_t sAcc;                  // speed accuracy in mm/s
+} gpsAccuracy_t;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
+    gpsAccuracy_t acc;
     uint16_t speed3d;               // speed in 0.1m/s
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
