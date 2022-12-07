@@ -8,4 +8,4 @@
 #include "rx/rx.h"   
 //rcData[THROTTLE]
 
-void alt_ctrl_run(uint32_t z_ref);
+float alt_ctrl_run(uint32_t z_ref);

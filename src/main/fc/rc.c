@@ -677,14 +677,16 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         }
     }
 
-    if(!IS_RC_MODE_ACTIVE(BOXRANGEFINDER))  //rx
-    {
-        DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
-    }else{
-        rcCommand[THROTTLE] = 1300;
-        ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
-        //beeper(BEEPER_ALL);
-    }
+    // if(!IS_RC_MODE_ACTIVE(BOXRANGEFINDER))  //rx
+    // {
+    //     DISABLE_FLIGHT_MODE(RANGEFINDER_MODE);     
+    // }else{
+    //     // rcCommand[THROTTLE] = 1300;
+    //     // ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
+    //     //beeper(BEEPER_ALL);
+    //     ENABLE_FLIGHT_MODE(RANGEFINDER_MODE);
+    //     alt_ctrl_run(0);
+    // }
 }
 
 void resetYawAxis(void)
