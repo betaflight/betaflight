@@ -98,7 +98,8 @@ static const uint8_t mavRates[] = {
     [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
     [MAV_DATA_STREAM_POSITION] = 10, //100Hz
     [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10 //100Hz
+    [MAV_DATA_STREAM_EXTRA2] = 10, //100Hz
+    [MAV_DATA_STREAM_EXTRA3] = 5
 };
 
 #define MAXSTREAMS ARRAYLEN(mavRates)
@@ -525,6 +526,87 @@ void mavlinkSendHUDAndHeartbeat(void)
     // mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+void mavlinkSendHeartbeat(void)
+{
+    uint16_t msgLength;
+    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+    if (ARMING_FLAG(ARMED))
+        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
+
+    uint8_t mavSystemType;
+    switch (mixerConfig()->mixerMode)
+    {
+        case MIXER_TRI:
+            mavSystemType = MAV_TYPE_TRICOPTER;
+            break;
+        case MIXER_QUADP:
+        case MIXER_QUADX:
+        case MIXER_Y4:
+        case MIXER_VTAIL4:
+            mavSystemType = MAV_TYPE_QUADROTOR;
+            break;
+        case MIXER_Y6:
+        case MIXER_HEX6:
+        case MIXER_HEX6X:
+            mavSystemType = MAV_TYPE_HEXAROTOR;
+            break;
+        case MIXER_OCTOX8:
+        case MIXER_OCTOFLATP:
+        case MIXER_OCTOFLATX:
+            mavSystemType = MAV_TYPE_OCTOROTOR;
+            break;
+        case MIXER_FLYING_WING:
+        case MIXER_AIRPLANE:
+        case MIXER_CUSTOM_AIRPLANE:
+            mavSystemType = MAV_TYPE_FIXED_WING;
+            break;
+        case MIXER_HELI_120_CCPM:
+        case MIXER_HELI_90_DEG:
+            mavSystemType = MAV_TYPE_HELICOPTER;
+            break;
+        default:
+            mavSystemType = MAV_TYPE_GENERIC;
+            break;
+    }
+
+    // Custom mode for compatibility with APM OSDs
+    uint8_t mavCustomMode = 1;  // Acro by default
+
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+        mavCustomMode = 0;      //Stabilize
+        mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
+    }
+    if ( FLIGHT_MODE(RANGEFINDER_MODE))
+        mavCustomMode = 2; // Alt Hold
+
+    uint8_t mavSystemState = 0;
+    if (ARMING_FLAG(ARMED)) {
+        if (failsafeIsActive()) {
+            mavSystemState = MAV_STATE_CRITICAL;
+        }
+        else {
+            mavSystemState = MAV_STATE_ACTIVE;
+        }
+    }
+    else {
+        mavSystemState = MAV_STATE_STANDBY;
+    }
+
+    mavlink_msg_heartbeat_pack(0, 200, &mavMsg,
+        // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
+        mavSystemType,
+        // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
+        MAV_AUTOPILOT_GENERIC,
+        // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
+        mavModes,
+        // custom_mode A bitfield for use for autopilot-specific flags.
+        mavCustomMode,
+        // system_status System status flag, see MAV_STATE ENUM
+        mavSystemState);
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 void processMAVLinkTelemetry(void)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
@@ -532,23 +614,28 @@ void processMAVLinkTelemetry(void)
     //     mavlinkSendSystemStatus();
     // }
 
+    // if(mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA3))
+    // {
+    //     mavlinkSendHeartbeat();
+    // }
+
     // if (mavlinkStreamTrigger(MAV_DATA_STREAM_RC_CHANNELS)) {
     //     mavlinkSendRCChannelsAndRSSI();
     // }
 
-// #ifdef USE_GPS
-//     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-//         mavlinkSendPosition();
-//     }
-// #endif
+    // #ifdef USE_GPS
+    //     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
+    //         mavlinkSendPosition();
+    //     }
+    // #endif
 
-//   if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA1)) {
+    //   if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA1)) {
     mavlinkSendAttitude();
-//   }
+    //   }
 
-//   if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
+    //   if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
     mavlinkSendHUDAndHeartbeat();
-//   }
+    //   }
 }
 
 void handleMAVLinkTelemetry(void)
@@ -564,8 +651,8 @@ void handleMAVLinkTelemetry(void)
     // uint32_t now = micros();
     // if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
     processMAVLinkTelemetry();
- //       lastMavlinkMessage = now;
-//    }
+    //       lastMavlinkMessage = now;
+    //    }
 }
 
 void WifiInitHardware_Esp8266(void)
@@ -649,7 +736,8 @@ void WifiInitHardware_Esp8266(void)
         delay(1000);
         c = 0;
 
-        serialPrint(mavlinkPort, "AT+CWJAP=\"mi12\",\"11111111\"\r\n");
+ //       serialPrint(mavlinkPort, "AT+CWJAP=\"mi12\",\"11111111\"\r\n");
+        serialPrint(mavlinkPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
         nowtime = millis();
         c = serialRead(mavlinkPort);
         while(c != 'W')
@@ -683,7 +771,8 @@ void WifiInitHardware_Esp8266(void)
         c = 0;
 
 
-        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.138.53\",14555\r\n");
+//        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.254.53\",14555\r\n");
+        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.31.142\",14555\r\n");
         delay(1000);
         nowtime = millis();
         c = serialRead(mavlinkPort);
