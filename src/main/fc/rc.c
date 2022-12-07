@@ -127,6 +127,11 @@ float getRcDeflection(int axis)
 #endif
 }
 
+float getRcDeflectionRaw(int axis)
+{
+    return rcDeflection[axis];
+}
+
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];

@@ -516,10 +516,11 @@ static CMS_Menu cmsx_menuLaunchControl = {
 };
 #endif
 
-static uint8_t  cmsx_angleStrength;
+static uint8_t  cmsx_angleP;
+static uint8_t  cmsx_angleFF;
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonTransition;
-static uint8_t  cmsx_levelAngleLimit;
+static uint8_t  cmsx_angleLimit;
 static uint8_t  cmsx_throttleBoost;
 static uint8_t  cmsx_thrustLinearization;
 static uint8_t  cmsx_antiGravityGain;
@@ -560,10 +561,11 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
-    cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
+    cmsx_angleP =            pidProfile->pid[PID_LEVEL].P;
+    cmsx_angleFF =           pidProfile->pid[PID_LEVEL].F;
     cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
     cmsx_horizonTransition = pidProfile->pid[PID_LEVEL].D;
-    cmsx_levelAngleLimit =   pidProfile->levelAngleLimit;
+    cmsx_angleLimit =   pidProfile->angle_limit;
 
     cmsx_antiGravityGain   = pidProfile->anti_gravity_gain;
 
@@ -611,10 +613,11 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidInitConfig(currentPidProfile);
 
-    pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
+    pidProfile->pid[PID_LEVEL].P = cmsx_angleP;
     pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
     pidProfile->pid[PID_LEVEL].D = cmsx_horizonTransition;
-    pidProfile->levelAngleLimit  = cmsx_levelAngleLimit;
+    pidProfile->pid[PID_LEVEL].F = cmsx_angleFF;
+    pidProfile->angle_limit  = cmsx_angleLimit;
 
     pidProfile->anti_gravity_gain   = cmsx_antiGravityGain;
 
@@ -665,10 +668,11 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     20,   1  }    },
     { "FF BOOST",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,             0,     50,   1  }    },
 #endif
-    { "ANGLE STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleStrength,          0,    200,   1  }    },
+    { "ANGLE P",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                  0,    200,   1  }    },
+    { "ANGLE FF",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                0,    200,   1  }    },
     { "HORZN STR",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,        0,    200,   1  }    },
     { "HORZN TRS",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonTransition,      0,    200,   1  }    },
-    { "ANGLE LIMIT", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_levelAngleLimit,        10,    90,   1  }    },
+    { "ANGLE LIMIT", OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleLimit,        10,    90,   1  }    },
 
     { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 1, 100 }    },
 #ifdef USE_THROTTLE_BOOST

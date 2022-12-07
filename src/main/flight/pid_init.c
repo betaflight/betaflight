@@ -52,7 +52,7 @@
 #define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
-#define ATTITUDE_CUTOFF_HZ 250
+#define ATTITUDE_CUTOFF_HZ 50
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
@@ -237,8 +237,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 #ifdef USE_ACC
     const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
+    const float angleFeedforwardSmoothing = pidProfile->angle_feedforward_smoothing;
+    const float angleCutoffHz = 100.0f / angleFeedforwardSmoothing; // default of 50 -> 2.0Hz, 100 -> 1.0Hz etc
+    const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
+
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
+        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
     }
 #endif
 
@@ -291,12 +296,16 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     {
         pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     }
-    pidRuntime.levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
+    pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
+    pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
+    pidRuntime.angleEarthRef = pidProfile->angle_earth_ref / 100.0f;
+
     pidRuntime.horizonGain = pidProfile->pid[PID_LEVEL].I / 10.0f;
     pidRuntime.horizonTransition = (float)pidProfile->pid[PID_LEVEL].D;
     pidRuntime.horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;
     pidRuntime.horizonCutoffDegrees = (175 - pidProfile->horizon_tilt_effect) * 1.8f;
     pidRuntime.horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
+
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.itermWindupPointInv = 1.0f;
@@ -426,6 +435,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
+
     feedforwardInit(pidProfile);
 #endif
 
