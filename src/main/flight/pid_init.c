@@ -52,7 +52,7 @@
 #define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
-#define ATTITUDE_CUTOFF_HZ 250
+#define ATTITUDE_CUTOFF_HZ 50
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
@@ -237,8 +237,13 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 #ifdef USE_ACC
     const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
+    const float angleResponse = pidProfile->angle_response;
+    const float angleCutoffHz = angleResponse / 20.0f;
+    const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
+
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
         pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
+        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
     }
 #endif
 
@@ -291,7 +296,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     {
         pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     }
-    pidRuntime.levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
+    pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
+    pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
+    pidRuntime.angle_pid_feedforward_scale = pidProfile->angle_pid_feedforward_scale / 100.0f;
+
     pidRuntime.horizonGain = pidProfile->pid[PID_LEVEL].I / 10.0f;
     pidRuntime.horizonTransition = (float)pidProfile->pid[PID_LEVEL].D;
     pidRuntime.horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;
@@ -426,6 +434,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
+
     feedforwardInit(pidProfile);
 #endif
 

@@ -122,6 +122,13 @@
 #define PARAM_NAME_POSITION_ALTITUDE_PREFER_BARO "altitude_prefer_baro"
 #define PARAM_NAME_POSITION_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
+#define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
+#define PARAM_NAME_ANGLE_PID_FF_SCALE "angle_pid_feedforward_scale"
+#define PARAM_NAME_ANGLE_RESPONSE "angle_response"
+#define PARAM_NAME_ANGLE_ROLL_EXPO "angle_roll_expo"
+#define PARAM_NAME_ANGLE_PITCH_EXPO "angle_pitch_expo"
+#define PARAM_NAME_ANGLE_LIMIT "angle_limit"
+#define PARAM_NAME_ANGLE_P_GAIN "angle_P_gain"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
