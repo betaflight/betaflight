@@ -109,4 +109,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GPS_DOP",
     "FAILSAFE",
     "GYRO_CALIBRATION",
+    "ANGLE_MODE",
+    "ANGLE_TARGET",
+    "CURRENT_ANGLE",
 };
