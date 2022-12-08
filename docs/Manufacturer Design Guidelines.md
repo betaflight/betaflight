@@ -384,7 +384,7 @@ Define correct flash driver(s) only if physical present on the board.
     #define USE_FLASH_W25M             // 16, 32, 64 or 128MB Winbond stacked die support
     #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
     #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
-    #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+    #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128 and the 8MB Winbond W25Q8 tyoes
 
 ### 4.2.3 Defines for BARO
 
