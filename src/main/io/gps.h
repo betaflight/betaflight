@@ -20,10 +20,13 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "common/axis.h"
 #include "common/time.h"
 
-#include "pg/pg.h"
+#include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L
 #define GPS_X 1
@@ -85,20 +88,6 @@ typedef enum {
 
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
-typedef struct gpsConfig_s {
-    gpsProvider_e provider;
-    sbasMode_e sbasMode;
-    gpsAutoConfig_e autoConfig;
-    gpsAutoBaud_e autoBaud;
-    uint8_t gps_ublox_use_galileo;
-    ubloxMode_e gps_ublox_mode;
-    uint8_t gps_set_home_point_once;
-    uint8_t gps_use_3d_speed;
-    uint8_t sbas_integrity;
-} gpsConfig_t;
-
-PG_DECLARE(gpsConfig_t, gpsConfig);
-
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
     int16_t mmmm;
@@ -111,16 +100,24 @@ typedef struct gpsLocation_s {
     int32_t altCm;                  // altitude in 0.01m
 } gpsLocation_t;
 
-/* Accuracy of position estimation = device accuracy * DOP */
+/* A value below 100 means great accuracy is possible with GPS satellite constellation */
 typedef struct gpsDilution_s {
     uint16_t pdop;                  // positional DOP - 3D (* 100)
     uint16_t hdop;                  // horizontal DOP - 2D (* 100)
     uint16_t vdop;                  // vertical DOP   - 1D (* 100)
 } gpsDilution_t;
 
+/* Only available on U-blox protocol */
+typedef struct gpsAccuracy_s {
+    uint32_t hAcc;                  // horizontal accuracy in mm
+    uint32_t vAcc;                  // vertical accuracy in mm
+    uint32_t sAcc;                  // speed accuracy in mm/s
+} gpsAccuracy_t;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
+    gpsAccuracy_t acc;
     uint16_t speed3d;               // speed in 0.1m/s
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
@@ -166,9 +163,9 @@ typedef enum {
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
-#define GPS_SV_MAXSATS_LEGACY   16
-#define GPS_SV_MAXSATS_M8N      32
-#define GPS_SV_MAXSATS_M9N      42
+#define GPS_SV_MAXSATS_LEGACY   16U
+#define GPS_SV_MAXSATS_M8N      32U
+#define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;

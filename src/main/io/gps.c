@@ -18,8 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
@@ -37,8 +35,6 @@
 #include "common/utils.h"
 
 #include "config/feature.h"
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
 
 #include "drivers/light_led.h"
 #include "drivers/time.h"
@@ -121,12 +117,12 @@ typedef struct gpsInitData_s {
 
 // NMEA will cycle through these until valid data is received
 static const gpsInitData_t gpsInitData[] = {
-    { GPS_BAUDRATE_115200,  BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
-    { GPS_BAUDRATE_57600,    BAUD_57600, "$PUBX,41,1,0003,0001,57600,0*2D\r\n", "$PMTK251,57600*2C\r\n" },
-    { GPS_BAUDRATE_38400,    BAUD_38400, "$PUBX,41,1,0003,0001,38400,0*26\r\n", "$PMTK251,38400*27\r\n" },
-    { GPS_BAUDRATE_19200,    BAUD_19200, "$PUBX,41,1,0003,0001,19200,0*23\r\n", "$PMTK251,19200*22\r\n" },
+    { GPS_BAUDRATE_115200,   BAUD_115200, "$PUBX,41,1,0003,0001,115200,0*1E\r\n", "$PMTK251,115200*1F\r\n" },
+    { GPS_BAUDRATE_57600,    BAUD_57600,  "$PUBX,41,1,0003,0001,57600,0*2D\r\n",  "$PMTK251,57600*2C\r\n" },
+    { GPS_BAUDRATE_38400,    BAUD_38400,  "$PUBX,41,1,0003,0001,38400,0*26\r\n",  "$PMTK251,38400*27\r\n" },
+    { GPS_BAUDRATE_19200,    BAUD_19200,  "$PUBX,41,1,0003,0001,19200,0*23\r\n",  "$PMTK251,19200*22\r\n" },
     // 9600 is not enough for 5Hz updates - leave for compatibility to dumb NMEA that only runs at this speed
-    { GPS_BAUDRATE_9600,      BAUD_9600, "$PUBX,41,1,0003,0001,9600,0*16\r\n", "" }
+    { GPS_BAUDRATE_9600,     BAUD_9600,   "$PUBX,41,1,0003,0001,9600,0*16\r\n",   "" }
 };
 
 #define GPS_INIT_DATA_ENTRY_COUNT ARRAYLEN(gpsInitData)
@@ -134,7 +130,7 @@ static const gpsInitData_t gpsInitData[] = {
 #define DEFAULT_BAUD_RATE_INDEX 0
 
 #ifdef USE_GPS_UBLOX
-enum {
+typedef enum {
     PREAMBLE1 = 0xB5,
     PREAMBLE2 = 0x62,
     CLASS_NAV = 0x01,
@@ -142,22 +138,22 @@ enum {
     CLASS_CFG = 0x06,
     MSG_ACK_NACK = 0x00,
     MSG_ACK_ACK = 0x01,
-    MSG_POSLLH = 0x2,
-    MSG_STATUS = 0x3,
-    MSG_DOP = 0x4,
-    MSG_SOL = 0x6,
-    MSG_PVT = 0x7,
+    MSG_POSLLH = 0x02,
+    MSG_STATUS = 0x03,
+    MSG_DOP = 0x04,
+    MSG_SOL = 0x06,
+    MSG_PVT = 0x07,
     MSG_VELNED = 0x12,
     MSG_SVINFO = 0x30,
     MSG_SAT = 0x35,
-    MSG_CFG_MSG = 0x1,
+    MSG_CFG_MSG = 0x01,
     MSG_CFG_PRT = 0x00,
     MSG_CFG_RATE = 0x08,
     MSG_CFG_SET_RATE = 0x01,
     MSG_CFG_SBAS = 0x16,
     MSG_CFG_NAV_SETTINGS = 0x24,
     MSG_CFG_GNSS = 0x3E
-} ubx_protocol_bytes;
+} ubxProtocolBytes_e;
 
 #define UBLOX_MODE_ENABLED    0x1
 #define UBLOX_MODE_TEST       0x2
@@ -173,56 +169,56 @@ enum {
 #define UBLOX_DYNMODE_AIRBORNE_1G 6
 #define UBLOX_DYNMODE_AIRBORNE_4G 8
 
-typedef struct {
+typedef struct ubxHeader_s {
     uint8_t preamble1;
     uint8_t preamble2;
     uint8_t msg_class;
     uint8_t msg_id;
     uint16_t length;
-} ubx_header;
+} ubxHeader_t;
 
-typedef struct {
+typedef struct ubxConfigblock_s {
     uint8_t gnssId;
     uint8_t resTrkCh;
     uint8_t maxTrkCh;
     uint8_t reserved1;
     uint32_t flags;
-} ubx_configblock;
+} ubxConfigblock_t;
 
-typedef struct {
+typedef struct ubxPollMsg_s {
     uint8_t msgClass;
     uint8_t msgID;
-} ubx_poll_msg;
+} ubxPollMsg_t;
 
-typedef struct {
+typedef struct ubxCfgMsg_s {
     uint8_t msgClass;
     uint8_t msgID;
     uint8_t rate;
-} ubx_cfg_msg;
+} ubxCfgMsg_t;
 
-typedef struct {
+typedef struct ubxCfgRate_s {
     uint16_t measRate;
     uint16_t navRate;
     uint16_t timeRef;
-} ubx_cfg_rate;
+} ubxCfgRate_t;
 
-typedef struct {
+typedef struct ubxCfgSbas_s {
     uint8_t mode;
     uint8_t usage;
     uint8_t maxSBAS;
     uint8_t scanmode2;
     uint32_t scanmode1;
-} ubx_cfg_sbas;
+} ubxCfgSbas_t;
 
-typedef struct {
+typedef struct ubxCfgGnss_s {
     uint8_t msgVer;
     uint8_t numTrkChHw;
     uint8_t numTrkChUse;
     uint8_t numConfigBlocks;
-    ubx_configblock configblocks[7];
-} ubx_cfg_gnss;
+    ubxConfigblock_t configblocks[7];
+} ubxCfgGnss_t;
 
-typedef struct {
+typedef struct ubxCfgNav5_s {
     uint16_t mask;
     uint8_t dynModel;
     uint8_t fixMode;
@@ -242,21 +238,21 @@ typedef struct {
     uint16_t staticHoldMaxDist;
     uint8_t utcStandard;
     uint8_t reserved1[5];
-} ubx_cfg_nav5;
+} ubxCfgNav5_t;
 
-typedef union {
-    ubx_poll_msg poll_msg;
-    ubx_cfg_msg cfg_msg;
-    ubx_cfg_rate cfg_rate;
-    ubx_cfg_nav5 cfg_nav5;
-    ubx_cfg_sbas cfg_sbas;
-    ubx_cfg_gnss cfg_gnss;
-} ubx_payload;
+typedef union ubxPayload_s {
+    ubxPollMsg_t poll_msg;
+    ubxCfgMsg_t cfg_msg;
+    ubxCfgRate_t cfg_rate;
+    ubxCfgNav5_t cfg_nav5;
+    ubxCfgSbas_t cfg_sbas;
+    ubxCfgGnss_t cfg_gnss;
+} ubxPayload_t;
 
-typedef struct {
-    ubx_header header;
-    ubx_payload payload;
-} __attribute__((packed)) ubx_message;
+typedef struct ubxMessage_s {
+    ubxHeader_t header;
+    ubxPayload_t payload;
+} __attribute__((packed)) ubxMessage_t;
 
 #endif // USE_GPS_UBLOX
 
@@ -275,20 +271,6 @@ typedef enum {
 #define GPS_MAX_WAIT_DATA_RX 30
 
 gpsData_t gpsData;
-
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
-
-PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
-    .provider = GPS_UBLOX,
-    .sbasMode = SBAS_NONE,
-    .autoConfig = GPS_AUTOCONFIG_ON,
-    .autoBaud = GPS_AUTOBAUD_OFF,
-    .gps_ublox_use_galileo = false,
-    .gps_ublox_mode = UBLOX_AIRBORNE,
-    .gps_set_home_point_once = false,
-    .gps_use_3d_speed = false,
-    .sbas_integrity = false,
-);
 
 static void shiftPacketLog(void)
 {
@@ -454,7 +436,7 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len)
     gpsData.ackState = UBLOX_ACK_WAITING;
 }
 
-static void ubloxSendConfigMessage(ubx_message *message, uint8_t msg_id, uint8_t length)
+static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length)
 {
     message->header.preamble1 = PREAMBLE1;
     message->header.preamble2 = PREAMBLE2;
@@ -466,7 +448,7 @@ static void ubloxSendConfigMessage(ubx_message *message, uint8_t msg_id, uint8_t
 
 static void ubloxSendPollMessage(uint8_t msg_id)
 {
-    ubx_message tx_buffer;
+    ubxMessage_t tx_buffer;
     tx_buffer.header.preamble1 = PREAMBLE1;
     tx_buffer.header.preamble2 = PREAMBLE2;
     tx_buffer.header.msg_class = CLASS_CFG;
@@ -477,7 +459,7 @@ static void ubloxSendPollMessage(uint8_t msg_id)
 
 static void ubloxSendNAV5Message(bool airborne)
 {
-    ubx_message tx_buffer;
+    ubxMessage_t tx_buffer;
     tx_buffer.payload.cfg_nav5.mask = 0xFFFF;
     if (airborne) {
 #if defined(GPS_UBLOX_MODE_AIRBORNE_1G)
@@ -511,30 +493,30 @@ static void ubloxSendNAV5Message(bool airborne)
     tx_buffer.payload.cfg_nav5.reserved1[3] = 0;
     tx_buffer.payload.cfg_nav5.reserved1[4] = 0;
 
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubx_cfg_nav5));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t));
 }
 
 static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate)
 {
-    ubx_message tx_buffer;
+    ubxMessage_t tx_buffer;
     tx_buffer.payload.cfg_msg.msgClass = messageClass;
     tx_buffer.payload.cfg_msg.msgID = messageID;
     tx_buffer.payload.cfg_msg.rate = rate;
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubx_cfg_msg));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t));
 }
 
 static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint16_t timeRef)
 {
-    ubx_message tx_buffer;
+    ubxMessage_t tx_buffer;
     tx_buffer.payload.cfg_rate.measRate = measRate;
     tx_buffer.payload.cfg_rate.navRate = navRate;
     tx_buffer.payload.cfg_rate.timeRef = timeRef;
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_RATE, sizeof(ubx_cfg_rate));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_RATE, sizeof(ubxCfgRate_t));
 }
 
 static void ubloxSetSbas(void)
 {
-    ubx_message tx_buffer;
+    ubxMessage_t tx_buffer;
 
     //NOTE: default ublox config for sbas mode is: UBLOX_MODE_ENABLED, test is disabled
     tx_buffer.payload.cfg_sbas.mode = UBLOX_MODE_TEST;
@@ -570,7 +552,7 @@ static void ubloxSetSbas(void)
             tx_buffer.payload.cfg_sbas.scanmode1 = 0;
             break;
     }
-    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_SBAS, sizeof(ubx_cfg_sbas));
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_SBAS, sizeof(ubxCfgSbas_t));
 }
 
 void gpsInitUblox(void)
@@ -689,12 +671,15 @@ void gpsInitUblox(void)
                         }
                         break;
                     case 12:
-                        ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle) (for 5Hz use 0xC8)
+                        ubloxSetMessageRate(CLASS_NAV, MSG_DOP, 1); // set DOP MSG rate
                         break;
                     case 13:
-                        ubloxSetSbas();
+                        ubloxSetNavRate(0x64, 1, 1); // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle) (for 5Hz use 0xC8)
                         break;
                     case 14:
+                        ubloxSetSbas();
+                        break;
+                    case 15:
                         if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
                             ubloxSendPollMessage(MSG_CFG_GNSS);
                         } else {
@@ -715,7 +700,7 @@ void gpsInitUblox(void)
                     }
                     break;
                 case UBLOX_ACK_GOT_ACK:
-                    if (gpsData.state_position == 14) {
+                    if (gpsData.state_position == 15) {
                         // ublox should be initialised, try receiving
                         gpsSetState(GPS_STATE_RECEIVING_DATA);
                     } else {
@@ -1053,149 +1038,201 @@ typedef struct gpsDataNmea_s {
     uint32_t date;
 } gpsDataNmea_t;
 
-static bool gpsNewFrameNMEA(char c)
+static void parseFieldNmea(gpsDataNmea_t *data, char *str, uint8_t gpsFrame, uint8_t idx)
 {
-    static gpsDataNmea_t gps_Msg;
-
-    uint8_t frameOK = 0;
-    static uint8_t param = 0, offset = 0, parity = 0;
-    static char string[15];
-    static uint8_t checksum_param, gps_frame = NO_FRAME;
     static uint8_t svMessageNum = 0;
     uint8_t svSatNum = 0, svPacketIdx = 0, svSatParam = 0;
 
+    switch (gpsFrame) {
+
+        case FRAME_GGA:        //************* GPGGA FRAME parsing
+            switch (idx) {
+    //          case 1:             // Time information
+    //              break;
+                case 2:
+                    data->latitude = GPS_coord_to_degrees(str);
+                    break;
+                case 3:
+                    if (str[0] == 'S') data->latitude *= -1;
+                    break;
+                case 4:
+                    data->longitude = GPS_coord_to_degrees(str);
+                    break;
+                case 5:
+                    if (str[0] == 'W') data->longitude *= -1;
+                    break;
+                case 6:
+                    gpsSetFixState(str[0] > '0');
+                    break;
+                case 7:
+                    data->numSat = grab_fields(str, 0);
+                    break;
+                case 9:
+                    data->altitudeCm = grab_fields(str, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
+                    break;
+            }
+            break;
+
+        case FRAME_RMC:        //************* GPRMC FRAME parsing
+            switch (idx) {
+                case 1:
+                    data->time = grab_fields(str, 2); // UTC time hhmmss.ss
+                    break;
+                case 7:
+                    data->speed = ((grab_fields(str, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
+                    break;
+                case 8:
+                    data->ground_course = (grab_fields(str, 1));      // ground course deg * 10
+                    break;
+                case 9:
+                    data->date = grab_fields(str, 0); // date dd/mm/yy
+                    break;
+            }
+            break;
+
+        case FRAME_GSV:
+            switch (idx) {
+                /*case 1:
+                    // Total number of messages of this type in this cycle
+                    break; */
+                case 2:
+                    // Message number
+                    svMessageNum = grab_fields(str, 0);
+                    break;
+                case 3:
+                    // Total number of SVs visible
+                    GPS_numCh = MIN(grab_fields(str, 0), GPS_SV_MAXSATS_LEGACY);
+                    break;
+            }
+            if (idx < 4)
+                break;
+
+            svPacketIdx = (idx - 4) / 4 + 1; // satellite number in packet, 1-4
+            svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
+            svSatParam  = idx - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
+
+            if (svSatNum > GPS_SV_MAXSATS_LEGACY)
+                break;
+
+            switch (svSatParam) {
+                case 1:
+                    // SV PRN number
+                    GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
+                    GPS_svinfo_svid[svSatNum - 1] = grab_fields(str, 0);
+                    break;
+                /*case 2:
+                    // Elevation, in degrees, 90 maximum
+                    break;
+                case 3:
+                    // Azimuth, degrees from True North, 000 through 359
+                    break; */
+                case 4:
+                    // SNR, 00 through 99 dB (null when not tracking)
+                    GPS_svinfo_cno[svSatNum - 1] = grab_fields(str, 0);
+                    GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
+                    break;
+            }
+
+            GPS_svInfoReceivedCount++;
+            break;
+
+        case FRAME_GSA:
+            switch (idx) {
+                case 15:
+                    data->pdop = grab_fields(str, 2);  // pDOP * 100
+                    break;
+                case 16:
+                    data->hdop = grab_fields(str, 2);  // hDOP * 100
+                    break;
+                case 17:
+                    data->vdop = grab_fields(str, 2);  // vDOP * 100
+                    break;
+            }
+            break;
+    }
+}
+
+static bool writeGpsSolutionNmea(gpsSolutionData_t *sol, const gpsDataNmea_t *data, uint8_t gpsFrame)
+{
+    switch (gpsFrame) {
+
+        case FRAME_GGA:
+            *gpsPacketLogChar = LOG_NMEA_GGA;
+            if (STATE(GPS_FIX)) {
+                sol->llh.lat = data->latitude;
+                sol->llh.lon = data->longitude;
+                sol->numSat = data->numSat;
+                sol->llh.altCm = data->altitudeCm;
+            }
+            // return only one true statement to trigger one "newGpsDataReady" flag per GPS loop
+            return true;
+
+        case FRAME_GSA:
+            *gpsPacketLogChar = LOG_NMEA_GSA;
+            sol->dop.pdop = data->pdop;
+            sol->dop.hdop = data->hdop;
+            sol->dop.vdop = data->vdop;
+            return false;
+
+        case FRAME_RMC:
+            *gpsPacketLogChar = LOG_NMEA_RMC;
+            sol->groundSpeed = data->speed;
+            sol->groundCourse = data->ground_course;
+#ifdef USE_RTC_TIME
+            // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
+            if(!rtcHasTime() && data->date != 0 && data->time != 0) {
+                dateTime_t temp_time;
+                temp_time.year = (data->date % 100) + 2000;
+                temp_time.month = (data->date / 100) % 100;
+                temp_time.day = (data->date / 10000) % 100;
+                temp_time.hours = (data->time / 1000000) % 100;
+                temp_time.minutes = (data->time / 10000) % 100;
+                temp_time.seconds = (data->time / 100) % 100;
+                temp_time.millis = (data->time & 100) * 10;
+                rtcSetDateTime(&temp_time);
+            }
+#endif
+            return false;
+
+        default:
+            return false;
+    }
+}
+
+static bool gpsNewFrameNMEA(char c)
+{
+    static gpsDataNmea_t gps_msg;
+    static char string[15];
+    static uint8_t param = 0, offset = 0, parity = 0;
+    static uint8_t checksum_param, gps_frame = NO_FRAME;
+    bool isFrameOk = false;
+
     switch (c) {
+
         case '$':
             param = 0;
             offset = 0;
             parity = 0;
             break;
+
         case ',':
         case '*':
             string[offset] = 0;
-            if (param == 0) {       //frame identification
+            if (param == 0) {  // frame identification (5 chars, e.g. "GPGGA", "GNGGA", "GLGGA", ...)
                 gps_frame = NO_FRAME;
-                if (0 == strcmp(string, "GPGGA") || 0 == strcmp(string, "GNGGA")) {
+                if (strcmp(&string[2], "GGA") == 0) {
                     gps_frame = FRAME_GGA;
-                } else if (0 == strcmp(string, "GPRMC") || 0 == strcmp(string, "GNRMC")) {
+                } else if (strcmp(&string[2], "RMC") == 0) {
                     gps_frame = FRAME_RMC;
-                } else if (0 == strcmp(string, "GPGSV")) {
+                } else if (strcmp(&string[2], "GSV") == 0) {
                     gps_frame = FRAME_GSV;
-                } else if (0 == strcmp(string, "GPGSA")) {
+                } else if (strcmp(&string[2], "GSA") == 0) {
                     gps_frame = FRAME_GSA;
                 }
             }
 
-            switch (gps_frame) {
-                case FRAME_GGA:        //************* GPGGA FRAME parsing
-                    switch (param) {
-            //          case 1:             // Time information
-            //              break;
-                        case 2:
-                            gps_Msg.latitude = GPS_coord_to_degrees(string);
-                            break;
-                        case 3:
-                            if (string[0] == 'S')
-                                gps_Msg.latitude *= -1;
-                            break;
-                        case 4:
-                            gps_Msg.longitude = GPS_coord_to_degrees(string);
-                            break;
-                        case 5:
-                            if (string[0] == 'W')
-                                gps_Msg.longitude *= -1;
-                            break;
-                        case 6:
-                            gpsSetFixState(string[0] > '0');
-                            break;
-                        case 7:
-                            gps_Msg.numSat = grab_fields(string, 0);
-                            break;
-                        case 9:
-                            gps_Msg.altitudeCm = grab_fields(string, 1) * 10;     // altitude in centimeters. Note: NMEA delivers altitude with 1 or 3 decimals. It's safer to cut at 0.1m and multiply by 10
-                            break;
-                    }
-                    break;
-                case FRAME_RMC:        //************* GPRMC FRAME parsing
-                    switch (param) {
-                        case 1:
-                            gps_Msg.time = grab_fields(string, 2); // UTC time hhmmss.ss
-                            break;
-                        case 7:
-                            gps_Msg.speed = ((grab_fields(string, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
-                            break;
-                        case 8:
-                            gps_Msg.ground_course = (grab_fields(string, 1));      // ground course deg * 10
-                            break;
-                        case 9:
-                            gps_Msg.date = grab_fields(string, 0); // date dd/mm/yy
-                            break;
-                    }
-                    break;
-                case FRAME_GSV:
-                    switch (param) {
-                      /*case 1:
-                            // Total number of messages of this type in this cycle
-                            break; */
-                        case 2:
-                            // Message number
-                            svMessageNum = grab_fields(string, 0);
-                            break;
-                        case 3:
-                            // Total number of SVs visible
-                            GPS_numCh = grab_fields(string, 0);
-                            if (GPS_numCh > GPS_SV_MAXSATS_LEGACY) {
-                                GPS_numCh = GPS_SV_MAXSATS_LEGACY;
-                            }
-                            break;
-                    }
-                    if (param < 4)
-                        break;
-
-                    svPacketIdx = (param - 4) / 4 + 1; // satellite number in packet, 1-4
-                    svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
-                    svSatParam  = param - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
-
-                    if (svSatNum > GPS_SV_MAXSATS_LEGACY)
-                        break;
-
-                    switch (svSatParam) {
-                        case 1:
-                            // SV PRN number
-                            GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
-                            GPS_svinfo_svid[svSatNum - 1] = grab_fields(string, 0);
-                            break;
-                      /*case 2:
-                            // Elevation, in degrees, 90 maximum
-                            break;
-                        case 3:
-                            // Azimuth, degrees from True North, 000 through 359
-                            break; */
-                        case 4:
-                            // SNR, 00 through 99 dB (null when not tracking)
-                            GPS_svinfo_cno[svSatNum - 1] = grab_fields(string, 0);
-                            GPS_svinfo_quality[svSatNum - 1] = 0; // only used by ublox
-                            break;
-                    }
-
-                    GPS_svInfoReceivedCount++;
-
-                    break;
-
-                case FRAME_GSA:
-                    switch (param) {
-                        case 15:
-                            gps_Msg.pdop = grab_fields(string, 1) * 100;        // pDOP
-                            break;
-                        case 16:
-                            gps_Msg.hdop = grab_fields(string, 1) * 100;        // hDOP
-                            break;
-                        case 17:
-                            gps_Msg.vdop = grab_fields(string, 1) * 100;        // vDOP
-                            break;
-                    }
-                    break;
-            }
+            // parse string and write data into gps_msg
+            parseFieldNmea(&gps_msg, string, gps_frame, param);
 
             param++;
             offset = 0;
@@ -1204,6 +1241,7 @@ static bool gpsNewFrameNMEA(char c)
             else
                 parity ^= c;
             break;
+
         case '\r':
         case '\n':
             if (checksum_param) {   //parity checksum
@@ -1212,62 +1250,29 @@ static bool gpsNewFrameNMEA(char c)
                 if (checksum == parity) {
                     *gpsPacketLogChar = LOG_IGNORED;
                     GPS_packetCount++;
-                    switch (gps_frame) {
-                    case FRAME_GGA:
-                        *gpsPacketLogChar = LOG_NMEA_GGA;
-                        frameOK = 1;
-                        if (STATE(GPS_FIX)) {
-                            gpsSol.llh.lat = gps_Msg.latitude;
-                            gpsSol.llh.lon = gps_Msg.longitude;
-                            gpsSol.numSat = gps_Msg.numSat;
-                            gpsSol.llh.altCm = gps_Msg.altitudeCm;
-                        }
-                        break;
-                    case FRAME_GSA:
-                        *gpsPacketLogChar = LOG_NMEA_GSA;
-                        gpsSol.dop.pdop = gps_Msg.pdop;
-                        gpsSol.dop.hdop = gps_Msg.hdop;
-                        gpsSol.dop.vdop = gps_Msg.vdop;
-                        break;
-                    case FRAME_RMC:
-                        *gpsPacketLogChar = LOG_NMEA_RMC;
-                        gpsSol.groundSpeed = gps_Msg.speed;
-                        gpsSol.groundCourse = gps_Msg.ground_course;
-#ifdef USE_RTC_TIME
-                        // This check will miss 00:00:00.00, but we shouldn't care - next report will be valid
-                        if(!rtcHasTime() && gps_Msg.date != 0 && gps_Msg.time != 0) {
-                            dateTime_t temp_time;
-                            temp_time.year = (gps_Msg.date % 100) + 2000;
-                            temp_time.month = (gps_Msg.date / 100) % 100;
-                            temp_time.day = (gps_Msg.date / 10000) % 100;
-                            temp_time.hours = (gps_Msg.time / 1000000) % 100;
-                            temp_time.minutes = (gps_Msg.time / 10000) % 100;
-                            temp_time.seconds = (gps_Msg.time / 100) % 100;
-                            temp_time.millis = (gps_Msg.time & 100) * 10;
-                            rtcSetDateTime(&temp_time);
-                        }
-#endif
-                        break;
-                    } // end switch
+                    isFrameOk = writeGpsSolutionNmea(&gpsSol, &gps_msg, gps_frame);  // // write gps_msg into gpsSol
                 } else {
                     *gpsPacketLogChar = LOG_ERROR;
                 }
             }
             checksum_param = 0;
             break;
+
         default:
             if (offset < 15)
                 string[offset++] = c;
             if (!checksum_param)
                 parity ^= c;
+            break;
     }
-    return frameOK;
+
+    return isFrameOk;
 }
 #endif // USE_GPS_NMEA
 
 #ifdef USE_GPS_UBLOX
 // UBX support
-typedef struct {
+typedef struct ubxNavPosllh_s {
     uint32_t time;              // GPS msToW
     int32_t longitude;
     int32_t latitude;
@@ -1275,9 +1280,9 @@ typedef struct {
     int32_t altitudeMslMm;
     uint32_t horizontal_accuracy;
     uint32_t vertical_accuracy;
-} ubx_nav_posllh;
+} ubxNavPosllh_t;
 
-typedef struct {
+typedef struct ubxNavStatus_s {
     uint32_t time;              // GPS msToW
     uint8_t fix_type;
     uint8_t fix_status;
@@ -1285,9 +1290,9 @@ typedef struct {
     uint8_t res;
     uint32_t time_to_first_fix;
     uint32_t uptime;            // milliseconds
-} ubx_nav_status;
+} ubxNavStatus_t;
 
-typedef struct {
+typedef struct ubxNavDop_s {
     uint32_t itow;              // GPS Millisecond Time of Week
     uint16_t gdop;              // Geometric DOP
     uint16_t pdop;              // Position DOP
@@ -1296,9 +1301,9 @@ typedef struct {
     uint16_t hdop;              // Horizontal DOP
     uint16_t ndop;              // Northing DOP
     uint16_t edop;              // Easting DOP
-} ubx_nav_dop;
+} ubxNavDop_t;
 
-typedef struct {
+typedef struct ubxNavSolution_s {
     uint32_t time;
     int32_t time_nsec;
     int16_t week;
@@ -1316,9 +1321,9 @@ typedef struct {
     uint8_t res;
     uint8_t satellites;
     uint32_t res2;
-} ubx_nav_solution;
+} ubxNavSolution_t;
 
-typedef struct {
+typedef struct ubxNavPvt_s {
     uint32_t time;
     uint16_t year;
     uint8_t month;
@@ -1352,9 +1357,9 @@ typedef struct {
     int32_t headVeh;
     int16_t magDec;
     uint16_t magAcc;
-} ubx_nav_pvt;
+} ubxNavPvt_t;
 
-typedef struct {
+typedef struct ubxNavVelned_s {
     uint32_t time;              // GPS msToW
     int32_t ned_north;
     int32_t ned_east;
@@ -1364,9 +1369,9 @@ typedef struct {
     int32_t heading_2d;
     uint32_t speed_accuracy;
     uint32_t heading_accuracy;
-} ubx_nav_velned;
+} ubxNavVelned_t;
 
-typedef struct {
+typedef struct ubxNavSvinfoChannel_s {
     uint8_t chn;                // Channel number, 255 for SVx not assigned to channel
     uint8_t svid;               // Satellite ID
     uint8_t flags;              // Bitmask
@@ -1375,9 +1380,9 @@ typedef struct {
     uint8_t elev;               // Elevation in integer degrees
     int16_t azim;               // Azimuth in integer degrees
     int32_t prRes;              // Pseudo range residual in centimetres
-} ubx_nav_svinfo_channel;
+} ubxNavSvinfoChannel_t;
 
-typedef struct {
+typedef struct ubxNavSatSv_s {
     uint8_t gnssId;
     uint8_t svId;               // Satellite ID
     uint8_t cno;                // Carrier to Noise Ratio (Signal Strength) // dbHz, 0-55.
@@ -1385,48 +1390,48 @@ typedef struct {
     int16_t azim;               // Azimuth in integer degrees
     int16_t prRes;              // Pseudo range residual in decimetres
     uint32_t flags;             // Bitmask
-} ubx_nav_sat_sv;
+} ubxNavSatSv_t;
 
-typedef struct {
+typedef struct ubxNavSvinfo_s {
     uint32_t time;              // GPS Millisecond time of week
     uint8_t numCh;              // Number of channels
     uint8_t globalFlags;        // Bitmask, Chip hardware generation 0:Antaris, 1:u-blox 5, 2:u-blox 6
     uint16_t reserved2;         // Reserved
-    ubx_nav_svinfo_channel channel[GPS_SV_MAXSATS_M8N];         // 32 satellites * 12 byte
-} ubx_nav_svinfo;
+    ubxNavSvinfoChannel_t channel[GPS_SV_MAXSATS_M8N];         // 32 satellites * 12 byte
+} ubxNavSvinfo_t;
 
-typedef struct {
+typedef struct ubxNavSat_s {
     uint32_t time;              // GPS Millisecond time of week
     uint8_t version;
     uint8_t numSvs;
     uint8_t reserved0[2];
-    ubx_nav_sat_sv svs[GPS_SV_MAXSATS_M9N];
-} ubx_nav_sat;
+    ubxNavSatSv_t svs[GPS_SV_MAXSATS_M9N];
+} ubxNavSat_t;
 
-typedef struct {
+typedef struct ubxAck_s {
     uint8_t clsId;               // Class ID of the acknowledged message
     uint8_t msgId;               // Message ID of the acknowledged message
-} ubx_ack;
+} ubxAck_t;
 
-enum {
+typedef enum {
     FIX_NONE = 0,
     FIX_DEAD_RECKONING = 1,
     FIX_2D = 2,
     FIX_3D = 3,
     FIX_GPS_DEAD_RECKONING = 4,
     FIX_TIME = 5
-} ubs_nav_fix_type;
+} ubsNavFixType_e;
 
-enum {
+typedef enum {
     NAV_STATUS_FIX_VALID = 1,
     NAV_STATUS_TIME_WEEK_VALID = 4,
     NAV_STATUS_TIME_SECOND_VALID = 8
-} ubx_nav_status_bits;
+} ubxNavStatusBits_e;
 
-enum {
+typedef enum {
     NAV_VALID_DATE = 1,
     NAV_VALID_TIME = 2
-} ubx_nav_pvt_valid;
+} ubxNavPvtValid_e;
 
 // Packet checksum accumulators
 static uint8_t _ck_a;
@@ -1467,16 +1472,16 @@ static bool _new_speed;
 
 // Receive buffer
 static union {
-    ubx_nav_posllh posllh;
-    ubx_nav_status status;
-    ubx_nav_dop dop;
-    ubx_nav_solution solution;
-    ubx_nav_velned velned;
-    ubx_nav_pvt pvt;
-    ubx_nav_svinfo svinfo;
-    ubx_nav_sat sat;
-    ubx_cfg_gnss gnss;
-    ubx_ack ack;
+    ubxNavPosllh_t posllh;
+    ubxNavStatus_t status;
+    ubxNavDop_t dop;
+    ubxNavSolution_t solution;
+    ubxNavVelned_t velned;
+    ubxNavPvt_t pvt;
+    ubxNavSvinfo_t svinfo;
+    ubxNavSat_t sat;
+    ubxCfgGnss_t gnss;
+    ubxAck_t ack;
     uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
@@ -1548,6 +1553,9 @@ static bool UBLOX_parse_gps(void)
         gpsSetFixState(next_fix);
         _new_position = true;
         gpsSol.numSat = _buffer.pvt.numSV;
+        gpsSol.acc.hAcc = _buffer.pvt.hAcc;
+        gpsSol.acc.vAcc = _buffer.pvt.vAcc;
+        gpsSol.acc.sAcc = _buffer.pvt.sAcc;
         gpsSol.speed3d = (uint16_t) sqrtf(powf(_buffer.pvt.gSpeed / 10, 2.0f) + powf(_buffer.pvt.velD / 10, 2.0f));
         gpsSol.groundSpeed = _buffer.pvt.gSpeed / 10;    // cm/s
         gpsSol.groundCourse = (uint16_t) (_buffer.pvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
@@ -1638,9 +1646,9 @@ static bool UBLOX_parse_gps(void)
                 isM8NwithDefaultConfig = true;
             }
 
-            const uint16_t messageSize = 4 + (_buffer.gnss.numConfigBlocks * sizeof(ubx_configblock));
+            const uint16_t messageSize = 4 + (_buffer.gnss.numConfigBlocks * sizeof(ubxConfigblock_t));
 
-            ubx_message tx_buffer;
+            ubxMessage_t tx_buffer;
             memcpy(&tx_buffer.payload, &_buffer, messageSize);
 
             if (isSBASenabled && (gpsConfig()->sbasMode == SBAS_NONE)) {
@@ -1772,14 +1780,13 @@ static bool gpsNewFrameUBLOX(uint8_t data)
 
 static void gpsHandlePassthrough(uint8_t data)
 {
-     gpsNewData(data);
- #ifdef USE_DASHBOARD
-     if (featureIsEnabled(FEATURE_DASHBOARD)) {
-         dashboardUpdate(micros());
-     }
- #endif
-
- }
+    gpsNewData(data);
+#ifdef USE_DASHBOARD
+    if (featureIsEnabled(FEATURE_DASHBOARD)) {
+        dashboardUpdate(micros());
+    }
+#endif
+}
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
