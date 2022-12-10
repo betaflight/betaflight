@@ -54,6 +54,7 @@ extern "C" {
     #include "osd/osd_elements.h"
     #include "osd/osd_warnings.h"
 
+    #include "pg/gps_rescue.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"

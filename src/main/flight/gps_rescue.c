@@ -26,6 +26,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -44,20 +45,11 @@
 #include "flight/pid.h"
 #include "flight/position.h"
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "rx/rx.h"
 
 #include "sensors/acceleration.h"
 
 #include "gps_rescue.h"
-
-typedef enum {
-    RESCUE_SANITY_OFF = 0,
-    RESCUE_SANITY_ON,
-    RESCUE_SANITY_FS_ONLY
-} gpsRescueSanity_e;
 
 typedef enum {
     RESCUE_IDLE,
@@ -113,7 +105,6 @@ typedef struct {
     float velocityToHomeCmS;
     float alitutudeStepCm;
     float maxPitchStep;
-    float filterK;
     float absErrorAngle;
 } rescueSensorData_s;
 
@@ -125,12 +116,6 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
-typedef enum {
-    MAX_ALT,
-    FIXED_ALT,
-    CURRENT_ALT
-} altitudeMode_e;
-
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
 #define GPS_RESCUE_MIN_DESCENT_DIST_M    5      // minimum descent distance
 #define GPS_RESCUE_MAX_ITERM_VELOCITY    1000   // max iterm value for velocity
@@ -138,69 +123,33 @@ typedef enum {
 #define GPS_RESCUE_MAX_PITCH_RATE        3000   // max change in pitch per second in degrees * 100
 #define GPS_RESCUE_DISARM_THRESHOLD      2.0f   // disarm threshold in G's
 
-#ifdef USE_MAG
-#define GPS_RESCUE_USE_MAG              true
-#else
-#define GPS_RESCUE_USE_MAG              false
-#endif
-
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 3);
-
-PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
-    .minRescueDth = 30,
-    .altitudeMode = MAX_ALT,
-    .rescueAltitudeBufferM = 10,
-    .ascendRate = 500,          // cm/s, for altitude corrections on ascent
-
-    .initialAltitudeM = 30,
-    .rescueGroundspeed = 500,
-    .angle = 40,
-    .rollMix = 150,
-
-    .descentDistanceM = 20,
-    .descendRate = 100,         // cm/s, minimum for descent and landing phase, or for descending if starting high ascent
-    .targetLandingAltitudeM = 4,
-
-    .throttleMin = 1100,
-    .throttleMax = 1600,
-    .throttleHover = 1275,
-
-    .allowArmingWithoutFix = false,
-    .sanityChecks = RESCUE_SANITY_FS_ONLY,
-    .minSats = 8,
-
-    .throttleP = 15,
-    .throttleI = 15,
-    .throttleD = 15,
-    .velP = 8,
-    .velI = 30,
-    .velD = 20,
-    .yawP = 20,
-
-    .useMag = GPS_RESCUE_USE_MAG
-);
-
 static float rescueThrottle;
 static float rescueYaw;
 float       gpsRescueAngle[ANGLE_INDEX_COUNT] = { 0, 0 };
 bool        magForceDisable = false;
 static bool newGPSData = false;
 static pt2Filter_t throttleDLpf;
+static pt2Filter_t velocityDLpf;
 static pt3Filter_t pitchLpf;
 
 rescueState_s rescueState;
 
 void gpsRescueInit(void)
 {
-    const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
+    const float sampleTimeS = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ);
+    float cutoffHz, gain;
 
-    const float throttleDCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
-    const float throttleDCutoffGain = pt2FilterGain(throttleDCutoffHz, sampleTimeS);
-    pt2FilterInit(&throttleDLpf, throttleDCutoffGain);
+    cutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
+    gain = pt2FilterGain(cutoffHz, sampleTimeS);
+    pt2FilterInit(&throttleDLpf, gain);
 
-    const float pitchCutoffHz = 4.0f;
-    const float pitchCutoffGain = pt3FilterGain(pitchCutoffHz, sampleTimeS);
-    pt3FilterInit(&pitchLpf, pitchCutoffGain);
+    cutoffHz = 0.8f;
+    gain = pt2FilterGain(cutoffHz, 1.0f);
+    pt2FilterInit(&velocityDLpf, gain);
+
+    cutoffHz = 4.0f;
+    gain = pt3FilterGain(cutoffHz, sampleTimeS);
+    pt3FilterInit(&pitchLpf, gain);
 }
 
 /*
@@ -242,13 +191,13 @@ static void setReturnAltitude(void)
         const float initialAltitudeCm = gpsRescueConfig()->initialAltitudeM * 100.0f;
         const float rescueAltitudeBufferCm = gpsRescueConfig()->rescueAltitudeBufferM * 100.0f;
         switch (gpsRescueConfig()->altitudeMode) {
-            case FIXED_ALT:
+            case GPS_RESCUE_ALT_MODE_FIXED:
                 rescueState.intent.returnAltitudeCm = initialAltitudeCm;
                 break;
-            case CURRENT_ALT:
+            case GPS_RESCUE_ALT_MODE_CURRENT:
                 rescueState.intent.returnAltitudeCm = rescueState.sensor.currentAltitudeCm + rescueAltitudeBufferCm;
                 break;
-            case MAX_ALT:
+            case GPS_RESCUE_ALT_MODE_MAX:
             default:
                 rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + rescueAltitudeBufferCm;
                 break;
@@ -261,7 +210,6 @@ static void rescueAttainPosition(void)
     // runs at 100hz, but only updates RPYT settings when new GPS Data arrives and when not in idle phase.
     static float previousVelocityError = 0.0f;
     static float velocityI = 0.0f;
-    static float previousVelocityD = 0.0f;      // for smoothing
     static float previousPitchAdjustment = 0.0f;
     static float throttleI = 0.0f;
     static float previousAltitudeError = 0.0f;
@@ -278,7 +226,6 @@ static void rescueAttainPosition(void)
         // Initialize internal variables each time GPS Rescue is started
         previousVelocityError = 0.0f;
         velocityI = 0.0f;
-        previousVelocityD = 0.0f;
         previousPitchAdjustment = 0.0f;
         throttleI = 0.0f;
         previousAltitudeError = 0.0f;
@@ -391,9 +338,9 @@ static void rescueAttainPosition(void)
         // D component
         float velocityD = ((velocityError - previousVelocityError) / sampleIntervalNormaliseFactor);
         previousVelocityError = velocityError;
-        // simple first order filter on derivative with k = 0.5 for 200ms steps
-        velocityD = previousVelocityD + rescueState.sensor.filterK * (velocityD - previousVelocityD);
-        previousVelocityD = velocityD;
+        const float gain = pt2FilterGain(0.8f, HZ_TO_INTERVAL(gpsGetSampleRateHz()));
+        pt2FilterUpdateCutoff(&velocityDLpf, gain);
+        velocityD = pt2FilterApply(&velocityDLpf, velocityD);
         velocityD *= gpsRescueConfig()->velD;
 
         const float velocityIAttenuator = rescueState.intent.targetVelocityCmS / gpsRescueConfig()->rescueGroundspeed;
@@ -601,9 +548,6 @@ static void sensorUpdate(void)
     rescueState.sensor.gpsDataIntervalSeconds = constrainf(gpsDataIntervalUs * 0.000001f, 0.01f, 1.0f);
     // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
     previousGPSDataTimeUs = currentTimeUs;
-
-    rescueState.sensor.filterK = pt1FilterGain(0.8, rescueState.sensor.gpsDataIntervalSeconds);
-    // 0.8341 for 1hz, 0.5013 for 5hz, 0.3345 for 10hz, 0.1674 for 25Hz, etc
 
     rescueState.sensor.velocityToHomeCmS = (prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds;
     // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.

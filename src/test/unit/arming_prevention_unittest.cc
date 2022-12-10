@@ -18,34 +18,48 @@
 #include <stdint.h>
 
 extern "C" {
+
     #include "blackbox/blackbox.h"
+
     #include "build/debug.h"
+
+    #include "common/filter.h"
     #include "common/maths.h"
-    #include "config/feature.h"
-    #include "pg/motor.h"
-    #include "pg/pg.h"
-    #include "pg/pg_ids.h"
-    #include "pg/rx.h"
+
     #include "config/config.h"
+    #include "config/feature.h"
+
     #include "fc/controlrate_profile.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+
     #include "flight/failsafe.h"
+    #include "flight/gps_rescue.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
     #include "flight/servos.h"
+
     #include "io/beeper.h"
     #include "io/gps.h"
+
+    #include "pg/gps_rescue.h"
+    #include "pg/motor.h"
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/rx.h"
+
     #include "rx/rx.h"
+
     #include "scheduler/scheduler.h"
+
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
+
     #include "telemetry/telemetry.h"
-    #include "flight/gps_rescue.h"
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -60,6 +74,7 @@ extern "C" {
     PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 
     float rcCommand[4];
@@ -81,6 +96,9 @@ extern "C" {
     acc_t acc = {};
     bool mockIsUpright = false;
     uint8_t activePidLoopDenom = 1;
+
+    float gpsGetSampleRateHz(void) { return 10.0f; }
+    void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k) { filter->k = k; }
 }
 
 uint32_t simulationFeatureFlags = 0;
