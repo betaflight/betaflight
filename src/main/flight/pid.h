@@ -79,6 +79,8 @@ typedef enum {
     PID_ROLL,
     PID_PITCH,
     PID_YAW,
+    // PID_ALT,
+    // PID_VEL,
     PID_LEVEL,
     PID_MAG,
     PID_ITEM_COUNT

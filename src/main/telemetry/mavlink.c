@@ -54,6 +54,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
+#include "flight/alt_ctrl.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
@@ -429,6 +430,7 @@ void mavlinkSendHUDAndHeartbeat(void)
 // #endif
 
     mavAltitude = rangefinderGetLatestAltitude();
+    mavGroundSpeed = Get_alt_Kalman();
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s

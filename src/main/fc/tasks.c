@@ -58,6 +58,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/wifi.h"
+#include "flight/alt_ctrl.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -292,6 +293,8 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
     rangefinderUpdate();
 
     rangefinderProcess(getCosTiltAngle());
+
+    Update_Kalman();
 }
 #endif
 
