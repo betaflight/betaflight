@@ -52,6 +52,15 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .crashflip_motor_percent = 0,
     .crashflip_expo = 35,
     .mixer_type = MIXER_LEGACY,
+    .rpm_limiter = false,
+    .rpm_limiter_p = 20,
+    .rpm_limiter_i = 6,
+    .rpm_limiter_d = 7,
+    .rpm_limiter_rpm_linearization = true,
+    .rpm_limiter_idle_rpm = 17,
+    .rpm_limiter_acceleration_limit = 60,
+    .rpm_limiter_deceleration_limit = 60,
+    .rpm_limiter_rpm_limit = 130,
 );
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
@@ -321,6 +330,19 @@ void mixerInitProfile(void)
             mixerRuntime.vbatSagCompensationFactor = ((float)currentPidProfile->vbat_sag_compensation) / 100.0f;
         }
     }
+#endif
+
+#ifdef USE_RPM_LIMITER
+    mixerRuntime.rpmLimiterExpectedThrottleLimit = 1.0f;
+    mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limiter_p * 0.0000015f;
+    mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limiter_i * 0.0001f * pidGetDT();
+    mixerRuntime.rpmLimiterDGain = mixerConfig()->rpm_limiter_d * 0.00000003f * pidGetPidFrequency();
+    mixerRuntime.rpmLimiterAccelerationLimit = mixerConfig()->rpm_limiter_acceleration_limit * 1000.0f * pidGetDT();
+    mixerRuntime.rpmLimiterDecelerationLimit = mixerConfig()->rpm_limiter_deceleration_limit * 1000.0f * pidGetDT();
+    mixerRuntime.rpmLimiterI = 0.0f;
+    mixerRuntime.rpmLimiterPreviousSmoothedRPMError = 0;
+    mixerRuntime.rpmLimiterDelayK = 800 * pidGetDT() / 20.0f;
+    mixerRuntime.rpmLimiterInit = false;
 #endif
 }
 
