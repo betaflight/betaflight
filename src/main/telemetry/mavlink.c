@@ -417,10 +417,10 @@ void mavlinkSendAttitude(void)
 void mavlinkSendHUDAndHeartbeat(void)
 {
     uint16_t msgLength;
-    float mavAltitude = 0;
-    float mavGroundSpeed = 0;
-    float mavAirSpeed = 0;
-    float mavClimbRate = 0;
+    float mavAltitude_Measure = 0;
+    float mavVel_Hat_current = 0;
+    float mavVel_Measure = 0;
+    float mavAltitude_Hat_current = 0;
 
 // #if defined(USE_GPS)
 //     // use ground speed if source available
@@ -429,22 +429,25 @@ void mavlinkSendHUDAndHeartbeat(void)
 //     }
 // #endif
 
-    mavAltitude = rangefinderGetLatestAltitude();
-    mavGroundSpeed = Get_alt_Kalman();
+    
+    mavVel_Measure = Get_Vel_measure(); //速度测量值
+    mavVel_Hat_current = Get_Vel_Kalman(); //速度最优估计值
+    mavAltitude_Measure = rangefinderGetLatestAltitude(); //高度测量值
+    mavAltitude_Hat_current = Get_Alt_Kalman(); //高度最优估计值
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s
-        mavAirSpeed,
+        mavVel_Measure,
         // groundspeed Current ground speed in m/s
-        mavGroundSpeed,
+        mavVel_Hat_current,
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
         scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
         // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
-        mavAltitude,
+        mavAltitude_Measure,
         // climb Current climb rate in meters/second
-        mavClimbRate);
+        mavAltitude_Hat_current);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
  //   serialWrite(mavlinkPort,'\r\n');

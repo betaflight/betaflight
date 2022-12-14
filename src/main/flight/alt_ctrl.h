@@ -14,6 +14,17 @@
 
 //#include "flight/matrix.h"
 
+/*PID结构体*/
+typedef struct PID_TypeDef_s{
+	int32_t SetPoint; //设定目标 Desired Value
+	float P;  //比例常数 Proportional Const
+	float I;  //积分常数 Integral Const
+	float D;  //微分常数 Derivative Const
+	float LastError;  //Error[-1]
+	float PrevError;  //Error[-2]
+}PID_TypeDef_t;
+
+
 /*卡尔曼滤波*/
 typedef struct TWO_DIM_Matrix_s{
     float A11;
@@ -85,9 +96,11 @@ TWO_DIM_Matrix_t Matrix_ADD(TWO_DIM_Matrix_t input_matrix1 , TWO_DIM_Matrix_t in
 TWO_DIM_Matrix_t Matrix_Reduce(TWO_DIM_Matrix_t input_matrix1 , TWO_DIM_Matrix_t input_matrix2);
 TWO_DIM_Matrix_t Inverse_Matrix(TWO_DIM_Matrix_t input_matrix);
 
-void Kalman_Calc(kalman_t *kalman, float newMeasured, timeMs_t currentTimeMs);
-void Update_Kalman(void);
-float Get_alt_Kalman(void);
+void Kalman_Calc(kalman_t *kalman, timeMs_t currentTimeMs);
+void Update_Kalman(timeUs_t currentTimeUs);
+float Get_Alt_Kalman(void);
+float Get_Vel_Kalman(void);
+float Get_Vel_measure(void);
 float Get_alt_Kalman_last(void);
 float Get_finall_throttle(void);
 
@@ -98,9 +111,9 @@ void updateAltHoldState(void); //先在接收部分判断接收的状态
 void applyAltHold(void); //定高控制入口函数
 void applyMultirotorAltHold(kalman_t *kalman); //利用控制器的结果进行油门的控制
 bool isThrustFacingDownwards(attitudeEulerAngles_t *attitude);
-float calculateAltHoldThrottleAdjustment(kalman_t *kalman);//Alt and Velocity PID-Controler
-void calculateEstimatedAltitude_kalman(timeUs_t currentTimeUs); //得到的卡尔曼滤波后的结果值
-
+float calculateAltHoldThrottleAdjustment(kalman_t *kalman, PID_TypeDef_t *sPID);//Alt and Velocity PID-Controler
+void calculateEstimatedAltitude_kalman(kalman_t *kalman, timeUs_t currentTimeUs); 
+void calculateCurrentMeasure_kalman(kalman_t *kalman, timeUs_t currentTimeUs); //获取卡尔曼滤波前的数据
 
 void kalmanFilter_init(kalman_t *kalman, float init_x, float init_p,float predict_q,float newMeasured_q);
 void kalmanFilter_filter(kalman_t *kalman, float newMeasured);

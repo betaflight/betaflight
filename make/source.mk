@@ -89,7 +89,6 @@ COMMON_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            flight/alt_ctrl.c\
             flight/position.c \
             flight/failsafe.c \
             flight/gps_rescue.c \
@@ -105,6 +104,7 @@ COMMON_SRC = \
             flight/servos.c \
             flight/servos_tricopter.c \
             flight/wifi.c  \
+            flight/alt_ctrl.c\
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \

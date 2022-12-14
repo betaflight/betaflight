@@ -28,6 +28,18 @@
 // Exported symbols
 extern bool canUseGPSHeading;
 
+#ifdef USE_ALT_HOLD
+extern uint32_t accTimeSum;
+extern int accSumCount;
+extern float accVelScale;
+extern float accSum[XYZ_AXIS_COUNT];
+
+typedef struct accDeadband_s {
+    uint8_t xy;                 // set the acc deadband for xy-Axis
+    uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
+} accDeadband_t;
+#endif
+
 typedef struct {
     float w,x,y,z;
 } quaternion;
@@ -56,6 +68,8 @@ typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
     uint8_t small_angle;
+    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
+    accDeadband_t accDeadband;
     uint8_t imu_process_denom;
 } imuConfig_t;
 
@@ -64,6 +78,8 @@ PG_DECLARE(imuConfig_t, imuConfig);
 typedef struct imuRuntimeConfig_s {
     float dcm_ki;
     float dcm_kp;
+    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
+    accDeadband_t accDeadband;
 } imuRuntimeConfig_t;
 
 void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correction_value);
@@ -72,6 +88,7 @@ float getCosTiltAngle(void);
 void getQuaternion(quaternion * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 
+void imuResetAccelerationSum(void);
 void imuInit(void);
 
 #ifdef SIMULATOR_BUILD

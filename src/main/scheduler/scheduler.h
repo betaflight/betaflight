@@ -178,6 +178,10 @@ typedef enum {
     TASK_SPEED_NEGOTIATION,
 #endif
 
+#ifdef USE_ALT_HOLD
+    TASK_KALMAN_FILTER,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 

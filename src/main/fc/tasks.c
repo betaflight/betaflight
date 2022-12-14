@@ -294,7 +294,7 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
 
     rangefinderProcess(getCosTiltAngle());
 
-    Update_Kalman();
+    // Update_Kalman();
 }
 #endif
 
@@ -348,7 +348,7 @@ task_t tasks[TASK_COUNT];
 task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_SYSTEM] = DEFINE_TASK("SYSTEM", "LOAD", NULL, taskSystemLoad, TASK_PERIOD_HZ(10), TASK_PRIORITY_MEDIUM_HIGH),
     [TASK_MAIN] = DEFINE_TASK("SYSTEM", "UPDATE", NULL, taskMain, TASK_PERIOD_HZ(1000), TASK_PRIORITY_MEDIUM_HIGH),
-    [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(200), TASK_PRIORITY_LOW), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+    [TASK_SERIAL] = DEFINE_TASK("SERIAL", NULL, NULL, taskHandleSerial, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW), // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
     [TASK_BATTERY_ALERTS] = DEFINE_TASK("BATTERY_ALERTS", NULL, NULL, taskBatteryAlerts, TASK_PERIOD_HZ(5), TASK_PRIORITY_MEDIUM),
     [TASK_BATTERY_VOLTAGE] = DEFINE_TASK("BATTERY_VOLTAGE", NULL, NULL, batteryUpdateVoltage, TASK_PERIOD_HZ(SLOW_VOLTAGE_TASK_FREQ_HZ), TASK_PRIORITY_MEDIUM), // Freq may be updated in tasksInit
     [TASK_BATTERY_CURRENT] = DEFINE_TASK("BATTERY_CURRENT", NULL, NULL, batteryUpdateCurrentMeter, TASK_PERIOD_HZ(50), TASK_PRIORITY_MEDIUM),
@@ -400,7 +400,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_TELEMETRY
-    [TASK_TELEMETRY] = DEFINE_TASK("TELEMETRY", NULL, NULL, taskTelemetry, TASK_PERIOD_HZ(500), TASK_PRIORITY_LOW),
+    [TASK_TELEMETRY] = DEFINE_TASK("TELEMETRY", NULL, NULL, taskTelemetry, TASK_PERIOD_HZ(250), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_LED_STRIP
@@ -445,6 +445,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 
 #ifdef USE_CRSF_V3
     [TASK_SPEED_NEGOTIATION] = DEFINE_TASK("SPEED_NEGOTIATION", NULL, NULL, speedNegotiationProcess, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
+#endif
+
+#ifdef USE_ALT_HOLD
+    [TASK_KALMAN_FILTER] = DEFINE_TASK("TASK_KALMAN_FILTER", NULL, NULL, Update_Kalman, TASK_PERIOD_HZ(400), TASK_PRIORITY_LOW),
 #endif
 };
 
@@ -608,6 +612,10 @@ void tasksInit(void)
 #ifdef USE_CRSF_V3
     const bool useCRSF = rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
     setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
+#endif
+
+#ifdef USE_ALT_HOLD
+    setTaskEnabled(TASK_KALMAN_FILTER, true);
 #endif
 }
 

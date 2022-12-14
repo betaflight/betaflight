@@ -5,6 +5,12 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
+#include "common/axis.h"
+#include "common/maths.h"
+#include "common/utils.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -40,9 +46,12 @@ float E4[1] = {0};
 
 TWO_DIM_Matrix_t buffer;
 kalman_t kalman_alt;
+PID_TypeDef_t ALT_PID;
+PID_TypeDef_t VEL_PID;
 
-static timeMs_t lastTimeMs = 0;
-static timeMs_t currentTimeMs;
+//static timeMs_t lastTimeMs = 0;
+static timeMs_t currentTimeMs = 0;
+// static timeUs_t currentTimeUs = 0;
 
 float AltHold;  //设定高度
 static float RcCommand_Throttle;
@@ -50,13 +59,48 @@ static float RcCommand_Throttle;
 static float altHoldThrottleAdjustment = 0.0;        //定高油门调节量
 static int16_t initialThrottleHold = 960;                  //定高时油门的初始值
 static uint8_t velocityControl = 0;                  //是否利用速度环控制
-static float setVelocity = 0.0;
+static float setVelocity = 1.0;
 static int32_t errorVelocityI = 0;
+static float vel = 0.0f;
 
-static int16_t alt_pid[4] = {50, 0, 0, 0};
-static int16_t vel_pid[4] = {50, 0, 0, 0};
+// static int16_t alt_pid[4] = {50, 0, 0, 0};
+// static int16_t vel_pid[4] = {50, 0, 0, 0};
 
-static float estimatedAltitude = 0.0;
+
+enum {
+    DEBUG_ALTITUDE_ACC,
+    DEBUG_ALTITUDE_VEL
+};
+
+void PID_ParamInit(PID_TypeDef_t *sPID, float LastError, float PrevError, float P, float I, float D, float Setpoint)
+{
+    sPID->LastError = LastError;
+    sPID->PrevError = PrevError;
+    sPID->P = P;
+    sPID->I = I;
+    sPID->D = D;
+    sPID->SetPoint = Setpoint;
+}
+
+float SpdPIDCalc(PID_TypeDef_t *sPID, float NextPoint)
+{
+  float iError,iIncpid;
+  iError = (float)sPID->SetPoint - NextPoint; //偏差
+
+  /* 消除抖动误差 */
+  if((iError<0.05f )&& (iError>-0.05f))
+    iError = 0.0f;
+
+  iIncpid=(sPID->P * iError)                //E[k]项
+              -(sPID->I * sPID->LastError)     //E[k-1]项
+              +(sPID->D * sPID->PrevError);  //E[k-2]项
+
+  sPID->PrevError = sPID->LastError;                  //存储误差，用于下次计算
+  sPID->LastError = iError;
+  return(iIncpid);                                  //返回增量值
+
+}
+
 
 void updateAltHoldState(void) //先在接收部分判断接收的状态  接收机以33HZ 高优先级接受模式的更改
 {
@@ -90,11 +134,11 @@ bool isThrustFacingDownwards(attitudeEulerAngles_t *attitude)
 }
 
 
-float calculateAltHoldThrottleAdjustment(kalman_t *kalman) //Alt and Velocity PID-Controler
+float calculateAltHoldThrottleAdjustment(kalman_t *kalman, PID_TypeDef_t *sPID) //Alt and Velocity PID-Controler
 {
     float result = 0.0;
-    float error;
-    float setVel;
+    float error = 0.0;
+    float setVel = 0.0;
 
     if (!isThrustFacingDownwards(&attitude)) {
         return result;
@@ -105,7 +149,7 @@ float calculateAltHoldThrottleAdjustment(kalman_t *kalman) //Alt and Velocity PI
     if (!velocityControl) {
         error = constrain(AltHold - kalman->X_Hat_current.Altitude, -500, 500);
         error = applyDeadband(error, 10); // remove small P parameter to reduce noise near zero position
-        setVel = constrain((alt_pid[0] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+        setVel = constrain((sPID->P * error / 128), -300, +300); // limit velocity to +/- 3 m/s
     } else {
         setVel = setVelocity;
     }
@@ -113,33 +157,54 @@ float calculateAltHoldThrottleAdjustment(kalman_t *kalman) //Alt and Velocity PI
 	// Velocity PID-Controller
 
     // P
-    error = setVel - kalman->X_Hat_current.Altitude;
-    result = constrain((vel_pid[0] * error / 32), -300, +300);
+    error = setVel - kalman->X_Hat_current.Alt_Velocity;
+    result = constrain((sPID->P * error / 32), -300, +300);
 
     // I
-    errorVelocityI += (vel_pid[1] * error);
+    errorVelocityI += (sPID->I * error);
     errorVelocityI = constrain(errorVelocityI, -(8192 * 200), (8192 * 200));
     result += errorVelocityI / 8192;     // I in range +/-200
 
     // D
-    result -= constrain(vel_pid[2] * (kalman->X_Hat_current.Altitude + kalman->X_Hat_last.Altitude) / 512, -150, 150);
+    result -= constrain(sPID->D * (kalman->X_Hat_current.Altitude + kalman->X_Hat_last.Altitude) / 512, -150, 150);
 
 
     return result;
 }
 
-void calculateEstimatedAltitude_kalman(timeUs_t currentTimeUs)  //得到的卡尔曼滤波后的结果值,自定义task（50Hz）进行最优高度的计算和油门值调节
+void calculateCurrentMeasure_kalman(kalman_t *kalman, timeUs_t currentTimeUs)
 {
-    static timeUs_t previousTimeUs = 0;
-    const uint32_t dTime = currentTimeUs - previousTimeUs;
 	UNUSED(currentTimeUs);
-	UNUSED(dTime);
-	UNUSED(previousTimeUs);
 
-#ifdef USE_ALT_HOLD
-	estimatedAltitude = Get_alt_Kalman();
-    altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(&kalman_alt);
+    float accZ_tmp = 0;
+#ifdef USE_ACC
+    if (sensors(SENSOR_ACC)) {
+ //       const float dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
+
+        // Integrator - velocity, cm/sec
+        if (accSumCount) {
+            accZ_tmp = (float)accSum[2] / accSumCount;
+        }
+        const float vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
+        vel = vel_acc;
+    }
 #endif
+
+    DEBUG_SET(DEBUG_ALTITUDE, DEBUG_ALTITUDE_ACC, accSum[2] / accSumCount);
+    DEBUG_SET(DEBUG_ALTITUDE, DEBUG_ALTITUDE_VEL, vel);
+
+
+    kalman->Z_current.Alt_Velocity = accSum[2];
+    kalman->Z_current.Altitude = rangefinderGetLatestAltitude();
+
+    imuResetAccelerationSum();
+
+ //   altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(&kalman_alt);
+}
+void calculateEstimatedAltitude_kalman(kalman_t *kalman, timeUs_t currentTimeUs) //获取卡尔曼滤波前的数据
+{
+    UNUSED(&kalman);
+    UNUSED(currentTimeUs);
 }
 
  
@@ -268,18 +333,13 @@ void Kalman_init(void)
 	TWO_DIM_Matrix_PARAM_init(&kalman_alt);
 	Kalman_Calc_Init(&kalman_alt);
 
- //   kalmanFilter_init(&kalman_alt, -1, 0.1, 0.1, 0.5);
 }
 
 //获取高度后进行kalman滤波，必须是在新的数据到来以后才进行
-void Kalman_Calc(kalman_t *kalman, float newMeasured, timeMs_t currentTimeMs){
+void Kalman_Calc(kalman_t *kalman, timeMs_t currentTimeMs){
 
-    // UNUSED(currentTimeMs);
-    UNUSED(newMeasured);
-	kalman->Z_current.Altitude = rangefinderGetLatestAltitude();
-	currentTimeMs = millis();
-//    kalman->X_Hat_PRE.Alt_Velocity = 1;
-	kalman->Z_current.Alt_Velocity = (kalman->Z_current.Altitude - kalman->Z_last.Altitude)*1000/(currentTimeMs - lastTimeMs);
+    UNUSED(currentTimeMs);
+//	currentTimeMs = millis();
 
 	//预测过程  目前是没有输入的
 	kalman->X_Hat_PRE.Altitude = kalman->A.A11*kalman->X_Hat_last.Altitude + kalman->A.A12*kalman->X_Hat_last.Alt_Velocity;
@@ -305,58 +365,39 @@ void Kalman_Calc(kalman_t *kalman, float newMeasured, timeMs_t currentTimeMs){
 	kalman->X_Hat_last.Altitude = kalman->X_Hat_current.Altitude;
 	kalman->X_Hat_last.Alt_Velocity = kalman->X_Hat_current.Alt_Velocity;
 
-	lastTimeMs = currentTimeMs; 
-
 	kalman->P_last = kalman->P_current;
 		
 }
 
-void Update_Kalman(void)
+void Update_Kalman(timeUs_t currentTimeUs)
 {
-	Kalman_Calc(&kalman_alt, 0 ,currentTimeMs);
- //   kalmanFilter_filter(&kalman_alt, rangefinderGetLatestAltitude());
+    UNUSED(currentTimeUs);
+    calculateCurrentMeasure_kalman(&kalman_alt,currentTimeUs);
+	Kalman_Calc(&kalman_alt, currentTimeMs);
 }
 
-float Get_alt_Kalman(void)
+float Get_Alt_Kalman(void)
 {
 	return kalman_alt.X_Hat_current.Altitude;
 }
 
+float Get_Vel_Kalman(void)
+{
+	return kalman_alt.X_Hat_current.Alt_Velocity;
+}
+
+float Get_Vel_measure(void)
+{
+    return kalman_alt.Z_current.Alt_Velocity;
+}
 
 float Get_alt_Kalman_last(void)
 {
 	return kalman_alt.X_Hat_last.Altitude;
 }
 
+
 float Get_finall_throttle(void)
 {
 	return kalman_alt.alt_throttle;
-}
-
-
-void kalmanFilter_init(kalman_t *kalman, float init_x, float init_p,float predict_q,float newMeasured_q)
-{
-    kalman->X_Hat_last.Altitude = init_x;//待测量的初始值，如有中值一般设成中值
-    kalman->P_last.A11 = init_p;//后验状态估计值误差协方差的初始值（不要为0问题不大）
-    kalman->A.A11 = 1;
-    kalman->H.A11 = 1;
-    kalman->Q.A11 = predict_q;//预测（过程）噪声方差 影响收敛速率，可以根据实际需求给出
-    kalman->R.A11 = newMeasured_q;//测量（观测）噪声方差R，可以通过实验手段获得
-}
-
-void kalmanFilter_filter(kalman_t *kalman, float newMeasured)
-{
-    /* Predict */
-    kalman->X_Hat_PRE.Altitude = kalman->A.A11 * kalman->X_Hat_last.Altitude;//%x的先验估计由上一个时间点的后验估计值和输入信息给出
-    kalman->P_PRE.A11 = kalman->A.A11 * kalman->A.A11 * kalman->P_last.A11 + kalman->Q.A11;  /*计算先验均方差 p(n|n-1)=A^2*p(n-1|n-1)+q */
-
-    /* Correct */
-    kalman->Kp.A11 = kalman->P_PRE.A11 * kalman->H.A11 / (kalman->P_PRE.A11 * kalman->H.A11 * kalman->H.A11 + kalman->R.A11);
-    kalman->X_Hat_current.Altitude = kalman->X_Hat_PRE.Altitude + kalman->Kp.A11 * (newMeasured - kalman->H.A11 * kalman->X_Hat_PRE.Altitude);//利用残余的信息改善对x(t)的估计，给出后验估计，这个值也就是输出
-    kalman->P_current.A11 = (1 - kalman->Kp.A11 * kalman->H.A11) * kalman->P_PRE.A11;//%计算后验均方差
-
-    kalman->X_Hat_last.Altitude = kalman->X_Hat_current.Altitude;
-    kalman->P_last.A11 = kalman->P_current.A11;
-
- //   return kalman->X_current.Altitude;//得到现时刻的最优估计
 }
