@@ -121,6 +121,9 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
         phase++;
     } while (phase != BAIL && !detected);
 
+    if (detected) {
+        flashDevice.geometry.jedecId = chipID;
+    }
     return detected;
 }
 #endif  // USE_QUADSPI
@@ -134,6 +137,7 @@ void flashPreInit(const flashConfig_t *flashConfig)
 
 static bool flashSpiInit(const flashConfig_t *flashConfig)
 {
+    bool detected = false;
     // Read chip identification and send it to device detect
     dev = &devInstance;
 
@@ -179,30 +183,37 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_FLASH_M25P16
     if (m25p16_detect(&flashDevice, chipID)) {
-        return true;
+        detected = true;
     }
 #endif
 
 #if defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25M)
-    if (w25m_detect(&flashDevice, chipID)) {
-        return true;
+    if (!detected && w25m_detect(&flashDevice, chipID)) {
+        detected = true;
     }
 #endif
 
-    // Newer chips
-    chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
+    if (!detected) {
+        // Newer chips
+        chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
+    }
 
 #ifdef USE_FLASH_W25N01G
-    if (w25n01g_detect(&flashDevice, chipID)) {
-        return true;
+    if (!detected && w25n01g_detect(&flashDevice, chipID)) {
+        detected = true;
     }
 #endif
 
 #ifdef USE_FLASH_W25M02G
-    if (w25m_detect(&flashDevice, chipID)) {
-        return true;
+    if (!detected && w25m_detect(&flashDevice, chipID)) {
+        detected = true;
     }
 #endif
+
+    if (detected) {
+        flashDevice.geometry.jedecId = chipID;
+        return detected;
+    }
 
     spiPreinitByTag(flashConfig->csTag);
 
