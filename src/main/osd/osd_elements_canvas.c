@@ -126,4 +126,35 @@ void simple_artificial_horizon(displayCanvas_t *canvas, int16_t roll, int16_t pi
     }
 }
 
+void lqgraph_render(displayCanvas_t *canvas, uint32_t bitArray[], uint8_t lqBitCount, int16_t x, int16_t y)
+{
+
+    const uint8_t bitsPerArrayIndex = sizeof(bitArray[0]) * 8;
+    const uint8_t arrayLength = (lqBitCount + bitsPerArrayIndex - 1) / bitsPerArrayIndex;
+
+    uint16_t height = canvas->gridElementHeight;
+    uint32_t xOffset = x - lqBitCount / 2;
+
+    const uint8_t barHeight = height - 2;
+    const uint8_t borderWidth = 1;
+
+    displayCanvasSetStrokeColor(canvas, DISPLAY_CANVAS_COLOR_WHITE);
+    displayCanvasStrokeRect(canvas, xOffset - borderWidth, y, lqBitCount + borderWidth, height);
+
+
+    for (int i = 0; i < arrayLength; i++) {
+
+        for (int bit = 0; bit < bitsPerArrayIndex; bit++) {
+            uint32_t mask = 1 << bit;
+            bool value = (bitArray[i] & mask) > 0;
+
+            uint8_t index = i * bitsPerArrayIndex + bit;
+
+            if (value) {
+                displayCanvasMoveToPoint(canvas, xOffset + index, y + borderWidth + (barHeight));
+                displayCanvasStrokeLineToPoint(canvas, xOffset + index, y + borderWidth);
+            }
+        }
+    }
+}
 #endif
