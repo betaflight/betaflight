@@ -45,6 +45,7 @@ typedef struct flashGeometry_s {
     uint32_t totalSize;  // This is just sectorSize * sectors
     uint16_t pagesPerSector;
     flashType_e flashType;
+    uint32_t jedecId;
 } flashGeometry_t;
 
 void flashPreInit(const flashConfig_t *flashConfig);
