@@ -457,6 +457,22 @@ extern uint8_t __config_end;
 #define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #endif
 
+#if defined(USE_RX_EXPRESSLRS)
+// ELRS depends on CRSF telemetry
+#if !defined(USE_TELEMETRY)
+#define USE_TELEMETRY
+#endif
+#if !defined(USE_TELEMETRY_CRSF)
+#define USE_TELEMETRY_CRSF
+#endif
+#if !defined(USE_CRSF_LINK_STATISTICS)
+#define USE_CRSF_LINK_STATISTICS
+#endif
+#if !defined(USE_SERIALRX_CRSF)
+#define USE_SERIALRX_CRSF
+#endif
+#endif
+
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
 #define USE_RX_BIND
 #endif
