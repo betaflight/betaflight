@@ -163,6 +163,7 @@
 #include "pg/stats.h"
 
 #include "rx/rx.h"
+#include "rx/expresslrs_common.h"
 
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
@@ -1783,6 +1784,30 @@ static void osdElementWarnings(osdElementParms_t *element)
 #endif // USE_CRAFTNAME_MSGS
 }
 
+#ifdef USE_RX_EXPRESSLRS
+static void osdElementLQGraph(osdElementParms_t *element)
+{
+#if defined(USE_CANVAS) && defined(USE_CANVAS_OSD)
+    if (canvas) {
+
+        uint8_t lqBitCount;
+        uint32_t *lqArray = lqGetArray(&lqBitCount);
+
+        lqgraph_render(canvas,
+            lqArray, lqBitCount,
+            element->elemPosX * canvas->gridElementWidth, element->elemPosY * canvas->gridElementHeight
+        );
+
+    } else {
+#endif
+        // No character based implementation
+#if defined(USE_CANVAS) && defined(USE_CANVAS_OSD)
+    }
+#endif
+    element->drawElement = false;  // element already drawn
+}
+#endif
+
 #ifdef USE_MSP_DISPLAYPORT
 static void osdElementSys(osdElementParms_t *element)
 {
@@ -1853,6 +1878,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #endif
 #ifdef USE_RX_LINK_QUALITY_INFO
     OSD_LINK_QUALITY,
+#endif
+#ifdef USE_RX_EXPRESSLRS
+    OSD_LQ_GRAPH,
 #endif
 #ifdef USE_RX_LINK_UPLINK_POWER
     OSD_TX_UPLINK_POWER,
@@ -1978,6 +2006,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_RX_LINK_QUALITY_INFO
     [OSD_LINK_QUALITY]            = osdElementLinkQuality,
+#endif
+#ifdef USE_RX_EXPRESSLRS
+    [OSD_LQ_GRAPH]                = osdElementLQGraph,
 #endif
 #ifdef USE_RX_LINK_UPLINK_POWER
     [OSD_TX_UPLINK_POWER]         = osdElementTxUplinkPower,

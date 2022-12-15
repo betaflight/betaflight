@@ -27,3 +27,5 @@
 
 void simple_artificial_horizon(displayCanvas_t *canvas, int16_t roll, int16_t pitch, int16_t x, int16_t y,
         int16_t width, int16_t height, int8_t max_pitch, uint8_t n_pitch_steps);
+
+void lqgraph_render(displayCanvas_t *canvas, uint32_t bitArray[], uint8_t lqBitCount, int16_t x, int16_t y);
