@@ -138,10 +138,10 @@ static void mspCrsfPush(const uint8_t mspCommand, const uint8_t *mspFrame, const
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    uint8_t mspHeader[8] = {'$', 'X', '>', 0, mspCommand & 0xFF, (mspCommand >> 8) & 0xFF, mspFrameSize & 0xFF, (mspFrameSize >> 8) & 0xFF }; // MSP V2 Native header
+    uint8_t mspHeader[6] = {0x50, 0, mspCommand & 0xFF, (mspCommand >> 8) & 0xFF, mspFrameSize & 0xFF, (mspFrameSize >> 8) & 0xFF }; // MSP V2 over CRSF header
     uint8_t mspChecksum;
 
-    mspChecksum = crc8_dvb_s2_update(0, &mspHeader[3], 5); // first 3 characters are not checksummable
+    mspChecksum = crc8_dvb_s2_update(0, &mspHeader[1], 5); // first character is not checksummable
     mspChecksum = crc8_dvb_s2_update(mspChecksum, mspFrame, mspFrameSize);
 
     uint8_t fullMspFrameSize = mspFrameSize + sizeof(mspHeader) + 1;  // add 1 for msp checksum
