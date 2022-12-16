@@ -52,7 +52,7 @@
 #define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
-#define ATTITUDE_CUTOFF_HZ 250
+#define ATTITUDE_CUTOFF_HZ 100
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
@@ -243,6 +243,10 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
     pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
+    //initialise anglemode filters
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        laggedMovingAverageInit(&pidRuntime.angleFeedforwardAvg[i].filter, pidProfile->feedforward_averaging + 1, (float *)&pidRuntime.angleFeedforwardAvg[i].buf[0]);
+    }
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -263,6 +267,7 @@ void pidInitFeedforwardLpf(uint16_t filterCutoff, uint8_t debugAxis)
         pidRuntime.feedforwardLpfInitialized = true;
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             pt3FilterInit(&pidRuntime.feedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
+            pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
@@ -272,6 +277,7 @@ void pidUpdateFeedforwardLpf(uint16_t filterCutoff)
     if (filterCutoff > 0) {
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             pt3FilterUpdateCutoff(&pidRuntime.feedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
+            pt3FilterUpdateCutoff(&pidRuntime.angleFeedforwardPt3[axis], pt3FilterGain(filterCutoff, pidRuntime.dT));
         }
     }
 }
@@ -291,9 +297,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     {
         pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     }
-    pidRuntime.levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
+    pidRuntime.levelGain = pidProfile->pid[PID_LEVEL].P; // 10.0f;
+    pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 200.0f;
+    pidRuntime.angleDerivativeGain = pidProfile->pid[PID_LEVEL].D / 200.0f;
+    pidRuntime.angle_gyro_feedforward_scale = pidProfile->angle_gyro_feedforward_scale / 100.0f;
     pidRuntime.horizonGain = pidProfile->pid[PID_LEVEL].I / 10.0f;
-    pidRuntime.horizonTransition = (float)pidProfile->pid[PID_LEVEL].D;
+    pidRuntime.horizonTransition = pidProfile->horizonTransition;
     pidRuntime.horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;
     pidRuntime.horizonCutoffDegrees = (175 - pidProfile->horizon_tilt_effect) * 1.8f;
     pidRuntime.horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;

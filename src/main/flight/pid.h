@@ -149,7 +149,9 @@ typedef struct pidProfile_s {
     uint8_t levelAngleLimit;                // Max angle in degrees in level mode
 
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
+    float   horizonTransition;
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
+    uint8_t angle_gyro_feedforward_scale;      // Gyro loop feedforward adjust in angle mode 100 = full gyro FF, 0 = no Gyro FF
 
     // Betaflight PID controller parameters
     uint8_t anti_gravity_gain;              // AntiGravity Gain (was itermAcceleratorGain)
@@ -272,6 +274,11 @@ typedef struct pidCoefficient_s {
     float Kf;
 } pidCoefficient_t;
 
+typedef struct laggedMovingAverageCombined_s {
+    laggedMovingAverage_t filter;
+    float buf[4];
+} laggedMovingAverageCombined_t;
+
 typedef struct pidRuntime_s {
     float dT;
     float pidFrequency;
@@ -294,6 +301,9 @@ typedef struct pidRuntime_s {
     float antiGravityPGain;
     pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float levelGain;
+    float angleFeedforwardGain;
+    float angleDerivativeGain;
+    float angle_gyro_feedforward_scale;
     float horizonGain;
     float horizonTransition;
     float horizonCutoffDegrees;
@@ -395,6 +405,11 @@ typedef struct pidRuntime_s {
     float feedforwardSmoothFactor;
     float feedforwardJitterFactor;
     float feedforwardBoostFactor;
+    float angleFeedforward[XYZ_AXIS_COUNT];
+    float previousAngleTarget[XYZ_AXIS_COUNT];
+    float previousAngle[XYZ_AXIS_COUNT];
+    pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
+    laggedMovingAverageCombined_t  angleFeedforwardAvg[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC
@@ -445,7 +460,7 @@ void applyItermRelax(const int axis, const float iterm,
 void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
-    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint, float horizonLevelStrength);
+    const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength, bool newRcFrame);
 float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);

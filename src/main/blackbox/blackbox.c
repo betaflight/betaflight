@@ -1351,9 +1351,10 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("yawPID", "%d,%d,%d",                    currentPidProfile->pid[PID_YAW].P,
                                                                             currentPidProfile->pid[PID_YAW].I,
                                                                             currentPidProfile->pid[PID_YAW].D);
-        BLACKBOX_PRINT_HEADER_LINE("levelPID", "%d,%d,%d",                  currentPidProfile->pid[PID_LEVEL].P,
+        BLACKBOX_PRINT_HEADER_LINE("levelPID", "%d,%d,%d,%d",               currentPidProfile->pid[PID_LEVEL].P,
                                                                             currentPidProfile->pid[PID_LEVEL].I,
-                                                                            currentPidProfile->pid[PID_LEVEL].D);
+                                                                            currentPidProfile->pid[PID_LEVEL].D,
+                                                                            currentPidProfile->pid[PID_LEVEL].F);
         BLACKBOX_PRINT_HEADER_LINE("magPID", "%d",                          currentPidProfile->pid[PID_MAG].P);
 #ifdef USE_D_MIN
         BLACKBOX_PRINT_HEADER_LINE("d_min", "%d,%d,%d",                     currentPidProfile->d_min[ROLL],
@@ -1402,8 +1403,11 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_JITTER_FACTOR, "%d",  currentPidProfile->feedforward_jitter_factor);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_BOOST, "%d",          currentPidProfile->feedforward_boost);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_MAX_RATE_LIMIT, "%d", currentPidProfile->feedforward_max_rate_limit);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_FEEDFORWARD, "%d",          currentPidProfile->pid[PID_LEVEL].F);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_GYRO_FF_SCALE, "%d",        currentPidProfile->angle_gyro_feedforward_scale);
 #endif
-
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_ROLL_EXPO, "%d",        currentControlRateProfile->levelExpo[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_PITCH_EXPO, "%d",       currentControlRateProfile->levelExpo[FD_PITCH]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ACC_LIMIT_YAW, "%d",          currentPidProfile->yawRateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ACC_LIMIT, "%d",              currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PIDSUM_LIMIT, "%d",           currentPidProfile->pidSumLimit);

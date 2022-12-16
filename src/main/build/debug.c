@@ -107,4 +107,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ATTITUDE",
     "VTX_MSP",
     "GPS_DOP",
+    "ANGLE_MODE",
+    "ANGLE_FEEDFORWARD",
+    "ANGLE_DERIVATIVE",
 };
