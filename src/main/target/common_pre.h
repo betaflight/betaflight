@@ -289,7 +289,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RANGEFINDER_TF
 
 #define USE_RX_EXPRESSLRS
-#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #define USE_RX_SX1280
 #define USE_RX_SX127X
 #endif
