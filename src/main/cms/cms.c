@@ -936,9 +936,9 @@ void cmsMenuOpen(void)
     } else {
       smallScreen       = false;
       linesPerMenuItem  = 1;
-      leftMenuColumn    = 2;
+      leftMenuColumn    = (pCurrentDisplay->cols / 2) - 13;
 #ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
-      rightMenuColumn   = pCurrentDisplay->cols - 2;
+      rightMenuColumn   = (pCurrentDisplay->cols / 2) + 13;
 #else
       rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
 #endif

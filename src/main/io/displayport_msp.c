@@ -40,6 +40,8 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
+#include "osd/osd.h"
+
 #include "pg/vcd.h"
 
 static displayPort_t mspDisplayPort;
@@ -163,9 +165,14 @@ static bool isSynced(const displayPort_t *displayPort)
 
 static void redraw(displayPort_t *displayPort)
 {
-    const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? 16 : 13;
-    displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
-    displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
+    if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
+        displayPort->rows = osdConfig()->canvas_rows;
+        displayPort->cols = osdConfig()->canvas_cols;
+    } else {
+        const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? 16 : 13;
+        displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
+        displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
+    }
     drawScreen(displayPort);
 }
 

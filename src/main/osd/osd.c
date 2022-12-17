@@ -113,6 +113,9 @@ const char * const osdTimerSourceNames[] = {
     "ON/ARM   "
 };
 
+#define OSD_LOGO_ROWS 4
+#define OSD_LOGO_COLS 24
+
 // Things in both OSD and CMS
 
 #define IS_HI(X)  (rcData[X] > 1750)
@@ -429,8 +432,8 @@ static void osdDrawLogo(int x, int y)
 {
     // display logo and help
     int fontOffset = 160;
-    for (int row = 0; row < 4; row++) {
-        for (int column = 0; column < 24; column++) {
+    for (int row = 0; row < OSD_LOGO_ROWS; row++) {
+        for (int column = 0; column < OSD_LOGO_COLS; column++) {
             if (fontOffset <= SYM_END_OF_FONT)
                 displayWriteChar(osdDisplayPort, x + column, y + row, DISPLAYPORT_ATTR_NORMAL, fontOffset++);
         }
@@ -439,6 +442,9 @@ static void osdDrawLogo(int x, int y)
 
 static void osdCompleteInitialization(void)
 {
+    uint8_t midRow = osdDisplayPort->rows / 2;
+    uint8_t midCol = osdDisplayPort->cols / 2;
+
     armState = ARMING_FLAG(ARMED);
 
     osdResetAlarms();
@@ -449,21 +455,21 @@ static void osdCompleteInitialization(void)
     displayBeginTransaction(osdDisplayPort, DISPLAY_TRANSACTION_OPT_RESET_DRAWING);
     displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
 
-    osdDrawLogo(3, 1);
+    osdDrawLogo(midCol - (OSD_LOGO_COLS) / 2, midRow - 7);
 
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, 20, 6, DISPLAYPORT_ATTR_NORMAL, string_buffer);
+    displayWrite(osdDisplayPort, midCol + 5, midRow - 2, DISPLAYPORT_ATTR_NORMAL, string_buffer);
 #ifdef USE_CMS
-    displayWrite(osdDisplayPort, 7, 8,  DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT1);
-    displayWrite(osdDisplayPort, 11, 9, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT2);
-    displayWrite(osdDisplayPort, 11, 10, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT3);
+    displayWrite(osdDisplayPort, midCol - 8, midRow,  DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, midCol - 4, midRow + 1, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, midCol - 4, midRow + 2, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT3);
 #endif
 
 #ifdef USE_RTC_TIME
     char dateTimeBuffer[FORMATTED_DATE_TIME_BUFSIZE];
     if (osdFormatRtcDateTime(&dateTimeBuffer[0])) {
-        displayWrite(osdDisplayPort, 5, 12, DISPLAYPORT_ATTR_NORMAL, dateTimeBuffer);
+        displayWrite(osdDisplayPort, midCol - 10, midRow + 6, DISPLAYPORT_ATTR_NORMAL, dateTimeBuffer);
     }
 #endif
 
@@ -1063,7 +1069,9 @@ static timeDelta_t osdShowArmed(void)
     displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
 
     if ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_ON) || ((osdConfig()->logo_on_arming == OSD_LOGO_ARMING_FIRST) && !ARMING_FLAG(WAS_EVER_ARMED))) {
-        osdDrawLogo(3, 1);
+        uint8_t midRow = osdDisplayPort->rows / 2;
+        uint8_t midCol = osdDisplayPort->cols / 2;
+        osdDrawLogo(midCol - (OSD_LOGO_COLS) / 2, midRow - 5);
         ret = osdConfig()->logo_on_arming_duration * 1e5;
     } else {
         ret = (REFRESH_1S / 2);
