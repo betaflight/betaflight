@@ -54,11 +54,7 @@ See: https://github.com/betaflight/betaflight/wiki
 
 ## Support and Developers Channel
 
-There's a dedicated Slack chat channel here:
-
-https://slack.betaflight.com/
-
-And a Discord server here:
+There's a dedicated Discord server here:
 
 https://discord.gg/n4E6ak4u3c
 
@@ -101,9 +97,7 @@ If you want to contribute financially on an ongoing basis, you should consider b
 Contribution of bugfixes and new features is encouraged. Please be aware that we have a thorough review process for pull requests, and be prepared to explain what you want to achieve with your pull request.
 Before starting to write code, please read our [development guidelines](docs/development/Development.md ) and [coding style definition](docs/development/CodingStyle.md).
 
-Azure Pipelines are used to run automatic builds
-
-https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_build
+GitHub actions are used to run automatic builds
 
 ## Translators
 
