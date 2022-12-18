@@ -273,3 +273,5 @@ TARGET := STM32F7X2
 ```
 
 6. You should now be able to successfully make a debuggable version of Betaflight for the BETAFLIGHTF7 board, using the command line: `make BOARD=BETAFLIGHTF7`. Other command line options all remain valid also. e.g. `make BOARD=BETAFLIGHTF7 TARGET=STM32F7X2 EXTRA_FLAGS="-DUSE_BATTERY_CONTINUE"`.
+
+NOTE: The **/src/main/board** directory is GIT IGNORED. This is because it is a developers scratch space for this very purpose, so code you include will not be picked up for committing. You can create as many board "profiles" as you like in this directory.
