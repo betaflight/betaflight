@@ -38,7 +38,7 @@ PG_RESET_TEMPLATE(gpsLapTimerConfig_t, gpsLapTimerConfig,
     .gateLat = 0,
     .gateLon = 0,
     .minimumLapTimeSeconds = 10,
-    .gateTolerance = 9,
+    .gateToleranceM = 9,
 );
 
 // if 1000 readings of 32-bit values are used, the total (for use in calculating the averate) would need 42 bits max.
@@ -96,7 +96,7 @@ void gpsLapTimerEndSetGate(void)
 
 void lapTimerNewGpsData(void)
 {
-    GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPoint, &gpsLapTimerData.dirToPoint);
+    GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
 
     if (IS_RC_MODE_ACTIVE(BOXLAPTIMERRESET)) {
         gpsLapTimerInit();
@@ -111,10 +111,10 @@ void lapTimerNewGpsData(void)
     if (!gpsLapTimerData.timerRunning || gpsSol.time - gpsLapTimerData.timeOfLastLap > (gpsLapTimerConfig()->minimumLapTimeSeconds * 1000)) {
 
         // Within radius of gate, record the closest point we get before leaving
-        if (gpsLapTimerData.distToPoint < (gpsLapTimerConfig()->gateTolerance * 100)) {
+        if (gpsLapTimerData.distToPointCM < (gpsLapTimerConfig()->gateToleranceM * 100)) {
             // Either just entered the circle or were already in circle but are the closest we've been to the center this lap
-            if (!wasInCircle || gpsLapTimerData.distToPoint < minDistance) {
-                minDistance = gpsLapTimerData.distToPoint;
+            if (!wasInCircle || gpsLapTimerData.distToPointCM < minDistance) {
+                minDistance = gpsLapTimerData.distToPointCM;
                 minDistanceTime = gpsSol.time;
             }
             wasInCircle = true;
@@ -164,4 +164,4 @@ void lapTimerNewGpsData(void)
     }
 }
 
-#endif // GPS_LAP_TIMER
+#endif // USE_GPS_LAP_TIMER

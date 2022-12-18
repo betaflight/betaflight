@@ -40,14 +40,14 @@
 #include "fc/gps_lap_timer.h"
 
 static uint16_t gpsLapTimerConfig_minimumLapTimeSeconds;
-static uint8_t gpsLapTimerConfig_gateTolerance;
+static uint8_t gpsLapTimerConfig_gateToleranceM;
 
 static const void *cms_menuGpsLapTimerOnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
     gpsLapTimerConfig_minimumLapTimeSeconds = gpsLapTimerConfig()->minimumLapTimeSeconds;
-    gpsLapTimerConfig_gateTolerance = gpsLapTimerConfig()->gateTolerance;
+    gpsLapTimerConfig_gateToleranceM = gpsLapTimerConfig()->gateToleranceM;
 
     return NULL;
 }
@@ -58,7 +58,7 @@ static const void *cms_menuGpsLapTimerOnExit(displayPort_t *pDisp, const OSD_Ent
     UNUSED(self);
 
     gpsLapTimerConfigMutable()->minimumLapTimeSeconds = gpsLapTimerConfig_minimumLapTimeSeconds;
-    gpsLapTimerConfigMutable()->gateTolerance = gpsLapTimerConfig_gateTolerance;
+    gpsLapTimerConfigMutable()->gateToleranceM = gpsLapTimerConfig_gateToleranceM;
 
     return NULL;
 }
@@ -83,13 +83,13 @@ static const void *cmsEndSetGate(displayPort_t *pDisp, const OSD_Entry *self)
 }
 
 static OSD_UINT16_t setGateCMSWaitCount = { &gpsLapTimerData.numberOfSetReadings, 0, 2000, 0 };
-static OSD_UINT32_t setGateCMSdist = { &gpsLapTimerData.distToPoint, 0, 200, 0 };
+static OSD_UINT32_t setGateCMSdistCM = { &gpsLapTimerData.distToPointCM, 0, 200, 0 };
 
 static const OSD_Entry cmsSetGateMenuEntries[] = {
     {"SETTING POSITION", OME_Label,     NULL, NULL},
 
     {"READINGS",  OME_UINT16 | DYNAMIC, NULL, &setGateCMSWaitCount},
-    {"DISTANCE (CM)",  OME_UINT32 | DYNAMIC, NULL, &setGateCMSdist},
+    {"DISTANCE(cm)",  OME_UINT32 | DYNAMIC, NULL, &setGateCMSdistCM},
 
     {"BACK",       OME_Back,            NULL, NULL},
     { NULL,        OME_END,             NULL, NULL}
@@ -111,7 +111,7 @@ const OSD_Entry cms_menuGpsLapTimerEntries[] =
     {"--- GPS LAP TIMER ---", OME_Label,   NULL,          NULL},
 
     {"SET POSITION",          OME_Funcall, cmsMenuChange, &cmsSetGateMenu},
-    {"GATE RADIUS (M)",       OME_UINT8,   NULL,          &(OSD_UINT8_t){&gpsLapTimerConfig_gateTolerance, 1, 200, 1}},
+    {"GATE RADIUS(m)",       OME_UINT8,   NULL,          &(OSD_UINT8_t){&gpsLapTimerConfig_gateToleranceM, 1, 100, 1}},
     {"MIN LAP SECONDS",       OME_UINT16,  NULL,          &(OSD_UINT16_t){&gpsLapTimerConfig_minimumLapTimeSeconds,   0, 3000, 1}},
 
     {"BACK",                  OME_Back,    NULL,          NULL},

@@ -30,7 +30,7 @@ typedef struct gpsLapTimerData_s {
     uint16_t numberOfSetReadings;
     uint32_t bestLapTime;
     uint32_t best3Consec;
-    uint32_t distToPoint;
+    uint32_t distToPointCM;
     int32_t dirToPoint;
     bool timerRunning;
     uint32_t timeOfLastLap;
@@ -40,7 +40,7 @@ typedef struct gpsLapTimerConfig_s {
     int32_t gateLat;
     int32_t gateLon;
     uint16_t minimumLapTimeSeconds;
-    uint8_t gateTolerance;
+    uint8_t gateToleranceM;
 } gpsLapTimerConfig_t;
 
 PG_DECLARE(gpsLapTimerConfig_t, gpsLapTimerConfig);

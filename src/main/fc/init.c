@@ -764,7 +764,7 @@ void init(void)
 
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerInit();
-#endif
+#endif // USE_GPS_LAP_TIMER
 
 #ifdef USE_LED_STRIP
     ledStripInit();
