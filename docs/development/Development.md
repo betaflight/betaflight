@@ -132,23 +132,141 @@ When you `git config --global --get core.excludesfile` a second time, you should
 
 As all targets are now MCU based (and cloud built), this poses a problem for developers in flashing and running a fully baked "hex" using the standard debugger. The board scratch space (located at the /src/main/board directory) allows developers to setup their environment like they were running a fully baked unified target.
 
-Once setup, you can simply execute make with `make BOARD=XXX` where XXX is the sub directory name under /src/main/board.
+Once setup, you can simply execute make with `make BOARD=BETAFLIGHTF7` where BETAFLIGHTF7 is the sub directory name under /src/main/board i.e. /src/main/board/BETAFLIGHTF7.
 
-Example board.c (so that custom defaults are placed in the resultant build file):
+For example if you were developing and you had the BETAFLIGHTF7 target:
+
+1. Create the directory /src/main/board/BETAFLIGHTF7
+
+2. Create files, `board.c`, `board.h`, and `board.mk` in the directory created (in #1 above).
+
+3. `board.c` is where you will insert the custom defaults so they are baked into the board already (and do not need to be loaded separately). This is great for debugging as they will already be present in the flash. So the `board.c` for BETAFLIGHTF7 is:
+
+`board.c`
 ```
 #include "board.h"
 
 const char __attribute__ ((section(".custom_defaults"), used, aligned(4))) customDefaults[] = 
     "# Betaflight\n"
-    "board_name NERO\n"
+    "board_name BETAFLIGHTF7\n"
+    "manufacturer_id FPVM\n"
+    "resource BEEPER 1 D15\n",
+    "resource MOTOR 1 B00\n",
+    "resource MOTOR 2 B01\n",
+    "resource MOTOR 3 E09\n",
+    "resource MOTOR 4 E11\n",
+    "resource PPM 1 A03\n",
+    "resource SONAR_TRIGGER 1 B10\n",
+    "resource SONAR_ECHO 1 B11\n",
+    "resource LED_STRIP 1 D12\n",
+    "resource SERIAL_TX 1 A09\n",
+    "resource SERIAL_TX 2 A02\n",
+    "resource SERIAL_TX 3 B10\n",
+    "resource SERIAL_TX 6 C06\n",
+    "resource SERIAL_RX 1 A10\n",
+    "resource SERIAL_RX 2 A03\n",
+    "resource SERIAL_RX 3 B11\n",
+    "resource SERIAL_RX 6 C07\n",
+    "resource LED 1 E00\n",
+    "resource SPI_SCK 1 A05\n",
+    "resource SPI_SCK 2 B13\n",
+    "resource SPI_SCK 3 C10\n",
+    "resource SPI_SCK 4 E02\n",
+    "resource SPI_MISO 1 A06\n",
+    "resource SPI_MISO 2 B14\n",
+    "resource SPI_MISO 3 C11\n",
+    "resource SPI_MISO 4 E05\n",
+    "resource SPI_MOSI 1 A07\n",
+    "resource SPI_MOSI 2 B15\n",
+    "resource SPI_MOSI 3 C12\n",
+    "resource SPI_MOSI 4 E06\n",
+    "resource CAMERA_CONTROL 1 C08\n",
+    "resource ADC_BATT 1 C03\n",
+    "resource ADC_RSSI 1 C05\n",
+    "resource ADC_CURR 1 C02\n",
+    "resource BARO_CS 1 A01\n",
+    "resource FLASH_CS 1 E04\n",
+    "resource OSD_CS 1 B12\n",
+    "resource GYRO_EXTI 1 D00\n",
+    "resource GYRO_EXTI 2 E08\n",
+    "resource GYRO_CS 1 A04\n",
+    "resource GYRO_CS 2 A15\n",
+    "resource USB_DETECT 1 C04\n",
+    "timer C08 AF3\n",
+    "timer E13 AF1\n",
+    "timer B00 AF2\n",
+    "timer B01 AF2\n",
+    "timer E09 AF1\n",
+    "timer E11 AF1\n",
+    "timer D12 AF2\n",
+    "timer B10 AF1\n",
+    "timer B11 AF1\n",
+    "timer C06 AF3\n",
+    "timer C07 AF3\n",
+    "timer A03 AF1\n",
+    "timer A02 AF3\n",
+    "dma ADC 1 1\n",
+    "dma pin C08 1\n",
+    "dma pin E13 1\n",
+    "dma pin B00 0\n",
+    "dma pin B01 0\n",
+    "dma pin E09 2\n",
+    "dma pin E11 1\n",
+    "dma pin D12 0\n",
+    "dma pin B10 0\n",
+    "dma pin B11 0\n",
+    "dma pin C06 0\n",
+    "dma pin C07 1\n",
+    "dma pin A03 0\n",
+    "feature OSD\n",
+    "set mag_bustype = I2C\n",
+    "set mag_i2c_device = 2\n",
+    "set baro_spi_device = 1\n",
+    "set blackbox_device = SPIFLASH\n",
+    "set current_meter = ADC\n",
+    "set battery_meter = ADC\n",
+    "set beeper_inversion = ON\n",
+    "set beeper_od = OFF\n",
+    "set max7456_spi_bus = 2\n",
+    "set dashboard_i2c_bus = 2\n",
+    "set flash_spi_bus = 4\n",
+    "set gyro_1_bustype = SPI\n",
+    "set gyro_1_spibus = 1\n",
+    "set gyro_1_sensor_align = CW90\n",
+    "set gyro_1_align_yaw = 900\n",
+    "set gyro_2_spibus = 3\n",
+    "set gyro_2_sensor_align = CW270\n",
+    "set gyro_2_align_yaw = 2700\n"
     "\0";
-
 ```
-board.h allows for any defines that you are working on as developers rather than specify via command line in EXTRA_FLAGS (as the cloud build system does).
 
-board.mk allows for any additional source files, and to specify the target.
+NOTE: the ... is replaced with everything you need for the custom defaults configuration you want to "bake" into the board when flashed. You can get this from the unified targets repository if needed. DO NOT forget the firstline `# Betaflight\n`, the `\0` terminator (one at the very end of the list), and the `\n` line termination (one at the end of each line) need to be added.
 
-e.g. 
+4. `board.h` allows for any defines that you are working on as developers rather than specify via command line in EXTRA_FLAGS (as the cloud build system does). Therefore for `board.h` for the BETAFLIGHTF7 insert the following:
+
+`board.h`
+```
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define USE_MAX7456
+#define USE_DSHOT
+#define USE_SERIALRX
+#define USE_SERIALRX_CRSF
+#define USE_SERIALRX_GHST
+#define USE_SERIALRX_SBUS
+#define USE_TELEMETRY
+#define USE_FLASH
+#define USE_OSD
+#define USE_VTX
+#define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_GHST
+```
+
+5. `board.mk` allows for any additional source files, and to specify the target. The minimum requirement is the target (unless you specify this on the command line for make). So the contents of `board.mk` for BETAFLIGHTF7 is as follows:
+
+`board.mk`
 ```
 TARGET := STM32F7X2
 
