@@ -240,7 +240,7 @@ const char __attribute__ ((section(".custom_defaults"), used, aligned(4))) custo
     "\0";
 ```
 
-NOTE: the ... is replaced with everything you need for the custom defaults configuration you want to "bake" into the board when flashed. You can get this from the unified targets repository if needed. DO NOT forget the firstline `# Betaflight\n`, the `\0` terminator (one at the very end of the list), and the `\n` line termination (one at the end of each line) need to be added.
+NOTE: When wanting to do this for other boards, the contents is replaced with everything you need for the custom defaults configuration you want to "bake" into the board when flashed. You can get this from the unified targets repository if needed. DO NOT forget the firstline `# Betaflight\n`, the `\0` terminator (one at the very end of the list), and the `\n` line termination (one at the end of each line) need to be added.
 
 4. `board.h` allows for any defines that you are working on as developers rather than specify via command line in EXTRA_FLAGS (as the cloud build system does). Therefore for `board.h` for the BETAFLIGHTF7 insert the following:
 
