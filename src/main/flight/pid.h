@@ -146,7 +146,7 @@ typedef struct pidProfile_s {
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
-    uint8_t levelAngleLimit;                // Max angle in degrees in level mode
+    uint8_t angleLimit;                // Max angle in degrees in level mode
 
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
     float   horizonTransition;
@@ -326,6 +326,7 @@ typedef struct pidRuntime_s {
     bool zeroThrottleItermReset;
     bool levelRaceMode;
     float tpaFactor;
+    float angleTargetDelta[XYZ_AXIS_COUNT];
 
 #ifdef USE_ITERM_RELAX
     pt1Filter_t windupLpf[XYZ_AXIS_COUNT];
@@ -410,6 +411,7 @@ typedef struct pidRuntime_s {
     float previousAngle[XYZ_AXIS_COUNT];
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
     laggedMovingAverageCombined_t  angleFeedforwardAvg[XYZ_AXIS_COUNT];
+    uint8_t angleDuplicateCount[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC

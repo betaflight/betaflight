@@ -62,8 +62,8 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *controlRateConfig)
             .rate_limit[FD_YAW] = CONTROL_RATE_CONFIG_RATE_LIMIT_MAX,
             .profileName = { 0 },
             .quickRatesRcExpo = 0,
-            .levelExpo[FD_ROLL] = 0,
-            .levelExpo[FD_PITCH] = 0,
+            .levelExpo[FD_ROLL] = 60,
+            .levelExpo[FD_PITCH] = 60,
         );
     }
 }

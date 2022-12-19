@@ -33,6 +33,7 @@ void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);
 float getRcDeflectionAbs(int axis);
+float getRcDeflectionRaw(int axis);
 void updateRcCommands(void);
 void resetYawAxis(void);
 void initRcProcessing(void);

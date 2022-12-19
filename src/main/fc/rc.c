@@ -132,6 +132,11 @@ float getRcDeflectionAbs(int axis)
     return rcDeflectionAbs[axis];
 }
 
+float getRcDeflectionRaw(int axis)
+{
+    return rcDeflection[axis];
+}
+
 #ifdef USE_FEEDFORWARD
 float getRawSetpoint(int axis)
 {

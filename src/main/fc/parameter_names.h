@@ -127,6 +127,8 @@
 #define PARAM_NAME_ANGLE_ROLL_EXPO "angle_roll_expo"
 #define PARAM_NAME_ANGLE_PITCH_EXPO "angle_pitch_expo"
 #define PARAM_NAME_ANGLE_DERIVATIVE_GAIN "angle_derivative_gain"
+#define PARAM_NAME_ANGLE_ERROR_GAIN "angle_error_gain"
+#define PARAM_NAME_ANGLE_LIMIT "angle_limit"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"

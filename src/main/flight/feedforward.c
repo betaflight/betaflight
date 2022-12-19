@@ -71,17 +71,6 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         prevSetpointSpeed[axis] = setpointSpeed;
         setpointAcceleration *= feedforwardBoostFactor;
         setpointDelta[axis] = (setpointSpeed + setpointAcceleration);
-        if (newRcFrame) {
-            const float rcCommandDelta = getRcCommandDelta(axis);
-            if (rcCommandDelta) {
-                duplicateCount[axis] = 0;
-            } else {
-                if (duplicateCount[axis] > 1) {
-                    duplicateCount[axis] = 1;
-                }
-            duplicateCount[axis] += 1;
-            }
-        }
     } else {
         if (newRcFrame) {
             const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
