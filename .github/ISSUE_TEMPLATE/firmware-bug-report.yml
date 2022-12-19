@@ -36,6 +36,18 @@ body:
 
   - type: textarea
     attributes:
+      label: Cloud build log
+      description: |
+        BetaFlight 4.4 uses Cloud build. After flashing firmware click on 'Show log' and post the link here.
+        Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
+      placeholder: |
+          # PASTE HERE THE OUTPUT OF `the cloud build log` IN THE FIRMWARE FLASHER TAB
+      render: txt
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
       label: Diff configuration
       description: |
         Create a `diff` and post it here. Instructions on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/
