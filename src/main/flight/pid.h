@@ -234,7 +234,7 @@ typedef struct pidProfile_s {
     uint8_t tpa_mode;                       // Controls which PID terms TPA effects
     uint8_t tpa_rate;                       // Percent reduction in P or D at full throttle
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-    uint8_t angle_response;
+    uint8_t angle_feedforward_smoothing;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -298,7 +298,6 @@ typedef struct pidRuntime_s {
     float angleGain;
     float angleFeedforwardGain;
     float angle_pid_feedforward_scale;
-    float angle_response_gain;
     float horizonGain;
     float horizonTransition;
     float horizonCutoffDegrees;

@@ -224,7 +224,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_mode = TPA_MODE_D,
         .tpa_rate = 65,
         .tpa_breakpoint = 1350,
-        .angle_response = 50,
+        .angle_feedforward_smoothing = 50,
     );
 
 #ifndef USE_D_MIN

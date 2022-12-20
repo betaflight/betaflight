@@ -237,8 +237,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 #ifdef USE_ACC
     const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
-    const float angleResponse = pidProfile->angle_response;
-    const float angleCutoffHz = angleResponse / 20.0f;
+    const float angleFeedforwardSmoothing = pidProfile->angle_feedforward_smoothing;
+    const float angleCutoffHz = 100.0f / angleFeedforwardSmoothing; // default of 50 -> 2.0Hz, 100 -> 1.0Hz etc
     const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
 
     for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only

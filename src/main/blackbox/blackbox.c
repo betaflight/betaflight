@@ -1404,7 +1404,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_FEEDFORWARD_MAX_RATE_LIMIT, "%d", currentPidProfile->feedforward_max_rate_limit);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_FEEDFORWARD, "%d",          currentPidProfile->pid[PID_LEVEL].F);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_PID_FF_SCALE, "%d",         currentPidProfile->angle_pid_feedforward_scale);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_RESPONSE, "%d",             currentPidProfile->angle_response);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_FF_SMOOTHING, "%d",         currentPidProfile->angle_feedforward_smoothing);
 #endif
 
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ACC_LIMIT_YAW, "%d",          currentPidProfile->yawRateAccelLimit);
