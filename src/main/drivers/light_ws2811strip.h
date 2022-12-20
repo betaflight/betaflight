@@ -24,7 +24,7 @@
 
 #include "drivers/io_types.h"
 
-#define WS2811_LED_STRIP_LENGTH    32
+#define WS2811_LED_STRIP_LENGTH    LED_MAX_STRIP_LENGTH
 
 #define WS2811_BITS_PER_LED_MAX    32
 

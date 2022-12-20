@@ -339,6 +339,14 @@ extern uint8_t _dmaram_end__;
 
 #endif // !defined(CLOUD_BUILD)
 
+#ifndef LED_MAX_STRIP_LENGTH
+    #ifdef USE_LEDSTRIP_64
+        #define LED_MAX_STRIP_LENGTH           64
+    #else
+        #define LED_MAX_STRIP_LENGTH           32
+    #endif
+#endif // #ifndef LED_MAX_STRIP_LENGTH
+
 #if defined(USE_SDCARD)
 #define USE_SDCARD_SPI
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)

@@ -43,6 +43,14 @@
 #define USE_SERVOS
 #define USE_TRANSPONDER
 
+#ifndef LED_MAX_STRIP_LENGTH
+    #ifdef USE_LEDSTRIP_64
+        #define LED_MAX_STRIP_LENGTH           64
+    #else
+        #define LED_MAX_STRIP_LENGTH           32
+    #endif
+#endif // #ifndef LED_MAX_STRIP_LENGTH
+
 typedef enum
 {
     Mode_TEST = 0x0,
