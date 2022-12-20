@@ -298,8 +298,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
     pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
-    pidRuntime.angle_pid_feedforward_scale = pidProfile->angle_pid_feedforward_scale / 100.0f;
-
     pidRuntime.horizonGain = pidProfile->pid[PID_LEVEL].I / 10.0f;
     pidRuntime.horizonTransition = (float)pidProfile->pid[PID_LEVEL].D;
     pidRuntime.horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;

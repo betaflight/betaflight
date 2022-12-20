@@ -1133,7 +1133,6 @@ const clivalue_t valueTable[] = {
     { "horizon_level_strength",      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].I) },
     { "horizon_transition",          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].D) },
     { PARAM_NAME_ANGLE_FEEDFORWARD,  VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_LEVEL].F) },
-    { PARAM_NAME_ANGLE_PID_FF_SCALE, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pid_feedforward_scale) },
     { PARAM_NAME_ANGLE_FF_SMOOTHING, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_feedforward_smoothing) },
     { PARAM_NAME_ANGLE_LIMIT,        VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 90 }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_limit) },
 

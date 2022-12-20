@@ -150,7 +150,6 @@ typedef struct pidProfile_s {
 
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
-    uint8_t angle_pid_feedforward_scale;       // Gyro loop feedforward adjust in angle mode 100 = full gyro FF, 0 = no Gyro FF
 
     // Betaflight PID controller parameters
     uint8_t anti_gravity_gain;              // AntiGravity Gain (was itermAcceleratorGain)
@@ -297,7 +296,6 @@ typedef struct pidRuntime_s {
     pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float angleGain;
     float angleFeedforwardGain;
-    float angle_pid_feedforward_scale;
     float horizonGain;
     float horizonTransition;
     float horizonCutoffDegrees;

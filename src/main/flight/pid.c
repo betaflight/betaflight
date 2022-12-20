@@ -153,7 +153,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false,
-        .angle_pid_feedforward_scale = 100,
         .crash_limit_yaw = 200,
         .itermLimit = 400,
         .throttle_boost = 5,
@@ -1185,8 +1184,6 @@ const bool newRcFrame = getShouldUpdateFeedforward();
         // no feedforward in launch control
         float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         if (feedforwardGain > 0) {
-            // adjust feedforward gain in Level mode by an adjustable factor to control noise
-            feedforwardGain *= FLIGHT_MODE(ANGLE_MODE) ? pidRuntime.angle_pid_feedforward_scale : 1.0f;
             // transition now calculated in feedforward.c when new RC data arrives
             float feedForward = feedforwardGain * pidSetpointDelta * pidRuntime.pidFrequency;
 
