@@ -475,14 +475,14 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             // TO DO - interpolate duplicates in rc.c for frsky so that incoming steps don't have them
             pidRuntime.angleDuplicateCount[axis] += 1;
             float rcDeflectionAbs = getRcDeflectionAbs(axis);
-            if (pidRuntime.angleDuplicateCount[axis] == 1 && rcDeflectionAbs < 0.97) {
+            if (pidRuntime.angleDuplicateCount[axis] == 1 && rcDeflectionAbs < 0.97f) {
                 // on first duplicate, unless we just hit max deflection, reduce glitch by interpolation
                 angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
             } else {
                 // force feedforward to zero
                 pidRuntime.angleDuplicateCount[axis] = 2;
                 pidRuntime.angleTargetDelta[axis] = 0.0f;
-                angleFeedforwardInput = 0;
+                angleFeedforwardInput = 0.0f;
             }
         }
         // jitter attenuation copied from feedforward.c
