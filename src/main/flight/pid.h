@@ -399,6 +399,7 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
+    float angleSetpoint[XYZ_AXIS_COUNT];
 #endif
 } pidRuntime_t;
 

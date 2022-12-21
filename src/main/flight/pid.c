@@ -437,25 +437,38 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 // processing power that it should be a non-issue.
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
                                                         float currentPidSetpoint, float horizonLevelStrength)
-{
-    const float levelAngleLimit = pidProfile->levelAngleLimit;
-    // calculate error angle and limit the angle to the max inclination
-    // rcDeflection is in range [-1.0, 1.0]
-    float angle = levelAngleLimit * getLevelModeRcDeflection(axis);
-#ifdef USE_GPS_RESCUE
-    angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
-#endif
-    angle = constrainf(angle, -levelAngleLimit, levelAngleLimit);
-    const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        // ANGLE mode - control is angle based
-        const float setpointCorrection = errorAngle * pidRuntime.levelGain;
-        currentPidSetpoint = pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
+{  
+    if(axis == FD_YAW){
+        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)){
+            currentPidSetpoint = pidRuntime.angleSetpoint[FD_YAW] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) - pidRuntime.angleSetpoint[FD_PITCH] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_ROLL] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+        }
     } else {
-        // HORIZON mode - mix of ANGLE and ACRO modes
-        // mix in errorAngle to currentPidSetpoint to add a little auto-level feel
-        const float setpointCorrection = errorAngle * pidRuntime.horizonGain * horizonLevelStrength;
-        currentPidSetpoint += pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
+        const float levelAngleLimit = pidProfile->levelAngleLimit;
+        // calculate error angle and limit the angle to the max inclination
+        // rcDeflection is in range [-1.0, 1.0]
+        float angle = levelAngleLimit * getLevelModeRcDeflection(axis);
+#ifdef USE_GPS_RESCUE
+        angle += gpsRescueAngle[axis] / 100; // ANGLE IS IN CENTIDEGREES
+#endif
+        angle = constrainf(angle, -levelAngleLimit, levelAngleLimit);
+        const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
+        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            // ANGLE mode - control is angle based
+            const float setpointCorrection = errorAngle * pidRuntime.levelGain;
+            pidRuntime.angleSetpoint[axis] = pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
+            //cross co-ordination of gyro setpoints
+            if(axis == FD_ROLL){
+                currentPidSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) - pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+            }
+            if(axis == FD_PITCH){
+                currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+            }
+        } else {
+            // HORIZON mode - mix of ANGLE and ACRO modes
+            // mix in errorAngle to currentPidSetpoint to add a little auto-level feel
+            const float setpointCorrection = errorAngle * pidRuntime.horizonGain * horizonLevelStrength;
+            currentPidSetpoint += pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
+        }
     }
     return currentPidSetpoint;
 }
@@ -945,8 +958,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
+        if (axis == FD_YAW){
+            pidRuntime.angleSetpoint[FD_YAW] = currentPidSetpoint;
+        }
         if ((levelMode == LEVEL_MODE_R && axis == FD_ROLL)
-            || (levelMode == LEVEL_MODE_RP && (axis == FD_ROLL || axis ==  FD_PITCH)) ) {
+            || (levelMode == LEVEL_MODE_RP) ) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
             DEBUG_SET(DEBUG_ATTITUDE, axis - FD_ROLL + 2, currentPidSetpoint);
         }
