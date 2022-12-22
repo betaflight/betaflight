@@ -218,7 +218,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                 if (rawValue != DSHOT_TELEMETRY_INVALID) {
                     // Check EDT enable or store raw value
                     if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(i) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
-                        dshotTelemetryState.motorState[i].telemetryTypes = DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
+                        dshotTelemetryState.motorState[i].telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
                     } else {
                         dshotTelemetryState.motorState[i].rawValue = rawValue;
                     }
