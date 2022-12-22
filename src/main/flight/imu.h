@@ -49,7 +49,17 @@ typedef union {
 } attitudeEulerAngles_t;
 #define EULER_INITIALIZE  { { 0, 0, 0 } }
 
+typedef struct {
+    // cosines of absolute angles
+    float cosineRoll;
+    float cosinePitch;
+    float sineRoll;
+    float sinePitch;
+} attitudeEulerCosines_t;
+#define ATTITUDE_COSINES_INITIALIZE  { 0, 0, 0, 0 }
+
 extern attitudeEulerAngles_t attitude;
+extern attitudeEulerCosines_t attitudeCosines;
 extern float rMat[3][3];
 
 typedef struct imuConfig_s {

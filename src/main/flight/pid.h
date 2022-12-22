@@ -131,6 +131,12 @@ typedef enum feedforwardAveraging_e {
     FEEDFORWARD_AVERAGING_4_POINT,
 } feedforwardAveraging_t;
 
+typedef enum {
+    LEVEL_MODE_OFF = 0,
+    LEVEL_MODE_R,
+    LEVEL_MODE_RP,
+} levelMode_e;
+
 #define MAX_PROFILE_NAME_LENGTH 8u
 
 typedef struct pidProfile_s {
@@ -401,6 +407,7 @@ typedef struct pidRuntime_s {
     float angleTargetPrevious[XYZ_AXIS_COUNT];
     float angleTargetDelta[XYZ_AXIS_COUNT];
     uint8_t angleDuplicateCount[XYZ_AXIS_COUNT];
+    float angleSetpoint[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC
@@ -452,7 +459,7 @@ void applyItermRelax(const int axis, const float iterm,
 void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
-    const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength, bool newRcFrame);
+    const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength, bool newRcFrame, levelMode_e levelMode);
 float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);

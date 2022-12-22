@@ -63,11 +63,6 @@
 
 #include "pid.h"
 
-typedef enum {
-    LEVEL_MODE_OFF = 0,
-    LEVEL_MODE_R,
-    LEVEL_MODE_RP,
-} levelMode_e;
 
 const char pidNames[] =
     "ROLL;"
@@ -448,92 +443,103 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
-                                                        float rawSetpoint, float horizonLevelStrength, bool newRcFrame)
-{
-    const float angleLimit = pidProfile->angle_limit;
-
-    // ** angle loop feedforward
-    float angleFeedforward = 0.0f;
-#ifdef USE_FEEDFORWARD
-    const float rxRateHz = 1e6f / getCurrentRxRefreshRate();
-    const float rcCommandDelta = fabsf(getRcCommandDelta(axis));
-    if (newRcFrame){
-        float angleTargetRaw = angleLimit * getAngleModeStickInputRaw(axis);
-        #ifdef USE_GPS_RESCUE
-            angleTargetRaw += gpsRescueAngle[axis] / 100.0f; // ANGLE IS IN CENTIDEGREES
-        #endif
-        // set angleFeedforward to previous feedforward value, to be used if we get a duplicate packet
-        float angleFeedforwardInput = 0.0f;
-        if (rcCommandDelta) {
-            // this runs at Rx link rate
-            pidRuntime.angleTargetDelta[axis] = (angleTargetRaw - pidRuntime.angleTargetPrevious[axis]);
-            angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
-            pidRuntime.angleDuplicateCount[axis] = 0;
-            pidRuntime.angleTargetPrevious[axis] = angleTargetRaw;
-            // no need for averaging or PT1 smoothing because of the strong PT3 smoothing of the final value
-        } else { // it's a duplicate
-            // TO DO - interpolate duplicates in rc.c for frsky so that incoming steps don't have them
-            pidRuntime.angleDuplicateCount[axis] += 1;
-            float rcDeflectionAbs = getRcDeflectionAbs(axis);
-            if (pidRuntime.angleDuplicateCount[axis] == 1 && rcDeflectionAbs < 0.97f) {
-                // on first duplicate, unless we just hit max deflection, reduce glitch by interpolation
-                angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
-            } else {
-                // force feedforward to zero
-                pidRuntime.angleDuplicateCount[axis] = 2;
-                pidRuntime.angleTargetDelta[axis] = 0.0f;
-                angleFeedforwardInput = 0.0f;
-            }
-        }
-        // jitter attenuation copied from feedforward.c
-        // TO DO move jitter algorithm to rc.c and use same code here and in feedforward.c
-        const float feedforwardJitterFactor = pidRuntime.feedforwardJitterFactor;
-        float jitterAttenuator = 1.0f;
-        if (feedforwardJitterFactor) {
-            if (rcCommandDelta < feedforwardJitterFactor) {
-                jitterAttenuator = MAX(1.0f - (rcCommandDelta / feedforwardJitterFactor), 0.0f);
-                jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
-            }
-        }
-        angleFeedforwardInput *= jitterAttenuator * rxRateHz;
-        pidRuntime.angleFeedforward[axis] = angleFeedforwardInput; // feedforward element in degrees
-    }
-    angleFeedforward = pidRuntime.angleFeedforward[axis] * pidRuntime.angleFeedforwardGain;
-    // limit max angle feedforward amount depending on angle limit
-    // TO DO remove this limit if not needed.
-    // angleFeedforward = constrainf(angleFeedforward, -angleLimit * 10.0f, angleLimit * 10.0f);
-    // filter angle feedforward, heavily, at the PID loop rate, providing user control over time constant
-    // const float angleFeedforwardRaw = angleFeedforward; // for debugging
-    angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
-#endif
-
-    // ** angle error correction
-    // calculate error angle and limit the angle to the max inclination
-    // stick input is from rcCommand, is smoothed, includes level expo, and is in range [-1.0, 1.0]
-    float angleTarget = angleLimit * getAngleModeStickInput(axis);
-#ifdef USE_GPS_RESCUE
-    angleTarget += gpsRescueAngle[axis] / 100.0f; // ANGLE IS IN CENTIDEGREES
-#endif
-    const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
-    const float errorAngle = angleTarget - currentAngle;
-    // smooth the errorAngle to clean up both attitude signal steps (500hz) and RC dropout steps at ATTITUDE_CUTOFF_HZ
-    const float errorAngleSmoothed = pt3FilterApply(&pidRuntime.attitudeFilter[axis], errorAngle);
-
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        // ANGLE mode - control is angle based with P term based on angle error and feedforward based on angle setpoint velocity
-        rawSetpoint = errorAngleSmoothed * pidRuntime.angleGain + angleFeedforward;
+                                                        float rawSetpoint, float horizonLevelStrength, bool newRcFrame, levelMode_e levelMode)
+{  
+    if(axis == FD_YAW && !FLIGHT_MODE(HORIZON_MODE)){
+        rawSetpoint = pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.cosinePitch * attitudeCosines.cosineRoll - pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.sineRoll + pidRuntime.angleSetpoint[FD_ROLL] * attitudeCosines.sinePitch;
+    } else if((levelMode == LEVEL_MODE_R) && (axis == FD_PITCH)) {
+        pidRuntime.angleSetpoint[FD_PITCH] = rawSetpoint;
+        rawSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
     } else {
-        // HORIZON mode - mix of ANGLE and ACRO modes
-        // mix in errorAngle to currentPidSetpoint to add a little auto-level feel
-        rawSetpoint += errorAngleSmoothed * horizonLevelStrength * pidRuntime.horizonGain;
-    }
+        const float angleLimit = pidProfile->angle_limit;
+        // ** angle loop feedforward
+        float angleFeedforward = 0.0f;
+#ifdef USE_FEEDFORWARD
+        const float rxRateHz = 1e6f / getCurrentRxRefreshRate();
+        const float rcCommandDelta = fabsf(getRcCommandDelta(axis));
+        if (newRcFrame){
+            float angleTargetRaw = angleLimit * getAngleModeStickInputRaw(axis);
+#ifdef USE_GPS_RESCUE
+                angleTargetRaw += gpsRescueAngle[axis] / 100.0f; // ANGLE IS IN CENTIDEGREES
+#endif
+            // set angleFeedforward to previous feedforward value, to be used if we get a duplicate packet
+            float angleFeedforwardInput = 0.0f;
+            if (rcCommandDelta) {
+                // this runs at Rx link rate
+                pidRuntime.angleTargetDelta[axis] = (angleTargetRaw - pidRuntime.angleTargetPrevious[axis]);
+                angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
+                pidRuntime.angleDuplicateCount[axis] = 0;
+                pidRuntime.angleTargetPrevious[axis] = angleTargetRaw;
+                // no need for averaging or PT1 smoothing because of the strong PT3 smoothing of the final value
+            } else { // it's a duplicate
+                // TO DO - interpolate duplicates in rc.c for frsky so that incoming steps don't have them
+                pidRuntime.angleDuplicateCount[axis] += 1;
+                float rcDeflectionAbs = getRcDeflectionAbs(axis);
+                if (pidRuntime.angleDuplicateCount[axis] == 1 && rcDeflectionAbs < 0.97f) {
+                    // on first duplicate, unless we just hit max deflection, reduce glitch by interpolation
+                    angleFeedforwardInput = pidRuntime.angleTargetDelta[axis];
+                } else {
+                    // force feedforward to zero
+                    pidRuntime.angleDuplicateCount[axis] = 2;
+                    pidRuntime.angleTargetDelta[axis] = 0.0f;
+                    angleFeedforwardInput = 0.0f;
+                }
+            }
+            // jitter attenuation copied from feedforward.c
+            // TO DO move jitter algorithm to rc.c and use same code here and in feedforward.c
+            const float feedforwardJitterFactor = pidRuntime.feedforwardJitterFactor;
+            float jitterAttenuator = 1.0f;
+            if (feedforwardJitterFactor) {
+                if (rcCommandDelta < feedforwardJitterFactor) {
+                    jitterAttenuator = MAX(1.0f - (rcCommandDelta / feedforwardJitterFactor), 0.0f);
+                    jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
+                }
+            }
+            angleFeedforwardInput *= jitterAttenuator * rxRateHz;
+            pidRuntime.angleFeedforward[axis] = angleFeedforwardInput; // feedforward element in degrees
+        }
+        angleFeedforward = pidRuntime.angleFeedforward[axis] * pidRuntime.angleFeedforwardGain;
+        // limit max angle feedforward amount depending on angle limit
+        // TO DO remove this limit if not needed.
+        // angleFeedforward = constrainf(angleFeedforward, -angleLimit * 10.0f, angleLimit * 10.0f);
+        // filter angle feedforward, heavily, at the PID loop rate, providing user control over time constant
+        // const float angleFeedforwardRaw = angleFeedforward; // for debugging
+        angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
+    #endif
+
+        // ** angle error correction
+        // calculate error angle and limit the angle to the max inclination
+        // stick input is from rcCommand, is smoothed, includes level expo, and is in range [-1.0, 1.0]
+        float angleTarget = angleLimit * getAngleModeStickInput(axis);
+    #ifdef USE_GPS_RESCUE
+        angleTarget += gpsRescueAngle[axis] / 100.0f; // ANGLE IS IN CENTIDEGREES
+    #endif
+        const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
+        const float errorAngle = angleTarget - currentAngle;
+        // smooth the errorAngle to clean up both attitude signal steps (500hz) and RC dropout steps at ATTITUDE_CUTOFF_HZ
+        const float errorAngleSmoothed = pt3FilterApply(&pidRuntime.attitudeFilter[axis], errorAngle);
+
+        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            // ANGLE mode - control is angle based with P term based on angle error and feedforward based on angle setpoint velocity
+            pidRuntime.angleSetpoint[axis] = errorAngleSmoothed * pidRuntime.angleGain + angleFeedforward;
+            if(axis == FD_ROLL){
+                rawSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * attitudeCosines.cosinePitch - pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sinePitch;
+            } else {
+                rawSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
+            }
+        } else {
+            // HORIZON mode - mix of ANGLE and ACRO modes
+            // mix in errorAngle to currentPidSetpoint to add a little auto-level feel
+            rawSetpoint += errorAngleSmoothed * horizonLevelStrength * pidRuntime.horizonGain;
+        }
     //logging
-    if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_ANGLE_MODE, 0, lrintf(angleTarget * 10.0f)); // target angle
-//        DEBUG_SET(DEBUG_ANGLE_MODE, 1, lrintf(angleFeedforwardRaw * 10.0f));
-        DEBUG_SET(DEBUG_ANGLE_MODE, 1, lrintf(errorAngleSmoothed * pidRuntime.angleGain * 10.0f)); // un-smoothed error correction in degrees
-        DEBUG_SET(DEBUG_ANGLE_MODE, 2, lrintf(angleFeedforward * 10.0f)); // feedforward amount in degrees
-        DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(currentAngle * 10.0f)); // angle returned
+        if (axis == FD_ROLL) {
+            DEBUG_SET(DEBUG_ANGLE_MODE, 0, lrintf(angleTarget * 10.0f)); // target angle
+    //        DEBUG_SET(DEBUG_ANGLE_MODE, 1, lrintf(angleFeedforwardRaw * 10.0f));
+            DEBUG_SET(DEBUG_ANGLE_MODE, 1, lrintf(errorAngleSmoothed * pidRuntime.angleGain * 10.0f)); // un-smoothed error correction in degrees
+            DEBUG_SET(DEBUG_ANGLE_MODE, 2, lrintf(angleFeedforward * 10.0f)); // feedforward amount in degrees
+            DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(currentAngle * 10.0f)); // angle returned
+        }
     }
     return rawSetpoint;
 }
@@ -1026,11 +1032,14 @@ const bool newRcFrame = getShouldUpdateFeedforward();
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
-        if ((levelMode == LEVEL_MODE_R && axis == FD_ROLL)
-            || (levelMode == LEVEL_MODE_RP && (axis == FD_ROLL || axis ==  FD_PITCH)) ) {
-            rawSetpoint = pidLevel(axis, pidProfile, angleTrim, rawSetpoint, horizonLevelStrength, newRcFrame);
+        if (axis == FD_YAW){
+            pidRuntime.angleSetpoint[FD_YAW] = currentPidSetpoint;
+        }
+        if ((levelMode == LEVEL_MODE_R) || (levelMode == LEVEL_MODE_RP)) {
+            rawSetpoint = pidLevel(axis, pidProfile, angleTrim, rawSetpoint, horizonLevelStrength, newRcFrame, levelMode);
             currentPidSetpoint = rawSetpoint;
-            DEBUG_SET(DEBUG_ATTITUDE, axis - FD_ROLL + 2, currentPidSetpoint);
+            DEBUG_SET(DEBUG_ATTITUDE, FD_ROLL + 2, attitude.values.roll);
+            DEBUG_SET(DEBUG_ATTITUDE, FD_PITCH + 2, attitude.values.pitch);
         }
 #endif
 
