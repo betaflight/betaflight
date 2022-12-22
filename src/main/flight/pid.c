@@ -436,12 +436,13 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 // The impact is possibly slightly slower performance on F7/H7 but they have more than enough
 // processing power that it should be a non-issue.
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
-                                                        float currentPidSetpoint, float horizonLevelStrength)
+                                                        float currentPidSetpoint, float horizonLevelStrength, levelMode_e levelMode)
 {  
-    if(axis == FD_YAW){
-        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)){
-            currentPidSetpoint = pidRuntime.angleSetpoint[FD_YAW] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_PITCH] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) - pidRuntime.angleSetpoint[FD_ROLL] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
-        }
+    if(axis == FD_YAW && !FLIGHT_MODE(HORIZON_MODE)){
+        currentPidSetpoint = pidRuntime.angleSetpoint[FD_YAW] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) - pidRuntime.angleSetpoint[FD_PITCH] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_ROLL] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+    } else if((levelMode == LEVEL_MODE_R) && (axis == FD_PITCH)) {
+        pidRuntime.angleSetpoint[FD_PITCH] = currentPidSetpoint;
+        currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
     } else {
         const float levelAngleLimit = pidProfile->levelAngleLimit;
         // calculate error angle and limit the angle to the max inclination
@@ -458,10 +459,10 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             pidRuntime.angleSetpoint[axis] = pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
             //cross co-ordination of gyro setpoints
             if(axis == FD_ROLL){
-                currentPidSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) + pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+                currentPidSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) - pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
             }
             if(axis == FD_PITCH){
-                currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) - pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+                currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
             }
         } else {
             // HORIZON mode - mix of ANGLE and ACRO modes
@@ -961,10 +962,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (axis == FD_YAW){
             pidRuntime.angleSetpoint[FD_YAW] = currentPidSetpoint;
         }
-        if ((levelMode == LEVEL_MODE_R && axis == FD_ROLL)
-            || (levelMode == LEVEL_MODE_RP) ) {
-            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
-            DEBUG_SET(DEBUG_ATTITUDE, axis - FD_ROLL + 2, currentPidSetpoint);
+        if ((levelMode == LEVEL_MODE_R) || (levelMode == LEVEL_MODE_RP)) {
+            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength, levelMode);
+            DEBUG_SET(DEBUG_ATTITUDE, FD_ROLL + 2, attitude.values.roll);
+            DEBUG_SET(DEBUG_ATTITUDE, FD_PITCH + 2, attitude.values.pitch);
         }
 #endif
 

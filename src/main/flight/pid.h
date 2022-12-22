@@ -446,7 +446,7 @@ void applyItermRelax(const int axis, const float iterm,
 void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
-    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint, float horizonLevelStrength);
+    const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint, float horizonLevelStrength, levelMode_e levelMode);
 float calcHorizonLevelStrength(void);
 #endif
 void dynLpfDTermUpdate(float throttle);
