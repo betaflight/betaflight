@@ -29,6 +29,9 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
     SUMH
     XBUS
 
+    EXPRESSLRS (SPI)
+    CC2500 (SPI)
+    SX1280 (SPI)
 ### Telemetry Protocols
 
     CRSF
@@ -44,12 +47,15 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
 
 ### Other Options
 
+    AKK (SA FIX)
     BARO
     FLASH
     GPS
     LED
     MAG
     OSD
+    PINIO
+    VTX
 
 ### Motor Protocols
 
@@ -63,10 +69,10 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
 ### Custom Defines
 
     BATTERY_CONTINUE
-    ESCSERIAL_SIMONK
     DASHBOARD
     EMFAT_AUTORUN
     EMFAT_ICON
+    ESCSERIAL_SIMONK
     GPS_PLUS_CODES
     SERIAL_4WAY_SK_BOOTLOADER
 

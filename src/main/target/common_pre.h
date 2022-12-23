@@ -337,6 +337,16 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD
 #define USE_LED_STRIP
 
+#if TARGET_FLASH_SIZE > 512
+#define USE_BATTERY_CONTINUE
+#define USE_DASHBOARD
+#define USE_EMFAT_AUTORUN
+#define USE_EMFAT_ICON
+#define USE_ESCSERIAL_SIMONK
+#define USE_GPS_PLUS_CODES
+#define USE_SERIAL_4WAY_SK_BOOTLOADER
+#endif
+
 #endif // !defined(CLOUD_BUILD)
 
 #if defined(USE_SDCARD)
@@ -461,21 +471,6 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
 #define USE_OSD_STICK_OVERLAY
-#endif
-
-#if (TARGET_FLASH_SIZE > 512)
-
-#define USE_ESCSERIAL_SIMONK
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
-#define USE_DASHBOARD
-#define USE_EMFAT_AUTORUN
-#define USE_EMFAT_ICON
-#define USE_BATTERY_CONTINUE
-
-#if !defined(CLOUD_BUILD)
-#define USE_GPS_PLUS_CODES
-#endif
-
 #endif
 
 #if defined(CLOUD_BUILD)
