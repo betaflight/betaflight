@@ -692,3 +692,23 @@ On initial power up the LEDs on the strip will be set to WHITE.  This means you 
 This also means that you can make sure that each R,G and B LED in each LED module on the strip is also functioning. After a short delay the LEDs will show the unarmed color sequence and or low-battery warning sequence.
 
 Also check that the feature `LED_STRIP` was correctly enabled and that it does not conflict with other features, as above.
+
+
+## Resource remapping
+
+If your board does not have a physical LED_STRIP pin you still can use this feature but configuration is dependend on target resources.
+
+An example for a Foxeer F745V3_AIO board using SERIAL_RX 1 as LED_STRIP:
+
+    resource SERIAL_RX 1 A10
+    resource SERIAL_RX 1 NONE
+    resource LED_STRIP 1 A10
+    timer show # show current timer list
+    timer A10 list # check available timers for next commmand
+    timer A10 AF1
+    dma show # show current dma list
+    dma pin A10 list # check available dma pins for next command
+    dma pin A10 0
+    feature LED_STRIP
+    save
+
