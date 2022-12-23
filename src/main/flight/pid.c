@@ -439,10 +439,10 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
                                                         float currentPidSetpoint, float horizonLevelStrength, levelMode_e levelMode)
 {  
     if(axis == FD_YAW && !FLIGHT_MODE(HORIZON_MODE)){
-        currentPidSetpoint = pidRuntime.angleSetpoint[FD_YAW] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) - pidRuntime.angleSetpoint[FD_PITCH] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_ROLL] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+        currentPidSetpoint = pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.cosinePitch * attitudeCosines.cosineRoll - pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.sineRoll + pidRuntime.angleSetpoint[FD_ROLL] * attitudeCosines.sinePitch;
     } else if((levelMode == LEVEL_MODE_R) && (axis == FD_PITCH)) {
         pidRuntime.angleSetpoint[FD_PITCH] = currentPidSetpoint;
-        currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+        currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
     } else {
         const float levelAngleLimit = pidProfile->levelAngleLimit;
         // calculate error angle and limit the angle to the max inclination
@@ -459,10 +459,9 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             pidRuntime.angleSetpoint[axis] = pt3FilterApply(&pidRuntime.attitudeFilter[axis], setpointCorrection);
             //cross co-ordination of gyro setpoints
             if(axis == FD_ROLL){
-                currentPidSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch)) - pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
-            }
-            if(axis == FD_PITCH){
-                currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll)) + pidRuntime.angleSetpoint[FD_YAW] * sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+                currentPidSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * attitudeCosines.cosinePitch - pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sinePitch;
+            } else {
+                currentPidSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
             }
         } else {
             // HORIZON mode - mix of ANGLE and ACRO modes

@@ -112,6 +112,7 @@ quaternion offset = QUATERNION_INITIALIZE;
 
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
+attitudeEulerCosines_t attitudeCosines = ATTITUDE_COSINES_INITIALIZE;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 2);
 
@@ -343,6 +344,10 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     if (attitude.values.yaw < 0) {
         attitude.values.yaw += 3600;
     }
+    attitudeCosines.sineRoll = sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+    attitudeCosines.cosineRoll = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+    attitudeCosines.sinePitch = sin_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+    attitudeCosines.cosinePitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
 }
 
 static bool imuIsAccelerometerHealthy(float *accAverage)
