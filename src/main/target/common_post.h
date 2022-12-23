@@ -62,22 +62,23 @@
 
 #if defined(USE_RX_CC2500)
 
-#define USE_RX_FRSKY_SPI_D
-#define USE_RX_FRSKY_SPI_X
-#define USE_RX_SFHSS_SPI
-#define USE_RX_REDPINE_SPI
-#define USE_RX_FRSKY_SPI_TELEMETRY
 #define USE_RX_CC2500_SPI_PA_LNA
 #define USE_RX_CC2500_SPI_DIVERSITY
 
+#define USE_RX_SFHSS_SPI
+#define USE_RX_REDPINE_SPI
+
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define USE_RX_FRSKY_SPI
+#define USE_RX_FRSKY_SPI_TELEMETRY
+
 #define USE_RX_FLYSKY
 #define USE_RX_FLYSKY_SPI_LED
-
 #define USE_RX_SPEKTRUM
 #define USE_RX_SPEKTRUM_TELEMETRY
 
 #endif // defined(USE_RX_CC2500)
-
 
 /* END HARDWARE INCLUSIONS */
 
@@ -215,23 +216,6 @@
 #undef USE_VTX_SMARTAUDIO
 #undef USE_VTX_TABLE
 #undef USE_VTX_MSP
-#endif
-
-#if defined(USE_RX_FRSKY_SPI_D) || defined(USE_RX_FRSKY_SPI_X) || defined(USE_RX_REDPINE_SPI)
-#define USE_RX_CC2500
-#define USE_RX_FRSKY_SPI
-#endif
-
-#if defined(USE_RX_SFHSS_SPI)
-#define USE_RX_CC2500
-#endif
-
-#if !defined(USE_RX_CC2500)
-#undef USE_RX_CC2500_SPI_PA_LNA
-#endif
-
-#if !defined(USE_RX_CC2500_SPI_PA_LNA)
-#undef USE_RX_CC2500_SPI_DIVERSITY
 #endif
 
 // Burst dshot to default off if not configured explicitly by target
