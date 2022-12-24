@@ -137,7 +137,7 @@ void doTestArm(bool testEmpty = true)
 
     // then
     // arming alert displayed
-    displayPortTestBufferSubstring(12, 7, "ARMED");
+    displayPortTestBufferSubstring(13, 8, "ARMED");
 
     // given
     // armed alert times out (0.5 seconds)
@@ -221,9 +221,9 @@ TEST(LQTest, TestInit)
 
     // then
     // display buffer should contain splash screen
-    displayPortTestBufferSubstring(7, 8, "MENU:THR MID");
-    displayPortTestBufferSubstring(11, 9, "+ YAW LEFT");
-    displayPortTestBufferSubstring(11, 10, "+ PITCH UP");
+    displayPortTestBufferSubstring(7, 10, "MENU:THR MID");
+    displayPortTestBufferSubstring(11, 11, "+ YAW LEFT");
+    displayPortTestBufferSubstring(11, 12, "+ PITCH UP");
 
     // when
     // splash screen timeout has elapsed
