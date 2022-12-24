@@ -4817,6 +4817,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     cliPrintf("System Uptime: %d seconds", millis() / 1000);
 
+#ifdef BUILD_KEY
+    cliPrintLinef("BUILD KEY: %s", STR(BUILD_KEY));
+#endif
+
 #ifdef USE_RTC_TIME
     char buf[FORMATTED_DATE_TIME_BUFSIZE];
     dateTime_t dt;
