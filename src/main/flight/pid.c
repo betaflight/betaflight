@@ -447,10 +447,10 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 {  
     if(axis == FD_YAW && !FLIGHT_MODE(HORIZON_MODE)){
         rawSetpoint = pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.cosinePitch * attitudeCosines.cosineRoll - pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.sineRoll + pidRuntime.angleSetpoint[FD_ROLL] * attitudeCosines.sinePitch;
-    } else if((levelMode == LEVEL_MODE_R) && (axis == FD_PITCH)) {
+    } else if(((levelMode == LEVEL_MODE_R) && (axis == FD_PITCH)) && !FLIGHT_MODE(HORIZON_MODE)) {
         pidRuntime.angleSetpoint[FD_PITCH] = rawSetpoint;
         rawSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
-    } else {
+    } else if (axis != FD_YAW) {
         const float angleLimit = pidProfile->angle_limit;
         // ** angle loop feedforward
         float angleFeedforward = 0.0f;
