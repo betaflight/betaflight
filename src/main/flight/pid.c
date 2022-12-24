@@ -514,7 +514,10 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     #ifdef USE_GPS_RESCUE
         angleTarget += gpsRescueAngle[axis] / 100.0f; // ANGLE IS IN CENTIDEGREES
     #endif
-        const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
+        float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
+        if ((attitude.values.pitch > 900.0f || attitude.values.pitch < -900.0f) && axis == FD_ROLL){
+            currentAngle = (attitude.raw[axis] < 0.0f)? currentAngle + 180.0f : currentAngle - 180.0f;
+        }
         const float errorAngle = angleTarget - currentAngle;
         // smooth the errorAngle to clean up both attitude signal steps (500hz) and RC dropout steps at ATTITUDE_CUTOFF_HZ
         const float errorAngleSmoothed = pt3FilterApply(&pidRuntime.attitudeFilter[axis], errorAngle);
