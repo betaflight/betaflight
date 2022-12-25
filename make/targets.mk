@@ -1,6 +1,8 @@
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 VALID_TARGETS     = $(sort $(BASE_TARGETS))
 
+LEGACY_TARGETS    = SPRACINGH7EXTREME SPRACINGH7NANO SPRACINGH7ZERO
+ 
 CI_TARGETS := $(VALID_TARGETS)
 
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
@@ -36,6 +38,11 @@ SIMULATOR_BUILD = yes
 
 else
 $(error Unknown target MCU specified.)
+endif
+
+ifeq ($(TARGET),$(filter $(TARGET), $(LEGACY_TARGETS)))
+OPTIONS  	+= CLOUD_BUILD=YES
+$(info Legacy target forcing CLOUD_BUILD option) 
 endif
 
 TARGET_FLAGS  	:= $(TARGET_FLAGS) -D$(TARGET_MCU)
