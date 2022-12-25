@@ -185,6 +185,7 @@
 #define USE_TRANSPONDER
 
 // MAX7456 not present on hardware, but pins are reserved and available on stacking connector.
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI4
 #define MAX7456_SPI_CS_PIN      SPI4_NSS_PIN

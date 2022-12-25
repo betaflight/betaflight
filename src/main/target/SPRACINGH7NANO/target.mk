@@ -14,10 +14,6 @@ TARGET_SRC += \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu6500.c \
-            drivers/compass/compass_hmc5883l.c \
-            drivers/compass/compass_qmc5883l.c \
-            drivers/barometer/barometer_bmp085.c \
-            drivers/barometer/barometer_bmp280.c \
-            drivers/barometer/barometer_bmp388.c \
-            drivers/barometer/barometer_ms5611.c \
-
+           	$(addprefix drivers/barometer/,$(notdir $(wildcard $(SRC_DIR)/drivers/barometer/*.c))) \
+	        $(addprefix drivers/compass/,$(notdir $(wildcard $(SRC_DIR)/drivers/compass/*.c))) \
+            
