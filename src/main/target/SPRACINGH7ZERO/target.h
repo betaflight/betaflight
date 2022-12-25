@@ -187,6 +187,7 @@
 
 #define USE_TRANSPONDER
 
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI4
 #define MAX7456_SPI_CS_PIN      SPI4_NSS_PIN
