@@ -117,13 +117,14 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
                 }
 #endif
             }
+
+            if (detected) {
+                flashDevice.geometry.jedecId = chipID;
+            }
         }
         phase++;
     } while (phase != BAIL && !detected);
 
-    if (detected) {
-        flashDevice.geometry.jedecId = chipID;
-    }
     return detected;
 }
 #endif  // USE_QUADSPI
