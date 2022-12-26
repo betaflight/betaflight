@@ -117,7 +117,7 @@ For more information see reference at the [Hardware specification](https://githu
 |STM32H743|STM32H743|
 |STM32H750|STM32H750|
 
-- find and install the firmware (4.0 or newer) for the Target identified above. The firmware is available from the board type drop-down in configurator. Be aware that after flashing this firmware, the LEDs on your board will not be working - this is normal.
+- find and install the firmware (4.0 or newer) for the Target identified above. The firmware is available the releases page as assets (generic) for Betaflight, or you may need to build your own. Be aware that after flashing this firmware, the LEDs on your board will not be working - this is normal.
 
 
 ### 2.9 Do the initial setup for your Target configuration
