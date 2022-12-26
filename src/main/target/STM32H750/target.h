@@ -43,10 +43,14 @@
 #define USBD_PRODUCT_STRING     "Betaflight STM32H750"
 #endif
 
+#if !defined(USE_I2C)
+#define USE_I2C
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
 #define USE_I2C_DEVICE_4
+#define I2C_FULL_RECONFIGURABILITY
+#endif
 
 // Provide a default so that this target builds on the build server.
 #if !defined(USE_SPI)
@@ -78,9 +82,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
-
-#define USE_I2C
-#define I2C_FULL_RECONFIGURABILITY
 
 #define USE_BEEPER
 
