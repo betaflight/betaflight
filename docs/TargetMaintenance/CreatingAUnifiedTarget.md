@@ -30,7 +30,7 @@ These are things that will result in a Target Configuration being rejected by Be
 
 ### 1.4 Discouraged
 
-Betaflight advises target creators against adding any setting to their Target Configuration if it is not strictly related hardware configuration. Examples for discouraged settings are:
+Betaflight advises target creators against adding any setting to their Target Configuration if it is not strictly related to hardware configuration. Example settings that are discouraged:
 - OSD element configuration;
 - craft name;
 - rates
@@ -43,7 +43,7 @@ These instructions explain how to create a new Target configuration. Creating Ta
 
 ### 2.1 Obtaining a target firmware for your MCU
 
-Betaflight Configuratior distributes customised targets featuring settings specific to each board. To create firmware for a new board it is recommended to build a generic firmware for your MCU type - STM32F411, STM32F405, STM32F7X2, and so on. If your board has special "compile time" configuration for specific hardware or boot configuration, these flags should be added as `EXTRA_PARAMS` on the make command line (e.g. `make TARGET=STM32F405 EXTRA_PARAMS="-D'MPU_I2C_INSTANCE=I2CDEV_1'"`. The `EXTRA_PARAMS` can be considered like the old target.h file.
+Betaflight Configurator distributes customised targets featuring settings specific to each board. To create firmware for a new board it is recommended to build a generic firmware for your MCU type - STM32F411, STM32F405, STM32F7X2, and so on. If your board has special "compile time" configuration for specific hardware or boot configuration, these flags should be added as `EXTRA_PARAMS` on the make command line (e.g. `make TARGET=STM32F405 EXTRA_PARAMS="-D'MPU_I2C_INSTANCE=I2CDEV_1'"`. The `EXTRA_PARAMS` can be considered like the old target.h file.
 
 These firmware types can be created by building locally and specifying the MCU type such as `make STM32F405`. Firmware files are created in the `obj` directory and can be flashed by choosing `Load local file` in Betaflight Configurator.
 
