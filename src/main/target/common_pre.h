@@ -238,6 +238,7 @@ extern uint8_t _dmaram_end__;
 #define USE_MAG
 #define USE_BARO
 
+#if !defined(USE_GYRO) && !defined(USE_ACC)
 #define USE_ACC
 #define USE_GYRO
 
@@ -260,6 +261,7 @@ extern uint8_t _dmaram_end__;
 #define USE_ACC_MPU6050
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
+#endif
 #endif
 
 #if !defined(USE_EXST)
