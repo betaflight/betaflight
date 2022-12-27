@@ -41,6 +41,7 @@
 #include "build/version.h"
 
 #include "cms/cms.h"
+#include "cms/cms_menu_quick.h"
 #include "cms/cms_menu_main.h"
 #include "cms/cms_menu_saveexit.h"
 #include "cms/cms_types.h"
@@ -845,7 +846,7 @@ const void *cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
     if (pMenu != currentCtx.menu) {
         saveMenuInhibited = false;
 
-        if (currentCtx.menu) {
+        if (currentCtx.menu && pMenu != &cmsx_menuMain) {
             // If we are opening the initial top-level menu, then currentCtx.menu will be NULL and nothing to do.
             // Otherwise stack the current menu before moving to the selected menu.
             if (menuStackIdx >= CMS_MENU_STACK_LIMIT - 1) {
@@ -896,6 +897,12 @@ void cmsMenuOpen(void)
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ NULL, 0, 0 };
         startMenu = &cmsx_menuMain;
+
+        if (osdConfig()->extra_osd_use_quick_menu)
+        {
+            startMenu = &cmsx_menuQuick;
+        }
+
         menuStackIdx = 0;
         setArmingDisabled(ARMING_DISABLED_CMS_MENU);
         displayLayerSelect(pCurrentDisplay, DISPLAYPORT_LAYER_FOREGROUND); // make sure the foreground layer is active
