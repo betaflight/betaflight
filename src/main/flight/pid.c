@@ -525,15 +525,15 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
             // ANGLE mode - control is angle based with P term based on angle error and feedforward based on angle setpoint velocity
             pidRuntime.angleSetpoint[axis] = errorAngleSmoothed * pidRuntime.angleGain + angleFeedforward;
-            if(axis == FD_ROLL){
-                rawSetpoint = pidRuntime.angleSetpoint[FD_ROLL] * attitudeCosines.cosinePitch - pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sinePitch;
-            } else {
-                rawSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
-            }
+            rawSetpoint = pidRuntime.angleSetpoint[axis];
+            rawSetpoint *= (axis == FD_ROLL)? attitudeCosines.cosinePitch : attitudeCosines.cosineRoll;
+            rawSetpoint += (axis == FD_ROLL)? - pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sinePitch : pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
         } else {
             // HORIZON mode - mix of ANGLE and ACRO modes
             // mix in errorAngle to currentPidSetpoint to add a little auto-level feel
-            rawSetpoint += errorAngleSmoothed * horizonLevelStrength * pidRuntime.horizonGain;
+            rawSetpoint += - currentAngle * horizonLevelStrength * pidRuntime.horizonGain;
+            rawSetpoint *= (axis == FD_ROLL)? attitudeCosines.cosinePitch : attitudeCosines.cosineRoll;
+            rawSetpoint += (axis == FD_ROLL)? - pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sinePitch : pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
         }
     //logging
         if (axis == FD_ROLL) {
