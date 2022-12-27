@@ -58,6 +58,8 @@
 #define USE_BARO_DPS310
 #define USE_BARO_SPI_DPS310
 #define USE_BARO_BMP085
+#define USE_BARO_2SMBP_02B
+#define USE_BARO_SPI_2SMBP_02B
 #endif
 
 #if defined(USE_RX_CC2500)

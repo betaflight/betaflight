@@ -295,6 +295,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/barometer/barometer_ms5611.c \
             drivers/barometer/barometer_lps.c \
             drivers/barometer/barometer_qmp6988.c \
+            drivers/barometer/barometer_2smpb_02b.c \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_timing.c \
             drivers/bus_spi_config.c \

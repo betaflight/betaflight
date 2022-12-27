@@ -43,6 +43,7 @@
 #include "drivers/barometer/barometer_fake.h"
 #include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/barometer/barometer_lps.h"
+#include "drivers/barometer/barometer_2smpb_02b.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
@@ -109,15 +110,21 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #elif defined(DEFAULT_BARO_BMP085)
 #define DEFAULT_BARO_BMP085
 #endif
+#elif defined(USE_BARO_2SMBP_02B) || defined(USE_BARO_SPI_2SMBP_02B)
+#if defined(USE_BARO_SPI_2SMBP_02B)
+#define DEFAULT_BARO_SPI_2SMBP_02B
+#else
+#define DEFAULT_BARO_2SMBP_02B
+#endif
 #endif
 
-#if defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_SPI_QMP6988) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_DPS310)
+#if defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_SPI_QMP6988) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_DPS310) || defined(DEFAULT_BARO_SPI_2SMBP_02B)
     barometerConfig->baro_busType = BUS_TYPE_SPI;
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(BARO_SPI_INSTANCE));
     barometerConfig->baro_spi_csn = IO_TAG(BARO_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085) ||defined(DEFAULT_BARO_QMP6988) || defined(DEFAULT_BARO_DPS310)
+#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085) ||defined(DEFAULT_BARO_QMP6988) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_2SMBP_02B)
     // All I2C devices shares a default config with address = 0 (per device default)
     barometerConfig->baro_busType = BUS_TYPE_I2C;
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
@@ -162,7 +169,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
     baroSensor_e baroHardware = baroHardwareToUse;
 
-#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP388) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)&& !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988) && !defined(USE_BARO_DPS310) && !defined(USE_BARO_SPI_DPS310)
+#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP388) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)&& !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988) && !defined(USE_BARO_DPS310) && !defined(USE_BARO_SPI_DPS310) && !defined(DEFAULT_BARO_SPI_2SMBP_02B) && !defined(DEFAULT_BARO_2SMBP_02B)
     UNUSED(dev);
 #endif
 
@@ -274,6 +281,16 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
         }
 #endif
         FALLTHROUGH;
+
+     case BARO_2SMPB_02B:
+#if defined(USE_BARO_2SMBP_02B) || defined(USE_BARO_SPI_2SMBP_02B)
+        if (baro2SMPB02BDetect(baroDev)) {
+            baroHardware = BARO_2SMPB_02B;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
     case BARO_NONE:
         baroHardware = BARO_NONE;
         break;
