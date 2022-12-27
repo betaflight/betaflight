@@ -451,14 +451,20 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         pidRuntime.angleSetpoint[FD_PITCH] = rawSetpoint;
         rawSetpoint = pidRuntime.angleSetpoint[FD_PITCH] * attitudeCosines.cosineRoll + pidRuntime.angleSetpoint[FD_YAW] * attitudeCosines.sineRoll;
     } else if (axis != FD_YAW) {
+        //reduces max pitch/roll to avoid control saturation. Only active if angleLimit > 63 degrees
+        float otherInput = (axis == FD_ROLL) ? getAngleModeStickInputRaw(FD_PITCH) : getAngleModeStickInput(FD_ROLL);
+        float input = getAngleModeStickInput(axis);
+        const float maxInput = 1.0f / sqrtf(input * input + otherInput * otherInput);
         const float angleLimit = pidProfile->angle_limit;
+        input = fmin(input, maxInput);
+        input = fmax(input, -maxInput);
         // ** angle loop feedforward
         float angleFeedforward = 0.0f;
 #ifdef USE_FEEDFORWARD
         const float rxRateHz = 1e6f / getCurrentRxRefreshRate();
         const float rcCommandDelta = fabsf(getRcCommandDelta(axis));
         if (newRcFrame){
-            float angleTargetRaw = angleLimit * getAngleModeStickInputRaw(axis);
+            float angleTargetRaw = angleLimit * input;
 #ifdef USE_GPS_RESCUE
                 angleTargetRaw += gpsRescueAngle[axis] / 100.0f; // ANGLE IS IN CENTIDEGREES
 #endif

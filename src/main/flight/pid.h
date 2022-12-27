@@ -152,7 +152,7 @@ typedef struct pidProfile_s {
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
-    uint8_t angle_limit;                     // Max angle in degrees in Angle mode
+    uint8_t angle_limit;                     // Max angle in degrees in Angle mode, suggest limit of 63.6 degrees to avoid control saturation.
 
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
