@@ -17,6 +17,15 @@ The MSP\_SET\_OSD\_CANVAS command is sent by the VTX, or display device, to the 
 | canvas_cols | uint8 | The number of columns |
 | canvas_rows | uint8 | The number of rows |
 
+```mermaid
+sequenceDiagram
+    participant FC
+    participant VTX
+    FC->>VTX: MSP_DP_HEARTBEAT sent and detected
+    VTX->>FC: MSP_SET_OSD_CANVAS set rows/columns
+    FC->>VTX: MSP request success
+```
+
 ### MSP\_OSD\_CANVAS
 
 The MSP\_OSD\_CANVAS command is sent by the configurator to the FC to determine the size of the canvas available to the DisplayPort rendering when in HD mode. This is then used on the OSD tab to show the correct number of rows/columns when editing the OSD element positions.
@@ -31,6 +40,16 @@ Response is two bytes.
 |------|------|-------|
 | canvas_cols | uint8 | The number of columns |
 | canvas_rows | uint8 | The number of rows |
+
+```mermaid
+sequenceDiagram
+    participant FC
+    participant Configurator
+    participant Preview
+    Configurator->>FC: Configurator connects to FC
+    Configurator->>FC: MSP_OSD_CANVAS get rows/columns
+    Configurator->>Preview: OSD Preview pane resized 
+```
 
 ### MSP\_DISPLAYPORT
 
