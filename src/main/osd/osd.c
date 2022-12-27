@@ -403,7 +403,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;
-    osdConfig->cms_background_type = DISPLAY_BACKGROUND_TRANSPARENT;
+    osdConfig->cms_background_type = DISPLAY_BACKGROUND_BLACK;
     #ifdef USE_CRAFTNAME_MSGS
     osdConfig->osd_craftname_msgs = false;   // Insert LQ/RSSI-dBm and warnings into CraftName
     #endif //USE_CRAFTNAME_MSGS
