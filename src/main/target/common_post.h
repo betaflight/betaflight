@@ -44,7 +44,7 @@
 #define USE_MAG_AK8975
 #endif
 
-#if defined(USE_BARO) && !defined(USE_FAKE_BARO)
+#if defined(USE_BARO) && !defined(USE_FAKE_BARO) && !defined(CLOUD_BUILD)
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_MS5611
 #define USE_BARO_BMP280
