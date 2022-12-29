@@ -4808,9 +4808,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
 #if defined(USE_OSD)
     osdDisplayPortDevice_e displayPortDeviceType;
-    osdGetDisplayPort(&displayPortDeviceType);
+    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
 
-    cliPrintLinef("OSD: %s", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
+    cliPrintLinef("OSD: %s (%u x %u)", lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort->cols, osdDisplayPort->rows);
 #endif
 
 #ifdef BUILD_KEY
