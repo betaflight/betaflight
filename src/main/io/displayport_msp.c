@@ -178,7 +178,7 @@ static void redraw(displayPort_t *displayPort)
     const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? 16 : 13;
     displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
     displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
-#endif
+#endif // USE_OSD
     drawScreen(displayPort);
 }
 
