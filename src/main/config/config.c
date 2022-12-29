@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "platform.h"
 
@@ -94,6 +95,8 @@
 
 #include "drivers/dshot.h"
 
+#include "osd/osd_elements.h"
+
 static bool configIsDirty; /* someone indicated that the config is modified and it is not yet saved */
 
 static bool rebootRequired = false;  // set if a config change requires a reboot to take effect
@@ -111,6 +114,11 @@ PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 2);
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .craftName = { 0 },
     .pilotName = { 0 },
+    .extra100Throttle = "KAACK",
+    .extraFcHotWarning = "B*TCH IS HOT",
+    .extraTurtleModeWarning = "SORRY BRYAN",
+    .extraLowBatteryWarning = "AINT LEAVING",
+    .extraArmedWarning = "LETS GO",
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
@@ -208,6 +216,15 @@ static void validateAndFixRatesSettings(void)
             controlRateProfilesMutable(profileIndex)->rcExpo[axis] = constrain(controlRateProfilesMutable(profileIndex)->rcExpo[axis], 0, ratesSettingLimits[ratesType].expo_limit);
         }
     }
+}
+
+void makeStringsUpperCase(void)
+{
+    toUpperCase(pilotConfigMutable()->extra100Throttle, pilotConfig()->extra100Throttle, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraFcHotWarning, pilotConfig()->extraFcHotWarning, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraTurtleModeWarning, pilotConfig()->extraTurtleModeWarning, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraLowBatteryWarning, pilotConfig()->extraLowBatteryWarning, MAX_NAME_LENGTH);
+    toUpperCase(pilotConfigMutable()->extraArmedWarning, pilotConfig()->extraArmedWarning, MAX_NAME_LENGTH);
 }
 
 static void validateAndFixConfig(void)
@@ -569,6 +586,7 @@ static void validateAndFixConfig(void)
 #endif
 
     validateAndfixMotorOutputReordering(motorConfigMutable()->dev.motorOutputReordering, MAX_SUPPORTED_MOTORS);
+    makeStringsUpperCase();
 
     // validate that the minimum battery cell voltage is less than the maximum cell voltage
     // reset to defaults if not
