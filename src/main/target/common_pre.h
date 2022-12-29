@@ -396,7 +396,6 @@ extern uint8_t _dmaram_end__;
 #define USE_DSHOT_DMAR
 #endif
 
-#define USE_CMS
 #define USE_MSP_OVER_TELEMETRY
 
 #define USE_VIRTUAL_CURRENT_METER
@@ -478,6 +477,7 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD
 #endif
 
+#define USE_CMS
 #define USE_MSP_DISPLAYPORT
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_OSD_ADJUSTMENTS
