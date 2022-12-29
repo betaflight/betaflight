@@ -350,11 +350,11 @@ extern uint8_t _dmaram_end__;
 #endif // !defined(CLOUD_BUILD)
 
 #ifndef LED_MAX_STRIP_LENGTH
-    #ifdef USE_LEDSTRIP_64
-        #define LED_MAX_STRIP_LENGTH           64
-    #else
-        #define LED_MAX_STRIP_LENGTH           32
-    #endif
+#ifdef USE_LEDSTRIP_64
+#define LED_MAX_STRIP_LENGTH           64
+#else
+#define LED_MAX_STRIP_LENGTH           32
+#endif
 #endif // #ifndef LED_MAX_STRIP_LENGTH
 
 #if defined(USE_SDCARD)
@@ -376,7 +376,7 @@ extern uint8_t _dmaram_end__;
 #define USE_VTX_TRAMP
 #define USE_VTX_MSP
 #define USE_VTX_TABLE
-#endif
+#endif // USE_VTX
 
 #define USE_HUFFMAN
 
@@ -426,7 +426,7 @@ extern uint8_t _dmaram_end__;
 #define USE_SPEKTRUM_VTX_CONTROL
 #define USE_SPEKTRUM_VTX_TELEMETRY
 #define USE_SPEKTRUM_CMS_TELEMETRY
-#endif
+#endif // USE_SERIALRX_SPEKTRUM
 
 #define USE_BOARD_INFO
 #define USE_EXTENDED_CMS_MENUS
@@ -469,7 +469,7 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS_NMEA
 #define USE_GPS_UBLOX
 #define USE_GPS_RESCUE
-#endif
+#endif // USE_GPS
 
 #if defined(USE_OSD) || defined(USE_OSD_HD) || defined(USE_OSD_SD)
 
@@ -483,10 +483,9 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
 #define USE_OSD_STICK_OVERLAY
-#endif
+#endif // defined(USE_OSD) || defined(USE_OSD_HD) || defined(USE_OSD_SD)
 
 #if defined(CLOUD_BUILD)
-
 // Handle the CRSF co-dependency requirements
 #if defined(USE_TELEMETRY_CRSF) 
 
@@ -494,8 +493,8 @@ extern uint8_t _dmaram_end__;
 #if defined(USE_CMS)
 #define USE_CRSF_CMS_TELEMETRY
 #define USE_CRSF_LINK_STATISTICS
-#endif 
+#endif  // USE_CMS
 
-#endif // CRSF co-dependency requirements.
+#endif // USE_TELEMETRY_CRSF (CRSF co-dependency requirements).
 
-#endif
+#endif // CLOUD_BUILD
