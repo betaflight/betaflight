@@ -397,9 +397,7 @@ extern uint8_t _dmaram_end__;
 #endif
 
 #define USE_CMS
-#define USE_MSP_DISPLAYPORT
 #define USE_MSP_OVER_TELEMETRY
-#define USE_OSD_OVER_MSP_DISPLAYPORT
 
 #define USE_VIRTUAL_CURRENT_METER
 #define USE_CAMERA_CONTROL
@@ -474,7 +472,13 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS_RESCUE
 #endif
 
-#ifdef USE_OSD
+#if defined(USE_OSD) || defined(USE_OSD_HD) || defined(USE_OSD_SD)
+
+#ifndef USE_OSD
+#define USE_OSD
+#endif
+
+#define USE_MSP_DISPLAYPORT
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
