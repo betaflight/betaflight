@@ -64,3 +64,4 @@ void osdSyncBlink();
 void osdResetAlarms(void);
 void osdUpdateAlarms(void);
 bool osdElementsNeedAccelerometer(void);
+void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength);
