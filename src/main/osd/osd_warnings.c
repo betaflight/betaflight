@@ -137,7 +137,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     // Warn when in flip over after crash mode
     if (osdWarnGetState(OSD_WARNING_CRASH_FLIP) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
         if (isFlipOverAfterCrashActive()) { // if was armed in crash flip mode
-            tfp_sprintf(warningText, CRASH_FLIP_WARNING);
+            tfp_sprintf(warningText, pilotConfig()->extraTurtleModeWarning);
             *displayAttr = DISPLAYPORT_SEVERITY_INFO;
             return;
         } else if (!ARMING_FLAG(ARMED)) { // if disarmed, but crash flip mode is activated
@@ -207,7 +207,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_RX_LINK_QUALITY_INFO
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
-        tfp_sprintf(warningText, " LAND NOW");
+        tfp_sprintf(warningText, ">>> LAND NOW <<<");
         *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
@@ -259,7 +259,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_ADC_INTERNAL
     const int16_t coreTemperature = getCoreTemperatureCelsius();
     if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
-        tfp_sprintf(warningText, "CORE %c: %3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(warningText, "%s %c: %3d%c", pilotConfig()->extraFcHotWarning, SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
@@ -378,7 +378,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_WARNING) && batteryState == BATTERY_WARNING) {
-        tfp_sprintf(warningText, "LOW BATTERY");
+        tfp_sprintf(warningText, pilotConfig()->extraLowBatteryWarning);
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;

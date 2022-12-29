@@ -72,3 +72,4 @@ bool osdElementsNeedAccelerometer(void);
 #ifdef USE_SPEC_PREARM_SCREEN
 bool osdDrawSpec(displayPort_t *osdDisplayPort);
 #endif // USE_SPEC_PREARM_SCREEN
+void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength);
