@@ -289,11 +289,11 @@ extern uint8_t _dmaram_end__;
 
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
-#define USE_FLASH_W25N01G // 1Gb NAND flash support
-#define USE_FLASH_W25M // Stacked die support
-#define USE_FLASH_W25M512 // 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M02G // 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25Q128FV // 16MB Winbond 25Q128
+#define USE_FLASH_W25N01G    // 1Gb NAND flash support
+#define USE_FLASH_W25M       // Stacked die support
+#define USE_FLASH_W25M512    // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G    // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV  // 16MB Winbond 25Q128
 
 #endif
 
@@ -343,7 +343,7 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
-#define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
+#define USE_SERIALRX_SRXL2      // Spektrum SRXL2 protocol
 #define USE_SERIALRX_JETIEXBUS
 #endif // !defined(USE_SERIAL_RX)
 
