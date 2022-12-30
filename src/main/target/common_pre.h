@@ -339,9 +339,7 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
-#define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_FPORT      // FrSky FPort
-#define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 #define USE_SERIALRX_SRXL2      // Spektrum SRXL2 protocol
 #define USE_SERIALRX_JETIEXBUS
@@ -355,15 +353,9 @@ extern uint8_t _dmaram_end__;
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_GHST
 #define USE_TELEMETRY_SRXL
-#define USE_TELEMETRY_HOTT
-#define USE_TELEMETRY_LTM
 #define USE_CRSF_CMS_TELEMETRY
 #define USE_CRSF_LINK_STATISTICS
 
-#define USE_TELEMETRY_IBUS
-#define USE_TELEMETRY_IBUS_EXTENDED
-#define USE_TELEMETRY_JETIEXBUS
-#define USE_TELEMETRY_MAVLINK
 #endif // !defined(USE_TELEMETRY)
 
 #define USE_SERVOS
@@ -376,6 +368,25 @@ extern uint8_t _dmaram_end__;
 #define USE_BLACKBOX
 
 #if TARGET_FLASH_SIZE > 512
+
+#if defined(USE_SERIALRX)
+
+#define USE_SERIALRX_SUMD       // Graupner Hott protocol
+#define USE_SERIALRX_SUMH       // Graupner legacy protocol
+
+#endif // USE_SERIALRX
+
+#if defined(USE_TELEMETRY)
+
+#define USE_TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS_EXTENDED
+#define USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_MAVLINK
+#define USE_TELEMETRY_HOTT
+#define USE_TELEMETRY_LTM
+
+#endif // USE_TELEMETRY
+
 #define USE_BATTERY_CONTINUE
 #define USE_DASHBOARD
 #define USE_EMFAT_AUTORUN
