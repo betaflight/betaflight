@@ -233,10 +233,30 @@ extern uint8_t _dmaram_end__;
 #define USE_GYRO_REGISTER_DUMP  // Adds gyroregisters command to cli to dump configured register values
 #define USE_IMU_CALC
 
+// all the settings for classic build
 #if !defined(CLOUD_BUILD) && !defined(SITL)
 
 #define USE_MAG
+
+#if !defined(USE_BARO) && !defined(USE_FAKE_BARO)
 #define USE_BARO
+
+#define USE_BARO_MS5611
+#define USE_BARO_SPI_MS5611
+#define USE_BARO_BMP280
+#define USE_BARO_SPI_BMP280
+#define USE_BARO_BMP388
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_LPS
+#define USE_BARO_SPI_LPS
+#define USE_BARO_QMP6988
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_DPS310
+#define USE_BARO_SPI_DPS310
+#define USE_BARO_BMP085
+#define USE_BARO_2SMBP_02B
+#define USE_BARO_SPI_2SMBP_02B
+#endif
 
 #if !defined(USE_GYRO) && !defined(USE_ACC)
 #define USE_ACC
@@ -264,23 +284,36 @@ extern uint8_t _dmaram_end__;
 #endif
 #endif
 
-#if !defined(USE_EXST)
+#if !defined(USE_EXST) && !defined(USE_FLASH)
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
-#define USE_FLASH_W25N01G          // 1Gb NAND flash support
-#define USE_FLASH_W25M             // Stacked die support
-#define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128
+// 1Gb NAND flash support
+#define USE_FLASH_W25N01G
+// Stacked die support
+#define USE_FLASH_W25M
+// 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M512
+// 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25M02G
+// 16MB Winbond 25Q128
+#define USE_FLASH_W25Q128FV
 #endif
 
+#ifndef USE_MAX7456
 #define USE_MAX7456
+#endif
 
+#if !defined(USE_RX_SPI)
 #define USE_RX_SPI
-#define USE_RX_CC2500
 
-#if !defined(USE_EXST)
+#define USE_RX_CC2500
+#define USE_RX_EXPRESSLRS
+#define USE_RX_SX1280
+#define USE_RX_SX127X
+#endif // !USE_RX_SPI
+
+#if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
 #endif
 
@@ -293,10 +326,6 @@ extern uint8_t _dmaram_end__;
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
-
-#define USE_RX_EXPRESSLRS
-#define USE_RX_SX1280
-#define USE_RX_SX127X
 #endif
 
 #define USE_PPM
@@ -306,6 +335,7 @@ extern uint8_t _dmaram_end__;
 
 #define USE_PINIO
 
+#if !defined(USE_SERIAL_RX)
 #define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_GHST       // ImmersionRC Ghost Protocol
@@ -313,31 +343,35 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
+#define USE_SERIALRX_FPORT      // FrSky FPort
+#define USE_SERIALRX_SUMH       // Graupner legacy protocol
+#define USE_SERIALRX_XBUS       // JR
+#define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
+#define USE_SERIALRX_JETIEXBUS
+#endif // !defined(USE_SERIAL_RX)
+
+#if !defined(USE_TELEMETRY)
 #define USE_TELEMETRY
+
 #define USE_TELEMETRY_FRSKY_HUB
 #define USE_TELEMETRY_SMARTPORT
-#define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_TELEMETRY_CRSF
 #define USE_TELEMETRY_GHST
 #define USE_TELEMETRY_SRXL
-
-#define USE_SERVOS
-
-#define USE_VTX
-
 #define USE_TELEMETRY_HOTT
 #define USE_TELEMETRY_LTM
-#define USE_SERIALRX_SUMH       // Graupner legacy protocol
-#define USE_SERIALRX_XBUS       // JR
 #define USE_CRSF_CMS_TELEMETRY
 #define USE_CRSF_LINK_STATISTICS
 
-#define USE_SERIALRX_JETIEXBUS
 #define USE_TELEMETRY_IBUS
 #define USE_TELEMETRY_IBUS_EXTENDED
 #define USE_TELEMETRY_JETIEXBUS
 #define USE_TELEMETRY_MAVLINK
-#define USE_SERIALRX_SRXL2     // Spektrum SRXL2 protocol
+#endif // !defined(USE_TELEMETRY)
+
+#define USE_SERVOS
+
+#define USE_VTX
 
 #define USE_GPS
 #define USE_OSD
@@ -355,13 +389,13 @@ extern uint8_t _dmaram_end__;
 
 #endif // !defined(CLOUD_BUILD)
 
-#ifndef LED_MAX_STRIP_LENGTH
+#if !defined(LED_MAX_STRIP_LENGTH)
 #ifdef USE_LEDSTRIP_64
 #define LED_MAX_STRIP_LENGTH           64
 #else
 #define LED_MAX_STRIP_LENGTH           32
 #endif
-#endif // #ifndef LED_MAX_STRIP_LENGTH
+#endif // # !defined(LED_MAX_STRIP_LENGTH)
 
 #if defined(USE_SDCARD)
 #define USE_SDCARD_SPI
@@ -390,9 +424,10 @@ extern uint8_t _dmaram_end__;
 #define CONTROL_RATE_PROFILE_COUNT  4
 
 #define USE_ACRO_TRAINER
-#define USE_BLACKBOX
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
+
+#define USE_BLACKBOX
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 
 #define USE_GYRO_OVERFLOW_CHECK

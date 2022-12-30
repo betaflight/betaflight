@@ -44,24 +44,6 @@
 #define USE_MAG_AK8975
 #endif
 
-#if defined(USE_BARO) && !defined(USE_FAKE_BARO) && !defined(CLOUD_BUILD)
-#define USE_BARO_MS5611
-#define USE_BARO_SPI_MS5611
-#define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
-#define USE_BARO_SPI_LPS
-#define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
-#define USE_BARO_DPS310
-#define USE_BARO_SPI_DPS310
-#define USE_BARO_BMP085
-#define USE_BARO_2SMBP_02B
-#define USE_BARO_SPI_2SMBP_02B
-#endif
-
 #if defined(USE_RX_CC2500)
 
 #define USE_RX_CC2500_SPI_PA_LNA
