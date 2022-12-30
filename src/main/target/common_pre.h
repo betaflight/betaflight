@@ -286,18 +286,15 @@ extern uint8_t _dmaram_end__;
 
 #if !defined(USE_EXST) && !defined(USE_FLASH)
 #define USE_FLASHFS
+
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
-// 1Gb NAND flash support
-#define USE_FLASH_W25N01G
-// Stacked die support
-#define USE_FLASH_W25M
-// 512Kb (256Kb x 2 stacked) NOR flash support
-#define USE_FLASH_W25M512
-// 2Gb (1Gb x 2 stacked) NAND flash support
-#define USE_FLASH_W25M02G
-// 16MB Winbond 25Q128
-#define USE_FLASH_W25Q128FV
+#define USE_FLASH_W25N01G // 1Gb NAND flash support
+#define USE_FLASH_W25M // Stacked die support
+#define USE_FLASH_W25M512 // 512Kb (256Kb x 2 stacked) NOR flash support
+#define USE_FLASH_W25M02G // 2Gb (1Gb x 2 stacked) NAND flash support
+#define USE_FLASH_W25Q128FV // 16MB Winbond 25Q128
+
 #endif
 
 #ifndef USE_MAX7456
@@ -376,6 +373,7 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS
 #define USE_OSD
 #define USE_LED_STRIP
+#define USE_BLACKBOX
 
 #if TARGET_FLASH_SIZE > 512
 #define USE_BATTERY_CONTINUE
@@ -404,6 +402,12 @@ extern uint8_t _dmaram_end__;
 #endif
 #endif
 
+#if defined(USE_SDCARD) || defined(USE_FLASH)
+#if !defined(USE_BLACKBOX)
+#define USE_BLACKBOX
+#endif
+#endif
+
 #if defined(USE_PINIO)
 #define USE_PINIOBOX
 #define USE_PIN_PULL_UP_DOWN
@@ -427,7 +431,6 @@ extern uint8_t _dmaram_end__;
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
 
-#define USE_BLACKBOX
 #define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 
 #define USE_GYRO_OVERFLOW_CHECK
