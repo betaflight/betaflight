@@ -157,7 +157,7 @@ MMFLASH_CODE static void w25q128fv_writeEnable(flashDevice_t *fdevice)
 
 MMFLASH_CODE static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t command)
 {
-    uint8_t in[1] = { 0 };
+    uint8_t in[W25Q128FV_STATUS_REGISTER_BITS / 8] = { 0 };
 #if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 

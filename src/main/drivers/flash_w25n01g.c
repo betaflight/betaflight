@@ -221,7 +221,7 @@ static uint8_t w25n01g_readRegister(flashDeviceIO_t *io, uint8_t reg)
 
         QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-        uint8_t in[1];
+        uint8_t in[W28N01G_STATUS_REGISTER_SIZE / 8];
         quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_STATUS_REG, 0, reg, W28N01G_STATUS_REGISTER_SIZE, in, sizeof(in));
 
         return in[0];
