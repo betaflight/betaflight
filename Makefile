@@ -303,6 +303,9 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 TARGET_EXST_HASH_SECTION_FILE = $(OBJECT_DIR)/$(TARGET)/exst_hash_section.bin
 
+TARGET_EF_HASH      := $(shell echo -n "$(EXTRA_FLAGS)" | openssl dgst -md5 | awk '{print $$2;}')
+TARGET_EF_HASH_FILE := $(OBJECT_DIR)/$(TARGET)/.efhash_$(TARGET_EF_HASH)
+
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
@@ -643,9 +646,14 @@ test_versions:
 test_%:
 	$(V0) cd src/test && $(MAKE) $@
 
+$(TARGET_EF_HASH_FILE):
+	$(V1) mkdir -p $(dir $@)
+	$(V0) rm -f $(OBJECT_DIR)/$(TARGET)/.efhash_*
+	@echo "EF HASH -> $(TARGET_EF_HASH_FILE)"
+	$(V1) touch $(TARGET_EF_HASH_FILE)
 
-# rebuild everything when makefile changes
-$(TARGET_OBJS): Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
+# rebuild everything when makefile changes or the extra flags have changed
+$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
