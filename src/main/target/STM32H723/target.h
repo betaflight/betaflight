@@ -92,4 +92,6 @@
 
 #define USE_ADC
 
+#if !defined(USE_EXST)
 #define USE_CUSTOM_DEFAULTS
+#endif
