@@ -74,7 +74,7 @@
 #define USE_UART8
 #define USE_UART9
 #define USE_UART10
-#define USE_LP_UART1
+#define USE_LPUART1
 
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 11)
 
