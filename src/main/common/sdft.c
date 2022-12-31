@@ -50,9 +50,8 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
 
     sdft->idx = 0;
 
-    // Add 1 bin on either side outside of range (if possible) to get proper windowing up to range limits
-    sdft->startBin = constrain(startBin - 1, 0, SDFT_BIN_COUNT - 1);
-    sdft->endBin = constrain(endBin + 1, sdft->startBin, SDFT_BIN_COUNT - 1);
+    sdft->startBin = constrain(startBin, 0, SDFT_BIN_COUNT - 1);
+    sdft->endBin = constrain(endBin, sdft->startBin, SDFT_BIN_COUNT - 1);
 
     sdft->numBatches = MAX(numBatches, 1);
     sdft->batchSize = (sdft->endBin - sdft->startBin) / sdft->numBatches + 1;  // batchSize = ceil(numBins / numBatches)
@@ -82,7 +81,7 @@ FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 
 
 // Add new sample to frequency spectrum in parts
-FAST_CODE void sdftPushBatch(sdft_t* sdft, const float sample, const int batchIdx)
+FAST_CODE void sdftPushBatch(sdft_t *sdft, const float sample, const int batchIdx)
 {
     const int batchStart = sdft->batchSize * batchIdx;
     int batchEnd = batchStart;
@@ -133,12 +132,30 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
+    if (sdft->startBin == 0) {
+        val = sdft->data[sdft->startBin] - sdft->data[sdft->startBin + 1];
+    } else {
+        val = sdft->data[sdft->startBin] - 0.5f * (sdft->data[sdft->startBin - 1] + sdft->data[sdft->startBin + 1]);
+    }
+    re = crealf(val);
+    im = cimagf(val);
+    output[sdft->startBin] = re * re + im * im;
+
     for (int i = (sdft->startBin + 1); i < sdft->endBin; i++) {
         val = sdft->data[i] - 0.5f * (sdft->data[i - 1] + sdft->data[i + 1]); // multiply by 2 to save one multiplication
         re = crealf(val);
         im = cimagf(val);
         output[i] = re * re + im * im;
     }
+
+    if (sdft->endBin == SDFT_BIN_COUNT - 1) {
+        val = sdft->data[sdft->endBin] - sdft->data[sdft->endBin - 1];
+    } else {
+        val = sdft->data[sdft->endBin] - 0.5f * (sdft->data[sdft->endBin - 1] + sdft->data[sdft->endBin + 1]);
+    }
+    re = crealf(val);
+    im = cimagf(val);
+    output[sdft->endBin] = re * re + im * im;
 }
 
 

@@ -184,7 +184,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
 
     sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 18.5hz per bin at 8k and 600Hz maxHz
-    sdftStartBin = MAX(2, lrintf(dynNotch.minHz / sdftResolutionHz)); // can't use bin 0 because it is DC.
+    sdftStartBin = MAX(1, lrintf(dynNotch.minHz / sdftResolutionHz)); // can't use bin 0 because it is DC.
     sdftEndBin = MIN(SDFT_BIN_COUNT - 1, lrintf(dynNotch.maxHz / sdftResolutionHz)); // can't use more than SDFT_BIN_COUNT bins.
     pt1LooptimeS = DYN_NOTCH_CALC_TICKS / looprateHz;
 
@@ -265,8 +265,8 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             
             // Get total vibrational power in dyn notch range for noise floor estimate in STEP_CALC_FREQUENCIES
             sdftNoiseThreshold = 0.0f;
-            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {   // don't use startBin or endBin because they are not windowed properly
-                sdftNoiseThreshold += sdftData[bin];                        // sdftData contains power spectral density
+            for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
+                sdftNoiseThreshold += sdftData[bin];  // sdftData contains power spectral density
             }
 
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
@@ -297,7 +297,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
                             break;
                         }
                     }
-                    bin++; // If bin is peak, next bin can't be peak => jump it
+                    bin++; // If bin is peak, next bin can't be peak => skip it
                 }
             }
 
@@ -330,7 +330,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
                     peakCount++;
                 }
             }
-            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount - 1;
+            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount + 1;
 
             // A noise threshold 2 times the noise floor prevents peak tracking being too sensitive to noise
             sdftNoiseThreshold *= 2.0f;
