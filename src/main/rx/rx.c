@@ -684,7 +684,7 @@ void detectAndApplySignalLossBehaviour(void)
             validRxSignalTimeout[channel] = currentTimeMs + MAX_INVALID_PULSE_TIME_MS;
         }
 
-       if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
+        if (ARMING_FLAG(ARMED) && failsafeIsActive()) {
             // while in failsafe Stage 2, whether Rx loss or switch induced, pass valid incoming flight channel values
             // this allows GPS Rescue to detect the 30% requirement for termination
             if (channel < NON_AUX_CHANNEL_COUNT) {

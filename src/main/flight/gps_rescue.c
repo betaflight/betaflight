@@ -394,19 +394,22 @@ static void performSanityChecks(void)
         previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
         secondsLowSats = 0;
         secondsDoingNothing = 0;
-        return;
     }
 
     // Handle events that set a failure mode to other than healthy.
     // Disarm via Abort when sanity on, or for hard Rx loss in FS_ONLY mode
     // Otherwise allow 20s of semi-controlled descent with impact disarm detection
-    const bool hardFailsafe = !rxIsReceivingSignal();
     if (rescueState.failure != RESCUE_HEALTHY) {
-        if (gpsRescueConfig()->sanityChecks == RESCUE_SANITY_ON) {
+        switch(gpsRescueConfig()->sanityChecks) {
+        case RESCUE_SANITY_ON:
             rescueState.phase = RESCUE_ABORT;
-        } else if ((gpsRescueConfig()->sanityChecks == RESCUE_SANITY_FS_ONLY) && hardFailsafe) {
-            rescueState.phase = RESCUE_ABORT;
-        } else {
+            break;
+        case RESCUE_SANITY_FS_ONLY:
+            if (!rxIsReceivingSignal()) {
+                rescueState.phase = RESCUE_ABORT;
+            }
+            break;
+        default:
             // even with sanity checks off, 
             rescueState.phase = RESCUE_DO_NOTHING; // 20s semi-controlled descent with impact detection, then abort
         }
@@ -450,7 +453,7 @@ static void performSanityChecks(void)
             } else
 #endif
             {
-            rescueState.failure = RESCUE_FLYAWAY;
+                rescueState.failure = RESCUE_FLYAWAY;
             }
         }
     }
@@ -471,14 +474,17 @@ static void performSanityChecks(void)
     prevAltitudeCm = rescueState.sensor.currentAltitudeCm;
     prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
 
-    if (rescueState.phase == RESCUE_LANDING) {
+    switch (rescueState.phase) {
+    case RESCUE_LANDING:
         rescueState.intent.secondsFailing += ratio > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 10);
         if (rescueState.intent.secondsFailing == 10) {
             rescueState.phase = RESCUE_ABORT;
             // Landing mode shouldn't take more than 10s
         }
-    } else if (rescueState.phase == RESCUE_ATTAIN_ALT || rescueState.phase == RESCUE_DESCENT) {
+        break;
+    case RESCUE_ATTAIN_ALT:
+    case RESCUE_DESCENT:
         rescueState.intent.secondsFailing += ratio > 0.5f ? -1 : 1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 10);
         if (rescueState.intent.secondsFailing == 10) {
@@ -486,12 +492,17 @@ static void performSanityChecks(void)
             rescueState.intent.secondsFailing = 0;
             // if can't climb, or slow descending, enable impact detection and time out in 10s
         }
-    } else if (rescueState.phase == RESCUE_DO_NOTHING) {
+        break;
+    case RESCUE_DO_NOTHING:
         secondsDoingNothing = MIN(secondsDoingNothing + 1, 20);
         if (secondsDoingNothing == 20) {
             rescueState.phase = RESCUE_ABORT;
             // time-limited semi-controlled fall with impact detection
         }
+        break;
+    default:
+        // do nothing
+        break;
     }
 
     DEBUG_SET(DEBUG_RTH, 2, (rescueState.failure * 10 + rescueState.phase));
