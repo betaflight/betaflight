@@ -291,20 +291,6 @@
 #define RX_SPI_BIND_PIN NONE
 #endif
 
-#if defined(USE_RX_CC2500)
-#if !defined(RX_CC2500_SPI_TX_EN_PIN)
-#define RX_CC2500_SPI_TX_EN_PIN NONE
-#endif
-
-#if !defined(RX_CC2500_SPI_LNA_EN_PIN)
-#define RX_CC2500_SPI_LNA_EN_PIN NONE
-#endif
-
-#if !defined(RX_CC2500_SPI_ANT_SEL_PIN)
-#define RX_CC2500_SPI_ANT_SEL_PIN NONE
-#endif
-#endif
-
 #if defined(USE_RX_EXPRESSLRS)
 #if !defined(RX_EXPRESSLRS_SPI_RESET_PIN)
 #define RX_EXPRESSLRS_SPI_RESET_PIN NONE
