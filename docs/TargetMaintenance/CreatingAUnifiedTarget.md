@@ -1,6 +1,6 @@
-# How to Create a Unified Target Configuration
+# How to Create a Target Configuration
 
-## 1. Considerations for Unified Target Configurations
+## 1. Considerations for Target Configurations
 
 ### 1.1. General
 
@@ -47,7 +47,7 @@ Betaflight Configurator distributes customised targets featuring settings specif
 
 These firmware types can be created by building locally and specifying the MCU type such as `make STM32F405`. Firmware files are created in the `obj` directory and can be flashed by choosing `Load local file` in Betaflight Configurator.
 
-### 2.2 Flashing the unified target firmware
+### 2.2 Flashing the target firmware
 
 (Theoretically there is no need for the board to match the firmware that is flashed in this step, but there is a chance that the board configuration is setting an input pin on the board to be an output pin, thus leading to a short and potential hardware damage.)
 
@@ -94,7 +94,7 @@ For example on [this target](https://github.com/betaflight/unified-targets/blob/
     board_name NOX
     manufacturer_id AIRB
 
-For more information see reference at the [Hardware specification](https://github.com/betaflight/betaflight/blob/master/docs/Manufacturer%20Design%20Guidelines.md#42-definitions-for-unified-targets)
+For more information see reference at the [Hardware specification](https://github.com/betaflight/betaflight/blob/master/docs/Manufacturer%20Design%20Guidelines.md#42-definitions-for-targets)
 
 ### 2.7 Add the board and manufacturer information
 

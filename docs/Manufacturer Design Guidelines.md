@@ -15,6 +15,7 @@ Version Change Register
 | Draft 0.5 | 24 October 2022 | Add additional information |
 | Draft 0.6 | 06 November 2022 | Add cloud build information |
 | Draft 0.7 | 17 November 2022 | Remove off-board hardware defines |
+| Draft 0.8 | 01 January 2023 | Update BARO and CC2500 |
 
 
 Thank you for considering or continuing your development of Betaflight capable flight control hardware.  
@@ -77,7 +78,7 @@ Achieving state of the art performance requires minimizing latency in craft resp
 - Initial Submission
     - This will require key information to be available, such as specific MCU arrangement (e.g. SPI Bus allocations) may be required in order to support complete feature sets.
 
-    - Desired Target name, MCU type, and which unified target architecture to be used required.
+    - Desired Target name, MCU type, and which target architecture to be used required.
 
         - Optionally, if any Official Betaflight Presets are to be requested with this hardware, what specific configurations will be used, and a rough plan of what complete system hardware will be provided to support these efforts.
 
@@ -354,7 +355,7 @@ Additionally, there are no RC ecosystems that are actively developing a supporte
 Note that the use of gyros such as the BMI270 lowers the gyro loop rate from 8kHz to 3.2kHz and is therefore advantageous for F411 designs.
 
 
-## 4.2 Definitions for unified targets
+## 4.2 Definitions for targets
 
 As reference please choose the defines for your target from this list as applicable for the target to select appropiate hardware for the cloud build.
 
@@ -375,6 +376,7 @@ Define at least one gyro and one accelerometer.
     #define USE_GYRO_SPI_ICM42688P
     #define USE_ACC_SPI_ICM42688P
 
+
 ### 4.2.2 Defines for FLASH
 
 Define correct flash driver(s) only if physical present on the board.
@@ -385,6 +387,7 @@ Define correct flash driver(s) only if physical present on the board.
     #define USE_FLASH_W25M512          // 512Kb (256Kb x 2 stacked) NOR flash support
     #define USE_FLASH_W25M02G          // 2Gb (1Gb x 2 stacked) NAND flash support
     #define USE_FLASH_W25Q128FV        // 16MB Winbond 25Q128 and the 8MB Winbond W25Q8 types
+
 
 ### 4.2.3 Defines for BARO
 
@@ -402,6 +405,9 @@ Define a barometer only if physical present on the board.
     #define USE_BARO_SPI_QMP6988
     #define USE_BARO_DPS310
     #define USE_BARO_SPI_DPS310
+    #define USE_BARO_2SMBP_02B
+    #define USE_BARO_SPI_2SMBP_02B
+
 
 ### 4.2.4 Defines for MAG
 
@@ -417,30 +423,33 @@ Define a magnetometer only if physical present of the board.
     #define USE_MAG_SPI_AK8963
     #define USE_MAG_AK8975
 
+
 ### 4.2.5 Defines for SX1280
 
 For SPI based SX1280 target designs add the following defines:
 
-    #define USE_RX_SPI
     #define USE_RX_EXPRESSLRS
     #define USE_RX_EXPRESSLRS_TELEMETRY
     #define USE_RX_SX1280
     #define RX_CHANNELS_AETR
 
+
 ### 4.2.6 Defines for OSD
 
     #define USE_MAX7456
+
 
 ### 4.2.7 Defines for SDCARD
 
     #define USE_SDCARD
 
+
 ### 4.2.8 Defines for CC2500
 
-For SPI based CC2500 target designs add the following defines:
+For SPI based CC2500 target designs add the following define:
 
-    #define USE_RX_SPI
-    #define USR_RX_CC2500
+    #define USE_RX_CC2500
+
 
 ## 4.3 Usage of the cloud build API
 
@@ -456,3 +465,4 @@ See reference to [cloud build API](https://github.com/betaflight/betaflight/blob
 * This project is operated and maintained by volunteers, with community support from pilots with a diverse range of flight goals.  
 
 * Pilots flying Betaflight have won every major FAI, MultiGP, and other major FPV multirotor racing event since 2019.
+
