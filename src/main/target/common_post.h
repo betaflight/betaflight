@@ -46,6 +46,10 @@
 
 #if defined(USE_RX_CC2500)
 
+#if !defined(USE_RX_SPI)
+#define USE_RX_SPI
+#endif
+
 #define USE_RX_CC2500_SPI_PA_LNA
 #define USE_RX_CC2500_SPI_DIVERSITY
 
