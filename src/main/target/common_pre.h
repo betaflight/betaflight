@@ -361,8 +361,6 @@ extern uint8_t _dmaram_end__;
 #define USE_SERVOS
 
 #define USE_VTX
-
-#define USE_GPS
 #define USE_OSD
 #define USE_OSD_SD
 #define USE_OSD_HD
@@ -394,7 +392,9 @@ extern uint8_t _dmaram_end__;
 #define USE_EMFAT_AUTORUN
 #define USE_EMFAT_ICON
 #define USE_ESCSERIAL_SIMONK
+#define USE_GPS
 #define USE_GPS_PLUS_CODES
+#define USE_LED_STRIP
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
 #endif
 

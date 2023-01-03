@@ -29,12 +29,9 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
     SUMH
     XBUS
 
-    EXPRESSLRS (SPI)
-    CC2500 (SPI)
-    SX1280 (SPI)
+
 ### Telemetry Protocols
 
-    CRSF
     FRSKY_HUB
     GHOST
     HOTT
@@ -45,17 +42,22 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
     SMARTPORT
     SRXL
 
+
+Note: telemetry for CRSF, ELRS, FPORT and GHST are included during the build.
+
 ### Other Options
 
     AKK (SA FIX)
-    BARO
     FLASH
     GPS
     LED
+    LED64
     MAG
     OSD
+    OSD (HD)
     PINIO
     VTX
+
 
 ### Motor Protocols
 
@@ -66,6 +68,7 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
     PROSHOT
     PWM
 
+
 ### Custom Defines
 
     BATTERY_CONTINUE
@@ -73,6 +76,8 @@ For optimal use please select ONLY the appropiate hardware for the flight contro
     EMFAT_AUTORUN
     EMFAT_ICON
     ESCSERIAL_SIMONK
+    GPS
     GPS_PLUS_CODES
+    LED_STRIP
     SERIAL_4WAY_SK_BOOTLOADER
 
