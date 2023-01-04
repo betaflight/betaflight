@@ -94,10 +94,10 @@ typedef struct mixerConfig_s {
     uint16_t rpm_limiter_i;
     uint16_t rpm_limiter_d;
     uint16_t rpm_limiter_rpm_limit;
+    bool rpm_limiter_acceleration_limiting;
     uint16_t rpm_limiter_acceleration_limit;
-    uint16_t rpm_limiter_deceleration_limit;
-    bool rpm_limiter_rpm_linearization;
-    uint16_t rpm_limiter_idle_rpm;
+    uint16_t motor_kv;
+    uint16_t rpm_limiter_accel_p;
     uint8_t mixer_type;
 } mixerConfig_t;
 
@@ -118,7 +118,6 @@ void mixerLoadMix(int index, motorMixer_t *customMixers);
 void initEscEndpoints(void);
 void mixerInit(mixerMode_e mixerMode);
 void mixerInitProfile(void);
-
 void mixerResetDisarmedMotors(void);
 void mixTable(timeUs_t currentTimeUs);
 void stopMotors(void);

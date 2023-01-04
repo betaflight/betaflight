@@ -942,11 +942,7 @@ const clivalue_t valueTable[] = {
     { "rpm_limiter_i",                  VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_i) },
     { "rpm_limiter_d",                  VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_d) },
     { "rpm_limit",                      VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_rpm_limit) },
-    { "rpm_limiter_accel_limit",        VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 1, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_acceleration_limit) },
-    { "rpm_limiter_deccel_limit",       VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 8, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_deceleration_limit) },
-    { "rpm_limiter_idle_rpm",           VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_idle_rpm) },
-    { "rpm_limiter_full_linearization", VAR_INT8   |  MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_rpm_linearization) },
-
+    { "rpm_limiter_motor_kv_real",      VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 1, 50000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, motor_kv) },
 
 // PG_MOTOR_3D_CONFIG
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_RANGE_MIDDLE }, PG_MOTOR_3D_CONFIG, offsetof(flight3DConfig_t, deadband3d_low) },
