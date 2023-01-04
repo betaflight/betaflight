@@ -73,8 +73,13 @@ typedef struct kalman_s
 	MEA_ERR_t Measure_Err_last; //上一时刻的测量误差
 	MEA_ERR_t Measure_Err_current; //当前时刻的测量误差
 
+	float acc_Z;
+	float acc_Z_last;
+	uint8_t alt_update;
+	uint8_t vel_update;
 	float alt_throttle;
 
+	float dt;
 	/* data */
 }kalman_t;
 
@@ -83,9 +88,6 @@ extern kalman_t kalman_alt;
 void Status_Param_init(kalman_t *kalman);
 void Mea_Param_init(kalman_t *kalman);
 void TWO_DIM_Matrix_PARAM_init(kalman_t *kalman);
-
-void Status_Param_estimation(kalman_t *kalman); // 状态估计
-void Mea_Param_output(kalman_t *kalman); //输出值
 
 void Kalman_init(void);
 
@@ -96,13 +98,18 @@ TWO_DIM_Matrix_t Matrix_ADD(TWO_DIM_Matrix_t input_matrix1 , TWO_DIM_Matrix_t in
 TWO_DIM_Matrix_t Matrix_Reduce(TWO_DIM_Matrix_t input_matrix1 , TWO_DIM_Matrix_t input_matrix2);
 TWO_DIM_Matrix_t Inverse_Matrix(TWO_DIM_Matrix_t input_matrix);
 
-void Kalman_Calc(kalman_t *kalman, timeMs_t currentTimeMs);
+void Kalman_Pred(kalman_t *kalman, timeUs_t currentTimeUs); //Kalman预测过程
+void kalman_update(kalman_t *kalman);
 void Update_Kalman(timeUs_t currentTimeUs);
 float Get_Alt_Kalman(void);
+float Get_Alt_Pre_kalman(void);
 float Get_Vel_Kalman(void);
 float Get_Vel_measure(void);
+float Get_Z_a(void);
 float Get_alt_Kalman_last(void);
 float Get_finall_throttle(void);
+
+void calculateEstimatedvel_acc(kalman_t *kalman);
 
 
 
@@ -112,8 +119,3 @@ void applyAltHold(void); //定高控制入口函数
 void applyMultirotorAltHold(kalman_t *kalman); //利用控制器的结果进行油门的控制
 bool isThrustFacingDownwards(attitudeEulerAngles_t *attitude);
 float calculateAltHoldThrottleAdjustment(kalman_t *kalman, PID_TypeDef_t *sPID);//Alt and Velocity PID-Controler
-void calculateEstimatedAltitude_kalman(kalman_t *kalman, timeUs_t currentTimeUs); 
-void calculateCurrentMeasure_kalman(kalman_t *kalman, timeUs_t currentTimeUs); //获取卡尔曼滤波前的数据
-
-void kalmanFilter_init(kalman_t *kalman, float init_x, float init_p,float predict_q,float newMeasured_q);
-void kalmanFilter_filter(kalman_t *kalman, float newMeasured);

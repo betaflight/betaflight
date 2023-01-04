@@ -43,6 +43,7 @@
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 #include "drivers/time.h"
 
+#include "flight/alt_ctrl.h"
 #include "fc/runtime_config.h"
 
 #include "pg/pg.h"
@@ -319,8 +320,11 @@ bool rangefinderProcess(float cosTiltAngle)
     */
     if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
+        kalman_alt.alt_update = 0;
     } else {
         rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
+        kalman_alt.alt_update = 1;
+        kalman_alt.Z_current.Altitude = rangefinder.calculatedAltitude/100.0f;
     }
 
  //   DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
@@ -335,7 +339,7 @@ bool rangefinderProcess(float cosTiltAngle)
  */
 float rangefinderGetLatestAltitude(void)
 {
-    return rangefinder.calculatedAltitude;
+    return rangefinder.calculatedAltitude/100.0f;
 }
 
 int32_t rangefinderGetLatestRawAltitude(void)

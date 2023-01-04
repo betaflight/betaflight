@@ -43,6 +43,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/alt_ctrl.h"
 
 #include "io/gps.h"
 
@@ -160,7 +161,7 @@ void imuResetAccelerationSum(void)
 {
     accSum[0] = 0;
     accSum[1] = 0;
- //   accSum[2] = 0;
+    accSum[2] = 0;
     accSumCount = 0;
     accTimeSum = 0;
 }
@@ -180,43 +181,7 @@ static void imuTransformVectorBodyToEarth(t_fp_vector * v)
 // rotate acc into Earth frame and calculate acceleration in it
 static void imuCalculateAcceleration(timeDelta_t deltaT)
 {
-    static int32_t accZoffset = 0;
-    static float accz_smooth = 0;
-    static float Z_vel = 0.0;
-
-    // deltaT is measured in us ticks
-    const float dT = (float)deltaT * 1e-6f;
-
-    t_fp_vector accel_ned;
-    accel_ned.V.X = acc.accADC[X];
-    accel_ned.V.Y = acc.accADC[Y];
-    accel_ned.V.Z = acc.accADC[Z];
-
-    imuTransformVectorBodyToEarth(&accel_ned);
-
-    if (imuRuntimeConfig.acc_unarmedcal == 1) {
-        if (!ARMING_FLAG(ARMED)) {
-            accZoffset -= accZoffset / 64;
-            accZoffset += accel_ned.V.Z;
-        }
-        accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
-    } else {
-        accel_ned.V.Z -= acc.dev.acc_1G;
-    }
-
-    Z_vel = accel_ned.V.Z * dT;
-
-//    accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
-
-    // apply Deadband to reduce integration drift and vibration influence
-    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), imuRuntimeConfig.accDeadband.xy);
-    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), imuRuntimeConfig.accDeadband.xy);
-//    accSum[Z] += applyDeadband(lrintf(accel_ned.V.Z), imuRuntimeConfig.accDeadband.z);
-    accSum[Z] = Z_vel;
-
-    // sum up Values for later integration to get velocity and distance
-    accTimeSum += deltaT;
-    accSumCount++;
+    UNUSED(deltaT);
 }
 
 #endif // USE_ALT_HOLD
@@ -271,7 +236,7 @@ void imuInit(void)
     canUseGPSHeading = false;
 #endif
 #ifdef USE_ALT_HOLD
-    accVelScale = 9.80665f / acc.dev.acc_1G / 10000.0f;
+    accVelScale = 9.80665f / acc.dev.acc_1G;
 #endif
 
     imuComputeRotationMatrix();
@@ -631,9 +596,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
     imuUpdateEulerAngles();
 #endif
-#if defined(USE_ALT_HOLD)
-    imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
-#endif
+// #if defined(USE_ALT_HOLD)
+//     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
+// #endif
 }
 
 static int calculateThrottleAngleCorrection(void)

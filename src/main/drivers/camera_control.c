@@ -31,7 +31,7 @@
 #include "time.h"
 #include "pg/pg_ids.h"
 
-#define CAMERA_CONTROL_PWM_RESOLUTION   128
+#define CAMERA_CONTROL_PWM_RESOLUTION 128
 #define CAMERA_CONTROL_SOFT_PWM_RESOLUTION 448
 
 #ifdef CURRENT_TARGET_CPU_VOLTAGE
@@ -61,15 +61,16 @@ void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
     cameraControlConfig->keyDelayMs = 180;
     cameraControlConfig->internalResistance = 470;
     cameraControlConfig->ioTag = timerioTagGetByUsage(TIM_USE_CAMERA_CONTROL, 0);
-    cameraControlConfig->inverted = 0;   // Output is inverted externally
+    cameraControlConfig->inverted = 0; // Output is inverted externally
     cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_ENTER] = 450;
-    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_LEFT]  = 270;
-    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_UP]    = 150;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_LEFT] = 270;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_UP] = 150;
     cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_RIGHT] = 68;
-    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_DOWN]  = 0;
+    cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_DOWN] = 0;
 }
 
-static struct {
+static struct
+{
     bool enabled;
     IO_t io;
     timerChannel_t channel;
@@ -82,18 +83,24 @@ static uint32_t endTimeMillis;
 #ifdef CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 static void cameraControlHi(void)
 {
-    if (cameraControlRuntime.inverted) {
+    if (cameraControlRuntime.inverted)
+    {
         IOLo(cameraControlRuntime.io);
-    } else {
+    }
+    else
+    {
         IOHi(cameraControlRuntime.io);
     }
 }
 
 static void cameraControlLo(void)
 {
-    if (cameraControlRuntime.inverted) {
+    if (cameraControlRuntime.inverted)
+    {
         IOHi(cameraControlRuntime.io);
-    } else {
+    }
+    else
+    {
         IOLo(cameraControlRuntime.io);
     }
 }
@@ -122,11 +129,13 @@ void cameraControlInit(void)
     cameraControlRuntime.io = IOGetByTag(cameraControlConfig()->ioTag);
     IOInit(cameraControlRuntime.io, OWNER_CAMERA_CONTROL, 0);
 
-    if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
+    if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode)
+    {
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
         const timerHardware_t *timerHardware = timerAllocate(cameraControlConfig()->ioTag, OWNER_CAMERA_CONTROL, 0);
 
-        if (!timerHardware) {
+        if (!timerHardware)
+        {
             return;
         }
 
@@ -138,7 +147,9 @@ void cameraControlInit(void)
         *cameraControlRuntime.channel.ccr = cameraControlRuntime.period;
         cameraControlRuntime.enabled = true;
 #endif
-    } else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode) {
+    }
+    else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode)
+    {
 #ifdef CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 
         IOConfigGPIO(cameraControlRuntime.io, IOCFG_OUT_PP);
@@ -148,30 +159,33 @@ void cameraControlInit(void)
         cameraControlRuntime.enabled = true;
 
         NVIC_InitTypeDef nvicTIM6 = {
-            TIM6_DAC_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE
-        };
+            TIM6_DAC_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE};
         NVIC_Init(&nvicTIM6);
         NVIC_InitTypeDef nvicTIM7 = {
-            TIM7_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE
-        };
+            TIM7_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER), ENABLE};
         NVIC_Init(&nvicTIM7);
 
         RCC->APB1ENR |= RCC_APB1Periph_TIM6 | RCC_APB1Periph_TIM7;
         TIM6->PSC = 0;
         TIM7->PSC = 0;
 #endif
-    } else if (CAMERA_CONTROL_MODE_DAC == cameraControlConfig()->mode) {
+    }
+    else if (CAMERA_CONTROL_MODE_DAC == cameraControlConfig()->mode)
+    {
         // @todo not yet implemented
     }
 }
 
 void cameraControlProcess(uint32_t currentTimeUs)
 {
-    if (endTimeMillis && currentTimeUs >= 1000 * endTimeMillis) {
-        if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
+    if (endTimeMillis && currentTimeUs >= 1000 * endTimeMillis)
+    {
+        if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode)
+        {
             *cameraControlRuntime.channel.ccr = cameraControlRuntime.period;
-        } else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode) {
-
+        }
+        else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode)
+        {
         }
 
         endTimeMillis = 0;
@@ -204,7 +218,7 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
 #if defined(CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE) || defined(CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE)
     const float dutyCycle = calculatePWMDutyCycle(key);
 #else
-    (void) holdDurationMs;
+    (void)holdDurationMs;
 #endif
 
 #ifdef USE_OSD
@@ -212,20 +226,26 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
     resumeRefreshAt = 0;
 #endif
 
-    if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
+    if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode)
+    {
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
         *cameraControlRuntime.channel.ccr = lrintf(dutyCycle * cameraControlRuntime.period);
         endTimeMillis = millis() + cameraControlConfig()->keyDelayMs + holdDurationMs;
 #endif
-    } else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode) {
+    }
+    else if (CAMERA_CONTROL_MODE_SOFTWARE_PWM == cameraControlConfig()->mode)
+    {
 #ifdef CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
         const uint32_t hiTime = lrintf(dutyCycle * cameraControlRuntime.period);
 
-        if (0 == hiTime) {
+        if (0 == hiTime)
+        {
             cameraControlLo();
             delay(cameraControlConfig()->keyDelayMs + holdDurationMs);
             cameraControlHi();
-        } else {
+        }
+        else
+        {
             TIM6->CNT = hiTime;
             TIM6->ARR = cameraControlRuntime.period;
 
@@ -233,7 +253,8 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             TIM7->ARR = cameraControlRuntime.period;
 
             // Start two timers as simultaneously as possible
-            ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+            ATOMIC_BLOCK(NVIC_PRIO_TIMER)
+            {
                 TIM6->CR1 = TIM_CR1_CEN;
                 TIM7->CR1 = TIM_CR1_CEN;
             }
@@ -245,7 +266,8 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             const uint32_t endTime = millis() + cameraControlConfig()->keyDelayMs + holdDurationMs;
 
             // Wait to give the camera a chance at registering the key press
-            while (millis() < endTime);
+            while (millis() < endTime)
+                ;
 
             // Disable timers and interrupt generation
             TIM6->CR1 &= ~TIM_CR1_CEN;
@@ -257,7 +279,9 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
             IOHi(cameraControlRuntime.io);
         }
 #endif
-    } else if (CAMERA_CONTROL_MODE_DAC == cameraControlConfig()->mode) {
+    }
+    else if (CAMERA_CONTROL_MODE_DAC == cameraControlConfig()->mode)
+    {
         // @todo not yet implemented
     }
 }

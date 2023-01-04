@@ -22,6 +22,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
+#include "sensors/acceleration.h"
 
 #include "common/time.h"
 
@@ -63,14 +64,11 @@ static float setVelocity = 1.0;
 static int32_t errorVelocityI = 0;
 static float vel = 0.0f;
 
+uint8_t scale1;
+
 // static int16_t alt_pid[4] = {50, 0, 0, 0};
 // static int16_t vel_pid[4] = {50, 0, 0, 0};
 
-
-enum {
-    DEBUG_ALTITUDE_ACC,
-    DEBUG_ALTITUDE_VEL
-};
 
 void PID_ParamInit(PID_TypeDef_t *sPID, float LastError, float PrevError, float P, float I, float D, float Setpoint)
 {
@@ -172,93 +170,20 @@ float calculateAltHoldThrottleAdjustment(kalman_t *kalman, PID_TypeDef_t *sPID) 
     return result;
 }
 
-void calculateCurrentMeasure_kalman(kalman_t *kalman, timeUs_t currentTimeUs)
+void calculateEstimatedvel_acc(kalman_t *kalman)
 {
-	UNUSED(currentTimeUs);
+    float acc_altitude;
+    float x;
+    float y;
+    float z;
 
-    float accZ_tmp = 0;
-#ifdef USE_ACC
-    if (sensors(SENSOR_ACC)) {
- //       const float dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
+    x = (acc.accADC[X]/ scale1) * 0.001953125f;
+    y = (acc.accADC[Y]/ scale1) * 0.001953125f;
+    z = (acc.accADC[Z]/ scale1) * 0.001953125f;
 
-        // Integrator - velocity, cm/sec
-        if (accSumCount) {
-            accZ_tmp = (float)accSum[2] / accSumCount;
-        }
-        const float vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
-        vel = vel_acc;
-    }
-#endif
+    acc_altitude = sqrtf(sq(x) + sq(y) + sq(z));
+    kalman->acc_Z = acc_altitude - 0.9985f;
 
-    DEBUG_SET(DEBUG_ALTITUDE, DEBUG_ALTITUDE_ACC, accSum[2] / accSumCount);
-    DEBUG_SET(DEBUG_ALTITUDE, DEBUG_ALTITUDE_VEL, vel);
-
-
-    kalman->Z_current.Alt_Velocity = accSum[2];
-    kalman->Z_current.Altitude = rangefinderGetLatestAltitude();
-
-    imuResetAccelerationSum();
-
- //   altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(&kalman_alt);
-}
-void calculateEstimatedAltitude_kalman(kalman_t *kalman, timeUs_t currentTimeUs) //获取卡尔曼滤波前的数据
-{
-    UNUSED(&kalman);
-    UNUSED(currentTimeUs);
-}
-
- 
-void Status_Param_init(kalman_t *kalman){  //状态以及过程误差初始化
-	kalman->Process_Err_current.W1 = E1[0];
-	kalman->Process_Err_current.W2 = E2[0];
-
-	kalman->X_last.Altitude = 0.0;
-	kalman->X_last.Alt_Velocity = 0.0;
-}
-
-void Status_Param_estimation(kalman_t *kalman) // 状态估计
-{
-	kalman->X_current.Altitude = kalman->A.A11*kalman->X_last.Altitude + kalman->A.A12*kalman->X_last.Alt_Velocity + kalman->Process_Err_last.W1;
-	kalman->X_current.Alt_Velocity = kalman->A.A21*kalman->X_last.Altitude + kalman->A.A22*kalman->X_last.Alt_Velocity + kalman->Process_Err_last.W2;
-}
- 
-void Mea_Param_init(kalman_t *kalman){  //测量误差和状态初始化
-	kalman->Measure_Err_current.V1 = E3[0];
-	kalman->Measure_Err_current.V2 = E4[0];	
-	kalman->Z_last.Altitude = -1.0;
-	kalman->Z_last.Alt_Velocity = 0.0;
-}
-
-void Mea_Param_output(kalman_t *kalman) //当前时刻的测量输出值
-{
-	kalman->Z_current.Altitude = rangefinderGetLatestAltitude();
-	// kalman->Z_current.Alt_Velocity = ???;
-	// kalman->Z_current.Altitude = kalman->H.A11*kalman->X_current.Altitude + kalman->H.A12*kalman->X_current.Alt_Velocity + kalman->Measure_Err_current.V1;
-	// kalman->Z_current.Alt_Velocity = kalman->H.A21*kalman->X_current.Altitude + kalman->H.A22*kalman->X_current.Alt_Velocity + kalman->Measure_Err_current.V2;
-}
- 
-void TWO_DIM_Matrix_PARAM_init(kalman_t *kalman){
- 	//Q Matrix init
-	kalman->Q.A11 = 0.1;	kalman->Q.A12 = 0.0;
-	kalman->Q.A21 = 0.0;	kalman->Q.A22 = 0.1;	
-   //R Matrix init
-	kalman->R.A11 = 1.0;	kalman->R.A12 = 0.0;
-	kalman->R.A21 = 0.0;	kalman->R.A22 = 1.0;
-    //A Matrix init
-	kalman->A.A11 = 1.0;	kalman->A.A12 = 0.0;
-	kalman->A.A21 = 0.0;	kalman->A.A22 = 1.0;
-	//B Matrix init
-	kalman->B.A11 = 1.0;    kalman->B.A12 = 0.0;
-	kalman->B.A21 = 0.0;	kalman->B.A22 = 1.0;
-    //H Matrix init
-	kalman->H.A11 = 1.0;	kalman->H.A12 = 0.0;
-	kalman->H.A21 = 0.0;	kalman->H.A22 = 1.0;
-    //E Matrix init
-	kalman->E.A11 = 1.0;	kalman->E.A12 = 0.0;
-	kalman->E.A21 = 0.0;	kalman->E.A22 = 1.0;	
-  	//P Matrix init
-	kalman->P_last.A11 = 1.0;	kalman->P_last.A12 = 0.0;
-	kalman->P_last.A21 = 0.0;	kalman->P_last.A22 = 1.0;
 }
 //矩阵的转置运算
 TWO_DIM_Matrix_t Matrix_Transpose(TWO_DIM_Matrix_t input_matrix){
@@ -296,7 +221,7 @@ TWO_DIM_Matrix_t Matrix_ADD(TWO_DIM_Matrix_t input_matrix1 , TWO_DIM_Matrix_t in
     Result.A22 = input_matrix1.A22 + input_matrix2.A22;
     return Result;
 }
- 
+
 //矩阵相减
 TWO_DIM_Matrix_t Matrix_Reduce(TWO_DIM_Matrix_t input_matrix1 , TWO_DIM_Matrix_t input_matrix2){
     TWO_DIM_Matrix_t Result;
@@ -320,60 +245,120 @@ TWO_DIM_Matrix_t Inverse_Matrix(TWO_DIM_Matrix_t input_matrix){
     return Result;
 }
 
+void TWO_DIM_Matrix_PARAM_init(kalman_t *kalman){
+ 	//Q Matrix init
+	kalman->Q.A11 = 0.1;	kalman->Q.A12 = 0.0;
+	kalman->Q.A21 = 0.0;	kalman->Q.A22 = 0.1;	
+   //R Matrix init
+	kalman->R.A11 = 0.003;	kalman->R.A12 = 0.0;
+	kalman->R.A21 = 0.0;	kalman->R.A22 = 0.003;
+    //A Matrix init
+	kalman->A.A11 = 1.0;	kalman->A.A12 = 0.002;
+	kalman->A.A21 = 0.0;	kalman->A.A22 = 1.0;
+
+	//B Matrix init
+	kalman->B.A11 = 1.0;    kalman->B.A12 = 0.0;
+	kalman->B.A21 = 0.0;	kalman->B.A22 = 1.0;
+    //H Matrix init
+	kalman->H.A11 = 1.0;	kalman->H.A12 = 0.0;
+	kalman->H.A21 = 0.0;	kalman->H.A22 = 0.0;
+    //E Matrix init
+	kalman->E.A11 = 1.0;	kalman->E.A12 = 0.0;
+	kalman->E.A21 = 0.0;	kalman->E.A22 = 1.0;	
+  	//P Matrix init
+	kalman->P_last.A11 = 10.0;	   kalman->P_last.A12 = 0.0;
+	kalman->P_last.A21 = 0.0;	   kalman->P_last.A22 = 10.0;
+}
+
+void Status_Param_init(kalman_t *kalman){  //状态以及过程误差初始化
+	kalman->X_last.Altitude = 0.0;
+	kalman->X_last.Alt_Velocity = 0.0;
+}
+ 
+void Mea_Param_init(kalman_t *kalman){  //测量误差和状态初始化
+	kalman->Z_last.Altitude = -1.0;
+	kalman->Z_last.Alt_Velocity = 0.0;
+}
+
 void Kalman_Calc_Init(kalman_t *kalman)
 {
-	kalman->X_Hat_last.Altitude = 0.0;
+	kalman->X_Hat_last.Altitude = rangefinderGetLatestAltitude();
 	kalman->X_Hat_last.Alt_Velocity = 0.0;
+    kalman->alt_update = 0;
+    kalman->acc_Z = 0;
 }
 
 void Kalman_init(void)
 {
-	Status_Param_init(&kalman_alt);
-	Mea_Param_init(&kalman_alt);
 	TWO_DIM_Matrix_PARAM_init(&kalman_alt);
 	Kalman_Calc_Init(&kalman_alt);
+    if (acc.dev.acc_1G > 512 * 4) {
+        scale1 = 8;
+    } else if (acc.dev.acc_1G > 512 * 2) {
+        scale1 = 4;
+    } else if (acc.dev.acc_1G >= 512) {
+        scale1 = 2;
+    } else {
+        scale1 = 1;
+    }
 
 }
 
-//获取高度后进行kalman滤波，必须是在新的数据到来以后才进行
-void Kalman_Calc(kalman_t *kalman, timeMs_t currentTimeMs){
+void Kalman_Pred(kalman_t *kalman, timeUs_t currentTimeUs)
+{
+    static timeUs_t lastTimeUs = 0;
+    const float dTime = (currentTimeUs - lastTimeUs)*1e-6f;
+    kalman->dt = dTime;
+    kalman->A.A12 = (float)dTime;
+    kalman->B.A11 = 0.5*dTime*dTime;
 
-    UNUSED(currentTimeMs);
-//	currentTimeMs = millis();
+    //预测过程
+    kalman->X_Hat_PRE.Altitude = kalman->A.A11*kalman->X_Hat_last.Altitude + kalman->A.A12*kalman->X_Hat_last.Alt_Velocity + kalman->acc_Z_last*kalman->B.A11;
+    kalman->X_Hat_PRE.Alt_Velocity = kalman->A.A22*kalman->X_Hat_last.Alt_Velocity + dTime*kalman->acc_Z_last;
 
-	//预测过程  目前是没有输入的
-	kalman->X_Hat_PRE.Altitude = kalman->A.A11*kalman->X_Hat_last.Altitude + kalman->A.A12*kalman->X_Hat_last.Alt_Velocity;
-	kalman->X_Hat_PRE.Alt_Velocity = kalman->A.A21*kalman->X_Hat_last.Altitude + kalman->A.A22*kalman->X_Hat_last.Alt_Velocity;
-	
-	buffer = Matrix_Multi(kalman->A, kalman->P_last);
+    buffer = Matrix_Multi(kalman->A, kalman->P_last);
 	buffer = Matrix_Multi(buffer, Matrix_Transpose(kalman->A));
 	kalman->P_PRE = Matrix_ADD(buffer, kalman->Q);
 
-	//更新过程
-	buffer = Matrix_Multi(kalman->P_PRE, Matrix_Transpose(kalman->H));
-	buffer = Inverse_Matrix(Matrix_ADD(Matrix_Multi(kalman->H, buffer), kalman->R));
+    lastTimeUs = currentTimeUs;
+
+}
+
+void kalman_update(kalman_t *kalman)
+{
+    //更新过程
+    buffer = Matrix_Multi(kalman->H, kalman->P_PRE);
+	buffer = Matrix_Multi(buffer, Matrix_Transpose(kalman->H));
+	buffer = Inverse_Matrix(Matrix_ADD(buffer, kalman->R));
 	buffer = Matrix_Multi(Matrix_Transpose(kalman->H), buffer);
 	kalman->Kp = Matrix_Multi(kalman->P_PRE, buffer);
 
-	kalman->X_Hat_current.Altitude = kalman->X_Hat_PRE.Altitude + kalman->Kp.A11*(kalman->Z_current.Altitude - (kalman->H.A11*kalman->X_Hat_PRE.Altitude + kalman->H.A12*kalman->X_Hat_PRE.Alt_Velocity)) \
-																+ kalman->Kp.A12*(kalman->Z_current.Alt_Velocity - (kalman->H.A21*kalman->X_Hat_PRE.Altitude + kalman->H.A22*kalman->X_Hat_PRE.Alt_Velocity));
-	kalman->X_Hat_current.Alt_Velocity = kalman->X_Hat_PRE.Alt_Velocity + kalman->Kp.A21*(kalman->Z_current.Altitude - (kalman->H.A11*kalman->X_Hat_PRE.Altitude + kalman->H.A12*kalman->X_Hat_PRE.Alt_Velocity)) \
-																		+ kalman->Kp.A22*(kalman->Z_current.Alt_Velocity - (kalman->H.A21*kalman->X_Hat_PRE.Altitude + kalman->H.A22*kalman->X_Hat_PRE.Alt_Velocity));
-
+    if(kalman->alt_update == 1) //为1表示接收到高度测量数据，进行融合更新; 为0，表示只信任先验值
+    {
+        kalman->X_Hat_current.Altitude = kalman->X_Hat_PRE.Altitude + kalman->Kp.A11*(kalman->Z_current.Altitude - (kalman->H.A11*kalman->X_Hat_PRE.Altitude + kalman->H.A12*kalman->X_Hat_PRE.Alt_Velocity))\
+                                                                    + kalman->Kp.A12*(kalman->Z_current.Alt_Velocity - (kalman->H.A21*kalman->X_Hat_PRE.Altitude + kalman->H.A22*kalman->X_Hat_PRE.Alt_Velocity));
+        kalman->X_Hat_current.Alt_Velocity = kalman->X_Hat_PRE.Alt_Velocity + kalman->Kp.A21*(kalman->Z_current.Altitude - (kalman->H.A11*kalman->X_Hat_PRE.Altitude + kalman->H.A12*kalman->X_Hat_PRE.Alt_Velocity))\
+                                                                    + kalman->Kp.A22*(kalman->Z_current.Alt_Velocity - (kalman->H.A21*kalman->X_Hat_PRE.Altitude + kalman->H.A22*kalman->X_Hat_PRE.Alt_Velocity));
+        kalman->alt_update = 0;
+    }else{
+        kalman->X_Hat_current.Altitude = kalman->X_Hat_PRE.Altitude;
+        kalman->X_Hat_current.Alt_Velocity = kalman->X_Hat_PRE.Alt_Velocity;
+    }
+                                                                        
 	kalman->P_current = Matrix_Multi(Matrix_Reduce(kalman->E, Matrix_Multi(kalman->Kp, kalman->H)), kalman->P_PRE);
 
+    calculateEstimatedvel_acc(&kalman_alt);
+    kalman->acc_Z_last = kalman->acc_Z;
 	kalman->X_Hat_last.Altitude = kalman->X_Hat_current.Altitude;
-	kalman->X_Hat_last.Alt_Velocity = kalman->X_Hat_current.Alt_Velocity;
-
+    kalman->X_Hat_last.Alt_Velocity = kalman->X_Hat_current.Alt_Velocity;
+	    
 	kalman->P_last = kalman->P_current;
-		
 }
 
 void Update_Kalman(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
-    calculateCurrentMeasure_kalman(&kalman_alt,currentTimeUs);
-	Kalman_Calc(&kalman_alt, currentTimeMs);
+    Kalman_Pred(&kalman_alt, currentTimeUs);
+    kalman_update(&kalman_alt);
 }
 
 float Get_Alt_Kalman(void)
@@ -381,14 +366,24 @@ float Get_Alt_Kalman(void)
 	return kalman_alt.X_Hat_current.Altitude;
 }
 
+float Get_Alt_Pre_kalman(void)
+{
+    return kalman_alt.X_Hat_PRE.Altitude;
+}
+
 float Get_Vel_Kalman(void)
 {
-	return kalman_alt.X_Hat_current.Alt_Velocity;
+	return kalman_alt.X_Hat_last.Alt_Velocity;
 }
 
 float Get_Vel_measure(void)
 {
     return kalman_alt.Z_current.Alt_Velocity;
+}
+
+float Get_Z_a(void)
+{
+    return kalman_alt.acc_Z;
 }
 
 float Get_alt_Kalman_last(void)

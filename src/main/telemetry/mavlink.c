@@ -430,10 +430,10 @@ void mavlinkSendHUDAndHeartbeat(void)
 // #endif
 
     
-    mavVel_Measure = Get_Vel_measure(); //速度测量值
-    mavVel_Hat_current = Get_Vel_Kalman(); //速度最优估计值
-    mavAltitude_Measure = rangefinderGetLatestAltitude(); //高度测量值
-    mavAltitude_Hat_current = Get_Alt_Kalman(); //高度最优估计值
+    mavVel_Measure = kalman_alt.acc_Z; //速度测量值  (airspeed)
+    mavVel_Hat_current = kalman_alt.P_current.A11 + kalman_alt.P_current.A22; //速度最优估计值 (groundspeed)
+    mavAltitude_Measure = rangefinderGetLatestAltitude(); //高度测量值 (altitude)
+    mavAltitude_Hat_current = Get_Alt_Kalman(); //高度最优估计值 (climb)
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
         // airspeed Current airspeed in m/s
@@ -741,8 +741,9 @@ void WifiInitHardware_Esp8266(void)
         delay(1000);
         c = 0;
 
- //       serialPrint(mavlinkPort, "AT+CWJAP=\"mi12\",\"11111111\"\r\n");
-        serialPrint(mavlinkPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
+        serialPrint(mavlinkPort, "AT+CWJAP=\"FAST_0530\",\"13525755559\"\r\n");
+        //serialPrint(mavlinkPort, "AT+CWJAP=\"mi12\",\"11111111\"\r\n");
+        // serialPrint(mavlinkPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
         nowtime = millis();
         c = serialRead(mavlinkPort);
         while(c != 'W')
@@ -777,7 +778,7 @@ void WifiInitHardware_Esp8266(void)
 
 
 //        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.254.53\",14555\r\n");
-        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.31.142\",14555\r\n");
+        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.0.100\",14555\r\n");
         delay(1000);
         nowtime = millis();
         c = serialRead(mavlinkPort);
