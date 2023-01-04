@@ -380,7 +380,7 @@ static void performSanityChecks(void)
     static float prevTargetAltitudeCm = 0.0f; // to calculate ascent or descent target change
     static float previousDistanceToHomeCm = 0.0f; // to check that we are returning
     static int8_t secondsLowSats = 0; // Minimum sat detection
-    static int8_t secondsDoingNothing = 0; // Limit on doing nothing
+    static int8_t secondsDoingNothing; // Limit on doing nothing
     const timeUs_t currentTimeUs = micros();
 
     if (rescueState.phase == RESCUE_IDLE) {
@@ -399,19 +399,27 @@ static void performSanityChecks(void)
     // Handle events that set a failure mode to other than healthy.
     // Disarm via Abort when sanity on, or for hard Rx loss in FS_ONLY mode
     // Otherwise allow 20s of semi-controlled descent with impact disarm detection
+    const bool hardFailsafe = !rxIsReceivingSignal();
+
     if (rescueState.failure != RESCUE_HEALTHY) {
+        // Default to 20s semi-controlled descent with impact detection, then abort
+        rescueState.phase = RESCUE_DO_NOTHING;
+
         switch(gpsRescueConfig()->sanityChecks) {
         case RESCUE_SANITY_ON:
             rescueState.phase = RESCUE_ABORT;
             break;
         case RESCUE_SANITY_FS_ONLY:
-            if (!rxIsReceivingSignal()) {
+            if (hardFailsafe) {
                 rescueState.phase = RESCUE_ABORT;
             }
             break;
         default:
-            // even with sanity checks off, 
-            rescueState.phase = RESCUE_DO_NOTHING; // 20s semi-controlled descent with impact detection, then abort
+            // even with sanity checks off,
+            // override when Allow Arming without Fix is enabled without GPS_FIX_HOME and no Control link available.
+            if (gpsRescueConfig()->allowArmingWithoutFix && !STATE(GPS_FIX_HOME) && hardFailsafe) {
+                rescueState.phase = RESCUE_ABORT;
+            }
         }
     }
 
