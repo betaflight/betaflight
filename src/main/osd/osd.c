@@ -496,6 +496,30 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
 #ifdef USE_CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
+
+    // Ensure that all OSD elements are on the canvas
+    for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        uint16_t itemPos = osdElementConfig()->item_pos[i];
+        uint8_t elemPosX = OSD_X(itemPos);
+        uint8_t elemPosY = OSD_Y(itemPos);
+        uint16_t elemProfileType = itemPos & (OSD_PROFILE_MASK | OSD_TYPE_MASK);
+        bool pos_reset = false;
+
+        if (elemPosX >= osdDisplayPort->cols) {
+            elemPosX = osdDisplayPort->cols - 1;
+            pos_reset  = true;
+        }
+
+        if (elemPosY >= osdDisplayPort->rows) {
+            elemPosY = osdDisplayPort->rows - 1;
+            pos_reset  = true;
+        }
+
+        if (pos_reset) {
+            osdElementConfigMutable()->item_pos[i] = elemProfileType | OSD_POS(elemPosX, elemPosY);
+        }
+    }
+
 }
 
 static void osdResetStats(void)
