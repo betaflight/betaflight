@@ -402,15 +402,29 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->aux_scale = 200;
     osdConfig->aux_symbol = 'A';
 
+    // Make it obvious on the configurator that the FC doesn't support HD
+#ifdef USE_OSD_HD
     osdConfig->canvas_cols = OSD_HD_COLS;
     osdConfig->canvas_rows = OSD_HD_ROWS;
+#else
+    osdConfig->canvas_cols = OSD_SD_COLS;
+    osdConfig->canvas_rows = OSD_SD_ROWS;
+#endif
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
 {
+#ifdef USE_OSD_SD
+    uint8_t midRow = 7;
+    uint8_t midCol = 15;
+#else
+    uint8_t midRow = 10;
+    uint8_t midCol = 26;
+#endif
+
     // Position elements near centre of screen and disabled by default
     for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-        osdElementConfig->item_pos[i] = OSD_POS(10, 7);
+        osdElementConfig->item_pos[i] = OSD_POS((midCol - 5), midRow);
     }
 
     // Always enable warnings elements by default
@@ -418,14 +432,14 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
         profileFlags |= OSD_PROFILE_FLAG(i);
     }
-    osdElementConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | profileFlags;
+    osdElementConfig->item_pos[OSD_WARNINGS] = OSD_POS((midCol - 6), (midRow + 3)) | profileFlags;
 
     // Default to old fixed positions for these elements
-    osdElementConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(13, 6);
-    osdElementConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(14, 2);
-    osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(14, 6);
-    osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS(3, 1);
-    osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS(13, 6);
+    osdElementConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS((midCol - 2), (midRow - 1));
+    osdElementConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS((midCol - 1), (midRow - 5));
+    osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS((midCol - 1), (midRow - 1));
+    osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS((midCol - 12), (midRow - 6));
+    osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS((midCol - 2), (midRow - 1));
 }
 
 static void osdDrawLogo(int x, int y)
@@ -497,29 +511,30 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
 
-    // Ensure that all OSD elements are on the canvas
-    for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-        uint16_t itemPos = osdElementConfig()->item_pos[i];
-        uint8_t elemPosX = OSD_X(itemPos);
-        uint8_t elemPosY = OSD_Y(itemPos);
-        uint16_t elemProfileType = itemPos & (OSD_PROFILE_MASK | OSD_TYPE_MASK);
-        bool pos_reset = false;
+    if (osdDisplayPort->cols && osdDisplayPort->rows) {
+        // Ensure that all OSD elements are on the canvas once number of row/columns is known
+        for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+            uint16_t itemPos = osdElementConfig()->item_pos[i];
+            uint8_t elemPosX = OSD_X(itemPos);
+            uint8_t elemPosY = OSD_Y(itemPos);
+            uint16_t elemProfileType = itemPos & (OSD_PROFILE_MASK | OSD_TYPE_MASK);
+            bool pos_reset = false;
 
-        if (elemPosX >= osdDisplayPort->cols) {
-            elemPosX = osdDisplayPort->cols - 1;
-            pos_reset  = true;
-        }
+            if (elemPosX >= osdDisplayPort->cols) {
+                elemPosX = osdDisplayPort->cols - 1;
+                pos_reset  = true;
+            }
 
-        if (elemPosY >= osdDisplayPort->rows) {
-            elemPosY = osdDisplayPort->rows - 1;
-            pos_reset  = true;
-        }
+            if (elemPosY >= osdDisplayPort->rows) {
+                elemPosY = osdDisplayPort->rows - 1;
+                pos_reset  = true;
+            }
 
-        if (pos_reset) {
-            osdElementConfigMutable()->item_pos[i] = elemProfileType | OSD_POS(elemPosX, elemPosY);
+            if (pos_reset) {
+                osdElementConfigMutable()->item_pos[i] = elemProfileType | OSD_POS(elemPosX, elemPosY);
+            }
         }
     }
-
 }
 
 static void osdResetStats(void)

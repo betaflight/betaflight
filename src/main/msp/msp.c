@@ -4082,7 +4082,13 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             if ((int8_t)addr == -1) {
                 /* Set general OSD settings */
 #ifdef USE_MAX7456
-                vcdProfileMutable()->video_system = sbufReadU8(src);
+                videoSystem_e video_system = sbufReadU8(src);
+#ifndef USE_OSD_HD
+                if (video_system == VIDEO_SYSTEM_HD) {
+                    video_system = VIDEO_SYSTEM_AUTO;
+                }
+#endif
+                vcdProfileMutable()->video_system = video_system;
 #else
                 sbufReadU8(src); // Skip video system
 #endif
@@ -4207,6 +4213,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
         }
         break;
 
+#ifdef USE_OSD_HD
     case MSP_SET_OSD_CANVAS:
         {
             osdConfigMutable()->canvas_cols = sbufReadU8(src);
@@ -4216,6 +4223,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
         }
         break;
+#endif //USE_OSD_HD
 #endif // OSD
 
     default:

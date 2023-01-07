@@ -27,8 +27,6 @@
 /** PAL or NTSC, value is number of chars total */
 #define VIDEO_BUFFER_CHARS_NTSC   390
 #define VIDEO_BUFFER_CHARS_PAL    480
-#define VIDEO_LINES_NTSC          13
-#define VIDEO_LINES_PAL           16
 
 typedef enum {
     // IO defined and MAX7456 was detected
