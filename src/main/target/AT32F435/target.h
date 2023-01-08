@@ -66,3 +66,4 @@
 #undef USE_TIMER
 #undef USE_GPIO
 #undef USE_DMA
+#undef USE_PWM
