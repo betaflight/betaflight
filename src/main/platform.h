@@ -108,6 +108,27 @@
 #define STM32F4
 #endif
 
+#elif defined(AT32F435ZMT7)
+
+#include "at32f435_437.h"
+
+// Chip Unique ID on F43X
+#define U_ID_0 (*(uint32_t*)0x1ffff7e8)
+#define U_ID_1 (*(uint32_t*)0x1ffff7ec)
+#define U_ID_2 (*(uint32_t*)0x1ffff7f0)
+
+#ifndef AT32F4
+#define AT32F4
+#endif
+
+#define SET_BIT(REG, BIT)     ((REG) |= (BIT))
+#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
+#define READ_BIT(REG, BIT)    ((REG) & (BIT))
+#define CLEAR_REG(REG)        ((REG) = (0x0))
+#define WRITE_REG(REG, VAL)   ((REG) = (VAL))
+#define READ_REG(REG)         ((REG))
+#define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
+
 #elif defined(SIMULATOR_BUILD)
 
 // Nop
