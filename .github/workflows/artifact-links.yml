@@ -17,4 +17,4 @@ jobs:
           prefix: "**Do you want to test this code? Here you have an automated build:**"
           suffix: "_**WARNING:** It may be unstable. Use only for testing! See: https://www.youtube.com/watch?v=I1uN9CN30gw for instructions for unified targets!_"
           format: name
-          addTo: pullandissues
+          addTo: pull
