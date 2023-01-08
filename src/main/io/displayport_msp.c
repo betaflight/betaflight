@@ -165,20 +165,14 @@ static bool isSynced(const displayPort_t *displayPort)
 
 static void redraw(displayPort_t *displayPort)
 {
-#ifdef USE_OSD
     if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
         displayPort->rows = osdConfig()->canvas_rows;
         displayPort->cols = osdConfig()->canvas_cols;
     } else {
-        const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? 16 : 13;
+        const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? VIDEO_LINES_PAL : VIDEO_LINES_NTSC;
         displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
-        displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
+        displayPort->cols = OSD_SD_COLS + displayPortProfileMsp()->colAdjust;
     }
-#else
-    const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? 16 : 13;
-    displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
-    displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
-#endif // USE_OSD
     drawScreen(displayPort);
 }
 
@@ -214,6 +208,17 @@ displayPort_t *displayPortMspInit(void)
     if (displayPortProfileMsp()->useDeviceBlink) {
         mspDisplayPort.useDeviceBlink = true;
     }
+
+#ifndef USE_OSD_SD
+    if (vcdProfile()->video_system != VIDEO_SYSTEM_HD) {
+        vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
+    }
+#endif
+#ifndef USE_OSD_HD
+    if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
+        vcdProfileMutable()->video_system = VIDEO_SYSTEM_AUTO;
+    }
+#endif
 
     redraw(&mspDisplayPort);
     return &mspDisplayPort;

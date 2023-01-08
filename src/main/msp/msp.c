@@ -982,7 +982,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #endif
         sbufWriteU8(dst, osdFlags);
 
-#ifdef USE_MAX7456
+#ifdef USE_OSD_SD
         // send video system (AUTO/PAL/NTSC/HD)
         sbufWriteU8(dst, vcdProfile()->video_system);
 #else
@@ -4081,12 +4081,14 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
 
             if ((int8_t)addr == -1) {
                 /* Set general OSD settings */
-#ifdef USE_MAX7456
-                vcdProfileMutable()->video_system = sbufReadU8(src);
-#else
-                sbufReadU8(src); // Skip video system
+                videoSystem_e video_system = sbufReadU8(src);
+#ifndef USE_OSD_HD
+                if (video_system == VIDEO_SYSTEM_HD) {
+                    video_system = VIDEO_SYSTEM_AUTO;
+                }
 #endif
-#if defined(USE_OSD)
+                vcdProfileMutable()->video_system = video_system;
+
                 osdConfigMutable()->units = sbufReadU8(src);
 
                 // Alarms
@@ -4134,19 +4136,16 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                     osdConfigMutable()->camera_frame_width = sbufReadU8(src);
                     osdConfigMutable()->camera_frame_height = sbufReadU8(src);
                 }
-#endif
             } else if ((int8_t)addr == -2) {
-#if defined(USE_OSD)
                 // Timers
                 uint8_t index = sbufReadU8(src);
                 if (index > OSD_TIMER_COUNT) {
                   return MSP_RESULT_ERROR;
                 }
                 osdConfigMutable()->timers[index] = sbufReadU16(src);
-#endif
+
                 return MSP_RESULT_ERROR;
             } else {
-#if defined(USE_OSD)
                 const uint16_t value = sbufReadU16(src);
 
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
@@ -4162,9 +4161,6 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                 } else {
                   return MSP_RESULT_ERROR;
                 }
-#else
-                return MSP_RESULT_ERROR;
-#endif
             }
         }
         break;
@@ -4207,6 +4203,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
         }
         break;
 
+#ifdef USE_OSD_HD
     case MSP_SET_OSD_CANVAS:
         {
             osdConfigMutable()->canvas_cols = sbufReadU8(src);
@@ -4216,6 +4213,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
         }
         break;
+#endif //USE_OSD_HD
 #endif // OSD
 
     default:

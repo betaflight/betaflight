@@ -20,6 +20,10 @@
 
 #pragma once
 
+#define VIDEO_COLUMNS_SD          30
+#define VIDEO_LINES_NTSC          13
+#define VIDEO_LINES_PAL           16
+
 typedef enum {
     DISPLAYPORT_DEVICE_TYPE_MAX7456 = 0,
     DISPLAYPORT_DEVICE_TYPE_OLED,

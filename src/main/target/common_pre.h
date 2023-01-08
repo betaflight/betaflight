@@ -364,6 +364,8 @@ extern uint8_t _dmaram_end__;
 
 #define USE_GPS
 #define USE_OSD
+#define USE_OSD_SD
+#define USE_OSD_HD
 #define USE_LED_STRIP
 #define USE_BLACKBOX
 
@@ -526,10 +528,24 @@ extern uint8_t _dmaram_end__;
 #define USE_GPS_RESCUE
 #endif // USE_GPS
 
-#if defined(USE_OSD) || defined(USE_OSD_HD) || defined(USE_OSD_SD)
-
+#if defined(USE_OSD_HD) || defined(USE_OSD_SD)
+// If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
 #ifndef USE_OSD
 #define USE_OSD
+#endif
+#endif
+
+#ifdef USE_OSD
+
+#if !defined(USE_OSD_HD) && !defined(USE_OSD_SD)
+// If USE_OSD is defined without specifying SD or HD, then support both
+#define USE_OSD_SD
+#define USE_OSD_HD
+#endif
+
+#if !defined(USE_OSD_SD) && defined(USE_MAX7456)
+// If USE_OSD_SD isn't defined then explicitly exclude MAX7456 support
+#undef USE_MAX7456
 #endif
 
 #define USE_CMS

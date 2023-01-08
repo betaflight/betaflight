@@ -82,6 +82,9 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 #define OSD_TYPE(x)   ((x & OSD_TYPE_MASK) >> 14)
 
+#define OSD_SD_COLS VIDEO_COLUMNS_SD
+#define OSD_SD_ROWS VIDEO_LINES_PAL
+
 // Default HD OSD canvas size to be applied unless the goggles announce otherwise
 #define OSD_HD_COLS 53
 #define OSD_HD_ROWS 20
