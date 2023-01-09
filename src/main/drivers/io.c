@@ -377,6 +377,49 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
     };
     GPIO_Init(IO_GPIO(io), &init);
 }
+
+#elif defined(AT32F4)
+
+//TODO: move to specific files (applies to STM32 also)
+void IOConfigGPIO(IO_t io, ioConfig_t cfg)
+{
+    if (!io) {
+        return;
+    }
+
+    const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
+    RCC_ClockCmd(rcc, ENABLE);
+
+    gpio_init_type init = {
+        .gpio_pins = IO_Pin(io),
+        .gpio_mode = (cfg >> 0) & 0x03,
+        .gpio_drive_strength = (cfg >> 2) & 0x03,
+        .gpio_out_type = (cfg >> 4) & 0x01,
+        .gpio_pull = (cfg >> 5) & 0x03,
+    };
+    gpio_init(IO_GPIO(io), &init);
+}
+
+void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
+{
+    if (!io) {
+        return;
+    }
+
+    const rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
+    RCC_ClockCmd(rcc, ENABLE);
+
+    gpio_init_type init = {
+        .gpio_pins = IO_Pin(io),
+        .gpio_mode = (cfg >> 0) & 0x03,
+        .gpio_drive_strength = (cfg >> 2) & 0x03,
+        .gpio_out_type = (cfg >> 4) & 0x01,
+        .gpio_pull = (cfg >> 5) & 0x03,
+    };
+    gpio_init(IO_GPIO(io), &init);
+    gpio_pin_mux_config(IO_GPIO(io), IO_GPIO_PinSource(io), af);
+}
+
 #endif
 
 #if DEFIO_PORT_USED_COUNT > 0

@@ -26,6 +26,9 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
+// common to all 
+#define USE_TIMER_AF
+
 #if defined(STM32G474xx)
 #include "stm32g4xx.h"
 #include "stm32g4xx_hal.h"
@@ -112,6 +115,20 @@
 
 #include "at32f435_437.h"
 
+#define GPIO_TypeDef        gpio_type
+#define GPIO_InitTypeDef    gpio_init_type
+#define TIM_TypeDef         tmr_type
+#define TIM_OCInitTypeDef   tmr_output_config_type
+#define DMA_TypeDef         dma_type
+#define DMA_InitTypeDef     dma_init_type
+#define SPI_TypeDef         spi_type
+typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
+#define ADC_TypeDef         adc_type
+#define USART_TypeDef       usart_type
+#define TIM_OCInitTypeDef   tmr_output_config_type 
+#define TIM_ICInitTypeDef   tmr_input_config_type
+#define SystemCoreClock     system_core_clock
+
 // Chip Unique ID on F43X
 #define U_ID_0 (*(uint32_t*)0x1ffff7e8)
 #define U_ID_1 (*(uint32_t*)0x1ffff7ec)
@@ -132,6 +149,7 @@
 #elif defined(SIMULATOR_BUILD)
 
 // Nop
+#undef USE_TIMER_AF
 
 #else
 #error "Invalid chipset specified. Update platform.h"

@@ -82,7 +82,7 @@ typedef struct timerHardware_s {
     uint8_t channel;
     timerUsageFlag_e usageFlags;
     uint8_t output;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(USE_TIMER_AF)
     uint8_t alternateFunction;
 #endif
 

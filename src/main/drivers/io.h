@@ -119,7 +119,7 @@ bool IOIsFreeOrPreinit(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#ifdef USE_TIMER_AF
 void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af);
 #endif
 
