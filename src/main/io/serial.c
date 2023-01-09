@@ -108,6 +108,9 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_LPUART1
     SERIAL_PORT_LPUART1,
 #endif
+#ifdef USE_FAKE_SERIAL
+    SERIAL_PORT_IDENTIFIER_MAX,
+#endif
 };
 
 static uint8_t serialPortCount;

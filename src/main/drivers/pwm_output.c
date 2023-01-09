@@ -54,6 +54,23 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
 
     HAL_TIM_PWM_ConfigChannel(Handle, &TIM_OCInitStructure, channel);
+#elif defined(USE_ATBSP_DRIVER)
+	tmr_output_config_type  tmr_OCInitStruct;
+	tmr_output_default_para_init(&tmr_OCInitStruct);
+	tmr_OCInitStruct.oc_mode= TMR_OUTPUT_CONTROL_PWM_MODE_A;
+
+	if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+		tmr_OCInitStruct.occ_output_state = TRUE;
+		tmr_OCInitStruct.occ_idle_state = FALSE;
+		tmr_OCInitStruct.occ_polarity = (output & TIMER_OUTPUT_INVERTED) ? TMR_OUTPUT_ACTIVE_LOW : TMR_OUTPUT_ACTIVE_HIGH;
+	} else {
+		tmr_OCInitStruct.oc_output_state = TRUE;
+		tmr_OCInitStruct.oc_idle_state = TRUE;
+		tmr_OCInitStruct.oc_polarity = (output & TIMER_OUTPUT_INVERTED) ? TMR_OUTPUT_ACTIVE_LOW : TMR_OUTPUT_ACTIVE_HIGH;
+	}
+	tmr_channel_value_set(tim, (channel-1)*2, value);
+	tmr_output_channel_config(tim,(channel-1)*2, &tmr_OCInitStruct);
+    tmr_output_channel_buffer_enable(tim, ((channel-1)*2), TRUE);
 #else
     TIM_OCInitTypeDef TIM_OCInitStructure;
 
@@ -96,6 +113,9 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
     else
         HAL_TIM_PWM_Start(Handle, timerHardware->channel);
     HAL_TIM_Base_Start(Handle);
+#elif defined(USE_ATBSP_DRIVER)
+    tmr_output_enable(timerHardware->tim, TRUE);
+    tmr_counter_enable(timerHardware->tim, TRUE);
 #else
     TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
     TIM_Cmd(timerHardware->tim, ENABLE);

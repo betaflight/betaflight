@@ -33,8 +33,8 @@
 //#define USE_UART1
 //#define USE_UART2
 //#define USE_UART3
-
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
+#define USE_FAKE_SERIAL
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 1)
 
 #define USE_INVERTER
 
@@ -54,19 +54,34 @@
 
 //#define USE_USB_DETECT
 //#define USE_VCP
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
 
-#define UNIFIED_SERIAL_PORT_COUNT       3
+#define UNIFIED_SERIAL_PORT_COUNT       0
 
 #define USE_ADC
 
 #define USE_CUSTOM_DEFAULTS
 
-#undef USE_TIMER
-#undef USE_GPIO
-#undef USE_DMA
+#undef USE_BEEPER
+#undef USE_LED_STRIP
+#undef USE_TRANSPONDER
+#undef USE_DSHOT
 #undef USE_PWM
+#undef USE_PWM_OUTPUT
+#undef USE_TIMER
+#undef USE_DMA
+#undef USE_CAMERA_CONTROL
+#undef USE_PPM
+#undef USE_RX_SPI
+#undef USE_RX_CC2500
+#undef USE_RX_EXPRESSLRS
+#undef USE_CMS
+#undef USE_OSD
+#undef USE_BLACKBOX
+#undef USE_SDCARD
+#undef USE_BARO
+#undef USE_MAG
 
 #if defined(AT32F435ZMT7) || defined(AT32F435RMT7)
 #define FLASH_PAGE_SIZE   ((uint32_t)0x1000)  // 4k sectors
