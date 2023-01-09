@@ -512,6 +512,14 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
 #endif
 
     if (osdDisplayPort->cols && osdDisplayPort->rows) {
+        // Ensure that osd_canvas_width/height are correct
+        if (osdConfig()->canvas_cols != osdDisplayPort->cols) {
+            osdConfigMutable()->canvas_cols = osdDisplayPort->cols;
+        }
+        if (osdConfig()->canvas_rows != osdDisplayPort->rows) {
+            osdConfigMutable()->canvas_rows = osdDisplayPort->rows;
+        }
+
         // Ensure that all OSD elements are on the canvas once number of row/columns is known
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
             uint16_t itemPos = osdElementConfig()->item_pos[i];

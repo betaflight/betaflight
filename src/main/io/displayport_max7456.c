@@ -182,9 +182,6 @@ static bool checkReady(displayPort_t *displayPort, bool rescan)
         }
     }
 
-    displayPort->rows = max7456GetRowsCount() + displayPortProfileMax7456()->rowAdjust;
-    displayPort->cols = 30 + displayPortProfileMax7456()->colAdjust;
-
     return true;
 }
 
@@ -246,6 +243,26 @@ bool max7456DisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **disp
 
         break;
     }
+
+    uint8_t displayRows;
+
+    switch(vcdProfile->video_system) {
+    default:
+    case VIDEO_SYSTEM_PAL:
+        displayRows = VIDEO_LINES_PAL;
+        break;
+
+    case VIDEO_SYSTEM_NTSC:
+        displayRows = VIDEO_LINES_NTSC;
+        break;
+
+    case VIDEO_SYSTEM_AUTO:
+        displayRows = max7456GetRowsCount();
+        break;
+    }
+
+    max7456DisplayPort.rows = displayRows + displayPortProfileMax7456()->rowAdjust;
+    max7456DisplayPort.cols = 30 + displayPortProfileMax7456()->colAdjust;
 
     return true;
 }
