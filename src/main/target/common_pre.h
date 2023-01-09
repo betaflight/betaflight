@@ -342,7 +342,6 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_SERIALRX_XBUS       // JR
 #define USE_SERIALRX_SRXL2      // Spektrum SRXL2 protocol
-#define USE_SERIALRX_JETIEXBUS
 #endif // !defined(USE_SERIAL_RX)
 
 #if !defined(USE_TELEMETRY)
@@ -371,6 +370,7 @@ extern uint8_t _dmaram_end__;
 
 #if defined(USE_SERIALRX)
 
+#define USE_SERIALRX_JETIEXBUS
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 
