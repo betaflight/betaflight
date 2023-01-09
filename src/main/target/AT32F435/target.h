@@ -67,3 +67,9 @@
 #undef USE_GPIO
 #undef USE_DMA
 #undef USE_PWM
+
+#if defined(AT32F435ZMT7) || defined(AT32F435RMT7)
+#define FLASH_PAGE_SIZE   ((uint32_t)0x1000)  // 4k sectors
+#elif defined(AT32F435RGT7)
+#define FLASH_PAGE_SIZE   ((uint32_t)0x0800)  // 2K page sectors
+#endif
