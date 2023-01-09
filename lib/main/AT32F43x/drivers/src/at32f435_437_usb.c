@@ -442,6 +442,7 @@ void usb_write_packet(otg_global_type *usbx, uint8_t *pusr_buf, uint16_t num, ui
   */
 void usb_read_packet(otg_global_type *usbx, uint8_t *pusr_buf, uint16_t num, uint16_t nbytes)
 {
+  (void)num;
   uint32_t n_index;
   uint32_t nhbytes = (nbytes + 3) / 4;
   uint32_t *pbuf = (uint32_t *)pusr_buf;
