@@ -212,9 +212,6 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 
                 rawValue = decodeTelemetryPacket(dmaMotors[i].dmaBuffer, edges);
 
-#ifdef USE_DSHOT_TELEMETRY_STATS
-                bool validTelemetryPacket = false;
-#endif
                 if (rawValue != DSHOT_TELEMETRY_INVALID) {
                     // Check EDT enable or store raw value
                     if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(i) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
@@ -222,13 +219,6 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                     } else {
                         dshotTelemetryState.motorState[i].rawValue = rawValue;
                     }
-
-                    if (i < 4) {
-                        DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, i, rawValue);
-                    }
-#ifdef USE_DSHOT_TELEMETRY_STATS
-                    validTelemetryPacket = true;
-#endif
                 } else {
                     dshotTelemetryState.invalidPacketCount++;
                     if (i == 0) {
@@ -236,7 +226,7 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
                     }
                 }
 #ifdef USE_DSHOT_TELEMETRY_STATS
-                updateDshotTelemetryQuality(&dshotTelemetryQuality[i], validTelemetryPacket, currentTimeMs);
+                updateDshotTelemetryQuality(&dshotTelemetryQuality[i], rawValue != DSHOT_TELEMETRY_INVALID, currentTimeMs);
 #endif
             }
         }

@@ -29,6 +29,7 @@
 
 #ifdef USE_DSHOT
 
+#include "build/debug.h"
 #include "build/atomic.h"
 
 #include "common/maths.h"
@@ -159,6 +160,11 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
         // Decode eRPM telemetry
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
 
+        // Update debug buffer
+        if (motorIndex < 4) {
+            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
+        }
+
         // Set telemetry type
         *pType = DSHOT_TELEMETRY_TYPE_eRPM;
     } else {
@@ -224,6 +230,11 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
         default:
             // Decode as eRPM
             *pDecoded = dshot_decode_eRPM_telemetry_value(value);
+
+            // Update debug buffer
+            if (motorIndex < 4) {
+                DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
+            }
 
             // Set telemetry type
             *pType = DSHOT_TELEMETRY_TYPE_eRPM;

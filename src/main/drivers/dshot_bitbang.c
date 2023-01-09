@@ -545,10 +545,6 @@ static bool bbUpdateStart(void)
                 } else {
                     dshotTelemetryState.motorState[motorIndex].rawValue = rawValue;
                 }
-
-                if (motorIndex < 4) {
-                    DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, rawValue);
-                }
             } else {
                 dshotTelemetryState.invalidPacketCount++;
             }
