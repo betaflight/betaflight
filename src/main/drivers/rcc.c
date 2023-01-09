@@ -113,6 +113,8 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     }
 #elif defined(USE_ATBSP_DRIVER)
 
+#define NOSUFFIX // Empty
+
 #define __AT_RCC_CLK_ENABLE(bus, suffix, enbit)   do {      \
         __IO uint32_t tmpreg;                               \
         SET_BIT(CRM->bus ## en ## suffix, enbit);           \

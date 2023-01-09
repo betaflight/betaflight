@@ -89,6 +89,7 @@ extern "C" {
 /* includes ------------------------------------------------------------------*/
 #ifdef CRM_MODULE_ENABLED
 #include "at32f435_437_crm.h"
+#include "at32f435_437_rcc_periph.h"
 #endif
 #ifdef TMR_MODULE_ENABLED
 #include "at32f435_437_tmr.h"
