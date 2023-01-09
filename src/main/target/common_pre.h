@@ -363,7 +363,6 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD
 #define USE_OSD_SD
 #define USE_OSD_HD
-#define USE_LED_STRIP
 #define USE_BLACKBOX
 
 #if TARGET_FLASH_SIZE > 512
