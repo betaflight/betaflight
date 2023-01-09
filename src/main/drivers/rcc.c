@@ -111,6 +111,42 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 
 #endif
     }
+#elif defined(USE_ATBSP_DRIVER)
+
+#define __AT_RCC_CLK_ENABLE(bus, suffix, enbit)   do {      \
+        __IO uint32_t tmpreg;                               \
+        SET_BIT(CRM->bus ## en ## suffix, enbit);           \
+        /* Delay after an RCC peripheral clock enabling */  \
+        tmpreg = READ_BIT(CRM->bus ## en ## suffix, enbit); \
+        UNUSED(tmpreg);                                     \
+    } while(0)
+
+#define __AT_RCC_CLK_DISABLE(bus, suffix, enbit) (CRM->bus ## en ## suffix &= ~(enbit))
+
+#define __AT_RCC_CLK(bus, suffix, enbit, newState) \
+    if (newState == ENABLE) {                      \
+        __AT_RCC_CLK_ENABLE(bus, suffix, enbit);   \
+    } else {                                       \
+        __AT_RCC_CLK_DISABLE(bus, suffix, enbit);  \
+    }
+
+    switch (tag) {
+    case RCC_AHB1:
+        __AT_RCC_CLK(ahb, 1, mask, NewState);
+        break;
+    case RCC_AHB2:
+        __AT_RCC_CLK(ahb, 2, mask, NewState);
+        break;
+    case RCC_AHB3:
+        __AT_RCC_CLK(ahb, 3, mask, NewState);
+        break;
+    case RCC_APB1:
+        __AT_RCC_CLK(apb1, NOSUFFIX, mask, NewState);
+        break;
+    case RCC_APB2:
+        __AT_RCC_CLK(apb2, NOSUFFIX, mask, NewState);
+        break;
+    }
 #else
     switch (tag) {
     case RCC_APB2:
@@ -204,7 +240,33 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 
 #endif
     }
+#elif defined(USE_ATBSP_DRIVER)
+#define __AT_RCC_FORCE_RESET(bus, suffix, enbit) (CRM->bus ## rst ## suffix |= (enbit))
+#define __AT_RCC_RELEASE_RESET(bus, suffix, enbit) (CRM->bus ## rst ## suffix &= ~(enbit))
+#define __AT_RCC_RESET(bus, suffix, enbit, NewState) \
+    if (NewState == ENABLE) {                        \
+        __AT_RCC_RELEASE_RESET(bus, suffix, enbit);  \
+    } else {                                         \
+        __AT_RCC_FORCE_RESET(bus, suffix, enbit);    \
+    }
 
+    switch (tag) {
+    case RCC_AHB1:
+        __AT_RCC_RESET(ahb, 1, mask, NewState);
+        break;
+    case RCC_AHB2:
+        __AT_RCC_RESET(ahb, 2, mask, NewState);
+        break;
+    case RCC_AHB3:
+        __AT_RCC_RESET(ahb, 3, mask, NewState);
+        break;
+    case RCC_APB1:
+        __AT_RCC_RESET(apb1, NOSUFFIX, mask, NewState);
+        break;
+    case RCC_APB2:
+        __AT_RCC_RESET(apb2, NOSUFFIX, mask, NewState);
+        break;
+    }
 #else
 
     switch (tag) {

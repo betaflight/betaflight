@@ -46,6 +46,12 @@ enum rcc_reg {
     RCC_APB11,
     RCC_APB12,
     RCC_AHB1,
+#elif defined(AT32F4)
+    RCC_AHB1,
+    RCC_AHB2,
+    RCC_AHB3,
+    RCC_APB2,
+    RCC_APB1,
 #else
     RCC_AHB,
     RCC_APB2,

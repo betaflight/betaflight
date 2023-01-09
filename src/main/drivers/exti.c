@@ -52,6 +52,16 @@ static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
     EXTI9_5_IRQn,
     EXTI15_10_IRQn
 };
+#elif defined(USE_ATBSP_DRIVER)
+static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
+	EXINT0_IRQn,
+    EXINT1_IRQn,
+    EXINT2_IRQn,
+    EXINT3_IRQn,
+    EXINT4_IRQn,
+    EXINT9_5_IRQn,
+    EXINT15_10_IRQn
+};
 #else
 # warning "Unknown CPU"
 #endif
@@ -65,6 +75,10 @@ static uint32_t triggerLookupTable[] = {
     [BETAFLIGHT_EXTI_TRIGGER_RISING] = EXTI_Trigger_Rising,
     [BETAFLIGHT_EXTI_TRIGGER_FALLING] = EXTI_Trigger_Falling,
     [BETAFLIGHT_EXTI_TRIGGER_BOTH] = EXTI_Trigger_Rising_Falling
+#elif defined(AT32F4)
+    [BETAFLIGHT_EXTI_TRIGGER_RISING] = EXINT_TRIGGER_RISING_EDGE,
+    [BETAFLIGHT_EXTI_TRIGGER_FALLING] = EXINT_TRIGGER_FALLING_EDGE,
+    [BETAFLIGHT_EXTI_TRIGGER_BOTH] = EXINT_TRIGGER_BOTH_EDGE    
 #else
 # warning "Unknown CPU"
 #endif
@@ -78,6 +92,9 @@ static uint32_t triggerLookupTable[] = {
 #elif defined(STM32G4)
 #define EXTI_REG_IMR (EXTI->IMR1)
 #define EXTI_REG_PR  (EXTI->PR1)
+#elif defined(USE_ATBSP_DRIVER)
+#define EXTI_REG_IMR (EXINT->inten)
+#define EXTI_REG_PR  (EXINT->intsts)
 #else
 #define EXTI_REG_IMR (EXTI->IMR)
 #define EXTI_REG_PR  (EXTI->PR)
@@ -94,7 +111,10 @@ void EXTIInit(void)
 #ifdef REMAP_TIM17_DMA
     SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_TIM17, ENABLE);
 #endif
+#elif defined(USE_ATBSP_DRIVER)
+    crm_periph_clock_enable(CRM_SCFG_PERIPH_CLOCK, TRUE);
 #endif
+
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));
     memset(extiGroupPriority, 0xff, sizeof(extiGroupPriority));
 }
@@ -138,9 +158,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 
 #if defined(STM32F4)
     SYSCFG_EXTILineConfig(IO_EXTI_PortSourceGPIO(io), IO_EXTI_PinSource(io));
-#else
-# warning "Unknown CPU"
-#endif
+
     uint32_t extiLine = IO_EXTI_Line(io);
 
     EXTI_InitTypeDef EXTIInit;
@@ -160,6 +178,35 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStructure);
     }
+#elif defined(USE_ATBSP_DRIVER)
+    scfg_exint_line_config(IO_GPIO_PortSource(io), IO_GPIO_PinSource(io));
+
+    uint32_t extiLine = IO_EXTI_Line(io);
+
+    exint_flag_clear(extiLine);
+
+    exint_init_type exint_init_struct;
+	exint_default_para_init(&exint_init_struct);
+	exint_init_struct.line_enable = TRUE;
+	exint_init_struct.line_mode = EXINT_LINE_INTERRUPUT;
+	exint_init_struct.line_select = extiLine;
+	exint_init_struct.line_polarity = triggerLookupTable[trigger];
+	exint_init(&exint_init_struct);
+
+    if (extiGroupPriority[group] > irqPriority) {
+        extiGroupPriority[group] = irqPriority;
+
+        nvic_priority_group_config(NVIC_PRIORITY_GROUPING);
+        nvic_irq_enable(
+            extiGroupIRQn[group],
+            NVIC_PRIORITY_BASE(irqPriority),
+            NVIC_PRIORITY_SUB(irqPriority)
+            );
+    }    
+#else
+# warning "Unknown CPU"
+#endif
+
 #endif
 }
 
@@ -180,7 +227,7 @@ void EXTIRelease(IO_t io)
 
 void EXTIEnable(IO_t io)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
@@ -196,7 +243,7 @@ void EXTIEnable(IO_t io)
 
 void EXTIDisable(IO_t io)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
@@ -237,7 +284,7 @@ void EXTI_IRQHandler(uint32_t mask)
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0x0001);
 _EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 0x0002);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
 _EXTI_IRQ_HANDLER(EXTI2_IRQHandler, 0x0004);
 #else
 # warning "Unknown CPU"
@@ -248,4 +295,3 @@ _EXTI_IRQ_HANDLER(EXTI9_5_IRQHandler, 0x03e0);
 _EXTI_IRQ_HANDLER(EXTI15_10_IRQHandler, 0xfc00);
 
 #endif
-

@@ -72,6 +72,19 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOE) },
     { RCC_AHB2(GPIOF) },
 };
+#elif defined(AT32F4)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB1(GPIOA) },
+    { RCC_AHB1(GPIOB) },
+    { RCC_AHB1(GPIOC) },
+    { RCC_AHB1(GPIOD) },
+    { RCC_AHB1(GPIOE) },
+    { RCC_AHB1(GPIOF) },
+    { RCC_AHB1(GPIOG) },
+    { RCC_AHB1(GPIOH) }
+};
+#else
+# error "IO PortDefs not defined for MCU"
 #endif
 
 ioRec_t* IO_Rec(IO_t io)
@@ -135,7 +148,7 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(SIMULATOR_BUILD)
     return 0;
@@ -153,6 +166,8 @@ bool IORead(IO_t io)
     return (LL_GPIO_ReadInputPort(IO_GPIO(io)) & IO_Pin(io));
 #elif defined(USE_HAL_DRIVER)
     return !! HAL_GPIO_ReadPin(IO_GPIO(io), IO_Pin(io));
+#elif defined(USE_ATBSP_DRIVER)
+    return (IO_GPIO(io)->idt & IO_Pin(io));
 #else
     return (IO_GPIO(io)->IDR & IO_Pin(io));
 #endif
@@ -173,6 +188,8 @@ void IOWrite(IO_t io, bool hi)
     } else {
         IO_GPIO(io)->BSRRH = IO_Pin(io);
     }
+#elif defined(USE_ATBSP_DRIVER)
+    IO_GPIO(io)->scr = IO_Pin(io) << (hi ? 0 : 16);
 #else
     IO_GPIO(io)->BSRR = IO_Pin(io) << (hi ? 0 : 16);
 #endif
@@ -189,6 +206,8 @@ void IOHi(IO_t io)
     HAL_GPIO_WritePin(IO_GPIO(io), IO_Pin(io), GPIO_PIN_SET);
 #elif defined(STM32F4)
     IO_GPIO(io)->BSRRL = IO_Pin(io);
+#elif defined(USE_ATBSP_DRIVER)
+    IO_GPIO(io)->scr = IO_Pin(io);
 #else
     IO_GPIO(io)->BSRR = IO_Pin(io);
 #endif
@@ -205,6 +224,8 @@ void IOLo(IO_t io)
     HAL_GPIO_WritePin(IO_GPIO(io), IO_Pin(io), GPIO_PIN_RESET);
 #elif defined(STM32F4)
     IO_GPIO(io)->BSRRH = IO_Pin(io);
+#elif defined(USE_ATBSP_DRIVER)
+    IO_GPIO(io)->clr = IO_Pin(io);
 #else
     IO_GPIO(io)->BRR = IO_Pin(io);
 #endif
@@ -234,10 +255,15 @@ void IOToggle(IO_t io)
     } else {
         IO_GPIO(io)->BSRRL = mask;
     }
+#elif defined(USE_ATBSP_DRIVER)
+    if (IO_GPIO(io)->odt & mask) {
+        mask <<= 16; // bit is set, shift mask to reset half
+    }
+    IO_GPIO(io)->scr = mask;
 #else
-    if (IO_GPIO(io)->ODR & mask)
-        mask <<= 16;   // bit is set, shift mask to reset half
-
+    if (IO_GPIO(io)->ODR & mask) {
+        mask <<= 16; // bit is set, shift mask to reset half
+    }
     IO_GPIO(io)->BSRR = mask;
 #endif
 }

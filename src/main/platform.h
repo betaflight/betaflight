@@ -128,6 +128,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define TIM_OCInitTypeDef   tmr_output_config_type 
 #define TIM_ICInitTypeDef   tmr_input_config_type
 #define SystemCoreClock     system_core_clock
+#define EXTI_TypeDef        exint_type
+#define EXTI_InitTypeDef    exint_init_type
 
 // Chip Unique ID on F43X
 #define U_ID_0 (*(uint32_t*)0x1ffff7e8)
