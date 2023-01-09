@@ -269,6 +269,20 @@
 #undef USE_RX_LINK_UPLINK_POWER
 #endif
 
+// Older ACC/GYRO sensors use MPU6500 driver
+#if !defined(USE_ACC_MPU6500) && (defined(USE_ACC_ICM20601) || defined(USE_ACC_ICM20602) || defined(USE_ACC_ICM20608G))
+#define USE_ACC_MPU6500
+#endif
+#if !defined(USE_ACC_SPI_MPU6500) && (defined(USE_ACC_SPI_ICM20601) || defined(USE_ACC_SPI_ICM20602) || defined(USE_ACC_SPI_ICM20608G))
+#define USE_ACC_SPI_MPU6500
+#endif
+#if !defined(USE_GYRO_MPU6500) && (defined(USE_GYRO_ICM20601) || defined(USE_GYRO_ICM20602) || defined(USE_GYRO_ICM20608G))
+#define USE_GYRO_MPU6500
+#endif
+#if !defined(USE_GYRO_SPI_MPU6500) && (defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20602) || defined(USE_GYRO_SPI_ICM20608G))
+#define USE_GYRO_SPI_MPU6500
+#endif
+
 // Generate USE_SPI_GYRO or USE_I2C_GYRO
 #if defined(USE_GYRO_L3G4200D) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6000) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500)
 #define USE_I2C_GYRO
