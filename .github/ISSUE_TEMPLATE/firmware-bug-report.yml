@@ -36,12 +36,12 @@ body:
 
   - type: textarea
     attributes:
-      label: Cloud build log
+      label: Support ID
       description: |
-        BetaFlight 4.4 uses Cloud build. After flashing firmware click on 'Show log' and post the link here.
+        From BetaFlight version 4.4 please use the `Submit Support Data` button to get an support ID. Please post the support ID here.
         Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
       placeholder: |
-          # PASTE HERE THE OUTPUT OF `the cloud build log` IN THE FIRMWARE FLASHER TAB
+          # PASTE HERE THE OUTPUT OF `Support ID` IN THE CLI TAB
       render: txt
     validations:
       required: false
