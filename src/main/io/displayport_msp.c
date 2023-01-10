@@ -165,14 +165,6 @@ static bool isSynced(const displayPort_t *displayPort)
 
 static void redraw(displayPort_t *displayPort)
 {
-    if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
-        displayPort->rows = osdConfig()->canvas_rows;
-        displayPort->cols = osdConfig()->canvas_cols;
-    } else {
-        const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? VIDEO_LINES_PAL : VIDEO_LINES_NTSC;
-        displayPort->rows = displayRows + displayPortProfileMsp()->rowAdjust;
-        displayPort->cols = OSD_SD_COLS + displayPortProfileMsp()->colAdjust;
-    }
     drawScreen(displayPort);
 }
 
@@ -220,7 +212,17 @@ displayPort_t *displayPortMspInit(void)
     }
 #endif
 
+    if (vcdProfile()->video_system == VIDEO_SYSTEM_HD) {
+        mspDisplayPort.rows = osdConfig()->canvas_rows;
+        mspDisplayPort.cols = osdConfig()->canvas_cols;
+    } else {
+        const uint8_t displayRows = (vcdProfile()->video_system == VIDEO_SYSTEM_PAL) ? VIDEO_LINES_PAL : VIDEO_LINES_NTSC;
+        mspDisplayPort.rows = displayRows + displayPortProfileMsp()->rowAdjust;
+        mspDisplayPort.cols = OSD_SD_COLS + displayPortProfileMsp()->colAdjust;
+    }
+
     redraw(&mspDisplayPort);
+
     return &mspDisplayPort;
 }
 

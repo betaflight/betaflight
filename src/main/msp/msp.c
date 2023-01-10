@@ -4087,6 +4087,14 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                     video_system = VIDEO_SYSTEM_AUTO;
                 }
 #endif
+
+                if ((video_system == VIDEO_SYSTEM_HD) && (vcdProfile()->video_system != VIDEO_SYSTEM_HD)) {
+                    // If switching to HD, don't wait for the VTX to communicate the correct resolution, just
+                    // increase the canvas size to the HD default as that is what the user will expect
+                    osdConfigMutable()->canvas_cols = OSD_HD_COLS;
+                    osdConfigMutable()->canvas_rows = OSD_HD_ROWS;
+                }
+
                 vcdProfileMutable()->video_system = video_system;
 
                 osdConfigMutable()->units = sbufReadU8(src);
