@@ -225,7 +225,7 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 }
 
 
-static bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+FAST_CODE static bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
 #if defined(STM32H7)
     LL_SPI_SetTransferSize(instance, len);
@@ -424,7 +424,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         /* Note from AN4031
          *
-         * If the user enables the used peripheral before the corresponding DMA stream, a “FEIF”
+         * If the user enables the used peripheral before the corresponding DMA stream, a FEIF
          * (FIFO Error Interrupt Flag) may be set due to the fact the DMA is not ready to provide
          * the first required data to the peripheral (in case of memory-to-peripheral transfer).
          */
@@ -464,7 +464,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         /* Note from AN4031
          *
-         * If the user enables the used peripheral before the corresponding DMA stream, a “FEIF”
+         * If the user enables the used peripheral before the corresponding DMA stream, a FEIF
          * (FIFO Error Interrupt Flag) may be set due to the fact the DMA is not ready to provide
          * the first required data to the peripheral (in case of memory-to-peripheral transfer).
          */
@@ -533,7 +533,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 }
 
 // DMA transfer setup and start
-void spiSequenceStart(const extDevice_t *dev)
+FAST_CODE void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
     SPI_TypeDef *instance = bus->busType_u.spi.instance;

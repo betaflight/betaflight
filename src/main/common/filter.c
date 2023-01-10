@@ -33,7 +33,7 @@
 
 // NULL filter
 
-FAST_CODE float nullFilterApply(filter_t *filter, float input)
+float nullFilterApply(filter_t *filter, float input)
 {
     UNUSED(filter);
     return input;
