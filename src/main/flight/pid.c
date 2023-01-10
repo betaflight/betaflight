@@ -460,7 +460,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     return currentPidSetpoint;
 }
 
-static void handleCrashRecovery(
+static FAST_CODE_NOINLINE void handleCrashRecovery(
     const pidCrashRecovery_e crash_recovery, const rollAndPitchTrims_t *angleTrim,
     const int axis, const timeUs_t currentTimeUs, const float gyroRate, float *currentPidSetpoint, float *errorRate)
 {
@@ -502,7 +502,7 @@ static void handleCrashRecovery(
     }
 }
 
-static void detectAndSetCrashRecovery(
+static FAST_CODE_NOINLINE void detectAndSetCrashRecovery(
     const pidCrashRecovery_e crash_recovery, const int axis,
     const timeUs_t currentTimeUs, const float delta, const float errorRate)
 {
