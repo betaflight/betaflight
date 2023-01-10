@@ -32,6 +32,8 @@ typedef struct dmaChannelSpec_s {
     dmaResource_t         *ref;
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint32_t              channel;
+#elif defined(AT32F4)
+    uint32_t 			  dmaMuxId;
 #endif
 } dmaChannelSpec_t;
 
@@ -58,6 +60,9 @@ typedef int8_t dmaoptValue_t;
 #if defined(STM32H7) || defined(STM32G4)
 #define MAX_PERIPHERAL_DMA_OPTIONS 16
 #define MAX_TIMER_DMA_OPTIONS 16
+#elif defined(AT32F4)
+#define MAX_PERIPHERAL_DMA_OPTIONS 14
+#define MAX_TIMER_DMA_OPTIONS 22
 #else
 #define MAX_PERIPHERAL_DMA_OPTIONS 2
 #define MAX_TIMER_DMA_OPTIONS 3

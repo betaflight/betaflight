@@ -37,52 +37,28 @@
 
 FAST_DATA_ZERO_INIT pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 
-static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
+static void pwmOCConfig(tmr_type *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
-#if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if (Handle == NULL) return;
+	tmr_output_config_type  tmr_OCInitStruct;
+	tmr_output_default_para_init(&tmr_OCInitStruct);
+	tmr_OCInitStruct.oc_mode= TMR_OUTPUT_CONTROL_PWM_MODE_A;
 
-    TIM_OC_InitTypeDef TIM_OCInitStructure;
-
-    TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
-    TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
-    TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
-    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
-    TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
-    TIM_OCInitStructure.Pulse = value;
-    TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
-
-    HAL_TIM_PWM_ConfigChannel(Handle, &TIM_OCInitStructure, channel);
-#else
-    TIM_OCInitTypeDef TIM_OCInitStructure;
-
-    TIM_OCStructInit(&TIM_OCInitStructure);
-    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-
-    if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
-        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
-    } else {
-        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
-    }
-    TIM_OCInitStructure.TIM_Pulse = value;
-
-    timerOCInit(tim, channel, &TIM_OCInitStructure);
-    timerOCPreloadConfig(tim, channel, TIM_OCPreload_Enable);
-#endif
+	if (output & TIMER_OUTPUT_N_CHANNEL) {
+		tmr_OCInitStruct.occ_output_state = TRUE;
+		tmr_OCInitStruct.occ_idle_state = FALSE;
+		tmr_OCInitStruct.occ_polarity =  (output & TIMER_OUTPUT_INVERTED) ? TMR_OUTPUT_ACTIVE_LOW : TMR_OUTPUT_ACTIVE_HIGH;
+	} else {
+		tmr_OCInitStruct.oc_output_state = TRUE;
+		tmr_OCInitStruct.oc_idle_state = TRUE;
+		tmr_OCInitStruct.oc_polarity =  (output & TIMER_OUTPUT_INVERTED) ? TMR_OUTPUT_ACTIVE_LOW : TMR_OUTPUT_ACTIVE_HIGH;
+	}
+	tmr_channel_value_set(tim, (channel-1)*2, value);
+	tmr_output_channel_config(tim,(channel-1)*2, &tmr_OCInitStruct);
+    tmr_output_channel_buffer_enable(tim, ((channel-1)*2),TRUE);
 }
 
 void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
-#if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if (Handle == NULL) return;
-#endif
-
     configTimeBase(timerHardware->tim, period, hz);
     pwmOCConfig(timerHardware->tim,
         timerHardware->channel,
@@ -90,16 +66,9 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
         );
 
-#if defined(USE_HAL_DRIVER)
-    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
-        HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
-    else
-        HAL_TIM_PWM_Start(Handle, timerHardware->channel);
-    HAL_TIM_Base_Start(Handle);
-#else
-    TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
-    TIM_Cmd(timerHardware->tim, ENABLE);
-#endif
+
+    tmr_output_enable(timerHardware->tim, TRUE);
+    tmr_counter_enable(timerHardware->tim, TRUE);
 
     channel->ccr = timerChCCR(timerHardware);
 
@@ -234,7 +203,12 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         motors[motorIndex].io = IOGetByTag(tag);
         IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
+#if defined(STM32F1)
+        IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
+        //FIXME：AT32F1 可以配置pin mux ，需要在io里面改一下
+#else
         IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
+#endif
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
@@ -305,7 +279,11 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
             break;
         }
 
+#if defined(STM32F1)
+        IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
+#else
         IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
+#endif
 
         pwmOutConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;

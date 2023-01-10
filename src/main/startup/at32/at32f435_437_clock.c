@@ -66,7 +66,6 @@ void system_clock_config(void)
   {
   }
 
-
   /* enable hick */
   crm_clock_source_enable(CRM_CLOCK_SOURCE_HICK, TRUE);
 
@@ -74,7 +73,6 @@ void system_clock_config(void)
   while(crm_flag_get(CRM_HICK_STABLE_FLAG) != SET)
   {
   }
-
 
   /* config pll clock resource */
   crm_pll_config(CRM_PLL_SOURCE_HEXT, 72, 1, CRM_PLL_FR_2);
@@ -86,7 +84,6 @@ void system_clock_config(void)
   while(crm_flag_get(CRM_PLL_STABLE_FLAG) != SET)
   {
   }
-
 
   /* config ahbclk */
   crm_ahb_div_set(CRM_AHB_DIV_1);
@@ -100,7 +97,6 @@ void system_clock_config(void)
   /* enable auto step mode */
   crm_auto_step_mode_enable(TRUE);
 
-
   /* select pll as system clock source */
   crm_sysclk_switch(CRM_SCLK_PLL);
 
@@ -109,17 +105,13 @@ void system_clock_config(void)
   {
   }
 
-
   /* disable auto step mode */
   crm_auto_step_mode_enable(FALSE);
-
 
   /* config usbclk from pll */
   crm_usb_clock_div_set(CRM_USB_DIV_6);
   crm_usb_clock_source_select(CRM_USB_CLOCK_SOURCE_PLL);
 
-
   /* update system_core_clock global variable */
   system_core_clock_update();
 }
-

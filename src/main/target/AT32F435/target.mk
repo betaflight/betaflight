@@ -29,5 +29,27 @@ ARCH_FLAGS      = -std=c99  -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=
 DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE)
 
 MCU_COMMON_SRC = \
-            $(addprefix startup/at32/,$(notdir $(wildcard $(SRC_DIR)/startup/at32/*.c))) \
-            $(addprefix drivers/at32/,$(notdir $(wildcard $(SRC_DIR)/drivers/at32/*.c)))
+    $(addprefix startup/at32/,$(notdir $(wildcard $(SRC_DIR)/startup/at32/*.c))) \
+    $(addprefix drivers/at32/,$(notdir $(wildcard $(SRC_DIR)/drivers/at32/*.c)))
+
+MCU_EXCLUDES = \
+    drivers/bus_i2c.c \
+    drivers/timer.c \
+    drivers/persistent.c \
+    drivers/pwm_output.c
+
+TARGET_SRC = \
+	$(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \
+	$(ROOT)/lib/main/BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
+	$(addprefix drivers/barometer/,$(notdir $(wildcard $(SRC_DIR)/drivers/barometer/*.c))) \
+	$(addprefix drivers/compass/,$(notdir $(wildcard $(SRC_DIR)/drivers/compass/*.c))) \
+	drivers/max7456.c \
+	drivers/vtx_rtc6705.c \
+	drivers/vtx_rtc6705_soft_spi.c \
+	$(addprefix rx/,$(notdir $(wildcard $(SRC_DIR)/rx/*.c))) \
+    drivers/rx/expresslrs_driver.c \
+    drivers/rx/rx_cc2500.c \
+    drivers/rx/rx_a7105.c \
+    drivers/rx/rx_cyrf6936.c \
+    drivers/rx/rx_sx127x.c \
+    drivers/rx/rx_sx1280.c

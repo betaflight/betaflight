@@ -27,7 +27,11 @@
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
 #include "drivers/resource.h"
+#if defined(USE_ATBSP_DRIVER)
+#include "drivers/at32/timer_def_at32.h"
+#else
 #include "drivers/timer_def.h"
+#endif
 
 #include "pg/timerio.h"
 
@@ -89,18 +93,18 @@ typedef struct timerHardware_s {
 #if defined(USE_TIMER_DMA)
 
 #if defined(USE_DMA_SPEC)
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
     dmaResource_t *dmaRefConfigured;
     uint32_t dmaChannelConfigured;
 #endif
 #else // USE_DMA_SPEC
     dmaResource_t *dmaRef;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
     uint32_t dmaChannel; // XXX Can be much smaller (e.g. uint8_t)
 #endif
 #endif // USE_DMA_SPEC
     dmaResource_t *dmaTimUPRef;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
     uint32_t dmaTimUPChannel;
 #endif
     uint8_t dmaTimUPIrqHandler;
@@ -178,8 +182,6 @@ extern const timerHardware_t fullTimerHardware[];
 
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) | TIM_N(20) )
 
-#else
-    #error "No timer / channel tag definition found for CPU"
 #endif
 
 #else

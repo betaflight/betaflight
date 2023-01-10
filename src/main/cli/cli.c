@@ -2484,7 +2484,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 }
 #endif // USE_FLASH_CHIP
 
-#ifdef USE_FLASHFS
+#if defined(USE_FLASHFS) && defined(USE_FLASH_CHIP)
 static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);

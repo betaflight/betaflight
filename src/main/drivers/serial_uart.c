@@ -54,7 +54,7 @@
 #elif defined(STM32F7)
 #define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
 #define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4)
+#elif defined(STM32F4) || defined(AT32F4)
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else
@@ -281,8 +281,10 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
     } else
 #endif
     {
-#ifdef USE_HAL_DRIVER
+#if defined(USE_HAL_DRIVER)
         __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+#elif defined(USE_ATBSP_DRIVER)
+	    usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
 #else
         USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
@@ -320,7 +322,11 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, device, serialUartConfig(device)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
             uartPort->txDMAChannel = dmaChannelSpec->channel;
+#elif defined(AT32F4)
+            uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
+#endif
         }
     }
 
@@ -328,7 +334,11 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
             uartPort->rxDMAChannel = dmaChannelSpec->channel;
+#elif defined(AT32F4)
+            uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
+#endif
         }
     }
 #else
@@ -336,12 +346,20 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (hardware->rxDMAResource) {
         uartPort->rxDMAResource = hardware->rxDMAResource;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         uartPort->rxDMAChannel = hardware->rxDMAChannel;
+#elif defined(AT32F4)
+        uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
+#endif
     }
 
     if (hardware->txDMAResource) {
         uartPort->txDMAResource = hardware->txDMAResource;
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         uartPort->txDMAChannel = hardware->txDMAChannel;
+#elif defined(AT32F4)
+        uartPort->txDMAMuxId = hardware->txDMAMuxId;
+#endif
     }
 #endif
 
@@ -349,6 +367,9 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->txDMAResource);
         if (dmaAllocate(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(hardware->device))) {
             dmaEnable(identifier);
+#if defined(AT32F4)
+            dmaMuxEnable(identifier, uartPort->txDMAMuxId);
+#endif
             dmaSetHandler(identifier, uartDmaIrqHandler, hardware->txPriority, (uint32_t)uartdev);
             uartPort->txDMAPeripheralBaseAddr = (uint32_t)&UART_REG_TXD(hardware->reg);
         }
@@ -358,6 +379,9 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaIdentifier_e identifier = dmaGetIdentifier(uartPort->rxDMAResource);
         if (dmaAllocate(identifier, OWNER_SERIAL_RX, RESOURCE_INDEX(hardware->device))) {
             dmaEnable(identifier);
+#if defined(AT32F4)
+            dmaMuxEnable(identifier, uartPort->rxDMAMuxId);
+#endif
             uartPort->rxDMAPeripheralBaseAddr = (uint32_t)&UART_REG_RXD(hardware->reg);
         }
     }

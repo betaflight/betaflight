@@ -168,6 +168,9 @@ void system_core_clock_update(void)
   /* ahbclk frequency */
   system_core_clock = system_core_clock >> div_value;
 }
+
+extern void _init(void) {;}
+
 /**
   * @}
   */

@@ -38,6 +38,8 @@
 
 #include "platform.h"
 
+#if defined(USE_FLASHFS)
+
 #include "build/debug.h"
 #include "common/printf.h"
 #include "drivers/flash.h"
@@ -666,3 +668,4 @@ bool flashfsVerifyEntireFlash(void)
     return verificationFailures == 0;
 }
 #endif // USE_FLASH_TOOLS
+#endif // USE_FLASHFS
