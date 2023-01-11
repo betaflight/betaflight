@@ -1127,6 +1127,39 @@ static void osdElementEfficiency(osdElementParms_t *element)
         tfp_sprintf(element->buff, "----%c/%c", SYM_MAH, unitSymbol);
     }
 }
+
+int16_t osdGetBoundaryFromDisplay(uint8_t fov, int16_t error)
+{
+    const uint8_t fov2 = fov / 2;
+    return constrain(error, -fov2, fov2-1);
+}
+
+static void osdElementProjectHomePoint(osdElementParms_t *element)
+{
+    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+        int16_t center_x = osdConfig()->canvas_cols / 2;
+        int16_t center_y = osdConfig()->canvas_rows / 2;
+        int16_t error_x = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
+
+        while (error_x < -179) error_x += 360;
+        while (error_x > 180) error_x -= 360;
+
+        float poi_angle = RADIANS_TO_DEGREES(atan2_approx((getEstimatedAltitudeCm() / 100), GPS_distanceToHome));
+        int16_t plane_angle = attitude.values.pitch / 10;
+        int16_t error_y = poi_angle - plane_angle + rxConfig()->fpvCamAngleDegrees;
+
+        float scaled_x = sin_approx(DEGREES_TO_RADIANS(osdGetBoundaryFromDisplay(osdConfig()->camera_fov_h, error_x))) / sin_approx(DEGREES_TO_RADIANS(osdConfig()->camera_fov_h / 2));
+        int16_t poi_x = center_x + center_x * scaled_x;
+
+        float scaled_y = sin_approx(DEGREES_TO_RADIANS(osdGetBoundaryFromDisplay(osdConfig()->camera_fov_v, error_y))) / sin_approx(DEGREES_TO_RADIANS(osdConfig()->camera_fov_v / 2));
+        int16_t poi_y = center_y + center_y * scaled_y;
+
+        osdDisplayWriteChar(element, poi_x, poi_y, DISPLAYPORT_ATTR_NORMAL, SYM_HOMEFLAG);
+    } else {
+        // We use this symbol when we don't have a FIX
+        element->buff[0] = SYM_HYPHEN;
+    }
+}
 #endif // USE_GPS
 
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
@@ -1861,6 +1894,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_SYS_VTX_TEMP]            = osdElementSys,
     [OSD_SYS_FAN_SPEED]           = osdElementSys,
 #endif
+#ifdef USE_GPS
+    [OSD_HOME_POINT]              = osdElementProjectHomePoint,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -1913,6 +1949,7 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
         osdAddActiveElement(OSD_EFFICIENCY);
+        osdAddActiveElement(OSD_HOME_POINT);
     }
 #endif // GPS
 

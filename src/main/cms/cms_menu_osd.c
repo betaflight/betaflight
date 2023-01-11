@@ -123,6 +123,7 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"HOME DIR",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_HOME_DIR]},
     {"HOME DIST",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_HOME_DIST]},
     {"FLIGHT DIST",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_FLIGHT_DIST]},
+    {"HOME POINT",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_HOME_POINT]},
 #endif // GPS
     {"COMPASS BAR",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR]},
 #ifdef USE_ESC_SENSOR

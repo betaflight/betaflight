@@ -186,6 +186,7 @@ typedef enum {
     OSD_SYS_WARNINGS,
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
+    OSD_HOME_POINT,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -340,6 +341,8 @@ typedef struct osdConfig_s {
     uint8_t aux_symbol;
     uint8_t canvas_cols;                      // Canvas dimensions for HD display
     uint8_t canvas_rows;
+    uint8_t camera_fov_h;                     // Config fov for moving home point
+    uint8_t camera_fov_v;
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
