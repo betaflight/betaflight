@@ -250,7 +250,7 @@ uint16_t getDshotTelemetry(uint8_t index)
     // Process telemetry in case it haven´t been processed yet
     if (dshotTelemetryState.rawValueState == DSHOT_RAW_VALUE_STATE_NOT_PROCESSED) {
         const unsigned motorCount = motorDeviceCount();
-        uint32_t rpmTotal = 0;
+        uint32_t erpmTotal = 0;
         uint32_t rpmSamples = 0;
 
         // Decode all telemetry data now to discharge interrupt from this task
@@ -264,7 +264,7 @@ uint16_t getDshotTelemetry(uint8_t index)
                 dshotUpdateTelemetryData(k, type, value);
 
                 if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
-                    rpmTotal += value;
+                    erpmTotal += value;
                     rpmSamples++;
                 }
             }
@@ -272,7 +272,7 @@ uint16_t getDshotTelemetry(uint8_t index)
 
         // Update average
         if (rpmSamples > 0) {
-            dshotTelemetryState.averageRpm = rpmTotal / rpmSamples;
+            dshotTelemetryState.averageErpm = (uint16_t)(erpmTotal / rpmSamples);
         }
 
         // Set state to processed
@@ -314,7 +314,7 @@ uint32_t erpmToRpm(uint16_t erpm)
 
 uint32_t getDshotAverageRpm(void)
 {
-    return dshotTelemetryState.averageRpm;
+    return erpmToRpm(dshotTelemetryState.averageErpm);
 }
 
 #endif // USE_DSHOT_TELEMETRY

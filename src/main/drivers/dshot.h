@@ -103,7 +103,7 @@ typedef struct dshotTelemetryState_s {
     uint32_t readCount;
     dshotTelemetryMotorState_t motorState[MAX_SUPPORTED_MOTORS];
     uint32_t inputBuffer[MAX_GCR_EDGES];
-    uint32_t averageRpm;
+    uint16_t averageErpm;
     dshotRawValueState_t rawValueState;
 } dshotTelemetryState_t;
 
