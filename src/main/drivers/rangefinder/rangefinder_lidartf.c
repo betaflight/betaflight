@@ -83,7 +83,7 @@ static uint8_t tfDevtype = TF_DEVTYPE_NONE;
 
 // Maximum ratings
 
-#define TF_MINI_RANGE_MIN 10
+#define TF_MINI_RANGE_MIN 1
 #define TF_MINI_RANGE_MAX 1200
 
 #define TF_02_RANGE_MIN 40

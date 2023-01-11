@@ -43,7 +43,8 @@
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 #include "drivers/time.h"
 
-#include "flight/alt_ctrl.h"
+//#include "flight/alt_ctrl.h"
+#include "flight/kalman_filter.h"
 #include "fc/runtime_config.h"
 
 #include "pg/pg.h"
@@ -320,12 +321,13 @@ bool rangefinderProcess(float cosTiltAngle)
     */
     if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
-        kalman_alt.alt_update = 0;
+        rangefinder.calculatedAltitude = 0.0f;
+        kalman_filter1.Z_current->element[0] = rangefinder.calculatedAltitude/100.0f;
     } else {
         rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
-        kalman_alt.alt_update = 1;
-        kalman_alt.Z_current.Altitude = rangefinder.calculatedAltitude/100.0f;
+        kalman_filter1.Z_current->element[0] = rangefinder.calculatedAltitude/100.0f;
     }
+    kalman_filter1.alt_update = 1;
 
  //   DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
  //   DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);

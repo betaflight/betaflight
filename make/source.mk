@@ -104,7 +104,8 @@ COMMON_SRC = \
             flight/servos.c \
             flight/servos_tricopter.c \
             flight/wifi.c  \
-            flight/alt_ctrl.c\
+            flight/Matrix.c \
+            flight/kalman_filter.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \

@@ -54,7 +54,8 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
-#include "flight/alt_ctrl.h"
+//#include "flight/alt_ctrl.h"
+#include "flight/kalman_filter.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
@@ -430,8 +431,8 @@ void mavlinkSendHUDAndHeartbeat(void)
 // #endif
 
     
-    mavVel_Measure = kalman_alt.acc_Z; //速度测量值  (airspeed)
-    mavVel_Hat_current = kalman_alt.P_current.A11 + kalman_alt.P_current.A22; //速度最优估计值 (groundspeed)
+    mavVel_Measure = Get_Acc_bias_kalman(); //速度测量值  (airspeed)
+    mavVel_Hat_current = Get_Trace_P_Current(); //速度最优估计值 (groundspeed)
     mavAltitude_Measure = rangefinderGetLatestAltitude(); //高度测量值 (altitude)
     mavAltitude_Hat_current = Get_Alt_Kalman(); //高度最优估计值 (climb)
 
@@ -778,7 +779,7 @@ void WifiInitHardware_Esp8266(void)
 
 
 //        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.254.53\",14555\r\n");
-        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.0.100\",14555\r\n");
+        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.0.103\",14555\r\n");
         delay(1000);
         nowtime = millis();
         c = serialRead(mavlinkPort);

@@ -82,7 +82,8 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
-#include "flight/alt_ctrl.h"
+//#include "flight/alt_ctrl.h"
+#include "flight/kalman_filter.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
@@ -1121,7 +1122,6 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
             // Hack scale due to choice of units for sensor data in multiwii
 
             uint8_t scale;
-            static uint16_t j = 0;
             if (acc.dev.acc_1G > 512 * 4) {
                 scale = 8;
             } else if (acc.dev.acc_1G > 512 * 2) {
@@ -1143,7 +1143,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
                 sbufWriteU16(dst, lrintf(rangefinderGetLatestAltitude()/0.001953125f));
             }else
             {
-                sbufWriteU16(dst, lrintf(acc.accADC[i] / scale - 512));
+                sbufWriteU16(dst, lrintf(Get_Acc_bias_kalman()/0.001953125f));
             } 
                  
 #else
