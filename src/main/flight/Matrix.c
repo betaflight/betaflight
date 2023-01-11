@@ -3,7 +3,7 @@
 #include "flight/Matrix.h"
 
 float isFiniteNumber(float d) {
-    return (d<=DBL_MAX&&d>=-DBL_MAX);
+    return (d<=FLT_MAX&&d>=-FLT_MAX);
 }
 
 struct easyMatrix* Creat_Matrix(int row, int column, DATA_TYPE *data){

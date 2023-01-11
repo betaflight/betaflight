@@ -95,45 +95,45 @@ static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 
 /* MAVLink datastream rates in Hz */
-static const uint8_t mavRates[] = {
-    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
-    [MAV_DATA_STREAM_POSITION] = 10, //100Hz
-    [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10, //100Hz
-    [MAV_DATA_STREAM_EXTRA3] = 5
-};
+// static const uint8_t mavRates[] = {
+//     [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
+//     [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
+//     [MAV_DATA_STREAM_POSITION] = 10, //100Hz
+//     [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
+//     [MAV_DATA_STREAM_EXTRA2] = 10, //100Hz
+//     [MAV_DATA_STREAM_EXTRA3] = 5
+// };
 
 #define MAXSTREAMS ARRAYLEN(mavRates)
 
-static uint8_t mavTicks[MAXSTREAMS];
+//static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessage = 0;
+//static uint32_t lastMavlinkMessage = 0;
 static uint32_t mavlinkstate_position = 0;
-static uint8_t wifi_uart_baud = 1;
+//static uint8_t wifi_uart_baud = 1;
 
-static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
-{
-    uint8_t rate = (uint8_t) mavRates[streamNum];
-    if (rate == 0) {
-        return 0;
-    }
+// static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
+// {
+//     uint8_t rate = (uint8_t) mavRates[streamNum];
+//     if (rate == 0) {
+//         return 0;
+//     }
 
-    if (mavTicks[streamNum] == 0) {
-        // we're triggering now, setup the next trigger point
-        if (rate > TELEMETRY_MAVLINK_MAXRATE) {
-            rate = TELEMETRY_MAVLINK_MAXRATE;
-        }
+//     if (mavTicks[streamNum] == 0) {
+//         // we're triggering now, setup the next trigger point
+//         if (rate > TELEMETRY_MAVLINK_MAXRATE) {
+//             rate = TELEMETRY_MAVLINK_MAXRATE;
+//         }
 
-        mavTicks[streamNum] = (TELEMETRY_MAVLINK_MAXRATE / rate);
-        return 1;
-    }
+//         mavTicks[streamNum] = (TELEMETRY_MAVLINK_MAXRATE / rate);
+//         return 1;
+//     }
 
-    // count down at TASK_RATE_HZ
-    mavTicks[streamNum]--;
-    return 0;
-}
+//     // count down at TASK_RATE_HZ
+//     mavTicks[streamNum]--;
+//     return 0;
+// }
 
 
 static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)

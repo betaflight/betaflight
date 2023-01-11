@@ -17,15 +17,15 @@ float Zero[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 float Zero31[] = {0, 0, 0};
 float A1[] = {1.0, 0.002, 0, 0, 1.0, 1.0, 0, 0, 1.0}; // 1 0.002 0;0 1 1;0 0 1;
 float B1[] = {0.0002, 0.002, 0};
-float H1[] = {1.0, 0, 0}; // 1 0 0;0 0 0;0 0 0; 
+float H1[] = {1.0, 0, 0, 0, 0, 0, 0, 0, 0}; // 1 0 0;0 0 0;0 0 0; 
 float Q1[] = {0.1, 0, 0, 0, 1, 0, 0, 0, 1};
-float R1[] = {0.003};
+float R1[] = {0.003, 0, 0, 0, 1, 0, 0, 0, 1};
 float P_last1[] = {10.0, 0, 0, 0, 10.0, 0, 0, 0, 10.0};
 float P_current1[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 float P_PRE1[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 float X_last1[] = {0, 0, 10};
 float E1[] = {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
-float Kp1[] = {0, 0, 0};
+float Kp1[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 float U1[] = {0};
 
 
@@ -33,18 +33,18 @@ void Create_Matrix(kalman_filter_t *kalman)
 {
     kalman->A = Creat_Matrix(3,3,A1);
     kalman->B = Creat_Matrix(3,1,B1);
-//    kalman->H = Creat_Matrix(3,3,H1);
-    kalman->H = Creat_Matrix(1,3,H1);
+    kalman->H = Creat_Matrix(3,3,H1);
+//    kalman->H = Creat_Matrix(1,3,H1);
     kalman->E = Creat_Matrix(3,3,E1);
     kalman->Q = Creat_Matrix(3,3,Q1);
-//    kalman->R = Creat_Matrix(3,3,R1);
-    kalman->R = Creat_Matrix(1,1,R1);
+    kalman->R = Creat_Matrix(3,3,R1);
+//    kalman->R = Creat_Matrix(1,1,R1);
 
     kalman->P_last = Creat_Matrix(3,3,P_last1);
     kalman->P_PRE  = Creat_Matrix(3,3,P_PRE1);
     kalman->P_current = Creat_Matrix(3,3,P_current1);
 
-    kalman->Kp = Creat_Matrix(3,1,Kp1);
+    kalman->Kp = Creat_Matrix(3,3,Kp1);
 
     kalman->X_Hat_last = Creat_Matrix(3,1,X_last1);
     kalman->X_Hat_PRE  = Creat_Matrix(3,1,Zero31);
@@ -102,55 +102,6 @@ void Kalman_filter_init(void)
 
 }
 
-// void Kalman_Predicted(kalman_filter_t *kalman, timeUs_t currentTimeUs)
-// {
-//     //预测过程
-//     static timeUs_t lastTimeUs = 0;
-//     const float dTime = (currentTimeUs - lastTimeUs)*1e-6f;
-
-//     kalman->dt = dTime;
-//     kalman->A->element[1] = dTime;
-//     kalman->A->element[2] = 0.5*dTime*dTime;
-//     kalman->A->element[5] = dTime;
-//     kalman->B->element[0] = 0.5*dTime*dTime;
-//     kalman->B->element[1] = dTime;
-//     kalman->B->element[2] = 0;
-
-//     multiMatrix(kalman->A,kalman->X_Hat_last,kalman->buffer4);
-//     multiMatrix(kalman->B,kalman->U_last,kalman->buffer5);
-//     addMatrix(kalman->buffer4,kalman->buffer5,kalman->X_Hat_PRE);
-
-//     multiMatrix(kalman->A,kalman->P_last,kalman->buffer1);
-//     transMatrix(kalman->A,kalman->buffer2);
-//     multiMatrix(kalman->buffer1,kalman->buffer2,kalman->buffer3);
-//     addMatrix(kalman->buffer3,kalman->Q,kalman->P_PRE);
-
-//     lastTimeUs = currentTimeUs;
-
-// }
-
-// void Kalman_update(kalman_filter_t *kalman)
-// {
-//     //更新过程
-//     multiMatrix(kalman->H,kalman->P_PRE,kalman->buffer1);
-//     transMatrix(kalman->H,kalman->buffer2);
-//     multiMatrix(kalman->buffer1,kalman->buffer2,kalman->buffer3);
-//     addMatrix(kalman->buffer3,kalman->R,kalman->buffer1);
-//     invMatrix(kalman->buffer1,kalman->buffer3);
-//     multiMatrix(kalman->buffer2,kalman->buffer3,kalman->buffer1);
-//     multiMatrix(kalman->P_PRE,kalman->buffer1,kalman->Kp);
-    
-//     multiMatrix(kalman->H,kalman->X_Hat_PRE,kalman->buffer4);
-//     subMatrix(kalman->Z_current,kalman->buffer4,kalman->buffer5);
-//     multiMatrix(kalman->Kp,kalman->buffer5,kalman->buffer4);
-//     addMatrix(kalman->X_Hat_PRE,kalman->buffer4,kalman->X_Hat_current);
-
-//     multiMatrix(kalman->Kp,kalman->H,kalman->buffer1);
-//     subMatrix(kalman->E,kalman->buffer1,kalman->buffer2);
-//     multiMatrix(kalman->buffer2,kalman->P_PRE,kalman->P_current);
-
-// }
-
 void Kalman_Predicted(kalman_filter_t *kalman, timeUs_t currentTimeUs)
 {
     //预测过程
@@ -181,18 +132,17 @@ void Kalman_Predicted(kalman_filter_t *kalman, timeUs_t currentTimeUs)
 void Kalman_update(kalman_filter_t *kalman)
 {
     //更新过程
-    multiMatrix(kalman->H,kalman->P_PRE,kalman->buffer6);
-    transMatrix(kalman->H,kalman->buffer4);
-    multiMatrix(kalman->buffer6,kalman->buffer4,kalman->buffer7);
-    addMatrix(kalman->buffer7,kalman->R,kalman->buffer8);
-    invMatrix(kalman->buffer8,kalman->buffer7);
-    multiMatrix(kalman->buffer4,kalman->buffer7,kalman->buffer5);
-    multiMatrix(kalman->P_PRE,kalman->buffer5,kalman->Kp);
+    multiMatrix(kalman->H,kalman->P_PRE,kalman->buffer1);
+    transMatrix(kalman->H,kalman->buffer2);
+    multiMatrix(kalman->buffer1,kalman->buffer2,kalman->buffer3);
+    addMatrix(kalman->buffer3,kalman->R,kalman->buffer1);
+    invMatrix(kalman->buffer1,kalman->buffer3);
+    multiMatrix(kalman->buffer2,kalman->buffer3,kalman->buffer1);
+    multiMatrix(kalman->P_PRE,kalman->buffer1,kalman->Kp);
     
-    multiMatrix(kalman->H,kalman->X_Hat_PRE,kalman->buffer7);
-    //subMatrix(kalman->Z_current,kalman->buffer4,kalman->buffer5);
-    kalman->buffer8->element[0] = kalman->Z_current->element[0] - kalman->buffer7->element[0];
-    multiMatrix(kalman->Kp,kalman->buffer8,kalman->buffer4);
+    multiMatrix(kalman->H,kalman->X_Hat_PRE,kalman->buffer4);
+    subMatrix(kalman->Z_current,kalman->buffer4,kalman->buffer5);
+    multiMatrix(kalman->Kp,kalman->buffer5,kalman->buffer4);
     addMatrix(kalman->X_Hat_PRE,kalman->buffer4,kalman->X_Hat_current);
 
     multiMatrix(kalman->Kp,kalman->H,kalman->buffer1);
@@ -200,6 +150,56 @@ void Kalman_update(kalman_filter_t *kalman)
     multiMatrix(kalman->buffer2,kalman->P_PRE,kalman->P_current);
 
 }
+
+// void Kalman_Predicted(kalman_filter_t *kalman, timeUs_t currentTimeUs)
+// {
+//     //预测过程
+//     static timeUs_t lastTimeUs = 0;
+//     const float dTime = (currentTimeUs - lastTimeUs)*1e-6f;
+
+//     kalman->dt = dTime;
+//     kalman->A->element[1] = dTime;
+//     kalman->A->element[2] = 0.5*dTime*dTime;
+//     kalman->A->element[5] = dTime;
+//     kalman->B->element[0] = 0.5*dTime*dTime;
+//     kalman->B->element[1] = dTime;
+//     kalman->B->element[2] = 0;
+
+//     multiMatrix(kalman->A,kalman->X_Hat_last,kalman->buffer4);
+//     multiMatrix(kalman->B,kalman->U_last,kalman->buffer5);
+//     addMatrix(kalman->buffer4,kalman->buffer5,kalman->X_Hat_PRE);
+
+//     multiMatrix(kalman->A,kalman->P_last,kalman->buffer1);
+//     transMatrix(kalman->A,kalman->buffer2);
+//     multiMatrix(kalman->buffer1,kalman->buffer2,kalman->buffer3);
+//     addMatrix(kalman->buffer3,kalman->Q,kalman->P_PRE);
+
+//     lastTimeUs = currentTimeUs;
+
+// }
+
+// void Kalman_update(kalman_filter_t *kalman)
+// {
+//     //更新过程
+//     multiMatrix(kalman->H,kalman->P_PRE,kalman->buffer6);
+//     transMatrix(kalman->H,kalman->buffer4);
+//     multiMatrix(kalman->buffer6,kalman->buffer4,kalman->buffer7);
+//     addMatrix(kalman->buffer7,kalman->R,kalman->buffer8);
+//     invMatrix(kalman->buffer8,kalman->buffer7);
+//     multiMatrix(kalman->buffer4,kalman->buffer7,kalman->buffer5);
+//     multiMatrix(kalman->P_PRE,kalman->buffer5,kalman->Kp);
+    
+//     multiMatrix(kalman->H,kalman->X_Hat_PRE,kalman->buffer7);
+//     //subMatrix(kalman->Z_current,kalman->buffer4,kalman->buffer5);
+//     kalman->buffer8->element[0] = kalman->Z_current->element[0] - kalman->buffer7->element[0];
+//     multiMatrix(kalman->Kp,kalman->buffer8,kalman->buffer4);
+//     addMatrix(kalman->X_Hat_PRE,kalman->buffer4,kalman->X_Hat_current);
+
+//     multiMatrix(kalman->Kp,kalman->H,kalman->buffer1);
+//     subMatrix(kalman->E,kalman->buffer1,kalman->buffer2);
+//     multiMatrix(kalman->buffer2,kalman->P_PRE,kalman->P_current);
+
+// }
 
 
 
