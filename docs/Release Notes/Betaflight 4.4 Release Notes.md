@@ -8,9 +8,9 @@ Any issues with the cloud build process please check out the #cloud-build-issues
 
 **NOTE:** If you have something missing from your cloud build that you would normally expect to be present, e.g. a flash chip or barometer, the reason is because the board configuration (in unified targets) has not been updated with this information (either by the community, or the manufacturer).
 
-If you do have something missing and it works as expected in `classic mode`, please don't worry it is an easy fix, you can use the **custom defines** input box that is shown when "Expert Mode" is enabled. `Classic mode` will load the all of the hardware drivers (but not all the features), and will allow you to boot the Flight Controller, and run the commands `status`, `flash_info`, 'dump hardware' etc, in the CLI tab of configurator to find the information about the hardware you have.
+If you do have something missing and it works as expected in `classic mode`, please don't worry it is an easy fix, you can use the **custom defines** input box that is shown when "Expert Mode" is enabled. The `classic mode` option will load the all of the hardware drivers (but not all the features), and will allow you to boot the Flight Controller, and run the commands `status`, `flash_info`, `dump hardware` etc, in the CLI tab of configurator to find the information about the hardware you have.
 
-For those missing a barometer: You can try any or all of `BARO_MS5611 BARO_SPI_MS5611 BARO_BMP280 BARO_SPI_BMP280 BARO_BMP388 BARO_SPI_BMP388 BARO_LPS BARO_SPI_LPS BARO_QMP6988 BARO_SPI_QMP6988 BARO_DPS310 BARO_SPI_DPS310 BARO_BMP085 BARO_2SMBP_02B BARO_SPI_2SMBP_02B` in the custom defines input box.
+For those missing a barometer: You can try any or all of `BARO_MS5611 BARO_SPI_MS5611 BARO_BMP280 BARO_SPI_BMP280 BARO_BMP388 BARO_SPI_BMP388 BARO_LPS BARO_SPI_LPS BARO_QMP6988 BARO_SPI_QMP6988 BARO_DPS310 BARO_SPI_DPS310 BARO_BMP085 BARO_2SMBP_02B BARO_SPI_2SMBP_02B` in the **custom defines** input box.
 
 For those missing the flash chip: You can try any or all of `USE_FLASH_W25P16 USE_FLASH_W25Q128FV USE_FLASH_W25M02G USE_FLASH_W25N01G USE_FLASH_W25M` in the custom defines input box.
 
