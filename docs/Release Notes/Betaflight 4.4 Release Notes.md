@@ -6,7 +6,18 @@ This is predominantly brought to you for convenience, and to ensure we can keep 
 
 Any issues with the cloud build process please check out the #cloud-build-issues Discord channel. Help us to help you, buy taking advantage of the new "Support" button in the CLI tab in Configurator 10.9.0 (RC4 onwards). This will give us valuable information in trying to diagnose your issue.
 
+**NOTE:** If you have something missing from your cloud build that you would normally expect to be present, e.g. a flash chip or barometer, the reason is because the board configuration (in unified targets) has not been updated with this information (either by the community, or the manufacturer).
+
+If you do have something missing and it works as expected in `classic mode`, please don't worry it is an easy fix, you can use the **custom defines** input box that is shown when "Expert Mode" is enabled. `Classic mode` will load the all of the hardware drivers (but not all the features), and will allow you to boot the Flight Controller, and run the commands `status`, `flash_info`, 'dump hardware' etc, in the CLI tab of configurator to find the information about the hardware you have.
+
+For those missing a barometer: You can try any or all of `BARO_MS5611 BARO_SPI_MS5611 BARO_BMP280 BARO_SPI_BMP280 BARO_BMP388 BARO_SPI_BMP388 BARO_LPS BARO_SPI_LPS BARO_QMP6988 BARO_SPI_QMP6988 BARO_DPS310 BARO_SPI_DPS310 BARO_BMP085 BARO_2SMBP_02B BARO_SPI_2SMBP_02B` in the custom defines input box.
+
+For those missing the flash chip: You can try any or all of `USE_FLASH_W25P16 USE_FLASH_W25Q128FV USE_FLASH_W25M02G USE_FLASH_W25N01G USE_FLASH_W25M` in the custom defines input box.
+
+Thank you all for your patience and assistance in working through what boards have what hardware. Unfortunately we need our flyers to help crowd source this information - as there is such diverse hardware out there! 
+
 ## 2. HD OSD Canvas
+
 HD OSD is now supported and adds the following features. Note that not all HD Goggle/VTX combinations support all features, but hopefully will do so in time.
 
 If the `OSD` option alone, or the `OSD (HD)` option is included in the build options, then HD support will be included.
@@ -56,6 +67,7 @@ set displayport_msp_fonts = 0,0,0,3
 ```
 
 ## 3. Preset Favourites
+
 This feature reduces the amount of search the users have to do in the presets tab. Configurator will remember the presets you are using, automatically marking them with the "star". Favorite presets will always appear first in the initial list and the search results. In combination with the fix that preselects the current firmware from the plugged in FC it allows users to completely avoid searching of the commonly used presets, and pick them right away. The UI "stars" are clickable, so users can manually add/remove favorite presets.
 ![image](https://user-images.githubusercontent.com/2925027/212130300-f67a5d82-dbc2-4726-9c07-b6aae0aa98ae.png)
 Favorite presets are being remembered by it's path+name in the repo. So a favorite preset in one repository becomes automatically a favorite in another, if it's sharing the same name and path withing the repos.
