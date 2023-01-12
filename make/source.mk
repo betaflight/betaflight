@@ -203,11 +203,63 @@ COMMON_SRC = \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
 
+ifneq ($(SIMULATOR_BUILD),yes)
+
+COMMON_SRC += \
+            $(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \
+            $(ROOT)/lib/main/BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
+            $(addprefix drivers/barometer/,$(notdir $(wildcard $(SRC_DIR)/drivers/barometer/*.c))) \
+            $(addprefix drivers/compass/,$(notdir $(wildcard $(SRC_DIR)/drivers/compass/*.c))) \
+            drivers/max7456.c \
+            drivers/vtx_rtc6705.c \
+            drivers/vtx_rtc6705_soft_spi.c
+
+RX_SRC = \
+            rx/cc2500_common.c \
+            rx/cc2500_frsky_shared.c \
+            rx/cc2500_frsky_d.c \
+            rx/cc2500_frsky_x.c \
+            rx/cc2500_sfhss.c \
+            rx/cc2500_redpine.c \
+            rx/a7105_flysky.c \
+            rx/cyrf6936_spektrum.c \
+            drivers/rx/expresslrs_driver.c \
+            rx/expresslrs.c \
+            rx/expresslrs_common.c \
+            rx/expresslrs_telemetry.c \
+            drivers/rx/rx_cc2500.c \
+            drivers/rx/rx_a7105.c \
+            drivers/rx/rx_cyrf6936.c \
+            drivers/rx/rx_sx127x.c \
+            drivers/rx/rx_sx1280.c
+
+FLASH_SRC += \
+            drivers/flash.c \
+            drivers/flash_m25p16.c \
+            drivers/flash_w25n01g.c \
+            drivers/flash_w25q128fv.c \
+            drivers/flash_w25m.c \
+            io/flashfs.c
+            
+SDCARD_SRC += \
+            drivers/sdcard.c \
+            drivers/sdcard_spi.c \
+            drivers/sdcard_sdio_baremetal.c \
+            drivers/sdcard_standard.c \
+            io/asyncfatfs/asyncfatfs.c \
+            io/asyncfatfs/fat_standard.c
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+
+endif
+
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
-COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC)
+COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC) $(RX_SRC)
 
 ifeq ($(EXST),yes)
 TARGET_FLAGS := -DUSE_EXST $(TARGET_FLAGS)
@@ -401,53 +453,17 @@ NOT_OPTIMISED_SRC := $(NOT_OPTIMISED_SRC) \
 ifneq ($(DSP_LIB),)
 
 INCLUDE_DIRS += $(DSP_LIB)/Include
-
 SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
+
 endif
 
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-SRC += \
-            drivers/flash.c \
-            drivers/flash_m25p16.c \
-            drivers/flash_w25n01g.c \
-            drivers/flash_w25q128fv.c \
-            drivers/flash_w25m.c \
-            io/flashfs.c \
-            $(MSC_SRC)
-endif
-
-SRC += $(COMMON_SRC)
+SRC += $(FLASH_SRC) $(MSC_SRC) $(SDCARD_SRC) $(COMMON_SRC)
 
 #excludes
 SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-SRC += \
-            drivers/sdcard.c \
-            drivers/sdcard_spi.c \
-            drivers/sdcard_standard.c \
-            io/asyncfatfs/asyncfatfs.c \
-            io/asyncfatfs/fat_standard.c \
-            $(MSC_SRC)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-SRC += \
-            drivers/sdcard.c \
-            drivers/sdcard_sdio_baremetal.c \
-            drivers/sdcard_standard.c \
-            io/asyncfatfs/asyncfatfs.c \
-            io/asyncfatfs/fat_standard.c \
-            $(MSC_SRC)
-endif
-
-ifneq ($(filter VCP,$(FEATURES)),)
 SRC += $(VCP_SRC)
-endif
 
-ifneq ($(filter MSC,$(FEATURES)),)
-SRC += $(MSC_SRC)
-endif
 # end target specific make file checks
 
 ifneq ($(BOARD),)

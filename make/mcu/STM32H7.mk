@@ -3,7 +3,7 @@
 #
 
 ifeq ($(DEBUG_HARDFAULTS),H7)
-CFLAGS               += -DDEBUG_HARDFAULTS
+CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
@@ -12,7 +12,7 @@ CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
-
+    
 EXCLUDES        = \
                 stm32h7xx_hal_cec.c \
                 stm32h7xx_hal_comp.c \
@@ -90,7 +90,6 @@ EXCLUDES        = \
                 stm32h7xx_ll_usart.c \
                 stm32h7xx_ll_utils.c
 
-
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
@@ -133,18 +132,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
                    $(ROOT)/src/main/vcp_hal
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
@@ -321,7 +308,9 @@ MCU_COMMON_SRC = \
             drivers/audio_stm32h7xx.c \
             drivers/memprot_hal.c \
             drivers/memprot_stm32h7xx.c \
-            #drivers/accgyro/accgyro_mpu.c \
+            drivers/sdio_h7xx.c \
+            drivers/bus_quadspi_hal.c \
+            drivers/bus_quadspi.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
@@ -330,26 +319,12 @@ MCU_EXCLUDES = \
 MSC_SRC = \
             drivers/usb_msc_common.c \
             drivers/usb_msc_h7xx.c \
-            msc/usbd_storage.c
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-MCU_COMMON_SRC += \
-            drivers/sdio_h7xx.c
-MSC_SRC += \
-            msc/usbd_storage_sdio.c
-endif
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sd_spi.c
-endif
-
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-MSC_SRC += \
+            msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
-endif
+            msc/emfat_file.c \
+            msc/usbd_storage_sdio.c \
+            msc/usbd_storage_sd_spi.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7

@@ -125,18 +125,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/src/main/vcpf4
 endif
 
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
@@ -176,7 +164,8 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c \
-            drivers/persistent.c
+            drivers/persistent.c \
+            drivers/sdio_f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
@@ -200,26 +189,12 @@ MSC_SRC = \
             drivers/usb_msc_common.c \
             drivers/usb_msc_f4xx.c \
             msc/usbd_msc_desc.c \
-            msc/usbd_storage.c
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sd_spi.c
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sdio.c
-MCU_COMMON_SRC += \
-            drivers/sdio_f4xx.c
-endif
-
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-MSC_SRC += \
+            msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
-endif
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c \
+            msc/usbd_storage_sdio.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4
