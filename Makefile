@@ -94,9 +94,6 @@ include $(ROOT)/make/tools.mk
 # default xtal value for F4 targets
 HSE_VALUE       ?= 8000000
 
-# used for turning on features like VCP and SDCARD
-FEATURES        =
-
 ifneq ($(BOARD),)
 # silently ignore if the file is not present. Allows for target defaults.
 -include $(ROOT)/src/main/board/$(BOARD)/board.mk
