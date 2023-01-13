@@ -75,3 +75,21 @@ Favorite presets are being remembered by it's path+name in the repo. So a favori
 
 ## 4. GPS Return to Home enhancements
 
+GPS "Rescue" has been extensively revised and greatly improved.  The quad should reliably return at the set speed, descend at an angle, land within a few metres of the home point, and disarm automatically on touch-down.  There are separate PID control elements for altitude and return velocity t home; the defaults work very well for 'typical' quads.  The system should initially be tested with a switch at reasonably close range and low altitude.  Setting up and testing GPS Rescue to provide a reliable return on the event of an RxLoss failsafe is a non-trivial task, but well worth the trouble.  
+
+**We strongly recommend reading the [wiki entry](https://github.com/betaflight/betaflight/wiki/GPS-Rescue-for-4.4) and following the instructions there.**  
+
+Remember that in any true failsafe the quad will always enter Failsafe Stage 1 phase for 1s (user-configurable) before initiating the Rescue.  You MUST set the Stage 1 behaviour NOT to DROP, or it will disarm and drop in Stage 1 and never enter GPS Rescue.  The safest option for Stage 1 is to configure Angle Mode on an aux switch, and set Stage 1 Failsafe to enable Angle Mode at a fixed hover / light climb throttle value with all other sticks forced to center.  When you get signal loss of more than 300ms, you'll enter Angle Mode, and the will start to level out.  That will give you a clear advance warning that you are getting signal breakup.  Alternatively, you can set Failsafe Stage 1 to hold all current values; the quad will then continue on the same path until Stage 1 Failsafe expires and the Rescue starts.
+
+Please disable the compass/magnetometer unless it has been fully calibrated and you have confirmed, by logging, that the magnetometer heading values are noise free and reflect the true attitude of the quad.
+
+In most short flights, using the Baro provides a significant improvement in altitude control.  Baro data is updated more frequently than GPS data, and often varies less.  The user can control how much trust they place on the Baro vs GPS altitude data.  Over long flights, and with some particular Baro units or installations, Baro drift can be more of a problem, and the GPS data should be trusted more.
+
+There are three new, and very useful, GPS Rescue Debug modes.  One shows how accurately the quad tracks the requested altitude and the requested velocity.  The other two are used for tuning the GPS Rescue PIDs. If Mag is enabled, Mag information is automatically recorded.
+
+Data acquisition from GPS hardware now uses the UBlox protocol, at 10hz, by default. NMEA mode has been improved and in some cases will run at 10hz.  We now can log Dilution Of Precision values for future improvements.
+
+There are extensive changes to sanity checks, and in most cases the quad will attempt to land itself, rather than disarm, if necessary using only the Baro signal.  
+
+WARNING: ALWAYS CHECK that the Home Arrow points directly back towards home when you take off and fly away.  Sometimes, if you take off and spin around during arming, or immediately on takeoff, the quad's attitude information can become corrupted, and the Home Arrow can point the wrong way.  It's best to arm cleanly and fly away from Home in a straight line at reasonable speed immediately after takeoff.  Watch the Home Arrow carefully to ensure that it quickly points back to Home. If the Home Arrow points the wrong way when a failsafe occurs, the GPS Rescue will initially fly off in the wrong direction and in some cases you may lose the quad.
+ 
