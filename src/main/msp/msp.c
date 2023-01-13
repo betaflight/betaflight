@@ -4217,8 +4217,17 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             osdConfigMutable()->canvas_cols = sbufReadU8(src);
             osdConfigMutable()->canvas_rows = sbufReadU8(src);
 
-            // An HD VTX has communicated it's canvas size, so we must be in HD mode
-            vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
+            if ((vcdProfile()->video_system != VIDEO_SYSTEM_HD) ||
+                (osdConfig()->displayPortDevice != OSD_DISPLAYPORT_DEVICE_MSP)) {
+                // An HD VTX has communicated it's canvas size, so we must be in HD mode
+                vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
+                // And using MSP displayport
+                osdConfigMutable()->displayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+
+                // Save settings and reboot or the user won't see the effect and will have to manually save
+                writeEEPROM();
+                systemReset();
+            }
         }
         break;
 #endif //USE_OSD_HD
