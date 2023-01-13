@@ -18,7 +18,7 @@ Thank you all for your patience and assistance in working through what boards ha
 
 Thanks to #blckmn
 
-## 2. HD OSD Canvas
+## 2. HD OSD
 
 HD OSD is now supported and adds the following features. Note that not all HD Goggle/VTX combinations support all features, but hopefully will do so in time.
 
@@ -26,9 +26,18 @@ If the `OSD` option alone, or the `OSD (HD)` option is included in the build opt
 
 To enable HD support select `VTX (MSP + Displayport)` on the ports tab for the UART to which the VTX is connected. The `MSP` option will automatically be selected.
 
-The OSD `HD` preview may be selected on the OSD tab along side the `PAL` and `NTSC` options. The size of the canvas (visible number of columns/rows) defaults to 53x20 (compared to 30x16 for PAL and 30x13 for NTSC). The VTX is then able to adjust this by sending an MSP command to adjust the canvas size. WTFOS will set this to 60x22 for example. This will be automatic with no user interaction required. Should the goggle vendor decide to support alternate canvas sizes then they would be selected in the goggle menus, and the new canvas size communicated to Betaflight which would then adjust the usable number of OSD rows/columns accordingly.
+![image](https://user-images.githubusercontent.com/11480839/212375683-0ac11ca1-9694-451d-a399-db910a72a062.png)
 
-Regardless of the canvas size the boot logo, armed message, CMS menu etc. will be centred correctly.
+The OSD `HD` preview may be manually selected on the OSD tab along side the `PAL` and `NTSC` options however this is not necessary as the first time the HD Goggle/VTX system is powered the FC detects it and automatically applies the following settings, saves and reboots automatically. This only happens if the setting below are not already applied. This is a new feature, and may not be supported by the your HD system yet, so if the OSD tab does not automatically switch to HD, please enter the commands below manually.
+
+```
+set osd_displayport_device = MSP
+set vcd_video_system = HD
+```
+
+The size of the canvas (visible number of columns/rows) defaults to 53x20 (compared to 30x16 for PAL and 30x13 for NTSC). The VTX is then able to adjust this by sending an MSP command to adjust the canvas size. WTFOS will set this to 60x22 for example. This will be automatic with no user interaction required. Should the goggle vendor decide to support alternate canvas sizes then they would be selected in the goggle menus, and the new canvas size communicated to Betaflight which would then adjust the usable number of OSD rows/columns accordingly.
+
+Regardless of the canvas size the boot logo, armed message, stats, CMS menu etc. will be centred correctly.
 
 If the canvas size is reduced, either by selecting the PAL/NTSC options or by the VTX sending a different canvas size, all OSD elements will be moved onto the available canvas so they can be repositioned using the configurator.
 
@@ -165,7 +174,8 @@ NOTE:  ELRS 2.x transmitters will not be able to bind to ELRS SPI Boards flashed
 - Four PID profiles (was 6), and 4 rate profiles (was 3) - thanks @haslinghuis
 - TPA settings inside the PID profile - thanks @haslinghuis
 - improved barometer smoothing and calibration, attitude calculation fixes, filter fixes - thanks @karatebrot
-- support for VTx control over MSP and a huge number of wide OSD improvements - thanks @SteveCEvans
+- HD OSD support - thanks @SteveCEvans
+- VTX device over MSP [PR11705](https://github.com/betaflight/betaflight/pull/11705) - thanks @phobos
 - parse and log GPS degree of precision (DOP) values [PR11912](https://github.com/betaflight/betaflight/pull/11912) - thanks @karatebrot
 - hardware support for newer gyro chips, improved filtering for BMI160/270, etc - thanks @SteveCEvans and others
 - lower minimum of 20Hz for dynamic notch, useful for low RPM setups with very large props
