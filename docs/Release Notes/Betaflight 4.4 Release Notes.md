@@ -120,13 +120,15 @@ Thanks @qvasic
 
 
 ## 6. Support for extended DShot Telemetry
+
 If the ESC supports it, we now can get per-motor temp, current and voltage via DSHot Telemetry.
 For more info see [PR11694](https://github.com/betaflight/betaflight/pull/11694) - thanks @damosvil
 
 
-## 7. FLight improvements
+## 7. Flight improvements
 
 **Antigravity**
+
 AntiGravity has been tweaked, resulting in greater stablility during rapid throttle changes, by:
 - not applying AntiGravity P boost to yaw, preventing additional yaw wobbles during rapid throttle changes
 - reducing the overall AntiGravity P boost to reduce the chance of unwanted P wobbles
@@ -139,6 +141,7 @@ The AntiGravity value is now directly related to the amount of iTerm boost.  The
 See [PR#11679](https://github.com/betaflight/betaflight/pull/11679) for more information - thanks @ctzsnooze, @tbolin.
 
 **iTermWindup**
+
 iTermWindup is an 'old' way to prevent iTerm growth when the quad cannot achieve the requested target rate.
 In 4.4 we are making iTermWindup active by default, at a value of 85.
 Whenever the motorMix percentage exceeds the `iterm_windup` limit value of 85%, iTerm growth will be reduced to the extent that motor_mix exceeds the `iterm_windup` value.  There will be zero iTerm growth only when motorMix differential is 100%.  The iTerm inhibiotion will apply on all axes, including yaw.
@@ -147,6 +150,7 @@ iTermWindup complements iTermRelax, and is especially useful to prevent iterm wi
 For more information see [PR#11806](https://github.com/betaflight/betaflight/pull/11806) - thanks @ctzsnooze.
 
 **Smoother mixer behaviour when airmode is active with extreme stick inputs**
+
 There were a number of edge cases where the onset of airmode throttle boost was not smooth, with different outcomes depending on the mixer type.  The mixer is now better behaved.
 For more information see [PR#11867](https://github.com/betaflight/betaflight/pull/11867) - thanks @QuickFlash.
 
