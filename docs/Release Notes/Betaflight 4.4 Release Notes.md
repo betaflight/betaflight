@@ -16,6 +16,8 @@ For those missing the flash chip: You can try any or all of `USE_FLASH_W25P16 US
 
 Thank you all for your patience and assistance in working through what boards have what hardware. Unfortunately we need our flyers to help crowd source this information - as there is such diverse hardware out there! 
 
+Thanks to #blckmn
+
 ## 2. HD OSD Canvas
 
 HD OSD is now supported and adds the following features. Note that not all HD Goggle/VTX combinations support all features, but hopefully will do so in time.
@@ -65,6 +67,8 @@ To display critial warnings in red, select the first font for **normal**, **good
 ```
 set displayport_msp_fonts = 0,0,0,3
 ```
+thanks @SteveCEvans
+
 
 ## 3. Preset Favourites
 
@@ -94,4 +98,75 @@ Data acquisition from GPS hardware now uses the UBlox protocol, at 10hz, by defa
 There are extensive changes to sanity checks, and in most cases the quad will attempt to land itself, rather than disarm, if necessary using only the Baro signal.  
 
 **WARNING: ALWAYS CHECK that the Home Arrow points directly back towards home after takeoff!**  Sometimes, if you take off and spin around during arming, or immediately on takeoff, the quad's attitude information can become corrupted, and the Home Arrow can point the wrong way.  It's best to arm cleanly and fly away from Home in a straight line at reasonable speed immediately after takeoff.  Watch the Home Arrow carefully to ensure that it quickly points back to Home. If the Home Arrow points the wrong way when a failsafe occurs, the GPS Rescue will initially fly off in the wrong direction and in some cases you may lose the quad.
+
+thanks to @ctzsnooze, @karatebrot, @haslinghuis
  
+
+## 5. Other OSD improvements
+
+**Option to show 'READY' in the OSD with a mode switch**
+This is a niche improvement, intended for racing situations where all pilots video feeds are on one central screen.  
+The pilot can flick a switch to indicate that they are ready to fly, and the word `READY` appears on their OSD.  
+The race director can then tell if all pilots are ready by looking at the central screen.  
+On arming, the `READY` text disappears.
+For more info see [PR#11886](https://github.com/betaflight/betaflight/pull/11886) - thanks @jonmahoney15
+
+**Craft and Pilot name now handled correctly**
+The user can now configure their OSD to show either Craft or Pilot name, or both.
+For more info see [PR#11391](https://github.com/betaflight/betaflight/pull/11391) - thanks @krasiyan
+
+**PID profile and Rate profile names shown in OSD**
+Thanks @qvasic
+
+
+## 6. Support for extended DShot Telemetry
+If the ESC supports it, we now can get per-motor temp, current and voltage via DSHot Telemetry.
+For more info see [PR11694](https://github.com/betaflight/betaflight/pull/11694) - thanks @damosvil
+
+
+## 7. FLight improvements
+
+**Antigravity**
+AntiGravity has been tweaked, resulting in greater stablility during rapid throttle changes, by:
+- not applying AntiGravity P boost to yaw, preventing additional yaw wobbles during rapid throttle changes
+- reducing the overall AntiGravity P boost to reduce the chance of unwanted P wobbles
+- allows the relative P gain during AntiGravity to be set independently of the I boost, with `anti_gravity_p_gain`.  The default is 100, meaning 'normal'.  A lower number will give proportionally less P boost than default, for machines that get P wobbles readily during throttle boost, and vice versa.
+- further optimisations of the timing of the boost effect.  A PT2 filter is used at 6Hz by default.  The value can be tweaked to focus the boost when it is needed most by changing the `anti_gravity_cutoff` value.  Higher values will make the boost a bit stronger but of shorter duration.  Lower values may work better for less responsive builds or where a more prolonged boost is needed.
+- applying iTerm windup constraints to antigravity-induced iTerm increases (thanks tbolin)
+- removing the old 'step' mode, which wasn't working as intended
+The AntiGravity value is now directly related to the amount of iTerm boost.  The default is now 80, meaning 8x iTerm boost on fast throttle cuts.
+**Do not increase AntiGravity unless you've made a log and confirm that there is no P wobble.  Use the debug.**
+See [PR#11679](https://github.com/betaflight/betaflight/pull/11679) for more information - thanks @ctzsnooze, @tbolin.
+
+**iTermWindup**
+iTermWindup is an 'old' way to prevent iTerm growth when the quad cannot achieve the requested target rate.
+In 4.4 we are making iTermWindup active by default, at a value of 85.
+Whenever the motorMix percentage exceeds the `iterm_windup` limit value of 85%, iTerm growth will be reduced to the extent that motor_mix exceeds the `iterm_windup` value.  There will be zero iTerm growth only when motorMix differential is 100%.  The iTerm inhibiotion will apply on all axes, including yaw.
+The default value is appropriate for nearly all quads.  Heavy or very low authority quads with significant iTerm windup problems (slow oscillations on larger moves) may benefit from lower iterm_windup values.
+iTermWindup complements iTermRelax, and is especially useful to prevent iterm windup in low authority quads where the machine is not able to meet the target rate for some time after the sticks have stopped moving.  iTermRelax is most effective, and operates more smoothly, when the sticks are moving fast.  iTermWindup also constrains iTerm growth in a variety of impact or failure states.
+For more information see [PR#11806](https://github.com/betaflight/betaflight/pull/11806) - thanks @ctzsnooze.
+
+**Smoother mixer behaviour when airmode is active with extreme stick inputs**
+There were a number of edge cases where the onset of airmode throttle boost was not smooth, with different outcomes depending on the mixer type.  The mixer is now better behaved.
+For more information see [PR#11867](https://github.com/betaflight/betaflight/pull/11867) - thanks @QuickFlash.
+
+
+## 7. ELRS 3.x support for ELRS SPI boards
+
+NOTE:  ELRS 2.x transmitters will not be able to bind to ELRS SPI Boards flashed with Betaflight 4.x.
+
+
+## Other changes
+
+- Four PID profiles (was 6), and 4 rate profiles (was 3) - thanks @haslinghuis
+- TPA settings inside the PID profile - thanks @haslinghuis
+- improved barometer smoothing and calibration, attitude calculation fixes, filter fixes - thanks @karatebrot
+- support for VTx control over MSP and a huge number of wide OSD improvements - thanks @SteveCEvans
+- parse and log GPS degree of precision (DOP) values [PR11912](https://github.com/betaflight/betaflight/pull/11912) - thanks @karatebrot
+- hardware support for newer gyro chips, improved filtering for BMI160/270, etc - thanks @SteveCEvans and others
+- lower minimum of 20Hz for dynamic notch, useful for low RPM setups with very large props
+- increased dynamic idle minimum RPM from 100 (10k RPM) to 200 (20k rpm) for quads with very small props
+- support for 64 discrete LEDs via cloud build option - PR12064 - thanks @Limonspb
+- Fixes to NMEA at 10hz and UBlox comms - thanks @Karatebrot, @krzysztofkuczek
+- Winbond W25q80 flash support - thanks @David-OConnor
+- many bugfixes, target updates, driver updates and fixes - thanks to too many people to mention individually
