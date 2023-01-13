@@ -6119,10 +6119,10 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
         cliPrintLinefeed();
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
-        cliPrintLine("Motor    Type   eRPM    RPM     Hz Invalid   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3");
+        cliPrintLine("Motor    Type   eRPM    RPM     Hz Invalid   TEMP    VCC   CURR   STAT   DBG1   DBG2   DMET");
         cliPrintLine("=====  ====== ====== ====== ====== ======= ====== ====== ====== ====== ====== ====== ======");
 #else
-        cliPrintLine("Motor    Type   eRPM    RPM     Hz   TEMP    VCC   CURR  ST/EV   DBG1   DBG2   DBG3");
+        cliPrintLine("Motor    Type   eRPM    RPM     Hz   TEMP    VCC   CURR   STAT   DBG1   DBG2   DMET");
         cliPrintLine("=====  ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ======");
 #endif
 
@@ -6136,7 +6136,7 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ? 'T' : '-'),
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 'V' : '-'),
                     ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ? 'C' : '-'),
-                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS)) ? 'S' : '-'),
+                    ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_STATUS)) ? 'S' : '-'),
                     erpm * 100, rpm, rpm / 60);
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -6148,15 +6148,15 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
             }
 #endif
 
-            cliPrintLinef(" %6d %3d.%02d %6d %6d %6d %6d %6d",
+            cliPrintLinef(" %6d %3d.%02d %6d %6x %6d %6d %6d",
                     dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE],
                     dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] / 4,
                     25 * (dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] % 4),
                     dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT],
-                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_STATE_EVENTS],
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_STATUS],
                     dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_DEBUG1],
                     dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_DEBUG2],
-                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_DEBUG3]
+                    dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_STRESS_LEVEL]
             );
         }
         cliPrintLinefeed();

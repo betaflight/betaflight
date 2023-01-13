@@ -1451,6 +1451,8 @@ case MSP_NAME:
         // API 1.42
         sbufWriteU8(dst, getMotorCount());
         sbufWriteU8(dst, motorConfig()->motorPoleCount);
+
+        // API 1.44
 #ifdef USE_DSHOT_TELEMETRY
         sbufWriteU8(dst, useDshotTelemetry);
 #else
@@ -1459,6 +1461,13 @@ case MSP_NAME:
 
 #ifdef USE_ESC_SENSOR
         sbufWriteU8(dst, featureIsEnabled(FEATURE_ESC_SENSOR)); // ESC sensor available
+#else
+        sbufWriteU8(dst, 0);
+#endif
+
+        // API 1.46
+#ifdef USE_DSHOT_TELEMETRY
+        sbufWriteU8(dst, motorConfig()->dev.useDshotEdt);
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -2843,8 +2852,19 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         // version 1.42
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->motorPoleCount = sbufReadU8(src);
+
+            // version 1.44
 #if defined(USE_DSHOT_TELEMETRY)
             motorConfigMutable()->dev.useDshotTelemetry = sbufReadU8(src);
+#else
+            sbufReadU8(src);
+#endif
+        }
+
+        // Version 1.46
+        if (sbufBytesRemaining(src) >= 1) {
+#if defined(USE_DSHOT_TELEMETRY)
+            motorConfigMutable()->dev.useDshotEdt = sbufReadU8(src);
 #else
             sbufReadU8(src);
 #endif
