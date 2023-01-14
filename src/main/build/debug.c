@@ -113,4 +113,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ANGLE_TARGET",
     "CURRENT_ANGLE",
     "DSHOT_TELEMETRY_COUNTS",
+    "DEBUG_FILT_VOLTAGE",
 };
