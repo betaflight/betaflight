@@ -52,6 +52,7 @@ typedef struct batteryConfig_s {
     uint16_t vbatnotpresentcellvoltage;     // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
     uint8_t lvcPercentage;                  // Percentage of throttle when lvc is triggered
     voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
+    uint8_t usingCurrentSensor;
 
     // current
     currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
@@ -71,6 +72,7 @@ typedef struct batteryConfig_s {
     uint8_t vbatDurationForWarning;         // Period voltage has to sustain before the battery state is set to BATTERY_WARNING (in 0.1 s)
     uint8_t vbatDurationForCritical;        // Period voltage has to sustain before the battery state is set to BATTERY_CRIT (in 0.1 s)
     uint8_t vbatSagLpfPeriod;               // Period of the cutoff frequency for the Vbat sag and PID compensation filter (in 0.1 s)
+    
 
 #ifdef USE_BATTERY_CONTINUE
     bool isBatteryContinueEnabled;
@@ -121,6 +123,7 @@ int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
 float getWhDrawn(void);
+uint32_t returnFilteredVoltage(void);
 #ifdef USE_BATTERY_CONTINUE
 bool hasUsedMAh(void);
 void setMAhDrawn(uint32_t mAhDrawn);
