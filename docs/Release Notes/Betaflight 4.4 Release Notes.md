@@ -8,7 +8,7 @@ Any issues with the cloud build process please check out the #cloud-build-issues
 
 **NOTE:** If you have something missing from your cloud build that you would normally expect to be present, e.g. a flash chip or barometer, the reason is because the board configuration (in unified targets) has not been updated with this information (either by the community, or the manufacturer).
 
-If you do have something missing then we suggest flashing the `core` version. This will load all the hardware drivers, and then you can submit a `Support` level of detail from the CLI tab. In addition you can use the **custom defines** input box that is shown when "Expert Mode" is enabled. The `classic mode` option will load the all of the hardware drivers (but not all the features), and will allow you to boot the Flight Controller, and run the commands `status`, `flash_info`, `dump hardware` etc, in the CLI tab of configurator to find the information about the hardware you have.
+If you do have something missing then we suggest flashing the `core` version. This will load all the hardware drivers (but not all features), and then you can submit a `Support` level of detail from the CLI tab. In addition you can use the **custom defines** input box that is shown when "Expert Mode" is enabled.
 
 For those missing a barometer: You can try any or all of `BARO_MS5611 BARO_SPI_MS5611 BARO_BMP280 BARO_SPI_BMP280 BARO_BMP388 BARO_SPI_BMP388 BARO_LPS BARO_SPI_LPS BARO_QMP6988 BARO_SPI_QMP6988 BARO_DPS310 BARO_SPI_DPS310 BARO_BMP085 BARO_2SMBP_02B BARO_SPI_2SMBP_02B` in the **custom defines** input box.
 
