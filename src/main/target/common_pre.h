@@ -553,7 +553,7 @@ extern uint8_t _dmaram_end__;
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
 #define USE_OSD_STICK_OVERLAY
-#endif // defined(USE_OSD) || defined(USE_OSD_HD) || defined(USE_OSD_SD)
+#endif // defined(USE_OSD_HD) || defined(USE_OSD_SD)
 
 #if defined(CLOUD_BUILD)
 // Handle the CRSF co-dependency requirements
