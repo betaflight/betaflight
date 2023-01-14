@@ -65,7 +65,7 @@ typedef struct dmaChannelDescriptor_s {
     uint8_t                     resourceIndex;
     uint32_t                    completeFlag;
 #if defined(USE_ATBSP_DRIVER)
-    dmamux_channel_type			*dmamux;
+    dmamux_channel_type         *dmamux;
 #endif
 } dmaChannelDescriptor_t;
 

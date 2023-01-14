@@ -49,7 +49,7 @@ static spi_init_type defaultInit = {
 
 static uint16_t spiDivisorToBRbits(spi_type  *instance, uint16_t divisor)
 {
-	UNUSED(instance);
+    UNUSED(instance);
     divisor = constrain(divisor, 2, 256);
     return (ffs(divisor) - 2) << 3; // SPI_CR1_BR_Pos
 
@@ -104,10 +104,10 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     initTx->direction=DMA_DIR_MEMORY_TO_PERIPHERAL;
     initTx->loop_mode_enable=FALSE;
     initTx->peripheral_base_addr=(uint32_t)&bus->busType_u.spi.instance->dt ;
-	initTx->priority =DMA_PRIORITY_LOW;
-	initTx->peripheral_inc_enable =FALSE;
+    initTx->priority =DMA_PRIORITY_LOW;
+    initTx->peripheral_inc_enable =FALSE;
     initTx->peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
-	initTx->memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
+    initTx->memory_data_width = DMA_MEMORY_DATA_WIDTH_BYTE;
 
     if (bus->dmaRx) {
         dma_init_type *initRx = bus->initRx;
@@ -126,7 +126,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
-	DMA_ARCH_TYPE *streamRegs = (DMA_ARCH_TYPE *)descriptor->ref;
+    DMA_ARCH_TYPE *streamRegs = (DMA_ARCH_TYPE *)descriptor->ref;
     xDMA_Cmd(streamRegs, FALSE);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
@@ -176,8 +176,8 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
     dma_init_type  *initTx = bus->initTx;
 
     if (txData) {
-    	initTx->memory_base_addr = (uint32_t)txData;
-    	initTx->memory_inc_enable =TRUE;
+        initTx->memory_base_addr = (uint32_t)txData;
+        initTx->memory_inc_enable =TRUE;
     } else {
         dummyTxByte = 0xff;
         initTx->memory_base_addr = (uint32_t)&dummyTxByte;
@@ -190,10 +190,10 @@ void spiInternalInitStream(const extDevice_t *dev, bool preInit)
         dma_init_type *initRx = bus->initRx;
 
         if (rxData) {
-        	initRx->memory_base_addr= (uint32_t)rxData;
-        	initRx->memory_inc_enable = TRUE;
+            initRx->memory_base_addr= (uint32_t)rxData;
+            initRx->memory_inc_enable = TRUE;
         } else {
-        	initRx->memory_base_addr = (uint32_t)&dummyRxByte;
+            initRx->memory_base_addr = (uint32_t)&dummyRxByte;
             initRx->memory_inc_enable = FALSE;
         }
 
@@ -207,7 +207,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
     DMA_ARCH_TYPE *streamRegsTx = (DMA_ARCH_TYPE *)dmaTx->ref;
     if (dmaRx) {
-    	DMA_ARCH_TYPE *streamRegsRx = (DMA_ARCH_TYPE *)dmaRx->ref;
+        DMA_ARCH_TYPE *streamRegsRx = (DMA_ARCH_TYPE *)dmaRx->ref;
 
         // Use the correct callback argument
         dmaRx->userParam = (uint32_t)dev;
@@ -231,7 +231,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         xDMA_Cmd(streamRegsRx, TRUE);
 
         spi_i2s_dma_transmitter_enable(dev->bus->busType_u.spi.instance, TRUE);
-		spi_i2s_dma_receiver_enable(dev->bus->busType_u.spi.instance, TRUE);
+        spi_i2s_dma_receiver_enable(dev->bus->busType_u.spi.instance, TRUE);
 
     } else {
         // Use the correct callback argument
@@ -263,20 +263,20 @@ void spiInternalStopDMA (const extDevice_t *dev)
     DMA_ARCH_TYPE *streamRegsTx = (DMA_ARCH_TYPE *)dmaTx->ref;
 
     if (dmaRx) {
-    	DMA_ARCH_TYPE *streamRegsRx = (DMA_ARCH_TYPE *)dmaRx->ref;
+        DMA_ARCH_TYPE *streamRegsRx = (DMA_ARCH_TYPE *)dmaRx->ref;
 
         // Disable streams
-    	xDMA_Cmd(streamRegsTx, FALSE);
-    	xDMA_Cmd(streamRegsRx, FALSE);
+        xDMA_Cmd(streamRegsTx, FALSE);
+        xDMA_Cmd(streamRegsRx, FALSE);
 
-    	DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
-    	DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+        DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+        DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 
         spi_i2s_dma_transmitter_enable(instance, FALSE);
-		spi_i2s_dma_receiver_enable(instance, FALSE);
+        spi_i2s_dma_receiver_enable(instance, FALSE);
     } else {
         // Ensure the current transmission is complete
-    	while(spi_i2s_flag_get(instance,SPI_I2S_BF_FLAG));
+        while(spi_i2s_flag_get(instance,SPI_I2S_BF_FLAG));
 
         // Drain the RX buffer
         while(spi_i2s_flag_get(instance,SPI_I2S_RDBF_FLAG)) {
@@ -284,8 +284,8 @@ void spiInternalStopDMA (const extDevice_t *dev)
         }
 
         // Disable stream
-    	xDMA_Cmd(streamRegsTx, FALSE);
-    	DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+        xDMA_Cmd(streamRegsTx, FALSE);
+        DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 
         spi_i2s_dma_transmitter_enable(instance, FALSE);
     }

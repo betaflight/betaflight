@@ -54,7 +54,7 @@ static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
 };
 #elif defined(USE_ATBSP_DRIVER)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
-	EXINT0_IRQn,
+    EXINT0_IRQn,
     EXINT1_IRQn,
     EXINT2_IRQn,
     EXINT3_IRQn,
@@ -186,12 +186,12 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
     exint_flag_clear(extiLine);
 
     exint_init_type exint_init_struct;
-	exint_default_para_init(&exint_init_struct);
-	exint_init_struct.line_enable = TRUE;
-	exint_init_struct.line_mode = EXINT_LINE_INTERRUPUT;
-	exint_init_struct.line_select = extiLine;
-	exint_init_struct.line_polarity = triggerLookupTable[trigger];
-	exint_init(&exint_init_struct);
+    exint_default_para_init(&exint_init_struct);
+    exint_init_struct.line_enable = TRUE;
+    exint_init_struct.line_mode = EXINT_LINE_INTERRUPUT;
+    exint_init_struct.line_select = extiLine;
+    exint_init_struct.line_polarity = triggerLookupTable[trigger];
+    exint_init(&exint_init_struct);
 
     if (extiGroupPriority[group] > irqPriority) {
         extiGroupPriority[group] = irqPriority;

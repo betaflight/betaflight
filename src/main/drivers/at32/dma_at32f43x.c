@@ -83,10 +83,10 @@ void dmaEnable(dmaIdentifier_e identifier)
     enableDmaClock(index);
 }
 
-void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t 	dmaMuxId)
+void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t  dmaMuxId)
 {
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
-	dmamux_init(dmaDescriptors[index].dmamux, dmaMuxId);
+    dmamux_init(dmaDescriptors[index].dmamux, dmaMuxId);
 }
 
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)

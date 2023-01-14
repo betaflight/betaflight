@@ -130,12 +130,12 @@
 
 /*
  DEF_TIM(tim, chan, pin, flags, out,dmaopt,upopt)
-		@tim,chan  tmr & channel
-		@pin	output pin
-		@flags  usage for timer
-		@out  0 for normal 1 for N_Channel
-		@dmaopt dma channel index used for timer channel data transmit
-		@upopt  USE_DSHOT_DMAR  timeup dma channel index
+        @tim,chan  tmr & channel
+        @pin    output pin
+        @flags  usage for timer
+        @out  0 for normal 1 for N_Channel
+        @dmaopt dma channel index used for timer channel data transmit
+        @upopt  USE_DSHOT_DMAR  timeup dma channel index
 */
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt, upopt) {            \
     tim,                                                                \

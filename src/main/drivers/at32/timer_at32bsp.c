@@ -289,7 +289,7 @@ int8_t timerGetTIMNumber(const tmr_type *tim)
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
 //    return channel >> 2;
-	return channel -1 ;//at32 use 1\2\3\4 as channel num
+    return channel -1 ;//at32 use 1\2\3\4 as channel num
 }
 
 uint8_t timerLookupChannelIndex(const uint16_t channel)
@@ -324,7 +324,7 @@ void timerNVICConfigure(uint8_t irq)
 
 void configTimeBase(tmr_type *tim, uint16_t period, uint32_t hz)
 {
-	//timer, period, perscaler
+    //timer, period, perscaler
     tmr_base_init(tim,(period - 1) & 0xFFFF,(timerClock(tim) / hz) - 1);
     //TMR_CLOCK_DIV1 = 0X00 NO DIV
     tmr_clock_source_div_set(tim,TMR_CLOCK_DIV1);
@@ -417,7 +417,7 @@ void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *e
     uint8_t channelIndex = lookupChannelIndex(timHw->channel);
     if (edgeCallback == NULL) {
         // disable irq before changing callback to NULL
-    	tmr_interrupt_enable(timHw->tim, TIM_IT_CCx(timHw->channel), FALSE);
+        tmr_interrupt_enable(timHw->tim, TIM_IT_CCx(timHw->channel), FALSE);
     }
 
     // setup callback info
@@ -425,7 +425,7 @@ void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *e
     timerConfig[timerIndex].overflowCallback[channelIndex] = overflowCallback;
     // enable channel IRQ
     if (edgeCallback) {
-    	tmr_interrupt_enable(timHw->tim, TIM_IT_CCx(timHw->channel), TRUE);
+        tmr_interrupt_enable(timHw->tim, TIM_IT_CCx(timHw->channel), TRUE);
     }
 
     timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
@@ -444,7 +444,7 @@ void timerConfigUpdateCallback(const tmr_type *tim, timerOvrHandlerRec_t *update
 // enable or disable IRQ
 void timerChITConfig(const timerHardware_t *timHw, FunctionalState newState)
 {
-	tmr_interrupt_enable(timHw->tim, TIM_IT_CCx(timHw->channel), newState ? TRUE : FALSE);
+    tmr_interrupt_enable(timHw->tim, TIM_IT_CCx(timHw->channel), newState ? TRUE : FALSE);
 }
 
 // clear Compare/Capture flag for channel
@@ -495,16 +495,16 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
 
-	if(timHw->channel ==1)
-		return (volatile timCCR_t*)(&timHw->tim->c1dt);
-	else if(timHw->channel ==2)
-		return (volatile timCCR_t*)(&timHw->tim->c2dt);
-	else if(timHw->channel ==3)
-		return (volatile timCCR_t*)(&timHw->tim->c3dt);
-	else if(timHw->channel ==4)
-		return (volatile timCCR_t*)(&timHw->tim->c4dt);
-	else
-		return (volatile timCCR_t*)((volatile char*)&timHw->tim->c1dt + (timHw->channel-1)*0x04); //for 32bit need to debug
+    if(timHw->channel ==1)
+        return (volatile timCCR_t*)(&timHw->tim->c1dt);
+    else if(timHw->channel ==2)
+        return (volatile timCCR_t*)(&timHw->tim->c2dt);
+    else if(timHw->channel ==3)
+        return (volatile timCCR_t*)(&timHw->tim->c3dt);
+    else if(timHw->channel ==4)
+        return (volatile timCCR_t*)(&timHw->tim->c4dt);
+    else
+        return (volatile timCCR_t*)((volatile char*)&timHw->tim->c1dt + (timHw->channel-1)*0x04); //for 32bit need to debug
 
 }
 
@@ -709,7 +709,7 @@ void timerForceOverflow(tmr_type *tim)
 
 void timerOCInit(tmr_type *tim, uint8_t channel, tmr_output_config_type *init)
 {
-	tmr_output_channel_config(tim, TIM_CH_TO_SELCHANNEL(channel), init);
+    tmr_output_channel_config(tim, TIM_CH_TO_SELCHANNEL(channel), init);
 }
 
 void timerOCPreloadConfig(tmr_type *tim, uint8_t channel, uint16_t preload)
@@ -721,16 +721,16 @@ void timerOCPreloadConfig(tmr_type *tim, uint8_t channel, uint16_t preload)
 volatile timCCR_t* timerCCR(tmr_type *tim, uint8_t channel)
 {
 
-	if(channel ==1)
-		return (volatile timCCR_t*)(&tim->c1dt);
-	else if(channel ==2)
-		return (volatile timCCR_t*)(&tim->c2dt);
-	else if(channel ==3)
-		return (volatile timCCR_t*)(&tim->c3dt);
-	else if(channel ==4)
-		return (volatile timCCR_t*)(&tim->c4dt);
-	else
-		return (volatile timCCR_t*)((volatile char*)&tim->c1dt + (channel-1)*0x04); //for 32bit need to debug
+    if(channel ==1)
+        return (volatile timCCR_t*)(&tim->c1dt);
+    else if(channel ==2)
+        return (volatile timCCR_t*)(&tim->c2dt);
+    else if(channel ==3)
+        return (volatile timCCR_t*)(&tim->c3dt);
+    else if(channel ==4)
+        return (volatile timCCR_t*)(&tim->c4dt);
+    else
+        return (volatile timCCR_t*)((volatile char*)&tim->c1dt + (channel-1)*0x04); //for 32bit need to debug
 
 }
 

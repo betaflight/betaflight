@@ -284,7 +284,7 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
 #if defined(USE_HAL_DRIVER)
         __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
 #elif defined(USE_ATBSP_DRIVER)
-	    usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+        usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
 #else
         USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif

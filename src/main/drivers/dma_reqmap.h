@@ -33,7 +33,7 @@ typedef struct dmaChannelSpec_s {
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
     uint32_t              channel;
 #elif defined(AT32F4)
-    uint32_t 			  dmaMuxId;
+    uint32_t              dmaMuxId;
 #endif
 } dmaChannelSpec_t;
 

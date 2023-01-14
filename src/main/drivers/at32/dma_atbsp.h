@@ -60,7 +60,7 @@ uint32_t dmaGetChannel(const uint8_t channel);
     .userParam = 0, \
     .owner.owner = 0, \
     .owner.resourceIndex = 0 ,\
-	.dmamux= (dmamux_channel_type *) d ## MUX_CHANNEL ##c \
+    .dmamux= (dmamux_channel_type *) d ## MUX_CHANNEL ##c \
     }
 
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) DMA_HANDLER_CODE void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
@@ -84,7 +84,7 @@ void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
 #define xDMA_Init(dmaResource, initStruct) dma_init((DMA_ARCH_TYPE *)(dmaResource), initStruct)
 #define xDMA_DeInit(dmaResource) dma_reset((DMA_ARCH_TYPE *)(dmaResource))
 #define xDMA_Cmd(dmaResource, newState)  dma_channel_enable((DMA_ARCH_TYPE *)(dmaResource), newState)
-#define xDMA_ITConfig(dmaResource, flags, newState)	dma_interrupt_enable((DMA_ARCH_TYPE *)(dmaResource), flags, newState)
+#define xDMA_ITConfig(dmaResource, flags, newState) dma_interrupt_enable((DMA_ARCH_TYPE *)(dmaResource), flags, newState)
 #define xDMA_GetCurrDataCounter(dmaResource) dma_data_number_get((DMA_ARCH_TYPE *)(dmaResource))
 #define xDMA_SetCurrDataCounter(dmaResource, count) dma_data_number_set((DMA_ARCH_TYPE *)(dmaResource), count)
 #define xDMA_GetFlagStatus(dmaResource, flags) dma_flag_get((DMA_ARCH_TYPE *)(dmaResource), flags)

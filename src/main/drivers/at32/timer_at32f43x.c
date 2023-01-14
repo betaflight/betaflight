@@ -33,21 +33,21 @@
 
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
-	{ .TIMx = TMR1,  .rcc = RCC_APB2(TMR1),  .inputIrq = TMR1_CH_IRQn},
-	{ .TIMx = TMR2,  .rcc = RCC_APB1(TMR2),  .inputIrq = TMR2_GLOBAL_IRQn},
-	{ .TIMx = TMR3,  .rcc = RCC_APB1(TMR3),  .inputIrq = TMR3_GLOBAL_IRQn},
-	{ .TIMx = TMR4,  .rcc = RCC_APB1(TMR4),  .inputIrq = TMR4_GLOBAL_IRQn},
-	{ .TIMx = TMR5,  .rcc = RCC_APB1(TMR5),  .inputIrq = TMR5_GLOBAL_IRQn},
-	{ .TIMx = TMR6,  .rcc = RCC_APB1(TMR6),  .inputIrq = TMR6_DAC_GLOBAL_IRQn},
-	{ .TIMx = TMR7,  .rcc = RCC_APB1(TMR7),  .inputIrq = TMR7_GLOBAL_IRQn},
-	{ .TIMx = TMR8,  .rcc = RCC_APB2(TMR8),  .inputIrq = TMR8_CH_IRQn},
-	{ .TIMx = TMR9,  .rcc = RCC_APB2(TMR9),  .inputIrq = TMR1_BRK_TMR9_IRQn},
-	{ .TIMx = TMR10, .rcc = RCC_APB2(TMR10), .inputIrq = TMR1_OVF_TMR10_IRQn},
-	{ .TIMx = TMR11, .rcc = RCC_APB2(TMR11), .inputIrq = TMR1_TRG_HALL_TMR11_IRQn},
-	{ .TIMx = TMR12, .rcc = RCC_APB1(TMR12), .inputIrq = TMR8_BRK_TMR12_IRQn},
-	{ .TIMx = TMR13, .rcc = RCC_APB1(TMR13), .inputIrq = TMR8_OVF_TMR13_IRQn},
-	{ .TIMx = TMR14, .rcc = RCC_APB1(TMR14), .inputIrq = TMR8_TRG_HALL_TMR14_IRQn},
-	{ .TIMx = TMR20, .rcc = RCC_APB2(TMR20), .inputIrq = TMR20_CH_IRQn},
+    { .TIMx = TMR1,  .rcc = RCC_APB2(TMR1),  .inputIrq = TMR1_CH_IRQn},
+    { .TIMx = TMR2,  .rcc = RCC_APB1(TMR2),  .inputIrq = TMR2_GLOBAL_IRQn},
+    { .TIMx = TMR3,  .rcc = RCC_APB1(TMR3),  .inputIrq = TMR3_GLOBAL_IRQn},
+    { .TIMx = TMR4,  .rcc = RCC_APB1(TMR4),  .inputIrq = TMR4_GLOBAL_IRQn},
+    { .TIMx = TMR5,  .rcc = RCC_APB1(TMR5),  .inputIrq = TMR5_GLOBAL_IRQn},
+    { .TIMx = TMR6,  .rcc = RCC_APB1(TMR6),  .inputIrq = TMR6_DAC_GLOBAL_IRQn},
+    { .TIMx = TMR7,  .rcc = RCC_APB1(TMR7),  .inputIrq = TMR7_GLOBAL_IRQn},
+    { .TIMx = TMR8,  .rcc = RCC_APB2(TMR8),  .inputIrq = TMR8_CH_IRQn},
+    { .TIMx = TMR9,  .rcc = RCC_APB2(TMR9),  .inputIrq = TMR1_BRK_TMR9_IRQn},
+    { .TIMx = TMR10, .rcc = RCC_APB2(TMR10), .inputIrq = TMR1_OVF_TMR10_IRQn},
+    { .TIMx = TMR11, .rcc = RCC_APB2(TMR11), .inputIrq = TMR1_TRG_HALL_TMR11_IRQn},
+    { .TIMx = TMR12, .rcc = RCC_APB1(TMR12), .inputIrq = TMR8_BRK_TMR12_IRQn},
+    { .TIMx = TMR13, .rcc = RCC_APB1(TMR13), .inputIrq = TMR8_OVF_TMR13_IRQn},
+    { .TIMx = TMR14, .rcc = RCC_APB1(TMR14), .inputIrq = TMR8_TRG_HALL_TMR14_IRQn},
+    { .TIMx = TMR20, .rcc = RCC_APB2(TMR20), .inputIrq = TMR20_CH_IRQn},
 
 };
 
@@ -76,9 +76,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
 
 // Port B ORDER BY MUX 1 2 3
-	//MUX1
-	DEF_TIM(TMR1, CH2N, PB0, TIM_USE_ANY, 0, 0, 0),
-	DEF_TIM(TMR1, CH3N, PB1, TIM_USE_ANY, 0, 0, 0),
+    //MUX1
+    DEF_TIM(TMR1, CH2N, PB0, TIM_USE_ANY, 0, 0, 0),
+    DEF_TIM(TMR1, CH3N, PB1, TIM_USE_ANY, 0, 0, 0),
     DEF_TIM(TMR2, CH4,  PB2, TIM_USE_ANY, 0, 0, 0),
     DEF_TIM(TMR2, CH2, PB3, TIM_USE_ANY, 0, 0, 0),
     DEF_TIM(TMR2, CH1, PB8, TIM_USE_ANY, 0, 0, 0),
@@ -107,7 +107,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TMR8, CH3N, PB15, TIM_USE_ANY, 0, 0, 0),
 
 // Port C ORDER BY MUX 1 2 3
-	//MUX2
+    //MUX2
     DEF_TIM(TMR20, CH2, PC2, TIM_USE_ANY, 0, 0, 0),
     DEF_TIM(TMR3, CH1, PC6, TIM_USE_ANY, 0, 0, 12),//for target test only 
     DEF_TIM(TMR3, CH2, PC7, TIM_USE_ANY, 0, 0, 12),
@@ -132,13 +132,13 @@ uint32_t timerClock(tmr_type *tim)
      * 1. If the APB prescaler equals 1, the timer clock frequencies are set to the same frequency as that of the APB domain.
      * 2. Otherwise, they are set to twice (×2) the frequency of the APB domain.
      */
-	/*
-	 * AN0085 雅特力AT32F435/7 MCU
-	 *  	定时器 TMRxClk源于 APB1/2 如果APB1/2 存在非1 分频时，TMRxClK 为APB1/2 时钟频率的2倍,与stm32 相同
-	 *  	例如：system_core_clock =288mhz , apb1/2 =144mhz  apb1_div=1 ,TMRxClk= apb1/2 *2 = 288Mhz
-	 *
-	 */
-	UNUSED(tim);
+    /*
+     * AN0085 雅特力AT32F435/7 MCU
+     *      定时器 TMRxClk源于 APB1/2 如果APB1/2 存在非1 分频时，TMRxClK 为APB1/2 时钟频率的2倍,与stm32 相同
+     *      例如：system_core_clock =288mhz , apb1/2 =144mhz  apb1_div=1 ,TMRxClk= apb1/2 *2 = 288Mhz
+     *
+     */
+    UNUSED(tim);
     return system_core_clock;
 }
 #endif

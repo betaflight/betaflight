@@ -74,16 +74,16 @@ void checkForBootLoaderRequest(void)
 
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
-	//enable all needed periph
-	crm_periph_clock_enable(
-			CRM_GPIOA_PERIPH_CLOCK    |
-			CRM_GPIOB_PERIPH_CLOCK    |
-			CRM_GPIOC_PERIPH_CLOCK    |
-			CRM_GPIOD_PERIPH_CLOCK    |
-			CRM_GPIOE_PERIPH_CLOCK    |
-			CRM_DMA1_PERIPH_CLOCK     |
-			CRM_DMA2_PERIPH_CLOCK     |
-			0,TRUE);
+    //enable all needed periph
+    crm_periph_clock_enable(
+            CRM_GPIOA_PERIPH_CLOCK    |
+            CRM_GPIOB_PERIPH_CLOCK    |
+            CRM_GPIOC_PERIPH_CLOCK    |
+            CRM_GPIOD_PERIPH_CLOCK    |
+            CRM_GPIOE_PERIPH_CLOCK    |
+            CRM_DMA1_PERIPH_CLOCK     |
+            CRM_DMA2_PERIPH_CLOCK     |
+            0,TRUE);
 }
 
 bool isMPUSoftReset(void)
@@ -96,10 +96,10 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	system_clock_config();//config system clock to 288mhz usb 48mhz
+    system_clock_config();//config system clock to 288mhz usb 48mhz
 
     // Configure NVIC preempt/priority groups
-	nvic_priority_group_config(NVIC_PRIORITY_GROUPING);
+    nvic_priority_group_config(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->CSR value to use it in isMPUSoftReset() and others
     cachedRccCsrValue = CRM->ctrlsts;

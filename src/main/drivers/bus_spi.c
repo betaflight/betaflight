@@ -353,7 +353,7 @@ uint16_t spiCalculateDivider(uint32_t freq)
     uint32_t spiClk = 100000000;
 #elif defined(AT32F4)
     if(freq> 36000000){
-    	freq= 36000000;
+        freq= 36000000;
     }
 
     uint32_t spiClk = system_core_clock / 2;
@@ -380,7 +380,7 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
     uint32_t spiClk = system_core_clock / 2;
 
     if ((spiClk / spiClkDivisor) > 36000000){
-    	return 36000000;
+        return 36000000;
     }
 
 #else

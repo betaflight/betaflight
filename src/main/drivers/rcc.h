@@ -99,8 +99,8 @@ enum rcc_reg {
 #define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1,   CRM_AHB1_ ## periph ## _PER_MASK)
 #define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2,   CRM_AHB2_ ## periph ## _PER_MASK)
 #define RCC_AHB3(periph) RCC_ENCODE(RCC_AHB3,   CRM_AHB3_ ## periph ## _PER_MASK)
-#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, 	CRM_APB1_ ## periph ## _PER_MASK)
-#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, 	CRM_APB2_ ## periph ## _PER_MASK)
+#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1,   CRM_APB1_ ## periph ## _PER_MASK)
+#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2,   CRM_APB2_ ## periph ## _PER_MASK)
 #endif
 
 void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState);

@@ -58,7 +58,7 @@ void cycleCounterInit(void)
 #if defined(USE_HAL_DRIVER)
     cpuClockFrequency = HAL_RCC_GetSysClockFreq();
 #elif defined(USE_ATBSP_DRIVER)
-	crm_clocks_freq_type clocks;
+    crm_clocks_freq_type clocks;
     crm_clocks_freq_get(&clocks);
     cpuClockFrequency = clocks.sclk_freq;
 #else
