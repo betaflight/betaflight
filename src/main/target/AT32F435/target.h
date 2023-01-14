@@ -28,6 +28,11 @@
 #define AT32F435
 #endif
 
+// AT-START-F435 V1.0 LED assignments to use as a default
+#define LED0_PIN                PD13 // Labelled LED2 Red
+#define LED1_PIN                PD14 // Labelled LED3 Amber
+#define LED2_PIN                PD15 // Labelled LED4 Green
+
 //#define USE_I2C_DEVICE_1
 
 #define USE_UART1
