@@ -16,6 +16,7 @@ Version Change Register
 | Draft 0.6 | 06 November 2022 | Add cloud build information |
 | Draft 0.7 | 17 November 2022 | Remove off-board hardware defines |
 | Draft 0.8 | 01 January 2023 | Update BARO and CC2500 |
+| Draft 0.9 | 14 January 2023 | Add FC LEDs |
 
 
 Thank you for considering or continuing your development of Betaflight capable flight control hardware.  
@@ -203,6 +204,20 @@ In order to aid development of Betaflight firmware, and to debug FC specific iss
 #### 3.1.4.5 Blackbox Support
 
 Black box of at least 8mb should also be standard on all fcs as it’s literally impossible to problem solve a tune or flight issues with out black box.
+
+#### 3.1.4.6 LEDs
+
+FCs should implement at least one LED to indicate activity. The second is preferable, and the third optional. Having at least one LED is essential for users to help diagnose basic faults. More LEDs are beneficial to developers as we can build custom images to help diagnose user reported issues.
+
+Each LED should be connected to a GPIO line. Polarity of the output doesn not matter.
+
+| LED Number | Colour | Required |
+| :-- | :-- | :-- |
+| 0 | Blue | Yes |
+| 1 | Green | Preferably |
+| 2 | Amber | No |
+
+For details of the use of these LEDs, please see the [FC LEDs](FC LEDs.md) documentation
 
 
 ## 3.2 Resource Selection Considerations
