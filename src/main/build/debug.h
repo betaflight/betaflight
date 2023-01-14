@@ -105,7 +105,8 @@ typedef enum {
     DEBUG_ATTITUDE,
     DEBUG_VTX_MSP,
     DEBUG_GPS_DOP,
-    DEBUG_COUNT
+    DEBUG_COUNT,
+    DEBUG_FILT_VOLTAGE,
 } debugType_e;
 
 extern const char * const debugModeNames[DEBUG_COUNT];
