@@ -492,7 +492,7 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 
 uint8_t calculateBatteryPercentageRemaining(void)
 {
-    float batteryPercentage = 0;
+    uint8_t batteryPercentage = 0;
     // if (batteryCellCount > 0) {
     //     uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
 
@@ -501,18 +501,18 @@ uint8_t calculateBatteryPercentageRemaining(void)
         // } else {
         //     batteryPercentage = constrain((((uint32_t)voltageMeter.displayFiltered - (batteryConfig()->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig()->vbatmaxcellvoltage - batteryConfig()->vbatmincellvoltage) * batteryCellCount), 0, 100);
         // }
-        float BATTERY_MIN_VOLTAGE  = 330 * batteryCellCount;
-        float BATTERY_MAX_VOLTAGE = 430 * batteryCellCount;
-        float throttle = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+        uint32_t BATTERY_MIN_VOLTAGE  = 330 * batteryCellCount;
+        uint32_t BATTERY_MAX_VOLTAGE = 430 * batteryCellCount;
+        uint32_t throttle = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
 
         if (batteryConfig()->usingCurrentSensor) { // toggle for usingCurrentSensor flag to be added as CLI setting
             uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
             batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn) * 100 / batteryCapacity, 0, 100);
         } else {
-            float voltage = returnFilteredVoltage();
+            uint32_t voltage = returnFilteredVoltage();
             //assume that the voltage drops by 0.1 V for every 1.0 unit of throttle; experimenatally adjust this and factor in batteryCellCount
             voltage -= (throttle * 0.01);  // throttle = rcCommand[3]
-            DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, voltage);
+    
             //clamp the adjusted voltage to the valid range
             if (voltage < BATTERY_MIN_VOLTAGE)
                 voltage = BATTERY_MIN_VOLTAGE;
@@ -527,17 +527,17 @@ uint8_t calculateBatteryPercentageRemaining(void)
     return batteryPercentage;
 }
 
-float returnFilteredVoltage(void) // using a low pass filter
+uint32_t returnFilteredVoltage(void) // using a low pass filter
 {
-    float currVoltage = voltageMeter.displayFiltered;
-    float dt = 1/500;
+    uint32_t currVoltage = (uint32_t)voltageMeter.displayFiltered;
+    uint8_t dt = 1/500;
     
     // calculate the filter constant (alpha) based on the cutoff frequency and time step
     //alpha = dt / (1.0 / (2.0 * np.pi * cutoff_frequency) + dt)
-    float alpha = cutoffFrequency * dt/20;
+    uint8_t alpha = cutoffFrequency * dt/20;
     
     // apply the low-pass filter to the voltage values
-    float newFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
+    uint32_t newFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
     lastFilteredVoltage = newFilteredVoltage;
     return newFilteredVoltage;
 }    

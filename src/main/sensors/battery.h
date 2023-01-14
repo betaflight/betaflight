@@ -123,7 +123,7 @@ int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
 float getWhDrawn(void);
-float returnFilteredVoltage(void);
+uint32_t returnFilteredVoltage(void);
 #ifdef USE_BATTERY_CONTINUE
 bool hasUsedMAh(void);
 void setMAhDrawn(uint32_t mAhDrawn);
