@@ -2,13 +2,13 @@
 
 ## 1. Cloud build 
 
-This is predominantly brought to you for convenience, and to ensure we can keep the 512kb flash targets (STM32F411 and STM32F722) alive and well for years to come. The cloud build system will allow you, the flyer, to select the features you want, and a custom hex will be created for you.
+This is predominantly brought to you for convenience, and to ensure we can keep the 512kb flash targets (STM32F411 and STM32F722) alive and well for years to come. The cloud build system will allow you, the flyer, to select the features you want, and a **custom firmware** will be created for you.
 
-Any issues with the cloud build process please check out the #cloud-build-issues Discord channel. Help us to help you, buy taking advantage of the new "Support" button in the CLI tab in Configurator 10.9.0 (RC4 onwards). This will give us valuable information in trying to diagnose your issue.
+Any issues with the cloud build process please check out the #cloud-build-issues Discord channel. Help us to help you, buy taking advantage of the new `Support` button in the Command Line Interface (CLI) tab in Configurator 10.9.0 (RC4 onwards). This will give us valuable information in trying to diagnose your issue.
 
 **NOTE:** If you have something missing from your cloud build that you would normally expect to be present, e.g. a flash chip or barometer, the reason is because the board configuration (in unified targets) has not been updated with this information (either by the community, or the manufacturer).
 
-If you do have something missing and it works as expected in `classic mode`, please don't worry it is an easy fix, you can use the **custom defines** input box that is shown when "Expert Mode" is enabled. The `classic mode` option will load the all of the hardware drivers (but not all the features), and will allow you to boot the Flight Controller, and run the commands `status`, `flash_info`, `dump hardware` etc, in the CLI tab of configurator to find the information about the hardware you have.
+If you do have something missing then we suggest flashing the `core` version. This will load all the hardware drivers, and then you can submit a `Support` level of detail from the CLI tab. In addition you can use the **custom defines** input box that is shown when "Expert Mode" is enabled. The `classic mode` option will load the all of the hardware drivers (but not all the features), and will allow you to boot the Flight Controller, and run the commands `status`, `flash_info`, `dump hardware` etc, in the CLI tab of configurator to find the information about the hardware you have.
 
 For those missing a barometer: You can try any or all of `BARO_MS5611 BARO_SPI_MS5611 BARO_BMP280 BARO_SPI_BMP280 BARO_BMP388 BARO_SPI_BMP388 BARO_LPS BARO_SPI_LPS BARO_QMP6988 BARO_SPI_QMP6988 BARO_DPS310 BARO_SPI_DPS310 BARO_BMP085 BARO_2SMBP_02B BARO_SPI_2SMBP_02B` in the **custom defines** input box.
 
@@ -16,7 +16,7 @@ For those missing the flash chip: You can try any or all of `USE_FLASH_W25P16 US
 
 Thank you all for your patience and assistance in working through what boards have what hardware. Unfortunately we need our flyers to help crowd source this information - as there is such diverse hardware out there! 
 
-Thanks to #blckmn
+Thanks to @blckmn for the implementation of the cloud build!
 
 ## 2. HD OSD
 
@@ -76,7 +76,8 @@ To display critial warnings in red, select the first font for **normal**, **good
 ```
 set displayport_msp_fonts = 0,0,0,3
 ```
-thanks @SteveCEvans
+
+Thanks goes to @SteveCEvans for these improvements!
 
 
 ## 3. Preset Favourites
@@ -125,6 +126,7 @@ The user can now configure their OSD to show either Craft or Pilot name, or both
 For more info see [PR#11391](https://github.com/betaflight/betaflight/pull/11391) - thanks @krasiyan
 
 **PID profile and Rate profile names shown in OSD**
+
 Thanks @qvasic
 
 
