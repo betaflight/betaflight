@@ -105,11 +105,6 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
-bool areSticksInApModePosition(uint16_t ap_mode)
-{
-    return fabsf(rcCommand[ROLL]) < ap_mode && fabsf(rcCommand[PITCH]) < ap_mode;
-}
-
 throttleStatus_e calculateThrottleStatus(void)
 {
     if (featureIsEnabled(FEATURE_3D)) {
