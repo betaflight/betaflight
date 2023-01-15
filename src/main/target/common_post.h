@@ -18,12 +18,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Touch up configuration
-
 #pragma once
 
 #include "build/version.h"
 
+/*
+
+    The purpose of this file is to enable / disable any firmware "gates" for features and drivers
+    that require hardware resources that are either available or not available after the target.h
+    has been processed.
+
+    It should also be used to define anything that should be defined (and is required), but is not
+    already, to some sort of defaults.
+
+    CLOUD_BUILD and CORE_BUILD should not be referenced here.
+
+    NOTE: for 4.5 we will be removing any conditions related to specific MCU types, instead 
+    these should be defined in the target.h or in a file that is imported by target.h (in the
+    case of common settings for a given MCU group)
+    
+*/
 
 /*
     BEGIN HARDWARE INCLUSIONS
