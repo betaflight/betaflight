@@ -217,16 +217,18 @@ uint32_t failsafeFailurePeriodMs(void)
 }
 
 FAST_CODE_NOINLINE void failsafeUpdateState(void)
-// triggered directly, and ONLY, by the cheduler, at 10ms = PERIOD_RXDATA_FAILURE - intervals
+// triggered directly, and ONLY, by the scheduler, at 10ms = PERIOD_RXDATA_FAILURE - intervals
 {
     if (!failsafeIsMonitoring()) {
         return;
     }
 
     bool receivingRxData = failsafeIsReceivingRxData();
-    // true when FAILSAFE_RXLINK_UP
-    // FAILSAFE_RXLINK_UP is set in failsafeOnValidDataReceived
+    // returns state of FAILSAFE_RXLINK_UP
+    // FAILSAFE_RXLINK_UP is set in failsafeOnValidDataReceived, after the various Stage 1 and recovery delays
     // failsafeOnValidDataReceived runs from detectAndApplySignalLossBehaviour
+
+    DEBUG_SET(DEBUG_FAILSAFE, 2, receivingRxData); // from Rx alone, not considering switch
 
     bool armed = ARMING_FLAG(ARMED);
     bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
@@ -414,6 +416,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
             default:
                 break;
         }
+
+    DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeSwitchIsOn);
+    DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
+
     } while (reprocessState);
 
     if (beeperMode != BEEPER_SILENCE) {
