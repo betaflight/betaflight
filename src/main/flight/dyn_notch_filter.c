@@ -159,7 +159,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     // always initialise, since the dynamic notch could be activated at any time
     dynNotch.q = config->dyn_notch_q / 100.0f;
     dynNotch.minHz = config->dyn_notch_min_hz;
-    dynNotch.maxHz = MAX(2 * dynNotch.minHz, config->dyn_notch_max_hz);
+    dynNotch.maxHz = MAX(dynNotch.minHz, config->dyn_notch_max_hz);
     dynNotch.count = config->dyn_notch_count;
     dynNotch.looptimeUs = targetLooptimeUs;
     dynNotch.maxCenterFreq = 0;
@@ -170,7 +170,11 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz
     if (looprateHz < DYN_NOTCH_UPDATE_MIN_HZ) {
         dynNotch.count = 0;
+        return;
     }
+
+    // Ensure to not go above the nyquist limit
+    dynNotch.maxHz = MIN(dynNotch.maxHz, looprateHz / 2.0f);
 
     sampleCount = MAX(1, looprateHz / (2 * dynNotch.maxHz)); // 600hz, 8k looptime, 6.00
     sampleCountRcp = 1.0f / sampleCount;
