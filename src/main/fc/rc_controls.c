@@ -405,10 +405,6 @@ void processRcStickPositions(void)
 #endif
 }
 
-int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
-    return MIN(abs((int32_t)rcData[axis] - midrc), 500);
-}
-
 void rcControlsInit(void)
 {
     analyzeModeActivationConditions();
