@@ -563,12 +563,12 @@ void init(void)
 #endif
 
     if (0) {}
-#if defined(USE_PPM)
+#if defined(USE_RX_PPM)
     else if (featureIsEnabled(FEATURE_RX_PPM)) {
         ppmRxInit(ppmConfig());
     }
 #endif
-#if defined(USE_PWM)
+#if defined(USE_RX_PWM)
     else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(pwmConfig());
     }

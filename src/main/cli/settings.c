@@ -799,7 +799,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_PWM_CONFIG
-#if defined(USE_PWM)
+#if defined(USE_RX_PWM)
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_OFF_ON }, PG_PWM_CONFIG, offsetof(pwmConfig_t, inputFilteringMode) },
 #endif
 
