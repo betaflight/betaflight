@@ -33,6 +33,7 @@ static FAST_DATA_ZERO_INIT bool      isInitialized;
 static FAST_DATA_ZERO_INIT complex_t twiddle[SDFT_BIN_COUNT];
 
 static void applySqrt(const sdft_t *sdft, float *data);
+static void updateEdges(sdft_t *sdft, const float value, const int batchIdx);
 
 
 void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numBatches)
@@ -77,6 +78,8 @@ FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
     for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
+
+    updateEdges(sdft, delta, 0);
 }
 
 
@@ -99,6 +102,8 @@ FAST_CODE void sdftPushBatch(sdft_t *sdft, const float sample, const int batchId
     for (int i = batchStart; i < batchEnd; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
+
+    updateEdges(sdft, delta, batchIdx);
 }
 
 
@@ -132,6 +137,7 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
+    // Apply window at the lower edge of active range
     if (sdft->startBin == 0) {
         val = sdft->data[sdft->startBin] - sdft->data[sdft->startBin + 1];
     } else {
@@ -148,6 +154,7 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
         output[i] = re * re + im * im;
     }
 
+    // Apply window at the upper edge of active range
     if (sdft->endBin == SDFT_BIN_COUNT - 1) {
         val = sdft->data[sdft->endBin] - sdft->data[sdft->endBin - 1];
     } else {
@@ -172,5 +179,22 @@ static FAST_CODE void applySqrt(const sdft_t *sdft, float *data)
 {
     for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         data[i] = sqrtf(data[i]);
+    }
+}
+
+
+// Needed for proper windowing at the edges of startBin and endBin
+static FAST_CODE void updateEdges(sdft_t *sdft, const float value, const int batchIdx)
+{
+    // First bin outside of lower range
+    if (sdft->startBin > 0 && batchIdx == 0) {
+        const unsigned idx = sdft->startBin - 1;
+        sdft->data[idx] = twiddle[idx] * (sdft->data[idx] + value);
+    }
+    
+    // First bin outside of upper range
+    if (sdft->endBin < SDFT_BIN_COUNT - 1 && batchIdx == sdft->numBatches - 1) {
+        const unsigned idx = sdft->endBin + 1;
+        sdft->data[idx] = twiddle[idx] * (sdft->data[idx] + value);
     }
 }
