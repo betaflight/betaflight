@@ -104,6 +104,7 @@ void failsafeReset(void)
     failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
+    failsafeState.failsafeSwitchWasOn = false;
 }
 
 void failsafeInit(void)
@@ -240,7 +241,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
         receivingRxData = false;
     }
 
-    // Beep RX lost only if we are not seeing data and we have been armed earlier
+    // Beep RX lost only if we are not seeing data and are armed or have been armed earlier
     if (!receivingRxData && (armed || ARMING_FLAG(WAS_EVER_ARMED))) {
         beeperMode = BEEPER_RX_LOST;
     }
@@ -252,12 +253,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 
         switch (failsafeState.phase) {
             case FAILSAFE_IDLE:
+                failsafeState.failsafeSwitchWasOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
                 if (armed) {
                     // Track throttle command below minimum time
                     if (calculateThrottleStatus() != THROTTLE_LOW) {
                         failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
-                    if (failsafeSwitchIsOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL)) {
+                    if (failsafeState.failsafeSwitchWasOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL)) {
                         // Failsafe switch is configured as KILL switch and is switched ON
                         failsafeState.active = true;
                         failsafeState.events++;
@@ -288,8 +290,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         reprocessState = true;
                     }
                 } else {
-                    // When NOT armed, show rxLinkState of failsafe switch in GUI (failsafe mode)
-                    if (failsafeSwitchIsOn) {
+                    // When NOT armed, enable failsafe mode to show warnings in OSD
+                    if (failsafeState.failsafeSwitchWasOn) {
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                     } else {
                         DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
@@ -331,9 +333,9 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             break;
 #endif
                     }
-                    if (failsafeSwitchIsOn) {
+                    if (failsafeState.failsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;
-                        // allow immediate recovery if failsafe is triggered by a switch
+                        // allow immediate recovery if failsafe was triggered by a switch
                     }
                 }
                 reprocessState = true;
@@ -360,8 +362,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 #ifdef USE_GPS_RESCUE
             case FAILSAFE_GPS_RESCUE:
                 if (receivingRxData) {
-                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || !failsafeSwitchIsOn) {
-                        //  this test requires stick inputs to be received during GPS Rescue see PR #7936 for rationale
+                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.failsafeSwitchWasOn) {
+                        // exits the rescue immediately if failsafe was initiated by switch, otherwise 
+                        // requires stick input to exit the rescue after a true Rx loss failsafe
+                        // NB this test requires stick inputs to be received during GPS Rescue see PR #7936 for rationale
                         failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                         reprocessState = true;
                     }
@@ -417,7 +421,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 break;
         }
 
-    DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeSwitchIsOn);
+    DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.failsafeSwitchWasOn);
     DEBUG_SET(DEBUG_FAILSAFE, 3, failsafeState.phase);
 
     } while (reprocessState);
