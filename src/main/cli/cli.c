@@ -4814,7 +4814,11 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef BUILD_KEY
-    cliPrintLinef("BUILD KEY: %s", STR(BUILD_KEY));
+    cliPrintf("BUILD KEY: %s", STR(BUILD_KEY));
+#ifdef RELEASE_NAME
+    cliPrintf(" (%s)", STR(RELEASE_NAME));
+#endif
+    cliPrintLinefeed();
 #endif
 
     // Uptime and wall clock
