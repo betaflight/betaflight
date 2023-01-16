@@ -337,6 +337,12 @@
 #undef USE_LED_STRIP_STATUS_MODE
 #endif
 
+#if defined(USE_MAX7456) || defined(USE_FRSKYOSD) || defined(USE_MSP_DISPLAYPORT)
+#ifndef USE_VIDEO_SYSTEM
+#define USE_VIDEO_SYSTEM
+#endif
+#endif
+
 #if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_STATUS_MODE)
 #define USE_WS2811_SINGLE_COLOUR
 #endif
