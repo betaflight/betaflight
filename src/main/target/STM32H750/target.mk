@@ -1,6 +1,6 @@
 TARGET_MCU        := STM32H750xx
 TARGET_MCU_FAMILY := STM32H7
-H750xB_TARGETS    += $(TARGET)
+
 HSE_VALUE          = 8000000
 
 ifneq ($(EXST),)
