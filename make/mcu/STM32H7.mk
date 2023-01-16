@@ -12,7 +12,7 @@ CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32H7/Drivers/STM32H7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
-    
+
 EXCLUDES        = \
                 stm32h7xx_hal_cec.c \
                 stm32h7xx_hal_comp.c \

@@ -33,14 +33,8 @@ EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_hash_sha1.c
 endif
 
-ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
+ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
 EXCLUDES        += stm32f4xx_fsmc.c
-MCU_FLASH_SIZE  := 512
-else ifeq ($(TARGET),$(filter $(TARGET), $(F446_TARGETS)))
-EXCLUDES        += stm32f4xx_fsmc.c
-MCU_FLASH_SIZE  := 512
-else
-MCU_FLASH_SIZE  := 1024
 endif
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
@@ -132,14 +126,20 @@ ifeq ($(TARGET_MCU),STM32F411xE)
 DEVICE_FLAGS    = -DSTM32F411xE -finline-limit=20
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
 STARTUP_SRC     = startup_stm32f411xe.s
+MCU_FLASH_SIZE  := 512
+
 else ifeq ($(TARGET_MCU),STM32F405xx)
 DEVICE_FLAGS    = -DSTM32F40_41xxx -DSTM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
 STARTUP_SRC     = startup_stm32f40xx.s
+MCU_FLASH_SIZE  := 1024
+
 else ifeq ($(TARGET_MCU),STM32F446xx)
 DEVICE_FLAGS    = -DSTM32F446xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f446.ld
 STARTUP_SRC     = startup_stm32f446xx.s
+MCU_FLASH_SIZE  := 512
+
 else
 $(error Unknown MCU for F4 target)
 endif
