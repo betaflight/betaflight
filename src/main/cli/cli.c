@@ -5049,24 +5049,24 @@ typedef struct {
     { owner, pgn, sizeof(type), offsetof(type, member), max }
 
 const cliResourceValue_t resourceTable[] = {
-#ifdef USE_BEEPER
+#if defined(USE_BEEPER)
     DEFS( OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, beeperDevConfig_t, ioTag) ,
 #endif
     DEFA( OWNER_MOTOR,         PG_MOTOR_CONFIG, motorConfig_t, dev.ioTags[0], MAX_SUPPORTED_MOTORS ),
-#ifdef USE_SERVOS
+#if defined(USE_SERVOS)
     DEFA( OWNER_SERVO,         PG_SERVO_CONFIG, servoConfig_t, dev.ioTags[0], MAX_SUPPORTED_SERVOS ),
 #endif
-#if defined(USE_PPM)
+#if defined(USE_RX_PPM)
     DEFS( OWNER_PPMINPUT,      PG_PPM_CONFIG, ppmConfig_t, ioTag ),
 #endif
-#if defined(USE_PWM)
+#if defined(USE_RX_PWM)
     DEFA( OWNER_PWMINPUT,      PG_PWM_CONFIG, pwmConfig_t, ioTags[0], PWM_INPUT_PORT_COUNT ),
 #endif
-#ifdef USE_RANGEFINDER_HCSR04
+#if defined(USE_RANGEFINDER_HCSR04)
     DEFS( OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, sonarConfig_t, triggerTag ),
     DEFS( OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, sonarConfig_t, echoTag ),
 #endif
-#ifdef USE_LED_STRIP
+#if defined(USE_LED_STRIP)
     DEFS( OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, ledStripConfig_t, ioTag ),
 #endif
 #ifdef USE_UART

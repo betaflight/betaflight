@@ -96,7 +96,7 @@ typedef enum {
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
-#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
+#if defined(USE_VIDEO_SYSTEM)
     TABLE_VIDEO_SYSTEM,
 #endif
 #if defined(USE_ITERM_RELAX)

@@ -31,9 +31,9 @@ This file specifies the features enabled/disabled depending on the memory flash 
 The first interesting part is where it specifies the features activated for all flight controllers. In the actual version, for example:
 ```
 #define USE_CLI
-#define USE_PPM
-#define USE_PWM
-#define SERIAL_RX
+#define USE_RX_PPM
+#define USE_RX_PWM
+#define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
@@ -96,17 +96,17 @@ After looking carefully to this file, you must know what features you want to di
 
 ## Specific features for each Flight Controller
 
-Each flight controller has its own file to specify what features are enabled or disabled only for it. Sometimes they have been disabled by space limitations, but other times it's for limited computing capacity or a bug, so enable them at your own risk. 
+Each flight controller has its own file to specify what features are enabled or disabled only for it. Sometimes they have been disabled by space limitations, but other times it's for limited computing capacity or a bug, so enable them at your own risk.
 
 This file is located in `target/[FLIGHT_CONTROLLER_NAME]/target.h` and it's loaded **after** the `target/common_pre.h`. Any changes in this file will overwrite the default settings, so this file is the place where you must touch to create your custom firmware.
 
-The first thing to do is to *#undef* all the features that we want to disable from the *common_pre.h*. 
+The first thing to do is to *#undef* all the features that we want to disable from the *common_pre.h*.
 
 For example, in a NAZE32, if we're using Serial RX, with a FlySky receiver (that uses de iBus protocol) and we don't have a led strip we will add all this *#undef* to the file.
 
 ```
-#undef USE_PPM
-#undef USE_PWM
+#undef USE_RX_PPM
+#undef USE_RX_PWM
 #undef USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol

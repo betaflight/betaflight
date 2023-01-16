@@ -325,14 +325,15 @@ extern uint8_t _dmaram_end__;
 #define USE_RANGEFINDER_TF
 #endif
 
-#define USE_PPM
+#define USE_RX_PPM
+#define USE_RX_PWM
 
 #define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
-#define USE_PWM
 
 #define USE_PINIO
 
 #if !defined(USE_SERIAL_RX)
+
 #define USE_SERIALRX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_GHST       // ImmersionRC Ghost Protocol
@@ -342,6 +343,7 @@ extern uint8_t _dmaram_end__;
 #define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_SERIALRX_XBUS       // JR
 #define USE_SERIALRX_SRXL2      // Spektrum SRXL2 protocol
+
 #endif // !defined(USE_SERIAL_RX)
 
 #if !defined(USE_TELEMETRY)

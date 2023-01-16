@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#if defined(USE_PWM) || defined(USE_PPM)
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
 
 #include "build/build_config.h"
 #include "build/debug.h"
