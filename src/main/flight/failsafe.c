@@ -312,8 +312,6 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             //  Enter Stage 2 with settings for landing mode
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                             failsafeState.phase = FAILSAFE_LANDING;
-                            failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
-                            //  allow re-arming 1 second after Rx recovery
                             failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
                             break;
 
@@ -321,21 +319,20 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                             failsafeState.phase = FAILSAFE_LANDED;
                             //  go directly to FAILSAFE_LANDED
-                            failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
-                            //  allow re-arming 1 second after Rx recovery
                             break;
 #ifdef USE_GPS_RESCUE
                         case FAILSAFE_PROCEDURE_GPS_RESCUE:
                             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
-                            failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
-                            //  allow re-arming 1 second after Rx recovery
                             break;
 #endif
                     }
                     if (failsafeState.failsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;
-                        // allow immediate recovery if failsafe was triggered by a switch
+                        // recover immediately if failsafe was triggered by a switch
+                    } else {
+                        failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
+                        // recover from true link loss failsafe 1 second after RC Link recovers
                     }
                 }
                 reprocessState = true;
