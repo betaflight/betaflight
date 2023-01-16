@@ -1,4 +1,6 @@
-SITL_TARGETS += $(TARGET)
+TARGET_MCU        := SITL
+TARGET_MCU_FAMILY := SITL
+SIMULATOR_BUILD    = yes
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

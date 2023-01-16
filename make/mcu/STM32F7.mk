@@ -116,22 +116,22 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XI_TARGETS)))
+ifeq ($(TARGET_MCU),STM32F765xx)
 DEVICE_FLAGS   += -DSTM32F765xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f765.ld
 STARTUP_SRC     = startup_stm32f765xx.s
 MCU_FLASH_SIZE	:= 2048
-else ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32F745xx)
 DEVICE_FLAGS   += -DSTM32F745xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f745xx.s
 MCU_FLASH_SIZE  := 1024
-else ifeq ($(TARGET),$(filter $(TARGET),$(F7X6XG_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32F746xx)
 DEVICE_FLAGS   += -DSTM32F746xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f74x.ld
 STARTUP_SRC     = startup_stm32f746xx.s
 MCU_FLASH_SIZE  := 1024
-else ifeq ($(TARGET),$(filter $(TARGET),$(F7X2RE_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32F722xx)
 DEVICE_FLAGS   += -DSTM32F722xx
 ifndef LD_SCRIPT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f722.ld
@@ -145,8 +145,6 @@ else
 $(error Unknown MCU for F7 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
-
-TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
@@ -179,7 +177,7 @@ MCU_COMMON_SRC = \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_hal.c \
             drivers/serial_uart_stm32f7xx.c \
-            drivers/sdio_f7xx.c            
+            drivers/sdio_f7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \

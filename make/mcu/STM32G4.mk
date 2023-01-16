@@ -120,7 +120,7 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER -DUSE_DMA_RAM -DMAX_MPU_
 
 # G47X_TARGETS includes G47{3,4}{RE,CE,CEU}
 
-ifeq ($(TARGET),$(filter $(TARGET),$(G47X_TARGETS)))
+ifeq ($(TARGET_MCU),STM32G474xx)
 DEVICE_FLAGS   += -DSTM32G474xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_g474.ld
 STARTUP_SRC     = startup_stm32g474xx.s
@@ -132,8 +132,6 @@ else
 $(error Unknown MCU for G4 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
-
-TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
