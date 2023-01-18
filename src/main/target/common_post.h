@@ -205,7 +205,7 @@
 #define USE_SBUS_CHANNELS
 #endif
 
-#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
+#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF) && !defined(USE_TELEMETRY_GHST)
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 
