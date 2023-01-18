@@ -203,9 +203,11 @@ void calculateEstimatedAltitude(void)
  
     // *** set debugs
     DEBUG_SET(DEBUG_ALTITUDE, 0, (int32_t)(100 * gpsTrust));
-    DEBUG_SET(DEBUG_ALTITUDE, 1, gpsAltCm);
-    DEBUG_SET(DEBUG_ALTITUDE, 2, displayAltitudeCm);
-    DEBUG_SET(DEBUG_ALTITUDE, 3, zeroedAltitudeCm);
+    DEBUG_SET(DEBUG_ALTITUDE, 1, baroAltCm);
+    DEBUG_SET(DEBUG_ALTITUDE, 2, gpsAltCm);
+#ifdef USE_VARIO
+    DEBUG_SET(DEBUG_ALTITUDE, 3, estimatedVario);
+#endif
     DEBUG_SET(DEBUG_RTH, 1, displayAltitudeCm);
     DEBUG_SET(DEBUG_BARO, 3, baroAltCm);
 }
