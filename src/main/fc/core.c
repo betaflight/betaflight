@@ -683,18 +683,7 @@ static bool canUpdateVTX(void)
 bool areSticksActive(uint8_t stickPercentLimit)
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis ++) {
-        const uint8_t deadband = axis == FD_YAW ? rcControlsConfig()->yaw_deadband : rcControlsConfig()->deadband;
-        uint8_t stickPercent = 0;
-        if ((rcData[axis] >= PWM_RANGE_MAX) || (rcData[axis] <= PWM_RANGE_MIN)) {
-            stickPercent = 100;
-        } else {
-            if (rcData[axis] > (rxConfig()->midrc + deadband)) {
-                stickPercent = ((rcData[axis] - rxConfig()->midrc - deadband) * 100) / (PWM_RANGE_MAX - rxConfig()->midrc - deadband);
-            } else if (rcData[axis] < (rxConfig()->midrc - deadband)) {
-                stickPercent = ((rxConfig()->midrc - deadband - rcData[axis]) * 100) / (rxConfig()->midrc - deadband - PWM_RANGE_MIN);
-            }
-        }
-        if (stickPercent >= stickPercentLimit) {
+        if (getRcDeflectionAbs(axis) * 100.f >= stickPercentLimit) {
             return true;
         }
     }

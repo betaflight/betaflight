@@ -1150,5 +1150,5 @@ extern "C" {
         UNUSED(pitchLpf);
         return 0.0f;
     }
-
+    void getRcDeflectionAbs(void) {}
 }

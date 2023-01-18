@@ -90,6 +90,7 @@ typedef struct failsafeState_s {
     uint32_t receivingRxDataPeriodPreset;   // preset for the required period of valid rxData
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
+    bool failsafeSwitchWasOn;
 } failsafeState_t;
 
 void failsafeInit(void);
