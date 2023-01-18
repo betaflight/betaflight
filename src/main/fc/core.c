@@ -317,7 +317,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_THROTTLE);
         }
 
-        if (!isUpright() && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        if (!isUpright() && !isCrashflipSwitchActive()) {
             setArmingDisabled(ARMING_DISABLED_ANGLE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
@@ -346,7 +346,7 @@ void updateArmingStatus(void)
 #ifdef USE_GPS_RESCUE
         if (gpsRescueIsConfigured()) {
             if (gpsRescueConfig()->allowArmingWithoutFix || (STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) ||
-            ARMING_FLAG(WAS_EVER_ARMED) || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            ARMING_FLAG(WAS_EVER_ARMED) || isCrashflipSwitchActive()) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
                 setArmingDisabled(ARMING_DISABLED_GPS);
@@ -442,7 +442,7 @@ void disarm(flightLogDisarmReason_e reason)
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
-        if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || isLaunchControlActive()) {
+        if (isCrashflipSwitchActive() || isLaunchControlActive()) {
             osdSuppressStats(true);
         }
 #endif
@@ -478,7 +478,8 @@ void disarm(flightLogDisarmReason_e reason)
         }
     }
 }
-
+static bool useAutoCrashflipMixer = true;
+static bool crashflipSwitchActive = false;
 void tryArm(void)
 {
     if (armingConfig()->gyro_cal_on_first_arm) {
@@ -491,13 +492,23 @@ void tryArm(void)
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-
+        //Remember that this is not called continuously
+        if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            useAutoCrashflipMixer = false;
+            crashflipSwitchActive = true;
+        } else if(shouldAutoTurtle()) { // This will mean quad enters turtle mode midair
+            useAutoCrashflipMixer = true;
+            crashflipSwitchActive = true;
+        } else {
+            useAutoCrashflipMixer = true;
+            crashflipSwitchActive = false;
+        }
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
         if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
-                if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                if (isCrashflipSwitchActive()) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
 #ifdef USE_LAUNCH_CONTROL
                 } else if (canUseLaunchControl()) {
@@ -523,7 +534,7 @@ void tryArm(void)
 
             if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
                 // Set motor spin direction
-                if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
+                if (!(isCrashflipSwitchActive() || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                     flipOverAfterCrashActive = false;
                     if (!featureIsEnabled(FEATURE_3D)) {
                         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
@@ -609,6 +620,19 @@ void tryArm(void)
             }
         }
     }
+}
+
+bool isCrashflipInAutoMode(void)
+{
+    return useAutoCrashflipMixer;
+}
+
+bool isCrashflipSwitchActive(void) {
+    return crashflipSwitchActive;
+}
+
+bool shouldAutoTurtle(void) {
+    return isUpright();
 }
 
 // Automatic ACC Offset Calibration

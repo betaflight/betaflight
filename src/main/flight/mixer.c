@@ -273,75 +273,107 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     if (ARMING_FLAG(ARMED)) {
-        const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
-        const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
-        const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
-        const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
-
-        const float stickDeflectionPitchExpo = flipPowerFactor * stickDeflectionPitchAbs + power3(stickDeflectionPitchAbs) * (1 - flipPowerFactor);
-        const float stickDeflectionRollExpo = flipPowerFactor * stickDeflectionRollAbs + power3(stickDeflectionRollAbs) * (1 - flipPowerFactor);
-        const float stickDeflectionYawExpo = flipPowerFactor * stickDeflectionYawAbs + power3(stickDeflectionYawAbs) * (1 - flipPowerFactor);
-
-        float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
-        float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
-        float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
-
-        float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
-        float stickDeflectionExpoLength = sqrtf(sq(stickDeflectionPitchExpo) + sq(stickDeflectionRollExpo));
-
-        if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
-            // If yaw is the dominant, disable pitch and roll
-            stickDeflectionLength = stickDeflectionYawAbs;
-            stickDeflectionExpoLength = stickDeflectionYawExpo;
-            signRoll = 0;
-            signPitch = 0;
-        } else {
-            // If pitch/roll dominant, disable yaw
-            signYaw = 0;
-        }
-
-        const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
-        const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
-
-        if (cosPhi < cosThreshold) {
-            // Enforce either roll or pitch exclusively, if not on diagonal
-            if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
-                signPitch = 0;
-            } else {
-                signRoll = 0;
-            }
-        }
-
-        // Apply a reasonable amount of stick deadband
-        const float crashFlipStickMinExpo = flipPowerFactor * CRASH_FLIP_STICK_MINF + power3(CRASH_FLIP_STICK_MINF) * (1 - flipPowerFactor);
-        const float flipStickRange = 1.0f - crashFlipStickMinExpo;
-        const float flipPower = MAX(0.0f, stickDeflectionExpoLength - crashFlipStickMinExpo) / flipStickRange;
-
-        for (int i = 0; i < mixerRuntime.motorCount; ++i) {
-            float motorOutputNormalised =
-                signPitch * mixerRuntime.currentMixer[i].pitch +
-                signRoll * mixerRuntime.currentMixer[i].roll +
-                signYaw * mixerRuntime.currentMixer[i].yaw;
-
-            if (motorOutputNormalised < 0) {
-                if (mixerConfig()->crashflip_motor_percent > 0) {
-                    motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
+        if (isCrashflipInAutoMode()) {
+            float flipPower = mixerConfig()->crashflip_motor_percent / 100.0f;
+            // float rightSideUpFlipPower = flipPower / 2.0f;
+            float quadVec[3] = {0,0,1};
+            applyMatrixRotation(quadVec, (struct fp_rotationMatrix_s*)rMat);
+            float crashflipPitch = -quadVec[0];
+            float crashflipRoll = quadVec[1];
+            float rollCorrection = crashflipRoll;
+            float pitchCorrection = crashflipPitch;
+            if (ABS(ABS(crashflipRoll) - ABS(crashflipPitch)) > 0.15f) {
+                //If far apart then we deactivate one of these
+                if (ABS(crashflipRoll) > ABS(crashflipPitch)) {
+                    pitchCorrection = 0;
                 } else {
-                    motorOutputNormalised = 0;
+                    rollCorrection = 0;
                 }
             }
-            motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
-            float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
+            if (quadVec[2] < 0) { // If upside down 
+                for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+                    float motorOutputNormalised =
+                            SIGN(pitchCorrection) * mixerRuntime.currentMixer[i].pitch +
+                            SIGN(rollCorrection) * mixerRuntime.currentMixer[i].roll;
+                    motorOutputNormalised = constrainf(flipPower * motorOutputNormalised, 0.0f, 1.0f); //Removes need for some previous code in normal crashflip because no one really needs mixerConfig()->crashflip_motor_percent to ever be > 0
+                    float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
+                    motor[i] = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
+            } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
+                disarm();
+            } else {
+                tryArm(); //Tryarm should automatically be ran
+            }
+        } else {
+            const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
+            const float stickDeflectionPitchAbs = getRcDeflectionAbs(FD_PITCH);
+            const float stickDeflectionRollAbs = getRcDeflectionAbs(FD_ROLL);
+            const float stickDeflectionYawAbs = getRcDeflectionAbs(FD_YAW);
 
-            // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
+            const float stickDeflectionPitchExpo = flipPowerFactor * stickDeflectionPitchAbs + power3(stickDeflectionPitchAbs) * (1 - flipPowerFactor);
+            const float stickDeflectionRollExpo = flipPowerFactor * stickDeflectionRollAbs + power3(stickDeflectionRollAbs) * (1 - flipPowerFactor);
+            const float stickDeflectionYawExpo = flipPowerFactor * stickDeflectionYawAbs + power3(stickDeflectionYawAbs) * (1 - flipPowerFactor);
 
-            motor[i] = motorOutput;
-        }
-    } else {
-        // Disarmed mode
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motor[i] = motor_disarmed[i];
+            float signPitch = getRcDeflection(FD_PITCH) < 0 ? 1 : -1;
+            float signRoll = getRcDeflection(FD_ROLL) < 0 ? 1 : -1;
+            float signYaw = (getRcDeflection(FD_YAW) < 0 ? 1 : -1) * (mixerConfig()->yaw_motors_reversed ? 1 : -1);
+
+            float stickDeflectionLength = sqrtf(sq(stickDeflectionPitchAbs) + sq(stickDeflectionRollAbs));
+            float stickDeflectionExpoLength = sqrtf(sq(stickDeflectionPitchExpo) + sq(stickDeflectionRollExpo));
+
+            if (stickDeflectionYawAbs > MAX(stickDeflectionPitchAbs, stickDeflectionRollAbs)) {
+                // If yaw is the dominant, disable pitch and roll
+                stickDeflectionLength = stickDeflectionYawAbs;
+                stickDeflectionExpoLength = stickDeflectionYawExpo;
+                signRoll = 0;
+                signPitch = 0;
+            } else {
+                // If pitch/roll dominant, disable yaw
+                signYaw = 0;
+            }
+
+            const float cosPhi = (stickDeflectionLength > 0) ? (stickDeflectionPitchAbs + stickDeflectionRollAbs) / (sqrtf(2.0f) * stickDeflectionLength) : 0;
+            const float cosThreshold = sqrtf(3.0f)/2.0f; // cos(PI/6.0f)
+
+            if (cosPhi < cosThreshold) {
+                // Enforce either roll or pitch exclusively, if not on diagonal
+                if (stickDeflectionRollAbs > stickDeflectionPitchAbs) {
+                    signPitch = 0;
+                } else {
+                    signRoll = 0;
+                }
+            }
+
+            // Apply a reasonable amount of stick deadband
+            const float crashFlipStickMinExpo = flipPowerFactor * CRASH_FLIP_STICK_MINF + power3(CRASH_FLIP_STICK_MINF) * (1 - flipPowerFactor);
+            const float flipStickRange = 1.0f - crashFlipStickMinExpo;
+            const float flipPower = MAX(0.0f, stickDeflectionExpoLength - crashFlipStickMinExpo) / flipStickRange;
+
+            for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+                float motorOutputNormalised =
+                    signPitch * mixerRuntime.currentMixer[i].pitch +
+                    signRoll * mixerRuntime.currentMixer[i].roll +
+                    signYaw * mixerRuntime.currentMixer[i].yaw;
+
+                if (motorOutputNormalised < 0) {
+                    if (mixerConfig()->crashflip_motor_percent > 0) {
+                        motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
+                    } else {
+                        motorOutputNormalised = 0;
+                    }
+                }
+                motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
+                float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
+
+                // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
+                motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
+
+                motor[i] = motorOutput;
+            }
+        } else {
+            // Disarmed mode
+            for (int i = 0; i < mixerRuntime.motorCount; i++) {
+                motor[i] = motor_disarmed[i];
+            }
         }
     }
 }
