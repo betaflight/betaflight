@@ -290,6 +290,8 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     rollCorrection = 0;
                 }
             }
+            DEBUG_SET(DEBUG_AUTO_TURTLE_2, 0, crashflipRoll * 100.0f);
+            DEBUG_SET(DEBUG_AUTO_TURTLE_2, 1, crashflipPitch * 100.0f);
             if (quadVec[2] < 0) { // If upside down 
                 for (int i = 0; i < mixerRuntime.motorCount; ++i) {
                     float motorOutputNormalised =
@@ -302,14 +304,14 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
             } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
-                disarm(DISARM_REASON_AUTO_CRASHFLIP);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 70);
+                disarm(DISARM_REASON_AUTO_CRASHFLIP);
+                updateArmingStatus();
             } else {
-                tryArm(); //Tryarm should automatically be ran
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 69);
-
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
+                // tryArm(); //Tryarm should automatically be ran
             }
         } else {
             const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;

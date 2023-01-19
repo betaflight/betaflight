@@ -480,8 +480,10 @@ void disarm(flightLogDisarmReason_e reason)
 }
 static bool useAutoCrashflipMixer = false;
 static bool crashflipSwitchActive = false;
+static uint32_t loopcount = 0;
 void tryArm(void)
 {
+    loopcount++;
     if (armingConfig()->gyro_cal_on_first_arm) {
         gyroStartCalibration(true);
     }
@@ -504,9 +506,9 @@ void tryArm(void)
             useAutoCrashflipMixer = false;
             crashflipSwitchActive = false;
         }
-        DEBUG_SET(DEBUG_AUTO_TURTLE, 0, useAutoCrashflipMixer);
-        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, crashflipSwitchActive);
-        
+        DEBUG_SET(DEBUG_AUTO_TURTLE, 0, useAutoCrashflipMixer + 10*crashflipSwitchActive);
+        // DEBUG_SET(DEBUG_AUTO_TURTLE, 1, crashflipSwitchActive);
+        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, loopcount);
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
