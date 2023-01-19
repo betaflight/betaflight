@@ -88,7 +88,7 @@
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
 #else
-#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 3);
@@ -873,7 +873,7 @@ STATIC_UNIT_TESTED bool writeSlowFrameIfNeeded(void)
 
 void blackboxValidateConfig(void)
 {
-    // If we've chosen an unsupported device, change the device to serial
+    // If we've chosen an unsupported device, change the device to NONE
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
@@ -886,7 +886,7 @@ void blackboxValidateConfig(void)
         break;
 
     default:
-        blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
 }
 
