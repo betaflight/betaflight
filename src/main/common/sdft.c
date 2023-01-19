@@ -86,7 +86,7 @@ FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
 // Add new sample to frequency spectrum in parts
 FAST_CODE void sdftPushBatch(sdft_t *sdft, const float sample, const int batchIdx)
 {
-    const int batchStart = sdft->batchSize * batchIdx;
+    const int batchStart = sdft->batchSize * batchIdx + sdft->startBin;
     int batchEnd = batchStart;
 
     const float delta = sample - rPowerN * sdft->samples[sdft->idx];
@@ -191,7 +191,7 @@ static FAST_CODE void updateEdges(sdft_t *sdft, const float value, const int bat
         const unsigned idx = sdft->startBin - 1;
         sdft->data[idx] = twiddle[idx] * (sdft->data[idx] + value);
     }
-    
+
     // First bin outside of upper range
     if (sdft->endBin < SDFT_BIN_COUNT - 1 && batchIdx == sdft->numBatches - 1) {
         const unsigned idx = sdft->endBin + 1;
