@@ -478,7 +478,7 @@ void disarm(flightLogDisarmReason_e reason)
         }
     }
 }
-static bool useAutoCrashflipMixer = true;
+static bool useAutoCrashflipMixer = false;
 static bool crashflipSwitchActive = false;
 void tryArm(void)
 {
@@ -500,7 +500,7 @@ void tryArm(void)
             useAutoCrashflipMixer = true;
             crashflipSwitchActive = true;
         } else {
-            useAutoCrashflipMixer = true;
+            useAutoCrashflipMixer = false;
             crashflipSwitchActive = false;
         }
         const timeUs_t currentTimeUs = micros();
@@ -632,7 +632,7 @@ bool isCrashflipSwitchActive(void) {
 }
 
 bool shouldAutoTurtle(void) {
-    return isUpright();
+    return !isUpright();
 }
 
 // Automatic ACC Offset Calibration

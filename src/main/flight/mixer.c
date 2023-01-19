@@ -298,8 +298,9 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     motorOutputNormalised = constrainf(flipPower * motorOutputNormalised, 0.0f, 1.0f); //Removes need for some previous code in normal crashflip because no one really needs mixerConfig()->crashflip_motor_percent to ever be > 0
                     float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
                     motor[i] = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
+                }
             } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
-                disarm();
+                disarm(DISARM_REASON_AUTO_CRASHFLIP);
             } else {
                 tryArm(); //Tryarm should automatically be ran
             }
@@ -369,11 +370,11 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 
                 motor[i] = motorOutput;
             }
-        } else {
-            // Disarmed mode
-            for (int i = 0; i < mixerRuntime.motorCount; i++) {
-                motor[i] = motor_disarmed[i];
-            }
+        }
+    } else {
+        // Disarmed mode
+        for (int i = 0; i < mixerRuntime.motorCount; i++) {
+            motor[i] = motor_disarmed[i];
         }
     }
 }

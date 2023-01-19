@@ -55,6 +55,7 @@ typedef enum {
     DISARM_REASON_RUNAWAY_TAKEOFF   = 6,
     DISARM_REASON_GPS_RESCUE        = 7,
     DISARM_REASON_SERIAL_COMMAND    = 8,
+    DISARM_REASON_AUTO_CRASHFLIP    = 9,
 #ifdef UNIT_TEST
     DISARM_REASON_SYSTEM            = 255,
 #endif
@@ -76,6 +77,8 @@ void disarm(flightLogDisarmReason_e reason);
 void tryArm(void);
 
 bool isCrashflipInAutoMode(void);
+bool shouldAutoTurtle(void);
+bool isCrashflipSwitchActive(void);
 
 bool processRx(timeUs_t currentTimeUs);
 void processRxModes(timeUs_t currentTimeUs);
