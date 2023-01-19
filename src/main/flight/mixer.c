@@ -443,7 +443,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
         }
     }
     DEBUG_SET(DEBUG_EZLANDING, 1, throttle * 10000U);
-    // DEBUG_ESLANDING 0 is the ez_landing coeffiecient 2 is the throttle limit
+    // DEBUG_EZLANDING 0 is the ezLanding factor 2 is the throttle limit
 }
 
 static float applyThrottleLimit(float throttle)
@@ -525,46 +525,44 @@ static void applyMixerAdjustmentLinear(float *motorMix, const bool airmodeEnable
 
 static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin, const float motorMixMax)
 {
-    // Calculate the 'airmode throttle' as usual
-    const float motorMixNormalizationFactor = motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f;
+    // Calculate factor for normalizing motor mix range to <= 1.0
+    const float baseNormalizationFactor = motorMixRange > 1.0f ? 1.0f / motorMixRange : 1.0f;
+    const float normalizedMotorMixMin = motorMixMin * baseNormalizationFactor;
+    const float normalizedMotorMixMax = motorMixMax * baseNormalizationFactor;
 
+    // Upper throttle limit
+    // range default 0.1 - 1.0 with ezLandingLimit = 10, no stick deflection -> 0.1
+    const float ezLandLimit = 1.0f - calcEzLandStrength(0.0f, getMaxRcDeflectionAbs());
+    // use the largest of throttle and limit calculated from RPY stick positions
+    float upperLimit = fmaxf(ezLandLimit, throttle);
+    // limit throttle to avoid clipping the highest motor output
+    upperLimit = fminf(upperLimit, 1.0f - normalizedMotorMixMax);
+
+    // Lower throttle Limit
+    const float epsilon = 1.0e-6f;  // add small value to avoid divisions by zero
+    const float absMotorMixMin = fabsf(normalizedMotorMixMin) + epsilon;
+    const float lowerLimit = fminf(upperLimit, absMotorMixMin);
+
+    // represents how much motor values have to be scaled to avoid clipping
+    const float ezLandFactor = upperLimit / absMotorMixMin;
+
+    // scale motor values
+    const float normalizationFactor = baseNormalizationFactor * fminf(1.0f, ezLandFactor);
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-        motorMix[i] *= motorMixNormalizationFactor;
+        motorMix[i] *= normalizationFactor;
     }
+    motorMixRange *= baseNormalizationFactor;
+    // Make anti windup recognize reduced authority range
+    motorMixRange = fmaxf(motorMixRange, 1.0f / ezLandFactor);
 
-    const float normalizedMotorMixMin = motorMixMin * motorMixNormalizationFactor;
-    const float normalizedMotorMixMax = motorMixMax * motorMixNormalizationFactor;
-    motorMixRange *= motorMixNormalizationFactor;
+    // Constrain throttle
+    throttle = constrainf(throttle, lowerLimit, upperLimit);
 
-    const float airmodeThrottle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
-
-    // Calculate throttle limit based on stick positions
-    float throttleLimit = 1.0f - calcEzLandStrength(0.0, getMaxRcDeflectionAbs());
-
-    // Log ezLandCoefficient if throttle was zero
-    DEBUG_SET(DEBUG_EZLANDING, 3, MIN(1, throttleLimit/fabsf(normalizedMotorMixMin)) * 10000U);
-
-    // Use the largest of throttle and limit calculated from stick positions
-    throttleLimit = fmaxf(throttle, throttleLimit);
-
-    // Log actual throttle limit
-    DEBUG_SET(DEBUG_EZLANDING, 2, throttleLimit * 10000U);
-    if (airmodeThrottle > throttleLimit) {
-        // Scale down motor mix from PIDs so that the limit is respected
-        const float ezLandCoefficient = throttleLimit / fabsf(normalizedMotorMixMin);
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motorMix[i] *= ezLandCoefficient;
-        }
-        throttle = throttleLimit;
-        // Hack to make anti windup recognize the reduced authority range
-        motorMixRange /= ezLandCoefficient;
-        // end of hack
-        DEBUG_SET(DEBUG_EZLANDING, 0, ezLandCoefficient * 10000U);
-    } else {
-        throttle = airmodeThrottle;
-        DEBUG_SET(DEBUG_EZLANDING, 0, 10000U);
-        // DEBUG_EZLANDING 1 is the adjusted throttle
-    }
+    // Log ezLandFactor, upper throttle limit, and ezLandFactor if throttle was zero
+    DEBUG_SET(DEBUG_EZLANDING, 0, fminf(1.0f, ezLandFactor) * 10000U);
+    // DEBUG_EZLANDING 1 is the adjusted throttle
+    DEBUG_SET(DEBUG_EZLANDING, 2, upperLimit * 10000U);
+    DEBUG_SET(DEBUG_EZLANDING, 3, fminf(1.0f, ezLandLimit / absMotorMixMin) * 10000U);
 }
 
 static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
