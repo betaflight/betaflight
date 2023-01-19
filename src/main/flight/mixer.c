@@ -272,7 +272,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
-    if (ARMING_FLAG(ARMED)) {
+    // if (ARMING_FLAG(ARMED)) {
         if (isCrashflipInAutoMode()) {
             float flipPower = mixerConfig()->crashflip_motor_percent / 100.0f;
             // float rightSideUpFlipPower = flipPower / 2.0f;
@@ -299,10 +299,17 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
                     motor[i] = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
                 }
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
             } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
                 disarm(DISARM_REASON_AUTO_CRASHFLIP);
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 70);
             } else {
                 tryArm(); //Tryarm should automatically be ran
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 69);
+
             }
         } else {
             const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
@@ -371,7 +378,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 motor[i] = motorOutput;
             }
         }
-    } else {
+    if (!ARMING_FLAG(ARMED)) {
         // Disarmed mode
         for (int i = 0; i < mixerRuntime.motorCount; i++) {
             motor[i] = motor_disarmed[i];

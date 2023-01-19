@@ -496,6 +496,7 @@ void tryArm(void)
         if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
             useAutoCrashflipMixer = false;
             crashflipSwitchActive = true;
+            
         } else if(shouldAutoTurtle()) { // This will mean quad enters turtle mode midair
             useAutoCrashflipMixer = true;
             crashflipSwitchActive = true;
@@ -503,6 +504,9 @@ void tryArm(void)
             useAutoCrashflipMixer = false;
             crashflipSwitchActive = false;
         }
+        DEBUG_SET(DEBUG_AUTO_TURTLE, 0, useAutoCrashflipMixer);
+        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, crashflipSwitchActive);
+        
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
@@ -632,7 +636,9 @@ bool isCrashflipSwitchActive(void) {
 }
 
 bool shouldAutoTurtle(void) {
-    return !isUpright();
+    float quadVec[3] = {0,0,1};
+    applyMatrixRotation(quadVec, (struct fp_rotationMatrix_s*)rMat);
+    return quadVec[2] < 0;
 }
 
 // Automatic ACC Offset Calibration

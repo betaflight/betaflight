@@ -107,6 +107,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ATTITUDE",
     "VTX_MSP",
     "GPS_DOP",
+    "AUTO_TURTLE",
     "FAILSAFE",
     "GYRO_CALIBRATION",
 };
