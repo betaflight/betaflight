@@ -512,7 +512,7 @@ uint8_t calculateBatteryPercentageRemaining(void)
             float voltage = returnFilteredVoltage();
             //assume that the voltage drops by 0.1 V for every 1.0 unit of throttle; experimenatally adjust this and factor in batteryCellCount
             voltage -= (throttle * 0.01);  // throttle = rcCommand[3]
-    
+            DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, voltage);
             //clamp the adjusted voltage to the valid range
             if (voltage < BATTERY_MIN_VOLTAGE)
                 voltage = BATTERY_MIN_VOLTAGE;
