@@ -52,6 +52,7 @@
 #endif
 
 #include "sensors/battery.h"
+#include "flight/pid.h"
 
 /**
  * terminology: meter vs sensors
@@ -77,7 +78,7 @@ static uint16_t batteryWarningHysteresisVoltage;
 static uint16_t batteryCriticalHysteresisVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
 static uint8_t cutoffFrequency = 0.5; //Hz
-volatile uint8_t lastFilteredVoltage;
+static float lastFilteredVoltage = 0;
 
 #define PWM_RANGE_MIN 1000
 #define PWM_RANGE_MAX 2000
@@ -167,6 +168,19 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
 
     DEBUG_SET(DEBUG_BATTERY, 0, voltageMeter.unfiltered);
     DEBUG_SET(DEBUG_BATTERY, 1, voltageMeter.displayFiltered);
+
+    float currVoltage = voltageMeter.displayFiltered;
+    DEBUG_SET(DEBUG_UNFILT_VOLTAGE, 1, currVoltage);
+    //float dt = 1/500;
+    float dt = pidGetDT();
+    
+    // calculate the filter constant (alpha) based on the cutoff frequency and time step
+    //alpha = dt / (1.0 / (2.0 * np.pi * cutoff_frequency) + dt)
+    float alpha = cutoffFrequency * dt/20.0f;
+    
+    // apply the low-pass filter to the voltage values
+    lastFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
+    //DEBUG_SET(DEBUG_FILT_VOLTAGE, 2, lastFilteredVoltage);
 }
 
 static void updateBatteryBeeperAlert(void)
@@ -208,7 +222,7 @@ void batteryUpdatePresence(void)
 
     if ((voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()) {
         // Battery has just been connected - calculate cells, warning voltages and reset state
-
+        lastFilteredVoltage = voltageMeter.displayFiltered;
         consumptionState = voltageState = BATTERY_OK;
         if (batteryConfig()->forceBatteryCellCount != 0) {
             batteryCellCount = batteryConfig()->forceBatteryCellCount;
@@ -503,22 +517,22 @@ uint8_t calculateBatteryPercentageRemaining(void)
         // }
         float BATTERY_MIN_VOLTAGE  = 330 * batteryCellCount;
         float BATTERY_MAX_VOLTAGE = 430 * batteryCellCount;
-        float throttle = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+        //float throttle = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
 
         if (batteryConfig()->usingCurrentSensor) { // toggle for usingCurrentSensor flag to be added as CLI setting
             uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
             batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn) * 100 / batteryCapacity, 0, 100);
         } else {
-            float voltage = returnFilteredVoltage();
+            float voltage = lastFilteredVoltage;
             //assume that the voltage drops by 0.1 V for every 1.0 unit of throttle; experimenatally adjust this and factor in batteryCellCount
-            voltage -= (throttle * 0.01);  // throttle = rcCommand[3]
-            DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, voltage);
+            //voltage -= (throttle);  // throttle = rcCommand[3]
+            
             //clamp the adjusted voltage to the valid range
             if (voltage < BATTERY_MIN_VOLTAGE)
                 voltage = BATTERY_MIN_VOLTAGE;
             else if (voltage > BATTERY_MAX_VOLTAGE)
                 voltage = BATTERY_MAX_VOLTAGE;
-            
+            DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, voltage);
             // calculate the battery SoC based on the adjusted voltage
             batteryPercentage = ((voltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100;
     }
@@ -530,11 +544,13 @@ uint8_t calculateBatteryPercentageRemaining(void)
 float returnFilteredVoltage(void) // using a low pass filter
 {
     float currVoltage = voltageMeter.displayFiltered;
-    float dt = 1/500;
+    DEBUG_SET(DEBUG_UNFILT_VOLTAGE, 1, currVoltage);
+    //float dt = 1/500;
+    float dt = pidGetDT();
     
     // calculate the filter constant (alpha) based on the cutoff frequency and time step
     //alpha = dt / (1.0 / (2.0 * np.pi * cutoff_frequency) + dt)
-    float alpha = cutoffFrequency * dt/20;
+    float alpha = cutoffFrequency * dt/20.0f;
     
     // apply the low-pass filter to the voltage values
     float newFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
