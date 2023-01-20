@@ -593,6 +593,10 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+#ifdef USE_BLACKBOX
+    validateAndFixBlackBox();
+#endif // USE_BLACKBOX
+
 #if defined(TARGET_VALIDATECONFIG)
     // This should be done at the end of the validation
     targetValidateConfiguration();
@@ -687,7 +691,19 @@ void validateAndFixGyroConfig(void)
         }
     }
 
+    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
+        systemConfigMutable()->activeRateProfile = 0;
+    }
+    loadControlRateProfile();
+
+    if (systemConfig()->pidProfileIndex >= PID_PROFILE_COUNT) {
+        systemConfigMutable()->pidProfileIndex = 0;
+    }
+    loadPidProfile();
+}
+
 #ifdef USE_BLACKBOX
+void validateAndFixBlackBox(void) {
 #ifndef USE_FLASHFS
     if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
@@ -702,18 +718,8 @@ void validateAndFixGyroConfig(void)
             blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
         }
     }
-#endif // USE_BLACKBOX
-
-    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
-        systemConfigMutable()->activeRateProfile = 0;
-    }
-    loadControlRateProfile();
-
-    if (systemConfig()->pidProfileIndex >= PID_PROFILE_COUNT) {
-        systemConfigMutable()->pidProfileIndex = 0;
-    }
-    loadPidProfile();
 }
+#endif // USE_BLACKBOX
 
 bool readEEPROM(void)
 {
