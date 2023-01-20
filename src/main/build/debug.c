@@ -109,4 +109,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "GPS_DOP",
     "FAILSAFE",
     "DEBUG_FILT_VOLTAGE",
+    "DEBUG_UNFILT_VOLTAGE",
 };
