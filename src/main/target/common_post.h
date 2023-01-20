@@ -234,9 +234,6 @@
 #endif
 
 #ifdef USE_FLASH
-#define USE_FLASHFS
-#define USE_FLASH_TOOLS
-#endif
 
 #if (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)) && !defined(USE_FLASH_M25P16)
 #define USE_FLASH_M25P16
@@ -252,9 +249,14 @@
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25Q128FV)
 #define USE_FLASH_CHIP
+#define USE_FLASH_TOOLS
+#define USE_FLASHFS
 #endif
 
+#endif // USE_FLASH
+
 #ifndef USE_FLASH_CHIP
+#undef USE_FLASH_TOOLS
 #undef USE_FLASHFS
 #endif
 
