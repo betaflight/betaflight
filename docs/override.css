@@ -1,8 +1,0 @@
-IMG {
- max-width: 700px;
-}
-
-/* mainly for the cli reference table */
-TABLE TR TD, TABLE TR TH {
- font-size: 9px
-}
