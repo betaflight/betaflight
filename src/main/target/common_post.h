@@ -117,9 +117,15 @@
 #endif
 #endif
 
-#if !defined(USE_BARO) && !defined(USE_GPS)
-#undef USE_VARIO
+// Vario depends on BARO and GPS
+#if defined(USE_VARIO)
+#if !defined(USE_BARO)
+#define USE_BARO
 #endif
+#if !defined(USE_GPS)
+#define USE_GPS
+#endif
+#endif // USE_VARIO
 
 #if defined(USE_BARO) && !defined(BARO_EOC_PIN)
 #define BARO_EOC_PIN NONE
