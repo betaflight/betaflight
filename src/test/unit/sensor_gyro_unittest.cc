@@ -116,10 +116,6 @@ TEST(SensorGyro, Update)
 {
     pgResetAll();
     // turn off filters
-    gyroConfigMutable()->gyro_lpf1_static_hz = 0;
-    gyroConfigMutable()->gyro_lpf2_static_hz = 0;
-    gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
-    gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     gyroInit();
     gyroSetTargetLooptime(1);
     gyroDevPtr->readFn = virtualGyroRead;

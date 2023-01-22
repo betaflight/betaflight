@@ -170,34 +170,23 @@ typedef struct gyroConfig_s {
     uint8_t gyro_high_fsr;
     uint8_t gyro_to_use;
 
-    uint16_t gyro_lpf1_static_hz;
-    uint16_t gyro_lpf2_static_hz;
-
-    uint16_t gyro_soft_notch_hz_1;
-    uint16_t gyro_soft_notch_cutoff_1;
-    uint16_t gyro_soft_notch_hz_2;
-    uint16_t gyro_soft_notch_cutoff_2;
     int16_t gyro_offset_yaw;
     uint8_t checkOverflow;
-
-    // Lowpass primary/secondary
-    uint8_t gyro_lpf1_type;
-    uint8_t gyro_lpf2_type;
 
     uint8_t yaw_spin_recovery;
     int16_t yaw_spin_threshold;
 
     uint16_t gyroCalibrationDuration;   // Gyro calibration duration in 1/100 second
 
-    uint16_t gyro_lpf1_dyn_min_hz;
-    uint16_t gyro_lpf1_dyn_max_hz;
-
     uint8_t gyro_filter_debug_axis;
 
     uint8_t gyrosDetected; // What gyros should detection be attempted for on startup. Automatically set on first startup.
-    uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
-    uint8_t simplified_gyro_filter;
-    uint8_t simplified_gyro_filter_multiplier;
+
+    uint16_t gyro_soft_notch_hz_1;
+    uint16_t gyro_soft_notch_cutoff_1;
+    uint16_t gyro_soft_notch_hz_2;
+    uint16_t gyro_soft_notch_cutoff_2;
+
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

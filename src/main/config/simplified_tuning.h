@@ -36,10 +36,10 @@ typedef enum {
     PID_SIMPLIFIED_TUNING_MODE_COUNT,
 } pidSimplifiedTuningMode_e;
 
-void applySimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig);
+void applySimplifiedTuning(pidProfile_t *pidProfile);
 
 void applySimplifiedTuningPids(pidProfile_t *pidProfile);
 void applySimplifiedTuningDtermFilters(pidProfile_t *pidProfile);
-void applySimplifiedTuningGyroFilters(gyroConfig_t *gyroConfig);
+void applySimplifiedTuningGyroFilters(pidProfile_t *pidProfile);
 
-void disableSimplifiedTuning(pidProfile_t *pidProfile, gyroConfig_t *gyroConfig);
+void disableSimplifiedTuning(pidProfile_t *pidProfile);

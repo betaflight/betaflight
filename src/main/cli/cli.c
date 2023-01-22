@@ -3044,7 +3044,7 @@ static void cliVtxInfo(const char *cmdName, char *cmdline)
 static void applySimplifiedTuningAllProfiles(void)
 {
     for (unsigned pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
-        applySimplifiedTuning(pidProfilesMutable(pidProfileIndex), gyroConfigMutable());
+        applySimplifiedTuning(pidProfilesMutable(pidProfileIndex));
     }
 }
 
@@ -3056,7 +3056,7 @@ static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
         cliPrintLine("Applied simplified tuning.");
     } else if (strcasecmp(cmdline, "disable") == 0) {
         for (unsigned pidProfileIndex = 0; pidProfileIndex < PID_PROFILE_COUNT; pidProfileIndex++) {
-            disableSimplifiedTuning(pidProfilesMutable(pidProfileIndex), gyroConfigMutable());
+            disableSimplifiedTuning(pidProfilesMutable(pidProfileIndex));
         }
 
         cliPrintLine("Disabled simplified tuning.");

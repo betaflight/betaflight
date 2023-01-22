@@ -665,7 +665,7 @@ static bool rowSliderOverride(const uint16_t flags)
     bool slider_flags_mode_rpy = (simplified_pids_mode == PID_SIMPLIFIED_TUNING_RPY);
     bool slider_flags_mode_rp = slider_flags_mode_rpy || (simplified_pids_mode == PID_SIMPLIFIED_TUNING_RP);
 
-    bool simplified_gyro_filter = gyroConfig()->simplified_gyro_filter;
+    bool simplified_gyro_filter = currentPidProfile->simplified_gyro_filter;
     bool simplified_dterm_filter = currentPidProfile->simplified_dterm_filter;
 
     if (((flags & SLIDER_RP) && slider_flags_mode_rp) ||

@@ -236,6 +236,23 @@ typedef struct pidProfile_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
     uint8_t angle_earth_ref;         // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
+
+    uint8_t gyro_lpf1_type;
+    uint8_t gyro_lpf1_dyn_expo; // set the curve for dynamic gyro lowpass filter
+    uint16_t gyro_lpf1_static_hz;
+    uint16_t gyro_lpf1_dyn_min_hz;
+    uint16_t gyro_lpf1_dyn_max_hz;
+
+    uint8_t gyro_lpf2_type;
+    uint16_t gyro_lpf2_static_hz;
+
+    uint16_t gyro_soft_notch_hz_1;
+    uint16_t gyro_soft_notch_cutoff_1;
+    uint16_t gyro_soft_notch_hz_2;
+    uint16_t gyro_soft_notch_cutoff_2;
+
+    uint8_t simplified_gyro_filter;
+    uint8_t simplified_gyro_filter_multiplier;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

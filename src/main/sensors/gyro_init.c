@@ -90,6 +90,8 @@
 // gyro types are supported with SPI DMA.
 #define GYRO_BUF_SIZE 32
 
+pidProfile_t *pidProfile;
+
 static gyroDetectionFlags_t gyroDetectionFlags = GYRO_NONE_MASK;
 
 static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
@@ -214,8 +216,8 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 #ifdef USE_DYN_LPF
 static void dynLpfFilterInit(void)
 {
-    if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
-        switch (gyroConfig()->gyro_lpf1_type) {
+    if (pidProfile->gyro_lpf1_dyn_min_hz > 0) {
+        switch (pidProfile->gyro_lpf1_type) {
         case FILTER_PT1:
             gyro.dynLpfFilter = DYN_LPF_PT1;
             break;
@@ -235,38 +237,38 @@ static void dynLpfFilterInit(void)
     } else {
         gyro.dynLpfFilter = DYN_LPF_NONE;
     }
-    gyro.dynLpfMin = gyroConfig()->gyro_lpf1_dyn_min_hz;
-    gyro.dynLpfMax = gyroConfig()->gyro_lpf1_dyn_max_hz;
-    gyro.dynLpfCurveExpo = gyroConfig()->gyro_lpf1_dyn_expo;
+    gyro.dynLpfMin = pidProfile->gyro_lpf1_dyn_min_hz;
+    gyro.dynLpfMax = pidProfile->gyro_lpf1_dyn_max_hz;
+    gyro.dynLpfCurveExpo = pidProfile->gyro_lpf1_dyn_expo;
 }
 #endif
 
 void gyroInitFilters(void)
 {
-    uint16_t gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_static_hz;
+    uint16_t gyro_lpf1_init_hz = pidProfile->gyro_lpf1_static_hz;
 
 #ifdef USE_DYN_LPF
-    if (gyroConfig()->gyro_lpf1_dyn_min_hz > 0) {
-        gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_dyn_min_hz;
+    if (pidProfile->gyro_lpf1_dyn_min_hz > 0) {
+        gyro_lpf1_init_hz = pidProfile->gyro_lpf1_dyn_min_hz;
     }
 #endif
 
     gyroInitLowpassFilterLpf(
       FILTER_LPF1,
-      gyroConfig()->gyro_lpf1_type,
+      pidProfile->gyro_lpf1_type,
       gyro_lpf1_init_hz,
       gyro.targetLooptime
     );
 
     gyro.downsampleFilterEnabled = gyroInitLowpassFilterLpf(
       FILTER_LPF2,
-      gyroConfig()->gyro_lpf2_type,
-      gyroConfig()->gyro_lpf2_static_hz,
+      pidProfile->gyro_lpf2_type,
+      pidProfile->gyro_lpf2_static_hz,
       gyro.sampleLooptime
     );
 
-    gyroInitFilterNotch1(gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
-    gyroInitFilterNotch2(gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
+    gyroInitFilterNotch1(pidProfile->gyro_soft_notch_hz_1, pidProfile->gyro_soft_notch_cutoff_1);
+    gyroInitFilterNotch2(pidProfile->gyro_soft_notch_hz_2, pidProfile->gyro_soft_notch_cutoff_2);
 #ifdef USE_DYN_LPF
     dynLpfFilterInit();
 #endif

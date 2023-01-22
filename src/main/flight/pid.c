@@ -89,7 +89,7 @@ FAST_DATA_ZERO_INIT float throttleBoost;
 pt1Filter_t throttleLpf;
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 4);
 
 #if defined(STM32F411xE)
 #define PID_PROCESS_DENOM_DEFAULT       2
@@ -226,6 +226,19 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_breakpoint = 1350,
         .angle_feedforward_smoothing_ms = 80,
         .angle_earth_ref = 100,
+        .gyro_lpf1_type = FILTER_PT1,
+        .gyro_lpf1_dyn_expo = 5, // set the curve for dynamic gyro lowpass filter
+        .gyro_lpf1_static_hz = GYRO_LPF1_DYN_MIN_HZ_DEFAULT,
+        .gyro_lpf1_dyn_min_hz = GYRO_LPF1_DYN_MIN_HZ_DEFAULT,
+        .gyro_lpf1_dyn_max_hz = GYRO_LPF1_DYN_MAX_HZ_DEFAULT,
+        .gyro_lpf2_type = FILTER_PT1,
+        .gyro_lpf2_static_hz = GYRO_LPF2_HZ_DEFAULT,
+        .gyro_soft_notch_hz_1 = 0,
+        .gyro_soft_notch_cutoff_1 = 0,
+        .gyro_soft_notch_hz_2 = 0,
+        .gyro_soft_notch_cutoff_2 = 0,
+        .simplified_gyro_filter = true,
+        .simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT
     );
 
 #ifndef USE_D_MIN

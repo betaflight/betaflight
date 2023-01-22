@@ -643,24 +643,24 @@ void validateAndFixGyroConfig(void)
 {
     // Fix gyro filter settings to handle cases where an older configurator was used that
     // allowed higher cutoff limits from previous firmware versions.
-    adjustFilterLimit(&gyroConfigMutable()->gyro_lpf1_static_hz, LPF_MAX_HZ);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_lpf2_static_hz, LPF_MAX_HZ);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_1, LPF_MAX_HZ);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_1, 0);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_hz_2, LPF_MAX_HZ);
-    adjustFilterLimit(&gyroConfigMutable()->gyro_soft_notch_cutoff_2, 0);
+    adjustFilterLimit(&currentPidProfile->gyro_lpf1_static_hz, LPF_MAX_HZ);
+    adjustFilterLimit(&currentPidProfile->gyro_lpf2_static_hz, LPF_MAX_HZ);
+    adjustFilterLimit(&currentPidProfile->gyro_soft_notch_hz_1, LPF_MAX_HZ);
+    adjustFilterLimit(&currentPidProfile->gyro_soft_notch_cutoff_1, 0);
+    adjustFilterLimit(&currentPidProfile->gyro_soft_notch_hz_2, LPF_MAX_HZ);
+    adjustFilterLimit(&currentPidProfile->gyro_soft_notch_cutoff_2, 0);
 
     // Prevent invalid notch cutoff
-    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
-        gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
+    if (currentPidProfile->gyro_soft_notch_cutoff_1 >= currentPidProfile->gyro_soft_notch_hz_1) {
+        currentPidProfile->gyro_soft_notch_hz_1 = 0;
     }
-    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
-        gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
+    if (currentPidProfile->gyro_soft_notch_cutoff_2 >= currentPidProfile->gyro_soft_notch_hz_2) {
+        currentPidProfile->gyro_soft_notch_hz_2 = 0;
     }
 #ifdef USE_DYN_LPF
     //Prevent invalid dynamic lowpass filter
-    if (gyroConfig()->gyro_lpf1_dyn_min_hz > gyroConfig()->gyro_lpf1_dyn_max_hz) {
-        gyroConfigMutable()->gyro_lpf1_dyn_min_hz = 0;
+    if (currentPidProfile->gyro_lpf1_dyn_min_hz > currentPidProfile->gyro_lpf1_dyn_max_hz) {
+        currentPidProfile->gyro_lpf1_dyn_min_hz = 0;
     }
 #endif
 

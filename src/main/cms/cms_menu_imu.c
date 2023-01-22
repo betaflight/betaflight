@@ -288,8 +288,8 @@ static const void *cmsx_simplifiedTuningOnEnter(displayPort_t *pDisp)
 
     cmsx_simplified_dterm_filter = pidProfile->simplified_dterm_filter;
     cmsx_simplified_dterm_filter_multiplier = pidProfile->simplified_dterm_filter_multiplier;
-    cmsx_simplified_gyro_filter = gyroConfig()->simplified_gyro_filter;
-    cmsx_simplified_gyro_filter_multiplier = gyroConfig()->simplified_gyro_filter_multiplier;
+    cmsx_simplified_gyro_filter = pidProfile->simplified_gyro_filter;
+    cmsx_simplified_gyro_filter_multiplier = pidProfile->simplified_gyro_filter_multiplier;
 
     return 0;
 }
@@ -314,8 +314,8 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
         || pidProfile->simplified_pitch_pi_gain != cmsx_simplified_pitch_pi_gain
         || pidProfile->simplified_dterm_filter != cmsx_simplified_dterm_filter
         || pidProfile->simplified_dterm_filter_multiplier != cmsx_simplified_dterm_filter_multiplier
-        || gyroConfigMutable()->simplified_gyro_filter != cmsx_simplified_gyro_filter
-        || gyroConfigMutable()->simplified_gyro_filter_multiplier != cmsx_simplified_gyro_filter_multiplier;
+        || pidProfile->simplified_gyro_filter != cmsx_simplified_gyro_filter
+        || pidProfile->simplified_gyro_filter_multiplier != cmsx_simplified_gyro_filter_multiplier;
 
     if (anySettingChanged) {
         pidProfile->simplified_pids_mode = cmsx_simplified_pids_mode;
@@ -332,10 +332,10 @@ static const void *cmsx_simplifiedTuningOnExit(displayPort_t *pDisp, const OSD_E
 
         pidProfile->simplified_dterm_filter = cmsx_simplified_dterm_filter;
         pidProfile->simplified_dterm_filter_multiplier = cmsx_simplified_dterm_filter_multiplier;
-        gyroConfigMutable()->simplified_gyro_filter = cmsx_simplified_gyro_filter;
-        gyroConfigMutable()->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
+        pidProfile->simplified_gyro_filter = cmsx_simplified_gyro_filter;
+        pidProfile->simplified_gyro_filter_multiplier = cmsx_simplified_gyro_filter_multiplier;
 
-        applySimplifiedTuning(currentPidProfile, gyroConfigMutable());
+        applySimplifiedTuning(currentPidProfile);
     }
 
     return 0;
@@ -733,24 +733,24 @@ static CMS_Menu cmsx_menuProfileOther = {
 };
 
 
-static uint16_t gyroConfig_gyro_lpf1_static_hz;
-static uint16_t gyroConfig_gyro_lpf2_static_hz;
-static uint16_t gyroConfig_gyro_soft_notch_hz_1;
-static uint16_t gyroConfig_gyro_soft_notch_cutoff_1;
-static uint16_t gyroConfig_gyro_soft_notch_hz_2;
-static uint16_t gyroConfig_gyro_soft_notch_cutoff_2;
+static uint16_t cmsx_gyro_lpf1_static_hz;
+static uint16_t cmsx_gyro_lpf2_static_hz;
+static uint16_t cmsx_gyro_soft_notch_hz_1;
+static uint16_t cmsx_gyro_soft_notch_cutoff_1;
+static uint16_t cmsx_gyro_soft_notch_hz_2;
+static uint16_t cmsx_gyro_soft_notch_cutoff_2;
 static uint8_t  gyroConfig_gyro_to_use;
 
 static const void *cmsx_menuGyro_onEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    gyroConfig_gyro_lpf1_static_hz =  gyroConfig()->gyro_lpf1_static_hz;
-    gyroConfig_gyro_lpf2_static_hz =  gyroConfig()->gyro_lpf2_static_hz;
-    gyroConfig_gyro_soft_notch_hz_1 = gyroConfig()->gyro_soft_notch_hz_1;
-    gyroConfig_gyro_soft_notch_cutoff_1 = gyroConfig()->gyro_soft_notch_cutoff_1;
-    gyroConfig_gyro_soft_notch_hz_2 = gyroConfig()->gyro_soft_notch_hz_2;
-    gyroConfig_gyro_soft_notch_cutoff_2 = gyroConfig()->gyro_soft_notch_cutoff_2;
+    cmsx_gyro_lpf1_static_hz =  currentPidProfile->gyro_lpf1_static_hz;
+    cmsx_gyro_lpf2_static_hz =  currentPidProfile->gyro_lpf2_static_hz;
+    cmsx_gyro_soft_notch_hz_1 = currentPidProfile->gyro_soft_notch_hz_1;
+    cmsx_gyro_soft_notch_cutoff_1 = currentPidProfile->gyro_soft_notch_cutoff_1;
+    cmsx_gyro_soft_notch_hz_2 = currentPidProfile->gyro_soft_notch_hz_2;
+    cmsx_gyro_soft_notch_cutoff_2 = currentPidProfile->gyro_soft_notch_cutoff_2;
     gyroConfig_gyro_to_use = gyroConfig()->gyro_to_use;
 
     return NULL;
@@ -761,12 +761,14 @@ static const void *cmsx_menuGyro_onExit(displayPort_t *pDisp, const OSD_Entry *s
     UNUSED(pDisp);
     UNUSED(self);
 
-    gyroConfigMutable()->gyro_lpf1_static_hz =  gyroConfig_gyro_lpf1_static_hz;
-    gyroConfigMutable()->gyro_lpf2_static_hz =  gyroConfig_gyro_lpf2_static_hz;
-    gyroConfigMutable()->gyro_soft_notch_hz_1 = gyroConfig_gyro_soft_notch_hz_1;
-    gyroConfigMutable()->gyro_soft_notch_cutoff_1 = gyroConfig_gyro_soft_notch_cutoff_1;
-    gyroConfigMutable()->gyro_soft_notch_hz_2 = gyroConfig_gyro_soft_notch_hz_2;
-    gyroConfigMutable()->gyro_soft_notch_cutoff_2 = gyroConfig_gyro_soft_notch_cutoff_2;
+    pidProfile_t *pidProfile = currentPidProfile;
+
+    pidProfile->gyro_lpf1_static_hz =  cmsx_gyro_lpf1_static_hz;
+    pidProfile->gyro_lpf2_static_hz =  cmsx_gyro_lpf2_static_hz;
+    pidProfile->gyro_soft_notch_hz_1 = cmsx_gyro_soft_notch_hz_1;
+    pidProfile->gyro_soft_notch_cutoff_1 = cmsx_gyro_soft_notch_cutoff_1;
+    pidProfile->gyro_soft_notch_hz_2 = cmsx_gyro_soft_notch_hz_2;
+    pidProfile->gyro_soft_notch_cutoff_2 = cmsx_gyro_soft_notch_cutoff_2;
     gyroConfigMutable()->gyro_to_use = gyroConfig_gyro_to_use;
 
     return NULL;
@@ -776,14 +778,14 @@ static const OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL },
 
-    { "GYRO LPF1",  OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_lpf1_static_hz, 0, LPF_MAX_HZ, 1 } },
+    { "GYRO LPF1",  OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &cmsx_gyro_lpf1_static_hz, 0, LPF_MAX_HZ, 1 } },
 #ifdef USE_GYRO_LPF2
-    { "GYRO LPF2",  OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_lpf2_static_hz,  0, LPF_MAX_HZ, 1 } },
+    { "GYRO LPF2",  OME_UINT16 | SLIDER_GYRO, NULL, &(OSD_UINT16_t) { &cmsx_gyro_lpf2_static_hz,  0, LPF_MAX_HZ, 1 } },
 #endif
-    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_hz_1,     0, 500, 1 } },
-    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_cutoff_1, 0, 500, 1 } },
-    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_hz_2,     0, 500, 1 } },
-    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig_gyro_soft_notch_cutoff_2, 0, 500, 1 } },
+    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_gyro_soft_notch_hz_1,     0, 500, 1 } },
+    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_gyro_soft_notch_cutoff_1, 0, 500, 1 } },
+    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_gyro_soft_notch_hz_2,     0, 500, 1 } },
+    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_gyro_soft_notch_cutoff_2, 0, 500, 1 } },
 #ifdef USE_MULTI_GYRO
     { "GYRO TO USE",  OME_TAB | REBOOT_REQUIRED,  NULL, &(OSD_TAB_t)    { &gyroConfig_gyro_to_use,  2, osdTableGyroToUse} },
 #endif
@@ -832,9 +834,9 @@ static const void *cmsx_menuDynFilt_onEnter(displayPort_t *pDisp)
 #endif
 #ifdef USE_DYN_LPF
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
-    gyroLpfDynMin   = gyroConfig()->gyro_lpf1_dyn_min_hz;
-    gyroLpfDynMax   = gyroConfig()->gyro_lpf1_dyn_max_hz;
-    gyroLpfDynExpo  = gyroConfig()->gyro_lpf1_dyn_expo;
+    gyroLpfDynMin   = pidProfile->gyro_lpf1_dyn_min_hz;
+    gyroLpfDynMax   = pidProfile->gyro_lpf1_dyn_max_hz;
+    gyroLpfDynExpo  = pidProfile->gyro_lpf1_dyn_expo;
     dtermLpfDynMin  = pidProfile->dterm_lpf1_dyn_min_hz;
     dtermLpfDynMax  = pidProfile->dterm_lpf1_dyn_max_hz;
     dtermLpfDynExpo = pidProfile->dterm_lpf1_dyn_expo;
@@ -856,9 +858,9 @@ static const void *cmsx_menuDynFilt_onExit(displayPort_t *pDisp, const OSD_Entry
 #endif
 #ifdef USE_DYN_LPF
     pidProfile_t *pidProfile = currentPidProfile;
-    gyroConfigMutable()->gyro_lpf1_dyn_min_hz = gyroLpfDynMin;
-    gyroConfigMutable()->gyro_lpf1_dyn_max_hz = gyroLpfDynMax;
-    gyroConfigMutable()->gyro_lpf1_dyn_expo   = gyroLpfDynExpo;
+    pidProfile->gyro_lpf1_dyn_min_hz = gyroLpfDynMin;
+    pidProfile->gyro_lpf1_dyn_max_hz = gyroLpfDynMax;
+    pidProfile->gyro_lpf1_dyn_expo   = gyroLpfDynExpo;
     pidProfile->dterm_lpf1_dyn_min_hz         = dtermLpfDynMin;
     pidProfile->dterm_lpf1_dyn_max_hz         = dtermLpfDynMax;
     pidProfile->dterm_lpf1_dyn_expo           = dtermLpfDynExpo;
@@ -914,7 +916,7 @@ static const void *cmsx_FilterPerProfileRead(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
 
-    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    pidProfile_t *pidProfile = currentPidProfile;
 
     cmsx_dterm_lpf1_static_hz   = pidProfile->dterm_lpf1_static_hz;
     cmsx_dterm_lpf2_static_hz   = pidProfile->dterm_lpf2_static_hz;
