@@ -533,9 +533,13 @@ extern uint8_t _dmaram_end__;
 #define USE_SIMPLIFIED_TUNING
 #define USE_CRAFTNAME_MSGS
 
+#if !defined(CORE_BUILD)
+
 #if !defined(USE_LAUNCH_CONTROL)
 #define USE_LAUNCH_CONTROL
 #endif
+
+#endif // !defined(CORE_BUILD)
 
 #ifdef USE_GPS
 #define USE_GPS_NMEA
