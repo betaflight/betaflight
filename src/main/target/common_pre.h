@@ -533,6 +533,16 @@ extern uint8_t _dmaram_end__;
 #define USE_SIMPLIFIED_TUNING
 #define USE_CRAFTNAME_MSGS
 
+#if !defined(CORE_BUILD)
+// CORE_BUILD is only hardware drivers, and the bare minimum
+// any thing defined here will be in the standard (git hub actions)
+// builds or included in CLOUD_BUILD by default.
+
+#if !defined(USE_LAUNCH_CONTROL)
+#define USE_LAUNCH_CONTROL
+#endif
+
+#endif // !defined(CORE_BUILD)
 
 #ifdef USE_GPS
 #define USE_GPS_NMEA
