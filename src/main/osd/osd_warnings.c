@@ -53,6 +53,8 @@
 
 #include "io/beeper.h"
 
+#include "localization/localization.h"
+
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
@@ -207,7 +209,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_RX_LINK_QUALITY_INFO
 
     if (osdWarnGetState(OSD_WARNING_BATTERY_CRITICAL) && batteryState == BATTERY_CRITICAL) {
-        tfp_sprintf(warningText, " LAND NOW");
+        tfp_sprintf(warningText, T_LAND_NOW);
         *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
         *blinking = true;
         return;
