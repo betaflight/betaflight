@@ -287,7 +287,7 @@
 #if !defined(USE_ACC_MPU6500) && (defined(USE_ACC_ICM20601) || defined(USE_ACC_ICM20602) || defined(USE_ACC_ICM20608G))
 #define USE_ACC_MPU6500
 #endif
-#if !defined(USE_ACC_SPI_MPU6500) && (defined(USE_ACC_SPI_ICM20601) || defined(USE_ACC_SPI_ICM20602) || defined(USE_ACC_SPI_ICM20608G))
+#if !defined(USE_ACC_SPI_MPU6500) && (defined(USE_ACC_SPI_MPU9250) || defined(USE_ACC_SPI_ICM20601) || defined(USE_ACC_SPI_ICM20602) || defined(USE_ACC_SPI_ICM20608G))
 #define USE_ACC_SPI_MPU6500
 #endif
 #if !defined(USE_GYRO_MPU6500) && (defined(USE_GYRO_ICM20601) || defined(USE_GYRO_ICM20602) || defined(USE_GYRO_ICM20608G))
