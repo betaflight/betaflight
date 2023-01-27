@@ -132,31 +132,35 @@ static bool qmc5883lRead(magDev_t *magDev, int16_t *magData)
     return false;
 }
 
+#define DETECTION_MAX_RETRY_COUNT   5
+
 bool qmc5883lDetect(magDev_t *magDev)
 {
-
     extDevice_t *dev = &magDev->dev;
 
     if (dev->bus->busType == BUS_TYPE_I2C && dev->busType_u.i2c.address == 0) {
         dev->busType_u.i2c.address = QMC5883L_MAG_I2C_ADDRESS;
     }
 
-    // Must write reset first  - don't care about the result
-    busWriteRegister(dev, QMC5883L_REG_CONF2, QMC5883L_RST);
-    delay(20);
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        // Must write reset first  - don't care about the result
+        busWriteRegister(dev, QMC5883L_REG_CONF2, QMC5883L_RST);
+        delay(30);
 
-    uint8_t sig = 0;
-    bool ack = busReadRegisterBuffer(dev, QMC5883L_REG_ID, &sig, 1);
-    if (ack && sig == QMC5883_ID_VAL) {
-        // Should be in standby mode after soft reset and sensor is really present
-        // Reading ChipID of 0xFF alone is not sufficient to be sure the QMC is present
-        ack = busReadRegisterBuffer(dev, QMC5883L_REG_CONF1, &sig, 1);
-        if (ack && sig != QMC5883L_MODE_STANDBY) {
-            return false;
+        uint8_t sig = 0;
+        bool ack = busReadRegisterBuffer(dev, QMC5883L_REG_ID, &sig, 1);
+        if (ack && sig == QMC5883_ID_VAL) {
+            // Should be in standby mode after soft reset and sensor is really present
+            // Reading ChipID of 0xFF alone is not sufficient to be sure the QMC is present
+            ack = busReadRegisterBuffer(dev, QMC5883L_REG_CONF1, &sig, 1);
+
+            if (ack && sig == QMC5883L_MODE_STANDBY) {
+                magDev->init = qmc5883lInit;
+                magDev->read = qmc5883lRead;
+
+                return true;
+            }
         }
-        magDev->init = qmc5883lInit;
-        magDev->read = qmc5883lRead;
-        return true;
     }
 
     return false;
