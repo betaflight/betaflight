@@ -36,6 +36,11 @@
 //#define USE_I2C_DEVICE_1
 
 #define USE_UART1
+// AT-START-F435 V1.0 UART 1 assignments to use as a default
+#define UART1_RX_PIN PA10
+#define UART1_TX_PIN PA9
+#define USE_MSP_UART SERIAL_PORT_USART1
+
 #define USE_UART2
 #define USE_UART3
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
