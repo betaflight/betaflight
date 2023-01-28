@@ -1,4 +1,4 @@
-![Betaflight](docs/assets/images/bf_logo.png)
+![Betaflight](images/bf_logo.png)
 
 [![Latest version](https://img.shields.io/github/v/release/betaflight/betaflight)](https://github.com/betaflight/betaflight/releases) [![Build](https://img.shields.io/github/actions/workflow/status/betaflight/betaflight/nightly.yml?branch=master)](https://github.com/betaflight/betaflight/actions/workflows/nightly.yml) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Join us on Discord!](https://img.shields.io/discord/868013470023548938)](https://discord.gg/n4E6ak4u3c)
 
@@ -11,6 +11,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 | Date  | Event |
 | - | - |
 | 01-11-2022 | Firmware 4.4 Feature freeze |
+| 29-01-2023 | Firmware 4.4 Release |
 
 
 ## News
@@ -19,11 +20,11 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 The following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
 
-1. Read the [hardware specification](https://betaflight.com/docs/manufacturer/Manufacturer%20Design%20Guidelines)
+1. Read the [hardware specification](https://betaflight.com/docs/manufacturer/manufacturer-design-guidelines)
 
 2. No new F3 based targets will be accepted;
 
-3. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://betaflight.com/docs/manufacturer/Creating%20An%20Unified%20Target) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
+3. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://betaflight.com/docs/manufacturer/creating-an-unified-target) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
 
 4. For changes to existing targets, the change needs to be applied to the Unified Target config in https://github.com/betaflight/unified-targets/tree/master/configs/default. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted. If there is no Unified Target for the MCU type of the new target (see instructions above), then an update to the 'legacy' format target definition in `src/main/target/` has to be submitted alongside the update to the Unified Target configuration.
 
@@ -95,7 +96,7 @@ If you want to contribute financially on an ongoing basis, you should consider b
 ## Developers
 
 Contribution of bugfixes and new features is encouraged. Please be aware that we have a thorough review process for pull requests, and be prepared to explain what you want to achieve with your pull request.
-Before starting to write code, please read our [development guidelines](https://betaflight.com/docs/development/development) and [coding style definition](https://betaflight.com/docs/development/development/CodingStyle).
+Before starting to write code, please read our [development guidelines](https://betaflight.com/docs/development) and [coding style definition](https://betaflight.com/docs/development/CodingStyle).
 
 GitHub actions are used to run automatic builds
 
