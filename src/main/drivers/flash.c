@@ -93,7 +93,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #ifdef USE_FLASH_MEMORY_MAPPED
     bool memoryMappedModeEnabledOnBoot = isMemoryMappedModeEnabledOnBoot();
 #else
-    bool memoryMappedModeEnabledOnBoot = false
+    bool memoryMappedModeEnabledOnBoot = false;
 #endif
 
 #ifndef USE_OCTOSPI_EXPERIMENTAL
