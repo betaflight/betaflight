@@ -132,3 +132,4 @@ void setMAhDrawn(uint32_t mAhDrawn);
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 
 const lowVoltageCutoff_t *getLowVoltageCutoff(void);
+float getBatteryPercentageGlobal(void);

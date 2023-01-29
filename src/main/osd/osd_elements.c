@@ -1249,7 +1249,8 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     switch (element->type) {
     case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
         //displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
-        displayBasis = calculateBatteryPercentageRemaining();
+        //displayBasis = calculateBatteryPercentageRemaining();
+        displayBasis = getBatteryPercentageGlobal();
         FALLTHROUGH;
 
     case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
@@ -1258,7 +1259,7 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             // if (batteryConfig()->batteryCapacity) {
             //     displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
             // }
-            int displayPercent = 100 - calculateBatteryPercentageRemaining();
+            int displayPercent = 100 - getBatteryPercentageGlobal(); 
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
         }
