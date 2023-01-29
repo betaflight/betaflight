@@ -77,8 +77,8 @@
 #undef USE_TRANSPONDER
 #undef USE_DSHOT
 #undef USE_CAMERA_CONTROL
-#undef USE_PPM
-#undef USE_PWM
+#undef USE_RX_PPM
+#undef USE_RX_PWM
 #undef USE_RX_SPI
 #undef USE_RX_CC2500
 #undef USE_RX_EXPRESSLRS
