@@ -1,5 +1,6 @@
-SITL_TARGETS += $(TARGET)
-FEATURES       += #SDCARD_SPI VCP
+TARGET_MCU        := SITL
+TARGET_MCU_FAMILY := SITL
+SIMULATOR_BUILD    = yes
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_fake.c \

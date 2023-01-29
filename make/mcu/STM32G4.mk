@@ -113,18 +113,6 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/STM32G4/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
                    $(ROOT)/src/main/vcp_hal
 
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
@@ -132,7 +120,7 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER -DUSE_DMA_RAM -DMAX_MPU_
 
 # G47X_TARGETS includes G47{3,4}{RE,CE,CEU}
 
-ifeq ($(TARGET),$(filter $(TARGET),$(G47X_TARGETS)))
+ifeq ($(TARGET_MCU),STM32G474xx)
 DEVICE_FLAGS   += -DSTM32G474xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_g474.ld
 STARTUP_SRC     = startup_stm32g474xx.s
@@ -144,8 +132,6 @@ else
 $(error Unknown MCU for G4 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
-
-TARGET_FLAGS    = -D$(TARGET)
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
@@ -188,26 +174,12 @@ MCU_EXCLUDES = \
 MSC_SRC = \
             drivers/usb_msc_common.c \
             drivers/usb_msc_f7xx.c \
-            msc/usbd_storage.c
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-MCU_COMMON_SRC += \
-            drivers/sdio_g4xx.c            
-MSC_SRC += \
-            msc/usbd_storage_sdio.c
-endif
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sd_spi.c
-endif
-
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-MSC_SRC += \
+            msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
-endif
+            msc/emfat_file.c \
+            msc/usbd_storage_sdio.c \
+            msc/usbd_storage_sd_spi.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

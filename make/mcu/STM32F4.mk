@@ -33,14 +33,8 @@ EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_hash_sha1.c
 endif
 
-ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
+ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
 EXCLUDES        += stm32f4xx_fsmc.c
-MCU_FLASH_SIZE  := 512
-else ifeq ($(TARGET),$(filter $(TARGET), $(F446_TARGETS)))
-EXCLUDES        += stm32f4xx_fsmc.c
-MCU_FLASH_SIZE  := 512
-else
-MCU_FLASH_SIZE  := 1024
 endif
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
@@ -125,33 +119,27 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/src/main/vcpf4
 endif
 
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F411_TARGETS)))
+ifeq ($(TARGET_MCU),STM32F411xE)
 DEVICE_FLAGS    = -DSTM32F411xE -finline-limit=20
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
 STARTUP_SRC     = startup_stm32f411xe.s
-else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))
+MCU_FLASH_SIZE  := 512
+
+else ifeq ($(TARGET_MCU),STM32F405xx)
 DEVICE_FLAGS    = -DSTM32F40_41xxx -DSTM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
 STARTUP_SRC     = startup_stm32f40xx.s
-else ifeq ($(TARGET),$(filter $(TARGET),$(F446_TARGETS)))
+MCU_FLASH_SIZE  := 1024
+
+else ifeq ($(TARGET_MCU),STM32F446xx)
 DEVICE_FLAGS    = -DSTM32F446xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f446.ld
 STARTUP_SRC     = startup_stm32f446xx.s
+MCU_FLASH_SIZE  := 512
+
 else
 $(error Unknown MCU for F4 target)
 endif
@@ -176,7 +164,8 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c \
-            drivers/persistent.c
+            drivers/persistent.c \
+            drivers/sdio_f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
@@ -200,26 +189,12 @@ MSC_SRC = \
             drivers/usb_msc_common.c \
             drivers/usb_msc_f4xx.c \
             msc/usbd_msc_desc.c \
-            msc/usbd_storage.c
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sd_spi.c
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sdio.c
-MCU_COMMON_SRC += \
-            drivers/sdio_f4xx.c
-endif
-
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-MSC_SRC += \
+            msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
-endif
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c \
+            msc/usbd_storage_sdio.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

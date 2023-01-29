@@ -15,7 +15,7 @@
 # Things that the user might override on the commandline
 #
 
-# The target to build, see VALID_TARGETS below
+# The target to build, see BASE_TARGETS below
 TARGET    ?= STM32F405
 BOARD     ?= 
 
@@ -94,15 +94,14 @@ include $(ROOT)/make/tools.mk
 # default xtal value for F4 targets
 HSE_VALUE       ?= 8000000
 
-# used for turning on features like VCP and SDCARD
-FEATURES        =
-
 ifneq ($(BOARD),)
 # silently ignore if the file is not present. Allows for target defaults.
 -include $(ROOT)/src/main/board/$(BOARD)/board.mk
 endif
 
-include $(ROOT)/make/targets.mk
+BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
+CI_TARGETS       := $(BASE_TARGETS)
+include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
@@ -149,7 +148,16 @@ VPATH 			:= $(VPATH):$(ROOT)/make/mcu
 VPATH 			:= $(VPATH):$(ROOT)/make
 
 # start specific includes
-include $(ROOT)/make/mcu/$(TARGET_MCU).mk
+ifeq ($(TARGET_MCU),)
+$(error No TARGET_MCU specified. Is the target.mk valid for $(TARGET)?)
+endif
+
+ifeq ($(TARGET_MCU_FAMILY),)
+$(error No TARGET_MCU_FAMILY specified. Is the target.mk valid for $(TARGET)?)
+endif
+
+TARGET_FLAGS  	:= -D$(TARGET) -D$(TARGET_MCU_FAMILY) $(TARGET_FLAGS)
+include $(ROOT)/make/mcu/$(TARGET_MCU_FAMILY).mk
 
 # openocd specific includes
 include $(ROOT)/make/openocd.mk
@@ -438,18 +446,13 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 ## all               : Build all currently built targets
 all: $(CI_TARGETS)
 
-## all_all : Build all targets (including legacy / unsupported)
-all_all: $(VALID_TARGETS)
-
-$(VALID_TARGETS):
+$(BASE_TARGETS):
 	$(V0) @echo "Building $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-$(NOBUILD_TARGETS):
-	$(MAKE) TARGET=$@
 
-TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS))
+TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
@@ -469,10 +472,10 @@ test_clean:
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
 
-## clean_all         : clean all valid targets
+## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
 
-TARGETS_FLASH = $(addsuffix _flash,$(VALID_TARGETS))
+TARGETS_FLASH = $(addsuffix _flash,$(BASE_TARGETS))
 
 ## <TARGET>_flash    : build and flash a target
 $(TARGETS_FLASH):
@@ -510,7 +513,7 @@ openocd-gdb: $(TARGET_ELF)
 	$(V0) $(OPENOCD_COMMAND) & $(CROSS_GDB) $(TARGET_ELF) -ex "target remote localhost:3333" -ex "load"
 endif
 
-TARGETS_ZIP = $(addsuffix _zip,$(VALID_TARGETS))
+TARGETS_ZIP = $(addsuffix _zip,$(BASE_TARGETS))
 
 ## <TARGET>_zip    : build target and zip it (useful for posting to GitHub)
 $(TARGETS_ZIP):
@@ -526,7 +529,7 @@ binary:
 hex:
 	$(V0) $(MAKE) -j $(TARGET_HEX)
 
-TARGETS_REVISION = $(addsuffix _rev,$(VALID_TARGETS))
+TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex_rev TARGET=$(subst _rev,,$@)
@@ -571,13 +574,13 @@ help: Makefile make/tools.mk
 	@echo "Or:"
 	@echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
 	@echo ""
-	@echo "Valid TARGET values are: $(VALID_TARGETS)"
+	@echo "Valid TARGET values are: $(BASE_TARGETS)"
 	@echo ""
 	@sed -n 's/^## //p' $?
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	@echo "Valid targets:       $(VALID_TARGETS)"
+	@echo "Valid targets:       $(BASE_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
 
@@ -586,7 +589,7 @@ targets-ci-print:
 
 ## target-mcu        : print the MCU type of the target
 target-mcu:
-	@echo $(TARGET_MCU)
+	@echo "$(TARGET_MCU_FAMILY) : $(TARGET_MCU)"
 
 ## targets-by-mcu    : make all targets that have a MCU_TYPE mcu
 targets-by-mcu:
@@ -606,26 +609,6 @@ targets-by-mcu:
 		fi; \
 	done
 	@echo
-
-## targets-f4        : make all F4 targets
-targets-f4:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
-
-targets-f4-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(VALID_TARGETS)"
-
-targets-ci-f4-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F4 TARGETS="$(CI_TARGETS)"
-
-## targets-f7        : make all F7 targets
-targets-f7:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 TARGETS="$(VALID_TARGETS)" DO_BUILD=1
-
-targets-f7-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 TARGETS="$(VALID_TARGETS)"
-
-targets-ci-f7-print:
-	$(V1) $(MAKE) -s targets-by-mcu MCU_TYPE=STM32F7 TARGETS="$(CI_TARGETS)"
 
 ## test              : run the Betaflight test suite
 ## junittest         : run the Betaflight test suite, producing Junit XML result files.

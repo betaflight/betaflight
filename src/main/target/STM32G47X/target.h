@@ -54,9 +54,7 @@
 
 #define USE_BEEPER
 
-#ifdef USE_SDCARD
-#define USE_SDCARD_SPI
-#endif
+#undef USE_SDCARD
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
