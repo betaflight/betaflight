@@ -152,6 +152,17 @@ static const motorMixer_t mixerOctoX8[] = {
     { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
 };
 
+static const motorMixer_t mixerOctoX8P[] = {
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
+    { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
+    { 1.0f,  1.0f,  0.0f,  1.0f },          // LEFT
+    { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // UNDER_REAR
+    { 1.0f, -1.0f,  0.0f, -1.0f },          // UNDER_RIGHT
+    { 1.0f,  1.0f,  0.0f, -1.0f },          // UNDER_LEFT
+    { 1.0f,  0.0f, -1.0f,  1.0f },          // UNDER_FRONT
+};
+
 static const motorMixer_t mixerOctoFlatP[] = {
     { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
     { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
@@ -175,6 +186,7 @@ static const motorMixer_t mixerOctoFlatX[] = {
 };
 #else
 #define mixerOctoX8 NULL
+#define mixerOctoX8P NULL
 #define mixerOctoFlatP NULL
 #define mixerOctoFlatX NULL
 #endif
@@ -244,7 +256,8 @@ const mixer_t mixers[] = {
     { 0, false, NULL },                // MIXER_CUSTOM
     { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL },                // MIXER_CUSTOM_TRI
-    { 4, false, mixerQuadX1234 },
+    { 4, false, mixerQuadX1234 },      // MIXER_QUADX_1234
+    { 8, false, mixerOctoX8P },        // MIXER_OCTOX8P
 };
 #endif // !USE_QUAD_MIXER_ONLY
 

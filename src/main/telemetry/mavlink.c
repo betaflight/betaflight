@@ -456,6 +456,7 @@ void mavlinkSendHUDAndHeartbeat(void)
             mavSystemType = MAV_TYPE_HEXAROTOR;
             break;
         case MIXER_OCTOX8:
+        case MIXER_OCTOX8P:
         case MIXER_OCTOFLATP:
         case MIXER_OCTOFLATX:
             mavSystemType = MAV_TYPE_OCTOROTOR;
