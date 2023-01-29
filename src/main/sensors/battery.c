@@ -77,7 +77,7 @@ static uint16_t batteryCriticalVoltage;
 static uint16_t batteryWarningHysteresisVoltage;
 static uint16_t batteryCriticalHysteresisVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
-static uint8_t cutoffFrequency = 0.5; //Hz
+static uint8_t cutoffFrequency = 5; //Hz
 static float lastFilteredVoltage = 0;
 
 #define PWM_RANGE_MIN 1000
@@ -92,6 +92,8 @@ static batteryState_e batteryState;
 static batteryState_e voltageState;
 static batteryState_e consumptionState;
 static float wattHoursDrawn;
+static timeUs_t lastTimeVol;
+static timeUs_t currentTimeVol;
 
 #ifndef DEFAULT_CURRENT_METER_SOURCE
 #ifdef USE_VIRTUAL_CURRENT_METER
@@ -169,10 +171,15 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_BATTERY, 0, voltageMeter.unfiltered);
     DEBUG_SET(DEBUG_BATTERY, 1, voltageMeter.displayFiltered);
 
+    currentTimeVol = micros();
+    float dt = currentTimeVol - lastTimeVol;
+    dt = dt /1000000; // to seconds
+    DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, 1/dt);
+    lastTimeVol = currentTimeVol;
     float currVoltage = voltageMeter.displayFiltered;
-    DEBUG_SET(DEBUG_UNFILT_VOLTAGE, 1, currVoltage);
+    DEBUG_SET(DEBUG_FILT_VOLTAGE, 1, currVoltage);
     //float dt = 1/500;
-    float dt = pidGetDT();
+    //loat dt = pidGetDT();
     
     // calculate the filter constant (alpha) based on the cutoff frequency and time step
     //alpha = dt / (1.0 / (2.0 * np.pi * cutoff_frequency) + dt)
@@ -180,7 +187,7 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
     
     // apply the low-pass filter to the voltage values
     lastFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
-    //DEBUG_SET(DEBUG_FILT_VOLTAGE, 2, lastFilteredVoltage);
+    DEBUG_SET(DEBUG_FILT_VOLTAGE, 2, lastFilteredVoltage);
 }
 
 static void updateBatteryBeeperAlert(void)
@@ -223,6 +230,7 @@ void batteryUpdatePresence(void)
     if ((voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()) {
         // Battery has just been connected - calculate cells, warning voltages and reset state
         lastFilteredVoltage = voltageMeter.displayFiltered;
+        lastTimeVol = micros();
         consumptionState = voltageState = BATTERY_OK;
         if (batteryConfig()->forceBatteryCellCount != 0) {
             batteryCellCount = batteryConfig()->forceBatteryCellCount;
@@ -532,7 +540,7 @@ uint8_t calculateBatteryPercentageRemaining(void)
                 voltage = BATTERY_MIN_VOLTAGE;
             else if (voltage > BATTERY_MAX_VOLTAGE)
                 voltage = BATTERY_MAX_VOLTAGE;
-            DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, voltage);
+            DEBUG_SET(DEBUG_FILT_VOLTAGE, 3, voltage);
             // calculate the battery SoC based on the adjusted voltage
             batteryPercentage = ((voltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100;
     }
@@ -544,7 +552,7 @@ uint8_t calculateBatteryPercentageRemaining(void)
 float returnFilteredVoltage(void) // using a low pass filter
 {
     float currVoltage = voltageMeter.displayFiltered;
-    DEBUG_SET(DEBUG_UNFILT_VOLTAGE, 1, currVoltage);
+    //DEBUG_SET(DEBUG_UNFILT_VOLTAGE, 1, currVoltage);
     //float dt = 1/500;
     float dt = pidGetDT();
     
