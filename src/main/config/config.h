@@ -68,6 +68,9 @@ void ensureEEPROMStructureIsValid(void);
 
 void saveConfigAndNotify(void);
 void validateAndFixGyroConfig(void);
+#ifdef USE_BLACKBOX
+void validateAndFixBlackBox(void);
+#endif
 
 void setConfigDirty(void);
 bool isConfigDirty(void);
