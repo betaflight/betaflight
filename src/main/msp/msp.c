@@ -2522,7 +2522,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             // type byte, then length byte followed by the actual characters
             const uint8_t textType = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
 
-            const char* textVar;
+            const char *textVar;
 
             switch (textType) {
                 case MSP2TEXT_PILOT_NAME:
