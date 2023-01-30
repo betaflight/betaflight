@@ -83,6 +83,8 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(GPIOG) },
     { RCC_AHB1(GPIOH) }
 };
+#elif defined(SITL)
+const struct ioPortDef_s ioPortDefs[] = { 0 };
 #else
 # error "IO PortDefs not defined for MCU"
 #endif
