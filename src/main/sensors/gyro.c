@@ -91,7 +91,7 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyro.gyroSensor1.gyroDev;
 #endif
 
 
-#define DEBUG_GYRO_CALIBRATION 3
+#define DEBUG_GYRO_CALIBRATION_VALUE 3
 
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
@@ -205,6 +205,8 @@ bool isFirstArmingGyroCalibrationRunning(void)
 
 STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t gyroMovementCalibrationThreshold)
 {
+    bool calFailed = false;
+
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // Reset g[axis] at start of calibration
         if (isOnFirstGyroCalibrationCycle(&gyroSensor->calibration)) {
@@ -220,24 +222,30 @@ STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor
 
         if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
             const float stddev = devStandardDeviation(&gyroSensor->calibration.var[axis]);
-            // DEBUG_GYRO_CALIBRATION records the standard deviation of roll
+            // DEBUG_GYRO_CALIBRATION_VALUE records the standard deviation of roll
             // into the spare field - debug[3], in DEBUG_GYRO_RAW
             if (axis == X) {
-                DEBUG_SET(DEBUG_GYRO_RAW, DEBUG_GYRO_CALIBRATION, lrintf(stddev));
+                DEBUG_SET(DEBUG_GYRO_RAW, DEBUG_GYRO_CALIBRATION_VALUE, lrintf(stddev));
             }
+
+            DEBUG_SET(DEBUG_GYRO_CALIBRATION, axis, stddev);
 
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && stddev > gyroMovementCalibrationThreshold) {
-                gyroSetCalibrationCycles(gyroSensor);
-                return;
-            }
-
-            // please take care with exotic boardalignment !!
-            gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
-            if (axis == Z) {
-              gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
+                calFailed = true;
+            } else {
+                // please take care with exotic boardalignment !!
+                gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
+                if (axis == Z) {
+                  gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
+                }
             }
         }
+    }
+
+    if (calFailed) {
+        gyroSetCalibrationCycles(gyroSensor);
+        return;
     }
 
     if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
@@ -248,6 +256,7 @@ STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor
     }
 
     --gyroSensor->calibration.cyclesRemaining;
+    DEBUG_SET(DEBUG_GYRO_CALIBRATION, 3, gyroSensor->calibration.cyclesRemaining);
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)
