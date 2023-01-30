@@ -24,7 +24,7 @@
 
 #if defined(STM32F4) || defined(STM32G4)
 #define MAX_SPI_PIN_SEL 2
-#elif defined(STM32F7)||defined(AT32F4)
+#elif defined(STM32F7) || defined(AT32F4)
 #define MAX_SPI_PIN_SEL 4
 #elif defined(STM32H7)
 #define MAX_SPI_PIN_SEL 5
