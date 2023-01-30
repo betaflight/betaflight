@@ -346,9 +346,6 @@
 #ifndef USE_PWM_OUTPUT
 #define USE_PWM_OUTPUT
 #endif
-
-#if !defined(USE_PWM_OUTPUT)
-#undef USE_SERIAL_4WAY_BLHELI_INTERFACE // implementation requires USE_PWM_OUTPUT to find motor outputs.
 #endif
 
 #if !defined(USE_LED_STRIP)
