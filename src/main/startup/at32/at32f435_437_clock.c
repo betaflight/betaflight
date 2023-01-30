@@ -24,7 +24,7 @@
 
 /* includes ------------------------------------------------------------------*/
 #include "at32f435_437_clock.h"
-
+#include "platform.h"
 /**
   * @brief  system clock config program
   * @note   the system clock is configured as follow:

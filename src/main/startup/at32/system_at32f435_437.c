@@ -31,8 +31,9 @@
 /** @addtogroup AT32F435_437_system
   * @{
   */
-    
+
 #include "at32f435_437.h"
+#include "platform.h"
 
 /** @addtogroup AT32F435_437_system_private_defines
   * @{
