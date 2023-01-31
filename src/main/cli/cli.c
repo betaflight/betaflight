@@ -4815,7 +4815,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef BUILD_KEY
-    cliPrintf("BUILD KEY: %s", STR(BUILD_KEY));
+    cliPrintf("BUILD KEY: %s", buildKey);
 #ifdef RELEASE_NAME
     cliPrintf(" (%s)", STR(RELEASE_NAME));
 #endif
