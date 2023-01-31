@@ -164,6 +164,7 @@ bool cmsDisplayPortSelect(displayPort_t *instance)
 #define CMS_MAX_ROWS 31
 
 #define NORMAL_SCREEN_MIN_COLS 18      // Less is a small screen
+#define NORMAL_SCREEN_MAX_COLS 30      // More is a large screen
 static bool    smallScreen;
 static uint8_t leftMenuColumn;
 static uint8_t rightMenuColumn;
@@ -936,12 +937,21 @@ void cmsMenuOpen(void)
     } else {
       smallScreen       = false;
       linesPerMenuItem  = 1;
-      leftMenuColumn    = (pCurrentDisplay->cols / 2) - 13;
+      if (pCurrentDisplay->cols <= NORMAL_SCREEN_MAX_COLS) {
+          leftMenuColumn    = 2;
 #ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
-      rightMenuColumn   = (pCurrentDisplay->cols / 2) + 13;
+          rightMenuColumn   = pCurrentDisplay->cols - 2;
 #else
-      rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
+          rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
 #endif
+      } else {
+          leftMenuColumn    = (pCurrentDisplay->cols / 2) - 13;
+#ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
+          rightMenuColumn   = (pCurrentDisplay->cols / 2) + 13;
+#else
+          rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
+#endif
+      }
       maxMenuItems      = pCurrentDisplay->rows - 2;
     }
 
