@@ -42,3 +42,5 @@ extern const char* const buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
 extern const char* const buildTime;  // "HH:MM:SS"
 
 #define MSP_API_VERSION_STRING STR(API_VERSION_MAJOR) "." STR(API_VERSION_MINOR)
+
+extern const char* const buildKey;
