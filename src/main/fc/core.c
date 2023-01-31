@@ -172,6 +172,10 @@ const char * const osdLaunchControlModeNames[] = {
     "FULL"
 };
 #endif
+static flightLogDisarmReason_e lastDisarmedReason = 0;
+static bool useAutoCrashflipMixer = false;
+static bool crashflipSwitchActive = false;
+static bool autoCrashflipHasBeenUsed = false;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
@@ -393,6 +397,12 @@ void updateArmingStatus(void)
             setArmingDisabled(ARMING_DISABLED_MOTOR_PROTOCOL);
         }
 
+        if (isOutsideAutoTurtleDeadzone() || !autoCrashflipHasBeenUsed) {
+            unsetArmingDisabled(ARMING_DISABLED_ANGLE);
+        } else {
+            setArmingDisabled(ARMING_DISABLED_ANGLE);
+        }
+
         if (!isUsingSticksForArming()) {
             if (!IS_RC_MODE_ACTIVE(BOXARM)) {
 #ifdef USE_RUNAWAY_TAKEOFF
@@ -415,11 +425,13 @@ void updateArmingStatus(void)
             if (isArmingDisabled()
                 && !ignoreGyro
                 && !ignoreThrottle
-                && IS_RC_MODE_ACTIVE(BOXARM)) {
+                && IS_RC_MODE_ACTIVE(BOXARM)
+                && lastDisarmedReason != DISARM_REASON_AUTO_CRASHFLIP) {
                 setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-            } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+            } else if (!IS_RC_MODE_ACTIVE(BOXARM) || lastDisarmedReason == DISARM_REASON_AUTO_CRASHFLIP) {
                 unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             }
+            DEBUG_SET(DEBUG_AUTO_TURTLE, 0, lastDisarmedReason);
         }
 
         if (isArmingDisabled()) {
@@ -432,6 +444,15 @@ void updateArmingStatus(void)
     }
 }
 
+// void checkAutoTurtleArmStatus(void) {
+//     //Needs to be changed to be safe
+//     if (isOutsideAutoTurtleDeadzone()) {
+//         unsetArmingDisabled(ARMING_DISABLED_ANGLE);
+//     } else {
+//         setArmingDisabled(ARMING_DISABLED_ANGLE);
+//     }
+// }
+static uint32_t loopcount = 0;
 void disarm(flightLogDisarmReason_e reason)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -455,9 +476,13 @@ void disarm(flightLogDisarmReason_e reason)
         if (blackboxConfig()->device && blackboxConfig()->mode != BLACKBOX_MODE_ALWAYS_ON) { // Close the log upon disarm except when logging mode is ALWAYS ON
             blackboxFinish();
         }
-#else
-        UNUSED(reason);
 #endif
+        loopcount++;
+        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, loopcount);
+        if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+            autoCrashflipHasBeenUsed = false;
+        }
+        lastDisarmedReason = reason;
         BEEP_OFF;
 #ifdef USE_DSHOT
         if (isMotorProtocolDshot() && flipOverAfterCrashActive && !featureIsEnabled(FEATURE_3D)) {
@@ -478,12 +503,9 @@ void disarm(flightLogDisarmReason_e reason)
         }
     }
 }
-static bool useAutoCrashflipMixer = false;
-static bool crashflipSwitchActive = false;
-static uint32_t loopcount = 0;
+
 void tryArm(void)
 {
-    loopcount++;
     if (armingConfig()->gyro_cal_on_first_arm) {
         gyroStartCalibration(true);
     }
@@ -498,17 +520,18 @@ void tryArm(void)
         if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
             useAutoCrashflipMixer = false;
             crashflipSwitchActive = true;
-            
+            autoCrashflipHasBeenUsed = false;
         } else if(shouldAutoTurtle()) { // This will mean quad enters turtle mode midair
             useAutoCrashflipMixer = true;
             crashflipSwitchActive = true;
+            autoCrashflipHasBeenUsed = true;
         } else {
             useAutoCrashflipMixer = false;
             crashflipSwitchActive = false;
         }
-        DEBUG_SET(DEBUG_AUTO_TURTLE, 0, useAutoCrashflipMixer + 10*crashflipSwitchActive);
+        // DEBUG_SET(DEBUG_AUTO_TURTLE, 0, useAutoCrashflipMixer + 10*crashflipSwitchActive);
         // DEBUG_SET(DEBUG_AUTO_TURTLE, 1, crashflipSwitchActive);
-        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, loopcount);
+        // DEBUG_SET(DEBUG_AUTO_TURTLE, 1, loopcount);
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
@@ -626,6 +649,23 @@ void tryArm(void)
             }
         }
     }
+}
+
+// void armMotorsAutoCrashflip(void) {
+//     tryArm();
+// }
+
+// void pauseMotorsAutoCrashflip(void)
+// {
+//     if (micros() - lastTimeAutoCrashflip < DSHOT_BEACON_GUARD_DELAY_US) {
+//         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, DSHOT_CMD_TYPE_INLINE);
+//     }
+// }
+
+bool isOutsideAutoTurtleDeadzone(void) {
+    float quadVec[3] = {0,0,1};
+    applyMatrixRotation(quadVec, (struct fp_rotationMatrix_s*)rMat);
+    return !(quadVec[2] > 0 && (ABS(quadVec[0]) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(quadVec[1]) > mixerConfig()->crashflip_arm_angle_range/45.0f));
 }
 
 bool isCrashflipInAutoMode(void)

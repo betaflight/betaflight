@@ -270,6 +270,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #define CRASH_FLIP_DEADBAND 20
 #define CRASH_FLIP_STICK_MINF 0.15f
 
+static bool crashFlipReadyToRearm = false;
+
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     // if (ARMING_FLAG(ARMED)) {
@@ -303,15 +305,25 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 }
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
+                crashFlipReadyToRearm = false;
             } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 70);
+                for (int i = 0; i < mixerRuntime.motorCount; ++i) {
+                    motor[i] = motor_disarmed[i];
+                }
                 disarm(DISARM_REASON_AUTO_CRASHFLIP);
-                updateArmingStatus();
+                // updateArmingStatus();
+                // checkAutoTurtleArmStatus();
+                // crashFlipReadyToRearm = true;
             } else {
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 69);
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 51);
                 DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
+                updateArmingStatus();
+
+                // checkAutoTurtleArmStatus();
                 // tryArm(); //Tryarm should automatically be ran
+                // crashFlipReadyToRearm = false;
             }
         } else {
             const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
@@ -380,12 +392,12 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 motor[i] = motorOutput;
             }
         }
-    if (!ARMING_FLAG(ARMED)) {
-        // Disarmed mode
-        for (int i = 0; i < mixerRuntime.motorCount; i++) {
-            motor[i] = motor_disarmed[i];
-        }
-    }
+    // if (!ARMING_FLAG(ARMED)) {
+    //     // Disarmed mode
+    //     for (int i = 0; i < mixerRuntime.motorCount; i++) {
+    //         motor[i] = motor_disarmed[i];
+    //     }
+    // }
 }
 
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
@@ -537,6 +549,12 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 {
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
+
+    // if (!ARMING_FLAG(ARMED) && crashFlipReadyToRearm) {
+    //     applyFlipOverAfterCrashModeToMotors();
+
+    //     return;
+    // }
 
     if (isFlipOverAfterCrashActive()) {
         applyFlipOverAfterCrashModeToMotors();

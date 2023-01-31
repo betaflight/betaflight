@@ -90,6 +90,8 @@ bool pidLoopReady(void);
 void taskFiltering(timeUs_t currentTimeUs);
 void taskMainPidLoop(timeUs_t currentTimeUs);
 
+// void checkAutoTurtleArmStatus(void);
+bool isOutsideAutoTurtleDeadzone(void);
 bool isFlipOverAfterCrashActive(void);
 int8_t calculateThrottlePercent(void);
 uint8_t calculateThrottlePercentAbs(void);
