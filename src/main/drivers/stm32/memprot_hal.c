@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#include "memprot.h"
+#include "drivers/memprot.h"
 
 static void memProtConfigError(void)
 {

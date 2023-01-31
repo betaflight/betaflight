@@ -100,7 +100,7 @@ USBD_DEVICE MSC_desc =
 };
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-  #if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #if defined( __ICCARM__ ) /*!< IAR Compiler */
     #pragma data_alignment=4
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
@@ -128,7 +128,7 @@ __ALIGN_BEGIN uint8_t USBD_DeviceDesc_MSC[USB_SIZ_DEVICE_DESC] __ALIGN_END =
 } ; /* USB_DeviceDescriptor */
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-  #if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #if defined( __ICCARM__ ) /*!< IAR Compiler */
     #pragma data_alignment=4
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
@@ -148,7 +148,7 @@ __ALIGN_BEGIN uint8_t USBD_DeviceQualifierDesc_MSC[USB_LEN_DEV_QUALIFIER_DESC] _
 };
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-  #if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #if defined( __ICCARM__ ) /*!< IAR Compiler */
     #pragma data_alignment=4
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
@@ -168,7 +168,7 @@ uint8_t USBD_StringSerial_MSC[USB_SIZ_STRING_SERIAL] =
 };
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-  #if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #if defined( __ICCARM__ ) /*!< IAR Compiler */
     #pragma data_alignment=4
   #endif
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */

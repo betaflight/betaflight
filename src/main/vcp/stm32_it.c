@@ -143,7 +143,7 @@ void PendSV_Handler(void)
  * Output         : None
  * Return         : None
  *******************************************************************************/
-#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS)|| defined (STM32F37X)
+#if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS)|| defined(STM32F37X)
 void USB_LP_IRQHandler(void)
 #else
 void USB_LP_CAN1_RX0_IRQHandler(void)

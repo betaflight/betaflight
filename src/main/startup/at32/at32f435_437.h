@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#if defined (__CC_ARM)
+#if defined(__CC_ARM)
  #pragma anon_unions
 #endif
 
@@ -53,30 +53,30 @@ extern "C" {
   *      devices, you can define the device in your toolchain compiler preprocessor.
   */
 
-#if !defined (AT32F435CCU7) && !defined (AT32F435CGU7) && !defined (AT32F435CMU7) && \
-    !defined (AT32F435CCT7) && !defined (AT32F435CGT7) && !defined (AT32F435CMT7) && \
-    !defined (AT32F435RCT7) && !defined (AT32F435RGT7) && !defined (AT32F435RMT7) && \
-    !defined (AT32F435VCT7) && !defined (AT32F435VGT7) && !defined (AT32F435VMT7) && \
-    !defined (AT32F435ZCT7) && !defined (AT32F435ZGT7) && !defined (AT32F435ZMT7) && \
-    !defined (AT32F437RCT7) && !defined (AT32F437RGT7) && !defined (AT32F437RMT7) && \
-    !defined (AT32F437VCT7) && !defined (AT32F437VGT7) && !defined (AT32F437VMT7) && \
-    !defined (AT32F437ZCT7) && !defined (AT32F437ZGT7) && !defined (AT32F437ZMT7)
+#if !defined(AT32F435CCU7) && !defined(AT32F435CGU7) && !defined(AT32F435CMU7) && \
+    !defined(AT32F435CCT7) && !defined(AT32F435CGT7) && !defined(AT32F435CMT7) && \
+    !defined(AT32F435RCT7) && !defined(AT32F435RGT7) && !defined(AT32F435RMT7) && \
+    !defined(AT32F435VCT7) && !defined(AT32F435VGT7) && !defined(AT32F435VMT7) && \
+    !defined(AT32F435ZCT7) && !defined(AT32F435ZGT7) && !defined(AT32F435ZMT7) && \
+    !defined(AT32F437RCT7) && !defined(AT32F437RGT7) && !defined(AT32F437RMT7) && \
+    !defined(AT32F437VCT7) && !defined(AT32F437VGT7) && !defined(AT32F437VMT7) && \
+    !defined(AT32F437ZCT7) && !defined(AT32F437ZGT7) && !defined(AT32F437ZMT7)
 
     #error "Please select first the target device used in your application (in at32f435_437.h file)"
 #endif
 
-#if defined (AT32F435CCU7) || defined (AT32F435CGU7) || defined (AT32F435CMU7) || \
-    defined (AT32F435CCT7) || defined (AT32F435CGT7) || defined (AT32F435CMT7) || \
-    defined (AT32F435RCT7) || defined (AT32F435RGT7) || defined (AT32F435RMT7) || \
-    defined (AT32F435VCT7) || defined (AT32F435VGT7) || defined (AT32F435VMT7) || \
-    defined (AT32F435ZCT7) || defined (AT32F435ZGT7) || defined (AT32F435ZMT7)
+#if defined(AT32F435CCU7) || defined(AT32F435CGU7) || defined(AT32F435CMU7) || \
+    defined(AT32F435CCT7) || defined(AT32F435CGT7) || defined(AT32F435CMT7) || \
+    defined(AT32F435RCT7) || defined(AT32F435RGT7) || defined(AT32F435RMT7) || \
+    defined(AT32F435VCT7) || defined(AT32F435VGT7) || defined(AT32F435VMT7) || \
+    defined(AT32F435ZCT7) || defined(AT32F435ZGT7) || defined(AT32F435ZMT7)
 
     #define AT32F435xx
 #endif
 
-#if defined (AT32F437RCT7) || defined (AT32F437RGT7) || defined (AT32F437RMT7) || \
-    defined (AT32F437VCT7) || defined (AT32F437VGT7) || defined (AT32F437VMT7) || \
-    defined (AT32F437ZCT7) || defined (AT32F437ZGT7) || defined (AT32F437ZMT7)
+#if defined(AT32F437RCT7) || defined(AT32F437RGT7) || defined(AT32F437RMT7) || \
+    defined(AT32F437VCT7) || defined(AT32F437VGT7) || defined(AT32F437VMT7) || \
+    defined(AT32F437ZCT7) || defined(AT32F437ZGT7) || defined(AT32F437ZMT7)
 
     #define AT32F437xx
 #endif
@@ -84,8 +84,8 @@ extern "C" {
 #ifndef USE_STDPERIPH_DRIVER
 /**
   * @brief comment the line below if you will not use the peripherals drivers.
-  * in this case, these drivers will not be included and the application code will 
-  * be based on direct access to peripherals registers 
+  * in this case, these drivers will not be included and the application code will
+  * be based on direct access to peripherals registers
   */
   #ifdef _RTE_
     #include "RTE_Components.h"
@@ -162,7 +162,7 @@ typedef enum IRQn
     EDMA_Stream6_IRQn           = 16,     /*!< edma stream 6 global interrupt                       */
     EDMA_Stream7_IRQn           = 17,     /*!< edma stream 7 global interrupt                       */
 
-#if defined (AT32F435xx)
+#if defined(AT32F435xx)
     ADC1_2_3_IRQn               = 18,     /*!< adc1 adc2 and adc3 global interrupt                  */
     CAN1_TX_IRQn                = 19,     /*!< can1 tx interrupts                                   */
     CAN1_RX0_IRQn               = 20,     /*!< can1 rx0 interrupts                                  */
@@ -241,7 +241,7 @@ typedef enum IRQn
     DMA2_Channel7_IRQn          = 114,    /*!< dma1 channel 7 global interrupt                      */
 #endif
 
-#if defined (AT32F437xx)
+#if defined(AT32F437xx)
     ADC1_2_3_IRQn               = 18,     /*!< adc1 adc2 and adc3 global interrupt                  */
     CAN1_TX_IRQn                = 19,     /*!< can1 tx interrupts                                   */
     CAN1_RX0_IRQn               = 20,     /*!< can1 rx0 interrupts                                  */
@@ -334,7 +334,7 @@ typedef enum IRQn
 
 /** @addtogroup Exported_types
   * @{
-  */  
+  */
 
 typedef int32_t  INT32;
 typedef int16_t  INT16;
@@ -431,7 +431,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 #define AHBPERIPH1_BASE                  (PERIPH_BASE + 0x20000)
 #define AHBPERIPH2_BASE                  (PERIPH_BASE + 0x10000000)
 
-#if defined (AT32F435xx)
+#if defined(AT32F435xx)
 /* apb1 bus base address */
 #define UART8_BASE                       (APB1PERIPH_BASE + 0x7C00)
 #define UART7_BASE                       (APB1PERIPH_BASE + 0x7800)
@@ -557,7 +557,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 #define EDMA_STREAM6_2D_BASE             (EDMA_2D_BASE + 0x002C)
 #define EDMA_STREAM7_2D_BASE             (EDMA_2D_BASE + 0x0034)
 #define EDMA_STREAM8_2D_BASE             (EDMA_2D_BASE + 0x003C)
-                                         
+
 #define EDMA_LL_BASE                     (EDMA_BASE + 0x00D0)
 #define EDMA_STREAM1_LL_BASE             (EDMA_LL_BASE + 0x0004)
 #define EDMA_STREAM2_LL_BASE             (EDMA_LL_BASE + 0x0008)
@@ -591,7 +591,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} error_status;
 #define OTGFS1_BASE                      (AHBPERIPH2_BASE + 0x00000)
 #endif
 
-#if defined (AT32F437xx)
+#if defined(AT32F437xx)
 /* apb1 bus base address */
 #define UART8_BASE                       (APB1PERIPH_BASE + 0x7C00)
 #define UART7_BASE                       (APB1PERIPH_BASE + 0x7800)

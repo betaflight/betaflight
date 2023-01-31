@@ -347,12 +347,12 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
     switch (irq) {
-#if defined (STM32F40_41xxx) || defined(STM32F411xE)
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
         break;
 #endif
-#if defined (STM32F40_41xxx)
+#if defined(STM32F40_41xxx)
     case TIM8_CC_IRQn:
         timerNVICConfigure(TIM8_UP_TIM13_IRQn);
         break;
@@ -759,7 +759,7 @@ static inline void timUpdateHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig
 
 #if USED_TIMERS & TIM_N(1)
 _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
-# if defined(STM32F40_41xxx) || defined (STM32F411xE)
+# if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #  if USED_TIMERS & TIM_N(10)
 _TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQHandler, 1, 10);  // both timers are in use
 #  else
@@ -806,7 +806,7 @@ _TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQHandler, 8, 13);  // both timers are in use
 _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);     // timer13 is not used
 #  endif
 # endif
-# if defined (STM32F411xE)
+# if defined(STM32F411xE)
 # endif
 #endif
 #if USED_TIMERS & TIM_N(9)

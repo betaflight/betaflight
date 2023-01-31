@@ -51,7 +51,7 @@
 
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
-#include "usb_io.h"
+#include "drivers/usb_io.h"
 
 uint8_t mscStart(void)
 {

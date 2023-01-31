@@ -29,7 +29,7 @@
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
 #include "drivers/rcc.h"
-#include "resource.h"
+#include "drivers/resource.h"
 
 /*
  * DMA descriptors.

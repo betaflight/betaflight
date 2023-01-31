@@ -501,7 +501,7 @@ void initHoTTTelemetry(void);
 void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
 bool hottTextmodeIsAlive();
 void hottTextmodeGrab();
 void hottTextmodeExit();

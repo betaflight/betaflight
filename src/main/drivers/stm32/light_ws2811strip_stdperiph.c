@@ -37,7 +37,7 @@
 #include "drivers/rcc.h"
 #include "drivers/timer.h"
 
-#include "light_ws2811strip.h"
+#include "drivers/light_ws2811strip.h"
 
 static IO_t ws2811IO = IO_NONE;
 #if defined(STM32F4)

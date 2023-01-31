@@ -227,7 +227,7 @@ static const char icon_file[] =
 #define CMA_TIME EMFAT_ENCODE_CMA_TIME(1,1,2018, 13,0,0)
 #define CMA { CMA_TIME, CMA_TIME, CMA_TIME }
 
-#if defined (USE_EMFAT_AUTORUN) || defined (USE_EMFAT_ICON) || defined (USE_EMFAT_README)
+#if defined(USE_EMFAT_AUTORUN) || defined(USE_EMFAT_ICON) || defined(USE_EMFAT_README)
 static void memory_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
 {
     int len;

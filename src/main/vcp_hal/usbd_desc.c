@@ -103,7 +103,7 @@ USBD_DescriptorsTypeDef VCP_Desc = {
 };
 
 /* USB Standard Device Descriptor */
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+#if defined( __ICCARM__ ) /*!< IAR Compiler */
   #pragma data_alignment=4
 #endif
 __ALIGN_BEGIN uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
@@ -159,7 +159,7 @@ __ALIGN_BEGIN uint8_t USBD_MSC_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
 #endif
 
 /* USB Standard Device Descriptor */
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+#if defined( __ICCARM__ ) /*!< IAR Compiler */
   #pragma data_alignment=4
 #endif
 __ALIGN_BEGIN uint8_t USBD_LangIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
@@ -175,7 +175,7 @@ uint8_t USBD_StringSerial[USB_SIZ_STRING_SERIAL] =
   USB_DESC_TYPE_STRING,
 };
 
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+#if defined( __ICCARM__ ) /*!< IAR Compiler */
   #pragma data_alignment=4
 #endif
 __ALIGN_BEGIN uint8_t USBD_StrDesc[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;

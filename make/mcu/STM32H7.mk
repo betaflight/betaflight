@@ -271,7 +271,7 @@ ifneq ($(FIRMWARE_SIZE),)
 DEVICE_FLAGS   += -DFIRMWARE_SIZE=$(FIRMWARE_SIZE)
 endif
 
-DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000
+DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
@@ -283,31 +283,31 @@ VCP_SRC = \
 
 MCU_COMMON_SRC = \
             startup/system_stm32h7xx.c \
-            drivers/system_stm32h7xx.c \
-            drivers/timer_hal.c \
-            drivers/timer_stm32h7xx.c \
-            drivers/serial_uart_hal.c \
-            drivers/serial_uart_stm32h7xx.c \
-            drivers/bus_quadspi_hal.c \
-            drivers/bus_spi_ll.c \
-            drivers/dma_stm32h7xx.c \
+            drivers/stm32/system_stm32h7xx.c \
+            drivers/stm32/timer_hal.c \
+            drivers/stm32/timer_stm32h7xx.c \
+            drivers/stm32/serial_uart_hal.c \
+            drivers/stm32/serial_uart_stm32h7xx.c \
+            drivers/stm32/bus_quadspi_hal.c \
+            drivers/stm32/bus_spi_ll.c \
+            drivers/stm32/dma_stm32h7xx.c \
             drivers/dshot_bitbang.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/dshot_bitbang_ll.c \
-            drivers/light_ws2811strip_hal.c \
-            drivers/adc_stm32h7xx.c \
-            drivers/bus_i2c_hal.c \
-            drivers/bus_i2c_hal_init.c \
+            drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/light_ws2811strip_hal.c \
+            drivers/stm32/adc_stm32h7xx.c \
+            drivers/stm32/bus_i2c_hal.c \
+            drivers/stm32/bus_i2c_hal_init.c \
             drivers/bus_i2c_timing.c \
-            drivers/pwm_output_dshot_hal.c \
+            drivers/stm32/pwm_output_dshot_hal.c \
             drivers/pwm_output_dshot_shared.c \
             drivers/persistent.c \
-            drivers/transponder_ir_io_hal.c \
-            drivers/audio_stm32h7xx.c \
-            drivers/memprot_hal.c \
-            drivers/memprot_stm32h7xx.c \
-            drivers/sdio_h7xx.c \
-            drivers/bus_quadspi_hal.c \
+            drivers/stm32/transponder_ir_io_hal.c \
+            drivers/stm32/audio_stm32h7xx.c \
+            drivers/stm32/memprot_hal.c \
+            drivers/stm32/memprot_stm32h7xx.c \
+            drivers/stm32/sdio_h7xx.c \
+            drivers/stm32/bus_quadspi_hal.c \
             drivers/bus_quadspi.c
 
 MCU_EXCLUDES = \
@@ -316,7 +316,7 @@ MCU_EXCLUDES = \
 
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/usb_msc_h7xx.c \
+            drivers/stm32/usb_msc_h7xx.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \

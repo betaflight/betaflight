@@ -29,8 +29,8 @@
 #include "drivers/timer_def.h"
 
 #include "stm32h7xx.h"
-#include "rcc.h"
-#include "timer.h"
+#include "drivers/rcc.h"
+#include "drivers/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),   .inputIrq = TIM1_CC_IRQn},
