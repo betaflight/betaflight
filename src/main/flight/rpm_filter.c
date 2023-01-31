@@ -94,6 +94,8 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
         pt1FilterInit(&motorFreqLpf[i], pt1FilterGain(config->rpm_filter_lpf_hz, looptimeUs * 1e-6f));
     }
 
+    erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
+
     // if RPM Filtering is configured to be off
     if (!config->rpm_filter_harmonics) {
         return;
@@ -114,8 +116,6 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
             }
         }
     }
-
-    erpmToHz = ERPM_PER_LSB / SECONDS_PER_MINUTE  / (motorConfig()->motorPoleCount / 2.0f);
 
     const float loopIterationsPerUpdate = RPM_FILTER_DURATION_S / (looptimeUs * 1e-6f);
     const float numNotchesPerAxis = getMotorCount() * rpmFilter.numHarmonics;
