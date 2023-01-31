@@ -161,7 +161,7 @@ bool cmsDisplayPortSelect(displayPort_t *instance)
 //   13 cols x 9 rows, top row printed as a Bold Heading
 //   Needs the "smallScreen" adaptions
 
-#define CMS_MAX_ROWS 16
+#define CMS_MAX_ROWS 31
 
 #define NORMAL_SCREEN_MIN_COLS 18      // Less is a small screen
 static bool    smallScreen;
@@ -810,11 +810,11 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // simple text device and use the '^' (carat) and 'V' for arrow approximations.
     if (displayWasCleared && leftMenuColumn > 0) {      // make sure there's room to draw the symbol
         if (currentCtx.page > 0) {
-            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_NORTH : '^';
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SMALL_UP : '^';
             displayWriteChar(pDisplay, leftMenuColumn - 1, top, DISPLAYPORT_ATTR_NORMAL, symbol);
         }
          if (currentCtx.page < pageCount - 1) {
-            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SOUTH : 'V';
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SMALL_DOWN : 'V';
             displayWriteChar(pDisplay, leftMenuColumn - 1, top + pageMaxRow, DISPLAYPORT_ATTR_NORMAL, symbol);
         }
     }
