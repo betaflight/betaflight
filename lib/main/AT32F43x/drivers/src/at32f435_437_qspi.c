@@ -165,6 +165,7 @@ flag_status qspi_flag_get(qspi_type* qspi_x, uint32_t flag)
   */
 void qspi_flag_clear(qspi_type* qspi_x, uint32_t flag)
 {
+  (void)flag;
   qspi_x->cmdsts = QSPI_CMDSTS_FLAG;
 }
 

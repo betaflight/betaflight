@@ -59,6 +59,15 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #endif
 
+#ifdef AT32F4
+
+#define USE_TIMER_MGMT
+#define USE_DMA_SPEC
+#define USE_PERSISTENT_OBJECTS
+#define USE_CUSTOM_DEFAULTS_ADDRESS
+
+#endif
+
 #ifdef STM32F4
 #if defined(STM32F40_41xxx)
 #define USE_FAST_DATA
@@ -305,9 +314,15 @@ extern uint8_t _dmaram_end__;
 #endif
 #endif
 
-#if !defined(USE_EXST) && !defined(USE_FLASH)
-#define USE_FLASHFS
+#if defined(USE_FLASH_CHIP)
 
+#if !defined(USE_EXST) && !defined(USE_FLASH)
+#define USE_FLASH
+#endif
+
+#if defined(USE_FLASH)
+
+#define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
 #define USE_FLASH_W25N01G    // 1Gb NAND flash support
@@ -316,6 +331,7 @@ extern uint8_t _dmaram_end__;
 #define USE_FLASH_W25M02G    // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV  // 16MB Winbond 25Q128
 
+#endif
 #endif
 
 #ifndef USE_MAX7456

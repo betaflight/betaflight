@@ -26,6 +26,9 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
+// common to all 
+#define USE_TIMER_AF
+
 #if defined(STM32G474xx)
 #include "stm32g4xx.h"
 #include "stm32g4xx_hal.h"
@@ -44,6 +47,8 @@
 #define U_ID_0 (*(uint32_t*)UID_BASE)
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
+
+#define USE_PIN_AF
 
 #ifndef STM32G4
 #define STM32G4
@@ -68,6 +73,8 @@
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
+#define USE_PIN_AF
+
 #ifndef STM32H7
 #define STM32H7
 #endif
@@ -91,6 +98,8 @@
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
 
+#define USE_PIN_AF
+
 #ifndef STM32F7
 #define STM32F7
 #endif
@@ -108,9 +117,52 @@
 #define STM32F4
 #endif
 
+#elif defined(AT32F435ZMT7)
+
+#include "at32f435_437.h"
+
+typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
+
+#define GPIO_TypeDef        gpio_type
+#define GPIO_InitTypeDef    gpio_init_type
+#define TIM_TypeDef         tmr_type
+#define TIM_OCInitTypeDef   tmr_output_config_type
+#define DMA_TypeDef         dma_type
+#define DMA_InitTypeDef     dma_init_type
+#define DMA_Channel_TypeDef dma_channel_type
+#define SPI_TypeDef         spi_type
+#define ADC_TypeDef         adc_type
+#define USART_TypeDef       usart_type
+#define TIM_OCInitTypeDef   tmr_output_config_type 
+#define TIM_ICInitTypeDef   tmr_input_config_type
+#define SystemCoreClock     system_core_clock
+#define EXTI_TypeDef        exint_type
+#define EXTI_InitTypeDef    exint_init_type
+#define USART_TypeDef       usart_type
+
+// Chip Unique ID on F43X
+#define U_ID_0 (*(uint32_t*)0x1ffff7e8)
+#define U_ID_1 (*(uint32_t*)0x1ffff7ec)
+#define U_ID_2 (*(uint32_t*)0x1ffff7f0)
+
+#define USE_PIN_AF
+
+#ifndef AT32F4
+#define AT32F4
+#endif
+
+#define SET_BIT(REG, BIT)     ((REG) |= (BIT))
+#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
+#define READ_BIT(REG, BIT)    ((REG) & (BIT))
+#define CLEAR_REG(REG)        ((REG) = (0x0))
+#define WRITE_REG(REG, VAL)   ((REG) = (VAL))
+#define READ_REG(REG)         ((REG))
+#define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
+
 #elif defined(SIMULATOR_BUILD)
 
 // Nop
+#undef USE_TIMER_AF
 
 #else
 #error "Invalid chipset specified. Update platform.h"

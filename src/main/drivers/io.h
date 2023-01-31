@@ -71,21 +71,39 @@
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_NOPULL)
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_25MHz, 0, GPIO_PuPd_UP)
 
+#elif defined(AT32F4)
+
+#define IO_CONFIG(mode, speed, otype, pupd) ((mode) | ((speed) << 2) | ((otype) << 4) | ((pupd) << 5))
+
+#define IOCFG_OUT_PP         IO_CONFIG(GPIO_MODE_OUTPUT , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_PUSH_PULL , GPIO_PULL_NONE )  // TODO
+#define IOCFG_OUT_PP_UP      IO_CONFIG(GPIO_MODE_OUTPUT , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_PUSH_PULL , GPIO_PULL_UP )
+#define IOCFG_OUT_PP_25      IO_CONFIG(GPIO_MODE_OUTPUT , GPIO_DRIVE_STRENGTH_STRONGER , GPIO_OUTPUT_PUSH_PULL, GPIO_PULL_NONE)
+#define IOCFG_OUT_OD         IO_CONFIG(GPIO_MODE_OUTPUT , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_NONE)
+#define IOCFG_AF_PP          IO_CONFIG(GPIO_MODE_MUX    , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_PUSH_PULL , GPIO_PULL_NONE)
+#define IOCFG_AF_PP_PD       IO_CONFIG(GPIO_MODE_MUX    , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_PUSH_PULL , GPIO_PULL_DOWN)
+#define IOCFG_AF_PP_UP       IO_CONFIG(GPIO_MODE_MUX    , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_PUSH_PULL , GPIO_PULL_UP)
+#define IOCFG_AF_OD          IO_CONFIG(GPIO_MODE_MUX    , GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_NONE)
+#define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_DOWN)
+#define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_UP)
+#define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_NONE)
+#define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE , 0, GPIO_PULL_UP)
+
+
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
 
-# define IOCFG_OUT_PP         0
-# define IOCFG_OUT_OD         0
-# define IOCFG_AF_PP          0
-# define IOCFG_AF_OD          0
-# define IOCFG_IPD            0
-# define IOCFG_IPU            0
-# define IOCFG_IN_FLOATING    0
+#define IOCFG_OUT_PP         0
+#define IOCFG_OUT_OD         0
+#define IOCFG_AF_PP          0
+#define IOCFG_AF_OD          0
+#define IOCFG_IPD            0
+#define IOCFG_IPU            0
+#define IOCFG_IN_FLOATING    0
 
 #else
 # warning "Unknown TARGET"
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
 // Expose these for EXTIConfig
 #define IO_CONFIG_GET_MODE(cfg) (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
@@ -109,7 +127,7 @@ bool IOIsFreeOrPreinit(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#ifdef USE_TIMER_AF
 void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af);
 #endif
 

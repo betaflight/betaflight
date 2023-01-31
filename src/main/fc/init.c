@@ -293,7 +293,7 @@ void init(void)
     enum {
         FLASH_INIT_ATTEMPTED            = (1 << 0),
         SD_INIT_ATTEMPTED               = (1 << 1),
-        SPI_AND_QSPI_INIT_ATTEMPTED      = (1 << 2),
+        SPI_AND_QSPI_INIT_ATTEMPTED     = (1 << 2),
     };
     uint8_t initFlags = 0;
 

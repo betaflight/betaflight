@@ -93,6 +93,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #elif defined(CONFIG_IN_FLASH) || defined(CONFIG_IN_FILE)
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Unlock();
+#elif defined(AT32F4)
+        flash_unlock();
 #else
         FLASH_Unlock();
 #endif
@@ -111,6 +113,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     // NOP
 #elif defined(STM32G4)
     // NOP
+#elif defined(AT32F4)
+    flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -492,6 +496,18 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (status != HAL_OK) {
         return -2;
     }
+#elif defined(AT32F4)
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+        const flash_status_type status = flash_sector_erase(c->address);
+        if (status != FLASH_OPERATE_DONE) {
+            return -1;
+        }
+    }
+
+    const flash_status_type status = flash_word_program(c->address, (uint32_t)*buffer);
+    if (status != FLASH_OPERATE_DONE) {
+        return -2;
+    }
 #else // !STM32H7 && !STM32F7 && !STM32G4
     if (c->address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
@@ -553,6 +569,8 @@ int config_streamer_finish(config_streamer_t *c)
 #elif defined(CONFIG_IN_FLASH)
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
         HAL_FLASH_Lock();
+#elif defined(AT32F4)
+        flash_lock();
 #else
         FLASH_Lock();
 #endif

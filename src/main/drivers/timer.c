@@ -67,6 +67,7 @@ typedef struct timerConfig_s {
     timerOvrHandlerRec_t *overflowCallbackActive; // null-terminated linked list of active overflow callbacks
     uint32_t forcedOverflowTimerValue;
 } timerConfig_t;
+
 timerConfig_t timerConfig[USED_TIMER_COUNT];
 
 typedef struct {

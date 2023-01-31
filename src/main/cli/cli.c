@@ -301,6 +301,7 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
+    "AT32F435"
 };
 
 static const char *configurationStates[] = { "UNCONFIGURED", "CUSTOM DEFAULTS", "CONFIGURED" };
@@ -2484,7 +2485,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 }
 #endif // USE_FLASH_CHIP
 
-#ifdef USE_FLASHFS
+#if defined(USE_FLASHFS) && defined(USE_FLASH_CHIP)
 static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
