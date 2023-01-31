@@ -154,6 +154,7 @@ static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
 static int tryingToArm = ARMING_DELAYED_DISARMED;
+static bool flipOverAfterCrashWasActiveLast = false;
 
 #ifdef USE_RUNAWAY_TAKEOFF
 static timeUs_t runawayTakeoffDeactivateUs = 0;
@@ -495,7 +496,8 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        if (cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs()) < DSHOT_BEACON_GUARD_DELAY_US) {
+        if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US 
+        || (currentTimeUs - lastDisarmTimeUs < 200000 && flipOverAfterCrashWasActiveLast)) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
@@ -598,6 +600,7 @@ void tryArm(void)
         runawayTakeoffAccumulatedUs = 0;
         runawayTakeoffTriggerUs = 0;
 #endif
+    flipOverAfterCrashWasActiveLast = flipOverAfterCrashActive;
     } else {
        resetTryingToArm();
         if (!isFirstArmingGyroCalibrationRunning()) {
