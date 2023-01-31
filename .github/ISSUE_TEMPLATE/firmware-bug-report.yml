@@ -38,34 +38,15 @@ body:
     attributes:
       label: Support ID
       description: |
-        From BetaFlight version 4.4 please use the `Submit Support Data` button to get an support ID. Please post the support ID here.
+
+        If missing any drivers for GYRO, ACC, MAG, BARO, FLASH or OSD it's required to flash a `Core Only` build for your board.
+
+        Go to CLI tab and use the `Submit Support Data` button to get an `Support ID`. Please post the `Support ID` here.
+
         Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
+
       placeholder: |
           # PASTE HERE THE OUTPUT OF `Support ID` IN THE CLI TAB
-      render: txt
-    validations:
-      required: false
-
-  - type: textarea
-    attributes:
-      label: Diff configuration
-      description: |
-        Create a `diff` and post it here. Instructions on how to do a diff: https://oscarliang.com/use-diff-not-dump-betaflight/
-        Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
-      placeholder: |
-          # PASTE HERE THE OUTPUT OF `diff` COMMAND IN THE CLI TAB
-      render: txt
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Resources configuration
-      description: |
-        Use `resource show all` to create a resource allocation list and post it here.
-        Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
-      placeholder: |
-          # PASTE HERE THE OUTPUT OF `resource show all` COMMAND IN THE CLI TAB
       render: txt
     validations:
       required: true
@@ -89,7 +70,7 @@ body:
 
   - type: textarea
     attributes:
-      label: How are the different components wired up
+      label: How are the different components wired up (including port information)
       description: Details about how all is wired.
 
   - type: markdown
