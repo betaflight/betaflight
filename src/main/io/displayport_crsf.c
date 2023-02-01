@@ -96,7 +96,7 @@ static int crsfWriteString(displayPort_t *displayPort, uint8_t col, uint8_t row,
 
 static int crsfWriteChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t attr, uint8_t c)
 {
-    char s[1];
+    char s[2];
     tfp_sprintf(s, "%c", c);
     return crsfWriteString(displayPort, col, row, attr, s);
 }

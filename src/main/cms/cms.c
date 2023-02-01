@@ -161,9 +161,10 @@ bool cmsDisplayPortSelect(displayPort_t *instance)
 //   13 cols x 9 rows, top row printed as a Bold Heading
 //   Needs the "smallScreen" adaptions
 
-#define CMS_MAX_ROWS 16
+#define CMS_MAX_ROWS 31
 
 #define NORMAL_SCREEN_MIN_COLS 18      // Less is a small screen
+#define NORMAL_SCREEN_MAX_COLS 30      // More is a large screen
 static bool    smallScreen;
 static uint8_t leftMenuColumn;
 static uint8_t rightMenuColumn;
@@ -810,11 +811,11 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // simple text device and use the '^' (carat) and 'V' for arrow approximations.
     if (displayWasCleared && leftMenuColumn > 0) {      // make sure there's room to draw the symbol
         if (currentCtx.page > 0) {
-            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_NORTH : '^';
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SMALL_UP : '^';
             displayWriteChar(pDisplay, leftMenuColumn - 1, top, DISPLAYPORT_ATTR_NORMAL, symbol);
         }
          if (currentCtx.page < pageCount - 1) {
-            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SOUTH : 'V';
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SMALL_DOWN : 'v';
             displayWriteChar(pDisplay, leftMenuColumn - 1, top + pageMaxRow, DISPLAYPORT_ATTR_NORMAL, symbol);
         }
     }
@@ -936,12 +937,21 @@ void cmsMenuOpen(void)
     } else {
       smallScreen       = false;
       linesPerMenuItem  = 1;
-      leftMenuColumn    = (pCurrentDisplay->cols / 2) - 13;
+      if (pCurrentDisplay->cols <= NORMAL_SCREEN_MAX_COLS) {
+          leftMenuColumn    = 2;
 #ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
-      rightMenuColumn   = (pCurrentDisplay->cols / 2) + 13;
+          rightMenuColumn   = pCurrentDisplay->cols - 2;
 #else
-      rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
+          rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
 #endif
+      } else {
+          leftMenuColumn    = (pCurrentDisplay->cols / 2) - 13;
+#ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
+          rightMenuColumn   = (pCurrentDisplay->cols / 2) + 13;
+#else
+          rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
+#endif
+      }
       maxMenuItems      = pCurrentDisplay->rows - 2;
     }
 
