@@ -417,16 +417,17 @@ int8_t sx127xGetCurrRSSI(void)
     return (-157 + sx127xGetRegisterValue(SX127X_REG_RSSI_VALUE, 7, 0));
 }
 
-int8_t sx127xGetLastPacketSNRRaw(void)
+int8_t sx127xGetLastPacketSNR(void)
 {
-    return (int8_t)sx127xGetRegisterValue(SX127X_REG_PKT_SNR_VALUE, 7, 0);
+    int8_t rawSNR = (int8_t)sx127xGetRegisterValue(SX127X_REG_PKT_SNR_VALUE, 7, 0);
+    return (rawSNR / 4);
 }
 
 void sx127xGetLastPacketStats(int8_t *rssi, int8_t *snr)
 {
     *rssi = sx127xGetLastPacketRSSI();
-    *snr = sx127xGetLastPacketSNRRaw();
-    int8_t negOffset = (*snr < 0) ? (*snr / 4) : 0;
+    *snr = sx127xGetLastPacketSNR();
+    int8_t negOffset = (*snr < 0) ? *snr : 0;
     *rssi += negOffset;
 }
 

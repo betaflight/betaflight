@@ -45,16 +45,16 @@ typedef enum {
 void initTelemetry(void);
 bool getNextTelemetryPayload(uint8_t *nextPayloadSize, uint8_t **payloadData);
 
-void setTelemetryDataToTransmit(const uint8_t lengthToTransmit, uint8_t* dataToTransmit);
+void setTelemetryDataToTransmit(const uint8_t lengthToTransmit, uint8_t* dataToTransmit, const uint8_t bpc);
 bool isTelemetrySenderActive(void);
-uint8_t getCurrentTelemetryPayload(uint8_t *outData);
+void getCurrentTelemetryPayload(uint8_t *packageIndex, uint8_t *count, uint8_t **currentData);
 void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue);
 void updateTelemetryRate(const uint16_t airRate, const uint8_t tlmRatio, const uint8_t tlmBurst);
 
 void mspReceiverResetState(void);
 bool getCurrentMspConfirm(void);
-void setMspDataToReceive(const uint8_t maxLength, uint8_t* dataToReceive);
-void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* const receiveData);
+void setMspDataToReceive(const uint8_t maxLength, uint8_t* dataToReceive, const uint8_t bpc);
+void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* receiveData);
 bool hasFinishedMspData(void);
 void mspReceiverUnlock(void);
 void processMspPacket(uint8_t *packet);
