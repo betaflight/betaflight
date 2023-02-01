@@ -36,7 +36,7 @@
 #include "drivers/transponder_ir_erlt.h"
 #include "drivers/transponder_ir_ilap.h"
 
-#include "transponder_ir.h"
+#include "drivers/transponder_ir.h"
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 

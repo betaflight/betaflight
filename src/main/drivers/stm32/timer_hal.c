@@ -36,10 +36,10 @@
 #include "drivers/io.h"
 #include "drivers/dma.h"
 
-#include "rcc.h"
+#include "drivers/rcc.h"
 
-#include "timer.h"
-#include "timer_impl.h"
+#include "drivers/timer.h"
+#include "drivers/timer_impl.h"
 
 #define TIM_N(n) (1 << (n))
 

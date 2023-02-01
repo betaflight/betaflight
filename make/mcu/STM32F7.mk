@@ -144,7 +144,7 @@ OPTIMISE_SPEED = -O2
 else
 $(error Unknown MCU for F7 target)
 endif
-DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
+DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
@@ -157,27 +157,27 @@ VCP_SRC = \
 MCU_COMMON_SRC = \
             startup/system_stm32f7xx.c \
             drivers/accgyro/accgyro_mpu.c \
-            drivers/adc_stm32f7xx.c \
-            drivers/audio_stm32f7xx.c \
-            drivers/bus_i2c_hal.c \
-            drivers/bus_i2c_hal_init.c \
+            drivers/stm32/adc_stm32f7xx.c \
+            drivers/stm32/audio_stm32f7xx.c \
+            drivers/stm32/bus_i2c_hal.c \
+            drivers/stm32/bus_i2c_hal_init.c \
             drivers/bus_i2c_timing.c \
-            drivers/dma_stm32f7xx.c \
-            drivers/light_ws2811strip_hal.c \
-            drivers/transponder_ir_io_hal.c \
-            drivers/bus_spi_ll.c \
+            drivers/stm32/dma_stm32f7xx.c \
+            drivers/stm32/light_ws2811strip_hal.c \
+            drivers/stm32/transponder_ir_io_hal.c \
+            drivers/stm32/bus_spi_ll.c \
             drivers/persistent.c \
             drivers/dshot_bitbang.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/dshot_bitbang_ll.c \
-            drivers/pwm_output_dshot_hal.c \
+            drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/pwm_output_dshot_hal.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/timer_hal.c \
-            drivers/timer_stm32f7xx.c \
-            drivers/system_stm32f7xx.c \
-            drivers/serial_uart_hal.c \
-            drivers/serial_uart_stm32f7xx.c \
-            drivers/sdio_f7xx.c
+            drivers/stm32/timer_hal.c \
+            drivers/stm32/timer_stm32f7xx.c \
+            drivers/stm32/system_stm32f7xx.c \
+            drivers/stm32/serial_uart_hal.c \
+            drivers/stm32/serial_uart_stm32f7xx.c \
+            drivers/stm32/sdio_f7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
@@ -185,7 +185,7 @@ MCU_EXCLUDES = \
 
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/usb_msc_f7xx.c \
+            drivers/stm32/usb_msc_f7xx.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \

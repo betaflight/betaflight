@@ -86,7 +86,7 @@
 #include "telemetry/hott.h"
 #include "telemetry/telemetry.h"
 
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
 #include "scheduler/scheduler.h"
 #include "io/displayport_hott.h"
 
@@ -129,7 +129,7 @@ static portSharing_e hottPortSharing;
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
 
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
 static hottTextModeMsg_t hottTextModeMessage;
 static bool textmodeIsAlive = false;
 static int32_t telemetryTaskPeriod = 0;
@@ -176,7 +176,7 @@ static void initialiseMessages(void)
 #ifdef USE_GPS
     initialiseGPSMessage(&hottGPSMessage, sizeof(hottGPSMessage));
 #endif
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
     initialiseTextmodeMessage(&hottTextModeMessage);
 #endif
 }
@@ -351,7 +351,7 @@ void initHoTTTelemetry(void)
 
     hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
     hottDisplayportRegister();
 #endif
 
@@ -459,7 +459,7 @@ static void hottPrepareMessages(void)
 #endif
 }
 
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
 static void hottTextmodeStart(void)
 {
     // Increase menu speed
@@ -538,7 +538,7 @@ static void processHottTextModeRequest(const uint8_t cmd)
 
 static void processBinaryModeRequest(uint8_t address)
 {
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
     if (textmodeIsAlive) {
         hottTextmodeStop();
         textmodeIsAlive = false;
@@ -622,7 +622,7 @@ static void hottCheckSerialData(uint32_t currentMicros)
      */
         processBinaryModeRequest(address);
     }
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
     else if (requestId == HOTTV4_TEXT_MODE_REQUEST_ID) {
         processHottTextModeRequest(address);
     }

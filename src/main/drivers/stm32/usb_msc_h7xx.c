@@ -50,7 +50,7 @@
 
 #include "vcp_hal/usbd_cdc_interface.h"
 
-#include "usb_io.h"
+#include "drivers/usb_io.h"
 #include "usbd_msc.h"
 
 uint8_t mscStart(void)

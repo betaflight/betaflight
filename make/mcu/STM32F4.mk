@@ -143,29 +143,29 @@ MCU_FLASH_SIZE  := 512
 else
 $(error Unknown MCU for F4 target)
 endif
-DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
+DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 MCU_COMMON_SRC = \
             startup/system_stm32f4xx.c \
             drivers/accgyro/accgyro_mpu.c \
-            drivers/adc_stm32f4xx.c \
-            drivers/bus_i2c_stm32f4xx.c \
-            drivers/bus_spi_stdperiph.c \
-            drivers/dma_stm32f4xx.c \
+            drivers/stm32/adc_stm32f4xx.c \
+            drivers/stm32/bus_i2c_stm32f4xx.c \
+            drivers/stm32/bus_spi_stdperiph.c \
+            drivers/stm32/dma_stm32f4xx.c \
             drivers/dshot_bitbang.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/dshot_bitbang_stdperiph.c \
+            drivers/stm32/dshot_bitbang_stdperiph.c \
             drivers/inverter.c \
-            drivers/light_ws2811strip_stdperiph.c \
-            drivers/transponder_ir_io_stdperiph.c \
+            drivers/stm32/light_ws2811strip_stdperiph.c \
+            drivers/stm32/transponder_ir_io_stdperiph.c \
             drivers/pwm_output_dshot.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/serial_uart_stdperiph.c \
-            drivers/serial_uart_stm32f4xx.c \
-            drivers/system_stm32f4xx.c \
-            drivers/timer_stm32f4xx.c \
+            drivers/stm32/serial_uart_stdperiph.c \
+            drivers/stm32/serial_uart_stm32f4xx.c \
+            drivers/stm32/system_stm32f4xx.c \
+            drivers/stm32/timer_stm32f4xx.c \
             drivers/persistent.c \
-            drivers/sdio_f4xx.c
+            drivers/stm32/sdio_f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
@@ -187,7 +187,7 @@ endif
 
 MSC_SRC = \
             drivers/usb_msc_common.c \
-            drivers/usb_msc_f4xx.c \
+            drivers/stm32/usb_msc_f4xx.c \
             msc/usbd_msc_desc.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \

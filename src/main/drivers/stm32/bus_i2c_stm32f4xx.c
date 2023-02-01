@@ -91,7 +91,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #endif
             I2CPINDEF(PF0,  GPIO_AF_I2C2),
 
-#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
             // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
             I2CPINDEF(PB3,  GPIO_AF9_I2C2),
             I2CPINDEF(PB9,  GPIO_AF9_I2C2),
@@ -112,7 +112,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .sdaPins = {
             I2CPINDEF(PC9, GPIO_AF_I2C3),
 
-#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
             // STM32F401xx/STM32F410xx/STM32F411xE/STM32F412xG
             I2CPINDEF(PB4, GPIO_AF9_I2C3),
             I2CPINDEF(PB8, GPIO_AF9_I2C3),

@@ -214,9 +214,9 @@
     #define __ALIGN_END
     #if defined   (__CC_ARM)      /* ARM Compiler */
       #define __ALIGN_BEGIN    __align(4)
-    #elif defined (__ICCARM__)    /* IAR Compiler */
+    #elif defined(__ICCARM__)    /* IAR Compiler */
       #define __ALIGN_BEGIN
-    #elif defined  (__TASKING__)  /* TASKING Compiler */
+    #elif defined(__TASKING__)  /* TASKING Compiler */
       #define __ALIGN_BEGIN    __align(4)
     #endif /* __CC_ARM */
   #endif /* __GNUC__ */
@@ -226,15 +226,15 @@
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
 /* __packed keyword used to decrease the data type alignment to 1-byte */
-#if defined (__CC_ARM)         /* ARM Compiler */
+#if defined(__CC_ARM)         /* ARM Compiler */
   #define __packed    __packed
-#elif defined (__ICCARM__)     /* IAR Compiler */
+#elif defined(__ICCARM__)     /* IAR Compiler */
   #define __packed    __packed
-#elif defined   ( __GNUC__ )   /* GNU Compiler */
+#elif defined( __GNUC__ )   /* GNU Compiler */
     #ifndef __packed
       #define __packed    __attribute__ ((__packed__))
     #endif
-#elif defined   (__TASKING__)  /* TASKING Compiler */
+#elif defined(__TASKING__)  /* TASKING Compiler */
   #define __packed    __unaligned
 #endif /* __CC_ARM */
 

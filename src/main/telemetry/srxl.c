@@ -462,7 +462,7 @@ bool srxlFrameFlightPackCurrent(sbuf_t *dst, timeUs_t currentTimeUs)
     return false;
 }
 
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
 
 // Betaflight CMS using Spektrum Tx telemetry TEXT_GEN sensor as display.
 
@@ -691,7 +691,7 @@ static bool srxlFrameVTX(sbuf_t *dst, timeUs_t currentTimeUs)
 #define SRXL_GPS_STAT_COUNT 0
 #endif
 
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
 #define SRXL_SCHEDULE_CMS_COUNT  1
 #else
 #define SRXL_SCHEDULE_CMS_COUNT  0
@@ -721,7 +721,7 @@ const srxlScheduleFnPtr srxlScheduleFuncs[SRXL_TOTAL_COUNT] = {
 #if defined(USE_SPEKTRUM_VTX_TELEMETRY) && defined(USE_SPEKTRUM_VTX_CONTROL) && defined(USE_VTX_COMMON)
     srxlFrameVTX,
 #endif
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
     srxlFrameText,
 #endif
 };
@@ -742,7 +742,7 @@ static void processSrxl(timeUs_t currentTimeUs)
         srxlFnPtr = srxlScheduleFuncs[srxlScheduleIndex + srxlScheduleUserIndex];
         srxlScheduleUserIndex = (srxlScheduleUserIndex + 1) % SRXL_SCHEDULE_USER_COUNT;
 
-#if defined (USE_SPEKTRUM_CMS_TELEMETRY) && defined (USE_CMS)
+#if defined(USE_SPEKTRUM_CMS_TELEMETRY) && defined(USE_CMS)
         // Boost CMS performance by sending nothing else but CMS Text frames when in a CMS menu.
         // Sideeffect, all other reports are still not sent if user leaves CMS without a proper EXIT.
         if (cmsInMenu &&

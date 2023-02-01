@@ -32,7 +32,7 @@
 
 #ifdef USE_SDCARD_SDIO
 
-#include "sdmmc_sdio.h"
+#include "drivers/sdmmc_sdio.h"
 
 #include "pg/sdio.h"
 

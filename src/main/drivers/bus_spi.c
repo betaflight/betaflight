@@ -376,7 +376,7 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
     uint32_t spiClk = SystemCoreClock / 2;
 #elif defined(STM32H7)
     uint32_t spiClk = 100000000;
-#elif defined (AT32F4)
+#elif defined(AT32F4)
     uint32_t spiClk = system_core_clock / 2;
 
     if ((spiClk / spiClkDivisor) > 36000000){

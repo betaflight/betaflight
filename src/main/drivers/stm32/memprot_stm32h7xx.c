@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "memprot.h"
+#include "drivers/memprot.h"
 
 // Defined in linker script
 extern uint8_t dmaram_start;

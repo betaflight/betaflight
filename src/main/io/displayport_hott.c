@@ -23,7 +23,8 @@
 #include <string.h>
 
 #include "platform.h"
-#if defined (USE_HOTT_TEXTMODE) && defined (USE_CMS)
+
+#if defined(USE_HOTT_TEXTMODE) && defined(USE_CMS)
 
 #include "common/utils.h"
 #include "cms/cms.h"

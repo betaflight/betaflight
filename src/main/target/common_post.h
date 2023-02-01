@@ -33,15 +33,15 @@
 
     CLOUD_BUILD and CORE_BUILD should not be referenced here.
 
-    NOTE: for 4.5 we will be removing any conditions related to specific MCU types, instead 
+    NOTE: for 4.5 we will be removing any conditions related to specific MCU types, instead
     these should be defined in the target.h or in a file that is imported by target.h (in the
     case of common settings for a given MCU group)
-    
+
 */
 
 /*
     BEGIN HARDWARE INCLUSIONS
-    
+
     Simplified options for the moment, i.e. adding USE_MAG or USE_BARO and the entire driver suite is added.
     In the future we can move to specific drivers being added only - to save flash space.
 */
@@ -482,7 +482,7 @@ extern uint8_t __config_end;
 #endif
 #endif
 
-#if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
+#if defined(USE_RX_SPI) || defined(USE_SERIALRX_SRXL2)
 #define USE_RX_BIND
 #endif
 
