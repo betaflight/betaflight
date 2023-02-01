@@ -274,55 +274,54 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 VCP_SRC = \
-            vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf_stm32h7xx.c \
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c \
             vcp_hal/usbd_cdc_hid.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c \
-            drivers/usb_io.c
+            vcp_hal/usbd_conf_stm32h7xx.c \
+            vcp_hal/usbd_desc.c
 
 MCU_COMMON_SRC = \
             startup/system_stm32h7xx.c \
+            drivers/bus_i2c_timing.c \
+            drivers/bus_quadspi.c \
+            drivers/dshot_bitbang.c \
+            drivers/dshot_bitbang_decode.c \
+            drivers/persistent.c \
+            drivers/pwm_output_dshot_shared.c \
+            drivers/stm32/adc_stm32h7xx.c \
+            drivers/stm32/audio_stm32h7xx.c \
+            drivers/stm32/bus_i2c_hal.c \
+            drivers/stm32/bus_i2c_hal_init.c \
+            drivers/stm32/bus_spi_ll.c \
+            drivers/stm32/bus_quadspi_hal.c \
+            drivers/stm32/dma_stm32h7xx.c \
+            drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/light_ws2811strip_hal.c \
+            drivers/stm32/memprot_hal.c \
+            drivers/stm32/memprot_stm32h7xx.c \
+            drivers/stm32/pwm_output_dshot_hal.c \
+            drivers/stm32/sdio_h7xx.c \
+            drivers/stm32/serial_uart_hal.c \
+            drivers/stm32/serial_uart_stm32h7xx.c \
             drivers/stm32/system_stm32h7xx.c \
             drivers/stm32/timer_hal.c \
             drivers/stm32/timer_stm32h7xx.c \
-            drivers/stm32/serial_uart_hal.c \
-            drivers/stm32/serial_uart_stm32h7xx.c \
-            drivers/stm32/bus_quadspi_hal.c \
-            drivers/stm32/bus_spi_ll.c \
-            drivers/stm32/dma_stm32h7xx.c \
-            drivers/dshot_bitbang.c \
-            drivers/dshot_bitbang_decode.c \
-            drivers/stm32/dshot_bitbang_ll.c \
-            drivers/stm32/light_ws2811strip_hal.c \
-            drivers/stm32/adc_stm32h7xx.c \
-            drivers/stm32/bus_i2c_hal.c \
-            drivers/stm32/bus_i2c_hal_init.c \
-            drivers/bus_i2c_timing.c \
-            drivers/stm32/pwm_output_dshot_hal.c \
-            drivers/pwm_output_dshot_shared.c \
-            drivers/persistent.c \
-            drivers/stm32/transponder_ir_io_hal.c \
-            drivers/stm32/audio_stm32h7xx.c \
-            drivers/stm32/memprot_hal.c \
-            drivers/stm32/memprot_stm32h7xx.c \
-            drivers/stm32/sdio_h7xx.c \
-            drivers/stm32/bus_quadspi_hal.c \
-            drivers/bus_quadspi.c
+            drivers/stm32/transponder_ir_io_hal.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
             drivers/timer.c
 
 MSC_SRC = \
-            drivers/usb_msc_common.c \
             drivers/stm32/usb_msc_h7xx.c \
+            drivers/usb_msc_common.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
             msc/emfat_file.c \
-            msc/usbd_storage_sdio.c \
-            msc/usbd_storage_sd_spi.c
+            msc/usbd_storage_sd_spi.c \
+            msc/usbd_storage_sdio.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
