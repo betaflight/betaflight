@@ -815,7 +815,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
             displayWriteChar(pDisplay, leftMenuColumn - 1, top, DISPLAYPORT_ATTR_NORMAL, symbol);
         }
          if (currentCtx.page < pageCount - 1) {
-            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SMALL_DOWN : 'V';
+            const uint8_t symbol = displaySupportsOsdSymbols(pDisplay) ? SYM_ARROW_SMALL_DOWN : 'v';
             displayWriteChar(pDisplay, leftMenuColumn - 1, top + pageMaxRow, DISPLAYPORT_ATTR_NORMAL, symbol);
         }
     }
