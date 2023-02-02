@@ -16,37 +16,35 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR ?= $(TOOLS_DIR)/arm-gnu-toolchain-11.3.rel1
+ARM_SDK_DIR ?= $(TOOLS_DIR)/gcc-arm-none-eabi-10.3-2021.10
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
-GCC_REQUIRED_VERSION ?= 11.3.1
+GCC_REQUIRED_VERSION ?= 10.3.1
+
+.PHONY: arm_sdk_version
+
+arm_sdk_version:
+	$(V1) $(ARM_SDK_PREFIX)gcc --version
 
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
-# source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
+ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10
+# source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 ifeq ($(OSFAMILY), linux)
-    ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/11.3.rel1/binrel/arm-gnu-toolchain-11.3.rel1-x86_64-arm-none-eabi.tar.xz?rev=95edb5e17b9d43f28c74ce824f9c6f10&hash=D5ACE3A6F75F603551D7702E00ED7B29
-    ARM_SDK_DIR := $(ARM_SDK_DIR)-x86_64-arm-none-eabi
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-x86_64-linux.tar.bz2
 endif
 
 ifeq ($(OSFAMILY), macosx)
-    ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/11.3.rel1/binrel/arm-gnu-toolchain-11.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz?rev=0f93cc5b9df1473dabc1f39b06feb468&hash=7DF6BEF69DFDF7226B812B30BF45F552
-    ARM_SDK_DIR := $(ARM_SDK_DIR)-darwin-x86_64-arm-none-eabi
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
 endif
 
 ifeq ($(OSFAMILY), windows)
-    ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/11.3.rel1/binrel/arm-gnu-toolchain-11.3.rel1-mingw-w64-i686-arm-none-eabi.zip?rev=82f0e95b5a7740d9899e6ce375df8106&hash=E8C79FCFC43534AC1D691CBEE00F34D0
-    ARM_SDK_DIR := $(ARM_SDK_DIR)-mingw-w64-i686-arm-none-eabi
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
 
 SDK_INSTALL_MARKER := $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc-$(GCC_REQUIRED_VERSION)
-
-.PHONY: arm_sdk_version
-
-arm_sdk_version: | $(ARM_SDK_DIR)
-	$(V1) $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc --version
 
 # order-only prereq on directory existance:
 arm_sdk_install: | $(TOOLS_DIR)
@@ -55,8 +53,8 @@ arm_sdk_install: arm_sdk_download $(SDK_INSTALL_MARKER)
 
 $(SDK_INSTALL_MARKER):
 ifneq ($(OSFAMILY), windows)
-    # binary only release so just extract it
-	$(V1) tar -C $(TOOLS_DIR) -xf "$(DL_DIR)/$(ARM_SDK_FILE)"
+        # binary only release so just extract it
+	$(V1) tar -C $(TOOLS_DIR) -xjf "$(DL_DIR)/$(ARM_SDK_FILE)"
 else
 	$(V1) unzip -q -d $(ARM_SDK_DIR) "$(DL_DIR)/$(ARM_SDK_FILE)"
 endif
