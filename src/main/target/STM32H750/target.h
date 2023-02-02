@@ -114,3 +114,8 @@
 #if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
 #define CONFIG_IN_RAM
 #endif
+
+#ifdef USE_EXST
+#define USE_CUSTOM_DEFAULTS
+#endif
+
