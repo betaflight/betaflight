@@ -82,6 +82,21 @@ SECTIONS
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
   } >MAIN
 
+  /* Storage for the address for the configuration section so we can grab it out of the hex file */
+  .custom_defaults :
+  {
+    . = ALIGN(4);
+    KEEP (*(.custom_defaults_start_address))
+    . = ALIGN(4);
+    KEEP (*(.custom_defaults_end_address))
+    . = ALIGN(4);
+    __custom_defaults_internal_start = .;
+    *(.custom_defaults);
+  } >CUSTOM_DEFAULTS
+
+  PROVIDE_HIDDEN (__custom_defaults_start = __custom_defaults_internal_start);
+  PROVIDE_HIDDEN (__custom_defaults_end = ORIGIN(CUSTOM_DEFAULTS) + LENGTH(CUSTOM_DEFAULTS));
+
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
