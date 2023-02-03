@@ -176,6 +176,7 @@ static flightLogDisarmReason_e lastDisarmedReason = 0;
 static bool useAutoCrashflipMixer = false;
 static bool crashflipSwitchActive = false;
 static bool autoCrashflipHasBeenUsed = false;
+static bool flipOverAfterCrashWasActiveLast = false;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
@@ -535,7 +536,8 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
+        if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US 
+        || (currentTimeUs - lastDisarmTimeUs < 200000 && flipOverAfterCrashWasActiveLast)) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (isCrashflipSwitchActive()) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
@@ -638,6 +640,7 @@ void tryArm(void)
         runawayTakeoffAccumulatedUs = 0;
         runawayTakeoffTriggerUs = 0;
 #endif
+    flipOverAfterCrashWasActiveLast = flipOverAfterCrashActive;
     } else {
        resetTryingToArm();
         if (!isFirstArmingGyroCalibrationRunning()) {
