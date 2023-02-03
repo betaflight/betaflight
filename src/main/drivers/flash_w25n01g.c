@@ -124,9 +124,9 @@
 #define W25N01G_TIMEOUT_RESET_MS            500 // tRSTmax = 500ms
 
 // Sizes (in bits)
-#define W28N01G_STATUS_REGISTER_SIZE        8
-#define W28N01G_STATUS_PAGE_ADDRESS_SIZE    16
-#define W28N01G_STATUS_COLUMN_ADDRESS_SIZE  16
+#define W25N01G_STATUS_REGISTER_SIZE        8
+#define W25N01G_STATUS_PAGE_ADDRESS_SIZE    16
+#define W25N01G_STATUS_COLUMN_ADDRESS_SIZE  16
 
 typedef struct bblut_s {
     uint16_t pba;
@@ -188,7 +188,7 @@ static void w25n01g_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t c
     else if (io->mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-        quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, pageAddress & 0xffff, W28N01G_STATUS_PAGE_ADDRESS_SIZE + 8);
+        quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, pageAddress & 0xffff, W25N01G_STATUS_PAGE_ADDRESS_SIZE + 8);
     }
 #endif
 }
@@ -221,8 +221,8 @@ static uint8_t w25n01g_readRegister(flashDeviceIO_t *io, uint8_t reg)
 
         QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-        uint8_t in[1];
-        quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_STATUS_REG, 0, reg, W28N01G_STATUS_REGISTER_SIZE, in, sizeof(in));
+        uint8_t in[W25N01G_STATUS_REGISTER_SIZE / 8];
+        quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_STATUS_REG, 0, reg, W25N01G_STATUS_REGISTER_SIZE, in, sizeof(in));
 
         return in[0];
     }
@@ -253,7 +253,7 @@ static void w25n01g_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data
    else if (io->mode == FLASHIO_QUADSPI) {
        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-       quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W28N01G_STATUS_REGISTER_SIZE, &data, 1);
+       quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W25N01G_STATUS_REGISTER_SIZE, &data, 1);
    }
 #endif
 }
@@ -311,18 +311,11 @@ static void w25n01g_writeEnable(flashDevice_t *fdevice)
     fdevice->couldBeBusy = true;
 }
 
-/**
- * Read chip identification and geometry information (into global `geometry`).
- *
- * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
- */
 const flashVTable_t w25n01g_vTable;
 
-static void w25n01g_deviceInit(flashDevice_t *flashdev);
-
-bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
+bool w25n01g_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
-    switch (chipID) {
+    switch (jedecID) {
     case JEDEC_ID_WINBOND_W25N01GV:
         fdevice->geometry.sectors = 1024;      // Blocks
         fdevice->geometry.pagesPerSector = 64; // Pages/Blocks
@@ -348,6 +341,19 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
             W25N01G_BB_MANAGEMENT_START_BLOCK + W25N01G_BB_MANAGEMENT_BLOCKS - 1);
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
+    fdevice->vTable = &w25n01g_vTable;
+
+    return true;
+}
+
+static void w25n01g_deviceInit(flashDevice_t *flashdev);
+
+
+void w25n01g_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
+{
+    if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
+        return;
+    }
 
     w25n01g_deviceReset(fdevice);
 
@@ -366,10 +372,6 @@ bool w25n01g_detect(flashDevice_t *fdevice, uint32_t chipID)
     // If it ever run out, the device becomes unusable.
 
     w25n01g_deviceInit(fdevice);
-
-    fdevice->vTable = &w25n01g_vTable;
-
-    return true;
 }
 
 /**
@@ -422,7 +424,7 @@ static void w25n01g_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddre
    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-       quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+       quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W25N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
     }
 #endif
 
@@ -453,7 +455,7 @@ static void w25n01g_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t colum
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-        quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+        quadSpiTransmitWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W25N01G_STATUS_COLUMN_ADDRESS_SIZE, data, length);
      }
 #endif
 
@@ -696,8 +698,8 @@ int w25n01g_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer,
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-        //quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
-        quadSpiReceiveWithAddress4LINES(quadSpi, W25N01G_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        //quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W25N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceiveWithAddress4LINES(quadSpi, W25N01G_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W25N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
 
@@ -765,7 +767,7 @@ int w25n01g_readExtensionBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
-        quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W28N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceiveWithAddress1LINE(quadSpi, W25N01G_INSTRUCTION_READ_DATA, 8, column, W25N01G_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
 
@@ -785,6 +787,7 @@ const flashGeometry_t* w25n01g_getGeometry(flashDevice_t *fdevice)
 }
 
 const flashVTable_t w25n01g_vTable = {
+    .configure = w25n01g_configure,
     .isReady = w25n01g_isReady,
     .waitForReady = w25n01g_waitForReady,
     .eraseSector = w25n01g_eraseSector,

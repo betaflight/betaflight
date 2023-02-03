@@ -3,5 +3,5 @@
 
 #ifdef USE_FLASH_W25Q128FV
 
-bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID);
+bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t jedecID);
 #endif

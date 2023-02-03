@@ -207,8 +207,21 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(H723xG_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H723xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
 STARTUP_SRC         = startup_stm32h723xx.s
-MCU_FLASH_SIZE     := 1024
+DEFAULT_TARGET_FLASH := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(TARGET_FLASH),)
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
+endif
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE      := 1024
+# TARGET_FLASH now becomes the amount of MEMORY-MAPPED address space that is occupied by the firmware
+# and the maximum size of the data stored on the external flash device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h723_exst.ld
+LD_SCRIPTS          = $(LINKER_DIR)/stm32_h723_common.ld $(LINKER_DIR)/stm32_h723_common_post.ld
+endif
 
 else ifeq ($(TARGET),$(filter $(TARGET),$(H725xG_TARGETS)))
 DEVICE_FLAGS       += -DSTM32H725xx
@@ -226,7 +239,7 @@ DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
 
 ifeq ($(TARGET_FLASH),)
-MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
 endif
 
 ifeq ($(EXST),yes)
@@ -246,7 +259,7 @@ STARTUP_SRC         = startup_stm32h743xx.s
 DEFAULT_TARGET_FLASH := 128
 
 ifeq ($(TARGET_FLASH),)
-MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
 endif
 
 ifeq ($(EXST),yes)
@@ -281,7 +294,7 @@ LD_SCRIPT = $(DEFAULT_LD_SCRIPT)
 endif
 
 ifneq ($(FIRMWARE_SIZE),)
-DEVICE_FLAGS   += -DFIRMWARE_SIZE=$(FIRMWARE_SIZE) 
+DEVICE_FLAGS   += -DFIRMWARE_SIZE=$(FIRMWARE_SIZE)
 endif
 
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000
@@ -304,6 +317,7 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_hal.c \
             drivers/serial_uart_stm32h7xx.c \
             drivers/bus_quadspi_hal.c \
+            drivers/bus_octospi_stm32h7xx.c \
             drivers/bus_spi_ll.c \
             drivers/dma_stm32h7xx.c \
             drivers/dshot_bitbang.c \

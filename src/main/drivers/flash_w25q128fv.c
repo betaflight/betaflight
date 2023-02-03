@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_FLASH_W25Q128FV) && defined(USE_QUADSPI)
+#if defined(USE_FLASH_W25Q128FV) && (defined(USE_QUADSPI) || defined(USE_OCTOSPI))
 
 #define USE_FLASH_WRITES_USING_4LINES
 #define USE_FLASH_READS_USING_4LINES
@@ -33,15 +33,19 @@
 #include "build/debug.h"
 #include "common/utils.h"
 
+#include "drivers/time.h"
 #include "drivers/flash.h"
 #include "drivers/flash_impl.h"
 #include "drivers/flash_w25q128fv.h"
 #include "drivers/bus_quadspi.h"
+#include "drivers/bus_octospi.h"
 
 // JEDEC ID
-#define JEDEC_ID_WINBOND_W25Q128FV_SPI      0xEF4018
-#define JEDEC_ID_WINBOND_W25Q128FV_QUADSPI  0xEF6018
-#define JEDEC_ID_WINBOND_W25Q128JV_QUADSPI  0xEF7018
+#define JEDEC_ID_WINBOND_W25Q128FV_SPI          0xEF4018
+#define JEDEC_ID_WINBOND_W25Q128FV_QUADSPI      0xEF6018
+#define JEDEC_ID_WINBOND_W25Q128JV_QUADSPI      0xEF7018
+#define JEDEC_ID_WINBOND_W25Q16JV_SPI           0xEF4015
+#define JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI       0xEF7015
 
 // Device size parameters
 #define W25Q128FV_PAGE_SIZE         2048
@@ -90,14 +94,14 @@
 //#define W25Q128FV_INSTRUCTION_WRITE_DISABLE    0x04
 //#define W25Q128FV_INSTRUCTION_PAGE_PROGRAM     0x02
 
-// Timings (2ms minimum to avoid 1 tick advance in consecutive calls to HAL_GetTick).
-#define W25Q128FV_TIMEOUT_PAGE_READ_MS          4
-#define W25Q128FV_TIMEOUT_RESET_MS              2           // tRST = 30us
+// Values from W25Q128FV Datasheet Rev L.
+#define W25Q128FV_TIMEOUT_PAGE_READ_MS          1           // No minimum specified in datasheet
+#define W25Q128FV_TIMEOUT_RESET_MS              1           // tRST = 30us
 #define W25Q128FV_TIMEOUT_BLOCK_ERASE_64KB_MS   2000        // tBE2max = 2000ms, tBE2typ = 150ms
 #define W25Q128FV_TIMEOUT_CHIP_ERASE_MS        (200 * 1000) // tCEmax 200s, tCEtyp = 40s
 
-#define W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS       2           // tPPmax = 700us, tPPtyp = 250us
-#define W25Q128FV_TIMEOUT_WRITE_ENABLE_MS       2
+#define W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS       3           // tPPmax = 3ms, tPPtyp = 0.7ms
+#define W25Q128FV_TIMEOUT_WRITE_ENABLE_MS       1
 
 
 typedef enum {
@@ -115,45 +119,71 @@ w25q128fvState_t w25q128fvState = { 0 };
 static bool w25q128fv_waitForReady(flashDevice_t *fdevice);
 static void w25q128fv_waitForTimeout(flashDevice_t *fdevice);
 
-static void w25q128fv_setTimeout(flashDevice_t *fdevice, uint32_t timeoutMillis)
+MMFLASH_CODE static void w25q128fv_setTimeout(flashDevice_t *fdevice, timeMs_t timeoutMillis)
 {
-    uint32_t now = HAL_GetTick();
-    fdevice->timeoutAt = now + timeoutMillis;
+    timeMs_t nowMs = microsISR() / 1000;
+    fdevice->timeoutAt = nowMs + timeoutMillis;
 }
 
-static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
+MMFLASH_CODE static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
 {
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
     quadSpiTransmit1LINE(quadSpi, command, 0, NULL, 0);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+    octoSpiTransmit1LINE(octoSpi, command, 0, NULL, 0);
+#endif
+
 }
 
-static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io, uint8_t command, uint32_t address)
+MMFLASH_CODE static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io, uint8_t command, uint32_t address)
 {
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
     quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, address & 0xffffff, W25Q128FV_ADDRESS_BITS);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+
+    octoSpiInstructionWithAddress1LINE(octoSpi, command, 0, address & 0xffffff, W25Q128FV_ADDRESS_BITS);
+#endif
 }
 
-static void w25q128fv_writeEnable(flashDevice_t *fdevice)
+MMFLASH_CODE static void w25q128fv_writeEnable(flashDevice_t *fdevice)
 {
     w25q128fv_performOneByteCommand(&fdevice->io, W25Q128FV_INSTRUCTION_WRITE_ENABLE);
 }
 
-static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t command)
+MMFLASH_CODE static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t command)
 {
+    uint8_t in[W25Q128FV_STATUS_REGISTER_BITS / 8] = { 0 };
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-    uint8_t in[1];
     quadSpiReceive1LINE(quadSpi, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+
+    octoSpiReceive1LINE(octoSpi, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#endif
+
 
     return in[0];
 }
 
 static void w25q128fv_writeRegister(flashDeviceIO_t *io, uint8_t command, uint8_t data)
 {
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
 
-   quadSpiTransmit1LINE(quadSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
+    quadSpiTransmit1LINE(quadSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+
+    octoSpiTransmit1LINE(octoSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
+#endif
+
 }
 
 static void w25q128fv_deviceReset(flashDevice_t *fdevice)
@@ -203,7 +233,7 @@ static void w25q128fv_deviceReset(flashDevice_t *fdevice)
 #endif
 }
 
-bool w25q128fv_isReady(flashDevice_t *fdevice)
+MMFLASH_CODE bool w25q128fv_isReady(flashDevice_t *fdevice)
 {
     uint8_t status = w25q128fv_readRegister(&fdevice->io, W25Q128FV_INSTRUCTION_READ_STATUS1_REG);
 
@@ -212,7 +242,7 @@ bool w25q128fv_isReady(flashDevice_t *fdevice)
     return !busy;
 }
 
-static bool w25q128fv_isWritable(flashDevice_t *fdevice)
+MMFLASH_CODE static bool w25q128fv_isWritable(flashDevice_t *fdevice)
 {
     uint8_t status = w25q128fv_readRegister(&fdevice->io, W25Q128FV_INSTRUCTION_READ_STATUS1_REG);
 
@@ -221,23 +251,23 @@ static bool w25q128fv_isWritable(flashDevice_t *fdevice)
     return writable;
 }
 
-bool w25q128fv_hasTimedOut(flashDevice_t *fdevice)
+MMFLASH_CODE bool w25q128fv_hasTimedOut(flashDevice_t *fdevice)
 {
-    uint32_t now = HAL_GetTick();
-    if (cmp32(now, fdevice->timeoutAt) >= 0) {
+    uint32_t nowMs = microsISR() / 1000;
+    if (cmp32(nowMs, fdevice->timeoutAt) >= 0) {
         return true;
     }
     return false;
 }
 
-void w25q128fv_waitForTimeout(flashDevice_t *fdevice)
+MMFLASH_CODE void w25q128fv_waitForTimeout(flashDevice_t *fdevice)
 {
    while (!w25q128fv_hasTimedOut(fdevice)) { }
 
    fdevice->timeoutAt = 0;
 }
 
-bool w25q128fv_waitForReady(flashDevice_t *fdevice)
+MMFLASH_CODE bool w25q128fv_waitForReady(flashDevice_t *fdevice)
 {
     bool ready = true;
     while (!w25q128fv_isReady(fdevice)) {
@@ -255,15 +285,24 @@ const flashVTable_t w25q128fv_vTable;
 
 static void w25q128fv_deviceInit(flashDevice_t *flashdev);
 
-bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
+MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
-    switch (chipID) {
+    switch (jedecID) {
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
     case JEDEC_ID_WINBOND_W25Q128FV_QUADSPI:
     case JEDEC_ID_WINBOND_W25Q128JV_QUADSPI:
         fdevice->geometry.sectors           = 256;
         fdevice->geometry.pagesPerSector    = 256;
         fdevice->geometry.pageSize          = 256;
+        // = 16777216 128MBit 16MB
+        break;
+
+    case JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI:
+    case JEDEC_ID_WINBOND_W25Q16JV_SPI:
+        fdevice->geometry.sectors           = 32;
+        fdevice->geometry.pagesPerSector    = 256;
+        fdevice->geometry.pageSize          = 256;
+        // = 2097152 16MBit 2MB
         break;
 
     default:
@@ -276,7 +315,9 @@ bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
     }
 
     // use the chip id to determine the initial interface mode on cold-boot.
-    switch (chipID) {
+    switch (jedecID) {
+    case JEDEC_ID_WINBOND_W25Q16JV_SPI:
+    case JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI:
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
         w25q128fvState.initialMode = INITIAL_MODE_SPI;
         break;
@@ -294,18 +335,24 @@ bool w25q128fv_detect(flashDevice_t *fdevice, uint32_t chipID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    w25q128fv_deviceReset(fdevice);
-
-    w25q128fv_deviceInit(fdevice);
-
     fdevice->vTable = &w25q128fv_vTable;
 
     return true;
 }
 
-static void w25q128fv_eraseSector(flashDevice_t *fdevice, uint32_t address)
+void w25q128fv_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
 {
+    if (configurationFlags & FLASH_CF_SYSTEM_IS_MEMORY_MAPPED) {
+        return;
+    }
 
+    w25q128fv_deviceReset(fdevice);
+
+    w25q128fv_deviceInit(fdevice);
+}
+
+MMFLASH_CODE static void w25q128fv_eraseSector(flashDevice_t *fdevice, uint32_t address)
+{
     w25q128fv_waitForReady(fdevice);
 
     w25q128fv_writeEnable(fdevice);
@@ -326,11 +373,11 @@ static void w25q128fv_eraseCompletely(flashDevice_t *fdevice)
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_CHIP_ERASE_MS);
 }
 
-
-static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
+MMFLASH_CODE static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *data, int length)
 {
     w25q128fv_waitForReady(fdevice);
 
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 
 #ifdef USE_FLASH_WRITES_USING_4LINES
@@ -338,19 +385,28 @@ static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const uint8_t *dat
 #else
     quadSpiTransmitWithAddress1LINE(quadSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #endif
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
+
+#ifdef USE_FLASH_WRITES_USING_4LINES
+    octoSpiTransmitWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#else
+    octoSpiTransmitWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_PAGE_PROGRAM, 0, w25q128fvState.currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
+#endif
+#endif
 
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_PAGE_PROGRAM_MS);
 
     w25q128fvState.currentWriteAddress += length;
 }
 
-static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+MMFLASH_CODE static void w25q128fv_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
 {
     fdevice->callback = callback;
     w25q128fvState.currentWriteAddress = address;
 }
 
-static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
 {
     for (uint32_t i = 0; i < bufferCount; i++) {
         w25q128fv_waitForReady(fdevice);
@@ -374,35 +430,45 @@ static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevice, uint8_t co
     return fdevice->callbackArg;
 }
 
-static void w25q128fv_pageProgramFinish(flashDevice_t *fdevice)
+MMFLASH_CODE static void w25q128fv_pageProgramFinish(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 }
 
-static void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+MMFLASH_CODE static void w25q128fv_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
 {
     w25q128fv_pageProgramBegin(fdevice, address, callback);
     w25q128fv_pageProgramContinue(fdevice, &data, &length, 1);
     w25q128fv_pageProgramFinish(fdevice);
 }
 
-void w25q128fv_flush(flashDevice_t *fdevice)
+MMFLASH_CODE void w25q128fv_flush(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
 }
 
-static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
+MMFLASH_CODE static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buffer, uint32_t length)
 {
     if (!w25q128fv_waitForReady(fdevice)) {
         return 0;
     }
 
+#if defined(USE_QUADSPI)
     QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
 #ifdef USE_FLASH_READS_USING_4LINES
     bool status = quadSpiReceiveWithAddress4LINES(quadSpi, W25Q128FV_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
 #else
     bool status = quadSpiReceiveWithAddress1LINE(quadSpi, W25Q128FV_INSTRUCTION_FAST_READ, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
 #endif
+#elif defined(USE_OCTOSPI)
+    OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
+#ifdef USE_FLASH_READS_USING_4LINES
+    bool status = octoSpiReceiveWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
+#else
+    bool status = octoSpiReceiveWithAddress1LINE(octoSpi, W25Q128FV_INSTRUCTION_FAST_READ, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
+#endif
+#endif
+
     w25q128fv_setTimeout(fdevice, W25Q128FV_TIMEOUT_PAGE_READ_MS);
 
     if (!status) {
@@ -412,14 +478,13 @@ static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t
     return length;
 }
 
-
-
 const flashGeometry_t* w25q128fv_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }
 
-const flashVTable_t w25q128fv_vTable = {
+MMFLASH_DATA const flashVTable_t w25q128fv_vTable = {
+    .configure = w25q128fv_configure,
     .isReady = w25q128fv_isReady,
     .waitForReady = w25q128fv_waitForReady,
     .eraseSector = w25q128fv_eraseSector,
