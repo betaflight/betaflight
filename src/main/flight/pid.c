@@ -453,27 +453,18 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     angleFeedforward = pidRuntime.angleFeedforward[axis] * pidRuntime.angleFeedforwardGain;
     // filter angle feedforward, heavily, at the PID loop rate, providing user control over time constant
     angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
+    angleFeedforward = (FLIGHT_MODE(HORIZON_MODE) && pidRuntime.horizonLevelAdditive) ? 0.0f : angleFeedforward; // no angle feedforward in additive horizon mode
 #endif // USE_FEEDFORWARD
 
     // calculate error angle and limit the angle to the max inclination
     // stick input is from rcCommand, is smoothed, includes level expo, and is in range [-1.0, 1.0]
-    float angleTarget = angleLimit * getAngleModeStickInputRaw(axis);
+    float angleTarget = (FLIGHT_MODE(HORIZON_MODE) && pidRuntime.horizonLevelAdditive) ? 0.0f : angleLimit * getAngleModeStickInputRaw(axis); // angle target is zero in additive horizon mode
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
 #endif
     const float currentAngle = (attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f; // stepped at 500hz with some 4ms flat spots
     const float errorAngle = angleTarget - currentAngle;
     float angleRate = errorAngle * pidRuntime.angleGain + angleFeedforward;
-
-    // optionally, minimise cross-axis wobble due to faster yaw responses than roll or pitch, and make co-ordinated yaw turns
-    // by compensating for the effect of yaw on roll while pitched, and on pitch while rolled
-    float axisCoordination = pidRuntime.angleYawSetpoint;
-    if (pidRuntime.angleEarthRef) {
-        const float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
-        pidRuntime.angleTarget[axis] = angleTarget; // store target for alternate axis to current axis, for use in preceding calculation
-        axisCoordination *= (axis == FD_ROLL) ? -sinAngle : sinAngle; // must be negative for Roll
-        angleRate += axisCoordination * pidRuntime.angleEarthRef;
-    }
 
     // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
     // this filter runs at ATTITUDE_CUTOFF_HZ, currently 50hz, so GPS roll may be a bit steppy
@@ -483,7 +474,22 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         rawSetpoint = angleRate;
     } else {
         // can only be HORIZON mode - crossfade Angle rate and Acro rate
-        rawSetpoint = rawSetpoint * (1.0f - horizonLevelStrength) + angleRate * horizonLevelStrength;
+        const float max_rate = fmax(angleRate, rawSetpoint);
+        const float min_rate = fmin(angleRate, rawSetpoint);
+        rawSetpoint *= pidRuntime.horizonLevelAdditive ? 1.0f : (1.0f - horizonLevelStrength);
+        rawSetpoint += angleRate * horizonLevelStrength;
+        rawSetpoint = constrainf(rawSetpoint, min_rate, max_rate); //prevent terms adding up in the same direction causing an unpleasant snappy response
+    }
+
+    // optionally, minimise cross-axis wobble due to faster yaw responses than roll or pitch, and make co-ordinated yaw turns
+    // by compensating for the effect of yaw on roll while pitched, and on pitch while rolled
+    float axisCoordination = pidRuntime.angleYawSetpoint;
+    if (pidRuntime.angleEarthRef) {
+        const float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.currentAngle[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
+        pidRuntime.currentAngle[axis] = currentAngle;
+        axisCoordination *= (axis == FD_ROLL) ? -sinAngle : sinAngle; // must be negative for Roll
+        axisCoordination *= FLIGHT_MODE(HORIZON_MODE) ? pidRuntime.angleEarthRef * horizonLevelStrength : pidRuntime.angleEarthRef;
+        rawSetpoint += axisCoordination;
     }
 
     //logging

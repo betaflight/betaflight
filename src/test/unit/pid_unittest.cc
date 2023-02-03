@@ -163,6 +163,7 @@ void setDefaultTestSettings(void)
     pidProfile->crash_gthreshold = 400;
     pidProfile->crash_setpoint_threshold = 350;
     pidProfile->crash_recovery = PID_CRASH_RECOVERY_OFF;
+    pidProfile->horizon_level_additive = false;
     pidProfile->horizon_limit_degrees = 135;
     pidProfile->horizon_ignore_sticks = false;
     pidProfile->crash_limit_yaw = 200;

@@ -148,6 +148,7 @@ typedef struct pidProfile_s {
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t angle_limit;                    // Max angle in degrees in Angle mode
 
+    uint8_t horizon_level_additive;          // levelling in horizion mode is additive rather than crossfading
     uint8_t horizon_limit_degrees;          // in Horizon mode, zero levelling when the quad's attitude exceeds this angle
     uint8_t horizon_ignore_sticks;          // 0 = default, meaning both stick and attitude attenuation; 1 = only attitude attenuation
 
@@ -297,6 +298,7 @@ typedef struct pidRuntime_s {
     pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float angleGain;
     float angleFeedforwardGain;
+    uint8_t horizonLevelAdditive;
     float horizonGain;
     float horizonLimitSticks;
     float horizonLimitDegrees;
@@ -409,6 +411,7 @@ typedef struct pidRuntime_s {
     float angleYawSetpoint;
     float angleEarthRef;
     float angleTarget[2];
+    float currentAngle[2];
 #endif
 } pidRuntime_t;
 

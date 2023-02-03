@@ -296,6 +296,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     {
         pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     }
+    pidRuntime.horizonLevelAdditive = pidProfile->horizon_level_additive;
     pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
     pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
     pidRuntime.angleEarthRef = pidProfile->angle_earth_ref / 100.0f;
