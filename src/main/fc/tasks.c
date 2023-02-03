@@ -103,14 +103,7 @@
 #endif
 
 #ifdef USE_USB_CDC_HID
-//TODO: Make it platform independent in the future
-#ifdef STM32F4
-#include "vcpf4/usbd_cdc_vcp.h"
-#include "usbd_hid_core.h"
-#elif defined(STM32F7)
-#include "usbd_cdc_interface.h"
-#include "usbd_hid.h"
-#endif
+#include "io/usb_cdc_hid.h"
 #endif
 
 #include "tasks.h"

@@ -18,9 +18,19 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
 
-void sendRcDataToHid(void);
-bool cdcDeviceIsMayBeActive();
-void sendReport(uint8_t *report, uint8_t len);
-uint8_t usbIsConnected(void);
+#include <stdbool.h>
+
+#include "platform.h"
+
+#ifdef USE_USB_CDC_HID
+
+#include "drivers/stm32/vcpf4/usbd_cdc_vcp.h"
+#include "usbd_hid_core.h"
+
+void sendReport(uint8_t *report, uint8_t len)
+{
+    USBD_HID_SendReport(&USB_OTG_dev, report, len);
+}
+
+#endif

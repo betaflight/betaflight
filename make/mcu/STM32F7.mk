@@ -108,7 +108,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F7/Drivers/CMSIS/Device/ST/STM32F7xx/Include \
-                   $(ROOT)/src/main/vcp_hal
+                   $(ROOT)/src/main/drivers/stm32/vcp_hal
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
@@ -147,11 +147,11 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 VCP_SRC = \
-            vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf_stm32f7xx.c \
-            vcp_hal/usbd_cdc_hid.c \
-            vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c \
+            drivers/stm32/vcp_hal/usbd_desc.c \
+            drivers/stm32/vcp_hal/usbd_conf_stm32f7xx.c \
+            drivers/stm32/vcp_hal/usbd_cdc_hid.c \
+            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \

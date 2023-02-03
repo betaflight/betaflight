@@ -33,6 +33,10 @@
 #include "usbd_cdc.h"
 #include "usbd_hid.h"
 
+#include "drivers/serial_usb_vcp.h"
+#include "usbd_hid.h"
+#include "drivers/stm32/vcp_hal/usbd_cdc_interface.h"
+
 #define USB_HID_CDC_CONFIG_DESC_SIZ  (USB_HID_CONFIG_DESC_SIZ - 9 + USB_CDC_CONFIG_DESC_SIZ + 8)
 
 #define HID_INTERFACE 0x0
@@ -45,21 +49,21 @@
 
 __ALIGN_BEGIN uint8_t USBD_HID_CDC_DeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END =
 {
-	0x12,                                  /*bLength */
-	USB_DESC_TYPE_DEVICE,            /*bDescriptorType*/
-	0x00, 0x02,                            /*bcdUSB */
-	0xEF,                                  /*bDeviceClass*/
-	0x02,                                  /*bDeviceSubClass*/
-	0x01,                                  /*bDeviceProtocol*/
-	USB_OTG_MAX_EP0_SIZE,                  /*bMaxPacketSize*/
-	LOBYTE(USBD_VID), HIBYTE(USBD_VID),    /*idVendor*/
-	LOBYTE(USBD_PID),
-	HIBYTE(USBD_PID),                      /*idProduct*/
-	0x00, 0x02,                            /*bcdDevice rel. 2.00*/
-	USBD_IDX_MFC_STR,                      /*Index of manufacturer  string*/
-	USBD_IDX_PRODUCT_STR,                  /*Index of product string*/
-	USBD_IDX_SERIAL_STR,                   /*Index of serial number string*/
-	USBD_MAX_NUM_CONFIGURATION                       /*bNumConfigurations*/
+  0x12,                                  /*bLength */
+  USB_DESC_TYPE_DEVICE,            /*bDescriptorType*/
+  0x00, 0x02,                            /*bcdUSB */
+  0xEF,                                  /*bDeviceClass*/
+  0x02,                                  /*bDeviceSubClass*/
+  0x01,                                  /*bDeviceProtocol*/
+  USB_OTG_MAX_EP0_SIZE,                  /*bMaxPacketSize*/
+  LOBYTE(USBD_VID), HIBYTE(USBD_VID),    /*idVendor*/
+  LOBYTE(USBD_PID),
+  HIBYTE(USBD_PID),                      /*idProduct*/
+  0x00, 0x02,                            /*bcdDevice rel. 2.00*/
+  USBD_IDX_MFC_STR,                      /*Index of manufacturer  string*/
+  USBD_IDX_PRODUCT_STR,                  /*Index of product string*/
+  USBD_IDX_SERIAL_STR,                   /*Index of serial number string*/
+  USBD_MAX_NUM_CONFIGURATION                       /*bNumConfigurations*/
 };
 
 __ALIGN_BEGIN static uint8_t USBD_HID_CDC_CfgDesc[USB_HID_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
@@ -235,102 +239,106 @@ uint8_t  *USBD_HID_CDC_GetDeviceQualifierDescriptor (uint16_t *length);       //
 /* CDC interface class callbacks structure */
 USBD_ClassTypeDef  USBD_HID_CDC =
 {
-	USBD_HID_CDC_Init,
-	USBD_HID_CDC_DeInit,
-	USBD_HID_CDC_Setup,
-	NULL,                 /* EP0_TxSent, */
-	USBD_HID_CDC_EP0_RxReady,
-	USBD_HID_CDC_DataIn,
-	USBD_HID_CDC_DataOut,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	USBD_HID_CDC_GetFSCfgDesc,
-	NULL,
-	USBD_HID_CDC_GetDeviceQualifierDescriptor,
+    USBD_HID_CDC_Init,
+    USBD_HID_CDC_DeInit,
+    USBD_HID_CDC_Setup,
+    NULL,                 /* EP0_TxSent, */
+    USBD_HID_CDC_EP0_RxReady,
+    USBD_HID_CDC_DataIn,
+    USBD_HID_CDC_DataOut,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    USBD_HID_CDC_GetFSCfgDesc,
+    NULL,
+    USBD_HID_CDC_GetDeviceQualifierDescriptor,
 };
 
 static uint8_t USBD_HID_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
-	//Init CDC
-	USBD_CDC.Init(pdev, cfgidx);
+    //Init CDC
+    USBD_CDC.Init(pdev, cfgidx);
 
-	//Init HID
-	USBD_HID.Init(pdev, cfgidx);
+    //Init HID
+    USBD_HID.Init(pdev, cfgidx);
 
-	return USBD_OK;
+    return USBD_OK;
 }
 
 static uint8_t USBD_HID_CDC_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
-	//DeInit CDC
-	USBD_CDC.DeInit(pdev, cfgidx);
+    //DeInit CDC
+    USBD_CDC.DeInit(pdev, cfgidx);
 
-	//DeInit HID
-	USBD_HID.DeInit(pdev, cfgidx);
+    //DeInit HID
+    USBD_HID.DeInit(pdev, cfgidx);
 
-	return USBD_OK;
+    return USBD_OK;
 }
 
 static uint8_t USBD_HID_CDC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
-	switch(req->bmRequest & USB_REQ_RECIPIENT_MASK) {
-	case USB_REQ_RECIPIENT_INTERFACE:
-		if (req->wIndex == HID_INTERFACE) {
-			return USBD_HID.Setup(pdev, req);
-		}
-		else {
-			return USBD_CDC.Setup(pdev, req);
-		}
-		break;
-	case USB_REQ_RECIPIENT_ENDPOINT:
-		if (req->wIndex == HID_EPIN_ADDR) {
-			return USBD_HID.Setup(pdev, req);
-		} else {
-			return USBD_CDC.Setup(pdev, req);
-		}
-		break;
-	}
+    switch(req->bmRequest & USB_REQ_RECIPIENT_MASK) {
+        case USB_REQ_RECIPIENT_INTERFACE:
+            if (req->wIndex == HID_INTERFACE) {
+                return USBD_HID.Setup(pdev, req);
+            } else {
+                return USBD_CDC.Setup(pdev, req);
+            }
+            break;
+        case USB_REQ_RECIPIENT_ENDPOINT:
+            if (req->wIndex == HID_EPIN_ADDR) {
+                return USBD_HID.Setup(pdev, req);
+            } else {
+                return USBD_CDC.Setup(pdev, req);
+            }
+            break;
+      }
 
-	return USBD_OK;
+    return USBD_OK;
 }
 
 static uint8_t USBD_HID_CDC_EP0_RxReady  (USBD_HandleTypeDef *pdev)
 {
-	return (USBD_CDC.EP0_RxReady(pdev));
+    return (USBD_CDC.EP0_RxReady(pdev));
 }
 
 static uint8_t USBD_HID_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-	if (epnum == (CDC_IN_EP &~ 0x80)) {
-		return USBD_CDC.DataIn(pdev, epnum);
-	}
-	else {
-		return USBD_HID.DataIn(pdev, epnum);
-	}
+    if (epnum == (CDC_IN_EP &~ 0x80)) {
+        return USBD_CDC.DataIn(pdev, epnum);
+    } else {
+        return USBD_HID.DataIn(pdev, epnum);
+    }
 
-	return USBD_OK;
+    return USBD_OK;
 }
 
 static uint8_t USBD_HID_CDC_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-	if (epnum == (CDC_OUT_EP &~ 0x80)) {
-		return (USBD_CDC.DataOut(pdev, epnum));
-	}
+  if (epnum == (CDC_OUT_EP &~ 0x80)) {
+    return (USBD_CDC.DataOut(pdev, epnum));
+  }
 
-	return USBD_OK;
+  return USBD_OK;
 }
 
 static uint8_t  *USBD_HID_CDC_GetFSCfgDesc (uint16_t *length)
 {
-	*length = sizeof(USBD_HID_CDC_CfgDesc);
-	return USBD_HID_CDC_CfgDesc;
+  *length = sizeof(USBD_HID_CDC_CfgDesc);
+  return USBD_HID_CDC_CfgDesc;
 }
 
 uint8_t  *USBD_HID_CDC_GetDeviceQualifierDescriptor (uint16_t *length)
 {
-	*length = sizeof(USBD_HID_CDC_DeviceQualifierDesc);
-	return USBD_HID_CDC_DeviceQualifierDesc;
+  *length = sizeof(USBD_HID_CDC_DeviceQualifierDesc);
+  return USBD_HID_CDC_DeviceQualifierDesc;
 }
+
+void sendReport(uint8_t *report, uint8_t len)
+{
+    USBD_HID_SendReport(&USBD_Device, report, len);
+}
+
 #endif

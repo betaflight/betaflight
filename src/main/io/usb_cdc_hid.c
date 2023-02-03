@@ -26,24 +26,11 @@
 #ifdef USE_USB_CDC_HID
 
 #include "common/maths.h"
-
 #include "fc/rc_controls.h"
-
 #include "rx/rx.h"
-
 #include "pg/usb.h"
-
 #include "sensors/battery.h"
-
-//TODO: Make it platform independent in the future
-#if defined(STM32F4)
-#include "vcpf4/usbd_cdc_vcp.h"
-#include "usbd_hid_core.h"
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#include "drivers/serial_usb_vcp.h"
-#include "usbd_hid.h"
-#include "vcp_hal/usbd_cdc_interface.h"
-#endif
+#include "usb_cdc_hid.h"
 
 #define USB_CDC_HID_NUM_AXES 8
 #define USB_CDC_HID_NUM_BUTTONS 8
@@ -94,13 +81,8 @@ void sendRcDataToHid(void)
             report[8] |= (1 << i);
         }
     }
-#if defined(STM32F4)
-    USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)report, sizeof(report));
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-    USBD_HID_SendReport(&USBD_Device, (uint8_t*)report, sizeof(report));
-#else
-# error "MCU does not support USB HID."
-#endif
+
+    sendReport((uint8_t*)report, sizeof(report));
 }
 
 bool cdcDeviceIsMayBeActive(void)

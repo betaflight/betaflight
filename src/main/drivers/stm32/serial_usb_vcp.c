@@ -39,10 +39,10 @@
 #ifdef USE_USB_CDC_HID
 #include "usbd_hid_cdc_wrapper.h"
 #endif
-#include "usb_io.h"
+#include "drivers/usb_io.h"
 #elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
-#include "vcp_hal/usbd_cdc_interface.h"
-#include "usb_io.h"
+#include "drivers/stm32/vcp_hal/usbd_cdc_interface.h"
+#include "drivers/usb_io.h"
 #ifdef USE_USB_CDC_HID
 #include "usbd_ioreq.h"
 
@@ -57,8 +57,8 @@ USBD_HandleTypeDef USBD_Device;
 
 #include "drivers/time.h"
 
-#include "serial.h"
-#include "serial_usb_vcp.h"
+#include "drivers/serial.h"
+#include "drivers/serial_usb_vcp.h"
 
 
 #define USB_TIMEOUT  50
