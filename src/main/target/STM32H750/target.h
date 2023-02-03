@@ -84,9 +84,9 @@
 #define USE_UART6
 #define USE_UART7
 #define USE_UART8
-#define USE_LP_UART1
+#define USE_LPUART1
 
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 8)
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 9)
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

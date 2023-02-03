@@ -26,7 +26,7 @@
 // Streams data out to the EEPROM, padding to the write size as
 // needed, and updating the checksum as it goes.
 
-#ifdef CONFIG_IN_EXTERNAL_FLASH
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 #define CONFIG_STREAMER_BUFFER_SIZE 8 // Must not be greater than the smallest flash page size of all compiled-in flash devices.
 typedef uint32_t config_streamer_buffer_align_type_t;
 #elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx)

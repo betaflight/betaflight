@@ -194,8 +194,21 @@ else ifeq ($(TARGET_MCU),STM32H723xx)
 DEVICE_FLAGS       += -DSTM32H723xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
 STARTUP_SRC         = startup_stm32h723xx.s
-MCU_FLASH_SIZE     := 1024
+DEFAULT_TARGET_FLASH := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(TARGET_FLASH),)
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
+endif
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE      := 1024
+# TARGET_FLASH now becomes the amount of MEMORY-MAPPED address space that is occupied by the firmware
+# and the maximum size of the data stored on the external flash device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h723_exst.ld
+LD_SCRIPTS          = $(LINKER_DIR)/stm32_h723_common.ld $(LINKER_DIR)/stm32_h723_common_post.ld
+endif
 
 else ifeq ($(TARGET_MCU),STM32H725xx)
 DEVICE_FLAGS       += -DSTM32H725xx
@@ -295,6 +308,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/bus_i2c_hal_init.c \
             drivers/stm32/bus_spi_ll.c \
             drivers/stm32/bus_quadspi_hal.c \
+            drivers/stm32/bus_octospi_stm32h7xx.c \
             drivers/stm32/dma_stm32h7xx.c \
             drivers/stm32/dshot_bitbang_ll.c \
             drivers/stm32/light_ws2811strip_hal.c \

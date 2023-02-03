@@ -47,6 +47,7 @@
 #include "drivers/adc.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_octospi.h"
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
@@ -195,8 +196,7 @@ void busSwitchInit(void)
 }
 #endif
 
-
-static void configureSPIAndQuadSPI(void)
+static void configureSPIBusses(void)
 {
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
@@ -226,7 +226,10 @@ static void configureSPIAndQuadSPI(void)
     spiInit(SPIDEV_6);
 #endif
 #endif // USE_SPI
+}
 
+static void configureQuadSPIBusses(void)
+{
 #ifdef USE_QUADSPI
     quadSpiPinConfigure(quadSpiConfig(0));
 
@@ -234,6 +237,15 @@ static void configureSPIAndQuadSPI(void)
     quadSpiInit(QUADSPIDEV_1);
 #endif
 #endif // USE_QUAD_SPI
+}
+
+static void configureOctoSPIBusses(void)
+{
+#ifdef USE_OCTOSPI
+#ifdef USE_OCTOSPI_DEVICE_1
+    octoSpiInit(OCTOSPIDEV_1);
+#endif
+#endif
 }
 
 #ifdef USE_SDCARD
@@ -291,9 +303,10 @@ void init(void)
 #endif
 
     enum {
-        FLASH_INIT_ATTEMPTED            = (1 << 0),
-        SD_INIT_ATTEMPTED               = (1 << 1),
-        SPI_AND_QSPI_INIT_ATTEMPTED     = (1 << 2),
+        FLASH_INIT_ATTEMPTED                = (1 << 0),
+        SD_INIT_ATTEMPTED                   = (1 << 1),
+        SPI_BUSSES_INIT_ATTEMPTED           = (1 << 2),
+        QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED = (1 << 3),
     };
     uint8_t initFlags = 0;
 
@@ -303,19 +316,17 @@ void init(void)
     // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
     // sdcard are in the config which is on the sdcard which we can't read yet!
     //
-    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
-    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
-    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change sdio/spi configs needed for
-    // the system to boot and/or to save the config.
+    // FIXME For now, users must NOT change flash/pin configs needed for the system to boot and/or to save the config.
+    // One possible solution is to lock the pins for the flash chip so they cannot be modified post-boot.
     //
-    // note that target specific SDCARD/SDIO/SPI/QUADSPI configs are
+    // note that target specific SDCARD/SDIO/SPI/QUADSPI/OCTOSPI configs are
     // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_SDCARD.
     //
 
     //
     // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
-    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
-    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI/OCTOSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI/OCTOSPI CS lines.
     //
 
 #ifdef TARGET_BUS_INIT
@@ -325,8 +336,8 @@ void init(void)
     pgResetAll();
 
 #ifdef USE_SDCARD_SPI
-    configureSPIAndQuadSPI();
-    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+    configureSPIBusses();
+    initFlags |= SPI_BUSSES_INIT_ATTEMPTED;
 #endif
 
     sdCardAndFSInit();
@@ -346,37 +357,42 @@ void init(void)
 
 #endif // CONFIG_IN_SDCARD
 
-#ifdef CONFIG_IN_EXTERNAL_FLASH
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     //
     // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
     // external flash are in the config which is on a chip which we can't read yet!
     //
-    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
-    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
-    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change flash/pin configs needed for
-    // the system to boot and/or to save the config.
+    // FIXME For now, users must NOT change flash/pin configs needed for the system to boot and/or to save the config.
+    // One possible solution is to lock the pins for the flash chip so they cannot be modified post-boot.
     //
-    // note that target specific FLASH/SPI/QUADSPI configs are
-    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH.
+    // note that target specific FLASH/SPI/QUADSPI/OCTOSPI configs are
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH/CONFIG_IN_MEMORY_MAPPED_FLASH.
     //
 
     //
     // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
-    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
-    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI/OCTOSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI/OCTOSPI CS lines.
     //
     pgResetAll();
 
 #ifdef TARGET_BUS_INIT
-#error "CONFIG_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
+#error "CONFIG_IN_EXTERNAL_FLASH/CONFIG_IN_MEMORY_MAPPED_FLASH and TARGET_BUS_INIT are mutually exclusive"
 #endif
 
-    configureSPIAndQuadSPI();
-    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+#if defined(CONFIG_IN_EXTERNAL_FLASH)
+    configureSPIBusses();
+    initFlags |= SPI_BUSSES_INIT_ATTEMPTED;
+#endif
 
+#if defined(CONFIG_IN_MEMORY_MAPPED_FLASH) || defined(CONFIG_IN_EXTERNAL_FLASH)
+    configureQuadSPIBusses();
+    configureOctoSPIBusses();
+    initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
+#endif
 
 #ifndef USE_FLASH_CHIP
-#error "CONFIG_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
+#error "CONFIG_IN_EXTERNAL_FLASH/CONFIG_IN_MEMORY_MAPPED_FLASH requires USE_FLASH_CHIP to be defined."
 #endif
 
     bool haveFlash = flashInit(flashConfig());
@@ -386,7 +402,8 @@ void init(void)
     }
     initFlags |= FLASH_INIT_ATTEMPTED;
 
-#endif // CONFIG_IN_EXTERNAL_FLASH
+#endif // CONFIG_IN_EXTERNAL_FLASH || CONFIG_IN_MEMORY_MAPPED_FLASH
+
 
     initEEPROM();
 
@@ -588,10 +605,16 @@ void init(void)
 
 #else
 
-    // Depending on compilation options SPI/QSPI initialisation may already be done.
-    if (!(initFlags & SPI_AND_QSPI_INIT_ATTEMPTED)) {
-        configureSPIAndQuadSPI();
-        initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+    // Depending on compilation options SPI/QSPI/OSPI initialisation may already be done.
+    if (!(initFlags & SPI_BUSSES_INIT_ATTEMPTED)) {
+        configureSPIBusses();
+        initFlags |= SPI_BUSSES_INIT_ATTEMPTED;
+    }
+
+    if (!(initFlags & QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED)) {
+        configureQuadSPIBusses();
+        configureOctoSPIBusses();
+        initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
 #if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && defined(STM32H7)
