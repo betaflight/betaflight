@@ -117,7 +117,12 @@
 #endif
 #endif
 
-#if !defined(USE_BARO) && !defined(USE_GPS)
+// Add VARIO if BARO or GPS is defined. Remove when none defined.
+#if defined(USE_BARO) || defined(USE_GPS)
+#ifndef USE_VARIO
+#define USE_VARIO
+#endif
+#else
 #undef USE_VARIO
 #endif
 
