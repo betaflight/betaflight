@@ -496,8 +496,7 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US 
-        || (currentTimeUs - lastDisarmTimeUs < 200000 && flipOverAfterCrashWasActiveLast)) {
+        if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
@@ -526,11 +525,19 @@ void tryArm(void)
             if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
                 // Set motor spin direction
                 if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
+                    if (currentTimeUs - lastDisarmTimeUs < 200000 && flipOverAfterCrashWasActiveLast) {
+                        tryingToArm = ARMING_DELAYED_NORMAL;
+                        return;
+                    }
                     flipOverAfterCrashActive = false;
                     if (!featureIsEnabled(FEATURE_3D)) {
                         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
                     }
                 } else {
+                    if (currentTimeUs - lastDisarmTimeUs < 200000 && !flipOverAfterCrashWasActiveLast) {
+                        tryingToArm = ARMING_DELAYED_CRASHFLIP;
+                        return;
+                    }
                     flipOverAfterCrashActive = true;
 #ifdef USE_RUNAWAY_TAKEOFF
                     runawayTakeoffCheckDisabled = false;
