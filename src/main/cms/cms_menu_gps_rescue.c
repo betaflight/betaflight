@@ -139,7 +139,7 @@ static const void *cmsx_menuGpsRescueOnEnter(displayPort_t *pDisp)
 
     gpsRescueConfig_initialAltitudeM = gpsRescueConfig()->initialAltitudeM;
     gpsRescueConfig_rescueGroundspeed = gpsRescueConfig()->rescueGroundspeed;
-    gpsRescueConfig_angle = gpsRescueConfig()->angle;
+    gpsRescueConfig_angle = gpsRescueConfig()->maxRescueAngle;
 
     gpsRescueConfig_descentDistanceM = gpsRescueConfig()->descentDistanceM;
     gpsRescueConfig_descendRate = gpsRescueConfig()->descendRate;
@@ -167,7 +167,7 @@ static const void *cmsx_menuGpsRescueOnExit(displayPort_t *pDisp, const OSD_Entr
 
     gpsRescueConfigMutable()->initialAltitudeM = gpsRescueConfig_initialAltitudeM;
     gpsRescueConfigMutable()->rescueGroundspeed = gpsRescueConfig_rescueGroundspeed;
-    gpsRescueConfigMutable()->angle = gpsRescueConfig_angle;
+    gpsRescueConfigMutable()->maxRescueAngle = gpsRescueConfig_angle;
 
     gpsRescueConfigMutable()->descentDistanceM = gpsRescueConfig_descentDistanceM;
     gpsRescueConfigMutable()->descendRate = gpsRescueConfig_descendRate;
