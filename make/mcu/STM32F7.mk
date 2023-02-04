@@ -169,6 +169,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/dma_stm32f7xx.c \
             drivers/stm32/dshot_bitbang_ll.c \
             drivers/stm32/exti.c \
+            drivers/stm32/io_stm32.c \
             drivers/stm32/light_ws2811strip_hal.c \
             drivers/stm32/pwm_output.c \
             drivers/stm32/pwm_output_dshot_hal.c \

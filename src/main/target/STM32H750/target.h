@@ -119,3 +119,4 @@
 #define USE_CUSTOM_DEFAULTS
 #endif
 
+#define USE_EXTI

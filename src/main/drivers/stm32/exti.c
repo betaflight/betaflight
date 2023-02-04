@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if !defined(SIMULATOR_BUILD)
+#ifdef USE_EXTI
 
 #include "drivers/nvic.h"
 #include "drivers/io_impl.h"
@@ -94,7 +94,7 @@ void EXTIInit(void)
 #ifdef REMAP_TIM17_DMA
     SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_TIM17, ENABLE);
 #endif
-
+#endif
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));
     memset(extiGroupPriority, 0xff, sizeof(extiGroupPriority));
 }
@@ -158,8 +158,6 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStructure);
     }
-#else
-# warning "Unknown CPU"
 #endif
 
 #endif
@@ -211,7 +209,6 @@ void EXTIDisable(IO_t io)
 # error "Unknown CPU"
 #endif
 }
-
 
 #define EXTI_EVENT_MASK 0xFFFF // first 16 bits only, see also definition of extiChannelRecs.
 

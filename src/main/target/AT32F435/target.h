@@ -103,3 +103,5 @@
 // 2K page sectors
 #define FLASH_PAGE_SIZE   ((uint32_t)0x0800)
 #endif
+
+#define USE_EXTI
