@@ -157,6 +157,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/light_ws2811strip_hal.c \
             drivers/stm32/memprot_hal.c \
             drivers/stm32/memprot_stm32g4xx.c \
+            drivers/stm32/pwm_output.c \
             drivers/stm32/pwm_output_dshot_hal.c \
             drivers/stm32/rcc.c \
             drivers/stm32/serial_uart_hal.c \

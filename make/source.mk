@@ -79,7 +79,6 @@ COMMON_SRC = \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
             drivers/pwm_esc_detect.c \
-            drivers/pwm_output.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
             drivers/rx/rx_pwm.c \
