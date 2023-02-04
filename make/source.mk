@@ -38,7 +38,6 @@ COMMON_SRC = \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
             drivers/resource.c \
-            drivers/rcc.c \
             drivers/serial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart.c \

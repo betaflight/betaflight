@@ -159,13 +159,14 @@ MCU_COMMON_SRC = \
             drivers/stm32/dma_stm32f4xx.c \
             drivers/stm32/dshot_bitbang_stdperiph.c \
             drivers/stm32/light_ws2811strip_stdperiph.c \
+            drivers/stm32/rcc.c \
             drivers/stm32/sdio_f4xx.c \
             drivers/stm32/serial_uart_stdperiph.c \
             drivers/stm32/serial_uart_stm32f4xx.c \
             drivers/stm32/system_stm32f4xx.c \
             drivers/stm32/timer_stm32f4xx.c \
             drivers/stm32/transponder_ir_io_stdperiph.c \
-            startup/system_stm32f4xx.c 
+            startup/system_stm32f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \

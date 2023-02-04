@@ -155,29 +155,30 @@ VCP_SRC = \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            startup/system_stm32f7xx.c \
             drivers/accgyro/accgyro_mpu.c \
+            drivers/bus_i2c_timing.c \
+            drivers/dshot_bitbang_decode.c \
+            drivers/dshot_bitbang.c \
+            drivers/persistent.c \
+            drivers/pwm_output_dshot_shared.c \
             drivers/stm32/adc_stm32f7xx.c \
             drivers/stm32/audio_stm32f7xx.c \
-            drivers/stm32/bus_i2c_hal.c \
             drivers/stm32/bus_i2c_hal_init.c \
-            drivers/bus_i2c_timing.c \
-            drivers/stm32/dma_stm32f7xx.c \
-            drivers/stm32/light_ws2811strip_hal.c \
-            drivers/stm32/transponder_ir_io_hal.c \
+            drivers/stm32/bus_i2c_hal.c \
             drivers/stm32/bus_spi_ll.c \
-            drivers/persistent.c \
-            drivers/dshot_bitbang.c \
-            drivers/dshot_bitbang_decode.c \
+            drivers/stm32/dma_stm32f7xx.c \
             drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/light_ws2811strip_hal.c \
             drivers/stm32/pwm_output_dshot_hal.c \
-            drivers/pwm_output_dshot_shared.c \
-            drivers/stm32/timer_hal.c \
-            drivers/stm32/timer_stm32f7xx.c \
-            drivers/stm32/system_stm32f7xx.c \
+            drivers/stm32/rcc.c \
+            drivers/stm32/sdio_f7xx.c \
             drivers/stm32/serial_uart_hal.c \
             drivers/stm32/serial_uart_stm32f7xx.c \
-            drivers/stm32/sdio_f7xx.c
+            drivers/stm32/system_stm32f7xx.c \
+            drivers/stm32/timer_hal.c \
+            drivers/stm32/timer_stm32f7xx.c \
+            drivers/stm32/transponder_ir_io_hal.c \
+            startup/system_stm32f7xx.c
 
 MCU_EXCLUDES = \
             drivers/bus_i2c.c \
