@@ -29,26 +29,28 @@
 
 #include "gps_rescue.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCUE, 4);
 
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
     .minRescueDth = 30,
     .altitudeMode = GPS_RESCUE_ALT_MODE_MAX,
     .rescueAltitudeBufferM = 10,
-    .ascendRate = 500,          // cm/s, for altitude corrections on ascent
+    .ascendRate = 750,          // cm/s, for altitude corrections on ascent
 
     .initialAltitudeM = 30,
-    .rescueGroundspeed = 500,
-    .angle = 40,
+    .rescueGroundspeed = 750,
+    .maxRescueAngle = 70,
     .rollMix = 150,
+    .pitchCutoffHz = 75,
 
     .descentDistanceM = 20,
-    .descendRate = 100,         // cm/s, minimum for descent and landing phase, or for descending if starting high ascent
+    .descendRate = 150,         // cm/s, minimum for descent and landing phase, or for descending if starting high ascent
     .targetLandingAltitudeM = 4,
+    .disarmThreshold = 20,
 
     .throttleMin = 1100,
-    .throttleMax = 1600,
+    .throttleMax = 1700,
     .throttleHover = 1275,
 
     .allowArmingWithoutFix = false,
@@ -57,10 +59,10 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
     .throttleP = 15,
     .throttleI = 15,
-    .throttleD = 15,
+    .throttleD = 20,
     .velP = 8,
-    .velI = 30,
-    .velD = 20,
+    .velI = 40,
+    .velD = 12,
     .yawP = 20,
 
     .useMag = GPS_RESCUE_USE_MAG
