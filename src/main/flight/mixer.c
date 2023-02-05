@@ -729,8 +729,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     motorMixRange = motorMixMax - motorMixMin;
 
-    switch (mixerConfig()->mixer_type)
-    {
+    switch (mixerConfig()->mixer_type) {
     case MIXER_LEGACY:
         applyMixerAdjustment(motorMix, motorMixMin, motorMixMax, airmodeEnabled);
         break;
