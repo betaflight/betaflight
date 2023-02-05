@@ -21,6 +21,9 @@
   *
   **************************************************************************
   */
+
+#include "platform.h"
+
 #include "usbd_sdr.h"
 
 /** @addtogroup AT32F435_437_middlewares_usbd_drivers

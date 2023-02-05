@@ -21,6 +21,9 @@
   *
   **************************************************************************
   */
+
+#include "platform.h"
+
 #include "usb_core.h"
 
 /** @addtogroup AT32F435_437_middlewares_usb_drivers

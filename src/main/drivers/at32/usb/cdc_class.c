@@ -21,6 +21,8 @@
   *
   **************************************************************************
   */
+#include "platform.h"
+
 #include "usbd_core.h"
 #include "cdc_class.h"
 #include "cdc_desc.h"

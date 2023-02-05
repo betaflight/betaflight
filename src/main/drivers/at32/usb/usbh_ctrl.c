@@ -21,6 +21,9 @@
   *
   **************************************************************************
   */
+
+#include "platform.h"
+
 #include "usbh_ctrl.h"
 #include "usbh_core.h"
 #include "usb_std.h"

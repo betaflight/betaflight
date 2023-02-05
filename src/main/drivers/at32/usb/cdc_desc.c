@@ -22,6 +22,9 @@
   **************************************************************************
   */
 #include "stdio.h"
+
+#include "platform.h"
+
 #include "usb_std.h"
 #include "usbd_sdr.h"
 #include "usbd_core.h"
