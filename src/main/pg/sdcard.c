@@ -30,6 +30,7 @@
 
 #include "sdcard.h"
 #include "drivers/bus_spi.h"
+#include "drivers/sdio.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
@@ -69,6 +70,12 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
 
     if (spidevice != SPIINVALID && config->chipSelectTag) {
         config->mode = SDCARD_MODE_SPI;
+    }
+#endif
+
+#if defined(USE_SDCARD_SDIO)
+    if (SDIO_DEVICE != SDIOINVALID) {
+        config->mode = SDCARD_MODE_SDIO;
     }
 #endif
 }
