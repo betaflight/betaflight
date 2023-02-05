@@ -66,7 +66,6 @@ static busyIntContext_t busyIntContext;
 
 static volatile timeUs_t sx1280Processing;
 
-static volatile bool pendingISR = false;
 static volatile bool pendingDoFHSS = false;
 
 #define SX1280_BUSY_TIMEOUT_US 1000
@@ -574,10 +573,7 @@ FAST_IRQ_HANDLER void sx1280ISR(void)
     // Only attempt to access the SX1280 if it is currently idle to avoid any race condition
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         if (sx1280EnableBusy()) {
-            pendingISR = false;
             sx1280SetBusyFn(sx1280IrqGetStatus);
-        } else {
-            pendingISR = true;
         }
     }
 }
@@ -827,6 +823,7 @@ static void sx1280SetFrequency(extiCallbackRec_t *cb)
 static busStatus_e sx1280SetFreqComplete(uint32_t arg)
 {
     UNUSED(arg);
+    pendingDoFHSS = false;
 
     if (expressLrsTelemRespReq()) {
         expressLrsDoTelem();
@@ -864,11 +861,7 @@ static busStatus_e sx1280EnableIRQs(uint32_t arg)
 {
     UNUSED(arg);
 
-    // Handle any queued interrupt processing
-    if (pendingISR) {
-        pendingISR = false;
-        sx1280SetBusyFn(sx1280IrqGetStatus);
-    } else if (pendingDoFHSS) {
+    if (pendingDoFHSS) {
         pendingDoFHSS = false;
         sx1280SetBusyFn(sx1280SetFrequency);
     } else {
