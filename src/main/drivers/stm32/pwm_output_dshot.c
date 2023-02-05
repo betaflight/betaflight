@@ -40,12 +40,11 @@
 #include "stm32f4xx.h"
 #endif
 
-#include "pwm_output.h"
+#include "drivers/pwm_output.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_dpwm.h"
 #include "drivers/dshot_command.h"
-
-#include "pwm_output_dshot_shared.h"
+#include "drivers/pwm_output_dshot_shared.h"
 
 #ifdef USE_DSHOT_TELEMETRY
 

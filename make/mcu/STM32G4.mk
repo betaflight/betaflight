@@ -145,7 +145,6 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
-            drivers/dshot_bitbang.c \
             drivers/pwm_output_dshot_shared.c \
             drivers/stm32/adc_stm32g4xx.c \
             drivers/stm32/bus_i2c_hal_init.c \
@@ -153,6 +152,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/bus_spi_ll.c \
             drivers/stm32/dma_stm32g4xx.c \
             drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/dshot_bitbang.c \
             drivers/stm32/exti.c \
             drivers/stm32/io_stm32.c \
             drivers/stm32/light_ws2811strip_hal.c \
@@ -161,7 +161,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/persistent.c \
             drivers/stm32/pwm_output.c \
             drivers/stm32/pwm_output_dshot_hal.c \
-            drivers/stm32/rcc.c \
+            drivers/stm32/rcc_stm32.c \
             drivers/stm32/serial_uart_hal.c \
             drivers/stm32/serial_uart_stm32g4xx.c \
             drivers/stm32/system_stm32g4xx.c \
