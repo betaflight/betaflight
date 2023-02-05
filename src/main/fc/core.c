@@ -564,10 +564,12 @@ void tryArm(void)
 #endif
 
             if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 0, 50);
                 // Set motor spin direction
                 if (!(isCrashflipSwitchActive() || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
                     flipOverAfterCrashActive = false;
                     if (!featureIsEnabled(FEATURE_3D)) {
+                        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, 11);
                         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
                     }
                 } else {
@@ -576,9 +578,12 @@ void tryArm(void)
                     runawayTakeoffCheckDisabled = false;
 #endif
                     if (!featureIsEnabled(FEATURE_3D)) {
+                        DEBUG_SET(DEBUG_AUTO_TURTLE, 1, 21);
                         dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, DSHOT_CMD_TYPE_INLINE);
                     }
                 }
+            } else {
+                DEBUG_SET(DEBUG_AUTO_TURTLE, 0, 10);
             }
         }
 #endif

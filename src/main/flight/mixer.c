@@ -303,12 +303,12 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
                     motor[i] = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
                 }
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
+                // DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
+                // DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
                 crashFlipReadyToRearm = false;
             } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 70);
+                // DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
+                // DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 70);
                 for (int i = 0; i < mixerRuntime.motorCount; ++i) {
                     motor[i] = motor_disarmed[i];
                 }
@@ -317,8 +317,8 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 // checkAutoTurtleArmStatus();
                 // crashFlipReadyToRearm = true;
             } else {
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 51);
-                DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
+                // DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 51);
+                // DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
                 updateArmingStatus();
 
                 // checkAutoTurtleArmStatus();
