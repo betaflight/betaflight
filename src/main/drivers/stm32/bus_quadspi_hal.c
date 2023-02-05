@@ -27,13 +27,13 @@
 
 #ifdef USE_QUADSPI
 
-#include "bus_quadspi.h"
-#include "bus_quadspi_impl.h"
-#include "dma.h"
-#include "io.h"
-#include "io_impl.h"
-#include "nvic.h"
-#include "rcc.h"
+#include "drivers/bus_quadspi.h"
+#include "drivers/bus_quadspi_impl.h"
+#include "drivers/dma.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/nvic.h"
+#include "drivers/rcc.h"
 
 #include "pg/bus_quadspi.h"
 
