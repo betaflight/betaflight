@@ -165,15 +165,13 @@ MCU_COMMON_SRC = \
             drivers/stm32/serial_uart_hal.c \
             drivers/stm32/serial_uart_stm32g4xx.c \
             drivers/stm32/system_stm32g4xx.c \
-            drivers/stm32/timer.c \
             drivers/stm32/timer_hal.c \
             drivers/stm32/timer_stm32g4xx.c \
             drivers/stm32/transponder_ir_io_hal.c \
             startup/system_stm32g4xx.c
 
 MCU_EXCLUDES = \
-            drivers/bus_i2c.c \
-            drivers/timer.c
+            drivers/bus_i2c.c
 
 # G4's MSC use the same driver layer file with F7
 MSC_SRC = \
