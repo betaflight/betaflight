@@ -36,15 +36,14 @@
 #include "pg/usb.h"
 
 #include "at32f435_437_clock.h"
-#include "usb_conf.h"
-#include "usb_core.h"
-#include "usbd_int.h"
-#include "cdc_class.h"
-#include "cdc_desc.h"
+#include "drivers/at32/usb/usb_conf.h"
+#include "drivers/at32/usb/usb_core.h"
+#include "drivers/at32/usb/usbd_int.h"
+#include "drivers/at32/usb/cdc_class.h"
+#include "drivers/at32/usb/cdc_desc.h"
 
 #include "drivers/time.h"
-
-#include "serial.h"
+#include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 #include "drivers/nvic.h"
 #include "at32f435_437_tmr.h"
@@ -54,6 +53,44 @@
 static vcpPort_t vcpPort;
 
 otg_core_type otg_core_struct;
+
+#define APP_RX_DATA_SIZE  2048
+#define APP_TX_DATA_SIZE  2048
+
+#define APP_TX_BLOCK_SIZE 512
+
+volatile uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
+volatile uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
+uint32_t BuffLength;
+
+/* Increment this pointer or roll it back to start address when data are received over USART */
+volatile uint32_t UserTxBufPtrIn = 0;
+/* Increment this pointer or roll it back to start address when data are sent over USB */
+volatile uint32_t UserTxBufPtrOut = 0;
+
+volatile uint32_t APP_Rx_ptr_out = 0;
+volatile uint32_t APP_Rx_ptr_in = 0;
+static uint8_t APP_Rx_Buffer[APP_RX_DATA_SIZE];
+
+tmr_type * usbTxTmr= TMR20;
+#define  CDC_POLLING_INTERVAL 5
+
+static void (*ctrlLineStateCb)(void* context, uint16_t ctrlLineState);
+static void *ctrlLineStateCbContext;
+static void (*baudRateCb)(void *context, uint32_t baud);
+static void *baudRateCbContext;
+
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
+{
+    baudRateCbContext = context;
+    baudRateCb = cb;
+}
+
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
+{
+    ctrlLineStateCbContext = context;
+    ctrlLineStateCb = cb;
+}
 
 void usb_clock48m_select(usb_clk48_s clk_s)
 {
@@ -220,17 +257,17 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 
 void TxTimerConfig(void)
 {
-    tmr_base_init(usbTxTmr,(CDC_POLLING_INTERVAL - 1),((system_core_clock)/1000 - 1));
-    tmr_clock_source_div_set(usbTxTmr,TMR_CLOCK_DIV1);
-    tmr_cnt_dir_set(usbTxTmr,TMR_COUNT_UP);
-    tmr_period_buffer_enable(usbTxTmr,TRUE);
+    tmr_base_init(usbTxTmr, (CDC_POLLING_INTERVAL - 1), ((system_core_clock)/1000 - 1));
+    tmr_clock_source_div_set(usbTxTmr, TMR_CLOCK_DIV1);
+    tmr_cnt_dir_set(usbTxTmr, TMR_COUNT_UP);
+    tmr_period_buffer_enable(usbTxTmr, TRUE);
     tmr_interrupt_enable(usbTxTmr, TMR_OVF_INT, TRUE);
-    nvic_irq_enable(TMR20_OVF_IRQn,NVIC_PRIORITY_BASE(NVIC_PRIO_USB), NVIC_PRIORITY_SUB(NVIC_PRIO_USB));
+    nvic_irq_enable(TMR20_OVF_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_USB), NVIC_PRIORITY_SUB(NVIC_PRIO_USB));
 
     tmr_counter_enable(usbTxTmr,TRUE);
 }
 
-void TMR20_OVF_IRQHandler()
+void TMR20_OVF_IRQHandler(void)
 {
     uint32_t buffsize;
     static uint32_t lastBuffsize = 0;
@@ -262,13 +299,13 @@ void TMR20_OVF_IRQHandler()
                 buffsize = APP_TX_BLOCK_SIZE;
             }
 
-            uint32_t txed=usb_vcp_send_data(&otg_core_struct.dev,(uint8_t*)&UserTxBuffer[UserTxBufPtrOut], buffsize);
-            if (txed==SUCCESS) {
+            uint32_t txed = usb_vcp_send_data(&otg_core_struct.dev,(uint8_t*)&UserTxBuffer[UserTxBufPtrOut], buffsize);
+            if (txed == SUCCESS) {
                 lastBuffsize = buffsize;
             }
         }
     }
-    tmr_flag_clear(usbTxTmr,TMR_OVF_FLAG);
+    tmr_flag_clear(usbTxTmr, TMR_OVF_FLAG);
 }
 
 uint8_t usbIsConnected(void)
@@ -276,7 +313,7 @@ uint8_t usbIsConnected(void)
 	return (USB_CONN_STATE_DEFAULT != otg_core_struct.dev.conn_state);
 }
 
-uint8_t usbIsConfigured()
+uint8_t usbIsConfigured(void)
 {
 	return (USB_CONN_STATE_CONFIGURED == otg_core_struct.dev.conn_state);
 }
@@ -341,9 +378,9 @@ static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
-   if ((APP_Rx_ptr_in==0)||(APP_Rx_ptr_out == APP_Rx_ptr_in)){
-        APP_Rx_ptr_out=0;
-        APP_Rx_ptr_in=usb_vcp_get_rxdata(&otg_core_struct.dev,APP_Rx_Buffer);
+   if ((APP_Rx_ptr_in == 0) || (APP_Rx_ptr_out == APP_Rx_ptr_in)){
+        APP_Rx_ptr_out = 0;
+        APP_Rx_ptr_in = usb_vcp_get_rxdata(&otg_core_struct.dev, APP_Rx_Buffer);
         if(APP_Rx_ptr_in == 0) {
             return 0;
         }
