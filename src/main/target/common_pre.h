@@ -166,6 +166,7 @@
 
 #if defined(USE_FLASH)
 
+#if !defined(USE_EXST)
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
 #define USE_FLASH_M25P16
@@ -174,9 +175,10 @@
 #define USE_FLASH_W25M512    // 512Kb (256Kb x 2 stacked) NOR flash support
 #define USE_FLASH_W25M02G    // 2Gb (1Gb x 2 stacked) NAND flash support
 #define USE_FLASH_W25Q128FV  // 16MB Winbond 25Q128
+#endif // USE_EXST
 
-#endif
-#endif
+#endif // USE_FLASH
+#endif // USE_FLASH_CHIP
 
 #ifndef USE_MAX7456
 #define USE_MAX7456
