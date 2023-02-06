@@ -151,7 +151,12 @@
 #undef USE_TELEMETRY_SRXL
 
 #ifdef USE_SERIALRX_FPORT
+#ifndef USE_TELEMETRY
 #define USE_TELEMETRY
+#endif
+#ifndef USE_TELEMETRY_SMARTPORT
+#define USE_TELEMETRY_SMARTPORT
+#endif
 #endif
 #endif
 
