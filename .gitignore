@@ -37,6 +37,9 @@ stm32.mak
 # ozone launch configurations
 /support/ozone
 
+# local scripts
+/support/scripts
+
 # artefacts for VS Code
 /.vscode/
 
