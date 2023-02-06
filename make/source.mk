@@ -30,7 +30,6 @@ COMMON_SRC = \
             drivers/display_canvas.c \
             drivers/dma_common.c \
             drivers/dma_reqmap.c \
-            drivers/exti.c \
             drivers/io.c \
             drivers/light_led.c \
             drivers/mco.c \
@@ -38,7 +37,6 @@ COMMON_SRC = \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
             drivers/resource.c \
-            drivers/rcc.c \
             drivers/serial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
@@ -47,7 +45,6 @@ COMMON_SRC = \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer_common.c \
-            drivers/timer.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
@@ -80,7 +77,6 @@ COMMON_SRC = \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
             drivers/pwm_esc_detect.c \
-            drivers/pwm_output.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
             drivers/rx/rx_pwm.c \
@@ -362,15 +358,11 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/display_ug2864hsweg01.c \
             drivers/inverter.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_hal.c \
-            drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_tcp.c \
             drivers/serial_uart_pinconfig.c \
             drivers/serial_usb_vcp.c \
-            drivers/transponder_ir_io_hal.c \
-            drivers/transponder_ir_io_stdperiph.c \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \

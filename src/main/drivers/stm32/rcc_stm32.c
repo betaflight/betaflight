@@ -19,7 +19,7 @@
  */
 
 #include "platform.h"
-#include "rcc.h"
+#include "drivers/rcc.h"
 
 void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
 {

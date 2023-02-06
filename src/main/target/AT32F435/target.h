@@ -59,12 +59,12 @@
 #define SPI_FULL_RECONFIGURABILITY
 
 //#define USE_USB_DETECT
-//#define USE_VCP
+#define USE_VCP
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
 
 
-#define UNIFIED_SERIAL_PORT_COUNT       0
+#define UNIFIED_SERIAL_PORT_COUNT       1
 
 //#define USE_ADC
 
@@ -103,3 +103,5 @@
 // 2K page sectors
 #define FLASH_PAGE_SIZE   ((uint32_t)0x0800)
 #endif
+
+#define USE_EXTI

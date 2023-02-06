@@ -102,7 +102,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBCDC_DIR)/Inc \
                    $(CMSIS_DIR)/Include \
                    $(CMSIS_DIR)/Device/ST/STM32F4xx/Include \
-                   $(ROOT)/src/main/vcp_hal
+                   $(ROOT)/src/main/drivers/stm32/vcp_hal
 else
 CMSIS_SRC       := $(notdir $(wildcard $(CMSIS_DIR)/CoreSupport/*.c \
                    $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/*.c))
@@ -116,7 +116,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx \
-                   $(ROOT)/src/main/vcpf4
+                   $(ROOT)/src/main/drivers/stm32/vcpf4
 endif
 
 #Flags
@@ -146,42 +146,48 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 MCU_COMMON_SRC = \
-            startup/system_stm32f4xx.c \
             drivers/accgyro/accgyro_mpu.c \
+            drivers/dshot_bitbang_decode.c \
+            drivers/inverter.c \
+            drivers/pwm_output_dshot_shared.c \
+            drivers/stm32/pwm_output_dshot.c \
             drivers/stm32/adc_stm32f4xx.c \
             drivers/stm32/bus_i2c_stm32f4xx.c \
             drivers/stm32/bus_spi_stdperiph.c \
             drivers/stm32/dma_stm32f4xx.c \
-            drivers/dshot_bitbang.c \
-            drivers/dshot_bitbang_decode.c \
+            drivers/stm32/dshot_bitbang.c \
             drivers/stm32/dshot_bitbang_stdperiph.c \
-            drivers/inverter.c \
+            drivers/stm32/exti.c \
+            drivers/stm32/io_stm32.c \
             drivers/stm32/light_ws2811strip_stdperiph.c \
-            drivers/stm32/transponder_ir_io_stdperiph.c \
-            drivers/pwm_output_dshot.c \
-            drivers/pwm_output_dshot_shared.c \
+            drivers/stm32/persistent.c \
+            drivers/stm32/pwm_output.c \
+            drivers/stm32/rcc_stm32.c \
+            drivers/stm32/sdio_f4xx.c \
             drivers/stm32/serial_uart_stdperiph.c \
             drivers/stm32/serial_uart_stm32f4xx.c \
             drivers/stm32/system_stm32f4xx.c \
+            drivers/stm32/timer_stdperiph.c \
             drivers/stm32/timer_stm32f4xx.c \
-            drivers/persistent.c \
-            drivers/stm32/sdio_f4xx.c
+            drivers/stm32/transponder_ir_io_stdperiph.c \
+            startup/system_stm32f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
 VCP_SRC = \
-            vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf.c \
-            vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c \
+            drivers/stm32/vcp_hal/usbd_desc.c \
+            drivers/stm32/vcp_hal/usbd_conf.c \
+            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 else
 VCP_SRC = \
-            vcpf4/stm32f4xx_it.c \
-            vcpf4/usb_bsp.c \
-            vcpf4/usbd_desc.c \
-            vcpf4/usbd_usr.c \
-            vcpf4/usbd_cdc_vcp.c \
-            drivers/serial_usb_vcp.c \
+            drivers/stm32/vcpf4/stm32f4xx_it.c \
+            drivers/stm32/vcpf4/usb_bsp.c \
+            drivers/stm32/vcpf4/usbd_desc.c \
+            drivers/stm32/vcpf4/usbd_usr.c \
+            drivers/stm32/vcpf4/usbd_cdc_vcp.c \
+            drivers/stm32/vcpf4/usb_cdc_hid.c \
+            drivers/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 endif
 

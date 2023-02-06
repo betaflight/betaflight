@@ -111,7 +111,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32G4/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
-                   $(ROOT)/src/main/vcp_hal
+                   $(ROOT)/src/main/drivers/stm32/vcp_hal
 
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
@@ -134,41 +134,44 @@ endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DSTM32
 
 VCP_SRC = \
-            vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf_stm32g4xx.c \
-            vcp_hal/usbd_cdc_hid.c \
-            vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c \
+            drivers/stm32/vcp_hal/usbd_desc.c \
+            drivers/stm32/vcp_hal/usbd_conf_stm32g4xx.c \
+            drivers/stm32/vcp_hal/usbd_cdc_hid.c \
+            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
-            drivers/stm32/adc_stm32g4xx.c \
-            drivers/stm32/bus_i2c_hal.c \
-            drivers/stm32/bus_i2c_hal_init.c \
             drivers/bus_i2c_timing.c \
+            drivers/dshot_bitbang_decode.c \
+            drivers/pwm_output_dshot_shared.c \
+            drivers/stm32/adc_stm32g4xx.c \
+            drivers/stm32/bus_i2c_hal_init.c \
+            drivers/stm32/bus_i2c_hal.c \
             drivers/stm32/bus_spi_ll.c \
             drivers/stm32/dma_stm32g4xx.c \
-            drivers/dshot_bitbang.c \
-            drivers/dshot_bitbang_decode.c \
             drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/dshot_bitbang.c \
+            drivers/stm32/exti.c \
+            drivers/stm32/io_stm32.c \
             drivers/stm32/light_ws2811strip_hal.c \
             drivers/stm32/memprot_hal.c \
             drivers/stm32/memprot_stm32g4xx.c \
-            drivers/persistent.c \
-            drivers/pwm_output_dshot_shared.c \
+            drivers/stm32/persistent.c \
+            drivers/stm32/pwm_output.c \
             drivers/stm32/pwm_output_dshot_hal.c \
+            drivers/stm32/rcc_stm32.c \
+            drivers/stm32/serial_uart_hal.c \
+            drivers/stm32/serial_uart_stm32g4xx.c \
+            drivers/stm32/system_stm32g4xx.c \
             drivers/stm32/timer_hal.c \
             drivers/stm32/timer_stm32g4xx.c \
             drivers/stm32/transponder_ir_io_hal.c \
-            drivers/stm32/system_stm32g4xx.c \
-            drivers/stm32/serial_uart_stm32g4xx.c \
-            drivers/stm32/serial_uart_hal.c \
             startup/system_stm32g4xx.c
 
 MCU_EXCLUDES = \
-            drivers/bus_i2c.c \
-            drivers/timer.c
+            drivers/bus_i2c.c
 
 # G4's MSC use the same driver layer file with F7
 MSC_SRC = \
