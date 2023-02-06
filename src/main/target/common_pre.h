@@ -158,7 +158,7 @@
 #endif
 #endif
 
-#if defined(USE_FLASH_CHIP)
+#if !defined(USE_FLASH_CHIP)
 
 #if !defined(USE_EXST) && !defined(USE_FLASH)
 #define USE_FLASH
