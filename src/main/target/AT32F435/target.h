@@ -54,9 +54,23 @@
 //#define I2C_FULL_RECONFIGURABILITY
 
 #define USE_SPI
-#define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
-#define SPI_FULL_RECONFIGURABILITY
+
+// AT-START-F435 J7 connector SPI 1
+#define SPI2_SCK_PIN            PD1
+#define SPI2_MISO_PIN           PC2
+#define SPI2_MOSI_PIN           PD4
+
+#define J7_NSS                  PD0
+
+#define GYRO_1_CS_PIN           J7_NSS
+#define GYRO_1_SPI_INSTANCE     SPI2
+
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PB11
+
+#define USE_ACCGYRO_BMI160
 
 //#define USE_USB_DETECT
 #define USE_VCP

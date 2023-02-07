@@ -1021,7 +1021,7 @@ void init(void)
 #endif
 
     // On H7/G4 allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
 #ifdef USE_SPI
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
