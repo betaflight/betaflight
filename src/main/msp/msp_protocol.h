@@ -62,7 +62,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   45 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   46 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
@@ -351,3 +351,7 @@
 #define MSP_RTC                  247    //out message         Gets the RTC clock
 #define MSP_SET_BOARD_INFO       248    //in message          Sets the board information for this board
 #define MSP_SET_SIGNATURE        249    //in message          Sets the signature of the board and serial number
+
+// Shockflight specific commands
+#define MSP_SET_LGEAR_FAULTS     250    //in message          Sets the fault state of landing gear (if all 0 everything works fine, if some bit is 1, then a component is malfunctioning)
+#define MSP_SET_LGEAR            251    //in message          Sets the state of landing gear. Look at landingGearState_e for possible values

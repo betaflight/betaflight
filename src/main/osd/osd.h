@@ -186,6 +186,7 @@ typedef enum {
     OSD_SYS_WARNINGS,
     OSD_SYS_VTX_TEMP,
     OSD_SYS_FAN_SPEED,
+    OSD_LGEAR_INFO,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

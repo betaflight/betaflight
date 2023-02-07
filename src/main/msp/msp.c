@@ -122,6 +122,7 @@
 #include "pg/dyn_notch.h"
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
+#include "pg/landinggear.h"
 #include "pg/rx.h"
 #include "pg/rx_spi.h"
 #ifdef USE_RX_EXPRESSLRS
@@ -4236,7 +4237,12 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
         break;
 #endif //USE_OSD_HD
 #endif // OSD
-
+    case MSP_SET_LGEAR_FAULTS:
+        landingGearDataMutable()->faults = sbufReadU16(src);
+        break;
+    case MSP_SET_LGEAR:
+        landingGearDataMutable()->state = sbufReadU8(src);
+        break;
     default:
         return mspProcessInCommand(srcDesc, cmdMSP, src);
     }
