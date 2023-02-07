@@ -16,10 +16,25 @@
  * along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Author: Dominic Clifton
  */
 
 #pragma once
 
-#include "flash_impl.h"
+#ifdef USE_OCTOSPI
 
-bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID);
+typedef struct octoSpiHardware_s {
+    OCTOSPIDevice device;
+    OCTOSPI_TypeDef *reg;
+} octoSpiHardware_t;
+
+typedef struct OCTOSPIDevice_s {
+    OCTOSPI_TypeDef *dev;
+} octoSpiDevice_t;
+
+extern octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT];
+
+void octoSpiInitDevice(OCTOSPIDevice device);
+
+#endif

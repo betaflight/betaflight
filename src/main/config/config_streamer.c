@@ -36,7 +36,7 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 
 
-#if (defined(STM32H750xx) || defined(STM32H730xx)) && !(defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD))
+#if (defined(STM32H750xx) || defined(STM32H730xx)) && !(defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH) || defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD))
 #error "The configured MCU only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
 #endif
 // @todo this is not strictly correct for F4/F7, where sector sizes are variable
@@ -400,7 +400,7 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
 
     flashPageProgramContinue(buffers, bufferSizes, 1);
 
-#elif defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD)
+#elif defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     if (c->address == (uintptr_t)&eepromData[0]) {
         memset(eepromData, 0, sizeof(eepromData));
     }
@@ -541,11 +541,13 @@ int config_streamer_finish(config_streamer_t *c)
 {
     if (c->unlocked) {
 #if defined(CONFIG_IN_SDCARD)
-        bool saveEEPROMToSDCard(void); // XXX forward declaration to avoid circular dependency between config_streamer / config_eeprom
+        bool saveEEPROMToSDCard(void); // forward declaration to avoid circular dependency between config_streamer / config_eeprom
         saveEEPROMToSDCard();
-        // TODO overwrite the data in the file on the SD card.
 #elif defined(CONFIG_IN_EXTERNAL_FLASH)
         flashFlush();
+#elif defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
+        void saveEEPROMToMemoryMappedFlash(void); // forward declaration to avoid circular dependency between config_streamer / config_eeprom
+        saveEEPROMToMemoryMappedFlash();
 #elif defined(CONFIG_IN_RAM)
         // NOP
 #elif defined(CONFIG_IN_FILE)
