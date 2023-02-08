@@ -27,6 +27,7 @@
 #include "common/crc.h"
 #include "common/maths.h"
 
+#include "resource/resource.h"
 #include "pg.h"
 
 const pgRegistry_t* pgFind(pgn_t pgn)
@@ -101,4 +102,6 @@ void pgResetAll(void)
     PG_FOREACH(reg) {
         pgReset(reg);
     }
+
+    resource_applyDefaults();
 }

@@ -4937,12 +4937,6 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
 
 #if defined(USE_RESOURCE_MGMT)
 
-static ioTag_t *getIoTag(const resourceValue_t value, uint8_t index)
-{
-    const pgRegistry_t* rec = pgFind(value.pgn);
-    return CONST_CAST(ioTag_t *, rec->address + value.stride * index + value.offset);
-}
-
 static void printResource(dumpFlags_t dumpMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
@@ -5002,7 +4996,7 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
     const char * format = "\r\nNOTE: %c%02d already assigned to ";
     for (int r = 0; r < (int)resource_resourceTableLength(); r++) {
         for (int i = 0; i < RESOURCE_VALUE_MAX_INDEX(resourceTable[r].maxIndex); i++) {
-            ioTag_t *tag = getIoTag(resourceTable[r], i);
+            ioTag_t *tag = resource_getIoTag(resourceTable[r], i);
             if (*tag == newTag) {
                 bool cleared = false;
                 if (r == resourceIndex) {
@@ -5027,30 +5021,6 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
             }
         }
     }
-}
-
-static bool strToPin(char *ptr, ioTag_t *tag)
-{
-    if (strcasecmp(ptr, "NONE") == 0) {
-        *tag = IO_TAG_NONE;
-
-        return true;
-    } else {
-        const unsigned port = (*ptr >= 'a') ? *ptr - 'a' : *ptr - 'A';
-        if (port < 8) {
-            ptr++;
-
-            char *end;
-            const long pin = strtol(ptr, &end, 10);
-            if (end != ptr && pin >= 0 && pin < 16) {
-                *tag = DEFIO_TAG_MAKE(port, pin);
-
-                return true;
-            }
-        }
-    }
-
-    return false;
 }
 
 #ifdef USE_DMA
@@ -5345,7 +5315,7 @@ static void cliDmaopt(const char *cmdName, char *cmdline)
         orgval = *optaddr;
     } else {
         // It's a pin
-        if (!pch || !(strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
+        if (!pch || !(resource_strToPin(pch, &ioTag) && IOGetByTag(ioTag))) {
             cliPrintErrorLinef(cmdName, "INVALID PIN: '%s'", pch ? pch : "");
 
             return;
@@ -5619,7 +5589,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
 
     ioTag_t ioTag = IO_TAG_NONE;
     pch = strtok_r(cmdline, " ", &saveptr);
-    if (!pch || !strToPin(pch, &ioTag)) {
+    if (!pch || !resource_strToPin(pch, &ioTag)) {
         cliShowParseError(cmdName);
 
         return;
@@ -5785,10 +5755,10 @@ static void cliResource(const char *cmdName, char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
+    ioTag_t *tag = resource_getIoTag(resourceTable[resourceIndex], index);
 
     if (strlen(pch) > 0) {
-        if (strToPin(pch, tag)) {
+        if (resource_strToPin(pch, tag)) {
             if (*tag == IO_TAG_NONE) {
 #ifdef MINIMAL_CLI
                 cliPrintLine("Freed");

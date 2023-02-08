@@ -116,15 +116,9 @@
 #include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
 
-#if defined(USE_RESOURCE_MGMT)
+#include "resource/resource.h"
 
-typedef struct {
-    const uint8_t owner;
-    pgn_t pgn;
-    uint8_t stride;
-    uint8_t offset;
-    const uint8_t maxIndex;
-} resourceValue_t;
+#if defined(USE_RESOURCE_MGMT)
 
 #define RESOURCE_VALUE_MAX_INDEX(x) ((x) == 0 ? 1 : (x))
 
