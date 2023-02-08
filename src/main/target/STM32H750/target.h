@@ -115,8 +115,4 @@
 #define CONFIG_IN_RAM
 #endif
 
-#ifdef USE_EXST
-#define USE_CUSTOM_DEFAULTS
-#endif
-
 #define USE_EXTI

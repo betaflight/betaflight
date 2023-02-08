@@ -54,34 +54,14 @@ possible.
 /* see .exst section below */
 _exst_hash_size = 64;
 
-/*
-
-A section for custom defaults needs to exist for unified targets, however it is a hideous waste of precious RAM.
-Using RAM will suffice until an alternative location for it can be made workable.
-
-It would be much better to store the custom defaults on some spare flash pages on the external flash and have some
-code to read them from external flash instead of a copy of them stored in precious RAM.
-There are usually spare flash pages after the config page on the external flash, however current EXST bootloaders are
-not 'custom defaults' aware. they only know about firmware partitions and config partitions.  Using the spare sectors
-in the config partition for custom defaults would work, but if users use the bootloader menus to erase their config
-then the custom defaults would also be erased...
-Also, it would need a change the packaging a distribution method of BF as there would be 2 non-contiguous files to
-flash if they were separated, i.e. load firmware at flash address 'x' and load custom defaults at flash address 'y'.
-
-*/
-
-_custom_defaults_size = 8K;
-
 /* Specify the memory areas */
 MEMORY
 {
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 64K
-    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _custom_defaults_size - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
-    CUSTOM_DEFAULTS (r) : ORIGIN = ORIGIN(CODE_RAM) + LENGTH(CODE_RAM), LENGTH = _custom_defaults_size
-    
-    EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM) + LENGTH(CUSTOM_DEFAULTS), LENGTH = _exst_hash_size
+    CODE_RAM (rx)     : ORIGIN = 0x24010000, LENGTH = 448K - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
+    EXST_HASH (rx)    : ORIGIN = 0x24010000 + LENGTH(CODE_RAM), LENGTH = _exst_hash_size
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
 
