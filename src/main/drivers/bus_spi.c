@@ -41,6 +41,10 @@
 
 #define NUM_QUEUE_SEGS 5
 
+#if !defined(STM32G4) && !defined(STM32H7) && !defined(AT32F435)
+#define USE_TX_IRQ_HANDLER
+#endif
+
 static uint8_t spiRegisteredDeviceCount = 0;
 
 spiDevice_t spiDevice[SPIDEV_COUNT];
@@ -501,7 +505,7 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     spiIrqHandler(dev);
 }
 
-#if !defined(STM32G4) && !defined(STM32H7)
+#ifdef USE_TX_IRQ_HANDLER
 // Interrupt handler for SPI transmit DMA completion
 FAST_IRQ_HANDLER static void spiTxIrqHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -671,7 +675,7 @@ void spiInitBusDMA(void)
             dmaSetHandler(dmaRxIdentifier, spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
             bus->useDMA = true;
-#if !defined(STM32G4) && !defined(STM32H7)
+#ifdef USE_TX_IRQ_HANDLER
         } else if (dmaTxIdentifier) {
             // Transmit on DMA is adequate for OSD so worth having
             bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);

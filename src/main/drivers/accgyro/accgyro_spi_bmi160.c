@@ -322,7 +322,7 @@ static bool bmi160AccRead(accDev_t *acc)
     case GYRO_EXTI_INT:
     case GYRO_EXTI_NO_INT:
     {
-        dev->txBuf[0] = BMI160_REG_ACC_DATA_X_LSB | 0x80;
+        dev->txBuf[1] = BMI160_REG_ACC_DATA_X_LSB | 0x80;
 
         busSegment_t segments[] = {
                 {.u.buffers = {NULL, NULL}, 7, true, NULL},
