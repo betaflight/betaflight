@@ -18,12 +18,12 @@ float Zero31[] = {0, 0, 0};
 float A1[] = {1.0, 0.002, 0, 0, 1.0, 1.0, 0, 0, 1.0}; // 1 0.002 0;0 1 1;0 0 1;
 float B1[] = {0.0002, 0.002, 0};
 float H1[] = {1.0, 0, 0, 0, 0, 0, 0, 0, 0}; // 1 0 0;0 0 0;0 0 0; 
-float Q1[] = {0.1, 0, 0, 0, 1, 0, 0, 0, 1};
-float R1[] = {0.003, 0, 0, 0, 1, 0, 0, 0, 1};
+float Q1[] = {0.01, 0, 0, 0, 1, 0, 0, 0, 1};
+float R1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 float P_last1[] = {10.0, 0, 0, 0, 10.0, 0, 0, 0, 10.0};
 float P_current1[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 float P_PRE1[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-float X_last1[] = {0, 0, 10};
+float X_last1[] = {0, 0, 0};
 float E1[] = {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0};
 float Kp1[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 float U1[] = {0};
@@ -151,6 +151,8 @@ void Kalman_update(kalman_filter_t *kalman)
 
 }
 
+
+
 // void Kalman_Predicted(kalman_filter_t *kalman, timeUs_t currentTimeUs)
 // {
 //     //预测过程
@@ -214,7 +216,6 @@ void Update_Kalman_filter(timeUs_t currentTimeUs)
     Kalman_Predicted(&kalman_filter1, currentTimeUs);
     
     if(kalman_filter1.alt_update == 1){
- //       kalman_filter1.Z_current->element[2] = 0.2;
         Kalman_update(&kalman_filter1);
         kalman_filter1.alt_update = 0;
     }
@@ -224,14 +225,10 @@ void Update_Kalman_filter(timeUs_t currentTimeUs)
 
     calculate_Estimatedvel_acc(&kalman_filter1);
     // kalman_filter1.trace = TraceMatrix(kalman_filter1.Kp);
-    //kalman_filter1.trace = kalman_filter1.Kp->element[0] + kalman_filter1.Kp->element[1] + kalman_filter1.Kp->element[2];
     kalman_filter1.trace = TraceMatrix(kalman_filter1.P_current);
     copyMatrix(kalman_filter1.X_Hat_current,kalman_filter1.X_Hat_last);
     copyMatrix(kalman_filter1.P_current,kalman_filter1.P_last);
     copyMatrix(kalman_filter1.U_current,kalman_filter1.U_last);
-
-    // kalman_filter1.X_Hat_last = kalman_filter1.X_Hat_current;
-    // kalman_filter1.P_last = kalman_filter1.P_current;
     
 }
 

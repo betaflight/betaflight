@@ -742,9 +742,9 @@ void WifiInitHardware_Esp8266(void)
         delay(1000);
         c = 0;
 
-        serialPrint(mavlinkPort, "AT+CWJAP=\"FAST_0530\",\"13525755559\"\r\n");
+        //serialPrint(mavlinkPort, "AT+CWJAP=\"FAST_0530\",\"13525755559\"\r\n");
         //serialPrint(mavlinkPort, "AT+CWJAP=\"mi12\",\"11111111\"\r\n");
-        // serialPrint(mavlinkPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
+        serialPrint(mavlinkPort, "AT+CWJAP=\"NeSC\",\"nesc2022\"\r\n");
         nowtime = millis();
         c = serialRead(mavlinkPort);
         while(c != 'W')
@@ -779,7 +779,7 @@ void WifiInitHardware_Esp8266(void)
 
 
 //        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.254.53\",14555\r\n");
-        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.0.103\",14555\r\n");
+        serialPrint(mavlinkPort,"AT+CIPSTART=\"UDP\",\"192.168.31.142\",14555\r\n");
         delay(1000);
         nowtime = millis();
         c = serialRead(mavlinkPort);

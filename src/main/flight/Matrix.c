@@ -348,6 +348,12 @@ float TraceMatrix(struct easyMatrix* const A)
     }
     return _tr_mat;
 }
+
+// struct easyMatrix* Jacobi(int n, int MaxNum, struct easyMatrix* const A, struct easyMatrix* const X, struct easyMatrix* const B, struct easyMatrix* const U, struct easyMatrix* Y)
+// {  
+      
+// }
+
 // void dumpMatrix(struct easyMatrix* const e) {
 //     int count = 0;
 //     int x = e->rows;
