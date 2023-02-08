@@ -61,6 +61,10 @@
 #include "board.h"
 #endif
 
+#ifdef USE_CUSTOM_TARGET
+#include <custom_target.h>
+#endif
+
 #include "target.h"
 #include "target/common_post.h"
 #include "target/common_defaults_post.h"
