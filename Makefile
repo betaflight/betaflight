@@ -17,6 +17,10 @@
 
 # The target to build, see BASE_TARGETS below
 TARGET    ?= STM32F405
+
+# The target config, i.e. a name of a file from the targets repo, e.g. 'SPRO-SPRACINGH7EXTREME'
+CUSTOM_TARGET ?=
+
 BOARD     ?= 
 
 # Compile-time options
@@ -63,6 +67,7 @@ INCLUDE_DIRS    := $(SRC_DIR) \
                    $(ROOT)/src/main/target \
                    $(ROOT)/src/main/startup
 LINKER_DIR      := $(ROOT)/src/link
+TARGETS_REPO_DIR := $(ROOT)/../betaflight-unified-targets
 
 ## V                 : Set verbosity level based on the V= parameter
 ##                     V=0 Low
@@ -195,6 +200,33 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
+ifneq ($(CUSTOM_TARGET),)
+# This section extract the #define from the target config file and includes via platform.h before target.h is included
+# This requires that appropriate file for the named custom target is in the targets repo at the default path, which
+# is defined above in 'TARGETS_REPO_DIR' which can also be overridden on the commandline.
+#
+# Example usage:
+# "make TARGET=STM32H750 CUSTOM_TARGET=SPRO-SPRACINGH7EXTREME"
+
+CUSTOM_TARGET_CONFIGS_DIR  := $(TARGETS_REPO_DIR)/configs/default
+CUSTOM_TARGET_FILE_NAME    := $(CUSTOM_TARGET).config
+CUSTOM_TARGET_FILE         := $(CUSTOM_TARGET_CONFIGS_DIR)/$(CUSTOM_TARGET_FILE_NAME)
+CUSTOM_TARGET_INCLUDE_DIR  := $(OBJECT_DIR)/$(TARGET)
+CUSTOM_TARGET_INCLUDE_FILE := $(CUSTOM_TARGET_INCLUDE_DIR)/custom_target.h
+
+CUSTOM_TARGET_FLAGS       := -DUSE_CUSTOM_TARGET
+TARGET_FLAGS              += $(CUSTOM_TARGET_FLAGS)
+
+INCLUDE_DIRS              := $(INCLUDE_DIRS) \
+                             $(CUSTOM_TARGET_INCLUDE_DIR)
+VPATH                    := $(VPATH):$(CUSTOM_TARGET_INCLUDE_DIR)
+
+$(CUSTOM_TARGET_INCLUDE_FILE) : $(CUSTOM_TARGET_FILE)
+	@echo "Extracting #defines from custom target file $(CUSTOM_TARGET_FILE) to $(CUSTOM_TARGET_INCLUDE_FILE)" "$(STDOUT)"
+	$(V1) grep -P '^#define' $(CUSTOM_TARGET_FILE) > $(CUSTOM_TARGET_INCLUDE_FILE)
+
+endif
+
 include $(ROOT)/make/source.mk
 
 ###############################################################################
@@ -319,6 +351,7 @@ CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(CUSTOM_TARGET_INCLUDE_FILE)
 
 # Make sure build date and revision is updated on every incremental build
 $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
@@ -389,7 +422,7 @@ $(TARGET_HEX): $(TARGET_BIN)
 
 endif
 
-$(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
+$(TARGET_ELF): $(CUSTOM_TARGET_INCLUDE_FILE) $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
 	@echo "Linking $(TARGET)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
