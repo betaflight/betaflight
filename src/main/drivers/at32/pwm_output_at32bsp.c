@@ -203,12 +203,7 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
         motors[motorIndex].io = IOGetByTag(tag);
         IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex));
 
-#if defined(STM32F1)
-        IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
-        //FIXME：AT32F1 可以配置pin mux ，需要在io里面改一下
-#else
         IOConfigGPIOAF(motors[motorIndex].io, IOCFG_AF_PP, timerHardware->alternateFunction);
-#endif
 
         /* standard PWM outputs */
         // margin of safety is 4 periods when unsynced
@@ -279,11 +274,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
             break;
         }
 
-#if defined(STM32F1)
-        IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
-#else
         IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
-#endif
 
         pwmOutConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
