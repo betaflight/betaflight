@@ -52,6 +52,7 @@
 // VTX supplied menus
 
 #include "cms/cms_menu_vtx_common.h"
+#include "cms/cms_menu_rpm_limit.h"
 
 #include "common/printf.h"
 #include "fc/controlrate_profile.h"
@@ -121,6 +122,9 @@ static const OSD_Entry menuMainEntries[] =
 {
     {"-- QUICK --",  OME_Label, NULL, NULL},
 
+#if defined(USE_RPM_LIMITER)
+    {"RPM LIM", OME_Submenu, cmsMenuChange, &cmsx_menuRpmLimit},
+#endif
     { "THR LIM TYPE",OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, osdTableThrottleLimitType} },
     { "THR LIM %",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1} },
     { "MTR OUT LIM %",OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1} },
