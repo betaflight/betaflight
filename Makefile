@@ -16,8 +16,9 @@
 #
 
 # The target to build, see BASE_TARGETS below
-TARGET    ?= STM32F405
-BOARD     ?= 
+DEFAULT_TARGET    ?= STM32F405
+TARGET    ?=
+CONFIG    ?=
 
 # Compile-time options
 OPTIONS   ?=
@@ -80,8 +81,9 @@ include $(ROOT)/make/system-id.mk
 include $(ROOT)/make/checks.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
-TOOLS_DIR ?= $(ROOT)/tools
-DL_DIR    := $(ROOT)/downloads
+TOOLS_DIR  ?= $(ROOT)/tools
+DL_DIR     := $(ROOT)/downloads
+CONFIG_DIR ?= $(ROOT)/src/config
 
 export RM := rm
 
@@ -94,10 +96,35 @@ include $(ROOT)/make/tools.mk
 # default xtal value for F4 targets
 HSE_VALUE       ?= 8000000
 
-ifneq ($(BOARD),)
-# silently ignore if the file is not present. Allows for target defaults.
--include $(ROOT)/src/main/board/$(BOARD)/board.mk
+# Search path for sources
+VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
+FATFS_DIR        = $(ROOT)/lib/main/FatFS
+FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
+CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
+
+ifneq ($(CONFIG),)
+
+ifeq ($(wildcard $(CONFIG_DIR)/$(CONFIG)/config.h),)
+$(error Config file not found: $(CONFIG_DIR)/$(CONFIG)/config.h)
 endif
+
+ifneq ($(TARGET),)
+$(error TARGET or CONFIG should be specified. Not both.)
+endif
+
+TARGET       := $(shell grep " FC_TARGET_MCU" src/config/$(CONFIG)/config.h | awk '{print $$3}' )
+INCLUDE_DIRS += $(CONFIG_DIR)/$(CONFIG)
+CONFIG_FILE  := $(CONFIG_DIR)/$(CONFIG)/config.h
+
+ifeq ($(TARGET),)
+$(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
+endif
+
+else
+ifeq ($(TARGET),)
+TARGET := $(DEFAULT_TARGET)
+endif
+endif #CONFIG
 
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 CI_TARGETS       := $(BASE_TARGETS)
@@ -113,13 +140,6 @@ FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk 
 FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
 
 FC_VER := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
-
-# Search path for sources
-VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
-FATFS_DIR       = $(ROOT)/lib/main/FatFS
-FATFS_SRC       = $(notdir $(wildcard $(FATFS_DIR)/*.c))
-
-CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
 LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
@@ -157,6 +177,11 @@ $(error No TARGET_MCU_FAMILY specified. Is the target.mk valid for $(TARGET)?)
 endif
 
 TARGET_FLAGS  	:= -D$(TARGET) -D$(TARGET_MCU_FAMILY) $(TARGET_FLAGS)
+
+ifneq ($(CONFIG),)
+TARGET_FLAGS  	:= $(TARGET_FLAGS) -DUSE_CONFIG
+endif
+
 include $(ROOT)/make/mcu/$(TARGET_MCU_FAMILY).mk
 
 # openocd specific includes
@@ -291,8 +316,11 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
+ifneq ($(CONFIG),)
+TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(CONFIG)
+else
 TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)
-
+endif
 #
 # Things we will build
 #
@@ -633,7 +661,7 @@ $(TARGET_EF_HASH_FILE):
 	$(V1) touch $(TARGET_EF_HASH_FILE)
 
 # rebuild everything when makefile changes or the extra flags have changed
-$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
+$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*) $(CONFIG_FILE)
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

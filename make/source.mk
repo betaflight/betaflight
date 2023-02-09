@@ -237,7 +237,7 @@ FLASH_SRC += \
             drivers/flash_w25q128fv.c \
             drivers/flash_w25m.c \
             io/flashfs.c
-            
+
 SDCARD_SRC += \
             drivers/sdcard.c \
             drivers/sdcard_spi.c \
@@ -458,12 +458,6 @@ SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 SRC += $(VCP_SRC)
 
 # end target specific make file checks
-
-ifneq ($(BOARD),)
-SRC += board/$(BOARD)/board.c
-INCLUDE_DIRS += $(ROOT)/src/main/board/$(BOARD)
-TARGET_FLAGS := -D'__BOARD__="$(BOARD)"' $(TARGET_FLAGS)
-endif
 
 # Search path and source files for the ST stdperiph library
 VPATH        := $(VPATH):$(STDPERIPH_DIR)/src

@@ -57,8 +57,8 @@
 
 #include "target/common_pre.h"
 
-#ifdef __BOARD__
-#include "board.h"
+#ifdef USE_CONFIG
+#include "config.h"
 #endif
 
 #include "target.h"
