@@ -64,7 +64,7 @@
 #define SPI_FULL_RECONFIGURABILITY
 #endif
 
-#define USE_SPI_LATE_INIT
+#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_UART1
 #define USE_UART2

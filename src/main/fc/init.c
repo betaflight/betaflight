@@ -1010,7 +1010,7 @@ void init(void)
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
 // allocate SPI DMA streams before motor timers
-#if defined(USE_SPI) && defined(USE_SPI_EARLY_INIT)
+#if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
 #endif
@@ -1021,7 +1021,7 @@ void init(void)
 #endif
 
 // allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
-#if defined(USE_SPI) && defined(USE_SPI_LATE_INIT) && !defined(USE_SPI_EARLY_INIT)
+#if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_LATE) && !defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
 #endif
