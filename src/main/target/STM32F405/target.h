@@ -61,6 +61,7 @@
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
+#define USE_SPI_EARLY_INIT
 
 #define USE_VCP
 

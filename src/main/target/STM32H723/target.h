@@ -50,6 +50,8 @@
 #define SPI_FULL_RECONFIGURABILITY
 #endif
 
+#define USE_SPI_LATE_INIT
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3

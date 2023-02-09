@@ -64,17 +64,7 @@
 #define SPI_FULL_RECONFIGURABILITY
 #endif
 
-// Provide a default so that this target builds on the build server.
-#if !defined(USE_SPI)
-#define USE_SPI
-#define USE_SPI_DEVICE_1
-#define USE_SPI_DEVICE_2
-#define USE_SPI_DEVICE_3
-#define USE_SPI_DEVICE_4
-#define USE_SPI_DEVICE_5
-#define USE_SPI_DEVICE_6
-#define SPI_FULL_RECONFIGURABILITY
-#endif
+#define USE_SPI_LATE_INIT
 
 #define USE_UART1
 #define USE_UART2
