@@ -69,6 +69,55 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
     for (unsigned servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         servoConfig->dev.ioTags[servoIndex] = timerioTagGetByUsage(TIM_USE_SERVO, servoIndex);
     }
+#ifdef RESOURCE_SERVO1_PIN
+    servoConfig->dev.ioTags[0] = IO_TAG(RESOURCE_SERVO1_PIN);
+#endif
+#ifdef RESOURCE_SERVO2_PIN
+    servoConfig->dev.ioTags[1] = IO_TAG(RESOURCE_SERVO2_PIN);
+#endif
+#ifdef RESOURCE_SERVO3_PIN
+    servoConfig->dev.ioTags[2] = IO_TAG(RESOURCE_SERVO3_PIN);
+#endif
+#ifdef RESOURCE_SERVO4_PIN
+    servoConfig->dev.ioTags[3] = IO_TAG(RESOURCE_SERVO4_PIN);
+#endif
+#ifdef RESOURCE_SERVO5_PIN
+    servoConfig->dev.ioTags[4] = IO_TAG(RESOURCE_SERVO5_PIN);
+#endif
+#ifdef RESOURCE_SERVO6_PIN
+    servoConfig->dev.ioTags[5] = IO_TAG(RESOURCE_SERVO6_PIN);
+#endif
+#ifdef RESOURCE_SERVO7_PIN
+    servoConfig->dev.ioTags[6] = IO_TAG(RESOURCE_SERVO7_PIN);
+#endif
+#ifdef RESOURCE_SERVO8_PIN
+    servoConfig->dev.ioTags[7] = IO_TAG(RESOURCE_SERVO8_PIN);
+#endif
+#ifdef RESOURCE_SERVO9_PIN
+    servoConfig->dev.ioTags[8] = IO_TAG(RESOURCE_SERVO9_PIN);
+#endif
+#ifdef RESOURCE_SERVO10_PIN
+    servoConfig->dev.ioTags[9] = IO_TAG(RESOURCE_SERVO10_PIN);
+#endif
+#ifdef RESOURCE_SERVO11_PIN
+    servoConfig->dev.ioTags[10] = IO_TAG(RESOURCE_SERVO11_PIN);
+#endif
+#ifdef RESOURCE_SERVO12_PIN
+    servoConfig->dev.ioTags[11] = IO_TAG(RESOURCE_SERVO12_PIN);
+#endif
+#ifdef RESOURCE_SERVO13_PIN
+    servoConfig->dev.ioTags[12] = IO_TAG(RESOURCE_SERVO13_PIN);
+#endif
+#ifdef RESOURCE_SERVO14_PIN
+    servoConfig->dev.ioTags[13] = IO_TAG(RESOURCE_SERVO14_PIN);
+#endif
+#ifdef RESOURCE_SERVO15_PIN
+    servoConfig->dev.ioTags[14] = IO_TAG(RESOURCE_SERVO15_PIN);
+#endif
+#ifdef RESOURCE_SERVO16_PIN
+    servoConfig->dev.ioTags[15] = IO_TAG(RESOURCE_SERVO16_PIN);
+#endif
+
 }
 
 PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
