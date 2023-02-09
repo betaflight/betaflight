@@ -70,7 +70,55 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
         motorConfig->dev.ioTags[motorIndex] = timerioTagGetByUsage(TIM_USE_MOTOR, motorIndex);
     }
+#ifdef RESOURCE_MOTOR1_PIN
+    motorConfig->dev.ioTags[0] = IO_TAG(RESOURCE_MOTOR1_PIN);
 #endif
+#ifdef RESOURCE_MOTOR2_PIN
+    motorConfig->dev.ioTags[1] = IO_TAG(RESOURCE_MOTOR2_PIN);
+#endif
+#ifdef RESOURCE_MOTOR3_PIN
+    motorConfig->dev.ioTags[2] = IO_TAG(RESOURCE_MOTOR3_PIN);
+#endif
+#ifdef RESOURCE_MOTOR4_PIN
+    motorConfig->dev.ioTags[3] = IO_TAG(RESOURCE_MOTOR4_PIN);
+#endif
+#ifdef RESOURCE_MOTOR5_PIN
+    motorConfig->dev.ioTags[4] = IO_TAG(RESOURCE_MOTOR5_PIN);
+#endif
+#ifdef RESOURCE_MOTOR6_PIN
+    motorConfig->dev.ioTags[5] = IO_TAG(RESOURCE_MOTOR6_PIN);
+#endif
+#ifdef RESOURCE_MOTOR7_PIN
+    motorConfig->dev.ioTags[6] = IO_TAG(RESOURCE_MOTOR7_PIN);
+#endif
+#ifdef RESOURCE_MOTOR8_PIN
+    motorConfig->dev.ioTags[7] = IO_TAG(RESOURCE_MOTOR8_PIN);
+#endif
+#ifdef RESOURCE_MOTOR9_PIN
+    motorConfig->dev.ioTags[8] = IO_TAG(RESOURCE_MOTOR9_PIN);
+#endif
+#ifdef RESOURCE_MOTOR10_PIN
+    motorConfig->dev.ioTags[9] = IO_TAG(RESOURCE_MOTOR10_PIN);
+#endif
+#ifdef RESOURCE_MOTOR11_PIN
+    motorConfig->dev.ioTags[10] = IO_TAG(RESOURCE_MOTOR11_PIN);
+#endif
+#ifdef RESOURCE_MOTOR12_PIN
+    motorConfig->dev.ioTags[11] = IO_TAG(RESOURCE_MOTOR12_PIN);
+#endif
+#ifdef RESOURCE_MOTOR13_PIN
+    motorConfig->dev.ioTags[12] = IO_TAG(RESOURCE_MOTOR13_PIN);
+#endif
+#ifdef RESOURCE_MOTOR14_PIN
+    motorConfig->dev.ioTags[13] = IO_TAG(RESOURCE_MOTOR14_PIN);
+#endif
+#ifdef RESOURCE_MOTOR15_PIN
+    motorConfig->dev.ioTags[14] = IO_TAG(RESOURCE_MOTOR15_PIN);
+#endif
+#ifdef RESOURCE_MOTOR16_PIN
+    motorConfig->dev.ioTags[15] = IO_TAG(RESOURCE_MOTOR16_PIN);
+#endif
+#endif // USE_TIMER
 
     motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
 
