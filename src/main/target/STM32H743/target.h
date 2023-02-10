@@ -68,6 +68,7 @@
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
+#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_VCP
 

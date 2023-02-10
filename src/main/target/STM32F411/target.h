@@ -58,6 +58,7 @@
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
+#define USE_SPI_DMA_ENABLE_EARLY
 
 #define USE_VCP
 

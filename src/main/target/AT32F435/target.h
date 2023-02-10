@@ -55,6 +55,7 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
+#define USE_SPI_DMA_ENABLE_LATE
 
 // AT-START-F435 J7 connector SPI 1
 #define SPI2_SCK_PIN            PD1
