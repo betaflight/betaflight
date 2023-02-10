@@ -221,10 +221,12 @@ mspDescriptor_t mspDescriptorAlloc(void)
 
 static uint32_t mspArmingDisableFlags = 0;
 
+#ifndef SIMULATOR_BUILD
 static void mspArmingDisableByDescriptor(mspDescriptor_t desc)
 {
     mspArmingDisableFlags |= (1 << desc);
 }
+#endif
 
 static void mspArmingEnableByDescriptor(mspDescriptor_t desc)
 {
@@ -1516,7 +1518,7 @@ case MSP_NAME:
         sbufWriteU16(dst, (uint16_t)constrain(gpsSol.llh.altCm / 100, 0, UINT16_MAX)); // alt changed from 1m to 0.01m per lsb since MSP API 1.39 by RTH. To maintain backwards compatibility compensate to 1m per lsb in MSP again.
         sbufWriteU16(dst, gpsSol.groundSpeed);
         sbufWriteU16(dst, gpsSol.groundCourse);
-        // Added in API version 1.44    
+        // Added in API version 1.44
         sbufWriteU16(dst, gpsSol.dop.hdop);
         break;
 
@@ -3549,11 +3551,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 disableRunawayTakeoff = sbufReadU8(src);
             }
             if (command) {
+#ifndef SIMULATOR_BUILD //In simulator mode we can safely arm with MSP link.
                 mspArmingDisableByDescriptor(srcDesc);
                 setArmingDisabled(ARMING_DISABLED_MSP);
                 if (ARMING_FLAG(ARMED)) {
                     disarm(DISARM_REASON_ARMING_DISABLED);
                 }
+#endif
 #ifdef USE_RUNAWAY_TAKEOFF
                 runawayTakeoffTemporaryDisable(false);
 #endif
@@ -3702,7 +3706,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
             uint8_t emptyUid[6];
             sbufReadData(src, emptyUid, 6);
-#endif        
+#endif
         }
         break;
     case MSP_SET_FAILSAFE_CONFIG:

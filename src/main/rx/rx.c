@@ -381,7 +381,7 @@ void rxInit(void)
     // Configurable amount of filtering to remove excessive jumpiness of the values on the osd
     float k = (256.0f - rxConfig()->rssi_smoothing) / 256.0f;
 
-    pt1FilterInit(&rssiFilter, k);  
+    pt1FilterInit(&rssiFilter, k);
 
 #ifdef USE_RX_RSSI_DBM
     pt1FilterInit(&rssiDbmFilter, k);
@@ -534,6 +534,7 @@ FAST_CODE_NOINLINE void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t current
     case RX_PROVIDER_SERIAL:
     case RX_PROVIDER_MSP:
     case RX_PROVIDER_SPI:
+    case RX_PROVIDER_UDP:
         {
             const uint8_t frameStatus = rxRuntimeState.rcFrameStatusFn(&rxRuntimeState);
             DEBUG_SET(DEBUG_RX_SIGNAL_LOSS, 1, (frameStatus & RX_FRAME_FAILSAFE));
