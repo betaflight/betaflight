@@ -90,7 +90,6 @@ typedef struct mixerConfig_s {
     bool yaw_motors_reversed;
     uint8_t crashflip_motor_percent;
     uint8_t crashflip_expo;
-    bool rpm_limiter;
     uint16_t rpm_limiter_p;
     uint16_t rpm_limiter_i;
     uint16_t rpm_limiter_d;

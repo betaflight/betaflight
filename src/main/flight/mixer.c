@@ -346,14 +346,6 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 #ifdef USE_RPM_LIMITER
-static float getAverageRPM(void) // Placeholder function
-{
-    float averageRPM = 0;
-    for (int i = 0; i < getMotorCount(); i++) {
-        averageRPM += getDshotTelemetry(i);
-    }
-    return (averageRPM / (getMotorCount() * motorConfig()->motorPoleCount)) * 20;
-}
 
 static bool isMotorSaturated(void) //Placeholder function
 {
@@ -368,7 +360,7 @@ static bool isMotorSaturated(void) //Placeholder function
 static void applyRPMLimiter(void)
 {
     if (mixerConfig()->rpm_limiter && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
-        float averageRPM = getAverageRPM();
+        float averageRPM = getDshotAverageRpm();
         float averageRPMSmoothed = pt1FilterApply(&mixerRuntime.averageRPMFilter, averageRPM);
         float smoothedRPMError = averageRPMSmoothed - mixerRuntime.rpmLimiterRPMLimit;
         // PID
@@ -432,10 +424,10 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
 
     // Disarmed mode
     if (!ARMING_FLAG(ARMED)) {
-        #ifdef USE_RPM_LIMITER
+#ifdef USE_RPM_LIMITER
         mixerRuntime.rpmLimiterI = 0.0f;
         mixerRuntime.rpmLimiterPreviousSmoothedRPMError = -mixerRuntime.rpmLimiterRPMLimit;
-        #endif
+#endif
         for (int i = 0; i < mixerRuntime.motorCount; i++) {
             motor[i] = motor_disarmed[i];
         }
