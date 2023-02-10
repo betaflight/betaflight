@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        VGOODF722DUAL
 #define MANUFACTURER_ID   VGRC
+

@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        MODULARF4
 #define MANUFACTURER_ID   TACO
+

@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        KD722
 #define MANUFACTURER_ID   HARC
+

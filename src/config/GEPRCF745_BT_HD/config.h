@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        GEPRCF745_BT_HD
 #define MANUFACTURER_ID   GEPR
+

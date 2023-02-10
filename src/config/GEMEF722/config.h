@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        GEMEF722
 #define MANUFACTURER_ID   GFPV
+

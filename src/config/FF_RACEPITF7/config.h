@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        FF_RACEPITF7
 #define MANUFACTURER_ID   FFPV
+

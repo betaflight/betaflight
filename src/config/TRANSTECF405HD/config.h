@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        TRANSTECF405HD
 #define MANUFACTURER_ID   TTRH
+

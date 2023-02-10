@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        CYCLONEF405_PRO
 #define MANUFACTURER_ID   CYCL
+

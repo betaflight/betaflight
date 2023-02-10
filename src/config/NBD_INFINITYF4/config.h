@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        NBD_INFINITYF4
 #define MANUFACTURER_ID   NEBD
+

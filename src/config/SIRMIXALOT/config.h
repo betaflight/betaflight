@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        SIRMIXALOT
 #define MANUFACTURER_ID   CUST
+

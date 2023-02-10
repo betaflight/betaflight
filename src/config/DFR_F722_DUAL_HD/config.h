@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        DFR_F722_DUAL_HD
 #define MANUFACTURER_ID   DFRA
+

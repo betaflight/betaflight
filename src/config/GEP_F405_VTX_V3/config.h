@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        GEP_F405_VTX_V3
 #define MANUFACTURER_ID   GEPR
+

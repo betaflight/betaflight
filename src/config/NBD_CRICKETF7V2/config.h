@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        NBD_CRICKETF7V2
 #define MANUFACTURER_ID   NEBD
+

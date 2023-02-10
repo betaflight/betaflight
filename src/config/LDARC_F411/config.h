@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        LDARC_F411
 #define MANUFACTURER_ID   LDAR
+

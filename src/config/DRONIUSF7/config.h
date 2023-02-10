@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        DRONIUSF7
 #define MANUFACTURER_ID   FOSS
+

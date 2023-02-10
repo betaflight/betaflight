@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        TRANSTECF411AIO
 #define MANUFACTURER_ID   TTRH
+

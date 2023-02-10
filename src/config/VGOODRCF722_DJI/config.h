@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        VGOODRCF722_DJI
 #define MANUFACTURER_ID   VGRC
+

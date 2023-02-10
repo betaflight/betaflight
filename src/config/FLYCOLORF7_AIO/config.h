@@ -29,3 +29,4 @@
 
 #define BOARD_NAME        FLYCOLORF7_AIO
 #define MANUFACTURER_ID   FLCO
+
