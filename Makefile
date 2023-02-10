@@ -104,17 +104,18 @@ CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
 ifneq ($(CONFIG),)
 
-ifeq ($(wildcard $(CONFIG_DIR)/$(CONFIG)/config.h),)
-$(error Config file not found: $(CONFIG_DIR)/$(CONFIG)/config.h)
-endif
-
 ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
 endif
 
-TARGET       := $(shell grep " FC_TARGET_MCU" src/config/$(CONFIG)/config.h | awk '{print $$3}' )
 INCLUDE_DIRS += $(CONFIG_DIR)/$(CONFIG)
 CONFIG_FILE  := $(CONFIG_DIR)/$(CONFIG)/config.h
+
+ifeq ($(wildcard $(CONFIG_FILE)),)
+$(error Config file not found: $(CONFIG_FILE))
+endif
+
+TARGET       := $(shell grep " FC_TARGET_MCU" $(CONFIG_FILE) | awk '{print $$3}' )
 
 ifeq ($(TARGET),)
 $(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
