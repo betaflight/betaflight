@@ -427,7 +427,7 @@ void init(void)
     dbgPinInit();
 #endif
 
-#if defined(USE_BRUSHED_ESC_AUTODETECT) && defined(MOTO1_PIN)
+#if defined(USE_BRUSHED_ESC_AUTODETECT) && defined(MOTOR1_PIN)
     // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
     ioTag_t configuredMotorIoTag = motorConfig()->dev.ioTags[0];
 
