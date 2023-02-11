@@ -133,7 +133,11 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_visual_beeper_color = VISUAL_BEEPER_COLOR;
     ledStripConfig->ledstrip_brightness = 100;
 #ifndef UNIT_TEST
-    ledStripConfig->ioTag = timerioTagGetByUsage(TIM_USE_LED, 0);
+#ifdef LED_STRIP_PIN
+    ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
+#else
+    ledStripConfig->ioTag = IO_TAG_NONE;
+#endif
 #endif
 }
 
