@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#if defined(USE_TIMER_MGMT) && (defined(STM32H7) || defined(STM32G4))
+#if defined(USE_TIMER_MGMT) && defined(USE_TIMER_UP_CONFIG)
 
 #include "drivers/dma_reqmap.h"
 #include "drivers/timer.h"
@@ -36,14 +36,5 @@ void pgResetFn_timerUpConfig(timerUpConfig_t *config)
     for (unsigned timno = 0; timno < HARDWARE_TIMER_DEFINITION_COUNT; timno++) {
         config[timno].dmaopt = DMA_OPT_UNUSED;
     }
-
-#if USABLE_TIMER_CHANNEL_COUNT > 0
-    // Scan target timerHardware and extract dma option for TIMUP
-    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        const timerHardware_t *timhw = &timerHardware[i];
-        uint8_t timnum = timerGetTIMNumber(timhw->tim) - 1;
-        config[timnum].dmaopt = dmaGetUpOptionByTimer(timhw);
-    }
-#endif
 }
 #endif
