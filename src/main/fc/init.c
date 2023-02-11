@@ -294,10 +294,14 @@ void init(void)
     targetConfiguration();
 #endif
 
-#if defined(USE_BRUSHED_ESC_AUTODETECT) && defined(MOTOR1_PIN)
+#if defined(USE_BRUSHED_ESC_AUTODETECT)
     // Opportunistically use the first motor pin of the default configuration for detection.
     // We are doing this as with some boards, timing seems to be important, and the later detection will fail.
+#if defined(MOTOR1_PIN)
     ioTag_t motorIoTag = IO_TAG(MOTOR1_PIN);
+#else
+    ioTag_t motorIoTag = IO_TAG_NONE;
+#endif
 
     if (motorIoTag) {
         detectBrushedESC(motorIoTag);
@@ -427,7 +431,7 @@ void init(void)
     dbgPinInit();
 #endif
 
-#if defined(USE_BRUSHED_ESC_AUTODETECT) && defined(MOTOR1_PIN)
+#if defined(USE_BRUSHED_ESC_AUTODETECT)
     // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
     ioTag_t configuredMotorIoTag = motorConfig()->dev.ioTags[0];
 
