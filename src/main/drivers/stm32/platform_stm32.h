@@ -254,3 +254,52 @@ extern uint8_t _dmaram_end__;
 
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
+
+#ifdef STM32F4
+#ifndef I2C1_SCL_PIN
+#define I2C1_SCL_PIN PB6
+#endif
+#ifndef I2C1_SDA_PIN
+#define I2C1_SDA_PIN PB7
+#endif
+#ifndef I2C2_SCL_PIN
+#define I2C2_SCL_PIN PB10
+#endif
+#ifndef I2C2_SDA_PIN
+#define I2C2_SDA_PIN PB11
+#endif
+#ifndef I2C3_SCL_PIN
+#define I2C3_SCL_PIN PA8
+#endif
+#ifndef I2C3_SDA_PIN
+#define I2C3_SDA_PIN PC9
+#endif
+#endif // STM32F4
+
+#ifdef STM32F7
+#ifndef I2C1_SCL_PIN
+#define I2C1_SCL_PIN PB6
+#endif
+#ifndef I2C1_SDA_PIN
+#define I2C1_SDA_PIN PB7
+#endif
+#ifndef I2C2_SCL_PIN
+#define I2C2_SCL_PIN PB10
+#endif
+#ifndef I2C2_SDA_PIN
+#define I2C2_SDA_PIN PB11
+#endif
+#ifndef I2C3_SCL_PIN
+#define I2C3_SCL_PIN PA8
+#endif
+#ifndef I2C3_SDA_PIN
+#define I2C3_SDA_PIN PB4
+#endif
+#ifndef I2C4_SCL_PIN
+#define I2C4_SCL_PIN PD12
+#endif
+#ifndef I2C4_SDA_PIN
+#define I2C4_SDA_PIN PD13
+#endif
+#endif // STM32F7
+
