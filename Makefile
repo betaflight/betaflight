@@ -321,11 +321,11 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_NAME := $(TARGET)
 
 ifneq ($(CONFIG),)
-TARGET_NAME := $(TARGET)_$(CONFIG)
+TARGET_NAME := $(TARGET_NAME)_$(CONFIG)
 endif
 
 ifeq ($(REV),yes)
-TARGET_NAME := $(TARGET)_$(CONFIG)_$(REVISION)
+TARGET_NAME := $(TARGET_NAME)_$(REVISION)
 endif
 
 TARGET_FULLNAME = $(FORKNAME)_$(FC_VER)_$(TARGET_NAME)
