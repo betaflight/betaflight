@@ -80,8 +80,8 @@
 #define TARGET_IO_PORTH 0xffff
 #define USE_I2C
 #define USE_I2C_DEVICE_1
-#define I2C1_SCL                PB8
-#define I2C1_SDA                PB9
+#define I2C1_SCL_PIN            PB8
+#define I2C1_SDA_PIN            PB9
 #define USE_I2C_DEVICE_2
 #define I2C2_SCL                PB10
 #define I2C2_SDA                PB11

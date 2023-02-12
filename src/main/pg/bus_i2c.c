@@ -39,6 +39,31 @@
 
 #include "pg/bus_i2c.h"
 
+#ifndef I2C1_SCL_PIN
+#define I2C1_SCL_PIN NONE
+#endif
+#ifndef I2C1_SDA_PIN
+#define I2C1_SDA_PIN NONE
+#endif
+#ifndef I2C2_SCL_PIN
+#define I2C2_SCL_PIN NONE
+#endif
+#ifndef I2C2_SDA_PIN
+#define I2C2_SDA_PIN NONE
+#endif
+#ifndef I2C3_SCL_PIN
+#define I2C3_SCL_PIN NONE
+#endif
+#ifndef I2C3_SDA_PIN
+#define I2C3_SDA_PIN NONE
+#endif
+#ifndef I2C4_SCL_PIN
+#define I2C4_SCL_PIN NONE
+#endif
+#ifndef I2C4_SDA_PIN
+#define I2C4_SDA_PIN NONE
+#endif
+
 typedef struct i2cDefaultConfig_s {
     I2CDevice device;
     ioTag_t ioTagScl, ioTagSda;
@@ -48,16 +73,16 @@ typedef struct i2cDefaultConfig_s {
 
 static const i2cDefaultConfig_t i2cDefaultConfig[] = {
 #ifdef USE_I2C_DEVICE_1
-    { I2CDEV_1, IO_TAG(I2C1_SCL), IO_TAG(I2C1_SDA), I2C1_PULLUP, I2C1_CLOCKSPEED },
+    { I2CDEV_1, IO_TAG(I2C1_SCL_PIN), IO_TAG(I2C1_SDA_PIN), I2C1_PULLUP, I2C1_CLOCKSPEED },
 #endif
 #ifdef USE_I2C_DEVICE_2
-    { I2CDEV_2, IO_TAG(I2C2_SCL), IO_TAG(I2C2_SDA), I2C2_PULLUP, I2C2_CLOCKSPEED },
+    { I2CDEV_2, IO_TAG(I2C2_SCL_PIN), IO_TAG(I2C2_SDA_PIN), I2C2_PULLUP, I2C2_CLOCKSPEED },
 #endif
 #ifdef USE_I2C_DEVICE_3
-    { I2CDEV_3, IO_TAG(I2C3_SCL), IO_TAG(I2C3_SDA), I2C3_PULLUP, I2C3_CLOCKSPEED },
+    { I2CDEV_3, IO_TAG(I2C3_SCL_PIN), IO_TAG(I2C3_SDA_PIN), I2C3_PULLUP, I2C3_CLOCKSPEED },
 #endif
 #ifdef USE_I2C_DEVICE_4
-    { I2CDEV_4, IO_TAG(I2C4_SCL), IO_TAG(I2C4_SDA), I2C4_PULLUP, I2C4_CLOCKSPEED },
+    { I2CDEV_4, IO_TAG(I2C4_SCL_PIN), IO_TAG(I2C4_SDA_PIN), I2C4_PULLUP, I2C4_CLOCKSPEED },
 #endif
 };
 
