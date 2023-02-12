@@ -186,8 +186,10 @@ extern const timerHardware_t fullTimerHardware[];
 
 #else
 
+#ifdef USABLE_TIMER_CHANNEL_COUNT
 #define TIMER_CHANNEL_COUNT USABLE_TIMER_CHANNEL_COUNT
 #define TIMER_HARDWARE timerHardware
+#endif
 
 #endif // USE_TIMER_MGMT
 

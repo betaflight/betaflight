@@ -27,6 +27,12 @@
 
 #if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16
+#elif defined(AT32F435)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 18
+#else
+#define ADC_TAG_MAP_COUNT 16
+#endif
 #elif defined(STM32H7)
 #ifdef USE_ADC_INTERNAL
 #define ADC_TAG_MAP_COUNT 30
@@ -47,7 +53,7 @@ typedef struct adcTagMap_s {
     ioTag_t tag;
     uint8_t devices;
     uint32_t channel;
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
     uint8_t channelOrdinal;
 #endif
 } adcTagMap_t;
@@ -138,4 +144,13 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL_VREFANALOG          (3300U)
 #define TEMPSENSOR_CAL1_TEMP               ((int32_t)  30)
 #define TEMPSENSOR_CAL2_TEMP               ((int32_t) 110)
+#endif
+
+#ifdef AT32F435
+#define VREFINT_EXPECTED                   (1489U)  // The raw ADC reading at 12bit resolution expected for the 1V2 internal ref
+#define VREFINT_CAL_VREF                   (3300U)  // The nominal external Vref+ for the above reading
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               (25U)
+#define TEMPSENSOR_CAL1_V                  (1.27f)
+#define TEMPSENSOR_SLOPE                   (-4.13f) //  mV/C
 #endif
