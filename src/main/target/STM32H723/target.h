@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/stm32/platform_stm32.h"
+
 #ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "SH72"
 #endif
