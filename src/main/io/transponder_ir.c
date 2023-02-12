@@ -54,7 +54,11 @@ void pgResetFn_transponderConfig(transponderConfig_t *transponderConfig)
         .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
         .ioTag = IO_TAG_NONE
     );
-    transponderConfig->ioTag = timerioTagGetByUsage(TIM_USE_TRANSPONDER, 0);
+#ifdef TRANSPONDER_PIN
+    transponderConfig->ioTag = IO_TAG(TRANSPONDER_PIN);
+#else
+    transponderConfig->ioTag = IO_TAG_NONE;
+#endif
 }
 
 static bool transponderInitialised = false;

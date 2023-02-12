@@ -60,7 +60,11 @@ void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
     cameraControlConfig->refVoltage = 330;
     cameraControlConfig->keyDelayMs = 180;
     cameraControlConfig->internalResistance = 470;
-    cameraControlConfig->ioTag = timerioTagGetByUsage(TIM_USE_CAMERA_CONTROL, 0);
+#ifdef CAMERA_CONTROL_PIN
+    cameraControlConfig->ioTag = IO_TAG(CAMERA_CONTROL_PIN);
+#else
+    cameraControlConfig->ioTag = IO_TAG_NONE;
+#endif
     cameraControlConfig->inverted = 0;   // Output is inverted externally
     cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_ENTER] = 450;
     cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_LEFT]  = 270;

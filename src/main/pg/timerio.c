@@ -29,33 +29,15 @@
 
 #include "timerio.h"
 
+#define TIMER_PIN_MAP(idx, pin, pos, dmaOpt)  \
+        { config[idx].ioTag = IO_TAG(pin); config[idx].index = pos; config[idx].dmaopt = dmaOpt; }
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIOConfig, PG_TIMER_IO_CONFIG, 0);
 
 void pgResetFn_timerIOConfig(timerIOConfig_t *config)
 {
-#if defined(USE_TIMER_MGMT) && USABLE_TIMER_CHANNEL_COUNT > 0
-    unsigned configIndex = 0;
-    for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
-        const timerHardware_t *configuredTimer = &timerHardware[timerIndex];
-        unsigned positionIndex = 1;
-        for (unsigned fullTimerIndex = 0; fullTimerIndex < FULL_TIMER_CHANNEL_COUNT; fullTimerIndex++) {
-            const timerHardware_t *timer = &fullTimerHardware[fullTimerIndex];
-            if (timer->tag == configuredTimer->tag) {
-                if (timer->tim == configuredTimer->tim && timer->channel == configuredTimer->channel) {
-                    config[configIndex].ioTag = timer->tag;
-                    config[configIndex].index = positionIndex;
-
-                    config[configIndex].dmaopt = dmaGetOptionByTimer(configuredTimer);
-
-                    configIndex++;
-
-                    break;
-                } else {
-                    positionIndex++;
-                }
-            }
-        }
-    }
+#ifdef TIMER_PIN_MAPPING
+    TIMER_PIN_MAPPING
 #else
     UNUSED(config);
 #endif
