@@ -127,6 +127,7 @@ TARGET := $(DEFAULT_TARGET)
 endif
 endif #CONFIG
 
+BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/config/*/config.h)))))
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 CI_TARGETS       := $(BASE_TARGETS)
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
@@ -317,31 +318,37 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   $(addprefix -I,$(INCLUDE_DIRS)) \
                   -I/usr/include -I/usr/include/linux
 
+TARGET_NAME := $(TARGET)
+
 ifneq ($(CONFIG),)
-TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)_$(CONFIG)
-else
-TARGET_BASENAME = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET)
+TARGET_NAME := $(TARGET)_$(CONFIG)
 endif
+
+ifeq ($(REV),yes)
+TARGET_NAME := $(TARGET)_$(CONFIG)_$(REVISION)
+endif
+
+TARGET_FULLNAME = $(FORKNAME)_$(FC_VER)_$(TARGET_NAME)
 #
 # Things we will build
 #
-TARGET_BIN      = $(TARGET_BASENAME).bin
-TARGET_HEX      = $(TARGET_BASENAME).hex
-TARGET_HEX_REV  = $(TARGET_BASENAME)_$(REVISION).hex
-TARGET_DFU      = $(TARGET_BASENAME).dfu
-TARGET_ZIP      = $(TARGET_BASENAME).zip
-TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
-TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_EXST.elf
-TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET)_UNPATCHED.bin
-TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).lst
-TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
-TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
-TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
+TARGET_BIN      = $(BIN_DIR)/$(TARGET_FULLNAME).bin
+TARGET_HEX      = $(BIN_DIR)/$(TARGET_FULLNAME).hex
+TARGET_DFU      = $(BIN_DIR)/$(TARGET_FULLNAME).dfu
+TARGET_ZIP      = $(BIN_DIR)/$(TARGET_FULLNAME).zip
+TARGET_OBJ_DIR  = $(OBJECT_DIR)/$(TARGET_NAME)
+TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).elf
+TARGET_EXST_ELF = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_EXST.elf
+TARGET_UNPATCHED_BIN = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME)_UNPATCHED.bin
+TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).lst
+TARGET_OBJS     = $(addsuffix .o,$(addprefix $(TARGET_OBJ_DIR)/,$(basename $(SRC))))
+TARGET_DEPS     = $(addsuffix .d,$(addprefix $(TARGET_OBJ_DIR)/,$(basename $(SRC))))
+TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET_NAME).map
 
-TARGET_EXST_HASH_SECTION_FILE = $(OBJECT_DIR)/$(TARGET)/exst_hash_section.bin
+TARGET_EXST_HASH_SECTION_FILE = $(TARGET_OBJ_DIR)/exst_hash_section.bin
 
 TARGET_EF_HASH      := $(shell echo -n "$(EXTRA_FLAGS)" | openssl dgst -md5 | awk '{print $$2;}')
-TARGET_EF_HASH_FILE := $(OBJECT_DIR)/$(TARGET)/.efhash_$(TARGET_EF_HASH)
+TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
@@ -350,7 +357,7 @@ CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
 
 # Make sure build date and revision is updated on every incremental build
-$(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
+$(TARGET_OBJ_DIR)/build/version.o : $(SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -419,7 +426,7 @@ $(TARGET_HEX): $(TARGET_BIN)
 endif
 
 $(TARGET_ELF): $(TARGET_OBJS) $(LD_SCRIPT) $(LD_SCRIPTS)
-	@echo "Linking $(TARGET)" "$(STDOUT)"
+	@echo "Linking $(TARGET_NAME)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -o $@ $(filter-out %.ld,$^) $(LD_FLAGS)
 	$(V1) $(SIZE) $(TARGET_ELF)
 
@@ -432,7 +439,7 @@ define compile_file
 endef
 
 ifeq ($(DEBUG),GDB)
-$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+$(TARGET_OBJ_DIR)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
 		$(call compile_file,not optimised, $(CC_NO_OPTIMISATION)) \
@@ -440,7 +447,7 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 		$(call compile_file,debug,$(CC_DEBUG_OPTIMISATION)) \
 	)
 else
-$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+$(TARGET_OBJ_DIR)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) $(if $(findstring $<,$(NOT_OPTIMISED_SRC)), \
 		$(call compile_file,not optimised,$(CC_NO_OPTIMISATION)) \
@@ -458,12 +465,12 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 endif
 
 # Assemble
-$(OBJECT_DIR)/$(TARGET)/%.o: %.s
+$(TARGET_OBJ_DIR)/%.o: %.s
 	$(V1) mkdir -p $(dir $@)
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-$(OBJECT_DIR)/$(TARGET)/%.o: %.S
+$(TARGET_OBJ_DIR)/%.o: %.S
 	$(V1) mkdir -p $(dir $@)
 	@echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
@@ -477,15 +484,21 @@ $(BASE_TARGETS):
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
+$(BASE_CONFIGS):
+	$(V0) @echo "Building config $@" && \
+	$(MAKE) hex CONFIG=$@ && \
+	echo "Building config $@ succeeded."
+
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
+CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	@echo "Cleaning $(TARGET)"
+	@echo "Cleaning $(TARGET_NAME)"
 	$(V0) rm -f $(CLEAN_ARTIFACTS)
-	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
-	@echo "Cleaning $(TARGET) succeeded."
+	$(V0) rm -rf $(TARGET_OBJ_DIR)
+	@echo "Cleaning $(TARGET_NAME) succeeded."
 
 ## test_clean        : clean up temporary / machine-generated files (tests)
 test-%_clean:
@@ -497,6 +510,10 @@ test_clean:
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
+
+## <CONFIG>_clean    : clean up one specific config (alias for above)
+$(CONFIGS_CLEAN):
+	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
@@ -558,10 +575,7 @@ hex:
 TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 $(TARGETS_REVISION):
-	$(V0) $(MAKE) hex_rev TARGET=$(subst _rev,,$@)
-
-hex_rev: hex
-	$(V0) mv -f $(TARGET_HEX) $(TARGET_HEX_REV)
+	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
 
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
@@ -610,6 +624,9 @@ targets:
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
 
+configs:
+	@echo "Valid configs:       $(BASE_CONFIGS)"
+
 targets-ci-print:
 	@echo $(CI_TARGETS)
 
@@ -657,7 +674,7 @@ test_%:
 
 $(TARGET_EF_HASH_FILE):
 	$(V1) mkdir -p $(dir $@)
-	$(V0) rm -f $(OBJECT_DIR)/$(TARGET)/.efhash_*
+	$(V0) rm -f $(TARGET_OBJ_DIR)/.efhash_*
 	@echo "EF HASH -> $(TARGET_EF_HASH_FILE)"
 	$(V1) touch $(TARGET_EF_HASH_FILE)
 
