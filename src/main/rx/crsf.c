@@ -234,6 +234,7 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
     }
 #ifdef USE_RX_RSSI_DBM
     setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    setActiveAntenna(stats.active_antenna);
 #endif
 
 #ifdef USE_RX_RSNR
