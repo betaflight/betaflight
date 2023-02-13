@@ -283,7 +283,7 @@
 #endif // !defined(CLOUD_BUILD)
 
 #if !defined(LED_MAX_STRIP_LENGTH)
-#ifdef USE_LEDSTRIP_64
+#ifdef USE_LED_STRIP_64
 #define LED_MAX_STRIP_LENGTH           64
 #else
 #define LED_MAX_STRIP_LENGTH           32
