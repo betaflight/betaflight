@@ -29,6 +29,13 @@
 
 #include "timerio.h"
 
+/*
+    idx      => is the index in the config array,
+    pin      => is the pin to be mapped,
+    pos      => is the pin position (index) within timerHardware (full) that should be used
+                e.g. 1 = first occurence of the pin, 2 = second occurence, etc.
+    dmaopt   => the configured dma opt for the pin
+*/
 #define TIMER_PIN_MAP(idx, pin, pos, dmaOpt)  \
         { config[idx].ioTag = IO_TAG(pin); config[idx].index = pos; config[idx].dmaopt = dmaOpt; }
 

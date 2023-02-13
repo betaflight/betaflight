@@ -5857,6 +5857,7 @@ static void showTimerMap(void)
     cliPrintLine("Timer Mapping:");
     for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const ioTag_t ioTag = timerIOConfig(i)->ioTag;
+
         if (!ioTag) {
             continue;
         }
@@ -5864,7 +5865,7 @@ static void showTimerMap(void)
         cliPrintLinef(" TIMER_PIN_MAP(%d, P%c%d, %d, %d)",
             i,
             IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-            timerIOConfig(i)->index ,
+            timerIOConfig(i)->index,
             timerIOConfig(i)->dmaopt
         );
     }
