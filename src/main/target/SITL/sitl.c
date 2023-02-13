@@ -83,8 +83,7 @@ static char simulator_ip[32] = "127.0.0.1";
 int targetParseArgs(int argc, char * argv[])
 {
   //The first argument should be target IP.
-  if (argc > 1)
-  {
+  if (argc > 1) {
       strcpy(simulator_ip, argv[1]);
   }
 
@@ -219,7 +218,8 @@ static void* udpThread(void* data)
     return NULL;
 }
 
-static float readRCSITL(const rxRuntimeState_t *rxRuntimeState, uint8_t channel) {
+static float readRCSITL(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
+{
     UNUSED(rxRuntimeState);
     return rcPkt.channels[channel];
 }
@@ -230,7 +230,8 @@ static uint8_t rxRCFrameStatus(rxRuntimeState_t *rxRuntimeState)
     return RX_FRAME_COMPLETE;
 }
 
-static void* udpRCThread(void* data) {
+static void* udpRCThread(void* data)
+{
     UNUSED(data);
     int n = 0;
 
@@ -597,8 +598,7 @@ static void pwmCompleteMotorUpdate(void)
 void pwmWriteServo(uint8_t index, float value)
 {
     servosPwm[index] = value;
-    if (index + pwmRawPkt.motorCount < SIMULATOR_MAX_PWM_CHANNELS)
-    {
+    if (index + pwmRawPkt.motorCount < SIMULATOR_MAX_PWM_CHANNELS) {
       // In pwmRawPkt, we put servo right after the motors.
       pwmRawPkt.pwm_output_raw[index + pwmRawPkt.motorCount] = value;
     }
