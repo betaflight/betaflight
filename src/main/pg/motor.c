@@ -79,10 +79,18 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #ifdef MOTOR4_PIN
     motorConfig->dev.ioTags[3] = IO_TAG(MOTOR4_PIN);
 #endif
-/*
-  NOTE as we predominantly build for quads, the default motor pin defines is 4,
-  add more if a specific configuration ever requires it.
-*/
+#ifdef MOTOR5_PIN
+    motorConfig->dev.ioTags[4] = IO_TAG(MOTOR5_PIN);
+#endif
+#ifdef MOTOR6_PIN
+    motorConfig->dev.ioTags[5] = IO_TAG(MOTOR6_PIN);
+#endif
+#ifdef MOTOR7_PIN
+    motorConfig->dev.ioTags[6] = IO_TAG(MOTOR7_PIN);
+#endif
+#ifdef MOTOR8_PIN
+    motorConfig->dev.ioTags[7] = IO_TAG(MOTOR8_PIN);
+#endif
 #endif
 
     motorConfig->motorPoleCount = 14;   // Most brushes motors that we use are 14 poles
