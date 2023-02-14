@@ -75,7 +75,7 @@
 
 #define USE_ACCGYRO_BMI160
 
-//#define USE_USB_DETECT
+#define USE_USB_DETECT
 #define USE_VCP
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
@@ -83,7 +83,7 @@
 
 #define UNIFIED_SERIAL_PORT_COUNT       1
 
-//#define USE_ADC
+#define USE_ADC
 
 #define USE_CUSTOM_DEFAULTS
 #define USE_PWM_OUTPUT

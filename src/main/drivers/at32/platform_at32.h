@@ -48,6 +48,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#define USE_ADC_INTERNAL
+
 #define USE_LATE_TASK_STATISTICS
 
 #define TASK_GYROPID_DESIRED_PERIOD     1000 // 1000us = 1kHz
@@ -66,3 +68,4 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_RAM_W
 #define DMA_RAM_RW
 
+#define USE_LATE_TASK_STATISTICS

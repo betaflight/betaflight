@@ -74,7 +74,9 @@ typedef struct {
     channelType_t type;
 } timerChannelInfo_t;
 
+#ifdef TIMER_CHANNEL_COUNT
 timerChannelInfo_t timerChannelInfo[TIMER_CHANNEL_COUNT];
+#endif
 
 typedef struct {
     uint8_t priority;
@@ -353,6 +355,16 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
 void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
+    #ifndef USE_TIMER_MGMT
+
+    UNUSED(timHw);
+    UNUSED(type);
+    UNUSED(irqPriority);
+    UNUSED(irq);
+    return;
+
+    #else
+
     unsigned channel = timHw - TIMER_HARDWARE;
     if (channel >= TIMER_CHANNEL_COUNT) {
         return;
@@ -371,6 +383,7 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
 
         timerInfo[timer].priority = irqPriority;
     }
+    #endif
 }
 
 void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn)
@@ -666,6 +679,7 @@ void timerInit(void)
     GPIO_PinRemapConfig(GPIO_PartialRemap_TIM3, ENABLE);
 #endif
 
+    #ifdef USE_TIMER_MGMT
     /* enable the timer peripherals */
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(TIMER_HARDWARE[i].tim), ENABLE);
@@ -675,6 +689,7 @@ void timerInit(void)
     for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }
+    #endif
 
     for (unsigned i = 0; i < USED_TIMER_COUNT; i++) {
         timerInfo[i].priority = ~0;

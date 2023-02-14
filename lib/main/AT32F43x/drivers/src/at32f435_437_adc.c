@@ -66,17 +66,8 @@ void adc_enable(adc_type *adc_x, confirm_state new_state)
 
 /**
   * @brief  adc base default para init.
-  * @param  sequence_mode: set the state of adc sequence mode.
-  *         this parameter can be:TRUE or FALSE
-  * @param  repeat_mode: set the state of adc repeat conversion mode.
-  *         this parameter can be:TRUE or FALSE
-  * @param  data_align: set the state of adc data alignment.
-  *         this parameter can be one of the following values:
-  *         - ADC_RIGHT_ALIGNMENT
-  *         - ADC_LEFT_ALIGNMENT
-  * @param  ordinary_channel_length: configure the adc ordinary channel sequence length.
-  *         this parameter can be:
-  *         - (0x1~0xf)
+  * Sets sequence FALSE, repeat FALSE, align right, length 1
+  * @param adc_base_struct pointer to the struct to be initialised
   * @retval none
   */
 void adc_base_default_para_init(adc_base_config_type *adc_base_struct)

@@ -130,11 +130,25 @@ int32_t adcTSCAL1;
 int32_t adcTSCAL2;
 int32_t adcTSSlopeK;
 
-uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue)
+/**
+ * Use a measurement of the fixed internal vref to calculate the external Vref+
+ * 
+ * The ADC full range reading equates to Vref+ on the channel. Vref+ is typically
+ * fed from Vcc at 3.3V, but since Vcc isn't a critical value it may be off
+ * by a little due to variation in the regulator. Some chips are provided with a 
+ * known internal voltage reference, typically around 1.2V. By measuring this
+ * reference with an internally connected ADC channel we can then calculate a more 
+ * accurate value for Vref+ instead of assuming that it is 3.3V
+ * 
+ * @param intVRefAdcValue reading from the internal calibration voltage
+ * 
+ * @return the calculated value of Vref+
+*/
+uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)
 {
     // This is essentially a tuned version of
     // __HAL_ADC_CALC_VREFANALOG_VOLTAGE(vrefAdcValue, ADC_RESOLUTION_12B);
-    return (uint16_t)((uint32_t)(adcVREFINTCAL * VREFINT_CAL_VREF) / vrefAdcValue);
+    return (uint16_t)((uint32_t)(adcVREFINTCAL * VREFINT_CAL_VREF) / intVRefAdcValue);
 }
 
 int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
