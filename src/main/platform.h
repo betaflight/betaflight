@@ -26,35 +26,6 @@
 #pragma GCC poison sprintf snprintf
 #endif
 
-// common to all
-#define USE_TIMER_AF
-
-#if defined(STM32)
-
-#include "drivers/stm32/platform_stm32.h"
-
-#elif defined(AT32)
-
-#include "drivers/at32/platform_at32.h"
-
-#elif defined(SIMULATOR_BUILD)
-
-// Nop
-#undef USE_TIMER_AF
-#define DEFAULT_CPU_OVERCLOCK 1
-#define DMA_RAM
-#define DMA_RW_AXI
-#define DMA_RAM_R
-#define DMA_RAM_W
-#define DMA_RAM_RW
-
-#define DMA_DATA_ZERO_INIT
-#define DMA_DATA
-#define STATIC_DMA_DATA_AUTO
-#else
-#error "Invalid chipset specified. Update platform.h"
-#endif
-
 #include "target/common_pre.h"
 
 #ifdef USE_CONFIG

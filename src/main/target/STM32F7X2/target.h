@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/stm32/platform_stm32.h"
+
 #define TARGET_BOARD_IDENTIFIER "S7X2"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32F7x2"

@@ -19,6 +19,9 @@
  */
 
 #pragma once
+
+#include "drivers/stm32/platform_stm32.h"
+
 #define TARGET_BOARD_IDENTIFIER "SG47"
 
 #define USBD_PRODUCT_STRING     "Betaflight STM32G47x"

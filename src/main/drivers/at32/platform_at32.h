@@ -44,6 +44,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #endif
 
 #define USE_TIMER_MGMT
+#define USE_TIMER_AF
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS

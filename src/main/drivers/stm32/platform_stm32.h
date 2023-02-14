@@ -124,7 +124,6 @@
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
 #define USE_DMA_SPEC
-#define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
 #define USE_LATE_TASK_STATISTICS
@@ -148,7 +147,6 @@
 #define USE_PERSISTENT_MSC_RTC
 #define USE_MCO
 #define USE_DMA_SPEC
-#define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_CUSTOM_DEFAULTS_ADDRESS
 #define USE_LATE_TASK_STATISTICS
@@ -168,7 +166,6 @@
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
 #define USE_DMA_SPEC
-#define USE_TIMER_MGMT
 #define USE_PERSISTENT_OBJECTS
 #define USE_DMA_RAM
 #define USE_USB_MSC
@@ -187,7 +184,6 @@
 #define USE_USB_CDC_HID
 #define USE_MCO
 #define USE_DMA_SPEC
-#define USE_TIMER_MGMT
 #define USE_LATE_TASK_STATISTICS
 #endif
 
@@ -255,3 +251,6 @@ extern uint8_t _dmaram_end__;
 #define DMA_RAM_W
 #define DMA_RAM_RW
 #endif
+
+#define USE_TIMER_MGMT
+#define USE_TIMER_AF

@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "drivers/at32/platform_at32.h"
+
 #define TARGET_BOARD_IDENTIFIER "A435"
 
 #define USBD_PRODUCT_STRING     "Betaflight AT32F435"
@@ -84,7 +86,6 @@
 //#define USE_ADC
 
 #define USE_CUSTOM_DEFAULTS
-#define USE_TIMER_MGMT
 #define USE_PWM_OUTPUT
 
 #undef USE_BEEPER

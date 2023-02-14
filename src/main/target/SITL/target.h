@@ -31,6 +31,17 @@
 
 #define SIMULATOR_MULTITHREAD
 
+#define DEFAULT_CPU_OVERCLOCK 1
+#define DMA_RAM
+#define DMA_RW_AXI
+#define DMA_RAM_R
+#define DMA_RAM_W
+#define DMA_RAM_RW
+
+#define DMA_DATA_ZERO_INIT
+#define DMA_DATA
+#define STATIC_DMA_DATA_AUTO
+
 // use simulatior's attitude directly
 // disable this if wants to test AHRS algorithm
 #undef USE_IMU_CALC
