@@ -34,3 +34,63 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_BARO_BMP280
 #define USE_MAX7456
+
+#define BEEPER_PIN           PB2
+#define MOTOR1_PIN           PB4
+#define MOTOR2_PIN           PB5
+#define MOTOR3_PIN           PA8
+#define MOTOR4_PIN           PA9
+#define MOTOR5_PIN           PA10
+#define MOTOR6_PIN           PB8
+#define RX_PPM_PIN           PA3
+#define LED_STRIP_PIN        PB10
+#define UART1_TX_PIN         PA15
+#define UART2_TX_PIN         PA2
+#define UART11_TX_PIN        PB9
+#define UART12_TX_PIN        PA2
+#define UART1_RX_PIN         PB3
+#define UART2_RX_PIN         PA3
+#define I2C1_SCL_PIN         PB6
+#define I2C1_SDA_PIN         PB7
+#define LED1_PIN             PC13
+#define LED2_PIN             PC14
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define CAMERA_CONTROL_PIN   PA1
+#define ADC_BATT_PIN         PB0
+#define ADC_RSSI_PIN         PA0
+#define ADC_CURR_PIN         PB1
+#define PINIO1_PIN           PA13
+#define OSD_CS_PIN           PB12
+#define GYRO_1_EXTI_PIN      PA14
+#define GYRO_1_CS_PIN        PA4
+#define USB_DETECT_PIN       PC15
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PB4 , 1,  0) \
+    TIMER_PIN_MAP( 1, PB5 , 1,  0) \
+    TIMER_PIN_MAP( 2, PA8 , 1,  1) \
+    TIMER_PIN_MAP( 3, PA9 , 1,  1) \
+    TIMER_PIN_MAP( 4, PA10, 1,  1) \
+    TIMER_PIN_MAP( 5, PB8 , 1,  0) \
+    TIMER_PIN_MAP( 6, PB10, 1,  0) \
+    TIMER_PIN_MAP( 7, PB9 , 2, -1) \
+    TIMER_PIN_MAP( 8, PA2 , 3, -1) \
+    TIMER_PIN_MAP( 9, PA3 , 3, -1) \
+    TIMER_PIN_MAP(10, PA1 , 2,  0) \
+
+
+
+#define ADC1_DMA_OPT        1
+
+#define MAG_I2C_INSTANCE I2C1
+#define BARO_I2C_INSTANCE I2C1
+#define BEEPER_INVERTED
+#define MAX7456_SPI_INSTANCE SPI2
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI1
+#define GYRO_1_ALIGN CW180_DEG

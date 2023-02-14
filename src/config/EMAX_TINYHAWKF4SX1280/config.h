@@ -25,44 +25,38 @@
    The auto generation is transitional only.
 */
 
-#define FC_TARGET_MCU     STM32F411
+#define FC_TARGET_MCU     STM32F411SX1280
 
-#define BOARD_NAME        DARWINF4SX1280HD
-#define MANUFACTURER_ID   DAFP
+#define BOARD_NAME        EMAX_TINYHAWKF4SX1280
+#define MANUFACTURER_ID   EMAX
 
-#define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define USE_ACC_SPI_ICM20689
-#define USE_GYRO_SPI_ICM20689
-#define USE_ACCGYRO_LSM6DSO
+#define USE_ACC_SPI_MPU6000
 #define USE_ACCGYRO_BMI270
-#define USE_GYRO_SPI_ICM42605
-#define USE_GYRO_SPI_ICM42688P
-#define USE_ACC_SPI_ICM42605
+#define USE_GYRO_SPI_ICM20689
+#define USE_ACC_SPI_ICM20689
 #define USE_ACC_SPI_ICM42688P
+#define USE_GYRO_SPI_ICM42688P
 #define USE_RX_EXPRESSLRS
 #define USE_RX_EXPRESSLRS_TELEMETRY
 #define USE_RX_SX1280
-#define RX_CHANNELS_AETR
 #define USE_MAX7456
 
-#define BEEPER_PIN           PA14
-#define MOTOR1_PIN           PB8
-#define MOTOR2_PIN           PA0
-#define MOTOR3_PIN           PB10
-#define MOTOR4_PIN           PB7
-#define MOTOR5_PIN           PA8
-#define MOTOR6_PIN           PA10
-#define LED_STRIP_PIN        PB1
+#define BEEPER_PIN           PC15
+#define MOTOR1_PIN           PB10
+#define MOTOR2_PIN           PB6
+#define MOTOR3_PIN           PB7
+#define MOTOR4_PIN           PB8
+#define RX_PPM_PIN           PA3
+#define RX_PWM1_PIN          PA2
+#define RX_PWM2_PIN          PA9
+#define RX_PWM3_PIN          PA10
+#define LED_STRIP_PIN        PA0
 #define UART1_TX_PIN         PA9
 #define UART2_TX_PIN         PA2
-#define UART11_TX_PIN        PA8
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
-#define UART11_RX_PIN        PA8
-#define LED1_PIN             PC14
+#define LED1_PIN             PC13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
@@ -72,26 +66,28 @@
 #define SPI1_MOSI_PIN        PA7
 #define SPI2_MOSI_PIN        PB15
 #define SPI3_MOSI_PIN        PB5
-#define ADC_BATT_PIN         PA1
-#define ADC_CURR_PIN         PB0
+#define ADC_BATT_PIN         PB0
+#define ADC_CURR_PIN         PB1
 #define OSD_CS_PIN           PB12
 #define RX_SPI_CS_PIN        PA15
-#define RX_SPI_EXTI_PIN      PC13
+#define RX_SPI_EXTI_PIN      PC14
 #define RX_SPI_BIND_PIN      PB2
-#define RX_SPI_LED_PIN       PC15
-#define RX_SPI_EXPRESSLRS_RESET_PIN PB9
+#define RX_SPI_LED_PIN       PB9
+#define RX_SPI_EXPRESSLRS_RESET_PIN PA8
 #define RX_SPI_EXPRESSLRS_BUSY_PIN PA13
-#define GYRO_1_EXTI_PIN      PB6
+#define GYRO_1_EXTI_PIN      PA1
 #define GYRO_1_CS_PIN        PA4
 
 #define TIMER_PIN_MAPPING \
-    TIMER_PIN_MAP( 0, PB1 , 2,  0) \
-    TIMER_PIN_MAP( 1, PB8 , 1,  0) \
-    TIMER_PIN_MAP( 2, PA0 , 1,  0) \
-    TIMER_PIN_MAP( 3, PB10, 1,  0) \
-    TIMER_PIN_MAP( 4, PB7 , 1,  0) \
-    TIMER_PIN_MAP( 5, PA8 , 1,  0) \
-    TIMER_PIN_MAP( 6, PA10, 1,  0) \
+    TIMER_PIN_MAP( 0, PA3 , 3, -1) \
+    TIMER_PIN_MAP( 1, PB10, 1,  0) \
+    TIMER_PIN_MAP( 2, PB6 , 1,  0) \
+    TIMER_PIN_MAP( 3, PB7 , 1,  0) \
+    TIMER_PIN_MAP( 4, PB8 , 1,  0) \
+    TIMER_PIN_MAP( 5, PA0 , 2,  0) \
+    TIMER_PIN_MAP( 6, PA2 , 3, -1) \
+    TIMER_PIN_MAP( 7, PA9 , 1,  0) \
+    TIMER_PIN_MAP( 8, PA10, 1,  0) \
 
 
 
@@ -102,4 +98,4 @@
 #define MAX7456_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
-#define GYRO_1_ALIGN CW90_DEG
+#define GYRO_1_ALIGN CW180_DEG

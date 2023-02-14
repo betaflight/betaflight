@@ -34,3 +34,74 @@
 #define USE_MAX7456
 #define USE_SDCARD
 #define USE_BARO_DPS310
+
+#define BEEPER_PIN           PC5
+#define MOTOR1_PIN           PB6
+#define MOTOR2_PIN           PB7
+#define MOTOR3_PIN           PB8
+#define MOTOR4_PIN           PB9
+#define MOTOR5_PIN           PB0
+#define MOTOR6_PIN           PB1
+#define MOTOR7_PIN           PB5
+#define MOTOR8_PIN           PB4
+#define SERVO1_PIN           PA8
+#define RX_PPM_PIN           PA3
+#define LED_STRIP_PIN        PC9
+#define UART1_TX_PIN         PA9
+#define UART2_TX_PIN         PA2
+#define UART3_TX_PIN         PC10
+#define UART4_TX_PIN         PA0
+#define UART5_TX_PIN         PC12
+#define UART6_TX_PIN         PC6
+#define UART1_RX_PIN         PA10
+#define UART2_RX_PIN         PA3
+#define UART3_RX_PIN         PC11
+#define UART4_RX_PIN         PA1
+#define UART5_RX_PIN         PD2
+#define UART6_RX_PIN         PC7
+#define I2C2_SCL_PIN         PB10
+#define I2C2_SDA_PIN         PB11
+#define LED1_PIN             PC8
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define CAMERA_CONTROL_PIN   PB3
+#define ADC_BATT_PIN         PC0
+#define ADC_RSSI_PIN         PC2
+#define ADC_CURR_PIN         PC1
+#define SDCARD_CS_PIN        PA15
+#define PINIO1_PIN           PC3
+#define OSD_CS_PIN           PB12
+#define GYRO_1_EXTI_PIN      PC4
+#define GYRO_1_CS_PIN        PA4
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PB6 , 1,  0) \
+    TIMER_PIN_MAP( 1, PB7 , 1,  0) \
+    TIMER_PIN_MAP( 2, PB8 , 1,  0) \
+    TIMER_PIN_MAP( 3, PB9 , 1, -1) \
+    TIMER_PIN_MAP( 4, PB0 , 2,  0) \
+    TIMER_PIN_MAP( 5, PB1 , 2,  0) \
+    TIMER_PIN_MAP( 6, PB5 , 1,  0) \
+    TIMER_PIN_MAP( 7, PB4 , 1,  0) \
+    TIMER_PIN_MAP( 8, PA8 , 1,  0) \
+    TIMER_PIN_MAP( 9, PA3 , 2,  0) \
+    TIMER_PIN_MAP(10, PB3 , 1,  0) \
+    TIMER_PIN_MAP(11, PC9 , 2,  0) \
+
+
+
+#define SPI2_TX_DMA_OPT     0
+#define ADC1_DMA_OPT        0
+
+#define MAG_I2C_INSTANCE I2C2
+#define BARO_I2C_INSTANCE I2C2
+#define BEEPER_INVERTED
+#define USE_SDCARD_SPI
+#define SDCARD_SPI_INSTANCE SPI2
+#define MAX7456_SPI_INSTANCE SPI2
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI1

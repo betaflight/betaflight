@@ -33,3 +33,57 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define USE_MAX7456
+
+#define BEEPER_PIN           PB0
+#define MOTOR1_PIN           PC8
+#define MOTOR2_PIN           PB6
+#define MOTOR3_PIN           PC9
+#define MOTOR4_PIN           PB7
+#define LED_STRIP_PIN        PA15
+#define UART1_TX_PIN         PA9
+#define UART3_TX_PIN         PC10
+#define UART4_TX_PIN         PA0
+#define UART5_TX_PIN         PC12
+#define UART6_TX_PIN         PC6
+#define UART1_RX_PIN         PA10
+#define UART2_RX_PIN         PA3
+#define UART3_RX_PIN         PC11
+#define UART4_RX_PIN         PA1
+#define UART6_RX_PIN         PC7
+#define I2C1_SCL_PIN         PB8
+#define I2C1_SDA_PIN         PB9
+#define LED1_PIN             PB12
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI3_SCK_PIN         PB3
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI3_MISO_PIN        PB4
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define SPI3_MOSI_PIN        PB5
+#define ADC_BATT_PIN         PC0
+#define ADC_CURR_PIN         PC1
+#define FLASH_CS_PIN         PA2
+#define OSD_CS_PIN           PC15
+#define GYRO_1_CS_PIN        PD2
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PA15, 1,  0) \
+    TIMER_PIN_MAP( 1, PA8 , 1,  0) \
+    TIMER_PIN_MAP( 2, PC9 , 2,  0) \
+    TIMER_PIN_MAP( 3, PB6 , 1,  0) \
+    TIMER_PIN_MAP( 4, PC8 , 2,  0) \
+    TIMER_PIN_MAP( 5, PB7 , 1,  0) \
+
+
+
+#define ADC1_DMA_OPT        1
+
+#define BEEPER_INVERTED
+#define MAX7456_SPI_INSTANCE SPI2
+#define FLASH_SPI_INSTANCE SPI1
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI3
+#define GYRO_1_ALIGN CW0_DEG
+#define GYRO_2_SPI_INSTANCE SPI3
