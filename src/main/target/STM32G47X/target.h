@@ -75,3 +75,4 @@
 
 #define USE_CUSTOM_DEFAULTS
 #define USE_EXTI
+#define USE_TIMER_UP_CONFIG

@@ -133,11 +133,6 @@ typedef enum {
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
 
-#if USABLE_TIMER_CHANNEL_COUNT > 0
-extern const timerHardware_t timerHardware[];
-#endif
-
-
 #if defined(USE_TIMER_MGMT)
 #if defined(STM32F4)
 
