@@ -230,8 +230,11 @@ void spiInternalStartDMA(const extDevice_t *dev)
         xDMA_Cmd(streamRegsTx, TRUE);
         xDMA_Cmd(streamRegsRx, TRUE);
 
-        spi_i2s_dma_transmitter_enable(dev->bus->busType_u.spi.instance, TRUE);
+        /* Enable the receiver before the transmitter to ensure that not bits are missed on reception. An interrupt between
+         * the tramitter and receiver being enabled can otherwise cause a hang.
+         */
         spi_i2s_dma_receiver_enable(dev->bus->busType_u.spi.instance, TRUE);
+        spi_i2s_dma_transmitter_enable(dev->bus->busType_u.spi.instance, TRUE);
 
     } else {
         // Use the correct callback argument
