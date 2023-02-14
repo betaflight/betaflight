@@ -256,20 +256,6 @@ static void sdCardAndFSInit(void)
 }
 #endif
 
-#ifdef USE_SWDIO
-static void swdPinsInit(void)
-{
-    IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PA14)); // SWCLK
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-}
-#endif
-
 void init(void)
 {
 #ifdef SERIAL_PORT_COUNT
@@ -1030,8 +1016,8 @@ void init(void)
     spiInitBusDMA();
 #endif
 
-#ifdef USE_SWDIO
-    swdPinsInit();
+#ifdef DEBUG
+    debugInit();
 #endif
 
     unusedPinsInit();
