@@ -173,6 +173,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     UNUSED(dev);
 #endif
 
+#ifndef USE_FAKE_BARO
     switch (barometerConfig()->baro_busType) {
 #ifdef USE_I2C
     case BUS_TYPE_I2C:
@@ -192,10 +193,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
         }
         break;
 #endif
-
     default:
         return false;
     }
+#endif
 
     switch (baroHardware) {
     case BARO_DEFAULT:
@@ -291,6 +292,15 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #endif
         FALLTHROUGH;
 
+    case BARO_FAKE:
+#ifdef USE_FAKE_BARO
+        if (fakeBaroDetect(baroDev)) {
+            baroHardware = BARO_FAKE;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
     case BARO_NONE:
         baroHardware = BARO_NONE;
         break;
@@ -307,7 +317,11 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
 void baroInit(void)
 {
+#ifndef USE_FAKE_BARO
     baroReady = baroDetect(&baro.dev, barometerConfig()->baro_hardware);
+#else
+    baroReady = baroDetect(&baro.dev, BARO_FAKE);
+#endif
 }
 
 bool baroIsCalibrated(void)

@@ -258,6 +258,7 @@ typedef struct {
     double imu_orientation_quat[4];     //w, x, y, z
     double velocity_xyz[3];             // m/s, earth frame
     double position_xyz[3];             // meters, NED from origin
+    double pressure;
 } fdm_packet;
 
 typedef struct {
