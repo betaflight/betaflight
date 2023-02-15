@@ -172,4 +172,3 @@ extern const char STR_CLI_ENTER_LONG[];
 extern const char STR_CLI_ENTER_SHORT[];
 
 #endif // _TRANSLATIONS_H_
-

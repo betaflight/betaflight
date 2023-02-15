@@ -22,4 +22,3 @@
 #define TR_PERIOD	            "."
 
 #define TR_VISUAL_BEEP          "  * * * *"
-

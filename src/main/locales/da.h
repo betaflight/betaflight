@@ -146,4 +146,3 @@
 #define TR_CLI_PROCESS              "UKENDT KOMMANDO, PROEV 'HELP'"
 #define TR_CLI_ENTER_LONG           "\r\nAabnet i CLI tilstand, tast 'exit' for at forlade, eller 'help' for at faa hjaelp"
 #define TR_CLI_ENTER_SHORT          "\r\nCLI"
-
