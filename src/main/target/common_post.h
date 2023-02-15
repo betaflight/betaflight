@@ -39,6 +39,45 @@
 
 */
 
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+#define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
+#else
+#define DEFAULT_AUX_CHANNEL_COUNT       6
+#endif
+
+#ifdef USE_ITCM_RAM
+#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
+#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
+#else
+#define FAST_CODE                   __attribute__((section(".tcm_code")))
+#endif
+// Handle case where we'd prefer code to be in ITCM, but it won't fit on the F745
+#ifdef STM32F745xx
+#define FAST_CODE_PREF
+#else
+#define FAST_CODE_PREF                  __attribute__((section(".tcm_code")))
+#endif
+#define FAST_CODE_NOINLINE          NOINLINE
+#else
+#define FAST_CODE
+#define FAST_CODE_PREF
+#define FAST_CODE_NOINLINE
+#endif // USE_ITCM_RAM
+
+#ifdef USE_CCM_CODE
+#define CCM_CODE                    __attribute__((section(".ccm_code")))
+#else
+#define CCM_CODE
+#endif
+
+#ifdef USE_FAST_DATA
+#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
+#else
+#define FAST_DATA_ZERO_INIT
+#define FAST_DATA
+#endif // USE_FAST_DATA
+
 /*
     BEGIN HARDWARE INCLUSIONS
 
