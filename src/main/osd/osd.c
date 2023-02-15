@@ -78,6 +78,8 @@
 #include "io/flashfs.h"
 #include "io/gps.h"
 
+#include "locales/translations.h"
+
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
@@ -1021,7 +1023,7 @@ static bool osdRenderStatsContinue(void)
         }
 
         if (displayLabel) {
-            displayWrite(osdDisplayPort, midCol - (strlen("--- STATS ---") / 2), osdStatsRenderingState.row++, DISPLAYPORT_ATTR_NORMAL, "--- STATS ---");
+            displayWrite(osdDisplayPort, midCol - (strlen(STR_OSD_STATS) / 2), osdStatsRenderingState.row++, DISPLAYPORT_ATTR_NORMAL, STR_OSD_STATS);
             return false;
         }
     }
@@ -1128,10 +1130,10 @@ static timeDelta_t osdShowArmed(void)
     } else {
         ret = (REFRESH_1S / 2);
     }
-    displayWrite(osdDisplayPort, midCol - (strlen("ARMED") / 2), midRow, DISPLAYPORT_ATTR_NORMAL, "ARMED");
+    displayWrite(osdDisplayPort, midCol - (strlen(STR_OSD_ARMED) / 2), midRow, DISPLAYPORT_ATTR_NORMAL, STR_OSD_ARMED);
 
     if (isFlipOverAfterCrashActive()) {
-        displayWrite(osdDisplayPort, midCol - (strlen(CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_ATTR_NORMAL, CRASH_FLIP_WARNING);
+        displayWrite(osdDisplayPort, midCol - (strlen(STR_OSDW_CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_ATTR_NORMAL, STR_OSDW_CRASH_FLIP_WARNING);
     }
 
     return ret;
