@@ -29,8 +29,16 @@
 
 #include "timerio.h"
 
-#define TIMER_PIN_MAP(idx, pin, pos, dmaOpt)  \
-        { config[idx].ioTag = IO_TAG(pin); config[idx].index = pos; config[idx].dmaopt = dmaOpt; }
+/*
+Details of the TIMER_PIN_MAP macro:
+    i => is the index in the PG timer IO config array,
+    p => is the hardware pin to be mapped,
+    o => is the hardware pin occurrence (1 based index) within timerHardware (full) that should be used
+                e.g. 1 = first occurence of the pin, 2 = second occurence, etc.
+    d => the configured dma opt for the pin
+*/
+#define TIMER_PIN_MAP(i, p, o, d)  \
+        { config[i].ioTag = IO_TAG(p); config[i].index = o; config[i].dmaopt = d; }
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIOConfig, PG_TIMER_IO_CONFIG, 0);
 

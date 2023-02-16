@@ -5850,6 +5850,28 @@ static void alternateFunctionToString(const ioTag_t ioTag, const int index, char
     }
 }
 
+#ifdef USE_TIMER_MAP_PRINT
+static void showTimerMap(void)
+{
+    cliPrintLinefeed();
+    cliPrintLine("Timer Mapping:");
+    for (unsigned int i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
+        const ioTag_t ioTag = timerIOConfig(i)->ioTag;
+
+        if (!ioTag) {
+            continue;
+        }
+
+        cliPrintLinef(" TIMER_PIN_MAP(%d, P%c%d, %d, %d)",
+            i,
+            IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
+            timerIOConfig(i)->index,
+            timerIOConfig(i)->dmaopt
+        );
+    }
+}
+#endif
+
 static void showTimers(void)
 {
     cliPrintLinefeed();
@@ -5901,6 +5923,12 @@ static void cliTimer(const char *cmdName, char *cmdline)
         cliPrintErrorLinef(cmdName, "NOT IMPLEMENTED YET");
 
         return;
+#ifdef USE_TIMER_MAP_PRINT
+    } else if (strncasecmp(cmdline, "map", len) == 0) {
+        showTimerMap();
+
+        return;
+#endif
     } else if (strncasecmp(cmdline, "show", len) == 0) {
         showTimers();
 
