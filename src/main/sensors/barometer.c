@@ -196,7 +196,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     default:
         return false;
     }
-#endif
+#endif // USE_FAKE_BARO
 
     switch (baroHardware) {
     case BARO_DEFAULT:

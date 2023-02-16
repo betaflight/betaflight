@@ -76,21 +76,21 @@ static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
 
-#define PORT_PWM_RAW 9001 //Out
-#define PORT_PWM 9002     //Out
-#define PORT_STATE 9003   //In
-#define PORT_RC 9004      //In
+#define PORT_PWM_RAW    9001    // Out
+#define PORT_PWM        9002    // Out
+#define PORT_STATE      9003    // In
+#define PORT_RC         9004    // In
 
 int targetParseArgs(int argc, char * argv[])
 {
-  //The first argument should be target IP.
-  if (argc > 1) {
-      strcpy(simulator_ip, argv[1]);
-  }
+    //The first argument should be target IP.
+    if (argc > 1) {
+        strcpy(simulator_ip, argv[1]);
+    }
 
-  printf("[SITL] The SITL will output to IP %s:%d (Gazebo) and %s:%d (RealFlightBridge)\n",
-         simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
-  return 0;
+    printf("[SITL] The SITL will output to IP %s:%d (Gazebo) and %s:%d (RealFlightBridge)\n",
+           simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
+    return 0;
 }
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
@@ -233,7 +233,7 @@ static uint8_t rxRCFrameStatus(rxRuntimeState_t *rxRuntimeState)
     return RX_FRAME_COMPLETE;
 }
 
-static void* udpRCThread(void* data)
+static void *udpRCThread(void *data)
 {
     UNUSED(data);
     int n = 0;
@@ -250,7 +250,6 @@ static void* udpRCThread(void* data)
                 rxRuntimeState.rcReadRawFn = readRCSITL;
                 rxRuntimeState.rcFrameStatusFn = rxRCFrameStatus;
 
-                // rxRuntimeState.rxRefreshRate = 20000;
                 rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
                 rc_received = true;
             }
@@ -551,13 +550,15 @@ static bool pwmEnableMotors(void)
 static void pwmWriteMotor(uint8_t index, float value)
 {
     if (pthread_mutex_trylock(&updateLock) != 0) return;
-    if (index < 4) {
+
+    if (index < MAX_SUPPORTED_MOTORS) {
         motorsPwm[index] = value - idlePulse;
     }
 
     if (index < pwmRawPkt.motorCount) {
         pwmRawPkt.pwm_output_raw[index] = value;
     }
+
     pthread_mutex_unlock(&updateLock); // can send PWM output now
 }
 
@@ -602,8 +603,8 @@ void pwmWriteServo(uint8_t index, float value)
 {
     servosPwm[index] = value;
     if (index + pwmRawPkt.motorCount < SIMULATOR_MAX_PWM_CHANNELS) {
-      // In pwmRawPkt, we put servo right after the motors.
-      pwmRawPkt.pwm_output_raw[index + pwmRawPkt.motorCount] = value;
+        // In pwmRawPkt, we put servo right after the motors.
+        pwmRawPkt.pwm_output_raw[index + pwmRawPkt.motorCount] = value;
     }
 }
 
