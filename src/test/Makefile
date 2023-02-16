@@ -188,7 +188,7 @@ motor_output_unittest_SRC := \
 motor_output_unittest_DEFINES := \
 		USE_DSHOT= 
 
-osd_unittest_SRC := \osd.c
+osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
 		$(USER_DIR)/osd/osd_warnings.c \
