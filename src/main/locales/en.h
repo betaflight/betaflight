@@ -75,6 +75,8 @@
 #define TR_ODSE_ELEMENT_ROL         "ROL"
 #define TR_ODSE_ELEMENT_YAW         "YAW"
 
+#define TR_ODSE_ANTIGRAVITY         "AG"
+
 #define TR_OSDE_READY               "READY"
 
 // CLI

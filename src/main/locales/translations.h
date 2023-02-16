@@ -102,6 +102,8 @@ extern const char STR_ODSE_ELEMENT_PIT[];
 extern const char STR_ODSE_ELEMENT_ROL[];
 extern const char STR_ODSE_ELEMENT_YAW[];
 
+extern const char STR_ODSE_ANTIGRAVITY[];
+
 extern const char STR_OSDE_READY[];
 
 extern const char STR_CLI_ERROR_INVALID_NAME[];

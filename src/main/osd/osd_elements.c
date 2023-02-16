@@ -693,7 +693,7 @@ static void osdElementAngleRollPitch(osdElementParms_t *element)
 static void osdElementAntiGravity(osdElementParms_t *element)
 {
     if (pidOsdAntiGravityActive()) {
-        strcpy(element->buff, "AG");
+        strcpy(element->buff, STR_ODSE_ANTIGRAVITY);
     }
 }
 
