@@ -18,6 +18,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include "locales/translations.h"
 
 #define ISTR(x) const char* const STR_##x[] = { TR_##x }

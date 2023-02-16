@@ -18,8 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TRANSLATIONS_H_
-#define _TRANSLATIONS_H_
+#pragma once
 
 #if defined(USE_OSD_HD)                         // HD screen
   #define TR2(x, y) y
@@ -172,5 +171,3 @@ extern const char STR_CLI_MSC_REBOOT[];
 extern const char STR_CLI_PROCESS[];
 extern const char STR_CLI_ENTER_LONG[];
 extern const char STR_CLI_ENTER_SHORT[];
-
-#endif // _TRANSLATIONS_H_
