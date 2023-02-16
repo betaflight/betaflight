@@ -77,7 +77,7 @@
 #define TR_ODSE_ELEMENT_ROL         "KRÆ"
 #define TR_ODSE_ELEMENT_YAW         "SID"
 
-#define TR_ODSE_ANTIGRAVITY         "AG"
+#define TR_ODSE_ANTIGRAVITY         "AT"        // Anti Tyndekraft
 
 #define TR_OSDE_READY               "KLAR"
 

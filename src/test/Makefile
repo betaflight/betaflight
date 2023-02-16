@@ -109,6 +109,7 @@ cli_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/locales/translations.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/typeconversion.c
 
@@ -197,7 +198,8 @@ osd_unittest_SRC := \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
 		$(USER_DIR)/common/filter.c \
-		$(USER_DIR)/fc/runtime_config.c
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/locales/translations.c
 
 osd_unittest_DEFINES := \
 		USE_OSD= \
