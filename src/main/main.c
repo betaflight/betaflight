@@ -34,8 +34,8 @@ int main(int argc, char * argv[])
 #ifdef SIMULATOR_BUILD
     targetParseArgs(argc, argv);
 #else
-  UNUSED(argc);
-  UNUSED(argv);
+    UNUSED(argc);
+    UNUSED(argv);
 #endif
     init();
 
