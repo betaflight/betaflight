@@ -368,6 +368,16 @@
 #define USE_SPI_GYRO
 #endif
 
+#ifndef SIMULATOR_BUILD
+#ifndef USE_ACC
+#define USE_ACC
+#endif
+
+#ifndef USE_GYRO
+#define USE_GYRO
+#endif
+#endif
+
 // CX10 is a special case of SPI RX which requires XN297
 #if defined(USE_RX_CX10)
 #define USE_RX_XN297
@@ -383,7 +393,7 @@
 #ifdef USE_SPI
 #ifndef SPI_PREINIT_COUNT
 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
-#define SPI_PREINIT_COUNT 16 
+#define SPI_PREINIT_COUNT 16
 #endif
 #endif
 
