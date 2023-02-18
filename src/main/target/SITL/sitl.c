@@ -42,6 +42,7 @@
 #include "drivers/timer_def.h"
 
 #include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/barometer/barometer_fake.h"
 #include "flight/imu.h"
 
 #include "config/feature.h"
@@ -59,16 +60,38 @@
 uint32_t SystemCoreClock;
 
 static fdm_packet fdmPkt;
+static rc_packet rcPkt;
 static servo_packet pwmPkt;
+static servo_packet_raw pwmRawPkt;
+
+static bool rc_received = false;
+static bool fdm_received = false;
 
 static struct timespec start_time;
 static double simRate = 1.0;
-static pthread_t tcpWorker, udpWorker;
+static pthread_t tcpWorker, udpWorker, udpWorkerRC;
 static bool workerRunning = true;
-static udpLink_t stateLink, pwmLink;
+static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
 static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
+static char simulator_ip[32] = "127.0.0.1";
 
+#define PORT_PWM_RAW    9001    // Out
+#define PORT_PWM        9002    // Out
+#define PORT_STATE      9003    // In
+#define PORT_RC         9004    // In
+
+int targetParseArgs(int argc, char * argv[])
+{
+    //The first argument should be target IP.
+    if (argc > 1) {
+        strcpy(simulator_ip, argv[1]);
+    }
+
+    printf("[SITL] The SITL will output to IP %s:%d (Gazebo) and %s:%d (RealFlightBridge)\n",
+           simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
+    return 0;
+}
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
 int lockMainPID(void)
@@ -118,6 +141,8 @@ void updateState(const fdm_packet* pkt)
     fakeGyroSet(fakeGyroDev, x, y, z);
 //    printf("[gyr]%lf,%lf,%lf\n", pkt->imu_angular_velocity_rpy[0], pkt->imu_angular_velocity_rpy[1], pkt->imu_angular_velocity_rpy[2]);
 
+    // temperature in 0.01 C = 25 deg
+    fakeBaroSet(pkt->pressure, 2500);
 #if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
     // set from Euler
@@ -184,12 +209,54 @@ static void* udpThread(void* data)
     while (workerRunning) {
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
         if (n == sizeof(fdm_packet)) {
-//            printf("[data]new fdm %d\n", n);
+            if (!fdm_received) {
+                printf("[SITL] new fdm %d t:%f from %s:%d\n", n, fdmPkt.timestamp, inet_ntoa(stateLink.recv.sin_addr), stateLink.recv.sin_port);
+                fdm_received = true;
+            }
             updateState(&fdmPkt);
         }
     }
 
     printf("udpThread end!!\n");
+    return NULL;
+}
+
+static float readRCSITL(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
+{
+    UNUSED(rxRuntimeState);
+    return rcPkt.channels[channel];
+}
+
+static uint8_t rxRCFrameStatus(rxRuntimeState_t *rxRuntimeState)
+{
+    UNUSED(rxRuntimeState);
+    return RX_FRAME_COMPLETE;
+}
+
+static void *udpRCThread(void *data)
+{
+    UNUSED(data);
+    int n = 0;
+
+    while (workerRunning) {
+        n = udpRecv(&rcLink, &rcPkt, sizeof(rc_packet), 100);
+        if (n == sizeof(rc_packet)) {
+            if (!rc_received) {
+                printf("[SITL] new rc %d: t:%f AETR: %d %d %d %d AUX1-4: %d %d %d %d\n", n, rcPkt.timestamp,
+                    rcPkt.channels[0], rcPkt.channels[1],rcPkt.channels[2],rcPkt.channels[3],
+                    rcPkt.channels[4], rcPkt.channels[5],rcPkt.channels[6],rcPkt.channels[7]);
+
+                rxRuntimeState.channelCount = SIMULATOR_MAX_RC_CHANNELS;
+                rxRuntimeState.rcReadRawFn = readRCSITL;
+                rxRuntimeState.rcFrameStatusFn = rxRCFrameStatus;
+
+                rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
+                rc_received = true;
+            }
+        }
+    }
+
+    printf("udpRCThread end!!\n");
     return NULL;
 }
 
@@ -236,8 +303,17 @@ void systemInit(void)
         exit(1);
     }
 
-    ret = udpInit(&pwmLink, "127.0.0.1", 9002, false);
-    printf("init PwmOut UDP link...%d\n", ret);
+    ret = udpInit(&pwmLink, simulator_ip, PORT_PWM, false);
+    printf("[SITL] init PwmOut UDP link to gazebo %s:%d...%d\n", simulator_ip, PORT_PWM, ret);
+
+    ret = udpInit(&pwmRawLink, simulator_ip, PORT_PWM_RAW, false);
+    printf("[SITL] init PwmOut UDP link to RF9 %s:%d...%d\n", simulator_ip, PORT_PWM_RAW, ret);
+
+    ret = udpInit(&stateLink, NULL, PORT_STATE, true);
+    printf("[SITL] start UDP server @%d...%d\n", PORT_STATE, ret);
+
+    ret = udpInit(&rcLink, NULL, PORT_RC, true);
+    printf("[SITL] start UDP server for RC input @%d...%d\n", PORT_RC, ret);
 
     ret = udpInit(&stateLink, NULL, 9003, true);
     printf("start UDP server...%d\n", ret);
@@ -248,6 +324,11 @@ void systemInit(void)
         exit(1);
     }
 
+    ret = pthread_create(&udpWorkerRC, NULL, udpRCThread, NULL);
+    if (ret != 0) {
+        printf("Create udpRCThread error!\n");
+        exit(1);
+    }
 }
 
 void systemReset(void)
@@ -430,7 +511,8 @@ static int16_t idlePulse;
 
 void servoDevInit(const servoDevConfig_t *servoConfig)
 {
-    UNUSED(servoConfig);
+    printf("[SITL] Init servos num %d rate %d center %d\n", MAX_SUPPORTED_SERVOS,
+           servoConfig->servoPwmRate, servoConfig->servoCenterPulse);
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         servos[servoIndex].enabled = true;
     }
@@ -467,7 +549,17 @@ static bool pwmEnableMotors(void)
 
 static void pwmWriteMotor(uint8_t index, float value)
 {
-    motorsPwm[index] = value - idlePulse;
+    if (pthread_mutex_trylock(&updateLock) != 0) return;
+
+    if (index < MAX_SUPPORTED_MOTORS) {
+        motorsPwm[index] = value - idlePulse;
+    }
+
+    if (index < pwmRawPkt.motorCount) {
+        pwmRawPkt.pwm_output_raw[index] = value;
+    }
+
+    pthread_mutex_unlock(&updateLock); // can send PWM output now
 }
 
 static void pwmWriteMotorInt(uint8_t index, uint16_t value)
@@ -504,11 +596,16 @@ static void pwmCompleteMotorUpdate(void)
     if (pthread_mutex_trylock(&updateLock) != 0) return;
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 //    printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
+    udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
 }
 
 void pwmWriteServo(uint8_t index, float value)
 {
     servosPwm[index] = value;
+    if (index + pwmRawPkt.motorCount < SIMULATOR_MAX_PWM_CHANNELS) {
+        // In pwmRawPkt, we put servo right after the motors.
+        pwmRawPkt.pwm_output_raw[index + pwmRawPkt.motorCount] = value;
+    }
 }
 
 static motorDevice_t motorPwmDevice = {
@@ -532,9 +629,8 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t _id
     UNUSED(motorConfig);
     UNUSED(useUnsyncedPwm);
 
-    if (motorCount > 4) {
-        return NULL;
-    }
+    printf("Initialized motor count %d\n", motorCount);
+    pwmRawPkt.motorCount = motorCount;
 
     idlePulse = _idlePulse;
 

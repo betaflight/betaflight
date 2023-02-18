@@ -29,8 +29,14 @@
 
 void run(void);
 
-int main(void)
+int main(int argc, char * argv[])
 {
+#ifdef SIMULATOR_BUILD
+    targetParseArgs(argc, argv);
+#else
+    UNUSED(argc);
+    UNUSED(argv);
+#endif
     init();
 
     run();
