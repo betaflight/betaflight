@@ -132,6 +132,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_beacon_armed_only = false; // blink always
     ledStripConfig->ledstrip_visual_beeper_color = VISUAL_BEEPER_COLOR;
     ledStripConfig->ledstrip_brightness = 100;
+    ledStripConfig->extra_ledstrip_blinkmask = 0x8005; // 0b1000000000000101;
 #ifndef UNIT_TEST
     ledStripConfig->ioTag = timerioTagGetByUsage(TIM_USE_LED, 0);
 #endif
@@ -955,7 +956,7 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
 // blink twice, then wait ; either always or just when landing
 static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 {
-    const uint16_t blinkPattern = 0x8005; // 0b1000000000000101;
+    const uint16_t blinkPattern = ledStripConfig()->extra_ledstrip_blinkmask;
     static uint16_t blinkMask;
 
     if (updateNow) {
