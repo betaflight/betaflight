@@ -121,6 +121,11 @@ ifeq ($(TARGET),)
 $(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
 endif
 
+EXST_ADJUST_VMA := $(shell grep " FC_VMA_ADDRESS" $(CONFIG_FILE) | awk '{print $$3}' )
+ifneq ($(EXST_ADJUST_VMA),)
+EXST = yes
+endif
+
 else
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
