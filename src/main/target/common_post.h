@@ -318,6 +318,16 @@
 #define USE_SPI_GYRO
 #endif
 
+#ifndef SIMULATOR_BUILD
+#ifndef USE_ACC
+#define USE_ACC
+#endif
+
+#ifndef USE_GYRO
+#define USE_GYRO
+#endif
+#endif
+
 // CX10 is a special case of SPI RX which requires XN297
 #if defined(USE_RX_CX10)
 #define USE_RX_XN297
