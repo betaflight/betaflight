@@ -182,6 +182,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_brightness;
     uint16_t ledstrip_rainbow_delta;
     uint16_t ledstrip_rainbow_freq;
+    uint16_t extra_ledstrip_blinkmask;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
