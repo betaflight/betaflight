@@ -1290,6 +1290,7 @@ const clivalue_t valueTable[] = {
     { "ledstrip_beacon_percent",    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_beacon_percent) },
     { "ledstrip_beacon_armed_only", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_beacon_armed_only) },
     { "ledstrip_brightness",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_brightness) },
+    { "extra_ledstrip_blinkmask",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, UINT16_MAX }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, extra_ledstrip_blinkmask) },    
 #endif
 
 // PG_SDCARD_CONFIG
