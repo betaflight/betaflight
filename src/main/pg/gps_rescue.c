@@ -62,7 +62,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .throttleD = 20,
     .velP = 8,
     .velI = 40,
-    .velD = 25,
+    .velD = 12,
     .yawP = 20,
 
     .useMag = GPS_RESCUE_USE_MAG

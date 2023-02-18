@@ -98,6 +98,7 @@ extern "C" {
     uint8_t activePidLoopDenom = 1;
 
     float getGpsDataIntervalSeconds(void) { return 0.1f; }
+    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k) { filter->k = k; }
     void pt2FilterUpdateCutoff(pt2Filter_t *filter, float k) { filter->k = k; }
     void pt3FilterUpdateCutoff(pt3Filter_t *filter, float k) { filter->k = k; }
 }
@@ -1142,6 +1143,13 @@ extern "C" {
     }
     float pt2FilterApply(pt2Filter_t *throttleDLpf, float) {
         UNUSED(throttleDLpf);
+        return 0.0f;
+    }
+    void pt1FilterInit(pt1Filter_t *velocityDLpf, float) {
+        UNUSED(velocityDLpf);
+    }
+    float pt1FilterApply(pt1Filter_t *velocityDLpf, float) {
+        UNUSED(velocityDLpf);
         return 0.0f;
     }
     void pt3FilterInit(pt3Filter_t *velocityUpsampleLpf, float) {
