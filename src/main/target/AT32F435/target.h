@@ -30,56 +30,31 @@
 #define AT32F435
 #endif
 
-// AT-START-F435 V1.0 LED assignments to use as a default
-#define LED0_PIN                PD13 // Labelled LED2 Red
-#define LED1_PIN                PD14 // Labelled LED3 Amber
-#define LED2_PIN                PD15 // Labelled LED4 Green
-
-//#define USE_I2C_DEVICE_1
-
 #define USE_UART1
-// AT-START-F435 V1.0 UART 1 assignments to use as a default
-#define UART1_RX_PIN PA10
-#define UART1_TX_PIN PA9
-#define USE_MSP_UART SERIAL_PORT_USART1
-
 #define USE_UART2
 #define USE_UART3
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
-
-//#define USE_I2C
-//#define I2C_FULL_RECONFIGURABILITY
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         0xffff
 
 #define USE_SPI
+#define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
 #define USE_SPI_DMA_ENABLE_LATE
 
-// AT-START-F435 J7 connector SPI 1
-#define SPI2_SCK_PIN            PD1
-#define SPI2_MISO_PIN           PC2
-#define SPI2_MOSI_PIN           PD4
-
-#define J7_NSS                  PD0
-
-#define GYRO_1_CS_PIN           J7_NSS
-#define GYRO_1_SPI_INSTANCE     SPI2
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6000
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PIN         PB11
 
-#define USE_ACCGYRO_BMI160
 
 #define USE_USB_DETECT
 #define USE_VCP
-//#define USE_SOFTSERIAL1
-//#define USE_SOFTSERIAL2
-
 
 #define UNIFIED_SERIAL_PORT_COUNT       1
 
@@ -88,6 +63,7 @@
 #define USE_CUSTOM_DEFAULTS
 #define USE_PWM_OUTPUT
 
+// Remove these undefines as support is added
 #undef USE_BEEPER
 #undef USE_LED_STRIP
 #undef USE_TRANSPONDER
@@ -111,13 +87,3 @@
 #undef USE_FLASH
 #undef USE_FLASHFS
 #undef USE_FLASH_CHIP
-
-#if defined(AT32F435ZMT7) || defined(AT32F435RMT7)
-// 4k sectors
-#define FLASH_PAGE_SIZE   ((uint32_t)0x1000)
-#elif defined(AT32F435RGT7)
-// 2K page sectors
-#define FLASH_PAGE_SIZE   ((uint32_t)0x0800)
-#endif
-
-#define USE_EXTI
