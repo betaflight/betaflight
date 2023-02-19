@@ -577,6 +577,11 @@ TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
 
+CONFIGS_REVISION = $(addsuffix _rev,$(BASE_CONFIGS))
+## <CONFIG>_rev    : build configured target and add revision to filename
+$(CONFIGS_REVISION):
+	$(V0) $(MAKE) hex REV=yes CONFIG=$(subst _rev,,$@)
+
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
 unbrick_$(TARGET): $(TARGET_HEX)
