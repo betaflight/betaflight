@@ -309,6 +309,13 @@ void mixerInitProfile(void)
     } else {
         mixerRuntime.dynIdleMinRps = 0.0f;
     }
+
+#ifdef USE_RPM_LIMITER
+    if (mixerConfig()->rpm_limiter) {
+        mixerRuntime.dynIdleMinRps = 0.0f;
+    }
+#endif
+
     mixerRuntime.dynIdlePGain = currentPidProfile->dyn_idle_p_gain * 0.00015f;
     mixerRuntime.dynIdleIGain = currentPidProfile->dyn_idle_i_gain * 0.01f * pidGetDT();
     mixerRuntime.dynIdleDGain = currentPidProfile->dyn_idle_d_gain * 0.0000003f * pidGetPidFrequency();
