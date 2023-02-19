@@ -172,7 +172,7 @@ bool cliMode = false;
 #include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
 
-#include "locales/translations.h"
+#include "locales/localisation.h"
 
 #include "cli.h"
 

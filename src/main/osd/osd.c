@@ -78,7 +78,7 @@
 #include "io/flashfs.h"
 #include "io/gps.h"
 
-#include "locales/translations.h"
+#include "locales/localisation.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
