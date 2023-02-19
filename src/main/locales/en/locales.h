@@ -75,11 +75,18 @@
 #define TR_ODSE_ELEMENT_ROL         "ROL"
 #define TR_ODSE_ELEMENT_YAW         "YAW"
 
+#define TR_ODSE_ANTIGRAVITY         "AG"
+
 #define TR_OSDE_READY               "READY"
 
 // CLI
 #define TR_CLI_ERROR_INVALID_NAME   "INVALID NAME: %s"
 #define TR_CLI_ERROR_MESSAGE        "%s CANNOT BE CHANGED. CURRENT VALUE: '%s'"
+#define TR_CLI_PARSINGFAIL          "PARSING FAILED"
+#define TR_CLI_INVALIDRESSOURCE     "INVALID RESOURCE NAME: '%s'"
+#define TR_CLI_ARG_INVALIDCOUNT     "INVALID ARGUMENT COUNT"
+#define TR_CLI_ARG_INVALIDRANGE     "%s NOT BETWEEN %d AND %d"
+#define TR_CLI_ARG_OUTOFRANGE       "ARGUMENT OUT OF RANGE"
 
 #define TR_CLI_DSHOT_READ           "Dshot reads: %u"
 #define TR_CLI_DSHOT_INVALID_PKT    "Dshot invalid pkts: %u"
@@ -144,3 +151,33 @@
 #define TR_CLI_PROCESS              "UNKNOWN COMMAND, TRY 'HELP'"
 #define TR_CLI_ENTER_LONG           "\r\nEntering CLI Mode, type 'exit' to return, or 'help'"
 #define TR_CLI_ENTER_SHORT          "\r\nCLI"
+
+#define TR_CLI_SDCARD_NAME          "SD card: "
+#define TR_CLI_SDCARD_NOCONFIG      "Not configured"
+#define TR_CLI_SDCARD_NONE          "None inserted"
+#define TR_CLI_SDCARD_NOSTART       "Startup failed"
+#define TR_CLI_SDCARD_MANUFAC       "Manufacturer 0x%x, %ukB, %02d/%04d, v%d.%d, '"
+#define TR_CLI_SDCARD_FILESYSTEM    "'\r\n" "Filesystem: "
+#define TR_CLI_SDCARD_READY         "Ready"
+#define TR_CLI_SDCARD_INIT          "Initializing"
+#define TR_CLI_SDCARD_FATAL         "Fatal"
+#define TR_CLI_SDCARD_NOFATMBR      " - no FAT MBR partitions"
+#define TR_CLI_SDCARD_BADFAT        " - bad FAT header"
+
+#define TR_CLI_FLASH_INFO           "Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u JEDEC ID=0x%08x"
+#define TR_CLI_FLASH_PART           "Partitions:"
+#define TR_CLI_FLASH_SIZE           "FlashFS size=%u, usedSize=%u"
+#define TR_CLI_FLASH_ER_LONG        "Erasing, please wait ... "
+#define TR_CLI_FLASH_ER_SHORT       "Erasing,"
+#define TR_CLI_FLASH_ER_DONE        "Done."
+#define TR_CLI_FLASH_VR             "Verifying"
+#define TR_CLI_FLASH_VR_OK          "Success"
+#define TR_CLI_FLASH_VR_FAIL        "Failed"
+#define TR_CLI_FLASH_WROTE          "Wrote %u bytes at %u."
+#define TR_CLI_FLASH_READ           "Reading %u bytes at %u:"
+
+#define TR_CLI_ENABLED              "Enabled"
+#define TR_CLI_DISABLED             "Disabled"
+#define TR_CLI_AVAILABLE            "Available:"
+#define TR_CLI_UNAVAILABLE          "unavailable"
+#define TR_CLI_NOSUPPORT            "Not supported."

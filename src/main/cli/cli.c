@@ -967,20 +967,20 @@ static void cliPrompt(void)
 
 static void cliShowParseError(const char *cmdName)
 {
-    cliPrintErrorLinef(cmdName, "PARSING FAILED");
+    cliPrintErrorLinef(cmdName, STR_CLI_PARSINGFAIL);
 }
 
 static void cliShowInvalidArgumentCountError(const char *cmdName)
 {
-    cliPrintErrorLinef(cmdName, "INVALID ARGUMENT COUNT", cmdName);
+    cliPrintErrorLinef(cmdName, STR_CLI_ARG_INVALIDCOUNT, cmdName);
 }
 
 static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, int max)
 {
     if (name) {
-        cliPrintErrorLinef(cmdName, "%s NOT BETWEEN %d AND %d", name, min, max);
+        cliPrintErrorLinef(cmdName, STR_CLI_ARG_INVALIDRANGE, name, min, max);
     } else {
-        cliPrintErrorLinef(cmdName, "ARGUMENT OUT OF RANGE");
+        cliPrintErrorLinef(cmdName, STR_CLI_ARG_OUTOFRANGE);
     }
 }
 
@@ -2388,27 +2388,27 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
 
-    cliPrint("SD card: ");
+    cliPrint(STR_CLI_SDCARD_NAME);
 
     if (sdcardConfig()->mode == SDCARD_MODE_NONE) {
-        cliPrintLine("Not configured");
+        cliPrintLine(STR_CLI_SDCARD_NOCONFIG);
 
         return;
     }
 
     if (!sdcard_isInserted()) {
-        cliPrintLine("None inserted");
+        cliPrintLine(STR_CLI_SDCARD_NONE);
         return;
     }
 
     if (!sdcard_isFunctional() || !sdcard_isInitialized()) {
-        cliPrintLine("Startup failed");
+        cliPrintLine(STR_CLI_SDCARD_NOSTART);
         return;
     }
 
     const sdcardMetadata_t *metadata = sdcard_getMetadata();
 
-    cliPrintf("Manufacturer 0x%x, %ukB, %02d/%04d, v%d.%d, '",
+    cliPrintf(STR_CLI_SDCARD_MANUFAC,
         metadata->manufacturerID,
         metadata->numBlocks / 2, /* One block is half a kB */
         metadata->productionMonth,
@@ -2419,25 +2419,25 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 
     cliWriteBytes((uint8_t*)metadata->productName, sizeof(metadata->productName));
 
-    cliPrint("'\r\n" "Filesystem: ");
+    cliPrint(STR_CLI_SDCARD_FILESYSTEM);
 
     switch (afatfs_getFilesystemState()) {
     case AFATFS_FILESYSTEM_STATE_READY:
-        cliPrint("Ready");
+        cliPrint(STR_CLI_SDCARD_READY);
         break;
     case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-        cliPrint("Initializing");
+        cliPrint(STR_CLI_SDCARD_INIT);
         break;
     case AFATFS_FILESYSTEM_STATE_UNKNOWN:
     case AFATFS_FILESYSTEM_STATE_FATAL:
-        cliPrint("Fatal");
+        cliPrint(STR_CLI_SDCARD_FATAL);
 
         switch (afatfs_getLastError()) {
         case AFATFS_ERROR_BAD_MBR:
-            cliPrint(" - no FAT MBR partitions");
+            cliPrint(STR_CLI_SDCARD_NOFATMBR);
             break;
         case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
-            cliPrint(" - bad FAT header");
+            cliPrint(STR_CLI_SDCARD_BADFAT);
             break;
         case AFATFS_ERROR_GENERIC:
         case AFATFS_ERROR_NONE:
@@ -2459,13 +2459,12 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 
     const flashGeometry_t *layout = flashGetGeometry();
 
-    cliPrintLinef("Flash sectors=%u, sectorSize=%u, pagesPerSector=%u, pageSize=%u, totalSize=%u JEDEC ID=0x%08x",
-            layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, layout->jedecId);
+    cliPrintLinef(STR_CLI_FLASH_INFO, layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, layout->jedecId);
 
     for (uint8_t index = 0; index < FLASH_MAX_PARTITIONS; index++) {
         const flashPartition_t *partition;
         if (index == 0) {
-            cliPrintLine("Partitions:");
+            cliPrintLine(STR_CLI_FLASH_PART);
         }
         partition = flashPartitionFindByIndex(index);
         if (!partition) {
@@ -2476,7 +2475,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 #ifdef USE_FLASHFS
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
 
-    cliPrintLinef("FlashFS size=%u, usedSize=%u",
+    cliPrintLinef(STR_CLI_FLASH_SIZE,
             FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
             flashfsGetOffset()
     );
@@ -2496,9 +2495,9 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
 
 #ifndef MINIMAL_CLI
     uint32_t i = 0;
-    cliPrintLine("Erasing, please wait ... ");
+    cliPrintLine(STR_CLI_FLASH_ER_LONG);
 #else
-    cliPrintLine("Erasing,");
+    cliPrintLine(STR_CLI_FLASH_ER_SHORT);
 #endif
 
     cliWriterFlush();
@@ -2518,7 +2517,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     }
     beeper(BEEPER_BLACKBOX_ERASE);
     cliPrintLinefeed();
-    cliPrintLine("Done.");
+    cliPrintLine(STR_CLI_FLASH_ER_DONE);
 }
 
 #ifdef USE_FLASH_TOOLS
@@ -2526,11 +2525,11 @@ static void cliFlashVerify(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLine("Verifying");
+    cliPrintLine(STR_CLI_FLASH_VR);
     if (flashfsVerifyEntireFlash()) {
-        cliPrintLine("Success");
+        cliPrintLine(STR_CLI_FLASH_VR_OK);
     } else {
-        cliPrintErrorLinef(cmdName, "Failed");
+        cliPrintErrorLinef(cmdName, STR_CLI_FLASH_VR_FAIL);
     }
 }
 
@@ -2546,7 +2545,7 @@ static void cliFlashWrite(const char *cmdName, char *cmdline)
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
 
-        cliPrintLinef("Wrote %u bytes at %u.", strlen(text), address);
+        cliPrintLinef(STR_CLI_FLASH_WROTE, strlen(text), address);
     }
 }
 
@@ -2561,7 +2560,7 @@ static void cliFlashRead(const char *cmdName, char *cmdline)
     } else {
         uint32_t length = atoi(nextArg);
 
-        cliPrintLinef("Reading %u bytes at %u:", length, address);
+        cliPrintLinef(STR_CLI_FLASH_READ, length, address);
 
         uint8_t buffer[32];
         while (length > 0) {
@@ -3269,7 +3268,7 @@ static void cliFeature(const char *cmdName, char *cmdline)
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
     if (len == 0) {
-        cliPrint("Enabled: ");
+        cliPrintf("%s: ", STR_CLI_ENABLED);
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL) {
                 break;
@@ -3280,7 +3279,7 @@ static void cliFeature(const char *cmdName, char *cmdline)
         }
         cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available:");
+        cliPrint(STR_CLI_AVAILABLE);
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
@@ -3310,22 +3309,22 @@ static void cliFeature(const char *cmdName, char *cmdline)
                 feature = 1 << i;
 #ifndef USE_GPS
                 if (feature & FEATURE_GPS) {
-                    cliPrintLine("unavailable");
+                    cliPrintLine(STR_CLI_UNAVAILABLE);
                     break;
                 }
 #endif
 #ifndef USE_RANGEFINDER
                 if (feature & FEATURE_RANGEFINDER) {
-                    cliPrintLine("unavailable");
+                    cliPrintLine(STR_CLI_UNAVAILABLE);
                     break;
                 }
 #endif
                 if (remove) {
                     featureConfigClear(feature);
-                    cliPrint("Disabled");
+                    cliPrint(STR_CLI_DISABLED);
                 } else {
                     featureConfigSet(feature);
-                    cliPrint("Enabled");
+                    cliPrint(STR_CLI_ENABLED);
                 }
                 cliPrintLinef(" %s", featureNames[i]);
                 break;
@@ -3358,7 +3357,7 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
     uint8_t beeperCount = beeperTableEntryCount();
 
     if (len == 0) {
-        cliPrintf("Disabled:");
+        cliPrintf("%s:", STR_CLI_DISABLED);
         for (int32_t i = 0; ; i++) {
             if (i == beeperCount - 1) {
                 if (*offFlags == 0)
@@ -3371,7 +3370,7 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
         }
         cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available:");
+        cliPrint(STR_CLI_AVAILABLE);
         for (uint32_t i = 0; i < beeperCount; i++) {
             if (beeperModeMaskForTableIndex(i) & allowedFlags) {
                 cliPrintf(" %s", beeperNameForTableIndex(i));
@@ -3398,7 +3397,7 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
                     } else {
                         *offFlags |= beeperModeMaskForTableIndex(i);
                     }
-                    cliPrint("Disabled");
+                    cliPrint(STR_CLI_DISABLED);
                 }
                 else { // beeper on
                     if (i == BEEPER_ALL - 1) {
@@ -3406,7 +3405,7 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
                     } else {
                         *offFlags &= ~beeperModeMaskForTableIndex(i);
                     }
-                    cliPrint("Enabled");
+                    cliPrint(STR_CLI_ENABLED);
                 }
             cliPrintLinef(" %s", beeperNameForTableIndex(i));
             break;
@@ -3976,7 +3975,7 @@ static void cliMixer(const char *cmdName, char *cmdline)
         cliPrintLinef("Mixer: %s", mixerNames[mixerConfig()->mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available:");
+        cliPrint(STR_CLI_AVAILABLE);
         for (uint32_t i = 0; ; i++) {
             if (mixerNames[i] == NULL)
                 break;

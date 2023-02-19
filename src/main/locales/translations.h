@@ -29,20 +29,7 @@
 #endif
 
 #include "locales/untranslated.h"
-
-#if defined(TRANSLATIONS_CZ)
-  #include "locales/cz.h"
-#elif defined(TRANSLATIONS_DA)
-  #include "locales/da.h"
-#elif defined(TRANSLATIONS_ES)
-  #include "locales/es.h"
-#elif defined(TRANSLATIONS_FR)
-  #include "locales/fr.h"
-#elif defined(TRANSLATIONS_NL)
-  #include "locales/nl.h"
-#else
-  #include "locales/en.h"
-#endif
+#include "locales.h"                            // located in locales/xx, default locales/en, managed by make
 
 // extern const char* const STR_OFFON[];
 // extern const char STR_ALT[]=TR_ALT;
@@ -107,6 +94,11 @@ extern const char STR_OSDE_READY[];
 
 extern const char STR_CLI_ERROR_INVALID_NAME[];
 extern const char STR_CLI_ERROR_MESSAGE[];
+extern const char STR_CLI_PARSINGFAIL[];
+extern const char STR_CLI_INVALIDRESSOURCE[];
+extern const char STR_CLI_ARG_INVALIDCOUNT[];
+extern const char STR_CLI_ARG_INVALIDRANGE[];
+extern const char STR_CLI_ARG_OUTOFRANGE[];
 
 extern const char STR_CLI_DSHOT_READ[];
 extern const char STR_CLI_DSHOT_INVALID_PKT[];
@@ -171,3 +163,33 @@ extern const char STR_CLI_MSC_REBOOT[];
 extern const char STR_CLI_PROCESS[];
 extern const char STR_CLI_ENTER_LONG[];
 extern const char STR_CLI_ENTER_SHORT[];
+
+extern const char STR_CLI_SDCARD_NAME[];
+extern const char STR_CLI_SDCARD_NOCONFIG[];
+extern const char STR_CLI_SDCARD_NONE[];
+extern const char STR_CLI_SDCARD_NOSTART[];
+extern const char STR_CLI_SDCARD_MANUFAC[];
+extern const char STR_CLI_SDCARD_FILESYSTEM[];
+extern const char STR_CLI_SDCARD_READY[];
+extern const char STR_CLI_SDCARD_INIT[];
+extern const char STR_CLI_SDCARD_FATAL[];
+extern const char STR_CLI_SDCARD_NOFATMBR[];
+extern const char STR_CLI_SDCARD_BADFAT[];
+
+extern const char STR_CLI_FLASH_INFO[];
+extern const char STR_CLI_FLASH_PART[];
+extern const char STR_CLI_FLASH_SIZE[];
+extern const char STR_CLI_FLASH_ER_LONG[];
+extern const char STR_CLI_FLASH_ER_SHORT[];
+extern const char STR_CLI_FLASH_ER_DONE[];
+extern const char STR_CLI_FLASH_VR[];
+extern const char STR_CLI_FLASH_VR_OK[];
+extern const char STR_CLI_FLASH_VR_FAIL[];
+extern const char STR_CLI_FLASH_WROTE[];
+extern const char STR_CLI_FLASH_READ[];
+
+extern const char STR_CLI_ENABLED[];
+extern const char STR_CLI_DISABLED[];
+extern const char STR_CLI_AVAILABLE[];
+extern const char STR_CLI_UNAVAILABLE[];
+extern const char STR_CLI_NOSUPPORT[];

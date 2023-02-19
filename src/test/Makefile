@@ -17,6 +17,16 @@ ROOT = ../..
 OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
+# Setup locale
+LOCALE_LIST := en da
+ifeq ($(LOCALE),)
+LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS := $(USER_DIR)/locales/$(LOCALE)
+
 include $(ROOT)/make/system-id.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
@@ -501,6 +511,7 @@ COMMON_FLAGS = \
 	-Wno-error=unused-command-line-argument \
 	-ggdb3 \
 	-O0 \
+	-I$(INCLUDE_DIRS)\
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \

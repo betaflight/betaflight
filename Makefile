@@ -146,6 +146,18 @@ LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
 
 #
+# Setup locale
+#
+LOCALE_LIST := en da
+ifeq ($(LOCALE),)
+LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS += $(INCLUDE_DIRS) $(SRC_DIR)/locales/$(LOCALE)
+
+#
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 ifeq ($(DEBUG),GDB)
