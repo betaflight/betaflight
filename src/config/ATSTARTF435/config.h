@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only.
-*/
-
 #define FC_TARGET_MCU     AT32F435
 
 #define BOARD_NAME        ATSTARTF435
