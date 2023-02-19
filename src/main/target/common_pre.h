@@ -40,7 +40,7 @@
     case of common settings for a given MCU group)
 
 */
-
+#define USE_RPM_LIMIT
 #define USE_PARAMETER_GROUPS
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
