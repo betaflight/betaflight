@@ -70,7 +70,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define USE_LATE_TASK_STATISTICS
 
-/*
 #ifndef SPI1_SCK_PIN
 #define SPI1_SCK_PIN    PA5
 #define SPI1_MISO_PIN   PA6
@@ -106,4 +105,3 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SPI6_MISO_PIN   NONE
 #define SPI6_MOSI_PIN   NONE
 #endif
-*/
