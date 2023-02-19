@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "locales/translations.h"
+#include "../locales/localisation.h"
 
 #define ISTR(x) const char* const STR_##x[] = { TR_##x }
 

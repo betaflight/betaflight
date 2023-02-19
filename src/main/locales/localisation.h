@@ -28,8 +28,8 @@
   #define TR2(x, y) x
 #endif
 
-#include "locales/untranslated.h"
-#include "locales.h"                            // located in locales/xx, default locales/en, managed by make
+#include "../locales/untranslated.h"
+#include "locale.h"                            // located in locales/xx, default locales/en, managed by make
 
 // extern const char* const STR_OFFON[];
 // extern const char STR_ALT[]=TR_ALT;
