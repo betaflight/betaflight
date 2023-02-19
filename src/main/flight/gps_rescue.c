@@ -807,8 +807,8 @@ void gpsRescueUpdate(void)
         rescueState.intent.velocityPidCutoffModifier = 2.0f - rescueState.intent.velocityItermRelax; 
         // higher velocity cutoff for initial few seconds to improve accuracy; can be smoother later
 
-        rescueState.intent.rollAngleLimitDeg *= 0.5f * rescueState.intent.velocityItermRelax * gpsRescueConfig()->maxRescueAngle;
-        // gradually gain roll capability to max of half of 
+        rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.velocityItermRelax * gpsRescueConfig()->maxRescueAngle;
+        // gradually gain roll capability to max of half of max pitch angle
 
         if (newGPSData) {
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
