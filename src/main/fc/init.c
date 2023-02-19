@@ -1016,9 +1016,7 @@ void init(void)
     spiInitBusDMA();
 #endif
 
-#ifdef DEBUG
     debugInit();
-#endif
 
     unusedPinsInit();
 
