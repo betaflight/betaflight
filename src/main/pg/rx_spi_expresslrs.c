@@ -29,6 +29,14 @@
 
 #include "rx_spi_expresslrs.h"
 
+#if !defined(RX_EXPRESSLRS_SPI_RESET_PIN)
+#define RX_EXPRESSLRS_SPI_RESET_PIN NONE
+#endif
+
+#if !defined(RX_EXPRESSLRS_SPI_BUSY_PIN)
+#define RX_EXPRESSLRS_SPI_BUSY_PIN NONE
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(rxExpressLrsSpiConfig_t, rxExpressLrsSpiConfig, PG_RX_EXPRESSLRS_SPI_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rxExpressLrsSpiConfig_t, rxExpressLrsSpiConfig,

@@ -552,14 +552,6 @@ extern uint8_t __config_end;
 #define USE_CUSTOM_DEFAULTS_ADDRESS
 #endif
 
-#if defined(USE_RX_EXPRESSLRS) && defined(STM32F411)
-#define RX_SPI_DEFAULT_PROTOCOL          RX_SPI_EXPRESSLRS
-#endif
-
-#if defined(USE_RX_EXPRESSLRS) && !defined(RX_EXPRESSLRS_TIMER_INSTANCE) && (defined(STM32F411) || defined(STM32F405) || defined(STM32F745) || defined(STM32H7))
-#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
-#endif
-
 #if defined(USE_RX_EXPRESSLRS)
 // ELRS depends on CRSF telemetry
 #if !defined(USE_TELEMETRY)
