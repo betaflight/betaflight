@@ -588,7 +588,6 @@ static void sensorUpdate(void)
 
     DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(rescueState.sensor.velocityToHomeCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.velocityToHomeCmS));
-
 }
 
 // This function flashes "RESCUE N/A" in the OSD if:
@@ -708,26 +707,31 @@ void gpsRescueUpdate(void)
         // target altitude is always set to current altitude.
 
     case RESCUE_INITIALIZE:
-        // Things that should abort the start of a Rescue
+        // Things that should be done at the start of a Rescue
+        rescueState.intent.targetLandingAltitudeCm = 100.0f * gpsRescueConfig()->targetLandingAltitudeM;
         if (!STATE(GPS_FIX_HOME)) {
             // we didn't get a home point on arming
             rescueState.failure = RESCUE_NO_HOME_POINT;
             // will result in a disarm via the sanity check system, with delay if switch induced
             // alternative is to prevent the rescue by returning to IDLE, but this could cause flyaways
         } else if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minRescueDth) {
-            // Attempt to initiate inside minimum activation distance -> landing mode
-            rescueState.intent.altitudeStep = -rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
-            rescueState.intent.targetVelocityCmS = 0; // zero forward velocity
-            rescueState.intent.pitchAngleLimitDeg = 0; // flat on pitch
-            rescueState.intent.rollAngleLimitDeg = 0.0f; // flat on roll also
-            rescueState.intent.proximityToLandingArea = 0.0f; // force velocity iTerm to zero
-            rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm + rescueState.intent.altitudeStep;
-            rescueState.phase = RESCUE_LANDING;
-            // start landing from current altitude
+            if (rescueState.sensor.distanceToHomeM < 5.0f && rescueState.sensor.currentAltitudeCm < rescueState.intent.targetLandingAltitudeCm) {
+                // attempted initiation within 5m of home, and 'on the ground' -> instant disarm, for safety reasons
+                rescueState.phase = RESCUE_ABORT;
+            } else {
+                // Otherwise, attempted initiation inside minimum activation distance, at any height -> landing mode
+                rescueState.intent.altitudeStep = -rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
+                rescueState.intent.targetVelocityCmS = 0; // zero forward velocity
+                rescueState.intent.pitchAngleLimitDeg = 0; // flat on pitch
+                rescueState.intent.rollAngleLimitDeg = 0.0f; // flat on roll also
+                rescueState.intent.proximityToLandingArea = 0.0f; // force velocity iTerm to zero
+                rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm + rescueState.intent.altitudeStep;
+                rescueState.phase = RESCUE_LANDING;
+                // start landing from current altitude
+            }
         } else {
             rescueState.phase = RESCUE_ATTAIN_ALT;
             rescueState.intent.secondsFailing = 0; // reset the sanity check timer for the climb
-            rescueState.intent.targetLandingAltitudeCm = 100.0f * gpsRescueConfig()->targetLandingAltitudeM;
             initialAltitudeLow = (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm);
             rescueState.intent.yawAttenuator = 0.0f;
             rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
