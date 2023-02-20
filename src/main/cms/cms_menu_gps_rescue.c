@@ -63,6 +63,7 @@ static uint8_t gpsRescueConfig_throttleP, gpsRescueConfig_throttleI, gpsRescueCo
 static uint8_t gpsRescueConfig_yawP;
 static uint8_t gpsRescueConfig_velP, gpsRescueConfig_velI, gpsRescueConfig_velD;
 
+static uint8_t gpsRescueConfig_pitchCutoffHz;
 
 static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
 {
@@ -78,6 +79,7 @@ static const void *cms_menuGpsRescuePidOnEnter(displayPort_t *pDisp)
     gpsRescueConfig_velI = gpsRescueConfig()->velI;
     gpsRescueConfig_velD = gpsRescueConfig()->velD;
 
+    gpsRescueConfig_pitchCutoffHz = gpsRescueConfig()->pitchCutoffHz;
     return NULL;
 }
 
@@ -96,6 +98,8 @@ static const void *cms_menuGpsRescuePidOnExit(displayPort_t *pDisp, const OSD_En
     gpsRescueConfigMutable()->velI = gpsRescueConfig_velI;
     gpsRescueConfigMutable()->velD = gpsRescueConfig_velD;
 
+    gpsRescueConfigMutable()->pitchCutoffHz = gpsRescueConfig_pitchCutoffHz;
+
     return NULL;
 }
 
@@ -112,6 +116,8 @@ const OSD_Entry cms_menuGpsRescuePidEntries[] =
     { "VELOCITY P",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_velP, 0, 255, 1 } },
     { "VELOCITY I",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_velI, 0, 255, 1 } },
     { "VELOCITY D",        OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_velD, 0, 255, 1 } },
+
+    { "SMOOTHING",         OME_UINT8 | REBOOT_REQUIRED, NULL, &(OSD_UINT8_t){ &gpsRescueConfig_pitchCutoffHz, 10, 255, 1 } },
 
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
