@@ -665,7 +665,7 @@ void descend(void)
         // reduce roll capability when closer to home, none within final 2m
     }
 
-    // adjust altitude step for interval between altitude readings
+    // configure altitude step for descent, considering interval between altitude readings
     rescueState.intent.altitudeStep = -1.0f * rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
 
     // descend more slowly if return altitude is less than 20m
@@ -677,13 +677,6 @@ void descend(void)
     rescueState.intent.descentRateModifier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
     rescueState.intent.targetAltitudeCm += rescueState.intent.altitudeStep * (1.0f + (2.0f * rescueState.intent.descentRateModifier));
     // increase descent rate to max of 3x default above 50m, 2x above 25m, 1.2 at 5m, default by ground level.
-}
-
-void altitudeAchieved(void)
-{
-    rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
-    rescueState.intent.altitudeStep = 0;
-    rescueState.phase = RESCUE_ROTATE;
 }
 
 void gpsRescueUpdate(void)
@@ -701,7 +694,7 @@ void gpsRescueUpdate(void)
 
     sensorUpdate(); // always get latest GPS and Altitude data, update ascend and descend rates
 
-    static bool startedLow = true;
+    static bool initialAltitudeLow = true;
     static bool initialVelocityLow = true;
     rescueState.isAvailable = checkGPSRescueIsAvailable();
 
@@ -735,7 +728,7 @@ void gpsRescueUpdate(void)
             rescueState.phase = RESCUE_ATTAIN_ALT;
             rescueState.intent.secondsFailing = 0; // reset the sanity check timer for the climb
             rescueState.intent.targetLandingAltitudeCm = 100.0f * gpsRescueConfig()->targetLandingAltitudeM;
-            startedLow = (rescueState.sensor.currentAltitudeCm <= rescueState.intent.returnAltitudeCm);
+            initialAltitudeLow = (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm);
             rescueState.intent.yawAttenuator = 0.0f;
             rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
             rescueState.intent.pitchAngleLimitDeg = 0.0f; // no pitch
@@ -752,20 +745,18 @@ void gpsRescueUpdate(void)
         // gradually increment the target altitude until the craft reaches target altitude
         // note that this can mean the target altitude may increase above returnAltitude if the craft lags target
         // sanity check will abort if altitude gain is blocked for a cumulative period
-        if (startedLow) {
-            if (rescueState.intent.targetAltitudeCm < rescueState.intent.returnAltitudeCm) {
-                rescueState.intent.altitudeStep = rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->ascendRate;
-            } else if (rescueState.sensor.currentAltitudeCm > rescueState.intent.returnAltitudeCm) {
-                altitudeAchieved();
-            } 
+        rescueState.intent.altitudeStep = ((initialAltitudeLow) ? gpsRescueConfig()->ascendRate : -1.0f * gpsRescueConfig()->descendRate) * rescueState.sensor.gpsRescueTaskIntervalSeconds;
+        const bool currentAltitudeLow = rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm;
+        if (initialAltitudeLow == currentAltitudeLow) {
+            // we started low, and still are low; also true if we started high, and still are too high
+            rescueState.intent.targetAltitudeCm += rescueState.intent.altitudeStep;
         } else {
-            if (rescueState.intent.targetAltitudeCm > rescueState.intent.returnAltitudeCm) {
-                rescueState.intent.altitudeStep = -rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
-            } else if (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm) {
-                altitudeAchieved();
-            }
+            // target altitude achieved - move on to ROTATE phase, returning at target altitude
+            rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
+            rescueState.intent.altitudeStep = 0.0f;
+            rescueState.phase = RESCUE_ROTATE;
         }
-        rescueState.intent.targetAltitudeCm += rescueState.intent.altitudeStep;
+
         rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
         // gives velocity P and I no error that otherwise would be present due to velocity drift at the start of the rescue
         break;
