@@ -80,3 +80,5 @@
 
 #define USE_CUSTOM_DEFAULTS
 #define USE_EXTI
+
+#define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
