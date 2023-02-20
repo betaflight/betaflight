@@ -133,21 +133,6 @@
 #define RX_SPI_BIND_PIN NONE
 #endif
 
-#if defined(USE_RX_EXPRESSLRS)
-#if !defined(RX_EXPRESSLRS_SPI_RESET_PIN)
-#define RX_EXPRESSLRS_SPI_RESET_PIN NONE
-#endif
-
-#if !defined(RX_EXPRESSLRS_SPI_BUSY_PIN)
-#define RX_EXPRESSLRS_SPI_BUSY_PIN NONE
-#endif
-
-#if !defined(RX_EXPRESSLRS_TIMER_INSTANCE)
-#define RX_EXPRESSLRS_TIMER_INSTANCE NULL
-#endif
-
-#endif
-
 #endif
 
 // gyro hardware
