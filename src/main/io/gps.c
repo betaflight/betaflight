@@ -1926,9 +1926,19 @@ void onGpsNewData(void)
 {
     static timeUs_t lastTimeUs = 0;
     const timeUs_t timeUs = micros();
+
     // calculate GPS solution interval
     // !!! TOO MUCH JITTER TO BE USEFUL - need an exact time !!!
-    gpsDataIntervalSeconds = cmpTimeUs(timeUs, lastTimeUs) / 1e6f;
+    const float gpsDataIntervalS = cmpTimeUs(timeUs, lastTimeUs) / 1e6f;
+    // dirty hack to remove jitter from interval
+    if (gpsDataIntervalS < 0.15f) {
+        gpsDataIntervalSeconds = 0.1f;
+    } else if (gpsDataIntervalS < 0.4f) {
+        gpsDataIntervalSeconds = 0.2f;
+    } else {
+        gpsDataIntervalSeconds = 1.0f;
+    }
+
     lastTimeUs = timeUs;
 
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= GPS_MIN_SAT_COUNT)) {

@@ -141,18 +141,6 @@ void gpsRescueInit(void)
 {
     rescueState.sensor.gpsRescueTaskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ);
 
-    // ***** THIS IS A QUICK HACK replacing the constraint ****
-    const float gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
-    // We need a constant value since we cannot measure the interval with adequate precision in the current code
-    // TODO: set the interval from time between GPS samples using GPS timestamp packet, which helps if the GPS itself drops a packet or has erratic intervals
-    rescueState.sensor.gpsDataIntervalSeconds = 0.1f;
-    if (gpsDataIntervalSeconds > 0.4f) {
-        rescueState.sensor.gpsDataIntervalSeconds = 1.0f;
-    } else if (gpsDataIntervalSeconds > 0.15f) {
-        rescueState.sensor.gpsDataIntervalSeconds = 0.2f;
-    }
-    // Assumes that the only possible options are 1, 5 and 10hz, and that we primarily support 10hz
-
     float cutoffHz, gain;
     cutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
     gain = pt2FilterGain(cutoffHz, rescueState.sensor.gpsRescueTaskIntervalSeconds);
@@ -578,9 +566,8 @@ static void sensorUpdate(void)
     rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm / 100.0f;
     rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed; // cm/s
 
-// ***QUICK HACK replaces these lines***
-//    rescueState.sensor.gpsDataIntervalSeconds = constrainf(getGpsDataIntervalSeconds(), 0.01f, 1.0f);
-//    // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
+    rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
+    // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
 
     rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) / rescueState.sensor.gpsDataIntervalSeconds);
     // positive = towards home.  First value is useless since prevDistanceToHomeCm was zero.
