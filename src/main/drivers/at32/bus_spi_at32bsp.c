@@ -44,7 +44,7 @@ static spi_init_type defaultInit = {
     .first_bit_transmission = SPI_FIRST_BIT_MSB,
     .mclk_freq_division = SPI_MCLK_DIV_8,
     .clock_polarity = SPI_CLOCK_POLARITY_HIGH,
-    .clock_phase = SPI_CLOCK_PHASE_2EDGE 
+    .clock_phase = SPI_CLOCK_PHASE_2EDGE
 };
 
 static uint16_t spiDivisorToBRbits(spi_type  *instance, uint16_t divisor)

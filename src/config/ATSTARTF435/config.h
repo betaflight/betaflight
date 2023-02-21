@@ -19,18 +19,29 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
-#include "build/debug.h"
-#include "drivers/io.h"
+#define FC_TARGET_MCU     AT32F435
 
-void debugInit(void)
-{
-    IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PA14));      // SWCLK
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-}
+#define BOARD_NAME        ATSTARTF435
+#define MANUFACTURER_ID   AT
+
+// AT-START-F435 V1.0 LED assignments to use as a default
+#define LED0_PIN                PD13 // Labelled LED2 Red
+#define LED1_PIN                PD14 // Labelled LED3 Amber
+#define LED2_PIN                PD15 // Labelled LED4 Green
+
+// AT-START-F435 J7 connector SPI 2
+#define SPI2_SCK_PIN            PD1
+#define SPI2_MISO_PIN           PC2
+#define SPI2_MOSI_PIN           PD4
+
+#define J7_NSS                  PD0
+
+#define GYRO_1_CS_PIN           J7_NSS
+#define GYRO_1_SPI_INSTANCE     SPI2
+
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PB11
+
+#define USE_ACCGYRO_BMI160
+

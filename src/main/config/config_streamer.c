@@ -50,6 +50,10 @@ uint8_t eepromData[EEPROM_SIZE];
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
 # elif defined(STM32F446xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
+# elif defined(AT32F435ZMT7) || defined(AT32F435RMT7)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x1000) // 4K sectors
+# elif defined(AT32F435RGT7)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x0800) // 2K sectors
 // F7
 #elif defined(STM32F722xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors

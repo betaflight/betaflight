@@ -23,7 +23,6 @@
 #include "build/debug.h"
 #include "drivers/io.h"
 
-#ifdef DEBUG // DEBUG=GDB on command line
 void debugInit(void)
 {
     IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
@@ -35,4 +34,3 @@ void debugInit(void)
         IOInit(io, OWNER_SWD, 0);
     }
 }
-#endif

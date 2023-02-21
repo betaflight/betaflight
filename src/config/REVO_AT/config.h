@@ -19,18 +19,32 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
-#include "build/debug.h"
-#include "drivers/io.h"
+#define FC_TARGET_MCU     AT32F435
 
-void debugInit(void)
-{
-    IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PA14));      // SWCLK
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-}
+// REVO with STM32F405 swapped for an AT32F435
+
+#define BOARD_NAME        REVO_AT
+#define MANUFACTURER_ID   OPEN
+
+#define LED0_PIN                PB5
+
+#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6000
+#define GYRO_1_CS_PIN           PA4
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_ALIGN            CW270_DEG
+
+// MPU6000 interrupts
+#define USE_EXTI
+#define USE_GYRO_EXTI
+#define GYRO_1_EXTI_PIN         PC4
+
+#define  SPI1_SCK_PIN           PA5
+#define  SPI1_MISO_PIN          PA6
+#define  SPI1_MOSI_PIN          PA7
+
+#define  SPI3_SCK_PIN           PC10
+#define  SPI3_MISO_PIN          PC11
+#define  SPI3_MOSI_PIN          PC12
+
+#define USE_FLASH_M25P16
