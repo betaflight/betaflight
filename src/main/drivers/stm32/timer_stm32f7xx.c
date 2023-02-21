@@ -26,7 +26,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/io.h"
-#include "drivers/timer_def.h"
+#include "timer_def.h"
 
 #include "stm32f7xx.h"
 #include "drivers/rcc.h"
