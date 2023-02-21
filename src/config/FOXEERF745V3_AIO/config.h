@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only.
+   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
 */
 
 #define FC_TARGET_MCU     STM32F745
@@ -34,3 +34,65 @@
 #define USE_ACC_SPI_ICM42688P
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
+
+#define BEEPER_PIN           PD2
+#define MOTOR1_PIN           PB4
+#define MOTOR2_PIN           PB5
+#define MOTOR3_PIN           PB1
+#define MOTOR4_PIN           PB0
+#define LED_STRIP_PIN        PA8
+#define UART1_TX_PIN         PA9
+#define UART2_TX_PIN         PA2
+#define UART3_TX_PIN         PB10
+#define UART4_TX_PIN         PA0
+#define UART7_TX_PIN         PE8
+#define UART1_RX_PIN         PA10
+#define UART2_RX_PIN         PA3
+#define UART3_RX_PIN         PB11
+#define UART4_RX_PIN         PA1
+#define UART7_RX_PIN         PE7
+#define I2C1_SCL_PIN         PB8
+#define I2C1_SDA_PIN         PB9
+#define LED1_PIN             PC13
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI3_SCK_PIN         PC10
+#define SPI4_SCK_PIN         PE2
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI3_MISO_PIN        PC11
+#define SPI4_MISO_PIN        PE5
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define SPI3_MOSI_PIN        PC12
+#define SPI4_MOSI_PIN        PE6
+#define CAMERA_CONTROL_PIN   PB3
+#define ADC_BATT_PIN         PC3
+#define ADC_RSSI_PIN         PC5
+#define ADC_CURR_PIN         PC2
+#define ADC_EXT_PIN          PC1
+#define FLASH_CS_PIN         PE4
+#define OSD_CS_PIN           PA4
+#define GYRO_1_EXTI_PIN      PD0
+#define GYRO_1_CS_PIN        PA15
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PA8 , 1,  0) \
+    TIMER_PIN_MAP( 1, PB3 , 1,  0) \
+    TIMER_PIN_MAP( 2, PB0 , 2,  0) \
+    TIMER_PIN_MAP( 3, PB1 , 2,  0) \
+    TIMER_PIN_MAP( 4, PB4 , 1,  0) \
+    TIMER_PIN_MAP( 5, PB5 , 1,  0) \
+
+
+
+#define ADC1_DMA_OPT        0
+
+#define MAG_I2C_INSTANCE I2C1
+#define BARO_I2C_INSTANCE I2C1
+#define BEEPER_INVERTED
+#define MAX7456_SPI_INSTANCE SPI1
+#define FLASH_SPI_INSTANCE SPI4
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI3
+#define GYRO_1_ALIGN CW90_DEG

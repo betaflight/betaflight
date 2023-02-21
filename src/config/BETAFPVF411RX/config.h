@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only.
+   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -38,3 +38,57 @@
 #define USE_RX_CC2500
 #define USE_MAX7456
 #define USE_FLASH_W25Q128FV
+
+#define MOTOR1_PIN           PB8
+#define MOTOR2_PIN           PA0
+#define MOTOR3_PIN           PB10
+#define MOTOR4_PIN           PB7
+#define RX_PPM_PIN           PA10
+#define LED_STRIP_PIN        PB1
+#define UART1_TX_PIN         PA9
+#define UART2_TX_PIN         PA2
+#define UART1_RX_PIN         PA10
+#define UART2_RX_PIN         PA3
+#define LED1_PIN             PC14
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI3_SCK_PIN         PB3
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI3_MISO_PIN        PB4
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define SPI3_MOSI_PIN        PB5
+#define ADC_BATT_PIN         PA1
+#define ADC_CURR_PIN         PB0
+#define OSD_CS_PIN           PB12
+#define RX_SPI_CS_PIN        PA15
+#define RX_SPI_EXTI_PIN      PC13
+#define RX_SPI_BIND_PIN      PB2
+#define RX_SPI_LED_PIN       PC15
+#define RX_SPI_CC2500_TX_EN_PIN PB9
+#define RX_SPI_CC2500_LNA_EN_PIN PA13
+#define RX_SPI_CC2500_ANT_SEL_PIN PA14
+#define GYRO_1_EXTI_PIN      PB6
+#define GYRO_1_CS_PIN        PA4
+#define FLASH_CS_PIN         PA8
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PA0 , 1,  0) \
+    TIMER_PIN_MAP( 1, PA8 , 1,  0) \
+    TIMER_PIN_MAP( 2, PA10, 1, -1) \
+    TIMER_PIN_MAP( 3, PB1 , 2,  0) \
+    TIMER_PIN_MAP( 4, PB7 , 1,  0) \
+    TIMER_PIN_MAP( 5, PB8 , 1,  0) \
+    TIMER_PIN_MAP( 6, PB10, 1,  0) \
+
+
+
+#define ADC1_DMA_OPT        1
+
+#define RX_SPI_INSTANCE SPI3
+#define MAX7456_SPI_INSTANCE SPI2
+#define FLASH_SPI_INSTANCE SPI2
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI1
+#define GYRO_1_ALIGN CW180_DEG

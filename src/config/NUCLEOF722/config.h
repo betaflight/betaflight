@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only.
+   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -32,3 +32,54 @@
 
 #define USE_GYRO_MPU6050
 #define USE_ACC_MPU6050
+
+#define MOTOR1_PIN           PB8
+#define MOTOR2_PIN           PA3
+#define MOTOR3_PIN           PB5
+#define MOTOR4_PIN           PB9
+#define MOTOR5_PIN           PE6
+#define MOTOR6_PIN           PB4
+#define RX_PPM_PIN           PB15
+#define RX_PWM1_PIN          PB15
+#define RX_PWM2_PIN          PC6
+#define RX_PWM3_PIN          PC7
+#define UART2_TX_PIN         PD5
+#define UART3_TX_PIN         PD8
+#define UART4_TX_PIN         PA0
+#define UART2_RX_PIN         PD6
+#define UART3_RX_PIN         PD9
+#define UART4_RX_PIN         PA1
+#define I2C1_SCL_PIN         PB8
+#define I2C1_SDA_PIN         PB9
+#define LED1_PIN             PB7
+#define LED2_PIN             PB14
+#define SPI1_SCK_PIN         PA5
+#define SPI4_SCK_PIN         PE12
+#define SPI1_MISO_PIN        PA6
+#define SPI4_MISO_PIN        PE13
+#define SPI1_MOSI_PIN        PA7
+#define SPI4_MOSI_PIN        PE14
+#define ADC_BATT_PIN         PA3
+#define ADC_RSSI_PIN         PC3
+#define ADC_CURR_PIN         PC0
+#define GYRO_1_EXTI_PIN      PB15
+#define USB_DETECT_PIN       PA9
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PB15, 3, -1) \
+    TIMER_PIN_MAP( 1, PC6 , 2,  0) \
+    TIMER_PIN_MAP( 2, PC7 , 2,  1) \
+    TIMER_PIN_MAP( 3, PB8 , 1,  0) \
+    TIMER_PIN_MAP( 4, PA3 , 1,  1) \
+    TIMER_PIN_MAP( 5, PB5 , 1,  0) \
+    TIMER_PIN_MAP( 6, PB9 , 1, -1) \
+    TIMER_PIN_MAP( 7, PE6 , 1, -1) \
+    TIMER_PIN_MAP( 8, PB4 , 1,  0) \
+
+
+
+#define ADC1_DMA_OPT        1
+
+#define MAG_I2C_INSTANCE I2C1
+#define BARO_I2C_INSTANCE I2C1
+#define GYRO_1_ALIGN CW270_DEG

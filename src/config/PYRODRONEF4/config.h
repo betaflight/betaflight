@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only.
+   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -33,3 +33,55 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC_SPI_MPU6000
 #define USE_MAX7456
+
+#define BEEPER_PIN           PB5
+#define MOTOR1_PIN           PB1
+#define MOTOR2_PIN           PB0
+#define MOTOR3_PIN           PC9
+#define MOTOR4_PIN           PA8
+#define LED_STRIP_PIN        PB8
+#define UART1_TX_PIN         PA9
+#define UART2_TX_PIN         PA2
+#define UART3_TX_PIN         PB10
+#define UART4_TX_PIN         PA0
+#define UART5_TX_PIN         PC12
+#define UART6_TX_PIN         PC6
+#define UART1_RX_PIN         PA10
+#define UART2_RX_PIN         PA3
+#define UART3_RX_PIN         PB11
+#define UART4_RX_PIN         PA1
+#define UART5_RX_PIN         PD2
+#define UART6_RX_PIN         PC7
+#define INVERTER1_PIN        PC3
+#define LED1_PIN             PB4
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define ESCSERIAL_PIN        PB9
+#define CAMERA_CONTROL_PIN   PB9
+#define ADC_BATT_PIN         PC2
+#define ADC_CURR_PIN         PC1
+#define PINIO1_PIN           PA15
+#define OSD_CS_PIN           PB12
+#define GYRO_1_EXTI_PIN      PC4
+#define GYRO_1_CS_PIN        PA4
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PB9 , 2, -1) \
+    TIMER_PIN_MAP( 1, PB1 , 2, 0           # pin B01: DMA1 Stream 2 Channel 5) \
+    TIMER_PIN_MAP( 2, PB0 , 3, 0           # pin B00: DMA2 Stream 2 Channel 0) \
+    TIMER_PIN_MAP( 3, PC9 , 2, 0           # pin C09: DMA2 Stream 7 Channel 7) \
+    TIMER_PIN_MAP( 4, PA8 , 1, 1           # pin A08: DMA2 Stream 1 Channel 6) \
+    TIMER_PIN_MAP( 5, PB8 , 1, 0           # pin B08: DMA1 Stream 7 Channel 2) \
+
+
+
+#define ADC1_DMA_OPT        1
+
+#define BEEPER_INVERTED
+#define MAX7456_SPI_INSTANCE SPI2
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI1

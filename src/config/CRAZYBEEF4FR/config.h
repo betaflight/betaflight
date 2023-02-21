@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only.
+   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -39,3 +39,59 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_RX_CC2500
 #define USE_MAX7456
+
+#define BEEPER_PIN           PC15
+#define MOTOR1_PIN           PB10
+#define MOTOR2_PIN           PB6
+#define MOTOR3_PIN           PB7
+#define MOTOR4_PIN           PB8
+#define RX_PPM_PIN           PA3
+#define RX_PWM1_PIN          PA2
+#define RX_PWM2_PIN          PA9
+#define RX_PWM3_PIN          PA10
+#define LED_STRIP_PIN        PA0
+#define UART1_TX_PIN         PA9
+#define UART2_TX_PIN         PA2
+#define UART1_RX_PIN         PA10
+#define UART2_RX_PIN         PA3
+#define LED1_PIN             PC13
+#define SPI1_SCK_PIN         PA5
+#define SPI2_SCK_PIN         PB13
+#define SPI3_SCK_PIN         PB3
+#define SPI1_MISO_PIN        PA6
+#define SPI2_MISO_PIN        PB14
+#define SPI3_MISO_PIN        PB4
+#define SPI1_MOSI_PIN        PA7
+#define SPI2_MOSI_PIN        PB15
+#define SPI3_MOSI_PIN        PB5
+#define ADC_BATT_PIN         PB0
+#define ADC_CURR_PIN         PB1
+#define OSD_CS_PIN           PB12
+#define RX_SPI_CS_PIN        PA15
+#define RX_SPI_EXTI_PIN      PC14
+#define RX_SPI_BIND_PIN      PB2
+#define RX_SPI_LED_PIN       PB9
+#define GYRO_1_EXTI_PIN      PA1
+#define GYRO_1_CS_PIN        PA4
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PA3 , 3, -1) \
+    TIMER_PIN_MAP( 1, PB10, 1,  0) \
+    TIMER_PIN_MAP( 2, PB6 , 1,  0) \
+    TIMER_PIN_MAP( 3, PB7 , 1,  0) \
+    TIMER_PIN_MAP( 4, PB8 , 1,  0) \
+    TIMER_PIN_MAP( 5, PA0 , 2,  0) \
+    TIMER_PIN_MAP( 6, PA2 , 3, -1) \
+    TIMER_PIN_MAP( 7, PA9 , 1,  0) \
+    TIMER_PIN_MAP( 8, PA10, 1,  0) \
+
+
+
+#define ADC1_DMA_OPT        1
+
+#define RX_SPI_INSTANCE SPI3
+#define BEEPER_INVERTED
+#define MAX7456_SPI_INSTANCE SPI2
+#define USE_SPI_GYRO
+#define GYRO_1_SPI_INSTANCE SPI1
+#define GYRO_1_ALIGN CW90_DEG
