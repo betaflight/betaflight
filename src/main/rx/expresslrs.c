@@ -34,6 +34,10 @@
 
 #ifdef USE_RX_EXPRESSLRS
 
+#if !defined(RX_EXPRESSLRS_TIMER_INSTANCE)
+#define RX_EXPRESSLRS_TIMER_INSTANCE NULL
+#endif
+
 #include "build/atomic.h"
 #include "build/debug.h"
 #include "build/debug_pin.h"
@@ -865,9 +869,9 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
     }
 
     rxSpiCommonIOInit(rxConfig);
-    
+
     rxRuntimeState->channelCount = ELRS_MAX_CHANNELS;
-    
+
     extiConfig->ioConfig = IOCFG_IPD;
     extiConfig->trigger = BETAFLIGHT_EXTI_TRIGGER_RISING;
 
