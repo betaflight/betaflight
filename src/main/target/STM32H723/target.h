@@ -102,3 +102,5 @@
 
 #define USE_EXTI
 #define USE_TIMER_UP_CONFIG
+
+#define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors

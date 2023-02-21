@@ -155,6 +155,8 @@
 
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
 
+#define FLASH_PAGE_SIZE (0x400)
+
 // belows are internal stuff
 
 extern uint32_t SystemCoreClock;

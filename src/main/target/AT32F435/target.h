@@ -87,3 +87,5 @@
 #undef USE_FLASH
 #undef USE_FLASHFS
 #undef USE_FLASH_CHIP
+
+#define FLASH_PAGE_SIZE ((uint32_t)0x1000) // 4K sectors

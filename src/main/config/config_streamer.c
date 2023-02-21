@@ -36,49 +36,8 @@ uint8_t eepromData[EEPROM_SIZE];
 #endif
 
 
-#if (defined(STM32H750xx) || defined(STM32H730xx)) && !(defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH) || defined(CONFIG_IN_RAM) || defined(CONFIG_IN_SDCARD))
-#error "The configured MCU only has one flash page which contains the bootloader, no spare flash pages available, use external storage for persistent config or ram for target testing"
-#endif
-// @todo this is not strictly correct for F4/F7, where sector sizes are variable
 #if !defined(FLASH_PAGE_SIZE)
-// F4
-#if defined(STM32F40_41xxx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
-# elif defined(STM32F411xE)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
-# elif defined(STM32F427_437xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
-# elif defined(STM32F446xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
-# elif defined(AT32F435ZMT7) || defined(AT32F435RMT7)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x1000) // 4K sectors
-# elif defined(AT32F435RGT7)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x0800) // 2K sectors
-// F7
-#elif defined(STM32F722xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
-# elif defined(STM32F745xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000) // 32K sectors
-# elif defined(STM32F746xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
-# elif defined(STM32F765xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
-# elif defined(UNIT_TEST)
-#  define FLASH_PAGE_SIZE                 (0x400)
-// H7
-# elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
-# elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x2000) // 8K sectors
-// G4
-# elif defined(STM32G4)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x800) // 2K page
-// SIMULATOR
-# elif defined(SIMULATOR_BUILD)
-#  define FLASH_PAGE_SIZE                 (0x400)
-# else
-#  error "Flash page size not defined for target."
-# endif
+#error "Flash page size not defined for target."
 #endif
 
 void config_streamer_init(config_streamer_t *c)
