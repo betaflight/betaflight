@@ -93,6 +93,20 @@ static mspBuffer_t mspRxBuffer;
 
 #define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 20000 // 20ms
 
+#if defined(USE_CRSF_CMS_TELEMETRY)
+#define CRSF_LINK_TYPE_CHECK_US 250000 // 250 ms
+#define CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US 75000 // 75 ms
+
+typedef enum {
+    CRSF_LINK_UNKNOWN,
+    CRSF_LINK_ELRS,
+    CRSF_LINK_NOT_ELRS
+} crsfLinkType_t;
+
+static crsfLinkType_t crsfLinkType = CRSF_LINK_UNKNOWN;
+static timeDelta_t crsfDisplayPortChunkIntervalUs = 0;
+#endif
+
 static bool isCrsfV3Running = false;
 typedef struct {
     uint8_t hasPendingReply:1;
@@ -280,6 +294,20 @@ void crsfFrameHeartbeat(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAME_HEARTBEAT_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_HEARTBEAT);
     sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+}
+
+/*
+0x28 Ping
+Payload:
+int8_t    destination_add ( Destination Device address )
+int8_t    origin_add ( Origin Device address )
+*/
+void crsfFramePing(sbuf_t *dst)
+{
+    sbufWriteU8(dst, CRSF_FRAME_DEVICE_PING_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DEVICE_PING);
+    sbufWriteU8(dst, CRSF_ADDRESS_CRSF_RECEIVER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
 }
 
 typedef enum {
@@ -482,6 +510,23 @@ void speedNegotiationProcess(timeUs_t currentTimeUs)
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
+#if defined(USE_CRSF_CMS_TELEMETRY)
+    } else if (crsfLinkType == CRSF_LINK_UNKNOWN) {
+        static timeUs_t lastPing;
+
+        if ((cmpTimeUs(currentTimeUs, lastPing) > CRSF_LINK_TYPE_CHECK_US)) {
+            // Send a ping, the response to which will be a device info response giving the rx serial number
+            sbuf_t crsfPayloadBuf;
+            sbuf_t *dst = &crsfPayloadBuf;
+            crsfInitializeFrame(dst);
+            crsfFramePing(dst);
+            crsfRxSendTelemetryData(); // prevent overwriting previous data
+            crsfFinalize(dst);
+            crsfRxSendTelemetryData();
+
+            lastPing = currentTimeUs;
+        }
+#endif
     }
 }
 #endif
@@ -669,6 +714,25 @@ void crsfScheduleDeviceInfoResponse(void)
     deviceInfoReplyPending = true;
 }
 
+#if defined(USE_CRSF_CMS_TELEMETRY)
+void crsfHandleDeviceInfoResponse(uint8_t *payload)
+{
+    // Skip over dst/src address bytes
+    payload += 2;
+
+    // Skip over first string which is the rx model/part number
+    while (*payload++ != '\0');
+
+    // Check the serial number
+    if (memcmp(payload, "ELRS", 4) == 0) {
+        crsfLinkType = CRSF_LINK_ELRS;
+        crsfDisplayPortChunkIntervalUs = CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US;
+    } else {
+        crsfLinkType = CRSF_LINK_NOT_ELRS;
+    }
+}
+#endif
+
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
@@ -821,27 +885,40 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs;
         return;
     }
-    static uint8_t displayPortBatchId = 0;
-    if (crsfDisplayPortIsReady() && crsfDisplayPortScreen()->updated) {
-        crsfDisplayPortScreen()->updated = false;
-        uint16_t screenSize = crsfDisplayPortScreen()->rows * crsfDisplayPortScreen()->cols;
-        uint8_t *srcStart = (uint8_t*)crsfDisplayPortScreen()->buffer;
-        uint8_t *srcEnd = (uint8_t*)(crsfDisplayPortScreen()->buffer + screenSize);
-        sbuf_t displayPortSbuf;
-        sbuf_t *src = sbufInit(&displayPortSbuf, srcStart, srcEnd);
+
+    if (crsfDisplayPortIsReady()) {
+        static uint8_t displayPortBatchId = 0;
+        static sbuf_t displayPortSbuf;
+        static sbuf_t *src = NULL;
+        static uint8_t batchIndex;
+        static timeUs_t batchLastTimeUs;
         sbuf_t crsfDisplayPortBuf;
         sbuf_t *dst = &crsfDisplayPortBuf;
-        displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
-        uint8_t i = 0;
-        while (sbufBytesRemaining(src)) {
+
+        if (crsfDisplayPortScreen()->updated) {
+            crsfDisplayPortScreen()->updated = false;
+            uint16_t screenSize = crsfDisplayPortScreen()->rows * crsfDisplayPortScreen()->cols;
+            uint8_t *srcStart = (uint8_t*)crsfDisplayPortScreen()->buffer;
+            uint8_t *srcEnd = (uint8_t*)(crsfDisplayPortScreen()->buffer + screenSize);
+            src = sbufInit(&displayPortSbuf, srcStart, srcEnd);
+            displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
+            batchIndex = 0;
+        }
+
+        // Wait between successive chunks of displayport data for CMS menu display to prevent ELRS buffer over-run if necessary
+        if (src && sbufBytesRemaining(src) &&
+            (cmpTimeUs(currentTimeUs, batchLastTimeUs) > crsfDisplayPortChunkIntervalUs)) {
             crsfInitializeFrame(dst);
-            crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, i);
+            crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, batchIndex);
             crsfFinalize(dst);
             crsfRxSendTelemetryData();
-            i++;
+            batchIndex++;
+            batchLastTimeUs = currentTimeUs;
+
+            crsfLastCycleTime = currentTimeUs;
+
+            return;
         }
-        crsfLastCycleTime = currentTimeUs;
-        return;
     }
 #endif
 

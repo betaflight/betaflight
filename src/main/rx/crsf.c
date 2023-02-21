@@ -411,6 +411,9 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                 case CRSF_FRAMETYPE_DEVICE_PING:
                     crsfScheduleDeviceInfoResponse();
                     break;
+                case CRSF_FRAMETYPE_DEVICE_INFO:
+                    crsfHandleDeviceInfoResponse(crsfFrame.frame.payload);
+                    break;
                 case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
                     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
                     crsfProcessDisplayPortCmd(frameStart);
