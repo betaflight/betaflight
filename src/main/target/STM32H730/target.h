@@ -35,8 +35,6 @@
 
 #pragma once
 
-#include "drivers/stm32/platform_stm32.h"
-
 #ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "S730"
 #endif
