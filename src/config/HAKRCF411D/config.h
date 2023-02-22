@@ -30,8 +30,11 @@
 #define BOARD_NAME        HAKRCF411D
 #define MANUFACTURER_ID   HARC
 
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42688P
+#define USE_BARO_BMP280
 #define USE_BARO_DPS310
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
@@ -51,15 +54,15 @@
 #define UART11_TX_PIN        PA15
 #define I2C1_SCL_PIN         PB8
 #define I2C1_SDA_PIN         PB9
-#define LED1_PIN             PC13
-#define LED2_PIN             PC14
+#define LED0_PIN             PC13
+#define LED1_PIN             PC14
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI1_MISO_PIN        PA6
 #define SPI2_MISO_PIN        PB14
 #define SPI1_MOSI_PIN        PA7
 #define SPI2_MOSI_PIN        PB15
-#define ADC_BATT_PIN         PB0
+#define ADC_VBAT_PIN         PB0
 #define ADC_CURR_PIN         PB1
 #define PINIO1_PIN           PB10
 #define PINIO2_PIN           PC14

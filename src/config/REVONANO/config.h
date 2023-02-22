@@ -54,13 +54,13 @@
 #define INVERTER2_PIN        PC15
 #define I2C3_SCL_PIN         PA8
 #define I2C3_SDA_PIN         PB4
-#define LED1_PIN             PC14
-#define LED2_PIN             PC13
+#define LED0_PIN             PC14
+#define LED1_PIN             PC13
 #define SPI2_SCK_PIN         PB13
 #define SPI2_MISO_PIN        PB14
 #define SPI2_MOSI_PIN        PB15
 #define ESCSERIAL_PIN        PB10
-#define ADC_BATT_PIN         PA6
+#define ADC_VBAT_PIN         PA6
 #define ADC_RSSI_PIN         PA5
 #define ADC_CURR_PIN         PA7
 #define PINIO1_PIN           PB10

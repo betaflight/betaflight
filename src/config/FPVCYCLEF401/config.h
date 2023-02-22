@@ -44,14 +44,14 @@
 #define UART2_TX_PIN         PA2
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
-#define LED1_PIN             PC13
+#define LED0_PIN             PC13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI1_MISO_PIN        PA6
 #define SPI2_MISO_PIN        PB14
 #define SPI1_MOSI_PIN        PA7
 #define SPI2_MOSI_PIN        PB15
-#define ADC_BATT_PIN         PB0
+#define ADC_VBAT_PIN         PB0
 #define OSD_CS_PIN           PB12
 #define GYRO_1_EXTI_PIN      PA1
 #define GYRO_1_CS_PIN        PA4

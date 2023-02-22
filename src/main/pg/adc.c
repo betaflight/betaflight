@@ -55,48 +55,48 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
     adcConfig->dmaopt[ADCDEV_5] = ADC5_DMA_OPT;
 #endif
 
-#ifdef VBAT_ADC_PIN
+#ifdef ADC_VBAT_PIN
     adcConfig->vbat.enabled = true;
-    adcConfig->vbat.ioTag = IO_TAG(VBAT_ADC_PIN);
+    adcConfig->vbat.ioTag = IO_TAG(ADC_VBAT_PIN);
 #if defined(STM32H7)
-#ifdef VBAT_ADC_INSTANCE
-    adcConfig->vbat.device = ADC_DEV_TO_CFG(adcDeviceByInstance(VBAT_ADC_INSTANCE));
+#ifdef ADC_VBAT_INSTANCE
+    adcConfig->vbat.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_VBAT_INSTANCE));
 #else
     adcConfig->vbat.device = adcConfig->device;
 #endif
 #endif
 #endif
 
-#ifdef EXTERNAL1_ADC_PIN
+#ifdef ADC_EXTERNAL1_PIN
     adcConfig->external1.enabled = true;
-    adcConfig->external1.ioTag = IO_TAG(EXTERNAL1_ADC_PIN);
+    adcConfig->external1.ioTag = IO_TAG(ADC_EXTERNAL1_PIN);
 #if defined(STM32H7)
-#ifdef EXTERNAL1_ADC_INSTANCE
-    adcConfig->external1.device = ADC_DEV_TO_CFG(adcDeviceByInstance(EXTERNAL1_ADC_INSTANCE));
+#ifdef ADC_EXTERNAL1_INSTANCE
+    adcConfig->external1.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_EXTERNAL1_INSTANCE));
 #else
     adcConfig->external1.device = adcConfig->device;
 #endif
 #endif
 #endif
 
-#ifdef CURRENT_METER_ADC_PIN
+#ifdef ADC_CURR_PIN
     adcConfig->current.enabled = true;
-    adcConfig->current.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
+    adcConfig->current.ioTag = IO_TAG(ADC_CURR_PIN);
 #if defined(STM32H7)
-#ifdef CURRENT_METER_ADC_INSTANCE
-    adcConfig->current.device = ADC_DEV_TO_CFG(adcDeviceByInstance(CURRENT_METER_ADC_INSTANCE));
+#ifdef ADC_CURR_INSTANCE
+    adcConfig->current.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_CURR_INSTANCE));
 #else
     adcConfig->current.device = adcConfig->device;
 #endif
 #endif
 #endif
 
-#ifdef RSSI_ADC_PIN
+#ifdef ADC_RSSI_PIN
     adcConfig->rssi.enabled = true;
-    adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
+    adcConfig->rssi.ioTag = IO_TAG(ADC_RSSI_PIN);
 #if defined(STM32H7)
-#ifdef RSSI_ADC_INSTANCE
-    adcConfig->rssi.device = ADC_DEV_TO_CFG(adcDeviceByInstance(RSSI_ADC_INSTANCE));
+#ifdef ADC_RSSI_INSTANCE
+    adcConfig->rssi.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_RSSI_INSTANCE));
 #else
     adcConfig->rssi.device = adcConfig->device;
 #endif

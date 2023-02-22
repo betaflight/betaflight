@@ -164,15 +164,15 @@
 #define I2C4_SCL_PIN         PNONE
 #define I2C4_SDA_PIN         PNONE
 
-#define LED1_PIN             PE3
+#define LED0_PIN             PE3
 #define TRANSPONDER_PIN      PB11
 
 #define CAMERA_CONTROL_PIN   PE5
 
-#define ADC_BATT_PIN         PC1
+#define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC4
 #define ADC_CURR_PIN         PC0
-#define ADC_EXT_PIN          PC5
+#define ADC_EXTERNAL1_PIN    PC5
 
 #define SDCARD_DETECT_PIN    PD10
 #define SDIO_CK_PIN          PC12

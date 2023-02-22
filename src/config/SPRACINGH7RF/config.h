@@ -224,16 +224,16 @@
 #define I2C3_SDA_PIN         PNONE
 #define I2C4_SDA_PIN         PNONE
 
-#define LED1_PIN             PE5
-#define LED2_PIN             PE6
-#define LED3_PIN             PNONE
+#define LED0_PIN             PE5
+#define LED1_PIN             PE6
+#define LED2_PIN             PNONE
 #define SPEKTRUM_RX_BIND_PIN PNONE
 #define RX_BIND_PLUG_PIN     PNONE
 
-#define ADC_BATT_PIN         PC3
+#define ADC_VBAT_PIN         PC3
 #define ADC_RSSI_PIN         PC0
 #define ADC_CURR_PIN         PC1
-#define ADC_EXT_PIN          PC2
+#define ADC_EXTERNAL1_PIN    PC2
 
 #define SDCARD_DETECT_PIN    PC13
 #define SDIO_CK_PIN          PC12

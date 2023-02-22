@@ -63,7 +63,7 @@
 #define INVERTER5_PIN        PC15
 #define I2C2_SCL_PIN         PB10
 #define I2C2_SDA_PIN         PB11
-#define LED1_PIN             PC5
+#define LED0_PIN             PC5
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
@@ -75,7 +75,7 @@
 #define SPI3_MOSI_PIN        PB5
 #define ESCSERIAL_PIN        PA8
 #define CAMERA_CONTROL_PIN   PC9
-#define ADC_BATT_PIN         PC1
+#define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC2
 #define ADC_CURR_PIN         PC3
 #define FLASH_CS_PIN         PC8

@@ -71,8 +71,8 @@
 #define I2C2_SCL_PIN         PB10
 #define I2C1_SDA_PIN         PB7
 #define I2C2_SDA_PIN         PB11
-#define LED1_PIN             PE5
-#define LED2_PIN             PE4
+#define LED0_PIN             PE5
+#define LED1_PIN             PE4
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
@@ -85,10 +85,10 @@
 #define SPI2_MOSI_PIN        PB15
 #define SPI3_MOSI_PIN        PB2
 #define SPI4_MOSI_PIN        PE14
-#define ADC_BATT_PIN         PC1
+#define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC2
 #define ADC_CURR_PIN         PC3
-#define ADC_EXT_PIN          PC0
+#define ADC_EXTERNAL1_PIN    PC0
 #define PINIO1_PIN           PC5
 #define FLASH_CS_PIN         PA15
 #define OSD_CS_PIN           PB12

@@ -63,8 +63,8 @@
 #define INVERTER2_PIN        PC15
 #define I2C1_SCL_PIN         PB6
 #define I2C1_SDA_PIN         PB7
-#define LED1_PIN             PC12
-#define LED2_PIN             PD2
+#define LED0_PIN             PC12
+#define LED1_PIN             PD2
 #define SPEKTRUM_RX_BIND_PIN PB2
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
@@ -76,10 +76,10 @@
 #define SPI2_MOSI_PIN        PC3
 #define SPI3_MOSI_PIN        PB5
 #define ESCSERIAL_PIN        PA8
-#define ADC_BATT_PIN         PC0
+#define ADC_VBAT_PIN         PC0
 #define ADC_RSSI_PIN         PC4
 #define ADC_CURR_PIN         PC1
-#define ADC_EXT_PIN          PC5
+#define ADC_EXTERNAL1_PIN    PC5
 #define SDCARD_CS_PIN        PB10
 #define SDCARD_DETECT_PIN    PB11
 #define FLASH_CS_PIN         PB12

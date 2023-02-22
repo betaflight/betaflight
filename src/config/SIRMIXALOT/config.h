@@ -50,8 +50,8 @@
 #define UART11_RX_PIN        PB11
 #define I2C1_SCL_PIN         PA8
 #define I2C1_SDA_PIN         PC9
-#define LED1_PIN             PB12
-#define LED2_PIN             PC8
+#define LED0_PIN             PB12
+#define LED1_PIN             PC8
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
@@ -62,7 +62,7 @@
 #define SPI2_MOSI_PIN        PB15
 #define SPI3_MOSI_PIN        PB5
 #define CAMERA_CONTROL_PIN   PC10
-#define ADC_BATT_PIN         PC2
+#define ADC_VBAT_PIN         PC2
 #define ADC_RSSI_PIN         PC3
 #define ADC_CURR_PIN         PC1
 #define BARO_CS_PIN          PB9

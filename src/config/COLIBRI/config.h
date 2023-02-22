@@ -63,8 +63,8 @@
 #define INVERTER2_PIN        PB2
 #define I2C3_SCL_PIN         PA8
 #define I2C3_SDA_PIN         PC9
-#define LED1_PIN             PC14
-#define LED2_PIN             PC13
+#define LED0_PIN             PC14
+#define LED1_PIN             PC13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI1_MISO_PIN        PA6
