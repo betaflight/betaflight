@@ -55,7 +55,7 @@
 #define SPI3_MOSI_PIN        PB5
 #define ADC_VBAT_PIN         PB1
 #define ADC_CURR_PIN         PA4
-#define OSD_CS_PIN           PB10
+#define MAX7456_SPI_CS_PIN   PB10
 #define GYRO_1_EXTI_PIN      PC15
 #define GYRO_1_CS_PIN        PA15
 

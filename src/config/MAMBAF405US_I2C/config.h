@@ -62,7 +62,7 @@
 #define FLASH_CS_PIN         PA15
 #define FLASH_SPI_INSTANCE SPI3
 
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define MAX7456_SPI_INSTANCE SPI2
 
 #define ADC_VBAT_PIN         PC1

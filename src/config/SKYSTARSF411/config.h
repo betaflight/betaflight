@@ -66,7 +66,7 @@
 #define SPI1_MOSI_PIN        PA7
 #define GYRO_1_EXTI_PIN      PC14
 
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define SPI2_SCK_PIN         PB13
 #define SPI2_MISO_PIN        PB14
 #define SPI2_MOSI_PIN        PB15

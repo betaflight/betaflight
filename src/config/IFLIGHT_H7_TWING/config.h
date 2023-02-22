@@ -81,7 +81,7 @@
 #define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC4
 #define ADC_CURR_PIN         PC0
-#define OSD_CS_PIN           PE11
+#define MAX7456_SPI_CS_PIN   PE11
 #define GYRO_1_EXTI_PIN      PC5
 #define GYRO_2_EXTI_PIN      PB11
 #define GYRO_1_CS_PIN        PA4

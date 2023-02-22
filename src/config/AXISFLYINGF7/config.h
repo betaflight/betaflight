@@ -74,7 +74,7 @@
 #define ADC_VBAT_PIN         PC0
 #define ADC_CURR_PIN         PC1
 #define FLASH_CS_PIN         PC4
-#define OSD_CS_PIN           PC13
+#define MAX7456_SPI_CS_PIN   PC13
 #define GYRO_1_CS_PIN        PB12
 
 #define TIMER_PIN_MAPPING \

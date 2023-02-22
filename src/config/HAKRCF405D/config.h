@@ -82,7 +82,7 @@
 #define PINIO1_PIN           PC14
 #define PINIO2_PIN           PC15
 #define FLASH_CS_PIN         PC0
-#define OSD_CS_PIN           PB10
+#define MAX7456_SPI_CS_PIN   PB10
 #define GYRO_1_EXTI_PIN      PC3
 #define GYRO_1_CS_PIN        PC2
 #define USB_DETECT_PIN       PB12

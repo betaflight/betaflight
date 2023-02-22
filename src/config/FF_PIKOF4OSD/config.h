@@ -64,7 +64,7 @@
 #define ESCSERIAL_PIN        PA3
 #define ADC_VBAT_PIN         PC2
 #define ADC_CURR_PIN         PC1
-#define OSD_CS_PIN           PA4
+#define MAX7456_SPI_CS_PIN   PA4
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PA15
 

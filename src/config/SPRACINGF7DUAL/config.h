@@ -80,7 +80,7 @@
 #define ADC_RSSI_PIN         PC0
 #define ADC_CURR_PIN         PC2
 #define SDCARD_CS_PIN        PC3
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PC13
 #define GYRO_2_EXTI_PIN      PC14
 #define GYRO_1_CS_PIN        PA15

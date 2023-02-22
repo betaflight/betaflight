@@ -71,7 +71,7 @@
 #define SDCARD_DETECT_PIN    PB7
 #define PINIO1_PIN           PA14
 #define FLASH_CS_PIN         PB3
-#define OSD_CS_PIN           PA15
+#define MAX7456_SPI_CS_PIN   PA15
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PA4
 #define USB_DETECT_PIN       PC5

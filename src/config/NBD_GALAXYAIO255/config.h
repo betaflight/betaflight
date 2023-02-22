@@ -77,7 +77,7 @@
 #define SDIO_D1_PIN          PC9
 #define SDIO_D2_PIN          PC10
 #define SDIO_D3_PIN          PC11
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PB2
 #define GYRO_2_EXTI_PIN      PE15
 #define GYRO_1_CS_PIN        PC15

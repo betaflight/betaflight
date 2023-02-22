@@ -77,7 +77,7 @@
 #define BARO_CS_PIN          PA1
 #define SDCARD_CS_PIN        PE4
 #define SDCARD_DETECT_PIN    PE3
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PD0
 #define GYRO_2_EXTI_PIN      PE8
 #define GYRO_1_CS_PIN        PA15

@@ -81,7 +81,7 @@
 #define PINIO1_PIN           PC13
 #define PINIO2_PIN           PC14
 #define PINIO3_PIN           PB8
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PA8
 #define GYRO_2_EXTI_PIN      PB2
 #define GYRO_1_CS_PIN        PA15

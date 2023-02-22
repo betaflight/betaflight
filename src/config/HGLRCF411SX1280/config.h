@@ -72,7 +72,7 @@
 #define ADC_VBAT_PIN         PA1
 #define ADC_CURR_PIN         PB0
 #define FLASH_CS_PIN         PA8
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define RX_SPI_CS_PIN        PA15
 #define RX_SPI_EXTI_PIN      PC13
 #define RX_SPI_BIND_PIN      PB2

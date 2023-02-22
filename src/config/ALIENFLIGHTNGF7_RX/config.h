@@ -74,7 +74,7 @@
 #define ADC_CURR_PIN         PC1
 #define SDCARD_CS_PIN        PB10
 #define SDCARD_DETECT_PIN    PB11
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define RX_SPI_CS_PIN        PA15
 #define RX_SPI_EXTI_PIN      PB15
 #define RX_SPI_BIND_PIN      PB2

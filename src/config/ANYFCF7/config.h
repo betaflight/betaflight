@@ -89,7 +89,7 @@
 #define ADC_CURR_PIN         PC1
 #define SDCARD_CS_PIN        PE11
 #define SDCARD_DETECT_PIN    PD3
-#define OSD_CS_PIN           PD2
+#define MAX7456_SPI_CS_PIN   PD2
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PA4
 #define USB_DETECT_PIN       PA8

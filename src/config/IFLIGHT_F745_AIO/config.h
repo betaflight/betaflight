@@ -77,7 +77,7 @@
 #define SPI4_SCK_PIN         PE2
 #define SPI4_MISO_PIN        PE5
 #define SPI4_MOSI_PIN        PE6
-#define OSD_CS_PIN           PE4
+#define MAX7456_SPI_CS_PIN   PE4
 #define CAMERA_CONTROL_PIN   PC8
 #define ADC_CURR_PIN         PC2
 #define ADC_VBAT_PIN         PC3

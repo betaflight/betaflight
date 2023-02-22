@@ -61,7 +61,7 @@
 #define SPI3_MOSI_PIN        PB5
 #define ADC_VBAT_PIN         PB0
 #define ADC_CURR_PIN         PB1
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define RX_SPI_CS_PIN        PA15
 #define RX_SPI_EXTI_PIN      PA14
 #define RX_SPI_BIND_PIN      PB2

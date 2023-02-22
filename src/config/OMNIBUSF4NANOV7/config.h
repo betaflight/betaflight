@@ -67,7 +67,7 @@
 #define ADC_VBAT_PIN         PC0
 #define ADC_CURR_PIN         PC1
 #define FLASH_CS_PIN         PA2
-#define OSD_CS_PIN           PC15
+#define MAX7456_SPI_CS_PIN   PC15
 #define GYRO_1_CS_PIN        PD2
 #define GYRO_2_CS_PIN        PC4
 

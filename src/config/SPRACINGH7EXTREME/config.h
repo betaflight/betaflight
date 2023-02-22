@@ -181,7 +181,7 @@
 #define SDIO_D1_PIN          PC9
 #define SDIO_D2_PIN          PC10
 #define SDIO_D3_PIN          PC11
-#define OSD_CS_PIN           PE11
+#define MAX7456_SPI_CS_PIN   PE11
 
 #define GYRO_1_EXTI_PIN      PD4
 #define GYRO_2_EXTI_PIN      PE15

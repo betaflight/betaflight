@@ -82,7 +82,7 @@
 #define SDCARD_CS_PIN        PB10
 #define SDCARD_DETECT_PIN    PB11
 #define FLASH_CS_PIN         PB12
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PC14
 #define GYRO_1_CS_PIN        PA4
 

@@ -72,7 +72,7 @@
 #define ADC_CURR_PIN         PC2
 #define ADC_EXTERNAL1_PIN    PC1
 #define FLASH_CS_PIN         PE4
-#define OSD_CS_PIN           PA4
+#define MAX7456_SPI_CS_PIN   PA4
 #define GYRO_1_EXTI_PIN      PD0
 #define GYRO_1_CS_PIN        PA15
 

@@ -60,7 +60,7 @@
 #define ADC_CURR_PIN         PB1
 #define CAMERA_CONTROL_PIN   PB8
 #define FLASH_CS_PIN         PA0
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PA1
 #define GYRO_1_CS_PIN        PA4
 #define BARO_CS_PIN          PA15

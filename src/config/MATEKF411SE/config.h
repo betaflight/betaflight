@@ -65,7 +65,7 @@
 #define ADC_RSSI_PIN         PA0
 #define ADC_CURR_PIN         PB1
 #define PINIO1_PIN           PA13
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PA14
 #define GYRO_1_CS_PIN        PA4
 #define USB_DETECT_PIN       PC15
