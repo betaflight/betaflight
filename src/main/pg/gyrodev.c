@@ -34,6 +34,13 @@
 #include "drivers/sensor.h"
 #include "sensors/gyro.h"
 
+#ifndef GYRO_2_CS_PIN
+#define GYRO_2_CS_PIN NONE
+#endif
+
+#ifndef GYRO_2_EXTI_PIN
+#define GYRO_2_EXTI_PIN NONE
+#endif
 
 ioTag_t selectMPUIntExtiConfigByHardwareRevision(void); // XXX Should be gone
 
