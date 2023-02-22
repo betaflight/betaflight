@@ -101,6 +101,8 @@
 #include "flight/position.h"
 #include "flight/servos.h"
 #include "flight/wifi.h"
+#include "flight/alt_ctrl.h"
+#include "flight/kalman_filter.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -998,6 +1000,11 @@ void init(void)
     motorPostInit();
     motorEnable();
 #endif
+
+#ifdef USE_ALT_HOLD
+    Controller_Init();
+#endif
+
 
     // On H7/G4 allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
 #if defined(STM32H7) || defined(STM32G4)

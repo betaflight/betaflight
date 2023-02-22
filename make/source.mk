@@ -106,6 +106,7 @@ COMMON_SRC = \
             flight/wifi.c  \
             flight/Matrix.c \
             flight/kalman_filter.c \
+            flight/alt_ctrl.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \

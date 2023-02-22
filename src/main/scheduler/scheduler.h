@@ -180,6 +180,7 @@ typedef enum {
 
 #ifdef USE_ALT_HOLD
     TASK_KALMAN_FILTER,
+    TASK_ALT_CTRL,
 #endif
 
     /* Count of real tasks */

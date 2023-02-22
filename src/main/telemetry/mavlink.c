@@ -54,7 +54,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
-//#include "flight/alt_ctrl.h"
+#include "flight/alt_ctrl.h"
 #include "flight/kalman_filter.h"
 
 #include "io/serial.h"
@@ -422,6 +422,9 @@ void mavlinkSendHUDAndHeartbeat(void)
     float mavVel_Hat_current = 0;
     float mavVel_Measure = 0;
     float mavAltitude_Hat_current = 0;
+    float mavPID_vel_output = 0;
+    float mavPID_height_output = 0;
+    float mav_vel_throttle = 0;
 
 // #if defined(USE_GPS)
 //     // use ground speed if source available
@@ -432,21 +435,32 @@ void mavlinkSendHUDAndHeartbeat(void)
 
     
     mavVel_Measure = Get_Acc_bias_kalman(); //速度测量值  (airspeed)
-    mavVel_Hat_current = Get_Trace_P_Current(); //速度最优估计值 (groundspeed)
+    mavVel_Hat_current = Get_Vel_Kalman(); //速度最优估计值 (groundspeed)
     mavAltitude_Measure = rangefinderGetLatestAltitude(); //高度测量值 (altitude)
     mavAltitude_Hat_current = Get_Alt_Kalman(); //高度最优估计值 (climb)
+    mavPID_vel_output = Get_Velocity_PID_Output(); //获取内环pid结果
+    mavPID_height_output = Get_Height_PID_Output(); //获取外环pid结果
+    mav_vel_throttle = Get_Velocity_throttle();
 
     mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
-        // airspeed Current airspeed in m/s
-        mavVel_Measure,
-        // groundspeed Current ground speed in m/s
-        mavVel_Hat_current,
+        // // airspeed Current airspeed in m/s
+        // mavVel_Measure,
+        // // groundspeed Current ground speed in m/s
+        // mavVel_Hat_current,
+        //获取外环pid结果
+        //mavPID_height_output,
+        mav_vel_throttle,
+        //获取内环pid结果
+        mavPID_vel_output,
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn(),
         // throttle Current throttle setting in integer percent, 0 to 100
         scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
         // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
-        mavAltitude_Measure,
+        // mavVel_Hat_current,
+        //
+
+        mavVel_Hat_current,
         // climb Current climb rate in meters/second
         mavAltitude_Hat_current);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);

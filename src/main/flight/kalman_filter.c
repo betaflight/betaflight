@@ -237,6 +237,15 @@ float Get_Alt_Kalman(void)
 {
 	return kalman_filter1.X_Hat_current->element[0];
 }
+float Get_Vel_Kalman(void)
+{
+	return kalman_filter1.X_Hat_current->element[1];
+}
+
+float Get_Acc_bias_kalman(void)
+{
+    return kalman_filter1.X_Hat_current->element[2];
+}
 
 float Get_Alt_Pre_kalman(void)
 {
@@ -246,16 +255,6 @@ float Get_Alt_Pre_kalman(void)
 float Get_Alt_Measure(void)
 {
     return kalman_filter1.Z_current->element[0];
-}
-
-float Get_Vel_Kalman(void)
-{
-	return kalman_filter1.X_Hat_current->element[1];
-}
-
-float Get_Acc_bias_kalman(void)
-{
-    return kalman_filter1.X_Hat_current->element[2];
 }
 
 float Get_Trace_P_Current(void)

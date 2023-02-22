@@ -58,7 +58,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/wifi.h"
-//#include "flight/alt_ctrl.h"
+#include "flight/alt_ctrl.h"
 #include "flight/kalman_filter.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -401,7 +401,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #endif
 
 #ifdef USE_TELEMETRY
-    [TASK_TELEMETRY] = DEFINE_TASK("TELEMETRY", NULL, NULL, taskTelemetry, TASK_PERIOD_HZ(250), TASK_PRIORITY_LOW),
+    [TASK_TELEMETRY] = DEFINE_TASK("TELEMETRY", NULL, NULL, taskTelemetry, TASK_PERIOD_HZ(50), TASK_PRIORITY_LOW),
 #endif
 
 #ifdef USE_LED_STRIP
@@ -450,6 +450,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 
 #ifdef USE_ALT_HOLD
     [TASK_KALMAN_FILTER] = DEFINE_TASK("TASK_KALMAN_FILTER", NULL, NULL, Update_Kalman_filter, TASK_PERIOD_HZ(500), TASK_PRIORITY_LOW),
+    [TASK_ALT_CTRL] = DEFINE_TASK("TASK_ALT_CTRL", NULL, NULL, Update_PID_Height, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 };
 
@@ -617,6 +618,7 @@ void tasksInit(void)
 
 #ifdef USE_ALT_HOLD
     setTaskEnabled(TASK_KALMAN_FILTER, true);
+    setTaskEnabled(TASK_ALT_CTRL, true);
 #endif
 }
 
