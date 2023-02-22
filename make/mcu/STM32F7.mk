@@ -108,6 +108,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32F7/Drivers/CMSIS/Device/ST/STM32F7xx/Include \
+                   $(ROOT)/src/main/drivers/stm32 \
                    $(ROOT)/src/main/drivers/stm32/vcp_hal
 
 #Flags
@@ -165,6 +166,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/bus_i2c_hal.c \
             drivers/stm32/bus_spi_ll.c \
             drivers/stm32/debug.c \
+            drivers/stm32/dma_reqmap_mcu.c \
             drivers/stm32/dma_stm32f7xx.c \
             drivers/stm32/dshot_bitbang_ll.c \
             drivers/stm32/dshot_bitbang.c \

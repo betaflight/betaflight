@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "drivers/at32/platform_at32.h"
-
 #define TARGET_BOARD_IDENTIFIER "A435"
 
 #define USBD_PRODUCT_STRING     "Betaflight AT32F435"

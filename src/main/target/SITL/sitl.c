@@ -39,7 +39,7 @@
 #include "drivers/light_led.h"
 
 #include "drivers/timer.h"
-#include "drivers/timer_def.h"
+#include "timer_def.h"
 
 #include "drivers/accgyro/accgyro_fake.h"
 #include "drivers/barometer/barometer_fake.h"
@@ -92,6 +92,7 @@ int targetParseArgs(int argc, char * argv[])
            simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
     return 0;
 }
+
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
 int lockMainPID(void)
@@ -102,10 +103,12 @@ int lockMainPID(void)
 #define RAD2DEG (180.0 / M_PI)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
+
 void sendMotorUpdate(void)
 {
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
+
 void updateState(const fdm_packet* pkt)
 {
     static double last_timestamp = 0; // in seconds

@@ -36,7 +36,7 @@ extern "C" {
     #include "drivers/io.h"
     #include "drivers/light_ws2811strip.h"
     #include "drivers/timer.h"
-    #include "drivers/timer_def.h"
+    #include "timer_def.h"
 
     #include "config/config.h"
     #include "fc/rc_controls.h"

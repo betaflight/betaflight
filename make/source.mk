@@ -29,7 +29,6 @@ COMMON_SRC = \
             drivers/display.c \
             drivers/display_canvas.c \
             drivers/dma_common.c \
-            drivers/dma_reqmap.c \
             drivers/io.c \
             drivers/light_led.c \
             drivers/mco.c \

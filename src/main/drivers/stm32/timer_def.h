@@ -1124,3 +1124,39 @@
 
 #endif
 
+#if defined(STM32F7)
+
+#define FULL_TIMER_CHANNEL_COUNT 78
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14) )
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+
+#elif defined(STM32F4)
+
+#if defined(STM32F411xE)
+#define FULL_TIMER_CHANNEL_COUNT 59
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(9) | TIM_N(10) | TIM_N(11) )
+#define HARDWARE_TIMER_DEFINITION_COUNT 10
+
+#else
+
+#define FULL_TIMER_CHANNEL_COUNT 78
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11) | TIM_N(12) | TIM_N(13) | TIM_N(14) )
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+
+#endif //STM32F411xE
+
+#elif defined(STM32H7)
+
+#define FULL_TIMER_CHANNEL_COUNT 87
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(12) | TIM_N(13) | TIM_N(14) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
+#define HARDWARE_TIMER_DEFINITION_COUNT 17
+#define TIMUP_TIMERS ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8) | BIT(15) | BIT(16) | BIT(17) )
+
+#elif defined(STM32G4)
+
+#define FULL_TIMER_CHANNEL_COUNT 93 // XXX Need review
+#define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(6) | TIM_N(7) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) | TIM_N(20) )
+#define HARDWARE_TIMER_DEFINITION_COUNT 12
+#define TIMUP_TIMERS ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8) | BIT(15) | BIT(16) | BIT(17) | BIT(20))
+
+#endif

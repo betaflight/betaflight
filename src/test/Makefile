@@ -185,7 +185,7 @@ motor_output_unittest_SRC := \
 		$(USER_DIR)/drivers/dshot.c
 
 motor_output_unittest_DEFINES := \
-		USE_DSHOT= 
+		USE_DSHOT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -290,7 +290,7 @@ scheduler_unittest_SRC := \
 		$(USER_DIR)/common/streambuf.c
 
 scheduler_unittest_DEFINES := \
-		USE_OSD= 
+		USE_OSD=
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \

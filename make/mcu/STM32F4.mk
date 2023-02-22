@@ -94,6 +94,9 @@ endif
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/Core/Include:$(ROOT)/lib/main/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx
 
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(ROOT)/src/main/drivers/stm32
+
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -155,6 +158,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/bus_i2c_stm32f4xx.c \
             drivers/stm32/bus_spi_stdperiph.c \
             drivers/stm32/debug.c \
+            drivers/stm32/dma_reqmap_mcu.c \
             drivers/stm32/dma_stm32f4xx.c \
             drivers/stm32/dshot_bitbang.c \
             drivers/stm32/dshot_bitbang_stdperiph.c \
