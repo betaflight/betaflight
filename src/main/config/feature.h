@@ -25,9 +25,19 @@
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
 #endif
+
 #ifndef DEFAULT_RX_FEATURE
+
+#if defined(USE_SERIALRX)
 #define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+#elif defined(USE_RX_MSP)
+#define DEFAULT_RX_FEATURE FEATURE_RX_MSP
+#elif defined(USE_RX_SPI)
+// need to test with FEATURE_RX_EXPRESSLRS
+#define DEFAULT_RX_FEATURE FEATURE_RX_SPI
 #endif
+
+#endif // DEFAULT_RX_FEATURE
 
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
