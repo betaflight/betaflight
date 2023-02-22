@@ -32,6 +32,7 @@
 
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
+#define USE_FLASH_M25P16
 #define USE_MAX7456
 
 #define LED1_PIN             PB9
