@@ -39,12 +39,19 @@
 #define USE_MAG_SPI_AK8963
 #define USE_MAX7456
 #define USE_SDCARD
+#define USE_RX_SPI
 #define USE_RX_EXPRESSLRS
 #define USE_RX_EXPRESSLRS_TELEMETRY
-#define RX_SPI_DEFAULT_PROTOCOL          RX_SPI_EXPRESSLRS
-#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #define USE_RX_SX1280
 #define RX_CHANNELS_AETR
+#define RX_SPI_DEFAULT_PROTOCOL         RX_SPI_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE    TIM5
+#define RX_EXPRESSLRS_SPI_RESET_PIN     PB6
+#define RX_EXPRESSLRS_SPI_BUSY_PIN      PB7
+#define RX_SPI_CS                       PA15
+#define RX_SPI_EXTI                     PB15
+#define RX_SPI_BIND                     PB2
+#define RX_SPI_LED                      PB9
 
 #define BEEPER_PIN           PC13
 #define MOTOR1_PIN           PC6
