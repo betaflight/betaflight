@@ -26,6 +26,7 @@
 */
 
 #define FC_TARGET_MCU     STM32H730
+#define FC_VMA_ADDRESS    0x90100000
 
 #define BOARD_NAME        SPRACINGH7RF
 #define MANUFACTURER_ID   SPRO
