@@ -210,6 +210,18 @@ COMMON_SRC += \
             drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
 
+ifneq ($(CONFIG),)
+
+GYRO_DEFINE         := $(shell grep " USE_GYRO_" $(CONFIG_FILE) | awk '{print $$2}' )
+LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
+ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
+
+COMMON_SRC += \
+            $(addprefix drivers/accgyro_legacy/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro_legacy/*.c)))
+
+endif
+endif
+
 RX_SRC = \
             rx/cc2500_common.c \
             rx/cc2500_frsky_shared.c \
