@@ -49,7 +49,7 @@
 #define UART5_RX_PIN         PD2
 #define UART6_RX_PIN         PC7
 #define INVERTER1_PIN        PA10
-#define LED1_PIN             PC0
+#define LED0_PIN             PC0
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
@@ -61,11 +61,11 @@
 #define SPI3_MOSI_PIN        PB5
 #define ESCSERIAL_PIN        PD2
 #define CAMERA_CONTROL_PIN   PB9
-#define ADC_BATT_PIN         PC4
+#define ADC_VBAT_PIN         PC4
 #define ADC_CURR_PIN         PC3
 #define PINIO1_PIN           PC5
 #define FLASH_CS_PIN         PA15
-#define OSD_CS_PIN           PA4
+#define MAX7456_SPI_CS_PIN   PA4
 #define GYRO_1_EXTI_PIN      PC13
 #define GYRO_1_CS_PIN        PB12
 

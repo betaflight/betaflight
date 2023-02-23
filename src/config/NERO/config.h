@@ -33,9 +33,9 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
-#define LED1_PIN             PB6
-#define LED2_PIN             PB5
-#define LED3_PIN             PB4
+#define LED0_PIN             PB6
+#define LED1_PIN             PB5
+#define LED2_PIN             PB4
 #define BEEPER_PIN           PC1
 #define I2C1_SCL_PIN         PB8
 #define I2C1_SDA_PIN         PB9
@@ -64,7 +64,7 @@
 #define UART3_RX_PIN         PB11
 #define UART6_TX_PIN         PC6
 #define UART6_RX_PIN         PC7
-#define ADC_BATT_PIN         PC3
+#define ADC_VBAT_PIN         PC3
 #define ESCSERIAL_PIN        PC7
 #define SDCARD_CS_PIN        PA15
 #define SDCARD_DETECT_PIN    PD2

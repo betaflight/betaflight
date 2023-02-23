@@ -47,11 +47,11 @@
 #define UART4_RX_PIN         PA1
 #define UART5_RX_PIN         PD2
 #define INVERTER1_PIN        PB8
-#define LED1_PIN             PB9
+#define LED0_PIN             PB9
 #define SPI1_SCK_PIN         PA5
 #define SPI1_MISO_PIN        PA6
 #define SPI1_MOSI_PIN        PA7
-#define ADC_BATT_PIN         PC5
+#define ADC_VBAT_PIN         PC5
 #define ADC_RSSI_PIN         PB1
 #define ADC_CURR_PIN         PC4
 #define GYRO_1_EXTI_PIN      PC3

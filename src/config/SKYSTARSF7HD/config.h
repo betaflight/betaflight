@@ -36,8 +36,8 @@
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
 
-#define LED1_PIN             PC15
-#define LED2_PIN             PC14
+#define LED0_PIN             PC15
+#define LED1_PIN             PC14
 #define BEEPER_PIN           PB2
 
 #define MOTOR1_PIN           PC8
@@ -56,11 +56,11 @@
 #define SPI3_SCK_PIN         PC10
 #define SPI3_MISO_PIN        PC11
 #define SPI3_MOSI_PIN        PB5
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define SPI2_SCK_PIN         PB13
 #define SPI2_MISO_PIN        PB14
 #define SPI2_MOSI_PIN        PB15
-#define ADC_BATT_PIN         PC1
+#define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC2
 #define ADC_CURR_PIN         PC3
 #define UART1_TX_PIN         PB6

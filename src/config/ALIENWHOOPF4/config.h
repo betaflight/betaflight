@@ -48,8 +48,8 @@
 #define UART2_RX_PIN         PA3
 #define UART3_RX_PIN         PC11
 #define UART4_RX_PIN         PA1
-#define LED1_PIN             PC12
-#define LED2_PIN             PD2
+#define LED0_PIN             PC12
+#define LED1_PIN             PD2
 #define SPEKTRUM_RX_BIND_PIN PC13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
@@ -61,7 +61,7 @@
 #define SPI2_MOSI_PIN        PB15
 #define SPI3_MOSI_PIN        PB5
 #define FLASH_CS_PIN         PA15
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PC14
 #define GYRO_1_CS_PIN        PA4
 

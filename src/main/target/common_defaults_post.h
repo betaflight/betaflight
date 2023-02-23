@@ -24,20 +24,6 @@
 #define DEBUG_MODE DEBUG_NONE
 #endif
 
-#ifdef USE_MAX7456
-#ifndef MAX7456_CLOCK_CONFIG_DEFAULT
-#define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
-#endif
-
-#ifndef MAX7456_SPI_CS_PIN
-#define MAX7456_SPI_CS_PIN              NONE
-#endif
-
-#ifndef MAX7456_SPI_INSTANCE
-#define MAX7456_SPI_INSTANCE            NULL
-#endif
-#endif
-
 // pg/flash
 
 #ifdef USE_FLASH_M25P16

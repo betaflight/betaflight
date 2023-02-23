@@ -44,7 +44,7 @@
 #define UART3_RX_PIN         PB11
 #define I2C1_SCL_PIN         PA15
 #define I2C1_SDA_PIN         PB7
-#define LED1_PIN             PC15
+#define LED0_PIN             PC15
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
@@ -56,10 +56,10 @@
 #define SPI3_MOSI_PIN        PB5
 #define ESCSERIAL_PIN        PC6
 #define CAMERA_CONTROL_PIN   PB6
-#define ADC_BATT_PIN         PA0
+#define ADC_VBAT_PIN         PA0
 #define ADC_CURR_PIN         PA1
 #define FLASH_CS_PIN         PB9
-#define OSD_CS_PIN           PB12
+#define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PA4
 

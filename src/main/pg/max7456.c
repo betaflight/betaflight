@@ -30,6 +30,18 @@
 
 #include "max7456.h"
 
+#ifndef MAX7456_CLOCK_CONFIG_DEFAULT
+#define MAX7456_CLOCK_CONFIG_DEFAULT    MAX7456_CLOCK_CONFIG_OC
+#endif
+
+#ifndef MAX7456_SPI_CS_PIN
+#define MAX7456_SPI_CS_PIN              NONE
+#endif
+
+#ifndef MAX7456_SPI_INSTANCE
+#define MAX7456_SPI_INSTANCE            NULL
+#endif
+
 PG_REGISTER_WITH_RESET_FN(max7456Config_t, max7456Config, PG_MAX7456_CONFIG, 0);
 
 void pgResetFn_max7456Config(max7456Config_t *config)

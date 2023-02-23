@@ -54,8 +54,8 @@
 #define UART6_RX_PIN         PC7
 #define INVERTER3_PIN        PB12
 #define INVERTER6_PIN        PB13
-#define LED1_PIN             PA15
-#define LED2_PIN             PC14
+#define LED0_PIN             PA15
+#define LED1_PIN             PC14
 #define SPI1_SCK_PIN         PA5
 #define SPI3_SCK_PIN         PB3
 #define SPI1_MISO_PIN        PA6
@@ -63,11 +63,11 @@
 #define SPI1_MOSI_PIN        PA7
 #define SPI3_MOSI_PIN        PB5
 #define ESCSERIAL_PIN        PB9
-#define ADC_BATT_PIN         PC1
+#define ADC_VBAT_PIN         PC1
 #define ADC_CURR_PIN         PC2
 #define BARO_CS_PIN          PB8
 #define SDCARD_DETECT_PIN    PB15
-#define OSD_CS_PIN           PC0
+#define MAX7456_SPI_CS_PIN   PC0
 #define GYRO_1_CS_PIN        PA4
 #define USB_DETECT_PIN       PA9
 
