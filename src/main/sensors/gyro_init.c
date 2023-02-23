@@ -659,9 +659,12 @@ bool gyroInit(void)
         gyro.gyroSensor2.gyroDev.dev.rxBuf = &gyroBuf2[GYRO_BUF_SIZE / 2];
 
         gyroInitSensor(&gyro.gyroSensor2, gyroDeviceConfig(1));
-        gyro.gyroHasOverflowProtection =  gyro.gyroHasOverflowProtection && gyro.gyroSensor2.gyroDev.gyroHasOverflowProtection;
+        gyro.gyroHasOverflowProtection = gyro.gyroHasOverflowProtection && gyro.gyroSensor2.gyroDev.gyroHasOverflowProtection;
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor2.gyroDev.gyroHardware;
     }
+#endif
+#ifdef USE_CUSTOM_DEFAULTS
+    eepromWriteRequired = eepromWriteRequired && systemConfig()->configurationState != CONFIGURATION_STATE_DEFAULTS_BARE;
 #endif
 
     if (eepromWriteRequired) {
