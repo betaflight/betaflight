@@ -545,6 +545,7 @@ static void sensorUpdate(void)
     if (rescueState.phase == RESCUE_LANDING) {
         // do this at sensor update rate, not the much slower GPS rate, for quick disarm
         rescueState.sensor.accMagnitude = (float) sqrtf(sq(acc.accADC[Z] - acc.dev.acc_1G) + sq(acc.accADC[X]) + sq(acc.accADC[Y])) * acc.dev.acc_1G_rec;
+        // Note: subtracting 1G from Z assumes the quad is 'flat' with respect to the horizon.  A true non-gravity acceleration value, regardless of attitude, may be better.
     }
 
     rescueState.sensor.directionToHome = GPS_directionToHome;
