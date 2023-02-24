@@ -82,9 +82,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DEFAULT_CPU_OVERCLOCK 0
 #define FAST_IRQ_HANDLER
 
-#define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
-#define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
-#define STATIC_DMA_DATA_AUTO        static DMA_DATA
+#define DMA_DATA_ZERO_INIT
+#define DMA_DATA
+#define STATIC_DMA_DATA_AUTO        static
 
 #define DMA_RAM
 #define DMA_RW_AXI
