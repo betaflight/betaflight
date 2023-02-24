@@ -39,9 +39,17 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
 #define USE_MAX7456
+#define USE_RX_SPI
 #define USE_RX_EXPRESSLRS
 #define USE_RX_EXPRESSLRS_TELEMETRY
 #define USE_RX_SX1280
 #define RX_CHANNELS_AETR
-#define USE_RX_SPI
+#define RX_SPI_DEFAULT_PROTOCOL         RX_SPI_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE    TIM5
+#define RX_EXPRESSLRS_SPI_RESET_PIN     PB9
+#define RX_EXPRESSLRS_SPI_BUSY_PIN      PA13
+#define RX_SPI_CS                       PA15
+#define RX_SPI_EXTI                     PC13
+#define RX_SPI_BIND                     PB2
+#define RX_SPI_LED                      PC15
 
