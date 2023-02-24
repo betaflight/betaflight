@@ -23,7 +23,7 @@
   */
 #include "usbd_core.h"
 #include "msc_class.h"
-#include "msc_desc.h"
+#include <msc_desc.h>
 #include "msc_bot_scsi.h"
 
 /** @addtogroup AT32F435_437_middlewares_usbd_class
@@ -183,6 +183,7 @@ static usb_sts_type class_setup_handler(void *udev, usb_setup_type *setup)
   */
 static usb_sts_type class_ept0_tx_handler(void *udev)
 {
+	UNUSED(udev);
   usb_sts_type status = USB_OK;
 
   /* ...user code... */
@@ -199,7 +200,7 @@ static usb_sts_type class_ept0_rx_handler(void *udev)
 {
   usb_sts_type status = USB_OK;
   usbd_core_type *pudev = (usbd_core_type *)udev;
-  uint32_t recv_len = usbd_get_recv_len(pudev, 0);
+  usbd_get_recv_len(pudev, 0);
   /* ...user code... */
   return status;
 }
@@ -240,6 +241,7 @@ static usb_sts_type class_out_handler(void *udev, uint8_t ept_num)
   */
 static usb_sts_type class_sof_handler(void *udev)
 {
+	UNUSED(udev);
   usb_sts_type status = USB_OK;
 
   /* ...user code... */
@@ -255,6 +257,7 @@ static usb_sts_type class_sof_handler(void *udev)
   */
 static usb_sts_type class_event_handler(void *udev, usbd_event_type event)
 {
+	UNUSED(udev);
   usb_sts_type status = USB_OK;
   switch(event)
   {

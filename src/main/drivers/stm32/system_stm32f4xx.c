@@ -147,6 +147,10 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
+    persistentObjectInit();
+
+    checkForBootLoaderRequest();
+
     SetSysClock();
 
     // Configure NVIC preempt/priority groups

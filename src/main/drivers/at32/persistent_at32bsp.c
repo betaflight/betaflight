@@ -39,7 +39,9 @@ uint32_t persistentObjectRead(persistentObjectId_e id)
 
 void persistentObjectWrite(persistentObjectId_e id, uint32_t value)
 {
+    ertc_write_protect_disable();
     ertc_bpr_data_write((ertc_dt_type)id, value);
+    ertc_write_protect_enable();
 }
 
 void persistentObjectRTCEnable(void)

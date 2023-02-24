@@ -180,6 +180,7 @@ MCU_COMMON_SRC = \
             drivers/stm32/timer_stdperiph.c \
             drivers/stm32/timer_stm32f4xx.c \
             drivers/stm32/transponder_ir_io_stdperiph.c \
+            drivers/stm32/usbd_msc_desc.c \
             startup/system_stm32f4xx.c
 
 ifeq ($(PERIPH_DRIVER), HAL)
@@ -204,7 +205,6 @@ endif
 MSC_SRC = \
             drivers/usb_msc_common.c \
             drivers/stm32/usb_msc_f4xx.c \
-            msc/usbd_msc_desc.c \
             msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \

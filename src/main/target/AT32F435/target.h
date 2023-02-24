@@ -62,6 +62,7 @@
 #define USE_I2C_DEVICE_3
 
 #define USE_USB_DETECT
+#define USE_PERSISTENT_MSC_RTC
 #define USE_VCP
 
 #define UNIFIED_SERIAL_PORT_COUNT       1

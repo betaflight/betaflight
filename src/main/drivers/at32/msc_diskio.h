@@ -1,13 +1,13 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
+ * Betaflight is free software. You can redistribute
  * this software and/or modify this software under the terms of the
  * GNU General Public License as published by the Free Software
  * Foundation, either version 3 of the License, or (at your option)
  * any later version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
+ * Betaflight is distributed in the hope that they
  * will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -18,26 +18,12 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Author: jflyper (https://github.com/jflyper)
- */
+#pragma once
 
-#include "platform.h"
-#include "common/time.h"
+// IO routines from usb_msc_at32F435.c
+int8_t msc_disk_capacity(uint8_t lun, uint32_t *block_num, uint32_t *block_size);
+int8_t msc_disk_read(uint8_t lun, uint32_t blk_addr, uint8_t *buf, uint16_t blk_len);
+int8_t msc_disk_write(uint8_t lun, uint32_t blk_addr, uint8_t *buf, uint16_t blk_len);
+uint8_t *get_inquiry(uint8_t lun);
+uint8_t msc_get_readonly(uint8_t lun);
 
-#ifdef USE_HAL_DRIVER
-#include "usbd_msc.h"
-#else
-#include "usbd_msc_mem.h"
-#ifndef AT32F435
-#include "usbd_msc_core.h"
-#endif
-#endif
-
-#include "usbd_storage.h"
-
-#ifdef USE_HAL_DRIVER
-USBD_StorageTypeDef *USBD_STORAGE_fops;
-#else
-USBD_STORAGE_cb_TypeDef *USBD_STORAGE_fops;
-#endif
