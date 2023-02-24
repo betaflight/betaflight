@@ -46,6 +46,7 @@
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW180_DEG
+#define GYRO_1_ALIGN_YAW 1800
 
 #define SPI1_SCK_PIN         PA5
 #define SPI1_MISO_PIN        PA6
