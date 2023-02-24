@@ -44,12 +44,13 @@
 #define USE_SPI_DEVICE_3
 #define USE_SPI_DMA_ENABLE_LATE
 
-#define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6000
-
 #define USE_EXTI
 #define USE_GYRO_EXTI
 
+#define USE_I2C
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
 
 #define USE_USB_DETECT
 #define USE_VCP
@@ -76,8 +77,8 @@
 #undef USE_OSD
 #undef USE_BLACKBOX
 #undef USE_SDCARD
-#undef USE_BARO
-#undef USE_MAG
+//#undef USE_BARO
+//#undef USE_MAG
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 

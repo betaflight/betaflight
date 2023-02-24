@@ -36,6 +36,8 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
 
+#include "pg/pinio.h"
+
 // Number of bits in I2C protocol phase
 #define LEN_ADDR 7
 #define LEN_RW 1
@@ -140,29 +142,29 @@ void i2cInit(I2CDevice device)
 
 
     // Init I2C peripheral
-
     i2c_handle_type  *pHandle = &pDev->handle;
-
     memset(pHandle, 0, sizeof(*pHandle));
 
-    pHandle->i2cx = pDev->hardware->reg;
+    i2c_type *i2cx = (i2c_type *)pDev->hardware->reg;
+    pHandle->i2cx = i2cx;
 
     crm_clocks_freq_type crm_clk_freq;
     crm_clocks_freq_get(&crm_clk_freq);
+
     uint32_t i2cPclk = crm_clk_freq.apb1_freq;
 
     uint32_t I2Cx_CLKCTRL = i2cClockTIMINGR(i2cPclk, pDev->clockSpeed, 0);
 
-    i2c_reset( pHandle->i2cx);
+    i2c_config(pHandle);
 
-    i2c_init( pHandle->i2cx, 0x0f, I2Cx_CLKCTRL);
+    i2c_init(i2cx, 0x0f, I2Cx_CLKCTRL);
 
-    i2c_own_address1_set( pHandle->i2cx, I2C_ADDRESS_MODE_7BIT, 0x0);
+    i2c_own_address1_set(i2cx, I2C_ADDRESS_MODE_7BIT, 0x0);
 
     nvic_irq_enable(hardware->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
     nvic_irq_enable(hardware->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
 
-    i2c_enable(pHandle->i2cx, TRUE);
+    i2c_enable(i2cx, TRUE);
 }
 
 static void i2cUnstick(IO_t scl, IO_t sda)
