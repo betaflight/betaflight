@@ -379,6 +379,36 @@ extern uint32_t dashboardGpsNavSvInfoRcvCount;                  // Count of time
 #define GPS_DBHZ_MAX 55
 #endif  // USE_DASHBOARD
 
+// UBX NMEA message types
+#define GPS_PUBX_115200         "$PUBX,41,1,0003,0001,115200,0*1E\r\n"
+#define GPS_PUBX_57600          "$PUBX,41,1,0003,0001,57600,0*2D\r\n"
+#define GPS_PUBX_38400          "$PUBX,41,1,0003,0001,38400,0*26\r\n"
+#define GPS_PUBX_19200          "$PUBX,41,1,0003,0001,19200,0*23\r\n"
+#define GPS_PUBX_9600           "$PUBX,41,1,0003,0001,9600,0*16\r\n"
+
+// MTK NMEA message types
+#define GPS_PMTK_115200         "$PMTK251,115200*1F\r\n"
+#define GPS_PMTK_57600          "$PMTK251,57600*2C\r\n"
+#define GPS_PMTK_38400          "$PMTK251,38400*27\r\n"
+#define GPS_PMTK_19200          "$PMTK251,19200*22\r\n"
+#define GPS_PMTK_9600           "$PMTK251,9600*17\r\n"
+
+#define GPS_PMTK_GGA_RATE_5HZ   "$PMTK220,200*2C\r\n"
+
+// SIRF NMEA message types
+#define GPS_PSRF_NMEA_115200    "$PSRF100,1,115200,8,1,0*05\r\n"
+#define GPS_PSRF_NMEA_57600     "$PSRF100,1,57600,8,1,0*36\r\n"
+#define GPS_PSRF_NMEA_38400     "$PSRF100,1,38400,8,1,0*3D\r\n"
+#define GPS_PSRF_NMEA_19200     "$PSRF100,1,19200,8,1,0*38\r\n"
+#define GPS_PSRF_NMEA_9600      "$PSRF100,1,9600,8,1,0*0D\r\n"
+
+#define GPS_PSRF_GGA_RATE_1HZ   "$PSRF103,00,00,01,01*25\r\n"
+#define GPS_PSRF_GGA_RATE_5HZ   "$PSRF103,00,00,05,01*21\r\n"
+#define GPS_PSRF_DISABLE_GSV    "$PSRF103,03,00,00,01*27\r\n"
+
+// ATGM336 message types
+#define GPS_ATGM336_RATE_10HZ   "$PCAS02,100*1E\r\n"
+#define GPS_ATGM336_HOT_RESTART "$PCAS10,0*1C\r\n"
 
 #ifdef USE_GPS_UBLOX
 ubloxVersion_e ubloxParseVersion(const uint32_t version);
