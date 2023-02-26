@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -108,7 +108,7 @@
 //TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
 //TODO #define BEEPER_OD OFF
-//TODO #define SYSTEM_HSE_MHZ 8
+#define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI3
 //TODO #define DASHBOARD_I2C_BUS 1
 #define FLASH_SPI_INSTANCE SPI2

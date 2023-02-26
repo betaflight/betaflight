@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -101,7 +101,7 @@
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 //TODO #define MAG_BUSTYPE I2C
 //TODO #define MAG_I2C_ADDRESS 1
-//TODO #define SYSTEM_HSE_MHZ 8
+#define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI2
 //TODO #define DASHBOARD_I2C_BUS 1
 #define FLASH_SPI_INSTANCE SPI3

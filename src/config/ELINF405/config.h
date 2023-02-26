@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -115,7 +115,7 @@
 //TODO #define OSD_AH_POS 2126
 //TODO #define OSD_COMPASS_BAR_POS 106
 //TODO #define OSD_WARNINGS_POS 2377
-//TODO #define SYSTEM_HSE_MHZ 8
+#define SYSTEM_HSE_MHZ 8
 //TODO #define VCD_VIDEO_SYSTEM NTSC
 #define MAX7456_SPI_INSTANCE SPI2
 //TODO #define DASHBOARD_I2C_BUS 1
