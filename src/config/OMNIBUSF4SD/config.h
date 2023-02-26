@@ -107,7 +107,7 @@
 #define SPI2_TX_DMA_OPT     0
 #define ADC2_DMA_OPT        1
 
-#define MAG_I2C_INSTANCE I2C2
+#define MAG_I2C_INSTANCE (I2CDEV_2)
 #define BARO_SPI_INSTANCE SPI3
 #define BEEPER_INVERTED
 #define USE_SDCARD_SPI

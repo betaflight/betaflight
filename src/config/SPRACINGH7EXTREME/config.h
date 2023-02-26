@@ -192,9 +192,9 @@
 #define VTX_DATA_PIN         PA6
 #define VTX_CLK_PIN          PA7
 
-#define MAG_I2C_INSTANCE I2C1
+#define MAG_I2C_INSTANCE (I2CDEV_1)
 
-#define BARO_I2C_INSTANCE I2C1
+#define BARO_I2C_INSTANCE (I2CDEV_1)
 
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI3

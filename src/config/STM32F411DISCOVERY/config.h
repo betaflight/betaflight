@@ -77,7 +77,7 @@
 
 #define ADC1_DMA_OPT        1
 
-#define MAG_I2C_INSTANCE I2C1
+#define MAG_I2C_INSTANCE (I2CDEV_1)
 #define BEEPER_PWM_HZ 2000
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
