@@ -121,7 +121,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         if (armingDelayTime >= (DSHOT_BEACON_GUARD_DELAY_US / 1e5 - 5)) {
             tfp_sprintf(warningText, STR_OSDW_BEACON_ON); // Display this message for the first 0.5 seconds
         } else {
-            tfp_sprintf(warningText, STR_OSDW_ARM_IN, armingDelayTime / 10, armingDelayTime % 10);
+            tfp_sprintf(warningText, "%s %d.%d", STR_OSDW_ARM_IN, armingDelayTime / 10, armingDelayTime % 10);
         }
         *displayAttr = DISPLAYPORT_ATTR_INFO;
         return;
@@ -153,7 +153,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_ACC
         if (sensors(SENSOR_ACC)) {
             const int pitchAngle = constrain((attitude.raw[FD_PITCH] - accelerometerConfig()->accelerometerTrims.raw[FD_PITCH]) / 10, -90, 90);
-            tfp_sprintf(warningText, STR_OSDW_LAUNCH_ANGEL, pitchAngle);
+            tfp_sprintf(warningText, "%s %d", STR_OSDW_LAUNCH, pitchAngle);
         } else
 #endif // USE_ACC
         {
@@ -189,7 +189,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_RX_RSNR
     // rsnr
     if (osdWarnGetState(OSD_WARNING_RSNR) && (getRsnr() < osdConfig()->rsnr_alarm)) {
-        tfp_sprintf(warningText, TR_OSDW_RSNR_LOW);
+        tfp_sprintf(warningText, STR_OSDW_RSNR_LOW);
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
         *blinking = true;
         return;
@@ -252,7 +252,8 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_ADC_INTERNAL
     const int16_t coreTemperature = getCoreTemperatureCelsius();
     if (osdWarnGetState(OSD_WARNING_CORE_TEMPERATURE) && coreTemperature >= osdConfig()->core_temp_alarm) {
-        tfp_sprintf(warningText, STR_OSDW_CORE_TEMP, SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(warningText, "%s %c: %3d%c", STR_OSDW_CORE, SYM_TEMPERATURE, 
+                    osdConvertTemperatureToSelectedUnit(coreTemperature), osdGetTemperatureSymbolForSelectedUnit());
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
         *blinking = true;
         return;

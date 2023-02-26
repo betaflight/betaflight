@@ -34,6 +34,8 @@
 
 #include "telemetry/srxl.h"
 
+#include "locales/localisation.h"
+
 #include "displayport_srxl.h"
 
 displayPort_t srxlDisplayPort;

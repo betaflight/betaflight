@@ -978,7 +978,7 @@ static void cliShowInvalidArgumentCountError(const char *cmdName)
 static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, int max)
 {
     if (name) {
-        cliPrintErrorLinef(cmdName, STR_CLI_ARG_INVALIDRANGE, name, min, max);
+        cliPrintErrorLinef(cmdName, "%s %s %d %s %d", name, STR_CLI_ARG_NOTBETWEEN, min, STR_CLI_ARG_AND, max);
     } else {
         cliPrintErrorLinef(cmdName, STR_CLI_ARG_OUTOFRANGE);
     }
@@ -1796,7 +1796,7 @@ static void cliMotorMix(const char *cmdName, char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+                    cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -2277,7 +2277,7 @@ static void cliServoMix(const char *cmdName, char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+                    cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -2408,7 +2408,8 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 
     const sdcardMetadata_t *metadata = sdcard_getMetadata();
 
-    cliPrintf(STR_CLI_SDCARD_MANUFAC,
+    cliPrintf("%s 0x%x, %ukB, %02d/%04d, v%d.%d, '", 
+        STR_CLI_SDCARD_MANUFAC,
         metadata->manufacturerID,
         metadata->numBlocks / 2, /* One block is half a kB */
         metadata->productionMonth,
@@ -2459,7 +2460,13 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 
     const flashGeometry_t *layout = flashGetGeometry();
 
-    cliPrintLinef(STR_CLI_FLASH_INFO, layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, layout->jedecId);
+    cliPrintLinef("%s%u, %s%u, %s%u, %s%u, %s%u, %s=0x%08x", 
+                  STR_CLI_FLASH_SEC,        layout->sectors, 
+                  STR_CLI_FLASH_SEC_SIZE,   layout->sectorSize, 
+                  STR_CLI_FLASH_SEC_PAGE,   layout->pagesPerSector, 
+                  STR_CLI_FLASH_PAGE_SIZE,  layout->pageSize, 
+                  STR_CLI_FLASH_TOTAL_SIZE, layout->totalSize, 
+                  STR_CLI_FLASH_JEDEC,      layout->jedecId);
 
     for (uint8_t index = 0; index < FLASH_MAX_PARTITIONS; index++) {
         const flashPartition_t *partition;
@@ -2475,9 +2482,9 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 #ifdef USE_FLASHFS
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_FLASHFS);
 
-    cliPrintLinef(STR_CLI_FLASH_SIZE,
-            FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
-            flashfsGetOffset()
+    cliPrintLinef("%s%u, %s%u", 
+                  STR_CLI_FLASH_SIZE, FLASH_PARTITION_SECTOR_COUNT(flashPartition) * layout->sectorSize,
+                  STR_CLI_FLASH_SIZE_USED, flashfsGetOffset()
     );
 #endif
 }
@@ -2545,7 +2552,7 @@ static void cliFlashWrite(const char *cmdName, char *cmdline)
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
 
-        cliPrintLinef(STR_CLI_FLASH_WROTE, strlen(text), address);
+        cliPrintLinef("%s %u %s %u", STR_CLI_FLASH_WROTE, strlen(text), STR_CLI_FLASH_BYTES_AT, address);
     }
 }
 
@@ -2560,7 +2567,7 @@ static void cliFlashRead(const char *cmdName, char *cmdline)
     } else {
         uint32_t length = atoi(nextArg);
 
-        cliPrintLinef(STR_CLI_FLASH_READ, length, address);
+        cliPrintLinef("%s %u %s %u", STR_CLI_FLASH_READ, length, STR_CLI_FLASH_BYTES_AT, address);
 
         uint8_t buffer[32];
         while (length > 0) {
@@ -3134,7 +3141,7 @@ static void cliBoardName(const char *cmdName, char *cmdline)
     const unsigned int len = strlen(cmdline);
     const char *boardName = getBoardName();
     if (len > 0 && strlen(boardName) != 0 && boardInformationIsSet() && (len != strlen(boardName) || strncmp(boardName, cmdline, len))) {
-        cliPrintErrorLinef(cmdName, STR_CLI_ERROR_MESSAGE, "BOARD_NAME", boardName);
+        cliPrintErrorLinef(cmdName, "%s %s '%s'", "BOARD_NAME", STR_CLI_ERROR_MESSAGE, boardName);
     } else {
         if (len > 0 && !configIsInCopy && setBoardName(cmdline)) {
             boardInformationUpdated = true;
@@ -3157,7 +3164,7 @@ static void cliManufacturerId(const char *cmdName, char *cmdline)
     const unsigned int len = strlen(cmdline);
     const char *manufacturerId = getManufacturerId();
     if (len > 0 && boardInformationIsSet() && strlen(manufacturerId) != 0 && (len != strlen(manufacturerId) || strncmp(manufacturerId, cmdline, len))) {
-        cliPrintErrorLinef(cmdName, STR_CLI_ERROR_MESSAGE, "MANUFACTURER_ID", manufacturerId);
+        cliPrintErrorLinef(cmdName, "%s %s '%s'", "MANUFACTURER_ID", STR_CLI_ERROR_MESSAGE, manufacturerId);
     } else {
         if (len > 0 && !configIsInCopy && setManufacturerId(cmdline)) {
             boardInformationUpdated = true;
@@ -3209,7 +3216,7 @@ static void cliSignature(const char *cmdName, char *cmdline)
     char signatureStr[SIGNATURE_LENGTH * 2 + 1] = {0};
     if (len > 0 && signatureIsSet() && memcmp(signature, getSignature(), SIGNATURE_LENGTH)) {
         writeSignature(signatureStr, getSignature());
-        cliPrintErrorLinef(cmdName, STR_CLI_ERROR_MESSAGE, "SIGNATURE", signatureStr);
+        cliPrintErrorLinef(cmdName, "%s %s '%s'", "SIGNATURE", STR_CLI_ERROR_MESSAGE, signatureStr);
     } else {
         if (len > 0 && !configIsInCopy && setSignature(signature)) {
             signatureUpdated = true;
@@ -3301,7 +3308,7 @@ static void cliFeature(const char *cmdName, char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL) {
-                cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+                cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
                 break;
             }
 
@@ -3387,7 +3394,7 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
 
         for (uint32_t i = 0; ; i++) {
             if (i == beeperCount) {
-                cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+                cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
                 break;
             }
             if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0 && beeperModeMaskForTableIndex(i) & (allowedFlags | BEEPER_GET_FLAG(BEEPER_ALL))) {
@@ -3987,7 +3994,7 @@ static void cliMixer(const char *cmdName, char *cmdline)
 
     for (uint32_t i = 0; ; i++) {
         if (mixerNames[i] == NULL) {
-            cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+            cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
@@ -4469,7 +4476,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
     if (!matchedCommands) {
-        cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+        cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
     }
 }
 
@@ -4520,7 +4527,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
         const uint16_t index = cliGetSettingIndex(cmdline, variableNameLength);
         if (index >= valueTableEntryCount) {
-            cliPrintErrorLinef(cmdName, STR_CLI_ERROR_INVALID_NAME, cmdline);
+            cliPrintErrorLinef(cmdName, "%s %s", STR_CLI_ERROR_INVALID_NAME, cmdline);
             return;
         }
         const clivalue_t *val = &valueTable[index];
@@ -4702,7 +4709,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // MCU type, clock, vrefint, core temperature
 
-    cliPrintf(STR_CLI_STATUS_MCU, getMcuTypeById(getMcuTypeId()), (SystemCoreClock / 1000000));
+    cliPrintf("%s %s, %s%dMHz", STR_CLI_STATUS_MCU, getMcuTypeById(getMcuTypeId()), STR_CLI_STATUS_CLOCK, (SystemCoreClock / 1000000));
 
 #if defined(STM32F4) || defined(STM32G4)
     // Only F4 and G4 is capable of switching between HSE/HSI (for now)
@@ -4723,32 +4730,37 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #ifdef USE_ADC_INTERNAL
     uint16_t vrefintMv = getVrefMv();
     int16_t coretemp = getCoreTemperatureCelsius();
-    cliPrintLinef(STR_CLI_STATUS_VREF, vrefintMv / 1000, (vrefintMv % 1000) / 10, coretemp);
+    cliPrintLinef(", %s%d.%2dV, %s%d degC", 
+                  STR_CLI_STATUS_VREF, vrefintMv / 1000, (vrefintMv % 1000) / 10, 
+                  STR_CLI_STATUS_CORETEMP, coretemp);
 #else
     cliPrintLinefeed();
 #endif
 
     // Stack and config sizes and usages
 
-    cliPrintf(STR_CLI_STATUS_STACK_SIZE, stackTotalSize(), stackHighMem());
+    cliPrintf("%s %d, %s 0x%x", STR_CLI_STATUS_STACK_SIZE, stackTotalSize(), STR_CLI_STATUS_STACK_ADDR, stackHighMem());
 #ifdef USE_STACK_CHECK
-    cliPrintf(STR_CLI_STATUS_STACK_USED, stackUsedSize());
+    cliPrintf(", %s %d", STR_CLI_STATUS_STACK_USED, stackUsedSize());
 #endif
     cliPrintLinefeed();
 
-    cliPrintLinef(STR_CLI_STATUS_CONFIGURATION, configurationStates[systemConfigMutable()->configurationState], getEEPROMConfigSize(), getEEPROMStorageSize());
+    cliPrintLinef("%s %s, %s %d, %s %d", 
+                  STR_CLI_STATUS_CONFIG,       configurationStates[systemConfigMutable()->configurationState], 
+                  STR_CLI_STATUS_CONFIG_SIZE,  getEEPROMConfigSize(), 
+                  STR_CLI_STATUS_CONFIG_AVAIL, getEEPROMStorageSize());
 
     // Devices
 #if defined(USE_SPI) || defined(USE_I2C)
     cliPrint(STR_CLI_STATUS_DEVICES);
 #if defined(USE_SPI)
-    cliPrintf(STR_CLI_STATUS_SPI, spiGetRegisteredDeviceCount());
+    cliPrintf(" %s%d", STR_CLI_STATUS_SPI, spiGetRegisteredDeviceCount());
 #if defined(USE_I2C)
     cliPrint(",");
 #endif
 #endif
 #if defined(USE_I2C)
-    cliPrintf(STR_CLI_STATUS_I2C, i2cGetRegisteredDeviceCount());
+    cliPrintf(" %s%d", STR_CLI_STATUS_I2C, i2cGetRegisteredDeviceCount());
 #endif
     cliPrintLinefeed();
 #endif
@@ -4763,7 +4775,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
             } else {
                 found = true;
             }
-            cliPrintf(STR_CLI_STATUS_GYRO, pos + 1);
+            cliPrintf(" %s %d:", STR_CLI_STATUS_GYRO, pos + 1);
         }
     }
 #ifdef USE_SPI
@@ -4792,7 +4804,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
             if (i) {
                 cliPrint(", ");
             }
-            cliPrintf("%s=%s", sensorTypeNames[i], sensorHardware);
+            cliPrintf("%s: %s", sensorTypeNames[i], sensorHardware);
 #if defined(USE_ACC)
             if (mask == SENSOR_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
@@ -4807,11 +4819,12 @@ static void cliStatus(const char *cmdName, char *cmdline)
     osdDisplayPortDevice_e displayPortDeviceType;
     displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
 
-    cliPrintLinef(STR_CLI_STATUS_OSD, lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort->cols, osdDisplayPort->rows);
+    cliPrintLinef("%s %s (%u x %u)", 
+                  STR_CLI_STATUS_OSD, lookupTableOsdDisplayPortDevice[displayPortDeviceType], osdDisplayPort->cols, osdDisplayPort->rows);
 #endif
 
 #ifdef BUILD_KEY
-    cliPrintf(TR_CLI_STATUS_BUILD_KEY, buildKey);
+    cliPrintf("%s %s", STR_CLI_STATUS_BUILD_KEY, buildKey);
 #ifdef RELEASE_NAME
     cliPrintf(" (%s)", STR(RELEASE_NAME));
 #endif
@@ -4819,32 +4832,36 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
 
     // Uptime and wall clock
-
-    cliPrintf(STR_CLI_STATUS_SYSTEM_UPTIME, millis() / 1000);
+    cliPrintf("%s %d %s", STR_CLI_STATUS_SYSTEM_UPTIME, millis() / 1000, STR_SECONDS);
 
 #ifdef USE_RTC_TIME
     char buf[FORMATTED_DATE_TIME_BUFSIZE];
     dateTime_t dt;
     if (rtcGetDateTime(&dt)) {
         dateTimeFormatLocal(buf, &dt);
-        cliPrintf(STR_CLI_STATUS_TIME_CURRENT, buf);
+        cliPrintf("%s %s", STR_CLI_STATUS_TIME_CURRENT, buf);
     }
 #endif
     cliPrintLinefeed();
 
-    // Run status
-
+    // CPU status
     const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
     int rxRate = getCurrentRxRefreshRate();
     if (rxRate != 0) {
         rxRate = (int)(1000000.0f / ((float)rxRate));
     }
     const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
-    cliPrintLinef(STR_CLI_STATUS_CPU_INFO, constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), getTaskDeltaTimeUs(TASK_GYRO), gyroRate, rxRate, systemRate);
+    cliPrintLinef("%s %d%%, %s %d, %s %d, %s %d, %s %d",
+                  STR_CLI_STATUS_CPU,        constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE), 
+                  STR_CLI_STATUS_CPU_CYCLE,  getTaskDeltaTimeUs(TASK_GYRO), 
+                  STR_CLI_STATUS_CPU_GYRO,   gyroRate, 
+                  STR_CLI_STATUS_CPU_RX,     rxRate, 
+                  STR_CLI_STATUS_CPU_SYSTEM, systemRate);
 
-    // Battery meter
-
-    cliPrintLinef(TR_CLI_STATUS_BATTERY, getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
+    // Battery status
+    cliPrintLinef("%s %d * 0.01V (%dS %s - %s)", 
+                  STR_CLI_STATUS_BAT_VOLTAGE, getBatteryVoltage(), getBatteryCellCount(), 
+                  STR_CLI_STATUS_BAT_TYPE, getBatteryStateString());
 
     // Other devices and status
 
@@ -4853,7 +4870,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #else
     const uint16_t i2cErrorCounter = 0;
 #endif
-    cliPrintLinef(STR_CLI_STATUS_I2C_ERRORS, i2cErrorCounter);
+    cliPrintLinef("%s %d", STR_CLI_STATUS_I2C_ERRORS, i2cErrorCounter);
 
 #ifdef USE_SDCARD
     cliSdInfo(cmdName, "");
@@ -4862,7 +4879,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #ifdef USE_FLASH_CHIP
     const flashGeometry_t *layout = flashGetGeometry();
     if (layout->jedecId != 0) {
-        cliPrintLinef(STR_CLI_STATUS_FLASH, layout->jedecId, layout->totalSize >> 20);
+        cliPrintLinef("%s0x%08x %uM", STR_CLI_STATUS_FLASH, layout->jedecId, layout->totalSize >> 20);
     }
 #endif
 
@@ -4927,12 +4944,15 @@ static void cliTasks(const char *cmdName, char *cmdline)
     if (systemConfig()->task_statistics) {
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef(STR_CLI_TASK_RX_CHECK, checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
-        cliPrintLinef(STR_CLI_TASK_TOTAL, averageLoadSum/10, averageLoadSum%10);
+        cliPrintLinef("%s %19d %7d %25d", 
+                      STR_CLI_TASK_RX_CHECK, checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        cliPrintLinef("%s %33d.%1d%%", STR_CLI_TASK_TOTAL, averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
 
-            cliPrintLinef(STR_CLI_TASK_SCHEDULER, schedLoopStartCycles, taskGuardCycles);
+            cliPrintLinef("%s %d %s %d", 
+                          STR_CLI_TASK_SCHEDULER_START, schedLoopStartCycles, 
+                          STR_CLI_TASK_SCHEDULER_GAURD, taskGuardCycles);
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
@@ -4945,7 +4965,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
     UNUSED(printBoardInfo);
 #endif
 
-    cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
+    cliPrintf("# %s / %s (%s) %s %s / %s (%s) %s %s",
         FC_FIRMWARE_NAME,
         targetName,
         systemConfig()->boardIdentifier,
@@ -4953,6 +4973,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
         buildDate,
         buildTime,
         shortGitRevision,
+        STR_MSP_API_NAME,
         MSP_API_VERSION_STRING
     );
 
@@ -4968,7 +4989,7 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
 
 #if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
-        cliPrintLinef(STR_CLI_VERSION_INFO, getManufacturerId(), getBoardName());
+        cliPrintLinef("%s %s, %s %s", STR_CLI_VERSION_INFO_MANUF, getManufacturerId(), STR_CLI_VERSION_INFO_BOARD, getBoardName());
     }
 #endif
 }
@@ -5747,7 +5768,7 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
 {
     if (timerIndex > 0) {
         const timerHardware_t *timer = timerGetByTagAndIndex(ioTag, timerIndex);
-        const bool printDetails = printValue(dumpMask, equalsDefault, STR_CLI_TIMER_FORMAT,
+        const bool printDetails = printValue(dumpMask, equalsDefault, "%s %c%02d AF%d", STR_CLI_TIMER,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
             IO_GPIOPinIdxByTag(ioTag),
             timer->alternateFunction
@@ -5763,9 +5784,9 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
             );
         }
     } else {
-        printValue(dumpMask, equalsDefault, STR_CLI_TIMER_EMPTY,
+        printValue(dumpMask, equalsDefault, "%s %c%02d %s", STR_CLI_TIMER,
             IO_GPIOPortIdxByTag(ioTag) + 'A',
-            IO_GPIOPinIdxByTag(ioTag)
+            IO_GPIOPinIdxByTag(ioTag), STR_CLI_NONE
         );
     }
 }
@@ -5854,7 +5875,7 @@ static void showTimers(void)
 
     int8_t timerNumber;
     for (int i = 0; (timerNumber = timerGetNumberByIndex(i)); i++) {
-        cliPrintf(STR_CLI_TIMERS_SHORT, timerNumber);
+        cliPrintf("TIM %2d:", timerNumber);
         bool timerUsed = false;
         for (unsigned timerIndex = 0; timerIndex < CC_CHANNELS_PER_TIMER; timerIndex++) {
             const timerHardware_t *timer = timerGetAllocatedByNumberAndChannel(timerNumber, CC_CHANNEL_FROM_INDEX(timerIndex));
@@ -6046,7 +6067,7 @@ static void cliResource(const char *cmdName, char *cmdline)
     unsigned resourceIndex = 0;
     for (; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrintErrorLinef(cmdName, "INVALID RESOURCE NAME: '%s'", pch);
+            cliPrintErrorLinef(cmdName, "%s '%s'", STR_CLI_INVALIDRESSOURCE, pch);
             return;
         }
 
@@ -6110,11 +6131,11 @@ static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
     UNUSED(cmdline);
 
     if (useDshotTelemetry) {
-        cliPrintLinef(STR_CLI_DSHOT_READ, dshotTelemetryState.readCount);
-        cliPrintLinef(STR_CLI_DSHOT_INVALID_PKT, dshotTelemetryState.invalidPacketCount);
+        cliPrintLinef("%s %u", STR_CLI_DSHOT_READ, dshotTelemetryState.readCount);
+        cliPrintLinef("%s %u", STR_CLI_DSHOT_INVALID_PKT, dshotTelemetryState.invalidPacketCount);
         int32_t directionChangeCycles = cmp32(dshotDMAHandlerCycleCounters.changeDirectionCompletedAt, dshotDMAHandlerCycleCounters.irqAt);
         int32_t directionChangeDurationUs = clockCyclesToMicros(directionChangeCycles);
-        cliPrintLinef(STR_CLI_DSHOT_DIR_CHANGE, directionChangeCycles, directionChangeDurationUs);
+        cliPrintLinef("%s %u %s %u", STR_CLI_DSHOT_DIR_CHANGE, directionChangeCycles, STR_CLI_DSHOT_DIR_CHANGE_MIC, directionChangeDurationUs);
         cliPrintLinefeed();
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -6652,7 +6673,7 @@ static void cliHelp(const char *cmdName, char *cmdline)
         }
     }
     if (!isEmpty(cmdline) && !anyMatches) {
-        cliPrintErrorLinef(cmdName, STR_CLI_NO_MATCH, cmdline);
+        cliPrintErrorLinef(cmdName, "%s '%s'", STR_CLI_NO_MATCH, cmdline);
     }
 }
 

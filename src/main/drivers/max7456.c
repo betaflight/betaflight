@@ -39,8 +39,8 @@
 #include "drivers/nvic.h"
 #include "drivers/osd.h"
 #include "drivers/osd_symbols.h"
+#include "locales/localisation.h"
 #include "drivers/time.h"
-
 
 // 10 MHz max SPI frequency
 #define MAX7456_MAX_SPI_CLK_HZ 10000000

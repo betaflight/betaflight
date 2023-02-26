@@ -918,7 +918,7 @@ static void osdElementTotalFlights(osdElementParms_t *element)
 static void osdElementRateProfileName(osdElementParms_t *element)
 {
     if (strlen(currentControlRateProfile->profileName) == 0) {
-        tfp_sprintf(element->buff, STR_OSDE_RATE, getCurrentControlRateProfileIndex() + 1);
+        tfp_sprintf(element->buff, "%s%u", STR_OSDE_RATE, getCurrentControlRateProfileIndex() + 1);
     } else {
         toUpperCase(element->buff, currentControlRateProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
@@ -927,12 +927,12 @@ static void osdElementRateProfileName(osdElementParms_t *element)
 static void osdElementPidProfileName(osdElementParms_t *element)
 {
     if (strlen(currentPidProfile->profileName) == 0) {
-        tfp_sprintf(element->buff, STR_OSDE_PID, getCurrentPidProfileIndex() + 1);
+        tfp_sprintf(element->buff, "%s%u", STR_OSDE_PID, getCurrentPidProfileIndex() + 1);
     } else {
         toUpperCase(element->buff, currentPidProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
-#endif
+#endif // USE_PROFILE_NAMES
 
 #ifdef USE_OSD_PROFILES
 static void osdElementOsdProfileName(osdElementParms_t *element)
@@ -940,12 +940,12 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
     uint8_t profileIndex = getCurrentOsdProfileIndex();
 
     if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
-        tfp_sprintf(element->buff, STR_OSDE_OID, profileIndex);
+        tfp_sprintf(element->buff, "%s%u", STR_OSDE_OID, profileIndex);
     } else {
         toUpperCase(element->buff, osdConfig()->profile[profileIndex - 1], OSD_PROFILE_NAME_LENGTH);
     }
 }
-#endif
+#endif // USE_OSD_PROFILES
 
 #if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
 
@@ -953,12 +953,12 @@ static void osdElementEscTemperature(osdElementParms_t *element)
 {
 #if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        tfp_sprintf(element->buff, STR_OSDE_ESC_SENSOR, SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
+        tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
     } else
-#endif
+#endif // USE_ESC_SENSOR
 #if defined(USE_DSHOT_TELEMETRY)
     {
-        uint32_t osdEleIx = tfp_sprintf(element->buff, STR_ODSE_ESC_TELEMETRY, SYM_TEMPERATURE);
+        uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
 
         for (uint8_t k = 0; k < getMotorCount(); k++) {
             if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
@@ -972,7 +972,7 @@ static void osdElementEscTemperature(osdElementParms_t *element)
     }
 #else
     {}
-#endif
+#endif // USE_DSHOT_TELEMETRY
 }
 
 static void osdElementEscRpm(osdElementParms_t *element)
@@ -985,7 +985,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
     renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
 }
 
-#endif
+#endif // defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
 
 static void osdElementFlymode(osdElementParms_t *element)
 {

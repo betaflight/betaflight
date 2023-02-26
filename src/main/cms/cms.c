@@ -75,6 +75,8 @@
 
 #include "sensors/gyro.h"
 
+#include "locales/localisation.h"
+
 // DisplayPort management
 
 #ifndef CMS_MAX_DEVICE

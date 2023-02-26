@@ -173,7 +173,6 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/pidaudio.c \
-	    locales/translations.c \
             osd/osd.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
