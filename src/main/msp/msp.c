@@ -2321,6 +2321,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
 
         break;
+#if defined(USE_OSD)
     case MSP_OSD_CHAR_READ:
         {
             uint16_t addr;
@@ -2347,6 +2348,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             }
         }
         break;
+#endif
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;
