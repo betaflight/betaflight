@@ -109,10 +109,10 @@ typedef enum {
 } osd_logo_on_arming_e;
 
 const char * const osdTimerSourceNames[] = {
-    "ON TIME  ",
-    "TOTAL ARM",
-    "LAST ARM ",
-    "ON/ARM   "
+    STR_OSD_TIM_SOURCE_1,
+    STR_OSD_TIM_SOURCE_2,
+    STR_OSD_TIM_SOURCE_3,
+    STR_OSD_TIM_SOURCE_4
 };
 
 #define OSD_LOGO_ROWS 4
@@ -785,7 +785,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MAX_ALTITUDE: {
         osdPrintFloat(buff, SYM_NONE, osdGetMetersToSelectedUnit(stats.max_altitude) / 100.0f, "", 1, true, osdGetMetersToSelectedUnitSymbol());
-        osdDisplayStatisticLabel(midCol, displayRow, "MAX ALTITUDE", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_ALTITUDE, buff);
         return true;
     }
 
@@ -793,7 +793,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MAX_SPEED:
         if (featureIsEnabled(FEATURE_GPS)) {
             tfp_sprintf(buff, "%d%c", osdGetSpeedToSelectedUnit(stats.max_speed), osdGetSpeedToSelectedUnitSymbol());
-            osdDisplayStatisticLabel(midCol, displayRow, "MAX SPEED", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_SPEED, buff);
             return true;
         }
         break;
@@ -801,7 +801,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MAX_DISTANCE:
         if (featureIsEnabled(FEATURE_GPS)) {
             osdFormatDistanceString(buff, stats.max_distance, SYM_NONE);
-            osdDisplayStatisticLabel(midCol, displayRow, "MAX DISTANCE", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_DISTANCE, buff);
             return true;
         }
         break;
@@ -810,7 +810,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         if (featureIsEnabled(FEATURE_GPS)) {
             const int distanceFlown = GPS_distanceFlownInCm / 100;
             osdFormatDistanceString(buff, distanceFlown, SYM_NONE);
-            osdDisplayStatisticLabel(midCol, displayRow, "FLIGHT DISTANCE", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_FLIGHT_DISTANCE, buff);
             return true;
         }
         break;
@@ -818,19 +818,19 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MIN_BATTERY:
         osdPrintFloat(buff, SYM_NONE, stats.min_voltage / 100.0f, "", 2, true, SYM_VOLT);
-        osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value? "MIN AVG CELL" : "MIN BATTERY", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value? STR_OSD_STAT_MIN_BATTERY_AVG : STR_OSD_STAT_MIN_BATTERY, buff);
         return true;
 
     case OSD_STAT_END_BATTERY:
         osdPrintFloat(buff, SYM_NONE, stats.end_voltage / 100.0f, "", 2, true, SYM_VOLT);
-        osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value ? "END AVG CELL" : "END BATTERY", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value ? STR_OSD_STAT_END_BATTERY_AVG : STR_OSD_STAT_END_BATTERY, buff);
         return true;
 
     case OSD_STAT_BATTERY: 
         {
             const uint16_t statsVoltage = getStatsVoltage();
             osdPrintFloat(buff, SYM_NONE, statsVoltage / 100.0f, "", 2, true, SYM_VOLT);
-            osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value ? "AVG BATT CELL" : "BATTERY", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, osdConfig()->stat_show_cell_value ? STR_OSD_STAT_BATTERY_AVG : STR_OSD_STAT_BATTERY, buff);
             return true;
         }
         break;
@@ -838,13 +838,13 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MIN_RSSI:
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
-        osdDisplayStatisticLabel(midCol, displayRow, "MIN RSSI", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MIN_RSSI, buff);
         return true;
 
     case OSD_STAT_MAX_CURRENT:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
             tfp_sprintf(buff, "%d%c", stats.max_current, SYM_AMP);
-            osdDisplayStatisticLabel(midCol, displayRow, "MAX CURRENT", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_CURRENT, buff);
             return true;
         }
         break;
@@ -852,7 +852,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_USED_MAH:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
             tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
-            osdDisplayStatisticLabel(midCol, displayRow, "USED MAH", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_USED_MAH, buff);
             return true;
         }
         break;
@@ -860,7 +860,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_WATT_HOURS_DRAWN:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
             osdPrintFloat(buff, SYM_NONE, getWhDrawn(), "", 2, true, SYM_NONE);
-            osdDisplayStatisticLabel(midCol, displayRow, "USED WATT HOURS", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_WATT_HOURS_DRAWN, buff);
             return true;
         }
         break;
@@ -869,7 +869,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_BLACKBOX:
         if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
             osdGetBlackboxStatusString(buff);
-            osdDisplayStatisticLabel(midCol, displayRow, "BLACKBOX", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_BLACKBOX, buff);
             return true;
         }
         break;
@@ -879,7 +879,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             int32_t logNumber = blackboxGetLogNumber();
             if (logNumber >= 0) {
                 itoa(logNumber, buff, 10);
-                osdDisplayStatisticLabel(midCol, displayRow, "BB LOG NUM", buff);
+                osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_BLACKBOX_NUMBER, buff);
                 return true;
             }
         }
@@ -890,7 +890,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MAX_G_FORCE:
         if (sensors(SENSOR_ACC)) {
             osdPrintFloat(buff, SYM_NONE, stats.max_g_force, "", 1, true, 'G');
-            osdDisplayStatisticLabel(midCol, displayRow, "MAX G-FORCE", buff);
+            osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_G_FORCE, buff);
             return true;
         }
         break;
@@ -904,7 +904,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             ix = tfp_sprintf(buff, "%d ", stats.max_esc_temp_ix);
         }
         tfp_sprintf(buff + ix, "%d%c", osdConvertTemperatureToSelectedUnit(stats.max_esc_temp), osdGetTemperatureSymbolForSelectedUnit());
-        osdDisplayStatisticLabel(midCol, displayRow, "MAX ESC TEMP", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_ESC_TEMP, buff);
         return true;
     }
 #endif
@@ -912,7 +912,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
     case OSD_STAT_MAX_ESC_RPM:
         itoa(stats.max_esc_rpm, buff, 10);
-        osdDisplayStatisticLabel(midCol, displayRow, "MAX ESC RPM", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_ESC_RPM, buff);
         return true;
 #endif
 
@@ -920,7 +920,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
     case OSD_STAT_MIN_LINK_QUALITY:
         tfp_sprintf(buff, "%d", stats.min_link_quality);
         strcat(buff, "%");
-        osdDisplayStatisticLabel(midCol, displayRow, "MIN LINK", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MIN_LINK_QUALITY, buff);
         return true;
 #endif
 
@@ -930,9 +930,9 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             int value = getMaxFFT();
             if (value > 0) {
                 tfp_sprintf(buff, "%dHZ", value);
-                osdDisplayStatisticLabel(midCol, displayRow, "PEAK FFT", buff);
+                osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_FFT, buff);
             } else {
-                osdDisplayStatisticLabel(midCol, displayRow, "PEAK FFT", "THRT<20%");
+                osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MAX_FFT, STR_OSD_STAT_MAX_FFT_THRT);
             }
             return true;
         }
@@ -942,27 +942,27 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #ifdef USE_RX_RSSI_DBM
     case OSD_STAT_MIN_RSSI_DBM:
         tfp_sprintf(buff, "%3d", stats.min_rssi_dbm);
-        osdDisplayStatisticLabel(midCol, displayRow, "MIN RSSI DBM", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MIN_RSSI_DBM, buff);
         return true;
 #endif
 
 #ifdef USE_RX_RSNR
     case OSD_STAT_MIN_RSNR:
         tfp_sprintf(buff, "%3d", stats.min_rsnr);
-        osdDisplayStatisticLabel(midCol, displayRow, "MIN RSNR", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_MIN_RSNR, buff);
         return true;
 #endif
 
 #ifdef USE_PERSISTENT_STATS
     case OSD_STAT_TOTAL_FLIGHTS:
         itoa(statsConfig()->stats_total_flights, buff, 10);
-        osdDisplayStatisticLabel(midCol, displayRow, "TOTAL FLIGHTS", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_USE_PERSISTENT_STATS, buff);
         return true;
 
     case OSD_STAT_TOTAL_TIME: {
         int minutes = statsConfig()->stats_total_time_s / 60;
         tfp_sprintf(buff, "%d:%02dH", minutes / 60, minutes % 60);
-        osdDisplayStatisticLabel(midCol, displayRow, "TOTAL FLIGHT TIME", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_TOTAL_TIME, buff);
         return true;
     }
 
@@ -974,7 +974,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         } else {
             tfp_sprintf(buff, "%d%c", statsConfig()->stats_total_dist_m / METERS_PER_KILOMETER, SYM_KM);
         }
-        osdDisplayStatisticLabel(midCol, displayRow, "TOTAL DISTANCE", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_TOTAL_DIST, buff);
         return true;
 #endif
     }
