@@ -39,11 +39,13 @@
 #define LED1_PIN             PB8
 #define BEEPER_PIN           PC3
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define PINIO1_PIN           PC0
 #define PINIO2_PIN           PC8
 
 #define I2C3_SCL_PIN         PA8
 #define I2C3_SDA_PIN         PC9
+//TODO #define I2C3_PULLUP ON
 
 #define SPI1_SCK_PIN         PA5
 #define SPI1_MISO_PIN        PA6
@@ -86,6 +88,9 @@
 
 #define ADC2_DMA_OPT        1
 
+//TODO #define DSHOT_BURST ON
+//TODO #define MOTOR_PWM_PROTOCOL Dshot600
+
 #define UART1_TX_PIN         PA9
 #define UART1_RX_PIN         PB7
 
@@ -110,3 +115,10 @@
 
 #define ESCSERIAL_PIN        PB0
 
+//TODO #define PINIO_CONFIG 1,129,1,1
+//TODO #define PINIO_BOX 40,41,255,255
+//TODO #define TLM_HALFDUPLEX OFF
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define ADC_DEVICE 2
+//TODO #define BATTERY_METER ADC
+//TODO #define CURRENT_METER ADC

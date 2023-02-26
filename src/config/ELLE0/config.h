@@ -73,6 +73,8 @@
 
 #define ADC1_DMA_OPT        1
 
+//TODO #define MAG_BUSTYPE SLAVE
+//TODO #define SYSTEM_HSE_MHZ 25
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI2
 #define GYRO_1_ALIGN CW270_DEG

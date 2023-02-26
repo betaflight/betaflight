@@ -90,7 +90,10 @@
 
 #define ADC1_DMA_OPT        1
 
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define SYSTEM_HSE_MHZ 8
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI2
 #define GYRO_1_ALIGN CW270_DEG

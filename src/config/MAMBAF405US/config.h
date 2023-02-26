@@ -39,6 +39,8 @@
 #define LED1_PIN             PC14
 #define BEEPER_PIN           PC13
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define OSD_DISPLAYPORT_DEVICE MAX7456
 
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PA4
@@ -68,6 +70,7 @@
 #define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC2
 #define ADC_CURR_PIN         PC3
+//TODO #define ADC_DEVICE 3
 
 #define UART1_TX_PIN         PB6
 #define UART1_RX_PIN         PB7
@@ -111,5 +114,15 @@
 #define ESCSERIAL_PIN        PB9
 #define PINIO1_PIN           PB0
 
+//TODO #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 #define MAG_I2C_INSTANCE (I2CDEV_1)
+//TODO #define MAG_BUSTYPE I2C
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_BURST ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define PINIO_BOX 0,255,255,255
+//TODO #define PINIO_CONFIG 129,1,1,1
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC

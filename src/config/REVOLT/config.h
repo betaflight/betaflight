@@ -80,6 +80,9 @@
 
 #define ADC1_DMA_OPT        1
 
+//TODO #define DSHOT_BURST ON
+//TODO #define SYSTEM_HSE_MHZ 8
+//TODO #define DASHBOARD_I2C_BUS 1
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
