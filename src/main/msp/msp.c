@@ -2321,6 +2321,34 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
 
         break;
+#if defined(USE_OSD)
+    case MSP_OSD_CHAR_READ:
+        {
+            uint16_t addr;
+            const unsigned int dataSize = sbufBytesRemaining( src );
+            if ( dataSize == 1 ) {
+                addr = sbufReadU8( src );
+            } else if ( dataSize == 2 ) {
+                addr = sbufReadU16( src );
+            } else {
+                return MSP_RESULT_ERROR;
+            }
+            displayPort_t *osdDisplayPort = osdGetDisplayPort( NULL );
+            if ( !osdDisplayPort ) {
+                return MSP_RESULT_ERROR;
+            }
+            osdCharacter_t chr;
+            uint16_t osdCharacterBytes = displayReadFontCharacter( osdDisplayPort, addr, &chr );
+            if ( osdCharacterBytes == 0 ) {
+                return MSP_RESULT_ERROR;
+            }
+            sbufWriteU16( dst, addr );
+            for ( int x = 0; x < osdCharacterBytes; x++ ){
+                sbufWriteU8( dst, chr.data[x] );
+            }
+        }
+        break;
+#endif
     case MSP_MULTIPLE_MSP:
         {
             uint8_t maxMSPs = 0;
@@ -4184,7 +4212,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
     case MSP_OSD_CHAR_WRITE:
         {
             osdCharacter_t chr;
-            size_t osdCharacterBytes;
+            uint16_t osdCharacterBytes;
             uint16_t addr;
             if (dataSize >= OSD_CHAR_VISIBLE_BYTES + 2) {
                 if (dataSize >= OSD_CHAR_BYTES + 2) {
@@ -4213,7 +4241,7 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                 return MSP_RESULT_ERROR;
             }
 
-            if (!displayWriteFontCharacter(osdDisplayPort, addr, &chr)) {
+            if (!displayWriteFontCharacter(osdDisplayPort, addr, &chr, osdCharacterBytes)) {
                 return MSP_RESULT_ERROR;
             }
         }

@@ -159,11 +159,18 @@ static bool layerCopy(displayPort_t *displayPort, displayPortLayer_e destLayer, 
     return max7456LayerCopy(destLayer, sourceLayer);
 }
 
-static bool writeFontCharacter(displayPort_t *displayPort, uint16_t addr, const osdCharacter_t *chr)
+static uint16_t readFontCharacter( displayPort_t *displayPort, uint16_t addr, osdCharacter_t *chr )
 {
     UNUSED(displayPort);
 
-    return max7456WriteNvm(addr, (const uint8_t *)chr);
+    return max7456ReadNvm( addr, ( uint8_t * )chr );
+}
+
+static bool writeFontCharacter( displayPort_t *displayPort, uint16_t addr, const osdCharacter_t *chr, uint16_t bytes )
+{
+    UNUSED( displayPort );
+
+    return max7456WriteNvm( addr, ( const uint8_t * )chr, bytes );
 }
 
 static bool checkReady(displayPort_t *displayPort, bool rescan)
@@ -207,6 +214,7 @@ static const displayPortVTable_t max7456VTable = {
     .layerSupported = layerSupported,
     .layerSelect = layerSelect,
     .layerCopy = layerCopy,
+    .readFontCharacter = readFontCharacter,
     .writeFontCharacter = writeFontCharacter,
     .checkReady = checkReady,
     .setBackgroundType = setBackgroundType,

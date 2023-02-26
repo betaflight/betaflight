@@ -155,12 +155,20 @@ bool displayLayerCopy(displayPort_t *instance, displayPortLayer_e destLayer, dis
     return false;
 }
 
-bool displayWriteFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr)
+bool displayWriteFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr, uint16_t bytes)
 {
     if (instance->vTable->writeFontCharacter) {
-        return instance->vTable->writeFontCharacter(instance, addr, chr);
+        return instance->vTable->writeFontCharacter( instance, addr, chr, bytes );
     }
     return false;
+}
+
+uint16_t displayReadFontCharacter(displayPort_t *instance, uint16_t addr, osdCharacter_t *chr)
+{
+    if ( instance->vTable->readFontCharacter ) {
+        return instance->vTable->readFontCharacter( instance, addr, chr );
+    }
+    return 0;
 }
 
 void displaySetBackgroundType(displayPort_t *instance, displayPortBackground_e backgroundType)
