@@ -37,8 +37,8 @@ DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 
 MCU_COMMON_SRC = \
     $(addprefix startup/at32/,$(notdir $(wildcard $(SRC_DIR)/startup/at32/*.c))) \
     $(addprefix drivers/at32/,$(notdir $(wildcard $(SRC_DIR)/drivers/at32/*.c))) \
-    drivers/bus_i2c_timing.c
-    
+    drivers/bus_i2c_timing.c \
+    drivers/pwm_output_dshot_shared.c
 
 MCU_EXCLUDES =
 

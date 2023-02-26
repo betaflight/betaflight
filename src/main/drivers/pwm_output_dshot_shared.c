@@ -89,6 +89,10 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         return;
     }
 
+    // XXX DEBUG
+    gpio_bits_set(GPIOC, GPIO_PINS_12);
+
+
     /*If there is a command ready to go overwrite the value and send that instead*/
     if (dshotCommandIsProcessing()) {
         value = dshotCommandGetCurrent(index);
@@ -110,15 +114,28 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #endif
     {
         bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
+
         motor->timer->timerDmaSources |= motor->timerDmaSource;
+
 #ifdef USE_FULL_LL_DRIVER
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
         xLL_EX_DMA_EnableResource(motor->dmaRef);
 #else
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
+
+        // XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
+        #ifdef AT32F435
+        xDMA_Cmd(motor->dmaRef, TRUE);
+        #else
         xDMA_Cmd(motor->dmaRef, ENABLE);
-#endif
+        #endif
+
+#endif // USE_FULL_LL_DRIVER
     }
+
+    // XXX DEBUG
+    gpio_bits_reset(GPIOC, GPIO_PINS_12);
+
 }
 
 
@@ -201,6 +218,8 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 
 #ifdef USE_FULL_LL_DRIVER
             LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
+#elif defined(AT32F435)
+            tmr_dma_request_enable(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
 #else
             TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif

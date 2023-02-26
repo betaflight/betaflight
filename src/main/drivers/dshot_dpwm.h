@@ -25,10 +25,12 @@
 #include "drivers/dshot.h"
 #include "drivers/motor.h"
 
+// Timer clock frequency for the dshot speeds
 #define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
 #define MOTOR_DSHOT300_HZ     MHZ_TO_HZ(6)
 #define MOTOR_DSHOT150_HZ     MHZ_TO_HZ(3)
 
+// These three constants are times in timer clock ticks, e.g. with a 6 MHz clock 20 ticks for bitlength = 300kHz bit rate
 #define MOTOR_BIT_0           7
 #define MOTOR_BIT_1           14
 #define MOTOR_BITLENGTH       20
@@ -61,6 +63,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #define GCR_TELEMETRY_INPUT_LEN MAX_GCR_EDGES
 
 // For H7, DMA buffer is placed in a dedicated segment for coherency management
+// XXX Do we need any special qualifier for AT32?
 #if defined(STM32H7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
 #elif defined(STM32G4)
@@ -71,7 +74,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t
