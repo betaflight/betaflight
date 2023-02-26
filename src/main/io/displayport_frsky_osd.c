@@ -122,9 +122,14 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
-static bool writeFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr)
+static bool writeFontCharacter(displayPort_t *instance, uint16_t addr, const osdCharacter_t *chr, uint16_t bytes)
 {
     UNUSED(instance);
+    UNUSED(bytes);
+
+    if (addr > 0xff) {
+        return true;    // support extended character ?
+    }
 
     return frskyOsdWriteFontCharacter(addr, chr);
 }

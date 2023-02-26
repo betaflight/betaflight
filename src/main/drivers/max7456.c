@@ -26,6 +26,8 @@
 
 #ifdef USE_MAX7456
 
+#define USE_MAX7456_EXTENDED
+
 #include "build/debug.h"
 
 #include "pg/max7456.h"
@@ -40,6 +42,7 @@
 #include "drivers/osd.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"
+#include "common/maths.h"
 
 
 // 10 MHz max SPI frequency
@@ -170,15 +173,19 @@
 #define MAX7456ADD_RB15         0x1f
 #define MAX7456ADD_OSDBL        0x6c
 #define MAX7456ADD_STAT         0xA0
+#define MAX7456ADD_CMDO         0xC0
 
 #define NVM_RAM_SIZE            54
 #define WRITE_NVR               0xA0
+#define READ_NVR                0x50
 
 // Device type
 #define MAX7456_DEVICE_TYPE_MAX 0
 #define MAX7456_DEVICE_TYPE_AT  1
 
 #define CHARS_PER_LINE      30 // XXX Should be related to VIDEO_BUFFER_CHARS_*?
+#define MAX7456_READ_RETRIES    20
+#define NVN_CHAR_SIZE    64
 
 #define MAX7456_SUPPORTED_LAYER_COUNT (DISPLAYPORT_LAYER_BACKGROUND + 1)
 
@@ -722,10 +729,20 @@ void max7456RefreshAll(void)
     while (max7456DrawScreen());
 }
 
-bool max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
+bool max7456WriteNvm( uint16_t char_address, const uint8_t *font_data, uint16_t bytes )
 {
     if (!max7456DeviceDetected) {
         return false;
+    }
+
+    if ( char_address > 0xff ) {
+#ifdef USE_MAX7456_EXTENDED
+        if ( max7456DeviceType != MAX7456_DEVICE_TYPE_AT ) {
+            return false;    // can't write extended character
+        }
+#else
+        return false;    // can't write extended character
+#endif
     }
 
     // Block pending completion of any prior SPI access
@@ -735,10 +752,12 @@ bool max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
     fontIsLoading = true;
     spiWriteReg(dev, MAX7456ADD_VM0, 0);
 
-    spiWriteReg(dev, MAX7456ADD_CMAH, char_address); // set start address high
+    spiWriteReg( dev, MAX7456ADD_CMAH, char_address & 0xff ); // set start address high
 
-    for (int x = 0; x < 54; x++) {
-        spiWriteReg(dev, MAX7456ADD_CMAL, x); //set start address low
+    bytes = MIN( bytes, NVN_CHAR_SIZE );
+
+    for ( int x = 0; x < bytes; x++ ) {
+        spiWriteReg( dev, MAX7456ADD_CMAL, x | ( char_address > 0xff ? 0x40 : 0 ) ); // set start address low
         spiWriteReg(dev, MAX7456ADD_CMDI, font_data[x]);
 #ifdef LED0_TOGGLE
         LED0_TOGGLE;
@@ -756,6 +775,48 @@ bool max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
     while ((spiReadRegMsk(dev, MAX7456ADD_STAT) & STAT_NVR_BUSY) != 0x00);
 
     return true;
+}
+
+uint16_t max7456ReadNvm( uint16_t char_address, uint8_t *font_data )
+{
+    if ( !max7456DeviceDetected ) {
+        return 0;
+    }
+
+    if ( char_address > 0xff ) {
+#ifdef USE_MAX7456_EXTENDED
+        if ( max7456DeviceType != MAX7456_DEVICE_TYPE_AT ) {
+            return 0;
+        }
+#else
+        return 0;
+#endif
+    }
+
+    // Block pending completion of any prior SPI access
+    spiWait( dev );
+
+    // disable display
+    fontIsLoading = true;
+    spiWriteReg( dev, MAX7456ADD_VM0, 0 );
+    for ( int retriesThree = 0; retriesThree < MAX7456_READ_RETRIES && ( spiReadRegMsk( dev, MAX7456ADD_STAT ) & STAT_NVR_BUSY ) != 0x00; retriesThree++ );
+
+    spiWriteReg( dev, MAX7456ADD_CMAH, ( char_address & 0xff ) );
+    spiWriteReg( dev, MAX7456ADD_CMAL, ( char_address > 0xff ) ? 0x40 : 0 );
+    spiWriteReg( dev, MAX7456ADD_CMM, READ_NVR );
+    //delay(60); // MAX7456 Datasheet asks for 0.5 microseconds, AT7456E asks for 30
+    // wait until bit 5 in the status register returns to 0 (12ms)
+    uint8_t retriesThree = 0;
+    for ( retriesThree = 0; retriesThree < MAX7456_READ_RETRIES && ( spiReadRegMsk( dev, MAX7456ADD_STAT ) & STAT_NVR_BUSY ) != 0x00; retriesThree++ );
+    for ( int x = 0; x < NVN_CHAR_SIZE; x++ ) {
+        spiWriteReg( dev, MAX7456ADD_CMAL, x );
+        font_data[x] = spiReadRegMsk( dev, MAX7456ADD_CMDO );
+    }
+
+    spiWriteReg( dev, MAX7456ADD_VM0, videoSignalReg );
+    //max7456ReInit();
+
+    return NVN_CHAR_SIZE;
 }
 
 #ifdef MAX7456_NRST_PIN
