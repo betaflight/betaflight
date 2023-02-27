@@ -25,16 +25,14 @@
    The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
 */
 
-#define FC_TARGET_MCU     STM32F7X2
+#define FC_TARGET_MCU     STM32G47X
 
-#define BOARD_NAME        OMNINXT7
-#define MANUFACTURER_ID   AIRB
+#define BOARD_NAME        MAMBAG4
+#define MANUFACTURER_ID   DIAT
 
 #define USE_ACC_SPI_MPU6000
+#define USE_BARO_DPS310
 #define USE_GYRO_SPI_MPU6000
-#define USE_ACC_SPI_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define USE_BARO_SPI_LPS
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
 
