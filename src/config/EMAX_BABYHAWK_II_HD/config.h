@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -93,8 +93,21 @@
 
 #define ADC1_DMA_OPT        0
 
+//TODO #define GYRO_TO_USE FIRST
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define SERIALRX_INVERTED OFF
+//TODO #define ADC_DEVICE 1
+//TODO #define DSHOT_BURST AUTO
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 179
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+#define SYSTEM_HSE_MHZ 8
+//TODO #define MAX7456_CLOCK DEFAULT
 #define MAX7456_SPI_INSTANCE SPI2
+//TODO #define USB_MSC_PIN_PULLUP ON
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

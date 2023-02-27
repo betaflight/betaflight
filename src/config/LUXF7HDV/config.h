@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -77,8 +77,17 @@
 
 #define ADC1_DMA_OPT        1
 
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_BURST ON
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 179
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define ESC_SENSOR_HALFDUPLEX ON
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG
+#define GYRO_1_ALIGN_YAW 2700

@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32H743
@@ -102,12 +102,25 @@
 #define TIMUP3_DMA_OPT      4
 #define TIMUP5_DMA_OPT      4
 
-#define MAG_I2C_INSTANCE I2C1
-#define BARO_I2C_INSTANCE I2C2
+//TODO #define GYRO_TO_USE BOTH
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_1)
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_2)
+//TODO #define SERIALRX_PROVIDER CRSF
+//TODO #define BLACKBOX_DEVICE SDCARD
+//TODO #define DSHOT_BIDIR ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define SDIO_USE_4BIT_WIDTH ON
+//TODO #define SDIO_DEVICE 1
 #define MAX7456_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW90_DEG
+#define GYRO_1_ALIGN_YAW 900
 #define USE_SPI_GYRO
 #define GYRO_2_SPI_INSTANCE SPI4

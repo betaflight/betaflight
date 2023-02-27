@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F745
@@ -103,18 +103,52 @@
 #define SPI4_TX_DMA_OPT     0
 #define ADC1_DMA_OPT        1
 
-#define MAG_I2C_INSTANCE I2C2
+//TODO #define GYRO_TO_USE FIRST
+#define MAG_ALIGN DEFAULT
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_2)
+//TODO #define MAG_I2C_ADDRESS 0
+//TODO #define MAG_SPI_DEVICE 0
+//TODO #define BARO_BUSTYPE SPI
 #define BARO_SPI_INSTANCE SPI1
-#define BARO_I2C_INSTANCE I2C0
+#define BARO_I2C_INSTANCE (I2CDEV_0)
+//TODO #define BARO_I2C_ADDRESS 0
+//TODO #define ADC_DEVICE 1
+//TODO #define BLACKBOX_DEVICE SDCARD
+//TODO #define DSHOT_BURST OFF
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 400
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define BEEPER_PWM_HZ 0
+//TODO #define SDCARD_DETECT_INVERTED ON
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI4
+//TODO #define MAX7456_CLOCK NOMINAL
 #define MAX7456_SPI_INSTANCE SPI2
+//TODO #define MAX7456_PREINIT_OPU OFF
+//TODO #define LED_INVERSION 0
+//TODO #define DASHBOARD_I2C_BUS 2
+//TODO #define DASHBOARD_I2C_ADDR 60
+//TODO #define USB_MSC_PIN_PULLUP ON
 #define FLASH_SPI_INSTANCE SPI0
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI3
+//TODO #define GYRO_1_I2CBUS 0
+//TODO #define GYRO_1_I2C_ADDRESS 0
 #define GYRO_1_ALIGN CW90_DEG
 #define USE_SPI_GYRO
 #define GYRO_2_SPI_INSTANCE SPI1
+//TODO #define GYRO_2_I2CBUS 0
+//TODO #define GYRO_2_I2C_ADDRESS 0
 #define GYRO_2_ALIGN DEFAULT
+//TODO #define I2C1_PULLUP OFF
+//TODO #define I2C1_OVERCLOCK ON
+//TODO #define I2C2_PULLUP OFF
+//TODO #define I2C2_OVERCLOCK ON
+//TODO #define I2C3_PULLUP OFF
+//TODO #define I2C3_OVERCLOCK ON
+//TODO #define I2C4_PULLUP OFF
+//TODO #define I2C4_OVERCLOCK ON
+//TODO #define MCO2_ON_PC9 OFF

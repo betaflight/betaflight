@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32G47X
@@ -81,10 +81,23 @@
 #define TIMUP4_DMA_OPT      0
 #define TIMUP5_DMA_OPT      0
 
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_BURST OFF
+//TODO #define DSHOT_BITBANG OFF
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT300
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 100
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+#define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI2
+//TODO #define LED_INVERSION 1
 #define FLASH_SPI_INSTANCE SPI3
+//TODO #define PID_PROCESS_DENOM 2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG
+#define GYRO_1_ALIGN_YAW 2700

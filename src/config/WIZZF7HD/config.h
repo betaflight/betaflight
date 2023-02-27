@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -93,11 +93,24 @@
 
 #define ADC1_DMA_OPT        1
 
-#define MAG_I2C_INSTANCE I2C2
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_2)
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define DSHOT_BURST ON
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 250
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define PID_PROCESS_DENOM 1
+//TODO #define SDCARD_DETECT_INVERTED ON
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI2
 #define MAX7456_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
+//TODO #define GYRO_TO_USE BOTH
+//TODO #define MCO2_ON_PC9 ON
+//TODO #define PINIO_BOX 40,255,255,255

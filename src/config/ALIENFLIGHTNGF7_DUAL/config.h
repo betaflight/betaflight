@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -99,13 +99,23 @@
 #define SPI2_TX_DMA_OPT     0
 #define ADC1_DMA_OPT        0
 
+//TODO #define SERIALRX_PROVIDER SPEK2048
+//TODO #define SPEKTRUM_SAT_BIND 9
+//TODO #define BLACKBOX_DEVICE SDCARD
+//TODO #define DSHOT_BURST ON
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define SDCARD_DETECT_INVERTED ON
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI2
 #define MAX7456_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG
+#define GYRO_1_ALIGN_YAW 2700
 #define USE_SPI_GYRO
 #define GYRO_2_SPI_INSTANCE SPI3
 #define GYRO_2_ALIGN CW270_DEG
+#define GYRO_2_ALIGN_YAW 2700
+//TODO #define I2C1_PULLUP ON

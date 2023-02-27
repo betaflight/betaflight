@@ -22,11 +22,10 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32H730
-#define FC_VMA_ADDRESS    0x90100000
 
 #define BOARD_NAME        SPRACINGH7RF
 #define MANUFACTURER_ID   SPRO
@@ -260,11 +259,29 @@
 
 #define ADC3_DMA_OPT       10
 
-#define MAG_I2C_INSTANCE I2C1
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_1)
 
-#define BARO_I2C_INSTANCE I2C2
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_2)
 
+//TODO #define ADC_DEVICE 3
+
+//TODO #define RX_SPI_PROTOCOL EXPRESSLRS
 #define RX_SPI_INSTANCE SPI2
+
+//TODO #define PINIO_CONFIG 1,1,1,1
+//TODO #define PINIO_BOX 40,255,255,255
+
+//TODO #define BLACKBOX_DEVICE SDCARD
+
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+
+//TODO #define SDCARD_DETECT_INVERTED ON
+//TODO #define SDCARD_MODE SDIO
+//TODO #define SDIO_USE_4BIT_WIDTH ON
+//TODO #define SDIO_DEVICE 1
 
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI6

@@ -22,11 +22,10 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32H750
-#define FC_VMA_ADDRESS    0x97CE0000
 
 #define BOARD_NAME        SPRACINGH7EXTREME
 #define MANUFACTURER_ID   SPRO
@@ -193,14 +192,22 @@
 #define VTX_DATA_PIN         PA6
 #define VTX_CLK_PIN          PA7
 
-#define MAG_I2C_INSTANCE I2C1
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_1)
 
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
 
+//TODO #define BLACKBOX_DEVICE SDCARD
+
+//TODO #define GYRO_TO_USE BOTH
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI3
 #define GYRO_1_ALIGN CW180_DEG
 #define USE_SPI_GYRO
 #define GYRO_2_SPI_INSTANCE SPI2
 #define GYRO_2_ALIGN CUSTOM
+#define GYRO_2_ALIGN_ROLL 0
+#define GYRO_2_ALIGN_PITCH 0
+#define GYRO_2_ALIGN_YAW 2250
 #define MAX7456_SPI_INSTANCE SPI4
