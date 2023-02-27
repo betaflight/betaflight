@@ -68,7 +68,7 @@
 #define MAX7456_SPI_CS_PIN   PB12
 #define FLASH_CS_PIN         PB3
 #define GYRO_1_EXTI_PIN      PA1
-#define GYRO_2_EXTI_PIN      PNONE
+#define GYRO_2_EXTI_PIN      NONE
 #define GYRO_1_CS_PIN        PA4
 #define USB_DETECT_PIN       PC15
 

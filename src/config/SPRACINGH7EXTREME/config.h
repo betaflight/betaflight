@@ -144,25 +144,25 @@
 #define UART4_TX_PIN         PD1
 #define UART5_TX_PIN         PB13
 #define UART6_TX_PIN         PC6
-#define UART7_TX_PIN         PNONE
+#define UART7_TX_PIN         NONE
 #define UART8_TX_PIN         PE1
 #define UART1_RX_PIN         PB15
-#define UART2_RX_PIN         PNONE
+#define UART2_RX_PIN         NONE
 #define UART3_RX_PIN         PD9
 #define UART4_RX_PIN         PD0
 #define UART5_RX_PIN         PB5
 #define UART6_RX_PIN         PC7
-#define UART7_RX_PIN         PNONE
+#define UART7_RX_PIN         NONE
 #define UART8_RX_PIN         PE0
 
 #define I2C1_SCL_PIN         PB8
 #define I2C1_SDA_PIN         PB9
-#define I2C2_SCL_PIN         PNONE
-#define I2C2_SDA_PIN         PNONE
-#define I2C3_SCL_PIN         PNONE
-#define I2C3_SDA_PIN         PNONE
-#define I2C4_SCL_PIN         PNONE
-#define I2C4_SDA_PIN         PNONE
+#define I2C2_SCL_PIN         NONE
+#define I2C2_SDA_PIN         NONE
+#define I2C3_SCL_PIN         NONE
+#define I2C3_SDA_PIN         NONE
+#define I2C4_SCL_PIN         NONE
+#define I2C4_SDA_PIN         NONE
 
 #define LED0_PIN             PE3
 #define TRANSPONDER_PIN      PB11

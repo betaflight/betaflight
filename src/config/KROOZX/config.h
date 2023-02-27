@@ -77,7 +77,7 @@
 #define SDCARD_DETECT_PIN    PC13
 #define PINIO1_PIN           PC5
 #define MAX7456_SPI_CS_PIN   PC4
-#define GYRO_1_EXTI_PIN      PNONE
+#define GYRO_1_EXTI_PIN      NONE
 #define GYRO_1_CS_PIN        PB2
 
 #define TIMER_PIN_MAPPING \

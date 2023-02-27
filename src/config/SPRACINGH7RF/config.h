@@ -194,41 +194,41 @@
 #define MOTOR8_PIN           PA3
 #define LED_STRIP_PIN        PB7
 
-#define UART1_TX_PIN         PNONE
+#define UART1_TX_PIN         NONE
 #define UART2_TX_PIN         PD5
 #define UART3_TX_PIN         PD8
 #define UART4_TX_PIN         PD1
-#define UART5_TX_PIN         PNONE
-#define UART6_TX_PIN         PNONE
-#define UART7_TX_PIN         PNONE
+#define UART5_TX_PIN         NONE
+#define UART6_TX_PIN         NONE
+#define UART7_TX_PIN         NONE
 #define UART8_TX_PIN         PE1
-#define UART9_TX_PIN         PNONE
-#define UART10_TX_PIN        PNONE
-#define UART1_RX_PIN         PNONE
+#define UART9_TX_PIN         NONE
+#define UART10_TX_PIN        NONE
+#define UART1_RX_PIN         NONE
 #define UART2_RX_PIN         PD6
 #define UART3_RX_PIN         PD9
 #define UART4_RX_PIN         PD0
 #define UART5_RX_PIN         PB13
-#define UART6_RX_PIN         PNONE
-#define UART7_RX_PIN         PNONE
+#define UART6_RX_PIN         NONE
+#define UART7_RX_PIN         NONE
 #define UART8_RX_PIN         PE0
-#define UART9_RX_PIN         PNONE
-#define UART10_RX_PIN        PNONE
+#define UART9_RX_PIN         NONE
+#define UART10_RX_PIN        NONE
 
 #define I2C1_SCL_PIN         PB8
 #define I2C2_SCL_PIN         PB10
-#define I2C3_SCL_PIN         PNONE
-#define I2C4_SCL_PIN         PNONE
+#define I2C3_SCL_PIN         NONE
+#define I2C4_SCL_PIN         NONE
 #define I2C1_SDA_PIN         PB9
 #define I2C2_SDA_PIN         PB11
-#define I2C3_SDA_PIN         PNONE
-#define I2C4_SDA_PIN         PNONE
+#define I2C3_SDA_PIN         NONE
+#define I2C4_SDA_PIN         NONE
 
 #define LED0_PIN             PE5
 #define LED1_PIN             PE6
-#define LED2_PIN             PNONE
-#define SPEKTRUM_RX_BIND_PIN PNONE
-#define RX_BIND_PLUG_PIN     PNONE
+#define LED2_PIN             NONE
+#define SPEKTRUM_RX_BIND_PIN NONE
+#define RX_BIND_PLUG_PIN     NONE
 
 #define ADC_VBAT_PIN         PC3
 #define ADC_RSSI_PIN         PC0
@@ -247,15 +247,15 @@
 
 #define RX_SPI_CS_PIN        PB12
 #define RX_SPI_EXTI_PIN      PC6
-#define RX_SPI_BIND_PIN      PNONE
-#define RX_SPI_LED_PIN       PNONE
+#define RX_SPI_BIND_PIN      NONE
+#define RX_SPI_LED_PIN       NONE
 #define RX_SPI_EXPRESSLRS_RESET_PIN PD10
 #define RX_SPI_EXPRESSLRS_BUSY_PIN PC7
 
 #define GYRO_1_EXTI_PIN      PD15
-#define GYRO_2_EXTI_PIN      PNONE
+#define GYRO_2_EXTI_PIN      NONE
 #define GYRO_1_CS_PIN        PA15
-#define GYRO_2_CS_PIN        PNONE
+#define GYRO_2_CS_PIN        NONE
 
 #define ADC3_DMA_OPT       10
 

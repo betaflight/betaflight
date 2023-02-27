@@ -62,7 +62,7 @@
 #define BARO_CS_PIN          PA9
 #define FLASH_CS_PIN         PA15
 #define MAX7456_SPI_CS_PIN   PA10
-#define GYRO_1_EXTI_PIN      PNONE
+#define GYRO_1_EXTI_PIN      NONE
 #define GYRO_1_CS_PIN        PB12
 
 #define TIMER_PIN_MAPPING \
