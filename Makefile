@@ -214,11 +214,6 @@ TARGET_DIR_SRC = $(notdir $(wildcard $(TARGET_DIR)/*.c))
 
 .DEFAULT_GOAL := hex
 
-ifeq ($(CUSTOM_DEFAULTS_EXTENDED),yes)
-TARGET_FLAGS += -DUSE_CUSTOM_DEFAULTS=
-EXTRA_LD_FLAGS += -Wl,--defsym=USE_CUSTOM_DEFAULTS_EXTENDED=1
-endif
-
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(ROOT)/lib/main/MAVLink
 

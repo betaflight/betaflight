@@ -54,18 +54,17 @@ SECTIONS
   } >FLASH
 
   /* Critical program code goes into CCM RAM */
-  /* Copy specific fast-executing code to CCM RAM */ 
-  ccm_code = LOADADDR(.ccm_code); 
+  /* Copy specific fast-executing code to CCM RAM */
+  ccm_code = LOADADDR(.ccm_code);
   .ccm_code :
   {
     . = ALIGN(4);
-    ccm_code_start = .; 
+    ccm_code_start = .;
     *(.ccm_code)
     *(.ccm_code*)
     . = ALIGN(4);
-    ccm_code_end = .; 
+    ccm_code_end = .;
   } >CCM AT >FLASH
-
 
    .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
     .ARM : {
@@ -138,7 +137,7 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
-  
+
   .fastram_bss (NOLOAD) :
   {
     __fastram_bss_start__ = .;

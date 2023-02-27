@@ -31,7 +31,7 @@ ENTRY(Reset_Handler)
 0x08000000 to 0x0801FFFF  128K isr vector, startup code, firmware, no config! // FLASH_Sector_0
 */
 
-/* 
+/*
 
 For H7 EXST (External Storage) targets a binary is built that is placed on an external device.
 The bootloader will then copy this entire binary to RAM, at the CODE_RAM address.  The bootloader
@@ -46,7 +46,7 @@ to ram and one section for the main code.  e.g. one file for .tcm_code, one file
 one for the main code/data, then load each to the appropriate address and adjust the usual startup
 code which will no-longer need to duplicate code/data sections from RAM to ITCM/DTCM RAM.
 
-The initial CODE_RAM is sized at 448K to enable all firmware features and to as much RAM free as 
+The initial CODE_RAM is sized at 448K to enable all firmware features and to as much RAM free as
 possible.
 
 */
@@ -66,7 +66,7 @@ MEMORY
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 256K /* SRAM1 + SRAM2 */
 
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
-    QUADSPI (rx)      : ORIGIN = 0x90000000, LENGTH = 0K 
+    QUADSPI (rx)      : ORIGIN = 0x90000000, LENGTH = 0K
 }
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
@@ -113,7 +113,7 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >RAM
-  
+
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
@@ -141,4 +141,3 @@ SECTIONS
 
 INCLUDE "stm32_h750_common_post.ld"
 INCLUDE "stm32_ram_h750_exst_post.ld"
-

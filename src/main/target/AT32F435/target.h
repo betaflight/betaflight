@@ -58,11 +58,10 @@
 
 #define USE_ADC
 
-#define USE_CUSTOM_DEFAULTS
 #define USE_PWM_OUTPUT
 
 // Remove these undefines as support is added
-#undef USE_BEEPER
+//#undef USE_BEEPER
 #undef USE_LED_STRIP
 #undef USE_TRANSPONDER
 #undef USE_DSHOT
@@ -72,12 +71,12 @@
 #undef USE_RX_SPI
 #undef USE_RX_CC2500
 #undef USE_RX_EXPRESSLRS
-#undef USE_CMS
-#undef USE_OSD
+//#undef USE_CMS
+//#undef USE_OSD
 #undef USE_BLACKBOX
-#undef USE_SDCARD
+//#undef USE_SDCARD
 #undef USE_BARO
-#undef USE_MAG
+//#undef USE_MAG
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 

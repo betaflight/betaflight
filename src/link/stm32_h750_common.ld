@@ -44,24 +44,24 @@ SECTIONS
   } >MAIN
 
   /* Critical program code goes into ITCM RAM */
-  /* Copy specific fast-executing code to ITCM RAM */ 
-  tcm_code = LOADADDR(.tcm_code); 
+  /* Copy specific fast-executing code to ITCM RAM */
+  tcm_code = LOADADDR(.tcm_code);
   .tcm_code :
   {
     . = ALIGN(4);
-    tcm_code_start = .; 
+    tcm_code_start = .;
     *(.tcm_code)
     *(.tcm_code*)
     . = ALIGN(4);
-    tcm_code_end = .; 
+    tcm_code_end = .;
   } >ITCM_RAM AT >MAIN
 
-  .ARM.extab   : 
-  { 
-    *(.ARM.extab* .gnu.linkonce.armextab.*) 
+  .ARM.extab   :
+  {
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
   } >MAIN
-  
-  .ARM : 
+
+  .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
@@ -74,7 +74,7 @@ SECTIONS
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
   } >MAIN
-  
+
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
