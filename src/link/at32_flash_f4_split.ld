@@ -75,7 +75,7 @@ SECTIONS
   } >FLASH1
   
   /* 
-    Critical program code goes into RAM1
+    Critical program code goes into RAM
   */ 
   tcm_code = LOADADDR(.tcm_code); 
   .tcm_code :
@@ -86,7 +86,7 @@ SECTIONS
     *(.tcm_code*)
     . = ALIGN(4);
     tcm_code_end = .; 
-  } >RAM1 AT >FLASH1
+  } >RAM AT >FLASH1
 
 
    .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
@@ -177,41 +177,13 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
-  /* used during startup to initialized fastram_data */
-  _sfastram_idata = LOADADDR(.fastram_data);
-
-  /* Initialized FAST_DATA section for unsuspecting developers */
-  .fastram_data :
-  {
-    . = ALIGN(4);
-    _sfastram_data = .;        /* create a global symbol at data start */
-    *(.fastram_data)           /* .data sections */
-    *(.fastram_data*)          /* .data* sections */
-
-    . = ALIGN(4);
-    _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT> FLASH1
-
-  . = ALIGN(4);
-  .fastram_bss (NOLOAD) :
-  {
-    _sfastram_bss = .;
-    __fastram_bss_start__ = _sfastram_bss;
-    *(.fastram_bss)
-    *(SORT_BY_ALIGNMENT(.fastram_bss*))
-
-    . = ALIGN(4);
-    _efastram_bss = .;
-    __fastram_bss_end__ = _efastram_bss;
-  } >FASTRAM
-
   .persistent_data (NOLOAD) :
   {
     __persistent_data_start__ = .;
     *(.persistent_data)
     . = ALIGN(4);
     __persistent_data_end__ = .;
-  } >FASTRAM
+  } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   _heap_stack_end = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - _Hot_Reboot_Flags_Size;
