@@ -77,7 +77,7 @@ static uint16_t batteryCriticalVoltage;
 static uint16_t batteryWarningHysteresisVoltage;
 static uint16_t batteryCriticalHysteresisVoltage;
 static lowVoltageCutoff_t lowVoltageCutoff;
-static uint8_t cutoffFrequency = 5; //Hz
+// static uint8_t cutoffFrequency = 5;
 static float lastFilteredVoltage;
 static float BATTERY_MIN_VOLTAGE;  
 static float BATTERY_MAX_VOLTAGE;
@@ -126,6 +126,9 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .vbatnotpresentcellvoltage = 300, //A cell below 3 will be ignored
     .voltageMeterSource = DEFAULT_VOLTAGE_METER_SOURCE,
     .lvcPercentage = 100, //Off by default at 100%
+    .usingCurrentSensor = 0,
+    .cutoffFreqVoltageLpf = 200, //centi Hz
+    .throttleMultiplier = 100, //will be divided by 100 when being used to adjust voltage for better precision
 
     // current
     .batteryCapacity = 0,
@@ -182,13 +185,12 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
     //DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, 1/dt);
     lastTimeVol = currentTimeVol;
     float currVoltage = voltageMeter.displayFiltered;
-    DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, currVoltage);
     //float dt = 1/500;
     //loat dt = pidGetDT();
     
     // calculate the filter constant (alpha) based on the cutoff frequency and time step
     //alpha = dt / (1.0 / (2.0 * np.pi * cutoff_frequency) + dt)
-    float alpha = cutoffFrequency * dt/20.0f;
+    float alpha = batteryConfig()->cutoffFreqVoltageLpf/100 * dt/20.0f;
     
     // apply the low-pass filter to the voltage values
     lastFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
@@ -260,8 +262,8 @@ void batteryUpdatePresence(void)
                 changePidProfileFromCellCount(batteryCellCount);
             }
         }
-        BATTERY_MIN_VOLTAGE  = 330 * batteryCellCount;
-        BATTERY_MAX_VOLTAGE = 430 * batteryCellCount;
+        BATTERY_MIN_VOLTAGE  = batteryConfig()->vbatmincellvoltage * batteryCellCount;
+        BATTERY_MAX_VOLTAGE = batteryConfig()->vbatmaxcellvoltage * batteryCellCount;
         lastFilteredVoltage = voltageMeter.displayFiltered;
         lastTimeVol = micros();
 
@@ -533,60 +535,21 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 
 uint8_t calculateBatteryPercentageRemaining(void)
 {
-    float batteryPercentage = 0;
-    // if (batteryCellCount > 0) {
-    //     uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
+    uint8_t batteryPercentage = 0;
+    if (batteryCellCount > 0) {
+        uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
 
-        // if (batteryCapacity > 0) {
-        //     batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn) * 100 / batteryCapacity, 0, 100);
-        // } else {
-        //     batteryPercentage = constrain((((uint32_t)voltageMeter.displayFiltered - (batteryConfig()->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig()->vbatmaxcellvoltage - batteryConfig()->vbatmincellvoltage) * batteryCellCount), 0, 100);
-        // }
-        
-        //float throttle = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
-
-        if (batteryConfig()->usingCurrentSensor) { // toggle for usingCurrentSensor flag to be added as CLI setting
-            uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
+        if (batteryCapacity > 0) {
             batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn) * 100 / batteryCapacity, 0, 100);
         } else {
-            float voltage = lastFilteredVoltage;
-            // DEBUG_SET(DEBUG_FILT_VOLTAGE, 3, voltage);
-            //assume that the voltage drops by 0.1 V for every 1.0 unit of throttle; experimenatally adjust this and factor in batteryCellCount
-            //voltage -= (throttle);  // throttle = rcCommand[3]
-            
-            //clamp the adjusted voltage to the valid range
-            if (voltage < BATTERY_MIN_VOLTAGE)
-                voltage = BATTERY_MIN_VOLTAGE;
-            else if (voltage > BATTERY_MAX_VOLTAGE)
-                voltage = BATTERY_MAX_VOLTAGE;
-            
-            // calculate the battery SoC based on the adjusted voltage
-            batteryPercentage = ((voltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100;
-            //DEBUG_SET(DEBUG_FILT_VOLTAGE, 3, batteryPercentage);
-            
+            batteryPercentage = constrain((((uint32_t)voltageMeter.displayFiltered - (batteryConfig()->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig()->vbatmaxcellvoltage - batteryConfig()->vbatmincellvoltage) * batteryCellCount), 0, 100);
+        }
     }
     
 
     return batteryPercentage;
 }
 
-float returnFilteredVoltage(void) // using a low pass filter
-{
-    float currVoltage = voltageMeter.displayFiltered;
-    //DEBUG_SET(DEBUG_UNFILT_VOLTAGE, 1, currVoltage);
-    //float dt = 1/500;
-    float dt = pidGetDT();
-    
-    // calculate the filter constant (alpha) based on the cutoff frequency and time step
-    //alpha = dt / (1.0 / (2.0 * np.pi * cutoff_frequency) + dt)
-    float alpha = cutoffFrequency * dt/20.0f;
-    
-    // apply the low-pass filter to the voltage values
-    float newFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
-    lastFilteredVoltage = newFilteredVoltage;
-    return newFilteredVoltage;
-}    
-   
 void batteryUpdateAlarms(void)
 {
     // use the state to trigger beeper alerts

@@ -107,7 +107,6 @@ typedef enum {
     DEBUG_GPS_DOP,
     DEBUG_FAILSAFE,
     DEBUG_FILT_VOLTAGE,
-    DEBUG_UNFILT_VOLTAGE,
     DEBUG_COUNT,
 } debugType_e;
 
