@@ -212,7 +212,7 @@
 #define STR_CLI_SDCARD_NONE          "Ikke indsat"
 #define STR_CLI_SDCARD_NOSTART       "Startop fejlet"
 #define STR_CLI_SDCARD_MANUFAC       "Producent"
-#define STR_CLI_SDCARD_FILESYSTEM    "'\r\n" "Filsystem: "
+#define STR_CLI_SDCARD_FILESYSTEM    "\r\nFilsystem: "
 #define STR_CLI_SDCARD_READY         "Klart"
 #define STR_CLI_SDCARD_INIT          "Initialiserer"
 #define STR_CLI_SDCARD_FATAL         "Fejlet helt"

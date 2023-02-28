@@ -210,7 +210,7 @@
 #define STR_CLI_SDCARD_NONE          "None inserted"
 #define STR_CLI_SDCARD_NOSTART       "Startup failed"
 #define STR_CLI_SDCARD_MANUFAC       "Manufacturer"
-#define STR_CLI_SDCARD_FILESYSTEM    "'\r\n" "Filesystem: "
+#define STR_CLI_SDCARD_FILESYSTEM    "\r\nFilsystem: "
 #define STR_CLI_SDCARD_READY         "Ready"
 #define STR_CLI_SDCARD_INIT          "Initializing"
 #define STR_CLI_SDCARD_FATAL         "Fatal"
