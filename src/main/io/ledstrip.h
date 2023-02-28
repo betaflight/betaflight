@@ -32,22 +32,22 @@
 #define LED_MODE_COUNT                  6
 #define LED_DIRECTION_COUNT             6
 #define LED_BASEFUNCTION_COUNT          7
-#define LED_OVERLAY_COUNT               6
+#define LED_OVERLAY_COUNT               7
 #define LED_SPECIAL_COLOR_COUNT        11
 
 #define LED_POS_OFFSET                  0
 #define LED_FUNCTION_OFFSET             8
 #define LED_OVERLAY_OFFSET             12
-#define LED_COLOR_OFFSET               18
-#define LED_DIRECTION_OFFSET           22
-#define LED_PARAMS_OFFSET              28
+#define LED_COLOR_OFFSET               19
+#define LED_DIRECTION_OFFSET           23
+#define LED_PARAMS_OFFSET              29
 
 #define LED_POS_BITCNT                  8
 #define LED_FUNCTION_BITCNT             4
-#define LED_OVERLAY_BITCNT              6
+#define LED_OVERLAY_BITCNT              7
 #define LED_COLOR_BITCNT                4
 #define LED_DIRECTION_BITCNT            6
-#define LED_PARAMS_BITCNT               4
+#define LED_PARAMS_BITCNT               3
 
 #define LED_FLAG_OVERLAY_MASK ((1 << LED_OVERLAY_BITCNT) - 1)
 #define LED_FLAG_DIRECTION_MASK ((1 << LED_DIRECTION_BITCNT) - 1)
@@ -137,6 +137,7 @@ typedef enum {
 
 typedef enum {
     LED_OVERLAY_THROTTLE,
+    LED_OVERLAY_RAINBOW,
     LED_OVERLAY_LARSON_SCANNER,
     LED_OVERLAY_BLINK,
     LED_OVERLAY_VTX,
@@ -182,6 +183,8 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_beacon_armed_only;
     colorId_e ledstrip_visual_beeper_color;
     uint8_t ledstrip_brightness;
+    uint8_t ledstrip_rainbow_delta;
+    uint8_t ledstrip_rainbow_freq;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
