@@ -230,7 +230,6 @@ link_quality_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
-		$(USER_DIR)/locales/translations.c \
 		$(USER_DIR)/rx/rx.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/rx/crsf.c \
