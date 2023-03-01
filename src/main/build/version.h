@@ -28,7 +28,7 @@
 #define FC_VERSION_MINOR            4  // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      1  // increment when a bug is fixed
 
-#define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL) ".RPM_KAACK"
+#define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL) ".RPM_KAACK_V1"
 
 extern const char* const targetName;
 
