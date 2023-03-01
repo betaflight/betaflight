@@ -115,6 +115,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers);
 void initEscEndpoints(void);
 void mixerInit(mixerMode_e mixerMode);
 void mixerInitProfile(void);
+void mixerIntitRPMLimitThrottleScaling(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(timeUs_t currentTimeUs);
 void stopMotors(void);
