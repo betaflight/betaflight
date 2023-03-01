@@ -272,6 +272,18 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 
 static bool crashFlipReadyToRearm = false;
 
+static bool isStableForAutoCrashflip(void)
+{
+    float stableThreshold = 0.1;
+    // smoothedErrorPitch = pt1FilterApply(&mixerRuntime.pitchStableFilter, );
+    float smoothedErrorRoll = gyro.gyroADCf[FD_ROLL];
+    float smoothedErrorPitch = gyro.gyroADCf[FD_PITCH];
+    float smoothedErrorYaw = gyro.gyroADCf[FD_YAW];
+
+    bool isStable = smoothedErrorPitch < stableThreshold && smoothedErrorRoll < stableThreshold && smoothedErrorYaw < stableThreshold;
+    return isStable;
+}
+
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     // if (ARMING_FLAG(ARMED)) {
@@ -303,27 +315,16 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
                     motor[i] = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
                 }
-                // DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
-                // DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
                 crashFlipReadyToRearm = false;
             } else if (ABS(crashflipPitch) > mixerConfig()->crashflip_arm_angle_range/45.0f || ABS(crashflipRoll) > mixerConfig()->crashflip_arm_angle_range/45.0f) { // If right side up but not level
-                // DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 0);
-                // DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 70);
                 for (int i = 0; i < mixerRuntime.motorCount; ++i) {
                     motor[i] = motor_disarmed[i];
                 }
                 disarm(DISARM_REASON_AUTO_CRASHFLIP);
-                // updateArmingStatus();
-                // checkAutoTurtleArmStatus();
-                // crashFlipReadyToRearm = true;
             } else {
-                // DEBUG_SET(DEBUG_AUTO_TURTLE, 2, 51);
-                // DEBUG_SET(DEBUG_AUTO_TURTLE, 3, 0);
-                updateArmingStatus();
-
-                // checkAutoTurtleArmStatus();
-                // tryArm(); //Tryarm should automatically be ran
-                // crashFlipReadyToRearm = false;
+                if(isStableForAutoCrashflip()) {
+                    updateArmingStatus();
+                }
             }
         } else {
             const float flipPowerFactor = 1.0f - mixerConfig()->crashflip_expo / 100.0f;
