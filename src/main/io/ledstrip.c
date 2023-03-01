@@ -115,7 +115,7 @@ const hsvColor_t hsv[] = {
 // macro to save typing on default colors
 #define HSV(color) (hsv[COLOR_ ## color])
 
-PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
 
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
@@ -132,6 +132,8 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_beacon_armed_only = false; // blink always
     ledStripConfig->ledstrip_visual_beeper_color = VISUAL_BEEPER_COLOR;
     ledStripConfig->ledstrip_brightness = 100;
+    ledStripConfig->ledstrip_rainbow_delta = 0;
+    ledStripConfig->ledstrip_rainbow_freq = 120;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
