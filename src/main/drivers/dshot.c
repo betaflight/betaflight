@@ -155,13 +155,14 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
 {
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
+    const unsigned motorCount = motorDeviceCount();
 
     if (dshotTelemetryState.motorState[motorIndex].telemetryTypes == DSHOT_NORMAL_TELEMETRY_MASK) {   /* Check DSHOT_TELEMETRY_TYPE_eRPM mask */
         // Decode eRPM telemetry
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
 
         // Update debug buffer
-        if (motorIndex < 4) {
+        if (motorIndex < motorCount) {
             DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
         }
 
@@ -232,7 +233,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
             *pDecoded = dshot_decode_eRPM_telemetry_value(value);
 
             // Update debug buffer
-            if (motorIndex < 4) {
+            if (motorIndex < motorCount) {
                 DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
             }
 
