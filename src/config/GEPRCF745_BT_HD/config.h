@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F745
@@ -101,13 +101,25 @@
 
 #define ADC1_DMA_OPT        0
 
-#define MAG_I2C_INSTANCE I2C1
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define GYRO_TO_USE BOTH
+#define MAG_I2C_INSTANCE (I2CDEV_1)
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define BLACKBOX_SAMPLE_RATE 1/1
+//TODO #define BLACKBOX_DEVICE SDCARD
+//TODO #define CURRENT_METER ESC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 100
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI3
+//TODO #define PINIO_CONFIG 129,1,1,1
+//TODO #define PINIO_BOX 0,40,41,42
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG
+#define GYRO_1_ALIGN_YAW 2700
 #define GYRO_2_SPI_INSTANCE SPI2

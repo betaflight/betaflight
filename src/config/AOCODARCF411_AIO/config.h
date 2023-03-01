@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -79,8 +79,19 @@
 
 #define ADC1_DMA_OPT        0
 
+//TODO #define DSHOT_IDLE_VALUE 450
+//TODO #define DSHOT_BURST AUTO
+//TODO #define DSHOT_BITBANG OFF
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define ADC_DEVICE 1
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 500
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+#define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI1
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI2
 #define GYRO_1_ALIGN CW90_DEG
+#define GYRO_1_ALIGN_YAW 900

@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -46,7 +46,7 @@
 #define MOTOR3_PIN           PB6
 #define MOTOR4_PIN           PB7
 #define MOTOR5_PIN           PB10
-#define MOTOR6_PIN           PNONE
+#define MOTOR6_PIN           NONE
 
 #define UART1_TX_PIN         PA9
 #define UART1_RX_PIN         PA10
@@ -93,10 +93,24 @@
 
 #define ADC1_DMA_OPT        1
 
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define BARO_HARDWARE NONE
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define BLACKBOX_DEVICE SPIFLASH
 #define FLASH_SPI_INSTANCE SPI3
+//TODO #define DSHOT_IDLE_VALUE 450
+//TODO #define DSHOT_BURST AUTO
+//TODO #define DSHOT_BITBANG OFF
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define MAG_HARDWARE NONE
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+#define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW180_DEG
+#define GYRO_1_ALIGN_YAW 1800

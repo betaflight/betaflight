@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -104,13 +104,29 @@
 
 #define ADC3_DMA_OPT        0
 
-#define MAG_I2C_INSTANCE I2C2
-#define BARO_I2C_INSTANCE I2C2
+//TODO #define GYRO_TO_USE BOTH
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_2)
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_2)
+//TODO #define SERIALRX_PROVIDER CRSF
+//TODO #define ADC_DEVICE 3
+//TODO #define BLACKBOX_DEVICE SDCARD
+//TODO #define DSHOT_BURST ON
+//TODO #define DSHOT_BIDIR ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define CURRENT_METER ESC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 100
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI3
 #define MAX7456_SPI_INSTANCE SPI2
+//TODO #define PINIO_CONFIG 129,1,1,1
+//TODO #define PINIO_BOX 0,40,41,42
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG
+#define GYRO_1_ALIGN_YAW 2700
 #define GYRO_2_SPI_INSTANCE SPI1

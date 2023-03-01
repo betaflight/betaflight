@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -87,8 +87,24 @@
 
 #define ADC3_DMA_OPT        1
 
+//TODO #define MAG_HARDWARE NONE
+//TODO #define BARO_HARDWARE NONE
+//TODO #define SERIALRX_PROVIDER CRSF
+//TODO #define ADC_DEVICE 3
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define VBAT_SCALE 110
+//TODO #define IBATA_SCALE 350
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define MAX7456_SPI_INSTANCE SPI3
+//TODO #define PINIO_CONFIG 1,1,1,1
+//TODO #define PINIO_BOX 40,255,255,255
+//TODO #define BOX_USER_1_NAME VTX SWITCH
 #define FLASH_SPI_INSTANCE SPI1
 #define GYRO_1_SPI_INSTANCE SPI2
 #define GYRO_1_ALIGN CW0_DEG_FLIP
+#define GYRO_1_ALIGN_PITCH 1800
+//TODO #define OSD_CORE_TEMP_ALARM 85

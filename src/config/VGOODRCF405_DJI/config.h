@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -90,6 +90,11 @@
 
 #define ADC3_DMA_OPT        1
 
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define ADC_DEVICE 3
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
 #define MAX7456_SPI_INSTANCE SPI2
 #define FLASH_SPI_INSTANCE SPI3

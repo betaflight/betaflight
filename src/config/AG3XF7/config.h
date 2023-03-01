@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -100,13 +100,26 @@
 
 #define ADC1_DMA_OPT        1
 
-#define MAG_I2C_INSTANCE I2C2
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_2)
 #define BARO_SPI_INSTANCE SPI2
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define MIN_THROTTLE 1070
+//TODO #define DSHOT_BURST ON
+//TODO #define USE_UNSYNCED_PWM OFF
+//TODO #define MOTOR_PWM_PROTOCOL ONESHOT125
+//TODO #define MOTOR_PWM_RATE 480
+//TODO #define CURRENT_METER ESC
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define MAX7456_SPI_INSTANCE SPI3
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG_FLIP
+#define GYRO_1_ALIGN_PITCH 1800
+#define GYRO_1_ALIGN_YAW 2700
 #define GYRO_2_SPI_INSTANCE SPI1
 #define GYRO_2_ALIGN CW0_DEG_FLIP
+#define GYRO_2_ALIGN_PITCH 1800

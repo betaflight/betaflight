@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -84,11 +84,24 @@
 
 #define ADC1_DMA_OPT        0
 
-#define MAG_I2C_INSTANCE I2C1
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_1)
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define RX_SPI_PROTOCOL FRSKY_D
 #define RX_SPI_INSTANCE SPI3
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_BURST ON
+//TODO #define DSHOT_BIDIR ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT300
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 200
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 #define MAX7456_SPI_INSTANCE SPI2
+//TODO #define FRSKY_SPI_TX_ID 64,120
+//TODO #define FRSKY_SPI_OFFSET -103
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW0_DEG_FLIP

@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -88,8 +88,33 @@
 
 #define ADC1_DMA_OPT        1
 
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define MAG_HARDWARE NONE
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define SERIALRX_HALFDUPLEX ON
+//TODO #define DSHOT_BURST ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define PID_PROCESS_DENOM 1
+//TODO #define OSD_WARN_CORE_TEMP OFF
+//TODO #define OSD_WARN_RC_SMOOTHING OFF
+//TODO #define OSD_WARN_FAIL_SAFE OFF
+//TODO #define OSD_WARN_LAUNCH_CONTROL OFF
+//TODO #define OSD_WARN_NO_GPS_RESCUE OFF
+//TODO #define OSD_WARN_GPS_RESCUE_DISABLED OFF
+//TODO #define OSD_VBAT_POS 2401
+//TODO #define OSD_RSSI_POS 2106
+//TODO #define OSD_VTX_CHANNEL_POS 2424
+//TODO #define OSD_CROSSHAIRS_POS 2253
+//TODO #define OSD_AH_SBAR_POS 2254
+//TODO #define OSD_AH_POS 2126
+//TODO #define OSD_COMPASS_BAR_POS 106
+//TODO #define OSD_WARNINGS_POS 2377
+//TODO #define VCD_VIDEO_SYSTEM NTSC
 #define MAX7456_SPI_INSTANCE SPI2
+//TODO #define PINIO_BOX 40,41,255,255
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

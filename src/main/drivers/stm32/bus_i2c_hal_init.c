@@ -165,8 +165,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_2,
         .reg = I2C2,
-        .sclPins = { I2CPINDEF(PA9,  GPIO_AF4_I2C2), },
-        .sdaPins = { I2CPINDEF(PA10, GPIO_AF4_I2C2), },
+        .sclPins = { I2CPINDEF(PA9,  GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PA8, GPIO_AF4_I2C2), I2CPINDEF(PF6, GPIO_AF4_I2C2) },
         .rcc = RCC_APB11(I2C2),
         .ev_irq = I2C2_EV_IRQn,
         .er_irq = I2C2_ER_IRQn,

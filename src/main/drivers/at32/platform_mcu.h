@@ -23,9 +23,13 @@
 #if defined(AT32F435ZMT7)
 
 #include "at32f435_437.h"
+#include "at32f435_437_i2c.h"
+#include "i2c_application.h"
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
+#define I2C_TypeDef         i2c_type
+#define I2C_HandleTypeDef   i2c_handle_type
 #define GPIO_TypeDef        gpio_type
 #define GPIO_InitTypeDef    gpio_init_type
 #define TIM_TypeDef         tmr_type

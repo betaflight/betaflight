@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -99,14 +99,36 @@
 #define SPI2_TX_DMA_OPT     0
 #define ADC2_DMA_OPT        1
 
-#define MAG_I2C_INSTANCE I2C2
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_2)
+//TODO #define MAG_HARDWARE NONE
 #define BARO_SPI_INSTANCE SPI3
+//TODO #define BARO_HARDWARE NONE
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define ADC_DEVICE 2
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_IDLE_VALUE 450
+//TODO #define DSHOT_BURST ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600
+//TODO #define MOTOR_POLES 12
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define YAW_MOTORS_REVERSED ON
+//TODO #define SDCARD_DETECT_INVERTED ON
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI2
+#define SYSTEM_HSE_MHZ 8
+//TODO #define VTX_BAND 5
+//TODO #define VTX_CHANNEL 8
+//TODO #define VTX_POWER 1
+//TODO #define VTX_FREQ 5917
 #define MAX7456_SPI_INSTANCE SPI3
+//TODO #define DASHBOARD_I2C_BUS 2
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG
+#define GYRO_1_ALIGN_YAW 2700
 #define GYRO_2_SPI_INSTANCE SPI1

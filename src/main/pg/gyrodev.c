@@ -34,12 +34,45 @@
 #include "drivers/sensor.h"
 #include "sensors/gyro.h"
 
+#ifndef GYRO_1_SPI_INSTANCE
+#define GYRO_1_SPI_INSTANCE NULL
+#endif
+
+#ifndef GYRO_1_CS_PIN
+#define GYRO_1_CS_PIN NONE
+#endif
+
+#ifndef GYRO_1_EXTI_PIN
+#define GYRO_1_EXTI_PIN NONE
+#endif
+
+#ifndef GYRO_2_SPI_INSTANCE
+#define GYRO_2_SPI_INSTANCE NULL
+#endif
+
 #ifndef GYRO_2_CS_PIN
 #define GYRO_2_CS_PIN NONE
 #endif
 
 #ifndef GYRO_2_EXTI_PIN
 #define GYRO_2_EXTI_PIN NONE
+#endif
+
+#ifdef MPU_ADDRESS
+#define GYRO_I2C_ADDRESS MPU_ADDRESS
+#else
+ // 0 == AUTO
+#define GYRO_I2C_ADDRESS 0
+#endif
+
+// gyro alignments
+
+#ifndef GYRO_1_ALIGN
+#define GYRO_1_ALIGN            CW0_DEG
+#endif
+
+#ifndef GYRO_2_ALIGN
+#define GYRO_2_ALIGN            CW0_DEG
 #endif
 
 ioTag_t selectMPUIntExtiConfigByHardwareRevision(void); // XXX Should be gone

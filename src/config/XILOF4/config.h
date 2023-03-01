@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F405
@@ -89,9 +89,20 @@
 #define ADC1_DMA_OPT        1
 #define ADC3_DMA_OPT        1
 
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_BURST ON
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT300
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
+//TODO #define IBATA_SCALE 118
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+#define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI3
+//TODO #define PINIO_CONFIG 129,1,1,1
+//TODO #define PINIO_BOX 40,255,255,255
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW180_DEG
+#define GYRO_1_ALIGN_YAW 1800

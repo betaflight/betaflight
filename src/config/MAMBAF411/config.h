@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -38,6 +38,7 @@
 #define LED1_PIN             PC14
 #define BEEPER_PIN           PB2
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
 
 #define GYRO_1_EXTI_PIN      PB0
 #define GYRO_1_CS_PIN        PA4
@@ -59,6 +60,9 @@
 #define ADC_VBAT_PIN         PA0
 #define ADC_RSSI_PIN         PB1
 #define ADC_CURR_PIN         PA1
+//TODO #define ADC_DEVICE 1
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
 
 #define UART1_TX_PIN         PA9
 #define UART1_RX_PIN         PA10
@@ -89,3 +93,7 @@
 
 #define ADC1_DMA_OPT        1
 
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define DSHOT_BURST AUTO
+//TODO #define DSHOT_BITBANG OFF
+//TODO #define MOTOR_PWM_PROTOCOL DSHOT600

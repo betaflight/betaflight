@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -104,10 +104,27 @@
 
 #define ADC1_DMA_OPT        0
 
-#define MAG_I2C_INSTANCE I2C1
-#define BARO_I2C_INSTANCE I2C1
+//TODO #define SERIALRX_PROVIDER SBUS
+//TODO #define MAG_BUSTYPE I2C
+#define MAG_I2C_INSTANCE (I2CDEV_1)
+//TODO #define MAG_HARDWARE AUTO
+//TODO #define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE (I2CDEV_1)
+//TODO #define BARO_HARDWARE AUTO
+//TODO #define BLACKBOX_DEVICE SPIFLASH
+//TODO #define DSHOT_BURST ON
+//TODO #define CURRENT_METER ADC
+//TODO #define BATTERY_METER ADC
 #define BEEPER_INVERTED
+//TODO #define BEEPER_OD OFF
+//TODO #define PINIO_BOX 40,41,255,255
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW180_DEG_FLIP
+#define GYRO_1_ALIGN_PITCH 1800
+#define GYRO_1_ALIGN_YAW 1800
+//TODO #define CAMERA_CONTROL_MODE HARDWARE_PWM
+//TODO #define OSD_VBAT_POS 2467
+//TODO #define OSD_CURRENT_POS 2434
+//TODO #define OSD_DISARMED_POS 2282
