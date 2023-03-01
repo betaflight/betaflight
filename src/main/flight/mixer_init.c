@@ -57,7 +57,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .rpm_limiter_p = 25,
     .rpm_limiter_i = 10,
     .rpm_limiter_d = 8,
-    .rpm_limiter_rpm_limit = 180,
+    .rpm_limiter_rpm_limit = 0,
     .motor_kv = 1960,
 );
 
