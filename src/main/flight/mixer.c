@@ -67,6 +67,12 @@
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
+#ifdef USE_RPM_LIMITER
+    #define RPM_LIMIT_ACTIVE (mixerConfig()->rpm_limiter_rpm_limit > 0)
+#else
+    #define RPM_LIMIT_ACTIVE false
+#endif
+
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
 float FAST_DATA_ZERO_INIT motor[MAX_SUPPORTED_MOTORS];
@@ -245,7 +251,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
         float motorRangeAttenuationFactor = 0;
         // reduce motorRangeMax when battery is full
-        if (!(mixerConfig()->rpm_limiter_rpm_limit > 0) && mixerRuntime.vbatSagCompensationFactor > 0.0f) {
+        if (mixerRuntime.vbatSagCompensationFactor > 0.0f) {
             const uint16_t currentCellVoltage = getBatterySagCellVoltage();
             // batteryGoodness = 1 when voltage is above vbatFull, and 0 when voltage is below vbatLow
             float batteryGoodness = 1.0f - constrainf((mixerRuntime.vbatFull - currentCellVoltage) / mixerRuntime.vbatRangeToCompensate, 0.0f, 1.0f);
@@ -359,7 +365,7 @@ static bool isMotorSaturated(void) //Placeholder function
 
 static void applyRPMLimiter(mixerRuntime_t *mixer)
 {
-    if (mixerConfig()->rpm_limiter_rpm_limit > 0 && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
+    if (RPM_LIMIT_ACTIVE && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
         float averageRPM = getDshotAverageRpm();
         float averageRPMSmoothed = pt1FilterApply(&mixer->averageRPMFilter, averageRPM);
         float smoothedRPMError = averageRPMSmoothed - mixer->rpmLimiterRPMLimit;
@@ -398,7 +404,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         float motorOutput = motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle;
 #ifdef USE_THRUST_LINEARIZATION
-    if (!(mixerConfig()->rpm_limiter_rpm_limit > 0)) {
+    if (!RPM_LIMIT_ACTIVE) {
         motorOutput = pidApplyThrustLinearization(motorOutput);
     }
 #endif
