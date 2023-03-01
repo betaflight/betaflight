@@ -54,7 +54,6 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .crashflip_motor_percent = 0,
     .crashflip_expo = 35,
     .mixer_type = MIXER_LEGACY,
-    .rpm_limiter = false,
     .rpm_limiter_p = 25,
     .rpm_limiter_i = 10,
     .rpm_limiter_d = 8,
@@ -347,7 +346,7 @@ void mixerInitProfile(void)
 
 #ifdef USE_RPM_LIMITER
     mixerRuntime.rpmLimiterRPMLimit = mixerConfig()->rpm_limiter_rpm_limit * 10.0f;
-    float maxExpectedRPMs = MAX(1.0f, (getBatteryVoltage() / 100.0f) * mixerConfig()->motor_kv / 10.0f);
+    const float maxExpectedRPMs = MAX(1.0f, (getBatteryVoltage() / 100.0f) * mixerConfig()->motor_kv / 10.0f);
     mixerRuntime.rpmLimiterExpectedThrottleLimit =  MIN(1.0f, mixerRuntime.rpmLimiterRPMLimit / maxExpectedRPMs);
     mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limiter_p * 0.00015f;
     mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limiter_i * 0.01f * pidGetDT();

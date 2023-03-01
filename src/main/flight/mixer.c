@@ -245,7 +245,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
         float motorRangeAttenuationFactor = 0;
         // reduce motorRangeMax when battery is full
-        if (!mixerConfig()->rpm_limiter && mixerRuntime.vbatSagCompensationFactor > 0.0f) {
+        if (!(mixerConfig()->rpm_limiter_rpm_limit > 0) && mixerRuntime.vbatSagCompensationFactor > 0.0f) {
             const uint16_t currentCellVoltage = getBatterySagCellVoltage();
             // batteryGoodness = 1 when voltage is above vbatFull, and 0 when voltage is below vbatLow
             float batteryGoodness = 1.0f - constrainf((mixerRuntime.vbatFull - currentCellVoltage) / mixerRuntime.vbatRangeToCompensate, 0.0f, 1.0f);
@@ -357,35 +357,35 @@ static bool isMotorSaturated(void) //Placeholder function
     return false;
 }
 
-static void applyRPMLimiter(void)
+static void applyRPMLimiter(mixerRuntime_t *mixer)
 {
-    if (mixerConfig()->rpm_limiter && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
+    if (mixerConfig()->rpm_limiter_rpm_limit > 0 && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
         float averageRPM = getDshotAverageRpm();
-        float averageRPMSmoothed = pt1FilterApply(&mixerRuntime.averageRPMFilter, averageRPM);
-        float smoothedRPMError = averageRPMSmoothed - mixerRuntime.rpmLimiterRPMLimit;
+        float averageRPMSmoothed = pt1FilterApply(&mixer->averageRPMFilter, averageRPM);
+        float smoothedRPMError = averageRPMSmoothed - mixer->rpmLimiterRPMLimit;
         // PID
-        float rpmLimiterP = smoothedRPMError * mixerRuntime.rpmLimiterPGain;
-        mixerRuntime.rpmLimiterI += smoothedRPMError * mixerRuntime.rpmLimiterIGain;
-        mixerRuntime.rpmLimiterI = MAX(0.0f, mixerRuntime.rpmLimiterI);
-        float rpmDerivative = smoothedRPMError - mixerRuntime.rpmLimiterPreviousSmoothedRPMError;
-        float rpmLimiterD = rpmDerivative * mixerRuntime.rpmLimiterDGain;
-        float pidOutput = rpmLimiterP + mixerRuntime.rpmLimiterI + rpmLimiterD;
+        float rpmLimiterP = smoothedRPMError * mixer->rpmLimiterPGain;
+        mixer->rpmLimiterI += smoothedRPMError * mixer->rpmLimiterIGain;
+        mixer->rpmLimiterI = MAX(0.0f, mixer->rpmLimiterI);
+        float rpmDerivative = smoothedRPMError - mixer->rpmLimiterPreviousSmoothedRPMError;
+        float rpmLimiterD = rpmDerivative * mixer->rpmLimiterDGain;
+        float pidOutput = rpmLimiterP + mixer->rpmLimiterI + rpmLimiterD;
         // Throttle limit learning
-        if (smoothedRPMError > -10.0f && rcCommand[THROTTLE] < rxConfig()->max_check) {
-            mixerRuntime.rpmLimiterExpectedThrottleLimit *= 1.0f - 4.8f / pidGetPidFrequency();
-        } else if (pidOutput < -0.05f && rcCommand[THROTTLE] > rxConfig()->max_check && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
-            mixerRuntime.rpmLimiterExpectedThrottleLimit *= 1.0f + 3.2f / pidGetPidFrequency();
+        if (smoothedRPMError > -10.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
+            mixer->rpmLimiterExpectedThrottleLimit *= 1.0f - 4.8f / pidGetPidFrequency();
+        } else if (pidOutput < -0.05f && rcCommand[THROTTLE] > rxConfig()->maxcheck && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
+            mixer->rpmLimiterExpectedThrottleLimit *= 1.0f + 3.2f / pidGetPidFrequency();
         }
-        mixerRuntime.rpmLimiterExpectedThrottleLimit = constrainf(mixerRuntime.rpmLimiterExpectedThrottleLimit, 0.01f, 1.0f);
-        throttle *= mixerRuntime.rpmLimiterExpectedThrottleLimit;
+        mixer->rpmLimiterExpectedThrottleLimit = constrainf(mixer->rpmLimiterExpectedThrottleLimit, 0.01f, 1.0f);
+        throttle *= mixer->rpmLimiterExpectedThrottleLimit;
         // Output
         pidOutput = MAX(0.0f, pidOutput);
         throttle = constrainf(throttle-pidOutput, 0.0f, 1.0f);
-        mixerRuntime.rpmLimiterPreviousSmoothedRPMError = smoothedRPMError;
+        mixer->rpmLimiterPreviousSmoothedRPMError = smoothedRPMError;
         DEBUG_SET(DEBUG_RPM_LIMITER, 0, smoothedRPMError);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 1, throttle * 100.0f);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.rpmLimiterP * 100.0f);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 3, mixerRuntime.rpmLimiterD * 100.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 1, rpmLimiterP * 100.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixer->rpmLimiterI * 100.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 3, rpmLimiterD * 100.0f);
     }
 }
 
@@ -398,7 +398,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
         float motorOutput = motorOutputMixSign * motorMix[i] + throttle * activeMixer[i].throttle;
 #ifdef USE_THRUST_LINEARIZATION
-    if (!mixerConfig()->rpm_limiter) {
+    if (!(mixerConfig()->rpm_limiter_rpm_limit > 0)) {
         motorOutput = pidApplyThrustLinearization(motorOutput);
     }
 #endif
@@ -624,7 +624,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_RPM_LIMITER
-    applyRPMLimiter();
+    applyRPMLimiter(&mixerRuntime);
 #endif
 
     // Find roll/pitch/yaw desired output
