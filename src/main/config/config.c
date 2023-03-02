@@ -475,6 +475,42 @@ static void validateAndFixConfig(void)
     featureDisableImmediate(FEATURE_RSSI_ADC);
 #endif
 
+// Enable features in Cloud Build
+#ifdef CLOUD_BUILD
+
+if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
+
+#ifdef USE_DASHBOARD
+    featureEnableImmediate(FEATURE_DASHBOARD);
+#endif
+#ifdef USE_GPS
+    featureEnableImmediate(FEATURE_GPS);
+#endif
+#ifdef USE_LED_STRIP
+    featureEnableImmediate(FEATURE_LED_STRIP);
+#endif
+#ifdef USE_OSD_SD
+    featureEnableImmediate(FEATURE_OSD);
+#endif
+#ifdef USE_RANGEFINDER
+    featureEnableImmediate(FEATURE_RANGEFINDER);
+#endif
+#ifdef USE_SERVOS
+    featureEnableImmediate(FEATURE_CHANNEL_FORWARDING);
+    featureEnableImmediate(FEATURE_SERVO_TILT);
+#endif
+#ifdef USE_TELEMETRY
+    featureEnableImmediate(FEATURE_TELEMETRY);
+#endif
+#ifdef USE_TRANSPONDER
+    featureEnableImmediate(FEATURE_TRANSPONDER);
+#endif
+
+}
+
+#endif // CLOUD_BUILD
+
+
 #if defined(USE_BEEPER)
 #ifdef USE_TIMER
     if (beeperDevConfig()->frequency && !timerGetConfiguredByTag(beeperDevConfig()->ioTag)) {
@@ -761,20 +797,9 @@ void writeEEPROM(void)
     writeUnmodifiedConfigToEEPROM();
 }
 
-bool resetEEPROM(bool useCustomDefaults)
+bool resetEEPROM(void)
 {
-#if !defined(USE_CUSTOM_DEFAULTS)
-    UNUSED(useCustomDefaults);
-#else
-    if (useCustomDefaults) {
-        if (!resetConfigToCustomDefaults()) {
-            return false;
-        }
-    } else
-#endif
-    {
-        resetConfig();
-    }
+    resetConfig();
 
     writeUnmodifiedConfigToEEPROM();
 
@@ -786,7 +811,7 @@ void ensureEEPROMStructureIsValid(void)
     if (isEEPROMStructureValid()) {
         return;
     }
-    resetEEPROM(false);
+    resetEEPROM();
 }
 
 void saveConfigAndNotify(void)

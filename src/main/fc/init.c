@@ -256,20 +256,6 @@ static void sdCardAndFSInit(void)
 }
 #endif
 
-#ifdef USE_SWDIO
-static void swdPinsInit(void)
-{
-    IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PA14)); // SWCLK
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-}
-#endif
-
 void init(void)
 {
 #ifdef SERIAL_PORT_COUNT
@@ -422,7 +408,7 @@ void init(void)
 #endif
 
     if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
-        resetEEPROM(false);
+        resetEEPROM();
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
@@ -477,7 +463,7 @@ void init(void)
             bothButtonsHeld = buttonAPressed() && buttonBPressed();
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
-                    resetEEPROM(false);
+                    resetEEPROM();
 #ifdef USE_PERSISTENT_OBJECTS
                     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
 #endif
@@ -835,17 +821,15 @@ void init(void)
     flashfsInit();
 #endif
 
-#ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
-    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-        if (sdcardConfig()->mode) {
-            if (!(initFlags & SD_INIT_ATTEMPTED)) {
-                sdCardAndFSInit();
-                initFlags |= SD_INIT_ATTEMPTED;
-            }
+    if (sdcardConfig()->mode) {
+        if (!(initFlags & SD_INIT_ATTEMPTED)) {
+            sdCardAndFSInit();
+            initFlags |= SD_INIT_ATTEMPTED;
         }
     }
 #endif
+#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
@@ -1030,9 +1014,7 @@ void init(void)
     spiInitBusDMA();
 #endif
 
-#ifdef USE_SWDIO
-    swdPinsInit();
-#endif
+    debugInit();
 
     unusedPinsInit();
 
