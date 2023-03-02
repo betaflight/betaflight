@@ -148,7 +148,7 @@ EXTRA_LD_FLAGS  :=
 #
 # Setup locale
 #
-LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(SRC_DIR)/locales/*/locale.h)))))
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(SRC_DIR)/locales/*/bf_locale.h)))))
 ifeq ($(LOCALE),)
 LOCALE := en
 endif

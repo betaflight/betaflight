@@ -28,7 +28,7 @@
   #define TR2(x, y) x
 #endif
 
-#include "locale.h"                             // located in locales/xx, default locales/en, managed by make
+#include "bf_locale.h"                          // located in locales/xx, default locales/en, managed by make
 
 // defines to be untranslated
 #define STR_COMMA	              ","
