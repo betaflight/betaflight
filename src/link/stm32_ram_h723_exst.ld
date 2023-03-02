@@ -30,7 +30,7 @@ ENTRY(Reset_Handler)
 0x08000000 to 0x0801FFFF  128K isr vector, startup code, firmware, no config! // FLASH_Sector_0
 */
 
-/* 
+/*
 
 For H7 EXFL (External Flash) targets a binary is built that is placed on an external device.
 The bootloader will enable the memory mapped mode on the CPU which allows code to run directly from
@@ -61,7 +61,7 @@ MEMORY
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 
     OCTOSPI2 (rx)     : ORIGIN = 0x70000000, LENGTH = 256M
-    OCTOSPI1 (rx)     : ORIGIN = 0x90000000, LENGTH = 256M 
+    OCTOSPI1 (rx)     : ORIGIN = 0x90000000, LENGTH = 256M
     OCTOSPI1_CODE (rx): ORIGIN = ORIGIN(OCTOSPI1) + 1M, LENGTH = 1M - _exst_hash_size /* hard coded start address, as required by SPRACINGH7 boot loader, don't change! */
     EXST_HASH (rx)    : ORIGIN = ORIGIN(OCTOSPI1_CODE) + LENGTH(OCTOSPI1_CODE), LENGTH = _exst_hash_size
 }
@@ -112,7 +112,7 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >RAM
-  
+
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
@@ -140,4 +140,3 @@ SECTIONS
 
 INCLUDE "stm32_h723_common_post.ld"
 INCLUDE "stm32_ram_h723_exst_post.ld"
-

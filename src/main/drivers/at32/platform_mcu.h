@@ -72,7 +72,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define USE_TIMER_AF
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
-#define USE_CUSTOM_DEFAULTS_ADDRESS
 #define USE_ADC_INTERNAL
 
 #define USE_LATE_TASK_STATISTICS

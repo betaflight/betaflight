@@ -11,12 +11,12 @@ SECTIONS
     BYTE(0x00); /* Checksum method, 0x00 = MD5 hash */
     BYTE(0x00); /* Reserved */
     BYTE(0x00); /* Reserved */
-    
+
     /* Fill the last 60 bytes with data, including an empty hash aligned   */
-    
+
     /* to the last 16 bytes.                                               */
     FILL(0x00000000); /* Reserved */
-    
+
     . = ORIGIN(EXST_HASH) + LENGTH(EXST_HASH) - 16;
     __md5_hash_address__ = .;
     LONG(0x00000000);
