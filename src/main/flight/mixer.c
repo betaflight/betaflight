@@ -288,7 +288,9 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 {
     // if (ARMING_FLAG(ARMED)) {
         if (isCrashflipInAutoMode()) {
-            float flipPower = mixerConfig()->crashflip_motor_percent / 100.0f;
+            float maxFlipPower = mixerConfig()->crashflip_motor_percent / 100.0f;
+            mixerRuntime.autoFlipPower = MIN(maxFlipPower, mixerRuntime.autoFlipPower + mixerRuntime.autoCrashflipStep);
+
             // float rightSideUpFlipPower = flipPower / 2.0f;
             float quadVec[3] = {0,0,1};
             applyMatrixRotation(quadVec, (struct fp_rotationMatrix_s*)rMat);
@@ -311,7 +313,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     float motorOutputNormalised =
                             SIGN(pitchCorrection) * mixerRuntime.currentMixer[i].pitch +
                             SIGN(rollCorrection) * mixerRuntime.currentMixer[i].roll;
-                    motorOutputNormalised = constrainf(flipPower * motorOutputNormalised, 0.0f, 1.0f); //Removes need for some previous code in normal crashflip because no one really needs mixerConfig()->crashflip_motor_percent to ever be > 0
+                    motorOutputNormalised = constrainf(mixerRuntime.autoFlipPower * motorOutputNormalised, 0.0f, 1.0f); //Removes need for some previous code in normal crashflip because no one really needs mixerConfig()->crashflip_motor_percent to ever be > 0
                     float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;
                     motor[i] = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? mixerRuntime.disarmMotorOutput : (motorOutput - CRASH_FLIP_DEADBAND);
                 }
@@ -320,8 +322,10 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 for (int i = 0; i < mixerRuntime.motorCount; ++i) {
                     motor[i] = motor_disarmed[i];
                 }
+                mixerRuntime.autoFlipPower = 0;
                 disarm(DISARM_REASON_AUTO_CRASHFLIP);
             } else {
+                mixerRuntime.autoFlipPower = 0;
                 if(isStableForAutoCrashflip()) {
                     updateArmingStatus();
                 }
@@ -378,11 +382,11 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                     signYaw * mixerRuntime.currentMixer[i].yaw;
 
                 if (motorOutputNormalised < 0) {
-                    if (mixerConfig()->crashflip_motor_percent > 0) {
-                        motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
-                    } else {
+                    // if (mixerConfig()->crashflip_motor_percent > 0) {
+                    //     motorOutputNormalised = -motorOutputNormalised * (float)mixerConfig()->crashflip_motor_percent / 100.0f;
+                    // } else {
                         motorOutputNormalised = 0;
-                    }
+                    // }
                 }
                 motorOutputNormalised = MIN(1.0f, flipPower * motorOutputNormalised);
                 float motorOutput = motorOutputMin + motorOutputNormalised * motorOutputRange;

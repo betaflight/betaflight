@@ -435,7 +435,8 @@ void mixerInit(mixerMode_e mixerMode)
     mixerRuntime.dynIdleI = 0.0f;
     mixerRuntime.prevMinRps = 0.0f;
 #endif
-
+    mixerRuntime.autoFlipPower = 0;
+    mixerRuntime.autoCrashflipStep = 1 * pidGetDT(); // 1s
     mixerConfigureOutput();
 }
 
