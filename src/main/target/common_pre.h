@@ -62,7 +62,6 @@
 #define USE_MOTOR
 #define USE_DMA
 #define USE_TIMER
-#define USE_RPM_LIMITER
 
 #define USE_CLI
 #define USE_SERIAL_PASSTHROUGH
