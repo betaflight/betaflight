@@ -670,12 +670,6 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #if defined(USE_FLASH_BOOT_LOADER)
         targetCapabilities |= BIT(TARGET_HAS_FLASH_BOOTLOADER);
 #endif
-#if defined(USE_CUSTOM_DEFAULTS)
-        targetCapabilities |= BIT(TARGET_SUPPORTS_CUSTOM_DEFAULTS);
-        if (hasCustomDefaults()) {
-            targetCapabilities |= BIT(TARGET_HAS_CUSTOM_DEFAULTS);
-        }
-#endif
 #if defined(USE_RX_BIND)
         if (getRxBindSupported()) {
             targetCapabilities |= BIT(TARGET_SUPPORTS_RX_BIND);
@@ -2485,25 +2479,14 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 
     case MSP_RESET_CONF:
         {
-#if defined(USE_CUSTOM_DEFAULTS)
-            defaultsType_e defaultsType = DEFAULTS_TYPE_CUSTOM;
-#endif
             if (sbufBytesRemaining(src) >= 1) {
                 // Added in MSP API 1.42
-#if defined(USE_CUSTOM_DEFAULTS)
-                defaultsType = sbufReadU8(src);
-#else
                 sbufReadU8(src);
-#endif
             }
 
             bool success = false;
             if (!ARMING_FLAG(ARMED)) {
-#if defined(USE_CUSTOM_DEFAULTS)
-                success = resetEEPROM(defaultsType == DEFAULTS_TYPE_CUSTOM);
-#else
                 success = resetEEPROM(false);
-#endif
 
                 if (success && mspPostProcessFn) {
                     rebootMode = MSP_REBOOT_FIRMWARE;
