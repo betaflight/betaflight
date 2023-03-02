@@ -366,7 +366,7 @@ static bool isMotorSaturated(void) //Placeholder function
 static void applyRPMLimiter(mixerRuntime_t *mixer)
 {
     if (RPM_LIMIT_ACTIVE && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
-        float averageRPM = getDshotAverageRpm();
+        float averageRPM = getDshotAverageRpm() / 10.0f;
         float averageRPMSmoothed = pt1FilterApply(&mixer->averageRPMFilter, averageRPM);
         float smoothedRPMError = averageRPMSmoothed - mixer->rpmLimiterRPMLimit;
         // PID
@@ -389,7 +389,7 @@ static void applyRPMLimiter(mixerRuntime_t *mixer)
         throttle = constrainf(throttle-pidOutput, 0.0f, 1.0f);
         mixer->rpmLimiterPreviousSmoothedRPMError = smoothedRPMError;
         DEBUG_SET(DEBUG_RPM_LIMITER, 0, smoothedRPMError);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 1, rpmLimiterP * 100.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 1, throttle * 100.0f);
         DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixer->rpmLimiterI * 100.0f);
         DEBUG_SET(DEBUG_RPM_LIMITER, 3, rpmLimiterD * 100.0f);
     }
