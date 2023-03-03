@@ -161,7 +161,10 @@
 #define USE_FLASH_W25Q128FV
 #define USE_SDCARD
 
+#ifndef USE_OSD
 #define USE_OSD
+#endif
+
 #define SPRACING_PIXEL_OSD_BLACK_PIN                    PE12
 #define SPRACING_PIXEL_OSD_WHITE_PIN                    PE13
 #define SPRACING_PIXEL_OSD_MASK_ENABLE_PIN              PE14
