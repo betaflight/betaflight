@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
-
 #define FC_TARGET_MCU     STM32F405
 
 #define BOARD_NAME        FF_RACEPIT
@@ -73,12 +67,12 @@
 #define MAX7456_SPI_INSTANCE SPI2
 
 #define TIMER_PIN_MAPPING \
-    TIMER_PIN_MAP( 0, PB0 , 2, 0    # pin B00: DMA1 Stream 7 Channel 5) \
-    TIMER_PIN_MAP( 1, PB1 , 2, 0    # pin B01: DMA1 Stream 2 Channel 5) \
-    TIMER_PIN_MAP( 2, PB11, 1, 1    # pin B11: DMA1 Stream 7 Channel 3) \
-    TIMER_PIN_MAP( 3, PB10, 1, 0    # pin B10: DMA1 Stream 1 Channel 3) \
+    TIMER_PIN_MAP( 0, PB0 , 2, 0 ) \
+    TIMER_PIN_MAP( 1, PB1 , 2, 0 ) \
+    TIMER_PIN_MAP( 2, PB11, 1, 1 ) \
+    TIMER_PIN_MAP( 3, PB10, 1, 0 ) \
     TIMER_PIN_MAP( 4, PA10, 1, -1) \
-    TIMER_PIN_MAP( 5, PB6 , 1, 0    # pin B06: DMA1 Stream 0 Channel 2) \
+    TIMER_PIN_MAP( 5, PB6 , 1, 0 ) \
 
 
 #define MOTOR1_PIN           PB0
