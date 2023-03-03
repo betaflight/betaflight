@@ -204,6 +204,7 @@ usb_sts_type usbh_ctrl_data_in_handler(usbh_core_type *uhost)
   */
 usb_sts_type usbh_ctrl_data_in_wait_handler(usbh_core_type *uhost, uint32_t timeout)
 {
+  UNUSED(timeout);
   usb_sts_type status = USB_OK;
   urb_sts_type urb_state;
   urb_state = uhost->urb_state[uhost->ctrl.hch_in];
@@ -260,6 +261,7 @@ usb_sts_type usbh_ctrl_data_out_handler(usbh_core_type *uhost)
   */
 usb_sts_type usbh_ctrl_data_out_wait_handler(usbh_core_type *uhost, uint32_t timeout)
 {
+  UNUSED(timeout);
   usb_sts_type status = USB_OK;
   urb_sts_type urb_state;
   urb_state = uhost->urb_state[uhost->ctrl.hch_out];
@@ -316,6 +318,7 @@ usb_sts_type usbh_ctrl_status_in_handler(usbh_core_type *uhost)
   */
 usb_sts_type usbh_ctrl_status_in_wait_handler(usbh_core_type *uhost, uint32_t timeout)
 {
+  UNUSED(timeout);
   usb_sts_type status = USB_OK;
   urb_sts_type urb_state;
   urb_state = uhost->urb_state[uhost->ctrl.hch_in];
@@ -369,6 +372,7 @@ usb_sts_type usbh_ctrl_status_out_handler(usbh_core_type *uhost)
   */
 usb_sts_type usbh_ctrl_status_out_wait_handler(usbh_core_type *uhost, uint32_t timeout)
 {
+  UNUSED(timeout);
   usb_sts_type status = USB_OK;
   urb_sts_type urb_state;
   urb_state = uhost->urb_state[uhost->ctrl.hch_out];
@@ -418,7 +422,6 @@ usb_sts_type usbh_ctrl_error_handler(usbh_core_type *uhost)
     uhost->ctrl.sts = CTRL_FAIL;
     uhost->global_state = USBH_ERROR_STATE;
     uhost->ctrl.err_cnt = 0;
-    USBH_DEBUG("control error: ****    Device No Response    ****");
     status = USB_ERROR;
   }
   return status;
@@ -431,6 +434,7 @@ usb_sts_type usbh_ctrl_error_handler(usbh_core_type *uhost)
   */
 usb_sts_type usbh_ctrl_stall_handler(usbh_core_type *uhost)
 {
+  UNUSED(uhost);
   return USB_NOT_SUPPORT;
 }
 
@@ -441,6 +445,7 @@ usb_sts_type usbh_ctrl_stall_handler(usbh_core_type *uhost)
   */
 usb_sts_type usbh_ctrl_complete_handler(usbh_core_type *uhost)
 {
+  UNUSED(uhost);
   return USB_OK;
 }
 
@@ -810,6 +815,8 @@ usb_sts_type usbh_get_configure_descriptor(usbh_core_type *uhost, uint16_t lengt
 usb_sts_type usbh_get_sting_descriptor(usbh_core_type *uhost, uint8_t string_id,
                                   uint8_t *buffer, uint16_t length)
 {
+  UNUSED(buffer);
+
   usb_sts_type status = USB_WAIT;
   uint8_t bm_req;
   uint16_t wvalue;
@@ -941,6 +948,7 @@ usb_sts_type usbh_clear_dev_feature(usbh_core_type *uhost, uint8_t feature, uint
   */
 usb_sts_type usbh_clear_ept_feature(usbh_core_type *uhost, uint8_t ept_num, uint8_t hc_num)
 {
+  UNUSED(hc_num);
   usb_sts_type status = USB_WAIT;
   uint8_t bm_req;
   if(uhost->ctrl.state == CONTROL_IDLE )

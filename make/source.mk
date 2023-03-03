@@ -469,9 +469,6 @@ SRC += $(VCP_SRC)
 
 # end target specific make file checks
 
-# Search path and source files for the ST stdperiph library
-VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
-
 # Search path and source files for the Open Location Code library
 OLC_DIR = $(ROOT)/lib/main/google/olc
 

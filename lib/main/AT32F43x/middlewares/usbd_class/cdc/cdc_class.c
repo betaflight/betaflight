@@ -191,6 +191,7 @@ static usb_sts_type class_setup_handler(void *udev, usb_setup_type *setup)
   */
 static usb_sts_type class_ept0_tx_handler(void *udev)
 {
+  UNUSED(udev);
   usb_sts_type status = USB_OK;
 
   /* ...user code... */
@@ -268,6 +269,7 @@ static usb_sts_type class_out_handler(void *udev, uint8_t ept_num)
   */
 static usb_sts_type class_sof_handler(void *udev)
 {
+  UNUSED(udev);
   usb_sts_type status = USB_OK;
 
   /* ...user code... */
@@ -283,6 +285,7 @@ static usb_sts_type class_sof_handler(void *udev)
   */
 static usb_sts_type class_event_handler(void *udev, usbd_event_type event)
 {
+  UNUSED(udev);
   usb_sts_type status = USB_OK;
   switch(event)
   {
@@ -391,6 +394,7 @@ error_status usb_vcp_send_data(void *udev, uint8_t *send_data, uint16_t len)
   */
 static void usb_vcp_cmd_process(void *udev, uint8_t cmd, uint8_t *buff, uint16_t len)
 {
+  UNUSED(len);
   usbd_core_type *pudev = (usbd_core_type *)udev;
   cdc_struct_type *pcdc = (cdc_struct_type *)pudev->class_handler->pdata;
   switch(cmd)

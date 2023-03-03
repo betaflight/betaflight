@@ -51,8 +51,7 @@ USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
 EXCLUDES   = usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
 
-VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src
-
+VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(STDPERIPH_DIR)/src
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
                         $(USBCDC_SRC)

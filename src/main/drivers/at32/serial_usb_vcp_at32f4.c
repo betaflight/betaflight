@@ -36,11 +36,11 @@
 #include "pg/usb.h"
 
 #include "at32f435_437_clock.h"
-#include "drivers/at32/usb/usb_conf.h"
-#include "drivers/at32/usb/usb_core.h"
-#include "drivers/at32/usb/usbd_int.h"
-#include "drivers/at32/usb/cdc_class.h"
-#include "drivers/at32/usb/cdc_desc.h"
+#include "usb_conf.h"
+#include "usb_core.h"
+#include "usbd_int.h"
+#include "cdc_class.h"
+#include "cdc_desc.h"
 
 #include "drivers/time.h"
 #include "drivers/serial.h"
@@ -285,7 +285,7 @@ void TMR20_OVF_IRQHandler(void)
             lastBuffsize = 0;
 
             if (needZeroLengthPacket) {
-            	usb_vcp_send_data(&otg_core_struct.dev, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
+                usb_vcp_send_data(&otg_core_struct.dev, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
                 return;
             }
         }
@@ -310,12 +310,12 @@ void TMR20_OVF_IRQHandler(void)
 
 uint8_t usbIsConnected(void)
 {
-	return (USB_CONN_STATE_DEFAULT != otg_core_struct.dev.conn_state);
+    return (USB_CONN_STATE_DEFAULT != otg_core_struct.dev.conn_state);
 }
 
 uint8_t usbIsConfigured(void)
 {
-	return (USB_CONN_STATE_CONFIGURED == otg_core_struct.dev.conn_state);
+    return (USB_CONN_STATE_CONFIGURED == otg_core_struct.dev.conn_state);
 }
 
 uint8_t usbVcpIsConnected(void)
