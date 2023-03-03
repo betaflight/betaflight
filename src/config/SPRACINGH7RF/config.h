@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
-
 #define FC_TARGET_MCU     STM32H730
 
 #define BOARD_NAME        SPRACINGH7RF
@@ -273,15 +267,10 @@
 //TODO #define PINIO_CONFIG 1,1,1,1
 //TODO #define PINIO_BOX 40,255,255,255
 
-//TODO #define BLACKBOX_DEVICE SDCARD
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 //TODO #define CURRENT_METER ADC
 //TODO #define BATTERY_METER ADC
-
-//TODO #define SDCARD_DETECT_INVERTED ON
-//TODO #define SDCARD_MODE SDIO
-//TODO #define SDIO_USE_4BIT_WIDTH ON
-//TODO #define SDIO_DEVICE 1
 
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI6
