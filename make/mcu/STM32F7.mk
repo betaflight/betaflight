@@ -99,6 +99,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32F7xx
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
+
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
