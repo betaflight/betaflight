@@ -240,10 +240,9 @@
 #define SDIO_D2_PIN          PC10
 #define SDIO_D3_PIN          PC11
 
-#define PINIO1_PIN           PC15
-
+//#define PINIO1_PIN           PC15
 #define RX_SPI_CS_PIN        PB12
-#define RX_SPI_EXTI_PIN      PC6
+//#define RX_SPI_EXTI_PIN      PC6
 #define RX_SPI_BIND_PIN      NONE
 #define RX_SPI_LED_PIN       NONE
 #define RX_SPI_EXPRESSLRS_RESET_PIN PD10
