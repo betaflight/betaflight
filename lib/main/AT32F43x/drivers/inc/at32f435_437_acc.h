@@ -163,7 +163,7 @@ typedef struct
   * @}
   */
 
-#define ACC                             ((acc_type *) ACC_BASE)
+#define ACC_REGS	((acc_type *) ACC_BASE)
 
 /** @defgroup ACC_exported_functions
   * @{

@@ -31,7 +31,7 @@ SECTIONS
     *(.mb1rodata)      /* read-only data (constants) */
     *(.mb1rodata*)
   } >MEMORY_B1
-  
+
     /* Remove information from the standard libraries */
   /DISCARD/ :
   {

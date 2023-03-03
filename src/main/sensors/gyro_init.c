@@ -663,9 +663,6 @@ bool gyroInit(void)
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor2.gyroDev.gyroHardware;
     }
 #endif
-#ifdef USE_CUSTOM_DEFAULTS
-    eepromWriteRequired = eepromWriteRequired && systemConfig()->configurationState != CONFIGURATION_STATE_DEFAULTS_BARE;
-#endif
 
     if (eepromWriteRequired) {
         writeEEPROM();

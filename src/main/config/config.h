@@ -60,7 +60,7 @@ struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
 
 void initEEPROM(void);
-bool resetEEPROM(bool useCustomDefaults);
+bool resetEEPROM(void);
 bool readEEPROM(void);
 void writeEEPROM(void);
 void writeUnmodifiedConfigToEEPROM(void);

@@ -209,32 +209,8 @@ static bool signatureUpdated = false;
 static const char* const emptyName = "-";
 static const char* const emptyString = "";
 
-#if !defined(USE_CUSTOM_DEFAULTS)
-#define CUSTOM_DEFAULTS_START ((char*)0)
-#define CUSTOM_DEFAULTS_END ((char *)0)
-#else
-extern char __custom_defaults_start;
-extern char __custom_defaults_end;
-#define CUSTOM_DEFAULTS_START (&__custom_defaults_start)
-#define CUSTOM_DEFAULTS_END (&__custom_defaults_end)
-
-static bool processingCustomDefaults = false;
-static char cliBufferTemp[CLI_IN_BUFFER_SIZE];
-
-#define CUSTOM_DEFAULTS_START_PREFIX ("# " FC_FIRMWARE_NAME)
-
 #define MAX_CHANGESET_ID_LENGTH 8
 #define MAX_DATE_LENGTH 20
-
-static bool customDefaultsHeaderParsed = false;
-static bool customDefaultsFound = false;
-
-#endif
-
-#if defined(USE_CUSTOM_DEFAULTS_ADDRESS)
-static char __attribute__ ((section(".custom_defaults_start_address"))) *customDefaultsStart = CUSTOM_DEFAULTS_START;
-static char __attribute__ ((section(".custom_defaults_end_address"))) *customDefaultsEnd = CUSTOM_DEFAULTS_END;
-#endif
 
 #define ERROR_INVALID_NAME "INVALID NAME: %s"
 #define ERROR_MESSAGE "%s CANNOT BE CHANGED. CURRENT VALUE: '%s'"
@@ -714,33 +690,14 @@ static bool isReadingConfigFromCopy(void)
 
 static bool isWritingConfigToCopy(void)
 {
-    return configIsInCopy
-#if defined(USE_CUSTOM_DEFAULTS)
-        && !processingCustomDefaults
-#endif
-        ;
+    return configIsInCopy;
 }
 
-#if defined(USE_CUSTOM_DEFAULTS)
-static bool cliProcessCustomDefaults(bool quiet);
-#endif
-
-static void backupAndResetConfigs(const bool useCustomDefaults)
+static void backupAndResetConfigs(void)
 {
     backupConfigs();
-
     // reset all configs to defaults to do differencing
     resetConfig();
-
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (useCustomDefaults) {
-        if (!cliProcessCustomDefaults(true)) {
-            cliPrintLine("###WARNING: NO CUSTOM DEFAULTS FOUND###");
-        }
-    }
-#else
-    UNUSED(useCustomDefaults);
-#endif
 }
 
 static uint8_t getPidProfileIndexToUse(void)
@@ -956,14 +913,7 @@ static void cliRepeat(char ch, uint8_t len)
 
 static void cliPrompt(void)
 {
-#if defined(USE_CUSTOM_DEFAULTS) && defined(DEBUG_CUSTOM_DEFAULTS)
-    if (processingCustomDefaults) {
-        cliPrint("\r\nd: #");
-    } else
-#endif
-    {
-        cliPrint("\r\n# ");
-    }
+    cliPrint("\r\n# ");
 }
 
 static void cliShowParseError(const char *cmdName)
@@ -4202,11 +4152,6 @@ static void cliBatch(const char *cmdName, char *cmdline)
 
 static bool prepareSave(void)
 {
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (processingCustomDefaults) {
-        return true;
-    }
-#endif
 
 #ifdef USE_CLI_BATCH
     if (commandBatchActive && commandBatchError) {
@@ -4258,66 +4203,10 @@ static void cliSave(const char *cmdName, char *cmdline)
     }
 }
 
-#if defined(USE_CUSTOM_DEFAULTS)
-bool resetConfigToCustomDefaults(void)
-{
-    resetConfig();
-
-#ifdef USE_CLI_BATCH
-    commandBatchError = false;
-#endif
-
-    cliProcessCustomDefaults(true);
-
-#if defined(USE_SIMPLIFIED_TUNING)
-    applySimplifiedTuningAllProfiles();
-#endif
-
-    return prepareSave();
-}
-
-static bool customDefaultsHasNext(const char *customDefaultsPtr)
-{
-    return *customDefaultsPtr && *customDefaultsPtr != 0xFF && customDefaultsPtr < customDefaultsEnd;
-}
-
-static void parseCustomDefaultsHeader(void)
-{
-    const char *customDefaultsPtr = customDefaultsStart;
-    if (strncmp(customDefaultsPtr, CUSTOM_DEFAULTS_START_PREFIX, strlen(CUSTOM_DEFAULTS_START_PREFIX)) == 0) {
-        customDefaultsFound = true;
-
-        customDefaultsPtr = strchr(customDefaultsPtr, '\n');
-        if (customDefaultsPtr && customDefaultsHasNext(customDefaultsPtr)) {
-            customDefaultsPtr++;
-        }
-    }
-
-    customDefaultsHeaderParsed = true;
-}
-
-bool hasCustomDefaults(void)
-{
-    if (!customDefaultsHeaderParsed) {
-        parseCustomDefaultsHeader();
-    }
-
-    return customDefaultsFound;
-}
-#endif
-
 static void cliDefaults(const char *cmdName, char *cmdline)
 {
     bool saveConfigs = true;
     uint16_t parameterGroupId = 0;
-#if defined(USE_CUSTOM_DEFAULTS)
-    bool useCustomDefaults = true;
-#elif defined(USE_CUSTOM_DEFAULTS_ADDRESS)
-    // Required to keep the linker from eliminating these
-    if (customDefaultsStart != customDefaultsEnd) {
-        delay(0);
-    }
-#endif
 
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
@@ -4330,35 +4219,12 @@ static void cliDefaults(const char *cmdName, char *cmdline)
 
             if (!parameterGroupId) {
                 cliShowParseError(cmdName);
-                
                 return;
             }
         } else if (strcasestr(tok, "group_id")) {
             expectParameterGroupId = true;
         } else if (strcasestr(tok, "nosave")) {
             saveConfigs = false;
-#if defined(USE_CUSTOM_DEFAULTS)
-        } else if (strcasestr(tok, "bare")) {
-            useCustomDefaults = false;
-        } else if (strcasestr(tok, "show")) {
-            if (index != 0) {
-                cliShowParseError(cmdName);
-            } else if (hasCustomDefaults()) {
-                char *customDefaultsPtr = customDefaultsStart;
-                while (customDefaultsHasNext(customDefaultsPtr)) {
-                    if (*customDefaultsPtr != '\n') {
-                        cliPrintf("%c", *customDefaultsPtr++);
-                    } else {
-                        cliPrintLinefeed();
-                        customDefaultsPtr++;
-                    }
-                }
-            } else {
-                cliPrintError(cmdName, "NO CUSTOM DEFAULTS FOUND");
-            }
-
-            return;
-#endif
         } else {
             cliShowParseError(cmdName);
 
@@ -4390,12 +4256,6 @@ static void cliDefaults(const char *cmdName, char *cmdline)
     // only reset the current error state but the batch will still be active
     // for subsequent commands.
     commandBatchError = false;
-#endif
-
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (useCustomDefaults) {
-        cliProcessCustomDefaults(false);
-    }
 #endif
 
 #if defined(USE_SIMPLIFIED_TUNING)
@@ -4436,7 +4296,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
     pidProfileIndexToUse = getCurrentPidProfileIndex();
     rateProfileIndexToUse = getCurrentControlRateProfileIndex();
 
-    backupAndResetConfigs(true);
+    backupAndResetConfigs();
 
     for (uint32_t i = 0; i < valueTableEntryCount; i++) {
         if (strcasestr(valueTable[i].name, cmdline)) {
@@ -4943,13 +4803,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     }
 }
 
-static void printVersion(const char *cmdName, bool printBoardInfo)
+static void printVersion(bool printBoardInfo)
 {
-#if !(defined(USE_CUSTOM_DEFAULTS))
-    UNUSED(cmdName);
-    UNUSED(printBoardInfo);
-#endif
-
     cliPrintf("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
         targetName,
@@ -4963,26 +4818,21 @@ static void printVersion(const char *cmdName, bool printBoardInfo)
 
     cliPrintLinefeed();
 
-#if defined(USE_CUSTOM_DEFAULTS)
-    if (hasCustomDefaults()) {
-        cliPrintHashLine("config: YES");
-    } else {
-        cliPrintError(cmdName, "NO CONFIG FOUND");
-    }
-#endif // USE_CUSTOM_DEFAULTS
-
 #if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
         cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
     }
+#else
+    UNUSED(printBoardInfo);
 #endif
 }
 
 static void cliVersion(const char *cmdName, char *cmdline)
 {
+    UNUSED(cmdName);
     UNUSED(cmdline);
 
-    printVersion(cmdName, true);
+    printVersion(true);
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -6248,14 +6098,14 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
         dumpMask = dumpMask | BARE;   // show the diff / dump without extra commands and board specific data
     }
 
-    backupAndResetConfigs((dumpMask & BARE) == 0);
+    backupAndResetConfigs();
 
 #ifdef USE_CLI_BATCH
     bool batchModeEnabled = false;
 #endif
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
-        printVersion(cmdName, false);
+        printVersion(false);
 
         if (!(dumpMask & BARE)) {
 #ifdef USE_CLI_BATCH
@@ -6522,11 +6372,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
-#if defined(USE_CUSTOM_DEFAULTS)
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "{show} {nosave} {bare} {group_id <id>}", cliDefaults),
-#else
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "{nosave}", cliDefaults),
-#endif
     CLI_COMMAND_DEF("diff", "list configuration changes from default", "[master|profile|rates|hardware|all] {defaults|bare}", cliDiff),
 #ifdef USE_RESOURCE_MGMT
 
@@ -6699,12 +6545,6 @@ static void processCharacter(const char c)
         // enter pressed
         cliPrintLinefeed();
 
-#if defined(USE_CUSTOM_DEFAULTS) && defined(DEBUG_CUSTOM_DEFAULTS)
-        if (processingCustomDefaults) {
-            cliPrint("d: ");
-        }
-#endif
-
         // Strip comment starting with # from line
         char *p = cliBuffer;
         p = strchr(p, '#');
@@ -6825,56 +6665,6 @@ void cliProcess(void)
         processCharacterInteractive(c);
     }
 }
-
-#if defined(USE_CUSTOM_DEFAULTS)
-static bool cliProcessCustomDefaults(bool quiet)
-{
-    if (processingCustomDefaults || !hasCustomDefaults()) {
-        return false;
-    }
-
-    bufWriter_t *cliWriterTemp = NULL;
-    if (quiet
-#if !defined(DEBUG_CUSTOM_DEFAULTS)
-        || true
-#endif
-       ) {
-        cliWriterTemp = cliWriter;
-        cliWriter = NULL;
-    }
-    if (quiet) {
-        cliErrorWriter = NULL;
-    }
-
-    memcpy(cliBufferTemp, cliBuffer, sizeof(cliBuffer));
-    uint32_t bufferIndexTemp = bufferIndex;
-    bufferIndex = 0;
-    processingCustomDefaults = true;
-
-    char *customDefaultsPtr = customDefaultsStart;
-    while (customDefaultsHasNext(customDefaultsPtr)) {
-        processCharacter(*customDefaultsPtr++);
-    }
-
-    // Process a newline at the very end so that the last command gets executed,
-    // even when the file did not contain a trailing newline
-    processCharacter('\r');
-
-    processingCustomDefaults = false;
-
-    if (cliWriterTemp) {
-        cliWriter = cliWriterTemp;
-        cliErrorWriter = cliWriter;
-    }
-
-    memcpy(cliBuffer, cliBufferTemp, sizeof(cliBuffer));
-    bufferIndex = bufferIndexTemp;
-
-    systemConfigMutable()->configurationState = CONFIGURATION_STATE_DEFAULTS_CUSTOM;
-
-    return true;
-}
-#endif
 
 void cliEnter(serialPort_t *serialPort)
 {

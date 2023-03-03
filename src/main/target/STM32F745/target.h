@@ -83,7 +83,6 @@
 
 #define USE_ADC
 
-#define USE_CUSTOM_DEFAULTS
 #define USE_EXTI
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x8000) // 32K sectors

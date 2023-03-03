@@ -52,13 +52,13 @@ void acc_calibration_mode_enable(uint16_t acc_trim, confirm_state new_state)
 {
   if(acc_trim == ACC_CAL_HICKCAL)
   {
-    ACC->ctrl1_bit.entrim = FALSE;
+    ACC_REGS->ctrl1_bit.entrim = FALSE;
   }
   else
   {
-    ACC->ctrl1_bit.entrim = TRUE;
+    ACC_REGS->ctrl1_bit.entrim = TRUE;
   }
-  ACC->ctrl1_bit.calon = new_state;
+  ACC_REGS->ctrl1_bit.calon = new_state;
 }
 
 /**
@@ -68,7 +68,7 @@ void acc_calibration_mode_enable(uint16_t acc_trim, confirm_state new_state)
   */
 void acc_step_set(uint8_t step_value)
 {
-  ACC->ctrl1_bit.step = step_value;
+  ACC_REGS->ctrl1_bit.step = step_value;
 }
 
 /**
@@ -81,7 +81,7 @@ void acc_step_set(uint8_t step_value)
   */
 void acc_sof_select(uint16_t sof_sel)
 {
-  ACC->ctrl1 |= sof_sel;
+  ACC_REGS->ctrl1 |= sof_sel;
 }
 
 /**
@@ -97,11 +97,11 @@ void acc_interrupt_enable(uint16_t acc_int, confirm_state new_state)
 {
   if(acc_int == ACC_CALRDYIEN_INT)
   {
-    ACC->ctrl1_bit.calrdyien = new_state;
+    ACC_REGS->ctrl1_bit.calrdyien = new_state;
   }
   else
   {
-    ACC->ctrl1_bit.eien = new_state;
+    ACC_REGS->ctrl1_bit.eien = new_state;
   }
 }
 
@@ -112,7 +112,7 @@ void acc_interrupt_enable(uint16_t acc_int, confirm_state new_state)
   */
 uint8_t acc_hicktrim_get(void)
 {
-  return ((uint8_t)(ACC->ctrl2_bit.hicktrim));
+  return ((uint8_t)(ACC_REGS->ctrl2_bit.hicktrim));
 }
 
 /**
@@ -122,7 +122,7 @@ uint8_t acc_hicktrim_get(void)
   */
 uint8_t acc_hickcal_get(void)
 {
-  return ((uint8_t)(ACC->ctrl2_bit.hickcal));
+  return ((uint8_t)(ACC_REGS->ctrl2_bit.hickcal));
 }
 
 /**
@@ -132,7 +132,7 @@ uint8_t acc_hickcal_get(void)
   */
 void acc_write_c1(uint16_t acc_c1_value)
 {
-  ACC->c1 = acc_c1_value;
+  ACC_REGS->c1 = acc_c1_value;
 }
 
 /**
@@ -142,7 +142,7 @@ void acc_write_c1(uint16_t acc_c1_value)
   */
 void acc_write_c2(uint16_t acc_c2_value)
 {
-  ACC->c2 = acc_c2_value;
+  ACC_REGS->c2 = acc_c2_value;
 }
 
 /**
@@ -152,7 +152,7 @@ void acc_write_c2(uint16_t acc_c2_value)
   */
 void acc_write_c3(uint16_t acc_c3_value)
 {
-  ACC->c3 = acc_c3_value;
+  ACC_REGS->c3 = acc_c3_value;
 }
 
 /**
@@ -162,7 +162,7 @@ void acc_write_c3(uint16_t acc_c3_value)
   */
 uint16_t acc_read_c1(void)
 {
-  return ((uint16_t)(ACC->c1));
+  return ((uint16_t)(ACC_REGS->c1));
 }
 
 /**
@@ -172,7 +172,7 @@ uint16_t acc_read_c1(void)
   */
 uint16_t acc_read_c2(void)
 {
-  return ((uint16_t)(ACC->c2));
+  return ((uint16_t)(ACC_REGS->c2));
 }
 
 /**
@@ -182,7 +182,7 @@ uint16_t acc_read_c2(void)
   */
 uint16_t acc_read_c3(void)
 {
-  return ((uint16_t)(ACC->c3));
+  return ((uint16_t)(ACC_REGS->c3));
 }
 
 /**
@@ -196,9 +196,9 @@ uint16_t acc_read_c3(void)
 flag_status acc_flag_get(uint16_t acc_flag)
 {
   if(acc_flag == ACC_CALRDY_FLAG)
-    return (flag_status)(ACC->sts_bit.calrdy);
+    return (flag_status)(ACC_REGS->sts_bit.calrdy);
   else
-    return (flag_status)(ACC->sts_bit.rslost);
+    return (flag_status)(ACC_REGS->sts_bit.rslost);
 }
 
 /**
@@ -211,7 +211,7 @@ flag_status acc_flag_get(uint16_t acc_flag)
   */
 void acc_flag_clear(uint16_t acc_flag)
 {
-  ACC->sts = ~acc_flag;
+  ACC_REGS->sts = ~acc_flag;
 }
 
 /**

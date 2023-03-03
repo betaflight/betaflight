@@ -36,7 +36,7 @@ SECTIONS
     . = ALIGN(512); /* Vector table offset must be multiple of 0x200 */
     PROVIDE (ram_isr_vector_table_base = .);
     . += (isr_vector_table_end - isr_vector_table_base);
-    . = ALIGN(4);    
+    . = ALIGN(4);
     PROVIDE (ram_isr_vector_table_end = .);
   } >DTCM_RAM
 
@@ -60,24 +60,24 @@ SECTIONS
   } >MAIN
 
   /* Critical program code goes into ITCM RAM */
-  /* Copy specific fast-executing code to ITCM RAM */ 
-  tcm_code = LOADADDR(.tcm_code); 
+  /* Copy specific fast-executing code to ITCM RAM */
+  tcm_code = LOADADDR(.tcm_code);
   .tcm_code :
   {
     . = ALIGN(4);
-    tcm_code_start = .; 
+    tcm_code_start = .;
     *(.tcm_code)
     *(.tcm_code*)
     . = ALIGN(4);
-    tcm_code_end = .; 
+    tcm_code_end = .;
   } >ITCM_RAM AT >MAIN
 
-  .ARM.extab   : 
-  { 
-    *(.ARM.extab* .gnu.linkonce.armextab.*) 
+  .ARM.extab   :
+  {
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
   } >MAIN
-  
-  .ARM : 
+
+  .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
@@ -90,7 +90,7 @@ SECTIONS
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
   } >MAIN
-  
+
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
@@ -114,16 +114,16 @@ SECTIONS
   } >DTCM_RAM AT >MAIN
 
   /* Non-critical program code goes into RAM */
-  /* Copy specific slow-executing code to RAM */ 
-  ram_code = LOADADDR(.ram_code); 
+  /* Copy specific slow-executing code to RAM */
+  ram_code = LOADADDR(.ram_code);
   .ram_code :
   {
     . = ALIGN(4);
-    ram_code_start = .; 
+    ram_code_start = .;
     *(.ram_code)
     *(.ram_code*)
     . = ALIGN(4);
-    ram_code_end = .; 
+    ram_code_end = .;
   } >RAM AT >MAIN
 
   /* Uninitialized data section */
