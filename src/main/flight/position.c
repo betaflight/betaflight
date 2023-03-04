@@ -197,8 +197,8 @@ void calculateEstimatedAltitude(void)
 
 #ifdef USE_VARIO
     estimatedVario = lrintf(zeroedAltitudeDerivative);
-    estimatedVario = applyDeadband(estimatedVario, 10); // ignore climb rates less than 0.1 m/s
-    estimatedVario = constrain(estimatedVario, -1500, 1500);
+    estimatedVario = applyDeadband(estimatedVario, 5); // ignore climb rates less than 0.05 m/s
+    estimatedVario = scaleRange(estimatedVario, -1500, 1500, 1000, 2000);
 #endif
  
     // *** set debugs
