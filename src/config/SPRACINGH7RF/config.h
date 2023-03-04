@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
-
 #define FC_TARGET_MCU     STM32H730
 
 #define BOARD_NAME        SPRACINGH7RF
@@ -161,7 +155,10 @@
 #define USE_FLASH_W25Q128FV
 #define USE_SDCARD
 
+#ifndef USE_OSD
 #define USE_OSD
+#endif
+
 #define SPRACING_PIXEL_OSD_BLACK_PIN                    PE12
 #define SPRACING_PIXEL_OSD_WHITE_PIN                    PE13
 #define SPRACING_PIXEL_OSD_MASK_ENABLE_PIN              PE14
@@ -243,10 +240,9 @@
 #define SDIO_D2_PIN          PC10
 #define SDIO_D3_PIN          PC11
 
-#define PINIO1_PIN           PC15
-
+//#define PINIO1_PIN           PC15
 #define RX_SPI_CS_PIN        PB12
-#define RX_SPI_EXTI_PIN      PC6
+//#define RX_SPI_EXTI_PIN      PC6
 #define RX_SPI_BIND_PIN      NONE
 #define RX_SPI_LED_PIN       NONE
 #define RX_SPI_EXPRESSLRS_RESET_PIN PD10
