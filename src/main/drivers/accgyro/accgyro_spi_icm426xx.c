@@ -204,14 +204,13 @@ static aafConfig_t getGyroAafConfig(void);
 static void turnGyroAccOff(const extDevice_t *dev)
 {
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, ICM426XX_PWR_MGMT0_GYRO_ACCEL_MODE_OFF);
-    delay(15);
 }
 
 // Turn on gyro and acc on in Low Noise mode
 static void turnGyroAccOn(const extDevice_t *dev)
 {
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, ICM426XX_PWR_MGMT0_TEMP_DISABLE_OFF | ICM426XX_PWR_MGMT0_ACCEL_MODE_LN | ICM426XX_PWR_MGMT0_GYRO_MODE_LN);
-    delay(15);
+    delay(1);
 }
 
 static void setUserBank(const extDevice_t *dev, const uint8_t user_bank)
