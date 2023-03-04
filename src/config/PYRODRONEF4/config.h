@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
-
 #define FC_TARGET_MCU     STM32F405
 
 #define BOARD_NAME        PYRODRONEF4
@@ -71,11 +65,11 @@
 
 #define TIMER_PIN_MAPPING \
     TIMER_PIN_MAP( 0, PB9 , 2, -1) \
-    TIMER_PIN_MAP( 1, PB1 , 2, 0           # pin B01: DMA1 Stream 2 Channel 5) \
-    TIMER_PIN_MAP( 2, PB0 , 3, 0           # pin B00: DMA2 Stream 2 Channel 0) \
-    TIMER_PIN_MAP( 3, PC9 , 2, 0           # pin C09: DMA2 Stream 7 Channel 7) \
-    TIMER_PIN_MAP( 4, PA8 , 1, 1           # pin A08: DMA2 Stream 1 Channel 6) \
-    TIMER_PIN_MAP( 5, PB8 , 1, 0           # pin B08: DMA1 Stream 7 Channel 2) \
+    TIMER_PIN_MAP( 1, PB1 , 2, 0 ) \
+    TIMER_PIN_MAP( 2, PB0 , 3, 0 ) \
+    TIMER_PIN_MAP( 3, PC9 , 2, 0 ) \
+    TIMER_PIN_MAP( 4, PA8 , 1, 1 ) \
+    TIMER_PIN_MAP( 5, PB8 , 1, 0 ) \
 
 
 

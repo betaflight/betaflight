@@ -71,7 +71,7 @@
     TIMER_PIN_MAP( 2, PC8 , 2,  0) \
     TIMER_PIN_MAP( 3, PC9 , 2,  0) \
     TIMER_PIN_MAP( 4, PB0 , 2,  0) \
-    TIMER_PIN_MAP( 5, PB1 , 2,  0) \
+    TIMER_PIN_MAP( 5, PB1 , 2,  0)
 
 
 

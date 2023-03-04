@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
-
 #define FC_TARGET_MCU     STM32H750
 
 #define BOARD_NAME        SPRACINGH7EXTREME
@@ -206,7 +200,7 @@
 #define GYRO_1_ALIGN CW180_DEG
 #define USE_SPI_GYRO
 #define GYRO_2_SPI_INSTANCE SPI2
-#define GYRO_2_ALIGN CUSTOM
+#define GYRO_2_ALIGN ALIGN_CUSTOM
 #define GYRO_2_ALIGN_ROLL 0
 #define GYRO_2_ALIGN_PITCH 0
 #define GYRO_2_ALIGN_YAW 2250
