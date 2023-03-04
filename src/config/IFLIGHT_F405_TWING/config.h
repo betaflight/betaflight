@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F405
 
@@ -99,7 +95,7 @@
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 //TODO #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define SERIALRX_PROVIDER SBUS
+
 //TODO #define BLACKBOX_DEVICE SPIFLASH
 //TODO #define DSHOT_BURST ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600
@@ -118,4 +114,3 @@
 #define GYRO_2_SPI_INSTANCE SPI1
 #define GYRO_2_ALIGN CW90_DEG
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF

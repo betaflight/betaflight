@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F411
 
@@ -79,7 +75,7 @@
 
 //TODO #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define SERIALRX_PROVIDER SBUS
+
 #define RX_SPI_INSTANCE SPI3
 //TODO #define RX_SPI_LED_INVERSION ON
 //TODO #define DSHOT_BITBANG OFF

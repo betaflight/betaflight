@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F411
 
@@ -90,4 +86,3 @@
 #define GYRO_1_ALIGN_YAW 2700
 #define GYRO_1_ALIGN CW270_DEG
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF

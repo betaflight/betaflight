@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F7X2
 
@@ -97,7 +93,7 @@
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define BARO_SPI_INSTANCE SPI2
-//TODO #define SERIALRX_PROVIDER SBUS
+
 //TODO #define ADC_DEVICE 2
 //TODO #define DSHOT_IDLE_VALUE 450
 //TODO #define DSHOT_BURST ON

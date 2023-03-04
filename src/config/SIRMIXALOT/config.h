@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F7X2
 
@@ -97,7 +93,6 @@
 //TODO #define VBAT_SCALE 80
 //TODO #define IBATA_SCALE 210
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 //TODO #define PID_PROCESS_DENOM 1
 //TODO #define LEDSTRIP_VISUAL_BEEPER ON
 //TODO #define OSD_VBAT_POS 2403

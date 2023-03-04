@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F411
 
@@ -64,7 +60,7 @@
     TIMER_PIN_MAP( 2, PA1 , 1,  0) \
     TIMER_PIN_MAP( 3, PB6 , 1,  0) \
     TIMER_PIN_MAP( 4, PB7 , 1,  0) \
-    TIMER_PIN_MAP( 5, PA8 , 1,  0) \
+    TIMER_PIN_MAP( 5, PA8 , 1,  0)
 
 
 

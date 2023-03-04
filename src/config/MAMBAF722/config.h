@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F7X2
 
@@ -39,7 +35,6 @@
 #define LED1_PIN             PC14
 #define BEEPER_PIN           PB2
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PA4
@@ -114,7 +109,7 @@
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 //TODO #define MAG_BUSTYPE I2C
-//TODO #define SERIALRX_PROVIDER SBUS
+
 //TODO #define BLACKBOX_DEVICE SPIFLASH
 //TODO #define DSHOT_BURST ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600

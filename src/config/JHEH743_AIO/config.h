@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32H743
 
@@ -124,7 +120,6 @@
 //TODO #define BATTERY_METER ADC
 //TODO #define IBATA_SCALE 120
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define MAX7456_SPI_INSTANCE SPI4
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO

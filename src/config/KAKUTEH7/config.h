@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32H743
 
@@ -109,14 +105,13 @@
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 //TODO #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define SERIALRX_PROVIDER SBUS
+
 //TODO #define BLACKBOX_DEVICE SDCARD
 //TODO #define CURRENT_METER ADC
 //TODO #define BATTERY_METER ADC
 //TODO #define VBAT_SCALE 109
 //TODO #define IBATA_SCALE 168
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 //TODO #define SDCARD_DETECT_INVERTED ON
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI1

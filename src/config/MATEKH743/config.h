@@ -19,12 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
-
 #pragma once
 
 #define FC_TARGET_MCU     STM32H743
@@ -94,7 +88,7 @@
 #define ADC_RSSI_PIN         PC5
 #define ADC_CURR_PIN         PC1
 #define EXTERNAL1_ADC_PIN    PC4  //ADC12  AirS
-#define EXTERNAL2_ADC_PIN    PA4  //ADC12  VB2 
+#define EXTERNAL2_ADC_PIN    PA4  //ADC12  VB2
 #define EXTERNAL3_ADC_PIN    PA7  //ADC12  CU2
 #define SDIO_CK_PIN          PC12
 #define SDIO_CMD_PIN         PD2
@@ -110,7 +104,7 @@
 #define GYRO_1_CS_PIN        PC15
 #define GYRO_2_CS_PIN        PE11
 #define USB_DETECT_PIN       PE2
-#define VBAT_ADC_PIN         PC0  //ADC123 VBAT1 
+#define VBAT_ADC_PIN         PC0  //ADC123 VBAT1
 #define CURRENT_METER_ADC_PIN PC1  //ADC123 CURR1
 #define RSSI_ADC_PIN         PC5  //ADC12  RSSI
 
@@ -150,13 +144,13 @@
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 //TODO #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE (I2CDEV_2)
-//TODO #define SERIALRX_PROVIDER SBUS
+
 #define USE_SOFTSERIAL1
 #define SOFTSERIAL1_TX_PIN PC6 // TX6 Pad
 #define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER SERIALRX_SBUS
 #define SERIALRX_UART SERIAL_PORT_USART6
-//TODO #define BLACKBOX_DEVICE SDCARD
+
 #define USE_BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 //TODO #define CURRENT_METER ADC
@@ -167,7 +161,6 @@
 //TODO #define IBATA_SCALE 250
 #define CURRENT_METER_SCALE_DEFAULT 250
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define BEEPER_PWM_HZ 2500
 
 #define USE_SDCARD_SDIO

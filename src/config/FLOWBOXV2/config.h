@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F411
 
@@ -65,7 +61,6 @@
 //TODO #define BLACKBOX_DEVICE SDCARD
 #define BEEPER_PWM_HZ 2185
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI3
 #define SYSTEM_HSE_MHZ 8

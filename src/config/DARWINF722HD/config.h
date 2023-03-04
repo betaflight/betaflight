@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F7X2
 
@@ -111,7 +107,7 @@
 //TODO #define MAG_HARDWARE NONE
 //TODO #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define SERIALRX_PROVIDER SBUS
+
 //TODO #define BLACKBOX_DEVICE SPIFLASH
 //TODO #define DSHOT_BURST ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600
@@ -119,7 +115,6 @@
 //TODO #define BATTERY_METER ADC
 //TODO #define IBATA_SCALE 125
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 //TODO #define OSD_WARN_CORE_TEMP OFF
 #define MAX7456_SPI_INSTANCE SPI2
 //TODO #define PINIO_BOX 40,41,255,255
