@@ -37,6 +37,7 @@
 #include "drivers/light_led.h"
 #include "drivers/max7456.h"
 #include "drivers/nvic.h"
+#include "locales/localisation.h"
 #include "drivers/osd.h"
 #include "drivers/osd_symbols.h"
 #include "drivers/time.h"

@@ -20,6 +20,17 @@ MAKE_SCRIPT_DIR := $(ROOT)/mk
 
 include $(MAKE_SCRIPT_DIR)/system-id.mk
 
+# Setup locale
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(USER_DIR)/locales/*/bf_locale.h)))))
+ifeq ($(LOCALE),)
+    LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+INCLUDE_DIRS := $(USER_DIR)/locales/$(LOCALE)
+
+
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
 # specify which files that are included in the test in addition to the unittest file.
@@ -122,6 +133,7 @@ blackbox_encoding_unittest_SRC :=  \
 
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
+		$(USER_DIR)/locales/localisation.c \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
@@ -527,7 +539,7 @@ OPTIMIZE = -O0
 
 COMMON_FLAGS = \
 	-g -ggdb3 \
-	-Wall -Wextra  \
+	-Wall -Wextra \
 	$(OPTIMIZE) \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
@@ -711,7 +723,7 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR)
+test_include_dirs  = $1 $(INCLUDE_DIRS) $(TEST_DIR) $(USER_DIR)
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
