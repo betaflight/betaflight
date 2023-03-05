@@ -36,6 +36,9 @@
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
+// Use DMA if possible if this many bytes are to be transferred
+#define SPI_DMA_THRESHOLD 8
+
 static spi_init_type defaultInit = {
     .master_slave_mode = SPI_MODE_MASTER,
     .transmission_mode = SPI_TRANSMIT_FULL_DUPLEX,
@@ -86,13 +89,13 @@ void spiInitDevice(SPIDevice device)
     // Init SPI hardware
     spi_i2s_reset(spi->dev);
 
-    spi_i2s_dma_transmitter_enable(spi->dev,TRUE);
-    spi_i2s_dma_receiver_enable(spi->dev,TRUE);
+    spi_i2s_dma_transmitter_enable(spi->dev, TRUE);
+    spi_i2s_dma_receiver_enable(spi->dev, TRUE);
 
-    spi_init(spi->dev,&defaultInit);
-    spi_crc_polynomial_set(spi->dev,7);
+    spi_init(spi->dev, &defaultInit);
+    spi_crc_polynomial_set(spi->dev, 7);
 
-    spi_enable(spi->dev,TRUE);
+    spi_enable(spi->dev, TRUE);
 }
 
 void spiInternalResetDescriptors(busDevice_t *bus)
@@ -138,12 +141,12 @@ static bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txD
     while (len--) {
         b = txData ? *(txData++) : 0xFF;
 
-        while(spi_i2s_flag_get(instance,SPI_I2S_TDBE_FLAG) == RESET);
-        spi_i2s_data_transmit(instance,b);
+        while (spi_i2s_flag_get(instance, SPI_I2S_TDBE_FLAG) == RESET);
+        spi_i2s_data_transmit(instance, b);
 
 
-        while(spi_i2s_flag_get(instance,SPI_I2S_RDBF_FLAG) == RESET);
-        b=spi_i2s_data_receive(instance);
+        while (spi_i2s_flag_get(instance, SPI_I2S_RDBF_FLAG) == RESET);
+        b = (uint8_t)spi_i2s_data_receive(instance);
 
         if (rxData) {
             *(rxData++) = b;
@@ -279,10 +282,10 @@ void spiInternalStopDMA (const extDevice_t *dev)
         spi_i2s_dma_receiver_enable(instance, FALSE);
     } else {
         // Ensure the current transmission is complete
-        while(spi_i2s_flag_get(instance,SPI_I2S_BF_FLAG));
+        while (spi_i2s_flag_get(instance, SPI_I2S_BF_FLAG));
 
         // Drain the RX buffer
-        while(spi_i2s_flag_get(instance,SPI_I2S_RDBF_FLAG)) {
+        while (spi_i2s_flag_get(instance, SPI_I2S_RDBF_FLAG)) {
             instance->dt;
         }
 
@@ -324,67 +327,72 @@ void spiSequenceStart(const extDevice_t *dev)
         bus->busType_u.spi.leadingEdge = dev->busType_u.spi.leadingEdge;
     }
 
-    spi_enable(instance,TRUE);
+    spi_enable(instance, TRUE);
 
-    // Check that any there are no attempts to DMA to/from CCD SRAM
+    // Count segments
     for (busSegment_t *checkSegment = (busSegment_t *)bus->curSegment; checkSegment->len; checkSegment++) {
-        // Check there is no receive data as only transmit DMA is available
-        if (((checkSegment->u.buffers.rxData) && (IS_CCM(checkSegment->u.buffers.rxData) || 
-             (bus->dmaRx == (dmaChannelDescriptor_t *)NULL))) ||
-            ((checkSegment->u.buffers.txData) && IS_CCM(checkSegment->u.buffers.txData))) {
-            dmaSafe = false;
-            break;
-        }
         // Note that these counts are only valid if dmaSafe is true
         segmentCount++;
         xferLen += checkSegment->len;
     }
+
     // Use DMA if possible
-    // If there are more than one segments, or a single segment with negateCS negated then force DMA irrespective of length
-    if (bus->useDMA && dmaSafe && ((segmentCount > 1) || (xferLen >= 8) || !bus->curSegment->negateCS)) {
+    // If there are more than one segments, or a single segment with negateCS negated in the list terminator then force DMA irrespective of length
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) ||
+                                   (xferLen >= SPI_DMA_THRESHOLD) ||
+                                   !bus->curSegment[segmentCount].negateCS)) {
+        // Intialise the init structures for the first transfer
         spiInternalInitStream(dev, false);
+
+        // Assert Chip Select
         IOLo(dev->busType_u.spi.csnPin);
+
+        // Start the transfers
         spiInternalStartDMA(dev);
     } else {
         busSegment_t *lastSegment = NULL;
+        bool segmentComplete;
 
+        // Manually work through the segment list performing a transfer for each
         while (bus->curSegment->len) {
             if (!lastSegment || lastSegment->negateCS) {
+                // Assert Chip Select if necessary - it's costly so only do so if necessary
                 IOLo(dev->busType_u.spi.csnPin);
             }
 
-            spiInternalReadWriteBufPolled(
-                    bus->busType_u.spi.instance,
-                    bus->curSegment->u.buffers.txData,
-                    bus->curSegment->u.buffers.rxData,
-                    bus->curSegment->len
-                );
+            spiInternalReadWriteBufPolled(bus->busType_u.spi.instance,
+                                          bus->curSegment->u.buffers.txData,
+                                          bus->curSegment->u.buffers.rxData,
+                                          bus->curSegment->len);
 
             if (bus->curSegment->negateCS) {
+                // Negate Chip Select
                 IOHi(dev->busType_u.spi.csnPin);
             }
 
+            segmentComplete = true;
             if (bus->curSegment->callback) {
                 switch(bus->curSegment->callback(dev->callbackArg)) {
                 case BUS_BUSY:
-                    bus->curSegment--;
+                    // Repeat the last DMA segment
+                    segmentComplete = false;
                     break;
 
                 case BUS_ABORT:
                     bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
+                    segmentComplete = false;
                     return;
 
                 case BUS_READY:
                 default:
+                    // Advance to the next DMA segment
                     break;
                 }
             }
-            lastSegment = (busSegment_t *)bus->curSegment;
-            bus->curSegment++;
-        }
-
-        if (lastSegment && !lastSegment->negateCS) {
-            IOHi(dev->busType_u.spi.csnPin);
+            if (segmentComplete) {
+                lastSegment = (busSegment_t *)bus->curSegment;
+                bus->curSegment++;
+            }
         }
 
         // If a following transaction has been linked, start it
