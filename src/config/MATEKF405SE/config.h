@@ -26,7 +26,9 @@
 #define BOARD_NAME        MATEKF405SE
 #define MANUFACTURER_ID   MTKS
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_BARO_DPS310
 #define USE_MAX7456

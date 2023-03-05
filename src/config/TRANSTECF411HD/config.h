@@ -26,7 +26,9 @@
 #define BOARD_NAME        TRANSTECF411HD
 #define MANUFACTURER_ID   TTRH
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
 #define BEEPER_PIN           PB6

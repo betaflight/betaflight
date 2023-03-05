@@ -26,7 +26,9 @@
 #define BOARD_NAME        MATEKF405AIO
 #define MANUFACTURER_ID   MTKS
 
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define USE_MAX7456
 #define USE_SDCARD

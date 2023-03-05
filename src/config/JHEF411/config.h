@@ -27,7 +27,9 @@
 #define MANUFACTURER_ID   JHEF
 
 #define USE_ACCGYRO_BMI270
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_BARO_BMP280
 #define USE_BARO_DPS310

@@ -28,7 +28,9 @@
 
 #define LED0_PIN                PB5
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1

@@ -26,7 +26,9 @@
 #define BOARD_NAME        WORMFC
 #define MANUFACTURER_ID   FOSS
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define USE_BARO_SPI_LPS
 #define USE_MAX7456

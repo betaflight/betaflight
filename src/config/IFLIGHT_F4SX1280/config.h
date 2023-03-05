@@ -26,6 +26,8 @@
 #define BOARD_NAME        IFLIGHT_F4SX1280
 #define MANUFACTURER_ID   IFRC
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_MAX7456
 #define USE_RX_SPI

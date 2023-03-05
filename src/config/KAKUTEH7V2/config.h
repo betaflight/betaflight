@@ -26,6 +26,8 @@
 #define BOARD_NAME        KAKUTEH7V2
 #define MANUFACTURER_ID   HBRO
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_BARO_BMP280
 #define USE_FLASH_W25N01G

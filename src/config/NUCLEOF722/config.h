@@ -26,7 +26,9 @@
 #define BOARD_NAME        NUCLEOF722
 #define MANUFACTURER_ID   STMI
 
+#define USE_GYRO
 #define USE_GYRO_MPU6050
+#define USE_ACC
 #define USE_ACC_MPU6050
 
 #define MOTOR1_PIN           PB8

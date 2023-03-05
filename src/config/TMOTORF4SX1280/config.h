@@ -26,6 +26,8 @@
 #define BOARD_NAME        TMOTORF4SX1280
 #define MANUFACTURER_ID   TMTR
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_MAX7456
 #define USE_RX_SPI

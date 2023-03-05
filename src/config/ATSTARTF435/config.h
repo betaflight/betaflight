@@ -40,8 +40,10 @@
 #define GYRO_1_SPI_INSTANCE     SPI2
 
 #define USE_EXTI
+#define USE_GYRO
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PB11
 
+#define USE_ACC
 #define USE_ACCGYRO_BMI160
 

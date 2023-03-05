@@ -26,7 +26,9 @@
 #define BOARD_NAME        YUPIF7
 #define MANUFACTURER_ID   YUPF
 
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define USE_BARO_MS5611
 #define USE_BARO_BMP280

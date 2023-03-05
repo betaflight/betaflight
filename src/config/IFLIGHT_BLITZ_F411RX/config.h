@@ -26,6 +26,8 @@
 #define BOARD_NAME        IFLIGHT_BLITZ_F411RX
 #define MANUFACTURER_ID   IFRC
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_MAX7456
 

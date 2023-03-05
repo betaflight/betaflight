@@ -26,7 +26,9 @@
 #define BOARD_NAME        ALIENWHOOPF4
 #define MANUFACTURER_ID   ALWH
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_MAX7456
 

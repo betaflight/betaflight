@@ -26,6 +26,8 @@
 #define BOARD_NAME        SPEEDYBEEF7V3
 #define MANUFACTURER_ID   SPBE
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_BARO_BMP280
 #define USE_SDCARD

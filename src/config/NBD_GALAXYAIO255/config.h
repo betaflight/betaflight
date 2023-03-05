@@ -24,6 +24,8 @@
 #define BOARD_NAME        NBD_GALAXYAIO255
 #define MANUFACTURER_ID   NEBD
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_MAX7456
 #define USE_SDCARD

@@ -109,7 +109,9 @@
 #define ADC1_DMA_OPT 8
 #define ADC3_DMA_OPT 9
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_BARO_BMP388
 #define USE_MAG_HMC5883

@@ -26,7 +26,9 @@
 #define BOARD_NAME        JHEH743_AIO
 #define MANUFACTURER_ID   JHEF
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_BARO_BMP280
 #define USE_MAX7456

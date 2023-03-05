@@ -26,7 +26,9 @@
 #define BOARD_NAME        CYCLONEF722_PRO
 #define MANUFACTURER_ID   CYCL
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_BARO_BMP280
 #define USE_FLASH_W25P16

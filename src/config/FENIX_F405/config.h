@@ -26,7 +26,9 @@
 #define BOARD_NAME        FENIX_F405
 #define MANUFACTURER_ID   FOSS
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define USE_FLASH_W25M
 #define USE_MAX7456

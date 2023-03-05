@@ -146,8 +146,10 @@
 #define VTX_ENABLE_PIN          PC15
 #define PINIO1_PIN              VTX_ENABLE_PIN
 
+#define USE_ACC
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM42605
 #define USE_GYRO_SPI_ICM42688P
 #define USE_BARO_BMP388

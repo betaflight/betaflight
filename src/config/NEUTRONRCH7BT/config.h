@@ -24,6 +24,8 @@
 #define BOARD_NAME        NEUTRONRCH7BT
 #define MANUFACTURER_ID   NERC
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_FLASH_W25M02G
 #define USE_MAX7456

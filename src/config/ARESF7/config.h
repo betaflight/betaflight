@@ -26,7 +26,9 @@
 #define BOARD_NAME        ARESF7
 #define MANUFACTURER_ID   RCTI
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_FLASH_W25N01G
 #define USE_MAX7456

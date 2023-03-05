@@ -26,7 +26,9 @@
 #define BOARD_NAME        SOULF4
 #define MANUFACTURER_ID   DERC
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000

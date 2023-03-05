@@ -26,6 +26,8 @@
 #define BOARD_NAME        AOCODARCH7DUAL
 #define MANUFACTURER_ID   SJET
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_BARO_DPS310
 #define USE_FLASH_W25N01G

@@ -26,7 +26,9 @@
 #define BOARD_NAME        SPARKY2
 #define MANUFACTURER_ID   FOSS
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU9250
+#define USE_ACC
 #define USE_ACC_SPI_MPU9250
 #define USE_BARO_MS5611
 

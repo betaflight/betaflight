@@ -27,6 +27,8 @@
 #define MANUFACTURER_ID   TURC
 
 #define USE_FLASH_W25Q128FV
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_MAX7456
 
