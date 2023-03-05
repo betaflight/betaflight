@@ -55,6 +55,7 @@
 #define I2C2_SCL_PIN         PB10
 #define I2C2_SDA_PIN         PB11
 
+#define USE_BARO
 #define BARO_I2C_INSTANCE I2C2
 #define USE_BARO
 #define USE_BARO_MS5611

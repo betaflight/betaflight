@@ -81,7 +81,7 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define BARO_BUSTYPE I2C
+#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_3)
 #define SYSTEM_HSE_MHZ 8
 #define USE_SPI_GYRO
