@@ -28,11 +28,8 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-<<<<<<< HEAD
-=======
 #define USE_ACC_SPI_ICM42688P
 #define USE_ACCGYRO_BMI270
->>>>>>> 7fc265410 (Update latest unified target changes)
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_GYRO_SPI_ICM42688P

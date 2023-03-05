@@ -28,11 +28,6 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
-<<<<<<< HEAD
-#define USE_GYRO
-#define USE_GYRO_SPI_MPU6000
-=======
->>>>>>> 7fc265410 (Update latest unified target changes)
 #define USE_ACC_SPI_ICM20689
 #define USE_ACC_SPI_ICM42688P
 #define USE_ACCGYRO_BMI270
@@ -94,10 +89,6 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SCALE 179
-<<<<<<< HEAD
-=======
-
->>>>>>> 7fc265410 (Update latest unified target changes)
 #define BEEPER_INVERTED
 
 #define SYSTEM_HSE_MHZ 8
