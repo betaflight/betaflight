@@ -81,7 +81,7 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define DSHOT_BURST ON
+#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
 #define BEEPER_INVERTED
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
