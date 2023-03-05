@@ -68,8 +68,6 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
-const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
-
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
 // ESC alarm character constants
 #define ESC_ALARM_CURRENT   'C'
@@ -217,19 +215,10 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_DSHOT
     if (isTryingToArm() && !ARMING_FLAG(ARMED)) {
-<<<<<<< HEAD
         const int beaconGuard = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
         const int armingDelayTime = MAX(DSHOT_BEACON_GUARD_DELAY_US - beaconGuard, 0) / 100000;  // time remaining until BEACON_GUARD_DELAY, in tenths of second
         if (beaconGuard < 500 * 1000) {   // first 0.5s since beacon
-            tfp_sprintf(warningText, " BEACON ON");
-=======
-        int armingDelayTime = (getLastDshotBeaconCommandTimeUs() + DSHOT_BEACON_GUARD_DELAY_US - currentTimeUs) / 1e5;
-        if (armingDelayTime < 0) {
-            armingDelayTime = 0;
-        }
-        if (armingDelayTime >= (DSHOT_BEACON_GUARD_DELAY_US / 1e5 - 5)) {
-            tfp_sprintf(warningText, STR_OSDW_BEACON_ON); // Display this message for the first 0.5 seconds
->>>>>>> 0a224e7fe (Rebase)
+            tfp_sprintf(warningText, STR_OSDW_BEACON_ON);
         } else {
             tfp_sprintf(warningText, "%s %d.%d", STR_OSDW_ARM_IN, armingDelayTime / 10, armingDelayTime % 10);
         }
@@ -331,7 +320,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #ifdef USE_RX_LINK_QUALITY_INFO
     // Link Quality
     if (osdWarnGetState(OSD_WARNING_LINK_QUALITY) && (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm)) {
-        tfp_sprintf(warningText, STR_OSDW_LINK_QUA);
+        tfp_sprintf(warningText, STR_OSDW_LINK_QUALITY);
         *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
@@ -414,17 +403,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *blinking = true;
         return;
     }
-
-#ifdef USE_RC_SMOOTHING_FILTER
-    // Show warning if rc smoothing hasn't initialized the filters
-    if (osdWarnGetState(OSD_WARNING_RC_SMOOTHING) && ARMING_FLAG(ARMED) && !rcSmoothingInitializationComplete()) {
-        tfp_sprintf(warningText, STR_OSDW_RCSMOOTHING);
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-        *blinking = true;
-        return;
-    }
-#endif // USE_RC_SMOOTHING_FILTER
-
+  
     // Show warning if mah consumed is over the configured limit
     if (osdWarnGetState(OSD_WARNING_OVER_CAP) && ARMING_FLAG(ARMED) && osdConfig()->cap_alarm > 0 && getMAhDrawn() >= osdConfig()->cap_alarm) {
         tfp_sprintf(warningText, STR_OSDW_OVER_CAP);
@@ -446,7 +425,7 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     if (osdWarnGetState(OSD_WARNING_BATTERY_NOT_FULL) && !(ARMING_FLAG(ARMED) || ARMING_FLAG(WAS_EVER_ARMED)) && (getBatteryState() == BATTERY_OK)
           && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
         tfp_sprintf(warningText, STR_OSDW_BATT_BELOW_FULL);
-        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         return;
     }
 
