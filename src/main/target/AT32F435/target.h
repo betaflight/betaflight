@@ -72,18 +72,7 @@
 #undef USE_RX_SPI
 #undef USE_RX_CC2500
 #undef USE_RX_EXPRESSLRS
-//#undef USE_CMS
-//#undef USE_OSD
-#undef USE_BLACKBOX
-//#undef USE_SDCARD
-//#undef USE_BARO
-//#undef USE_MAG
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
-
-// remove all flash
-#undef USE_FLASH
-#undef USE_FLASHFS
-#undef USE_FLASH_CHIP
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x1000) // 4K sectors
