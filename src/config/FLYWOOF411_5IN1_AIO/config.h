@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F411
 
@@ -98,7 +94,6 @@
 //TODO #define BATTERY_METER ADC
 //TODO #define IBATA_SCALE 200
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define MAX7456_SPI_INSTANCE SPI2
 //TODO #define FRSKY_SPI_TX_ID 64,120
 //TODO #define FRSKY_SPI_OFFSET -103

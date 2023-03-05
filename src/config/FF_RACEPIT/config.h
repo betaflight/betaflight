@@ -33,7 +33,6 @@
 #define LED1_PIN             PB8
 #define BEEPER_PIN           PC3
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define PINIO1_PIN           PC0
 #define PINIO2_PIN           PC8
 #define CAMERA_CONTROL_PIN   PA10

@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F411
 
@@ -87,7 +83,7 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define SERIALRX_PROVIDER SBUS
+
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 //TODO #define MAG_HARDWARE NONE
@@ -97,7 +93,6 @@
 //TODO #define BATTERY_METER ADC
 //TODO #define VBAT_DETECT_CELL_VOLTAGE 300
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI2
 //TODO #define PINIO_BOX 40,255,255,255

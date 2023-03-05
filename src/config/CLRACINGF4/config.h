@@ -19,11 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-   This file has been auto generated from unified-targets repo.
-
-   The auto generation is transitional only, please remove this comment once the file is edited.
-*/
+#pragma once
 
 #define FC_TARGET_MCU     STM32F405
 
@@ -98,7 +94,6 @@
 //TODO #define BATTERY_METER ADC
 //TODO #define IBATA_SCALE 250
 #define BEEPER_INVERTED
-//TODO #define BEEPER_OD OFF
 #define BEEPER_PWM_HZ 3800
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI2
