@@ -70,6 +70,7 @@
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
 
+#include "locales/localisation.h"
 #include "osd/osd.h"
 
 #include "rx/rx.h"
