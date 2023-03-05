@@ -85,16 +85,17 @@
     TIMER_PIN_MAP( 5, PB7 , 1,  0) \
     TIMER_PIN_MAP( 6, PC8 , 2,  0) \
     TIMER_PIN_MAP( 7, PC9 , 2,  0) \
-    TIMER_PIN_MAP( 8, PA8 , 1, -1) \
-
+    TIMER_PIN_MAP( 8, PA8 , 1, -1)
 
 
 #define SPI3_TX_DMA_OPT     0
 #define ADC2_DMA_OPT        1
 
-//TODO #define BARO_BUSTYPE SPI
+
+#define USE_BARO
 #define BARO_SPI_INSTANCE SPI2
-//TODO #define ADC_DEVICE 2
+#define USE_ADC
+#define ADC_INSTANCE ADC2
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 //TODO #define DSHOT_BURST AUTO
 #define MAX7456_SPI_INSTANCE SPI2

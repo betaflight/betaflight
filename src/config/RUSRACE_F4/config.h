@@ -76,8 +76,7 @@
     TIMER_PIN_MAP( 5, PB6 , 1,  0) \
     TIMER_PIN_MAP( 6, PA0 , 2,  0) \
     TIMER_PIN_MAP( 7, PA1 , 2,  0) \
-    TIMER_PIN_MAP( 8, PA2 , 3, -1) \
-
+    TIMER_PIN_MAP( 8, PA2 , 3, -1)
 
 
 #define SPI3_TX_DMA_OPT     1

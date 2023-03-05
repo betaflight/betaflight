@@ -94,8 +94,7 @@
     TIMER_PIN_MAP( 7, PA0 , 2,  0) \
     TIMER_PIN_MAP( 8, PA1 , 2,  0) \
     TIMER_PIN_MAP( 9, PA2 , 3, -1) \
-    TIMER_PIN_MAP(10, PA3 , 2,  0) \
-
+    TIMER_PIN_MAP(10, PA3 , 2,  0)
 
 
 #define SPI3_TX_DMA_OPT     1
@@ -112,7 +111,7 @@
 //TODO #define DASHBOARD_I2C_BUS 1
 #define FLASH_SPI_INSTANCE SPI3
 #define SYSTEM_HSE_MHZ 8
-//TODO #define IBATA_SCALE 179
+#define CURRENT_METER_SCALE_DEFAULT 179
 //TODO #define PINIO_CONFIG 1,1,1,1
 //TODO #define PINIO_BOX 40,41,255,255
 #define USE_SPI_GYRO

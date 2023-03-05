@@ -73,14 +73,14 @@
     TIMER_PIN_MAP( 3, PA8 , 1,  0) \
     TIMER_PIN_MAP( 4, PA9 , 1,  0) \
     TIMER_PIN_MAP( 5, PB8 , 1,  0) \
-    TIMER_PIN_MAP( 6, PB3 , 1,  0) \
-
+    TIMER_PIN_MAP( 6, PB3 , 1,  0)
 
 
 #define ADC3_DMA_OPT        1
 
 
-//TODO #define ADC_DEVICE 3
+#define USE_ADC
+#define ADC_INSTANCE ADC3
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 //TODO #define DSHOT_BURST ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600

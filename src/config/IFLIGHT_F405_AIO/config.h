@@ -77,8 +77,7 @@
     TIMER_PIN_MAP( 3, PC9 , 2,  0) \
     TIMER_PIN_MAP( 4, PC8 , 2,  0) \
     TIMER_PIN_MAP( 5, PB6 , 1,  0) \
-    TIMER_PIN_MAP( 6, PA0 , 1,  0) \
-
+    TIMER_PIN_MAP( 6, PA0 , 1,  0)
 
 
 #define ADC1_DMA_OPT        1

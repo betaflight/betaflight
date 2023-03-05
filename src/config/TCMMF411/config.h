@@ -70,12 +70,12 @@
     TIMER_PIN_MAP( 5, PB8 , 2, -1) \
     TIMER_PIN_MAP( 6, PB3 , 1,  0) \
     TIMER_PIN_MAP( 7, PB10, 1,  0) \
-    TIMER_PIN_MAP( 8, PA8 , 1,  0) \
-
+    TIMER_PIN_MAP( 8, PA8 , 1,  0)
 
 
 #define ADC1_DMA_OPT        1
 
+#define USE_BARO
 #define BARO_SPI_INSTANCE SPI2
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH

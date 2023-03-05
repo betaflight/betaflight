@@ -83,8 +83,7 @@
     TIMER_PIN_MAP( 3, PA8 , 1,  0) \
     TIMER_PIN_MAP( 4, PA9 , 1,  0) \
     TIMER_PIN_MAP( 5, PA10, 1,  0) \
-    TIMER_PIN_MAP( 6, PB3 , 1,  0) \
-
+    TIMER_PIN_MAP( 6, PB3 , 1,  0)
 
 
 #define ADC2_DMA_OPT        0
@@ -92,9 +91,11 @@
 //TODO #define CAMERA_CONTROL_MODE SOFTWARE_PWM
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
+#define USE_BARO
 #define BARO_SPI_INSTANCE SPI2
 
-//TODO #define ADC_DEVICE 2
+#define USE_ADC
+#define ADC_INSTANCE ADC2
 //TODO #define DSHOT_IDLE_VALUE 450
 //TODO #define DSHOT_BURST ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600

@@ -74,12 +74,12 @@
     TIMER_PIN_MAP( 3, PA2 , 1,  0) \
     TIMER_PIN_MAP( 4, PA3 , 1,  1) \
     TIMER_PIN_MAP( 5, PA10, 1,  1) \
-    TIMER_PIN_MAP( 6, PA8 , 1,  1) \
-
+    TIMER_PIN_MAP( 6, PA8 , 1,  1)
 
 
 #define ADC1_DMA_OPT        1
 
+#define USE_BARO
 #define BARO_SPI_INSTANCE SPI3
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
 //TODO #define DSHOT_BURST ON

@@ -86,8 +86,7 @@
     TIMER_PIN_MAP( 5, PB0 , 2,  0) \
     TIMER_PIN_MAP( 6, PB1 , 2,  0) \
     TIMER_PIN_MAP( 7, PB8 , 1,  0) \
-    TIMER_PIN_MAP( 8, PB3 , 1,  0) \
-
+    TIMER_PIN_MAP( 8, PB3 , 1,  0)
 
 
 #define ADC3_DMA_OPT        0
@@ -100,7 +99,8 @@
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 
-//TODO #define ADC_DEVICE 3
+#define USE_ADC
+#define ADC_INSTANCE ADC3
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 //TODO #define DSHOT_BURST ON
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC

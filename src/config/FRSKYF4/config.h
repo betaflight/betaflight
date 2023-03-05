@@ -94,6 +94,7 @@
 #define SPI2_TX_DMA_OPT     0
 #define ADC1_DMA_OPT        1
 
+#define USE_BARO
 #define BARO_SPI_INSTANCE SPI3
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD

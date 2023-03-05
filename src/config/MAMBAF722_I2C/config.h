@@ -66,7 +66,8 @@
 #define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC2
 #define ADC_CURR_PIN         PC3
-//TODO #define ADC_DEVICE 3
+#define USE_ADC
+#define ADC_INSTANCE ADC3
 
 #define UART1_TX_PIN         PB6
 #define UART1_RX_PIN         PB7
@@ -96,8 +97,7 @@
     TIMER_PIN_MAP( 3, PA8 , 1,  0) \
     TIMER_PIN_MAP( 4, PA9 , 1,  0) \
     TIMER_PIN_MAP( 5, PB8 , 1,  0) \
-    TIMER_PIN_MAP( 6, PB3 , 1,  0) \
-
+    TIMER_PIN_MAP( 6, PB3 , 1,  0)
 
 #define MOTOR1_PIN           PC8
 #define MOTOR2_PIN           PC9

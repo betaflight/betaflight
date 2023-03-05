@@ -72,8 +72,7 @@
     TIMER_PIN_MAP( 3, PA2 , 1,  0) \
     TIMER_PIN_MAP( 4, PA3 , 1,  1) \
     TIMER_PIN_MAP( 5, PA10, 1,  1) \
-    TIMER_PIN_MAP( 6, PA8 , 1,  1) \
-
+    TIMER_PIN_MAP( 6, PA8 , 1,  1)
 
 
 #define SPI2_TX_DMA_OPT     0
