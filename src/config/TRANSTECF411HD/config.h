@@ -26,7 +26,9 @@
 #define BOARD_NAME        TRANSTECF411HD
 #define MANUFACTURER_ID   TTRH
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
 #define BEEPER_PIN           PB6
@@ -56,8 +58,7 @@
     TIMER_PIN_MAP( 1, PB1 , 2,  0) \
     TIMER_PIN_MAP( 2, PB10, 1,  0) \
     TIMER_PIN_MAP( 3, PB9 , 1, -1) \
-    TIMER_PIN_MAP( 4, PA8 , 1,  0) \
-
+    TIMER_PIN_MAP( 4, PA8 , 1,  0)
 
 
 #define ADC1_DMA_OPT        1
@@ -73,7 +74,7 @@
 //TODO #define ALIGN_BOARD_ROLL 180
 //TODO #define VBAT_MAX_CELL_VOLTAGE 435
 //TODO #define CURRENT_METER NONE
-//TODO #define BATTERY_METER ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define BEEPER_INVERTED
 //TODO #define YAW_MOTORS_REVERSED ON
 //TODO #define SMALL_ANGLE 90

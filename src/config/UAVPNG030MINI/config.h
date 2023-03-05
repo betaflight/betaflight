@@ -26,7 +26,9 @@
 #define BOARD_NAME        UAVPNG030MINI
 #define MANUFACTURER_ID   NGUA
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
 #define BEEPER_PIN           PB0
@@ -70,16 +72,16 @@
     TIMER_PIN_MAP( 2, PE14, 1,  0) \
     TIMER_PIN_MAP( 3, PD13, 1,  0) \
     TIMER_PIN_MAP( 4, PD14, 1,  0) \
-    TIMER_PIN_MAP( 5, PD15, 1, -1) \
-
+    TIMER_PIN_MAP( 5, PD15, 1, -1)
 
 
 #define ADC1_DMA_OPT        1
 
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_2)
+#define USE_BARO
 #define BARO_SPI_INSTANCE SPI1
-//TODO #define BATTERY_METER ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8
 //TODO #define DASHBOARD_I2C_BUS 2

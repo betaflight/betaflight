@@ -26,7 +26,9 @@
 #define BOARD_NAME        SPARKY2
 #define MANUFACTURER_ID   FOSS
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU9250
+#define USE_ACC
 #define USE_ACC_SPI_MPU9250
 #define USE_BARO_MS5611
 
@@ -80,14 +82,13 @@
     TIMER_PIN_MAP( 7, PA3 , 1,  0) \
     TIMER_PIN_MAP( 8, PA2 , 1,  0) \
     TIMER_PIN_MAP( 9, PA1 , 2,  0) \
-    TIMER_PIN_MAP(10, PA0 , 2,  0) \
-
+    TIMER_PIN_MAP(10, PA0 , 2,  0)
 
 
 #define ADC1_DMA_OPT        1
 
 //TODO #define MAG_BUSTYPE SLAVE
-//TODO #define BARO_BUSTYPE I2C
+#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8

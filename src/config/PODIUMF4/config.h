@@ -26,7 +26,9 @@
 #define BOARD_NAME        PODIUMF4
 #define MANUFACTURER_ID   LEGA
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
@@ -86,15 +88,14 @@
     TIMER_PIN_MAP( 8, PA3 , 1,  1) \
     TIMER_PIN_MAP( 9, PA2 , 1,  0) \
     TIMER_PIN_MAP(10, PA1 , 2,  0) \
-    TIMER_PIN_MAP(11, PA0 , 2,  0) \
-
+    TIMER_PIN_MAP(11, PA0 , 2,  0)
 
 
 #define ADC1_DMA_OPT        1
 
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
-//TODO #define BARO_BUSTYPE I2C
+#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 #define SYSTEM_HSE_MHZ 8
 //TODO #define DASHBOARD_I2C_BUS 1

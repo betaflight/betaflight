@@ -26,7 +26,9 @@
 #define BOARD_NAME        VRRACE
 #define MANUFACTURER_ID   LEGA
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define USE_MAX7456
 
@@ -80,13 +82,12 @@
     TIMER_PIN_MAP( 6, PA3 , 1,  0) \
     TIMER_PIN_MAP( 7, PB5 , 1,  0) \
     TIMER_PIN_MAP( 8, PB0 , 2,  0) \
-    TIMER_PIN_MAP( 9, PB1 , 2,  0) \
-
+    TIMER_PIN_MAP( 9, PB1 , 2,  0)
 
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define BATTERY_METER ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8
 #define USE_SPI_GYRO

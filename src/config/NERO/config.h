@@ -26,7 +26,9 @@
 #define BOARD_NAME        NERO
 #define MANUFACTURER_ID   BKMN
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 
 #define LED0_PIN             PB6
@@ -74,8 +76,7 @@
     TIMER_PIN_MAP( 5, PB1 , 2,  0) \
     TIMER_PIN_MAP( 6, PC7 , 2, -1) \
     TIMER_PIN_MAP( 7, PC8 , 2, -1) \
-    TIMER_PIN_MAP( 8, PC9 , 2, -1) \
-
+    TIMER_PIN_MAP( 8, PC9 , 2, -1)
 
 
 #define ADC1_DMA_OPT        1
@@ -88,4 +89,4 @@
 //TODO #define SDCARD_DETECT_INVERTED ON
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI3
-//TODO #define BATTERY_METER ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC

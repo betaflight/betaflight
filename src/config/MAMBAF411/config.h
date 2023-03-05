@@ -26,7 +26,9 @@
 #define BOARD_NAME        MAMBAF411
 #define MANUFACTURER_ID   DIAT
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_MAX7456
 
@@ -55,9 +57,10 @@
 #define ADC_VBAT_PIN         PA0
 #define ADC_RSSI_PIN         PB1
 #define ADC_CURR_PIN         PA1
-//TODO #define ADC_DEVICE 1
-//TODO #define CURRENT_METER ADC
-//TODO #define BATTERY_METER ADC
+#define USE_ADC
+#define ADC_INSTANCE ADC1
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
 #define UART1_TX_PIN         PA9
 #define UART1_RX_PIN         PA10
@@ -73,8 +76,7 @@
     TIMER_PIN_MAP( 4, PB7 , 1,  0) \
     TIMER_PIN_MAP( 5, PA15, 1,  0) \
     TIMER_PIN_MAP( 6, PB8 , 2, -1) \
-    TIMER_PIN_MAP( 7, PA8 , 1,  0) \
-
+    TIMER_PIN_MAP( 7, PA8 , 1,  0)
 
 
 #define MOTOR1_PIN           PB3

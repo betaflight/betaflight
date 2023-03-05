@@ -26,7 +26,9 @@
 #define BOARD_NAME        REVONANO
 #define MANUFACTURER_ID   OPEN
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU9250
+#define USE_ACC
 #define USE_ACC_SPI_MPU9250
 
 #define BEEPER_PIN           PC13
@@ -75,13 +77,12 @@
     TIMER_PIN_MAP( 8, PB8 , 1,  0) \
     TIMER_PIN_MAP( 9, PB9 , 1, -1) \
     TIMER_PIN_MAP(10, PA0 , 2,  0) \
-    TIMER_PIN_MAP(11, PA1 , 2,  0) \
-
+    TIMER_PIN_MAP(11, PA1 , 2,  0)
 
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define BARO_BUSTYPE I2C
+#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_3)
 #define SYSTEM_HSE_MHZ 8
 #define USE_SPI_GYRO

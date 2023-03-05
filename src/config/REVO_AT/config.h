@@ -28,7 +28,9 @@
 
 #define LED0_PIN                PB5
 
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO_1_CS_PIN           PA4
 #define GYRO_1_SPI_INSTANCE     SPI1
@@ -57,8 +59,8 @@
 #define I2C2_SCL_PIN            PB10
 #define I2C2_SDA_PIN            PB11
 
-#define MAG_I2C_INSTANCE        I2C1
 #define USE_MAG
+#define MAG_I2C_INSTANCE        I2C1
 
-#define BARO_I2C_INSTANCE       I2C1
 #define USE_BARO
+#define BARO_I2C_INSTANCE       I2C1

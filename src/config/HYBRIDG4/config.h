@@ -67,8 +67,7 @@
     TIMER_PIN_MAP( 3, PB3 , 1,  3) \
     TIMER_PIN_MAP( 4, PA8 , 1,  8) \
     TIMER_PIN_MAP( 5, PB6 , 2,  0) \
-    TIMER_PIN_MAP( 6, PA2 , 3,  0) \
-
+    TIMER_PIN_MAP( 6, PA2 , 3,  0)
 
 
 #define ADC1_DMA_OPT       12
@@ -78,9 +77,9 @@
 #define TIMUP4_DMA_OPT      0
 #define TIMUP5_DMA_OPT      0
 
-//TODO #define BARO_BUSTYPE I2C
+#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define BLACKBOX_DEVICE SPIFLASH
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI2

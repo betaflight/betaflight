@@ -26,7 +26,9 @@
 #define BOARD_NAME        NUCLEOF722
 #define MANUFACTURER_ID   STMI
 
+#define USE_GYRO
 #define USE_GYRO_MPU6050
+#define USE_ACC
 #define USE_ACC_MPU6050
 
 #define MOTOR1_PIN           PB8
@@ -70,15 +72,14 @@
     TIMER_PIN_MAP( 5, PB5 , 1,  0) \
     TIMER_PIN_MAP( 6, PB9 , 1, -1) \
     TIMER_PIN_MAP( 7, PE6 , 1, -1) \
-    TIMER_PIN_MAP( 8, PB4 , 1,  0) \
-
+    TIMER_PIN_MAP( 8, PB4 , 1,  0)
 
 
 #define ADC1_DMA_OPT        1
 
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
-//TODO #define BARO_BUSTYPE I2C
+#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 //TODO #define GYRO_1_BUSTYPE I2C
 //TODO #define GYRO_1_I2CBUS 1
