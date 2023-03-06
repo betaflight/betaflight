@@ -233,7 +233,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
             *pDecoded = dshot_decode_eRPM_telemetry_value(value);
 
             // Update debug buffer
-            if (motorIndex < motorCount) {
+            if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
                 DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
             }
 
