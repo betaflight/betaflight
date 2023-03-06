@@ -31,6 +31,7 @@
 
 #define SIMULATOR_MULTITHREAD
 
+#define SYSTEM_HSE_MHZ 0
 #define DEFAULT_CPU_OVERCLOCK 1
 #define DMA_RAM
 #define DMA_RW_AXI
