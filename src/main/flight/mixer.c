@@ -275,22 +275,28 @@ static bool crashFlipReadyToRearm = false;
 static bool isStableForAutoCrashflip(void)
 {
     float stableThreshold = 0.1;
-    // smoothedErrorPitch = pt1FilterApply(&mixerRuntime.pitchStableFilter, );
-    float smoothedErrorRoll = gyro.gyroADCf[FD_ROLL];
-    float smoothedErrorPitch = gyro.gyroADCf[FD_PITCH];
-    float smoothedErrorYaw = gyro.gyroADCf[FD_YAW];
+    // float smoothedErrorRoll = gyro.gyroADCf[FD_ROLL];
+    // float smoothedErrorPitch = gyro.gyroADCf[FD_PITCH];
+    // float smoothedErrorYaw = gyro.gyroADCf[FD_YAW];
+    float smoothedErrorRoll = gyroGetFilteredDownsampled(ROLL);
+    float smoothedErrorPitch = gyroGetFilteredDownsampled(PITCH);
+    float smoothedErrorYaw = gyroGetFilteredDownsampled(YAW);
 
     bool isStable = smoothedErrorPitch < stableThreshold && smoothedErrorRoll < stableThreshold && smoothedErrorYaw < stableThreshold;
     return isStable;
+}
+
+static float calculateVelocity(void) {
+    return sqrtf(powf(gyroGetFilteredDownsampled(PITCH),2) + powf(gyroGetFilteredDownsampled(ROLL),2) + powf(gyroGetFilteredDownsampled(YAW),2));
 }
 
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     // if (ARMING_FLAG(ARMED)) {
         if (isCrashflipInAutoMode()) {
+            float velocity = ABS(calculateVelocity());
             float maxFlipPower = mixerConfig()->crashflip_motor_percent / 100.0f;
-            mixerRuntime.autoFlipPower = MIN(maxFlipPower, mixerRuntime.autoFlipPower + mixerRuntime.autoCrashflipStep);
-
+            mixerRuntime.autoFlipPower = velocity < 10 ? MIN(maxFlipPower, mixerRuntime.autoFlipPower + mixerRuntime.autoCrashflipStep) : mixerRuntime.autoFlipPower;
             // float rightSideUpFlipPower = flipPower / 2.0f;
             float quadVec[3] = {0,0,1};
             applyMatrixRotation(quadVec, (struct fp_rotationMatrix_s*)rMat);
