@@ -97,8 +97,8 @@ void voltageMeterReset(voltageMeter_t *meter)
 // ADC
 //
 
-#ifndef VBAT_SCALE_DEFAULT
-#define VBAT_SCALE_DEFAULT 110
+#ifndef DEFAULT_VOLTAGE_METER_SCALE
+#define DEFAULT_VOLTAGE_METER_SCALE 110
 #endif
 
 #ifndef VBAT_RESDIVVAL_DEFAULT
@@ -134,7 +134,7 @@ void pgResetFn_voltageSensorADCConfig(voltageSensorADCConfig_t *instance)
 {
     for (int i = 0; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
         RESET_CONFIG(voltageSensorADCConfig_t, &instance[i],
-            .vbatscale = VBAT_SCALE_DEFAULT,
+            .vbatscale = DEFAULT_VOLTAGE_METER_SCALE,
             .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
             .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
         );
