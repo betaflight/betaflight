@@ -21,10 +21,10 @@
 
 #pragma once
 
-#define FC_TARGET_MCU     STM32F7X2
+#define FC_TARGET_MCU           STM32F7X2
 
-#define BOARD_NAME        MATEKF722HD
-#define MANUFACTURER_ID   MTKS
+#define BOARD_NAME              MATEKF722HD
+#define MANUFACTURER_ID         MTKS
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
@@ -34,53 +34,54 @@
 #define USE_BARO_DPS310
 #define USE_FLASH_W25Q128FV
 
-#define BEEPER_PIN           PC13
-#define MOTOR1_PIN           PC8
-#define MOTOR2_PIN           PC9
-#define MOTOR3_PIN           PB4
-#define MOTOR4_PIN           PB5
-#define MOTOR5_PIN           PB0
-#define MOTOR6_PIN           PB1
-#define MOTOR7_PIN           PB10
-#define MOTOR8_PIN           PB11
-#define SERVO1_PIN           PB6
-#define SERVO2_PIN           PB7
-#define RX_PPM_PIN           PA3
-#define RX_PWM1_PIN          PA2
-#define LED_STRIP_PIN        PA8
-#define UART1_TX_PIN         PA9
-#define UART2_TX_PIN         PA2
-#define UART3_TX_PIN         PC10
-#define UART4_TX_PIN         PA0
-#define UART5_TX_PIN         PC12
-#define UART6_TX_PIN         PC6
-#define UART1_RX_PIN         PA10
-#define UART2_RX_PIN         PA3
-#define UART3_RX_PIN         PC11
-#define UART4_RX_PIN         PA1
-#define UART5_RX_PIN         PD2
-#define UART6_RX_PIN         PC7
-#define I2C1_SCL_PIN         PB8
-#define I2C1_SDA_PIN         PB9
-#define LED0_PIN             PA14
-#define LED1_PIN             PA13
-#define SPI1_SCK_PIN         PA5
-#define SPI2_SCK_PIN         PB13
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PC3
-#define CAMERA_CONTROL_PIN   PB15
-#define ADC_VBAT_PIN         PC2
-#define ADC_RSSI_PIN         PC0
-#define ADC_CURR_PIN         PC1
-#define ADC_EXTERNAL1_PIN    PA4
-#define PINIO1_PIN           PA15
-#define PINIO2_PIN           PB3
-#define FLASH_CS_PIN         PB12
-#define GYRO_1_EXTI_PIN      PC4
-#define GYRO_1_CS_PIN        PB2
-#define USB_DETECT_PIN       PC14
+#define BEEPER_PIN              PC13
+#define MOTOR1_PIN              PC8
+#define MOTOR2_PIN              PC9
+#define MOTOR3_PIN              PB4
+#define MOTOR4_PIN              PB5
+#define MOTOR5_PIN              PB0
+#define MOTOR6_PIN              PB1
+#define MOTOR7_PIN              PB10
+#define MOTOR8_PIN              PB11
+#define SERVO1_PIN              PB6
+#define SERVO2_PIN              PB7
+#define RX_PPM_PIN              PA3
+#define RX_PWM1_PIN             PA2
+#define LED_STRIP_PIN           PA8
+#define UART1_TX_PIN            PA9
+#define UART2_TX_PIN            PA2
+#define UART3_TX_PIN            PC10
+#define UART4_TX_PIN            PA0
+#define UART5_TX_PIN            PC12
+#define UART6_TX_PIN            PC6
+#define UART1_RX_PIN            PA10
+#define UART2_RX_PIN            PA3
+#define UART3_RX_PIN            PC11
+#define UART4_RX_PIN            PA1
+#define UART5_RX_PIN            PD2
+#define UART6_RX_PIN            PC7
+#define I2C1_SCL_PIN            PB8
+#define I2C1_SDA_PIN            PB9
+#define LED0_PIN                PA14
+#define LED1_PIN                PA13
+#define SPI1_SCK_PIN            PA5
+#define SPI2_SCK_PIN            PB13
+#define SPI1_MISO_PIN           PA6
+#define SPI2_MISO_PIN           PB14
+#define SPI1_MOSI_PIN           PA7
+#define SPI2_MOSI_PIN           PC3
+#define CAMERA_CONTROL_PIN      PB15
+#define ADC_VBAT_PIN            PC2
+#define ADC_RSSI_PIN            PC0
+#define ADC_CURR_PIN            PC1
+#define ADC_EXTERNAL1_PIN       PA4
+#define PINIO1_PIN              PA15
+#define PINIO2_PIN              PB3
+#define FLASH_CS_PIN            PB12
+#define GYRO_1_EXTI_PIN         PC4
+#define GYRO_1_CS_PIN           PB2
+#define GYRO_2_CS_PIN           PC15
+#define USB_DETECT_PIN          PC14
 
 #define TIMER_PIN_MAPPING \
     TIMER_PIN_MAP( 0, PC8 , 2,  1) \
@@ -99,28 +100,47 @@
     TIMER_PIN_MAP(13, PB15, 3, -1)
 
 
-#define ADC1_DMA_OPT        0
+#define ADC_INSTANCE            ADC1  // Default added
+#define ADC1_DMA_OPT            0  // DMA 2 Stream 0 Channel 0 
 
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+// #define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
-//TODO #define MAG_BUSTYPE I2C
-#define MAG_I2C_INSTANCE (I2CDEV_1)
+#define MAG_I2C_INSTANCE        (I2CDEV_1)
 //TODO #define MAG_HARDWARE AUTO
-#define USE_BARO
-#define BARO_I2C_INSTANCE (I2CDEV_1)
+#define BARO_BUSTYPE I2C
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
 //TODO #define BARO_HARDWARE AUTO
-#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
+
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
 #define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
-#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
+
+#define DSHOT_BURST             ON
+#define BARO_HARDWARE           AUTO
+#define BLACKBOX_DEVICE         SPIFLASH
+#define DSHOT_BURST             ON
+
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
+#define DEFAULT_CURRENT_METER_SCALE 179
+
 #define BEEPER_INVERTED
 //TODO #define PINIO_BOX 40,41,255,255
-#define FLASH_SPI_INSTANCE SPI2
+#define FLASH_SPI_INSTANCE      SPI2
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
+
 #define USE_SPI_GYRO
-#define GYRO_1_SPI_INSTANCE SPI1
-#define GYRO_1_ALIGN CW180_DEG_FLIP
-#define GYRO_1_ALIGN_PITCH 1800
-#define GYRO_1_ALIGN_YAW 1800
-//TODO #define CAMERA_CONTROL_MODE HARDWARE_PWM
-//TODO #define OSD_VBAT_POS 2467
-//TODO #define OSD_CURRENT_POS 2434
-//TODO #define OSD_DISARMED_POS 2282
+#define GYRO_1_SPI_INSTANCE     SPI1
+#define GYRO_1_ALIGN            CW180_DEG_FLIP
+#define GYRO_1_ALIGN_PITCH      1800
+#define GYRO_1_ALIGN_YAW        1800
+
+#define GYRO_2_SPI_INSTANCE     SPI1
+#define GYRO_2_ALIGN            CW90_DEG
+
+#define CAMERA_CONTROL_MODE     HARDWARE_PWM
+
+#define ENSURE_MPU_DATA_READY_IS_LOW
+#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
+#define USE_MPU_DATA_READY_SIGNAL
