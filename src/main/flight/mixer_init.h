@@ -53,6 +53,21 @@ typedef struct mixerRuntime_s {
     float vbatFull;
     float vbatRangeToCompensate;
 #endif
+    float govenorExpectedThrottleLimit;
+    float govenorAccelerationLimit;
+    float govenorDecelerationLimit;
+    float prevAverageRPM;
+    float govenorPreviousSmoothedRPMError;
+    float minRPMDelayK;
+    float govenorI;
+    float govenorPGain;
+    float govenorIGain;
+    float govenorDGain;
+    float govenorPreviousSmoothedRPM;
+    float govenorPreviousRPMLimit;
+    float govenorDelayK;
+    float govenorLearningThrottleK;
+    bool govenor_init;
 } mixerRuntime_t;
 
 extern mixerRuntime_t mixerRuntime;
