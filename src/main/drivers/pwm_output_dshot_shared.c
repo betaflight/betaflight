@@ -80,7 +80,16 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
-
+/**
+ * Prepare to send dshot data for one motor
+ * 
+ * Formats the value into the appropriate dma buffer and enables the dma channel.
+ * The packet won't start transmitting until later since the dma requests from the timer
+ * are disabled when this function is called.
+ * 
+ * @param index index of the motor that the data is to be sent to
+ * @param value the dshot value to be sent
+*/
 FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
@@ -88,10 +97,6 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
     if (!motor->configured) {
         return;
     }
-
-    // XXX DEBUG
-    gpio_bits_set(GPIOC, GPIO_PINS_12);
-
 
     /*If there is a command ready to go overwrite the value and send that instead*/
     if (dshotCommandIsProcessing()) {
@@ -132,9 +137,6 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
 #endif // USE_FULL_LL_DRIVER
     }
-
-    // XXX DEBUG
-    gpio_bits_reset(GPIOC, GPIO_PINS_12);
 
 }
 
@@ -193,6 +195,10 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
+/**
+ * Process dshot telemetry packets before switching the channels back to outputs
+ * 
+*/
 FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 {
     if (!useDshotTelemetry) {

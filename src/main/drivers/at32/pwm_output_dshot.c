@@ -56,7 +56,7 @@
  * 
  * @see TIM_CH_TO_SELCHANNEL macro
 */
-tmr_channel_select_type toCHSelectType(uint8_t bfChannel, bool useNChannel)
+tmr_channel_select_type toCHSelectType(const uint8_t bfChannel, const bool useNChannel)
 {
     tmr_channel_select_type result = TMR_SELECT_CHANNEL_1; // XXX I don't like using ch 1 as a default result, but what to do?
     if (useNChannel)
@@ -77,6 +77,7 @@ tmr_channel_select_type toCHSelectType(uint8_t bfChannel, bool useNChannel)
               #ifdef HANG_ON_ERRORS
               while(true) {}
               #endif
+              break;
         }
 
     } else {
@@ -98,6 +99,7 @@ tmr_channel_select_type toCHSelectType(uint8_t bfChannel, bool useNChannel)
               #ifdef HANG_ON_ERRORS
               while(true) {}
               #endif
+              break;
         }
     }
 
@@ -106,70 +108,96 @@ tmr_channel_select_type toCHSelectType(uint8_t bfChannel, bool useNChannel)
 
 #ifdef USE_DSHOT_TELEMETRY
 
+/**
+ * Enable the timer channels for all motors
+ * 
+ *   Called once for every dshot update if telemetry is being used (not just enabled by #def)
+ *   Called from pwm_output_dshot_shared.c pwmStartDshotMotorUpdate
+*/
 void dshotEnableChannels(uint8_t motorCount)
 {
     for (int i = 0; i < motorCount; i++) {
-        tmr_channel_select_type atCh = toCHSelectType(dmaMotors[i].timerHardware->channel, dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL);
-
-        // XXX TODO need to confirm that these AT api calls are equivalent to the commented out ST calls
         tmr_primary_mode_select(dmaMotors[i].timerHardware->tim, TMR_PRIMARY_SEL_COMPARE);
 
-        // TODO these polarity set calls might not be needed if they are already the default settings
-        if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
-            // TIM_CCxNCmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerHardware->channel, TIM_CCxN_Enable);
-            tmr_output_channel_polarity_set(dmaMotors[i].timerHardware->tim, atCh, TMR_POLARITY_ACTIVE_LOW);
-        } else {
-            // TIM_CCxCmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerHardware->channel, TIM_CCx_Enable);
-            tmr_output_channel_polarity_set(dmaMotors[i].timerHardware->tim, atCh, TMR_POLARITY_ACTIVE_HIGH);
-        }
-
+        tmr_channel_select_type atCh = toCHSelectType(dmaMotors[i].timerHardware->channel, dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL);
         tmr_channel_enable(dmaMotors[i].timerHardware->tim, atCh, TRUE);
     }
 }
 
 #endif // USE_DSHOT_TELEMETRY
 
-
+/**
+ * Set the timer and dma of the specified motor for use as an output
+ * 
+ * Called from pwmDshotMotorHardwareConfig in this file and also from
+ * pwmStartDshotMotorUpdate in src/main/drivers/pwm_output_dshot_shared.c
+*/
 FAST_CODE void pwmDshotSetDirectionOutput(
     motorDmaOutput_t * const motor
-#ifndef USE_DSHOT_TELEMETRY
+    #ifndef USE_DSHOT_TELEMETRY
     ,TIM_OCInitTypeDef *pOcInit, DMA_InitTypeDef* pDmaInit
-#endif
-)
+    #endif
+    )
 {
-#ifdef USE_DSHOT_TELEMETRY
+    #ifdef USE_DSHOT_TELEMETRY
     TIM_OCInitTypeDef* pOcInit = &motor->ocInitStruct;
     DMA_InitTypeDef* pDmaInit = &motor->dmaInitStruct;
-#endif
+    #endif
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = timerHardware->tim;
-    const uint8_t channel = timerHardware->channel;
+    const uint8_t channel = timerHardware->channel; // BF channel index (1 based)
     const bool useCompOut = (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) != 0;
 
     dmaResource_t *dmaRef = motor->dmaRef;
 
-#if defined(USE_DSHOT_DMAR) && !defined(USE_DSHOT_TELEMETRY)
+    #if defined(USE_DSHOT_DMAR) && !defined(USE_DSHOT_TELEMETRY)
     if (useBurstDshot) {
         dmaRef = timerHardware->dmaTimUPRef;
     }
-#endif
+    #endif
 
     xDMA_DeInit(dmaRef);
 
-#ifdef USE_DSHOT_TELEMETRY
+    #ifdef USE_DSHOT_TELEMETRY
     motor->isInput = false;
-#endif
+    #endif
+
     // Disable the preload buffer so that we can write to the comparison registers (CxDT) immediately
-    // which seems a bit odd as we don't write to CxDT in this section
     // This call has the channel -> AT32 channel selector mapping built in
     timerOCPreloadConfig(timer, channel, FALSE);
+
     tmr_channel_enable(timer, toCHSelectType(channel, useCompOut), FALSE);
 
-    timerOCInit(timer, timerHardware->channel, pOcInit);
+    // The at32 apis do everything except actually put the channel in output mode, so we have to do that ourselves
+    // This is probably a bug in the at32 sdk, so the need for this code may go away in future releases
+    const uint8_t CH_OUTPUT = 0;
+    switch (channel) {
+        case 1:
+            timer->cm1_output_bit.c1c = CH_OUTPUT;
+            break;
+        case 2:
+            timer->cm1_output_bit.c2c = CH_OUTPUT;
+            break;
+        case 3:
+            timer->cm2_output_bit.c3c = CH_OUTPUT;
+            break;
+        case 4:
+            timer->cm2_output_bit.c4c = CH_OUTPUT;
+            break;
+    }
 
-    tmr_channel_enable(timer, toCHSelectType(timerHardware->channel, useCompOut), TRUE);
-    timerOCPreloadConfig(timer, timerHardware->channel, TRUE);
+    timerOCInit(timer, channel, pOcInit);
+
+    // On ST mcu this would be part of the ocInit struct, but on AT we have to do it seperately
+    { // local scope for variables
+        const bool useNChannel = false; // tmr_channel_value_set only supports the normal channels
+        const tmr_channel_select_type atChannel = toCHSelectType(timerHardware->channel, useNChannel);
+        tmr_channel_value_set(timer, atChannel, 0);
+    }
+
+    tmr_channel_enable(timer, toCHSelectType(channel, useCompOut), TRUE);
+    timerOCPreloadConfig(timer, channel, TRUE);
 
     pDmaInit->direction = DMA_DIR_MEMORY_TO_PERIPHERAL; 
     xDMA_Init(dmaRef, pDmaInit);
@@ -181,16 +209,15 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 
 
 #ifdef USE_DSHOT_TELEMETRY
+/**
+ * Set the timer and dma of the specified motor for use as an input
+*/
 FAST_CODE
-static void pwmDshotSetDirectionInput(
-    motorDmaOutput_t * const motor
-)
+static void pwmDshotSetDirectionInput(motorDmaOutput_t * const motor)
 {
     DMA_InitTypeDef* pDmaInit = &motor->dmaInitStruct;
-
     const timerHardware_t * const timerHardware = motor->timerHardware;
     TIM_TypeDef *timer = timerHardware->tim;
-
     dmaResource_t *dmaRef = motor->dmaRef;
 
     xDMA_DeInit(dmaRef);
@@ -199,27 +226,26 @@ static void pwmDshotSetDirectionInput(
     if (!inputStampUs) {
         inputStampUs = micros();
     }
-    // TIM_ARRPreloadConfig(timer, ENABLE); // Need to set the ovfif bit to enable preload
-    tmr_overflow_event_disable(timer, TRUE); // method is badly named. I think TRUE enables overflow events based on the code
-    // timer->ARR = 0xffffffff;    // arr = auto reload register, may be equivelent to the preload register on at32
+
+    tmr_period_buffer_enable(timer, FALSE);
+
     timer->pr = 0xffffffff;
 
-    // TIM_ICInit(timer, &motor->icInitStruct);
-
-    // XXX which input divider setting to use? Looks like it's the equivalent of ST prescaler, and the setting
-    // would have been in the init struct for ST, but isn't in the AT equivalent. We'll need another way of getting it
-    // Looks like it may have been hardcoded to div_1 anyway
     tmr_input_channel_init(timer, &motor->icInitStruct, TMR_CHANNEL_INPUT_DIV_1);
 
-#if defined(STM32F4)
-    motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralToMemory;
-#endif
+    pDmaInit->direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
 
     xDMA_Init(dmaRef, pDmaInit);
 }
-#endif
+#endif // USE_DSHOT_TELEMETRY
 
-
+/**
+ * Start the timers and dma requests to send dshot data to all motors
+ * 
+ * Called after pwm_output_dshot_shared.c has finished setting up the buffers that represent the dshot packets.
+ * Iterates over all the timers needed (note that there may be less timers than motors since a single timer can run
+ * multiple motors) and enables each one.
+*/
 void pwmCompleteDshotMotorUpdate(void)
 {
     // If there is a dshot command loaded up, time it correctly with motor update
@@ -229,47 +255,34 @@ void pwmCompleteDshotMotorUpdate(void)
         }
     }
 
-    for(int i=0; i<3; i++)
-    {
-        motorDmaOutput_t * motor = &dmaMotors[i];
-        uint32_t *buffer = motor->dmaBuffer;
-        UNUSED(buffer);
-    }
-
-    // XXX DEBUG
-    gpio_bits_set(GPIOC, GPIO_PINS_10);
-
     for (int i = 0; i < dmaMotorTimerCount; i++) { // dmaMotorTimerCount is a global declared in pwm_output_dshot_shared.c
-#ifdef USE_DSHOT_DMAR
+        #ifdef USE_DSHOT_DMAR
+        // NB burst mode not tested
         if (useBurstDshot) {
             xDMA_SetCurrDataCounter(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
             xDMA_Cmd(dmaMotorTimers[i].dmaBurstRef, TRUE);
 
             // TIM_DMAConfig(dmaMotorTimers[i].timer, TIM_DMABase_CCR1, TIM_DMABurstLength_4Transfers);
-            // XXX it's not at all clear that the hardware will be compatible at this level
             tmr_dma_control_config(dmaMotorTimers[i].timer, TMR_DMA_TRANSFER_4BYTES, TMR_CTRL1_ADDRESS);
 
-            // XXX TODO - there doesn't seem to be an equivalent of TIM_DMA_Update in AT32
+            // XXX TODO - what is the equivalent of TIM_DMA_Update in AT32?
             // TIM_DMACmd(dmaMotorTimers[i].timer, TIM_DMA_Update, ENABLE);
             // tmr_dma_request_enable(dmaMotorTimers[i].timer, )
         } else
-#endif
+        #endif // USE_DSHOT_DMAR
         {
-            // TIM_ARRPreloadConfig(dmaMotorTimers[i].timer, DISABLE);
+            // I think the counter is reset here to ensure that the first pulse is the correct width,
+            // and maybe also to reduce the chance of an interrupt firing prematurely
+            tmr_counter_value_set(dmaMotorTimers[i].timer, 0);
 
             // Allows setting the period with immediate effect
             tmr_period_buffer_enable(dmaMotorTimers[i].timer, FALSE);
 
+            #ifdef USE_DSHOT_TELEMETRY
+            // NB outputPeriod isn't set when telemetry is not #def'd
+            tmr_period_value_set(dmaMotorTimers[i].timer, dmaMotorTimers[i].outputPeriod);
+            #endif
 
-            // dmaMotorTimers[i].timer->ARR = dmaMotorTimers[i].outputPeriod;
-
-            // XXX This isn't set when telemetry is disabled. Do we come through here? Yes, and outputPeriod is 0
-            // Will be needed for bidir, check if it needs to be conditional or can be enabled for both cases
-            // use an api?
-            // dmaMotorTimers[i].timer->pr = dmaMotorTimers[i].outputPeriod;
-
-
-            // TIM_ARRPreloadConfig(dmaMotorTimers[i].timer, ENABLE);
             tmr_period_buffer_enable(dmaMotorTimers[i].timer, TRUE);
 
             // Ensure that overflow events are enabled. This event may affect both period and duty cycle
@@ -279,13 +292,8 @@ void pwmCompleteDshotMotorUpdate(void)
             tmr_dma_request_enable(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, TRUE);
 
             dmaMotorTimers[i].timerDmaSources = 0;
-
-            // I think the counter is reset here to ensure that the first pulse is the correct width
-            tmr_counter_value_set(dmaMotorTimers[i].timer, 0);
         }
     }
-    // XXX DEBUG
-    gpio_bits_reset(GPIOC, GPIO_PINS_10);
 }
 
 /**
@@ -294,57 +302,60 @@ void pwmCompleteDshotMotorUpdate(void)
  * Responsible for switching the dshot direction after sending a dshot command so that we 
  * can receive dshot telemetry. If telemetry is not enabled, disables the dma and request generation.
 */
-
-// XXX for testing
-uint32_t lastDTVal;
-bool mapGood = false;
-bool dtBAD = false;
-
 FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-
-        // XXX DEBUG
-        gpio_bits_set(GPIOC, GPIO_PINS_11);
-
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
+    {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
-#ifdef USE_DSHOT_TELEMETRY
+
+        #ifdef USE_DSHOT_TELEMETRY
         dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
-#endif
+        #endif
 
         // Disable timers and dma
 
-#ifdef USE_DSHOT_DMAR
+        #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
             xDMA_Cmd(motor->timerHardware->dmaTimUPRef, DISABLE);
             TIM_DMACmd(motor->timerHardware->tim, TIM_DMA_Update, DISABLE);
         } else
-#endif
-        // disable the dma channel
-        xDMA_Cmd(motor->dmaRef, FALSE); // Gets re-enabled in pwm_output_dshot_shared.c from pwmWriteDshotInt
+        #endif
+        {   // block for the 'else' in the #ifdef above
 
-        // disable request generation
-        tmr_dma_request_enable(motor->timerHardware->tim, motor->timerDmaSource, FALSE);
+            // Important - disable requests before disabling the dma channel, otherwise it's possible to
+            // have a pending request that will fire the moment the dma channel is re-enabled, which
+            // causes fake pulses to be sent at the start of the next packet.
+            // This may be the problem described in the errata 1.10.1. The full work-around sounds a bit
+            // heavyweight, but we should keep it in mind in case it's needed.
+            //   ADVTM
+            //   How to clear TMR-triggered DAM requests
+            //   Description:
+            //   TMR-induced DMA request cannot be cleared by resetting/setting the corresponding DMA
+            //   request enable bit in the TMRx_IDEN register.
+            //   Workaround:
+            //   Before enabling DMA channel, reset TMR (reset CRM clock of TMR) and initialize TMR to
+            //   clear pending DMA requests.
 
+            // disable request generation
+            tmr_dma_request_enable(motor->timerHardware->tim, motor->timerDmaSource, FALSE);
+
+            // disable the dma channel, (gets re-enabled in pwm_output_dshot_shared.c from pwmWriteDshotInt)
+            xDMA_Cmd(motor->dmaRef, FALSE);
+        }
 
         // If we're expecting telem, flip direction and re-enable
-
-#ifdef USE_DSHOT_TELEMETRY
+        #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             pwmDshotSetDirectionInput(motor);
             xDMA_SetCurrDataCounter(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
             xDMA_Cmd(motor->dmaRef, TRUE);
-            // TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, ENABLE);
-            // XXX check
             tmr_dma_request_enable(motor->timerHardware->tim, motor->timerDmaSource, TRUE);
 
             dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
         }
-#endif
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+        #endif
 
-        // XXX DEBUG
-        gpio_bits_reset(GPIOC, GPIO_PINS_11);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
 
     } // if DMA_IT_TCIF
 }
@@ -352,61 +363,35 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, 
                                  motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
-#ifdef USE_DSHOT_TELEMETRY
-#define OCINIT motor->ocInitStruct
-#define DMAINIT motor->dmaInitStruct
-#else
+    #ifdef USE_DSHOT_TELEMETRY
+    #define OCINIT motor->ocInitStruct
+    #define DMAINIT motor->dmaInitStruct
+    #else
     TIM_OCInitTypeDef ocInitStruct;
     DMA_InitTypeDef   dmaInitStruct;
-#define OCINIT ocInitStruct
-#define DMAINIT dmaInitStruct
-#endif
+    #define OCINIT ocInitStruct
+    #define DMAINIT dmaInitStruct
+    #endif
 
     dmaResource_t *dmaRef = NULL;
     uint32_t dmaMuxId = 0;
 
-    // XXX testing - find a better place and only enable the mux(s) being used
-    // merge into dmaMuxEnable?
-    dmamux_enable(DMA1, TRUE);
-    dmamux_enable(DMA2, TRUE);
-
-    // If we use pinio config for debug pins then the init will probably be done for us, but not until after this function runs
-    // grab a pin for debug, C10 will do for now
-    gpio_init_type init = {
-        .gpio_pins = GPIO_PINS_10,
-        .gpio_mode = GPIO_MODE_OUTPUT, 
-        .gpio_drive_strength = GPIO_DRIVE_STRENGTH_MODERATE,
-        .gpio_out_type = GPIO_OUTPUT_PUSH_PULL,
-        .gpio_pull = GPIO_PULL_NONE
-    };
-    gpio_init(GPIOC, &init);
-
-
-#if defined(USE_DMA_SPEC)
+    #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     if (dmaSpec != NULL) {
         dmaRef = dmaSpec->ref;
         dmaMuxId = dmaSpec->dmaMuxId;
     }
-
-#else // not defined USE_DMA_SPEC
+    #else // not defined USE_DMA_SPEC
     dmaRef = timerHardware->dmaRef;
-#if defined(STM32F4)
-    // XXX Fixme
-    dmaChannel = timerHardware->dmaChannel;
-#endif
-#endif // USE_DMA_SPEC
+    #endif // USE_DMA_SPEC
 
-#ifdef USE_DSHOT_DMAR
+    #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         dmaRef = timerHardware->dmaTimUPRef;
-#if defined(STM32F4)
-        // XXX Fixme
-        dmaChannel = timerHardware->dmaTimUPChannel;
-#endif
     }
-#endif // USE_DSHOT_DMAR
+    #endif // USE_DSHOT_DMAR
 
     if (dmaRef == NULL) {
         return false;
@@ -415,7 +400,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
 
     bool dmaIsConfigured = false;
-#ifdef USE_DSHOT_DMAR
+    #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
         if (owner->owner == OWNER_TIMUP && owner->resourceIndex == timerGetTIMNumber(timerHardware->tim)) {
@@ -424,8 +409,8 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
             return false;
         }
     } else
-#endif
-    {
+    #endif
+    { // 'else' block
         if (!dmaAllocate(dmaIdentifier, OWNER_MOTOR, RESOURCE_INDEX(reorderedMotorIndex))) {
             return false;
         }
@@ -449,13 +434,13 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
     uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PULL_DOWN : GPIO_PULL_UP;
-#ifdef USE_DSHOT_TELEMETRY
+
+    #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         output ^= TIMER_OUTPUT_INVERTED;
     }
-#endif
+    #endif
 
-    // motor->iocfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, pupMode);
     motor->iocfg = IO_CONFIG(GPIO_MODE_MUX, GPIO_DRIVE_STRENGTH_MODERATE, GPIO_OUTPUT_PUSH_PULL, pupMode);
 
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
@@ -478,12 +463,12 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     tmr_output_default_para_init(ocConfig);
 
     ocConfig->oc_mode = TMR_OUTPUT_CONTROL_PWM_MODE_A;
-    if (output & TIMER_OUTPUT_N_CHANNEL) {  // What's the benefit of using either the N or normal channels?
-        // XXX N channels not yet tested
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
+        // XXX N channels not yet tested, comments are the stm32 code
         // OCINIT.TIM_OutputNState = TIM_OutputNState_Enable;
         ocConfig->occ_output_state = TRUE;
         // OCINIT.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        ocConfig->occ_idle_state = FALSE;   // XXX is 'reset' equivalent to TRUE or FALSE???
+        ocConfig->occ_idle_state = FALSE;
         // OCINIT.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
         ocConfig->occ_polarity = (output & TIMER_OUTPUT_INVERTED) ? TMR_OUTPUT_ACTIVE_LOW : TMR_OUTPUT_ACTIVE_HIGH;
     } else {
@@ -492,55 +477,26 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         ocConfig->oc_polarity = (output & TIMER_OUTPUT_INVERTED) ? TMR_OUTPUT_ACTIVE_LOW : TMR_OUTPUT_ACTIVE_HIGH;
     }
 
-    // OCINIT.TIM_Pulse = 0;
-    { // local scope for variable
-        tmr_channel_select_type atChannel = toCHSelectType(timerHardware->channel, false);  // tmr_channel_value_set only supports the normal channels
-        tmr_channel_value_set(timer, atChannel, 0);
-        // tmr_channel_value_set(timer, atChannel, (motor->index + 1) * 2);
-    }
-
-#ifdef USE_DSHOT_TELEMETRY
-
-    // typedef struct
-    // {
-    //   tmr_channel_select_type                input_channel_select;   /*!< tmr input channel select */
-    //   tmr_input_polarity_type                input_polarity_select;  /*!< tmr input polarity select */
-    //   tmr_input_direction_mapped_type        input_mapped_select;    /*!< tmr channel mapped direct or indirect */
-    //   uint8_t                                input_filter_value;     /*!< tmr channel filter value */
-    // } tmr_input_config_type;
-
-    // TIM_ICStructInit(&motor->icInitStruct);
+    #ifdef USE_DSHOT_TELEMETRY
     tmr_input_config_type * icConfig = &motor->icInitStruct;
     tmr_input_default_para_init(icConfig);
-
-    // motor->icInitStruct.TIM_ICSelection = TIM_ICSelection_DirectTI;
     icConfig->input_mapped_select = TMR_CC_CHANNEL_MAPPED_DIRECT;
-
-    // motor->icInitStruct.TIM_ICPolarity = TIM_ICPolarity_BothEdge;
     icConfig->input_polarity_select = TMR_INPUT_BOTH_EDGE;
+    const bool useNChannel = output & TIMER_OUTPUT_N_CHANNEL;
+    icConfig->input_channel_select = toCHSelectType(timerHardware->channel, useNChannel);
+    icConfig->input_filter_value = 2;
+    #endif // USE_DSHOT_TELEMETRY
 
-    // motor->icInitStruct.TIM_ICPrescaler = TIM_ICPSC_DIV1; //  XXX not part of at32 input config
-
-    // motor->icInitStruct.TIM_Channel = timerHardware->channel;
-    icConfig->input_channel_select = toCHSelectType(timerHardware->channel, false);
-
-    // motor->icInitStruct.TIM_ICFilter = 2;
-    icConfig->input_filter_value = 2;   // What are the units, is this valid?
-#endif
-
-
-#ifdef USE_DSHOT_DMAR
+    #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstRef = dmaRef;
     } else
-#endif
-    {
-        // returns 1 bit set to indicate one of TMR_C1_DMA_REQUEST, C2_, C3_, C4_
+    #endif
+    { // 'else' block
         motor->timerDmaSource = timerDmaSource(timerHardware->channel);
 
         // clear that bit from timerDmaSources
         // timerDmaSources can have more than one source set in it if multiple motors share a common timer,
-        // although at this stage I'm not sure why we can't just set it to 0
         motor->timer->timerDmaSources &= ~motor->timerDmaSource;
     }
 
@@ -554,7 +510,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     dma_default_para_init(&DMAINIT);
 
-#ifdef USE_DSHOT_DMAR
+    #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
 
@@ -575,80 +531,63 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DMAINIT.DMA_Mode = DMA_Mode_Normal;
         DMAINIT.DMA_Priority = DMA_Priority_High;
     } else
-#endif
-    {
+    #endif // USE_DSHOT_DMAR
+    { // 'else' block
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
-
         DMAINIT.memory_base_addr = (uint32_t)motor->dmaBuffer;
         DMAINIT.memory_inc_enable = TRUE;
         DMAINIT.memory_data_width = DMA_MEMORY_DATA_WIDTH_WORD;
         DMAINIT.loop_mode_enable = FALSE;
-
-        DMAINIT.buffer_size = DSHOT_DMA_BUFFER_SIZE; // XXX shouldn't need to be set here, added for testing
-
+        DMAINIT.buffer_size = DSHOT_DMA_BUFFER_SIZE;
         DMAINIT.direction = DMA_DIR_MEMORY_TO_PERIPHERAL;
-
-        // Nothing about fifo or burst in at32 init struct
-        // DMAINIT.DMA_FIFOMode = DMA_FIFOMode_Enable;
-        // DMAINIT.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;  // Are we relying on this for something?
-        // DMAINIT.DMA_MemoryBurst = DMA_MemoryBurst_Single;
-        // DMAINIT.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
-
         DMAINIT.peripheral_base_addr = (uint32_t)timerChCCR(timerHardware); // returns the address of CxDT for timerHardware->channel
         DMAINIT.peripheral_inc_enable = FALSE;
         DMAINIT.peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_WORD;
-
         DMAINIT.priority = DMA_PRIORITY_HIGH;
     }
 
     motor->dmaRef = dmaRef;
 
 
-
-#ifdef USE_DSHOT_TELEMETRY
+    #ifdef USE_DSHOT_TELEMETRY
     motor->dshotTelemetryDeadtimeUs = DSHOT_TELEMETRY_DEADTIME_US + 1000000 *
         (16 * MOTOR_BITLENGTH) / getDshotHz(pwmProtocolType);
     motor->timer->outputPeriod = (pwmProtocolType == PWM_TYPE_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
     pwmDshotSetDirectionOutput(motor);
-#else
+    #else
     pwmDshotSetDirectionOutput(motor, &OCINIT, &DMAINIT);
-#endif
+    #endif
 
-#ifdef USE_DSHOT_DMAR
+    #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         if (!dmaIsConfigured) {
             dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
         }
     } else
-#endif
-    {
+    #endif
+    { // 'else' block
         dmaSetHandler(dmaIdentifier, motor_DMA_IRQHandler, NVIC_PRIO_DSHOT_DMA, motor->index);
     }
 
-    // toplevel enable for the entire timer - starts the counter running
-    tmr_counter_enable(timer, TRUE);
-
     { // local scope
-        tmr_channel_select_type chSel = toCHSelectType(timerHardware->channel, output & TIMER_OUTPUT_N_CHANNEL);
+        const tmr_channel_select_type chSel = toCHSelectType(timerHardware->channel, output & TIMER_OUTPUT_N_CHANNEL);
         tmr_channel_enable(timer, chSel, TRUE); 
     }
 
     if (configureTimer) {
         // Changes to the period register are deferred until the next counter overflow
         tmr_period_buffer_enable(timer, TRUE);
-
         tmr_output_enable(timer, TRUE);
-
-        // XXX We already did this above, why is it repeated here?
         tmr_counter_enable(timer, TRUE);
-
     }
-#ifdef USE_DSHOT_TELEMETRY
+
+    #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         // avoid high line during startup to prevent bootloader activation
         *timerChCCR(timerHardware) = 0xffff;
     }
-#endif
+    #endif
+    
     motor->configured = true;
 
     return true;
