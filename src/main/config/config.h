@@ -82,7 +82,9 @@ void changePidProfileFromCellCount(uint8_t cellCount);
 uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
 
+#ifdef USE_RPM_LIMITER
 void updateRPMLimiterExpectedThrottleLimit(void);
+#endif
 
 bool canSoftwareSerialBeUsed(void);
 
