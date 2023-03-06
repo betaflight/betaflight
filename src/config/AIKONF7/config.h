@@ -109,4 +109,7 @@
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW0_DEG
-//TODO #define PINIO_BOX 40,0,0,0
+#define PINIO1_BOX 40
+#define PINIO2_BOX 0
+#define PINIO3_BOX 0
+#define PINIO4_BOX 0

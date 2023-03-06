@@ -30,15 +30,30 @@
 
 #include "piniobox.h"
 
+#ifndef PINIO1_BOX
+#define PINIO1_BOX PERMANENT_ID_NONE
+#endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 1);
+#ifndef PINIO2_BOX
+#define PINIO2_BOX PERMANENT_ID_NONE
+#endif
 
-PG_RESET_TEMPLATE(pinioBoxConfig_t, pinioBoxConfig,
-    .permanentId = {
-        PERMANENT_ID_NONE,
-        PERMANENT_ID_NONE,
-        PERMANENT_ID_NONE,
-        PERMANENT_ID_NONE
-    },
-);
+#ifndef PINIO3_BOX
+#define PINIO3_BOX PERMANENT_ID_NONE
+#endif
+
+#ifndef PINIO4_BOX
+#define PINIO4_BOX PERMANENT_ID_NONE
+#endif
+
+PG_REGISTER_WITH_RESET_FN(pinioBoxConfig_t, pinioBoxConfig, PG_PINIOBOX_CONFIG, 1);
+
+void pgResetFn_pinioBoxConfig(pinioBoxConfig_t *config)
+{
+    config->permanentId[0] = PINIO1_BOX;
+    config->permanentId[1] = PINIO2_BOX;
+    config->permanentId[2] = PINIO3_BOX;
+    config->permanentId[3] = PINIO4_BOX;
+}
+
 #endif
