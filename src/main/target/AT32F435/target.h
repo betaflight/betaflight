@@ -54,10 +54,7 @@
 
 #define USE_EXTI
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PIN         PB12
 
-#define USE_GYRO_SPI_ICM42688P
-#define USE_ACC_SPI_ICM42688P
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

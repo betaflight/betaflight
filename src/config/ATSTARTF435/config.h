@@ -47,3 +47,11 @@
 #define USE_ACC
 #define USE_ACCGYRO_BMI160
 
+// These would be useful for connecting configurator via the at-link,
+// but don't seem to be active when defined here
+#define UART1_RX_PIN PA10
+#define UART1_TX_PIN PA9
+#define USE_MSP_UART SERIAL_PORT_USART1
+
+
+
