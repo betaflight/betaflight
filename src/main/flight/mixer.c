@@ -324,6 +324,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
                 }
                 mixerRuntime.autoFlipPower = 0;
                 disarm(DISARM_REASON_AUTO_CRASHFLIP);
+                 // Right after this, tryArm will be ran by processrx
             } else {
                 mixerRuntime.autoFlipPower = 0;
                 if(isStableForAutoCrashflip()) {
