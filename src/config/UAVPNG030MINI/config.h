@@ -57,8 +57,8 @@
 #define LED1_PIN             PE7
 #define LED2_PIN             PE6
 #define SPI1_SCK_PIN         PA5
-#define SPI1_MISO_PIN        PA6
-#define SPI1_MOSI_PIN        PA7
+#define SPI1_SDI_PIN         PA6
+#define SPI1_SDO_PIN         PA7
 #define ESCSERIAL_PIN        PA2
 #define ADC_VBAT_PIN         PC1
 #define BARO_CS_PIN          PE1

@@ -48,16 +48,16 @@
 #define GYRO_1_ALIGN_YAW 1800
 
 #define SPI1_SCK_PIN         PA5
-#define SPI1_MISO_PIN        PA6
-#define SPI1_MOSI_PIN        PA7
+#define SPI1_SDI_PIN         PA6
+#define SPI1_SDO_PIN         PA7
 
 #define SPI2_SCK_PIN         PB13
-#define SPI2_MISO_PIN        PB14
-#define SPI2_MOSI_PIN        PB15
+#define SPI2_SDI_PIN         PB14
+#define SPI2_SDO_PIN         PB15
 
 #define SPI3_SCK_PIN         PC10
-#define SPI3_MISO_PIN        PC11
-#define SPI3_MOSI_PIN        PB5
+#define SPI3_SDI_PIN         PC11
+#define SPI3_SDO_PIN         PB5
 
 #define FLASH_CS_PIN         PA15
 #define FLASH_SPI_INSTANCE SPI3

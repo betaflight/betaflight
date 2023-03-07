@@ -31,8 +31,8 @@
 
 // AT-START-F435 J7 connector SPI 2
 #define SPI2_SCK_PIN            PD1
-#define SPI2_MISO_PIN           PC2
-#define SPI2_MOSI_PIN           PD4
+#define SPI2_SDI_PIN            PC2
+#define SPI2_SDO_PIN            PD4
 
 #define J7_NSS                  PD0
 

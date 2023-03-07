@@ -49,8 +49,8 @@
 #define LED1_PIN             PB4
 #define LED2_PIN             PC2
 #define SPI2_SCK_PIN         PB13
-#define SPI2_MISO_PIN        PB14
-#define SPI2_MOSI_PIN        PB15
+#define SPI2_SDI_PIN         PB14
+#define SPI2_SDO_PIN         PB15
 #define ADC_VBAT_PIN         PC4
 #define ADC_CURR_PIN         PC5
 #define GYRO_1_EXTI_PIN      PB5

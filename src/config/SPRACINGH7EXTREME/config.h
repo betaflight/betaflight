@@ -76,20 +76,20 @@
 
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PD3
-#define SPI2_MISO_PIN           PC2
-#define SPI2_MOSI_PIN           PC3
+#define SPI2_SDI_PIN            PC2
+#define SPI2_SDO_PIN            PC3
 #define SPI2_NSS_PIN            PB12
 
 #define USE_SPI_DEVICE_3
 #define SPI3_SCK_PIN            PB3
-#define SPI3_MISO_PIN           PB4
-#define SPI3_MOSI_PIN           PD6
+#define SPI3_SDI_PIN            PB4
+#define SPI3_SDO_PIN            PD6
 #define SPI3_NSS_PIN            PA15
 
 #define USE_SPI_DEVICE_4
 #define SPI4_SCK_PIN            PE12
-#define SPI4_MISO_PIN           PE13
-#define SPI4_MOSI_PIN           PE14
+#define SPI4_SDI_PIN            PE13
+#define SPI4_SDO_PIN            PE14
 #define SPI4_NSS_PIN            PE11
 
 #define USE_USB_ID

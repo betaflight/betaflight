@@ -59,10 +59,10 @@
 #define LED2_PIN             PB6
 #define SPI1_SCK_PIN         PA5
 #define SPI3_SCK_PIN         PC10
-#define SPI1_MISO_PIN        PA6
-#define SPI3_MISO_PIN        PC11
-#define SPI1_MOSI_PIN        PA7
-#define SPI3_MOSI_PIN        PC12
+#define SPI1_SDI_PIN         PA6
+#define SPI3_SDI_PIN         PC11
+#define SPI1_SDO_PIN         PA7
+#define SPI3_SDO_PIN         PC12
 #define ESCSERIAL_PIN        PC7
 #define ADC_VBAT_PIN         PC1
 #define ADC_CURR_PIN         PC2

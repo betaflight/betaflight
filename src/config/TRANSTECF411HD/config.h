@@ -44,8 +44,8 @@
 #define INVERTER1_PIN        PC13
 #define LED0_PIN             PA14
 #define SPI1_SCK_PIN         PA5
-#define SPI1_MISO_PIN        PA6
-#define SPI1_MOSI_PIN        PA7
+#define SPI1_SDI_PIN         PA6
+#define SPI1_SDO_PIN         PA7
 #define ADC_VBAT_PIN         PA0
 #define ADC_CURR_PIN         PB4
 #define MAX7456_SPI_CS_PIN   PB12

@@ -66,10 +66,10 @@
 #define LED1_PIN             PA13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
-#define SPI1_MISO_PIN        PB4
-#define SPI2_MISO_PIN        PC2
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PC3
+#define SPI1_SDI_PIN         PB4
+#define SPI2_SDI_PIN         PC2
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PC3
 #define ADC_VBAT_PIN         PC4
 #define ADC_RSSI_PIN         PB0
 #define ADC_CURR_PIN         PC5
