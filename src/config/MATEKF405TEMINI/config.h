@@ -115,11 +115,13 @@
 #define DEFAULT_VOLTAGE_METER_SCALE     210
 #define DEFAULT_CURRENT_METER_SCALE     150
 #define BEEPER_INVERTED
+#define PINIO1_BOX 40
+#define PINIO2_BOX 41
 #define SYSTEM_HSE_MHZ                  8
 #define DEFAULT_BLACKBOX_DEVICE         BLACKBOX_DEVICE_FLASH
 #define MAX7456_SPI_INSTANCE            SPI1
-//TODO #define PINIO_BOX 40,41,255,255
 #define FLASH_SPI_INSTANCE              SPI2
+
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE             SPI1
 #define GYRO_1_ALIGN                    CW270_DEG_FLIP
