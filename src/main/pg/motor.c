@@ -33,6 +33,18 @@
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
 
+#if !defined(DEFAULT_DSHOT_BITBANG)
+#define DEFAULT_DSHOT_BITBANG DSHOT_BITBANG_AUTO
+#endif
+
+#if !defined(DSHOT_BITBANGED_TIMER_DEFAULT)
+#define DSHOT_BITBANGED_TIMER_DEFAULT DSHOT_BITBANGED_TIMER_AUTO
+#endif
+
+#if !defined(DEFAULT_DSHOT_BURST)
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
+#endif
+
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
@@ -61,10 +73,6 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffsetValue = 550;
-
-#ifdef USE_DSHOT_DMAR
-    motorConfig->dev.useBurstDshot = ENABLE_DSHOT_DMAR;
-#endif
 
 #ifdef USE_TIMER
 #ifdef MOTOR1_PIN
@@ -99,8 +107,12 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
         motorConfig->dev.motorOutputReordering[i] = i;
     }
 
+#ifdef USE_DSHOT_DMAR
+    motorConfig->dev.useBurstDshot = DEFAULT_DSHOT_BURST;
+#endif
+
 #ifdef USE_DSHOT_BITBANG
-    motorConfig->dev.useDshotBitbang = DSHOT_BITBANG_DEFAULT;
+    motorConfig->dev.useDshotBitbang = DEFAULT_DSHOT_BITBANG;
     motorConfig->dev.useDshotBitbangedTimer = DSHOT_BITBANGED_TIMER_DEFAULT;
 #endif
 }
