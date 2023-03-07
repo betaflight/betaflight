@@ -31,7 +31,7 @@
 /*
  * Quad SPI supports 1/2/4 wire modes
  *
- * 1LINE is like SPI MISO/MOSI using D0 (MOSI)/D1(MISO).
+ * 1LINE is like SPI SDI/SDO using D0 (SDO)/D1(SDI).
  * 2LINE uses D0, D1 (bidirectional).
  * 4LINE uses D0..D3 (bidirectional)
  *

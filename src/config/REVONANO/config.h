@@ -55,8 +55,8 @@
 #define LED0_PIN             PC14
 #define LED1_PIN             PC13
 #define SPI2_SCK_PIN         PB13
-#define SPI2_MISO_PIN        PB14
-#define SPI2_MOSI_PIN        PB15
+#define SPI2_SDI_PIN         PB14
+#define SPI2_SDO_PIN         PB15
 #define ESCSERIAL_PIN        PB10
 #define ADC_VBAT_PIN         PA6
 #define ADC_RSSI_PIN         PA5

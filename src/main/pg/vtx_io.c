@@ -43,7 +43,7 @@ void pgResetFn_vtxIOConfig(vtxIOConfig_t *vtxIOConfig)
 
     // software SPI
     vtxIOConfig->clockTag = IO_TAG(RTC6705_SPICLK_PIN);
-    vtxIOConfig->dataTag = IO_TAG(RTC6705_SPI_MOSI_PIN);
+    vtxIOConfig->dataTag = IO_TAG(RTC6705_SPI_SDO_PIN);
 
     // hardware spi
     vtxIOConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(RTC6705_SPI_INSTANCE));

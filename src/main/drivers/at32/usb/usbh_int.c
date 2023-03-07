@@ -100,7 +100,7 @@ void usbh_irq_handler(otg_core_type *otgdev)
     }
     if(intsts & USB_OTG_ISOOUTDROP_FLAG)
     {
-      usb_global_clear_interrupt(usbx, USB_OTG_ISOOUTDROP_FLAG);
+      usb_global_clear_interrupt(usbx, USB_OTG_INCOMISOIN_FLAG);
     }
 
   }

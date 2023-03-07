@@ -93,7 +93,7 @@ enum {
 #define CYRF6936_PACTL_GPIO (1<<2)
 #define CYRF6936_PACTL_OD   (1<<3)
 #define CYRF6936_XOUT_OD    (1<<4)
-#define CYRF6936_MISO_OD    (1<<5)
+#define CYRF6936_SDI_OD    (1<<5)
 #define CYRF6936_IRQ_POL    (1<<6)
 #define CYRF6936_IRQ_OD     (1<<7)
 
