@@ -386,8 +386,10 @@
 // Setup crystal frequency on F4 for backward compatibility
 // Should be set to zero for generic targets to ensure USB is working
 // when unconfigured for targets with non-standard crystal.
-// Can be set at runtime with with CLI parameter 'system_hse_value'.
-#define SYSTEM_HSE_VALUE 0
+// Can be set at runtime with with CLI parameter 'system_hse_mhz'.
+#ifndef SYSTEM_HSE_MHZ
+#define SYSTEM_HSE_MHZ 0
+#endif
 
 // Number of pins that needs pre-init
 #ifdef USE_SPI
