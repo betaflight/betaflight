@@ -98,8 +98,8 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyro.gyroSensor1.gyroDev;
 
 PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 9);
 
-#ifndef GYRO_CONFIG_USE_GYRO_DEFAULT
-#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
+#ifndef DEFAULT_GYRO_TO_USE
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_1
 #endif
 
 void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
@@ -116,7 +116,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->gyro_lpf2_type = FILTER_PT1;
     gyroConfig->gyro_lpf2_static_hz = GYRO_LPF2_HZ_DEFAULT;
     gyroConfig->gyro_high_fsr = false;
-    gyroConfig->gyro_to_use = GYRO_CONFIG_USE_GYRO_DEFAULT;
+    gyroConfig->gyro_to_use = DEFAULT_GYRO_TO_USE;
     gyroConfig->gyro_soft_notch_hz_1 = 0;
     gyroConfig->gyro_soft_notch_cutoff_1 = 0;
     gyroConfig->gyro_soft_notch_hz_2 = 0;
