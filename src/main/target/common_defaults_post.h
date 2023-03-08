@@ -144,54 +144,6 @@
 #endif
 #endif
 
-#ifdef USE_SDCARD
-#ifndef SDCARD_DETECT_PIN
-#define SDCARD_DETECT_PIN NONE
-#endif
-#ifdef SDCARD_DETECT_INVERTED
-#define SDCARD_DETECT_IS_INVERTED 1
-#else
-#define SDCARD_DETECT_IS_INVERTED 0
-#endif
-#ifdef USE_SDCARD_SPI
-#ifndef SDCARD_SPI_INSTANCE
-#define SDCARD_SPI_INSTANCE NULL
-#endif
-#ifndef SDCARD_SPI_CS_PIN
-#define SDCARD_SPI_CS_PIN NONE
-#endif
-#endif // USE_SDCARD_SPI
-#ifdef USE_SDCARD_SDIO
-#ifndef SDCARD_SDIO_DMA_OPT
-#define SDCARD_SDIO_DMA_OPT (DMA_OPT_UNUSED)
-#endif
-#ifndef SDIO_DEVICE
-#define SDIO_DEVICE SDIOINVALID
-#endif
-#ifndef SDIO_USE_4BIT
-#define SDIO_USE_4BIT false
-#endif
-#ifndef SDIO_CK_PIN
-#define SDIO_CK_PIN NONE
-#endif
-#ifndef SDIO_CMD_PIN
-#define SDIO_CMD_PIN NONE
-#endif
-#ifndef SDIO_D0_PIN
-#define SDIO_D0_PIN NONE
-#endif
-#ifndef SDIO_D1_PIN
-#define SDIO_D1_PIN NONE
-#endif
-#ifndef SDIO_D2_PIN
-#define SDIO_D2_PIN NONE
-#endif
-#ifndef SDIO_D3_PIN
-#define SDIO_D3_PIN NONE
-#endif
-#endif // USE_SDCARD_SDIO
-#endif // USE_SDCARD
-
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
 #define USE_UART
 #endif
