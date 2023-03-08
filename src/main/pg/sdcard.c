@@ -92,7 +92,7 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     }
 #endif
 
-#if defined(USE_SDCARD_SDIO)
+#if defined(USE_SDCARD_SDIO) && defined(SDIO_DEVICE)
     if (SDIO_DEVICE != SDIOINVALID) {
         config->mode = SDCARD_MODE_SDIO;
     }

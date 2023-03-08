@@ -30,9 +30,11 @@
 #ifndef SDCARD_SDIO_DMA_OPT
 #define SDCARD_SDIO_DMA_OPT (DMA_OPT_UNUSED)
 #endif
+
 #ifndef SDIO_DEVICE
 #define SDIO_DEVICE SDIOINVALID
 #endif
+
 #ifndef SDIO_USE_4BIT
 #define SDIO_USE_4BIT false
 #endif
