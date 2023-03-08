@@ -107,9 +107,9 @@
 #define GYRO_1_CS_PIN        PC15
 #define GYRO_2_CS_PIN        PE11
 #define USB_DETECT_PIN       PE2
-#define VBAT_ADC_PIN         PC0  //ADC123 VBAT1
-#define CURRENT_METER_ADC_PIN PC1  //ADC123 CURR1
-#define RSSI_ADC_PIN         PC5  //ADC12  RSSI
+#define ADC_VBAT_PIN         PC0  //ADC123 VBAT1
+#define ADC_CURR_PIN         PC1  //ADC123 CURR1
+#define ADC_RSSI_PIN         PC5  //ADC12  RSSI
 
 
 #define TIMER_PIN_MAPPING \
