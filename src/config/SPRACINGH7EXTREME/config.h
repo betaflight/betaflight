@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32H750
@@ -115,8 +115,11 @@
 #define ADC1_DMA_OPT 8
 #define ADC3_DMA_OPT 9
 
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
+#define USE_BARO
 #define USE_BARO_BMP388
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
