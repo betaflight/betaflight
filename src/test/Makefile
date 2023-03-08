@@ -161,6 +161,11 @@ flight_mixer_unittest :=  \
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
+io_unittest_SRC	:= \
+		$(USER_DIR)/drivers/io.c
+
+io_unittest_DEFINES := \
+		SITL=1 GPIOA_BASE="((intptr_t)0x0001)"
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \

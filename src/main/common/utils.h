@@ -35,6 +35,7 @@
 #define CONCAT2(_1,_2) CONCAT(_1, _2)
 #define CONCAT3(_1,_2,_3)  CONCAT(CONCAT(_1, _2), _3)
 #define CONCAT4(_1,_2,_3,_4)  CONCAT(CONCAT3(_1, _2, _3), _4)
+#define CONCAT5(_1,_2,_3,_4,_5)  CONCAT(CONCAT4(_1, _2, _3, _4), _5)
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
