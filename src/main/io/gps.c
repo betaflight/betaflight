@@ -82,7 +82,6 @@ uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint32_t GPS_distanceToHomeCm;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees * 10
 uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
-int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 int16_t nav_takeoff_bearing;
 
 #define GPS_DISTANCE_FLOWN_MIN_SPEED_THRESHOLD_CM_S 15 // 0.54 km/h 0.335 mph
@@ -107,7 +106,7 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 #define UBLOX_ACK_TIMEOUT_MAX_COUNT (25)
 
 static serialPort_t *gpsPort;
-static float gpsSampleRateHz;
+static float gpsDataIntervalSeconds;
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -327,8 +326,7 @@ static void gpsSetState(gpsState_e state)
 
 void gpsInit(void)
 {
-    gpsSampleRateHz = 0.0f;
-
+    gpsDataIntervalSeconds = 0.1f;
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsData.timeouts = 0;
@@ -1843,19 +1841,15 @@ void GPS_calc_longitude_scaling(int32_t lat)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Calculate the distance flown and vertical speed from gps position data
+// Calculate the distance flown from gps position data
 //
-static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
+static void GPS_calculateDistanceFlown(bool initialize)
 {
     static int32_t lastCoord[2] = { 0, 0 };
     static int32_t lastAlt;
-    static int32_t lastMillis;
-
-    int currentMillis = millis();
 
     if (initialize) {
         GPS_distanceFlownInCm = 0;
-        GPS_verticalSpeedInCmS = 0;
     } else {
         if (STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED)) {
             uint16_t speed = gpsConfig()->gps_use_3d_speed ? gpsSol.speed3d : gpsSol.groundSpeed;
@@ -1870,13 +1864,10 @@ static void GPS_calculateDistanceFlownVerticalSpeed(bool initialize)
                 GPS_distanceFlownInCm += dist;
             }
         }
-        GPS_verticalSpeedInCmS = (gpsSol.llh.altCm - lastAlt) * 1000 / (currentMillis - lastMillis);
-        GPS_verticalSpeedInCmS = constrain(GPS_verticalSpeedInCmS, -1500, 1500);
     }
     lastCoord[GPS_LONGITUDE] = gpsSol.llh.lon;
     lastCoord[GPS_LATITUDE] = gpsSol.llh.lat;
     lastAlt = gpsSol.llh.altCm;
-    lastMillis = currentMillis;
 }
 
 void GPS_reset_home_position(void)
@@ -1895,7 +1886,7 @@ void GPS_reset_home_position(void)
             // PS: to test for gyro cal, check for !ARMED, since we cannot be here while disarmed other than via gyro cal
         }
     }
-    GPS_calculateDistanceFlownVerticalSpeed(true); // Initialize
+    GPS_calculateDistanceFlown(true); // Initialize
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1920,8 +1911,8 @@ void GPS_calculateDistanceAndDirectionToHome(void)
         uint32_t dist;
         int32_t dir;
         GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[GPS_LATITUDE], &GPS_home[GPS_LONGITUDE], &dist, &dir);
-        GPS_distanceToHome = dist / 100; // m/s
-        GPS_distanceToHomeCm = dist; // cm/sec
+        GPS_distanceToHome = dist / 100; // m
+        GPS_distanceToHomeCm = dist; // cm
         GPS_directionToHome = dir / 10; // degrees * 10 or decidegrees
     } else {
         // If we don't have home set, do not display anything
@@ -1933,11 +1924,21 @@ void GPS_calculateDistanceAndDirectionToHome(void)
 
 void onGpsNewData(void)
 {
-    static timeUs_t timeUs, lastTimeUs = 0;
+    static timeUs_t lastTimeUs = 0;
+    const timeUs_t timeUs = micros();
 
-    // Detect current sample rate of GPS solution
-    timeUs = micros();
-    gpsSampleRateHz = 1e6f / cmpTimeUs(timeUs, lastTimeUs);
+    // calculate GPS solution interval
+    // !!! TOO MUCH JITTER TO BE USEFUL - need an exact time !!!
+    const float gpsDataIntervalS = cmpTimeUs(timeUs, lastTimeUs) / 1e6f;
+    // dirty hack to remove jitter from interval
+    if (gpsDataIntervalS < 0.15f) {
+        gpsDataIntervalSeconds = 0.1f;
+    } else if (gpsDataIntervalS < 0.4f) {
+        gpsDataIntervalSeconds = 0.2f;
+    } else {
+        gpsDataIntervalSeconds = 1.0f;
+    }
+
     lastTimeUs = timeUs;
 
     if (!(STATE(GPS_FIX) && gpsSol.numSat >= GPS_MIN_SAT_COUNT)) {
@@ -1947,7 +1948,7 @@ void onGpsNewData(void)
 
     GPS_calculateDistanceAndDirectionToHome();
     if (ARMING_FLAG(ARMED)) {
-        GPS_calculateDistanceFlownVerticalSpeed(false);
+        GPS_calculateDistanceFlown(false);
     }
 
 #ifdef USE_GPS_RESCUE
@@ -1965,9 +1966,9 @@ void gpsSetFixState(bool state)
     }
 }
 
-float gpsGetSampleRateHz(void)
+float getGpsDataIntervalSeconds(void)
 {
-    return gpsSampleRateHz;
+    return gpsDataIntervalSeconds;
 }
 
 #endif // USE_GPS
