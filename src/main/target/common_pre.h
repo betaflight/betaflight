@@ -172,8 +172,6 @@
 #define USE_RX_PPM
 #define USE_RX_PWM
 
-#define USE_BRUSHED_ESC_AUTODETECT  // Detect if brushed motors are connected and set defaults appropriately to avoid motors spinning on boot
-
 #define USE_PINIO
 
 #if !defined(USE_SERIAL_RX)
