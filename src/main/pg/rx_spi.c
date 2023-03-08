@@ -31,6 +31,26 @@
 
 #include "rx/rx_spi.h"
 
+#if !defined(RX_SPI_INSTANCE)
+#define RX_SPI_INSTANCE NULL
+#endif
+
+#if !defined(RX_SPI_CS_PIN)
+#define RX_SPI_CS_PIN NONE
+#endif
+
+#ifndef RX_SPI_LED_PIN
+#define RX_SPI_LED_PIN NONE
+#endif
+
+#if !defined(RX_SPI_EXTI_PIN)
+#define RX_SPI_EXTI_PIN NONE
+#endif
+
+#if !defined(RX_SPI_BIND_PIN)
+#define RX_SPI_BIND_PIN NONE
+#endif
+
 PG_REGISTER_WITH_RESET_FN(rxSpiConfig_t, rxSpiConfig, PG_RX_SPI_CONFIG, 0);
 
 void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
@@ -38,7 +58,7 @@ void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
     rxSpiConfig->rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
 
     // Basic SPI
-    rxSpiConfig->csnTag = IO_TAG(RX_NSS_PIN);
+    rxSpiConfig->csnTag = IO_TAG(RX_SPI_CS_PIN);
     rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance(RX_SPI_INSTANCE));
 
     rxSpiConfig->extiIoTag = IO_TAG(RX_SPI_EXTI_PIN);
