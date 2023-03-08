@@ -272,11 +272,6 @@
 #undef USE_VTX_MSP
 #endif
 
-// Burst dshot to default off if not configured explicitly by target
-#ifndef ENABLE_DSHOT_DMAR
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_OFF
-#endif
-
 // Some target doesn't define USE_ADC which USE_ADC_INTERNAL depends on
 #ifndef USE_ADC
 #undef USE_ADC_INTERNAL
