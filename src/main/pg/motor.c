@@ -26,7 +26,6 @@
 
 #ifdef USE_MOTOR
 
-#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 
 #include "pg/pg.h"
@@ -43,19 +42,9 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->dev.useUnsyncedPwm = true;
 #else
-#ifdef USE_BRUSHED_ESC_AUTODETECT
-    if (getDetectedMotorType() == MOTOR_BRUSHED) {
-        motorConfig->minthrottle = 1000;
-        motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
-        motorConfig->dev.useUnsyncedPwm = true;
-    } else
-#endif // USE_BRUSHED_ESC_AUTODETECT
-    {
-        motorConfig->minthrottle = 1070;
-        motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
-    }
+    motorConfig->minthrottle = 1070;
+    motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
 #endif // BRUSHED_MOTORS
 
     motorConfig->maxthrottle = 2000;
