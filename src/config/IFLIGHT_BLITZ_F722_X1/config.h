@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -30,9 +30,12 @@
 #define BOARD_NAME        IFLIGHT_BLITZ_F722_X1
 #define MANUFACTURER_ID   IFRC
 
+#define USE_GYRO
 #define USE_ACCGYRO_BMI270
 #define USE_GYRO_SPI_ICM42688P
+#define USE_ACC
 #define USE_ACC_SPI_ICM42688P
+#define USE_BARO
 #define USE_BARO_DPS310
 #define USE_FLASH_M25P16
 #define USE_MAX7456

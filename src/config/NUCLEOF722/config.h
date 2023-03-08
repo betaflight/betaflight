@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F7X2
@@ -30,6 +30,8 @@
 #define BOARD_NAME        NUCLEOF722
 #define MANUFACTURER_ID   STMI
 
+#define USE_GYRO
 #define USE_GYRO_MPU6050
+#define USE_ACC
 #define USE_ACC_MPU6050
 

@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32H743
@@ -30,6 +30,8 @@
 #define BOARD_NAME        NEUTRONRCH7BT
 #define MANUFACTURER_ID   NERC
 
+#define USE_GYRO
+#define USE_ACC
 #define USE_ACCGYRO_BMI270
 #define USE_FLASH_W25M02G
 #define USE_MAX7456

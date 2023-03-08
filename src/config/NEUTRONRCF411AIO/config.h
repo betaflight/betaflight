@@ -22,7 +22,7 @@
 /*
    This file has been auto generated from unified-targets repo.
 
-   The auto generation is transitional only, please ensure you update unified targets and not this file until the transition has complete.
+   The auto generation is transitional only, please remove this comment once the file is edited.
 */
 
 #define FC_TARGET_MCU     STM32F411
@@ -30,8 +30,10 @@
 #define BOARD_NAME        NEUTRONRCF411AIO
 #define MANUFACTURER_ID   NERC
 
+#define USE_ACC
 #define USE_ACC_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM42688P
 #define USE_GYRO_SPI_ICM42605
 #define USE_GYRO_SPI_ICM20689
