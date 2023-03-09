@@ -93,39 +93,3 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_RAM_RW
 
 #define USE_LATE_TASK_STATISTICS
-
-#ifndef SPI1_SCK_PIN
-#define SPI1_SCK_PIN    PA5
-#define SPI1_SDI_PIN    PA6
-#define SPI1_SDO_PIN    PA7
-#endif
-
-#ifndef SPI2_SCK_PIN
-#define SPI2_SCK_PIN    PB13
-#define SPI2_SDI_PIN    PB14
-#define SPI2_SDO_PIN    PB15
-#endif
-
-#ifndef SPI3_SCK_PIN
-#define SPI3_SCK_PIN    PB3
-#define SPI3_SDI_PIN    PB4
-#define SPI3_SDO_PIN    PB5
-#endif
-
-#ifndef SPI4_SCK_PIN
-#define SPI4_SCK_PIN    NONE
-#define SPI4_SDI_PIN    NONE
-#define SPI4_SDO_PIN    NONE
-#endif
-
-#ifndef SPI5_SCK_PIN
-#define SPI5_SCK_PIN    NONE
-#define SPI5_SDI_PIN   NONE
-#define SPI5_SDO_PIN   NONE
-#endif
-
-#ifndef SPI6_SCK_PIN
-#define SPI6_SCK_PIN    NONE
-#define SPI6_SDI_PIN   NONE
-#define SPI6_SDO_PIN   NONE
-#endif
