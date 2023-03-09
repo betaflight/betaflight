@@ -85,7 +85,7 @@
     In the future we can move to specific drivers being added only - to save flash space.
 */
 
-#if defined(USE_MAG) && !defined(USE_FAKE_MAG)
+#if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
 #define USE_MAG_DATA_READY_SIGNAL
 #define USE_MAG_HMC5883
 #define USE_MAG_SPI_HMC5883

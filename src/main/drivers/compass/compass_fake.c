@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FAKE_MAG
+#ifdef USE_VIRTUAL_MAG
 
 #include "build/build_config.h"
 
@@ -70,5 +70,5 @@ bool fakeMagDetect(magDev_t *mag)
     mag->read = fakeMagRead;
     return true;
 }
-#endif // USE_FAKE_MAG
+#endif // USE_VIRTUAL_MAG
 

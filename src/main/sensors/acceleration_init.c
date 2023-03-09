@@ -91,7 +91,7 @@
     !defined(USE_ACC_SPI_ICM20689) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_BMI160) && \
     !defined(USE_ACCGYRO_BMI270) && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) && \
     !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) && \
-    !defined(USE_ACC_MMA8452) && !defined(USE_FAKE_ACC)
+    !defined(USE_ACC_MMA8452) && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
 
@@ -328,7 +328,7 @@ retry:
         FALLTHROUGH;
 #endif
 
-#ifdef USE_FAKE_ACC
+#ifdef USE_VIRTUAL_ACC
     case ACC_FAKE:
         if (fakeAccDetect(dev)) {
             accHardware = ACC_FAKE;

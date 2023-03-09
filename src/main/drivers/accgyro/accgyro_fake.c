@@ -28,7 +28,7 @@
 #include <pthread.h>
 #endif
 
-#ifdef USE_FAKE_GYRO
+#ifdef USE_VIRTUAL_GYRO
 
 #include "build/build_config.h"
 
@@ -100,10 +100,10 @@ bool fakeGyroDetect(gyroDev_t *gyro)
 #endif
     return true;
 }
-#endif // USE_FAKE_GYRO
+#endif // USE_VIRTUAL_GYRO
 
 
-#ifdef USE_FAKE_ACC
+#ifdef USE_VIRTUAL_ACC
 
 static int16_t fakeAccData[XYZ_AXIS_COUNT];
 accDev_t *fakeAccDev;
@@ -155,4 +155,4 @@ bool fakeAccDetect(accDev_t *acc)
     acc->revisionCode = 0;
     return true;
 }
-#endif // USE_FAKE_ACC
+#endif // USE_VIRTUAL_ACC

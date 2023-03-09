@@ -408,7 +408,7 @@ void init(void)
     targetPreInit();
 #endif
 
-#if !defined(USE_FAKE_LED)
+#if !defined(USE_VIRTUAL_LED)
     ledInit(statusLedConfig());
 #endif
     LED2_ON;

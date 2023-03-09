@@ -173,7 +173,7 @@ static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 {
-#if defined(USE_FAKE_GYRO) && !defined(UNIT_TEST)
+#if defined(USE_VIRTUAL_GYRO) && !defined(UNIT_TEST)
     if (gyroSensor->gyroDev.gyroHardware == GYRO_FAKE) {
         gyroSensor->calibration.cyclesRemaining = 0;
         return;

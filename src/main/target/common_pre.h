@@ -76,7 +76,7 @@
 
 #define USE_MAG
 
-#if !defined(USE_BARO) && !defined(USE_FAKE_BARO)
+#if !defined(USE_BARO) && !defined(USE_VIRTUAL_BARO)
 #define USE_BARO
 
 #define USE_BARO_MS5611

@@ -42,7 +42,7 @@
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_avrootloader.h"
 
-#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_FAKE_ESC)
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_VIRTUAL_ESC)
 
 // Bootloader commands
 // RunCmd
@@ -344,7 +344,7 @@ uint8_t BL_VerifyFlash(ioMem_t *pMem)
 }
 
 #endif
-#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_FAKE_ESC)
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && defined(USE_VIRTUAL_ESC)
 
 #define FAKE_PAGE_SIZE 512
 #define FAKE_FLASH_SIZE 16385

@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FAKE_BARO
+#ifdef USE_VIRTUAL_BARO
 
 #include "common/utils.h"
 
@@ -82,4 +82,4 @@ bool fakeBaroDetect(baroDev_t *baro)
 
     return true;
 }
-#endif // USE_FAKE_BARO
+#endif // USE_VIRTUAL_BARO
