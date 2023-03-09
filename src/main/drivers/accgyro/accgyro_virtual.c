@@ -36,7 +36,7 @@
 #include "common/utils.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_virtual.h"
 
 static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
 gyroDev_t *fakeGyroDev;

@@ -41,8 +41,8 @@
 #include "drivers/timer.h"
 #include "timer_def.h"
 
-#include "drivers/accgyro/accgyro_fake.h"
-#include "drivers/barometer/barometer_fake.h"
+#include "drivers/accgyro/accgyro_virtual.h"
+#include "drivers/barometer/barometer_virtual.h"
 #include "flight/imu.h"
 
 #include "config/feature.h"

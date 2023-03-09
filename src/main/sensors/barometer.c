@@ -40,7 +40,7 @@
 #include "drivers/barometer/barometer_bmp388.h"
 #include "drivers/barometer/barometer_dps310.h"
 #include "drivers/barometer/barometer_qmp6988.h"
-#include "drivers/barometer/barometer_fake.h"
+#include "drivers/barometer/barometer_virtual.h"
 #include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/barometer/barometer_lps.h"
 #include "drivers/barometer/barometer_2smpb_02b.h"

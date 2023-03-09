@@ -29,7 +29,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/utils.h"
-    #include "drivers/accgyro/accgyro_fake.h"
+    #include "drivers/accgyro/accgyro_virtual.h"
     #include "drivers/accgyro/accgyro_mpu.h"
     #include "drivers/sensor.h"
     #include "io/beeper.h"

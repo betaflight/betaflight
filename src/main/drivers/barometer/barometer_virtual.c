@@ -28,7 +28,7 @@
 #include "common/utils.h"
 
 #include "barometer.h"
-#include "barometer_fake.h"
+#include "barometer_virtual.h"
 
 
 static int32_t fakePressure;

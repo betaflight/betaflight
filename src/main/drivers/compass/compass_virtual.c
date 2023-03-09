@@ -31,7 +31,7 @@
 #include "common/utils.h"
 
 #include "compass.h"
-#include "compass_fake.h"
+#include "compass_virtual.h"
 
 
 static int16_t fakeMagData[XYZ_AXIS_COUNT];
