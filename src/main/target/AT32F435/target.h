@@ -28,6 +28,14 @@
 #define AT32F435
 #endif
 
+#ifdef DEBUG
+// Development aid - invalid inputs or other failures are tested and will sit in a while(true) loop
+// so that you can go straight to the problem with the debugger
+#define HANG_ON_ERRORS
+#endif
+
+#define USE_FAKE_GYRO
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -47,6 +55,7 @@
 #define USE_EXTI
 #define USE_GYRO_EXTI
 
+
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -65,14 +74,22 @@
 //#undef USE_BEEPER
 #undef USE_LED_STRIP
 #undef USE_TRANSPONDER
-#undef USE_DSHOT
+
+// #undef USE_DSHOT
+// #undef USE_DSHOT_TELEMETRY
+// bitbang not implemented yet
+#undef USE_DSHOT_BITBANG
+// burst mode not implemented yet
+#undef USE_DSHOT_DMAR
+
+
 #undef USE_CAMERA_CONTROL
 #undef USE_RX_PPM
 #undef USE_RX_PWM
 #undef USE_RX_SPI
 #undef USE_RX_CC2500
 #undef USE_RX_EXPRESSLRS
-#undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+// #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x1000) // 4K sectors

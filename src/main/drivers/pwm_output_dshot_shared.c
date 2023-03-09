@@ -80,7 +80,16 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
-
+/**
+ * Prepare to send dshot data for one motor
+ * 
+ * Formats the value into the appropriate dma buffer and enables the dma channel.
+ * The packet won't start transmitting until later since the dma requests from the timer
+ * are disabled when this function is called.
+ * 
+ * @param index index of the motor that the data is to be sent to
+ * @param value the dshot value to be sent
+*/
 FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
@@ -110,15 +119,25 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #endif
     {
         bufferSize = loadDmaBuffer(motor->dmaBuffer, 1, packet);
+
         motor->timer->timerDmaSources |= motor->timerDmaSource;
+
 #ifdef USE_FULL_LL_DRIVER
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
         xLL_EX_DMA_EnableResource(motor->dmaRef);
 #else
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
+
+        // XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
+        #ifdef AT32F435
+        xDMA_Cmd(motor->dmaRef, TRUE);
+        #else
         xDMA_Cmd(motor->dmaRef, ENABLE);
-#endif
+        #endif
+
+#endif // USE_FULL_LL_DRIVER
     }
+
 }
 
 
@@ -176,6 +195,10 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
+/**
+ * Process dshot telemetry packets before switching the channels back to outputs
+ * 
+*/
 FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 {
     if (!useDshotTelemetry) {
@@ -201,6 +224,8 @@ FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
 
 #ifdef USE_FULL_LL_DRIVER
             LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
+#elif defined(AT32F435)
+            tmr_dma_request_enable(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
 #else
             TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif

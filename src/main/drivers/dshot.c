@@ -317,11 +317,6 @@ void dshotCleanTelemetryData(void)
     memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
 }
 
-uint32_t erpmToRpm(uint16_t erpm)
-{
-    //  rpm = (erpm * 100) / (motorConfig()->motorPoleCount / 2)
-    return (erpm * 200) / motorConfig()->motorPoleCount;
-}
 
 uint32_t getDshotAverageRpm(void)
 {
@@ -329,6 +324,17 @@ uint32_t getDshotAverageRpm(void)
 }
 
 #endif // USE_DSHOT_TELEMETRY
+
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+
+// Used with serial esc telem as well as dshot telem
+uint32_t erpmToRpm(uint16_t erpm)
+{
+    //  rpm = (erpm * 100) / (motorConfig()->motorPoleCount / 2)
+    return (erpm * 200) / motorConfig()->motorPoleCount;
+}
+
+#endif // USE_ESC_SENSOR || USE_DSHOT_TELEMETRY
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
 
