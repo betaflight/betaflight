@@ -75,7 +75,7 @@
 #define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC0
 #define ADC_CURR_PIN         PC2
-#define SDCARD_CS_PIN        PB9
+#define SDCARD_SPI_CS_PIN    PB9
 #define PINIO1_PIN           PC13
 #define PINIO2_PIN           PC14
 #define PINIO3_PIN           PB8

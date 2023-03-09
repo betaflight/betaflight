@@ -42,7 +42,7 @@
 #define SPI3_SDI_PIN         PB4
 #define SPI1_SDO_PIN         PA7
 #define SPI3_SDO_PIN         PB5
-#define SDCARD_CS_PIN        PA15
+#define SDCARD_SPI_CS_PIN    PA15
 #define GYRO_1_EXTI_PIN      PA1
 #define GYRO_1_CS_PIN        PA4
 

@@ -77,7 +77,7 @@
 #define ADC_RSSI_PIN         PB0
 #define ADC_CURR_PIN         PC5
 #define ADC_EXTERNAL1_PIN    PC0
-#define SDCARD_CS_PIN        PC1
+#define SDCARD_SPI_CS_PIN    PC1
 #define PINIO1_PIN           PA4
 #define PINIO2_PIN           PB5
 #define FLASH_CS_PIN         PC13

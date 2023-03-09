@@ -63,7 +63,7 @@
 #define ESCSERIAL_PIN        PC7
 #define ADC_VBAT_PIN         PC3
 #define ADC_CURR_PIN         PC2
-#define SDCARD_CS_PIN        PA15
+#define SDCARD_SPI_CS_PIN    PA15
 #define SDCARD_DETECT_PIN    PD2
 #define FLASH_CS_PIN         PB7
 #define GYRO_1_EXTI_PIN      PC5

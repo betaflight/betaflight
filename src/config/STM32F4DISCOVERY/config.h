@@ -61,7 +61,7 @@
 #define ESCSERIAL_PIN        PB9
 #define ADC_VBAT_PIN         PC1
 #define ADC_CURR_PIN         PC2
-#define SDCARD_CS_PIN        PD8
+#define SDCARD_SPI_CS_PIN    PD8
 #define USB_MSC_PIN          PA0
 #define GYRO_1_EXTI_PIN      PC4
 #define GYRO_1_CS_PIN        PC4

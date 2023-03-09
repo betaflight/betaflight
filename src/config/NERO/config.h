@@ -48,7 +48,7 @@
 #define SPI3_SDO_PIN         PC12
 #define GYRO_1_CS_PIN        PC4
 #define GYRO_1_EXTI_PIN      PB15
-#define SDCARD_CS_PIN        PA15
+#define SDCARD_SPI_CS_PIN    PA15
 #define SDCARD_DETECT_PIN    PD2
 #define MOTOR1_PIN           PA0
 #define MOTOR2_PIN           PA1
@@ -64,7 +64,7 @@
 #define UART6_RX_PIN         PC7
 #define ADC_VBAT_PIN         PC3
 #define ESCSERIAL_PIN        PC7
-#define SDCARD_CS_PIN        PA15
+#define SDCARD_SPI_CS_PIN    PA15
 #define SDCARD_DETECT_PIN    PD2
 
 #define TIMER_PIN_MAPPING \
