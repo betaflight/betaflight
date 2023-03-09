@@ -31,6 +31,42 @@
 
 #include "bus_spi.h"
 
+#ifndef SPI1_SCK_PIN
+#define SPI1_SCK_PIN    NONE
+#define SPI1_SDI_PIN    NONE
+#define SPI1_SDO_PIN    NONE
+#endif
+
+#ifndef SPI2_SCK_PIN
+#define SPI2_SCK_PIN    NONE
+#define SPI2_SDI_PIN    NONE
+#define SPI2_SDO_PIN    NONE
+#endif
+
+#ifndef SPI3_SCK_PIN
+#define SPI3_SCK_PIN    NONE
+#define SPI3_SDI_PIN    NONE
+#define SPI3_SDO_PIN    NONE
+#endif
+
+#ifndef SPI4_SCK_PIN
+#define SPI4_SCK_PIN    NONE
+#define SPI4_SDI_PIN    NONE
+#define SPI4_SDO_PIN    NONE
+#endif
+
+#ifndef SPI5_SCK_PIN
+#define SPI5_SCK_PIN    NONE
+#define SPI5_SDI_PIN    NONE
+#define SPI5_SDO_PIN    NONE
+#endif
+
+#ifndef SPI6_SCK_PIN
+#define SPI6_SCK_PIN    NONE
+#define SPI6_SDI_PIN    NONE
+#define SPI6_SDO_PIN    NONE
+#endif
+
 typedef struct spiDefaultConfig_s {
     SPIDevice device;
     ioTag_t sck;

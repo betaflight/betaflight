@@ -24,30 +24,6 @@
 #define DEBUG_MODE DEBUG_NONE
 #endif
 
-// pg/flash
-
-#ifdef USE_FLASH_M25P16
-#ifndef FLASH_CS_PIN
-#define FLASH_CS_PIN                    NONE
-#endif
-
-#ifndef FLASH_SPI_INSTANCE
-#define FLASH_SPI_INSTANCE              NULL
-#endif
-#endif
-
-// pg/flash
-
-#ifdef USE_FLASH_M25P16
-#ifndef FLASH_CS_PIN
-#define FLASH_CS_PIN                    NONE
-#endif
-
-#ifndef FLASH_SPI_INSTANCE
-#define FLASH_SPI_INSTANCE              NULL
-#endif
-#endif
-
 #ifndef I2C1_CLOCKSPEED
 #define I2C1_CLOCKSPEED 800
 #endif
