@@ -39,6 +39,14 @@
 #define FLASH_CS_PIN NONE
 #endif
 
+#ifndef FLASH_SPI_INSTANCE
+#define FLASH_SPI_INSTANCE NULL
+#endif
+
+#ifndef FLASH_QUADSPI_INSTANCE
+#define FLASH_QUADSPI_INSTANCE NULL
+#endif
+
 PG_REGISTER_WITH_RESET_FN(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
 
 void pgResetFn_flashConfig(flashConfig_t *flashConfig)
