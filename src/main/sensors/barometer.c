@@ -304,10 +304,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #endif
         FALLTHROUGH;
 
-    case BARO_FAKE:
+    case BARO_VIRTUAL:
 #ifdef USE_VIRTUAL_BARO
         if (fakeBaroDetect(baroDev)) {
-            baroHardware = BARO_FAKE;
+            baroHardware = BARO_VIRTUAL;
             break;
         }
 #endif
@@ -332,7 +332,7 @@ void baroInit(void)
 #ifndef USE_VIRTUAL_BARO
     baroReady = baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #else
-    baroReady = baroDetect(&baro.dev, BARO_FAKE);
+    baroReady = baroDetect(&baro.dev, BARO_VIRTUAL);
 #endif
 }
 

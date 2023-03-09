@@ -329,9 +329,9 @@ retry:
 #endif
 
 #ifdef USE_VIRTUAL_ACC
-    case ACC_FAKE:
+    case ACC_VIRTUAL:
         if (fakeAccDetect(dev)) {
-            accHardware = ACC_FAKE;
+            accHardware = ACC_VIRTUAL;
             break;
         }
         FALLTHROUGH;

@@ -316,7 +316,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     switch (gyroSensor->gyroDev.gyroHardware) {
     case GYRO_NONE:    // Won't ever actually get here, but included to account for all gyro types
     case GYRO_DEFAULT:
-    case GYRO_FAKE:
+    case GYRO_VIRTUAL:
     case GYRO_MPU6050:
     case GYRO_L3G4200D:
     case GYRO_MPU3050:
@@ -505,9 +505,9 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 #endif
 
 #ifdef USE_VIRTUAL_GYRO
-    case GYRO_FAKE:
+    case GYRO_VIRTUAL:
         if (fakeGyroDetect(dev)) {
-            gyroHardware = GYRO_FAKE;
+            gyroHardware = GYRO_VIRTUAL;
             break;
         }
         FALLTHROUGH;

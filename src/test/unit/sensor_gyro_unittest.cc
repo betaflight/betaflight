@@ -59,7 +59,7 @@ extern gyroDev_t * const gyroDevPtr;
 TEST(SensorGyro, Detect)
 {
     const gyroHardware_e detected = gyroDetect(gyroDevPtr);
-    EXPECT_EQ(GYRO_FAKE, detected);
+    EXPECT_EQ(GYRO_VIRTUAL, detected);
 }
 
 TEST(SensorGyro, Init)
@@ -67,7 +67,7 @@ TEST(SensorGyro, Init)
     pgResetAll();
     const bool initialised = gyroInit();
     EXPECT_TRUE(initialised);
-    EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
+    EXPECT_EQ(GYRO_VIRTUAL, detectedSensors[SENSOR_INDEX_GYRO]);
 }
 
 TEST(SensorGyro, Read)
