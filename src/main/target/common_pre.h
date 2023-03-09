@@ -71,6 +71,7 @@
 // all the settings for classic build
 #if !defined(CLOUD_BUILD) && !defined(SITL)
 
+// if no board config is provided, include all drivers
 #if !defined(USE_CONFIG)
 
 #define USE_MAG
