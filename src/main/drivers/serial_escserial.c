@@ -119,12 +119,12 @@ escSerial_t escSerialPorts[MAX_ESCSERIAL_PORTS];
 
 PG_REGISTER_WITH_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig, PG_ESCSERIAL_CONFIG, 0);
 
-#ifndef ESCSERIAL_TIMER_TX_PIN
-#define ESCSERIAL_TIMER_TX_PIN NONE
+#ifndef ESCSERIAL_PIN
+#define ESCSERIAL_PIN NONE
 #endif
 
 PG_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig,
-    .ioTag = IO_TAG(ESCSERIAL_TIMER_TX_PIN),
+    .ioTag = IO_TAG(ESCSERIAL_PIN),
 );
 
 enum {
@@ -196,7 +196,6 @@ static void escSerialInputPortConfig(const timerHardware_t *timerHardwarePtr)
     timerChClearCCFlag(timerHardwarePtr);
     timerChITConfig(timerHardwarePtr,ENABLE);
 }
-
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
 {
