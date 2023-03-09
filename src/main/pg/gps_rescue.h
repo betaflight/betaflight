@@ -26,7 +26,7 @@
 
 typedef struct gpsRescue_s {
 
-    uint16_t angle; // degrees
+    uint16_t maxRescueAngle; // degrees
     uint16_t initialAltitudeM; // meters
     uint16_t descentDistanceM; // meters
     uint16_t rescueGroundspeed; // centimeters per second
@@ -47,6 +47,8 @@ typedef struct gpsRescue_s {
     uint16_t descendRate;
     uint16_t rescueAltitudeBufferM; // meters
     uint8_t  rollMix;
+    uint8_t  disarmThreshold;
+    uint8_t  pitchCutoffHz;
 
 } gpsRescueConfig_t;
 

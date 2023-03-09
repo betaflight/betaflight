@@ -56,10 +56,10 @@
 #define LED0_PIN             PC13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
 #define CAMERA_CONTROL_PIN   PB10
 #define ADC_VBAT_PIN         PA0
 #define ADC_RSSI_PIN         PB1
@@ -91,12 +91,12 @@
 
 #define ADC1_DMA_OPT        0
 
-//TODO #define GYRO_TO_USE FIRST
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_1
 
 //TODO #define SERIALRX_INVERTED OFF
 #define USE_ADC
 #define ADC_INSTANCE ADC1
-//TODO #define DSHOT_BURST AUTO
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_AUTO
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC

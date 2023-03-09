@@ -58,12 +58,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PC11
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PC12
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PC11
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PC12
 #define ESCSERIAL_PIN        PA3
 #define ADC_VBAT_PIN         PC0
 #define ADC_RSSI_PIN         PC2
@@ -97,7 +97,7 @@
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
-//TODO #define DSHOT_BURST OFF
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define BEEPER_INVERTED
@@ -106,7 +106,7 @@
 #define SDCARD_SPI_INSTANCE SPI2
 #define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI3
-//TODO #define DASHBOARD_I2C_BUS 1
+#define DASHBOARD_I2C_INSTANCE (I2CDEV_1)
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW270_DEG

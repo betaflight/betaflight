@@ -57,10 +57,10 @@
 #define I2C1_SDA_PIN         PB9
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
 #define ADC_VBAT_PIN         PB0
 #define ADC_CURR_PIN         PB1
 #define MAX7456_SPI_CS_PIN   PB12
@@ -86,8 +86,8 @@
 #define ADC1_DMA_OPT        0
 
 
-//TODO #define DSHOT_BURST AUTO
-//TODO #define DSHOT_BITBANG OFF
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_AUTO
+#define DEFAULT_DSHOT_BITBANG DSHOT_BITBANG_OFF
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
@@ -104,6 +104,4 @@
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
-//TODO #define GYRO_1_I2CBUS 0
-//TODO #define GYRO_1_I2C_ADDRESS 0
 #define GYRO_1_ALIGN CW180_DEG

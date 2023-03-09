@@ -91,7 +91,7 @@ USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
 EXCLUDES   = usbd_msc_storage_template.c
 USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
 
-VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src
+VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \

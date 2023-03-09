@@ -630,8 +630,8 @@ bool max7456DrawScreen(void)
         bool autoInc = false;
         int posLimit = pos + (maxScreenSize / 2);
 
-        maxSpiBufStartIndex = spiUseMOSI_DMA(dev) ? MAX_BYTES2SEND : MAX_BYTES2SEND_POLLED;
-        maxEncodeTime = spiUseMOSI_DMA(dev) ? MAX_ENCODE_US : MAX_ENCODE_US_POLLED;
+        maxSpiBufStartIndex = spiUseSDO_DMA(dev) ? MAX_BYTES2SEND : MAX_BYTES2SEND_POLLED;
+        maxEncodeTime = spiUseSDO_DMA(dev) ? MAX_ENCODE_US : MAX_ENCODE_US_POLLED;
 
         // Abort for now if the bus is still busy
         if (spiIsBusy(dev)) {

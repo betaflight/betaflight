@@ -46,14 +46,14 @@
 
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PD3
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
+#define SPI2_SDI_PIN            PB14
+#define SPI2_SDO_PIN            PB15
 #define SPI2_NSS_PIN            PB12
 
 #define USE_SPI_DEVICE_6
 #define SPI6_SCK_PIN            PB3
-#define SPI6_MISO_PIN           PB4
-#define SPI6_MOSI_PIN           PB5
+#define SPI6_SDI_PIN            PB4
+#define SPI6_SDO_PIN            PB5
 #define SPI6_NSS_PIN            PA15
 
 #define SX1280_BUSY_PIN         PC7
@@ -261,8 +261,7 @@
 #define BARO_I2C_INSTANCE    (I2CDEV_2)
 
 //TODO #define ADC_DEVICE 3
-//TODO #define PINIO_CONFIG 1,1,1,1
-//TODO #define PINIO_BOX 40,255,255,255
+#define PINIO1_BOX 40
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
 

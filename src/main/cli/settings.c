@@ -150,7 +150,7 @@ const char * const lookupTableGyroHardware[] = {
 #if defined(USE_SENSOR_NAMES) || defined(USE_BARO)
 // sync with baroSensor_e
 const char * const lookupTableBaroHardware[] = {
-    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS", "QMP6988", "BMP388", "DPS310", "2SMPB_02B"
+    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS", "QMP6988", "BMP388", "DPS310", "2SMPB_02B", "FAKE"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
@@ -1017,12 +1017,14 @@ const clivalue_t valueTable[] = {
 
     { PARAM_NAME_GPS_RESCUE_RETURN_ALT,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 2, 255 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, initialAltitudeM) },
     { PARAM_NAME_GPS_RESCUE_RETURN_SPEED,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, rescueGroundspeed) },
-    { PARAM_NAME_GPS_RESCUE_PITCH_ANGLE_MAX, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 60 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, angle) },
+    { PARAM_NAME_GPS_RESCUE_MAX_RESCUE_ANGLE, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 80 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, maxRescueAngle) },
     { PARAM_NAME_GPS_RESCUE_ROLL_MIX,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, rollMix) },
+    { PARAM_NAME_GPS_RESCUE_PITCH_CUTOFF,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 255 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, pitchCutoffHz) },
 
     { PARAM_NAME_GPS_RESCUE_DESCENT_DIST,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descentDistanceM) },
     { PARAM_NAME_GPS_RESCUE_DESCEND_RATE,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 25, 500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, descendRate) },
     { PARAM_NAME_GPS_RESCUE_LANDING_ALT,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 15 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, targetLandingAltitudeM) },
+    { PARAM_NAME_GPS_RESCUE_DISARM_THRESHOLD, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 250 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, disarmThreshold) },
 
     { PARAM_NAME_GPS_RESCUE_THROTTLE_MIN,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleMin) },
     { PARAM_NAME_GPS_RESCUE_THROTTLE_MAX,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleMax) },

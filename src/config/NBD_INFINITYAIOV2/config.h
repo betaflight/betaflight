@@ -53,12 +53,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI3_SCK_PIN         PB3
 #define SPI4_SCK_PIN         PE12
-#define SPI1_MISO_PIN        PA6
-#define SPI3_MISO_PIN        PB4
-#define SPI4_MISO_PIN        PE13
-#define SPI1_MOSI_PIN        PA7
-#define SPI3_MOSI_PIN        PD6
-#define SPI4_MOSI_PIN        PE14
+#define SPI1_SDI_PIN         PA6
+#define SPI3_SDI_PIN         PB4
+#define SPI4_SDI_PIN         PE13
+#define SPI1_SDO_PIN         PA7
+#define SPI3_SDO_PIN         PD6
+#define SPI4_SDO_PIN         PE14
 #define ADC_VBAT_PIN         PC1
 #define ADC_CURR_PIN         PC2
 #define FLASH_CS_PIN         PB0
@@ -77,7 +77,7 @@
 
 #define ADC1_DMA_OPT                    1
 #define MAG_I2C_INSTANCE                (I2CDEV_1)
-//TODO #define DSHOT_BURST ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 //TODO #define DSHOT_BIDIR ON
 #define DEFAULT_BLACKBOX_DEVICE         BLACKBOX_DEVICE_FLASH
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC

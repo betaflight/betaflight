@@ -75,7 +75,6 @@ COMMON_SRC = \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
-            drivers/pwm_esc_detect.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
             drivers/rx/rx_pwm.c \
@@ -469,9 +468,6 @@ SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 SRC += $(VCP_SRC)
 
 # end target specific make file checks
-
-# Search path and source files for the ST stdperiph library
-VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 
 # Search path and source files for the Open Location Code library
 OLC_DIR = $(ROOT)/lib/main/google/olc

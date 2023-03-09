@@ -26,12 +26,23 @@
 
 #ifdef USE_MOTOR
 
-#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/motor.h"
+
+#if !defined(DEFAULT_DSHOT_BITBANG)
+#define DEFAULT_DSHOT_BITBANG DSHOT_BITBANG_AUTO
+#endif
+
+#if !defined(DSHOT_BITBANGED_TIMER_DEFAULT)
+#define DSHOT_BITBANGED_TIMER_DEFAULT DSHOT_BITBANGED_TIMER_AUTO
+#endif
+
+#if !defined(DEFAULT_DSHOT_BURST)
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
+#endif
 
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
@@ -43,28 +54,14 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->dev.useUnsyncedPwm = true;
 #else
-#ifdef USE_BRUSHED_ESC_AUTODETECT
-    if (getDetectedMotorType() == MOTOR_BRUSHED) {
-        motorConfig->minthrottle = 1000;
-        motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
-        motorConfig->dev.useUnsyncedPwm = true;
-    } else
-#endif // USE_BRUSHED_ESC_AUTODETECT
-    {
-        motorConfig->minthrottle = 1070;
-        motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
-    }
+    motorConfig->minthrottle = 1070;
+    motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
 #endif // BRUSHED_MOTORS
 
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffsetValue = 550;
-
-#ifdef USE_DSHOT_DMAR
-    motorConfig->dev.useBurstDshot = ENABLE_DSHOT_DMAR;
-#endif
 
 #ifdef USE_TIMER
 #ifdef MOTOR1_PIN
@@ -99,8 +96,12 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
         motorConfig->dev.motorOutputReordering[i] = i;
     }
 
+#ifdef USE_DSHOT_DMAR
+    motorConfig->dev.useBurstDshot = DEFAULT_DSHOT_BURST;
+#endif
+
 #ifdef USE_DSHOT_BITBANG
-    motorConfig->dev.useDshotBitbang = DSHOT_BITBANG_DEFAULT;
+    motorConfig->dev.useDshotBitbang = DEFAULT_DSHOT_BITBANG;
     motorConfig->dev.useDshotBitbangedTimer = DSHOT_BITBANGED_TIMER_DEFAULT;
 #endif
 }

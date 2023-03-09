@@ -58,14 +58,14 @@
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
 #define SPI4_SCK_PIN         PE12
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PB4
-#define SPI4_MISO_PIN        PE13
-#define SPI1_MOSI_PIN        PD7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PB5
-#define SPI4_MOSI_PIN        PE14
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PB4
+#define SPI4_SDI_PIN         PE13
+#define SPI1_SDO_PIN         PD7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PB5
+#define SPI4_SDO_PIN         PE14
 #define ADC_VBAT_PIN         PC0
 #define ADC_RSSI_PIN         PC5
 #define ADC_CURR_PIN         PC1
@@ -116,7 +116,7 @@
 #define TIMUP5_DMA_OPT      0
 #define TIMUP8_DMA_OPT      0
 
-//TODO #define GYRO_TO_USE BOTH
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_BOTH
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define USE_BARO
@@ -135,8 +135,11 @@
 #define USE_SDCARD_SDIO
 
 #define MAX7456_SPI_INSTANCE SPI2
-//TODO #define PINIO_CONFIG 129,1,1,1
-//TODO #define PINIO_BOX 0,40,41,42
+#define PINIO1_CONFIG 129
+#define PINIO1_BOX 0
+#define PINIO2_BOX 40
+#define PINIO3_BOX 41
+#define PINIO4_BOX 42
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW90_DEG

@@ -58,12 +58,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PB4
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PB5
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PB4
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PB5
 #define ESCSERIAL_PIN        PA3
 #define CAMERA_CONTROL_PIN   PA8
 #define ADC_VBAT_PIN         PC0
@@ -87,7 +87,7 @@
 #define ADC3_DMA_OPT        1
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT300
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
@@ -95,8 +95,8 @@
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI3
-//TODO #define PINIO_CONFIG 129,1,1,1
-//TODO #define PINIO_BOX 40,255,255,255
+#define PINIO1_CONFIG 129
+#define PINIO1_BOX 40
 #define FLASH_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

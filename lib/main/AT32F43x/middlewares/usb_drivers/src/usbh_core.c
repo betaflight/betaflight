@@ -502,6 +502,7 @@ usb_sts_type usbh_core_init(usbh_core_type *uhost,
                             usbh_user_handler_type *user_handler,
                             uint8_t core_id)
 {
+  UNUSED(core_id);
   usb_sts_type status = USB_OK;
   uint32_t i_index;
   otg_global_type *usbx = usb_reg;
@@ -552,8 +553,8 @@ usb_sts_type usbh_core_init(usbh_core_type *uhost,
 
   if(usbx == OTG1_GLOBAL)
   {
-  	/* set receive fifo size */
-  	usbx->grxfsiz = USBH_RX_FIFO_SIZE;
+    /* set receive fifo size */
+    usbx->grxfsiz = USBH_RX_FIFO_SIZE;
 
     /* set non-periodic transmit fifo start address and depth */
     usbx->gnptxfsiz_ept0tx_bit.nptxfstaddr = USBH_RX_FIFO_SIZE;
@@ -566,8 +567,8 @@ usb_sts_type usbh_core_init(usbh_core_type *uhost,
 #ifdef OTG2_GLOBAL
   if(usbx == OTG2_GLOBAL)
   {
-  	/* set receive fifo size */
-  	usbx->grxfsiz = USBH2_RX_FIFO_SIZE;
+    /* set receive fifo size */
+    usbx->grxfsiz = USBH2_RX_FIFO_SIZE;
 
     /* set non-periodic transmit fifo start address and depth */
     usbx->gnptxfsiz_ept0tx_bit.nptxfstaddr = USBH2_RX_FIFO_SIZE;
@@ -808,8 +809,6 @@ usb_sts_type usbh_enum_handler(usbh_core_type *uhost)
       if(usbh_ctrl_result_check(uhost, CONTROL_IDLE, ENUM_SET_ADDR) == USB_OK)
       {
         usbh_parse_dev_desc(uhost, uhost->rx_buffer, 18);
-        USBH_DEBUG("VID: %xh", uhost->dev.dev_desc.idVendor);
-        USBH_DEBUG("PID: %xh", uhost->dev.dev_desc.idProduct);
       }
       break;
 
@@ -818,7 +817,6 @@ usb_sts_type usbh_enum_handler(usbh_core_type *uhost)
       if(uhost->ctrl.state == CONTROL_IDLE)
       {
         uhost->dev.address = usbh_alloc_address();
-        USBH_DEBUG("Set Address: %d", uhost->dev.address);
         usbh_set_address(uhost, uhost->dev.address);
       }
       if (usbh_ctrl_result_check(uhost, CONTROL_IDLE, ENUM_GET_CFG) == USB_OK)
@@ -1096,7 +1094,6 @@ static void usbh_wakeup(usbh_core_type *uhost)
   if(usbh_ctrl_result_check(uhost, CONTROL_IDLE, ENUM_IDLE) == USB_OK)
   {
     uhost->global_state = USBH_CLASS_REQUEST;
-    USBH_DEBUG("Remote Wakeup");
   }
 }
 

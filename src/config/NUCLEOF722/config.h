@@ -53,10 +53,10 @@
 #define LED1_PIN             PB14
 #define SPI1_SCK_PIN         PA5
 #define SPI4_SCK_PIN         PE12
-#define SPI1_MISO_PIN        PA6
-#define SPI4_MISO_PIN        PE13
-#define SPI1_MOSI_PIN        PA7
-#define SPI4_MOSI_PIN        PE14
+#define SPI1_SDI_PIN         PA6
+#define SPI4_SDI_PIN         PE13
+#define SPI1_SDO_PIN         PA7
+#define SPI4_SDO_PIN         PE14
 #define ADC_VBAT_PIN         PA3
 #define ADC_RSSI_PIN         PC3
 #define ADC_CURR_PIN         PC0
@@ -81,7 +81,5 @@
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define GYRO_1_BUSTYPE I2C
-//TODO #define GYRO_1_I2CBUS 1
 #define GYRO_1_ALIGN CW270_DEG
 #define GYRO_1_ALIGN_YAW 2700

@@ -58,12 +58,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PC11
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PB5
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PC11
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PB5
 #define CAMERA_CONTROL_PIN   PB3
 #define ADC_VBAT_PIN         PC2
 #define ADC_RSSI_PIN         PC3
@@ -95,7 +95,7 @@
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SCALE 250
@@ -107,6 +107,6 @@
 #define MAX7456_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
-//TODO #define GYRO_TO_USE BOTH
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_BOTH
 //TODO #define MCO2_ON_PC9 ON
-//TODO #define PINIO_BOX 40,255,255,255
+#define PINIO1_BOX 40

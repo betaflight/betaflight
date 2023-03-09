@@ -55,10 +55,10 @@
 #define LED0_PIN             PB4
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
 #define ESCSERIAL_PIN        PB9
 #define CAMERA_CONTROL_PIN   PB9
 #define ADC_VBAT_PIN         PC2
@@ -92,11 +92,12 @@
 #define MAX7456_SPI_INSTANCE SPI2
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-//TODO #define VBAT_SCALE 160
+#define DEFAULT_VOLTAGE_METER_SCALE 160
 #define DEFAULT_CURRENT_METER_SCALE 250
 #define BEEPER_INVERTED
 //TODO #define PID_PROCESS_DENOM 1
 #define SYSTEM_HSE_MHZ 8
-//TODO #define PINIO_BOX 40,41,255,255
+#define PINIO1_BOX 40
+#define PINIO2_BOX 41
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

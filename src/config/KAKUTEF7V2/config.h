@@ -62,12 +62,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI4_SCK_PIN         PE2
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI4_MISO_PIN        PE5
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI4_MOSI_PIN        PE6
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI4_SDI_PIN         PE5
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI4_SDO_PIN         PE6
 #define CAMERA_CONTROL_PIN   PE13
 #define ADC_VBAT_PIN         PC3
 #define ADC_RSSI_PIN         PC5
@@ -105,7 +105,7 @@
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI1
 #define MAX7456_SPI_INSTANCE SPI2
-//TODO #define DASHBOARD_I2C_BUS 1
+#define DASHBOARD_I2C_INSTANCE (I2CDEV_1)
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI4
 #define GYRO_1_ALIGN CW270_DEG

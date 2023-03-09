@@ -47,10 +47,10 @@
 #define LED0_PIN             PC13
 #define SPI1_SCK_PIN         PA5
 #define SPI3_SCK_PIN         PB3
-#define SPI1_MISO_PIN        PA6
-#define SPI3_MISO_PIN        PB4
-#define SPI1_MOSI_PIN        PA7
-#define SPI3_MOSI_PIN        PB5
+#define SPI1_SDI_PIN         PA6
+#define SPI3_SDI_PIN         PB4
+#define SPI1_SDO_PIN         PA7
+#define SPI3_SDO_PIN         PB5
 #define ADC_VBAT_PIN         PB1
 #define ADC_CURR_PIN         PA4
 #define MAX7456_SPI_CS_PIN   PB10
@@ -79,5 +79,5 @@
 #define GYRO_1_SPI_INSTANCE SPI3
 #define GYRO_1_ALIGN CW90_DEG
 #define GYRO_1_ALIGN_YAW 900
-//TODO #define DSHOT_BURST AUTO
-//TODO #define DSHOT_BITBANG OFF
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_AUTO
+#define DEFAULT_DSHOT_BITBANG DSHOT_BITBANG_OFF

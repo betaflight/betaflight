@@ -46,8 +46,8 @@ typedef struct dmaChannelSpec_s {
 #define DMA_CODE_REQUEST(code) DMA_CODE_CHANNEL(code)
 
 typedef enum {
-    DMA_PERIPH_SPI_MOSI,
-    DMA_PERIPH_SPI_MISO,
+    DMA_PERIPH_SPI_SDO,
+    DMA_PERIPH_SPI_SDI,
     DMA_PERIPH_ADC,
     DMA_PERIPH_SDIO,
     DMA_PERIPH_UART_TX,

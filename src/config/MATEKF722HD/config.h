@@ -66,10 +66,10 @@
 #define LED1_PIN                PA13
 #define SPI1_SCK_PIN            PA5
 #define SPI2_SCK_PIN            PB13
-#define SPI1_MISO_PIN           PA6
-#define SPI2_MISO_PIN           PB14
-#define SPI1_MOSI_PIN           PA7
-#define SPI2_MOSI_PIN           PC3
+#define SPI1_SDI_PIN            PA6
+#define SPI2_SDI_PIN            PB14
+#define SPI1_SDO_PIN            PA7
+#define SPI2_SDO_PIN            PC3
 #define CAMERA_CONTROL_PIN      PB15
 #define ADC_VBAT_PIN            PC2
 #define ADC_RSSI_PIN            PC0
@@ -111,10 +111,9 @@
 //TODO #define MAG_HARDWARE AUTO
 #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE       (I2CDEV_1)
-//TODO #define BARO_HARDWARE AUTO
 
 #define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 
 #define DSHOT_BURST             ON
 #define BARO_HARDWARE           AUTO
@@ -126,7 +125,8 @@
 #define DEFAULT_CURRENT_METER_SCALE 179
 
 #define BEEPER_INVERTED
-//TODO #define PINIO_BOX 40,41,255,255
+#define PINIO1_BOX 40
+#define PINIO2_BOX 41
 #define FLASH_SPI_INSTANCE      SPI2
 #define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
 
@@ -142,5 +142,5 @@
 #define CAMERA_CONTROL_MODE     HARDWARE_PWM
 
 #define ENSURE_MPU_DATA_READY_IS_LOW
-#define GYRO_CONFIG_USE_GYRO_DEFAULT GYRO_CONFIG_USE_GYRO_1
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_1
 #define USE_MPU_DATA_READY_SIGNAL

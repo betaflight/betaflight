@@ -54,10 +54,10 @@
 #define LED1_PIN             PC14
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
 #define ESCSERIAL_PIN        PB9
 #define ADC_VBAT_PIN         PC2
 #define ADC_RSSI_PIN         PC1
@@ -77,7 +77,7 @@
 #define ADC1_DMA_OPT        1
 
 //TODO #define BLACKBOX_DEVICE NONE
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define BEEPER_INVERTED

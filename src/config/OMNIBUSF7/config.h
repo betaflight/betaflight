@@ -57,14 +57,14 @@
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
 #define SPI4_SCK_PIN         PE2
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PC11
-#define SPI4_MISO_PIN        PE5
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PC12
-#define SPI4_MOSI_PIN        PE6
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PC11
+#define SPI4_SDI_PIN         PE5
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PC12
+#define SPI4_SDO_PIN         PE6
 #define ADC_VBAT_PIN         PC3
 #define ADC_RSSI_PIN         PC5
 #define ADC_CURR_PIN         PC2
@@ -108,7 +108,7 @@
 #define USE_SDCARD_SPI
 #define SDCARD_SPI_INSTANCE SPI4
 #define MAX7456_SPI_INSTANCE SPI2
-//TODO #define DASHBOARD_I2C_BUS 2
+#define DASHBOARD_I2C_INSTANCE (I2CDEV_2)
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI3
 #define GYRO_2_SPI_INSTANCE SPI1

@@ -75,14 +75,14 @@
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
 #define SPI4_SCK_PIN         PE12
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PC11
-#define SPI4_MISO_PIN        PE13
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PB2
-#define SPI4_MOSI_PIN        PE14
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PC11
+#define SPI4_SDI_PIN         PE13
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PB2
+#define SPI4_SDO_PIN         PE14
 #define ADC_VBAT_PIN         PC1
 #define ADC_RSSI_PIN         PC2
 #define ADC_CURR_PIN         PC3
@@ -128,10 +128,10 @@
 #define BEEPER_INVERTED
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-//TODO #define VBAT_SCALE 110
+#define DEFAULT_VOLTAGE_METER_SCALE 110
 #define DEFAULT_CURRENT_METER_SCALE 400
-//TODO #define PINIO_CONFIG 129,1,1,1
-//TODO #define PINIO_BOX 0,255,255,255
+#define PINIO1_CONFIG 129
+#define PINIO1_BOX 0
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW180_DEG

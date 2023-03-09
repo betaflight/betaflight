@@ -28,6 +28,8 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_BARO
+#define USE_BARO_BMP280
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACCGYRO_BMI270
@@ -68,14 +70,14 @@
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PC10
 #define SPI4_SCK_PIN         PE2
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PC11
-#define SPI4_MISO_PIN        PE5
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PC12
-#define SPI4_MOSI_PIN        PE6
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PC11
+#define SPI4_SDI_PIN         PE5
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PC12
+#define SPI4_SDO_PIN         PE6
 #define CAMERA_CONTROL_PIN   PB3
 #define ADC_VBAT_PIN         PC3
 #define ADC_RSSI_PIN         PC5
@@ -109,7 +111,7 @@
 #define TIMUP5_DMA_OPT      0
 #define TIMUP8_DMA_OPT      0
 
-//TODO #define GYRO_TO_USE BOTH
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_BOTH
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define USE_BARO
@@ -120,7 +122,7 @@
 #define DEFAULT_CURRENT_METER_SCALE 100
 #define BEEPER_INVERTED
 #define MAX7456_SPI_INSTANCE SPI4
-//TODO #define DASHBOARD_I2C_BUS 1
+#define DASHBOARD_I2C_INSTANCE (I2CDEV_1)
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
 #define GYRO_1_ALIGN CW0_DEG

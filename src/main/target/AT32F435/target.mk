@@ -4,9 +4,10 @@ MCU_FLASH_SIZE    := 4032
 DEVICE_FLAGS       = -DAT32F435ZMT7
 TARGET_MCU_FAMILY := AT32F4
 
-STDPERIPH_DIR   = $(ROOT)/lib/main/AT32F43x/drivers
-STDPERIPH_SRC   = \
-            $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c)) \
+AT_LIB_DIR      = $(ROOT)/lib/main/AT32F43x
+STDPERIPH_DIR   = $(AT_LIB_DIR)/drivers
+
+STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 
 EXCLUDES        = at32f435_437_dvp.c \
 				  at32f435_437_can.c \
@@ -16,18 +17,21 @@ EXCLUDES        = at32f435_437_dvp.c \
 STARTUP_SRC     = at32/startup_at32f435_437.s
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
-VPATH           := $(VPATH):$(ROOT)/lib/main/AT32F43x/cmsis/cm4/core_support:$(STDPERIPH_DIR)/inc:$(SRC_DIR)/startup/at32
+VPATH           := $(VPATH):$(AT_LIB_DIR)/cmsis/cm4/core_support:$(STDPERIPH_DIR)/inc:$(SRC_DIR)/startup/at32:$(STDPERIPH_DIR)/src
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(SRC_DIR)/startup/at32 \
                    $(STDPERIPH_DIR)/inc \
-                   $(ROOT)/lib/main/AT32F43x/cmsis/cm4/core_support \
-                   $(ROOT)/lib/main/AT32F43x/cmsis/cm4 \
-                   $(ROOT)/lib/main/AT32F43x/middlewares/i2c_application_library
+                   $(AT_LIB_DIR)/cmsis/cm4/core_support \
+                   $(AT_LIB_DIR)/cmsis/cm4 \
+                   $(AT_LIB_DIR)/middlewares/i2c_application_library \
+                   $(AT_LIB_DIR)/middlewares/usb_drivers/inc \
+                   $(AT_LIB_DIR)/middlewares/usbd_class/cdc
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-TARGET_SRC		:= $(ROOT)/lib/main/AT32F43x/middlewares/i2c_application_library/i2c_application.c
+TARGET_SRC		:= \
+            $(AT_LIB_DIR)/middlewares/i2c_application_library/i2c_application.c
 
 LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xM.ld
 
@@ -43,5 +47,6 @@ MCU_COMMON_SRC = \
 MCU_EXCLUDES =
 
 VCP_SRC = \
-            $(addprefix drivers/at32/usb/,$(notdir $(wildcard $(SRC_DIR)/drivers/at32/usb/*.c))) \
-            drivers/usb_io.c
+        $(addprefix $(AT_LIB_DIR)/middlewares/usbd_class/cdc/,$(notdir $(wildcard $(AT_LIB_DIR)/middlewares/usbd_class/cdc/*.c))) \
+        $(addprefix $(AT_LIB_DIR)/middlewares/usb_drivers/src/,$(notdir $(wildcard $(AT_LIB_DIR)/middlewares/usb_drivers/src/*.c))) \
+        drivers/usb_io.c

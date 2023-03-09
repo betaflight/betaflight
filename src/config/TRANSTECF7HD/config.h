@@ -52,11 +52,11 @@
 #define I2C1_SDA_PIN         PB7
 #define LED0_PIN             PA14
 #define SPI1_SCK_PIN         PA5
-#define SPI1_MISO_PIN        PA6
-#define SPI1_MOSI_PIN        PA7
+#define SPI1_SDI_PIN         PA6
+#define SPI1_SDO_PIN         PA7
 #define SPI2_SCK_PIN         PB13
-#define SPI2_MISO_PIN        PB14
-#define SPI2_MOSI_PIN        PB15
+#define SPI2_SDI_PIN         PB14
+#define SPI2_SDO_PIN         PB15
 #define ADC_VBAT_PIN         PC0
 #define ADC_RSSI_PIN         PB5
 #define ADC_CURR_PIN         PC1
@@ -79,9 +79,9 @@
 #define ADC1_DMA_OPT        1
 
 //TODO #define MAG_HARDWARE NONE
-//TODO #define BARO_HARDWARE NONE
+#define DEFAULT_BARO_DEVICE BARO_NONE
 
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT300
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC

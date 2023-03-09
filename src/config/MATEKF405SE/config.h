@@ -66,12 +66,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PC2
-#define SPI3_MISO_PIN        PB4
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PC3
-#define SPI3_MOSI_PIN        PB5
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PC2
+#define SPI3_SDI_PIN         PB4
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PC3
+#define SPI3_SDO_PIN         PB5
 #define ADC_VBAT_PIN         PC0
 #define ADC_RSSI_PIN         PC5
 #define ADC_CURR_PIN         PC1
@@ -105,10 +105,9 @@
 //TODO #define MAG_HARDWARE AUTO
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-//TODO #define BARO_I2C_ADDRESS 118
-//TODO #define BARO_HARDWARE AUTO
+#define DEFAULT_BARO_I2C_ADDRESS 118
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
-//TODO #define DSHOT_BURST OFF
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SCALE 179

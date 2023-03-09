@@ -52,12 +52,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI3_SCK_PIN         PB3
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI3_MISO_PIN        PB4
-#define SPI1_MOSI_PIN        PA7
-#define SPI2_MOSI_PIN        PB15
-#define SPI3_MOSI_PIN        PB5
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PB4
+#define SPI1_SDO_PIN         PA7
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PB5
 #define ESCSERIAL_PIN        PA3
 #define ADC_VBAT_PIN         PC5
 #define ADC_CURR_PIN         PC4
@@ -85,15 +85,18 @@
 #define ADC1_DMA_OPT        0
 
 //TODO #define MAG_HARDWARE NONE
-//TODO #define BARO_HARDWARE NONE
+#define DEFAULT_BARO_DEVICE BARO_NONE
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define MAX7456_SPI_INSTANCE SPI2
 //TODO #define DISPLAYPORT_MAX7456_WHT 3
-//TODO #define PINIO_CONFIG 129,1,1,1
-//TODO #define PINIO_BOX 40,0,0,0
+#define PINIO1_CONFIG 129
+#define PINIO1_BOX 40
+#define PINIO2_BOX 0
+#define PINIO3_BOX 0
+#define PINIO4_BOX 0
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

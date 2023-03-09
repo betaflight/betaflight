@@ -60,10 +60,10 @@
 #define LED0_PIN             PC14
 #define SPI1_SCK_PIN         PA5
 #define SPI3_SCK_PIN         PC10
-#define SPI1_MISO_PIN        PA6
-#define SPI3_MISO_PIN        PC11
-#define SPI1_MOSI_PIN        PA7
-#define SPI3_MOSI_PIN        PC12
+#define SPI1_SDI_PIN         PA6
+#define SPI3_SDI_PIN         PC11
+#define SPI1_SDO_PIN         PA7
+#define SPI3_SDO_PIN         PC12
 #define ESCSERIAL_PIN        PB8
 #define CAMERA_CONTROL_PIN   PA9
 #define ADC_VBAT_PIN         PC3
@@ -97,7 +97,7 @@
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
-#define ENABLE_DSHOT_DMAR DSHOT_DMAR_ON
+#define DEFAULT_DSHOT_BURST DSHOT_DMAR_ON
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600
 
 #define USE_ADC
@@ -109,8 +109,9 @@
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8
 #define MAX7456_SPI_INSTANCE SPI3
-//TODO #define PINIO_BOX 40,41,255,255
-//TODO #define DASHBOARD_I2C_BUS 1
+#define DASHBOARD_I2C_INSTANCE (I2CDEV_1)
+#define PINIO1_BOX 40
+#define PINIO2_BOX 41
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

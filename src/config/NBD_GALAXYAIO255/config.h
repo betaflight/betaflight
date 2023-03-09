@@ -59,12 +59,12 @@
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
 #define SPI4_SCK_PIN         PE12
-#define SPI1_MISO_PIN        PA6
-#define SPI2_MISO_PIN        PB14
-#define SPI4_MISO_PIN        PE13
-#define SPI1_MOSI_PIN        PD7
-#define SPI2_MOSI_PIN        PB15
-#define SPI4_MOSI_PIN        PE14
+#define SPI1_SDI_PIN         PA6
+#define SPI2_SDI_PIN         PB14
+#define SPI4_SDI_PIN         PE13
+#define SPI1_SDO_PIN         PD7
+#define SPI2_SDO_PIN         PB15
+#define SPI4_SDO_PIN         PE14
 #define ADC_VBAT_PIN         PC0
 #define ADC_CURR_PIN         PC1
 #define SDIO_CK_PIN          PC12
@@ -97,7 +97,7 @@
 #define TIMUP3_DMA_OPT      4
 #define TIMUP5_DMA_OPT      4
 
-//TODO #define GYRO_TO_USE BOTH
+#define DEFAULT_GYRO_TO_USE GYRO_CONFIG_USE_GYRO_BOTH
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define USE_BARO

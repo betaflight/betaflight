@@ -61,10 +61,10 @@
 #define LED0_PIN             PB5
 #define SPI1_SCK_PIN         PA5
 #define SPI3_SCK_PIN         PC10
-#define SPI1_MISO_PIN        PA6
-#define SPI3_MISO_PIN        PC11
-#define SPI1_MOSI_PIN        PA7
-#define SPI3_MOSI_PIN        PC12
+#define SPI1_SDI_PIN         PA6
+#define SPI3_SDI_PIN         PC11
+#define SPI1_SDO_PIN         PA7
+#define SPI3_SDO_PIN         PC12
 #define ESCSERIAL_PIN        PB14
 #define ADC_VBAT_PIN         PC2
 #define ADC_CURR_PIN         PC1
@@ -109,7 +109,7 @@
 #define SYSTEM_HSE_MHZ 8
 //TODO #define MAX7456_CLOCK DOUBLE
 #define MAX7456_SPI_INSTANCE SPI3
-//TODO #define DASHBOARD_I2C_BUS 2
+#define DASHBOARD_I2C_INSTANCE (I2CDEV_2)
 #define FLASH_SPI_INSTANCE SPI3
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1
