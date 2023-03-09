@@ -85,7 +85,7 @@
 #define MOTOR4_PIN           PB7
 #define RX_PPM_PIN           PB9
 #define LED_STRIP_PIN        PA8
-#define INVERTER1_PIN        PB10
+#define INVERTER_PIN_UART1   PB10
 #define ESCSERIAL_PIN        PB9
 
 #define ADC1_DMA_OPT        1

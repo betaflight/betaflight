@@ -94,7 +94,7 @@
 
 #define UART3_TX_PIN         PC10
 #define UART3_RX_PIN         PC11
-#define INVERTER3_PIN        PC15
+#define INVERTER_PIN_UART3   PC15
 
 #define UART4_TX_PIN         PA0
 #define UART4_RX_PIN         PA1

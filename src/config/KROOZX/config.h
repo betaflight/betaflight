@@ -54,8 +54,8 @@
 #define UART4_RX_PIN         PC11
 #define UART5_RX_PIN         PD2
 #define UART6_RX_PIN         PC7
-#define INVERTER1_PIN        PB13
-#define INVERTER6_PIN        PB12
+#define INVERTER_PIN_UART1   PB13
+#define INVERTER_PIN_UART6   PB12
 #define I2C1_SCL_PIN         PB6
 #define I2C3_SCL_PIN         PA8
 #define I2C1_SDA_PIN         PB7

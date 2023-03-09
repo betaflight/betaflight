@@ -109,7 +109,7 @@
 
 #define ADC3_DMA_OPT        0
 
-#define INVERTER1_PIN        PC0
+#define INVERTER_PIN_UART1   PC0
 #define PINIO1_PIN           PB0
 
 #define USE_BARO
