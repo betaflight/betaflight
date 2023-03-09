@@ -35,6 +35,25 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 
+#ifdef USE_SDCARD_SPI
+#ifndef SDCARD_SPI_INSTANCE
+#define SDCARD_SPI_INSTANCE NULL
+#endif
+#ifndef SDCARD_SPI_CS_PIN
+#define SDCARD_SPI_CS_PIN NONE
+#endif
+#endif // USE_SDCARD_SPI
+
+#ifndef SDCARD_DETECT_PIN
+#define SDCARD_DETECT_PIN NONE
+#endif
+
+#ifdef SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_IS_INVERTED 1
+#else
+#define SDCARD_DETECT_IS_INVERTED 0
+#endif
+
 PG_REGISTER_WITH_RESET_FN(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 2);
 
 void pgResetFn_sdcardConfig(sdcardConfig_t *config)
@@ -73,7 +92,7 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     }
 #endif
 
-#if defined(USE_SDCARD_SDIO)
+#if defined(USE_SDCARD_SDIO) && defined(SDIO_DEVICE)
     if (SDIO_DEVICE != SDIOINVALID) {
         config->mode = SDCARD_MODE_SDIO;
     }
