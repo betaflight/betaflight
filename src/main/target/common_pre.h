@@ -71,6 +71,8 @@
 // all the settings for classic build
 #if !defined(CLOUD_BUILD) && !defined(SITL)
 
+#if !defined(USE_CONFIG)
+
 #define USE_MAG
 
 #if !defined(USE_BARO) && !defined(USE_FAKE_BARO)
@@ -117,7 +119,7 @@
 #define USE_GYRO_MPU6050
 #define USE_ACCGYRO_BMI160
 #endif
-#endif
+#endif // ACC GYRO inclusion
 
 #if !defined(USE_FLASH_CHIP)
 
@@ -141,7 +143,7 @@
 #endif // USE_FLASH
 #endif // USE_FLASH_CHIP
 
-#ifndef USE_MAX7456
+#if !defined(USE_MAX7456)
 #define USE_MAX7456
 #endif
 
@@ -157,6 +159,8 @@
 #if !defined(USE_EXST) && !defined(USE_SDCARD)
 #define USE_SDCARD
 #endif
+
+#endif // !defined(USE_CONFIG)
 
 #if defined(STM32F405) || defined(STM32F745) || defined(STM32H7)
 #define USE_VTX_RTC6705
