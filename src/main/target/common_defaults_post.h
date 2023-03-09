@@ -74,29 +74,6 @@
 #define BINDPLUG_PIN NONE
 #endif
 
-#ifdef USE_RX_SPI
-#if !defined(RX_SPI_INSTANCE)
-#define RX_SPI_INSTANCE NULL
-#endif
-
-#if !defined(RX_NSS_PIN)
-#define RX_NSS_PIN NONE
-#endif
-
-#ifndef RX_SPI_LED_PIN
-#define RX_SPI_LED_PIN NONE
-#endif
-
-#if !defined(RX_SPI_EXTI_PIN)
-#define RX_SPI_EXTI_PIN NONE
-#endif
-
-#if !defined(RX_SPI_BIND_PIN)
-#define RX_SPI_BIND_PIN NONE
-#endif
-
-#endif
-
 // Previously there was logic here to default GYRO_1_CUSTOM_ALIGN and GYRO_2_CUSTOM_ALIGN
 // to CUSTOM_ALIGN_CW0_DEG if they weren't defined in the target. The defaulting logic
 // has been moved to pg/gyrodev.c to set the custom alignment based on the sensor alignment
