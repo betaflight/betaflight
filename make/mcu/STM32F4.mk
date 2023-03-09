@@ -8,6 +8,9 @@ CMSIS_DIR      := $(ROOT)/lib/main/STM32F4/Drivers/CMSIS
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
 EXCLUDES        =
+
+VPATH       := $(VPATH):$(STDPERIPH_DIR)/Src
+
 else
 CMSIS_DIR      := $(ROOT)/lib/main/CMSIS
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
@@ -31,6 +34,8 @@ EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_dbgmcu.c \
                   stm32f4xx_cryp_tdes.c \
                   stm32f4xx_hash_sha1.c
+
+VPATH       := $(VPATH):$(STDPERIPH_DIR)/src
 endif
 
 ifeq ($(TARGET_MCU),$(filter $(TARGET_MCU),STM32F411xE STM32F446xx))
