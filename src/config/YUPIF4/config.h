@@ -53,8 +53,8 @@
 #define UART3_RX_PIN         PB11
 #define UART6_RX_PIN         PC7
 #define UART11_RX_PIN        PB1
-#define INVERTER1_PIN        PB12
-#define INVERTER6_PIN        PB15
+#define INVERTER_PIN_UART1   PB12
+#define INVERTER_PIN_UART6   PB15
 #define LED0_PIN             PB6
 #define LED1_PIN             PB4
 #define LED2_PIN             PB5

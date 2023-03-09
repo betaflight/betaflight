@@ -47,7 +47,7 @@
 #define UART2_TX_PIN         PA2
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
-#define INVERTER1_PIN        PB4
+#define INVERTER_PIN_UART1   PB4
 #define I2C1_SCL_PIN         PB8
 #define I2C1_SDA_PIN         PB9
 #define LED0_PIN             PC13

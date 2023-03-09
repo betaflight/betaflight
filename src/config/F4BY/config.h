@@ -60,7 +60,7 @@
 #define UART3_RX_PIN         PD9
 #define UART4_RX_PIN         PC11
 #define UART6_RX_PIN         PC7
-#define INVERTER6_PIN        PD3
+#define INVERTER_PIN_UART6   PD3
 #define I2C2_SCL_PIN         PB10
 #define I2C2_SDA_PIN         PB11
 #define LED0_PIN             PE3

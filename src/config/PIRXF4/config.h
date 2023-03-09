@@ -48,8 +48,8 @@
 #define UART3_RX_PIN         PB11
 #define UART4_RX_PIN         PA1
 #define UART6_RX_PIN         PC7
-#define INVERTER3_PIN        PB1
-#define INVERTER6_PIN        PA8
+#define INVERTER_PIN_UART3   PB1
+#define INVERTER_PIN_UART6   PA8
 #define LED0_PIN             PC13
 #define LED1_PIN             PC14
 #define SPI1_SCK_PIN         PA5
