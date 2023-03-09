@@ -76,7 +76,7 @@
 #define ADC_RSSI_PIN         PA0
 #define ADC_CURR_PIN         PC1
 #define BARO_CS_PIN          PC13
-#define SDCARD_CS_PIN        PB3
+#define SDCARD_SPI_CS_PIN    PB3
 #define SDCARD_DETECT_PIN    PC0
 #define PINIO1_PIN           PC8
 #define GYRO_1_EXTI_PIN      PC4

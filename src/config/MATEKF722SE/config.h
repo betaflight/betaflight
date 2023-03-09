@@ -78,7 +78,7 @@
 #define ADC_RSSI_PIN         PC0
 #define ADC_CURR_PIN         PC1
 #define ADC_EXTERNAL1_PIN    PA4
-#define SDCARD_CS_PIN        PD2
+#define SDCARD_SPI_CS_PIN    PD2
 #define PINIO1_PIN           PC8
 #define PINIO2_PIN           PC9
 #define MAX7456_SPI_CS_PIN   PB12

@@ -70,7 +70,7 @@
 #define ADC_VBAT_PIN         PC2
 #define ADC_RSSI_PIN         PC0
 #define ADC_CURR_PIN         PC1
-#define SDCARD_CS_PIN        PD2
+#define SDCARD_SPI_CS_PIN    PD2
 #define PINIO1_PIN           PC9
 #define FLASH_CS_PIN         PD2
 #define MAX7456_SPI_CS_PIN   PB12

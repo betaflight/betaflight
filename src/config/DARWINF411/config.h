@@ -64,7 +64,7 @@
 #define SPI2_SDO_PIN         PB15
 #define ADC_VBAT_PIN         PB0
 #define ADC_CURR_PIN         PB1
-#define SDCARD_CS_PIN        PA0
+#define SDCARD_SPI_CS_PIN    PA0
 #define MAX7456_SPI_CS_PIN   PB12
 #define GYRO_1_EXTI_PIN      PA1
 #define GYRO_1_CS_PIN        PA4

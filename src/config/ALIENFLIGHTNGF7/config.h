@@ -77,7 +77,7 @@
 #define ADC_CURR_PIN         PC1
 #define BARO_CS_PIN          PA15
 #define COMPASS_CS_PIN       PC15
-#define SDCARD_CS_PIN        PB10
+#define SDCARD_SPI_CS_PIN    PB10
 #define SDCARD_DETECT_PIN    PB11
 #define FLASH_CS_PIN         PB12
 #define MAX7456_SPI_CS_PIN   PB12

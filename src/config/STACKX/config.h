@@ -62,7 +62,7 @@
 #define ADC_VBAT_PIN         PC0
 #define ADC_RSSI_PIN         PC1
 #define ADC_CURR_PIN         PA1
-#define SDCARD_CS_PIN        PB9
+#define SDCARD_SPI_CS_PIN    PB9
 #define SDCARD_DETECT_PIN    PB7
 #define FLASH_CS_PIN         PD2
 #define MAX7456_SPI_CS_PIN   PB12

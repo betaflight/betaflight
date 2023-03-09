@@ -79,7 +79,7 @@
 #define ADC_VBAT_PIN         PC3
 #define ADC_RSSI_PIN         PC1
 #define ADC_CURR_PIN         PC2
-#define SDCARD_CS_PIN        PE15
+#define SDCARD_SPI_CS_PIN    PE15
 #define GYRO_1_EXTI_PIN      PB0
 #define GYRO_1_CS_PIN        PA4
 #define USB_DETECT_PIN       PA9
