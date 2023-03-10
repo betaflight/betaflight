@@ -99,7 +99,6 @@
     TIMER_PIN_MAP(13, RX_PPM_PIN, 3, -1) \
     TIMER_PIN_MAP(14, UART2_TX_PIN, 2,  0)
 
-
 #define ADC1_DMA_OPT                    1
 
 //TODO #define MAG_BUSTYPE I2C
@@ -125,5 +124,6 @@
 #define GYRO_1_ALIGN_PITCH              1800
 #define GYRO_1_ALIGN_YAW                2700
 
+#define SERIALRX_UART                   SERIAL_PORT_USART2
 #define DEFAULT_RX_FEATURE              FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER               SERIALRX_CRSF
