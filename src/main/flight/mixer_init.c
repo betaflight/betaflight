@@ -46,32 +46,23 @@
 
 #include "mixer_init.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 1);
 
+void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
+{
+        mixerConfig->mixerMode = DEFAULT_MIXER;
+        mixerConfig->yaw_motors_reversed = false;
+        mixerConfig->crashflip_motor_percent = 0;
+        mixerConfig->crashflip_expo = 35;
+        mixerConfig->mixer_type = MIXER_LEGACY;
 #ifdef USE_RPM_LIMITER
-    #define RESET_MIXER_CONFIG_RPM_LIMITER_VALUES \
-    .rpm_limiter_p = 25,                   \
-    .rpm_limiter_i = 10,                   \
-    .rpm_limiter_d = 8,                    \
-    .rpm_limiter_rpm_limit = 0,            \
-    .motor_kv = 1960,
-#else
-    #define RESET_MIXER_CONFIG_RPM_LIMITER_VALUES
+        mixerConfig->rpm_limiter_p = 25;
+        mixerConfig->rpm_limiter_i = 10;
+        mixerConfig->rpm_limiter_d = 8;
+        mixerConfig->rpm_limiter_rpm_limit = 0;
+        mixerConfig->motor_kv = 1960;
 #endif
-
-
-#define RESET_MIXER_CONFIG_VALUES   \
-    .mixerMode = DEFAULT_MIXER,     \
-    .yaw_motors_reversed = false,   \
-    .crashflip_motor_percent = 0,   \
-    .crashflip_expo = 35,           \
-    .mixer_type = MIXER_LEGACY,     \
-    RESET_MIXER_CONFIG_RPM_LIMITER_VALUES
-
-
-PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
-    RESET_MIXER_CONFIG_VALUES
-);
+}
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
