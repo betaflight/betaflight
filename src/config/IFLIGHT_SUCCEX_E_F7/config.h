@@ -33,6 +33,7 @@
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACC_SPI_ICM20689
 #define USE_BARO_DPS310
+#define USE_FLASH
 #define USE_FLASH_M25P16
 #define USE_MAX7456
 

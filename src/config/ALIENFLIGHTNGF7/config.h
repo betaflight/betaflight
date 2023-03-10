@@ -38,6 +38,7 @@
 #define USE_MAG_MPU925X_AK8963
 #define USE_MAG_SPI_AK8963
 #define USE_MAX7456
+#define USE_FLASH
 #define USE_FLASH_W25N01G
 #define USE_SDCARD
 
