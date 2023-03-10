@@ -607,8 +607,10 @@ void crsfRxWriteTelemetryData(const void *data, int len)
 void crsfRxSendTelemetryData(void)
 {
     // if there is telemetry data to write
-    if (telemetryBufLen > 0 && serialPort != NULL) {
-        serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+    if (telemetryBufLen > 0) {
+        if (serialPort != NULL) {
+            serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+        }
         telemetryBufLen = 0; // reset telemetry buffer
     }
 }
