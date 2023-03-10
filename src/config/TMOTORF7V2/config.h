@@ -36,6 +36,7 @@
 #define USE_GYRO_SPI_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define USE_BARO_BMP280
+#define USE_FLASH
 #define USE_FLASH_M25P16
 #define USE_MAX7456
 

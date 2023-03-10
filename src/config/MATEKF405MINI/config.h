@@ -30,6 +30,7 @@
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
+#define USE_FLASH
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
 

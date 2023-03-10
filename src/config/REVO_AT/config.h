@@ -49,6 +49,7 @@
 #define  SPI3_SDI_PIN           PC11
 #define  SPI3_SDO_PIN           PC12
 
+#define USE_FLASH
 #define USE_FLASH_M25P16
 #define FLASH_CS_PIN            PB3
 #define FLASH_SPI_INSTANCE      SPI3
