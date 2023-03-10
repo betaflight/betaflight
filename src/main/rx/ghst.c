@@ -124,7 +124,9 @@ void ghstRxSendTelemetryData(void)
 {
     // if there is telemetry data to write
     if (telemetryBufLen > 0) {
-        serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+        if (serialPort != NULL) {
+            serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+        }
         telemetryBufLen = 0; // reset telemetry buffer
     }
 }

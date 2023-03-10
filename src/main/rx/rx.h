@@ -54,7 +54,7 @@ typedef enum {
 } rxFrameState_e;
 
 typedef enum {
-    SERIALRX_SPEKTRUM1024 = 0,
+    SERIALRX_NONE = 0,
     SERIALRX_SPEKTRUM2048 = 1,
     SERIALRX_SBUS = 2,
     SERIALRX_SUMD = 3,
@@ -68,7 +68,8 @@ typedef enum {
     SERIALRX_TARGET_CUSTOM = 11,
     SERIALRX_FPORT = 12,
     SERIALRX_SRXL2 = 13,
-    SERIALRX_GHST = 14
+    SERIALRX_GHST = 14,
+    SERIALRX_SPEKTRUM1024 = 15
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
