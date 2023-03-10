@@ -39,5 +39,6 @@
 #define USE_ACCGYRO_BMI270
 #define USE_RX_CC2500
 #define USE_MAX7456
+#define USE_FLASH
 #define USE_FLASH_W25Q128FV
 

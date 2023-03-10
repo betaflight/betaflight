@@ -34,5 +34,6 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
+#define USE_FLASH
 #define USE_FLASH_M25P16
 

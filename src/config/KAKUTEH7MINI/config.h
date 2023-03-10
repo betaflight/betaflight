@@ -37,6 +37,7 @@
 #define USE_ACCGYRO_BMI270
 #define USE_BARO
 #define USE_BARO_BMP280
+#define USE_FLASH
 #define USE_FLASH_W25N01G
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456

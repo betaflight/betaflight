@@ -38,6 +38,7 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_BARO
 #define USE_BARO_MS5611
+#define USE_FLASH
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
 

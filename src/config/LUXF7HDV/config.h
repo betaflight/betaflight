@@ -34,5 +34,6 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_FLASH
 #define USE_FLASH_W25Q128FV
 
