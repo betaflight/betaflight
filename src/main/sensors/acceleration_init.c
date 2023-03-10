@@ -330,7 +330,7 @@ retry:
 
 #ifdef USE_VIRTUAL_ACC
     case ACC_VIRTUAL:
-        if (fakeAccDetect(dev)) {
+        if (virtualAccDetect(dev)) {
             accHardware = ACC_VIRTUAL;
             break;
         }

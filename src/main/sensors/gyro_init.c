@@ -506,7 +506,7 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
 
 #ifdef USE_VIRTUAL_GYRO
     case GYRO_VIRTUAL:
-        if (fakeGyroDetect(dev)) {
+        if (virtualGyroDetect(dev)) {
             gyroHardware = GYRO_VIRTUAL;
             break;
         }
@@ -533,7 +533,7 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 
     bool gyroFound = mpuDetect(&gyroSensor->gyroDev, config);
 
-#if !defined(USE_VIRTUAL_GYRO) // Allow resorting to fake accgyro if defined
+#if !defined(USE_VIRTUAL_GYRO) // Allow resorting to virtual accgyro if defined
     if (!gyroFound) {
         return false;
     }

@@ -38,12 +38,12 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_virtual.h"
 
-static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
-gyroDev_t *fakeGyroDev;
+static int16_t virtualGyroADC[XYZ_AXIS_COUNT];
+gyroDev_t *virtualGyroDev;
 
-static void fakeGyroInit(gyroDev_t *gyro)
+static void virtualGyroInit(gyroDev_t *gyro)
 {
-    fakeGyroDev = gyro;
+    virtualGyroDev = gyro;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     if (pthread_mutex_init(&gyro->lock, NULL) != 0) {
         printf("Create gyro lock error!\n");
@@ -51,20 +51,20 @@ static void fakeGyroInit(gyroDev_t *gyro)
 #endif
 }
 
-void fakeGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
+void virtualGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
 {
     gyroDevLock(gyro);
 
-    fakeGyroADC[X] = x;
-    fakeGyroADC[Y] = y;
-    fakeGyroADC[Z] = z;
+    virtualGyroADC[X] = x;
+    virtualGyroADC[Y] = y;
+    virtualGyroADC[Z] = z;
 
     gyro->dataReady = true;
 
     gyroDevUnLock(gyro);
 }
 
-STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro)
+STATIC_UNIT_TESTED bool virtualGyroRead(gyroDev_t *gyro)
 {
     gyroDevLock(gyro);
     if (gyro->dataReady == false) {
@@ -73,26 +73,26 @@ STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro)
     }
     gyro->dataReady = false;
 
-    gyro->gyroADCRaw[X] = fakeGyroADC[X];
-    gyro->gyroADCRaw[Y] = fakeGyroADC[Y];
-    gyro->gyroADCRaw[Z] = fakeGyroADC[Z];
+    gyro->gyroADCRaw[X] = virtualGyroADC[X];
+    gyro->gyroADCRaw[Y] = virtualGyroADC[Y];
+    gyro->gyroADCRaw[Z] = virtualGyroADC[Z];
 
     gyroDevUnLock(gyro);
     return true;
 }
 
-static bool fakeGyroReadTemperature(gyroDev_t *gyro, int16_t *temperatureData)
+static bool virtualGyroReadTemperature(gyroDev_t *gyro, int16_t *temperatureData)
 {
     UNUSED(gyro);
     UNUSED(temperatureData);
     return true;
 }
 
-bool fakeGyroDetect(gyroDev_t *gyro)
+bool virtualGyroDetect(gyroDev_t *gyro)
 {
-    gyro->initFn = fakeGyroInit;
-    gyro->readFn = fakeGyroRead;
-    gyro->temperatureFn = fakeGyroReadTemperature;
+    gyro->initFn = virtualGyroInit;
+    gyro->readFn = virtualGyroRead;
+    gyro->temperatureFn = virtualGyroReadTemperature;
 #if defined(SIMULATOR_BUILD)
     gyro->scale = GYRO_SCALE_2000DPS;
 #else
@@ -105,12 +105,12 @@ bool fakeGyroDetect(gyroDev_t *gyro)
 
 #ifdef USE_VIRTUAL_ACC
 
-static int16_t fakeAccData[XYZ_AXIS_COUNT];
-accDev_t *fakeAccDev;
+static int16_t virtualAccData[XYZ_AXIS_COUNT];
+accDev_t *virtualAccDev;
 
-static void fakeAccInit(accDev_t *acc)
+static void virtualAccInit(accDev_t *acc)
 {
-    fakeAccDev = acc;
+    virtualAccDev = acc;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     if (pthread_mutex_init(&acc->lock, NULL) != 0) {
         printf("Create acc lock error!\n");
@@ -118,20 +118,20 @@ static void fakeAccInit(accDev_t *acc)
 #endif
 }
 
-void fakeAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
+void virtualAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
 {
     accDevLock(acc);
 
-    fakeAccData[X] = x;
-    fakeAccData[Y] = y;
-    fakeAccData[Z] = z;
+    virtualAccData[X] = x;
+    virtualAccData[Y] = y;
+    virtualAccData[Z] = z;
 
     acc->dataReady = true;
 
     accDevUnLock(acc);
 }
 
-static bool fakeAccRead(accDev_t *acc)
+static bool virtualAccRead(accDev_t *acc)
 {
     accDevLock(acc);
     if (acc->dataReady == false) {
@@ -140,18 +140,18 @@ static bool fakeAccRead(accDev_t *acc)
     }
     acc->dataReady = false;
 
-    acc->ADCRaw[X] = fakeAccData[X];
-    acc->ADCRaw[Y] = fakeAccData[Y];
-    acc->ADCRaw[Z] = fakeAccData[Z];
+    acc->ADCRaw[X] = virtualAccData[X];
+    acc->ADCRaw[Y] = virtualAccData[Y];
+    acc->ADCRaw[Z] = virtualAccData[Z];
 
     accDevUnLock(acc);
     return true;
 }
 
-bool fakeAccDetect(accDev_t *acc)
+bool virtualAccDetect(accDev_t *acc)
 {
-    acc->initFn = fakeAccInit;
-    acc->readFn = fakeAccRead;
+    acc->initFn = virtualAccInit;
+    acc->readFn = virtualAccRead;
     acc->revisionCode = 0;
     return true;
 }

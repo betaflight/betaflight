@@ -21,11 +21,11 @@
 #pragma once
 
 struct accDev_s;
-extern struct accDev_s *fakeAccDev;
-bool fakeAccDetect(struct accDev_s *acc);
-void fakeAccSet(struct accDev_s *acc, int16_t x, int16_t y, int16_t z);
+extern struct accDev_s *virtualAccDev;
+bool virtualAccDetect(struct accDev_s *acc);
+void virtualAccSet(struct accDev_s *acc, int16_t x, int16_t y, int16_t z);
 
 struct gyroDev_s;
-extern struct gyroDev_s *fakeGyroDev;
-bool fakeGyroDetect(struct gyroDev_s *gyro);
-void fakeGyroSet(struct gyroDev_s *gyro, int16_t x, int16_t y, int16_t z);
+extern struct gyroDev_s *virtualGyroDev;
+bool virtualGyroDetect(struct gyroDev_s *gyro);
+void virtualGyroSet(struct gyroDev_s *gyro, int16_t x, int16_t y, int16_t z);

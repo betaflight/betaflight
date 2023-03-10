@@ -306,7 +306,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
     case BARO_VIRTUAL:
 #ifdef USE_VIRTUAL_BARO
-        if (fakeBaroDetect(baroDev)) {
+        if (virtualBaroDetect(baroDev)) {
             baroHardware = BARO_VIRTUAL;
             break;
         }

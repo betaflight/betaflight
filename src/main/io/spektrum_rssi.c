@@ -168,7 +168,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[])
 
 #ifdef USE_SPEKTRUM_VIRTUAL_RSSI
     {
-        // Fake RSSI value computed from fades
+        // Virtual RSSI value computed from fades
 
         const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
         uint16_t fade;
