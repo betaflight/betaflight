@@ -66,13 +66,10 @@
 #define LED1_PIN             PA13
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
-#define SPI3_SCK_PIN         NONE
 #define SPI1_SDI_PIN         PB4
 #define SPI2_SDI_PIN         PC2
-#define SPI3_SDI_PIN         NONE
 #define SPI1_SDO_PIN         PA7
 #define SPI2_SDO_PIN         PC3
-#define SPI3_SDO_PIN         NONE
 #define ADC_VBAT_PIN         PC4
 #define ADC_RSSI_PIN         PB0
 #define ADC_CURR_PIN         PC5
@@ -102,7 +99,6 @@
     TIMER_PIN_MAP(13, RX_PPM_PIN, 3, -1) \
     TIMER_PIN_MAP(14, UART2_TX_PIN, 2,  0)
 
-
 #define ADC1_DMA_OPT                    1
 
 //TODO #define MAG_BUSTYPE I2C
@@ -128,5 +124,6 @@
 #define GYRO_1_ALIGN_PITCH              1800
 #define GYRO_1_ALIGN_YAW                2700
 
+#define SERIALRX_UART                   SERIAL_PORT_USART2
 #define DEFAULT_RX_FEATURE              FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER               SERIALRX_CRSF
