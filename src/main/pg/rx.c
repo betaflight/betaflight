@@ -35,13 +35,17 @@
 #include "rx/rx_spi.h"
 
 #ifndef SERIALRX_PROVIDER
+
 #if defined(USE_SERIALRX_SBUS)
 #define SERIALRX_PROVIDER SERIALRX_SBUS
 #elif defined(USE_SERIALRX_GHST)
 #define SERIALRX_PROVIDER SERIALRX_GHST
-#else
+#elif defined(USE_SERIALRX_CRSF)
 #define SERIALRX_PROVIDER SERIALRX_CRSF
+#else
+#define SERIALRX_PROVIDER 0
 #endif
+
 #endif
 
 PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 4);
