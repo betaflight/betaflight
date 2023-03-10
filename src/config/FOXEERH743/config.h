@@ -50,12 +50,14 @@
 #define UART2_TX_PIN         PA2
 #define UART3_TX_PIN         PB10
 #define UART4_TX_PIN         PA0
+#define UART6_TX_PIN         PC6
 #define UART7_TX_PIN         PE8
 #define UART8_TX_PIN         PE1
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
 #define UART3_RX_PIN         PB11
 #define UART4_RX_PIN         PA1
+#define UART6_RX_PIN         PC7
 #define UART7_RX_PIN         PE7
 #define UART8_RX_PIN         PE0
 #define I2C1_SCL_PIN         PB8
@@ -95,33 +97,35 @@
 
 
 
-#define ADC1_DMA_OPT        8
-#define ADC2_DMA_OPT        9
-#define ADC3_DMA_OPT       10
+#define ADC1_DMA_OPT                    8
+#define ADC2_DMA_OPT                    9
+#define ADC3_DMA_OPT                    10
 
-#define TIMUP1_DMA_OPT      0
-#define TIMUP3_DMA_OPT      0
-#define TIMUP4_DMA_OPT      0
-#define TIMUP5_DMA_OPT      0
-#define TIMUP8_DMA_OPT      0
+#define TIMUP1_DMA_OPT                  0
+#define TIMUP3_DMA_OPT                  0
+#define TIMUP4_DMA_OPT                  0
+#define TIMUP5_DMA_OPT                  0
+#define TIMUP8_DMA_OPT                  0
 
-#define MAG_ALIGN CW180_DEG
-#define MAG_ALIGN_YAW 1800
+#define MAG_ALIGN                       CW180_DEG
+#define MAG_ALIGN_YAW                   1800
 //TODO #define MAG_BUSTYPE I2C
-#define MAG_I2C_INSTANCE (I2CDEV_1)
+#define MAG_I2C_INSTANCE                (I2CDEV_1)
 #define USE_BARO
-#define BARO_I2C_INSTANCE (I2CDEV_1)
+#define BARO_I2C_INSTANCE               (I2CDEV_1)
 
-#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
+#define DEFAULT_BLACKBOX_DEVICE         BLACKBOX_DEVICE_FLASH
 //TODO #define MOTOR_PWM_PROTOCOL DSHOT600
-#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
-#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-#define DEFAULT_CURRENT_METER_SCALE 100
+#define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SCALE     100
 #define BEEPER_INVERTED
-#define MAX7456_SPI_INSTANCE SPI1
-#define FLASH_SPI_INSTANCE SPI3
+#define MAX7456_SPI_INSTANCE            SPI1
+#define FLASH_SPI_INSTANCE              SPI3
 //TODO #define SDCARD_MODE OFF
 #define USE_SPI_GYRO
-#define GYRO_1_SPI_INSTANCE SPI2
-#define GYRO_1_ALIGN CW0_DEG
-#define GYRO_1_ALIGN_YAW 1800
+#define GYRO_1_SPI_INSTANCE             SPI2
+#define GYRO_1_ALIGN                    CW0_DEG
+#define GYRO_1_ALIGN_YAW                1800
+
+#define SERIALRX_UART                   SERIAL_PORT_USART1
