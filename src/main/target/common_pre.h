@@ -423,3 +423,15 @@
 #endif
 
 #endif // defined(USE_SERIALRX_CRSF)
+
+#if defined(USE_SERIALRX) && !defined(SERIALRX_PROVIDER)
+
+#if defined(USE_SERIALRX_SBUS)
+#define SERIALRX_PROVIDER SERIALRX_SBUS
+#elif defined(USE_SERIALRX_GHST)
+#define SERIALRX_PROVIDER SERIALRX_GHST
+#else
+#define SERIALRX_PROVIDER SERIALRX_CRSF
+#endif
+
+#endif

@@ -58,6 +58,7 @@
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
+
 #ifndef SERIALRX_PROVIDER
 #define SERIALRX_PROVIDER 0
 #endif
