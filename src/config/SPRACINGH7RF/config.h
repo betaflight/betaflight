@@ -262,3 +262,8 @@
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI6
 #define GYRO_1_ALIGN CW270_DEG_FLIP
+
+// Prevent flash being used for logs as target requires EXST
+#ifdef USE_FLASH
+#undef USE_FLASH
+#endif
