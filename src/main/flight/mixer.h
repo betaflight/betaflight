@@ -123,7 +123,7 @@ void stopMotors(void);
 void writeMotors(void);
 
 #ifdef USE_RPM_LIMITER
-void mixerIntitRPMLimitThrottleScaling(void);
+void mixerIntitRpmLimitThrottleScaling(void);
 #endif
 
 bool mixerIsTricopter(void);

@@ -870,20 +870,11 @@ void changePidProfile(uint8_t pidProfileIndex)
 
         pidInit(currentPidProfile);
         initEscEndpoints();
-        #ifdef USE_RPM_LIMITER
         mixerInitProfile();
-        #endif
     }
 
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
-
-#ifdef USE_RPM_LIMITER
-void updateRPMLimiterExpectedThrottleLimit(void)
-{
-    mixerIntitRPMLimitThrottleScaling();
-}
-#endif
 
 bool isSystemConfigured(void)
 {

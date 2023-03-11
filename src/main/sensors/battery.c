@@ -40,6 +40,7 @@
 #include "fc/rc_controls.h"
 
 #include "flight/mixer.h"
+#include "flight/mixer_init.h"
 
 #include "io/beeper.h"
 
@@ -216,7 +217,7 @@ void batteryUpdatePresence(void)
             if (!ARMING_FLAG(ARMED)) {
                 changePidProfileFromCellCount(batteryCellCount);
 #ifdef USE_RPM_LIMITER
-                updateRPMLimiterExpectedThrottleLimit();
+                mixerIntitRpmLimitThrottleScaling();
 #endif
             }
         }
