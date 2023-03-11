@@ -682,6 +682,12 @@ void validateAndFixGyroConfig(void)
         }
 #endif
 
+#if defined(USE_GYRO_DENOM_CHECK) && (defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270))
+        if (gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI160 || gyro.gyroSensor1.gyroDev.gyroHardware == GYRO_BMI270) {
+            pidConfigMutable()->pid_process_denom = 1;
+        }
+#endif
+
         switch (motorConfig()->dev.motorPwmProtocol) {
         case PWM_TYPE_STANDARD:
                 motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
