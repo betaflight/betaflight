@@ -56,7 +56,13 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #else
     motorConfig->minthrottle = 1070;
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+#ifndef USE_DSHOT
     motorConfig->dev.motorPwmProtocol = PWM_TYPE_DISABLED;
+#elif defined(DEFAULT_MOTOR_DSHOT_SPEED)
+    motorConfig->dev.motorPwmProtocol = DEFAULT_MOTOR_DSHOT_SPEED;
+#else
+    motorConfig->dev.motorPwmProtocol = PWM_TYPE_DSHOT600;
+#endif // USE_DSHOT
 #endif // BRUSHED_MOTORS
 
     motorConfig->maxthrottle = 2000;
