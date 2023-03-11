@@ -365,36 +365,34 @@ static bool isMotorSaturated(void) //Placeholder function
 
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
-    if (RPM_LIMIT_ACTIVE && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
-        static float prevError = 0.0f;
-        static float i = 0.0f;
-        const float averageRpm = pt1FilterApply(&mixer->averageRPMFilter, getDshotAverageRpm() / 10.0f);
-        const float error = averageRpm - mixer->RpmLimiterRpmLimit;
-        // PID
-        const float p = error * mixer->RpmLimiterPGain;
-        // mixer->RpmLimiterDGain already adjusted with pidGetPidFrequency in mixer_init.c
-        const float d = (error - prevError) * mixer->RpmLimiterDGain;
-        i += error * mixer->RpmLimiterIGain;
-        i = MAX(0.0f, i);
-        float pidOutput = p + i + d;
-        // Throttle limit learning
-        if (error > -10.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
-            mixer->RpmLimiterExpectedThrottleLimit *= 1.0f - 4.8f / pidGetPidFrequency();
-        } else if (pidOutput < -0.05f && rcCommand[THROTTLE] > rxConfig()->maxcheck && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
-            mixer->RpmLimiterExpectedThrottleLimit *= 1.0f + 3.2f / pidGetPidFrequency();
-        }
-        mixer->RpmLimiterExpectedThrottleLimit = constrainf(mixer->RpmLimiterExpectedThrottleLimit, 0.01f, 1.0f);
-        throttle *= mixer->RpmLimiterExpectedThrottleLimit;
-
-        // Output
-        pidOutput = MAX(0.0f, pidOutput);
-        throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
-        prevError = error;
-        DEBUG_SET(DEBUG_RPM_LIMITER, 0, error);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 1, throttle * 100.0f);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 2, i * 100.0f);
-        DEBUG_SET(DEBUG_RPM_LIMITER, 3, d * 100.0f);
+    static float prevError = 0.0f;
+    static float i = 0.0f;
+    const float averageRpm = pt1FilterApply(&mixer->averageRPMFilter, getDshotAverageRpm() / 10.0f);
+    const float error = averageRpm - mixer->RpmLimiterRpmLimit;
+    // PID
+    const float p = error * mixer->RpmLimiterPGain;
+    // mixer->RpmLimiterDGain already adjusted with pidGetPidFrequency in mixer_init.c
+    const float d = (error - prevError) * mixer->RpmLimiterDGain;
+    i += error * mixer->RpmLimiterIGain;
+    i = MAX(0.0f, i);
+    float pidOutput = p + i + d;
+    // Throttle limit learning
+    if (error > -10.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
+        mixer->RpmLimiterExpectedThrottleLimit *= 1.0f - 4.8f / pidGetPidFrequency();
+    } else if (pidOutput < -0.05f && rcCommand[THROTTLE] > rxConfig()->maxcheck && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
+        mixer->RpmLimiterExpectedThrottleLimit *= 1.0f + 3.2f / pidGetPidFrequency();
     }
+    mixer->RpmLimiterExpectedThrottleLimit = constrainf(mixer->RpmLimiterExpectedThrottleLimit, 0.01f, 1.0f);
+    throttle *= mixer->RpmLimiterExpectedThrottleLimit;
+
+    // Output
+    pidOutput = MAX(0.0f, pidOutput);
+    throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
+    prevError = error;
+    DEBUG_SET(DEBUG_RPM_LIMITER, 0, error);
+    DEBUG_SET(DEBUG_RPM_LIMITER, 1, throttle * 100.0f);
+    DEBUG_SET(DEBUG_RPM_LIMITER, 2, i * 100.0f);
+    DEBUG_SET(DEBUG_RPM_LIMITER, 3, d * 100.0f);
 }
 
 #endif
@@ -628,7 +626,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_RPM_LIMITER
-    applyRpmLimiter(&mixerRuntime);
+    if (RPM_LIMIT_ACTIVE && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
+        applyRpmLimiter(&mixerRuntime);
+    }
 #endif
 
     // Find roll/pitch/yaw desired output
