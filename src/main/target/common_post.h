@@ -329,6 +329,10 @@
 #define USE_USB_ADVANCED_PROFILES
 #endif
 
+#if defined(USE_VTX) && !defined(DEFAULT_FEATURES)
+#define DEFAULT_FEATURES FEATURE_VTX
+#endif
+
 #if !defined(USE_OSD)
 #undef USE_RX_LINK_QUALITY_INFO
 #undef USE_OSD_PROFILES
