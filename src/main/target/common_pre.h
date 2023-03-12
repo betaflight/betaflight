@@ -265,10 +265,6 @@
 #endif
 #endif
 
-#if (defined(USE_SDCARD) || defined(USE_FLASH)) && !defined(USE_BLACKBOX)
-#define USE_BLACKBOX
-#endif
-
 #if defined(USE_PINIO)
 #define USE_PINIOBOX
 #define USE_PIN_PULL_UP_DOWN
