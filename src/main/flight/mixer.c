@@ -379,7 +379,7 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // Throttle limit learning
     if (error > -10.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
         mixer->RpmLimiterExpectedThrottleLimit *= 1.0f - 4.8f / pidGetPidFrequency();
-    } else if (pidOutput < -0.05f && rcCommand[THROTTLE] > rxConfig()->maxcheck && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
+    } else if (pidOutput < -0.05f && rcCommand[THROTTLE] >= rxConfig()->maxcheck && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
         mixer->RpmLimiterExpectedThrottleLimit *= 1.0f + 3.2f / pidGetPidFrequency();
     }
     mixer->RpmLimiterExpectedThrottleLimit = constrainf(mixer->RpmLimiterExpectedThrottleLimit, 0.01f, 1.0f);
