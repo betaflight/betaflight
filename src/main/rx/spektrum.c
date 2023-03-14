@@ -121,7 +121,7 @@ static uint8_t spektrumFrameStatus(rxRuntimeState_t *rxRuntimeState)
     if (rcFrameComplete) {
         rcFrameComplete = false;
 
-#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
+#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_VIRTUAL_RSSI)
         spektrumHandleRSSI(spekFrame);
 #endif
 

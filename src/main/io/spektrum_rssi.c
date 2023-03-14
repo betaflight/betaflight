@@ -20,7 +20,7 @@
 
 #include "platform.h"
 #ifdef USE_SERIALRX
-#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
+#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_VIRTUAL_RSSI)
 
 #include "config/feature.h"
 #include "common/utils.h"
@@ -38,7 +38,7 @@
 // Number of fade outs counted as a link loss when using USE_SPEKTRUM_REAL_RSSI
 #define SPEKTRUM_RSSI_LINK_LOSS_FADES 5
 
-#ifdef USE_SPEKTRUM_FAKE_RSSI
+#ifdef USE_SPEKTRUM_VIRTUAL_RSSI
 // Spektrum Rx type. Determined by bind method.
 static bool spektrumSatInternal = true; // Assume internal,bound by BF.
 
@@ -161,14 +161,14 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[])
         spek_last_rssi = rssi;
     }
 
-#ifdef USE_SPEKTRUM_FAKE_RSSI
+#ifdef USE_SPEKTRUM_VIRTUAL_RSSI
     else
 #endif
 #endif // USE_SPEKTRUM_REAL_RSSI
 
-#ifdef USE_SPEKTRUM_FAKE_RSSI
+#ifdef USE_SPEKTRUM_VIRTUAL_RSSI
     {
-        // Fake RSSI value computed from fades
+        // Virtual RSSI value computed from fades
 
         const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
         uint16_t fade;
@@ -210,7 +210,7 @@ void spektrumHandleRSSI(volatile uint8_t spekFrame[])
             spek_fade_last_sec = current_secs;
         }
     }
-#endif // USE_SPEKTRUM_FAKE_RSSI
+#endif // USE_SPEKTRUM_VIRTUAL_RSSI
 }
-#endif // USE_SPEKTRUM_REAL_RSSI || USE_SPEKTRUM_FAKE_RSSI
+#endif // USE_SPEKTRUM_REAL_RSSI || USE_SPEKTRUM_VIRTUAL_RSSI
 #endif // USE_SERIALRX

@@ -40,7 +40,7 @@
 #include "drivers/barometer/barometer_bmp388.h"
 #include "drivers/barometer/barometer_dps310.h"
 #include "drivers/barometer/barometer_qmp6988.h"
-#include "drivers/barometer/barometer_fake.h"
+#include "drivers/barometer/barometer_virtual.h"
 #include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/barometer/barometer_lps.h"
 #include "drivers/barometer/barometer_2smpb_02b.h"
@@ -185,7 +185,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     UNUSED(dev);
 #endif
 
-#ifndef USE_FAKE_BARO
+#ifndef USE_VIRTUAL_BARO
     switch (barometerConfig()->baro_busType) {
 #ifdef USE_I2C
     case BUS_TYPE_I2C:
@@ -208,7 +208,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     default:
         return false;
     }
-#endif // USE_FAKE_BARO
+#endif // USE_VIRTUAL_BARO
 
     switch (baroHardware) {
     case BARO_DEFAULT:
@@ -304,10 +304,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #endif
         FALLTHROUGH;
 
-    case BARO_FAKE:
-#ifdef USE_FAKE_BARO
-        if (fakeBaroDetect(baroDev)) {
-            baroHardware = BARO_FAKE;
+    case BARO_VIRTUAL:
+#ifdef USE_VIRTUAL_BARO
+        if (virtualBaroDetect(baroDev)) {
+            baroHardware = BARO_VIRTUAL;
             break;
         }
 #endif
@@ -329,10 +329,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
 void baroInit(void)
 {
-#ifndef USE_FAKE_BARO
+#ifndef USE_VIRTUAL_BARO
     baroReady = baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #else
-    baroReady = baroDetect(&baro.dev, BARO_FAKE);
+    baroReady = baroDetect(&baro.dev, BARO_VIRTUAL);
 #endif
 }
 

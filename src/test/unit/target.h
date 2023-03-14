@@ -26,7 +26,7 @@
 #define USE_ACC
 #define USE_CMS
 #define CMS_MAX_DEVICE 4
-#define USE_FAKE_GYRO
+#define USE_VIRTUAL_GYRO
 #define USE_BEEPER
 #define USE_BLACKBOX
 #define USE_MAG

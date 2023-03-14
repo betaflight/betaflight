@@ -37,7 +37,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/compass/compass_ak8975.h"
 #include "drivers/compass/compass_ak8963.h"
-#include "drivers/compass/compass_fake.h"
+#include "drivers/compass/compass_virtual.h"
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"

@@ -23,63 +23,63 @@
 
 #include "platform.h"
 
-#ifdef USE_FAKE_BARO
+#ifdef USE_VIRTUAL_BARO
 
 #include "common/utils.h"
 
 #include "barometer.h"
-#include "barometer_fake.h"
+#include "barometer_virtual.h"
 
 
-static int32_t fakePressure;
-static int32_t fakeTemperature;
+static int32_t virtualPressure;
+static int32_t virtualTemperature;
 
 
-static void fakeBaroStart(baroDev_t *baro)
+static void virtualBaroStart(baroDev_t *baro)
 {
     UNUSED(baro);
 }
 
-static bool fakeBaroReadGet(baroDev_t *baro)
+static bool virtualBaroReadGet(baroDev_t *baro)
 {
     UNUSED(baro);
 
     return true;
 }
 
-static void fakeBaroCalculate(int32_t *pressure, int32_t *temperature)
+static void virtualBaroCalculate(int32_t *pressure, int32_t *temperature)
 {
     if (pressure)
-        *pressure = fakePressure;
+        *pressure = virtualPressure;
     if (temperature)
-        *temperature = fakeTemperature;
+        *temperature = virtualTemperature;
 }
 
-void fakeBaroSet(int32_t pressure, int32_t temperature)
+void virtualBaroSet(int32_t pressure, int32_t temperature)
 {
-    fakePressure = pressure;
-    fakeTemperature = temperature;
+    virtualPressure = pressure;
+    virtualTemperature = temperature;
 }
 
-bool fakeBaroDetect(baroDev_t *baro)
+bool virtualBaroDetect(baroDev_t *baro)
 {
-    fakePressure = 101325;    // pressure in Pa (0m MSL)
-    fakeTemperature = 2500;   // temperature in 0.01 C = 25 deg
+    virtualPressure = 101325;    // pressure in Pa (0m MSL)
+    virtualTemperature = 2500;   // temperature in 0.01 C = 25 deg
 
     // these are dummy as temperature is measured as part of pressure
     baro->combined_read = true;
     baro->ut_delay = 10000;
-    baro->get_ut = fakeBaroReadGet;
-    baro->read_ut = fakeBaroReadGet;
-    baro->start_ut = fakeBaroStart;
+    baro->get_ut = virtualBaroReadGet;
+    baro->read_ut = virtualBaroReadGet;
+    baro->start_ut = virtualBaroStart;
 
     // only _up part is executed, and gets both temperature and pressure
     baro->up_delay = 10000;
-    baro->start_up = fakeBaroStart;
-    baro->read_up = fakeBaroReadGet;
-    baro->get_up = fakeBaroReadGet;
-    baro->calculate = fakeBaroCalculate;
+    baro->start_up = virtualBaroStart;
+    baro->read_up = virtualBaroReadGet;
+    baro->get_up = virtualBaroReadGet;
+    baro->calculate = virtualBaroCalculate;
 
     return true;
 }
-#endif // USE_FAKE_BARO
+#endif // USE_VIRTUAL_BARO

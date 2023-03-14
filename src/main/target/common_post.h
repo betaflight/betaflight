@@ -85,7 +85,7 @@
     In the future we can move to specific drivers being added only - to save flash space.
 */
 
-#if defined(USE_MAG) && !defined(USE_FAKE_MAG)
+#if defined(USE_MAG) && !defined(USE_VIRTUAL_MAG)
 #define USE_MAG_DATA_READY_SIGNAL
 #define USE_MAG_HMC5883
 #define USE_MAG_SPI_HMC5883
@@ -235,7 +235,7 @@
 #undef USE_SPEKTRUM_BIND
 #undef USE_SPEKTRUM_BIND_PLUG
 #undef USE_SPEKTRUM_REAL_RSSI
-#undef USE_SPEKTRUM_FAKE_RSSI
+#undef USE_SPEKTRUM_VIRTUAL_RSSI
 #undef USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_SPEKTRUM_VTX_TELEMETRY

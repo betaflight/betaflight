@@ -35,7 +35,7 @@
 #include "config/config.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_mpu3050.h"
 #include "drivers/accgyro/accgyro_mpu6050.h"
@@ -75,7 +75,7 @@
 #if !defined(USE_GYRO_L3G4200D) && !defined(USE_GYRO_MPU3050) && !defined(USE_GYRO_MPU6050) && \
     !defined(USE_GYRO_MPU6500) && !defined(USE_GYRO_SPI_ICM20689) && !defined(USE_GYRO_SPI_MPU6000) && \
     !defined(USE_GYRO_SPI_MPU6500) && !defined(USE_GYRO_SPI_MPU9250) && !defined(USE_GYRO_L3GD20) && \
-    !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) && !defined(USE_ACCGYRO_BMI270) && !defined(USE_FAKE_GYRO)
+    !defined(USE_GYRO_SPI_ICM42605) && !defined(USE_GYRO_SPI_ICM42688P) && !defined(USE_ACCGYRO_BMI270) && !defined(USE_VIRTUAL_GYRO)
 #error At least one USE_GYRO device definition required
 #endif
 
@@ -316,7 +316,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     switch (gyroSensor->gyroDev.gyroHardware) {
     case GYRO_NONE:    // Won't ever actually get here, but included to account for all gyro types
     case GYRO_DEFAULT:
-    case GYRO_FAKE:
+    case GYRO_VIRTUAL:
     case GYRO_MPU6050:
     case GYRO_L3G4200D:
     case GYRO_MPU3050:
@@ -504,10 +504,10 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
         FALLTHROUGH;
 #endif
 
-#ifdef USE_FAKE_GYRO
-    case GYRO_FAKE:
-        if (fakeGyroDetect(dev)) {
-            gyroHardware = GYRO_FAKE;
+#ifdef USE_VIRTUAL_GYRO
+    case GYRO_VIRTUAL:
+        if (virtualGyroDetect(dev)) {
+            gyroHardware = GYRO_VIRTUAL;
             break;
         }
         FALLTHROUGH;
@@ -533,7 +533,7 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
 
     bool gyroFound = mpuDetect(&gyroSensor->gyroDev, config);
 
-#if !defined(USE_FAKE_GYRO) // Allow resorting to fake accgyro if defined
+#if !defined(USE_VIRTUAL_GYRO) // Allow resorting to virtual accgyro if defined
     if (!gyroFound) {
         return false;
     }

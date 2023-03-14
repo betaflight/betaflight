@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FAKE_MAG
+#ifdef USE_VIRTUAL_MAG
 
 #include "build/build_config.h"
 
@@ -31,44 +31,44 @@
 #include "common/utils.h"
 
 #include "compass.h"
-#include "compass_fake.h"
+#include "compass_virtual.h"
 
 
-static int16_t fakeMagData[XYZ_AXIS_COUNT];
+static int16_t virtualMagData[XYZ_AXIS_COUNT];
 
-static bool fakeMagInit(magDev_t *mag)
+static bool virtualMagInit(magDev_t *mag)
 {
     UNUSED(mag);
 
     // initially point north
-    fakeMagData[X] = 4096;
-    fakeMagData[Y] = 0;
-    fakeMagData[Z] = 0;
+    virtualMagData[X] = 4096;
+    virtualMagData[Y] = 0;
+    virtualMagData[Z] = 0;
     return true;
 }
 
-void fakeMagSet(int16_t x, int16_t y, int16_t z)
+void virtualMagSet(int16_t x, int16_t y, int16_t z)
 {
-    fakeMagData[X] = x;
-    fakeMagData[Y] = y;
-    fakeMagData[Z] = z;
+    virtualMagData[X] = x;
+    virtualMagData[Y] = y;
+    virtualMagData[Z] = z;
 }
 
-static bool fakeMagRead(magDev_t *mag, int16_t *magData)
+static bool virtualMagRead(magDev_t *mag, int16_t *magData)
 {
     UNUSED(mag);
 
-    magData[X] = fakeMagData[X];
-    magData[Y] = fakeMagData[Y];
-    magData[Z] = fakeMagData[Z];
+    magData[X] = virtualMagData[X];
+    magData[Y] = virtualMagData[Y];
+    magData[Z] = virtualMagData[Z];
     return true;
 }
 
-bool fakeMagDetect(magDev_t *mag)
+bool virtualMagDetect(magDev_t *mag)
 {
-    mag->init = fakeMagInit;
-    mag->read = fakeMagRead;
+    mag->init = virtualMagInit;
+    mag->read = virtualMagRead;
     return true;
 }
-#endif // USE_FAKE_MAG
+#endif // USE_VIRTUAL_MAG
 
