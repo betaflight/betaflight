@@ -125,7 +125,7 @@
 #define PARAM_NAME_POSITION_ALTITUDE_LPF "altitude_lpf"
 #define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
-#define PARAM_NAME_ANGLE_FF_SMOOTHING "angle_feedforward_smoothing"
+#define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
 #define PARAM_NAME_ANGLE_ROLL_EXPO "angle_roll_expo"
 #define PARAM_NAME_ANGLE_PITCH_EXPO "angle_pitch_expo"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"
