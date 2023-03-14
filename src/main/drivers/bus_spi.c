@@ -748,7 +748,7 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
 {
     busDevice_t *bus = dev->bus;
 
-    ATOMIC_BLOCK(NVIC_PRIO_SPI_DMA) {
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         if (spiIsBusy(dev)) {
             busSegment_t *endSegment;
 
