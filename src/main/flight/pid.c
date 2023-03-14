@@ -986,6 +986,7 @@ const bool newRcFrame = getShouldUpdateFeedforward();
 
         float currentPidSetpoint = getSetpointRate(axis);
         float rawSetpoint = getRawSetpoint(axis);
+        bool rawSetpointIsSmoothed = false;
         if (pidRuntime.maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
@@ -1012,6 +1013,8 @@ const bool newRcFrame = getShouldUpdateFeedforward();
             || (levelMode == LEVEL_MODE_RP && (axis == FD_ROLL || axis ==  FD_PITCH)) ) {
             rawSetpoint = pidLevel(axis, pidProfile, angleTrim, rawSetpoint, horizonLevelStrength, newRcFrame);
             currentPidSetpoint = rawSetpoint;
+            rawSetpointIsSmoothed = true;
+            // levelled axes are already smoothed; feedforward should be calculated each PID loop
             DEBUG_SET(DEBUG_ATTITUDE, axis - FD_ROLL + 2, currentPidSetpoint);
         }
 #endif
@@ -1094,7 +1097,7 @@ const bool newRcFrame = getShouldUpdateFeedforward();
         // -----calculate pidSetpointDelta
         float pidSetpointDelta = 0;
 #ifdef USE_FEEDFORWARD
-        pidSetpointDelta = feedforwardApply(axis, newRcFrame, pidRuntime.feedforwardAveraging, rawSetpoint);
+        pidSetpointDelta = feedforwardApply(axis, newRcFrame, pidRuntime.feedforwardAveraging, rawSetpoint, rawSetpointIsSmoothed);
 #endif
         pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint;
 

@@ -64,12 +64,12 @@ void feedforwardInit(const pidProfile_t *pidProfile)
     }
 }
 
-FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging, const float setpoint)
+FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforwardAveraging_t feedforwardAveraging, const float setpoint, bool rawSetpointIsSmoothed)
 {
     const float feedforwardBoostFactor = pidGetFeedforwardBoostFactor();
 
-    if (FLIGHT_MODE(ANGLE_MODE)) {
-        // bare bones feedforward with boost on pre-smoothed data
+    if (rawSetpointIsSmoothed) {
+        // simple feedforward with boost on pre-smoothed data that changes smoothly each PID loop
         const float setpointSpeed = (setpoint - prevSetpoint[axis]);
         prevSetpoint[axis] = setpoint;
         float setpointAcceleration = setpointSpeed - prevSetpointSpeed[axis];
@@ -78,6 +78,7 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
         setpointDelta[axis] = (setpointSpeed + setpointAcceleration);
     } else {
         if (newRcFrame) {
+            // calculate feedforward in steps, when new RC packet arrives, then upsammple the resulting feedforward to PID loop rate
             const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
             const float feedforwardSmoothFactor = pidGetFeedforwardSmoothFactor();
                         // good values : 25 for 111hz FrSky, 30 for 150hz, 50 for 250hz, 65 for 500hz links
