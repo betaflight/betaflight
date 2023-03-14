@@ -346,10 +346,20 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 
 static void applyRPMLimiter(void)
 {
-    //Street League customization
+    //Street League spec settings
     float forcedRPMLimit = 130.0f;
-    //if (mixerConfig()->govenor && motorConfig()->dev.useDshotTelemetry) {
-    if (motorConfig()->dev.useDshotTelemetry) {
+    bool forcedLinearization = true;
+    int forcedMotorPoleCount = 14;
+    bool forceGovenor = true;
+
+    //Unlocked spec settings
+    //float forcedRPMLimit = mixerConfig()->govenor_rpm_limit;
+    //bool forcedLinearization = mixerConfig()->rpm_linearization;
+    //int forcedMotorPoleCount = motorConfig()->motorPoleCount;
+    //bool forceGovenor = mixerConfig()->govenor && motorConfig()->dev.useDshotTelemetry;
+    
+
+    if (forceGovenor) {
         float RPM_GOVENOR_LIMIT = 0;
         float averageRPM = 0;
         float averageRPM_smoothed = 0;
@@ -357,11 +367,8 @@ static void applyRPMLimiter(void)
         float rcCommandThrottle = (rcCommand[THROTTLE]-1000)/1000.0f;
 
         //Street League customization
-        //if (mixerConfig()->rpm_linearization) {
-        if (true) {
+        if (forcedLinearization) {
             //scales rpm setpoint between idle rpm and rpm limit based on throttle percent
-            //Street League customization
-            //RPM_GOVENOR_LIMIT = ((mixerConfig()->govenor_rpm_limit - mixerConfig()->govenor_idle_rpm))*100.0f*(rcCommandThrottle) + mixerConfig()->govenor_idle_rpm * 100.0f;
             RPM_GOVENOR_LIMIT = ((forcedRPMLimit - mixerConfig()->govenor_idle_rpm))*100.0f*(rcCommandThrottle) + mixerConfig()->govenor_idle_rpm * 100.0f;
 
             //limit the speed with which the rpm setpoint can increase based on the rpm_limiter_acceleration_limit cli command
@@ -377,8 +384,6 @@ static void applyRPMLimiter(void)
         } 
         else {
             throttle = throttle * mixerRuntime.govenorExpectedThrottleLimit;
-            //Street League customization
-            //RPM_GOVENOR_LIMIT = ((mixerConfig()->govenor_rpm_limit))*100.0f;
             RPM_GOVENOR_LIMIT = ((forcedRPMLimit))*100.0f;
         }
 
@@ -390,7 +395,7 @@ static void applyRPMLimiter(void)
                 motorsSaturated = true;
             }
         }
-        averageRPM = 100 * averageRPM / (getMotorCount()*motorConfig()->motorPoleCount/2.0f);
+        averageRPM = 100 * averageRPM / (getMotorCount()*forcedMotorPoleCount/2.0f);
 
         //get the smoothed rpm to avoid d term noise
         averageRPM_smoothed = mixerRuntime.govenorPreviousSmoothedRPM + mixerRuntime.govenorDelayK * (averageRPM - mixerRuntime.govenorPreviousSmoothedRPM); //kinda braindead to convert to rps then back
@@ -399,7 +404,7 @@ static void applyRPMLimiter(void)
         float govenorP = smoothedRPMError * mixerRuntime.govenorPGain; //+ when overspped
         float govenorD = (smoothedRPMError-mixerRuntime.govenorPreviousSmoothedRPMError) * mixerRuntime.govenorDGain; // + when quickly going overspeed
         
-        if (mixerConfig()->rpm_linearization) {
+        if (forcedLinearization) {
             //don't let I term wind up if throttle is below the motor idle
             if (rcCommandThrottle < motorConfig()->digitalIdleOffsetValue / 10000.0f) {
                 mixerRuntime.govenorI *= 1.0f/(1.0f+(pidGetDT()*10.0f)); //slowly ramp down i term instead of resetting to avoid throttle pulsing cheats
@@ -430,7 +435,7 @@ static void applyRPMLimiter(void)
             
         }
         if (mixerRuntime.govenor_init) {
-            if (mixerConfig()->rpm_linearization) {
+            if (forcedLinearization) {
                 throttle = constrainf(-PIDOutput, 0.0f, 1.0f);
             } else {
                 throttle = constrainf(throttle-PIDOutput, 0.0f, 1.0f);
@@ -444,10 +449,10 @@ static void applyRPMLimiter(void)
         mixerRuntime.govenorPreviousSmoothedRPMError = smoothedRPMError;
         mixerRuntime.govenorPreviousRPMLimit = RPM_GOVENOR_LIMIT;
         
-        // DEBUG_SET(DEBUG_RPM_LIMITER, 0, averageRPM);
-        // DEBUG_SET(DEBUG_RPM_LIMITER, 1, smoothedRPMError);
-        // DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.govenorI*100.0f);
-        // DEBUG_SET(DEBUG_RPM_LIMITER, 3, govenorD*10000.0f);
+        //DEBUG_SET(DEBUG_RPM_LIMITER, 0, averageRPM);
+        //DEBUG_SET(DEBUG_RPM_LIMITER, 1, smoothedRPMError);
+        //DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.govenorI*100.0f);
+        //DEBUG_SET(DEBUG_RPM_LIMITER, 3, govenorD*10000.0f);
     }
 }
 
