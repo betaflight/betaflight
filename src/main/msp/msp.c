@@ -1943,7 +1943,7 @@ case MSP_NAME:
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU16(dst, currentPidProfile->rateAccelLimit);
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
-        sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
+        sbufWriteU8(dst, currentPidProfile->angle_limit);
         sbufWriteU8(dst, 0); // was pidProfile.levelSensitivity
         sbufWriteU16(dst, 0); // was currentPidProfile->itermThrottleThreshold
         sbufWriteU16(dst, currentPidProfile->anti_gravity_gain);
@@ -3074,7 +3074,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         currentPidProfile->rateAccelLimit = sbufReadU16(src);
         currentPidProfile->yawRateAccelLimit = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
-            currentPidProfile->levelAngleLimit = sbufReadU8(src);
+            currentPidProfile->angle_limit = sbufReadU8(src);
             sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
