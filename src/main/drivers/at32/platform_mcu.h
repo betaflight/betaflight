@@ -68,6 +68,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #endif
 
+#define USE_USB_MSC
+
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 #define USE_DMA_SPEC

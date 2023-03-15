@@ -58,7 +58,7 @@ typedef struct isrVector_s {
 
 void checkForBootLoaderRequest(void)
 {
-    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+    volatile uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
 
     if (bootloaderRequest != RESET_BOOTLOADER_REQUEST_ROM) {
         return;
@@ -96,6 +96,10 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
+    persistentObjectInit();
+
+    checkForBootLoaderRequest();
+
     system_clock_config();//config system clock to 288mhz usb 48mhz
 
     // Configure NVIC preempt/priority groups

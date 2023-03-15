@@ -26,7 +26,8 @@
 #define BOARD_NAME        REVO_AT
 #define MANUFACTURER_ID   OPEN
 
-#define LED0_PIN                PB5
+#define LED0_PIN             PB5
+#define LED1_PIN             PB4
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -41,13 +42,12 @@
 #define USE_GYRO_EXTI
 #define GYRO_1_EXTI_PIN         PC4
 
-#define  SPI1_SCK_PIN           PA5
-#define  SPI1_SDI_PIN           PA6
-#define  SPI1_SDO_PIN           PA7
-
-#define  SPI3_SCK_PIN           PC10
-#define  SPI3_SDI_PIN           PC11
-#define  SPI3_SDO_PIN           PC12
+#define SPI1_SCK_PIN         PA5
+#define SPI3_SCK_PIN         PC10
+#define SPI1_SDI_PIN         PA6
+#define SPI3_SDI_PIN         PC11
+#define SPI1_SDO_PIN         PA7
+#define SPI3_SDO_PIN         PC12
 
 #define USE_FLASH
 #define USE_FLASH_M25P16
@@ -60,8 +60,10 @@
 #define I2C2_SCL_PIN            PB10
 #define I2C2_SDA_PIN            PB11
 
+#define MAG_I2C_INSTANCE        I2CDEV_1
 #define USE_MAG
-#define MAG_I2C_INSTANCE        I2C1
+#define USE_MAG_HMC5883
 
+#define BARO_I2C_INSTANCE       I2CDEV_1
 #define USE_BARO
-#define BARO_I2C_INSTANCE       I2C1
+#define USE_BARO_MS5611

@@ -43,6 +43,9 @@
 #include "drivers/time.h"
 #include "drivers/usb_msc.h"
 
+#include "msc/usbd_storage.h"
+#include "msc/usbd_storage_emfat.h"
+
 #include "pg/sdcard.h"
 #include "pg/usb.h"
 
@@ -194,4 +197,44 @@ uint8_t mscStart(void)
     return 0;
 }
 
+int8_t msc_disk_capacity(uint8_t lun, uint32_t *block_num, uint32_t *block_size)
+{
+    return USBD_MSC_EMFAT_fops.GetCapacity(lun, block_num, block_size);
+}
+
+int8_t msc_disk_read(
+    uint8_t lun,        // logical unit number
+    uint32_t blk_addr,  // address of 1st block to be read
+    uint8_t *buf,       // Pointer to the buffer to save data
+    uint16_t blk_len)   // number of blocks to be read
+{
+    return USBD_MSC_EMFAT_fops.Read(lun, buf, blk_addr, blk_len);
+}
+
+int8_t msc_disk_write(uint8_t lun,
+    uint32_t blk_addr,
+    uint8_t *buf,
+    uint16_t blk_len)
+{
+    UNUSED(lun);
+    UNUSED(buf);
+    UNUSED(blk_addr);
+    UNUSED(blk_len);
+
+    return 1;
+}
+
+uint8_t *get_inquiry(uint8_t lun)
+{
+    UNUSED(lun);
+
+    return (uint8_t *)USBD_MSC_EMFAT_fops.pInquiry;
+}
+
+uint8_t msc_get_readonly(uint8_t lun)
+{
+    UNUSED(lun);
+
+    return 1;
+}
 #endif

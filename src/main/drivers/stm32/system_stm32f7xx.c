@@ -90,6 +90,8 @@ static void checkForBootLoaderRequest(void)
 
 void systemInit(void)
 {
+    persistentObjectInit();
+
     checkForBootLoaderRequest();
 
     //  Mark ITCM-RAM as read-only
