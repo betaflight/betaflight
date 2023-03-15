@@ -121,6 +121,10 @@
 
 #endif // defined(USE_RX_CC2500)
 
+#if defined(CAMERA_CONTROL_PIN) && defined(USE_VTX) && !defined(USE_CAMERA_CONTROL)
+#define USE_CAMERA_CONTROL
+#endif
+
 /* END HARDWARE INCLUSIONS */
 
 #if defined(USE_VTX_RTC6705_SOFTSPI)
