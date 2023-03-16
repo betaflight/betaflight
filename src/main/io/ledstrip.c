@@ -115,7 +115,7 @@ const hsvColor_t hsv[] = {
 // macro to save typing on default colors
 #define HSV(color) (hsv[COLOR_ ## color])
 
-PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
 
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
@@ -132,6 +132,8 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_beacon_armed_only = false; // blink always
     ledStripConfig->ledstrip_visual_beeper_color = VISUAL_BEEPER_COLOR;
     ledStripConfig->ledstrip_brightness = 100;
+    ledStripConfig->ledstrip_rainbow_delta = 0;
+    ledStripConfig->ledstrip_rainbow_freq = 120;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
@@ -295,7 +297,7 @@ static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 
 static const char directionCodes[LED_DIRECTION_COUNT] = { 'N', 'E', 'S', 'W', 'U', 'D' };
 static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT]   = { 'C', 'F', 'A', 'L', 'S', 'G', 'R' };
-static const char overlayCodes[LED_OVERLAY_COUNT]   = { 'T', 'O', 'B', 'V', 'I', 'W' };
+static const char overlayCodes[LED_OVERLAY_COUNT]   = { 'T', 'Y', 'O', 'B', 'V', 'I', 'W' };
 
 #define CHUNK_BUFFER_SIZE 11
 bool parseLedStripConfig(int ledIndex, const char *config)
@@ -894,6 +896,30 @@ static void applyLedThrustRingLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
+static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
+{
+    static int offset = 0;
+
+    if (updateNow) {
+        *timer += HZ_TO_US(ledStripConfig()->ledstrip_rainbow_freq);
+    }
+
+    uint8_t rainbowLedIndex = 0;
+
+    for (unsigned i = 0; i < ledCounts.count; i++) {
+        const ledConfig_t *ledConfig = &ledStripStatusModeConfig()->ledConfigs[i];
+        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
+            hsvColor_t ledColor;
+            ledColor.h = (offset + (rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta)) % HSV_HUE_MAX;
+            ledColor.s = 0;
+            ledColor.v = HSV_VALUE_MAX;
+            setLedHsv(i, &ledColor);
+            rainbowLedIndex++;
+        }
+    }
+    offset++;
+}
+
 typedef struct larsonParameters_s {
     uint8_t currentBrightness;
     int8_t currentIndex;
@@ -984,6 +1010,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 
 // In reverse order of priority
 typedef enum {
+    timRainbow,
     timBlink,
     timLarson,
     timRing,
@@ -1013,6 +1040,7 @@ STATIC_ASSERT(timTimerCount <= sizeof(disabledTimerMask) * 8, disabledTimerMask_
 typedef void applyLayerFn_timed(bool updateNow, timeUs_t *timer);
 
 static applyLayerFn_timed* layerTable[] = {
+    [timRainbow] = &applyRainbowLayer,
     [timBlink] = &applyLedBlinkLayer,
     [timLarson] = &applyLarsonScannerLayer,
     [timBattery] = &applyLedBatteryLayer,
@@ -1042,6 +1070,7 @@ bool isOverlayTypeUsed(ledOverlayId_e overlayType)
 void updateRequiredOverlay(void)
 {
     disabledTimerMask = 0;
+    disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_RAINBOW) << timRainbow;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_BLINK) << timBlink;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_LARSON_SCANNER) << timLarson;
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_WARNING) << timWarning;
