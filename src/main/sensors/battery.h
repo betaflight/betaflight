@@ -52,7 +52,11 @@ typedef struct batteryConfig_s {
     uint16_t vbatnotpresentcellvoltage;     // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
     uint8_t lvcPercentage;                  // Percentage of throttle when lvc is triggered
     voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
-    uint8_t usingCurrentSensor;
+    uint8_t usingCurrentSensor;             // whether a current sensor is to be used for battery usage calculation
+    uint8_t cutoffFreqVoltageLpf;           // cutoff frequency to be used for filtering the voltage for battery usage calculation
+    uint8_t throttleMultiplier;             // throttle value will be mutiplied by this value divided by 100 when being used to adjust voltage for SOC
+    uint8_t cellMinVoltCustom;              // user can set the minimum cell voltage they want for the purposes of battery soc prediction
+    uint8_t cellMaxVoltCustom;              // user can set the maximum cell voltage they want for the purposes of battery soc prediction
 
     // current
     currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
