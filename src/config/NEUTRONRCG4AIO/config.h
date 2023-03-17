@@ -26,6 +26,16 @@
 #define BOARD_NAME        NEUTRONRCG4AIO
 #define MANUFACTURER_ID   NERC
 
+#define USE_GYRO
+#define USE_ACC
+#define ACCGYRO_SPI_LSM6DSO
+#define USE_ACCGYRO_LSM6DSO
+#define USE_BARO
+#define USE_BARO_DPS310
+#define USE_FLASH
+#define USE_FLASH_M25P16
+#define USE_MAX7456
+
 #define BEEPER_PIN           PC14
 #define MOTOR1_PIN           PB1
 #define MOTOR2_PIN           PB0
@@ -76,7 +86,6 @@
 #define TIMUP4_DMA_OPT      0
 #define TIMUP5_DMA_OPT      0
 
-#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #define DEFAULT_DSHOT_BURST DSHOT_DMAR_OFF
