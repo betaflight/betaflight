@@ -138,12 +138,21 @@ static uint8_t odrLUT[ODR_CONFIG_COUNT] = {  // see GYRO_ODR in section 5.6
     [ODR_CONFIG_1K] = 6,
 };
 
-// Possible gyro Anti-Alias Filter (AAF) cutoffs
-static aafConfig_t aafLUT[AAF_CONFIG_COUNT] = {  // see table in section 5.3
+// Possible gyro Anti-Alias Filter (AAF) cutoffs for ICM-42688P
+static aafConfig_t aafLUT42688[AAF_CONFIG_COUNT] = {  // see table in section 5.3
     [AAF_CONFIG_258HZ]  = {  6,   36, 10 },
     [AAF_CONFIG_536HZ]  = { 12,  144,  8 },
     [AAF_CONFIG_997HZ]  = { 21,  440,  6 },
     [AAF_CONFIG_1962HZ] = { 37, 1376,  4 },
+};
+
+// Possible gyro Anti-Alias Filter (AAF) cutoffs for ICM-42688P
+// actual cutoff differs slightly from those of the 42688P
+static aafConfig_t aafLUT42605[AAF_CONFIG_COUNT] = {  // see table in section 5.3
+    [AAF_CONFIG_258HZ]  = { 21,  440,  6 }, // actually 249 Hz
+    [AAF_CONFIG_536HZ]  = { 39, 1536,  4 }, // actually 524 Hz
+    [AAF_CONFIG_997HZ]  = { 63, 3968,  3 }, // actually 995 Hz
+    [AAF_CONFIG_1962HZ] = { 63, 3968,  3 }, // 995 Hz is the max cutoff on the 42605
 };
 
 uint8_t icm426xxSpiDetect(const extDevice_t *dev)
@@ -199,7 +208,7 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     return true;
 }
 
-static aafConfig_t getGyroAafConfig(void);
+static aafConfig_t getGyroAafConfig(const mpuSensor_e, const aafConfig_e);
 
 static void turnGyroAccOff(const extDevice_t *dev)
 {
@@ -234,14 +243,15 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     turnGyroAccOff(dev);
 
     // Configure gyro Anti-Alias Filter (see section 5.3 "ANTI-ALIAS FILTER")
-    aafConfig_t aafConfig = getGyroAafConfig();
+    const mpuSensor_e gyroModel = gyro->mpuDetectionResult.sensor;
+    aafConfig_t aafConfig = getGyroAafConfig(gyroModel, gyroConfig()->gyro_hardware_lpf);
     setUserBank(dev, ICM426XX_BANK_SELECT1);
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC3, aafConfig.delt);
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC4, aafConfig.deltSqr & 0xFF);
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG_STATIC5, (aafConfig.deltSqr >> 8) | (aafConfig.bitshift << 4));
 
     // Configure acc Anti-Alias Filter for 1kHz sample rate (see tasks.c)
-    aafConfig = aafLUT[AAF_CONFIG_258HZ];
+    aafConfig = getGyroAafConfig(gyroModel, AAF_CONFIG_258HZ);
     setUserBank(dev, ICM426XX_BANK_SELECT2);
     spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC2, aafConfig.delt << 1);
     spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG_STATIC3, aafConfig.deltSqr & 0xFF);
@@ -305,21 +315,37 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
     return true;
 }
 
-static aafConfig_t getGyroAafConfig(void)
+static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig_e config)
 {
-    switch (gyroConfig()->gyro_hardware_lpf) {
-    case GYRO_HARDWARE_LPF_NORMAL:
-        return aafLUT[AAF_CONFIG_258HZ];
-    case GYRO_HARDWARE_LPF_OPTION_1:
-        return aafLUT[AAF_CONFIG_536HZ];
-    case GYRO_HARDWARE_LPF_OPTION_2:
-        return aafLUT[AAF_CONFIG_997HZ];
-#ifdef USE_GYRO_DLPF_EXPERIMENTAL
-    case GYRO_HARDWARE_LPF_EXPERIMENTAL:
-        return aafLUT[AAF_CONFIG_1962HZ];
-#endif
+    switch (gyroModel){
+    case ICM_42605_SPI:
+        switch (config) {
+        case GYRO_HARDWARE_LPF_NORMAL:
+            return aafLUT42605[AAF_CONFIG_258HZ];
+        case GYRO_HARDWARE_LPF_OPTION_1:
+            return aafLUT42605[AAF_CONFIG_536HZ];
+        case GYRO_HARDWARE_LPF_OPTION_2:
+            return aafLUT42605[AAF_CONFIG_997HZ];
+        default:
+            return aafLUT42605[AAF_CONFIG_258HZ];
+        }
+
+    case ICM_42688P_SPI:
     default:
-        return aafLUT[AAF_CONFIG_258HZ];
+        switch (config) {
+        case GYRO_HARDWARE_LPF_NORMAL:
+            return aafLUT42688[AAF_CONFIG_258HZ];
+        case GYRO_HARDWARE_LPF_OPTION_1:
+            return aafLUT42688[AAF_CONFIG_536HZ];
+        case GYRO_HARDWARE_LPF_OPTION_2:
+            return aafLUT42688[AAF_CONFIG_997HZ];
+#ifdef USE_GYRO_DLPF_EXPERIMENTAL
+        case GYRO_HARDWARE_LPF_EXPERIMENTAL:
+            return aafLUT42688[AAF_CONFIG_1962HZ];
+#endif
+        default:
+            return aafLUT42688[AAF_CONFIG_258HZ];
+        }
     }
 }
 
