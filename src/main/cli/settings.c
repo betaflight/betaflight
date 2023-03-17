@@ -899,6 +899,8 @@ const clivalue_t valueTable[] = {
     { "using_current_sensor",       VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, usingCurrentSensor) },
     { "cutoff_freq_voltage_lpf",    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 5000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, cutoffFreqVoltageLpf) },
     { "throttle_multiplier",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, throttleMultiplier) },
+    { "cell_min_volt_custom",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 300, 400 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, cellMinVoltCustom) },
+    { "cell_max_volt_custom",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 400, 500 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, cellMaxVoltCustom) },
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     { "vbat_sag_lpf_period",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, UINT8_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatSagLpfPeriod) },
 #endif

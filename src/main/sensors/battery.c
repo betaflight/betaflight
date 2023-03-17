@@ -127,9 +127,10 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .voltageMeterSource = DEFAULT_VOLTAGE_METER_SOURCE,
     .lvcPercentage = 100, //Off by default at 100%
     .usingCurrentSensor = 0,
-    .cutoffFreqVoltageLpf = 200, //centi Hz
-    .throttleMultiplier = 100, //will be divided by 100 when being used to adjust voltage for better precision
-
+    .cutoffFreqVoltageLpf = 200,  // centi Hz
+    .throttleMultiplier = 100,    // will be divided by 100 when being used to adjust voltage for better precision
+    .cellMinVoltCustom = 330,     // will be divided by 100 to get value in Volts
+    .cellMaxVoltCustom = 420,      // will be divived by 100 to get value in Volts
     // current
     .batteryCapacity = 0,
     .currentMeterSource = DEFAULT_CURRENT_METER_SOURCE,
@@ -196,7 +197,7 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
     lastFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
     DEBUG_SET(DEBUG_FILT_VOLTAGE, 1, lastFilteredVoltage);
     float throttleForBattPerc = (rcCommand[THROTTLE] - 1000) / 1000;
-    float vol = lastFilteredVoltage - throttleForBattPerc;
+    float vol = lastFilteredVoltage - throttleForBattPerc * batteryConfig()->throttleMultiplier;
     DEBUG_SET(DEBUG_FILT_VOLTAGE, 2, vol);
     if (vol < BATTERY_MIN_VOLTAGE)
         vol = BATTERY_MIN_VOLTAGE;

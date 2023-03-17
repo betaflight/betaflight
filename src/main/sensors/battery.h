@@ -55,6 +55,8 @@ typedef struct batteryConfig_s {
     uint8_t usingCurrentSensor;             // whether a current sensor is to be used for battery usage calculation
     uint8_t cutoffFreqVoltageLpf;           // cutoff frequency to be used for filtering the voltage for battery usage calculation
     uint8_t throttleMultiplier;             // throttle value will be mutiplied by this value divided by 100 when being used to adjust voltage for SOC
+    uint8_t cellMinVoltCustom;              // user can set the minimum cell voltage they want for the purposes of battery soc prediction
+    uint8_t cellMaxVoltCustom;              // user can set the maximum cell voltage they want for the purposes of battery soc prediction
 
     // current
     currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
