@@ -40,8 +40,23 @@
 static bool standardBoardAlignment = true;     // board orientation correction
 static fp_rotationMatrix_t boardRotation;
 
-// no template required since defaults are zero
-PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 1);
+
+#ifndef DEFAULT_ALIGN_BOARD_ROLL
+#define DEFAULT_ALIGN_BOARD_ROLL 0
+#endif
+#ifndef DEFAULT_ALIGN_BOARD_PITCH
+#define DEFAULT_ALIGN_BOARD_PITCH 0
+#endif
+#ifndef DEFAULT_ALIGN_BOARD_YAW
+#define DEFAULT_ALIGN_BOARD_YAW 0
+#endif
+
+PG_RESET_TEMPLATE(boardAlignment_t, boardAlignment,
+        .rollDegrees = DEFAULT_ALIGN_BOARD_ROLL,
+        .pitchDegrees = DEFAULT_ALIGN_BOARD_PITCH,
+        .yawDegrees = DEFAULT_ALIGN_BOARD_YAW,
+);
 
 static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
 {
