@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define FC_TARGET_MCU     AT32F435
+#define FC_TARGET_MCU     AT32F435M
 
 #define BOARD_NAME        ATSTARTF435
 #define MANUFACTURER_ID   AT

@@ -19,51 +19,49 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define FC_TARGET_MCU     AT32F435M
+#define FC_TARGET_MCU     AT32F435G
 
-// REVO with STM32F405 swapped for an AT32F435
+#define BOARD_NAME        NEUTRONRCF435
+#define MANUFACTURER_ID   NERC
 
-#define BOARD_NAME        REVO_AT
-#define MANUFACTURER_ID   OPEN
-
-#define LED0_PIN             PB5
-#define LED1_PIN             PB4
+#define LED0_PIN             PC4
 
 #define USE_GYRO
-#define USE_GYRO_SPI_MPU6000
 #define USE_ACC
-#define USE_ACC_SPI_MPU6000
-#define GYRO_1_CS_PIN           PA4
-#define GYRO_1_SPI_INSTANCE     SPI1
-#define GYRO_1_ALIGN            CW270_DEG
+#define USE_ACCGYRO_BMI270
+#define GYRO_1_CS_PIN        PA15
+#define GYRO_1_SPI_INSTANCE  SPI1
+#define GYRO_1_ALIGN         CW270_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
 #define USE_GYRO_EXTI
-#define GYRO_1_EXTI_PIN         PC4
+#define GYRO_1_EXTI_PIN      PB8
 
 #define SPI1_SCK_PIN         PA5
-#define SPI3_SCK_PIN         PC10
+#define SPI2_SCK_PIN         PB13
+#define SPI3_SCK_PIN         PB3
 #define SPI1_SDI_PIN         PA6
-#define SPI3_SDI_PIN         PC11
+#define SPI2_SDI_PIN         PB14
+#define SPI3_SDI_PIN         PB4
 #define SPI1_SDO_PIN         PA7
-#define SPI3_SDO_PIN         PC12
+#define SPI2_SDO_PIN         PB15
+#define SPI3_SDO_PIN         PB5
 
 #define USE_FLASH
-#define USE_FLASH_M25P16
-#define FLASH_CS_PIN            PB3
-#define FLASH_SPI_INSTANCE      SPI3
+#define USE_FLASH_W25Q128FV
+#define FLASH_CS_PIN         PB9
+#define FLASH_SPI_INSTANCE   SPI3
 
-#define I2C1_SCL_PIN            PB8
-#define I2C1_SDA_PIN            PB9
+#define I2C2_SCL_PIN         PB10
+#define I2C2_SDA_PIN         PB11
 
-#define I2C2_SCL_PIN            PB10
-#define I2C2_SDA_PIN            PB11
-
-#define MAG_I2C_INSTANCE        I2CDEV_1
-#define USE_MAG
-#define USE_MAG_HMC5883
-
-#define BARO_I2C_INSTANCE       I2CDEV_1
+#define BARO_I2C_INSTANCE    I2CDEV_2
 #define USE_BARO
-#define USE_BARO_MS5611
+#define USE_BARO_BMP280
+#define USE_BARO_DPS310
+
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE SPI2
+#define MAX7456_SPI_CS_PIN   PB12
+
