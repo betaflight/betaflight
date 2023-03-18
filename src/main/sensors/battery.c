@@ -83,11 +83,8 @@ static float BATTERY_MIN_VOLTAGE;
 static float BATTERY_MAX_VOLTAGE;
 static float batteryPercentageGlobal;
 
-
-#define PWM_RANGE_MIN 1000
-#define PWM_RANGE_MAX 2000
-#define MAX_SUPPORTED_RC_CHANNEL_COUNT 18
-extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
+// #define MAX_SUPPORTED_RC_CHANNEL_COUNT 18
+// extern float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2000]
 
 static currentMeter_t currentMeter;
 static voltageMeter_t voltageMeter;
@@ -129,8 +126,8 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .usingCurrentSensor = 0,
     .cutoffFreqVoltageLpf = 200,  // centi Hz
     .throttleMultiplier = 100,    // will be divided by 100 when being used to adjust voltage for better precision
-    .cellMinVoltCustom = 330,     // will be divided by 100 to get value in Volts
-    .cellMaxVoltCustom = 420,      // will be divived by 100 to get value in Volts
+    .cellMinVoltSOC = 330,     // will be divided by 100 to get value in Volts
+    .cellMaxVoltSOC = 420,      // will be divived by 100 to get value in Volts
     // current
     .batteryCapacity = 0,
     .currentMeterSource = DEFAULT_CURRENT_METER_SOURCE,
@@ -263,8 +260,8 @@ void batteryUpdatePresence(void)
                 changePidProfileFromCellCount(batteryCellCount);
             }
         }
-        BATTERY_MIN_VOLTAGE  = batteryConfig()->vbatmincellvoltage * batteryCellCount;
-        BATTERY_MAX_VOLTAGE = batteryConfig()->vbatmaxcellvoltage * batteryCellCount;
+        BATTERY_MIN_VOLTAGE  = batteryConfig()->cellMinVoltSOC * batteryCellCount;
+        BATTERY_MAX_VOLTAGE = batteryConfig()->cellMaxVoltSOC * batteryCellCount;
         lastFilteredVoltage = voltageMeter.displayFiltered;
         lastTimeVol = micros();
 

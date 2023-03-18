@@ -1239,8 +1239,8 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     // Set length of indicator bar
     #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
     const int mAhDrawn = getMAhDrawn();
-    //const int usedCapacity = getMAhDrawn();
-    //int displayBasis = usedCapacity;
+    const int usedCapacity = (batteryConfig()->usingCurrentSensor) ? getMAhDrawn() : ((getBatteryPercentageGlobal()/100.0f) * batteryConfig()->batteryCapacity);
+    int displayBasis = usedCapacity;
 
     if (mAhDrawn >= osdConfig()->cap_alarm) {
         element->attr = DISPLAYPORT_ATTR_CRITICAL;
@@ -1249,22 +1249,26 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     switch (element->type) {
     case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
         {
-        //displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
-        //displayBasis = calculateBatteryPercentageRemaining();
-        // displayBasis = 1;// 100 - getBatteryPercentageGlobal();
-        // FALLTHROUGH;
-        int displayRemPercent = getBatteryPercentageGlobal(); 
-        tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayRemPercent);
-        break;
+            if (batteryConfig()->usingCurrentSensor) {
+                displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+                FALLTHROUGH;
+            } else {
+                int displayRemPercent = getBatteryPercentageGlobal(); 
+                tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayRemPercent);
+                break;
+            }
         }
 
     case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
         {
-            // int displayPercent = 0;
-            // if (batteryConfig()->batteryCapacity) {
-            //     displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
-            // }
-            int displayPercent = 100 - getBatteryPercentageGlobal(); 
+            int displayPercent = 0;
+            if (batteryConfig()->usingCurrentSensor) {
+                if (batteryConfig()->batteryCapacity) {
+                    displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
+                }
+            } else {
+                    displayPercent = 100 - getBatteryPercentageGlobal(); 
+            }
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
         }
@@ -1278,15 +1282,13 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
         {
             uint8_t remainingCapacityBars = 0;
 
-            if (batteryConfig()->batteryCapacity) {
-                //const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
-                //remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            if (batteryConfig()->usingCurrentSensor && batteryConfig()->batteryCapacity) {
+                const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
+                remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            } else {
                 remainingCapacityBars = ceilf((getBatteryPercentageGlobal()/100.0f  * MAIN_BATT_USAGE_STEPS));
                 DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, remainingCapacityBars);
             }
-            remainingCapacityBars = ceilf((getBatteryPercentageGlobal()/100.0f  * MAIN_BATT_USAGE_STEPS));
-            DEBUG_SET(DEBUG_FILT_VOLTAGE, 0, remainingCapacityBars);
-
             // Create empty battery indicator bar
             element->buff[0] = SYM_PB_START;
             for (int i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
