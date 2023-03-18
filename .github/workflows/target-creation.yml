@@ -3,7 +3,9 @@ name: CI - Upload config.h to API
 on:
   push:
     branches:
-    - 'master'
+      - 'master'
+    paths:
+      - 'src/config/**'
 
 jobs:
   deploy:
