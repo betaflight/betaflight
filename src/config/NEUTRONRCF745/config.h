@@ -99,8 +99,8 @@
 #define GYRO_1_CS_PIN        PA4
 #define GYRO_2_CS_PIN        PB12
 
-// TIM1, CH1, PA8,
-// TIM2, CH2, PB3,
+// TIM1, CH1, PA8, 1
+// TIM2, CH2, PB3, 2
 // TIM8, CH2N, PB0, 1, 3, 8
 // TIM8, CH3N, PB1, 1, 3, 8
 // TIM3, CH1, PB4, 3
@@ -150,4 +150,3 @@
 #define GYRO_2_SPI_INSTANCE SPI2
 #define GYRO_2_ALIGN CW180_DEG
 #define GYRO_2_ALIGN_YAW 1800
-//TODO #define ALIGN_BOARD_YAW -45
