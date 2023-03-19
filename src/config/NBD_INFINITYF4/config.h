@@ -77,7 +77,6 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define ACC_HARDWARE NONE
 //TODO #define MAG_HARDWARE NONE
 #define DEFAULT_BARO_DEVICE BARO_NONE
 
