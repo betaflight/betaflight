@@ -400,7 +400,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    if (!beeperIsOn) {
 #ifdef USE_DSHOT
         if (!areMotorsRunning()
             && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
@@ -413,6 +412,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
 #endif
 
+    if (!beeperIsOn) {
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
                 BEEP_ON;
