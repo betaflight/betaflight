@@ -225,7 +225,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         throttle = rcCommand[THROTTLE] - PWM_RANGE_MIN + throttleAngleCorrection;
         currentThrottleInputRange = PWM_RANGE;
 #ifdef USE_DYN_IDLE
-        if (!RPM_LIMIT_ACTIVE && mixerRuntime.dynIdleMinRps > 0.0f) {
+        if (mixerRuntime.dynIdleMinRps > 0.0f) {
             const float maxIncrease = isAirmodeActivated()
                 ? mixerRuntime.dynIdleMaxIncrease : mixerRuntime.dynIdleStartIncrease;
             float minRps = getMinMotorFrequency();
