@@ -401,13 +401,15 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_DSHOT
-        if (!areMotorsRunning()
-            && ((currentBeeperEntry->mode == BEEPER_RX_SET && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)))
-            || (currentBeeperEntry->mode == BEEPER_RX_LOST && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST))))) {
-
+        if (!areMotorsRunning() && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
             if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US && !isTryingToArm()) {
-                lastDshotBeaconCommandTimeUs = currentTimeUs;
-                dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
+                const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET) ? DSHOT_BEACON_MODE_INTERVAL_US : DSHOT_BEACON_RXLOSS_INTERVAL_US;
+                if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
+                    // at least 500ms between DShot beacons to allow time for the sound to fully complete
+                    // note that this completely ignores the audio Beeper timing, where we can control the duration of the tone
+                    lastDshotBeaconCommandTimeUs = currentTimeUs;
+                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
+                }
             }
         }
 #endif
