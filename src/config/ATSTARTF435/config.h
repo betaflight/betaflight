@@ -53,5 +53,5 @@
 #define UART1_TX_PIN PA9
 #define USE_MSP_UART SERIAL_PORT_USART1
 
-
+#define ADC1_DMA_OPT                    1
 
