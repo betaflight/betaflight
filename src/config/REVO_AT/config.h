@@ -67,3 +67,5 @@
 #define BARO_I2C_INSTANCE       I2CDEV_1
 #define USE_BARO
 #define USE_BARO_MS5611
+
+#define ADC1_DMA_OPT                    1

@@ -65,3 +65,5 @@
 #define MAX7456_SPI_INSTANCE SPI2
 #define MAX7456_SPI_CS_PIN   PB12
 
+#define ADC1_DMA_OPT                    1
+
