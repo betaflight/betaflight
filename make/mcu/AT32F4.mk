@@ -39,7 +39,11 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(MIDDLEWARES_DIR)/usbd_class/msc \
                    $(VCP_INCLUDES)
 
-LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xM.ld
+ifeq ($(TARGET),AT32F435M)
+LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xm.ld
+else
+LD_SCRIPT       = $(LINKER_DIR)/at32_flash_f43xg.ld
+endif
 
 ARCH_FLAGS      = -std=c99  -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS   += -DUSE_ATBSP_DRIVER -DAT32F43x -DHSE_VALUE=$(HSE_VALUE) -DAT32 -DUSE_OTG_HOST_MODE

@@ -3,7 +3,7 @@
 **
 **  File        : at32_flash_f4_split.ld
 **
-**  Abstract    : Common linker script for STM32 devices.
+**  Abstract    : Common linker script for AT32 devices.
 **
 *****************************************************************************
 */

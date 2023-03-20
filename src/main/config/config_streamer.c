@@ -513,7 +513,7 @@ int config_streamer_flush(config_streamer_t *c)
         c->err = write_word(c, &c->buffer.w);
         c->at = 0;
     }
-    return c-> err;
+    return c->err;
 }
 
 int config_streamer_finish(config_streamer_t *c)

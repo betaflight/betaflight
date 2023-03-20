@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if defined(AT32F435ZMT7)
+#if defined(AT32F435)
 
 #include "at32f435_437.h"
 #include "at32f435_437_i2c.h"
