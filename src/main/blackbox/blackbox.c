@@ -48,6 +48,9 @@
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#ifdef USE_DSHOT_TELEMETRY
+#include "drivers/dshot.h"
+#endif
 
 #include "fc/board_info.h"
 #include "fc/controlrate_profile.h"
@@ -247,7 +250,18 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"motor",       7, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
 
     /* Tricopter tail servo */
-    {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)}
+    {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)},
+
+#ifdef USE_DSHOT_TELEMETRY
+    {"RPM",         0, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
+    {"RPM",         1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
+    {"RPM",         2, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_3_HAS_RPM)},
+    {"RPM",         3, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_4_HAS_RPM)},
+    {"RPM",         4, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_5_HAS_RPM)},
+    {"RPM",         5, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_6_HAS_RPM)},
+    {"RPM",         6, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
+    {"RPM",         7, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
+#endif /* USE_DSHOT_TELEMETRY */
 };
 
 #ifdef USE_GPS
@@ -314,6 +328,9 @@ typedef struct blackboxMainState_s {
     int16_t debug[DEBUG16_VALUE_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
+#ifdef USE_DSHOT_TELEMETRY
+    int16_t rpm[MAX_SUPPORTED_MOTORS];
+#endif
 
     uint16_t vbatLatest;
     int32_t amperageLatest;
@@ -366,7 +383,7 @@ static struct {
 } xmitState;
 
 // Cache for FLIGHT_LOG_FIELD_CONDITION_* test results:
-static uint32_t blackboxConditionCache;
+static uint64_t blackboxConditionCache;
 
 STATIC_ASSERT((sizeof(blackboxConditionCache) * 8) >= FLIGHT_LOG_FIELD_CONDITION_LAST, too_many_flight_log_conditions);
 
@@ -435,6 +452,18 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case CONDITION(AT_LEAST_MOTORS_7):
     case CONDITION(AT_LEAST_MOTORS_8):
         return (getMotorCount() >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1) && isFieldEnabled(FIELD_SELECT(MOTOR));
+
+#ifdef USE_DSHOT_TELEMETRY
+    case CONDITION(MOTOR_1_HAS_RPM):
+    case CONDITION(MOTOR_2_HAS_RPM):
+    case CONDITION(MOTOR_3_HAS_RPM):
+    case CONDITION(MOTOR_4_HAS_RPM):
+    case CONDITION(MOTOR_5_HAS_RPM):
+    case CONDITION(MOTOR_6_HAS_RPM):
+    case CONDITION(MOTOR_7_HAS_RPM):
+    case CONDITION(MOTOR_8_HAS_RPM):
+        return (getMotorCount() >= condition - CONDITION(MOTOR_1_HAS_RPM) + 1) && (motorConfig()->dev.useDshotTelemetry) && isFieldEnabled(FIELD_SELECT(RPM));
+#endif
 
     case CONDITION(TRICOPTER):
         return (mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && isFieldEnabled(FIELD_SELECT(MOTOR));
@@ -508,14 +537,14 @@ static void blackboxBuildConditionCache(void)
     blackboxConditionCache = 0;
     for (FlightLogFieldCondition cond = FLIGHT_LOG_FIELD_CONDITION_FIRST; cond <= FLIGHT_LOG_FIELD_CONDITION_LAST; cond++) {
         if (testBlackboxConditionUncached(cond)) {
-            blackboxConditionCache |= 1 << cond;
+            blackboxConditionCache |= ((uint64_t)1) << cond;
         }
     }
 }
 
 static bool testBlackboxCondition(FlightLogFieldCondition condition)
 {
-    return (blackboxConditionCache & (1 << condition)) != 0;
+    return (blackboxConditionCache & (((uint64_t)1) << condition)) != 0;
 }
 
 static void blackboxSetState(BlackboxState newState)
@@ -655,6 +684,17 @@ static void writeIntraframe(void)
             blackboxWriteSignedVB(blackboxCurrent->servo[5] - 1500);
         }
     }
+
+#ifdef USE_DSHOT_TELEMETRY
+    if (isFieldEnabled(FIELD_SELECT(RPM))) {
+        const int motorCount = getMotorCount();
+        for (int x = 0; x < motorCount; x++) {
+            if(testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
+                blackboxWriteSignedVB(blackboxCurrent->rpm[x]);
+            }
+        }
+    }
+#endif
 
     //Rotate our history buffers:
 
@@ -796,6 +836,11 @@ static void writeInterframe(void)
             blackboxWriteSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
         }
     }
+#ifdef USE_DSHOT_TELEMETRY
+    if (isFieldEnabled(FIELD_SELECT(RPM))) {
+        blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, rpm), getMotorCount());
+    }
+#endif
 
     //Rotate our history buffers
     blackboxHistory[2] = blackboxHistory[1];
@@ -1096,6 +1141,12 @@ static void loadMainState(timeUs_t currentTimeUs)
     for (int i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = lrintf(motor[i]);
     }
+
+#ifdef USE_DSHOT_TELEMETRY
+    for (int i = 0; i < motorCount; i++) {
+        blackboxCurrent->rpm[i] = getDshotTelemetry(i);
+    }
+#endif
 
     blackboxCurrent->vbatLatest = getBatteryVoltageLatest();
     blackboxCurrent->amperageLatest = getAmperageLatest();
