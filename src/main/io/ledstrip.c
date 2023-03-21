@@ -380,7 +380,7 @@ bool parseLedStripConfig(int ledIndex, const char *config)
         }
     }
 
-    *ledConfig = DEFINE_LED(x, y, color, direction_flags, baseFunction, overlay_flags, 0);
+    *ledConfig = DEFINE_LED(x, y, color, direction_flags, baseFunction, overlay_flags);
 
     reevaluateLedConfig();
 
