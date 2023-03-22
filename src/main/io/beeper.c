@@ -401,7 +401,8 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_DSHOT
-    if (!areMotorsRunning() && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
+    if (!areMotorsRunning() && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)
+        && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
         if (cmpTimeUs(currentTimeUs, getLastDisarmTimeUs()) > DSHOT_BEACON_GUARD_DELAY_US && !isTryingToArm()) {
             const timeDelta_t dShotBeaconInterval = (currentBeeperEntry->mode == BEEPER_RX_SET) ? DSHOT_BEACON_MODE_INTERVAL_US : DSHOT_BEACON_RXLOSS_INTERVAL_US;
             if (cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs) > dShotBeaconInterval) {
