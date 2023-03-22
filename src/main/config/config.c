@@ -489,7 +489,7 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
 #ifdef USE_LED_STRIP
     featureEnableImmediate(FEATURE_LED_STRIP);
 #endif
-#ifdef USE_OSD_SD
+#ifdef USE_OSD
     featureEnableImmediate(FEATURE_OSD);
 #endif
 #ifdef USE_RANGEFINDER
