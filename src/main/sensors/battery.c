@@ -199,7 +199,6 @@ static bool isVoltageFromBat(void)
 
 void batteryUpdatePresence(void)
 {
-
     if ((voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT) && isVoltageFromBat() && isVoltageStable()) {
         // Battery has just been connected - calculate cells, warning voltages and reset state
 
@@ -217,7 +216,7 @@ void batteryUpdatePresence(void)
             if (!ARMING_FLAG(ARMED)) {
                 changePidProfileFromCellCount(batteryCellCount);
 #ifdef USE_RPM_LIMITER
-                mixerIntitRpmLimitThrottleScaling();
+                mixerResetRpmLimiter();
 #endif
             }
         }
@@ -241,7 +240,7 @@ void batteryUpdatePresence(void)
     }
 }
 
-void batteryUpdateWhDrawn(void) 
+void batteryUpdateWhDrawn(void)
 {
     static int32_t mAhDrawnPrev = 0;
     const int32_t mAhDrawnCurrent = getMAhDrawn();

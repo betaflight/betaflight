@@ -50,17 +50,16 @@ PG_REGISTER_WITH_RESET_FN(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 1);
 
 void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
 {
-        mixerConfig->mixerMode = DEFAULT_MIXER;
-        mixerConfig->yaw_motors_reversed = false;
-        mixerConfig->crashflip_motor_percent = 0;
-        mixerConfig->crashflip_expo = 35;
-        mixerConfig->mixer_type = MIXER_LEGACY;
+    mixerConfig->mixerMode = DEFAULT_MIXER;
+    mixerConfig->yaw_motors_reversed = false;
+    mixerConfig->crashflip_motor_percent = 0;
+    mixerConfig->crashflip_expo = 35;
+    mixerConfig->mixer_type = MIXER_LEGACY;
 #ifdef USE_RPM_LIMITER
-        mixerConfig->rpm_limiter_p = 25;
-        mixerConfig->rpm_limiter_i = 10;
-        mixerConfig->rpm_limiter_d = 8;
-        mixerConfig->rpm_limiter_rpm_limit = 0;
-        mixerConfig->motor_kv = 1960;
+    mixerConfig->rpm_limiter_p = 25;
+    mixerConfig->rpm_limiter_i = 10;
+    mixerConfig->rpm_limiter_d = 8;
+    mixerConfig->rpm_limiter_rpm_limit = 0;
 #endif
 }
 
@@ -287,13 +286,21 @@ bool areMotorsRunning(void)
         for (int i = 0; i < mixerRuntime.motorCount; i++) {
             if (motor_disarmed[i] != mixerRuntime.disarmMotorOutput) {
                 motorsRunning = true;
-
                 break;
             }
         }
     }
-
     return motorsRunning;
+}
+
+bool areMotorsSaturated(void)
+{
+    for (int i = 0; i < getMotorCount(); i++) {
+        if (motor[i] >= motorConfig()->maxthrottle) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #ifdef USE_SERVOS
@@ -348,23 +355,22 @@ void mixerInitProfile(void)
 #endif
 
 #ifdef USE_RPM_LIMITER
-    mixerRuntime.RpmLimiterRpmLimit = mixerConfig()->rpm_limiter_rpm_limit * 10.0f;
-    mixerRuntime.RpmLimiterExpectedThrottleLimit = 1.0f;
-    mixerIntitRpmLimitThrottleScaling();
-    mixerRuntime.RpmLimiterPGain = mixerConfig()->rpm_limiter_p * 0.00015f;
-    mixerRuntime.RpmLimiterIGain = mixerConfig()->rpm_limiter_i * 0.01f * pidGetDT();
-    mixerRuntime.RpmLimiterDGain = mixerConfig()->rpm_limiter_d * 0.000003f * pidGetPidFrequency();
-    pt1FilterUpdateCutoff(&mixerRuntime.averageRPMFilter, pt1FilterGain(6.0f, pidGetDT()));
+    mixerRuntime.rpmLimiterRpmLimit = mixerConfig()->rpm_limiter_rpm_limit;
+    mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limiter_p * 15e-6f;
+    mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limiter_i * 1e-3f * pidGetDT();
+    mixerRuntime.rpmLimiterDGain = mixerConfig()->rpm_limiter_d * 3e-7f * pidGetPidFrequency();
+    pt1FilterInit(&mixerRuntime.averageRpmFilter, pt1FilterGain(6.0f, pidGetDT()));
+    mixerResetRpmLimiter();
 #endif
 }
 
 #ifdef USE_RPM_LIMITER
-    void mixerIntitRpmLimitThrottleScaling(void)
-    {
-        const float maxExpectedRPMs = MAX(1.0f, (getBatteryVoltage() / 100.0f) * mixerConfig()->motor_kv / 10.0f);
-        mixerRuntime.RpmLimiterExpectedThrottleLimit =  MIN(1.0f, mixerRuntime.RpmLimiterRpmLimit / maxExpectedRPMs);
-    }
-#endif
+void mixerResetRpmLimiter(void)
+{
+    const float maxExpectedRpm = MAX(1.0f, motorConfig()->kv * getBatteryVoltage() * 0.01f);
+    mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / maxExpectedRpm, 0.0f, 1.0f);
+}
+#endif // USE_RPM_LIMITER
 
 #ifdef USE_LAUNCH_CONTROL
 // Create a custom mixer for launch control based on the current settings

@@ -18,8 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -68,9 +66,9 @@
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
 #ifdef USE_RPM_LIMITER
-    #define RPM_LIMIT_ACTIVE (mixerConfig()->rpm_limiter_rpm_limit > 0)
+#define RPM_LIMIT_ACTIVE (mixerConfig()->rpm_limiter_rpm_limit > 0)
 #else
-    #define RPM_LIMIT_ACTIVE false
+#define RPM_LIMIT_ACTIVE false
 #endif
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
@@ -351,51 +349,43 @@ static void applyFlipOverAfterCrashModeToMotors(void)
         }
     }
 }
+
 #ifdef USE_RPM_LIMITER
-
-static bool isMotorSaturated(void) //Placeholder function
-{
-    for (int i = 0; i < getMotorCount(); i++) {
-        if (motor[i] >= motorConfig()->maxthrottle) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
     static float prevError = 0.0f;
     static float i = 0.0f;
-    const float averageRpm = pt1FilterApply(&mixer->averageRPMFilter, getDshotAverageRpm() / 10.0f);
-    const float error = averageRpm - mixer->RpmLimiterRpmLimit;
+
+    const float averageRpm = pt1FilterApply(&mixer->averageRpmFilter, getDshotAverageRpm());
+    const float error = averageRpm - mixer->rpmLimiterRpmLimit;
+
     // PID
-    const float p = error * mixer->RpmLimiterPGain;
-    // mixer->RpmLimiterDGain already adjusted with pidGetPidFrequency in mixer_init.c
-    const float d = (error - prevError) * mixer->RpmLimiterDGain;
-    i += error * mixer->RpmLimiterIGain;
+    const float p = error * mixer->rpmLimiterPGain;
+    const float d = (error - prevError) * mixer->rpmLimiterDGain; // rpmLimiterDGain already adjusted for looprate (see mixer_init.c)
+    i += error * mixer->rpmLimiterIGain;                          // rpmLimiterIGain already adjusted for looprate (see mixer_init.c)
     i = MAX(0.0f, i);
     float pidOutput = p + i + d;
+
     // Throttle limit learning
-    if (error > -10.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
-        mixer->RpmLimiterExpectedThrottleLimit *= 1.0f - 4.8f / pidGetPidFrequency();
-    } else if (pidOutput < -0.05f && rcCommand[THROTTLE] >= rxConfig()->maxcheck && !isMotorSaturated()) { // Throttle accel corresponds with motor accel
-        mixer->RpmLimiterExpectedThrottleLimit *= 1.0f + 3.2f / pidGetPidFrequency();
+    if (error > -100.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
+        mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
+    } else if (pidOutput < -0.05f && rcCommand[THROTTLE] >= rxConfig()->maxcheck && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+        mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
-    mixer->RpmLimiterExpectedThrottleLimit = constrainf(mixer->RpmLimiterExpectedThrottleLimit, 0.01f, 1.0f);
-    throttle *= mixer->RpmLimiterExpectedThrottleLimit;
+    mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
+    throttle *= mixer->rpmLimiterThrottleScale;
 
     // Output
     pidOutput = MAX(0.0f, pidOutput);
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
     prevError = error;
-    DEBUG_SET(DEBUG_RPM_LIMITER, 0, error);
-    DEBUG_SET(DEBUG_RPM_LIMITER, 1, throttle * 100.0f);
-    DEBUG_SET(DEBUG_RPM_LIMITER, 2, i * 100.0f);
-    DEBUG_SET(DEBUG_RPM_LIMITER, 3, d * 100.0f);
-}
 
-#endif
+    DEBUG_SET(DEBUG_RPM_LIMITER, 0, lrintf(error));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 1, lrintf(throttle * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 2, lrintf(i * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 3, lrintf(d * 100.0f));
+}
+#endif // USE_RPM_LIMITER
 
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
@@ -551,7 +541,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     if (isFlipOverAfterCrashActive()) {
         applyFlipOverAfterCrashModeToMotors();
-
         return;
     }
 
@@ -636,7 +625,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-
         float mix =
             scaledAxisPidRoll  * activeMixer[i].roll +
             scaledAxisPidPitch * activeMixer[i].pitch +
