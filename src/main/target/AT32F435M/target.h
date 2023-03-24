@@ -45,6 +45,11 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTE         0xffff
+#define TARGET_IO_PORTF         0xffff
+#define TARGET_IO_PORTG         0xffff
+#define TARGET_IO_PORTH         0xffff
+
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
