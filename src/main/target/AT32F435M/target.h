@@ -34,8 +34,6 @@
 #define HANG_ON_ERRORS
 #endif
 
-#define USE_VIRTUAL_GYRO
-
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
