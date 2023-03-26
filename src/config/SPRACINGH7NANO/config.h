@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define FC_TARGET_MCU     STM32H750
 
 #define BOARD_NAME        SPRACINGH7NANO
