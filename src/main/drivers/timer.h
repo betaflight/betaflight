@@ -33,8 +33,15 @@
 #include "pg/timerio.h"
 
 #define CC_CHANNELS_PER_TIMER         4 // TIM_Channel_1..4
-#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
+#ifdef AT32F435
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x) - 1)
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) + 1)
+#else
 #define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) << 2)
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
+#endif
+
+#define TIM_CH_TO_SELCHANNEL(ch)  ((ch - 1) * 2)
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
