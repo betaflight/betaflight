@@ -21,7 +21,7 @@
 
 #pragma once
 
-#define FC_TARGET_MCU                       AT32F435G
+#define FC_TARGET_MCU                       AT32F435M
 
 #define BOARD_NAME                          AIRBOTF435
 #define MANUFACTURER_ID                     AIRB
