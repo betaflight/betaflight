@@ -59,6 +59,9 @@
 
 #define FLASH_QUADSPI_INSTANCE    QUADSPI
 
+#define USE_FLASH
+#define USE_FLASH_W25N01G
+
 #define CONFIG_IN_EXTERNAL_FLASH
 
 // SD card not present on hardware, but pins are reserved.
@@ -170,13 +173,6 @@
 #define ADC_CURR_PIN         PC0
 #define ADC_EXTERNAL1_PIN    PC5
 
-#define SDCARD_DETECT_PIN    PD10
-#define SDIO_CK_PIN          PC12
-#define SDIO_CMD_PIN         PD2
-#define SDIO_D0_PIN          PC8
-#define SDIO_D1_PIN          PC9
-#define SDIO_D2_PIN          PC10
-#define SDIO_D3_PIN          PC11
 #define MAX7456_SPI_CS_PIN   PE11
 
 #define GYRO_1_EXTI_PIN      PE15
