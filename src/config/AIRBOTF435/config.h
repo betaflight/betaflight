@@ -40,6 +40,8 @@
 #define USE_FLASH_M25P16
 
 #define USE_MAX7456
+#define MAX7456_SPI_CS_PIN                  PH2
+#define MAX7456_SPI_INSTANCE                SPI3
 
 #define BEEPER_PIN                          PB10
 #define MOTOR1_PIN                          PC9
@@ -95,10 +97,11 @@
 //TODO #define PINIO2_PIN                          PH3
 
 #define FLASH_CS_PIN                        PC13
-//TODO #define MAX7456_SPI_CS_PIN                  PH2
+#define FLASH_SPI_INSTANCE                  SPI3
 
 #define GYRO_1_EXTI_PIN                     PB12
 #define GYRO_1_CS_PIN                       PC14
+#define GYRO_1_SPI_INSTANCE                 SPI2
 
 #define TIMER_PIN_MAPPING                   TIMER_PIN_MAP( 0, LED_STRIP_PIN, 1, -1 ) \
                                             TIMER_PIN_MAP( 1, MOTOR4_PIN, 1,  2 ) \
@@ -117,10 +120,6 @@
 
 #define ADC_INSTANCE                        ADC1
 #define BARO_I2C_INSTANCE                   (I2CDEV_1)
-
-#define FLASH_SPI_INSTANCE                  SPI3
-#define GYRO_1_SPI_INSTANCE                 SPI2
-#define MAX7456_SPI_INSTANCE                SPI1
 
 #define DEFAULT_BLACKBOX_DEVICE             BLACKBOX_DEVICE_FLASH
 
