@@ -376,19 +376,7 @@ float pidApplyThrustLinearization(float motorOutput)
 #endif
 
 #if defined(USE_ACC)
-// calculate the Angle Setpoint for use in Horizon mode from smoothed stick deflection, and apply level mode expo
-static float angleSetpointHorizon(int axis)
-{
-    const float stickDeflection = getRcDeflection(axis);
-    if (axis < FD_YAW) {
-        const float expof = currentControlRateProfile->levelExpo[axis] / 100.0f;
-        return power3(stickDeflection) * expof + stickDeflection * (1 - expof);
-    } else {
-        return stickDeflection;
-    }
-}
-
-// calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
+// Calculate strength of horizon leveling; 0 = none, 1.0 = most leveling
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 {
     const float currentInclination = MAX(abs(attitude.values.roll), abs(attitude.values.pitch)) / 10.0f;
@@ -413,27 +401,21 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim,
                                                         float currentPidSetpoint, float horizonLevelStrength)
 {
+    // Applies only to axes that are in Angle mode
+    // We now use Acro Rates, transformed into the range +/- 1, to provide setpoints
     const float angleLimit = pidProfile->angle_limit;
-
-// Applies only to axes that are in Angle mode
-// For Angle mode axes, currentSetpoint is angle setpoint from rc.c, using angle expo, and getFeedforwardDelta provides angle feedforward from stick input
-// in Horizon mode, flight is basically acro, with a simple angle setpoint (without angle feedforward) crossfaded in
-
+    const float maxRcRateInv = 1.0f / getMaxRcRate(axis);
     float angleFeedforward = 0.0f;
-    float setpointToUse = 0.0f;
-    if (FLIGHT_MODE(ANGLE_MODE)) {
+
 #ifdef USE_FEEDFORWARD
-        // Angle Mode axes are calculated in rc.c and a smoothed feedforwardDelta is available there
-        angleFeedforward = angleLimit * getFeedforwardDelta(axis) * pidRuntime.angleFeedforwardGain;
-        // filter angle feedforward, heavily, at the PID loop rate, providing user control over time constant
-        angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
-#endif // USE_FEEDFORWARD
-        setpointToUse = currentPidSetpoint;
-    } else if (FLIGHT_MODE(HORIZON_MODE)) {
-        // calculate a simple setpoint from rcDeflection, with no feedforward
-        setpointToUse = angleSetpointHorizon(axis);
-    }
-    float angleTarget = angleLimit * setpointToUse;
+    angleFeedforward = angleLimit * getFeedforwardDelta(axis) * pidRuntime.angleFeedforwardGain * maxRcRateInv;
+    //  angle feedforward must be heavily filtered, at the PID loop rate, with limited user control over time constant
+    // it MUST be very delayed to avoid early overshoot and being too aggressive
+    angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
+#endif
+
+    float angleTarget = angleLimit * currentPidSetpoint * maxRcRateInv;
+    // use acro rates for the angle target in both horizon and angle modes, converted to -1 to +1 range using maxRate
 
 #ifdef USE_GPS_RESCUE
     angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
@@ -952,7 +934,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (axis < FD_YAW) {
             if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
                 pidRuntime.axisInAngleMode[axis] = true;
-                // replace acro setpoint from rates with the angle mode setpoint, for self-levelling axes only
                 currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint, horizonLevelStrength);
             }
         } else { // yaw axis only

@@ -92,12 +92,6 @@ typedef struct laggedMovingAverageCombined_s {
 } laggedMovingAverageCombined_t;
 laggedMovingAverageCombined_t  feedforwardDeltaAvg[XYZ_AXIS_COUNT];
 
-static float maxRcRate[3];
-float getMaxRcRate(int axis)
-{
-    return maxRcRate[axis];
-}
-
 float getFeedforwardDelta(int axis)
 {
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -133,6 +127,12 @@ float getSetpointRate(int axis)
 #else
     return rawSetpoint[axis];
 #endif
+}
+
+static float maxRcRate[3];
+float getMaxRcRate(int axis)
+{
+    return maxRcRate[axis];
 }
 
 float getRcDeflection(int axis)
@@ -685,14 +685,6 @@ FAST_CODE void processRcCommand(void)
                 rcDeflectionAbs[axis] = rcCommandfAbs;
 
                 angleRate = applyRates(axis, rcCommandf, rcCommandfAbs);
-#if defined(USE_ACC)
-                // In Angle mode, the 'levelled' axes use Angle Expo
-                // but in Horizon mode, primary control is Acro, so we use Acro rates, even though the axis also gets levelling
-                if (pidGetAxisInAngleMode(axis) && FLIGHT_MODE(ANGLE_MODE)) {
-                    const float expof = currentControlRateProfile->levelExpo[axis] / 100.0f;
-                    angleRate = power3(rcCommandf) * expof + rcCommandf * (1 - expof);
-                }
-#endif
             }
 
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
@@ -842,13 +834,13 @@ void initRcProcessing(void)
         break;
     }
 
-#ifdef USE_FEEDFORWARD
     for (int i = 0; i < 3; i++) {
         maxRcRate[i] = applyRates(i, 1.0f, 1.0f);
+#ifdef USE_FEEDFORWARD
         feedforwardSmoothed[i] = 0.0f;
         feedforwardRaw[i] = 0.0f;
-    }
 #endif // USE_FEEDFORWARD
+    }
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const int maxYawRate = (int)applyRates(FD_YAW, 1.0f, 1.0f);
