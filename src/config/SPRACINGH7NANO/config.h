@@ -74,21 +74,16 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #endif
 
-#define USE_SPI
-
-#define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PD3
 #define SPI2_SDI_PIN            PC2
 #define SPI2_SDO_PIN            PC3
 #define SPI2_NSS_PIN            PB12
 
-#define USE_SPI_DEVICE_3
 #define SPI3_SCK_PIN            PB3
 #define SPI3_SDI_PIN            PB4
 #define SPI3_SDO_PIN            PD6
 #define SPI3_NSS_PIN            PA15
 
-#define USE_SPI_DEVICE_4
 #define SPI4_SCK_PIN            PE12
 #define SPI4_SDI_PIN            PE13
 #define SPI4_SDO_PIN            PE14
@@ -96,14 +91,12 @@
 
 #define USE_USB_ID
 
-#define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C1_SCL_PIN PB8
 #define I2C1_SDA_PIN PB9
 #define I2C_DEVICE (I2CDEV_1)
 
-#define USE_I2C_DEVICE_4        // Shared with motor outputs 5/6
-#define I2C4_SCL_PIN            PB6
+#define I2C4_SCL_PIN            PB6 // Shared with motor outputs 5/6
 #define I2C4_SDA_PIN            PB7
 
 #define ENSURE_MPU_DATA_READY_IS_LOW
