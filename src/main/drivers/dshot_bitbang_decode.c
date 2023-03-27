@@ -57,8 +57,6 @@ typedef struct bitBandWord_s {
     uint32_t junk[15];
 } bitBandWord_t;
 
-
-
 #ifdef DEBUG_BBDECODE
 uint32_t sequence[MAX_GCR_EDGES];
 int sequenceIndex = 0;
