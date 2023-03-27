@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -71,6 +72,9 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     {
         IOWrite(bbMotor->io, 0);
     }
+
+    // is this needed here?
+    IOConfigGPIO(bbMotor->io, IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, bbPuPdMode));
 }
 
 void bbTimerChannelInit(bbPort_t *bbPort)
@@ -237,10 +241,9 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->buffer_size = bbPort->portInputCount;
 
         dmainit->peripheral_base_addr = (uint32_t)&bbPort->gpio->idt;
-
         dmainit->peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_HALFWORD;
         dmainit->memory_base_addr = (uint32_t)bbPort->portInputBuffer;
-        dmainit->memory_data_width = DMA_MEMORY_DATA_WIDTH_WORD;
+        dmainit->memory_data_width = DMA_MEMORY_DATA_WIDTH_HALFWORD;
 
 #ifdef USE_DMA_REGISTER_CACHE
         xDMA_Init(bbPort->dmaResource, dmainit);

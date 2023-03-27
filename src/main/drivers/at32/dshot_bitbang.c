@@ -66,16 +66,8 @@ dshotBitbangStatus_e bbStatus;
 #define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RW_AXI __attribute__((aligned(32)))
 #define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RW_AXI __attribute__((aligned(32)))
 #else
-#if defined(STM32F4)
-#define BB_OUTPUT_BUFFER_ATTRIBUTE
-#define BB_INPUT_BUFFER_ATTRIBUTE
-#elif defined(STM32F7) || defined(STM32G4) || defined(AT32F435)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
 #define BB_INPUT_BUFFER_ATTRIBUTE  FAST_DATA_ZERO_INIT
-#elif defined(STM32H7)
-#define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
-#define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
-#endif
 #endif // USE_DSHOT_CACHE_MGMT
 
 BB_OUTPUT_BUFFER_ATTRIBUTE uint32_t bbOutputBuffer[MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH * MAX_SUPPORTED_MOTOR_PORTS];
@@ -83,7 +75,6 @@ BB_INPUT_BUFFER_ATTRIBUTE uint16_t bbInputBuffer[DSHOT_BB_PORT_IP_BUF_CACHE_ALIG
 
 uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
-
 
 const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TMR8,  CH1, NONE,  TIM_USE_NONE, 0, 0, 0),
@@ -273,7 +264,7 @@ static void bbSetupDma(bbPort_t *bbPort)
 
     dmaSetHandler(dmaIdentifier, bbDMAIrqHandler, NVIC_BUILD_PRIORITY(2, 1), (uint32_t)bbPort);
 
-    dmaMuxEnable(dmaIdentifier, bbPort->dmaMux);
+    dmaMuxEnable(dmaIdentifier, bbPort->dmaChannel);
 
     bbDMA_ITConfig(bbPort);
 }
@@ -405,7 +396,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
 #ifdef USE_DMA_SPEC
             const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timhw->tim, timhw->channel, dmaGetOptionByTimer(timhw));
             bbPort->dmaResource = dmaChannelSpec->ref;
-            bbPort->dmaMux = dmaChannelSpec->dmaMuxId;
+            bbPort->dmaChannel = dmaChannelSpec->dmaMuxId;
 #else
             bbPort->dmaResource = timhw->dmaRef;
             bbPort->dmaChannel = timhw->dmaChannel;

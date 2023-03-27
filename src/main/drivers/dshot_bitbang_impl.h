@@ -137,11 +137,7 @@ typedef struct bbPort_s {
     uint16_t dmaSource;
 
     dmaResource_t *dmaResource; // DMA resource for this port & timer channel
-#ifdef AT32F435
-    uint32_t dmaMux;
-#else
     uint32_t dmaChannel;        // DMA channel or peripheral request
-#endif
 
     uint8_t direction;
 
