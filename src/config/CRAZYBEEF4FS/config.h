@@ -28,8 +28,10 @@
 
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_ACC_SPI_ICM42688P
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
+#define USE_GYRO_SPI_ICM42688P
 #define USE_RX_CC2500
 #define USE_MAX7456
 
