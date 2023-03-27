@@ -79,6 +79,7 @@ static uint16_t rssi = 0;                  // range: [0;1023]
 static uint16_t rssiRaw = 0;               // range: [0;1023]
 static timeUs_t lastRssiSmoothingUs = 0;
 #ifdef USE_RX_RSSI_DBM
+static int8_t activeAntenna;
 static int16_t rssiDbm = CRSF_RSSI_MIN;    // range: [-130,0]
 static int16_t rssiDbmRaw = CRSF_RSSI_MIN; // range: [-130,0]
 #endif //USE_RX_RSSI_DBM
@@ -949,6 +950,17 @@ void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source)
     rssiDbm = newRssiDbm;
     rssiDbmRaw = newRssiDbm;
 }
+
+int8_t getActiveAntenna(void)
+{
+    return activeAntenna;
+}
+
+void setActiveAntenna(int8_t antenna)
+{
+    activeAntenna = antenna;
+}
+
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
