@@ -26,6 +26,16 @@
 #define BOARD_NAME        NEUTRONRCF7AIO
 #define MANUFACTURER_ID   NERC
 
+#define USE_ACC
+#define USE_ACC_SPI_ICM20689
+#define USE_GYRO
+#define USE_GYRO_SPI_ICM20689
+#define USE_ACCGYRO_BMI270
+#define USE_BARO_DPS310
+#define USE_FLASH
+#define USE_FLASH_W25N01G
+#define USE_MAX7456
+
 #define BEEPER_PIN           PD2
 #define MOTOR1_PIN           PB0
 #define MOTOR2_PIN           PB1
@@ -94,8 +104,6 @@
 
 #define ADC1_DMA_OPT        0
 
-#define MAG_ALIGN CW180_DEG
-#define MAG_ALIGN_YAW 1800
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 #define USE_BARO
@@ -116,4 +124,3 @@
 #define GYRO_2_SPI_INSTANCE SPI2
 #define GYRO_2_ALIGN CW180_DEG
 #define GYRO_2_ALIGN_YAW 1800
-#define DEFAULT_ALIGN_BOARD_YAW -45
