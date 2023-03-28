@@ -85,7 +85,7 @@ PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 1);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
-    .gyro_cal_on_first_arm = 0,  // TODO - Cleanup retarded arm support
+    .gyro_cal_on_first_arm = 0,
     .auto_disarm_delay = 5
 );
 

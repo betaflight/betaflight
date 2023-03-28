@@ -131,7 +131,7 @@ typedef struct flight3DConfig_s {
 PG_DECLARE(flight3DConfig_t, flight3DConfig);
 
 typedef struct armingConfig_s {
-    uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
+    uint8_t gyro_cal_on_first_arm;          // calibrate the gyro right before the first arm
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
 } armingConfig_t;
 
