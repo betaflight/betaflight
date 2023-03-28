@@ -59,10 +59,8 @@
 
 #define FLASH_QUADSPI_INSTANCE    QUADSPI
 
-#define USE_FLASH
-#define USE_FLASH_W25N01G
-
 #define CONFIG_IN_EXTERNAL_FLASH
+#define USE_FIRMWARE_PARTITION
 
 // SD card not present on hardware, but pins are reserved.
 //#define USE_SDCARD
