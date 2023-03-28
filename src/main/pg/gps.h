@@ -25,6 +25,8 @@
 
 #include "pg/pg.h"
 
+#define MAX_NMEA_CUSTOM_COMMANDS_LENGTH 64
+
 typedef struct gpsConfig_s {
     uint8_t provider;
     uint8_t sbasMode;
@@ -37,6 +39,7 @@ typedef struct gpsConfig_s {
     bool gps_set_home_point_once;
     bool gps_use_3d_speed;
     bool sbas_integrity;
+    char nmeaCustomCommands[MAX_NMEA_CUSTOM_COMMANDS_LENGTH+1];
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);

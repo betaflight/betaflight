@@ -415,6 +415,7 @@ void gpsInitNmea(void)
                return;
            }
            gpsData.state_ts = now;
+
            if (gpsData.state_position < GPS_STATE_INITIALIZING) {
                serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.baudrateIndex].baudrateIndex]);
                gpsData.state_position++;
@@ -424,8 +425,22 @@ void gpsInitNmea(void)
                if (!atgmRestartDone) {
                    atgmRestartDone = true;
                    serialPrint(gpsPort, "$PCAS02,100*1E\r\n");  // 10Hz refresh rate
-                   serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart 
+                   serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart
                }
+
+               //NMEA custom commands
+               char *commands = strdup(gpsConfig()->nmeaCustomCommands);
+
+               //divide commands with spaces and send them to the gps one by one
+               char *saveptr;
+               char* tok = strtok_r(commands, " ", &saveptr);
+               while (tok != NULL) {
+                   char *printable = strdup(tok);
+                   strcat(printable, "\r\n");
+                   serialPrint(gpsPort, printable);
+                   tok = strtok_r(NULL, " ", &saveptr);
+               }
+
                gpsData.state_position++;
            } else
 #else
