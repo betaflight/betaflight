@@ -547,7 +547,8 @@ FAST_CODE_NOINLINE void initAveraging (void)
 FAST_CODE_NOINLINE void calculateFeedforward (int axis)
 {
     const float rxInterval = currentRxRefreshRate * 1e-6f; // seconds
-    const float rxRate = 1.0f / rxInterval;
+    float rxRate = 1.0f / rxInterval;
+    static float prevRxInterval;
 
     const float feedforwardSmoothFactor = pidGetFeedforwardSmoothFactor();
     const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
@@ -573,7 +574,6 @@ FAST_CODE_NOINLINE void calculateFeedforward (int axis)
     float setpoint = rawSetpoint[axis];
     float setpointSpeed = (setpoint - prevSetpoint[axis]);
     prevSetpoint[axis] = setpoint;
-    setpointSpeed *= rxRate;
     float setpointAcceleration = 0.0f;
 
 
@@ -594,11 +594,11 @@ FAST_CODE_NOINLINE void calculateFeedforward (int axis)
     if (rcCommandDeltaAbs) {
         // movement!
         if (prevDuplicatePacket[axis] == true) {
-            setpointSpeed /= 2.0f;
-            // this step seems twice as fast
+            rxRate = 1.0f / (rxInterval + prevRxInterval);
             zeroTheAcceleration = 0.0f;
             // don't add acceleration, empirically seems better on FrSky
         }
+        setpointSpeed *= rxRate;
         prevDuplicatePacket[axis] = false;
     } else {
         // no movement!
@@ -617,6 +617,7 @@ FAST_CODE_NOINLINE void calculateFeedforward (int axis)
         }
         prevDuplicatePacket[axis] = true;
     }
+    prevRxInterval = rxInterval;
 
     // smooth the setpointSpeed value
     setpointSpeed = prevSetpointSpeed[axis] + feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
