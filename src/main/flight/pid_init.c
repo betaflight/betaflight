@@ -412,9 +412,10 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardBoostFactor = ((float)pidProfile->feedforward_boost) / 10.0f;
-    const float feedforwardMaxRateLimit = ((float)pidProfile->feedforward_max_rate_limit) * 0.01f;
+    const float feedforwardMaxRatePercent = ((float)pidProfile->feedforward_max_rate_limit) * 0.01f;
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        pidRuntime.feedforwardMaxRate[axis] = feedforwardMaxRateLimit * getMaxRcRate(axis);
+        pidRuntime.feedforwardMaxRate[axis] = feedforwardMaxRatePercent * getMaxRcRate(axis);
+        pidRuntime.feedforwardPidKp[axis] = pidProfile->pid[axis].P;
     }
 #endif
 

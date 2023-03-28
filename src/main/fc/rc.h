@@ -44,7 +44,7 @@ bool rcSmoothingInitializationComplete(void);
 
 #ifdef USE_FEEDFORWARD
 float getMaxRcRate(int axis);
-float getFeedforwardDelta(int axis);
+float getFeedforward(int axis);
 #endif
 
 void updateRcRefreshRate(timeUs_t currentTimeUs);

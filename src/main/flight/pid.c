@@ -288,6 +288,16 @@ float pidGetFeedforwardAveraging(void)
     return pidRuntime.feedforwardAveraging;
 }
 
+float pidGetFeedforwardMaxRate(int axis)
+{
+    return pidRuntime.feedforwardMaxRate[axis];
+}
+
+float pidGetFeedforwardPidKp(int axis)
+{
+    return pidRuntime.feedforwardPidKp[axis];
+}
+
 #endif // USE_FEEDFORWARD
 
 void pidResetIterm(void)
@@ -298,11 +308,6 @@ void pidResetIterm(void)
         axisError[axis] = 0.0f;
 #endif
     }
-}
-
-bool pidGetAxisInAngleMode(int axis)
-{
-    return pidRuntime.axisInAngleMode[axis];
 }
 
 void pidUpdateTpaFactor(float throttle)
@@ -408,7 +413,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     float angleFeedforward = 0.0f;
 
 #ifdef USE_FEEDFORWARD
-    angleFeedforward = angleLimit * getFeedforwardDelta(axis) * pidRuntime.angleFeedforwardGain * maxRcRateInv;
+    angleFeedforward = angleLimit * getFeedforward(axis) * pidRuntime.angleFeedforwardGain * maxRcRateInv;
     //  angle feedforward must be heavily filtered, at the PID loop rate, with limited user control over time constant
     // it MUST be very delayed to avoid early overshoot and being too aggressive
     angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
@@ -1095,15 +1100,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // -----calculate feedforward component
 #ifdef USE_FEEDFORWARD
         if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
-            // we are in Angle mode and this axis us fully under self-levelling control
+            // we are in Angle mode and this axis is fully under self-levelling control
             // these axes will already have stick based feedforward in the input to their angle setpoint
             // we can use the simple setpointDelta from Dterm to generate a pidF element to help control motor lag
             // this will not apply in Horizon mode; it is not needed because the acro normal setpoint feedforward is present
             pidSetpointDelta = pidSetpointDelta * pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
         } else {
-            // the axis is under acro control; use Feedforward with boost, smoothing and duplicate detection from rc.c
+            // the axis is under acro control; use Feedforward from rc.c, with boost, smoothing and duplicate detection
             // In Horizon we do not add any feedforward to the self-levelling element.
-            pidSetpointDelta = getFeedforwardDelta(axis);
+            pidSetpointDelta = getFeedforward(axis);
         }
 #endif
 
@@ -1115,23 +1120,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // no feedforward in launch control
         float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
-
         if (feedforwardGain > 0) {
             float feedForward = feedforwardGain * pidSetpointDelta;
-#ifdef USE_FEEDFORWARD
-            // limit feedforward if rapidly approaching max rate limit for the RP axes
-            const float feedforwardMaxRate = pidRuntime.feedforwardMaxRate[axis];
-            const float Kp = pidRuntime.pidCoefficient[axis].Kp;
-            if (axis < FD_YAW && feedforwardMaxRate != 0.0f) {
-                if (feedForward * currentPidSetpoint > 0.0f) {
-                    if (fabsf(currentPidSetpoint) <= feedforwardMaxRate) {
-                        feedForward = constrainf(feedForward, (-feedforwardMaxRate - currentPidSetpoint) * Kp, (feedforwardMaxRate - currentPidSetpoint) * Kp);
-                    } else {
-                        feedForward = 0;
-                    }
-                }
-            }
-#endif
             pidData[axis].F = feedForward;
         } else {
             pidData[axis].F = 0;
