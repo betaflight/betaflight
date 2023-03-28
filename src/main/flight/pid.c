@@ -1035,13 +1035,25 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
 
         // -----calculate D component
-        float pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
-        // used for stick factor in Dmin, and for simple feedforward on Angle controlled axes 
-        pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint;
+
+        float pidSetpointDelta = 0;
+
+#ifdef USE_FEEDFORWARD
+        if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
+            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
+            pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint;
+            // we are in Angle mode and this axis is fully under self-levelling control
+            // these axes will already have stick based feedforward applied in the input to their angle setpoint
+            // a simple setpoint Delta can be used to for PID feedforward element for motor lag on these axes
+            pidSetpointDelta = pidSetpointDelta * pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
+        } else {
+            // the axis is operating as a normal acro axis, so use normal feedforard from rc.c
+             pidSetpointDelta = getFeedforward(axis);
+        }
+#endif
 
         // disable D if launch control is active
         if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
-
             // Divide rate change by dT to get differential (ie dr/dt).
             // dT is fixed and calculated from the target PID loop time
             // This is done to avoid DTerm spikes that occur with dynamically
@@ -1097,20 +1109,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
         // -----calculate feedforward component
-#ifdef USE_FEEDFORWARD
-        if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
-            // we are in Angle mode and this axis is fully under self-levelling control
-            // these axes will already have stick based feedforward in the input to their angle setpoint
-            // we can use the simple setpointDelta from Dterm to generate a pidF element to help control motor lag
-            // this will not apply in Horizon mode; it is not needed because the acro normal setpoint feedforward is present
-            pidSetpointDelta = pidSetpointDelta * pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
-        } else {
-            // the axis is under acro control; use Feedforward from rc.c, with boost, smoothing and duplicate detection
-            // In Horizon we do not add any feedforward to the self-levelling element.
-            pidSetpointDelta = getFeedforward(axis);
-        }
-#endif
-
 #ifdef USE_ABSOLUTE_CONTROL
         // include abs control correction in feedforward
         pidSetpointDelta += setpointCorrection - pidRuntime.oldSetpointCorrection[axis];
