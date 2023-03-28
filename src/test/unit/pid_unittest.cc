@@ -31,8 +31,7 @@ float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedRcCommandDelta[3] = { 1,1,1 };
 float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
-uint16_t simulatedCurrentRxRefreshRate = 10000;
-uint8_t simulatedDuplicateCount = 0;
+float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -91,45 +90,15 @@ extern "C" {
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
-    uint16_t getCurrentRxRefreshRate(void) { return simulatedCurrentRxRefreshRate; }
-    uint8_t getFeedforwardDuplicateCount(void) { return simulatedDuplicateCount; }
+    float getFeedforward(int axis) { return simulatedFeedforward[axis]; }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
     void disarm(flightLogDisarmReason_e) { }
-    float applyFeedforwardLimit(int axis, float value, float Kp, float currentPidSetpoint)
-    {
-        UNUSED(axis);
-        UNUSED(Kp);
-        UNUSED(currentPidSetpoint);
-        return value;
-    }
-    void feedforwardInit(const pidProfile_t) { }
-    float feedforwardApply(int axis, feedforwardAveraging_t feedforwardAveraging, const float setpoint)
-    {
-        UNUSED(feedforwardAveraging);
-        UNUSED(setpoint);
-        const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
-        float setpointDelta = simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
-        setpointDelta *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1;
-        return setpointDelta;
-    }
-    float getFeedforwardDelta(int axis)
-    {
-        const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
-        float setpointDelta = simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
-        setpointDelta *= feedforwardTransitionFactor > 0 ? MIN(1.0f, getRcDeflectionAbs(axis) * feedforwardTransitionFactor) : 1;
-        return setpointDelta;
-    }
     float getMaxRcRate(int axis)
     {
         UNUSED(axis);
         float maxRate = simulatedMaxRate[axis];
         return maxRate;
-    }
-    bool shouldApplyFeedforwardLimits(int axis)
-    {
-        UNUSED(axis);
-        return true;
     }
     void initRcProcessing(void) { }
 }
@@ -628,7 +597,7 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     // Add additional verifications
 }
 
-// TEST(pidControllerTest, testFeedForward)
+// TEST(pidControllerTest, testFeedForward) // now in rc.c
 // {
 //     resetTest();
 //     ENABLE_ARMING_FLAG(ARMED);

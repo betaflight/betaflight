@@ -409,17 +409,16 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // Applies only to axes that are in Angle mode
     // We now use Acro Rates, transformed into the range +/- 1, to provide setpoints
     const float angleLimit = pidProfile->angle_limit;
-    const float maxRcRateInv = 1.0f / getMaxRcRate(axis);
     float angleFeedforward = 0.0f;
 
 #ifdef USE_FEEDFORWARD
-    angleFeedforward = angleLimit * getFeedforward(axis) * pidRuntime.angleFeedforwardGain * maxRcRateInv;
+    angleFeedforward = angleLimit * getFeedforward(axis) * pidRuntime.angleFeedforwardGain * pidRuntime.maxRcRateInv[axis];
     //  angle feedforward must be heavily filtered, at the PID loop rate, with limited user control over time constant
     // it MUST be very delayed to avoid early overshoot and being too aggressive
     angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
 #endif
 
-    float angleTarget = angleLimit * currentPidSetpoint * maxRcRateInv;
+    float angleTarget = angleLimit * currentPidSetpoint * pidRuntime.maxRcRateInv[axis];
     // use acro rates for the angle target in both horizon and angle modes, converted to -1 to +1 range using maxRate
 
 #ifdef USE_GPS_RESCUE

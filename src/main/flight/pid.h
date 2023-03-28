@@ -398,11 +398,11 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
-
     float angleYawSetpoint;
     float angleEarthRef;
     float angleTarget[2];
     bool axisInAngleMode[3];
+    float maxRcRateInv[2];
 #endif
 } pidRuntime_t;
 
