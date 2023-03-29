@@ -113,7 +113,6 @@
 #define USE_MAG_QMC5883
 #define USE_FLASH
 #define USE_FLASH_W25N01G
-#define USE_SDCARD
 #define USE_CAMERA_CONTROL
 #define USE_MAX7456
 
