@@ -195,7 +195,7 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
     lastFilteredVoltage = alpha * currVoltage + (1 - alpha) * lastFilteredVoltage;
     DEBUG_SET(DEBUG_FILT_VOLTAGE, 1, lastFilteredVoltage);
     float throttleForBattPerc = (rcCommand[THROTTLE] - 1000) / 1000;
-    float vol = lastFilteredVoltage - throttleForBattPerc * batteryConfig()->throttleMultiplier;
+    float vol = lastFilteredVoltage - throttleForBattPerc * (batteryConfig()->throttleMultiplier/100.0f);
     DEBUG_SET(DEBUG_FILT_VOLTAGE, 2, vol);
     if (vol < BATTERY_MIN_VOLTAGE)
         vol = BATTERY_MIN_VOLTAGE;
