@@ -1233,7 +1233,7 @@ case MSP_NAME:
 
 #ifdef USE_DSHOT_TELEMETRY
             if (motorConfig()->dev.useDshotTelemetry) {
-                rpm = erpmToRpm(getDshotTelemetry(i));
+                rpm = erpmToRpm(getDshotTelemetryERpm(i));
                 rpmDataAvailable = true;
                 invalidPct = 10000; // 100.00%
 
@@ -1492,7 +1492,7 @@ case MSP_NAME:
             sbufWriteU8(dst, getMotorCount());
             for (int i = 0; i < getMotorCount(); i++) {
                 sbufWriteU8(dst, dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]);
-                sbufWriteU16(dst, getDshotTelemetry(i) * 100 * 2 / motorConfig()->motorPoleCount);
+                sbufWriteU16(dst, getDshotTelemetryERpm(i) * 100 * 2 / motorConfig()->motorPoleCount);
             }
         }
         else

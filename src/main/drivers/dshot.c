@@ -135,7 +135,13 @@ FAST_CODE uint16_t prepareDshotPacket(dshotProtocolControl_t *pcb)
 
 FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 
-static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
+// convert interval in us from dshot telemetry to eRPM/100
+static uint32_t usIntervalToERpm(uint16_t interval)
+{
+    return (1000000 * 60 / 100 + interval / 2) / interval;
+}
+
+static uint16_t dshot_decode_eRPM_telemetry_value(uint16_t value)
 {
     // eRPM range
     if (value == 0x0fff) {
@@ -143,13 +149,11 @@ static uint32_t dshot_decode_eRPM_telemetry_value(uint16_t value)
     }
 
     // Convert value to 16 bit from the GCR telemetry format (eeem mmmm mmmm)
-    value = (value & 0x01ff) << ((value & 0xfe00) >> 9);
-    if (!value) {
+    const uint16_t interval = (value & 0x01ff) << ((value & 0xfe00) >> 9);
+    if (!interval) {
         return DSHOT_TELEMETRY_INVALID;
     }
-
-    // Convert period to erpm * 100
-    return (1000000 * 60 / 100 + value / 2) / value;
+    return interval;
 }
 
 static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded, dshotTelemetryType_t *pType)
@@ -163,7 +167,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
         // Update debug buffer
         if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
-            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
+            DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, usIntervalToERpm(*pDecoded));
         }
 
         // Set telemetry type
@@ -245,7 +249,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
     }
 }
 
-static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t type, uint32_t value)
+static void dshotUpdateTelemetryField(uint8_t motorIndex, dshotTelemetryType_t type, uint32_t value)
 {
     // Update telemetry data
     dshotTelemetryState.motorState[motorIndex].telemetryData[type] = value;
@@ -257,9 +261,8 @@ static void dshotUpdateTelemetryData(uint8_t motorIndex, dshotTelemetryType_t ty
     }
 }
 
-uint16_t getDshotTelemetry(uint8_t index)
+static void processDshotTelemetry(void)
 {
-    // Process telemetry in case it haven´t been processed yet
     if (dshotTelemetryState.rawValueState == DSHOT_RAW_VALUE_STATE_NOT_PROCESSED) {
         const unsigned motorCount = motorDeviceCount();
         uint32_t erpmTotal = 0;
@@ -273,7 +276,7 @@ uint16_t getDshotTelemetry(uint8_t index)
             dshot_decode_telemetry_value(k, &value, &type);
 
             if (value != DSHOT_TELEMETRY_INVALID) {
-                dshotUpdateTelemetryData(k, type, value);
+                dshotUpdateTelemetryField(k, type, value);
 
                 if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
                     erpmTotal += value;
@@ -290,7 +293,17 @@ uint16_t getDshotTelemetry(uint8_t index)
         // Set state to processed
         dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_PROCESSED;
     }
+}
 
+uint16_t getDshotTelemetryERpm(uint8_t index)
+{
+    processDshotTelemetry();
+    return usIntervalToERpm(dshotTelemetryState.motorState[index].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM]);
+}
+
+uint16_t getDshotTelemetryIntervalUs(uint8_t index)
+{
+    processDshotTelemetry();
     return dshotTelemetryState.motorState[index].telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
 }
 

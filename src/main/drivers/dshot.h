@@ -114,7 +114,8 @@ void updateDshotTelemetryQuality(dshotTelemetryQuality_t *qualityStats, bool pac
 #endif
 #endif
 
-uint16_t getDshotTelemetry(uint8_t index);
+uint16_t getDshotTelemetryERpm(uint8_t index);
+uint16_t getDshotTelemetryIntervalUs(uint8_t index);
 uint32_t erpmToRpm(uint16_t erpm);
 uint32_t getDshotAverageRpm(void);
 bool isDshotMotorTelemetryActive(uint8_t motorIndex);

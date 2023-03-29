@@ -131,7 +131,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
     // update motor RPM data
     minMotorFrequencyHz = FLT_MAX;
     for (int motor = 0; motor < getMotorCount(); motor++) {
-        motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotTelemetry(motor));
+        motorFrequencyHz[motor] = pt1FilterApply(&motorFreqLpf[motor], erpmToHz * getDshotTelemetryERpm(motor));
         minMotorFrequencyHz = MIN(minMotorFrequencyHz, motorFrequencyHz[motor]);
         if (motor < 4) {
             DEBUG_SET(DEBUG_RPM_FILTER, motor, motorFrequencyHz[motor]);
