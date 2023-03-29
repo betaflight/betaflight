@@ -30,7 +30,7 @@ float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedRcCommandDelta[3] = { 1,1,1 };
 float simulatedRawSetpoint[3] = { 0,0,0 };
-uint16_t simulatedCurrentRxRefreshRate = 10000;
+uint16_t simulatedCurrentRxIntervalUs = 10000;
 uint8_t simulatedDuplicateCount = 0;
 float simulatedMotorMixRange = 0.0f;
 
@@ -91,7 +91,7 @@ extern "C" {
     float getRcCommandDelta(int axis) { return simulatedRcCommandDelta[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
-    uint16_t getCurrentRxRefreshRate(void) { return simulatedCurrentRxRefreshRate; }
+    uint16_t getCurrentRxIntervalUs(void) { return simulatedCurrentRxIntervalUs; }
     uint8_t getFeedforwardDuplicateCount(void) { return simulatedDuplicateCount; }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }

@@ -93,19 +93,24 @@ typedef struct rcSmoothingFilterTraining_s {
 
 typedef struct rcSmoothingFilter_s {
     bool filterInitialized;
-    pt3Filter_t filter[4];
-    pt3Filter_t filterDeflection[2];
+    pt3Filter_t filterSetpoint[4];
+    pt3Filter_t filterRcDeflection[2]
+    ;
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;
+    uint8_t feedforwardCutoffSetting;
+
     uint16_t setpointCutoffFrequency;
     uint16_t throttleCutoffFrequency;
-    uint8_t ffCutoffSetting;
     uint16_t feedforwardCutoffFrequency;
+
     int averageFrameTimeUs;
     rcSmoothingFilterTraining_t training;
     uint8_t debugAxis;
+
     uint8_t autoSmoothnessFactorSetpoint;
     uint8_t autoSmoothnessFactorThrottle;
+    uint8_t autoSmoothnessFactorFeedforward;
 } rcSmoothingFilter_t;
 
 typedef struct rcControlsConfig_s {

@@ -84,7 +84,7 @@ FAST_CODE_NOINLINE float feedforwardApply(int axis, bool newRcFrame, feedforward
                         // good values : 25 for 111hz FrSky, 30 for 150hz, 50 for 250hz, 65 for 500hz links
             const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
                         // 7 is default, 5 for faster links with smaller steps and for racing, 10-12 for 150hz freestyle
-            const float rxInterval = getCurrentRxRefreshRate() * 1e-6f; // 0.0066 for 150hz RC Link.
+            const float rxInterval = getCurrentRxIntervalUs() * 1e-6f; // 0.0066 for 150hz RC Link.
             const float rxRate = 1.0f / rxInterval; // eg 150 for a 150Hz RC link
 
             const float absSetpointPercent = fabsf(setpoint) / feedforwardMaxRate[axis];

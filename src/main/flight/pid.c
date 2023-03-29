@@ -408,7 +408,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // ** angle loop feedforward
     float angleFeedforward = 0.0f;
 #ifdef USE_FEEDFORWARD
-    const float rxRateHz = 1e6f / getCurrentRxRefreshRate();
+    const float rxRateHz = 1e6f / getCurrentRxIntervalUs();
     const float rcCommandDeltaAbs = fabsf(getRcCommandDelta(axis));
 
     if (newRcFrame){
