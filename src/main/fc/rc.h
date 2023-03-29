@@ -48,4 +48,4 @@ float getFeedforward(int axis);
 #endif
 
 void updateRcRefreshRate(timeUs_t currentTimeUs);
-uint16_t getCurrentRxRefreshRate(void);
+uint16_t getCurrentRxIntervalUs(void);

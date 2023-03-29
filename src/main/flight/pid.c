@@ -825,6 +825,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
+    static float previousPidSetpointTest[XYZ_AXIS_COUNT]; // *****
 
 #ifdef USE_TPA_MODE
     const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
@@ -1040,8 +1041,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_FEEDFORWARD
         if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
-            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
-            pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint;
+            pidSetpointDelta = currentPidSetpoint - previousPidSetpointTest[axis];
             // we are in Angle mode and this axis is fully under self-levelling control
             // these axes will already have stick based feedforward applied in the input to their angle setpoint
             // a simple setpoint Delta can be used to for PID feedforward element for motor lag on these axes
@@ -1051,6 +1051,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
              pidSetpointDelta = getFeedforward(axis);
         }
 #endif
+        previousPidSetpointTest[axis] = currentPidSetpoint;
+        pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // strangely, this is the value sent to blackbox via pidGetPreviousSetpoint
 
         // disable D if launch control is active
         if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
