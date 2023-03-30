@@ -170,6 +170,27 @@
 #define GYRO_1_CS_PIN        PB12
 #define GYRO_2_CS_PIN        PA15
 
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP(0, PA8, 1, 10) \
+    TIMER_PIN_MAP(1, PB11, 1, 11) \
+    TIMER_PIN_MAP(2, PB15, 2, -1) \
+    TIMER_PIN_MAP(3, PE5, 1, 0) \
+    TIMER_PIN_MAP(4, PE6, 1, -1) \
+    TIMER_PIN_MAP(5, PA0, 2, 0) \
+    TIMER_PIN_MAP(6, PA1, 2, 1) \
+    TIMER_PIN_MAP(7, PA2, 2, 2) \
+    TIMER_PIN_MAP(8, PA3, 2, 3) \
+    TIMER_PIN_MAP(9, PB6, 2, 4) \
+    TIMER_PIN_MAP(10, PB7, 2, 5) \
+    TIMER_PIN_MAP(11, PC6, 2, 6) \
+    TIMER_PIN_MAP(12, PC7, 2, 7) \
+    TIMER_PIN_MAP(13, PD14, 1, 12) \
+    TIMER_PIN_MAP(14, PD15, 1, -1) \
+    TIMER_PIN_MAP(15, PA6, 1, 0) \
+    TIMER_PIN_MAP(16, PA7, 2, 0) \
+    TIMER_PIN_MAP(17, PB0, 2, 0) \
+    TIMER_PIN_MAP(18, PB1, 2, 0)
+
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 
