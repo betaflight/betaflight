@@ -355,8 +355,8 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
     static float prevError = 0.0f;
     static float i = 0.0f;
-
-    const float averageRpm = pt1FilterApply(&mixer->averageRpmFilter, getDshotAverageRpm());
+    const float unsmoothedAverageRpm = getDshotAverageRpm();
+    const float averageRpm = pt1FilterApply(&mixer->averageRpmFilter, unsmoothedAverageRpm);
     const float error = averageRpm - mixer->rpmLimiterRpmLimit;
 
     // PID
@@ -380,10 +380,14 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
     prevError = error;
 
-    DEBUG_SET(DEBUG_RPM_LIMITER, 0, lrintf(error));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 1, lrintf(throttle * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 2, lrintf(i * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 3, lrintf(d * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 0, lrintf(averageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 1, lrintf(unsmoothedAverageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 3, lrintf(throttle * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 4, lrintf(error));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 5, lrintf(p * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 6, lrintf(i * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMITER, 7, lrintf(d * 100.0f));
 }
 #endif // USE_RPM_LIMITER
 
