@@ -138,6 +138,7 @@ FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 // convert interval in us from dshot telemetry to eRPM/100
 static uint32_t usIntervalToERpm(uint16_t interval)
 {
+    if (interval == 0) { return 0; }
     return (1000000 * 60 / 100 + interval / 2) / interval;
 }
 
@@ -238,7 +239,7 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
 
             // Update debug buffer
             if (motorIndex < motorCount && motorIndex < DEBUG16_VALUE_COUNT) {
-                DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
+                DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, usIntervalToERpm(*pDecoded));
             }
 
             // Set telemetry type
@@ -279,7 +280,7 @@ static void processDshotTelemetry(void)
                 dshotUpdateTelemetryField(k, type, value);
 
                 if (type == DSHOT_TELEMETRY_TYPE_eRPM) {
-                    erpmTotal += value;
+                    erpmTotal += usIntervalToERpm(value);
                     rpmSamples++;
                 }
             }

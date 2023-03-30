@@ -254,14 +254,14 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 
 #ifdef USE_DSHOT_TELEMETRY
     // logging the interval of one electric revolution instead of RPM to get better precision and compression
-    {"eInterval",   0, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
-    {"eInterval",   1, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
-    {"eInterval",   2, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_3_HAS_RPM)},
-    {"eInterval",   3, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_4_HAS_RPM)},
-    {"eInterval",   4, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_5_HAS_RPM)},
-    {"eInterval",   5, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_6_HAS_RPM)},
-    {"eInterval",   6, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
-    {"eInterval",   7, UNSIGNED, .Ipredict = PREDICT(0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
+    {"eInterval",   0, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_1_HAS_RPM)},
+    {"eInterval",   1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_2_HAS_RPM)},
+    {"eInterval",   2, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_3_HAS_RPM)},
+    {"eInterval",   3, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_4_HAS_RPM)},
+    {"eInterval",   4, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_5_HAS_RPM)},
+    {"eInterval",   5, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_6_HAS_RPM)},
+    {"eInterval",   6, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
+    {"eInterval",   7, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
 #endif /* USE_DSHOT_TELEMETRY */
 };
 
@@ -691,7 +691,7 @@ static void writeIntraframe(void)
         const int motorCount = getMotorCount();
         for (int x = 0; x < motorCount; x++) {
             if(testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
-                blackboxWriteSignedVB(blackboxCurrent->rpm[x]);
+                blackboxWriteUnsignedVB(blackboxCurrent->rpm[x]);
             }
         }
     }
@@ -839,7 +839,12 @@ static void writeInterframe(void)
     }
 #ifdef USE_DSHOT_TELEMETRY
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
-        blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, rpm), getMotorCount());
+        const int motorCount = getMotorCount();
+        for (int x = 0; x < motorCount; x++) {
+            if(testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
+                blackboxWriteSignedVB(blackboxCurrent->rpm[x] -  blackboxLast->rpm[x]);
+            }
+        }
     }
 #endif
 
@@ -1146,7 +1151,8 @@ static void loadMainState(timeUs_t currentTimeUs)
 #ifdef USE_DSHOT_TELEMETRY
     for (int i = 0; i < motorCount; i++) {
         // log the interval instead of RPM for better compression and precision
-        blackboxCurrent->rpm[i] = getDshotTelemetryIntervalUs(i);
+        const uint16_t interval =  getDshotTelemetryIntervalUs(i);
+        blackboxCurrent->rpm[i] = interval ? interval : UINT16_MAX;
     }
 #endif
 
