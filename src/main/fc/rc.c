@@ -63,6 +63,7 @@ static float oldRcCommand[XYZ_AXIS_COUNT];
 static bool isDuplicate[XYZ_AXIS_COUNT];
 float rcCommandDelta[XYZ_AXIS_COUNT];
 #endif
+
 static float rawSetpoint[XYZ_AXIS_COUNT];
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static bool reverseMotors = false;
@@ -83,14 +84,12 @@ enum {
 };
 
 #ifdef USE_RC_SMOOTHING_FILTER
-#define RC_SMOOTHING_CUTOFF_MIN_HZ              15    // Minimum rc smoothing cutoff frequency
-#define RC_SMOOTHING_FILTER_STARTUP_DELAY_MS    5000  // Time to wait after power to let the PID loop stabilize before starting average frame rate calculation
-#define RC_SMOOTHING_FILTER_TRAINING_SAMPLES    50    // Number of rx frame rate samples to average during initial training
-#define RC_SMOOTHING_FILTER_RETRAINING_SAMPLES  20    // Number of rx frame rate samples to average during frame rate changes
-#define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS   1000  // Additional time to wait after receiving first valid rx frame before initial training starts
-#define RC_SMOOTHING_FILTER_RETRAINING_DELAY_MS 2000  // Guard time to wait after retraining to prevent retraining again too quickly
-#define RC_SMOOTHING_RX_RATE_CHANGE_PERCENT     20    // Look for samples varying this much from the current detected frame rate to initiate retraining
-#define RC_SMOOTHING_FEEDFORWARD_INITIAL_HZ     100 // The value to use for "auto" when interpolated feedforward is enabled
+#define RC_SMOOTHING_CUTOFF_MIN_HZ               15  // Minimum rc smoothing cutoff frequency
+#define RC_SMOOTHING_FILTER_STARTUP_DELAY_MS   5000  // Time to wait after power to let the PID loop stabilize before starting average frame rate calculation
+#define RC_SMOOTHING_FILTER_SAMPLE_COUNT         80  // Min number of rx samples after a change until recalculation stops
+#define RC_SMOOTHING_ACCEPT_SAMPLE             0.8f  // Percent change greater than this is considered unacceptable for interval calculations
+#define RC_SMOOTHING_INTERVAL_FILTER_K        0.15f  // Filter coefficient for smoothing Rx intervals
+#define RC_SMOOTHING_RECALC_THRESHOLD         0.15f  // Recalculate cutoffs when smoothed real Rx interval varies more than this fraction from the currently used Rx interval
 
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
@@ -318,13 +317,13 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
 {
     const float dT = targetPidLooptime * 1e-6f;
     if (smoothingData->setpointCutoffSetting == 0) {
-        smoothingData->setpointCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorSetpoint));
+        smoothingData->setpointCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageRxIntervalUs, smoothingData->autoSmoothnessFactorSetpoint));
     }
     if (smoothingData->throttleCutoffSetting == 0) {
-        smoothingData->throttleCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorThrottle));
+        smoothingData->throttleCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageRxIntervalUs, smoothingData->autoSmoothnessFactorThrottle));
     }
     if (smoothingData->feedforwardCutoffSetting == 0) {
-        smoothingData->feedforwardCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageFrameTimeUs, smoothingData->autoSmoothnessFactorFeedforward));
+        smoothingData->feedforwardCutoffFrequency = MAX(RC_SMOOTHING_CUTOFF_MIN_HZ, calcAutoSmoothingCutoff(smoothingData->averageRxIntervalUs, smoothingData->autoSmoothnessFactorFeedforward));
     }
 
     // initialize or update the Setpoint filter
@@ -363,32 +362,47 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
     }
 }
 
-FAST_CODE_NOINLINE void rcSmoothingResetAccumulation(rcSmoothingFilter_t *smoothingData)
+FAST_CODE_NOINLINE void rxIntervalCheck(void)
 {
-    smoothingData->training.sum = 0;
-    smoothingData->training.count = 0;
-    smoothingData->training.min = UINT16_MAX;
-    smoothingData->training.max = 0;
+    static uint16_t previousRxIntervalUs;
+    if (previousRxIntervalUs) {
+        rcSmoothingData.rxIntervalAcceptable = (abs(currentRxIntervalUs - previousRxIntervalUs) / (float)previousRxIntervalUs) < RC_SMOOTHING_ACCEPT_SAMPLE;
+    }
+    previousRxIntervalUs = currentRxIntervalUs;
 }
 
-// Accumulate the rx frame time samples. Once we've collected enough samples calculate the
-// average and return true.
-static FAST_CODE bool rcSmoothingAccumulateSample(rcSmoothingFilter_t *smoothingData, int rxFrameTimeUs)
+static void FAST_CODE rcSmoothingMeasureRxInterval(void)
+// Calculate the smoothed RC interval
 {
-    smoothingData->training.sum += rxFrameTimeUs;
-    smoothingData->training.count++;
-    smoothingData->training.max = MAX(smoothingData->training.max, rxFrameTimeUs);
-    smoothingData->training.min = MIN(smoothingData->training.min, rxFrameTimeUs);
+    if (rcSmoothingData.filterCutoffComplete == false) {
+        uint8_t multiplySampleCount = (rcSmoothingData.smoothedCurrentRxIntervalUs > 3500) ? 1 : 2;
+        uint8_t sampleCountFinished = RC_SMOOTHING_FILTER_SAMPLE_COUNT * multiplySampleCount;
+        if (rcSmoothingData.sampleCount < sampleCountFinished) {
+            if (rcSmoothingData.rxIntervalAcceptable) {
+                rcSmoothingData.sampleCount++;
+            }
 
-    // if we've collected enough samples then calculate the average and reset the accumulation
-    const int sampleLimit = (rcSmoothingData.filterInitialized) ? RC_SMOOTHING_FILTER_RETRAINING_SAMPLES : RC_SMOOTHING_FILTER_TRAINING_SAMPLES;
-    if (smoothingData->training.count >= sampleLimit) {
-        smoothingData->training.sum = smoothingData->training.sum - smoothingData->training.min - smoothingData->training.max; // Throw out high and low samples
-        smoothingData->averageFrameTimeUs = lrintf(smoothingData->training.sum / (smoothingData->training.count - 2));
-        rcSmoothingResetAccumulation(smoothingData);
-        return true;
+            uint8_t updateNow = 20 * multiplySampleCount;
+            static uint8_t counter = 0;
+            counter ++;
+            if (counter > updateNow) {
+                // recalculate filter cutoffs while updating the values to avoid large steps and large delays
+                rcSmoothingData.averageRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
+                rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+                counter = 0;
+            }
+
+        } else {
+            // finished
+            rcSmoothingData.filterCutoffComplete = true;
+            rcSmoothingData.filterInitialized = true;
+            rcSmoothingData.sampleCount = 0;
+            // update RC smoothing cutoff values
+            rcSmoothingData.averageRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
+            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+            // after this, cutoffs will only be updated again when the smoothed measured link rate varies by more than the allowed amount
+        }
     }
-    return false;
 }
 
 // Determine if we need to caclulate filter cutoffs. If not then we can avoid
@@ -406,15 +420,18 @@ static FAST_CODE void processRcSmoothingFilter(void)
 {
     static FAST_DATA_ZERO_INIT float rxDataToSmooth[4];
     static FAST_DATA_ZERO_INIT bool initialized;
-    static FAST_DATA_ZERO_INIT timeMs_t validRxFrameTimeMs;
     static FAST_DATA_ZERO_INIT bool calculateCutoffs;
 
     // first call initialization
     if (!initialized) {
         initialized = true;
         rcSmoothingData.filterInitialized = false;
-        rcSmoothingData.averageFrameTimeUs = 0;
+        rcSmoothingData.filterCutoffComplete = false;
+        rcSmoothingData.averageRxIntervalUs = 0;
+        rcSmoothingData.sampleCount = 0;
+        rcSmoothingData.rxIntervalAcceptable = false;
         rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
+        
 
         rcSmoothingData.autoSmoothnessFactorSetpoint = rxConfig()->rc_smoothing_auto_factor_rpy;
         rcSmoothingData.autoSmoothnessFactorFeedforward = rxConfig()->rc_smoothing_auto_factor_rpy;
@@ -423,8 +440,6 @@ static FAST_CODE void processRcSmoothingFilter(void)
         rcSmoothingData.setpointCutoffSetting = rxConfig()->rc_smoothing_setpoint_cutoff;
         rcSmoothingData.feedforwardCutoffSetting = rxConfig()->rc_smoothing_feedforward_cutoff;
         rcSmoothingData.feedforwardCutoffSetting = rxConfig()->rc_smoothing_feedforward_cutoff;
-
-        rcSmoothingResetAccumulation(&rcSmoothingData);
 
         rcSmoothingData.setpointCutoffFrequency = rcSmoothingData.setpointCutoffSetting;
         rcSmoothingData.feedforwardCutoffFrequency = rcSmoothingData.feedforwardCutoffSetting;
@@ -442,63 +457,64 @@ static FAST_CODE void processRcSmoothingFilter(void)
     }
 
     if (isRxDataNew) {
-        // for auto calculated filters we need to examine each rx frame interval
+        // for auto calculated filters, calculate the link interval and update the RC smoothing filters when it changes
+        // we should only update the Rx interval value when the link truly has changed its frequency,
+        // we should ignore short dropouts or double-duration intervals from telemetry packets
+        // we should handle signal loss by holding the previous interval until the link is restored
+
         if (calculateCutoffs) {
             const timeMs_t currentTimeMs = millis();
             int sampleState = 0;
 
-            // If the filter cutoffs in auto mode, and we have good rx data, then determine the average rx frame rate
-            // and use that to calculate the filter cutoff frequencies
+            // calculate percentage deviation of smoothedCurrentRxInterval from our current working averageRxIntervalUs
+            const float averageRxIntervalError = (fabsf(rcSmoothingData.smoothedCurrentRxIntervalUs - rcSmoothingData.averageRxIntervalUs) / (float)rcSmoothingData.averageRxIntervalUs);
+
+            // update our working Rx interval value
             if ((currentTimeMs > RC_SMOOTHING_FILTER_STARTUP_DELAY_MS) && (targetPidLooptime > 0)) { // skip during FC initialization
                 if (rxIsReceivingSignal() && isRxRateValid) {
 
-                    // set the guard time expiration if it's not set
-                    if (validRxFrameTimeMs == 0) {
-                        validRxFrameTimeMs = currentTimeMs + (rcSmoothingData.filterInitialized ? RC_SMOOTHING_FILTER_RETRAINING_DELAY_MS : RC_SMOOTHING_FILTER_TRAINING_DELAY_MS);
+                    // first, determine if the current interval is a very big change from the previous interval
+                    rxIntervalCheck();
+
+                    // then calculate the smoothed RxInterval using simple step to step first order filter
+                    static float prevSmoothedRxInterval;
+                    rcSmoothingData.smoothedCurrentRxIntervalUs = prevSmoothedRxInterval;
+                    if (rcSmoothingData.rxIntervalAcceptable) {
+                        // ie if data passed the rxIntervalCheck, smooth it and store in smoothedCurrentRxIntervalUs
+                        rcSmoothingData.smoothedCurrentRxIntervalUs = prevSmoothedRxInterval + RC_SMOOTHING_INTERVAL_FILTER_K * (currentRxIntervalUs - prevSmoothedRxInterval);
+                        prevSmoothedRxInterval = rcSmoothingData.smoothedCurrentRxIntervalUs;
+                   }
+
+                    // now decide whether to update the filters
+                    if (rcSmoothingData.filterInitialized) {
+                        sampleState = 2; 
+                        // normal monitoring state
+                        if (rcSmoothingData.filterCutoffComplete == false) {
+                             // filter re-calculation is in progress, let it complete
+                            sampleState = 3;
+                            rcSmoothingMeasureRxInterval();
+                        } else if (averageRxIntervalError > RC_SMOOTHING_RECALC_THRESHOLD) {
+                            // there is meaningful difference between current link interval and currently active link interval
+                            // and there is no re-calculation happening
+                            // hence we should force a re-calculation of the active link interval
+                            rcSmoothingData.filterCutoffComplete = false;
+                            rcSmoothingMeasureRxInterval();
+                        }
                     } else {
+                        // filter hasn't completed initialisation run yet
                         sampleState = 1;
-                    }
-
-                    // if the guard time has expired then process the rx frame time
-                    if (currentTimeMs > validRxFrameTimeMs) {
-                        sampleState = 2;
-                        bool accumulateSample = true;
-
-                        // During initial training process all samples.
-                        // During retraining check samples to determine if they vary by more than the limit percentage.
-                        if (rcSmoothingData.filterInitialized) {
-                            const float percentChange = (abs(currentRxIntervalUs - rcSmoothingData.averageFrameTimeUs) / (float)rcSmoothingData.averageFrameTimeUs) * 100;
-                            if (percentChange < RC_SMOOTHING_RX_RATE_CHANGE_PERCENT) {
-                                // We received a sample that wasn't more than the limit percent so reset the accumulation
-                                // During retraining we need a contiguous block of samples that are all significantly different than the current average
-                                rcSmoothingResetAccumulation(&rcSmoothingData);
-                                accumulateSample = false;
-                            }
-                        }
-
-                        // accumlate the sample into the average
-                        if (accumulateSample) {
-                            if (rcSmoothingAccumulateSample(&rcSmoothingData, currentRxIntervalUs)) {
-                                // the required number of samples were collected so set the filter cutoffs, but only if smoothing is active
-                                if (rxConfig()->rc_smoothing_mode) {
-                                    rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-                                    rcSmoothingData.filterInitialized = true;
-                                }
-                                validRxFrameTimeMs = 0;
-                            }
-                        }
-
+                        rcSmoothingMeasureRxInterval();
                     }
                 } else {
-                    // we have either stopped receiving rx samples (failsafe?) or the sample time is unreasonable so reset the accumulation
-                    rcSmoothingResetAccumulation(&rcSmoothingData);
+                    sampleState = 4;
+                    // we have either stopped receiving rx samples (failsafe?) or the sample time is unreasonable
+                    // require a full re-evaluation period after signal is restored, if the interval has changed
+                    rcSmoothingData.sampleCount = 0;
                 }
             }
-
-            // rx frame rate training blackbox debugging
             DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 0, currentRxIntervalUs / 10);
-            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 1, rcSmoothingData.training.count);
-            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, rcSmoothingData.averageFrameTimeUs / 10); // value used by filters
+            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 1, rcSmoothingData.sampleCount);
+            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, rcSmoothingData.averageRxIntervalUs / 10); // value used by filters
             DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 3, sampleState); // guard time = 1, guard time expired = 2
         }
         // Get new values to be smoothed
@@ -515,7 +531,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
     if (rcSmoothingData.filterInitialized && (debugMode == DEBUG_RC_SMOOTHING)) {
         // after training has completed then log the raw rc channel and the calculated
         // average rx frame rate that was used to calculate the automatic filter cutoffs
-        DEBUG_SET(DEBUG_RC_SMOOTHING, 3, rcSmoothingData.averageFrameTimeUs);
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 3, rcSmoothingData.averageRxIntervalUs);
     }
 
     // each pid loop, apply the last received channel value to the filter, if initialised - thanks @klutvott
