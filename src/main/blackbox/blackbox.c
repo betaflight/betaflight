@@ -690,7 +690,7 @@ static void writeIntraframe(void)
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
         const int motorCount = getMotorCount();
         for (int x = 0; x < motorCount; x++) {
-            if(testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
+            if (testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
                 blackboxWriteUnsignedVB(blackboxCurrent->rpm[x]);
             }
         }
@@ -841,7 +841,7 @@ static void writeInterframe(void)
     if (isFieldEnabled(FIELD_SELECT(RPM))) {
         const int motorCount = getMotorCount();
         for (int x = 0; x < motorCount; x++) {
-            if(testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
+            if (testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
                 blackboxWriteSignedVB(blackboxCurrent->rpm[x] -  blackboxLast->rpm[x]);
             }
         }

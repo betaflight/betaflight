@@ -138,8 +138,7 @@ FAST_DATA_ZERO_INIT dshotTelemetryState_t dshotTelemetryState;
 // convert interval in us from dshot telemetry to eRPM/100
 static uint32_t usIntervalToERpm(uint16_t interval)
 {
-    if (interval == 0) { return 0; }
-    return (1000000 * 60 / 100 + interval / 2) / interval;
+    return interval ? (1000000 * 60 / 100 + interval / 2) / interval : 0;
 }
 
 static uint16_t dshot_decode_eRPM_telemetry_value(uint16_t value)
