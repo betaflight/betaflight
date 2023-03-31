@@ -763,6 +763,11 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
             // Safe to discard the volatile qualifier as we're in an atomic block
             busSegment_t *endCmpSegment = (busSegment_t *)bus->curSegment;
 
+            /* It is possible that the endCmpSegment may be NULL as the bus is held busy by csLockDevice.
+             * If this is the case this transfer will be silently dropped. Therefore holding CS low after a transfer,
+             * as is done with the SD card, MUST not be done on a bus where interrupts may trigger a transfer
+             * on an idle bus, such as would be the case with a gyro. This would be result in skipped gyro transfers.
+             */
             if (endCmpSegment) {
                 while (true) {
                     // Find the last segment of the current transfer
@@ -784,11 +789,11 @@ void spiSequence(const extDevice_t *dev, busSegment_t *segments)
                         endCmpSegment = (busSegment_t *)endCmpSegment->u.link.segments;
                     }
                 }
-            }
 
-            // Record the dev and segments parameters in the terminating segment entry
-            endCmpSegment->u.link.dev = dev;
-            endCmpSegment->u.link.segments = segments;
+                // Record the dev and segments parameters in the terminating segment entry
+                endCmpSegment->u.link.dev = dev;
+                endCmpSegment->u.link.segments = segments;
+            }
 
             return;
         } else {
