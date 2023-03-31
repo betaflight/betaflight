@@ -99,8 +99,14 @@
 
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define ADC1_DMA_OPT 8
-#define ADC3_DMA_OPT 9
+#define ADC1_DMA_OPT            8
+#define ADC3_DMA_OPT            9
+#define TIMUP1_DMA_OPT          0
+#define TIMUP2_DMA_OPT          0
+#define TIMUP3_DMA_OPT          0
+#define TIMUP4_DMA_OPT          0
+#define TIMUP5_DMA_OPT          0
+#define TIMUP8_DMA_OPT          2
 
 #define USE_ADC
 #define ADC_INSTANCE                    ADC1
