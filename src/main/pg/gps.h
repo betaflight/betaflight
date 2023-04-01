@@ -30,7 +30,8 @@ typedef struct gpsConfig_s {
     uint8_t sbasMode;
     uint8_t autoConfig;
     uint8_t autoBaud;
-    uint8_t gps_ublox_mode;
+    uint8_t gps_ublox_acquire_model;
+    uint8_t gps_ublox_flight_model;
     bool gps_ublox_use_galileo;
     bool gps_set_home_point_once;
     bool gps_use_3d_speed;

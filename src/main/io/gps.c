@@ -165,9 +165,13 @@ typedef enum {
 #define UBLOX_GNSS_ENABLE     0x1
 #define UBLOX_GNSS_DEFAULT_SIGCFGMASK 0x10000
 
+#define UBLOX_DYNMODE_PORTABLE 0
 #define UBLOX_DYNMODE_PEDESTRIAN  3
-#define UBLOX_DYNMODE_AIRBORNE_1G 6
-#define UBLOX_DYNMODE_AIRBORNE_4G 8
+#if defined(GPS_UBLOX_MODE_AIRBORNE_1G)
+#define UBLOX_DYNMODE_AIRBORNE 6
+#else
+#define UBLOX_DYNMODE_AIRBORNE 8
+#endif
 
 typedef struct ubxHeader_s {
     uint8_t preamble1;
@@ -484,18 +488,14 @@ static void ubloxSendPollMessage(uint8_t msg_id)
     ubloxSendMessage((const uint8_t *) &tx_buffer, 6);
 }
 
-static void ubloxSendNAV5Message(bool airborne)
+static void ubloxSendNAV5Message(bool gps_fixed)
 {
     ubxMessage_t tx_buffer;
     tx_buffer.payload.cfg_nav5.mask = 0xFFFF;
-    if (airborne) {
-#if defined(GPS_UBLOX_MODE_AIRBORNE_1G)
-        tx_buffer.payload.cfg_nav5.dynModel = UBLOX_DYNMODE_AIRBORNE_1G;
-#else
-        tx_buffer.payload.cfg_nav5.dynModel = UBLOX_DYNMODE_AIRBORNE_4G;
-#endif
+    if (gps_fixed) {
+        tx_buffer.payload.cfg_nav5.dynModel = gpsConfig()->gps_ublox_flight_model;
     } else {
-        tx_buffer.payload.cfg_nav5.dynModel = UBLOX_DYNMODE_PEDESTRIAN;
+        tx_buffer.payload.cfg_nav5.dynModel = gpsConfig()->gps_ublox_acquire_model;
     }
     tx_buffer.payload.cfg_nav5.fixMode = 3;
     tx_buffer.payload.cfg_nav5.fixedAlt = 0;
@@ -642,7 +642,7 @@ void gpsInitUblox(void)
                     case UBLOX_INITIALIZE:
                         gpsData.ubloxUsePVT = true;
                         gpsData.ubloxUseSAT = true;
-                        ubloxSendNAV5Message(gpsConfig()->gps_ublox_mode == UBLOX_AIRBORNE);
+                        ubloxSendNAV5Message(false);
                         break;
                     case UBLOX_MSG_VGS: //Disable NMEA Messages
                         ubloxSetMessageRate(0xF0, 0x05, 0); // VGS: Course over ground and Ground speed
@@ -855,7 +855,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                             }
                             break;
                         case UBLOX_MSG_VGS:
-                            if (STATE(GPS_FIX) && (gpsConfig()->gps_ublox_mode == UBLOX_DYNAMIC)) {
+                            if (STATE(GPS_FIX)) {
                                 ubloxSendNAV5Message(true);
                                 gpsData.state_position = UBLOX_MSG_GSV;
                             }
