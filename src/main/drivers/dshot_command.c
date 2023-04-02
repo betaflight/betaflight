@@ -218,7 +218,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
 #ifdef USE_DSHOT_TELEMETRY
             timeUs_t timeoutUs = micros() + 1000;
-            while (!motorGetVTable().updateStart() &&
+            while (!motorGetVTable().decodeTelemetry() &&
                    cmpTimeUs(timeoutUs, micros()) > 0);
 #endif
             for (uint8_t i = 0; i < motorDeviceCount(); i++) {

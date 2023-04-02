@@ -59,7 +59,7 @@ void pwmDshotSetDirectionOutput(
 #endif
 );
 
-bool pwmStartDshotMotorUpdate(void);
+bool pwmTelemetryDecode(void);
 
 #endif
 #endif

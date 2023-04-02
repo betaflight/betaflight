@@ -1,3 +1,23 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -8,6 +28,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "build/debug.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_bitbang_decode.h"
 
@@ -28,7 +49,8 @@ uint16_t bbBuffer[134];
 #define BITBAND_SRAM_BASE  0x22000000
 #define BITBAND_SRAM(a,b) ((BITBAND_SRAM_BASE + (((a)-BITBAND_SRAM_REF)<<5) + ((b)<<2)))  // Convert SRAM address
 
-
+#define DSHOT_TELEMETRY_START_MARGIN 10
+static uint8_t preambleSkip = 0;
 
 typedef struct bitBandWord_s {
     uint32_t value;
@@ -84,6 +106,8 @@ static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t coun
 
 uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
+    uint8_t startMargin;
+
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
     sequenceIndex = 0;
@@ -93,6 +117,9 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     bitBandWord_t* p = (bitBandWord_t*)BITBAND_SRAM((uint32_t)buffer, bit);
     bitBandWord_t* b = p;
     bitBandWord_t* endP = p + (count - MIN_VALID_BBSAMPLES);
+
+    // Jump forward in the buffer to just before where we anticipate the first zero
+    p += preambleSkip;
 
     // Eliminate leading high signal level by looking for first zero bit in data stream.
     // Manual loop unrolling and branch hinting to produce faster code.
@@ -104,6 +131,9 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
             break;
         }
     }
+
+    startMargin = p - b;
+    DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
 
     if (p >= endP) {
         // not returning telemetry is ok if the esc cpu is
@@ -188,6 +218,10 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
     sequence[sequenceIndex] = sequence[sequenceIndex] + (nlen) * 3;
     sequenceIndex++;
 #endif
+
+    // The anticipated edges were observed
+    preambleSkip = startMargin - DSHOT_TELEMETRY_START_MARGIN;
+
     if (nlen > 0) {
         value <<= nlen;
         value |= 1 << (nlen - 1);
@@ -198,6 +232,8 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 
 FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
+    uint8_t startMargin;
+
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
     sequenceIndex = 0;
@@ -209,12 +245,15 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
     memset(sequence, 0, sizeof(sequence));
     int sequenceIndex = 0;
 #endif
-
     uint16_t lastValue = 0;
     uint32_t value = 0;
 
     uint16_t* p = buffer;
     uint16_t* endP = p + count - MIN_VALID_BBSAMPLES;
+
+    // Jump forward in the buffer to just before where we anticipate the first zero
+    p += preambleSkip;
+
     // Eliminate leading high signal level by looking for first zero bit in data stream.
     // Manual loop unrolling and branch hinting to produce faster code.
     while (p < endP) {
@@ -226,10 +265,15 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         }
     }
 
-    if(*p & mask) {
+    startMargin = p - buffer;
+    DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
+
+    if (p >= endP) {
         // not returning telemetry is ok if the esc cpu is
         // overburdened.  in that case no edge will be found and
         // BB_NOEDGE indicates the condition to caller
+        // Increase the start margin
+        preambleSkip--;
         return DSHOT_TELEMETRY_NOEDGE;
     }
 
@@ -268,6 +312,8 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 
     // length of last sequence has to be inferred since the last bit with inverted dshot is high
     if (bits < 18) {
+        // Increase the start margin
+        preambleSkip--;
         return DSHOT_TELEMETRY_NOEDGE;
     }
 
@@ -278,8 +324,13 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 #endif
 
     if (nlen < 0) {
+        // Increase the start margin
+        preambleSkip--;
         return DSHOT_TELEMETRY_NOEDGE;
     }
+
+    // The anticipated edges were observed
+    preambleSkip = startMargin - DSHOT_TELEMETRY_START_MARGIN;
 
     if (nlen > 0) {
         value <<= nlen;
