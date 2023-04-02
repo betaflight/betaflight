@@ -32,7 +32,7 @@
 //           elements before submitting final code.
 
 #include "platform.h"
-
+#define USE_CLI_DEBUG_PRINT
 #ifdef USE_CLI_DEBUG_PRINT
 
 #include "cli/cli.h"

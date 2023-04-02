@@ -17,7 +17,7 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include "cli/cli_debug_print.h"
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
@@ -101,12 +101,14 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
-#define GPS_BAUDRATE_CHANGE_DELAY (200)
+//Delay between gps commands. E.g for BAUD rate.
+#define GPS_CHANGE_DELAY (200)
 // Timeout for waiting ACK/NAK in GPS task cycles (0.25s at 100Hz)
 #define UBLOX_ACK_TIMEOUT_MAX_COUNT (25)
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
+static uint8_t customCommandIndex=0;
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -391,7 +393,7 @@ void gpsInitNmea(void)
         case GPS_STATE_INITIALIZING:
 #if !defined(GPS_NMEA_TX_ONLY)
            now = millis();
-           if (now - gpsData.state_ts < 1000) {
+           if (now - gpsData.state_ts < GPS_CHANGE_DELAY) {
                return;
            }
            gpsData.state_ts = now;
@@ -411,7 +413,7 @@ void gpsInitNmea(void)
         case GPS_STATE_CHANGE_BAUD:
 #if !defined(GPS_NMEA_TX_ONLY)
            now = millis();
-           if (now - gpsData.state_ts < 1000) {
+           if (now - gpsData.state_ts < GPS_CHANGE_DELAY) {
                return;
            }
            gpsData.state_ts = now;
@@ -428,20 +430,29 @@ void gpsInitNmea(void)
                    serialPrint(gpsPort, "$PCAS10,0*1C\r\n");    // hot restart
                }
 
-               //NMEA custom commands
-               char *commands = strdup(gpsConfig()->nmeaCustomCommands);
+                //NMEA custom commands
+                char *commands = strdup(gpsConfig()->nmeaCustomCommands);
 
-               //divide commands with spaces and send them to the gps one by one
-               char *saveptr;
-               char* tok = strtok_r(commands, " ", &saveptr);
-               while (tok != NULL) {
-                   char *printable = strdup(tok);
-                   strcat(printable, "\r\n");
-                   serialPrint(gpsPort, printable);
-                   tok = strtok_r(NULL, " ", &saveptr);
-               }
+                //divide commands with spaces and send them to the gps one by one
+                char *saveptr;
+                char* tok = strtok_r(commands, " ", &saveptr);
 
-               gpsData.state_position++;
+                for (uint8_t i=0; i < customCommandIndex; i++) {
+                    tok = strtok_r(NULL, " ", &saveptr);
+                }
+
+                if (tok == NULL) {
+                    customCommandIndex=0;
+                    gpsData.state_position++;
+                }
+                else {
+                    customCommandIndex++;
+
+                    char *printable = strdup(tok);
+                    strcat(printable, "\r\n");
+                    serialPrint(gpsPort, printable);
+                    cliPrintLine(printable);
+                }
            } else
 #else
            {
@@ -620,7 +631,7 @@ void gpsInitUblox(void)
     switch (gpsData.state) {
         case GPS_STATE_INITIALIZING:
             now = millis();
-            if (now - gpsData.state_ts < GPS_BAUDRATE_CHANGE_DELAY)
+            if (now - gpsData.state_ts < GPS_CHANGE_DELAY)
                 return;
 
             if (gpsData.state_position < GPS_INIT_ENTRIES) {
