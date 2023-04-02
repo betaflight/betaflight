@@ -825,7 +825,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 {
     static float previousGyroRateDterm[XYZ_AXIS_COUNT];
     static float previousRawGyroRateDterm[XYZ_AXIS_COUNT];
-    static float previousPidSetpointTest[XYZ_AXIS_COUNT]; // *****
 
 #ifdef USE_TPA_MODE
     const float tpaFactorKp = (pidProfile->tpa_mode == TPA_MODE_PD) ? pidRuntime.tpaFactor : 1.0f;
@@ -1041,18 +1040,23 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_FEEDFORWARD
         if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
-            pidSetpointDelta = currentPidSetpoint - previousPidSetpointTest[axis];
-            // we are in Angle mode and this axis is fully under self-levelling control
-            // these axes will already have stick based feedforward applied in the input to their angle setpoint
+            // this axis is fully under self-levelling control
+            // it will already have stick based feedforward applied in the input to their angle setpoint
             // a simple setpoint Delta can be used to for PID feedforward element for motor lag on these axes
-            pidSetpointDelta = pidSetpointDelta * pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
+            // however RC steps come in, via angle setpoint
+            // and setpoint RC smoothing must have a cutoff half normal to remove those steps completely
+            // the RC stepping does not come in via the feedforward, which is very well smoothed already
+            // if uncommented, and the forcing to zero is removed, the two following lines will restore PID feedforward to angle mode axes
+            // but for now let's see how we go without it (which was the case before 4.5 anyway)
+//            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
+//            pidSetpointDelta *= pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
+            pidSetpointDelta = 0.0f;
         } else {
             // the axis is operating as a normal acro axis, so use normal feedforard from rc.c
-             pidSetpointDelta = getFeedforward(axis);
+            pidSetpointDelta = getFeedforward(axis);
         }
 #endif
-        previousPidSetpointTest[axis] = currentPidSetpoint;
-        pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // strangely, this is the value sent to blackbox via pidGetPreviousSetpoint
+        pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // this is the value sent to blackbox, and used for Dmin setpoint
 
         // disable D if launch control is active
         if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
