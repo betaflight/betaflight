@@ -67,7 +67,6 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define MAG_HARDWARE NONE
 #define DEFAULT_BARO_DEVICE BARO_NONE
 
 //TODO #define DSHOT_IDLE_VALUE 600
