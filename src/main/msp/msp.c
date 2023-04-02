@@ -1121,7 +1121,11 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
             // Added in API version 1.46
             // Write CPU temp
             if (cmdMSP == MSP_STATUS_EX) {
+#ifdef USE_ADC_INTERNAL                
                 int16_t coretemp = getCoreTemperatureCelsius();
+#else
+                int16_t coretemp = 0;
+#endif                
                 sbufWriteU16(dst, coretemp);
             }
         }
