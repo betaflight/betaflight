@@ -75,4 +75,3 @@
 #define USE_ADC
 #define USE_EXTI
 #define USE_TIMER_UP_CONFIG
-
