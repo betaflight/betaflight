@@ -206,7 +206,7 @@ static const char * const lookupTableGPSSBASMode[] = {
 };
 
 static const char * const lookupTableGPSUBLOXModels[] = {
-    "AIRBORNE", "PEDESTRIAN", "PORTABLE"
+    "PORTABLE", "STATIONARY", "PEDESTRIAN", "AUTOMOTIVE", "AT_SEA", "AIRBORNE_1G", "AIRBORNE_2G", "AIRBORNE_4G"
 };
 #endif
 
