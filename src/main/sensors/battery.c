@@ -215,11 +215,11 @@ void batteryUpdatePresence(void)
 
             if (!ARMING_FLAG(ARMED)) {
                 changePidProfileFromCellCount(batteryCellCount);
-#ifdef USE_RPM_LIMITER
-                mixerResetRpmLimiter();
-#endif
             }
         }
+#ifdef USE_RPM_LIMITER
+        mixerResetRpmLimiter();
+#endif
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig()->vbatmincellvoltage;
         batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;
