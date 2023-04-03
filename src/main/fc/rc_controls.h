@@ -106,9 +106,7 @@ typedef struct rcSmoothingFilter_s {
 
     int averageRxIntervalUs;
     float smoothedCurrentRxIntervalUs;
-    bool rxIntervalAcceptable;
     uint8_t sampleCount;
-    bool filterCutoffComplete;
     uint8_t debugAxis;
 
     uint8_t autoSmoothnessFactorSetpoint;
