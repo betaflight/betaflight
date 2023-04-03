@@ -99,10 +99,9 @@ float getFeedforward(int axis)
 #ifdef USE_RC_SMOOTHING_FILTER
 #define RC_SMOOTHING_CUTOFF_MIN_HZ               15  // Minimum rc smoothing cutoff frequency
 #define RC_SMOOTHING_FILTER_STARTUP_DELAY_MS   5000  // Time to wait after power to let the PID loop stabilize before starting average frame rate calculation
-#define RC_SMOOTHING_FILTER_SAMPLE_COUNT         80  // Min number of rx samples after a change until recalculation stops
-#define RC_SMOOTHING_ACCEPT_SAMPLE             0.8f  // Percent change greater than this is considered unacceptable for interval calculations
-#define RC_SMOOTHING_INTERVAL_FILTER_K        0.15f  // Filter coefficient for smoothing Rx intervals
-#define RC_SMOOTHING_RECALC_THRESHOLD         0.15f  // Recalculate cutoffs when smoothed real Rx interval varies more than this fraction from the currently used Rx interval
+#define RC_SMOOTHING_FILTER_SAMPLE_COUNT          3  // Recalculate rc smoothing filters after this many valid samples
+#define RC_SMOOTHING_ACCEPT_SAMPLE             0.8f  // Fractional step up greater than this is considered unacceptable for interval calculations
+#define RC_SMOOTHING_INTERVAL_FILTER_K         0.2f  // Filter coefficient for Rx interval smoothing; reaches 50% of a step change in approximately 3 samples
 
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
@@ -352,52 +351,6 @@ FAST_CODE_NOINLINE void rcSmoothingSetFilterCutoffs(rcSmoothingFilter_t *smoothi
     }
 }
 
-FAST_CODE_NOINLINE void rxIntervalCheck(void)
-{
-    static uint16_t previousRxIntervalUs;
-    if (previousRxIntervalUs) {
-        rcSmoothingData.rxIntervalAcceptable = (abs(currentRxIntervalUs - previousRxIntervalUs) / (float)previousRxIntervalUs) < RC_SMOOTHING_ACCEPT_SAMPLE;
-    }
-    previousRxIntervalUs = currentRxIntervalUs;
-}
-
-static void FAST_CODE rcSmoothingMeasureRxInterval(void)
-{
-    // Calculate the smoothed RC interval and update 4-5 times during the measurement period
-    if (rcSmoothingData.filterCutoffComplete == false) {
-        uint8_t multiplySampleCount = (rcSmoothingData.smoothedCurrentRxIntervalUs > 3500) ? 1 : 2;
-        // for link intervals < 3.5ms, ie link speeds above 250Hz, double the number of samples to smooth
-        // this is to give a bit more time for the link to settle before finalising the cutoff
-        uint8_t sampleCountFinished = RC_SMOOTHING_FILTER_SAMPLE_COUNT * multiplySampleCount;
-        if (rcSmoothingData.sampleCount < sampleCountFinished) {
-            if (rcSmoothingData.rxIntervalAcceptable) {
-                rcSmoothingData.sampleCount++;
-            }
-
-            uint8_t updateNow = 20 * multiplySampleCount;
-            // multiply by 2 for faster links, so that there are the same number of steps
-            static uint8_t counter = 0;
-            counter ++;
-            if (counter > updateNow) {
-                // recalculate filter cutoffs while updating the values to avoid large steps and large delays
-                rcSmoothingData.averageRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
-                rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-                counter = 0;
-            }
-
-        } else {
-            // finished, so update the cutoffs and stop the measurement process
-            rcSmoothingData.filterCutoffComplete = true;
-            rcSmoothingData.filterInitialized = true;
-            rcSmoothingData.sampleCount = 0;
-            // update RC smoothing cutoff values
-            rcSmoothingData.averageRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
-            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
-            // after this, cutoffs will only be updated again when the smoothed measured link rate varies by more than the allowed amount
-        }
-    }
-}
-
 // Determine if we need to caclulate filter cutoffs. If not then we can avoid
 // examining the rx frame times completely
 FAST_CODE_NOINLINE bool rcSmoothingAutoCalculate(void)
@@ -419,12 +372,9 @@ static FAST_CODE void processRcSmoothingFilter(void)
     if (!initialized) {
         initialized = true;
         rcSmoothingData.filterInitialized = false;
-        rcSmoothingData.filterCutoffComplete = false;
         rcSmoothingData.averageRxIntervalUs = 0;
         rcSmoothingData.sampleCount = 0;
-        rcSmoothingData.rxIntervalAcceptable = false;
         rcSmoothingData.debugAxis = rxConfig()->rc_smoothing_debug_axis;
-        
 
         rcSmoothingData.autoSmoothnessFactorSetpoint = rxConfig()->rc_smoothing_auto_factor_rpy;
         rcSmoothingData.autoSmoothnessFactorFeedforward = rxConfig()->rc_smoothing_auto_factor_rpy;
@@ -450,59 +400,44 @@ static FAST_CODE void processRcSmoothingFilter(void)
     }
 
     if (isRxDataNew) {
-        // for auto calculated filters, calculate the link interval and update the RC smoothing filters when it changes
-        // we should only update the Rx interval value when the link truly has changed its frequency,
-        // we should ignore short dropouts or double-duration intervals from telemetry packets
-        // we should handle signal loss by holding the previous interval until the link is restored
-
         if (calculateCutoffs) {
+            // for auto calculated filters, calculate the link interval and update the RC smoothing filters at regular intervals
+            // this is more efficient than monitoring for significant changes and making comparisons to decide whether to update the filter
             const timeMs_t currentTimeMs = millis();
             int sampleState = 0;
-
-            // calculate percentage deviation of smoothedCurrentRxInterval from our current working averageRxIntervalUs
-            const float averageRxIntervalError = (fabsf(rcSmoothingData.smoothedCurrentRxIntervalUs - rcSmoothingData.averageRxIntervalUs) / (float)rcSmoothingData.averageRxIntervalUs);
-
-            // update our working Rx interval value
             if ((currentTimeMs > RC_SMOOTHING_FILTER_STARTUP_DELAY_MS) && (targetPidLooptime > 0)) { // skip during FC initialization
                 if (rxIsReceivingSignal() && isRxRateValid) {
 
-                    // first, determine if the current interval is a very big change from the previous interval
-                    rxIntervalCheck();
-
-                    // then calculate the smoothed RxInterval using simple step to step first order filter
-                    static float prevSmoothedRxInterval;
-                    rcSmoothingData.smoothedCurrentRxIntervalUs = prevSmoothedRxInterval;
-                    if (rcSmoothingData.rxIntervalAcceptable) {
-                        // ie if data passed the rxIntervalCheck, smooth it and store in smoothedCurrentRxIntervalUs
-                        rcSmoothingData.smoothedCurrentRxIntervalUs = prevSmoothedRxInterval + RC_SMOOTHING_INTERVAL_FILTER_K * (currentRxIntervalUs - prevSmoothedRxInterval);
-                        prevSmoothedRxInterval = rcSmoothingData.smoothedCurrentRxIntervalUs;
-                   }
-
-                    // now decide whether to update the filters
-                    if (rcSmoothingData.filterInitialized) {
-                        sampleState = 2; 
-                        // normal monitoring state
-                        if (rcSmoothingData.filterCutoffComplete == false) {
-                             // filter re-calculation is in progress, let it complete
-                            sampleState = 3;
-                            rcSmoothingMeasureRxInterval();
-                        } else if (averageRxIntervalError > RC_SMOOTHING_RECALC_THRESHOLD) {
-                            // there is meaningful difference between current link interval and currently active link interval
-                            // and there is no re-calculation happening
-                            // hence we should force a re-calculation of the active link interval
-                            rcSmoothingData.filterCutoffComplete = false;
-                            rcSmoothingMeasureRxInterval();
+                    bool rxIntervalIsOk = false;
+                    // exclude large steps, eg after dropouts or telemetry
+                    static uint16_t previousRxIntervalUs;
+                    if (previousRxIntervalUs) {
+                        if ((abs(currentRxIntervalUs - previousRxIntervalUs) / (float)previousRxIntervalUs) < RC_SMOOTHING_ACCEPT_SAMPLE) {
+                            rxIntervalIsOk = true;
                         }
-                    } else {
-                        // filter hasn't completed initialisation run yet
-                        sampleState = 1;
-                        rcSmoothingMeasureRxInterval();
+                    }
+                    previousRxIntervalUs = currentRxIntervalUs;
+
+                    if (rxIntervalIsOk) {
+                        static float prevSmoothedRxIntervalUs;
+                        rcSmoothingData.smoothedCurrentRxIntervalUs = prevSmoothedRxIntervalUs + RC_SMOOTHING_INTERVAL_FILTER_K * (currentRxIntervalUs - prevSmoothedRxIntervalUs);
+                        prevSmoothedRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
+                        // recalculate cutoffs every 3 acceptable samples
+                        if (rcSmoothingData.sampleCount < RC_SMOOTHING_FILTER_SAMPLE_COUNT) {
+                            rcSmoothingData.sampleCount++;
+                            sampleState = 1;
+                        } else {
+                            rcSmoothingData.averageRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
+                            rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+                            rcSmoothingData.sampleCount = 0;
+                            sampleState = 2;
+                        }
                     }
                 } else {
-                    sampleState = 4;
-                    // we have either stopped receiving rx samples (failsafe?) or the sample time is unreasonable
-                    // require a full re-evaluation period after signal is restored, if the interval has changed
+                    // we have either stopped receiving rx samples (failsafe?) or the sample interval is unreasonable
+                    // require a full re-evaluation period after signal is restored
                     rcSmoothingData.sampleCount = 0;
+                    sampleState = 4;
                 }
             }
             DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 0, currentRxIntervalUs / 10);
