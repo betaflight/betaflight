@@ -108,7 +108,6 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];
 
 static serialPort_t *gpsPort;
 static float gpsDataIntervalSeconds;
-static uint8_t customCommandIndex=0;
 
 typedef struct gpsInitData_s {
     uint8_t index;
@@ -386,6 +385,7 @@ void gpsInit(void)
 void gpsInitNmea(void)
 {
     static bool atgmRestartDone = false;
+    static uint8_t customCommandIndex=0;
 #if !defined(GPS_NMEA_TX_ONLY)
     uint32_t now;
 #endif
@@ -431,7 +431,8 @@ void gpsInitNmea(void)
                }
 
                 //NMEA custom commands
-                char *commands = strdup(gpsConfig()->nmeaCustomCommands);
+                char commands[strlen(gpsConfig()->nmeaCustomCommands) + 1];
+                strcpy(commands, gpsConfig()->nmeaCustomCommands);
 
                 //divide commands with spaces and send them to the gps one by one
                 char *saveptr;
@@ -448,7 +449,8 @@ void gpsInitNmea(void)
                 else {
                     customCommandIndex++;
 
-                    char *printable = strdup(tok);
+                    char printable[strlen(tok) + 3];
+                    strcpy(printable, tok);
                     strcat(printable, "\r\n");
                     serialPrint(gpsPort, printable);
                     cliPrintLine(printable);
