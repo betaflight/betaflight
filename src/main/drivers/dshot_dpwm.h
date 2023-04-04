@@ -28,7 +28,7 @@
 // Timer clock frequency for the dshot speeds
 #define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
 #define MOTOR_DSHOT300_HZ     MHZ_TO_HZ(6)
-#define MOTOR_DSHOT150_HZ     MHZ_TO_HZ(3)
+#define MOTOR_DSHOT150_HZ     MHZ_TO_HZ(15)
 
 // These three constants are times in timer clock ticks, e.g. with a 6 MHz clock 20 ticks for bitlength = 300kHz bit rate
 #define MOTOR_BIT_0           7
