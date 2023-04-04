@@ -691,7 +691,7 @@ void validateAndFixGyroConfig(void)
                 break;
 #ifdef USE_DSHOT
         case PWM_TYPE_DSHOT150:
-                motorUpdateRestriction = 0.000250f;
+                motorUpdateRestriction = 0.00003125f;
                 break;
         case PWM_TYPE_DSHOT300:
                 motorUpdateRestriction = 0.0001f;
