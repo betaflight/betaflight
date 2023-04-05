@@ -206,6 +206,13 @@
     TIMER_PIN_MAP(17, PB0, 2, 0) \
     TIMER_PIN_MAP(18, PB1, 2, 0)
 
+#define TIMUP1_DMA_OPT 0
+#define TIMUP2_DMA_OPT 0
+#define TIMUP3_DMA_OPT 0
+#define TIMUP4_DMA_OPT 0
+#define TIMUP5_DMA_OPT 0
+#define TIMUP8_DMA_OPT 2
+
 //TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_1)
 
