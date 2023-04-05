@@ -2039,20 +2039,30 @@ case MSP_NAME:
         sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
         break;
     case MSP_SENSOR_CONFIG:
+        // Changed with API 1.46
+        // if sensor name is default setting, use name in runtime config
+        // use sensorIndex_e index: 0:GyroHardware, 1:AccHardware, 2:BaroHardware, 3:MagHardware, 4:RangefinderHardware
+        // TODO: add rangefinder
 #if defined(USE_ACC)
-        sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+        sbufWriteU8(dst, accelerometerConfig()->acc_hardware == ACC_DEFAULT ? detectedSensors[1] : accelerometerConfig()->acc_hardware);
 #else
         sbufWriteU8(dst, 0);
 #endif
 #ifdef USE_BARO
-        sbufWriteU8(dst, barometerConfig()->baro_hardware);
+        sbufWriteU8(dst, barometerConfig()->baro_hardware == BARO_DEFAULT ? detectedSensors[2] : barometerConfig()->baro_hardware);
 #else
         sbufWriteU8(dst, BARO_NONE);
 #endif
 #ifdef USE_MAG
-        sbufWriteU8(dst, compassConfig()->mag_hardware);
+        sbufWriteU8(dst, compassConfig()->mag_hardware == MAG_DEFAULT ? detectedSensors[3] : compassConfig()->mag_hardware);
 #else
         sbufWriteU8(dst, MAG_NONE);
+#endif
+        // Added in MSP API 1.46
+#ifdef USE_RANGEFINDER
+        sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);    // no RANGEFINDER_DEFAULT value
+#else
+        sbufWriteU8(dst, RANGEFINDER_NONE);
 #endif
         break;
 
