@@ -429,6 +429,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         } else {
                             rcSmoothingData.averageRxIntervalUs = rcSmoothingData.smoothedCurrentRxIntervalUs;
                             rcSmoothingSetFilterCutoffs(&rcSmoothingData);
+                            rcSmoothingData.filterInitialized = true;
                             rcSmoothingData.sampleCount = 0;
                             sampleState = 2;
                         }
