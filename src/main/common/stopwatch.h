@@ -37,3 +37,4 @@ uint32_t stopwatchStart(stopwatch_t *watch);
 uint32_t stopwatchStop(stopwatch_t *watch);
 uint32_t stopwatchGetCycles(stopwatch_t *watch);
 uint32_t stopwatchGetMicros(stopwatch_t *watch);
+float stopwatchGetMicrosf(stopwatch_t *watch);

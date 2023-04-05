@@ -72,3 +72,8 @@ uint32_t stopwatchGetMicros(stopwatch_t *watch)
 {
     return clockCyclesToMicros(stopwatchGetCycles(watch));
 }
+
+float stopwatchGetMicrosf(stopwatch_t *watch)
+{
+    return clockCyclesToMicrosf(stopwatchGetCycles(watch));
+}

@@ -46,6 +46,7 @@
 
 // cycles per microsecond
 static uint32_t usTicks = 0;
+static float usTicksInv = 0.0f;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
 static volatile uint32_t sysTickValStamp = 0;
@@ -67,6 +68,7 @@ void cycleCounterInit(void)
     cpuClockFrequency = clocks.SYSCLK_Frequency;
 #endif
     usTicks = cpuClockFrequency / 1000000;
+    usTicksInv = 1e6f / cpuClockFrequency;
 
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
@@ -160,6 +162,11 @@ uint32_t getCycleCounter(void)
 int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles / usTicks;
+}
+
+float clockCyclesToMicrosf(int32_t clockCycles)
+{
+    return clockCycles * usTicksInv;
 }
 
 // Note that this conversion is signed as this is used for periods rather than absolute timestamps
