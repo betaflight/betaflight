@@ -38,35 +38,28 @@
 #define LED_POS_OFFSET                  0
 #define LED_FUNCTION_OFFSET             8
 #define LED_OVERLAY_OFFSET             12
-#define LED_COLOR_OFFSET               19
-#define LED_DIRECTION_OFFSET           23
-#define LED_PARAMS_OFFSET              29
+#define LED_COLOR_OFFSET               22
+#define LED_DIRECTION_OFFSET           26
 
 #define LED_POS_BITCNT                  8
 #define LED_FUNCTION_BITCNT             4
-#define LED_OVERLAY_BITCNT              7
+#define LED_OVERLAY_BITCNT              10
 #define LED_COLOR_BITCNT                4
 #define LED_DIRECTION_BITCNT            6
-#define LED_PARAMS_BITCNT               3
-
-#define LED_FLAG_OVERLAY_MASK ((1 << LED_OVERLAY_BITCNT) - 1)
-#define LED_FLAG_DIRECTION_MASK ((1 << LED_DIRECTION_BITCNT) - 1)
 
 #define LED_MOV_POS(pos) ((pos) << LED_POS_OFFSET)
 #define LED_MOV_FUNCTION(func) ((func) << LED_FUNCTION_OFFSET)
 #define LED_MOV_OVERLAY(overlay) ((overlay) << LED_OVERLAY_OFFSET)
 #define LED_MOV_COLOR(colorId) ((colorId) << LED_COLOR_OFFSET)
 #define LED_MOV_DIRECTION(direction) ((direction) << LED_DIRECTION_OFFSET)
-#define LED_MOV_PARAMS(param) ((param) << LED_PARAMS_OFFSET)
 
 #define LED_BIT_MASK(len) ((1 << (len)) - 1)
 
 #define LED_POS_MASK LED_MOV_POS(((1 << LED_POS_BITCNT) - 1))
 #define LED_FUNCTION_MASK LED_MOV_FUNCTION(((1 << LED_FUNCTION_BITCNT) - 1))
-#define LED_OVERLAY_MASK LED_MOV_OVERLAY(LED_FLAG_OVERLAY_MASK)
+#define LED_OVERLAY_MASK LED_MOV_OVERLAY(((1 << LED_OVERLAY_BITCNT) - 1))
 #define LED_COLOR_MASK LED_MOV_COLOR(((1 << LED_COLOR_BITCNT) - 1))
-#define LED_DIRECTION_MASK LED_MOV_DIRECTION(LED_FLAG_DIRECTION_MASK)
-#define LED_PARAMS_MASK LED_MOV_PARAMS(((1 << LED_PARAMS_BITCNT) - 1))
+#define LED_DIRECTION_MASK LED_MOV_DIRECTION(((1 << LED_DIRECTION_BITCNT) - 1))
 
 #define LED_FLAG_OVERLAY(id) (1 << (id))
 #define LED_FLAG_DIRECTION(id) (1 << (id))
@@ -204,7 +197,7 @@ PG_DECLARE(ledStripStatusModeConfig_t, ledStripStatusModeConfig);
 #define LF(name) LED_FUNCTION_ ## name
 #define LO(name) LED_FLAG_OVERLAY(LED_OVERLAY_ ## name)
 #define LD(name) LED_FLAG_DIRECTION(LED_DIRECTION_ ## name)
-#define DEFINE_LED(x, y, col, dir, func, ol, params) (LED_MOV_POS(CALCULATE_LED_XY(x, y)) | LED_MOV_COLOR(col) | LED_MOV_DIRECTION(dir) | LED_MOV_FUNCTION(func) | LED_MOV_OVERLAY(ol) | LED_MOV_PARAMS(params))
+#define DEFINE_LED(x, y, col, dir, func, ol) (LED_MOV_POS(CALCULATE_LED_XY(x, y)) | LED_MOV_COLOR(col) | LED_MOV_DIRECTION(dir) | LED_MOV_FUNCTION(func) | LED_MOV_OVERLAY(ol))
 
 static inline uint8_t ledGetXY(const ledConfig_t *lcfg)         { return ((*lcfg >> LED_POS_OFFSET) & LED_BIT_MASK(LED_POS_BITCNT)); }
 static inline uint8_t ledGetX(const ledConfig_t *lcfg)          { return ((*lcfg >> (LED_POS_OFFSET + LED_X_BIT_OFFSET)) & LED_XY_MASK); }
@@ -213,7 +206,6 @@ static inline uint8_t ledGetFunction(const ledConfig_t *lcfg)   { return ((*lcfg
 static inline uint8_t ledGetOverlay(const ledConfig_t *lcfg)    { return ((*lcfg >> LED_OVERLAY_OFFSET) & LED_BIT_MASK(LED_OVERLAY_BITCNT)); }
 static inline uint8_t ledGetColor(const ledConfig_t *lcfg)      { return ((*lcfg >> LED_COLOR_OFFSET) & LED_BIT_MASK(LED_COLOR_BITCNT)); }
 static inline uint8_t ledGetDirection(const ledConfig_t *lcfg)  { return ((*lcfg >> LED_DIRECTION_OFFSET) & LED_BIT_MASK(LED_DIRECTION_BITCNT)); }
-static inline uint8_t ledGetParams(const ledConfig_t *lcfg)     { return ((*lcfg >> LED_PARAMS_OFFSET) & LED_BIT_MASK(LED_PARAMS_BITCNT)); }
 
 static inline bool ledGetOverlayBit(const ledConfig_t *lcfg, int id) { return ((ledGetOverlay(lcfg) >> id) & 1); }
 static inline bool ledGetDirectionBit(const ledConfig_t *lcfg, int id) { return ((ledGetDirection(lcfg) >> id) & 1); }
