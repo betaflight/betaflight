@@ -336,7 +336,7 @@
 #define MSP_V2_FRAME             255    //MSPv2 payload indicator
 
 // Additional commands that are not compatible with MultiWii
-#define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
+#define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, CPU temperature, sensor present etc
 #define MSP_UID                  160    //out message         Unique device ID
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS        166    //out message         get GPS debugging data

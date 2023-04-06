@@ -138,6 +138,7 @@
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
+#include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
@@ -1116,6 +1117,14 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
             // config state flags - bits to indicate the state of the configuration, reboot required, etc.
             // other flags can be added as needed
             sbufWriteU8(dst, (getRebootRequired() << 0));
+
+            // Added in API version 1.46
+            // Write CPU temp
+#ifdef USE_ADC_INTERNAL                
+            sbufWriteU16(dst, getCoreTemperatureCelsius());
+#else
+            sbufWriteU16(dst, 0);
+#endif
         }
         break;
 
