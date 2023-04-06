@@ -377,8 +377,8 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
         if (activeBoxIdGet(boxId)) {
             if (getBoxIdState(boxId))
-                bitArraySet(mspFlightModeFlags, mspBoxIdx);       // box is enabled
-            mspBoxIdx++;                                          // box is active, count it
+                bitArraySet(mspFlightModeFlags, boxId);       // box is enabled
+            mspBoxIdx++;                                      // box is active, count it
         }
     }
     // return count of used bits
