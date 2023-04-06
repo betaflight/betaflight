@@ -93,9 +93,6 @@ include $(ROOT)/make/$(OSFAMILY).mk
 # include the tools makefile
 include $(ROOT)/make/tools.mk
 
-# default xtal value for F4 targets
-HSE_VALUE       ?= 8000000
-
 # Search path for sources
 VPATH           := $(SRC_DIR):$(SRC_DIR)/startup
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
@@ -115,7 +112,11 @@ ifeq ($(wildcard $(CONFIG_FILE)),)
 $(error Config file not found: $(CONFIG_FILE))
 endif
 
-TARGET       := $(shell grep " FC_TARGET_MCU" $(CONFIG_FILE) | awk '{print $$3}' )
+TARGET        := $(shell grep " FC_TARGET_MCU" $(CONFIG_FILE) | awk '{print $$3}' )
+HSE_VALUE_MHZ := $(shell grep " SYSTEM_HSE_MHZ" $(CONFIG_FILE) | awk '{print $$3}' )
+ifneq ($(HSE_VALUE_MHZ),)
+HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
+endif
 
 ifeq ($(TARGET),)
 $(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
@@ -131,6 +132,9 @@ ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
 endif
 endif #CONFIG
+
+# default xtal value
+HSE_VALUE       ?= 8000000
 
 BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/config/*/config.h)))))
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
