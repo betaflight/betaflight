@@ -127,6 +127,8 @@ ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
 endif
 
+SPRACING_PIXEL_OSD := $(shell grep " USE_SPRACING_PIXEL_OSD" $(CONFIG_FILE) | awk '{print $$2}' )
+
 else
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)

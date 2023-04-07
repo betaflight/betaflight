@@ -463,7 +463,7 @@ SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
 
 endif
 
-ifneq ($(filter SPRACING_PIXEL_OSD,$(FEATURES)),)
+ifneq ($(SPRACING_PIXEL_OSD),)
 
 SPRACING_PIXEL_OSD_SRC = \
             drivers/spracingpixelosd/spracing_pixel_osd_library.c \
@@ -475,8 +475,6 @@ SPRACING_PIXEL_OSD_SRC = \
             drivers/osd/font_max7456_12x18_betaflight.c \
 
 SPRACINGPIXELOSDLIB_DIR := $(ROOT)/lib/main/spracingpixelosd
-
-TARGET_FLAGS := -DUSE_SPRACING_PIXEL_OSD $(TARGET_FLAGS)
 
 INCLUDE_DIRS    += $(SPRACINGPIXELOSDLIB_DIR)/include
 VPATH           := $(VPATH):$(SPRACINGPIXELOSDLIB_DIR)/include

@@ -7,3 +7,8 @@ ifneq ($(EXST),yes)
 TARGET_FLASH_SIZE   := 1024
 LD_SCRIPT            = $(LINKER_DIR)/stm32_flash_h750_1m.ld
 endif
+
+
+ifneq ($(SPRACING_PIXEL_OSD),)
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_h750_1m_spracingpixelosd.ld
+endif
