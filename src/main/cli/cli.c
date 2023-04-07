@@ -4845,12 +4845,13 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     if (rxConfig()->rc_smoothing_mode) {
         cliPrintLine("FILTER");
         if (rcSmoothingAutoCalculate()) {
-            const uint16_t avgRxFrameUs = rcSmoothingData->averageRxIntervalUs;
-            cliPrint("# Detected RX frame rate: ");
-            if (avgRxFrameUs == 0) {
+            const uint16_t smoothedRxFrequency = lrintf(rcSmoothingData->smoothedRxFrequencyHz);
+            int rxInterval = getCurrentRxIntervalUs();
+            cliPrint("# Detected Rx frequency: ");
+            if (rxInterval == 0) {
                 cliPrintLine("NO SIGNAL");
             } else {
-                cliPrintLinef("%d.%03dms", avgRxFrameUs / 1000, avgRxFrameUs % 1000);
+                cliPrintLinef("%dHz", smoothedRxFrequency);
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
