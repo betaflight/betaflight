@@ -157,6 +157,7 @@
 #define USE_OSD
 #endif
 
+#define USE_SPRACING_PIXEL_OSD
 #define SPRACING_PIXEL_OSD_BLACK_PIN                    PE12
 #define SPRACING_PIXEL_OSD_WHITE_PIN                    PE13
 #define SPRACING_PIXEL_OSD_MASK_ENABLE_PIN              PE14
