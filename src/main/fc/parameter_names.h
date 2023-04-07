@@ -144,7 +144,8 @@
 #define PARAM_NAME_GPS_AUTO_CONFIG "gps_auto_config"
 #define PARAM_NAME_GPS_AUTO_BAUD "gps_auto_baud"
 #define PARAM_NAME_GPS_UBLOX_USE_GALILEO "gps_ublox_use_galileo"
-#define PARAM_NAME_GPS_UBLOX_MODE "gps_ublox_mode"
+#define PARAM_NAME_GPS_UBLOX_ACQUIRE_MODEL "gps_ublox_acquire_model"
+#define PARAM_NAME_GPS_UBLOX_FLIGHT_MODEL "gps_ublox_flight_model"
 #define PARAM_NAME_GPS_SET_HOME_POINT_ONCE "gps_set_home_point_once"
 #define PARAM_NAME_GPS_USE_3D_SPEED "gps_use_3d_speed"
 
