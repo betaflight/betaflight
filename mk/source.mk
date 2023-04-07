@@ -473,6 +473,10 @@ SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
 
 endif
 
+SRC += $(FLASH_SRC) $(MSC_SRC) $(SDCARD_SRC) $(COMMON_SRC)
+
+ifneq ($(SPRACING_PIXEL_OSD),)
+
 SPRACING_PIXEL_OSD_SRC = \
             drivers/spracingpixelosd/spracing_pixel_osd_library.c \
             drivers/spracingpixelosd/spracing_pixel_osd.c \
@@ -487,7 +491,9 @@ SPRACINGPIXELOSDLIB_DIR := $(ROOT)/lib/main/spracingpixelosd
 INCLUDE_DIRS    += $(SPRACINGPIXELOSDLIB_DIR)/include
 VPATH           := $(VPATH):$(SPRACINGPIXELOSDLIB_DIR)/include
 
-SRC += $(FLASH_SRC) $(MSC_SRC) $(SDCARD_SRC) $(COMMON_SRC) $(SPRACING_PIXEL_OSD_SRC)
+SRC += $(SPRACING_PIXEL_OSD_SRC)
+
+endif
 
 #excludes
 SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))

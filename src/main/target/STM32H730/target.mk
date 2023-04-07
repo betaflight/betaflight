@@ -9,3 +9,7 @@ ifeq ($(EXST_ADJUST_VMA),)
 EXST_ADJUST_VMA = 0x90100000
 endif
 endif
+
+ifneq ($(SPRACING_PIXEL_OSD),)
+LD_SCRIPT       = $(LINKER_DIR)/stm32_ram_h730_exst_spracingpixelosd.ld
+endif
