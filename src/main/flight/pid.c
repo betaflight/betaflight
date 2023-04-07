@@ -91,22 +91,24 @@ pt1Filter_t throttleLpf;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 3);
 
-#if defined(STM32F411xE)
-#define PID_PROCESS_DENOM_DEFAULT       2
+#if !defined(DEFAULT_PID_PROCESS_DENOM)
+#if defined(STM32F411xE) 
+#define DEFAULT_PID_PROCESS_DENOM       2
 #else
-#define PID_PROCESS_DENOM_DEFAULT       1
+#define DEFAULT_PID_PROCESS_DENOM       1
+#endif
 #endif
 
 #ifdef USE_RUNAWAY_TAKEOFF
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
-    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
+    .pid_process_denom = DEFAULT_PID_PROCESS_DENOM,
     .runaway_takeoff_prevention = true,
     .runaway_takeoff_deactivate_throttle = 20,  // throttle level % needed to accumulate deactivation time
     .runaway_takeoff_deactivate_delay = 500,    // Accumulated time (in milliseconds) before deactivation in successful takeoff
 );
 #else
 PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
-    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT,
+    .pid_process_denom = DEFAULT_PID_PROCESS_DENOM,
 );
 #endif
 

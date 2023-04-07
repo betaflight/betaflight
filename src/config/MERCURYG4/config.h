@@ -91,7 +91,7 @@
 #define BEEPER_INVERTED
 
 #define SYSTEM_HSE_MHZ                  16
-#define PID_PROCESS_DENOM               2
+#define DEFAULT_PID_PROCESS_DENOM       2
 
 #define DEFAULT_RX_FEATURE              FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER               SERIALRX_CRSF
@@ -108,3 +108,8 @@
 
 #define GYRO_1_ALIGN                    CW90_DEG
 #define GYRO_1_ALIGN_YAW                1800
+
+//TODO set rssi_channel = 15
+//TODO set dshot_bitbang = ON
+//TODO set vbat_divider = 5
+//TODO set vbat_multiplier = 2
