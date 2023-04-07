@@ -100,18 +100,18 @@ typedef struct rcSmoothingFilter_s {
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;
     uint8_t feedforwardCutoffSetting;
+
     uint16_t setpointCutoffFrequency;
     uint16_t throttleCutoffFrequency;
     uint16_t feedforwardCutoffFrequency;
 
-    int averageRxIntervalUs;
-    float smoothedCurrentRxIntervalUs;
+    float smoothedRxFrequencyHz;
     uint8_t sampleCount;
     uint8_t debugAxis;
 
-    uint8_t autoSmoothnessFactorSetpoint;
-    uint8_t autoSmoothnessFactorFeedforward;
-    uint8_t autoSmoothnessFactorThrottle;
+    float autoSmoothnessFactorSetpoint;
+    float autoSmoothnessFactorFeedforward;
+    float autoSmoothnessFactorThrottle;
 } rcSmoothingFilter_t;
 
 typedef struct rcControlsConfig_s {
