@@ -188,7 +188,7 @@ void frameBufferInit(void)
     frameBuffer_slowWriteString(fb0, 50, 150, (uint8_t*)"SP RACING PIXEL OSD", 19);
 }
 
-static void configureDMAHandlers(void)
+static bool configureDMAHandlers(void)
 {
     //
     // ADC DMA
@@ -205,13 +205,17 @@ static void configureDMAHandlers(void)
     //
 
     ioTag_t syncIoTag = timerioTagGetByUsage(TIM_USE_VIDEO_SYNC, 0);
+    if (syncIoTag == IO_TAG_NONE) {
+        return false;
+    }
+
     const timerHardware_t *syncTimerHardware = timerGetConfiguredByTag(syncIoTag);
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *syncDmaSpec = dmaGetChannelSpecByTimer(syncTimerHardware);
 
     if (!syncDmaSpec) {
-        return;
+        return false;
     }
 
     const dmaResource_t *syncDmaRef = syncDmaSpec->ref;
@@ -236,13 +240,16 @@ static void configureDMAHandlers(void)
 
 
     ioTag_t pixelIoTag = timerioTagGetByUsage(TIM_USE_VIDEO_PIXEL, 0);
+    if (pixelIoTag == IO_TAG_NONE) {
+        return false;
+    }
     const timerHardware_t *pixelTimerHardware = timerGetConfiguredByTag(pixelIoTag);
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *pixelDmaSpec = dmaGetChannelSpecByTimer(pixelTimerHardware);
 
     if (!pixelDmaSpec) {
-        return;
+        return false;
     }
 
     const dmaResource_t *pixelDmaRef = pixelDmaSpec->ref;
@@ -260,6 +267,8 @@ static void configureDMAHandlers(void)
     dmaIdentifier_e pixelDmaIdentifier = dmaGetIdentifier(pixelDmaRef);
     dmaAllocate(pixelDmaIdentifier, OWNER_OSD, 0);
     dmaSetHandler(pixelDmaIdentifier, PIXEL_DMA_IRQHandler, NVIC_PRIO_VIDEO_DMA, pixelDmaIndex);
+
+    return true;
 }
 
 typedef struct spracingPixelOSDIO_s {
@@ -343,10 +352,11 @@ bool spracingPixelOSDInit(const vcdProfile_t *vcdProfile)
         return false;
     }
 
-    frameBufferInit();
+    if (!configureDMAHandlers()) {
+        return false;
+    }
 
-    configureDMAHandlers();
-    // TODO reserve timers TIM1 and TIM15
+    frameBufferInit();
 
     spracingPixelOSDDefaultConfig_t defaultConfig = {
         .flags = (vcdProfile->video_system == VIDEO_SYSTEM_PAL ? PIXELOSD_CF_VIDEO_SYSTEM_PAL : PIXELOSD_CF_VIDEO_SYSTEM_NTSC),
