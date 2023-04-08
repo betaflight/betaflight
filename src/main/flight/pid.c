@@ -386,20 +386,29 @@ float pidApplyThrustLinearization(float motorOutput)
 // Calculate strength of horizon leveling; 0 = none, 1.0 = most leveling
 STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
 {
-    const float currentInclination = MAX(abs(attitude.values.roll), abs(attitude.values.pitch)) / 10.0f;
+    const float currentInclination = MAX(abs(attitude.values.roll), abs(attitude.values.pitch)) * 0.1f;
     // 0 when level, 90 when vertical, 180 when inverted (degrees):
-    float horizonLevelStrength = MAX((pidRuntime.horizonLimitDegrees - currentInclination) / pidRuntime.horizonLimitDegrees, 0.0f);
+
+    const float hlim = pidRuntime.horizonLimitDegrees;
+    const float hlimInv = pidRuntime.horizonLimitDegreesInv;
+    float horizonLevelStrength = MAX((hlim - currentInclination) * hlimInv, 0.0f);
     // 1.0 when attitude is 'flat', 0 when angle is equal to, or greater than, horizonLimitDegrees
 
     if (!pidRuntime.horizonIgnoreSticks) {
-    // horizonIgnoreSticks:  0 = default; levelling attenuated by both attitude and sticks;
-    //                       1 = level attenuation only by attitude
-        const float absMaxStickDeflection = MAX(fabsf(getRcDeflection(FD_ROLL)), fabsf(getRcDeflection(FD_PITCH))); // 0-1, smoothed if RC smoothing is enabled
-        const float horizonStickAttenuation = MAX((pidRuntime.horizonLimitSticks - absMaxStickDeflection) / pidRuntime.horizonLimitSticks, 0.0f);
+        // horizonIgnoreSticks:  0 = default; levelling attenuated by both attitude and sticks;
+        //                       1 = level attenuation only by attitude
+        const float hLimSticks = pidRuntime.horizonLimitSticks;
+        const float hLimSticksInv = pidRuntime.horizonLimitSticksInv;
+        const float horizGain = pidRuntime.horizonGain;
+        const float absMaxStickDeflection = MAX(fabsf(getRcDeflection(FD_ROLL)), fabsf(getRcDeflection(FD_PITCH)));
+        // 0-1, smoothed if RC smoothing is enabled
+        const float horizonStickAttenuation = MAX((hLimSticks - absMaxStickDeflection) * hLimSticksInv, 0.0f);
         // 1.0 at center stick, 0.0 at max stick deflection:
-        horizonLevelStrength *= horizonStickAttenuation * pidRuntime.horizonGain;
+        horizonLevelStrength *= horizonStickAttenuation * horizGain;
     }
+
     return horizonLevelStrength;
+    // 1 means full levelling, 0 means none
 }
 
 // Use the FAST_CODE_NOINLINE directive to avoid this code from being inlined into ITCM RAM to avoid overflow.
@@ -414,7 +423,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     float angleFeedforward = 0.0f;
 
 #ifdef USE_FEEDFORWARD
-    angleFeedforward = angleLimit * getFeedforward(axis) * pidRuntime.angleFeedforwardGain * pidRuntime.maxRcRateInv[axis];
+    const float angleFeedforwardGain = pidRuntime.angleFeedforwardGain;
+    angleFeedforward = angleLimit * getFeedforward(axis) * angleFeedforwardGain * pidRuntime.maxRcRateInv[axis];
     //  angle feedforward must be heavily filtered, at the PID loop rate, with limited user control over time constant
     // it MUST be very delayed to avoid early overshoot and being too aggressive
     angleFeedforward = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], angleFeedforward);
@@ -433,11 +443,12 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     // minimise cross-axis wobble due to faster yaw responses than roll or pitch, and make co-ordinated yaw turns
     // by compensating for the effect of yaw on roll while pitched, and on pitch while rolled
     float axisCoordination = pidRuntime.angleYawSetpoint;
-    if (pidRuntime.angleEarthRef) {
+    const float angleEarthRef = pidRuntime.angleEarthRef;
+    if (angleEarthRef) {
         const float sinAngle = sin_approx(DEGREES_TO_RADIANS(pidRuntime.angleTarget[axis == FD_ROLL ? FD_PITCH : FD_ROLL]));
         pidRuntime.angleTarget[axis] = angleTarget; // store target for alternate axis to current axis, for use in preceding calculation
         axisCoordination *= (axis == FD_ROLL) ? -sinAngle : sinAngle; // must be negative for Roll
-        angleRate += axisCoordination * pidRuntime.angleEarthRef;
+        angleRate += axisCoordination * angleEarthRef;
     }
 
     // smooth final angle rate output to clean up attitude signal steps (500hz), GPS steps (10 or 100hz), RC steps etc
