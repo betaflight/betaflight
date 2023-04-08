@@ -402,8 +402,10 @@ void spiSequenceStart(const extDevice_t *dev)
             busSegment_t *endSegment = (busSegment_t *)bus->curSegment;
             bus->curSegment = nextSegments;
             endSegment->u.link.dev = NULL;
+            endSegment->u.link.segments = NULL;
             spiSequenceStart(nextDev);
         } else {
+            // The end of the segment list has been reached, so mark transactions as complete
             bus->curSegment = (busSegment_t *)BUS_SPI_FREE;
         }
     }
