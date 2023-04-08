@@ -85,7 +85,6 @@
 
 #define ADC3_DMA_OPT        1
 
-//TODO #define MAG_HARDWARE NONE
 #define DEFAULT_BARO_DEVICE BARO_NONE
 //TODO #define SERIALRX_PROVIDER CRSF
 #define USE_ADC
