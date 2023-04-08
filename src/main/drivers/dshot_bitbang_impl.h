@@ -51,6 +51,7 @@
 #define MOTOR_DSHOT_BIT_PER_SYMBOL         1
 
 #define MOTOR_DSHOT_STATE_PER_SYMBOL       3  // Initial high, 0/1, low
+#define MOTOR_DSHOT_BIT_HOLD_STATES        3  // 3 extra states at the end of transmission required to allow ESC to sample the last bit correctly.
 
 #define MOTOR_DSHOT_FRAME_BITS             16
 
@@ -62,7 +63,7 @@
 
 #define MOTOR_DSHOT_GCR_CHANGE_INTERVAL_NS(rate) (MOTOR_DSHOT_CHANGE_INTERVAL_NS(rate) * 5 / 4)
 
-#define MOTOR_DSHOT_BUF_LENGTH            ((MOTOR_DSHOT_FRAME_BITS / MOTOR_DSHOT_BIT_PER_SYMBOL) * MOTOR_DSHOT_STATE_PER_SYMBOL)
+#define MOTOR_DSHOT_BUF_LENGTH            (((MOTOR_DSHOT_FRAME_BITS / MOTOR_DSHOT_BIT_PER_SYMBOL) * MOTOR_DSHOT_STATE_PER_SYMBOL) + MOTOR_DSHOT_BIT_HOLD_STATES)
 #ifdef USE_DSHOT_CACHE_MGMT
 // MOTOR_DSHOT_BUF_LENGTH is multiples of uint32_t
 // Number of bytes required for buffer

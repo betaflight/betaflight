@@ -68,16 +68,14 @@ typedef enum {
 } mspPendingSystemRequest_e;
 
 #define MSP_PORT_INBUF_SIZE 192
+#define MSP_PORT_OUTBUF_SIZE_MIN 320
+
 #ifdef USE_FLASHFS
-#ifdef STM32F1
-#define MSP_PORT_DATAFLASH_BUFFER_SIZE 1024
-#else
 #define MSP_PORT_DATAFLASH_BUFFER_SIZE 4096
-#endif
 #define MSP_PORT_DATAFLASH_INFO_SIZE 16
 #define MSP_PORT_OUTBUF_SIZE (MSP_PORT_DATAFLASH_BUFFER_SIZE + MSP_PORT_DATAFLASH_INFO_SIZE)
 #else
-#define MSP_PORT_OUTBUF_SIZE 320 // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1.
+#define MSP_PORT_OUTBUF_SIZE MSP_PORT_OUTBUF_SIZE_MIN // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1.
 #endif
 
 typedef struct __attribute__((packed)) {
@@ -122,5 +120,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
 void mspSerialReleaseSharedTelemetryPorts(void);
-int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction);
+mspDescriptor_t getMspSerialPortDescriptor(const uint8_t portIdentifier);
+int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction, mspVersion_e mspVersion);
 uint32_t mspSerialTxBytesFree(void);

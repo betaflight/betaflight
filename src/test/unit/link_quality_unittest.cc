@@ -45,6 +45,7 @@ extern "C" {
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
+    #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
@@ -78,7 +79,6 @@ extern "C" {
     gpsSolutionData_t gpsSol;
     float motor[8];
     acc_t acc;
-    float accAverage[XYZ_AXIS_COUNT];
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -86,6 +86,7 @@ extern "C" {
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+    PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
     timeUs_t simulationTime = 0;
 
@@ -136,7 +137,7 @@ void doTestArm(bool testEmpty = true)
 
     // then
     // arming alert displayed
-    displayPortTestBufferSubstring(12, 7, "ARMED");
+    displayPortTestBufferSubstring(13, 8, "ARMED");
 
     // given
     // armed alert times out (0.5 seconds)
@@ -162,7 +163,8 @@ void doTestArm(bool testEmpty = true)
 /*
  * Auxiliary function. Test is there're stats that must be shown
  */
-bool isSomeStatEnabled(void) {
+bool isSomeStatEnabled(void)
+{
     return (osdConfigMutable()->enabled_stats != 0);
 }
 
@@ -219,9 +221,9 @@ TEST(LQTest, TestInit)
 
     // then
     // display buffer should contain splash screen
-    displayPortTestBufferSubstring(7, 8, "MENU:THR MID");
-    displayPortTestBufferSubstring(11, 9, "+ YAW LEFT");
-    displayPortTestBufferSubstring(11, 10, "+ PITCH UP");
+    displayPortTestBufferSubstring(7, 10, "MENU:THR MID");
+    displayPortTestBufferSubstring(11, 11, "+ YAW LEFT");
+    displayPortTestBufferSubstring(11, 12, "+ PITCH UP");
 
     // when
     // splash screen timeout has elapsed
@@ -478,6 +480,7 @@ extern "C" {
     uint16_t getBatteryAverageCellVoltage() { return  420; }
     int32_t getAmperage() { return 0; }
     int32_t getMAhDrawn() { return 0; }
+    float getWhDrawn() { return 0.0; }
     int32_t getEstimatedAltitudeCm() { return 0; }
     int32_t getEstimatedVario() { return 0; }
     int32_t blackboxGetLogNumber() { return 0; }
@@ -494,6 +497,7 @@ extern "C" {
     bool areMotorsRunning(void){ return true; }
     bool pidOsdAntiGravityActive(void) { return false; }
     bool failsafeIsActive(void) { return false; }
+    bool failsafeIsReceivingRxData(void) { return true; }
     bool gpsIsHealthy(void) { return true; }
     bool gpsRescueIsConfigured(void) { return false; }
     int8_t calculateThrottlePercent(void) { return 0; }
@@ -501,6 +505,7 @@ extern "C" {
     void persistentObjectWrite(persistentObjectId_e, uint32_t) {}
     void failsafeOnRxSuspend(uint32_t ) {}
     void failsafeOnRxResume(void) {}
+    uint32_t failsafeFailurePeriodMs(void) { return 400; }
     void featureDisableImmediate(uint32_t) { }
     bool rxMspFrameComplete(void) { return false; }
     bool isPPMDataBeingReceived(void) { return false; }
@@ -509,9 +514,10 @@ extern "C" {
     void failsafeOnValidDataReceived(void) { }
     void failsafeOnValidDataFailed(void) { }
     void pinioBoxTaskControl(void) { }
-    bool taskUpdateRxMainInProgress() { return true; }
+    bool taskUpdateRxMainInProgress(void) { return true; }
     void schedulerIgnoreTaskStateTime(void) { }
     void schedulerIgnoreTaskExecRate(void) { }
+    bool schedulerGetIgnoreTaskExecTime() { return false; }
     void schedulerIgnoreTaskExecTime(void) { }
     void schedulerSetNextStateTime(timeDelta_t) {}
 
@@ -595,6 +601,12 @@ extern "C" {
     }
 
     void pt1FilterInit(pt1Filter_t *filter, float k)
+    {
+        UNUSED(filter);
+        UNUSED(k);
+    }
+
+    void pt1FilterUpdateCutoff(pt1Filter_t *filter, float k)
     {
         UNUSED(filter);
         UNUSED(k);

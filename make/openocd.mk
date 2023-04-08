@@ -1,10 +1,7 @@
 OPENOCD ?= openocd
 OPENOCD_IF ?= interface/stlink-v2.cfg
 
-ifeq ($(TARGET_MCU),STM32F3)
-OPENOCD_CFG := target/stm32f3x.cfg
-
-else ifeq ($(TARGET_MCU),STM32F4)
+ifeq ($(TARGET_MCU),STM32F4)
 OPENOCD_CFG := target/stm32f4x.cfg
 
 else ifeq ($(TARGET_MCU),STM32F7)

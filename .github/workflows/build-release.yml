@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+        
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      release_build: true
+
+  release:
+    name: Release
+    needs: ci
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Fetch build artifacts
+        uses: actions/download-artifact@v3
+
+      - name: List assets
+        run: ls -al Assets
+
+      - name: Attach assets to release
+        run: |
+          set -x
+          assets=()
+          for asset in Assets/*.hex; do
+            assets+=("-a" "$asset")
+            echo "$asset"
+          done
+          tag_name="${GITHUB_REF##*/}"
+          hub release edit "${assets[@]}" -m "" "$tag_name"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

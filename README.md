@@ -1,6 +1,6 @@
-![Betaflight](docs/assets/images/bf_logo.png)
+![Betaflight](images/bf_logo.png)
 
-[![Latest version](https://img.shields.io/github/v/release/betaflight/betaflight)](https://github.com/betaflight/betaflight/releases) [![Build Status](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_apis/build/status/betaflight.betaflight?branchName=master)](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_build/latest?definitionId=8&branchName=master) [![Build Status](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_apis/build/status/betaflight.betaflight?branchName=4.2-maintenance)](https://dev.azure.com/Betaflight/Betaflight%20Nightlies/_build/latest?definitionId=8&branchName=4.2-maintenance) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Latest version](https://img.shields.io/github/v/release/betaflight/betaflight)](https://github.com/betaflight/betaflight/releases) [![Build](https://img.shields.io/github/actions/workflow/status/betaflight/betaflight/nightly.yml?branch=master)](https://github.com/betaflight/betaflight/actions/workflows/nightly.yml) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Join us on Discord!](https://img.shields.io/discord/868013470023548938)](https://discord.gg/n4E6ak4u3c)
 
 Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
@@ -10,6 +10,8 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 | Date  | Event |
 | - | - |
+| 01-11-2022 | Firmware 4.4 Feature freeze |
+| 29-01-2023 | Firmware 4.4 Release |
 
 
 ## News
@@ -18,11 +20,13 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 The following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
 
-1. No new F3 based targets will be accepted;
+1. Read the [hardware specification](https://betaflight.com/docs/manufacturer/manufacturer-design-guidelines)
 
-2. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://github.com/betaflight/betaflight/blob/master/docs/TargetMaintenance/CreatingAUnifiedTarget.md) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
+2. No new F3 based targets will be accepted;
 
-3. For changes to existing targets, the change needs to be applied to the Unified Target config in https://github.com/betaflight/unified-targets/tree/master/configs/default. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted. If there is no Unified Target for the MCU type of the new target (see instructions above), then an update to the 'legacy' format target definition in `src/main/target/` has to be submitted alongside the update to the Unified Target configuration.
+3. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://betaflight.com/docs/manufacturer/creating-an-unified-target) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
+
+4. For changes to existing targets, the change needs to be applied to the Unified Target config in https://github.com/betaflight/unified-targets/tree/master/configs/default. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted. If there is no Unified Target for the MCU type of the new target (see instructions above), then an update to the 'legacy' format target definition in `src/main/target/` has to be submitted alongside the update to the Unified Target configuration.
 
 
 ## Features
@@ -30,15 +34,16 @@ The following new requirements for pull requests adding new targets or modifying
 Betaflight has the following features:
 
 * Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
-* DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
+* DShot (150, 300 and 600), Multishot, Oneshot (125 and 42) and Proshot1000 motor protocol support
 * Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
-* Support for targets that use the STM32 F7, F4 and F3 processors
-* PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
+* Support for targets that use the STM32 F4, G4, F7 and H7 processors
+* PWM, PPM, SPI, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
 * Multiple telemetry protocols (CRSF, FrSky, HoTT smart-port, MSP, etc)
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
 * OSD support & configuration without needing third-party OSD software/firmware/comm devices
 * OLED Displays - Display information on: Battery voltage/current/mAh, profile, rate profile, mode, version, sensors, etc
 * In-flight manual PID tuning and rate adjustment
+* PID and filter tuning using sliders
 * Rate profiles and in-flight selection of them
 * Configurable serial ports for Serial RX, Telemetry, ESC telemetry, MSP, GPS, OSD, Sonar, etc - Use most devices on any port, softserial included
 * VTX support for Unify Pro and IRC Tramp
@@ -46,13 +51,13 @@ Betaflight has the following features:
 
 ## Installation & Documentation
 
-See: https://github.com/betaflight/betaflight/wiki
+See: https://betaflight.com/docs/wiki
 
 ## Support and Developers Channel
 
-There's a dedicated Slack chat channel here:
+There's a dedicated Discord server here:
 
-https://slack.betaflight.com/
+https://discord.gg/n4E6ak4u3c
 
 We also have a Facebook Group. Join us to get a place to talk about Betaflight, ask configuration questions, or just hang out with fellow pilots.
 
@@ -77,7 +82,7 @@ Contributions are welcome and encouraged. You can contribute in many ways:
 * new feature ideas & suggestions;
 * provide a new translation for configurator, or help us maintain the existing ones (see [below](#Translators)).
 
-The best place to start is the Betaflight Slack (registration [here](https://slack.betaflight.com/)). Next place is the github issue tracker:
+The best place to start is the Betaflight Discord (registration [here](https://discord.gg/n4E6ak4u3c)). Next place is the github issue tracker:
 
 https://github.com/betaflight/betaflight/issues
 https://github.com/betaflight/betaflight-configurator/issues
@@ -91,18 +96,16 @@ If you want to contribute financially on an ongoing basis, you should consider b
 ## Developers
 
 Contribution of bugfixes and new features is encouraged. Please be aware that we have a thorough review process for pull requests, and be prepared to explain what you want to achieve with your pull request.
-Before starting to write code, please read our [development guidelines](docs/development/Development.md ) and [coding style definition](docs/development/CodingStyle.md).
+Before starting to write code, please read our [development guidelines](https://betaflight.com/docs/development) and [coding style definition](https://betaflight.com/docs/development/CodingStyle).
 
-TravisCI is used to run automatic builds
-
-https://travis-ci.com/betaflight/betaflight
+GitHub actions are used to run automatic builds
 
 ## Translators
 
-We want to make Betaflight accessible for pilots who are not fluent in English, and for this reason we are currently maintaining translations into 18 languages for Betaflight Configurator: Català, Deutsch, Español, Euskera, Français, Galego, Hrvatski, Bahasa Indonesia, Italiano, 日本語, 한국어, Latviešu, Português, Português Brasileiro, polski, Русский язык, Svenska, 简体中文.
+We want to make Betaflight accessible for pilots who are not fluent in English, and for this reason we are currently maintaining translations into 21 languages for Betaflight Configurator: Català, Dansk, Deutsch, Español, Euskera, Français, Galego, Hrvatski, Bahasa Indonesia, Italiano, 日本語, 한국어, Latviešu, Português, Português Brasileiro, polski, Русский язык, Svenska, 简体中文, 繁體中文.
 We have got a team of volunteer translators who do this work, but additional translators are always welcome to share the workload, and we are keen to add additional languages. If you would like to help us with translations, you have got the following options:
 - if you help by suggesting some updates or improvements to translations in a language you are familiar with, head to [crowdin](https://crowdin.com/project/betaflight-configurator) and add your suggested translations there;
-- if you would like to start working on the translation for a new language, or take on responsibility for proof-reading the translation for a language you are very familiar with, please head to the Betaflight Slack (registration [here](https://slack.betaflight.com/)), and join the '#team\_translation' channel - the people in there can help you to get a new language added, or set you up as a proof reader.
+- if you would like to start working on the translation for a new language, or take on responsibility for proof-reading the translation for a language you are very familiar with, please head to the Betaflight Discord chat (registration [here](https://discord.gg/n4E6ak4u3c)), and join the ['translation'](https://discord.com/channels/868013470023548938/1057773726915100702) channel - the people in there can help you to get a new language added, or set you up as a proof reader.
 
 ## Hardware Issues
 

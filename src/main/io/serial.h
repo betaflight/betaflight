@@ -50,6 +50,7 @@ typedef enum {
     FUNCTION_RCDEVICE            = (1 << 14), // 16384
     FUNCTION_LIDAR_TF            = (1 << 15), // 32768
     FUNCTION_FRSKY_OSD           = (1 << 16), // 65536
+    FUNCTION_VTX_MSP             = (1 << 17), // 131072
 } serialPortFunction_e;
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
@@ -101,7 +102,6 @@ typedef enum {
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
 #define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) (((x) < RESOURCE_SOFT_OFFSET) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
-
 #define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
 
 //

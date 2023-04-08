@@ -121,7 +121,7 @@ static uint8_t spektrumFrameStatus(rxRuntimeState_t *rxRuntimeState)
     if (rcFrameComplete) {
         rcFrameComplete = false;
 
-#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_FAKE_RSSI)
+#if defined(USE_SPEKTRUM_REAL_RSSI) || defined(USE_SPEKTRUM_VIRTUAL_RSSI)
         spektrumHandleRSSI(spekFrame);
 #endif
 
@@ -325,7 +325,7 @@ static bool spektrumProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     return true;
 }
 
-bool srxlTelemetryBufferEmpty()
+bool srxlTelemetryBufferEmpty(void)
 {
   if (telemetryBufLen == 0) {
       return true;
@@ -374,7 +374,6 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         spekHiRes = true;
         resolution = 2048;
         rxRuntimeState->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
-        rxRuntimeState->rxRefreshRate = 11000;
         break;
     case SERIALRX_SPEKTRUM1024:
         // 10 bit frames
@@ -383,7 +382,6 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
         spekHiRes = false;
         resolution = 1024;
         rxRuntimeState->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
-        rxRuntimeState->rxRefreshRate = 22000;
         break;
     }
 

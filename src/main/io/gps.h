@@ -20,14 +20,18 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "common/axis.h"
 #include "common/time.h"
 
-#include "pg/pg.h"
+#include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L
 #define GPS_X 1
 #define GPS_Y 0
+#define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
 
 typedef enum {
     GPS_LATITUDE,
@@ -52,10 +56,15 @@ typedef enum {
 #define SBAS_MODE_MAX SBAS_GAGAN
 
 typedef enum {
-    UBLOX_AIRBORNE = 0,
-    UBLOX_PEDESTRIAN,
-    UBLOX_DYNAMIC
-} ubloxMode_e;
+    UBLOX_MODEL_PORTABLE = 0,
+    UBLOX_MODEL_STATIONARY,
+    UBLOX_MODEL_PEDESTRIAN,
+    UBLOX_MODEL_AUTOMOTIVE,
+    UBLOX_MODEL_AT_SEA,
+    UBLOX_MODEL_AIRBORNE_1G,
+    UBLOX_MODEL_AIRBORNE_2G,
+    UBLOX_MODEL_AIRBORNE_4G,
+} ubloxModel_e;
 
 typedef enum {
     GPS_BAUDRATE_115200 = 0,
@@ -84,20 +93,6 @@ typedef enum {
 
 #define GPS_BAUDRATE_MAX GPS_BAUDRATE_9600
 
-typedef struct gpsConfig_s {
-    gpsProvider_e provider;
-    sbasMode_e sbasMode;
-    gpsAutoConfig_e autoConfig;
-    gpsAutoBaud_e autoBaud;
-    uint8_t gps_ublox_use_galileo;
-    ubloxMode_e gps_ublox_mode;
-    uint8_t gps_set_home_point_once;
-    uint8_t gps_use_3d_speed;
-    uint8_t sbas_integrity;
-} gpsConfig_t;
-
-PG_DECLARE(gpsConfig_t, gpsConfig);
-
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
     int16_t mmmm;
@@ -110,12 +105,27 @@ typedef struct gpsLocation_s {
     int32_t altCm;                  // altitude in 0.01m
 } gpsLocation_t;
 
+/* A value below 100 means great accuracy is possible with GPS satellite constellation */
+typedef struct gpsDilution_s {
+    uint16_t pdop;                  // positional DOP - 3D (* 100)
+    uint16_t hdop;                  // horizontal DOP - 2D (* 100)
+    uint16_t vdop;                  // vertical DOP   - 1D (* 100)
+} gpsDilution_t;
+
+/* Only available on U-blox protocol */
+typedef struct gpsAccuracy_s {
+    uint32_t hAcc;                  // horizontal accuracy in mm
+    uint32_t vAcc;                  // vertical accuracy in mm
+    uint32_t sAcc;                  // speed accuracy in mm/s
+} gpsAccuracy_t;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
-    uint16_t speed3d;              // speed in 0.1m/s
+    gpsDilution_t dop;
+    gpsAccuracy_t acc;
+    uint16_t speed3d;               // speed in 0.1m/s
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
-    uint16_t hdop;                  // generic HDOP value (*100)
     uint8_t numSat;
 } gpsSolutionData_t;
 
@@ -142,11 +152,10 @@ extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 
 extern int32_t GPS_home[2];
 extern uint16_t GPS_distanceToHome;        // distance to home point in meters
+extern uint32_t GPS_distanceToHomeCm;      // distance to home point in cm
 extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in centimeters
-extern int16_t GPS_verticalSpeedInCmS;     // vertical speed in cm/s
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
-extern float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
 extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
 extern int16_t nav_takeoff_bearing;
 
@@ -158,9 +167,9 @@ typedef enum {
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
-#define GPS_SV_MAXSATS_LEGACY   16
-#define GPS_SV_MAXSATS_M8N      32
-#define GPS_SV_MAXSATS_M9N      42
+#define GPS_SV_MAXSATS_LEGACY   16U
+#define GPS_SV_MAXSATS_M8N      32U
+#define GPS_SV_MAXSATS_M9N      42U
 
 extern uint8_t GPS_update;       // toogle to distinct a GPS position update (directly or via MSP)
 extern uint32_t GPS_packetCount;
@@ -209,3 +218,4 @@ void GPS_reset_home_position(void);
 void GPS_calc_longitude_scaling(int32_t lat);
 void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
 void gpsSetFixState(bool state);
+float getGpsDataIntervalSeconds(void);

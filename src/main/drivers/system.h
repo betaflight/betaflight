@@ -65,13 +65,18 @@ void systemReset(void);
 void systemResetToBootloader(bootloaderRequestType_e requestType);
 bool isMPUSoftReset(void);
 void cycleCounterInit(void);
-uint32_t clockCyclesToMicros(uint32_t clockCycles);
+int32_t clockCyclesToMicros(int32_t clockCycles);
+float clockCyclesToMicrosf(int32_t clockCycles);
 int32_t clockCyclesTo10thMicros(int32_t clockCycles);
 uint32_t clockMicrosToCycles(uint32_t micros);
 uint32_t getCycleCounter(void);
 #if defined(STM32H7) || defined(STM32G4)
 void systemProcessResetReason(void);
 #endif
+
+// memory
+void memoryMappedModeInit(void);
+bool isMemoryMappedModeEnabledOnBoot(void);
 
 void initialiseMemorySections(void);
 #ifdef STM32H7

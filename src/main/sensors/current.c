@@ -18,9 +18,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdbool.h"
-#include "stdint.h"
-#include "string.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -90,19 +90,19 @@ void currentMeterReset(currentMeter_t *meter)
 
 static pt1Filter_t adciBatFilter;
 
-#ifndef CURRENT_METER_SCALE_DEFAULT
-#define CURRENT_METER_SCALE_DEFAULT 400 // for Allegro ACS758LCB-100U (40mV/A)
+#ifndef DEFAULT_CURRENT_METER_SCALE
+#define DEFAULT_CURRENT_METER_SCALE 400 // for Allegro ACS758LCB-100U (40mV/A)
 #endif
 
-#ifndef CURRENT_METER_OFFSET_DEFAULT
-#define CURRENT_METER_OFFSET_DEFAULT 0
+#ifndef DEFAULT_CURRENT_METER_OFFSET
+#define DEFAULT_CURRENT_METER_OFFSET 0
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(currentSensorADCConfig_t, currentSensorADCConfig, PG_CURRENT_SENSOR_ADC_CONFIG, 0);
 
 PG_RESET_TEMPLATE(currentSensorADCConfig_t, currentSensorADCConfig,
-    .scale = CURRENT_METER_SCALE_DEFAULT,
-    .offset = CURRENT_METER_OFFSET_DEFAULT,
+    .scale = DEFAULT_CURRENT_METER_SCALE,
+    .offset = DEFAULT_CURRENT_METER_OFFSET,
 );
 
 #ifdef USE_VIRTUAL_CURRENT_METER
@@ -279,7 +279,7 @@ void currentMeterMSPRefresh(timeUs_t currentTimeUs)
     if (cmp32(currentTimeUs, streamRequestAt) > 0) {
         streamRequestAt = currentTimeUs + ((1000 * 1000) / 10); // 10hz
 
-        mspSerialPush(SERIAL_PORT_ALL, MSP_ANALOG, NULL, 0, MSP_DIRECTION_REQUEST);
+        mspSerialPush(SERIAL_PORT_ALL, MSP_ANALOG, NULL, 0, MSP_DIRECTION_REQUEST, MSP_V1);
     }
 }
 

@@ -43,6 +43,11 @@
 
 #include "rx_spi.h"
 
+#ifdef USE_RX_EXPRESSLRS
+#include "rx/rx_spi.h"
+#include "rx/expresslrs.h"
+#endif
+
 // 13.5 MHz max SPI frequency
 #define RX_MAX_SPI_CLK_HZ 13500000
 // 6.5 MHz max SPI frequency during startup
@@ -52,13 +57,18 @@ static extDevice_t rxSpiDevice;
 static extDevice_t *dev = &rxSpiDevice;
 
 static IO_t extiPin = IO_NONE;
-static extiCallbackRec_t rxSpiExtiCallbackRec;
 static bool extiLevel = true;
+static extiCallbackRec_t rxSpiExtiCallbackRec;
 
 static volatile bool extiHasOccurred = false;
 static volatile timeUs_t lastExtiTimeUs = 0;
 
 static uint32_t spiNormalSpeedMhz = RX_MAX_SPI_CLK_HZ;
+
+extDevice_t *rxSpiGetDevice(void)
+{
+    return dev;
+}
 
 void rxSpiDevicePreInit(const rxSpiConfig_t *rxSpiConfig)
 {
@@ -69,12 +79,12 @@ void rxSpiExtiHandler(extiCallbackRec_t* callback)
 {
     UNUSED(callback);
 
-    const timeUs_t extiTimeUs = microsISR();
+    lastExtiTimeUs = microsISR();
+    extiHasOccurred = true;
 
-    if (IORead(extiPin) == extiLevel) {
-        lastExtiTimeUs = extiTimeUs;
-        extiHasOccurred = true;
-    }
+#ifdef USE_RX_EXPRESSLRS
+    expressLrsISR(true);
+#endif
 }
 
 void rxSpiSetNormalSpeedMhz(uint32_t mhz)
@@ -82,12 +92,12 @@ void rxSpiSetNormalSpeedMhz(uint32_t mhz)
     spiNormalSpeedMhz = mhz;
 }
 
-void rxSpiNormalSpeed()
+void rxSpiNormalSpeed(void)
 {
     spiSetClkDivisor(dev, spiCalculateDivider(spiNormalSpeedMhz));
 }
 
-void rxSpiStartupSpeed()
+void rxSpiStartupSpeed(void)
 {
     spiSetClkDivisor(dev, spiCalculateDivider(RX_STARTUP_MAX_SPI_CLK_HZ));
 }
@@ -97,8 +107,6 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
     if (!spiSetBusInstance(dev, rxSpiConfig->spibus)) {
         return false;
     }
-
-    spiSetAtomicWait(dev);
 
     const IO_t rxCsPin = IOGetByTag(rxSpiConfig->csnTag);
     IOInit(rxCsPin, OWNER_RX_SPI_CS, 0);
@@ -123,12 +131,19 @@ bool rxSpiDeviceInit(const rxSpiConfig_t *rxSpiConfig)
 void rxSpiExtiInit(ioConfig_t rxSpiExtiPinConfig, extiTrigger_t rxSpiExtiPinTrigger)
 {
     if (extiPin) {
+        // Use interrupts on the EXTI pin
         if (rxSpiExtiPinTrigger == BETAFLIGHT_EXTI_TRIGGER_FALLING) {
             extiLevel = false;
         }
+
         EXTIHandlerInit(&rxSpiExtiCallbackRec, rxSpiExtiHandler);
-        EXTIConfig(extiPin, &rxSpiExtiCallbackRec, NVIC_PRIO_MPU_INT_EXTI, rxSpiExtiPinConfig, rxSpiExtiPinTrigger);
-        EXTIEnable(extiPin, true);
+        EXTIConfig(extiPin, &rxSpiExtiCallbackRec, NVIC_PRIO_RX_INT_EXTI, rxSpiExtiPinConfig, rxSpiExtiPinTrigger);
+        EXTIEnable(extiPin);
+
+        // Check that we've not missed the rising edge on the interrupt line
+        if (rxSpiGetExtiState()) {
+            rxSpiExtiHandler(NULL);
+        }
     }
 }
 

@@ -17,40 +17,39 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "common/axis.h"
 
-#include "pg/pg.h"
+#include "pg/gps_rescue.h"
 
-typedef struct gpsRescue_s {
-    uint16_t angle; //degrees
-    uint16_t initialAltitudeM; //meters
-    uint16_t descentDistanceM; //meters
-    uint16_t rescueGroundspeed; //centimeters per second
-    uint16_t throttleP, throttleI, throttleD;
-    uint16_t yawP;
-    uint16_t throttleMin;
-    uint16_t throttleMax;
-    uint16_t throttleHover;
-    uint16_t velP, velI, velD;
-    uint8_t minSats;
-    uint16_t minRescueDth; //meters
-    uint8_t sanityChecks;
-    uint8_t allowArmingWithoutFix;
-    uint8_t useMag;
-    uint16_t targetLandingAltitudeM; //meters
-    uint16_t targetLandingDistanceM; //meters
-    uint8_t altitudeMode;
-    uint16_t ascendRate;
-    uint16_t descendRate;
-    uint16_t rescueAltitudeBufferM; //meters
-} gpsRescueConfig_t;
+#define TASK_GPS_RESCUE_RATE_HZ 100  // in sync with altitude task rate
 
-PG_DECLARE(gpsRescueConfig_t, gpsRescueConfig);
+#ifdef USE_MAG
+#define GPS_RESCUE_USE_MAG  true
+#else
+#define GPS_RESCUE_USE_MAG  false
+#endif
 
-extern int32_t gpsRescueAngle[ANGLE_INDEX_COUNT]; //NOTE: ANGLES ARE IN CENTIDEGREES
+typedef enum {
+    RESCUE_SANITY_OFF = 0,
+    RESCUE_SANITY_ON,
+    RESCUE_SANITY_FS_ONLY,
+    RESCUE_SANITY_COUNT
+} gpsRescueSanity_e;
 
-void updateGPSRescueState(void);
-void rescueNewGpsData(void);
+typedef enum {
+    GPS_RESCUE_ALT_MODE_MAX = 0,
+    GPS_RESCUE_ALT_MODE_FIXED,
+    GPS_RESCUE_ALT_MODE_CURRENT,
+    GPS_RESCUE_ALT_MODE_COUNT
+} gpsRescueAltitudeMode_e;
+
+extern float gpsRescueAngle[ANGLE_INDEX_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
+
+void gpsRescueInit(void);
+void gpsRescueUpdate(void);
+void gpsRescueNewGpsData(void);
 
 float gpsRescueGetYawRate(void);
 float gpsRescueGetThrottle(void);

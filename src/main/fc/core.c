@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -186,7 +187,7 @@ static bool isCalibrating(void)
         || (sensors(SENSOR_ACC) && !accIsCalibrationComplete())
 #endif
 #ifdef USE_BARO
-        || (sensors(SENSOR_BARO) && !baroIsCalibrationComplete())
+        || (sensors(SENSOR_BARO) && !baroIsCalibrated())
 #endif
 #ifdef USE_MAG
         || (sensors(SENSOR_MAG) && !compassIsCalibrationComplete())
@@ -344,7 +345,8 @@ void updateArmingStatus(void)
 
 #ifdef USE_GPS_RESCUE
         if (gpsRescueIsConfigured()) {
-            if (gpsRescueConfig()->allowArmingWithoutFix || STATE(GPS_FIX) || ARMING_FLAG(WAS_EVER_ARMED) || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            if (gpsRescueConfig()->allowArmingWithoutFix || (STATE(GPS_FIX) && (gpsSol.numSat >= gpsRescueConfig()->minSats)) ||
+            ARMING_FLAG(WAS_EVER_ARMED) || IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 unsetArmingDisabled(ARMING_DISABLED_GPS);
             } else {
                 setArmingDisabled(ARMING_DISABLED_GPS);
@@ -359,7 +361,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_RPM_FILTER
         // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
-        // If the RPM filter is anabled and any motor isn't providing telemetry, then disable arming
+        // If the RPM filter is enabled and any motor isn't providing telemetry, then disable arming
         if (isRpmFilterEnabled() && !isDshotTelemetryActive()) {
             setArmingDisabled(ARMING_DISABLED_RPMFILTER);
         } else {
@@ -440,7 +442,7 @@ void disarm(flightLogDisarmReason_e reason)
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
-        if (flipOverAfterCrashActive || isLaunchControlActive()) {
+        if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || isLaunchControlActive()) {
             osdSuppressStats(true);
         }
 #endif
@@ -493,7 +495,7 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        if (currentTimeUs - getLastDshotBeaconCommandTimeUs() < DSHOT_BEACON_GUARD_DELAY_US) {
+        if (cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs()) < DSHOT_BEACON_GUARD_DELAY_US) {
             if (tryingToArm == ARMING_DELAYED_DISARMED) {
                 if (IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                     tryingToArm = ARMING_DELAYED_CRASHFLIP;
@@ -508,19 +510,32 @@ void tryArm(void)
             return;
         }
 
-        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
-            if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
-                flipOverAfterCrashActive = false;
-                if (!featureIsEnabled(FEATURE_3D)) {
-                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
+        if (isMotorProtocolDshot()) {
+#if defined(USE_ESC_SENSOR) && defined(USE_DSHOT_TELEMETRY)
+            // Try to activate extended DSHOT telemetry only if no esc sensor exists and dshot telemetry is active
+            if (!featureIsEnabled(FEATURE_ESC_SENSOR) && motorConfig()->dev.useDshotTelemetry) {
+                dshotCleanTelemetryData();
+                if (motorConfig()->dev.useDshotEdt) {
+                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);
                 }
-            } else {
-                flipOverAfterCrashActive = true;
-#ifdef USE_RUNAWAY_TAKEOFF
-                runawayTakeoffCheckDisabled = false;
+            }
 #endif
-                if (!featureIsEnabled(FEATURE_3D)) {
-                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, DSHOT_CMD_TYPE_INLINE);
+
+            if (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
+                // Set motor spin direction
+                if (!(IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH) || (tryingToArm == ARMING_DELAYED_CRASHFLIP))) {
+                    flipOverAfterCrashActive = false;
+                    if (!featureIsEnabled(FEATURE_3D)) {
+                        dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL, DSHOT_CMD_TYPE_INLINE);
+                    }
+                } else {
+                    flipOverAfterCrashActive = true;
+#ifdef USE_RUNAWAY_TAKEOFF
+                    runawayTakeoffCheckDisabled = false;
+#endif
+                    if (!featureIsEnabled(FEATURE_3D)) {
+                        dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED, DSHOT_CMD_TYPE_INLINE);
+                    }
                 }
             }
         }
@@ -560,10 +575,9 @@ void tryArm(void)
 
 #ifdef USE_GPS
         GPS_reset_home_position();
-
         //beep to indicate arming
         if (featureIsEnabled(FEATURE_GPS)) {
-            if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            if (STATE(GPS_FIX) && gpsSol.numSat >= gpsRescueConfig()->minSats) {
                 beeper(BEEPER_ARMING_GPS_FIX);
             } else {
                 beeper(BEEPER_ARMING_GPS_NO_FIX);
@@ -669,18 +683,7 @@ static bool canUpdateVTX(void)
 bool areSticksActive(uint8_t stickPercentLimit)
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis ++) {
-        const uint8_t deadband = axis == FD_YAW ? rcControlsConfig()->yaw_deadband : rcControlsConfig()->deadband;
-        uint8_t stickPercent = 0;
-        if ((rcData[axis] >= PWM_RANGE_MAX) || (rcData[axis] <= PWM_RANGE_MIN)) {
-            stickPercent = 100;
-        } else {
-            if (rcData[axis] > (rxConfig()->midrc + deadband)) {
-                stickPercent = ((rcData[axis] - rxConfig()->midrc - deadband) * 100) / (PWM_RANGE_MAX - rxConfig()->midrc - deadband);
-            } else if (rcData[axis] < (rxConfig()->midrc - deadband)) {
-                stickPercent = ((rxConfig()->midrc - deadband - rcData[axis]) * 100) / (rxConfig()->midrc - deadband - PWM_RANGE_MIN);
-            }
-        }
-        if (stickPercent >= stickPercentLimit) {
+        if (getRcDeflectionAbs(axis) * 100.f >= stickPercentLimit) {
             return true;
         }
     }
@@ -728,12 +731,12 @@ int8_t calculateThrottlePercent(void)
 
 uint8_t calculateThrottlePercentAbs(void)
 {
-    return ABS(calculateThrottlePercent());
+    return abs(calculateThrottlePercent());
 }
 
 static bool airmodeIsActivated;
 
-bool isAirmodeActivated()
+bool isAirmodeActivated(void)
 {
     return airmodeIsActivated;
 }
@@ -744,12 +747,6 @@ bool isAirmodeActivated()
  */
 bool processRx(timeUs_t currentTimeUs)
 {
-    timeDelta_t frameAgeUs;
-    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
-
-    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
-    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
-
     if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
         return false;
     }
@@ -767,7 +764,6 @@ bool processRx(timeUs_t currentTimeUs)
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();
     }
-    failsafeUpdateState();
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
     const uint8_t throttlePercent = calculateThrottlePercentAbs();
@@ -968,7 +964,6 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
     bool canUseHorizonMode = true;
-
     if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive()) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -1004,7 +999,7 @@ void processRxModes(timeUs_t currentTimeUs)
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
-        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(500));
+        rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));
     } else {
         LED1_OFF;
         rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(100));
@@ -1090,7 +1085,7 @@ void processRxModes(timeUs_t currentTimeUs)
     pidSetAntiGravityState(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || featureIsEnabled(FEATURE_ANTI_GRAVITY));
 }
 
-static FAST_CODE void subTaskPidController(timeUs_t currentTimeUs)
+static FAST_CODE_NOINLINE void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
@@ -1309,12 +1304,12 @@ timeUs_t getLastDisarmTimeUs(void)
     return lastDisarmTimeUs;
 }
 
-bool isTryingToArm()
+bool isTryingToArm(void)
 {
     return (tryingToArm != ARMING_DELAYED_DISARMED);
 }
 
-void resetTryingToArm()
+void resetTryingToArm(void)
 {
     tryingToArm = ARMING_DELAYED_DISARMED;
 }

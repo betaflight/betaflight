@@ -32,16 +32,18 @@
 
 #include "cms/cms.h"
 
+#include "config/config.h"
 #include "config/feature.h"
 
-#include "config/config.h"
 #include "common/crc.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "drivers/nvic.h"
+#include "drivers/persistent.h"
 
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -88,6 +90,23 @@ typedef struct mspBuffer_s {
 static mspBuffer_t mspRxBuffer;
 
 #if defined(USE_CRSF_V3)
+
+#define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 20000 // 20ms
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+#define CRSF_LINK_TYPE_CHECK_US 250000 // 250 ms
+#define CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US 75000 // 75 ms
+
+typedef enum {
+    CRSF_LINK_UNKNOWN,
+    CRSF_LINK_ELRS,
+    CRSF_LINK_NOT_ELRS
+} crsfLinkType_t;
+
+static crsfLinkType_t crsfLinkType = CRSF_LINK_UNKNOWN;
+static timeDelta_t crsfDisplayPortChunkIntervalUs = 0;
+#endif
+
 static bool isCrsfV3Running = false;
 typedef struct {
     uint8_t hasPendingReply:1;
@@ -98,6 +117,18 @@ typedef struct {
 } crsfSpeedControl_s;
 
 static crsfSpeedControl_s crsfSpeed = {0};
+
+uint32_t getCrsfCachedBaudrate(void)
+{
+    uint32_t crsfCachedBaudrate = persistentObjectRead(PERSISTENT_OBJECT_SERIALRX_BAUD);
+    // check if valid first. return default baudrate if not
+    for (unsigned i = 0; i < BAUD_COUNT; i++) {
+        if (crsfCachedBaudrate == baudRates[i] && baudRates[i] >= CRSF_BAUDRATE) {
+            return crsfCachedBaudrate;
+        }
+    }
+    return CRSF_BAUDRATE;
+}
 
 bool checkCrsfCustomizedSpeed(void)
 {
@@ -117,6 +148,11 @@ void setCrsfDefaultSpeed(void)
     crsfSpeed.index = BAUD_COUNT;
     isCrsfV3Running = false;
     crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
+}
+
+bool crsfBaudNegotiationInProgress(void)
+{
+    return crsfSpeed.hasPendingReply || crsfSpeed.isNewSpeedValid;
 }
 #endif
 
@@ -246,6 +282,32 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, (mAhDrawn >> 8));
     sbufWriteU8(dst, (uint8_t)mAhDrawn);
     sbufWriteU8(dst, batteryRemainingPercentage);
+}
+
+/*
+0x0B Heartbeat
+Payload:
+int16_t    origin_add ( Origin Device address )
+*/
+void crsfFrameHeartbeat(sbuf_t *dst)
+{
+    sbufWriteU8(dst, CRSF_FRAME_HEARTBEAT_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_HEARTBEAT);
+    sbufWriteU16BigEndian(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+}
+
+/*
+0x28 Ping
+Payload:
+int8_t    destination_add ( Destination Device address )
+int8_t    origin_add ( Origin Device address )
+*/
+void crsfFramePing(sbuf_t *dst)
+{
+    sbufWriteU8(dst, CRSF_FRAME_DEVICE_PING_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DEVICE_PING);
+    sbufWriteU8(dst, CRSF_ADDRESS_CRSF_RECEIVER);
+    sbufWriteU8(dst, CRSF_ADDRESS_FLIGHT_CONTROLLER);
 }
 
 typedef enum {
@@ -418,40 +480,53 @@ void crsfScheduleSpeedNegotiationResponse(void)
     crsfSpeed.isNewSpeedValid = false;
 }
 
-void speedNegotiationProcess(uint32_t currentTime)
+void speedNegotiationProcess(timeUs_t currentTimeUs)
 {
-    if (!featureIsEnabled(FEATURE_TELEMETRY) && getCrsfDesiredSpeed() == CRSF_BAUDRATE) {
-        // to notify the RX to fall back to default baud rate by sending device info frame if telemetry is disabled
-        sbuf_t crsfPayloadBuf;
-        sbuf_t *dst = &crsfPayloadBuf;
+    if (crsfSpeed.hasPendingReply) {
+        bool found = ((crsfSpeed.index < BAUD_COUNT) && crsfRxUseNegotiatedBaud()) ? true : false;
+        sbuf_t crsfSpeedNegotiationBuf;
+        sbuf_t *dst = &crsfSpeedNegotiationBuf;
         crsfInitializeFrame(dst);
-        crsfFrameDeviceInfo(dst);
+        crsfFrameSpeedNegotiationResponse(dst, found);
         crsfRxSendTelemetryData(); // prevent overwriting previous data
         crsfFinalize(dst);
         crsfRxSendTelemetryData();
-    } else {
-        if (crsfSpeed.hasPendingReply) {
-            bool found = crsfSpeed.index < BAUD_COUNT ? true : false;
-            sbuf_t crsfSpeedNegotiationBuf;
-            sbuf_t *dst = &crsfSpeedNegotiationBuf;
+        crsfSpeed.hasPendingReply = false;
+        crsfSpeed.isNewSpeedValid = found;
+        crsfSpeed.confirmationTime = currentTimeUs;
+    } else if (crsfSpeed.isNewSpeedValid) {
+        if (cmpTimeUs(currentTimeUs, crsfSpeed.confirmationTime) >= 4000) {
+            // delay 4ms before applying the new baudrate
+            crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
+            crsfSpeed.isNewSpeedValid = false;
+            isCrsfV3Running = true;
+        }
+    } else if (!featureIsEnabled(FEATURE_TELEMETRY) && crsfRxUseNegotiatedBaud()) {
+        // Send heartbeat if telemetry is disabled to allow RX to detect baud rate mismatches
+        sbuf_t crsfPayloadBuf;
+        sbuf_t *dst = &crsfPayloadBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameHeartbeat(dst);
+        crsfRxSendTelemetryData(); // prevent overwriting previous data
+        crsfFinalize(dst);
+        crsfRxSendTelemetryData();
+#if defined(USE_CRSF_CMS_TELEMETRY)
+    } else if (crsfLinkType == CRSF_LINK_UNKNOWN) {
+        static timeUs_t lastPing;
+
+        if ((cmpTimeUs(currentTimeUs, lastPing) > CRSF_LINK_TYPE_CHECK_US)) {
+            // Send a ping, the response to which will be a device info response giving the rx serial number
+            sbuf_t crsfPayloadBuf;
+            sbuf_t *dst = &crsfPayloadBuf;
             crsfInitializeFrame(dst);
-            crsfFrameSpeedNegotiationResponse(dst, found);
+            crsfFramePing(dst);
             crsfRxSendTelemetryData(); // prevent overwriting previous data
             crsfFinalize(dst);
             crsfRxSendTelemetryData();
-            crsfSpeed.hasPendingReply = false;
-            crsfSpeed.isNewSpeedValid = true;
-            crsfSpeed.confirmationTime = currentTime;
-            return;
-        } else if (crsfSpeed.isNewSpeedValid) {
-            if (currentTime - crsfSpeed.confirmationTime >= 4000) {
-                // delay 4ms before applying the new baudrate
-                crsfRxUpdateBaudrate(getCrsfDesiredSpeed());
-                crsfSpeed.isNewSpeedValid = false;
-                isCrsfV3Running = true;
-                return;
-            }
+
+            lastPing = currentTimeUs;
         }
+#endif
     }
 }
 #endif
@@ -493,7 +568,7 @@ static void cRleEncodeStream(sbuf_t *source, sbuf_t *dest, uint8_t maxDestLen)
             c |=  CRSF_RLE_CHAR_REPEATED_MASK;
             const uint8_t fullBatches = (runLength / CRSF_RLE_MAX_RUN_LENGTH);
             const uint8_t remainder = (runLength % CRSF_RLE_MAX_RUN_LENGTH);
-            const uint8_t totalBatches = fullBatches + (remainder) ? 1 : 0;
+            const uint8_t totalBatches = fullBatches + (remainder ? 1 : 0);
             if (destRemaining >= totalBatches * CRSF_RLE_BATCH_SIZE) {
                 for (unsigned int i = 1; i <= totalBatches; i++) {
                     const uint8_t batchLength = (i < totalBatches) ? CRSF_RLE_MAX_RUN_LENGTH : remainder;
@@ -552,6 +627,7 @@ typedef enum {
     CRSF_FRAME_BATTERY_SENSOR_INDEX,
     CRSF_FRAME_FLIGHT_MODE_INDEX,
     CRSF_FRAME_GPS_INDEX,
+    CRSF_FRAME_HEARTBEAT_INDEX,
     CRSF_SCHEDULE_COUNT_MAX
 } crsfFrameTypeIndex_e;
 
@@ -621,6 +697,15 @@ static void processCrsf(void)
         crsfFinalize(dst);
     }
 #endif
+
+#if defined(USE_CRSF_V3)
+    if (currentSchedule & BIT(CRSF_FRAME_HEARTBEAT_INDEX)) {
+        crsfInitializeFrame(dst);
+        crsfFrameHeartbeat(dst);
+        crsfFinalize(dst);
+    }
+#endif
+
     crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
 }
 
@@ -628,6 +713,25 @@ void crsfScheduleDeviceInfoResponse(void)
 {
     deviceInfoReplyPending = true;
 }
+
+#if defined(USE_CRSF_CMS_TELEMETRY)
+void crsfHandleDeviceInfoResponse(uint8_t *payload)
+{
+    // Skip over dst/src address bytes
+    payload += 2;
+
+    // Skip over first string which is the rx model/part number
+    while (*payload++ != '\0');
+
+    // Check the serial number
+    if (memcmp(payload, "ELRS", 4) == 0) {
+        crsfLinkType = CRSF_LINK_ELRS;
+        crsfDisplayPortChunkIntervalUs = CRSF_ELRS_DISLAYPORT_CHUNK_INTERVAL_US;
+    } else {
+        crsfLinkType = CRSF_LINK_NOT_ELRS;
+    }
+}
+#endif
 
 void initCrsfTelemetry(void)
 {
@@ -661,6 +765,14 @@ void initCrsfTelemetry(void)
         crsfSchedule[index++] = BIT(CRSF_FRAME_GPS_INDEX);
     }
 #endif
+
+#if defined(USE_CRSF_V3)
+    while (index < (CRSF_CYCLETIME_US / CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) && index < CRSF_SCHEDULE_COUNT_MAX) {
+        // schedule heartbeat to ensure that telemetry/heartbeat frames are sent at minimum 50Hz
+        crsfSchedule[index++] = BIT(CRSF_FRAME_HEARTBEAT_INDEX);
+    }
+#endif
+
     crsfScheduleCount = (uint8_t)index;
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
@@ -730,6 +842,13 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     if (!crsfTelemetryEnabled) {
         return;
     }
+
+#if defined(USE_CRSF_V3)
+    if (crsfBaudNegotiationInProgress()) {
+        return;
+    }
+#endif
+
     // Give the receiver a chance to send any outstanding telemetry data.
     // This needs to be done at high frequency, to enable the RX to send the telemetry frame
     // in between the RX frames.
@@ -766,27 +885,40 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
         crsfLastCycleTime = currentTimeUs;
         return;
     }
-    static uint8_t displayPortBatchId = 0;
-    if (crsfDisplayPortIsReady() && crsfDisplayPortScreen()->updated) {
-        crsfDisplayPortScreen()->updated = false;
-        uint16_t screenSize = crsfDisplayPortScreen()->rows * crsfDisplayPortScreen()->cols;
-        uint8_t *srcStart = (uint8_t*)crsfDisplayPortScreen()->buffer;
-        uint8_t *srcEnd = (uint8_t*)(crsfDisplayPortScreen()->buffer + screenSize);
-        sbuf_t displayPortSbuf;
-        sbuf_t *src = sbufInit(&displayPortSbuf, srcStart, srcEnd);
+
+    if (crsfDisplayPortIsReady()) {
+        static uint8_t displayPortBatchId = 0;
+        static sbuf_t displayPortSbuf;
+        static sbuf_t *src = NULL;
+        static uint8_t batchIndex;
+        static timeUs_t batchLastTimeUs;
         sbuf_t crsfDisplayPortBuf;
         sbuf_t *dst = &crsfDisplayPortBuf;
-        displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
-        uint8_t i = 0;
-        while (sbufBytesRemaining(src)) {
+
+        if (crsfDisplayPortScreen()->updated) {
+            crsfDisplayPortScreen()->updated = false;
+            uint16_t screenSize = crsfDisplayPortScreen()->rows * crsfDisplayPortScreen()->cols;
+            uint8_t *srcStart = (uint8_t*)crsfDisplayPortScreen()->buffer;
+            uint8_t *srcEnd = (uint8_t*)(crsfDisplayPortScreen()->buffer + screenSize);
+            src = sbufInit(&displayPortSbuf, srcStart, srcEnd);
+            displayPortBatchId = (displayPortBatchId  + 1) % CRSF_DISPLAYPORT_BATCH_MAX;
+            batchIndex = 0;
+        }
+
+        // Wait between successive chunks of displayport data for CMS menu display to prevent ELRS buffer over-run if necessary
+        if (src && sbufBytesRemaining(src) &&
+            (cmpTimeUs(currentTimeUs, batchLastTimeUs) > crsfDisplayPortChunkIntervalUs)) {
             crsfInitializeFrame(dst);
-            crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, i);
+            crsfFrameDisplayPortChunk(dst, src, displayPortBatchId, batchIndex);
             crsfFinalize(dst);
             crsfRxSendTelemetryData();
-            i++;
+            batchIndex++;
+            batchLastTimeUs = currentTimeUs;
+
+            crsfLastCycleTime = currentTimeUs;
+
+            return;
         }
-        crsfLastCycleTime = currentTimeUs;
-        return;
     }
 #endif
 

@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "platform.h"
@@ -77,7 +78,7 @@ static bool imuUpdated = false;
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
-// http://gentlenav.googlecode.com/files/fastRotations.pdf
+// https://drive.google.com/file/d/0ByvTkVQo3tqXQUVCVUNyZEgtRGs/view?usp=sharing&resourcekey=0-Mo4254cxdWWx2Y4mGN78Zw
 
 #define SPIN_RATE_LIMIT 20
 
@@ -85,22 +86,22 @@ static bool imuUpdated = false;
 #define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_KP_GAIN    25.0     // dcmKpGain value to use during attitude reset
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
-#define GPS_COG_MIN_GROUNDSPEED 500        // 500cm/s minimum groundspeed for a gps heading to be considered valid
-
-float accAverage[XYZ_AXIS_COUNT];
+#define GPS_COG_MIN_GROUNDSPEED 200        // 200cm/s minimum groundspeed for a gps based IMU heading to be considered valid
+                                           // Better to have some update than none for GPS Rescue at slow return speeds
 
 bool canUseGPSHeading = true;
 
 static float throttleAngleScale;
 static int throttleAngleValue;
-static float fc_acc;
 static float smallAngleCosZ = 0;
 
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 float rMat[3][3];
 
+#if defined(USE_ACC)
 STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
+#endif
 
 // quaternion of sensor frame relative to earth frame
 STATIC_UNIT_TESTED quaternion q = QUATERNION_INITIALIZE;
@@ -112,12 +113,13 @@ quaternion offset = QUATERNION_INITIALIZE;
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 attitudeEulerAngles_t attitude = EULER_INITIALIZE;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 2);
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .dcm_kp = 2500,                // 1.0 * 10000
     .dcm_ki = 0,                   // 0.003 * 10000
     .small_angle = 25,
+    .imu_process_denom = 2
 );
 
 static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *quatProd)
@@ -134,7 +136,8 @@ static void imuQuaternionComputeProducts(quaternion *quat, quaternionProducts *q
     quatProd->zz = quat->z * quat->z;
 }
 
-STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
+STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
+{
     imuQuaternionComputeProducts(&q, &qP);
 
     rMat[0][0] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
@@ -155,14 +158,6 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
 #endif
 }
 
-/*
-* Calculate RC time constant used in the accZ lpf.
-*/
-static float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
-{
-    return 0.5f / (M_PIf * accz_lpf_cutoff);
-}
-
 static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
@@ -175,7 +170,6 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
-    fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 
     throttleAngleValue = throttle_correction_value;
@@ -498,18 +492,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 #if defined(USE_GPS)
-    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
+    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
-        if (isFixedWing()) {
-            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-            useCOG = true;
-        } else {
-            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+        courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+        useCOG = true;
 
-            useCOG = true;
-        }
-
-        if (useCOG && shouldInitializeGPSHeading()) {
+        if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.  This will likely ideally happen more than once per flight, but for now,
             // shouldInitializeGPSHeading() returns true only once.
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
@@ -536,15 +524,15 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     deltaT = imuDeltaT;
 #endif
     float gyroAverage[XYZ_AXIS_COUNT];
-    gyroGetAccumulationAverage(gyroAverage);
-
-    if (accGetAccumulationAverage(accAverage)) {
-        useAcc = imuIsAccelerometerHealthy(accAverage);
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
+        gyroAverage[axis] = gyroGetFilteredDownsampled(axis);
     }
+
+    useAcc = imuIsAccelerometerHealthy(acc.accADC);
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
-                        useAcc, accAverage[X], accAverage[Y], accAverage[Z],
+                        useAcc, acc.accADC[X], acc.accADC[Y], acc.accADC[Z],
                         useMag,
                         useCOG, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
@@ -595,10 +583,13 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
         acc.accADC[Z] = 0;
         schedulerIgnoreTaskStateTime();
     }
+
+    DEBUG_SET(DEBUG_ATTITUDE, X, acc.accADC[X]);
+    DEBUG_SET(DEBUG_ATTITUDE, Y, acc.accADC[Y]);
 }
 #endif // USE_ACC
 
-bool shouldInitializeGPSHeading()
+bool shouldInitializeGPSHeading(void)
 {
     static bool initialized = false;
 
@@ -668,7 +659,7 @@ void imuSetHasNewData(uint32_t dt)
 
 bool imuQuaternionHeadfreeOffsetSet(void)
 {
-    if ((ABS(attitude.values.roll) < 450)  && (ABS(attitude.values.pitch) < 450)) {
+    if ((abs(attitude.values.roll) < 450)  && (abs(attitude.values.pitch) < 450)) {
         const float yaw = -atan2_approx((+2.0f * (qP.wz + qP.xy)), (+1.0f - 2.0f * (qP.yy + qP.zz)));
 
         offset.w = cos_approx(yaw/2);

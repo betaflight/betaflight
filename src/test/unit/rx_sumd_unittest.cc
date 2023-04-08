@@ -41,7 +41,7 @@ extern "C" {
     uint8_t batteryCellCount = 3;
     float rcCommand[4] = {0, 0, 0, 0};
     int16_t telemTemperature1 = 0;
-    baro_t baro = { .baroTemperature = 50 };
+    baro_t baro = { .temperature = 50 };
     telemetryConfig_t telemetryConfig_System;
     timeUs_t rxFrameTimeUs(void) { return 0; }
 }
@@ -163,7 +163,6 @@ TEST_F(SumdRxInitUnitTest, Test_SumdRxNotEnabled)
     EXPECT_FALSE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(11000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 }
@@ -178,7 +177,6 @@ TEST_F(SumdRxInitUnitTest, Test_SumdRxEnabled)
     EXPECT_TRUE(sumdInit(&initialRxConfig, &rxRuntimeState));
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(11000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 

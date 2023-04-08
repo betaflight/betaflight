@@ -208,42 +208,47 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
-int32_t getAmperage(void) {
+int32_t getAmperage(void)
+{
     return 100;
 }
 
-uint16_t getBatteryVoltage(void) {
+uint16_t getBatteryVoltage(void)
+{
     return 42;
 }
 
-batteryState_e getBatteryState(void) {
+batteryState_e getBatteryState(void)
+{
     return BATTERY_OK;
 }
 
-uint8_t calculateBatteryPercentageRemaining(void) {
+uint8_t calculateBatteryPercentageRemaining(void)
+{
     return 67;
 }
 
-uint8_t getMotorCount() {
+uint8_t getMotorCount()
+{
     return 4;
 }
 
-size_t getEEPROMStorageSize() {
+size_t getEEPROMStorageSize()
+{
     return 0;
 }
 
 
 void setPrintfSerialPort(struct serialPort_s) {}
 
-static const box_t boxes[] = { { 0, "DUMMYBOX", 0 } };
+static const box_t boxes[] = { { "DUMMYBOX", 0, 0 } };
 const box_t *findBoxByPermanentId(uint8_t) { return &boxes[0]; }
 const box_t *findBoxByBoxId(boxId_e) { return &boxes[0]; }
 
 int8_t unitTestDataArray[3];
 
-void pgResetFn_unitTestData(int8_t *ptr) {
-    ptr = &unitTestDataArray[0];
-}
+void pgResetFn_unitTestData(int8_t *)
+{}
 
 uint32_t getBeeperOffMask(void) { return 0; }
 uint32_t getPreferredBeeperOffMask(void) { return 0; }
@@ -267,7 +272,7 @@ void beeperOffSet(uint32_t) {}
 void beeperOffClear(uint32_t) {}
 void beeperOffClearAll(void) {}
 bool parseColor(int, const char *) {return false; }
-bool resetEEPROM(bool) { return true; }
+bool resetEEPROM(void) { return true; }
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 void gpsEnablePassthrough(struct serialPort_s *) {}
@@ -327,7 +332,7 @@ uint8_t serialRead(serialPort_t *){return 0;}
 
 void bufWriterAppend(bufWriter_t *, uint8_t ch){ printf("%c", ch); }
 void serialWriteBufShim(void *, const uint8_t *, int) {}
-bufWriter_t *bufWriterInit(uint8_t *, int, bufWrite_t, void *) {return NULL;}
+void bufWriterInit(bufWriter_t *, uint8_t *, int, bufWrite_t, void *) { }
 void setArmingDisabled(armingDisableFlags_e) {}
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *) {}

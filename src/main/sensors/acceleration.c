@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -47,7 +48,7 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     acc.accADC[Z] -= accelerationTrims->raw[Z];
 }
 
-void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
+void accUpdate(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
@@ -57,14 +58,8 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
     acc.isAccelUpdatedAtLeastOnce = true;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);
-        acc.accADC[axis] = acc.dev.ADCRaw[axis];
-    }
-
-    if (accelerationRuntime.accLpfCutHz) {
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            acc.accADC[axis] = biquadFilterApply(&accelerationRuntime.accFilter[axis], acc.accADC[axis]);
-        }
+        const int16_t val =  acc.dev.ADCRaw[axis];
+        acc.accADC[axis] = val;
     }
 
     if (acc.dev.accAlign == ALIGN_CUSTOM) {
@@ -74,36 +69,18 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
     }
 
     if (!accIsCalibrationComplete()) {
-        performAcclerationCalibration(rollAndPitchTrims);
+        performAcclerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
     }
 
     if (featureIsEnabled(FEATURE_INFLIGHT_ACC_CAL)) {
-        performInflightAccelerationCalibration(rollAndPitchTrims);
+        performInflightAccelerationCalibration(&accelerometerConfigMutable()->accelerometerTrims);
     }
 
     applyAccelerationTrims(accelerationRuntime.accelerationTrims);
 
-    ++accelerationRuntime.accumulatedMeasurementCount;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        accelerationRuntime.accumulatedMeasurements[axis] += acc.accADC[axis];
-    }
-}
-
-bool accGetAccumulationAverage(float *accumulationAverage)
-{
-    if (accelerationRuntime.accumulatedMeasurementCount > 0) {
-        // If we have gyro data accumulated, calculate average rate that will yield the same rotation
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accumulationAverage[axis] = accelerationRuntime.accumulatedMeasurements[axis] / accelerationRuntime.accumulatedMeasurementCount;
-            accelerationRuntime.accumulatedMeasurements[axis] = 0.0f;
-        }
-        accelerationRuntime.accumulatedMeasurementCount = 0;
-        return true;
-    } else {
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accumulationAverage[axis] = 0.0f;
-        }
-        return false;
+        const int16_t val = acc.accADC[axis];
+        acc.accADC[axis] = accelerationRuntime.accLpfCutHz ? pt2FilterApply(&accelerationRuntime.accFilter[axis], val) : val;
     }
 }
 

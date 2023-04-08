@@ -33,7 +33,8 @@ typedef enum {
 typedef enum {
     ELRS_DIO_UNKNOWN = 0,
     ELRS_DIO_RX_DONE = 1,
-    ELRS_DIO_TX_DONE = 2
+    ELRS_DIO_TX_DONE = 2,
+    ELRS_DIO_RX_AND_TX_DONE = 3,
 } dioReason_e;
 
 typedef enum {
@@ -67,12 +68,16 @@ typedef struct elrsReceiver_s {
     int8_t rssi;
     int8_t snr;
     int8_t rssiFiltered;
+#ifdef USE_RX_RSNR
+    int8_t rsnrFiltered;
+#endif //USE_RX_RSNR
 
     uint8_t uplinkLQ;
 
-    bool alreadyFHSS;
-    bool alreadyTLMresp;
+    bool alreadyFhss;
+    bool alreadyTelemResp;
     bool lockRFmode;
+    bool started;
 
     timerState_e timerState;
     connectionState_e connectionState;
@@ -91,7 +96,9 @@ typedef struct elrsReceiver_s {
     bool configChanged;
 
     bool inBindingMode;
+    volatile bool initializeReceiverPending;
     volatile bool fhssRequired;
+    volatile bool didFhss;
 
     uint32_t statsUpdatedAtMs;
 
@@ -99,9 +106,9 @@ typedef struct elrsReceiver_s {
     elrsRxConfigFnPtr config;
     elrsRxStartReceivingFnPtr startReceiving;
     elrsRxISRFnPtr rxISR;
-    elrsRxTransmitDataFnPtr transmitData;
-    elrsRxReceiveDataFnPtr receiveData;
-    elrsRxGetRFlinkInfoFnPtr getRFlinkInfo;
+    elrsRxHandleFromTockFnPtr rxHandleFromTock;
+    elrsRxBusyTimeoutFnPtr rxHandleFromTick;
+    elrsRxgetRfLinkInfoFnPtr getRfLinkInfo;
     elrsRxSetFrequencyFnPtr setFrequency;
     elrsRxHandleFreqCorrectionFnPtr handleFreqCorrection;
 

@@ -295,7 +295,8 @@ static bool ak8963DirectReadData(const extDevice_t *dev, uint8_t *buf)
     return ak8963ReadRegisterBuffer(dev, AK8963_MAG_REG_HXL, buf, 7);
 }
 
-static int16_t parseMag(uint8_t *raw, int16_t gain) {
+static int16_t parseMag(uint8_t *raw, int16_t gain)
+{
   int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
   return constrain(ret, INT16_MIN, INT16_MAX);
 }

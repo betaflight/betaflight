@@ -28,12 +28,13 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_erlt.h"
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
 
 static uint16_t dmaBufferOffset;
 extern const struct transponderVTable erltTansponderVTable;
 
-void transponderIrInitERLT(transponder_t *transponder){
+void transponderIrInitERLT(transponder_t *transponder)
+{
     transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE_ERLT;
     transponder->vTable             = &erltTansponderVTable;
     transponder->timer_hz           = TRANSPONDER_TIMER_MHZ_ERLT;

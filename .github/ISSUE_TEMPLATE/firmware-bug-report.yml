@@ -1,0 +1,83 @@
+name: Firmware Bug Report
+description: Create a report to help us fix bugs in the Betaflight firmware.
+labels: ["Template: Bug"]
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        # Please fill all the fields with the required information
+
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        # Flight controller configuration
+
+  - type: textarea
+    attributes:
+      label: Support ID
+      description: |
+
+        If missing any drivers for GYRO, ACC, MAG, BARO, FLASH or OSD it's required to flash a `Core Only` build for your board.
+
+        Go to CLI tab and use the `Submit Support Data` button to get an `Support ID`. Please post the `Support ID` here.
+
+        Don't add three backticks or any other format symbol at the start or end of the block, they will be added automatically.
+
+      placeholder: |
+          # PASTE HERE THE OUTPUT OF `Support ID` IN THE CLI TAB
+      render: txt
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        # Setup / Versions
+
+  - type: input
+    attributes:
+      label: Flight controller
+      description: Specify your flight controller model (what type is it, where was it bought from, ...).
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Other components
+      description: Specify other components attached to the flight controller (RX, VTX, brand / model for all of them, firmware version where applicable...).
+
+  - type: textarea
+    attributes:
+      label: How are the different components wired up (including port information)
+      description: Details about how all is wired.
+
+  - type: markdown
+    attributes:
+      value: |
+        # Other information
+
+  - type: textarea
+    attributes:
+      label: Add any other context about the problem that you think might be relevant here

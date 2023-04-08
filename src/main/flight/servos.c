@@ -66,9 +66,18 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
     servoConfig->servo_lowpass_freq = 0;
     servoConfig->channelForwardingStartChannel = AUX1;
 
-    for (unsigned servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
-        servoConfig->dev.ioTags[servoIndex] = timerioTagGetByUsage(TIM_USE_SERVO, servoIndex);
-    }
+#ifdef SERVO1_PIN
+    servoConfig->dev.ioTags[0] = IO_TAG(SERVO1_PIN);
+#endif
+#ifdef SERVO2_PIN
+    servoConfig->dev.ioTags[1] = IO_TAG(SERVO2_PIN);
+#endif
+#ifdef SERVO3_PIN
+    servoConfig->dev.ioTags[2] = IO_TAG(SERVO3_PIN);
+#endif
+#ifdef SERVO4_PIN
+    servoConfig->dev.ioTags[3] = IO_TAG(SERVO4_PIN);
+#endif
 }
 
 PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
@@ -249,7 +258,6 @@ static void servoConfigureOutput(void)
     case MIXER_CUSTOM_AIRPLANE:
     case MIXER_CUSTOM_TRI:
         loadCustomServoMixer();
-
         break;
     default:
         break;

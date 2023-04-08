@@ -20,6 +20,10 @@
 
 #pragma once
 
+#define VIDEO_COLUMNS_SD          30
+#define VIDEO_LINES_NTSC          13
+#define VIDEO_LINES_PAL           16
+
 typedef enum {
     DISPLAYPORT_DEVICE_TYPE_MAX7456 = 0,
     DISPLAYPORT_DEVICE_TYPE_OLED,
@@ -31,13 +35,30 @@ typedef enum {
 } displayPortDeviceType_e;
 
 typedef enum {
-    DISPLAYPORT_ATTR_NONE = 0,
+    DISPLAYPORT_ATTR_NORMAL = 0,
     DISPLAYPORT_ATTR_INFO,
     DISPLAYPORT_ATTR_WARNING,
     DISPLAYPORT_ATTR_CRITICAL,
-} displayPortAttr_e;
+    DISPLAYPORT_ATTR_COUNT,
+} displayPortSeverity_e;
 
-#define DISPLAYPORT_ATTR_BLINK  0x80 // Device local blink bit or'ed into displayPortAttr_e
+#define DISPLAYPORT_ATTR_BLINK  0x80 // Device local blink bit or'ed into displayPortSeverity_e
+
+// System elements rendered by VTX or Goggles
+typedef enum {
+    DISPLAYPORT_SYS_GOGGLE_VOLTAGE = 0,
+    DISPLAYPORT_SYS_VTX_VOLTAGE = 1,
+    DISPLAYPORT_SYS_BITRATE = 2,
+    DISPLAYPORT_SYS_DELAY = 3,
+    DISPLAYPORT_SYS_DISTANCE = 4,
+    DISPLAYPORT_SYS_LQ = 5,
+    DISPLAYPORT_SYS_GOGGLE_DVR = 6,
+    DISPLAYPORT_SYS_VTX_DVR = 7,
+    DISPLAYPORT_SYS_WARNINGS = 8,
+    DISPLAYPORT_SYS_VTX_TEMP = 9,
+    DISPLAYPORT_SYS_FAN_SPEED = 10,
+    DISPLAYPORT_SYS_COUNT,
+} displayPortSystemElement_e;
 
 typedef enum {
     DISPLAYPORT_LAYER_FOREGROUND,
@@ -58,6 +79,19 @@ typedef enum {
     DISPLAY_BACKGROUND_LTGRAY,
     DISPLAY_BACKGROUND_COUNT    // must be the last entry
 } displayPortBackground_e;
+
+typedef enum {
+    // Display drivers that can perform screen clearing in the background, e.g. via DMA, should do so.
+    // use `displayCheckReady` function to check if the screen clear has been completed.
+    DISPLAY_CLEAR_NONE = 0,
+
+    // * when set, the display driver should block until the screen clear has completed, use in synchronous cases
+    //   only, e.g. where the screen is cleared and the display is immediately drawn to.
+    // * when NOT set, return immediately and do not block unless screen is a simple operation or cannot
+    //   be performed in the background.  As with any long delay, waiting can cause task starvation which
+    //   can result in RX loss.
+    DISPLAY_CLEAR_WAIT = 1 << 0,
+} displayClearOption_e;
 
 struct displayCanvas_s;
 struct osdCharacter_s;
@@ -87,9 +121,10 @@ typedef struct displayPort_s {
 typedef struct displayPortVTable_s {
     int (*grab)(displayPort_t *displayPort);
     int (*release)(displayPort_t *displayPort);
-    int (*clearScreen)(displayPort_t *displayPort);
+    int (*clearScreen)(displayPort_t *displayPort, displayClearOption_e options);
     bool (*drawScreen)(displayPort_t *displayPort);
     int (*screenSize)(const displayPort_t *displayPort);
+    int (*writeSys)(displayPort_t *displayPort, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement);
     int (*writeString)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, const char *text);
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t attr, uint8_t c);
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
@@ -112,11 +147,12 @@ void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
 void displayReleaseAll(displayPort_t *instance);
 bool displayIsGrabbed(const displayPort_t *instance);
-void displayClearScreen(displayPort_t *instance);
+void displayClearScreen(displayPort_t *instance, displayClearOption_e options);
 bool displayDrawScreen(displayPort_t *instance);
 int displayScreenSize(const displayPort_t *instance);
 void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
-int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *s);
+int displaySys(displayPort_t *instance, uint8_t x, uint8_t y, displayPortSystemElement_e systemElement);
+int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, const char *text);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t attr, uint8_t c);
 bool displayIsTransferInProgress(const displayPort_t *instance);
 bool displayHeartbeat(displayPort_t *instance);

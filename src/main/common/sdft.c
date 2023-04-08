@@ -33,6 +33,7 @@ static FAST_DATA_ZERO_INIT bool      isInitialized;
 static FAST_DATA_ZERO_INIT complex_t twiddle[SDFT_BIN_COUNT];
 
 static void applySqrt(const sdft_t *sdft, float *data);
+static void updateEdges(sdft_t *sdft, const float value, const int batchIdx);
 
 
 void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numBatches)
@@ -49,10 +50,12 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
     }
 
     sdft->idx = 0;
-    sdft->startBin = startBin;
-    sdft->endBin = endBin;
-    sdft->numBatches = numBatches;
-    sdft->batchSize = (sdft->endBin - sdft->startBin) / sdft->numBatches + 1;  // batchSize = ceil(numBins / numBatches)
+
+    sdft->startBin = constrain(startBin, 0, SDFT_BIN_COUNT - 1);
+    sdft->endBin = constrain(endBin, sdft->startBin, SDFT_BIN_COUNT - 1);
+
+    sdft->numBatches = MAX(numBatches, 1);
+    sdft->batchSize = (sdft->endBin - sdft->startBin + 1) / sdft->numBatches;
 
     for (int i = 0; i < SDFT_SAMPLE_SIZE; i++) {
         sdft->samples[i] = 0.0f;
@@ -75,13 +78,15 @@ FAST_CODE void sdftPush(sdft_t *sdft, const float sample)
     for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
+
+    updateEdges(sdft, delta, 0);
 }
 
 
 // Add new sample to frequency spectrum in parts
-FAST_CODE void sdftPushBatch(sdft_t* sdft, const float sample, const int batchIdx)
+FAST_CODE void sdftPushBatch(sdft_t *sdft, const float sample, const int batchIdx)
 {
-    const int batchStart = sdft->batchSize * batchIdx;
+    const int batchStart = sdft->batchSize * batchIdx + sdft->startBin;
     int batchEnd = batchStart;
 
     const float delta = sample - rPowerN * sdft->samples[sdft->idx];
@@ -97,6 +102,8 @@ FAST_CODE void sdftPushBatch(sdft_t* sdft, const float sample, const int batchId
     for (int i = batchStart; i < batchEnd; i++) {
         sdft->data[i] = twiddle[i] * (sdft->data[i] + delta);
     }
+
+    updateEdges(sdft, delta, batchIdx);
 }
 
 
@@ -130,12 +137,32 @@ FAST_CODE void sdftWinSq(const sdft_t *sdft, float *output)
     float re;
     float im;
 
+    // Apply window at the lower edge of active range
+    if (sdft->startBin == 0) {
+        val = sdft->data[sdft->startBin] - sdft->data[sdft->startBin + 1];
+    } else {
+        val = sdft->data[sdft->startBin] - 0.5f * (sdft->data[sdft->startBin - 1] + sdft->data[sdft->startBin + 1]);
+    }
+    re = crealf(val);
+    im = cimagf(val);
+    output[sdft->startBin] = re * re + im * im;
+
     for (int i = (sdft->startBin + 1); i < sdft->endBin; i++) {
         val = sdft->data[i] - 0.5f * (sdft->data[i - 1] + sdft->data[i + 1]); // multiply by 2 to save one multiplication
         re = crealf(val);
         im = cimagf(val);
         output[i] = re * re + im * im;
     }
+
+    // Apply window at the upper edge of active range
+    if (sdft->endBin == SDFT_BIN_COUNT - 1) {
+        val = sdft->data[sdft->endBin] - sdft->data[sdft->endBin - 1];
+    } else {
+        val = sdft->data[sdft->endBin] - 0.5f * (sdft->data[sdft->endBin - 1] + sdft->data[sdft->endBin + 1]);
+    }
+    re = crealf(val);
+    im = cimagf(val);
+    output[sdft->endBin] = re * re + im * im;
 }
 
 
@@ -152,5 +179,22 @@ static FAST_CODE void applySqrt(const sdft_t *sdft, float *data)
 {
     for (int i = sdft->startBin; i <= sdft->endBin; i++) {
         data[i] = sqrtf(data[i]);
+    }
+}
+
+
+// Needed for proper windowing at the edges of active range
+static FAST_CODE void updateEdges(sdft_t *sdft, const float value, const int batchIdx)
+{
+    // First bin outside of lower range
+    if (sdft->startBin > 0 && batchIdx == 0) {
+        const unsigned idx = sdft->startBin - 1;
+        sdft->data[idx] = twiddle[idx] * (sdft->data[idx] + value);
+    }
+
+    // First bin outside of upper range
+    if (sdft->endBin < SDFT_BIN_COUNT - 1 && batchIdx == sdft->numBatches - 1) {
+        const unsigned idx = sdft->endBin + 1;
+        sdft->data[idx] = twiddle[idx] * (sdft->data[idx] + value);
     }
 }

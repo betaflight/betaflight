@@ -84,30 +84,29 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestInit)
 
 static void testSetDataToTransmit(uint8_t payloadSize, uint8_t *payload)
 {
-    uint8_t *data;
-    uint8_t maxLength;
-    uint8_t packageIndex;
+    uint8_t data[ELRS_TELEMETRY_BYTES_PER_CALL] = {0};
+    uint8_t maxPackageIndex = (payloadSize - 1) / ELRS_TELEMETRY_BYTES_PER_CALL;
+    uint8_t nextPackageIndex;
     bool confirmValue = true;
 
-    setTelemetryDataToTransmit(payloadSize, payload, ELRS_TELEMETRY_BYTES_PER_CALL);
+    setTelemetryDataToTransmit(payloadSize, payload);
 
-    for (int j = 0; j < (1 + ((payloadSize - 1) / ELRS_TELEMETRY_BYTES_PER_CALL)); j++) {
-        getCurrentTelemetryPayload(&packageIndex, &maxLength, &data);
-        EXPECT_LE(maxLength, 5);
-        EXPECT_EQ(1 + j, packageIndex);
-        for(int i = 0; i < maxLength; i++) {
+    for (int j = 0; j <= maxPackageIndex; j++) {
+        nextPackageIndex = getCurrentTelemetryPayload(data);
+        if (j != maxPackageIndex) {
+            EXPECT_EQ(1 + j, nextPackageIndex);
+        } else {
+            EXPECT_EQ(0, nextPackageIndex); //back to start
+        }
+        uint8_t maxLength = (j == maxPackageIndex) ? payloadSize % ELRS_TELEMETRY_BYTES_PER_CALL : ELRS_TELEMETRY_BYTES_PER_CALL;
+        for (int i = 0; i < maxLength; i++) {
             EXPECT_EQ(payload[i + j * ELRS_TELEMETRY_BYTES_PER_CALL], data[i]);
         }
+        EXPECT_EQ(true, isTelemetrySenderActive());
         confirmCurrentTelemetryPayload(confirmValue);
         confirmValue = !confirmValue;
     }
 
-    getCurrentTelemetryPayload(&packageIndex, &maxLength, &data);
-    EXPECT_EQ(0, packageIndex);
-    EXPECT_EQ(true, isTelemetrySenderActive());
-    confirmCurrentTelemetryPayload(!confirmValue);
-    EXPECT_EQ(true, isTelemetrySenderActive());
-    confirmCurrentTelemetryPayload(confirmValue);
     EXPECT_EQ(false, isTelemetrySenderActive());
 }
 
@@ -222,8 +221,8 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestFlightMode)
 
 TEST(RxSpiExpressLrsTelemetryUnitTest, TestMspVersionRequest)
 { 
-    uint8_t request[15] = {238,12,122,200,234,48,0,1,1,0,0,0,0,128, 0};
-    uint8_t response[12] = {200,10,123,234,200,48,3,1,0,1,44,42};
+    uint8_t request[15] = {238, 12, 122, 200, 234, 48, 0, 1, 1, 0, 0, 0, 0, 128, 0};
+    uint8_t response[12] = {200, 10, 123, 234, 200, 48, 3, 1, 0, API_VERSION_MAJOR, API_VERSION_MINOR, 0x55};
     uint8_t data1[6] = {1, request[0], request[1], request[2], request[3], request[4]};
     uint8_t data2[6] = {2, request[5], request[6], request[7], request[8], request[9]};
     uint8_t data3[6] = {3, request[10], request[11], request[12], request[13], request[14]};
@@ -240,7 +239,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestMspVersionRequest)
     initTelemetry();
     initSharedMsp();
 
-    setMspDataToReceive(15, mspBuffer, ELRS_MSP_BYTES_PER_CALL);
+    setMspDataToReceive(15, mspBuffer);
     receiveMspData(data1[0], data1 + 1);
     receiveMspData(data2[0], data2 + 1);
     receiveMspData(data3[0], data3 + 1);
@@ -279,7 +278,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestMspPidRequest)
     initTelemetry();
     initSharedMsp();
 
-    setMspDataToReceive(sizeof(mspBuffer), mspBuffer, ELRS_MSP_BYTES_PER_CALL);
+    setMspDataToReceive(sizeof(mspBuffer), mspBuffer);
     receiveMspData(data1[0], data1 + 1);
     EXPECT_FALSE(hasFinishedMspData());
     receiveMspData(data2[0], data2 + 1);
@@ -328,7 +327,7 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestMspVtxRequest)
     initTelemetry();
     initSharedMsp();
 
-    setMspDataToReceive(sizeof(mspBuffer), mspBuffer, ELRS_MSP_BYTES_PER_CALL);
+    setMspDataToReceive(sizeof(mspBuffer), mspBuffer);
     receiveMspData(data1[0], data1 + 1);
     receiveMspData(data2[0], data2 + 1);
     receiveMspData(data3[0], data3 + 1);
@@ -364,10 +363,10 @@ TEST(RxSpiExpressLrsTelemetryUnitTest, TestDeviceInfoResp)
     initTelemetry();
     initSharedMsp();
 
-    setMspDataToReceive(sizeof(mspBuffer), mspBuffer, ELRS_MSP_BYTES_PER_CALL);
+    setMspDataToReceive(sizeof(mspBuffer), mspBuffer);
     receiveMspData(pingData[0], pingData + 1);
     EXPECT_FALSE(hasFinishedMspData());
-    receiveMspData(0, 0);
+    receiveMspData(0, pingData + 1);
     EXPECT_TRUE(hasFinishedMspData());
 
     EXPECT_FALSE(deviceInfoReplyPending);

@@ -289,7 +289,7 @@ void arm_conv_fast_q15(
       x0 = *__SIMD32(px);
       /* read x[1], x[2] samples */
       x1 = _SIMD32_OFFSET(px+1);
-	  px+= 2U;
+      px+= 2U;
 
 
       /* Apply loop unrolling and compute 4 MACs simultaneously. */
@@ -335,7 +335,7 @@ void arm_conv_fast_q15(
 
         /* Read x[5], x[6] */
         x1 = _SIMD32_OFFSET(px+3);
-		px += 4U;
+        px += 4U;
 
         /* acc2 +=  x[4] * y[srcBLen - 3] + x[5] * y[srcBLen - 4] */
         acc2 = __SMLADX(x0, c0, acc2);
@@ -369,7 +369,7 @@ void arm_conv_fast_q15(
 
         /* Read x[7] */
         x3 = *__SIMD32(px);
-		px++;
+        px++;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLAD(x0, c0, acc0);
@@ -388,7 +388,7 @@ void arm_conv_fast_q15(
 
         /* Read x[9] */
         x2 = _SIMD32_OFFSET(px+1);
-		px += 2U;
+        px += 2U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x0, c0, acc0);
@@ -415,7 +415,7 @@ void arm_conv_fast_q15(
         acc3 = __SMLADX(x2, c0, acc3);
 
         /* Read y[srcBLen - 7] */
-		c0 = *(py-1);
+        c0 = *(py-1);
 #ifdef  ARM_MATH_BIG_ENDIAN
 
         c0 = c0 << 16U;
@@ -426,7 +426,7 @@ void arm_conv_fast_q15(
 
         /* Read x[10] */
         x3 =  _SIMD32_OFFSET(px+2);
-		px += 3U;
+        px += 3U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x1, c0, acc0);
@@ -802,7 +802,7 @@ void arm_conv_fast_q15(
 
     /* First part of the processing with loop unrolling.  Compute 4 MACs at a time.
      ** a second loop below computes MACs for the remaining 1 to 3 samples. */
-	py++;
+    py++;
 
     while (k > 0U)
     {
@@ -887,22 +887,22 @@ void arm_conv_fast_q15(
       acc3 = 0;
 
       /* read x[0], x[1] samples */
-	  a = *px++;
-	  b = *px++;
+      a = *px++;
+      b = *px++;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  x0 = __PKHBT(a, b, 16);
-	  a = *px;
-	  x1 = __PKHBT(b, a, 16);
+      x0 = __PKHBT(a, b, 16);
+      a = *px;
+      x1 = __PKHBT(b, a, 16);
 
 #else
 
-	  x0 = __PKHBT(b, a, 16);
-	  a = *px;
-	  x1 = __PKHBT(a, b, 16);
+      x0 = __PKHBT(b, a, 16);
+      a = *px;
+      x1 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	   */
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN    */
 
       /* Apply loop unrolling and compute 4 MACs simultaneously. */
       k = srcBLen >> 2U;
@@ -913,19 +913,19 @@ void arm_conv_fast_q15(
       {
         /* Read the last two inputB samples using SIMD:
          * y[srcBLen - 1] and y[srcBLen - 2] */
-		a = *py;
-		b = *(py+1);
-		py -= 2;
+        a = *py;
+        b = *(py+1);
+        py -= 2;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		c0 = __PKHBT(a, b, 16);
+        c0 = __PKHBT(a, b, 16);
 
 #else
 
- 		c0 = __PKHBT(b, a, 16);;
+        c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* acc0 +=  x[0] * y[srcBLen - 1] + x[1] * y[srcBLen - 2] */
         acc0 = __SMLADX(x0, c0, acc0);
@@ -933,22 +933,22 @@ void arm_conv_fast_q15(
         /* acc1 +=  x[1] * y[srcBLen - 1] + x[2] * y[srcBLen - 2] */
         acc1 = __SMLADX(x1, c0, acc1);
 
-	  a = *px;
-	  b = *(px + 1);
+      a = *px;
+      b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  x2 = __PKHBT(a, b, 16);
-	  a = *(px + 2);
-	  x3 = __PKHBT(b, a, 16);
+      x2 = __PKHBT(a, b, 16);
+      a = *(px + 2);
+      x3 = __PKHBT(b, a, 16);
 
 #else
 
-	  x2 = __PKHBT(b, a, 16);
-	  a = *(px + 2);
-	  x3 = __PKHBT(a, b, 16);
+      x2 = __PKHBT(b, a, 16);
+      a = *(px + 2);
+      x3 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	   */
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN    */
 
         /* acc2 +=  x[2] * y[srcBLen - 1] + x[3] * y[srcBLen - 2] */
         acc2 = __SMLADX(x2, c0, acc2);
@@ -957,19 +957,19 @@ void arm_conv_fast_q15(
         acc3 = __SMLADX(x3, c0, acc3);
 
         /* Read y[srcBLen - 3] and y[srcBLen - 4] */
-		a = *py;
-		b = *(py+1);
-		py -= 2;
+        a = *py;
+        b = *(py+1);
+        py -= 2;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		c0 = __PKHBT(a, b, 16);
+        c0 = __PKHBT(a, b, 16);
 
 #else
 
- 		c0 = __PKHBT(b, a, 16);;
+        c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* acc0 +=  x[2] * y[srcBLen - 3] + x[3] * y[srcBLen - 4] */
         acc0 = __SMLADX(x2, c0, acc0);
@@ -978,24 +978,24 @@ void arm_conv_fast_q15(
         acc1 = __SMLADX(x3, c0, acc1);
 
         /* Read x[4], x[5], x[6] */
-	  a = *(px + 2);
-	  b = *(px + 3);
+      a = *(px + 2);
+      b = *(px + 3);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  x0 = __PKHBT(a, b, 16);
-	  a = *(px + 4);
-	  x1 = __PKHBT(b, a, 16);
+      x0 = __PKHBT(a, b, 16);
+      a = *(px + 4);
+      x1 = __PKHBT(b, a, 16);
 
 #else
 
-	  x0 = __PKHBT(b, a, 16);
-	  a = *(px + 4);
-	  x1 = __PKHBT(a, b, 16);
+      x0 = __PKHBT(b, a, 16);
+      a = *(px + 4);
+      x1 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	   */
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN    */
 
-		px += 4U;
+        px += 4U;
 
         /* acc2 +=  x[4] * y[srcBLen - 3] + x[5] * y[srcBLen - 4] */
         acc2 = __SMLADX(x0, c0, acc2);
@@ -1028,19 +1028,19 @@ void arm_conv_fast_q15(
 #endif /*      #ifdef  ARM_MATH_BIG_ENDIAN     */
 
         /* Read x[7] */
-		a = *px;
-		b = *(px+1);
-		px++;
+        a = *px;
+        b = *(px+1);
+        px++;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		x3 = __PKHBT(a, b, 16);
+        x3 = __PKHBT(a, b, 16);
 
 #else
 
- 		x3 = __PKHBT(b, a, 16);;
+        x3 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
 
         /* Perform the multiply-accumulates */
@@ -1053,37 +1053,37 @@ void arm_conv_fast_q15(
       if (k == 2U)
       {
         /* Read y[srcBLen - 5], y[srcBLen - 6] */
-		a = *py;
-		b = *(py+1);
+        a = *py;
+        b = *(py+1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		c0 = __PKHBT(a, b, 16);
+        c0 = __PKHBT(a, b, 16);
 
 #else
 
- 		c0 = __PKHBT(b, a, 16);;
+        c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* Read x[7], x[8], x[9] */
-	  a = *px;
-	  b = *(px + 1);
+      a = *px;
+      b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  x3 = __PKHBT(a, b, 16);
-	  a = *(px + 2);
-	  x2 = __PKHBT(b, a, 16);
+      x3 = __PKHBT(a, b, 16);
+      a = *(px + 2);
+      x2 = __PKHBT(b, a, 16);
 
 #else
 
-	  x3 = __PKHBT(b, a, 16);
-	  a = *(px + 2);
-	  x2 = __PKHBT(a, b, 16);
+      x3 = __PKHBT(b, a, 16);
+      a = *(px + 2);
+      x2 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	   */
-		px += 2U;
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN    */
+        px += 2U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x0, c0, acc0);
@@ -1095,36 +1095,36 @@ void arm_conv_fast_q15(
       if (k == 3U)
       {
         /* Read y[srcBLen - 5], y[srcBLen - 6] */
-		a = *py;
-		b = *(py+1);
+        a = *py;
+        b = *(py+1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		c0 = __PKHBT(a, b, 16);
+        c0 = __PKHBT(a, b, 16);
 
 #else
 
- 		c0 = __PKHBT(b, a, 16);;
+        c0 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
         /* Read x[7], x[8], x[9] */
-	  a = *px;
-	  b = *(px + 1);
+      a = *px;
+      b = *(px + 1);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-	  x3 = __PKHBT(a, b, 16);
-	  a = *(px + 2);
-	  x2 = __PKHBT(b, a, 16);
+      x3 = __PKHBT(a, b, 16);
+      a = *(px + 2);
+      x2 = __PKHBT(b, a, 16);
 
 #else
 
-	  x3 = __PKHBT(b, a, 16);
-	  a = *(px + 2);
-	  x2 = __PKHBT(a, b, 16);
+      x3 = __PKHBT(b, a, 16);
+      a = *(px + 2);
+      x2 = __PKHBT(a, b, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	   */
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN    */
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x0, c0, acc0);
@@ -1133,7 +1133,7 @@ void arm_conv_fast_q15(
         acc3 = __SMLADX(x2, c0, acc3);
 
         /* Read y[srcBLen - 7] */
-		c0 = *(py-1);
+        c0 = *(py-1);
 #ifdef  ARM_MATH_BIG_ENDIAN
 
         c0 = c0 << 16U;
@@ -1143,20 +1143,20 @@ void arm_conv_fast_q15(
 #endif /*      #ifdef  ARM_MATH_BIG_ENDIAN     */
 
         /* Read x[10] */
-		a = *(px+2);
-		b = *(px+3);
+        a = *(px+2);
+        b = *(px+3);
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
-		x3 = __PKHBT(a, b, 16);
+        x3 = __PKHBT(a, b, 16);
 
 #else
 
- 		x3 = __PKHBT(b, a, 16);;
+        x3 = __PKHBT(b, a, 16);
 
-#endif	/*	#ifndef ARM_MATH_BIG_ENDIAN	*/
+#endif  /*  #ifndef ARM_MATH_BIG_ENDIAN */
 
-		px += 3U;
+        px += 3U;
 
         /* Perform the multiply-accumulates */
         acc0 = __SMLADX(x1, c0, acc0);
@@ -1166,10 +1166,10 @@ void arm_conv_fast_q15(
       }
 
       /* Store the results in the accumulators in the destination buffer. */
-	  *pOut++ = (q15_t)(acc0 >> 15);
-	  *pOut++ = (q15_t)(acc1 >> 15);
-	  *pOut++ = (q15_t)(acc2 >> 15);
-	  *pOut++ = (q15_t)(acc3 >> 15);
+      *pOut++ = (q15_t)(acc0 >> 15);
+      *pOut++ = (q15_t)(acc1 >> 15);
+      *pOut++ = (q15_t)(acc2 >> 15);
+      *pOut++ = (q15_t)(acc3 >> 15);
 
       /* Increment the pointer pIn1 index, count by 4 */
       count += 4U;
@@ -1318,7 +1318,7 @@ void arm_conv_fast_q15(
 
     /* First part of the processing with loop unrolling.  Compute 4 MACs at a time.
      ** a second loop below computes MACs for the remaining 1 to 3 samples. */
-	py++;
+    py++;
 
     while (k > 0U)
     {
@@ -1390,7 +1390,7 @@ void arm_conv_fast_q15(
     blockSize3--;
   }
 
-#endif	/*	#ifndef UNALIGNED_SUPPORT_DISABLE	*/
+#endif  /*  #ifndef UNALIGNED_SUPPORT_DISABLE   */
 }
 
 /**

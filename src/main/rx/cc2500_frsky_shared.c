@@ -154,7 +154,8 @@ const cc2500RegisterConfigElement_t cc2500FrskyXLbtV2Config[] =
     { CC2500_08_PKTCTRL0, 0x05 },
 };
 
-static void initialise() {
+static void initialise(void)
+{
     rxSpiStartupSpeed();
 
     cc2500Reset();
@@ -435,6 +436,8 @@ rx_spi_received_e frSkySpiDataReceived(uint8_t *packet)
         protocolState = STATE_STARTING;
 
         break;
+
+    case STATE_STARTING:
     default:
         ret = handlePacket(packet, &protocolState);
 

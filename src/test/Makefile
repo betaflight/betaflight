@@ -18,7 +18,6 @@ OBJECT_DIR = ../../obj/test
 TARGET_DIR = $(USER_DIR)/target
 
 include $(ROOT)/make/system-id.mk
-include $(ROOT)/make/targets_list.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -36,13 +35,13 @@ alignsensor_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
 arming_prevention_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/core.c \
 		$(USER_DIR)/fc/dispatch.c \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/flight/gps_rescue.c \
-		$(USER_DIR)/common/bitarray.c
+		$(USER_DIR)/flight/gps_rescue.c
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
@@ -106,7 +105,9 @@ blackbox_encoding_unittest_SRC :=  \
 
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/typeconversion.c
@@ -180,8 +181,11 @@ maths_unittest_SRC := \
 
 
 motor_output_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/drivers/dshot.c
 
+motor_output_unittest_DEFINES := \
+		USE_DSHOT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -192,6 +196,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/time.c \
+		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
@@ -226,6 +231,8 @@ link_quality_unittest_DEFINES := \
 		USE_RX_LINK_QUALITY_INFO=
 
 pg_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/pg/pg.c
 
 
@@ -233,7 +240,9 @@ rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/fc/rc_adjustments.c \
 		$(USER_DIR)/fc/rc_modes.c
 
@@ -253,7 +262,9 @@ rx_ibus_unittest_SRC := \
 
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/rx/rx.c \
 		$(USER_DIR)/pg/pg.c \
@@ -278,15 +289,19 @@ scheduler_unittest_SRC := \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/streambuf.c
 
+scheduler_unittest_DEFINES := \
+		USE_OSD=
 
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
 		$(USER_DIR)/sensors/boardalignment.c \
 		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/sensor_alignment.c \
-		$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
+		$(USER_DIR)/drivers/accgyro/accgyro_virtual.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
@@ -304,7 +319,6 @@ telemetry_crsf_unittest_SRC := \
 
 telemetry_crsf_unittest_DEFINES := \
 		FLASH_SIZE=128 \
-		STM32F10X_MD= \
 		__TARGET__="TEST" \
 		__REVISION__="revision"
 
@@ -336,22 +350,6 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
-timer_definition_unittest_EXPAND := yes
-
-# SITL is a simulator with empty timerHardware and many hearders in target.c.
-timer_definition_unittest_BLACKLIST := SITL
-
-timer_definition_unittest_SRC = \
-		$(TARGET_DIR)/$(call get_base_target,$1)/target.c
-
-timer_definition_unittest_DEFINES = \
-		TARGET=$1 \
-		BASE_TARGET=$(call get_base_target,$1)
-
-timer_definition_unittest_INCLUDE_DIRS = \
-		$(TEST_DIR)/timer_definition_unittest.include \
-		$(TARGET_DIR)/$(call get_base_target,$1)
-
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
 		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
@@ -375,8 +373,10 @@ rcdevice_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c \
 
 pid_unittest_SRC :=  \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/fc/controlrate_profile.c \
 		$(USER_DIR)/fc/runtime_config.c \
@@ -422,6 +422,7 @@ rx_spi_expresslrs_unittest_SRC := \
         $(USER_DIR)/pg/rx_spi_expresslrs.c \
 		$(USER_DIR)/rx/expresslrs_common.c \
 		$(USER_DIR)/rx/expresslrs.c \
+		$(USER_DIR)/build/atomic.c \
 
 rx_spi_expresslrs_unittest_DEFINES := \
 		USE_RX_SPI= \
@@ -447,6 +448,23 @@ rx_spi_expresslrs_telemetry_unittest_DEFINES := \
 		USE_GPS= \
 		USE_MSP_OVER_TELEMETRY= \
 
+vtx_msp_unittest_SRC := \
+        $(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+        $(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/drivers/vtx_common.c \
+		$(USER_DIR)/drivers/vtx_table.c \
+		$(USER_DIR)/pg/vtx_table.c \
+		$(USER_DIR)/io/vtx_control.c \
+		$(USER_DIR)/io/vtx.c \
+		$(USER_DIR)/io/vtx_msp.c \
+
+vtx_msp_unittest_DEFINES := \
+		USE_VTX_COMMON= \
+		USE_VTX_CONTROL= \
+		USE_VTX_TABLE= \
+		USE_VTX_MSP=
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
@@ -457,8 +475,8 @@ GTEST_DIR = ../../lib/test/gtest
 
 # Use clang/clang++ by default
 
-CC  := clang-10
-CXX := clang++-10
+CC  := clang-12
+CXX := clang++-12
 ifeq ($(shell which $(CC) 2>/dev/null),)
 $(info Falling back to 'clang'.)
 CC  := clang
@@ -468,7 +486,7 @@ endif
 #CC  := gcc
 #CXX := g++
 
-# These flags are needed for clang 10 (linux / MacOS) to make test work:
+# These flags are needed for clang > 10 (linux / MacOS) to make test work:
 # -Wno-c99-extensions
 # -Wno-reorder
 
@@ -484,18 +502,19 @@ COMMON_FLAGS = \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP \
 	-Wno-c99-extensions \
-	-Wno-reorder
+	-Wno-reorder \
+	-pipe
 
 CC_VERSION = $(shell $(CC) -dumpversion)
 CXX_VERSION = $(shell $(CXX) -dumpversion)
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 
-# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 13 }
+# Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 14 }
 # Travis reports CC_VERSION of 4.2.1
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 13
+CC_VERSION_CHECK_MAX := 14
 
 # Added flags for clang 11 - 13 are not backwards compatible
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \> 10 \& $(CC_VERSION_MAJOR) \< 14), 1)
@@ -505,7 +524,7 @@ COMMON_FLAGS += \
 endif
 
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
-$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-10'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
+$(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-12'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
 COMMON_FLAGS += -fblocks
@@ -562,13 +581,9 @@ endif
 TEST_SRCS = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TEST_BASENAMES = $(TEST_SRCS:$(TEST_DIR)/%.cc=%)
 TESTS_TARGET_SPECIFIC = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),$(test)))
-TESTS_TARGET_SPECIFIC_EXPANDED = $(foreach test,$(TESTS_TARGET_SPECIFIC),$(foreach \
-		target,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS)),$(test).$(target)))
 
 TESTS = $(foreach test,$(TEST_BASENAMES),$(if $($(test)_EXPAND),,$(test)))
-TESTS_ALL = $(TESTS) $(TESTS_TARGET_SPECIFIC_EXPANDED)
-TESTS_REPRESENTATIVE = $(TESTS) $(foreach test,$(TESTS_TARGET_SPECIFIC), \
-		$(test).$(word 1,$(filter-out $($(test)_BLACKLIST),$(VALID_TARGETS))))
+TESTS_ALL = $(TESTS)
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -694,7 +709,7 @@ $1_SRC = $(addsuffix .o,$(call $(basename $1)_SRC,$(call target,$1)))
 $1_OBJS = $$(patsubst \
 	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
 	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
-	$(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
+	$(TARGET_DIR)/$(TARGET)/%,$(OBJECT_DIR)/$1/%,$$($1_SRC))))
 $1_DEFINES = $(call $(basename $1)_DEFINES,$(call target,$1))
 $1_INCLUDE_DIRS = $(call $(basename $1)_INCLUDE_DIRS,$(call target,$1))
 endif
@@ -724,7 +739,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 
 ifneq ($1,$(basename $1))
 # per-target tests may compile files from the target directory
-$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(call get_base_target,$(call target,$1))/%.c
+$(OBJECT_DIR)/$1/%.c.o: $(TARGET_DIR)/$(TARGET)/%.c
 	@echo "compiling target c file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
@@ -765,20 +780,3 @@ endif
 
 $(foreach test,$(TESTS_ALL),$(if $($(basename $(test))_SRC),,$(error \
 	Test 'unit/$(basename $(test)).cc' has no '$(basename $(test))_SRC' variable defined)))
-$(foreach var,$(filter-out TARGET_SRC,$(filter %_SRC,$(.VARIABLES))),$(if $(filter $(var:_SRC=)%,$(TESTS_ALL)),,$(error \
-	Variable '$(var)' has no 'unit/$(var:_SRC=).cc' test)))
-
-
-target_list:
-	@echo ========== BASE TARGETS ==========
-	@echo $(BASE_TARGETS)
-	@echo ========== ALT TARGETS ==========
-	@echo $(ALT_TARGETS)
-	@echo ========== VALID_TARGETS ==========
-	@echo $(VALID_TARGETS)
-	@echo ========== BASE/ALT PAIRS ==========
-	@echo $(BASE_ALT_PAIRS)
-	@echo ========== ALT/BASE MAPPING ==========
-	@echo $(foreach target,$(ALT_TARGETS),$(target)\>$(call get_base_target,$(target)))
-	@echo ========== ALT/BASE FULL MAPPING ==========
-	@echo $(foreach target,$(VALID_TARGETS),$(target)\>$(call get_base_target,$(target)))

@@ -35,6 +35,7 @@ bool checkCrsfTelemetryState(void);
 void handleCrsfTelemetry(timeUs_t currentTimeUs);
 void crsfScheduleDeviceInfoResponse(void);
 void crsfScheduleMspResponse(uint8_t requestOriginID);
+void crsfHandleDeviceInfoResponse(uint8_t *payload);
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 void crsfProcessCommand(uint8_t *frameStart);
 #if defined(USE_CRSF_CMS_TELEMETRY)
@@ -48,4 +49,6 @@ int getCrsfMspFrame(uint8_t *frame, uint8_t *payload, const uint8_t payloadSize)
 #endif
 #if defined(USE_CRSF_V3)
 void speedNegotiationProcess(uint32_t currentTime);
+bool crsfBaudNegotiationInProgress(void);
+uint32_t getCrsfCachedBaudrate(void);
 #endif

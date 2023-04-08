@@ -24,6 +24,7 @@
 
 #include "platform.h"
 
+#include "common/crc.h"
 #include "common/maths.h"
 
 #include "pg.h"
@@ -79,6 +80,8 @@ bool pgLoad(const pgRegistry_t* reg, const void *from, int size, int version)
     if (version == pgVersion(reg)) {
         const int take = MIN(size, pgSize(reg));
         memcpy(pgOffset(reg), from, take);
+
+        *reg->fnv_hash = fnv_update(FNV_OFFSET_BASIS, from, take);
 
         return true;
     }

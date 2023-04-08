@@ -31,6 +31,18 @@
 
 #define SIMULATOR_MULTITHREAD
 
+#define SYSTEM_HSE_MHZ 0
+#define DEFAULT_CPU_OVERCLOCK 1
+#define DMA_RAM
+#define DMA_RW_AXI
+#define DMA_RAM_R
+#define DMA_RAM_W
+#define DMA_RAM_RW
+
+#define DMA_DATA_ZERO_INIT
+#define DMA_DATA
+#define STATIC_DMA_DATA_AUTO
+
 // use simulatior's attitude directly
 // disable this if wants to test AHRS algorithm
 #undef USE_IMU_CALC
@@ -55,19 +67,19 @@
 #undef SCHEDULER_DELAY_LIMIT
 #define SCHEDULER_DELAY_LIMIT           1
 
-#define USE_FAKE_LED
+#define USE_VIRTUAL_LED
 
 #define USE_ACC
-#define USE_FAKE_ACC
+#define USE_VIRTUAL_ACC
 
 #define USE_GYRO
-#define USE_FAKE_GYRO
+#define USE_VIRTUAL_GYRO
 
 #define USE_MAG
-#define USE_FAKE_MAG
+#define USE_VIRTUAL_MAG
 
 #define USE_BARO
-#define USE_FAKE_BARO
+#define USE_VIRTUAL_BARO
 
 #define USABLE_TIMER_CHANNEL_COUNT 0
 
@@ -90,15 +102,17 @@
 
 #define USE_PARAMETER_GROUPS
 
+#define USE_PWM_OUTPUT
+
 #undef USE_STACK_CHECK // I think SITL don't need this
 #undef USE_DASHBOARD
 #undef USE_TELEMETRY_LTM
 #undef USE_ADC
 #undef USE_VCP
 #undef USE_OSD
-#undef USE_PPM
-#undef USE_PWM
-#undef USE_SERIAL_RX
+#undef USE_RX_PPM
+#undef USE_RX_PWM
+#undef USE_SERIALRX
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_GHST
 #undef USE_SERIALRX_IBUS
@@ -124,9 +138,8 @@
 #undef USE_VTX_CONTROL
 #undef USE_VTX_SMARTAUDIO
 #undef USE_VTX_TRAMP
+#undef USE_VTX_MSP
 #undef USE_CAMERA_CONTROL
-#undef USE_BRUSHED_ESC_AUTODETECT
-#undef USE_GPS_RESCUE
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 
@@ -141,6 +154,8 @@
 #define SOFTSERIAL_2_TIMER 3
 
 #define DEFIO_NO_PORTS   // suppress 'no pins defined' warning
+
+#define FLASH_PAGE_SIZE (0x400)
 
 // belows are internal stuff
 
@@ -221,6 +236,9 @@ typedef struct
 #define UART7 ((USART_TypeDef *)0x0007)
 #define UART8 ((USART_TypeDef *)0x0008)
 
+#define SIMULATOR_MAX_RC_CHANNELS   16
+#define SIMULATOR_MAX_PWM_CHANNELS  16
+
 typedef struct
 {
     void* test;
@@ -242,10 +260,22 @@ typedef struct {
     double imu_orientation_quat[4];     //w, x, y, z
     double velocity_xyz[3];             // m/s, earth frame
     double position_xyz[3];             // meters, NED from origin
+    double pressure;
 } fdm_packet;
+
+typedef struct {
+    double timestamp;                               // in seconds
+    uint16_t channels[SIMULATOR_MAX_RC_CHANNELS];   // RC channels
+} rc_packet;
+
 typedef struct {
     float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
+
+typedef struct {
+    uint16_t motorCount; // Count of motor in the PWM output.
+    float pwm_output_raw[SIMULATOR_MAX_PWM_CHANNELS];   // Raw PWM from 1100 to 1900
+} servo_packet_raw;
 
 void FLASH_Unlock(void);
 void FLASH_Lock(void);
@@ -261,4 +291,4 @@ uint64_t millis64(void);
 
 int lockMainPID(void);
 
-
+int targetParseArgs(int argc, char * argv[]);

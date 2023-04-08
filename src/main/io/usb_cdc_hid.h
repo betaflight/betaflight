@@ -22,3 +22,5 @@
 
 void sendRcDataToHid(void);
 bool cdcDeviceIsMayBeActive();
+void sendReport(uint8_t *report, uint8_t len);
+uint8_t usbIsConnected(void);

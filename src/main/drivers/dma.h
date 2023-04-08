@@ -22,6 +22,10 @@
 
 #include "drivers/resource.h"
 
+#if defined(USE_ATBSP_DRIVER)
+#include "drivers/at32/dma_atbsp.h"
+#endif
+
 #define CACHE_LINE_SIZE 32
 #define CACHE_LINE_MASK (CACHE_LINE_SIZE - 1)
 
@@ -39,6 +43,8 @@ typedef struct dmaResource_s dmaResource_t;
 #elif defined(STM32H7)
 // H7 has stream based DMA and channel based BDMA, but we ignore BDMA (for now).
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
+#elif defined(AT32F435)
+#define DMA_ARCH_TYPE dma_channel_type
 #else
 #define DMA_ARCH_TYPE DMA_Channel_TypeDef
 #endif
@@ -60,17 +66,16 @@ typedef struct dmaChannelDescriptor_s {
     resourceOwner_t             owner;
     uint8_t                     resourceIndex;
     uint32_t                    completeFlag;
-} dmaChannelDescriptor_t;
-
-#if defined(STM32F7)
-//#define HAL_CLEANINVALIDATECACHE(addr, size) (SCB_CleanInvalidateDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), ((uint32_t)(addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
-//#define HAL_CLEANCACHE(addr, size) (SCB_CleanDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), ((uint32_t)(addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
-
+#if defined(USE_ATBSP_DRIVER)
+    dmamux_channel_type         *dmamux;
 #endif
+} dmaChannelDescriptor_t;
 
 #define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
+#if defined(USE_ATBSP_DRIVER)
+
+#elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 
 typedef enum {
     DMA_NONE = 0,
@@ -128,6 +133,8 @@ typedef enum {
 #define DMA_IT_DMEIF        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
+void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
+
 #else
 
 #if defined(STM32G4)
@@ -169,16 +176,7 @@ typedef enum {
     DMA1_CH5_HANDLER,
     DMA1_CH6_HANDLER,
     DMA1_CH7_HANDLER,
-#if defined(STM32F3) || defined(STM32F10X_CL)
-    DMA2_CH1_HANDLER,
-    DMA2_CH2_HANDLER,
-    DMA2_CH3_HANDLER,
-    DMA2_CH4_HANDLER,
-    DMA2_CH5_HANDLER,
-    DMA_LAST_HANDLER = DMA2_CH5_HANDLER
-#else
     DMA_LAST_HANDLER = DMA1_CH7_HANDLER
-#endif
 } dmaIdentifier_e;
 
 #define DMA_DEVICE_NO(x)    ((((x)-1) / 7) + 1)
@@ -201,11 +199,7 @@ typedef enum {
     .owner.resourceIndex = 0 \
     }
 
-#if defined(USE_CCM_CODE) && defined(STM32F3)
-#define DMA_HANDLER_CODE CCM_CODE
-#else
 #define DMA_HANDLER_CODE
-#endif
 
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) DMA_HANDLER_CODE void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
                                                                         const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
@@ -220,7 +214,6 @@ typedef enum {
 #define DMA_IT_TCIF         ((uint32_t)0x00000002)
 #define DMA_IT_HTIF         ((uint32_t)0x00000004)
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
-
 #endif
 
 // Macros to avoid direct register and register bit access
@@ -252,10 +245,10 @@ typedef enum {
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 // Missing __HAL_DMA_SET_COUNTER in FW library V1.0.0
 #define __HAL_DMA_SET_COUNTER(__HANDLE__, __COUNTER__) ((__HANDLE__)->Instance->CNDTR = (uint16_t)(__COUNTER__))
+#elif defined(AT32F4)
+#define DMA_CCR_EN 1 
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->ctrl_bit.chen & DMA_CCR_EN)
 #else
-#if defined(STM32F1)
-#define DMA_CCR_EN 1 // Not defined anywhere ...
-#endif
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #define DMAx_SetMemoryAddress(reg, address) ((DMA_ARCH_TYPE *)(reg))->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail]
 #endif
@@ -273,7 +266,7 @@ uint32_t dmaGetChannel(const uint8_t channel);
 // Wrapper macros to cast dmaResource_t back into DMA_ARCH_TYPE
 //
 
-#ifdef USE_HAL_DRIVER
+#if defined(USE_HAL_DRIVER)
 
 // We actually need these LL case only
 
@@ -284,6 +277,8 @@ uint32_t dmaGetChannel(const uint8_t channel);
 #define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+
+#elif defined(USE_ATBSP_DRIVER)
 
 #else
 

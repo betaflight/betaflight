@@ -39,7 +39,8 @@ float exp_cst2 = 0.f;
 /* Relative error bounded by 1e-5 for normalized outputs
    Returns invalid outputs for nan inputs
    Continuous error */
-float exp_approx(float val) {
+float exp_approx(float val)
+{
   union { int32_t i; float f; } xu, xu2;
   float val2, val3, val4, b;
   int32_t val4i;
@@ -70,7 +71,8 @@ float exp_approx(float val) {
    Returns a finite number for +inf input
    Returns -inf for nan and <= 0 inputs.
    Continuous error. */
-float log_approx(float val) {
+float log_approx(float val)
+{
   union { float f; int32_t i; } valu;
   float exp, addcst, x;
   valu.f = val;

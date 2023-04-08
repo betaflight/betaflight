@@ -52,8 +52,7 @@
 #define D_MIN_SETPOINT_GAIN_FACTOR 0.00008f
 #endif
 
-#define ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF 15  // The anti gravity throttle highpass filter cutoff
-#define ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF 3  // The anti gravity P smoothing filter cutoff
+#define ATTITUDE_CUTOFF_HZ 50
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
@@ -236,8 +235,18 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 #endif
 
-    pt1FilterInit(&pidRuntime.antiGravityThrottleLpf, pt1FilterGain(ANTI_GRAVITY_THROTTLE_FILTER_CUTOFF, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.antiGravitySmoothLpf, pt1FilterGain(ANTI_GRAVITY_SMOOTH_FILTER_CUTOFF, pidRuntime.dT));
+#ifdef USE_ACC
+    const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
+    const float angleCutoffHz = 1000.0f / (2.0f * M_PIf * pidProfile->angle_feedforward_smoothing_ms); // default of 80ms -> 2.0Hz, 160ms -> 1.0Hz, approximately
+    const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
+
+    for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
+        pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
+        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
+    }
+#endif
+
+    pt2FilterInit(&pidRuntime.antiGravityLpf, pt2FilterGain(pidProfile->anti_gravity_cutoff_hz, pidRuntime.dT));
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -246,7 +255,7 @@ void pidInit(const pidProfile_t *pidProfile)
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
 #ifdef USE_RPM_FILTER
-    rpmFilterInit(rpmFilterConfig());
+    rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
 #endif
 }
 
@@ -286,12 +295,15 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     {
         pidRuntime.pidCoefficient[FD_YAW].Ki *= 2.5f;
     }
-    pidRuntime.levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
-    pidRuntime.horizonGain = pidProfile->pid[PID_LEVEL].I / 10.0f;
-    pidRuntime.horizonTransition = (float)pidProfile->pid[PID_LEVEL].D;
-    pidRuntime.horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;
-    pidRuntime.horizonCutoffDegrees = (175 - pidProfile->horizon_tilt_effect) * 1.8f;
-    pidRuntime.horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
+    pidRuntime.angleGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
+    pidRuntime.angleFeedforwardGain = pidProfile->pid[PID_LEVEL].F / 100.0f;
+    pidRuntime.angleEarthRef = pidProfile->angle_earth_ref / 100.0f;
+
+    pidRuntime.horizonGain = MIN(pidProfile->pid[PID_LEVEL].I / 100.0f, 1.0f);
+    pidRuntime.horizonLimitSticks = pidProfile->pid[PID_LEVEL].D / 100.0f;
+    pidRuntime.horizonIgnoreSticks = pidProfile->horizon_ignore_sticks;
+    pidRuntime.horizonLimitDegrees = (float)pidProfile->horizon_limit_degrees;
+
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.itermWindupPointInv = 1.0f;
@@ -299,7 +311,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         const float itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
         pidRuntime.itermWindupPointInv = 1.0f / (1.0f - itermWindupPoint);
     }
-    pidRuntime.itermAcceleratorGain = pidProfile->itermAcceleratorGain;
+    pidRuntime.antiGravityGain = pidProfile->anti_gravity_gain;
     pidRuntime.crashTimeLimitUs = pidProfile->crash_time * 1000;
     pidRuntime.crashTimeDelayUs = pidProfile->crash_delay * 1000;
     pidRuntime.crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
@@ -313,17 +325,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     throttleBoost = pidProfile->throttle_boost * 0.1f;
 #endif
     pidRuntime.itermRotation = pidProfile->iterm_rotation;
-    pidRuntime.antiGravityMode = pidProfile->antiGravityMode;
 
-    // Calculate the anti-gravity value that will trigger the OSD display.
-    // For classic AG it's either 1.0 for off and > 1.0 for on.
-    // For the new AG it's a continuous floating value so we want to trigger the OSD
-    // display when it exceeds 25% of its possible range. This gives a useful indication
-    // of AG activity without excessive display.
-    pidRuntime.antiGravityOsdCutoff = 0.0f;
-    if (pidRuntime.antiGravityMode == ANTI_GRAVITY_SMOOTH) {
-        pidRuntime.antiGravityOsdCutoff += (pidRuntime.itermAcceleratorGain / 1000.0f) * 0.25f;
-    }
+    // Calculate the anti-gravity value that will trigger the OSD display when its strength exceeds 25% of max.
+    // This gives a useful indication of AG activity without excessive display.
+    pidRuntime.antiGravityOsdCutoff = (pidRuntime.antiGravityGain / 10.0f) * 0.25f;
+    pidRuntime.antiGravityPGain = ((float)(pidProfile->anti_gravity_p_gain) / 100.0f) * ANTIGRAVITY_KP;
 
 #if defined(USE_ITERM_RELAX)
     pidRuntime.itermRelax = pidProfile->iterm_relax;
@@ -393,7 +399,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_THRUST_LINEARIZATION
     pidRuntime.thrustLinearization = pidProfile->thrustLinearization / 100.0f;
-    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * powf(pidRuntime.thrustLinearization, 2);
+    pidRuntime.throttleCompensateAmount = pidRuntime.thrustLinearization - 0.5f * sq(pidRuntime.thrustLinearization);
 #endif
 
 #if defined(USE_D_MIN)
@@ -427,6 +433,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     }
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardBoostFactor = (float)pidProfile->feedforward_boost / 10.0f;
+
     feedforwardInit(pidProfile);
 #endif
 

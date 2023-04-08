@@ -47,6 +47,7 @@
 #include "drivers/adc.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_octospi.h"
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
@@ -62,7 +63,6 @@
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
 #include "drivers/pin_pull_up_down.h"
-#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/rx/rx_pwm.h"
 #include "drivers/sensor.h"
@@ -95,8 +95,10 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/gps_rescue.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "flight/position.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -117,6 +119,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx.h"
 #include "io/vtx_control.h"
+#include "io/vtx_msp.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
@@ -192,8 +195,7 @@ void busSwitchInit(void)
 }
 #endif
 
-
-static void configureSPIAndQuadSPI(void)
+static void configureSPIBusses(void)
 {
 #ifdef USE_SPI
     spiPinConfigure(spiPinConfig(0));
@@ -223,7 +225,10 @@ static void configureSPIAndQuadSPI(void)
     spiInit(SPIDEV_6);
 #endif
 #endif // USE_SPI
+}
 
+static void configureQuadSPIBusses(void)
+{
 #ifdef USE_QUADSPI
     quadSpiPinConfigure(quadSpiConfig(0));
 
@@ -233,25 +238,22 @@ static void configureSPIAndQuadSPI(void)
 #endif // USE_QUAD_SPI
 }
 
+static void configureOctoSPIBusses(void)
+{
+#ifdef USE_OCTOSPI
+#ifdef USE_OCTOSPI_DEVICE_1
+    octoSpiInit(OCTOSPIDEV_1);
+#endif
+#endif
+}
+
 #ifdef USE_SDCARD
-static void sdCardAndFSInit()
+static void sdCardAndFSInit(void)
 {
     sdcard_init(sdcardConfig());
     afatfs_init();
 }
 #endif
-
-static void swdPinsInit(void)
-{
-    IO_t io = IOGetByTag(DEFIO_TAG_E(PA13)); // SWDIO
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-    io = IOGetByTag(DEFIO_TAG_E(PA14)); // SWCLK
-    if (IOGetOwner(io) == OWNER_FREE) {
-        IOInit(io, OWNER_SWD, 0);
-    }
-}
 
 void init(void)
 {
@@ -260,6 +262,10 @@ void init(void)
 #endif
 
     systemInit();
+
+    // Initialize task data as soon as possible. Has to be done before tasksInit(),
+    // and any init code that may try to modify task behaviour before tasksInit().
+    tasksInitData();
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
@@ -273,20 +279,11 @@ void init(void)
     targetConfiguration();
 #endif
 
-#ifdef USE_BRUSHED_ESC_AUTODETECT
-    // Opportunistically use the first motor pin of the default configuration for detection.
-    // We are doing this as with some boards, timing seems to be important, and the later detection will fail.
-    ioTag_t motorIoTag = timerioTagGetByUsage(TIM_USE_MOTOR, 0);
-
-    if (motorIoTag) {
-        detectBrushedESC(motorIoTag);
-    }
-#endif
-
     enum {
-        FLASH_INIT_ATTEMPTED            = (1 << 0),
-        SD_INIT_ATTEMPTED               = (1 << 1),
-        SPI_AND_QSPI_INIT_ATTEMPTED      = (1 << 2),
+        FLASH_INIT_ATTEMPTED                = (1 << 0),
+        SD_INIT_ATTEMPTED                   = (1 << 1),
+        SPI_BUSSES_INIT_ATTEMPTED           = (1 << 2),
+        QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED = (1 << 3),
     };
     uint8_t initFlags = 0;
 
@@ -296,19 +293,17 @@ void init(void)
     // Config in sdcard presents an issue with pin configuration since the pin and sdcard configs for the
     // sdcard are in the config which is on the sdcard which we can't read yet!
     //
-    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
-    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
-    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change sdio/spi configs needed for
-    // the system to boot and/or to save the config.
+    // FIXME For now, users must NOT change flash/pin configs needed for the system to boot and/or to save the config.
+    // One possible solution is to lock the pins for the flash chip so they cannot be modified post-boot.
     //
-    // note that target specific SDCARD/SDIO/SPI/QUADSPI configs are
+    // note that target specific SDCARD/SDIO/SPI/QUADSPI/OCTOSPI configs are
     // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_SDCARD.
     //
 
     //
     // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
-    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
-    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI/OCTOSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI/OCTOSPI CS lines.
     //
 
 #ifdef TARGET_BUS_INIT
@@ -318,8 +313,8 @@ void init(void)
     pgResetAll();
 
 #ifdef USE_SDCARD_SPI
-    configureSPIAndQuadSPI();
-    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+    configureSPIBusses();
+    initFlags |= SPI_BUSSES_INIT_ATTEMPTED;
 #endif
 
     sdCardAndFSInit();
@@ -339,37 +334,42 @@ void init(void)
 
 #endif // CONFIG_IN_SDCARD
 
-#ifdef CONFIG_IN_EXTERNAL_FLASH
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     //
     // Config on external flash presents an issue with pin configuration since the pin and flash configs for the
     // external flash are in the config which is on a chip which we can't read yet!
     //
-    // FIXME We need to add configuration somewhere, e.g. bootloader image or reserved flash area, that can be read by the firmware.
-    // it's currently possible for the firmware resource allocation to be wrong after the config is loaded if the user changes the settings.
-    // This would cause undefined behaviour once the config is loaded.  so for now, users must NOT change flash/pin configs needed for
-    // the system to boot and/or to save the config.
+    // FIXME For now, users must NOT change flash/pin configs needed for the system to boot and/or to save the config.
+    // One possible solution is to lock the pins for the flash chip so they cannot be modified post-boot.
     //
-    // note that target specific FLASH/SPI/QUADSPI configs are
-    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH.
+    // note that target specific FLASH/SPI/QUADSPI/OCTOSPI configs are
+    // also not supported in USE_TARGET_CONFIG/targetConfigure() when using CONFIG_IN_EXTERNAL_FLASH/CONFIG_IN_MEMORY_MAPPED_FLASH.
     //
 
     //
     // IMPORTANT: all default flash and pin configurations must be valid for the target after pgResetAll() is called.
-    // Target designers must ensure other devices connected the same SPI/QUADSPI interface as the flash chip do not
-    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI CS lines.
+    // Target designers must ensure other devices connected the same SPI/QUADSPI/OCTOSPI interface as the flash chip do not
+    // cause communication issues with the flash chip.  e.g. use external pullups on SPI/QUADSPI/OCTOSPI CS lines.
     //
     pgResetAll();
 
 #ifdef TARGET_BUS_INIT
-#error "CONFIG_IN_EXTERNAL_FLASH and TARGET_BUS_INIT are mutually exclusive"
+#error "CONFIG_IN_EXTERNAL_FLASH/CONFIG_IN_MEMORY_MAPPED_FLASH and TARGET_BUS_INIT are mutually exclusive"
 #endif
 
-    configureSPIAndQuadSPI();
-    initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+#if defined(CONFIG_IN_EXTERNAL_FLASH)
+    configureSPIBusses();
+    initFlags |= SPI_BUSSES_INIT_ATTEMPTED;
+#endif
 
+#if defined(CONFIG_IN_MEMORY_MAPPED_FLASH) || defined(CONFIG_IN_EXTERNAL_FLASH)
+    configureQuadSPIBusses();
+    configureOctoSPIBusses();
+    initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
+#endif
 
 #ifndef USE_FLASH_CHIP
-#error "CONFIG_IN_EXTERNAL_FLASH requires USE_FLASH_CHIP to be defined."
+#error "CONFIG_IN_EXTERNAL_FLASH/CONFIG_IN_MEMORY_MAPPED_FLASH requires USE_FLASH_CHIP to be defined."
 #endif
 
     bool haveFlash = flashInit(flashConfig());
@@ -379,7 +379,8 @@ void init(void)
     }
     initFlags |= FLASH_INIT_ATTEMPTED;
 
-#endif // CONFIG_IN_EXTERNAL_FLASH
+#endif // CONFIG_IN_EXTERNAL_FLASH || CONFIG_IN_MEMORY_MAPPED_FLASH
+
 
     initEEPROM();
 
@@ -392,7 +393,7 @@ void init(void)
 #endif
 
     if (!readSuccess || !isEEPROMVersionValid() || strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
-        resetEEPROM(false);
+        resetEEPROM();
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
@@ -401,27 +402,18 @@ void init(void)
     dbgPinInit();
 #endif
 
-#ifdef USE_BRUSHED_ESC_AUTODETECT
-    // Now detect again with the actually configured pin for motor 1, if it is not the default pin.
-    ioTag_t configuredMotorIoTag = motorConfig()->dev.ioTags[0];
-
-    if (configuredMotorIoTag && configuredMotorIoTag != motorIoTag) {
-        detectBrushedESC(configuredMotorIoTag);
-    }
-#endif
-
     debugMode = systemConfig()->debug_mode;
 
 #ifdef TARGET_PREINIT
     targetPreInit();
 #endif
 
-#if !defined(USE_FAKE_LED)
+#if !defined(USE_VIRTUAL_LED)
     ledInit(statusLedConfig());
 #endif
     LED2_ON;
 
-#ifdef USE_EXTI
+#if !defined(SIMULATOR_BUILD)
     EXTIInit();
 #endif
 
@@ -447,7 +439,7 @@ void init(void)
             bothButtonsHeld = buttonAPressed() && buttonBPressed();
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
-                    resetEEPROM(false);
+                    resetEEPROM();
 #ifdef USE_PERSISTENT_OBJECTS
                     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
 #endif
@@ -556,12 +548,12 @@ void init(void)
 #endif
 
     if (0) {}
-#if defined(USE_PPM)
+#if defined(USE_RX_PPM)
     else if (featureIsEnabled(FEATURE_RX_PPM)) {
         ppmRxInit(ppmConfig());
     }
 #endif
-#if defined(USE_PWM)
+#if defined(USE_RX_PWM)
     else if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(pwmConfig());
     }
@@ -581,10 +573,16 @@ void init(void)
 
 #else
 
-    // Depending on compilation options SPI/QSPI initialisation may already be done.
-    if (!(initFlags & SPI_AND_QSPI_INIT_ATTEMPTED)) {
-        configureSPIAndQuadSPI();
-        initFlags |= SPI_AND_QSPI_INIT_ATTEMPTED;
+    // Depending on compilation options SPI/QSPI/OSPI initialisation may already be done.
+    if (!(initFlags & SPI_BUSSES_INIT_ATTEMPTED)) {
+        configureSPIBusses();
+        initFlags |= SPI_BUSSES_INIT_ATTEMPTED;
+    }
+
+    if (!(initFlags & QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED)) {
+        configureQuadSPIBusses();
+        configureOctoSPIBusses();
+        initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
 #if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && defined(STM32H7)
@@ -678,11 +676,7 @@ void init(void)
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
-        if (true
-#if defined(USE_UNIFIED_TARGET)
-            && isSystemConfigured()
-#endif
-            ) {
+        if (isSystemConfigured()) {
             indicateFailure(FAILURE_MISSING_ACC, 2);
         }
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
@@ -761,6 +755,9 @@ void init(void)
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
         gpsInit();
+#ifdef USE_GPS_RESCUE
+        gpsRescueInit();
+#endif
     }
 #endif
 
@@ -800,17 +797,15 @@ void init(void)
     flashfsInit();
 #endif
 
-#ifdef USE_BLACKBOX
 #ifdef USE_SDCARD
-    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-        if (sdcardConfig()->mode) {
-            if (!(initFlags & SD_INIT_ATTEMPTED)) {
-                sdCardAndFSInit();
-                initFlags |= SD_INIT_ATTEMPTED;
-            }
+    if (sdcardConfig()->mode) {
+        if (!(initFlags & SD_INIT_ATTEMPTED)) {
+            sdCardAndFSInit();
+            initFlags |= SD_INIT_ATTEMPTED;
         }
     }
 #endif
+#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
@@ -823,6 +818,7 @@ void init(void)
 #ifdef USE_BARO
     baroStartCalibration();
 #endif
+    positionInit();
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -833,6 +829,10 @@ void init(void)
 
 #if defined(USE_VTX_COMMON)
     vtxCommonInit();
+#endif
+
+#ifdef USE_VTX_MSP
+    vtxMspInit();
 #endif
 
 #ifdef USE_VTX_SMARTAUDIO
@@ -878,18 +878,13 @@ void init(void)
     cmsInit();
 #endif
 
-#ifdef USE_TELEMETRY
-    if (featureIsEnabled(FEATURE_TELEMETRY)) {
-        telemetryInit();
-    }
-#endif
-
 #if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)))
     displayPort_t *osdDisplayPort = NULL;
-    osdDisplayPortDevice_e osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_NONE;
 #endif
 
 #if defined(USE_OSD)
+    osdDisplayPortDevice_e osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_NONE;
+
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (featureIsEnabled(FEATURE_OSD)) {
@@ -969,14 +964,19 @@ void init(void)
     }
 #endif
 
+#ifdef USE_TELEMETRY
+    // Telemetry will initialise displayport and register with CMS by itself.
+    if (featureIsEnabled(FEATURE_TELEMETRY)) {
+        telemetryInit();
+    }
+#endif
+
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
-    // On F4/F7 allocate SPI DMA streams before motor timers
-#if defined(STM32F4) || defined(STM32F7)
-#ifdef USE_SPI
+// allocate SPI DMA streams before motor timers
+#if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
-#endif
 #endif
 
 #ifdef USE_MOTOR
@@ -984,15 +984,13 @@ void init(void)
     motorEnable();
 #endif
 
-    // On H7/G4 allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
-#if defined(STM32H7) || defined(STM32G4)
-#ifdef USE_SPI
+// allocate SPI DMA streams after motor timers as SPI DMA allocate will always be possible
+#if defined(USE_SPI) && defined(USE_SPI_DMA_ENABLE_LATE) && !defined(USE_SPI_DMA_ENABLE_EARLY)
     // Attempt to enable DMA on all SPI busses
     spiInitBusDMA();
 #endif
-#endif
 
-    swdPinsInit();
+    debugInit();
 
     unusedPinsInit();
 

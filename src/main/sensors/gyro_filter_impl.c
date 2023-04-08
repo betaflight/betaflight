@@ -50,7 +50,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 1, lrintf(gyroADCf));
 
 #ifdef USE_RPM_FILTER
-        gyroADCf = rpmFilterGyro(axis, gyroADCf);
+        gyroADCf = rpmFilterApply(axis, gyroADCf);
 #endif
 
         // DEBUG_GYRO_SAMPLE(2) Record the post-RPM Filter value for the selected debug axis

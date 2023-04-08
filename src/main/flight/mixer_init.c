@@ -152,6 +152,17 @@ static const motorMixer_t mixerOctoX8[] = {
     { 1.0f,  1.0f, -1.0f,  1.0f },          // UNDER_FRONT_L
 };
 
+static const motorMixer_t mixerOctoX8P[] = {
+    { 1.0f,  0.0f,  1.0f, -1.0f },          // REAR
+    { 1.0f, -1.0f,  0.0f,  1.0f },          // RIGHT
+    { 1.0f,  1.0f,  0.0f,  1.0f },          // LEFT
+    { 1.0f,  0.0f, -1.0f, -1.0f },          // FRONT
+    { 1.0f,  0.0f,  1.0f,  1.0f },          // UNDER_REAR
+    { 1.0f, -1.0f,  0.0f, -1.0f },          // UNDER_RIGHT
+    { 1.0f,  1.0f,  0.0f, -1.0f },          // UNDER_LEFT
+    { 1.0f,  0.0f, -1.0f,  1.0f },          // UNDER_FRONT
+};
+
 static const motorMixer_t mixerOctoFlatP[] = {
     { 1.0f,  0.707107f, -0.707107f,  1.0f },    // FRONT_L
     { 1.0f, -0.707107f, -0.707107f,  1.0f },    // FRONT_R
@@ -175,6 +186,7 @@ static const motorMixer_t mixerOctoFlatX[] = {
 };
 #else
 #define mixerOctoX8 NULL
+#define mixerOctoX8P NULL
 #define mixerOctoFlatP NULL
 #define mixerOctoFlatX NULL
 #endif
@@ -244,7 +256,8 @@ const mixer_t mixers[] = {
     { 0, false, NULL },                // MIXER_CUSTOM
     { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
     { 3, true,  NULL },                // MIXER_CUSTOM_TRI
-    { 4, false, mixerQuadX1234 },
+    { 4, false, mixerQuadX1234 },      // MIXER_QUADX_1234
+    { 8, false, mixerOctoX8P },        // MIXER_OCTOX8P
 };
 #endif // !USE_QUAD_MIXER_ONLY
 
@@ -305,13 +318,10 @@ void mixerInitProfile(void)
     mixerRuntime.dynIdleIGain = currentPidProfile->dyn_idle_i_gain * 0.01f * pidGetDT();
     mixerRuntime.dynIdleDGain = currentPidProfile->dyn_idle_d_gain * 0.0000003f * pidGetPidFrequency();
     mixerRuntime.dynIdleMaxIncrease = currentPidProfile->dyn_idle_max_increase * 0.001f;
+    mixerRuntime.dynIdleStartIncrease = currentPidProfile->dyn_idle_start_increase * 0.001f;
     mixerRuntime.minRpsDelayK = 800 * pidGetDT() / 20.0f; //approx 20ms D delay, arbitrarily suits many motors
-    if (!mixerRuntime.feature3dEnabled ) {
-        if (mixerRuntime.dynIdleMinRps) {
-            mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE;
-        } else {
-            mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE + mixerRuntime.idleThrottleOffset * DSHOT_RANGE;
-        }
+    if (!mixerRuntime.feature3dEnabled && mixerRuntime.dynIdleMinRps) {
+        mixerRuntime.motorOutputLow = DSHOT_MIN_THROTTLE; // Override value set by initEscEndpoints to allow zero motor drive
     }
 #endif
 
@@ -449,11 +459,9 @@ bool mixerModeIsFixedWing(mixerMode_e mixerMode)
     case MIXER_AIRPLANE:
     case MIXER_CUSTOM_AIRPLANE:
         return true;
-
         break;
     default:
         return false;
-
         break;
     }
 }

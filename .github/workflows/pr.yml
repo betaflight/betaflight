@@ -1,0 +1,12 @@
+name: PR
+
+on:
+  pull_request:
+    branches:
+      - master
+      - '*-maintenance'
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml

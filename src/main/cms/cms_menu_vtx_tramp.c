@@ -269,14 +269,14 @@ static const OSD_Entry trampMenuEntries[] =
 {
     { "- TRAMP -", OME_Label, NULL, NULL },
 
-    { "",       OME_Label | DYNAMIC,   NULL,                   trampCmsStatusString },
+    { "",       OME_Label | DYNAMIC,   NULL,         trampCmsStatusString },
     { "PIT",    OME_TAB,     trampCmsSetPitMode,     &trampCmsEntPitMode },
     { "BAND",   OME_TAB,     trampCmsConfigBand,     &trampCmsEntBand },
     { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan },
-    { "(FREQ)", OME_UINT16 | DYNAMIC,  NULL,                   &trampCmsEntFreqRef },
+    { "(FREQ)", OME_UINT16 | DYNAMIC,  NULL,         &trampCmsEntFreqRef },
     { "POWER",  OME_TAB,     trampCmsConfigPower,    &trampCmsEntPower },
-    { "T(C)",   OME_INT16 | DYNAMIC,   NULL,                   &trampCmsEntTemp },
-    { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence },
+    { "T(C)",   OME_INT16 | DYNAMIC,   NULL,         &trampCmsEntTemp },
+    { "SAVE",   OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence },
 
     { "BACK",   OME_Back, NULL, NULL },
     { NULL,     OME_END, NULL, NULL }

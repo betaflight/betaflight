@@ -44,14 +44,17 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
-bool tcpIsStart(void) {
+bool tcpIsStart(void)
+{
     return tcpStart;
 }
-static void onData(dyad_Event *e) {
+static void onData(dyad_Event *e)
+{
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     tcpDataIn(s, (uint8_t*)e->data, e->size);
 }
-static void onClose(dyad_Event *e) {
+static void onClose(dyad_Event *e)
+{
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     s->clientCount--;
     s->conn = NULL;
@@ -60,7 +63,8 @@ static void onClose(dyad_Event *e) {
         s->connected = false;
     }
 }
-static void onAccept(dyad_Event *e) {
+static void onAccept(dyad_Event *e)
+{
     tcpPort_t* s = (tcpPort_t*)(e->udata);
     fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
 

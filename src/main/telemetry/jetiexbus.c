@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -288,7 +289,7 @@ void createExTelemetryTextMessage(uint8_t *exMessage, uint8_t messageID, const e
 
 uint32_t calcGpsDDMMmmm(int32_t value, bool isLong)
 {
-    uint32_t absValue = ABS(value);
+    uint32_t absValue = abs(value);
     uint16_t deg16 = absValue / GPS_DEGREES_DIVIDER;
     uint16_t min16 = (absValue - deg16 * GPS_DEGREES_DIVIDER) * 6 / 1000;
 
@@ -365,7 +366,7 @@ int32_t getSensorValue(uint8_t sensor)
     break;
 
     case EX_GPS_DIRECTION_TO_HOME:
-        return GPS_directionToHome;
+        return GPS_directionToHome / 10;
     break;
 
     case EX_GPS_HEADING:

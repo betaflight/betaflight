@@ -27,43 +27,29 @@ ENTRY(Reset_Handler)
 0x38000000 to 0x38003FFF   16K SRAM4, D3 domain, unused
 0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain, unused
 
-XXX TODO join isr vector, startup and firmware to save some space
-0x08000000 to 0x080FFFFF 1024K full flash,
+0x08000000 to 0x080FFFFF 1024K full flash
 0x08000000 to 0x0801FFFF  128K isr vector, startup code
-0x08020000 to 0x080DFFFF  768K firmware
-0x080E0000 to 0x080FFFFF  128K config
-
+0x08020000 to 0x0803FFFF  128K config
+0x08040000 to 0x080FFFFF  768K firmware
 */
 
 /* Specify the memory areas */
 MEMORY
 {
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
-    FLASH_CONFIG (r)  : ORIGIN = 0x080E0000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x08020000, LENGTH = 768K
+    FLASH_CONFIG (r)  : ORIGIN = 0x08020000, LENGTH = 128K
+    FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = 768K
 
     ITCM_RAM (rwx)    : ORIGIN = 0x00000000, LENGTH = 64K
     DTCM_RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 128K
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 320K
 
     D2_RAM (rwx)      : ORIGIN = 0x30000000, LENGTH = 32K /* SRAM1 + SRAM2 */
-
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
 REGION_ALIAS("STACKRAM", DTCM_RAM)
 REGION_ALIAS("FASTRAM", DTCM_RAM)
-
-/* INCLUDE "stm32_flash_f7_split.ld" */
-/*
-*****************************************************************************
-**
-**  File        : stm32_flash_f7_split.ld
-**
-**  Abstract    : Common linker script for STM32 devices.
-**
-*****************************************************************************
-*/
 
 /* Entry Point */
 ENTRY(Reset_Handler)
@@ -77,7 +63,7 @@ __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
-_Min_Stack_Size = 0x800; /* required amount of stack */
+_Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Define output sections */
 SECTIONS
@@ -111,28 +97,28 @@ SECTIONS
   } >FLASH1
 
   /* Critical program code goes into ITCM RAM */
-  /* Copy specific fast-executing code to ITCM RAM */ 
-  tcm_code = LOADADDR(.tcm_code); 
+  /* Copy specific fast-executing code to ITCM RAM */
+  tcm_code = LOADADDR(.tcm_code);
   .tcm_code :
   {
     . = ALIGN(4);
-    tcm_code_start = .; 
+    tcm_code_start = .;
     *(.tcm_code)
     *(.tcm_code*)
     . = ALIGN(4);
-    tcm_code_end = .; 
+    tcm_code_end = .;
   } >ITCM_RAM AT >FLASH1
 
-  .ARM.extab   : 
-  { 
-    *(.ARM.extab* .gnu.linkonce.armextab.*) 
-  } >FLASH
-  
-  .ARM : 
+  .ARM.extab   :
+  {
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
+  } >FLASH1
+
+  .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH
+  } >FLASH1
 
   .pg_registry :
   {
@@ -140,14 +126,14 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH
-  
+  } >FLASH1
+
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH
+  } >FLASH1
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -162,7 +148,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH
+  } >RAM AT >FLASH1
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -178,7 +164,7 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >FASTRAM
+  } >RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -208,7 +194,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH
+  } >FASTRAM AT >FLASH1
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
@@ -237,7 +223,7 @@ SECTIONS
     *(.dmaram_data*)          /* .data* sections */
     . = ALIGN(32);
     _edmaram_data = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH
+  } >RAM AT >FLASH1
 
   . = ALIGN(32);
   .dmaram_bss (NOLOAD) :

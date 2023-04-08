@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "platform.h"
@@ -64,8 +65,6 @@ float rcCommandDelta[XYZ_AXIS_COUNT];
 #endif
 static float rawSetpoint[XYZ_AXIS_COUNT];
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
-static float rcDeflectionSmoothed[3];
-static float throttlePIDAttenuation;
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 static uint16_t currentRxRefreshRate;
@@ -91,14 +90,16 @@ enum {
 #define RC_SMOOTHING_FILTER_TRAINING_DELAY_MS   1000  // Additional time to wait after receiving first valid rx frame before initial training starts
 #define RC_SMOOTHING_FILTER_RETRAINING_DELAY_MS 2000  // Guard time to wait after retraining to prevent retraining again too quickly
 #define RC_SMOOTHING_RX_RATE_CHANGE_PERCENT     20    // Look for samples varying this much from the current detected frame rate to initiate retraining
-#define RC_SMOOTHING_RX_RATE_MIN_US             950   // 0.950ms to fit 1kHz without an issue
-#define RC_SMOOTHING_RX_RATE_MAX_US             65500 // 65.5ms or 15.26hz
 #define RC_SMOOTHING_FEEDFORWARD_INITIAL_HZ     100 // The value to use for "auto" when interpolated feedforward is enabled
 
 static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
+static float rcDeflectionSmoothed[3];
 #endif // USE_RC_SMOOTHING_FILTER
 
-bool getShouldUpdateFeedforward()
+#define RC_RX_RATE_MIN_US                       950   // 0.950ms to fit 1kHz without an issue
+#define RC_RX_RATE_MAX_US                       65500 // 65.5ms or 15.26hz
+
+bool getShouldUpdateFeedforward(void)
 // only used in pid.c, when feedforward is enabled, to initiate a new FF value
 {
     const bool updateFf = newRxDataForFF;
@@ -126,14 +127,14 @@ float getRcDeflection(int axis)
 #endif
 }
 
+float getRcDeflectionRaw(int axis)
+{
+    return rcDeflection[axis];
+}
+
 float getRcDeflectionAbs(int axis)
 {
     return rcDeflectionAbs[axis];
-}
-
-float getThrottlePIDAttenuation(void)
-{
-    return throttlePIDAttenuation;
 }
 
 #ifdef USE_FEEDFORWARD
@@ -213,7 +214,7 @@ float applyKissRates(const int axis, float rcCommandf, const float rcCommandfAbs
 float applyActualRates(const int axis, float rcCommandf, const float rcCommandfAbs)
 {
     float expof = currentControlRateProfile->rcExpo[axis] / 100.0f;
-    expof = rcCommandfAbs * (powf(rcCommandf, 5) * expof + rcCommandf * (1 - expof));
+    expof = rcCommandfAbs * (power5(rcCommandf) * expof + rcCommandf * (1 - expof));
 
     const float centerSensitivity = currentControlRateProfile->rcRates[axis] * 10.0f;
     const float stickMovement = MAX(0, currentControlRateProfile->rates[axis] * 10.0f - centerSensitivity);
@@ -270,46 +271,23 @@ static void scaleRawSetpointToFpvCamAngle(void)
     rawSetpoint[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, -SETPOINT_RATE_LIMIT * 1.0f, SETPOINT_RATE_LIMIT * 1.0f);
 }
 
-#define THROTTLE_BUFFER_MAX 20
-#define THROTTLE_DELTA_MS 100
-
-static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
-{
-    static int index;
-    static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
-
-    const int rxRefreshRateMs = rxRefreshRate / 1000;
-    const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
-    const int16_t throttleVelocityThreshold = (featureIsEnabled(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
-
-    rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
-    if (index >= indexMax) {
-        index = 0;
-    }
-
-    const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
-
-    if (currentPidProfile->antiGravityMode == ANTI_GRAVITY_STEP) {
-        if (ABS(rcCommandSpeed) > throttleVelocityThreshold) {
-            pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
-        } else {
-            pidSetItermAccelerator(0.0f);
-        }
-    }
-}
-
 void updateRcRefreshRate(timeUs_t currentTimeUs)
 {
     static timeUs_t lastRxTimeUs;
 
     timeDelta_t frameAgeUs;
-    timeDelta_t refreshRateUs = rxGetFrameDelta(&frameAgeUs);
-    if (!refreshRateUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
-        refreshRateUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
+    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
+
+    if (!frameDeltaUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
+        frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
     }
+
+    DEBUG_SET(DEBUG_RX_TIMING, 0, MIN(frameDeltaUs / 10, INT16_MAX));
+    DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
+
     lastRxTimeUs = currentTimeUs;
-    isRxRateValid = (refreshRateUs >= RC_SMOOTHING_RX_RATE_MIN_US && refreshRateUs <= RC_SMOOTHING_RX_RATE_MAX_US);
-    currentRxRefreshRate = constrain(refreshRateUs, RC_SMOOTHING_RX_RATE_MIN_US, RC_SMOOTHING_RX_RATE_MAX_US);
+    isRxRateValid = (frameDeltaUs >= RC_RX_RATE_MIN_US && frameDeltaUs <= RC_RX_RATE_MAX_US);
+    currentRxRefreshRate = constrain(frameDeltaUs, RC_RX_RATE_MIN_US, RC_RX_RATE_MAX_US);
 }
 
 uint16_t getCurrentRxRefreshRate(void)
@@ -491,7 +469,7 @@ static FAST_CODE void processRcSmoothingFilter(void)
                         // During initial training process all samples.
                         // During retraining check samples to determine if they vary by more than the limit percentage.
                         if (rcSmoothingData.filterInitialized) {
-                            const float percentChange = (ABS(currentRxRefreshRate - rcSmoothingData.averageFrameTimeUs) / (float)rcSmoothingData.averageFrameTimeUs) * 100;
+                            const float percentChange = (abs(currentRxRefreshRate - rcSmoothingData.averageFrameTimeUs) / (float)rcSmoothingData.averageFrameTimeUs) * 100;
                             if (percentChange < RC_SMOOTHING_RX_RATE_CHANGE_PERCENT) {
                                 // We received a sample that wasn't more than the limit percent so reset the accumulation
                                 // During retraining we need a contiguous block of samples that are all significantly different than the current average
@@ -570,13 +548,6 @@ FAST_CODE void processRcCommand(void)
 {
     if (isRxDataNew) {
         newRxDataForFF = true;
-    }
-
-    if (isRxDataNew && pidAntiGravityEnabled()) {
-        checkForThrottleErrorResetState(currentRxRefreshRate);
-    }
-
-    if (isRxDataNew) {
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
 
 #ifdef USE_FEEDFORWARD
@@ -614,7 +585,7 @@ FAST_CODE void processRcCommand(void)
 
             }
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
-            DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
+            DEBUG_SET(DEBUG_ANGLERATE, axis, lrintf(angleRate));
         }
         // adjust raw setpoint steps to camera angle (mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
@@ -633,24 +604,10 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     isRxDataNew = true;
 
-    // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
-    int32_t prop;
-    if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop = 100;
-        throttlePIDAttenuation = 1.0f;
-    } else {
-        if (rcData[THROTTLE] < 2000) {
-            prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
-        } else {
-            prop = 100 - currentControlRateProfile->dynThrPID;
-        }
-        throttlePIDAttenuation = prop / 100.0f;
-    }
-
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
 
-        float tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
+        float tmp = MIN(fabsf(rcData[axis] - rxConfig()->midrc), 500.0f);
         if (axis == ROLL || axis == PITCH) {
             if (tmp > rcControlsConfig()->deadband) {
                 tmp -= rcControlsConfig()->deadband;
@@ -747,30 +704,25 @@ void initRcProcessing(void)
         if (tmp < 0)
             y = currentControlRateProfile->thrMid8;
         lookupThrottleRC[i] = 10 * currentControlRateProfile->thrMid8 + tmp * (100 - currentControlRateProfile->thrExpo8 + (int32_t) currentControlRateProfile->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+        lookupThrottleRC[i] = PWM_RANGE_MIN + PWM_RANGE * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 
     switch (currentControlRateProfile->rates_type) {
     case RATES_TYPE_BETAFLIGHT:
     default:
         applyRates = applyBetaflightRates;
-
         break;
     case RATES_TYPE_RACEFLIGHT:
         applyRates = applyRaceFlightRates;
-
         break;
     case RATES_TYPE_KISS:
         applyRates = applyKissRates;
-
         break;
     case RATES_TYPE_ACTUAL:
         applyRates = applyActualRates;
-
         break;
     case RATES_TYPE_QUICK:
         applyRates = applyQuickRates;
-
         break;
     }
 
@@ -787,7 +739,8 @@ rcSmoothingFilter_t *getRcSmoothingData(void)
     return &rcSmoothingData;
 }
 
-bool rcSmoothingInitializationComplete(void) {
+bool rcSmoothingInitializationComplete(void)
+{
     return rcSmoothingData.filterInitialized;
 }
 #endif // USE_RC_SMOOTHING_FILTER

@@ -1,0 +1,98 @@
+# Builds Betaflight Firmware.
+#
+
+name: CI
+
+on: 
+  workflow_call:
+    inputs:
+      release_build:
+        description: 'Specifies if it is a build that should include commit hash in hex file names or not'
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-22.04
+    outputs:
+      targets: ${{ steps.get-targets.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get all official build targets
+        id: get-targets
+        run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
+      - name: Cache build toolchain
+        uses: actions/cache@v3
+        id: cache-toolchain
+        with:
+          path: tools
+          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+
+      - name: Download and install toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make arm_sdk_install
+
+  build:
+    name: Build
+    needs: setup
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.setup.outputs.targets) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Fetch toolchain from cache
+        uses: actions/cache@v3
+        id: cache-toolchain
+        with:
+          path: tools
+          key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
+
+      - name: Build target (without revision)
+        if: inputs.release_build == true
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
+        
+      - name: Build target (with revision)
+        if: inputs.release_build == false
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
+
+      - name: Publish build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Assets
+          path: obj/*.hex
+          retention-days: 60
+
+  test:
+    name: Test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get install -y libblocksruntime-dev
+
+      - name: Run sanity checks
+        run: make EXTRA_FLAGS=-Werror checks
+
+      - name: Run all unit tests
+        run: make EXTRA_FLAGS=-Werror test-all
+
+  result:
+    name: Complete
+    needs: [build, test]
+    if: ${{ always() }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check build matrix result
+        if: ${{ needs.build.result != 'success' }}
+        run: exit 1
+
+      - name: Check test result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1

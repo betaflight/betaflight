@@ -62,7 +62,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   44 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   46 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
@@ -235,6 +235,9 @@
 #define MSP_SET_TX_INFO                 186 // in message           Used to send runtime information from TX lua scripts to the firmware
 #define MSP_TX_INFO                     187 // out message          Used by TX lua scripts to read information from the firmware
 
+#define MSP_SET_OSD_CANVAS              188 // in message           Set osd canvas size COLSxROWS
+#define MSP_OSD_CANVAS                  189 // out message          Get osd canvas size COLSxROWS
+
 //
 // Multwii original MSP commands
 //
@@ -317,7 +320,7 @@
 #define MSP_SET_MOTOR_CONFIG     222    //out message         Motor configuration (min/max throttle, etc)
 #define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration
 //DEPRECATED - #define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
-#define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed, sanityChecks and minSats
+#define MSP_SET_GPS_RESCUE       225    //in message          GPS Rescues's angle, initialAltitude, descentDistance, rescueGroundSpeed and sanityChecks
 #define MSP_SET_GPS_RESCUE_PIDS  226    //in message          GPS Rescues's throttleP and velocity PIDS + yaw P
 #define MSP_SET_VTXTABLE_BAND    227    //in message          set vtxTable band/channel data (one band at a time)
 #define MSP_SET_VTXTABLE_POWERLEVEL 228 //in message          set vtxTable powerLevel data (one powerLevel at a time)
@@ -333,7 +336,7 @@
 #define MSP_V2_FRAME             255    //MSPv2 payload indicator
 
 // Additional commands that are not compatible with MultiWii
-#define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
+#define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, CPU temperature, sensor present etc
 #define MSP_UID                  160    //out message         Unique device ID
 #define MSP_GPSSVINFO            164    //out message         get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS        166    //out message         get GPS debugging data

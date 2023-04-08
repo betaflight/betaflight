@@ -29,7 +29,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
     #include "common/utils.h"
-    #include "drivers/accgyro/accgyro_fake.h"
+    #include "drivers/accgyro/accgyro_virtual.h"
     #include "drivers/accgyro/accgyro_mpu.h"
     #include "drivers/sensor.h"
     #include "io/beeper.h"
@@ -44,7 +44,7 @@ extern "C" {
     STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev);
     struct gyroSensor_s;
     STATIC_UNIT_TESTED void performGyroCalibration(struct gyroSensor_s *gyroSensor, uint8_t gyroMovementCalibrationThreshold);
-    STATIC_UNIT_TESTED bool fakeGyroRead(gyroDev_t *gyro);
+    STATIC_UNIT_TESTED bool virtualGyroRead(gyroDev_t *gyro);
 
     uint8_t debugMode;
     int16_t debug[DEBUG16_VALUE_COUNT];
@@ -59,7 +59,7 @@ extern gyroDev_t * const gyroDevPtr;
 TEST(SensorGyro, Detect)
 {
     const gyroHardware_e detected = gyroDetect(gyroDevPtr);
-    EXPECT_EQ(GYRO_FAKE, detected);
+    EXPECT_EQ(GYRO_VIRTUAL, detected);
 }
 
 TEST(SensorGyro, Init)
@@ -67,14 +67,14 @@ TEST(SensorGyro, Init)
     pgResetAll();
     const bool initialised = gyroInit();
     EXPECT_TRUE(initialised);
-    EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
+    EXPECT_EQ(GYRO_VIRTUAL, detectedSensors[SENSOR_INDEX_GYRO]);
 }
 
 TEST(SensorGyro, Read)
 {
     pgResetAll();
     gyroInit();
-    fakeGyroSet(gyroDevPtr, 5, 6, 7);
+    virtualGyroSet(gyroDevPtr, 5, 6, 7);
     const bool read = gyroDevPtr->readFn(gyroDevPtr);
     EXPECT_TRUE(read);
     EXPECT_EQ(5, gyroDevPtr->gyroADCRaw[X]);
@@ -87,7 +87,7 @@ TEST(SensorGyro, Calibrate)
     pgResetAll();
     gyroInit();
     gyroSetTargetLooptime(1);
-    fakeGyroSet(gyroDevPtr, 5, 6, 7);
+    virtualGyroSet(gyroDevPtr, 5, 6, 7);
     const bool read = gyroDevPtr->readFn(gyroDevPtr);
     EXPECT_TRUE(read);
     EXPECT_EQ(5, gyroDevPtr->gyroADCRaw[X]);
@@ -122,14 +122,14 @@ TEST(SensorGyro, Update)
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     gyroInit();
     gyroSetTargetLooptime(1);
-    gyroDevPtr->readFn = fakeGyroRead;
+    gyroDevPtr->readFn = virtualGyroRead;
     gyroStartCalibration(false);
     EXPECT_FALSE(gyroIsCalibrationComplete());
 
-    fakeGyroSet(gyroDevPtr, 5, 6, 7);
+    virtualGyroSet(gyroDevPtr, 5, 6, 7);
     gyroUpdate();
     while (!gyroIsCalibrationComplete()) {
-        fakeGyroSet(gyroDevPtr, 5, 6, 7);
+        virtualGyroSet(gyroDevPtr, 5, 6, 7);
         gyroUpdate();
     }
     EXPECT_TRUE(gyroIsCalibrationComplete());
@@ -144,7 +144,7 @@ TEST(SensorGyro, Update)
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[X]);
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Y]);
     EXPECT_FLOAT_EQ(0, gyro.gyroADCf[Z]);
-    fakeGyroSet(gyroDevPtr, 15, 26, 97);
+    virtualGyroSet(gyroDevPtr, 15, 26, 97);
     gyroUpdate();
     EXPECT_NEAR(10 * gyroDevPtr->scale, gyro.gyroADC[X], 1e-3); // gyro.gyroADC values are scaled
     EXPECT_NEAR(20 * gyroDevPtr->scale, gyro.gyroADC[Y], 1e-3);

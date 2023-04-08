@@ -22,9 +22,14 @@
 
 #ifdef USE_CAMERA_CONTROL
 
+#ifndef CAMERA_CONTROL_PIN
+#define CAMERA_CONTROL_PIN NONE
+#endif
+
+#include <math.h>
+
 #include "camera_control.h"
 #include "io.h"
-#include "math.h"
 #include "nvic.h"
 #include "pwm_output.h"
 #include "time.h"
@@ -59,7 +64,7 @@ void pgResetFn_cameraControlConfig(cameraControlConfig_t *cameraControlConfig)
     cameraControlConfig->refVoltage = 330;
     cameraControlConfig->keyDelayMs = 180;
     cameraControlConfig->internalResistance = 470;
-    cameraControlConfig->ioTag = timerioTagGetByUsage(TIM_USE_CAMERA_CONTROL, 0);
+    cameraControlConfig->ioTag = IO_TAG(CAMERA_CONTROL_PIN);
     cameraControlConfig->inverted = 0;   // Output is inverted externally
     cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_ENTER] = 450;
     cameraControlConfig->buttonResistanceValues[CAMERA_CONTROL_KEY_LEFT]  = 270;
@@ -129,11 +134,7 @@ void cameraControlInit(void)
             return;
         }
 
-        #ifdef STM32F1
-            IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
-        #else
-            IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
-        #endif
+        IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
 
         pwmOutConfig(&cameraControlRuntime.channel, timerHardware, timerClock(TIM6), CAMERA_CONTROL_PWM_RESOLUTION, 0, cameraControlRuntime.inverted);
 

@@ -33,6 +33,8 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+#include "common/utils.h"
+
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
@@ -52,7 +54,11 @@ void pgResetFn_transponderConfig(transponderConfig_t *transponderConfig)
         .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
         .ioTag = IO_TAG_NONE
     );
-    transponderConfig->ioTag = timerioTagGetByUsage(TIM_USE_TRANSPONDER, 0);
+#ifdef TRANSPONDER_PIN
+    transponderConfig->ioTag = IO_TAG(TRANSPONDER_PIN);
+#else
+    transponderConfig->ioTag = IO_TAG_NONE;
+#endif
 }
 
 static bool transponderInitialised = false;
@@ -61,7 +67,7 @@ static bool transponderRepeat = false;
 // timers
 static timeUs_t nextUpdateAtUs = 0;
 
-#define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
+#define JITTER_DURATION_COUNT ARRAYLEN(jitterDurations)
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
 
 const transponderRequirement_t transponderRequirements[TRANSPONDER_PROVIDER_COUNT] = {
@@ -136,7 +142,8 @@ void transponderUpdateData(void)
     transponderIrUpdateData(transponderConfig()->data);
 }
 
-void transponderTransmitOnce(void) {
+void transponderTransmitOnce(void)
+{
 
     if (!transponderInitialised) {
         return;

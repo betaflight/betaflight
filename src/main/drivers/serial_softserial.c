@@ -130,19 +130,11 @@ static void serialEnableCC(softSerial_t *softSerial)
 static void serialInputPortActivate(softSerial_t *softSerial)
 {
     if (softSerial->port.options & SERIAL_INVERTED) {
-#ifdef STM32F1
-        IOConfigGPIO(softSerial->rxIO, IOCFG_IPD);
-#else
         const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_PD;
         IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
-#endif
     } else {
-#ifdef STM32F1
-        IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
-#else
         const uint8_t pinConfig = (softSerial->port.options & SERIAL_BIDIR_NOPULL) ? IOCFG_AF_PP : IOCFG_AF_PP_UP;
         IOConfigGPIOAF(softSerial->rxIO, pinConfig, softSerial->timerHardware->alternateFunction);
-#endif
     }
 
     softSerial->rxActive = true;
@@ -170,26 +162,18 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
 
 static void serialOutputPortActivate(softSerial_t *softSerial)
 {
-#ifdef STM32F1
-    IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
-#else
     if (softSerial->exTimerHardware)
         IOConfigGPIOAF(softSerial->txIO, IOCFG_OUT_PP, softSerial->exTimerHardware->alternateFunction);
     else
         IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
-#endif
 }
 
 static void serialOutputPortDeActivate(softSerial_t *softSerial)
 {
-#ifdef STM32F1
-    IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
-#else
     if (softSerial->exTimerHardware)
         IOConfigGPIOAF(softSerial->txIO, IOCFG_IN_FLOATING, softSerial->exTimerHardware->alternateFunction);
     else
         IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
-#endif
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)

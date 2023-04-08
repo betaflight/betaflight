@@ -31,9 +31,10 @@
 
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
 
+
 // NULL filter
 
-FAST_CODE float nullFilterApply(filter_t *filter, float input)
+float nullFilterApply(filter_t *filter, float input)
 {
     UNUSED(filter);
     return input;
@@ -42,10 +43,10 @@ FAST_CODE float nullFilterApply(filter_t *filter, float input)
 
 // PT1 Low Pass filter
 
-float pt1FilterGain(float f_cut, float dT)
+FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
 {
-    float RC = 1 / (2 * M_PIf * f_cut);
-    return dT / (RC + dT);
+    float omega = 2.0f * M_PIf * f_cut * dT;
+    return omega / (omega + 1.0f);
 }
 
 void pt1FilterInit(pt1Filter_t *filter, float k)
@@ -65,16 +66,16 @@ FAST_CODE float pt1FilterApply(pt1Filter_t *filter, float input)
     return filter->state;
 }
 
+
 // PT2 Low Pass filter
 
-float pt2FilterGain(float f_cut, float dT)
+FAST_CODE float pt2FilterGain(float f_cut, float dT)
 {
-    const float order = 2.0f;
-    const float orderCutoffCorrection = 1 / sqrtf(powf(2, 1.0f / order) - 1);
-    float RC = 1 / (2 * orderCutoffCorrection * M_PIf * f_cut);
-    // float RC = 1 / (2 * 1.553773974f * M_PIf * f_cut);
-    // where 1.553773974 = 1 / sqrt( (2^(1 / order) - 1) ) and order is 2
-    return dT / (RC + dT);
+    // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
+    #define CUTOFF_CORRECTION_PT2 1.553773974f
+
+    // shift f_cut to satisfy -3dB cutoff condition
+    return pt1FilterGain(f_cut * CUTOFF_CORRECTION_PT2, dT);
 }
 
 void pt2FilterInit(pt2Filter_t *filter, float k)
@@ -96,16 +97,16 @@ FAST_CODE float pt2FilterApply(pt2Filter_t *filter, float input)
     return filter->state;
 }
 
+
 // PT3 Low Pass filter
 
-float pt3FilterGain(float f_cut, float dT)
+FAST_CODE float pt3FilterGain(float f_cut, float dT)
 {
-    const float order = 3.0f;
-    const float orderCutoffCorrection = 1 / sqrtf(powf(2, 1.0f / order) - 1);
-    float RC = 1 / (2 * orderCutoffCorrection * M_PIf * f_cut);
-    // float RC = 1 / (2 * 1.961459177f * M_PIf * f_cut);
-    // where 1.961459177 = 1 / sqrt( (2^(1 / order) - 1) ) and order is 3
-    return dT / (RC + dT);
+    // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
+    #define CUTOFF_CORRECTION_PT3 1.961459177f
+
+    // shift f_cut to satisfy -3dB cutoff condition
+    return pt1FilterGain(f_cut * CUTOFF_CORRECTION_PT3, dT);
 }
 
 void pt3FilterInit(pt3Filter_t *filter, float k)
@@ -308,4 +309,26 @@ void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpS
     filter->fp = 0;
     filter->beta = beta;
     filter->fpShift = fpShift;
+}
+
+void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal)
+{
+    filter->accumulator += newVal;
+    filter->count++;
+}
+
+int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue)
+{
+    if (filter->count) {
+        int8_t retVal = filter->accumulator / filter->count;
+        meanAccumulatorInit(filter);
+        return retVal;
+    }
+    return defaultValue;
+}
+
+void meanAccumulatorInit(meanAccumulator_t *filter)
+{
+    filter->accumulator = 0;
+    filter->count = 0;
 }

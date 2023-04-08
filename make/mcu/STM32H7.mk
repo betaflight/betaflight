@@ -3,7 +3,7 @@
 #
 
 ifeq ($(DEBUG_HARDFAULTS),H7)
-CFLAGS               += -DDEBUG_HARDFAULTS
+CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
@@ -90,7 +90,6 @@ EXCLUDES        = \
                 stm32h7xx_ll_usart.c \
                 stm32h7xx_ll_utils.c
 
-
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
@@ -112,7 +111,7 @@ USBMSC_SRC = $(notdir $(wildcard $(USBMSC_DIR)/Src/*.c))
 EXCLUDES   = usbd_msc_storage_template.c
 USBMSC_SRC := $(filter-out ${EXCLUDES}, $(USBMSC_SRC))
 
-VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src
+VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
@@ -132,22 +131,11 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBMSC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(ROOT)/lib/main/STM32H7/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
-                   $(ROOT)/src/main/vcp_hal
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(FATFS_DIR)
-VPATH           := $(VPATH):$(FATFS_DIR)
-endif
+                   $(ROOT)/src/main/drivers/stm32 \
+                   $(ROOT)/src/main/drivers/stm32/vcp_hal
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
@@ -158,7 +146,7 @@ DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 # H7A3xI : 2M FLASH, 1MB   AXI SRAM + 160KB AHB & SRD SRAM
 # H750xB : 128K FLASH, 1M RAM
 #
-ifeq ($(TARGET),$(filter $(TARGET),$(H743xI_TARGETS)))
+ifeq ($(TARGET_MCU),STM32H743xx)
 DEVICE_FLAGS       += -DSTM32H743xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h743_2m.ld
 STARTUP_SRC         = startup_stm32h743xx.s
@@ -173,7 +161,7 @@ MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h743.ld
 endif
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(H7A3xIQ_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32H7A3xxQ)
 DEVICE_FLAGS       += -DSTM32H7A3xxQ
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_2m.ld
 STARTUP_SRC         = startup_stm32h7a3xx.s
@@ -188,7 +176,7 @@ MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_ram_based.ld
 endif
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(H7A3xI_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32H7A3xx)
 DEVICE_FLAGS       += -DSTM32H7A3xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_2m.ld
 STARTUP_SRC         = startup_stm32h7a3xx.s
@@ -203,21 +191,34 @@ MCU_FLASH_SIZE     := FIRMWARE_SIZE
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h7a3_ram_based.ld
 endif
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(H723xG_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32H723xx)
 DEVICE_FLAGS       += -DSTM32H723xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
 STARTUP_SRC         = startup_stm32h723xx.s
-MCU_FLASH_SIZE     := 1024
+DEFAULT_TARGET_FLASH := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(H725xG_TARGETS)))
+ifeq ($(TARGET_FLASH),)
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
+endif
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE      := 1024
+# TARGET_FLASH now becomes the amount of MEMORY-MAPPED address space that is occupied by the firmware
+# and the maximum size of the data stored on the external flash device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h723_exst.ld
+LD_SCRIPTS          = $(LINKER_DIR)/stm32_h723_common.ld $(LINKER_DIR)/stm32_h723_common_post.ld
+endif
+
+else ifeq ($(TARGET_MCU),STM32H725xx)
 DEVICE_FLAGS       += -DSTM32H725xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h723_1m.ld
 STARTUP_SRC         = startup_stm32h723xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(H730xB_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32H730xx)
 DEVICE_FLAGS       += -DSTM32H730xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h730_128m.ld
 STARTUP_SRC         = startup_stm32h730xx.s
@@ -226,7 +227,7 @@ DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
 
 ifeq ($(TARGET_FLASH),)
-MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
 endif
 
 ifeq ($(EXST),yes)
@@ -239,14 +240,14 @@ LD_SCRIPTS          = $(LINKER_DIR)/stm32_h730_common.ld $(LINKER_DIR)/stm32_h73
 endif
 
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(H750xB_TARGETS)))
+else ifeq ($(TARGET_MCU),STM32H750xx)
 DEVICE_FLAGS       += -DSTM32H750xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h750_128k.ld
 STARTUP_SRC         = startup_stm32h743xx.s
 DEFAULT_TARGET_FLASH := 128
 
 ifeq ($(TARGET_FLASH),)
-MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH) 
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
 endif
 
 ifeq ($(EXST),yes)
@@ -281,76 +282,66 @@ LD_SCRIPT = $(DEFAULT_LD_SCRIPT)
 endif
 
 ifneq ($(FIRMWARE_SIZE),)
-DEVICE_FLAGS   += -DFIRMWARE_SIZE=$(FIRMWARE_SIZE) 
+DEVICE_FLAGS   += -DFIRMWARE_SIZE=$(FIRMWARE_SIZE)
 endif
 
-DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000
-
-TARGET_FLAGS    = -D$(TARGET)
+DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
 VCP_SRC = \
-            vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf_stm32h7xx.c \
-            vcp_hal/usbd_cdc_hid.c \
-            vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c \
+            drivers/stm32/vcp_hal/usbd_desc.c \
+            drivers/stm32/vcp_hal/usbd_conf_stm32h7xx.c \
+            drivers/stm32/vcp_hal/usbd_cdc_hid.c \
+            drivers/stm32/vcp_hal/usbd_cdc_interface.c \
+            drivers/stm32/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
-            startup/system_stm32h7xx.c \
-            drivers/system_stm32h7xx.c \
-            drivers/timer_hal.c \
-            drivers/timer_stm32h7xx.c \
-            drivers/serial_uart_hal.c \
-            drivers/serial_uart_stm32h7xx.c \
-            drivers/bus_quadspi_hal.c \
-            drivers/bus_spi_ll.c \
-            drivers/dma_stm32h7xx.c \
-            drivers/dshot_bitbang.c \
-            drivers/dshot_bitbang_decode.c \
-            drivers/dshot_bitbang_ll.c \
-            drivers/light_ws2811strip_hal.c \
-            drivers/adc_stm32h7xx.c \
-            drivers/bus_i2c_hal.c \
-            drivers/bus_i2c_hal_init.c \
             drivers/bus_i2c_timing.c \
-            drivers/pwm_output_dshot_hal.c \
+            drivers/bus_quadspi.c \
+            drivers/dshot_bitbang_decode.c \
             drivers/pwm_output_dshot_shared.c \
-            drivers/persistent.c \
-            drivers/transponder_ir_io_hal.c \
-            drivers/audio_stm32h7xx.c \
-            drivers/memprot_hal.c \
-            drivers/memprot_stm32h7xx.c \
-            #drivers/accgyro/accgyro_mpu.c \
+            drivers/stm32/adc_stm32h7xx.c \
+            drivers/stm32/audio_stm32h7xx.c \
+            drivers/stm32/bus_i2c_hal_init.c \
+            drivers/stm32/bus_i2c_hal.c \
+            drivers/stm32/bus_spi_ll.c \
+            drivers/stm32/bus_quadspi_hal.c \
+            drivers/stm32/bus_octospi_stm32h7xx.c \
+            drivers/stm32/debug.c \
+            drivers/stm32/dma_reqmap_mcu.c \
+            drivers/stm32/dma_stm32h7xx.c \
+            drivers/stm32/dshot_bitbang_ll.c \
+            drivers/stm32/dshot_bitbang.c \
+            drivers/stm32/exti.c \
+            drivers/stm32/io_stm32.c \
+            drivers/stm32/light_ws2811strip_hal.c \
+            drivers/stm32/memprot_hal.c \
+            drivers/stm32/memprot_stm32h7xx.c \
+            drivers/stm32/persistent.c \
+            drivers/stm32/pwm_output.c \
+            drivers/stm32/pwm_output_dshot_hal.c \
+            drivers/stm32/rcc_stm32.c \
+            drivers/stm32/sdio_h7xx.c \
+            drivers/stm32/serial_uart_hal.c \
+            drivers/stm32/serial_uart_stm32h7xx.c \
+            drivers/stm32/system_stm32h7xx.c \
+            drivers/stm32/timer_hal.c \
+            drivers/stm32/timer_stm32h7xx.c \
+            drivers/stm32/transponder_ir_io_hal.c \
+            startup/system_stm32h7xx.c
 
 MCU_EXCLUDES = \
-            drivers/bus_i2c.c \
-            drivers/timer.c
+            drivers/bus_i2c.c
 
 MSC_SRC = \
+            drivers/stm32/usb_msc_h7xx.c \
             drivers/usb_msc_common.c \
-            drivers/usb_msc_h7xx.c \
-            msc/usbd_storage.c
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-MCU_COMMON_SRC += \
-            drivers/sdio_h7xx.c
-MSC_SRC += \
-            msc/usbd_storage_sdio.c
-endif
-
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-MSC_SRC += \
-            msc/usbd_storage_sd_spi.c
-endif
-
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-MSC_SRC += \
+            msc/usbd_storage.c \
             msc/usbd_storage_emfat.c \
             msc/emfat.c \
-            msc/emfat_file.c
-endif
+            msc/emfat_file.c \
+            msc/usbd_storage_sd_spi.c \
+            msc/usbd_storage_sdio.c
 
 DSP_LIB := $(ROOT)/lib/main/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
-

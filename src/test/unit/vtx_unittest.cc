@@ -22,26 +22,34 @@ extern "C" {
     #include "build/debug.h"
     #include "common/maths.h"
     #include "common/streambuf.h"
+
     #include "config/feature.h"
     #include "config/config.h"
+
     #include "fc/controlrate_profile.h"
     #include "fc/core.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/servos.h"
+    #include "flight/gps_rescue.h"
+
     #include "io/beeper.h"
     #include "io/gps.h"
     #include "io/vtx.h"
+
+    #include "pg/gps_rescue.h"
     #include "pg/motor.h"
     #include "pg/pg.h"
     #include "pg/pg_ids.h"
     #include "pg/rx.h"
     #include "rx/rx.h"
+
     #include "scheduler/scheduler.h"
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
@@ -60,6 +68,8 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
     PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
+    PG_REGISTER(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+    PG_REGISTER(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_CONFIG, 0);
 
     float rcCommand[4];
     float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
@@ -75,6 +85,7 @@ extern "C" {
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
+    acc_t acc;
 }
 
 uint32_t simulationFeatureFlags = 0;
@@ -134,7 +145,7 @@ extern "C" {
     void blackboxFinish(void) {}
     bool accIsCalibrationComplete(void) { return true; }
     bool accHasBeenCalibrated(void) { return true; }
-    bool baroIsCalibrationComplete(void) { return true; }
+    bool baroIsCalibrated(void) { return true; }
     bool gyroIsCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
@@ -152,6 +163,8 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
+    bool rxAreFlightChannelsValid(void) { return false; }
+    bool failsafeIsReceivingRxData(void) { return false; }
     void pidResetIterm(void) {}
     void updateAdjustmentStates(void) {}
     void processRcAdjustments(controlRateConfig_t *) {}

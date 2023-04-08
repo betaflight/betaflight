@@ -37,7 +37,7 @@
 #include "drivers/compass/compass.h"
 #include "drivers/compass/compass_ak8975.h"
 #include "drivers/compass/compass_ak8963.h"
-#include "drivers/compass/compass_fake.h"
+#include "drivers/compass/compass_virtual.h"
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
@@ -51,6 +51,8 @@
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
@@ -347,10 +349,14 @@ bool compassIsCalibrationComplete(void)
     return tCal == 0;
 }
 
-void compassUpdate(timeUs_t currentTimeUs)
+uint32_t compassUpdate(timeUs_t currentTimeUs)
 {
+    if (busBusy(&magDev.dev, NULL) || !magDev.read(&magDev, magADCRaw)) {
+        // No action was taken as the read has not completed
+        schedulerIgnoreTaskExecRate();
+        return 1000; // Wait 1ms between states
+    }
 
-    magDev.read(&magDev, magADCRaw);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC[axis] = magADCRaw[axis];
     }
@@ -385,5 +391,7 @@ void compassUpdate(timeUs_t currentTimeUs)
             saveConfigAndNotify();
         }
     }
+
+    return TASK_PERIOD_HZ(10);
 }
 #endif // USE_MAG

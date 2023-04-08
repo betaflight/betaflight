@@ -28,12 +28,13 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_ilap.h"
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
 
 static uint16_t dmaBufferOffset;
 extern const struct transponderVTable ilapTansponderVTable;
 
-void transponderIrInitIlap(transponder_t *transponder){
+void transponderIrInitIlap(transponder_t *transponder)
+{
     // from drivers/transponder_ir.h
     transponder->gap_toggles        = TRANSPONDER_GAP_TOGGLES_ILAP;
     transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE_ILAP;

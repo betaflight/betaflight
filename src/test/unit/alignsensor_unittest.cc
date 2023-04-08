@@ -15,14 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "math.h"
-#include "stdint.h"
-#include "time.h"
+#include <math.h>
+#include <stdint.h>
+#include <time.h>
 
 extern "C" {
 #include "common/axis.h"
 #include "common/sensor_alignment.h"
 #include "common/sensor_alignment_impl.h"
+#include "common/utils.h"
 #include "drivers/sensor.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -289,7 +290,7 @@ static void testBuildAlignmentWithStandardAlignment(sensor_align_e alignment, se
 
     buildAlignmentFromStandardAlignment(&sensorAlignment, alignment);
 
-    for (int i = 0; i < (int)(sizeof(sensorAlignment.raw) / sizeof(sensorAlignment.raw[0])); i++) {
+    for (unsigned i = 0; i < ARRAYLEN(sensorAlignment.raw); i++) {
         EXPECT_EQ(expectedSensorAlignment.raw[i], sensorAlignment.raw[i]) << "Sensor alignment was not updated. alignment: " << alignment;
     }
 }
@@ -314,7 +315,7 @@ TEST(AlignSensorTest, AttemptBuildAlignmentFromCustomAlignment)
 
     sensorAlignment_t expectedSensorAlignment = SENSOR_ALIGNMENT(1, 2, 3);
 
-    for (int i = 0; i < (int)(sizeof(sensorAlignment.raw) / sizeof(sensorAlignment.raw[0])); i++) {
+    for (unsigned i = 0; i < ARRAYLEN(sensorAlignment.raw); i++) {
         EXPECT_EQ(expectedSensorAlignment.raw[i], sensorAlignment.raw[i]) << "Custom alignment should not be updated.";
     }
 }
@@ -327,7 +328,7 @@ TEST(AlignSensorTest, AttemptBuildAlignmentFromDefaultAlignment)
 
     sensorAlignment_t expectedSensorAlignment = SENSOR_ALIGNMENT(1, 2, 3);
 
-    for (int i = 0; i < (int)(sizeof(sensorAlignment.raw) / sizeof(sensorAlignment.raw[0])); i++) {
+    for (unsigned i = 0; i < ARRAYLEN(sensorAlignment.raw); i++) {
         EXPECT_EQ(expectedSensorAlignment.raw[i], sensorAlignment.raw[i]) << "Default alignment should not be updated.";
     }
 }

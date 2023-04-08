@@ -150,7 +150,8 @@ static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
 #endif
 
-static void reportFrameError(uint8_t errorReason) {
+static void reportFrameError(uint8_t errorReason)
+{
     static volatile uint16_t frameErrors = 0;
 
     frameErrors++;
@@ -391,8 +392,6 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     sbusChannelsInit(rxConfig, rxRuntimeState);
 
     rxRuntimeState->channelCount = SBUS_MAX_CHANNEL;
-    rxRuntimeState->rxRefreshRate = 11000;
-
     rxRuntimeState->rcFrameStatusFn = fportFrameStatus;
     rxRuntimeState->rcProcessFrameFn = fportProcessFrame;
     rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;

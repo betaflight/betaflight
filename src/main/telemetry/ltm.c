@@ -137,7 +137,7 @@ static void ltm_gframe(void)
 
     if (!STATE(GPS_FIX))
         gps_fix_type = 1;
-    else if (gpsSol.numSat < 5)
+    else if (gpsSol.numSat < GPS_MIN_SAT_COUNT)
         gps_fix_type = 2;
     else
         gps_fix_type = 3;

@@ -132,7 +132,7 @@ typedef struct dynNotch_s {
 // dynamic notch instance (singleton)
 static FAST_DATA_ZERO_INIT dynNotch_t dynNotch;
 
-// accumulator for oversampled data => no aliasing and less noise
+// accumulator for oversampled data => less aliasing and noise
 static FAST_DATA_ZERO_INIT int   sampleIndex;
 static FAST_DATA_ZERO_INIT int   sampleCount;
 static FAST_DATA_ZERO_INIT float sampleCountRcp;
@@ -156,36 +156,39 @@ static FAST_DATA_ZERO_INIT float   pt1LooptimeS;
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs)
 {
-    // always initialise, since the dynamic notch could be activated at any time
-    dynNotch.q = config->dyn_notch_q / 100.0f;
-    dynNotch.minHz = config->dyn_notch_min_hz;
-    dynNotch.maxHz = MAX(2 * dynNotch.minHz, config->dyn_notch_max_hz);
-    dynNotch.count = config->dyn_notch_count;
-    dynNotch.looptimeUs = targetLooptimeUs;
-    dynNotch.maxCenterFreq = 0;
-
-    // dynNotchUpdate() is running at looprateHz (which is PID looprate aka. 1e6f / gyro.targetLooptime)
-    const float looprateHz = 1.0f / dynNotch.looptimeUs * 1e6f;
+    // dynNotchUpdate() is running at looprateHz (which is the PID looprate aka. 1e6f / gyro.targetLooptime)
+    const float looprateHz = 1.0f / targetLooptimeUs * 1e6f;
+    const float nyquistHz = looprateHz / 2.0f;
 
     // Disable dynamic notch if dynNotchUpdate() would run at less than 2kHz
     if (looprateHz < DYN_NOTCH_UPDATE_MIN_HZ) {
         dynNotch.count = 0;
+        return;
     }
 
-    sampleCount = MAX(1, looprateHz / (2 * dynNotch.maxHz)); // 600hz, 8k looptime, 6.00
+    // If dynamic notch is available, initialise so it can be activated at any time
+    dynNotch.q = config->dyn_notch_q / 100.0f;
+    dynNotch.minHz = config->dyn_notch_min_hz;
+    dynNotch.maxHz = MAX(dynNotch.minHz, config->dyn_notch_max_hz);
+    dynNotch.maxHz = MIN(dynNotch.maxHz, nyquistHz); // Ensure to not go above the nyquist limit
+    dynNotch.count = config->dyn_notch_count;
+    dynNotch.looptimeUs = targetLooptimeUs;
+    dynNotch.maxCenterFreq = 0;
+
+    sampleCount = MAX(1, nyquistHz / dynNotch.maxHz); // maxHz = 600 & looprateHz = 8000 -> sampleCount = 6
     sampleCountRcp = 1.0f / sampleCount;
 
     sdftSampleRateHz = looprateHz / sampleCount;
-    // eg 8k, user max 600hz, int(8000/1200) = 6 (6.666), sdftSampleRateHz = 1333hz, range 666Hz
-    // eg 4k, user max 600hz, int(4000/1200) = 3 (3.333), sdftSampleRateHz = 1333hz, range 666Hz
-    // eg 2k, user max 600hz, int(2000/1200) = 1 (1.666) sdftSampleRateHz = 2000hz, range 1000Hz
-    // eg 2k, user max 400hz, int(2000/800) = 2 (2.5) sdftSampleRateHz = 1000hz, range 500Hz
-    // eg 1k, user max 600hz, int(1000/1200) = 1 (max(1,0.8333)) sdftSampleRateHz = 1000hz, range 500Hz
-    // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
+    // eg 8k, user max 600hz, int(4000/600) = 6 (6.666), sdftSampleRateHz = 1333hz, range 666Hz
+    // eg 4k, user max 600hz, int(2000/600) = 3 (3.333), sdftSampleRateHz = 1333hz, range 666Hz
+    // eg 2k, user max 600hz, int(1000/600) = 1 (1.666)  sdftSampleRateHz = 2000hz, range 1000Hz
+    // eg 2k, user max 400hz, int(1000/400) = 2 (2.5)    sdftSampleRateHz = 1000hz, range 500Hz
+    // eg 1k, user max 600hz, int(500/500)  = 1 (1.0)    sdftSampleRateHz = 1000hz, range 500Hz
+    // The upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
 
     sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 18.5hz per bin at 8k and 600Hz maxHz
-    sdftStartBin = MAX(2, dynNotch.minHz / sdftResolutionHz + 0.5f); // can't use bin 0 because it is DC.
-    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynNotch.maxHz / sdftResolutionHz + 0.5f); // can't use more than SDFT_BIN_COUNT bins.
+    sdftStartBin = MAX(1, lrintf(dynNotch.minHz / sdftResolutionHz)); // can't use bin 0 because it is DC.
+    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, lrintf(dynNotch.maxHz / sdftResolutionHz)); // can't use more than SDFT_BIN_COUNT bins.
     pt1LooptimeS = DYN_NOTCH_CALC_TICKS / looprateHz;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -194,7 +197,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         for (int p = 0; p < dynNotch.count; p++) {
-            // any init value is fine, but evenly spreading centerFreqs across frequency range makes notch filters stick to peaks quicker
+            // any init value is fine, but evenly spreading centerFreqs across frequency range makes notches stick to peaks quicker
             dynNotch.centerFreq[axis][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
             biquadFilterInit(&dynNotch.notch[axis][p], dynNotch.centerFreq[axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
         }
@@ -265,8 +268,8 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             
             // Get total vibrational power in dyn notch range for noise floor estimate in STEP_CALC_FREQUENCIES
             sdftNoiseThreshold = 0.0f;
-            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {   // don't use startBin or endBin because they are not windowed properly
-                sdftNoiseThreshold += sdftData[bin];                        // sdftData contains power spectral density
+            for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
+                sdftNoiseThreshold += sdftData[bin];  // sdftData contains power spectral density
             }
 
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
@@ -297,7 +300,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
                             break;
                         }
                     }
-                    bin++; // If bin is peak, next bin can't be peak => jump it
+                    bin++; // If bin is peak, next bin can't be peak => skip it
                 }
             }
 
@@ -330,7 +333,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
                     peakCount++;
                 }
             }
-            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount - 1;
+            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount + 1;
 
             // A noise threshold 2 times the noise floor prevents peak tracking being too sensitive to noise
             sdftNoiseThreshold *= 2.0f;

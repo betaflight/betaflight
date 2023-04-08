@@ -96,6 +96,10 @@
         type 2: Graphical bar showing battery used (grows as used)
         type 3: Numeric % of remaining battery
         type 4: Numeric % or used battery
+
+    VTX_CHANNEL
+        type 1: Contains Band:Channel:Power:Pit
+        type 2: Contains only Power
 */
 
 #include <stdbool.h>
@@ -121,6 +125,7 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 #include "common/unit.h"
+#include "common/filter.h"
 
 #include "config/config.h"
 #include "config/feature.h"
@@ -158,7 +163,6 @@
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/esc_sensor.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_GPS_PLUS_CODES
@@ -178,6 +182,9 @@
 
 #define FULL_CIRCLE 360
 #define EFFICIENCY_MINIMUM_SPEED_CM_S 100
+#define EFFICIENCY_CUTOFF_HZ 0.5f
+
+static pt1Filter_t batteryEfficiencyFilt;
 
 #define MOTOR_STOPPED_THRESHOLD_RPM 1000
 
@@ -255,12 +262,12 @@ static int getEscRpm(int i)
 {
 #ifdef USE_DSHOT_TELEMETRY
     if (motorConfig()->dev.useDshotTelemetry) {
-        return 100.0f / (motorConfig()->motorPoleCount / 2.0f) * getDshotTelemetry(i);
+        return erpmToRpm(getDshotTelemetry(i));
     }
 #endif
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        return calcEscRpm(getEscSensorData(i)->rpm);
+        return erpmToRpm(getEscSensorData(i)->rpm);
     }
 #endif
     return 0;
@@ -280,7 +287,7 @@ static void renderOsdEscRpmOrFreq(getEscRpmOrFreqFnPtr escFnPtr, osdElementParms
         const int rpm = MIN((*escFnPtr)(i),99999);
         const int len = tfp_sprintf(rpmStr, "%d", rpm);
         rpmStr[len] = '\0';
-        osdDisplayWrite(element, x, y + i, DISPLAYPORT_ATTR_NONE, rpmStr);
+        osdDisplayWrite(element, x, y + i, DISPLAYPORT_ATTR_NORMAL, rpmStr);
     }
     element->drawElement = false;
 }
@@ -325,8 +332,8 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
         gpsValue = (coordinateType == GPS_LONGITUDE) ? gpsSol.llh.lon : gpsSol.llh.lat;
     }
 
-    const int degreesPart = ABS(gpsValue) / GPS_DEGREES_DIVIDER;
-    int fractionalPart = ABS(gpsValue) % GPS_DEGREES_DIVIDER;
+    const int degreesPart = abs(gpsValue) / GPS_DEGREES_DIVIDER;
+    int fractionalPart = abs(gpsValue) % GPS_DEGREES_DIVIDER;
 
     switch (variantType) {
 #ifdef USE_GPS_PLUS_CODES
@@ -656,6 +663,12 @@ static void osdElementAltitude(osdElementParms_t *element)
 #ifdef USE_GPS
     haveGps = sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #endif // USE_GPS
+    int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitudeCm()) / 100;
+
+    if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
+
     if (haveBaro || haveGps) {
         osdFormatAltitudeString(element->buff, getEstimatedAltitudeCm(), element->type);
     } else {
@@ -700,7 +713,7 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
     for (int x = -4; x <= 4; x++) {
         const int y = ((-rollAngle * x) / 64) - pitchAngle;
         if (y >= 0 && y <= 81) {
-            osdDisplayWriteChar(element, element->elemPosX + x, element->elemPosY + (y / AH_SYMBOL_COUNT), DISPLAYPORT_ATTR_NONE, (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
+            osdDisplayWriteChar(element, element->elemPosX + x, element->elemPosY + (y / AH_SYMBOL_COUNT), DISPLAYPORT_ATTR_NORMAL, (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
         }
     }
 
@@ -712,7 +725,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
     const float earthUpinBodyFrame[3] = {-rMat[2][0], -rMat[2][1], -rMat[2][2]}; //transforum the up vector to the body frame
 
-    if (ABS(earthUpinBodyFrame[2]) < SINE_25_DEG && ABS(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
+    if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) { 
         float thetaB; // pitch from body frame to zenith/nadir
         float psiB; // psi from body frame to zenith/nadir
         char *symbol[2] = {"U", "D"}; // character buffer
@@ -730,7 +743,7 @@ static void osdElementUpDownReference(osdElementParms_t *element)
         int posX = element->elemPosX + lrintf(scaleRangef(psiB, -M_PIf / 4, M_PIf / 4, -14, 14));
         int posY = element->elemPosY + lrintf(scaleRangef(thetaB, -M_PIf / 4, M_PIf / 4, -8, 8));
 
-        osdDisplayWrite(element, posX, posY, DISPLAYPORT_ATTR_NONE, symbol[direction]);
+        osdDisplayWrite(element, posX, posY, DISPLAYPORT_ATTR_NORMAL, symbol[direction]);
     }
     element->drawElement = false;  // element already drawn
 }
@@ -739,6 +752,19 @@ static void osdElementUpDownReference(osdElementParms_t *element)
 static void osdElementAverageCellVoltage(osdElementParms_t *element)
 {
     const int cellV = getBatteryAverageCellVoltage();
+    const batteryState_e batteryState = getBatteryState();
+
+    switch (batteryState) {
+    case BATTERY_WARNING:
+        element->attr = DISPLAYPORT_ATTR_WARNING;
+        break;
+    case BATTERY_CRITICAL:
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+        break;
+    default:
+        break;
+    }
+
     osdPrintFloat(element->buff, osdGetBatterySymbol(cellV), cellV / 100.0f, "", 2, false, SYM_VOLT);
 }
 
@@ -769,30 +795,31 @@ static void osdBackgroundCameraFrame(osdElementParms_t *element)
     element->buff[width - 1] = SYM_STICK_OVERLAY_CENTER;
     element->buff[width] = 0;  // string terminator
 
-    osdDisplayWrite(element, xpos, ypos, DISPLAYPORT_ATTR_NONE, element->buff);
+    osdDisplayWrite(element, xpos, ypos, DISPLAYPORT_ATTR_NORMAL, element->buff);
     for (int i = 1; i < (height - 1); i++) {
-        osdDisplayWriteChar(element, xpos, ypos + i, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_VERTICAL);
-        osdDisplayWriteChar(element, xpos + width - 1, ypos + i, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_VERTICAL);
+        osdDisplayWriteChar(element, xpos, ypos + i, DISPLAYPORT_ATTR_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
+        osdDisplayWriteChar(element, xpos + width - 1, ypos + i, DISPLAYPORT_ATTR_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
     }
-    osdDisplayWrite(element, xpos, ypos + height - 1, DISPLAYPORT_ATTR_NONE, element->buff);
+    osdDisplayWrite(element, xpos, ypos + height - 1, DISPLAYPORT_ATTR_NORMAL, element->buff);
 
     element->drawElement = false;  // element already drawn
 }
 
+static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength)
+{
+    unsigned int i;
+    for (i = 0; i < maxSrcLength && src[i]; i++) {
+            dest[i] = toupper((unsigned char)src[i]);
+    }
+    dest[i] = '\0';
+}
+
 static void osdBackgroundCraftName(osdElementParms_t *element)
 {
-    if (strlen(pilotConfig()->name) == 0) {
+    if (strlen(pilotConfig()->craftName) == 0) {
         strcpy(element->buff, "CRAFT_NAME");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
-            if (pilotConfig()->name[i]) {
-                element->buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, pilotConfig()->craftName, MAX_NAME_LENGTH);
     }
 }
 
@@ -866,20 +893,12 @@ static void osdElementDisarmed(osdElementParms_t *element)
     }
 }
 
-static void osdBackgroundDisplayName(osdElementParms_t *element)
+static void osdBackgroundPilotName(osdElementParms_t *element)
 {
-    if (strlen(pilotConfig()->displayName) == 0) {
-        strcpy(element->buff, "DISPLAY_NAME");
+    if (strlen(pilotConfig()->pilotName) == 0) {
+        strcpy(element->buff, "PILOT_NAME");
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_NAME_LENGTH; i++) {
-            if (pilotConfig()->displayName[i]) {
-                element->buff[i] = toupper((unsigned char)pilotConfig()->displayName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, pilotConfig()->pilotName, MAX_NAME_LENGTH);
     }
 }
 
@@ -897,15 +916,7 @@ static void osdElementRateProfileName(osdElementParms_t *element)
     if (strlen(currentControlRateProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "RATE_%u", getCurrentControlRateProfileIndex() + 1);
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (currentControlRateProfile->profileName[i]) {
-                element->buff[i] = toupper((unsigned char)currentControlRateProfile->profileName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, currentControlRateProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
 
@@ -914,15 +925,7 @@ static void osdElementPidProfileName(osdElementParms_t *element)
     if (strlen(currentPidProfile->profileName) == 0) {
         tfp_sprintf(element->buff, "PID_%u", getCurrentPidProfileIndex() + 1);
     } else {
-        unsigned i;
-        for (i = 0; i < MAX_PROFILE_NAME_LENGTH; i++) {
-            if (currentPidProfile->profileName[i]) {
-                element->buff[i] = toupper((unsigned char)currentPidProfile->profileName[i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, currentPidProfile->profileName, MAX_PROFILE_NAME_LENGTH);
     }
 }
 #endif
@@ -935,29 +938,39 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
     if (strlen(osdConfig()->profile[profileIndex - 1]) == 0) {
         tfp_sprintf(element->buff, "OSD_%u", profileIndex);
     } else {
-        unsigned i;
-        for (i = 0; i < OSD_PROFILE_NAME_LENGTH; i++) {
-            if (osdConfig()->profile[profileIndex - 1][i]) {
-                element->buff[i] = toupper((unsigned char)osdConfig()->profile[profileIndex - 1][i]);
-            } else {
-                break;
-            }
-        }
-        element->buff[i] = '\0';
+        toUpperCase(element->buff, osdConfig()->profile[profileIndex - 1], OSD_PROFILE_NAME_LENGTH);
     }
 }
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
+
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
+#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
-    }
-}
-#endif // USE_ESC_SENSOR
+    } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+    {
+        uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
 
-#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+        for (uint8_t k = 0; k < getMotorCount(); k++) {
+            if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "%3d%c",
+                    osdConvertTemperatureToSelectedUnit(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]),
+                    osdGetTemperatureSymbolForSelectedUnit());
+            } else {
+                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "  0%c", osdGetTemperatureSymbolForSelectedUnit());
+            }
+        }
+    }
+#else
+    {}
+#endif
+}
+
 static void osdElementEscRpm(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpm,element);
@@ -967,6 +980,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 {
     renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
 }
+
 #endif
 
 static void osdElementFlymode(osdElementParms_t *element)
@@ -997,6 +1011,13 @@ static void osdElementFlymode(osdElementParms_t *element)
     }
 }
 
+static void osdElementReadyMode(osdElementParms_t *element)
+{
+    if (IS_RC_MODE_ACTIVE(BOXREADY) && !ARMING_FLAG(ARMED)) {
+        strcpy(element->buff, "READY"); 
+    }
+}
+
 #ifdef USE_ACC
 static void osdElementGForce(osdElementParms_t *element)
 {
@@ -1019,7 +1040,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         if (GPS_distanceToHome > 0) {
-            const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            const int h = DECIDEGREES_TO_DEGREES(GPS_directionToHome - attitude.values.yaw);
             element->buff[0] = osdGetDirectionSymbolFromHeading(h);
         } else {
             element->buff[0] = SYM_OVER_HOME;
@@ -1058,13 +1079,25 @@ static void osdElementGpsCoordinate(osdElementParms_t *element)
 
 static void osdElementGpsSats(osdElementParms_t *element)
 {
+    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < GPS_MIN_SAT_COUNT) ) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
+#ifdef USE_GPS_RESCUE
+    else if ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured()) {
+        element->attr = DISPLAYPORT_ATTR_WARNING;
+    }
+#endif
+    else {
+        element->attr = DISPLAYPORT_ATTR_INFO;
+    }
+
     if (!gpsIsHealthy()) {
         tfp_sprintf(element->buff, "%c%cNC", SYM_SAT_L, SYM_SAT_R);
     } else {
         int pos = tfp_sprintf(element->buff, "%c%c%2d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         if (osdConfig()->gps_sats_show_hdop) { // add on the GPS module HDOP estimate
             element->buff[pos++] = ' ';
-            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.hdop / 100.0f, "", 1, true, SYM_NONE);
+            osdPrintFloat(element->buff + pos, SYM_NONE, gpsSol.dop.hdop / 100.0f, "", 1, true, SYM_NONE);
         }
     }
 }
@@ -1082,12 +1115,9 @@ static void osdElementEfficiency(osdElementParms_t *element)
 {
     int efficiency = 0;
     if (sensors(SENSOR_GPS) && ARMING_FLAG(ARMED) && STATE(GPS_FIX) && gpsSol.groundSpeed >= EFFICIENCY_MINIMUM_SPEED_CM_S) {
-        const int speedX100 = osdGetSpeedToSelectedUnit(gpsSol.groundSpeed * 100); // speed * 100 for improved resolution at slow speeds
-        
-        if (speedX100 > 0) {
-            const int mAmperage = getAmperage() * 10; // Current in mA
-            efficiency = mAmperage * 100 / speedX100; // mAmperage * 100 to cancel out speed * 100 from above
-        }
+        const float speed = (float)osdGetSpeedToSelectedUnit(gpsSol.groundSpeed);
+        const float mAmperage = (float)getAmperage() * 10.f; // Current in mA
+        efficiency = lrintf(pt1FilterApply(&batteryEfficiencyFilt, (mAmperage / speed)));
     }
 
     const char unitSymbol = osdConfig()->units == UNIT_IMPERIAL ? SYM_MILES : SYM_KM;
@@ -1105,13 +1135,13 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
     const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
     const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
     for (int y = -hudheight; y <= hudheight; y++) {
-        osdDisplayWriteChar(element, element->elemPosX - hudwidth, element->elemPosY + y, DISPLAYPORT_ATTR_NONE, SYM_AH_DECORATION);
-        osdDisplayWriteChar(element, element->elemPosX + hudwidth, element->elemPosY + y, DISPLAYPORT_ATTR_NONE, SYM_AH_DECORATION);
+        osdDisplayWriteChar(element, element->elemPosX - hudwidth, element->elemPosY + y, DISPLAYPORT_ATTR_NORMAL, SYM_AH_DECORATION);
+        osdDisplayWriteChar(element, element->elemPosX + hudwidth, element->elemPosY + y, DISPLAYPORT_ATTR_NORMAL, SYM_AH_DECORATION);
     }
 
     // AH level indicators
-    osdDisplayWriteChar(element, element->elemPosX - hudwidth + 1, element->elemPosY, DISPLAYPORT_ATTR_NONE, SYM_AH_LEFT);
-    osdDisplayWriteChar(element, element->elemPosX + hudwidth - 1, element->elemPosY, DISPLAYPORT_ATTR_NONE, SYM_AH_RIGHT);
+    osdDisplayWriteChar(element, element->elemPosX - hudwidth + 1, element->elemPosY, DISPLAYPORT_ATTR_NORMAL, SYM_AH_LEFT);
+    osdDisplayWriteChar(element, element->elemPosX + hudwidth - 1, element->elemPosY, DISPLAYPORT_ATTR_NORMAL, SYM_AH_RIGHT);
 
     element->drawElement = false;  // element already drawn
 }
@@ -1120,6 +1150,11 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 static void osdElementLinkQuality(osdElementParms_t *element)
 {
     uint16_t osdLinkQuality = 0;
+
+    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
+
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
         osdLinkQuality = rxGetLinkQuality();
         const uint8_t osdRfMode = rxGetRfMode();
@@ -1171,16 +1206,45 @@ static void osdElementLogStatus(osdElementParms_t *element)
 
 static void osdElementMahDrawn(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%4d%c", getMAhDrawn(), SYM_MAH);
+    const int mAhDrawn = getMAhDrawn();
+
+    if (mAhDrawn >= osdConfig()->cap_alarm) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
+
+    tfp_sprintf(element->buff, "%4d%c", mAhDrawn, SYM_MAH);
+}
+
+static void osdElementWattHoursDrawn(osdElementParms_t *element)
+{
+    const int mAhDrawn = getMAhDrawn();
+    const float wattHoursDrawn = getWhDrawn();
+
+    if (mAhDrawn >= osdConfig()->cap_alarm) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
+
+    if (wattHoursDrawn < 1.0f) {        
+        tfp_sprintf(element->buff, "%3dMWH", lrintf(wattHoursDrawn * 1000));
+    } else {
+        int wattHourWholeNumber = (int)wattHoursDrawn;
+        int wattHourDecimalValue = (int)((wattHoursDrawn - wattHourWholeNumber) * 100);
+
+        tfp_sprintf(element->buff, wattHourDecimalValue >= 10 ? "%3d.%2dWH" : "%3d.0%1dWH", wattHourWholeNumber, wattHourDecimalValue);
+    }
 }
 
 static void osdElementMainBatteryUsage(osdElementParms_t *element)
 {
     // Set length of indicator bar
     #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
-
+    const int mAhDrawn = getMAhDrawn();
     const int usedCapacity = getMAhDrawn();
     int displayBasis = usedCapacity;
+
+    if (mAhDrawn >= osdConfig()->cap_alarm) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
 
     switch (element->type) {
     case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
@@ -1230,6 +1294,18 @@ static void osdElementMainBatteryVoltage(osdElementParms_t *element)
 {
     unsigned decimalPlaces;
     const float batteryVoltage = getBatteryVoltage() / 100.0f;
+    batteryState_e batteryState = getBatteryState();
+
+    switch (batteryState) {
+    case BATTERY_WARNING:
+        element->attr = DISPLAYPORT_ATTR_WARNING;
+        break;
+    case BATTERY_CRITICAL:
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+        break;
+    default:
+        break;
+    }
 
     if (batteryVoltage >= 10) { // if voltage is 10v or more then display only 1 decimal place
         decimalPlaces = 1;
@@ -1326,7 +1402,7 @@ static void osdElementRcChannels(osdElementParms_t *element)
             // Decimal notation can be added when tfp_sprintf supports float among fancy options.
             char fmtbuf[6];
             tfp_sprintf(fmtbuf, "%5d", data);
-            osdDisplayWrite(element, xpos, ypos + i, DISPLAYPORT_ATTR_NONE, fmtbuf);
+            osdDisplayWrite(element, xpos, ypos + i, DISPLAYPORT_ATTR_NORMAL, fmtbuf);
         }
     }
 
@@ -1336,6 +1412,10 @@ static void osdElementRcChannels(osdElementParms_t *element)
 static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 {
     const int mAhDrawn = getMAhDrawn();
+
+    if (mAhDrawn >= osdConfig()->cap_alarm) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
 
     if (mAhDrawn <= 0.1 * osdConfig()->cap_alarm) {  // also handles the mAhDrawn == 0 condition
         tfp_sprintf(element->buff, "--:--");
@@ -1354,6 +1434,10 @@ static void osdElementRssi(osdElementParms_t *element)
         osdRssi = 99;
     }
 
+    if (getRssiPercent() < osdConfig()->rssi_alarm) {
+        element->attr = DISPLAYPORT_ATTR_CRITICAL;
+    }
+
     tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssi);
 }
 
@@ -1367,9 +1451,24 @@ static void osdElementRtcTime(osdElementParms_t *element)
 #ifdef USE_RX_RSSI_DBM
 static void osdElementRssiDbm(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm());
+    const int8_t antenna = getActiveAntenna();
+    static bool diversity = false;
+
+    if (antenna || diversity) {
+        diversity = true;
+        tfp_sprintf(element->buff, "%c%3d:%d", SYM_RSSI, getRssiDbm(), antenna + 1);
+    } else {
+        tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm());
+    }
 }
 #endif // USE_RX_RSSI_DBM
+
+#ifdef USE_RX_RSNR
+static void osdElementRsnr(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRsnr());
+}
+#endif // USE_RX_RSNR
 
 #ifdef USE_OSD_STICK_OVERLAY
 static void osdBackgroundStickOverlay(osdElementParms_t *element)
@@ -1382,11 +1481,11 @@ static void osdBackgroundStickOverlay(osdElementParms_t *element)
         for (unsigned  y = 0; y < OSD_STICK_OVERLAY_HEIGHT; y++) {
             // draw the axes, vertical and horizonal
             if ((x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) && (y == (OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_CENTER);
+                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_ATTR_NORMAL, SYM_STICK_OVERLAY_CENTER);
             } else if (x == ((OSD_STICK_OVERLAY_WIDTH - 1) / 2)) {
-                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_VERTICAL);
+                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_ATTR_NORMAL, SYM_STICK_OVERLAY_VERTICAL);
             } else if (y == ((OSD_STICK_OVERLAY_HEIGHT - 1) / 2)) {
-                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_ATTR_NONE, SYM_STICK_OVERLAY_HORIZONTAL);
+                osdDisplayWriteChar(element, xpos + x, ypos + y, DISPLAYPORT_ATTR_NORMAL, SYM_STICK_OVERLAY_HORIZONTAL);
             }
         }
     }
@@ -1414,7 +1513,7 @@ static void osdElementStickOverlay(osdElementParms_t *element)
     const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 
-    osdDisplayWriteChar(element, xpos + cursorX, ypos + cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, DISPLAYPORT_ATTR_NONE, cursor);
+    osdDisplayWriteChar(element, xpos + cursorX, ypos + cursorY / OSD_STICK_OVERLAY_SPRITE_HEIGHT, DISPLAYPORT_ATTR_NORMAL, cursor);
 
     element->drawElement = false;  // element already drawn
 }
@@ -1427,6 +1526,15 @@ static void osdElementThrottlePosition(osdElementParms_t *element)
 
 static void osdElementTimer(osdElementParms_t *element)
 {
+    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+        const uint16_t timer = osdConfig()->timers[i];
+        const timeUs_t time = osdGetTimerValue(OSD_TIMER_SRC(timer));
+        const timeUs_t alarmTime = OSD_TIMER_ALARM(timer) * 60000000; // convert from minutes to us
+        if (alarmTime != 0 && time >= alarmTime) {
+            element->attr = DISPLAYPORT_ATTR_CRITICAL;
+        }
+    }
+
     osdFormatTimer(element->buff, true, true, element->item - OSD_ITEM_TIMER_1);
 }
 
@@ -1454,15 +1562,28 @@ static void osdElementVtxChannel(osdElementParms_t *element)
         vtxStatusIndicator = 'P';
     }
 
-    if (vtxStatus & VTX_STATUS_LOCKED) {
-        tfp_sprintf(element->buff, "-:-:-:L");
-    } else if (vtxStatusIndicator) {
-        tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
-    } else {
-        tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
+switch (element->type) {
+    case OSD_ELEMENT_TYPE_2:
+            tfp_sprintf(element->buff, "%s", vtxPowerLabel);
+        break;
+
+    default:
+        if (vtxStatus & VTX_STATUS_LOCKED) {
+            tfp_sprintf(element->buff, "-:-:-:L");
+        } else if (vtxStatusIndicator) {
+            tfp_sprintf(element->buff, "%c:%s:%s:%c", vtxBandLetter, vtxChannelName, vtxPowerLabel, vtxStatusIndicator);
+        } else {
+            tfp_sprintf(element->buff, "%c:%s:%s", vtxBandLetter, vtxChannelName, vtxPowerLabel);
+        }
+        break;
     }
 }
 #endif // USE_VTX_COMMON
+
+static void osdElementAuxValue(osdElementParms_t *element)
+{
+    tfp_sprintf(element->buff, "%c%d", osdConfig()->aux_symbol, osdAuxValue);
+}
 
 static void osdElementWarnings(osdElementParms_t *element)
 {
@@ -1473,7 +1594,47 @@ static void osdElementWarnings(osdElementParms_t *element)
     } else {
         CLR_BLINK(OSD_WARNINGS);
     }
+
+#ifdef USE_CRAFTNAME_MSGS
+    // Injects data into the CraftName variable for systems which limit
+    // the available MSP data field in their OSD.
+    if (osdConfig()->osd_craftname_msgs == true) {
+        // if warning is not set, or blink is off, then display LQ & RSSI
+        if (blinkState || (strlen(element->buff) == 0)) {
+#ifdef USE_RX_LINK_QUALITY_INFO
+            // replicate the LQ functionality without the special font symbols
+            uint16_t osdLinkQuality = 0;
+            if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
+                osdLinkQuality = rxGetLinkQuality();
+#ifdef USE_RX_RSSI_DBM
+                const uint8_t osdRfMode = rxGetRfMode();
+                tfp_sprintf(element->buff, "LQ %2d:%03d %3d", osdRfMode, osdLinkQuality, getRssiDbm());
+            } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
+                osdLinkQuality = rxGetLinkQuality();
+                tfp_sprintf(element->buff, "LQ %03d %3d", osdLinkQuality, getRssiDbm());
+#endif
+            } else { // 0-9
+                osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
+                if (osdLinkQuality >= 10) {
+                    osdLinkQuality = 9;
+                }
+                tfp_sprintf(element->buff, "LQ %1d", osdLinkQuality);
+            }
+#endif // USE_RX_LINK_QUALITY_INFO
+        }
+        strncpy(pilotConfigMutable()->craftName, element->buff, MAX_NAME_LENGTH - 1);
+    }
+#endif // USE_CRAFTNAME_MSGS
 }
+
+#ifdef USE_MSP_DISPLAYPORT
+static void osdElementSys(osdElementParms_t *element)
+{
+    UNUSED(element);
+
+    // Nothing to render for a system element
+}
+#endif
 
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
@@ -1495,6 +1656,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_VTX_CHANNEL,
     OSD_CURRENT_DRAW,
     OSD_MAH_DRAWN,
+    OSD_WATT_HOURS_DRAWN,
     OSD_CRAFT_NAME,
     OSD_ALTITUDE,
     OSD_ROLL_PIDS,
@@ -1510,6 +1672,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_MAIN_BATT_USAGE,
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
+    OSD_READY_MODE,
 #ifdef USE_VARIO
     OSD_NUMERICAL_VARIO,
 #endif
@@ -1522,7 +1685,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_ACC
     OSD_FLIP_ARROW,
 #endif
-    OSD_DISPLAY_NAME,
+    OSD_PILOT_NAME,
 #ifdef USE_RTC_TIME
     OSD_RTC_DATETIME,
 #endif
@@ -1541,6 +1704,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RX_RSSI_DBM
     OSD_RSSI_DBM_VALUE,
 #endif
+#ifdef USE_RX_RSNR
+    OSD_RSNR_VALUE,
+#endif
 #ifdef USE_OSD_STICK_OVERLAY
     OSD_STICK_OVERLAY_LEFT,
     OSD_STICK_OVERLAY_RIGHT,
@@ -1557,6 +1723,18 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_PERSISTENT_STATS
     OSD_TOTAL_FLIGHTS,
 #endif
+    OSD_AUX_VALUE,
+    OSD_SYS_GOGGLE_VOLTAGE,
+    OSD_SYS_VTX_VOLTAGE,
+    OSD_SYS_BITRATE,
+    OSD_SYS_DELAY,
+    OSD_SYS_DISTANCE,
+    OSD_SYS_LQ,
+    OSD_SYS_GOGGLE_DVR,
+    OSD_SYS_VTX_DVR,
+    OSD_SYS_WARNINGS,
+    OSD_SYS_VTX_TEMP,
+    OSD_SYS_FAN_SPEED,
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -1581,6 +1759,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
     [OSD_CURRENT_DRAW]            = osdElementCurrentDraw,
     [OSD_MAH_DRAWN]               = osdElementMahDrawn,
+    [OSD_WATT_HOURS_DRAWN]        = osdElementWattHoursDrawn,
 #ifdef USE_GPS
     [OSD_GPS_SPEED]               = osdElementGpsSpeed,
     [OSD_GPS_SATS]                = osdElementGpsSats,
@@ -1593,6 +1772,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_PIDRATE_PROFILE]         = osdElementPidRateProfile,
     [OSD_WARNINGS]                = osdElementWarnings,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
+    [OSD_READY_MODE]              = osdElementReadyMode,
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
@@ -1613,10 +1793,8 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_NUMERICAL_VARIO]         = osdElementNumericalVario,
 #endif
     [OSD_COMPASS_BAR]             = osdElementCompassBar,
-#ifdef USE_ESC_SENSOR
-    [OSD_ESC_TMP]                 = osdElementEscTemperature,
-#endif
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
+    [OSD_ESC_TMP]                 = osdElementEscTemperature,
     [OSD_ESC_RPM]                 = osdElementEscRpm,
 #endif
     [OSD_REMAINING_TIME_ESTIMATE] = osdElementRemainingTimeEstimate,
@@ -1653,7 +1831,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_LEFT]      = osdElementStickOverlay,
     [OSD_STICK_OVERLAY_RIGHT]     = osdElementStickOverlay,
 #endif
-    [OSD_DISPLAY_NAME]            = NULL,  // only has background
+    [OSD_PILOT_NAME]              = NULL,  // only has background
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     [OSD_ESC_RPM_FREQ]            = osdElementEscRpmFreq,
 #endif
@@ -1667,12 +1845,29 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_RX_RSSI_DBM
     [OSD_RSSI_DBM_VALUE]          = osdElementRssiDbm,
 #endif
+#ifdef USE_RX_RSNR
+    [OSD_RSNR_VALUE]              = osdElementRsnr,
+#endif
     [OSD_RC_CHANNELS]             = osdElementRcChannels,
 #ifdef USE_GPS
     [OSD_EFFICIENCY]              = osdElementEfficiency,
 #endif
 #ifdef USE_PERSISTENT_STATS
     [OSD_TOTAL_FLIGHTS]           = osdElementTotalFlights,
+#endif
+    [OSD_AUX_VALUE]               = osdElementAuxValue,
+#ifdef USE_MSP_DISPLAYPORT
+    [OSD_SYS_GOGGLE_VOLTAGE]      = osdElementSys,
+    [OSD_SYS_VTX_VOLTAGE]         = osdElementSys,
+    [OSD_SYS_BITRATE]             = osdElementSys,
+    [OSD_SYS_DELAY]               = osdElementSys,
+    [OSD_SYS_DISTANCE]            = osdElementSys,
+    [OSD_SYS_LQ]                  = osdElementSys,
+    [OSD_SYS_GOGGLE_DVR]          = osdElementSys,
+    [OSD_SYS_VTX_DVR]             = osdElementSys,
+    [OSD_SYS_WARNINGS]            = osdElementSys,
+    [OSD_SYS_VTX_TEMP]            = osdElementSys,
+    [OSD_SYS_FAN_SPEED]           = osdElementSys,
 #endif
 };
 
@@ -1687,7 +1882,7 @@ const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
     [OSD_STICK_OVERLAY_LEFT]      = osdBackgroundStickOverlay,
     [OSD_STICK_OVERLAY_RIGHT]     = osdBackgroundStickOverlay,
 #endif
-    [OSD_DISPLAY_NAME]            = osdBackgroundDisplayName,
+    [OSD_PILOT_NAME]              = osdBackgroundPilotName,
 };
 
 static void osdAddActiveElement(osd_items_e element)
@@ -1728,14 +1923,10 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_EFFICIENCY);
     }
 #endif // GPS
-#ifdef USE_ESC_SENSOR
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        osdAddActiveElement(OSD_ESC_TMP);
-    }
-#endif
 
 #if defined(USE_DSHOT_TELEMETRY) || defined(USE_ESC_SENSOR)
     if ((featureIsEnabled(FEATURE_ESC_SENSOR)) || (motorConfig()->dev.useDshotTelemetry)) {
+        osdAddActiveElement(OSD_ESC_TMP);
         osdAddActiveElement(OSD_ESC_RPM);
         osdAddActiveElement(OSD_ESC_RPM_FREQ);
     }
@@ -1768,12 +1959,16 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.buff = (char *)&buff;
     element.osdDisplayPort = osdDisplayPort;
     element.drawElement = true;
-    element.attr = DISPLAYPORT_ATTR_NONE;
+    element.attr = DISPLAYPORT_ATTR_NORMAL;
 
     // Call the element drawing function
-    osdElementDrawFunction[item](&element);
-    if (element.drawElement) {
-        osdDisplayWrite(&element, elemPosX, elemPosY, element.attr, buff);
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_ITEM_COUNT)) {
+        displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
+    } else {
+        osdElementDrawFunction[item](&element);
+        if (element.drawElement) {
+            osdDisplayWrite(&element, elemPosX, elemPosY, element.attr, buff);
+        }
     }
 }
 
@@ -1800,18 +1995,18 @@ static void osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     // Call the element background drawing function
     osdElementBackgroundFunction[item](&element);
     if (element.drawElement) {
-        osdDisplayWrite(&element, elemPosX, elemPosY, DISPLAYPORT_ATTR_NONE, buff);
+        osdDisplayWrite(&element, elemPosX, elemPosY, DISPLAYPORT_ATTR_NORMAL, buff);
     }
 }
 
 static uint8_t activeElement = 0;
 
-uint8_t osdGetActiveElement()
+uint8_t osdGetActiveElement(void)
 {
     return activeElement;
 }
 
-uint8_t osdGetActiveElementCount()
+uint8_t osdGetActiveElementCount(void)
 {
     return activeOsdElementCount;
 }
@@ -1846,7 +2041,7 @@ void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
 {
     if (backgroundLayerSupported) {
         displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
-        displayClearScreen(osdDisplayPort);
+        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
         for (unsigned i = 0; i < activeOsdElementCount; i++) {
             osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]);
         }
@@ -1858,9 +2053,11 @@ void osdElementsInit(bool backgroundLayerFlag)
 {
     backgroundLayerSupported = backgroundLayerFlag;
     activeOsdElementCount = 0;
+    pt1FilterInit(&batteryEfficiencyFilt, pt1FilterGain(EFFICIENCY_CUTOFF_HZ, 1.0f / osdConfig()->framerate_hz));
 }
 
-void osdSyncBlink() {
+void osdSyncBlink(void)
+{
     static int blinkCount = 0;
 
     // If the OSD blink is due a transition, do so
@@ -1905,7 +2102,7 @@ void osdUpdateAlarms(void)
     }
 
 #ifdef USE_GPS
-    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < 5)
+    if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)
 #ifdef USE_GPS_RESCUE
             || ((gpsSol.numSat < gpsRescueConfig()->minSats) && gpsRescueIsConfigured())
 #endif
@@ -1951,18 +2148,37 @@ void osdUpdateAlarms(void)
             CLR_BLINK(OSD_HOME_DIST);
         }
     } else {
-        CLR_BLINK(OSD_HOME_DIST);;
+        CLR_BLINK(OSD_HOME_DIST);
     }
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)
+    bool blink;
+
+#if defined(USE_ESC_SENSOR)
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         // This works because the combined ESC data contains the maximum temperature seen amongst all ESCs
-        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm) {
-            SET_BLINK(OSD_ESC_TMP);
-        } else {
-            CLR_BLINK(OSD_ESC_TMP);
+        blink = osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF && osdEscDataCombined->temperature >= osdConfig()->esc_temp_alarm;
+    } else
+#endif
+#if defined(USE_DSHOT_TELEMETRY)
+    {
+        blink = false;
+        if (osdConfig()->esc_temp_alarm != ESC_TEMP_ALARM_OFF) {
+            for (uint32_t k = 0; !blink && (k < getMotorCount()); k++) {
+                blink = (dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0 &&
+                    dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] >= osdConfig()->esc_temp_alarm;
+            }
         }
+    }
+#else
+    {}
+#endif
+
+    if (blink) {
+        SET_BLINK(OSD_ESC_TMP);
+    } else {
+        CLR_BLINK(OSD_ESC_TMP);
     }
 #endif
 }

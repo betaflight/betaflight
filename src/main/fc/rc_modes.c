@@ -79,11 +79,13 @@ void rcModeUpdate(boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
-bool airmodeIsEnabled(void) {
+bool airmodeIsEnabled(void)
+{
     return airmodeEnabled;
 }
 
-bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
+bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range)
+{
     if (!IS_RANGE_USABLE(range)) {
         return false;
     }
@@ -253,7 +255,7 @@ void analyzeModeActivationConditions(void)
             activeMacArray[activeMacCount++] = i;
         }
     }
-#ifdef USE_PINIOBOX
+#if defined(USE_PINIOBOX) && !defined(SIMULATOR_MULTITHREAD)
     pinioBoxTaskControl();
 #endif
 }

@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#if defined(USE_PWM) || defined(USE_PPM)
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -141,7 +141,7 @@ static uint8_t ppmEventIndex = 0;
 
 void ppmISREvent(eventSource_e source, uint32_t capture)
 {
-    ppmEventIndex = (ppmEventIndex + 1) % (sizeof(ppmEvents) / sizeof(ppmEvents[0]));
+    ppmEventIndex = (ppmEventIndex + 1) % ARRAYLEN(ppmEvents);
 
     ppmEvents[ppmEventIndex].source = source;
     ppmEvents[ppmEventIndex].capture = capture;
@@ -386,11 +386,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
         IO_t io = IOGetByTag(pwmConfig->ioTags[channel]);
         IOInit(io, OWNER_PWMINPUT, RESOURCE_INDEX(channel));
-#ifdef STM32F1
-        IOConfigGPIO(io, IOCFG_IPD);
-#else
         IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
-#endif
         timerConfigure(timer, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_1MHZ);
         timerChCCHandlerInit(&port->edgeCb, pwmEdgeCallback);
         timerChOvrHandlerInit(&port->overflowCb, pwmOverflowCallback);
@@ -443,11 +439,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
 
     IO_t io = IOGetByTag(ppmConfig->ioTag);
     IOInit(io, OWNER_PPMINPUT, 0);
-#ifdef STM32F1
-    IOConfigGPIO(io, IOCFG_IPD);
-#else
     IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
-#endif
 
     timerConfigure(timer, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_1MHZ);
     timerChCCHandlerInit(&port->edgeCb, ppmEdgeCallback);

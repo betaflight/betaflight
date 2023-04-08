@@ -29,12 +29,13 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_arcitimer.h"
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(UNIT_TEST)
 
 extern const struct transponderVTable arcitimerTansponderVTable;
 static uint16_t dmaBufferOffset;
 
-void transponderIrInitArcitimer(transponder_t *transponder){
+void transponderIrInitArcitimer(transponder_t *transponder)
+{
     // from drivers/transponder_ir.h
     transponder->gap_toggles        = TRANSPONDER_GAP_TOGGLES_ARCITIMER;
     transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER;

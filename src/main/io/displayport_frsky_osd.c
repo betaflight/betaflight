@@ -33,6 +33,8 @@
 #include "io/displayport_frsky_osd.h"
 #include "io/frsky_osd.h"
 
+#include "osd/osd.h"
+
 static displayPort_t frskyOsdDisplayPort;
 
 static int grab(displayPort_t *displayPort)
@@ -47,9 +49,10 @@ static int release(displayPort_t *displayPort)
     return 0;
 }
 
-static int clearScreen(displayPort_t *displayPort)
+static int clearScreen(displayPort_t *displayPort, displayClearOption_e options)
 {
     UNUSED(displayPort);
+    UNUSED(options);
     frskyOsdClearScreen();
     return 0;
 }
@@ -495,6 +498,8 @@ displayPort_t *frskyOsdDisplayPortInit(const videoSystem_e videoSystem)
 {
     if (frskyOsdInit(videoSystem)) {
         displayInit(&frskyOsdDisplayPort, &frskyOsdVTable, DISPLAYPORT_DEVICE_TYPE_FRSKYOSD);
+        frskyOsdDisplayPort.cols = OSD_SD_COLS;
+        frskyOsdDisplayPort.rows = OSD_SD_ROWS;
         redraw(&frskyOsdDisplayPort);
         return &frskyOsdDisplayPort;
     }

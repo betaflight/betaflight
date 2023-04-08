@@ -382,7 +382,7 @@ static rcdeviceResponseParseContext_t* getWaitingResponse(timeMs_t currentTimeMs
     return respCtx;
 }
 
-runcamDeviceRequest_t* rcdeviceGetRequest()
+runcamDeviceRequest_t* rcdeviceGetRequest(void)
 {
     if (requestParserContext.isParseDone) {
         // reset the parse done state, then we can handle next request from rcdevice
@@ -457,7 +457,7 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
             break;
         }
 
-        // if it is during the packet receiving progress, check if it is already timeout(200 ms), 
+        // if it is during the packet receiving progress, check if it is already timeout(200 ms),
         // if timeout, then reset the state, else the later requests can't  be accept
         if (requestParserContext.state != RCDEVICE_STATE_WAITING_HEADER && millis() - requestParserContext.lastRecvDataTimestamp > 200) {
             memset(&requestParserContext, 0, sizeof(runcamDeviceRequestParseContext_t));
@@ -475,7 +475,7 @@ void rcdeviceReceive(timeUs_t currentTimeUs)
             case RCDEVICE_STATE_WAITING_COMMAND:
                 requestParserContext.request.command = c;
                 // there is no payload for RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE, skip to waiting crc step
-                if (requestParserContext.request.command == RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE) { 
+                if (requestParserContext.request.command == RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE) {
                     requestParserContext.state = RCDEVICE_STATE_WAITING_CRC;
                 } else {
                     // for now, only RCDEVICE_PROTOCOL_COMMAND_REQUEST_FC_ATTITUDE support, so reset the state to waiting header.

@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "io/displayport_msp.h"
 #include "pg/pg.h"
 
 typedef struct displayPortProfile_s {
@@ -28,11 +29,10 @@ typedef struct displayPortProfile_s {
     bool invert;
     uint8_t blackBrightness;
     uint8_t whiteBrightness;
-    int8_t displayPortSerial;  // serialPortIdentifier_e
 
     // For attribute-rich OSDs
 
-    uint8_t attrValues[4];     // NORMAL, INFORMATIONAL, WARNING, CRITICAL
+    uint8_t fontSelection[DISPLAYPORT_ATTR_COUNT];
     uint8_t useDeviceBlink;    // Use device local blink capability
 } displayPortProfile_t;
 

@@ -166,7 +166,7 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
 {
     crsfFrameDone = true;
     crsfFrame.frame.deviceAddress = CRSF_ADDRESS_CRSF_RECEIVER;
-    crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;;
+    crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
     crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     // 16 11-bit channels packed into 22 bytes of data
     crsfFrame.frame.payload[0]  = 0xFF; // bits 0-7

@@ -29,33 +29,23 @@
 
 #include "timerio.h"
 
+/*
+Details of the TIMER_PIN_MAP macro:
+    i => is the index in the PG timer IO config array,
+    p => is the hardware pin to be mapped,
+    o => is the hardware pin occurrence (1 based index) within timerHardware (full) that should be used
+                e.g. 1 = first occurence of the pin, 2 = second occurence, etc.
+    d => the configured dma opt for the pin
+*/
+#define TIMER_PIN_MAP(i, p, o, d)  \
+        { config[i].ioTag = IO_TAG(p); config[i].index = o; config[i].dmaopt = d; }
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(timerIOConfig_t, MAX_TIMER_PINMAP_COUNT, timerIOConfig, PG_TIMER_IO_CONFIG, 0);
 
 void pgResetFn_timerIOConfig(timerIOConfig_t *config)
 {
-#if defined(USE_TIMER_MGMT) && !defined(USE_UNIFIED_TARGET)
-    unsigned configIndex = 0;
-    for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
-        const timerHardware_t *configuredTimer = &timerHardware[timerIndex];
-        unsigned positionIndex = 1;
-        for (unsigned fullTimerIndex = 0; fullTimerIndex < FULL_TIMER_CHANNEL_COUNT; fullTimerIndex++) {
-            const timerHardware_t *timer = &fullTimerHardware[fullTimerIndex];
-            if (timer->tag == configuredTimer->tag) {
-                if (timer->tim == configuredTimer->tim && timer->channel == configuredTimer->channel) {
-                    config[configIndex].ioTag = timer->tag;
-                    config[configIndex].index = positionIndex;
-
-                    config[configIndex].dmaopt = dmaGetOptionByTimer(configuredTimer);
-
-                    configIndex++;
-
-                    break;
-                } else {
-                    positionIndex++;
-                }
-            }
-        }
-    }
+#ifdef TIMER_PIN_MAPPING
+    TIMER_PIN_MAPPING
 #else
     UNUSED(config);
 #endif

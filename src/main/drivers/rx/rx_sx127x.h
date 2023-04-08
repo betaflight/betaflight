@@ -329,7 +329,7 @@ void sx127xAdjustFrequency(int32_t offset, const uint32_t freq);
 uint8_t sx127xUnsignedGetLastPacketRSSI(void);
 int8_t sx127xGetLastPacketRSSI(void);
 int8_t sx127xGetCurrRSSI(void);
-int8_t sx127xGetLastPacketSNR(void);
+int8_t sx127xGetLastPacketSNRRaw(void);
 uint8_t sx127xGetIrqFlags(void);
 void sx127xClearIrqFlags(void);
 uint8_t sx127xGetIrqReason(void);

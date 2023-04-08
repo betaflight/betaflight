@@ -20,6 +20,7 @@ COMMON_SRC = \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_soft.c \
+            drivers/bus_octospi.c \
             drivers/bus_quadspi.c \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
@@ -28,8 +29,6 @@ COMMON_SRC = \
             drivers/display.c \
             drivers/display_canvas.c \
             drivers/dma_common.c \
-            drivers/dma_reqmap.c \
-            drivers/exti.c \
             drivers/io.c \
             drivers/light_led.c \
             drivers/mco.c \
@@ -37,7 +36,6 @@ COMMON_SRC = \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \
             drivers/resource.c \
-            drivers/rcc.c \
             drivers/serial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
@@ -46,7 +44,6 @@ COMMON_SRC = \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer_common.c \
-            drivers/timer.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
             drivers/transponder_ir_erlt.c \
@@ -78,8 +75,6 @@ COMMON_SRC = \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/accgyro/gyro_sync.c \
-            drivers/pwm_esc_detect.c \
-            drivers/pwm_output.c \
             drivers/rx/rx_spi.c \
             drivers/rx/rx_xn297.c \
             drivers/rx/rx_pwm.c \
@@ -200,12 +195,78 @@ COMMON_SRC = \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
             io/vtx_control.c \
+            io/vtx_msp.c \
+            cms/cms_menu_vtx_msp.c
+
+ifneq ($(SIMULATOR_BUILD),yes)
+
+COMMON_SRC += \
+            $(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \
+            $(ROOT)/lib/main/BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
+            $(addprefix drivers/barometer/,$(notdir $(wildcard $(SRC_DIR)/drivers/barometer/*.c))) \
+            $(addprefix drivers/compass/,$(notdir $(wildcard $(SRC_DIR)/drivers/compass/*.c))) \
+            drivers/max7456.c \
+            drivers/vtx_rtc6705.c \
+            drivers/vtx_rtc6705_soft_spi.c
+
+ifneq ($(CONFIG),)
+
+GYRO_DEFINE         := $(shell grep " USE_GYRO_" $(CONFIG_FILE) | awk '{print $$2}' )
+LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
+ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
+
+COMMON_SRC += \
+            $(addprefix drivers/accgyro_legacy/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro_legacy/*.c)))
+
+endif
+endif
+
+RX_SRC = \
+            rx/cc2500_common.c \
+            rx/cc2500_frsky_shared.c \
+            rx/cc2500_frsky_d.c \
+            rx/cc2500_frsky_x.c \
+            rx/cc2500_sfhss.c \
+            rx/cc2500_redpine.c \
+            rx/a7105_flysky.c \
+            rx/cyrf6936_spektrum.c \
+            drivers/rx/expresslrs_driver.c \
+            rx/expresslrs.c \
+            rx/expresslrs_common.c \
+            rx/expresslrs_telemetry.c \
+            drivers/rx/rx_cc2500.c \
+            drivers/rx/rx_a7105.c \
+            drivers/rx/rx_cyrf6936.c \
+            drivers/rx/rx_sx127x.c \
+            drivers/rx/rx_sx1280.c
+
+FLASH_SRC += \
+            drivers/flash.c \
+            drivers/flash_m25p16.c \
+            drivers/flash_w25n01g.c \
+            drivers/flash_w25q128fv.c \
+            drivers/flash_w25m.c \
+            io/flashfs.c
+
+SDCARD_SRC += \
+            drivers/sdcard.c \
+            drivers/sdcard_spi.c \
+            drivers/sdcard_sdio_baremetal.c \
+            drivers/sdcard_standard.c \
+            io/asyncfatfs/asyncfatfs.c \
+            io/asyncfatfs/fat_standard.c
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(FATFS_DIR)
+VPATH           := $(VPATH):$(FATFS_DIR)
+
+endif
 
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
-COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC)
+COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC) $(RX_SRC)
 
 ifeq ($(EXST),yes)
 TARGET_FLAGS := -DUSE_EXST $(TARGET_FLAGS)
@@ -222,12 +283,12 @@ endif
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
 
-ifneq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
             common/sdft.c \
+            common/stopwatch.c \
             common/typeconversion.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_mpu3050.c \
@@ -294,6 +355,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/barometer/barometer_ms5611.c \
             drivers/barometer/barometer_lps.c \
             drivers/barometer/barometer_qmp6988.c \
+            drivers/barometer/barometer_2smpb_02b.c \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_timing.c \
             drivers/bus_spi_config.c \
@@ -307,15 +369,11 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/display_ug2864hsweg01.c \
             drivers/inverter.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_hal.c \
-            drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_tcp.c \
             drivers/serial_uart_pinconfig.c \
             drivers/serial_usb_vcp.c \
-            drivers/transponder_ir_io_hal.c \
-            drivers/transponder_ir_io_stdperiph.c \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
@@ -360,7 +418,9 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             osd/osd.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
-            rx/rx_bind.c
+            rx/rx_bind.c \
+            io/vtx_msp.c \
+            cms/cms_menu_vtx_msp.c
 
 # Gyro driver files that only contain initialization and configuration code - not runtime code
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
@@ -370,11 +430,11 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c
 
 
 # F4 and F7 optimizations
-ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_i2c_hal.c \
             drivers/bus_spi_ll.c \
@@ -386,8 +446,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_hal_init.c
-endif #!F3
-endif #!F1
 
 # check if target.mk supplied
 SRC := $(STARTUP_SRC) $(MCU_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
@@ -399,57 +457,18 @@ NOT_OPTIMISED_SRC := $(NOT_OPTIMISED_SRC) \
 ifneq ($(DSP_LIB),)
 
 INCLUDE_DIRS += $(DSP_LIB)/Include
-
 SRC += $(wildcard $(DSP_LIB)/Source/*/*.S)
+
 endif
 
-ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-SRC += \
-            drivers/flash.c \
-            drivers/flash_m25p16.c \
-            drivers/flash_w25n01g.c \
-            drivers/flash_w25q128fv.c \
-            drivers/flash_w25m.c \
-            io/flashfs.c \
-            $(MSC_SRC)
-endif
-
-SRC += $(COMMON_SRC)
+SRC += $(FLASH_SRC) $(MSC_SRC) $(SDCARD_SRC) $(COMMON_SRC)
 
 #excludes
 SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
 
-ifneq ($(filter SDCARD_SPI,$(FEATURES)),)
-SRC += \
-            drivers/sdcard.c \
-            drivers/sdcard_spi.c \
-            drivers/sdcard_standard.c \
-            io/asyncfatfs/asyncfatfs.c \
-            io/asyncfatfs/fat_standard.c \
-            $(MSC_SRC)
-endif
-
-ifneq ($(filter SDCARD_SDIO,$(FEATURES)),)
-SRC += \
-            drivers/sdcard.c \
-            drivers/sdcard_sdio_baremetal.c \
-            drivers/sdcard_standard.c \
-            io/asyncfatfs/asyncfatfs.c \
-            io/asyncfatfs/fat_standard.c \
-            $(MSC_SRC)
-endif
-
-ifneq ($(filter VCP,$(FEATURES)),)
 SRC += $(VCP_SRC)
-endif
 
-ifneq ($(filter MSC,$(FEATURES)),)
-SRC += $(MSC_SRC)
-endif
 # end target specific make file checks
-
-# Search path and source files for the ST stdperiph library
-VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 
 # Search path and source files for the Open Location Code library
 OLC_DIR = $(ROOT)/lib/main/google/olc

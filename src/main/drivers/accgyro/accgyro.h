@@ -59,14 +59,17 @@ typedef enum {
     GYRO_BMI160,
     GYRO_BMI270,
     GYRO_LSM6DSO,
-    GYRO_FAKE
+    GYRO_VIRTUAL
 } gyroHardware_e;
 
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,
+    GYRO_HARDWARE_LPF_OPTION_1,
+    GYRO_HARDWARE_LPF_OPTION_2,
 #ifdef USE_GYRO_DLPF_EXPERIMENTAL
-    GYRO_HARDWARE_LPF_EXPERIMENTAL
+    GYRO_HARDWARE_LPF_EXPERIMENTAL,
 #endif
+    GYRO_HARDWARE_LPF_COUNT
 } gyroHardwareLpf_e;
 
 typedef enum {
@@ -106,14 +109,12 @@ typedef struct gyroDev_s {
     sensor_align_e gyroAlign;
     gyroRateKHz_e gyroRateKHz;
     gyroModeSPI_e gyroModeSPI;
-#ifdef USE_GYRO_EXTI
     uint32_t detectedEXTI;
     uint32_t gyroLastEXTI;
     uint32_t gyroSyncEXTI;
     int32_t gyroShortPeriod;
     int32_t gyroDmaMaxDuration;
     busSegment_t segments[2];
-#endif
     volatile bool dataReady;
     bool gyro_high_fsr;
     uint8_t hardware_lpf;
@@ -125,6 +126,8 @@ typedef struct gyroDev_s {
     fp_rotationMatrix_t rotationMatrix;
     uint16_t gyroSampleRateHz;
     uint16_t accSampleRateHz;
+    uint8_t accDataReg;
+    uint8_t gyroDataReg;
 } gyroDev_t;
 
 typedef struct accDev_s {

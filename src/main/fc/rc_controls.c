@@ -20,8 +20,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
-
 #include <math.h>
 
 #include "platform.h"
@@ -85,7 +85,7 @@ PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 1);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
-    .gyro_cal_on_first_arm = 0,  // TODO - Cleanup retarded arm support
+    .gyro_cal_on_first_arm = 0,
     .auto_disarm_delay = 5
 );
 
@@ -103,11 +103,6 @@ PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
 bool isUsingSticksForArming(void)
 {
     return isUsingSticksToArm;
-}
-
-bool areSticksInApModePosition(uint16_t ap_mode)
-{
-    return fabsf(rcCommand[ROLL]) < ap_mode && fabsf(rcCommand[PITCH]) < ap_mode;
 }
 
 throttleStatus_e calculateThrottleStatus(void)
@@ -135,7 +130,7 @@ throttleStatus_e calculateThrottleStatus(void)
     doNotRepeat = false; \
 }
 
-void processRcStickPositions()
+void processRcStickPositions(void)
 {
     // time the sticks are maintained
     static int16_t rcDelayMs;
@@ -144,6 +139,7 @@ void processRcStickPositions()
     // an extra guard for disarming through switch to prevent that one frame can disarm it
     static uint8_t rcDisarmTicks;
     static bool doNotRepeat;
+    static bool pendingApplyRollAndPitchTrimDeltaSave = false;
 
     // checking sticks positions
     uint8_t stTmp = 0;
@@ -176,9 +172,16 @@ void processRcStickPositions()
             resetTryingToArm();
             // Disarming via ARM BOX
             resetArmingDisabled();
-            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
+            const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+            if (ARMING_FLAG(ARMED) && (failsafeIsReceivingRxData() || boxFailsafeSwitchIsOn)) {
+                // in a true signal loss situation, allow disarm only once we regain validated RxData (failsafeIsReceivingRxData = true),
+                // to avoid potentially false disarm signals soon after link recover
+                // Note that BOXFAILSAFE will also drive failsafeIsReceivingRxData false (immediately at start or end)
+                // That's why we explicitly allow disarm here BOXFAILSAFE switch is active
+                // Note that BOXGPSRESCUE mode does not trigger failsafe - we can always disarm in that mode
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
+                    // require three duplicate disarm values in a row before we disarm
                     disarm(DISARM_REASON_SWITCH);
                 }
             }
@@ -306,22 +309,28 @@ void processRcStickPositions()
         rollAndPitchTrims_t accelerometerTrimsDelta;
         memset(&accelerometerTrimsDelta, 0, sizeof(accelerometerTrimsDelta));
 
+        if (pendingApplyRollAndPitchTrimDeltaSave && ((rcSticks & THR_MASK) != THR_HI)) {
+            saveConfigAndNotify();
+            pendingApplyRollAndPitchTrimDeltaSave = false;
+            return;
+        }
+
         bool shouldApplyRollAndPitchTrimDelta = false;
         switch (rcSticks) {
         case THR_HI + YAW_CE + PIT_HI + ROL_CE:
-            accelerometerTrimsDelta.values.pitch = 2;
+            accelerometerTrimsDelta.values.pitch = 1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_LO + ROL_CE:
-            accelerometerTrimsDelta.values.pitch = -2;
+            accelerometerTrimsDelta.values.pitch = -1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_HI:
-            accelerometerTrimsDelta.values.roll = 2;
+            accelerometerTrimsDelta.values.roll = 1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         case THR_HI + YAW_CE + PIT_CE + ROL_LO:
-            accelerometerTrimsDelta.values.roll = -2;
+            accelerometerTrimsDelta.values.roll = -1;
             shouldApplyRollAndPitchTrimDelta = true;
             break;
         }
@@ -329,7 +338,9 @@ void processRcStickPositions()
 #if defined(USE_ACC)
             applyAccelerometerTrimsDelta(&accelerometerTrimsDelta);
 #endif
-            saveConfigAndNotify();
+            pendingApplyRollAndPitchTrimDeltaSave = true;
+
+            beeperConfirmationBeeps(1);
 
             repeatAfter(STICK_AUTOREPEAT_MS);
 
@@ -398,10 +409,6 @@ void processRcStickPositions()
         cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 2000);
     }
 #endif
-}
-
-int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
-    return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
 void rcControlsInit(void)

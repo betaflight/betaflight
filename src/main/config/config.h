@@ -34,8 +34,8 @@ typedef enum {
 } configurationState_e;
 
 typedef struct pilotConfig_s {
-    char name[MAX_NAME_LENGTH + 1];
-    char displayName[MAX_NAME_LENGTH + 1];
+    char craftName[MAX_NAME_LENGTH + 1];
+    char pilotName[MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
@@ -60,7 +60,7 @@ struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;
 
 void initEEPROM(void);
-bool resetEEPROM(bool useCustomDefaults);
+bool resetEEPROM(void);
 bool readEEPROM(void);
 void writeEEPROM(void);
 void writeUnmodifiedConfigToEEPROM(void);
@@ -68,6 +68,9 @@ void ensureEEPROMStructureIsValid(void);
 
 void saveConfigAndNotify(void);
 void validateAndFixGyroConfig(void);
+#ifdef USE_BLACKBOX
+void validateAndFixBlackBox(void);
+#endif
 
 void setConfigDirty(void);
 bool isConfigDirty(void);
@@ -90,3 +93,4 @@ void targetValidateConfiguration(void);
 bool isSystemConfigured(void);
 void setRebootRequired(void);
 bool getRebootRequired(void);
+bool isEepromWriteInProgress(void);

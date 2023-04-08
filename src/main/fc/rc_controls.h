@@ -70,6 +70,7 @@ typedef enum {
 #define THR_LO (1 << (2 * THROTTLE))
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
+#define THR_MASK (3 << (2 * THROTTLE))
 
 #define CONTROL_RATE_CONFIG_RC_EXPO_MAX  100
 
@@ -80,8 +81,6 @@ typedef enum {
 
 // (Super) rates are constrained to [0, 100] for Betaflight rates, so values higher than 100 won't make a difference. Range extended for RaceFlight rates.
 #define CONTROL_RATE_CONFIG_RATE_MAX  255
-
-#define CONTROL_RATE_CONFIG_TPA_MAX              100
 
 extern float rcCommand[4];
 
@@ -132,7 +131,7 @@ typedef struct flight3DConfig_s {
 PG_DECLARE(flight3DConfig_t, flight3DConfig);
 
 typedef struct armingConfig_s {
-    uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
+    uint8_t gyro_cal_on_first_arm;          // calibrate the gyro right before the first arm
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
 } armingConfig_t;
 
@@ -140,11 +139,9 @@ PG_DECLARE(armingConfig_t, armingConfig);
 
 bool areUsingSticksToArm(void);
 
-bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(void);
 void processRcStickPositions();
 
 bool isUsingSticksForArming(void);
 
-int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 void rcControlsInit(void);

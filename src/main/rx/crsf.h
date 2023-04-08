@@ -86,4 +86,5 @@ struct rxConfig_s;
 struct rxRuntimeState_s;
 bool crsfRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeState_s *rxRuntimeState);
 void crsfRxUpdateBaudrate(uint32_t baudrate);
+bool crsfRxUseNegotiatedBaud(void);
 bool crsfRxIsActive(void);

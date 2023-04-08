@@ -37,7 +37,7 @@
 #include "config/feature.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_mpu3050.h"
 #include "drivers/accgyro/accgyro_mpu6050.h"
@@ -86,6 +86,15 @@
 
 #include "acceleration_init.h"
 
+#if !defined(USE_ACC_MPU6000) && !defined(USE_ACC_SPI_MPU6000) && !defined(USE_ACC_MPU6500) && \
+    !defined(USE_ACC_SPI_MPU6500) && !defined(USE_ACC_SPI_MPU9250) && !defined(USE_ACC_SPI_ICM20602) && \
+    !defined(USE_ACC_SPI_ICM20689) && !defined(USE_ACCGYRO_LSM6DSO) && !defined(USE_ACCGYRO_BMI160) && \
+    !defined(USE_ACCGYRO_BMI270) && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) && \
+    !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) && \
+    !defined(USE_ACC_MMA8452) && !defined(USE_VIRTUAL_ACC)
+#error At least one USE_ACC device definition required
+#endif
+
 #define CALIBRATING_ACC_CYCLES              400
 
 FAST_DATA_ZERO_INIT accelerationRuntime_t accelerationRuntime;
@@ -105,7 +114,11 @@ static void setConfigCalibrationCompleted(void)
 
 bool accHasBeenCalibrated(void)
 {
+#ifdef SIMULATOR_BUILD
+    return true;
+#else
     return accelerometerConfig()->accZero.values.calibrationCompleted;
+#endif
 }
 
 void accResetRollAndPitchTrims(void)
@@ -124,7 +137,7 @@ static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
-        .acc_lpf_hz = 10,
+        .acc_lpf_hz = 25, // ATTITUDE/IMU runs at 100Hz (acro) or 500Hz (level modes) so we need to set 50 Hz (or lower) to avoid aliasing
         .acc_hardware = ACC_DEFAULT,
         .acc_high_fsr = false,
     );
@@ -315,10 +328,10 @@ retry:
         FALLTHROUGH;
 #endif
 
-#ifdef USE_FAKE_ACC
-    case ACC_FAKE:
-        if (fakeAccDetect(dev)) {
-            accHardware = ACC_FAKE;
+#ifdef USE_VIRTUAL_ACC
+    case ACC_VIRTUAL:
+        if (virtualAccDetect(dev)) {
+            accHardware = ACC_VIRTUAL;
             break;
         }
         FALLTHROUGH;
@@ -352,9 +365,9 @@ void accInitFilters(void)
     // the filter initialization is not defined (sample rate = 0)
     accelerationRuntime.accLpfCutHz = (acc.sampleRateHz) ? accelerometerConfig()->acc_lpf_hz : 0;
     if (accelerationRuntime.accLpfCutHz) {
-        const uint32_t accSampleTimeUs = 1e6 / acc.sampleRateHz;
+        const float k = pt2FilterGain(accelerationRuntime.accLpfCutHz, 1.0f / acc.sampleRateHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accelerationRuntime.accFilter[axis], accelerationRuntime.accLpfCutHz, accSampleTimeUs);
+            pt2FilterInit(&accelerationRuntime.accFilter[axis], k);
         }
     }
 }
@@ -368,7 +381,7 @@ bool accInit(uint16_t accSampleRateHz)
     acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
 
     // Copy alignment from active gyro, as all production boards use acc-gyro-combi chip.
-    // Exceptions are STM32F3DISCOVERY and STM32F411DISCOVERY, and (may be) handled in future enhancement.
+    // Exception is STM32F411DISCOVERY, and (may be) handled in future enhancement.
 
     sensor_align_e alignment = gyroDeviceConfig(0)->alignment;
     const sensorAlignment_t* customAlignment = &gyroDeviceConfig(0)->customAlignment;

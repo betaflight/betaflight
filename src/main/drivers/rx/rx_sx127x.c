@@ -31,9 +31,12 @@
 
 #ifdef USE_RX_SX127X
 
+#include "build/atomic.h"
+
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/nvic.h"
 #include "drivers/rx/rx_sx127x.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/time.h"
@@ -73,19 +76,16 @@ static bool sx127xDetectChip(void)
 
 uint8_t sx127xISR(timeUs_t *timeStamp)
 {
-    if (rxSpiPollExti()) {
-        if (rxSpiGetLastExtiTimeUs()) {
-            *timeStamp = rxSpiGetLastExtiTimeUs();
-        }
+    timeUs_t extiTimestamp = rxSpiGetLastExtiTimeUs();
 
-        uint8_t irqReason;
-        irqReason = sx127xGetIrqReason();
+    rxSpiResetExti();
 
-        rxSpiResetExti();
-
-        return irqReason;
+    uint8_t irqReason = sx127xGetIrqReason();
+    if (extiTimestamp) {
+        *timeStamp = extiTimestamp;
     }
-    return 0;
+
+    return irqReason;
 }
 
 bool sx127xInit(IO_t resetPin, IO_t busyPin)
@@ -417,16 +417,17 @@ int8_t sx127xGetCurrRSSI(void)
     return (-157 + sx127xGetRegisterValue(SX127X_REG_RSSI_VALUE, 7, 0));
 }
 
-int8_t sx127xGetLastPacketSNR(void)
+int8_t sx127xGetLastPacketSNRRaw(void)
 {
-    int8_t rawSNR = (int8_t)sx127xGetRegisterValue(SX127X_REG_PKT_SNR_VALUE, 7, 0);
-    return (rawSNR / 4);
+    return (int8_t)sx127xGetRegisterValue(SX127X_REG_PKT_SNR_VALUE, 7, 0);
 }
 
 void sx127xGetLastPacketStats(int8_t *rssi, int8_t *snr)
 {
     *rssi = sx127xGetLastPacketRSSI();
-    *snr = sx127xGetLastPacketSNR();
+    *snr = sx127xGetLastPacketSNRRaw();
+    int8_t negOffset = (*snr < 0) ? (*snr / 4) : 0;
+    *rssi += negOffset;
 }
 
 uint8_t sx127xGetIrqFlags(void)
@@ -443,7 +444,9 @@ uint8_t sx127xGetIrqReason(void)
 {
     uint8_t irqFlags = sx127xGetIrqFlags();
     sx127xClearIrqFlags();
-    if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE)) {
+    if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE) && (irqFlags & SX127X_CLEAR_IRQ_FLAG_RX_DONE)) {
+        return 3;
+    } else if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_TX_DONE)) {
         return 2;
     } else if ((irqFlags & SX127X_CLEAR_IRQ_FLAG_RX_DONE)) {
         return 1;

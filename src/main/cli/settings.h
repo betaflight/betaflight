@@ -32,7 +32,7 @@ typedef enum {
 #ifdef USE_GPS
     TABLE_GPS_PROVIDER,
     TABLE_GPS_SBAS_MODE,
-    TABLE_GPS_UBLOX_MODE,
+    TABLE_GPS_UBLOX_MODELS,
 #endif
 #ifdef USE_GPS_RESCUE
     TABLE_GPS_RESCUE_SANITY_CHECK,
@@ -48,7 +48,7 @@ typedef enum {
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
     TABLE_SERIAL_RX,
 #endif
 #ifdef USE_RX_SPI
@@ -66,7 +66,6 @@ typedef enum {
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_GYRO_LPF_TYPE,
     TABLE_DTERM_LPF_TYPE,
-    TABLE_ANTI_GRAVITY_MODE,
     TABLE_FAILSAFE,
     TABLE_FAILSAFE_SWITCH_MODE,
     TABLE_CRASH_RECOVERY,
@@ -97,7 +96,7 @@ typedef enum {
     TABLE_GYRO,
 #endif
     TABLE_THROTTLE_LIMIT_TYPE,
-#if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
+#if defined(USE_VIDEO_SYSTEM)
     TABLE_VIDEO_SYSTEM,
 #endif
 #if defined(USE_ITERM_RELAX)

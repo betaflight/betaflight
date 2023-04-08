@@ -1,0 +1,73 @@
+# You'll need to setup the follwing environment variables:
+#   env.repo_nightly - The repository to release nightly builds to e.g. betaflight-nightly
+#   env.release_notes - The release notes to be published as part of the github release
+#   env.debug_release_notes - The release notes to be published as part of the github debug release
+#   secrets.REPO_TOKEN - A GitHub token with permissions to push and publish releases to the nightly repo
+
+env:
+  repo_nightly: betaflight/betaflight-nightlies
+  debug_release_notes: >
+    This is an automated development build.
+    It may be unstable and result in craft loss or damage.
+    **Use only for testing.**
+  release_notes: This is a release build. 
+
+name: Nightly
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      release_build: false
+
+  release:
+    name: Nightly release
+    needs: ci
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+        
+      - name: Fetch build artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Select release notes
+        id: notes
+        run: |
+          set -- Assets/*.hex
+          echo "notes=$(test -e "$1" && echo '${{ env.debug_release_notes }}' || echo '${{ env.release_notes }}')" >> $GITHUB_OUTPUT
+
+      - name: Get current date
+        id: date
+        run: echo "today=$(date '+%Y%m%d')" >> $GITHUB_OUTPUT
+
+      - name: Release
+        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v0.1.14
+        with:
+          token: ${{ secrets.REPO_TOKEN }}
+          repository: ${{ env.repo_nightly }}
+          tag_name: v${{ steps.date.outputs.today }}.${{ github.run_number }}
+          files: Assets/*.hex
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          body: |
+            ${{ steps.notes.outputs.notes }}
+
+            ### Repository:
+            ${{ github.repository }} ([link](${{ github.event.repository.html_url }}))
+
+            ### Branch:
+            ${{ github.ref_name }} ([link](${{ github.event.repository.html_url }}/tree/${{ github.ref_name }}))
+
+            ### Latest changeset:
+            ${{ github.event.head_commit.id }} ([link](${{ github.event.head_commit.url }}))
+
+            ### Changes:
+            ${{ github.event.head_commit.message }}

@@ -146,7 +146,8 @@ static bool isChecksumOkIa6(void)
 }
 
 
-static bool checksumIsOk(void) {
+static bool checksumIsOk(void)
+{
     if (ibusModel == IBUS_MODEL_IA6 ) {
         return isChecksumOkIa6();
     } else {
@@ -155,7 +156,8 @@ static bool checksumIsOk(void) {
 }
 
 
-static void updateChannelData(void) {
+static void updateChannelData(void)
+{
     uint8_t i;
     uint8_t offset;
     for (i = 0, offset = ibusChannelOffset; i < IBUS_MAX_SLOTS; i++, offset += 2) {
@@ -207,8 +209,6 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState)
     ibusSyncByte = 0;
 
     rxRuntimeState->channelCount = IBUS_MAX_CHANNEL;
-    rxRuntimeState->rxRefreshRate = 20000; // TODO - Verify speed
-
     rxRuntimeState->rcReadRawFn = ibusReadRawRC;
     rxRuntimeState->rcFrameStatusFn = ibusFrameStatus;
     rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUs;

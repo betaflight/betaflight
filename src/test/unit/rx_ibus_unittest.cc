@@ -42,7 +42,7 @@ extern "C" {
     uint8_t batteryCellCount = 3;
     float rcCommand[4] = {0, 0, 0, 0};
     int16_t telemTemperature1 = 0;
-    baro_t baro = { .baroTemperature = 50 };
+    baro_t baro = { .temperature = 50 };
     telemetryConfig_t telemetryConfig_System;
     timeUs_t rxFrameTimeUs(void) { return 0; }
 }
@@ -175,7 +175,8 @@ static bool    stubTelemetryCalled = false;
 static uint8_t stubTelemetryPacket[100];
 static uint8_t stubTelemetryIgnoreRxChars = 0;
 
-uint8_t respondToIbusRequest(uint8_t const * const ibusPacket) {
+uint8_t respondToIbusRequest(uint8_t const * const ibusPacket)
+{
     uint8_t len = ibusPacket[0];
     EXPECT_LT(len, sizeof(stubTelemetryPacket));
     memcpy(stubTelemetryPacket, ibusPacket, len);
@@ -218,7 +219,6 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxNotEnabled)
     // EXPECT_EQ(NULL, rxRuntimeState.rcFrameStatusFn);
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(20000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 }
@@ -233,7 +233,6 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
     EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeState));
 
     EXPECT_EQ(18, rxRuntimeState.channelCount);
-    EXPECT_EQ(20000, rxRuntimeState.rxRefreshRate);
     EXPECT_FALSE(NULL == rxRuntimeState.rcReadRawFn);
     EXPECT_FALSE(NULL == rxRuntimeState.rcFrameStatusFn);
 

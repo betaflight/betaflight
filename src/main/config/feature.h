@@ -25,9 +25,19 @@
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
 #endif
+
 #ifndef DEFAULT_RX_FEATURE
-#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+
+#if defined(USE_SERIALRX)
+#define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
+#elif defined(USE_RX_MSP)
+#define DEFAULT_RX_FEATURE FEATURE_RX_MSP
+#elif defined(USE_RX_SPI)
+// need to test with FEATURE_RX_EXPRESSLRS
+#define DEFAULT_RX_FEATURE FEATURE_RX_SPI
 #endif
+
+#endif // DEFAULT_RX_FEATURE
 
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
@@ -49,6 +59,7 @@ typedef enum {
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
+    FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     //FEATURE_SOFTSPI = 1 << 26, (removed)
     FEATURE_ESC_SENSOR = 1 << 27,

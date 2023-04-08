@@ -153,7 +153,7 @@
 /** @addtogroup STM32H7xx_System_Private_FunctionPrototypes
   * @{
   */
-#if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
+#if defined(DATA_IN_ExtSRAM) || defined(DATA_IN_ExtSDRAM)
 static void SystemInit_ExtMemCtl(void);
 #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
 
@@ -735,6 +735,12 @@ void SystemInit (void)
     systemProcessResetReason();
 #endif
 
+#if defined(USE_FLASH_MEMORY_MAPPED)
+    memoryMappedModeInit();
+
+    // !IMPORTANT!  Do NOT reset peripherals, clocks and GPIO pins used by the MCU to access the memory-mapped flash!!!
+#endif
+
     // FPU settings
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  // Set CP10 and CP11 Full Access
@@ -809,7 +815,7 @@ void SystemInit (void)
     /* Change  the switch matrix read issuing capability to 1 for the AXI SRAM target (Target 7) */
   *((__IO uint32_t*)0x51008108) = 0x00000001;
 
-#if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
+#if defined(DATA_IN_ExtSRAM) || defined(DATA_IN_ExtSDRAM)
     SystemInit_ExtMemCtl();
 #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
 
@@ -905,7 +911,7 @@ void SystemCoreClockUpdate (void)
     SystemCoreClock = HAL_RCC_GetSysClockFreq();
 }
 
-#if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
+#if defined(DATA_IN_ExtSRAM) || defined(DATA_IN_ExtSDRAM)
 /**
   * @brief  Setup the external memory controller.
   *         Called in startup_stm32h7xx.s before jump to main.
@@ -916,7 +922,7 @@ void SystemCoreClockUpdate (void)
   */
 void SystemInit_ExtMemCtl(void)
 {
-#if defined (DATA_IN_ExtSDRAM)
+#if defined(DATA_IN_ExtSDRAM)
     register uint32_t tmpreg = 0, timeout = 0xFFFF;
     register __IO uint32_t index;
 
