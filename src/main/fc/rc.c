@@ -274,9 +274,10 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_RX_TIMING, 1, MIN(frameAgeUs / 10, INT16_MAX));
 
     lastRxTimeUs = currentTimeUs;
-    isRxIntervalValid = (frameDeltaUs >= RX_INTERVAL_MIN_US && frameDeltaUs <= RX_INTERVAL_MAX_US);
     currentRxIntervalUs = constrain(frameDeltaUs, RX_INTERVAL_MIN_US, RX_INTERVAL_MAX_US);
-    currentRxFrequencyHz = 1e6 / currentRxIntervalUs;
+    isRxIntervalValid = frameDeltaUs == currentRxIntervalUs;
+
+    currentRxFrequencyHz = 1e6 / currentRxIntervalUs; // cannot be zero due to preceding constraint
     DEBUG_SET(DEBUG_RX_TIMING, 2, isRxIntervalValid);
     DEBUG_SET(DEBUG_RX_TIMING, 3, MIN(currentRxIntervalUs / 10, INT16_MAX));
 }
