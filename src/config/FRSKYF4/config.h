@@ -30,6 +30,8 @@
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC
 #define USE_ACC_SPI_MPU6000
+#define USE_BARO
+#define USE_BARO_SPI_BMP280
 #define USE_MAX7456
 #define USE_SDCARD
 
@@ -96,7 +98,6 @@
 #define SPI2_TX_DMA_OPT     0
 #define ADC1_DMA_OPT        1
 
-#define USE_BARO
 #define BARO_SPI_INSTANCE SPI3
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
