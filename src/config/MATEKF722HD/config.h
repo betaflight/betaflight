@@ -109,7 +109,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define MAG_I2C_INSTANCE        (I2CDEV_1)
-//TODO #define MAG_HARDWARE AUTO
 #define BARO_BUSTYPE I2C
 #define BARO_I2C_INSTANCE       (I2CDEV_1)
 

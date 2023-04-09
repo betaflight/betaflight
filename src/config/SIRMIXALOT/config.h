@@ -78,7 +78,6 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define MAG_HARDWARE AUTO
 #define USE_BARO
 #define BARO_SPI_INSTANCE SPI3
 //TODO #define SERIALRX_PROVIDER FPORT

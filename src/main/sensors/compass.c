@@ -76,13 +76,17 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     memset(&compassConfig->mag_customAlignment, 0x00, sizeof(compassConfig->mag_customAlignment));
     compassConfig->mag_hardware = MAG_DEFAULT;
 
+#ifndef MAG_I2C_ADDRESS
+#define MAG_I2C_ADDRESS 0
+#endif
+
 // Generate a reasonable default for backward compatibility
 // Strategy is
 // 1. If SPI device is defined, it will take precedence, assuming it's onboard.
 // 2. I2C devices are will be handled by address = 0 (per device default).
 // 3. Slave I2C device on SPI gyro
 
-#if defined(USE_SPI) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
+#if defined(USE_SPI_MAG) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_busType = BUS_TYPE_SPI;
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MAG_SPI_INSTANCE));
     compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
@@ -91,13 +95,13 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 #elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
     compassConfig->mag_busType = BUS_TYPE_I2C;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(MAG_I2C_INSTANCE);
-    compassConfig->mag_i2c_address = 0;
+    compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #elif defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
     compassConfig->mag_busType = BUS_TYPE_MPU_SLAVE;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
-    compassConfig->mag_i2c_address = 0;
+    compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #else

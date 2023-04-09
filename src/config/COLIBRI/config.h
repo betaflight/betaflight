@@ -100,7 +100,6 @@
 
 #define ADC1_DMA_OPT        1
 
-//TODO #define MAG_BUSTYPE I2C
 #define MAG_I2C_INSTANCE (I2CDEV_3)
 #define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_3)

@@ -41,7 +41,7 @@
 
 #define I2C3_SCL_PIN         PA8
 #define I2C3_SDA_PIN         PC9
-//TODO #define I2C3_PULLUP ON
+#define USE_I2C3_PULLUP ON
 
 #define SPI1_SCK_PIN         PA5
 #define SPI1_SDI_PIN         PA6
