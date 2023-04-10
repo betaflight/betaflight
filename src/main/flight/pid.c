@@ -288,14 +288,9 @@ float pidGetFeedforwardAveraging(void)
     return pidRuntime.feedforwardAveraging;
 }
 
-float pidGetFeedforwardMaxRate(int axis)
+float pidGetFeedforwardMaxRateLimit(void)
 {
-    return pidRuntime.feedforwardMaxRate[axis];
-}
-
-float pidGetFeedforwardPidKp(int axis)
-{
-    return pidRuntime.feedforwardPidKp[axis];
+    return pidRuntime.feedforwardMaxRateLimit;
 }
 
 #endif // USE_FEEDFORWARD

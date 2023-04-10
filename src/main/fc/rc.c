@@ -500,8 +500,7 @@ FAST_CODE_NOINLINE void calculateFeedforward (int axis)
     const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
     const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
     const float feedforwardBoostFactor = pidGetFeedforwardBoostFactor();
-    const float feedforwardMaxRate = pidGetFeedforwardMaxRate(axis);
-    const float pidKp = pidGetFeedforwardPidKp(axis);
+    const float maxRateLimit = pidGetFeedforwardMaxRateLimit();
 
     static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
@@ -584,22 +583,28 @@ FAST_CODE_NOINLINE void calculateFeedforward (int axis)
     float feedforward = setpointSpeed + setpointAcceleration;
 
     if (axis == FD_ROLL) {
-        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforward * 0.1f)); // un-smoothed feedforward including acceleration
+        DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforward * 0.1f));
+        // un-smoothed feedforward including acceleration but before limiting, transition, averaging, and jitter reduction
     }
 
     // apply feedforward transition
     feedforward *= feedforwardTransitionFactor > 0 ? MIN(1.f, rcDeflectionAbs[axis] * feedforwardTransitionFactor) : 1;
+
     // apply averaging
     if (feedforwardAveraging) {
         feedforward = laggedMovingAverageUpdate(&feedforwardDeltaAvg[axis].filter, feedforward);
     }
+
     // apply jitter reduction
      feedforward *= jitterAttenuator;
+
     // apply max rate limiting
-    if (feedforwardMaxRate && axis < FD_YAW) {
+    if (maxRateLimit && axis < FD_YAW) {
         if (feedforward * setpoint > 0.0f) { // in same direction
-            if (fabsf(setpoint) <= feedforwardMaxRate) {
-                feedforward = constrainf(feedforward, (-feedforwardMaxRate - setpoint) * pidKp, (feedforwardMaxRate - setpoint) * pidKp);
+            const float maxRate = maxRcRate[axis];
+            const float limit = (maxRate - fabsf(setpoint)) * maxRateLimit;
+            if (limit > 0.0f) {
+                feedforward = constrainf(feedforward, -limit, limit);
             } else {
                 feedforward = 0.0f;
             }
@@ -610,6 +615,10 @@ FAST_CODE_NOINLINE void calculateFeedforward (int axis)
 
     if (axis == FD_ROLL) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 3, lrintf(feedforwardRaw[axis] * 0.1f)); // un-smoothed final feedforward
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 0, lrintf(jitterAttenuator * 100.0f)); // un-smoothed final feedforward
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 1, lrintf(maxRcRate[axis])); // un-smoothed final feedforward
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 2, lrintf(setpoint)); // un-smoothed final feedforward
+        DEBUG_SET(DEBUG_FEEDFORWARD_LIMIT, 3, lrintf(feedforwardRaw[axis])); // un-smoothed final feedforward
     }
 }
 
