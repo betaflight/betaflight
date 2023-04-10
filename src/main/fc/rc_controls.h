@@ -84,28 +84,34 @@ typedef enum {
 
 extern float rcCommand[4];
 
-typedef struct rcSmoothingFilterTraining_s {
-    float sum;
-    int count;
-    uint16_t min;
-    uint16_t max;
-} rcSmoothingFilterTraining_t;
+// typedef struct rcSmoothingFilterTraining_s {
+//     float sum;
+//     int count;
+//     uint16_t min;
+//     uint16_t max;
+// } rcSmoothingFilterTraining_t;
 
 typedef struct rcSmoothingFilter_s {
     bool filterInitialized;
-    pt3Filter_t filter[4];
-    pt3Filter_t filterDeflection[2];
+    pt3Filter_t filterSetpoint[4];
+    pt3Filter_t filterRcDeflection[2];
+    pt3Filter_t filterFeedforward[3];
+
     uint8_t setpointCutoffSetting;
     uint8_t throttleCutoffSetting;
+    uint8_t feedforwardCutoffSetting;
+
     uint16_t setpointCutoffFrequency;
     uint16_t throttleCutoffFrequency;
-    uint8_t ffCutoffSetting;
     uint16_t feedforwardCutoffFrequency;
-    int averageFrameTimeUs;
-    rcSmoothingFilterTraining_t training;
+
+    float smoothedRxFrequencyHz;
+    uint8_t sampleCount;
     uint8_t debugAxis;
-    uint8_t autoSmoothnessFactorSetpoint;
-    uint8_t autoSmoothnessFactorThrottle;
+
+    float autoSmoothnessFactorSetpoint;
+    float autoSmoothnessFactorFeedforward;
+    float autoSmoothnessFactorThrottle;
 } rcSmoothingFilter_t;
 
 typedef struct rcControlsConfig_s {

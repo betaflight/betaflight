@@ -4699,7 +4699,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
     // Run status
 
     const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
-    int rxRate = getCurrentRxRefreshRate();
+    int rxRate = getCurrentRxIntervalUs();
     if (rxRate != 0) {
         rxRate = (int)(1000000.0f / ((float)rxRate));
     }
@@ -4845,12 +4845,13 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
     if (rxConfig()->rc_smoothing_mode) {
         cliPrintLine("FILTER");
         if (rcSmoothingAutoCalculate()) {
-            const uint16_t avgRxFrameUs = rcSmoothingData->averageFrameTimeUs;
-            cliPrint("# Detected RX frame rate: ");
-            if (avgRxFrameUs == 0) {
+            const uint16_t smoothedRxFrequency = lrintf(rcSmoothingData->smoothedRxFrequencyHz);
+            int rxInterval = getCurrentRxIntervalUs();
+            cliPrint("# Detected Rx frequency: ");
+            if (rxInterval == 0) {
                 cliPrintLine("NO SIGNAL");
             } else {
-                cliPrintLinef("%d.%03dms", avgRxFrameUs / 1000, avgRxFrameUs % 1000);
+                cliPrintLinef("%dHz", smoothedRxFrequency);
             }
         }
         cliPrintf("# Active setpoint cutoff: %dhz ", rcSmoothingData->setpointCutoffFrequency);
@@ -4860,7 +4861,7 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
             cliPrintLine("(auto)");
         }
         cliPrintf("# Active FF cutoff: %dhz ", rcSmoothingData->feedforwardCutoffFrequency);
-        if (rcSmoothingData->ffCutoffSetting) {
+        if (rcSmoothingData->feedforwardCutoffSetting) {
             cliPrintLine("(manual)");
         } else {
             cliPrintLine("(auto)");
