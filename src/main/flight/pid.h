@@ -393,9 +393,8 @@ typedef struct pidRuntime_s {
     float feedforwardJitterFactor;
     float feedforwardBoostFactor;
     float feedforwardTransitionFactor;
+    float feedforwardMaxRateLimit;
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
-    float feedforwardMaxRate[XYZ_AXIS_COUNT];
-    float feedforwardPidKp[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC
@@ -466,7 +465,7 @@ float pidGetFeedforwardSmoothFactor();
 float pidGetFeedforwardJitterFactor();
 float pidGetFeedforwardAveraging();
 float pidGetFeedforwardTransitionFactor();
-float pidGetFeedforwardMaxRate(int axis);
+float pidGetFeedforwardMaxRateLimit();
 float pidGetFeedforwardPidKp(int axis);
 
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
