@@ -93,7 +93,7 @@
 #define DEFAULT_CURRENT_METER_SCALE     500
 
 #define BEEPER_INVERTED
-//TODO #define PID_PROCESS_DENOM 1
+#define DEFAULT_PID_PROCESS_DENOM 1
 #define SYSTEM_HSE_MHZ                  8
 #define MAX7456_SPI_INSTANCE            SPI2
 
