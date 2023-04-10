@@ -23,6 +23,15 @@
 #ifndef USE_PIXEL_OSD
 #define USE_PIXEL_OSD
 #endif
+
+#ifndef USE_CANVAS
+#define USE_CANVAS
+#endif
+
+#ifndef USE_CANVAS_OSD
+#define USE_CANVAS_OSD
+#endif
+
 #endif
 
 #ifndef DEBUG_MODE
