@@ -32,8 +32,8 @@
 #include "drivers/dshot.h"
 #include "drivers/dshot_bitbang_decode.h"
 
-#define MIN_VALID_BBSAMPLES ((21 - 2) * 3)
-#define MAX_VALID_BBSAMPLES ((21 + 2) * 3)
+#define MIN_VALID_BBSAMPLES ((21 - 2) * 3) // 57
+#define MAX_VALID_BBSAMPLES ((21 + 2) * 3) // 69
 
 // setting this define in dshot.h allows the cli command dshot_telemetry_info to
 // display the received telemetry data in raw form which helps identify
@@ -50,13 +50,13 @@ uint16_t bbBuffer[134];
 #define BITBAND_SRAM(a,b) ((BITBAND_SRAM_BASE + (((a)-BITBAND_SRAM_REF)<<5) + ((b)<<2)))  // Convert SRAM address
 
 #define DSHOT_TELEMETRY_START_MARGIN 10
+
 static uint8_t preambleSkip = 0;
 
 typedef struct bitBandWord_s {
     uint32_t value;
     uint32_t junk[15];
 } bitBandWord_t;
-
 
 
 #ifdef DEBUG_BBDECODE
@@ -106,8 +106,6 @@ static uint32_t decode_bb_value(uint32_t value, uint16_t buffer[], uint32_t coun
 
 uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
-    uint8_t startMargin;
-
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
     sequenceIndex = 0;
@@ -132,7 +130,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         }
     }
 
-    startMargin = p - b;
+    const uint8_t startMargin = p - b;
     DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
 
     if (p >= endP) {
@@ -142,7 +140,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         return DSHOT_TELEMETRY_NOEDGE;
     }
 
-    int remaining = MIN(count - (p - b), (unsigned int)MAX_VALID_BBSAMPLES);
+    const uint32_t remaining = MIN(count - startMargin, (unsigned int)MAX_VALID_BBSAMPLES);
 
     bitBandWord_t* oldP = p;
     uint32_t bits = 0;
@@ -232,7 +230,6 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
 
 FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
 {
-    uint8_t startMargin;
 
 #ifdef DEBUG_BBDECODE
     memset(sequence, 0, sizeof(sequence));
@@ -265,7 +262,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         }
     }
 
-    startMargin = p - buffer;
+    const uint8_t startMargin = p - buffer;
     DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
 
     if (p >= endP) {
@@ -277,8 +274,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         return DSHOT_TELEMETRY_NOEDGE;
     }
 
-    int remaining = MIN(count - (p - buffer), (unsigned int)MAX_VALID_BBSAMPLES);
-
+    const uint32_t remaining = MIN(count - startMargin, (unsigned int)MAX_VALID_BBSAMPLES);
     uint16_t* oldP = p;
     uint32_t bits = 0;
     endP = p + remaining;
@@ -300,7 +296,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
                 // A level of length n gets decoded to a sequence of bits of
                 // the form 1000 with a length of (n+1) / 3 to account for 3x
                 // oversampling.
-                const int len = MAX((p - oldP + 1) / 3,1);
+                const int len = MAX((p - oldP + 1) / 3, 1);
                 bits += len;
                 value <<= len;
                 value |= 1 << (len - 1);
