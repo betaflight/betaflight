@@ -112,4 +112,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ANGLE_MODE",
     "ANGLE_TARGET",
     "CURRENT_ANGLE",
+    "DSHOT_TELEMETRY_COUNTS",
 };
