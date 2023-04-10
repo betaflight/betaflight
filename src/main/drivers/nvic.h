@@ -27,6 +27,8 @@
 
   #ifdef USE_HAL_DRIVER
     #define NVIC_PRIORITY_GROUPING NVIC_PRIORITYGROUP_3
+  #elif defined(USE_ATBSP_DRIVER)
+    #define NVIC_PRIORITY_GROUPING NVIC_PRIORITY_GROUP_3
   #else
     #define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_3
   #endif
@@ -43,6 +45,8 @@
 
   #ifdef USE_HAL_DRIVER
     #define NVIC_PRIORITY_GROUPING NVIC_PRIORITYGROUP_2
+  #elif defined(USE_ATBSP_DRIVER)
+    #define NVIC_PRIORITY_GROUPING NVIC_PRIORITY_GROUP_2
   #else
     #define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
   #endif
@@ -114,7 +118,6 @@
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING))))>>4)
 #elif defined(USE_ATBSP_DRIVER)
-#define NVIC_PRIORITY_GROUPING NVIC_PRIORITY_GROUP_2
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)&((0x0f>>(7-(NVIC_PRIORITY_GROUPING)))<<4))>>4)
