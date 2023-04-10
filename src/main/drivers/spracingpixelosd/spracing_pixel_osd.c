@@ -81,18 +81,28 @@
 #include "drivers/spracingpixelosd/framebuffer.h"
 #include "drivers/spracingpixelosd/spracing_pixel_osd_library.h"
 #include "drivers/spracingpixelosd/configuration.h"
-
 #include "pg/spracing_pixel_osd.h"
 #include "pg/vcd.h"
 
 #include "drivers/osd/font_max7456_12x18.h"
-
 
 #include "spracing_pixel_osd.h"
 
 spracingPixelOSDState_t *pixelOSDState;
 volatile bool frameRenderingComplete = false;
 static volatile uint8_t frameBufferIndex = 0;
+
+#define TIM_USAGE_PIXEL 0
+#define TIM_USAGE_SYNC 1
+
+const timerHardware_t spracingPixelOSDTimerHardware[] = {
+#if defined(STM32H7)
+    DEF_TIM(TIM15, CH1, PE5,  0,  15, 15 ), // Pixel DMA
+    DEF_TIM(TIM1,  CH1, PA8,  0,  14, 14 ), // Sync
+#else
+#error MCU dependent code required
+#endif
+};
 
 //
 // Low-level handlers
@@ -204,15 +214,14 @@ static bool configureDMAHandlers(void)
     // Sync Generation DMA
     //
 
-    ioTag_t syncIoTag = timerioTagGetByUsage(TIM_USE_VIDEO_SYNC, 0);
-    if (syncIoTag == IO_TAG_NONE) {
+    const timerHardware_t *syncTimerHardware = &spracingPixelOSDTimerHardware[TIM_USAGE_SYNC];
+    if (!syncTimerHardware) {
         return false;
     }
 
-    const timerHardware_t *syncTimerHardware = timerGetConfiguredByTag(syncIoTag);
-
 #if defined(USE_DMA_SPEC)
-    const dmaChannelSpec_t *syncDmaSpec = dmaGetChannelSpecByTimer(syncTimerHardware);
+    dmaoptValue_t syncDmaOpt = dmaGetOptionByTimer(syncTimerHardware);
+    const dmaChannelSpec_t *syncDmaSpec = dmaGetChannelSpecByTimerValue(syncTimerHardware->tim, syncTimerHardware->channel, syncDmaOpt);
 
     if (!syncDmaSpec) {
         return false;
@@ -238,15 +247,14 @@ static bool configureDMAHandlers(void)
     // Pixel Generation DMA
     //
 
-
-    ioTag_t pixelIoTag = timerioTagGetByUsage(TIM_USE_VIDEO_PIXEL, 0);
-    if (pixelIoTag == IO_TAG_NONE) {
+    const timerHardware_t *pixelTimerHardware = &spracingPixelOSDTimerHardware[TIM_USAGE_PIXEL];
+    if (!syncTimerHardware) {
         return false;
     }
-    const timerHardware_t *pixelTimerHardware = timerGetConfiguredByTag(pixelIoTag);
 
 #if defined(USE_DMA_SPEC)
-    const dmaChannelSpec_t *pixelDmaSpec = dmaGetChannelSpecByTimer(pixelTimerHardware);
+    dmaoptValue_t pixelDmaOpt = dmaGetOptionByTimer(pixelTimerHardware);
+    const dmaChannelSpec_t *pixelDmaSpec = dmaGetChannelSpecByTimerValue(pixelTimerHardware->tim, pixelTimerHardware->channel, pixelDmaOpt);
 
     if (!pixelDmaSpec) {
         return false;
