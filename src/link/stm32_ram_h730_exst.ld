@@ -1,38 +1,10 @@
-/*
-*****************************************************************************
-**
-**  File        : stm32_flash_h750_exst.ld
-**
-**  Abstract    : Linker script for STM32H750xB Device with
-**                512K AXI-RAM mapped onto AXI bus on D1 domain
-**                128K SRAM1 mapped on D2 domain
-**                128K SRAM2 mapped on D2 domain
-**                 32K SRAM3 mapped on D2 domain
-**                 64K SRAM4 mapped on D3 domain
-**                 64K ITCM
-**                128K DTCM
-**
-*****************************************************************************
-*/
 
 /* Entry Point */
 ENTRY(Reset_Handler)
 
 /*
-0x00000000 to 0x0000FFFF   64K ITCM
-0x20000000 to 0x2001FFFF  128K DTCM, main RAM
-0x24000000 to 0x2404FFFF  320K AXI SRAM, D1 domain
-0x30000000 to 0x30003FFF   16K SRAM1, D2 domain
-0x30004000 to 0x30007FFF   16K SRAM2, D2 domain
-0x38000000 to 0x38003FFF   16K SRAM4, D3 domain, unused
-0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain, unused
 
-0x08000000 to 0x0801FFFF  128K isr vector, startup code, firmware, no config! // FLASH_Sector_0
-*/
-
-/*
-
-For H7 EXFL (External Flash) targets a binary is built that is placed on an external device.
+For H730 EXST (External Storage) targets a binary is built that is placed on an external device.
 The bootloader will enable the memory mapped mode on the CPU which allows code to run directly from
 the external flash device.
 
