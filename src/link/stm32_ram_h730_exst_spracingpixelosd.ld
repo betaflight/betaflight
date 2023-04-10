@@ -1,52 +1,17 @@
-/*
-*****************************************************************************
-**
-**  File        : stm32_flash_h750_exst_spracingpixelosd.ld
-**
-**  Abstract    : Linker script for STM32H750xB Device with
-**                512K AXI-RAM mapped onto AXI bus on D1 domain
-**                128K SRAM1 mapped on D2 domain
-**                128K SRAM2 mapped on D2 domain
-**                 32K SRAM3 mapped on D2 domain
-**                 64K SRAM4 mapped on D3 domain
-**                 64K ITCM
-**                128K DTCM
-**
-*****************************************************************************
-*/
 
 /* Entry Point */
 ENTRY(Reset_Handler)
 
 /*
-0x00000000 to 0x0000FFFF   64K ITCM
-0x20000000 to 0x2001FFFF  128K DTCM, main RAM
-0x24000000 to 0x2404FFFF  320K AXI SRAM, D1 domain
-0x30000000 to 0x30003FFF   16K SRAM1, D2 domain
-0x30004000 to 0x30007FFF   16K SRAM2, D2 domain
-0x38000000 to 0x38003FFF   16K SRAM4, D3 domain, unused
-0x38800000 to 0x38800FFF    4K BACKUP SRAM, Backup domain, unused
 
-0x08000000 to 0x0801FFFF  128K isr vector, startup code, firmware, no config! // FLASH_Sector_0
-*/
+For H730 EXST (External Storage) targets a binary is built that is placed on an external device.
+The bootloader will enable the memory mapped mode on the CPU which allows code to run directly from
+the external flash device.
 
-/* 
-
-For H7 EXST (External Storage) targets a binary is built that is placed on an external device.
-The bootloader will then copy this entire binary to RAM, at the CODE_RAM address.  The bootloader
-then executes code at the CODE_RAM address. The address of CODE_RAM is fixed to 0x24010000
+The bootloader then executes code at the CODE_RAM address. The address of CODE_RAM is fixed to 0x90010000
 and must not be changed.
 
-Currently, this is inefficient as there are two copies of some sections in RAM.  e.g. .tcm_code.
-
-It would be technically possible to free more RAM by having a more intelligent build system
-and bootloader which creates files for each of the sections that are usually copied from flash
-to ram and one section for the main code.  e.g. one file for .tcm_code, one file for .data and
-one for the main code/data, then load each to the appropriate address and adjust the usual startup
-code which will no-longer need to duplicate code/data sections from RAM to ITCM/DTCM RAM.
-
-The initial CODE_RAM is sized at 448K to enable all firmware features and to as much RAM free as 
-possible.
+The initial CODE_RAM is sized at 1MB.
 
 */
 
@@ -54,6 +19,7 @@ possible.
 _exst_hash_size = 64;
 
 _spracing_pixel_osd_framebuffer_size = (360 * 288 * 2 / 8) * 2; /* (H * V * Bit-per-pixel / Bits-per-byte) * 2 framebuffers  = 51840 bytes */
+
 /* Specify the memory areas */
 MEMORY
 {
@@ -159,7 +125,7 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >RAM
-  
+
   .DMA_RW_D2 (NOLOAD) :
   {
     . = ALIGN(32);
