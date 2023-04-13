@@ -1348,8 +1348,6 @@ void osdUpdate(timeUs_t currentTimeUs)
         break;
 
     case OSD_STATE_CHECK:
-        showVisualBeeper = isBeeperOn();
-
         // SPRacingPixelOSD - don't touch buffers while we're waiting for the framebuffer to be committed
         // MAX7456/etc - don't touch buffers if DMA transaction is in progress
         if (displayIsTransferInProgress(osdDisplayPort)) {
