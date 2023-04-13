@@ -111,9 +111,9 @@ typedef enum {
     DEBUG_ANGLE_TARGET,
     DEBUG_CURRENT_ANGLE,
     DEBUG_DSHOT_TELEMETRY_COUNTS,
-    DEBUG_COUNT
     DEBUG_FILT_VOLTAGE,
     DEBUG_UNFILT_VOLTAGE,
+    DEBUG_COUNT
 } debugType_e;
 
 extern const char * const debugModeNames[DEBUG_COUNT];
