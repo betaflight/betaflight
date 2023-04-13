@@ -533,21 +533,13 @@ static bool bbUpdateStart(void)
         if (telemetryWait) {
             DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
         } else {
-            for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
 #ifdef USE_DSHOT_CACHE_MGMT
-                // Only invalidate the buffer once. If all motors are on a common port they'll share a buffer.
-                bool invalidated = false;
-                for (int i = 0; i < motorIndex; i++) {
-                    if (bbMotors[motorIndex].bbPort->portInputBuffer == bbMotors[i].bbPort->portInputBuffer) {
-                        invalidated = true;
-                    }
-                }
-                if (!invalidated) {
-                    SCB_InvalidateDCache_by_Addr((uint32_t *)bbMotors[motorIndex].bbPort->portInputBuffer,
-                                                 DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
-                }
+            for (int i = 0; i < usedMotorPorts; i++) {
+                bbPort_t *bbPort = &bbPorts[i];
+                SCB_InvalidateDCache_by_Addr((uint32_t *)bbPort->portInputBuffer, DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
+            }
 #endif
-
+            for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
 #ifdef STM32F4
                 uint32_t rawValue = decode_bb_bitband(
                     bbMotors[motorIndex].bbPort->portInputBuffer,
@@ -646,23 +638,11 @@ static void bbUpdateComplete(void)
         }
     }
 
-#ifdef USE_DSHOT_CACHE_MGMT
-    for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        // Only clean each buffer once. If all motors are on a common port they'll share a buffer.
-        bool clean = false;
-        for (int i = 0; i < motorIndex; i++) {
-            if (bbMotors[motorIndex].bbPort->portOutputBuffer == bbMotors[i].bbPort->portOutputBuffer) {
-                clean = true;
-            }
-        }
-        if (!clean) {
-            SCB_CleanDCache_by_Addr(bbMotors[motorIndex].bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
-        }
-    }
-#endif
-
     for (int i = 0; i < usedMotorPorts; i++) {
         bbPort_t *bbPort = &bbPorts[i];
+#ifdef USE_DSHOT_CACHE_MGMT
+        SCB_CleanDCache_by_Addr(bbPort->portOutputBuffer, MOTOR_DSHOT_BUF_CACHE_ALIGN_BYTES);
+#endif
 
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
