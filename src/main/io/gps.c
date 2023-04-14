@@ -152,6 +152,7 @@ typedef enum {
     MSG_CFG_SET_RATE = 0x01,
     MSG_CFG_SBAS = 0x16,
     MSG_CFG_NAV_SETTINGS = 0x24,
+    MSG_CFG_PMS = 0x86,
     MSG_CFG_GNSS = 0x3E
 } ubxProtocolBytes_e;
 
@@ -214,6 +215,14 @@ typedef struct ubxCfgGnss_s {
     ubxConfigblock_t configblocks[7];
 } ubxCfgGnss_t;
 
+typedef struct ubxCfgPms_s {
+    uint8_t version;
+    uint8_t powerSetupValue;
+    uint16_t period;
+    uint16_t onTime;
+    uint8_t reserved1[2];
+} ubxCfgPms_t;
+
 typedef struct ubxCfgNav5_s {
     uint16_t mask;
     uint8_t dynModel;
@@ -243,6 +252,7 @@ typedef union ubxPayload_s {
     ubxCfgNav5_t cfg_nav5;
     ubxCfgSbas_t cfg_sbas;
     ubxCfgGnss_t cfg_gnss;
+    ubxCfgPms_t cfg_pms;
 } ubxPayload_t;
 
 typedef struct ubxMessage_s {
@@ -266,7 +276,8 @@ typedef enum {
     UBLOX_MSG_DOP,      // 12. MSG_DOP 
     UBLOX_SET_NAV_RATE, // 13. set GPS sample rate
     UBLOX_SET_SBAS,     // 14. Sets SBAS
-    UBLOX_MSG_CFG_GNSS  // 15. For not SBAS or GALILEO otherwise GPS_STATE_REVEIVING_DATA
+    UBLOX_SET_PMS,      // 15. Sets Power Mode
+    UBLOX_MSG_CFG_GNSS  // 16. For not SBAS or GALILEO otherwise GPS_STATE_REVEIVING_DATA
 } ubloxStatePosition_e;
 
 #endif // USE_GPS_UBLOX
@@ -510,7 +521,16 @@ static void ubloxSendNAV5Message(uint8_t model)
 
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t));
 }
-
+static void ubloxSendPowerMode(void)
+{
+    ubxMessage_t tx_buffer;
+    tx_buffer.payload.cfg_pms.powerSetupValue = !gpsConfig()->gps_ublox_full_power;
+    tx_buffer.payload.cfg_pms.period = 0;
+    tx_buffer.payload.cfg_pms.onTime = 0;
+    tx_buffer.payload.cfg_pms.reserved1[0] = 0;
+    tx_buffer.payload.cfg_pms.reserved1[1] = 0;
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_PMS, sizeof(ubxCfgPms_t));
+}
 static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate)
 {
     ubxMessage_t tx_buffer;
@@ -693,6 +713,9 @@ void gpsInitUblox(void)
                         break;
                     case UBLOX_SET_SBAS:
                         ubloxSetSbas();
+                        break;
+                    case UBLOX_SET_PMS:
+                        ubloxSendPowerMode();
                         break;
                     case UBLOX_MSG_CFG_GNSS:
                         if ((gpsConfig()->sbasMode == SBAS_NONE) || (gpsConfig()->gps_ublox_use_galileo)) {
