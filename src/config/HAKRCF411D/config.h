@@ -49,8 +49,8 @@
 #define UART1_RX_PIN         PA10
 #define UART2_TX_PIN         PA2
 #define UART2_RX_PIN         PA3
-#define UART11_RX_PIN        PB3
-#define UART11_TX_PIN        PA15
+#define SOFTSERIAL1_RX_PIN   PB3
+#define SOFTSERIAL1_TX_PIN   PA15
 #define I2C1_SCL_PIN         PB8
 #define I2C1_SDA_PIN         PB9
 #define LED0_PIN             PC13

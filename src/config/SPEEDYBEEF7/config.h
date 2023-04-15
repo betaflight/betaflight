@@ -52,7 +52,7 @@
 #define UART3_TX_PIN         PC10
 #define UART4_TX_PIN         PA0
 #define UART5_TX_PIN         PC12
-#define UART11_TX_PIN        PB0
+#define SOFTSERIAL1_TX_PIN   PB0
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
 #define UART3_RX_PIN         PC11

@@ -67,10 +67,10 @@
 #define LED_STRIP_PIN        PB1
 #define UART1_TX_PIN         PA9
 #define UART2_TX_PIN         PA2
-#define UART11_TX_PIN        PA8
+#define SOFTSERIAL1_TX_PIN   PA8
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
-#define UART11_RX_PIN        PA8
+#define SOFTSERIAL1_RX_PIN   PA8
 #define LED0_PIN             PC14
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13

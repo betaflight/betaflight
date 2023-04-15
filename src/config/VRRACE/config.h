@@ -50,12 +50,12 @@
 #define UART2_TX_PIN         PD5
 #define UART3_TX_PIN         PD8
 #define UART6_TX_PIN         PC6
-#define UART11_TX_PIN        PE11
+#define SOFTSERIAL1_TX_PIN   PE11
 #define UART1_RX_PIN         PB7
 #define UART2_RX_PIN         PD6
 #define UART3_RX_PIN         PD9
 #define UART6_RX_PIN         PC7
-#define UART11_RX_PIN        PE13
+#define SOFTSERIAL1_RX_PIN   PE13
 #define INVERTER_PIN_UART6   PD7
 #define LED0_PIN             PD14
 #define LED1_PIN             PD15

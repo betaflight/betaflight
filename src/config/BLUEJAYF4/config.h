@@ -45,7 +45,7 @@
 #define UART1_TX_PIN         PA9
 #define UART3_TX_PIN         PB10
 #define UART6_TX_PIN         PC6
-#define UART11_TX_PIN        PB3
+#define SOFTSERIAL1_TX_PIN   PB3
 #define UART1_RX_PIN         PA10
 #define UART3_RX_PIN         PB11
 #define UART6_RX_PIN         PC7
