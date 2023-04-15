@@ -404,18 +404,14 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_FEEDFORWARD
-    if (pidProfile->feedforward_transition == 0) {
-        pidRuntime.feedforwardTransitionFactor = 0;
-    } else {
-        pidRuntime.feedforwardTransitionFactor = 100.0f / pidProfile->feedforward_transition;
-    }
+    pidRuntime.feedforwardTransition = pidProfile->feedforward_transition / 100.0f;
+    pidRuntime.feedforwardTransitionInv = (pidProfile->feedforward_transition == 0) ? 0.0f : 100.0f / pidProfile->feedforward_transition;
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
-    pidRuntime.feedforwardSmoothFactor = 1.0f;
-    if (pidProfile->feedforward_smooth_factor) {
-        pidRuntime.feedforwardSmoothFactor = 1.0f - ((float)pidProfile->feedforward_smooth_factor) *0.01f;
-    }
+    pidRuntime.feedforwardSmoothFactor = 1.0f - (0.01f * pidProfile->feedforward_smooth_factor);
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
-    pidRuntime.feedforwardBoostFactor = pidProfile->feedforward_boost * 0.1f;
+    pidRuntime.feedforwardJitterFactorInv = 1.0f / (2.0f * pidProfile->feedforward_jitter_factor);
+    // the extra division by 2 is to average the sum of the two previous rcCommandAbs values
+    pidRuntime.feedforwardBoostFactor = 0.1f * pidProfile->feedforward_boost;
     pidRuntime.feedforwardMaxRateLimit = pidProfile->feedforward_max_rate_limit;
 #endif
 

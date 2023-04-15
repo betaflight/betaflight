@@ -523,9 +523,12 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     // attenuators
     float zeroTheAcceleration = 1.0f;
     float jitterAttenuator = 1.0f;
-    if (pid->feedforwardJitterFactor && rcCommandDeltaAbs < pid->feedforwardJitterFactor) {
-        jitterAttenuator = MAX(1.0f - ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) / 2.0f) / pid->feedforwardJitterFactor, 0.0f);
-        jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
+    if (pid->feedforwardJitterFactor) {
+        if (rcCommandDeltaAbs < pid->feedforwardJitterFactor) {
+            jitterAttenuator = MAX(1.0f - (rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) * pid->feedforwardJitterFactorInv, 0.0f);
+            // note that feedforwardJitterFactorInv includes a divide by 2 to average the two previous rcCommandDeltaAbs values
+            jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
+        }
     }
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
 
@@ -582,7 +585,10 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     }
 
     // apply feedforward transition
-    feedforward *= pid->feedforwardTransitionFactor > 0 ? MIN(1.f, rcDeflectionAbs[axis] * pid->feedforwardTransitionFactor) : 1;
+    const bool useTransition = (pid->feedforwardTransition != 0.0f) && (rcDeflectionAbs[axis] < pid->feedforwardTransition);
+    if (useTransition) {
+        feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
+    }
 
     // apply averaging
     if (feedforwardAveraging) {
@@ -595,13 +601,8 @@ FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
     // apply max rate limiting
     if (pid->feedforwardMaxRateLimit && axis < FD_YAW) {
         if (feedforward * setpoint > 0.0f) { // in same direction
-            const float maxRate = maxRcRate[axis];
-            const float limit = (maxRate - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
-            if (limit > 0.0f) {
-                feedforward = constrainf(feedforward, -limit, limit);
-            } else {
-                feedforward = 0.0f;
-            }
+            const float limit = (maxRcRate[axis] - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
+            feedforward = (limit > 0.0f) ? constrainf(feedforward, -limit, limit) : 0.0f;
         }
     }
 

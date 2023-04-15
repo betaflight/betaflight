@@ -390,10 +390,12 @@ typedef struct pidRuntime_s {
 #ifdef USE_FEEDFORWARD
     feedforwardAveraging_t feedforwardAveraging;
     float feedforwardSmoothFactor;
-    float feedforwardJitterFactor;
+    uint8_t feedforwardJitterFactor;
+    float feedforwardJitterFactorInv;
     float feedforwardBoostFactor;
-    float feedforwardTransitionFactor;
-    float feedforwardMaxRateLimit;
+    float feedforwardTransition;
+    float feedforwardTransitionInv;
+    uint8_t feedforwardMaxRateLimit;
     pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
 #endif
 
