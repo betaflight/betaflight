@@ -86,30 +86,55 @@ void systemReset(void)
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    UNUSED(requestType);
+    switch (requestType) {
+    case BOOTLOADER_REQUEST_ROM:
+    default:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
 
-    persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_REQUEST_ROM);
+        break;
+    }
 
     __disable_irq();
     NVIC_SystemReset();
 }
 
 #define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1fff0000)
+#define SYSMEMBOOT_LOADER       ((uint32_t *)0x1fff0000)
 
 typedef void *(*bootJumpPtr)(void);
 
+typedef void resetHandler_t(void);
+
+typedef struct isrVector_s {
+    __I uint32_t    stackEnd;
+    resetHandler_t *resetHandler;
+} isrVector_t;
+
 void systemJumpToBootloader(void)
-{   
-    __SYSCFG_CLK_ENABLE();
-    
-    uint32_t bootStack =  SYSMEMBOOT_VECTOR_TABLE[0];
-    
+{
+    //DeInit all used peripherals
+    HAL_RCC_DeInit();
+
+    //Disable all system timers and set to default values
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
+
+    //Disable all interrupts
+    __disable_irq();
+
+    //remap system memory
+    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+
+    //default bootloader call stack routine
+    uint32_t bootStack = SYSMEMBOOT_VECTOR_TABLE[0];
+
     bootJumpPtr SysMemBootJump = (bootJumpPtr)SYSMEMBOOT_VECTOR_TABLE[1];
-    
+
     __set_MSP(bootStack); //Set the main stack pointer to its default values
-    
+
     SysMemBootJump();
-    
+
     while (1);
 }
 

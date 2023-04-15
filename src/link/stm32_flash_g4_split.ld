@@ -39,7 +39,7 @@ SECTIONS
 
   .isr_vector :
   {
-    . = ALIGN(512);
+    . = ALIGN(4);
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
