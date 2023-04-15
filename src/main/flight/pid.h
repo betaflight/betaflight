@@ -460,12 +460,4 @@ float pidGetPreviousSetpoint(int axis);
 float pidGetDT();
 float pidGetPidFrequency();
 
-float pidGetFeedforwardBoostFactor();
-float pidGetFeedforwardSmoothFactor();
-float pidGetFeedforwardJitterFactor();
-float pidGetFeedforwardAveraging();
-float pidGetFeedforwardTransitionFactor();
-float pidGetFeedforwardMaxRateLimit();
-float pidGetFeedforwardPidKp(int axis);
-
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

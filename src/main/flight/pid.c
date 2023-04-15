@@ -264,39 +264,6 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-#ifdef USE_FEEDFORWARD
-float pidGetFeedforwardTransitionFactor(void)
-{
-    return pidRuntime.feedforwardTransitionFactor;
-}
-
-float pidGetFeedforwardSmoothFactor(void)
-{
-    return pidRuntime.feedforwardSmoothFactor;
-}
-
-float pidGetFeedforwardJitterFactor(void)
-{
-    return pidRuntime.feedforwardJitterFactor;
-}
-
-float pidGetFeedforwardBoostFactor(void)
-{
-    return pidRuntime.feedforwardBoostFactor;
-}
-
-float pidGetFeedforwardAveraging(void)
-{
-    return pidRuntime.feedforwardAveraging;
-}
-
-float pidGetFeedforwardMaxRateLimit(void)
-{
-    return pidRuntime.feedforwardMaxRateLimit;
-}
-
-#endif // USE_FEEDFORWARD
-
 void pidResetIterm(void)
 {
     for (int axis = 0; axis < 3; axis++) {

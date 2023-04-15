@@ -80,7 +80,6 @@ enum {
 };
 
 #ifdef USE_FEEDFORWARD
-static uint8_t feedforwardAveraging = 0;
 static float feedforwardSmoothed[3];
 static float feedforwardRaw[3];
 typedef struct laggedMovingAverageCombined_s {
@@ -104,8 +103,8 @@ static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
 #endif // USE_RC_SMOOTHING_FILTER
 
-#define RX_INTERVAL_MIN_US                       950   // 0.950ms to fit 1kHz without an issue
-#define RX_INTERVAL_MAX_US                       65500 // 65.5ms or 15.26hz
+#define RX_INTERVAL_MIN_US     950   // 0.950ms to fit 1kHz without an issue
+#define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
 
 float getSetpointRate(int axis)
 {
@@ -482,25 +481,18 @@ static FAST_CODE void processRcSmoothingFilter(void)
 }
 #endif // USE_RC_SMOOTHING_FILTER
 
-NOINLINE void initAveraging(void)
+NOINLINE void initAveraging(uint16_t feedforwardAveraging)
 {
-    feedforwardAveraging = pidGetFeedforwardAveraging();
     for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         laggedMovingAverageInit(&feedforwardDeltaAvg[i].filter, feedforwardAveraging + 1, (float *)&feedforwardDeltaAvg[i].buf[0]);
     }
 }
 
-FAST_CODE_NOINLINE void calculateFeedforward(int axis)
+FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;
     static float prevRxInterval;
-
-    const float feedforwardSmoothFactor = pidGetFeedforwardSmoothFactor();
-    const float feedforwardJitterFactor = pidGetFeedforwardJitterFactor();
-    const float feedforwardTransitionFactor = pidGetFeedforwardTransitionFactor();
-    const float feedforwardBoostFactor = pidGetFeedforwardBoostFactor();
-    const float maxRateLimit = pidGetFeedforwardMaxRateLimit();
 
     static float prevRcCommand[3];
     static float prevRcCommandDeltaAbs[3];          // for duplicate interpolation
@@ -508,9 +500,11 @@ FAST_CODE_NOINLINE void calculateFeedforward(int axis)
     static float prevSetpointSpeed[3];
     static float prevAcceleration[3];               // for duplicate interpolation
     static bool prevDuplicatePacket[3];             // to identify multiple identical packets
+    static uint16_t feedforwardAveraging = 0;
 
-    if (feedforwardAveraging != pidGetFeedforwardAveraging()) {
-        initAveraging();
+    if (feedforwardAveraging != pid->feedforwardAveraging) {
+        feedforwardAveraging = pid->feedforwardAveraging;
+        initAveraging(feedforwardAveraging);
     }
 
     const float rcCommandDeltaAbs = fabsf(rcCommand[axis] - prevRcCommand[axis]);
@@ -529,8 +523,8 @@ FAST_CODE_NOINLINE void calculateFeedforward(int axis)
     // attenuators
     float zeroTheAcceleration = 1.0f;
     float jitterAttenuator = 1.0f;
-    if (feedforwardJitterFactor && rcCommandDeltaAbs < feedforwardJitterFactor) {
-        jitterAttenuator = MAX(1.0f - ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) / 2.0f) / feedforwardJitterFactor, 0.0f);
+    if (pid->feedforwardJitterFactor && rcCommandDeltaAbs < pid->feedforwardJitterFactor) {
+        jitterAttenuator = MAX(1.0f - ((rcCommandDeltaAbs + prevRcCommandDeltaAbs[axis]) / 2.0f) / pid->feedforwardJitterFactor, 0.0f);
         jitterAttenuator = 1.0f - jitterAttenuator * jitterAttenuator;
     }
     prevRcCommandDeltaAbs[axis] = rcCommandDeltaAbs;
@@ -565,16 +559,16 @@ FAST_CODE_NOINLINE void calculateFeedforward(int axis)
     prevRxInterval = rxInterval;
 
     // smooth the setpointSpeed value
-    setpointSpeed = prevSetpointSpeed[axis] + feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
+    setpointSpeed = prevSetpointSpeed[axis] + pid->feedforwardSmoothFactor * (setpointSpeed - prevSetpointSpeed[axis]);
 
     // calculate acceleration and attenuate
     setpointAcceleration = (setpointSpeed - prevSetpointSpeed[axis]) * rxRate * 0.01f;
     prevSetpointSpeed[axis] = setpointSpeed;
 
     // smooth the acceleration element (effectively a second order filter) and apply jitter reduction
-    setpointAcceleration = prevAcceleration[axis] + feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
+    setpointAcceleration = prevAcceleration[axis] + pid->feedforwardSmoothFactor * (setpointAcceleration - prevAcceleration[axis]);
     prevAcceleration[axis] = setpointAcceleration * zeroTheAcceleration;
-    setpointAcceleration = setpointAcceleration * feedforwardBoostFactor * jitterAttenuator * zeroTheAcceleration;
+    setpointAcceleration = setpointAcceleration * pid->feedforwardBoostFactor * jitterAttenuator * zeroTheAcceleration;
 
     if (axis == FD_ROLL) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.1f)); // base feedforward without acceleration
@@ -588,7 +582,7 @@ FAST_CODE_NOINLINE void calculateFeedforward(int axis)
     }
 
     // apply feedforward transition
-    feedforward *= feedforwardTransitionFactor > 0 ? MIN(1.f, rcDeflectionAbs[axis] * feedforwardTransitionFactor) : 1;
+    feedforward *= pid->feedforwardTransitionFactor > 0 ? MIN(1.f, rcDeflectionAbs[axis] * pid->feedforwardTransitionFactor) : 1;
 
     // apply averaging
     if (feedforwardAveraging) {
@@ -599,10 +593,10 @@ FAST_CODE_NOINLINE void calculateFeedforward(int axis)
      feedforward *= jitterAttenuator;
 
     // apply max rate limiting
-    if (maxRateLimit && axis < FD_YAW) {
+    if (pid->feedforwardMaxRateLimit && axis < FD_YAW) {
         if (feedforward * setpoint > 0.0f) { // in same direction
             const float maxRate = maxRcRate[axis];
-            const float limit = (maxRate - fabsf(setpoint)) * maxRateLimit;
+            const float limit = (maxRate - fabsf(setpoint)) * pid->feedforwardMaxRateLimit;
             if (limit > 0.0f) {
                 feedforward = constrainf(feedforward, -limit, limit);
             } else {
@@ -659,7 +653,7 @@ FAST_CODE void processRcCommand(void)
             DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
 
 #ifdef USE_FEEDFORWARD
-        calculateFeedforward(axis);
+        calculateFeedforward(&pidRuntime, axis);
 #endif // USE_FEEDFORWARD
 
         }
