@@ -56,10 +56,11 @@ void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
     mixerConfig->crashflip_expo = 35;
     mixerConfig->mixer_type = MIXER_LEGACY;
 #ifdef USE_RPM_LIMITER
+    mixerConfig->rpm_limiter = false;
     mixerConfig->rpm_limiter_p = 25;
     mixerConfig->rpm_limiter_i = 10;
     mixerConfig->rpm_limiter_d = 8;
-    mixerConfig->rpm_limiter_rpm_limit = 0;
+    mixerConfig->rpm_limiter_rpm_limit = 18000;
 #endif
 }
 

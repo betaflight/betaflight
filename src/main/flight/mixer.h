@@ -97,6 +97,7 @@ typedef struct mixerConfig_s {
     uint8_t crashflip_expo;
     uint8_t mixer_type;
 #ifdef USE_RPM_LIMITER
+    bool rpm_limiter;
     uint16_t rpm_limiter_p;
     uint16_t rpm_limiter_i;
     uint16_t rpm_limiter_d;

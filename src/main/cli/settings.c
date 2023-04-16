@@ -940,9 +940,10 @@ const clivalue_t valueTable[] = {
     { "crashflip_motor_percent",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_motor_percent) },
     { "crashflip_expo",             VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_expo) },
 #ifdef USE_RPM_LIMITER
-    { "rpm_limit_p",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_p) },
-    { "rpm_limit_i",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 1000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_i) },
-    { "rpm_limit_d",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_d) },
+    { "rpm_limiter",                VAR_INT8   |  MASTER_VALUE,  .config.lookup = { TABLE_OFF_ON },     PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter) },
+    { "rpm_limit_p",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 },   PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_p) },
+    { "rpm_limit_i",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 1000 },  PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_i) },
+    { "rpm_limit_d",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 },   PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_d) },
     { "rpm_limit",                  VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 60000 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limiter_rpm_limit) },
 #endif
 

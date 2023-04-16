@@ -66,7 +66,7 @@
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
 #ifdef USE_RPM_LIMITER
-#define RPM_LIMIT_ACTIVE (mixerConfig()->rpm_limiter_rpm_limit > 0)
+#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limiter
 #else
 #define RPM_LIMIT_ACTIVE false
 #endif
