@@ -50,7 +50,9 @@ typedef struct motorVTable_s {
     bool (*enable)(void);
     void (*disable)(void);
     bool (*isMotorEnabled)(uint8_t index);
-    bool (*updateStart)(void);
+    bool (*telemetryWait)(void);
+    bool (*decodeTelemetry)(void);
+    void (*updateInit)(void);
     void (*write)(uint8_t index, float value);
     void (*writeInt)(uint8_t index, uint16_t value);
     void (*updateComplete)(void);
@@ -70,7 +72,7 @@ typedef struct motorDevice_s {
 
 void motorPostInitNull();
 void motorWriteNull(uint8_t index, float value);
-bool motorUpdateStartNull(void);
+bool motorDecodeTelemetryNull(void);
 void motorUpdateCompleteNull(void);
 
 void motorPostInit();
