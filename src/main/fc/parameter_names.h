@@ -134,6 +134,7 @@
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"
 #define PARAM_NAME_HORIZON_LIMIT_STICKS "horizon_limit_sticks"
 #define PARAM_NAME_HORIZON_IGNORE_STICKS "horizon_ignore_sticks"
+#define PARAM_NAME_HORIZON_DELAY "horizon_delay"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"

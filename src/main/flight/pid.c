@@ -227,6 +227,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_breakpoint = 1350,
         .angle_feedforward_smoothing_ms = 80,
         .angle_earth_ref = 100,
+        .horizon_delay = 50, // 500ms time constant on any increase in horizon strength
     );
 
 #ifndef USE_D_MIN
@@ -367,6 +368,10 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float calcHorizonLevelStrength(void)
         const float horizonStickAttenuation = MAX((hLimSticks - absMaxStickDeflection) * hLimSticksInv, 0.0f);
         // 1.0 at center stick, 0.0 at max stick deflection:
         horizonLevelStrength *= horizonStickAttenuation * horizGain;
+    }
+    if (pidRuntime.horizonDelay) {
+        const float horizonLevelStrengthSmoothed = pt1FilterApply(&pidRuntime.horizonSmoothingPt1, horizonLevelStrength);
+        horizonLevelStrength = MIN(horizonLevelStrength, horizonLevelStrengthSmoothed);
     }
 
     return horizonLevelStrength;
