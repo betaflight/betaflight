@@ -26,6 +26,11 @@
 #define BOARD_NAME        NBD_CRICKETF7
 #define MANUFACTURER_ID   NEBD
 
+#define USE_ACC
+#define USE_ACC_SPI_MPU6000
+#define USE_GYRO
+#define USE_GYRO_SPI_MPU6000
+
 #define BEEPER_PIN           PC15
 #define MOTOR1_PIN           PB4
 #define MOTOR2_PIN           PB1
