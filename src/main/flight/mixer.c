@@ -432,7 +432,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t 
 
 static float applyThrottleLimit(float throttle)
 {
-    if (currentControlRateProfile->throttle_limit_percent < 100) {
+    if (currentControlRateProfile->throttle_limit_percent < 100 && !RPM_LIMIT_ACTIVE) {
         const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
         switch (currentControlRateProfile->throttle_limit_type) {
             case THROTTLE_LIMIT_TYPE_SCALE:
