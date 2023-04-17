@@ -401,9 +401,9 @@ TEST(pidControllerTest, testPidLevel)
     // Disable ANGLE_MODE
     disableFlightMode(ANGLE_MODE);
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(357.79129, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(393.44571, calculatedAngleSetpoint);
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-357.79129, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-392.88422, calculatedAngleSetpoint);
 
     // Test level mode expo
     enableFlightMode(ANGLE_MODE);
@@ -431,21 +431,20 @@ TEST(pidControllerTest, testPidHorizon)
     setStickPosition(FD_PITCH, -0.76f);
     EXPECT_FLOAT_EQ(0.0f, calcHorizonLevelStrength());
 
-    // Expect full rate output on full stick
-    // Test zero stick response
+    // Return sticks to center, should expect some levelling, but will be delayed
     setStickPosition(FD_ROLL, 0);
     setStickPosition(FD_PITCH, 0);
-    EXPECT_FLOAT_EQ(0.5f, calcHorizonLevelStrength());
+    EXPECT_FLOAT_EQ(0.0078740157, calcHorizonLevelStrength());
 
-    // Test small stick response when flat
+    // Test small stick response when flat, considering delay
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
-    EXPECT_NEAR(0.4333f, calcHorizonLevelStrength(), calculateTolerance(0.434));
+    EXPECT_NEAR(0.01457f, calcHorizonLevelStrength(), calculateTolerance(0.01457));
 
     // Test larger stick response when flat
     setStickPosition(FD_ROLL, 0.5f);
     setStickPosition(FD_PITCH, -0.5f);
-    EXPECT_NEAR(0.166f, calcHorizonLevelStrength(), calculateTolerance(0.166));
+    EXPECT_NEAR(0.0166, calcHorizonLevelStrength(), calculateTolerance(0.0166));
 
     // set attitude of craft to 90 degrees
     attitude.values.roll = 900;
@@ -455,17 +454,17 @@ TEST(pidControllerTest, testPidHorizon)
     setStickPosition(FD_ROLL, 0);
     setStickPosition(FD_PITCH, 0);
     // with gain of 50, and max angle of 135 deg, strength = 0.5 * (135-90) / 90 ie 0.5 * 45/136 or 0.5 * 0.333 = 0.166
-    EXPECT_NEAR(0.166f, calcHorizonLevelStrength(), calculateTolerance(0.166));
+    EXPECT_NEAR(0.0193f, calcHorizonLevelStrength(), calculateTolerance(0.0193));
 
     // Test small stick response at 90 degrees
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
-    EXPECT_NEAR(0.144f, calcHorizonLevelStrength(), calculateTolerance(0.144));
+    EXPECT_NEAR(0.0213f, calcHorizonLevelStrength(), calculateTolerance(0.0213));
 
     // Test larger stick response at 90 degrees
     setStickPosition(FD_ROLL, 0.5f);
     setStickPosition(FD_PITCH, -0.5f);
-    EXPECT_NEAR(0.055f, calcHorizonLevelStrength(), calculateTolerance(0.055));
+    EXPECT_NEAR(0.0218f, calcHorizonLevelStrength(), calculateTolerance(0.0218));
 
     // set attitude of craft to 120 degrees, inside limit of 135
     attitude.values.roll = 1200;
@@ -474,18 +473,18 @@ TEST(pidControllerTest, testPidHorizon)
     // Test centered sticks at 120 degrees
     setStickPosition(FD_ROLL, 0);
     setStickPosition(FD_PITCH, 0);
-    EXPECT_NEAR(0.055f, calcHorizonLevelStrength(), calculateTolerance(0.055));
+    EXPECT_NEAR(0.0224f, calcHorizonLevelStrength(), calculateTolerance(0.0224));
 
     // Test small stick response at 120 degrees
     setStickPosition(FD_ROLL, 0.1f);
     setStickPosition(FD_PITCH, -0.1f);
-    EXPECT_NEAR(0.048f, calcHorizonLevelStrength(), calculateTolerance(0.048));
+    EXPECT_NEAR(0.0228f, calcHorizonLevelStrength(), calculateTolerance(0.0228));
 
     // Test larger stick response at 120 degrees
     setStickPosition(FD_ROLL, 0.5f);
     setStickPosition(FD_PITCH, -0.5f);
     EXPECT_NEAR(0.018f, calcHorizonLevelStrength(), calculateTolerance(0.018));
-    
+
     // set attitude of craft to 1500 degrees, outside limit of 135
     attitude.values.roll = 1500;
     attitude.values.pitch = 1500;
