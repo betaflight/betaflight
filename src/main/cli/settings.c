@@ -1012,7 +1012,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_GPS_RESCUE
     // PG_GPS_RESCUE
-    { PARAM_NAME_GPS_RESCUE_MIN_START_DIST,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDth) },
+    { PARAM_NAME_GPS_RESCUE_MIN_START_DIST,  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 30, 1000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minRescueDth) },
     { PARAM_NAME_GPS_RESCUE_ALT_MODE,        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE_ALT_MODE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, altitudeMode) },
     { PARAM_NAME_GPS_RESCUE_INITIAL_CLIMB,   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, rescueAltitudeBufferM) },
     { PARAM_NAME_GPS_RESCUE_ASCEND_RATE,     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 2500 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, ascendRate) },
