@@ -521,9 +521,11 @@ static void ubloxSendNAV5Message(uint8_t model)
 
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t));
 }
+
 static void ubloxSendPowerMode(void)
 {
     ubxMessage_t tx_buffer;
+    tx_buffer.payload.cfg_pms.version = 0;
     tx_buffer.payload.cfg_pms.powerSetupValue = !gpsConfig()->gps_ublox_full_power;
     tx_buffer.payload.cfg_pms.period = 0;
     tx_buffer.payload.cfg_pms.onTime = 0;
@@ -531,6 +533,7 @@ static void ubloxSendPowerMode(void)
     tx_buffer.payload.cfg_pms.reserved1[1] = 0;
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_PMS, sizeof(ubxCfgPms_t));
 }
+
 static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t rate)
 {
     ubxMessage_t tx_buffer;
