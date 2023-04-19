@@ -499,6 +499,9 @@ if (systemConfig()->configurationState == CONFIGURATION_STATE_DEFAULTS_BARE) {
     featureEnableImmediate(FEATURE_CHANNEL_FORWARDING);
     featureEnableImmediate(FEATURE_SERVO_TILT);
 #endif
+#if defined(SOFTSERIAL1_RX_PIN) || defined(SOFTSERIAL2_RX_PIN) || defined(SOFTSERIAL1_TX_PIN) || defined(SOFTSERIAL2_TX_PIN)
+    featureEnableImmediate(FEATURE_SOFTSERIAL);
+#endif
 #ifdef USE_TELEMETRY
     featureEnableImmediate(FEATURE_TELEMETRY);
 #endif
