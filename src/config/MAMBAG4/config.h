@@ -68,7 +68,7 @@
 #define UART3_TX_PIN         PB10
 #define UART4_RX_PIN         PC11
 #define UART4_TX_PIN         PC10
-#define UART11_TX_PIN        PB9
+#define SOFTSERIAL1_TX_PIN   PB9
 
 #define TIMER_PIN_MAPPING \
     TIMER_PIN_MAP( 0, MOTOR1_PIN, 1,  1) \

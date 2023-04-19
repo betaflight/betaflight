@@ -44,8 +44,8 @@
 #define LED_STRIP_PIN        PB10
 #define UART1_TX_PIN         PA15
 #define UART2_TX_PIN         PA2
-#define UART11_TX_PIN        PB9
-#define UART12_TX_PIN        PA2
+#define SOFTSERIAL1_TX_PIN   PB9
+#define SOFTSERIAL2_TX_PIN   PA2
 #define UART1_RX_PIN         PB3
 #define UART2_RX_PIN         PA3
 #define I2C1_SCL_PIN         PB6

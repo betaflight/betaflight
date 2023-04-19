@@ -33,6 +33,8 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACCGYRO_BMI270
+#define USE_FLASH
+#define USE_FLASH_W25Q128FV
 #define USE_MAX7456
 #define USE_RX_SPI
 #define USE_RX_EXPRESSLRS
@@ -60,10 +62,10 @@
 #define LED_STRIP_PIN        PB1
 #define UART1_TX_PIN         PA9
 #define UART2_TX_PIN         PA2
-#define UART11_TX_PIN        PA8
+#define SOFTSERIAL1_TX_PIN   PA8
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
-#define UART11_RX_PIN        PA8
+#define SOFTSERIAL1_RX_PIN   PA8
 #define LED0_PIN             PC14
 #define SPI1_SCK_PIN         PA5
 #define SPI2_SCK_PIN         PB13
@@ -85,6 +87,7 @@
 #define RX_SPI_EXPRESSLRS_BUSY_PIN PA13
 #define GYRO_1_EXTI_PIN      PB6
 #define GYRO_1_CS_PIN        PA4
+#define FLASH_CS_PIN         PA10
 
 #define TIMER_PIN_MAPPING \
     TIMER_PIN_MAP( 0, PB1 , 2,  0) \
@@ -108,6 +111,7 @@
 #define DEFAULT_CURRENT_METER_SCALE 800
 #define BEEPER_INVERTED
 #define SYSTEM_HSE_MHZ 8
+#define FLASH_SPI_INSTANCE SPI2
 #define MAX7456_SPI_INSTANCE SPI2
 #define USE_SPI_GYRO
 #define GYRO_1_SPI_INSTANCE SPI1

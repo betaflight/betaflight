@@ -48,12 +48,12 @@
 #define UART2_TX_PIN         PA2
 #define UART3_TX_PIN         PB10
 #define UART6_TX_PIN         PC6
-#define UART11_TX_PIN        PB9
+#define SOFTSERIAL1_TX_PIN   PB9
 #define UART1_RX_PIN         PA10
 #define UART2_RX_PIN         PA3
 #define UART3_RX_PIN         PB11
 #define UART6_RX_PIN         PC7
-#define UART11_RX_PIN        PB8
+#define SOFTSERIAL1_RX_PIN   PB8
 #define INVERTER_PIN_UART2   PC13
 #define I2C1_SCL_PIN         PB8
 #define I2C1_SDA_PIN         PB9
