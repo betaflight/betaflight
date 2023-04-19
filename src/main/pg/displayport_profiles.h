@@ -32,7 +32,7 @@ typedef struct displayPortProfile_s {
 
     // For attribute-rich OSDs
 
-    uint8_t fontSelection[DISPLAYPORT_ATTR_COUNT];
+    uint8_t fontSelection[DISPLAYPORT_SEVERITY_COUNT];
     uint8_t useDeviceBlink;    // Use device local blink capability
 } displayPortProfile_t;
 
