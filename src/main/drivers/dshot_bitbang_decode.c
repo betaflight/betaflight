@@ -268,7 +268,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
     startMargin = p - buffer;
     DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
 
-    if(*p & mask) {
+    if (p >= endP) {
         // not returning telemetry is ok if the esc cpu is
         // overburdened.  in that case no edge will be found and
         // BB_NOEDGE indicates the condition to caller
