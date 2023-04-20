@@ -449,7 +449,7 @@ static void osdDrawLogo(int x, int y)
     for (int row = 0; row < OSD_LOGO_ROWS; row++) {
         for (int column = 0; column < OSD_LOGO_COLS; column++) {
             if (fontOffset <= SYM_END_OF_FONT)
-                displayWriteChar(osdDisplayPort, x + column, y + row, DISPLAYPORT_ATTR_NORMAL, fontOffset++);
+                displayWriteChar(osdDisplayPort, x + column, y + row, DISPLAYPORT_SEVERITY_NORMAL, fontOffset++);
         }
     }
 }
@@ -473,17 +473,17 @@ static void osdCompleteInitialization(void)
 
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, midCol + 5, midRow, DISPLAYPORT_ATTR_NORMAL, string_buffer);
+    displayWrite(osdDisplayPort, midCol + 5, midRow, DISPLAYPORT_SEVERITY_NORMAL, string_buffer);
 #ifdef USE_CMS
-    displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT1);
-    displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT2);
-    displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT3);
+    displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT3);
 #endif
 
 #ifdef USE_RTC_TIME
     char dateTimeBuffer[FORMATTED_DATE_TIME_BUFSIZE];
     if (osdFormatRtcDateTime(&dateTimeBuffer[0])) {
-        displayWrite(osdDisplayPort, midCol - 10, midRow + 6, DISPLAYPORT_ATTR_NORMAL, dateTimeBuffer);
+        displayWrite(osdDisplayPort, midCol - 10, midRow + 6, DISPLAYPORT_SEVERITY_NORMAL, dateTimeBuffer);
     }
 #endif
 
@@ -732,9 +732,9 @@ static void osdGetBlackboxStatusString(char * buff)
 
 static void osdDisplayStatisticLabel(uint8_t x, uint8_t y, const char * text, const char * value)
 {
-    displayWrite(osdDisplayPort, x - 13, y, DISPLAYPORT_ATTR_NORMAL, text);
-    displayWrite(osdDisplayPort, x + 5, y, DISPLAYPORT_ATTR_NORMAL, ":");
-    displayWrite(osdDisplayPort, x + 7, y, DISPLAYPORT_ATTR_NORMAL, value);
+    displayWrite(osdDisplayPort, x - 13, y, DISPLAYPORT_SEVERITY_NORMAL, text);
+    displayWrite(osdDisplayPort, x + 5, y, DISPLAYPORT_SEVERITY_NORMAL, ":");
+    displayWrite(osdDisplayPort, x + 7, y, DISPLAYPORT_SEVERITY_NORMAL, value);
 }
 
 /*
@@ -767,7 +767,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
             tfp_sprintf(buff, "NO RTC");
         }
 
-        displayWrite(osdDisplayPort, midCol - 13, displayRow, DISPLAYPORT_ATTR_NORMAL, buff);
+        displayWrite(osdDisplayPort, midCol - 13, displayRow, DISPLAYPORT_SEVERITY_NORMAL, buff);
         return true;
     }
 
@@ -1021,7 +1021,7 @@ static bool osdRenderStatsContinue(void)
         }
 
         if (displayLabel) {
-            displayWrite(osdDisplayPort, midCol - (strlen("--- STATS ---") / 2), osdStatsRenderingState.row++, DISPLAYPORT_ATTR_NORMAL, "--- STATS ---");
+            displayWrite(osdDisplayPort, midCol - (strlen("--- STATS ---") / 2), osdStatsRenderingState.row++, DISPLAYPORT_SEVERITY_NORMAL, "--- STATS ---");
             return false;
         }
     }
@@ -1128,10 +1128,10 @@ static timeDelta_t osdShowArmed(void)
     } else {
         ret = (REFRESH_1S / 2);
     }
-    displayWrite(osdDisplayPort, midCol - (strlen("ARMED") / 2), midRow, DISPLAYPORT_ATTR_NORMAL, "ARMED");
+    displayWrite(osdDisplayPort, midCol - (strlen("ARMED") / 2), midRow, DISPLAYPORT_SEVERITY_NORMAL, "ARMED");
 
     if (isFlipOverAfterCrashActive()) {
-        displayWrite(osdDisplayPort, midCol - (strlen(CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_ATTR_NORMAL, CRASH_FLIP_WARNING);
+        displayWrite(osdDisplayPort, midCol - (strlen(CRASH_FLIP_WARNING) / 2), midRow + 1, DISPLAYPORT_SEVERITY_NORMAL, CRASH_FLIP_WARNING);
     }
 
     return ret;

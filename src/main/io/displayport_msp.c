@@ -119,9 +119,9 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, uin
     buf[0] = MSP_DP_WRITE_STRING;
     buf[1] = row;
     buf[2] = col;
-    buf[3] = displayPortProfileMsp()->fontSelection[attr] & ~DISPLAYPORT_MSP_ATTR_BLINK & DISPLAYPORT_MSP_ATTR_MASK;
+    buf[3] = displayPortProfileMsp()->fontSelection[attr & (DISPLAYPORT_SEVERITY_COUNT - 1)] & DISPLAYPORT_MSP_ATTR_FONT;
 
-    if (attr & DISPLAYPORT_ATTR_BLINK) {
+    if (attr & DISPLAYPORT_BLINK) {
         buf[3] |= DISPLAYPORT_MSP_ATTR_BLINK;
     }
 

@@ -1318,7 +1318,7 @@ case MSP_NAME:
             const uint8_t warningsLen = strlen(warningsBuffer);
 
             if (isBlinking) {
-                displayAttr |= DISPLAYPORT_ATTR_BLINK;
+                displayAttr |= DISPLAYPORT_BLINK;
             }
             sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
             sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
