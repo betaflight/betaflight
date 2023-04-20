@@ -47,6 +47,9 @@
 
 #include "pg/motor.h"
 
+// Maximum time to wait for telemetry reception to complete
+#define DSHOT_TELEMETRY_TIMEOUT 2000
+
 FAST_DATA_ZERO_INIT bbPacer_t bbPacers[MAX_MOTOR_PACERS];  // TIM1 or TIM8
 FAST_DATA_ZERO_INIT int usedMotorPacers = 0;
 
@@ -291,6 +294,8 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->inputIrq++;
 #endif
+            // Disable DMA as telemetry reception is complete
+            bbDMA_Cmd(bbPort, FALSE);
         } else {
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->outputIrq++;
@@ -405,7 +410,7 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
 
         if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
             bbDevice.vTable.write = motorWriteNull;
-            bbDevice.vTable.updateStart = motorUpdateStartNull;
+            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
             bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
 
             return false;
@@ -457,43 +462,66 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
     return true;
 }
 
-static bool bbUpdateStart(void)
+static bool bbTelemetryWait(void)
+{
+    // Wait for telemetry reception to complete
+    bool telemetryPending;
+    bool telemetryWait = false;
+    const timeUs_t startTimeUs = micros();
+
+    do {
+        telemetryPending = false;
+        for (int i = 0; i < usedMotorPorts; i++) {
+            telemetryPending |= bbPorts[i].telemetryPending;
+        }
+
+        telemetryWait |= telemetryPending;
+
+        if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
+            break;
+        }
+    } while (telemetryPending);
+
+    if (telemetryWait) {
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+    }
+
+    return telemetryWait;
+}
+
+static void bbUpdateInit(void)
+{
+    for (int i = 0; i < usedMotorPorts; i++) {
+        bbOutputDataClear(bbPorts[i].portOutputBuffer);
+    }
+}
+
+static bool bbDecodeTelemetry(void)
 {
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
 #ifdef USE_DSHOT_TELEMETRY_STATS
         const timeMs_t currentTimeMs = millis();
 #endif
-        timeUs_t currentUs = micros();
 
-        // don't send while telemetry frames might still be incoming
-        if (cmpTimeUs(currentUs, lastSendUs) < (timeDelta_t)(40 + 2 * dshotFrameUs)) {
-            return false;
-        }
-
-        for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
 #ifdef USE_DSHOT_CACHE_MGMT
-            // Only invalidate the buffer once. If all motors are on a common port they'll share a buffer.
-            bool invalidated = false;
-            for (int i = 0; i < motorIndex; i++) {
-                if (bbMotors[motorIndex].bbPort->portInputBuffer == bbMotors[i].bbPort->portInputBuffer) {
-                    invalidated = true;
-                }
-            }
-            if (!invalidated) {
-                SCB_InvalidateDCache_by_Addr((uint32_t *)bbMotors[motorIndex].bbPort->portInputBuffer,
-                                             DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
-            }
+        for (int i = 0; i < usedMotorPorts; i++) {
+            bbPort_t *bbPort = &bbPorts[i];
+            SCB_InvalidateDCache_by_Addr((uint32_t *)bbPort->portInputBuffer, DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_BYTES);
+        }
 #endif
+        for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
 
             uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
-                bbMotors[motorIndex].bbPort->portInputCount - bbDMA_Count(bbMotors[motorIndex].bbPort),
+                bbMotors[motorIndex].bbPort->portInputCount,
                 bbMotors[motorIndex].pinIndex);
 
             if (rawValue == DSHOT_TELEMETRY_NOEDGE) {
+                DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 1, debug[1] + 1);
                 continue;
             }
+            DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 0, debug[0] + 1);
             dshotTelemetryState.readCount++;
 
             if (rawValue != DSHOT_TELEMETRY_INVALID) {
@@ -514,10 +542,6 @@ static bool bbUpdateStart(void)
         dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
     }
 #endif
-    for (int i = 0; i < usedMotorPorts; i++) {
-        bbDMA_Cmd(&bbPorts[i], FALSE);
-        bbOutputDataClear(bbPorts[i].portOutputBuffer);
-    }
 
     return true;
 }
@@ -663,7 +687,9 @@ static motorVTable_t bbVTable = {
     .enable = bbEnableMotors,
     .disable = bbDisableMotors,
     .isMotorEnabled = bbIsMotorEnabled,
-    .updateStart = bbUpdateStart,
+    .telemetryWait = bbTelemetryWait,
+    .decodeTelemetry = bbDecodeTelemetry,
+    .updateInit = bbUpdateInit,
     .write = bbWrite,
     .writeInt = bbWriteInt,
     .updateComplete = bbUpdateComplete,
@@ -710,7 +736,7 @@ motorDevice_t *dshotBitbangDevInit(const motorDevConfig_t *motorConfig, uint8_t 
         if (!IOIsFreeOrPreinit(io)) {
             /* not enough motors initialised for the mixer or a break in the motors */
             bbDevice.vTable.write = motorWriteNull;
-            bbDevice.vTable.updateStart = motorUpdateStartNull;
+            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
             bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
             bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
             return NULL;
