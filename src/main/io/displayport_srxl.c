@@ -71,15 +71,15 @@ static int srxlClearScreen(displayPort_t *displayPort, displayClearOption_e opti
     UNUSED(options);
     for (int row = 0; row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS; row++) {
         for (int col= 0; col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS; col++) {
-            srxlWriteChar(displayPort, col, row, DISPLAYPORT_ATTR_NORMAL, ' ');
+            srxlWriteChar(displayPort, col, row, DISPLAYPORT_SEVERITY_NORMAL, ' ');
         }
     }
-    srxlWriteString(displayPort, 1, 0, DISPLAYPORT_ATTR_NORMAL, "BETAFLIGHT");
+    srxlWriteString(displayPort, 1, 0, DISPLAYPORT_SEVERITY_NORMAL, "BETAFLIGHT");
 
     if (displayPort->grabCount == 0) {
-        srxlWriteString(displayPort, 0, 2, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT1);
-        srxlWriteString(displayPort, 2, 3, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT2);
-        srxlWriteString(displayPort, 2, 4, DISPLAYPORT_ATTR_NORMAL, CMS_STARTUP_HELP_TEXT3);
+        srxlWriteString(displayPort, 0, 2, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
+        srxlWriteString(displayPort, 2, 3, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT2);
+        srxlWriteString(displayPort, 2, 4, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT3);
     }
     return 0;
 }
