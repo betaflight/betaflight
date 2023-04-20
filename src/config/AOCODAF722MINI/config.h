@@ -43,6 +43,7 @@
 #define MOTOR5_PIN           PA15
 #define MOTOR6_PIN           PB3
 #define MOTOR7_PIN           PB6
+#define MOTOR8_PIN           PB7
 #define RX_PPM_PIN           PA10
 #define LED_STRIP_PIN        PA8
 #define UART1_TX_PIN         PA9
@@ -85,7 +86,8 @@
     TIMER_PIN_MAP( 5, PA15, 1,  0) \
     TIMER_PIN_MAP( 6, PB3 , 1,  0) \
     TIMER_PIN_MAP( 7, PB6 , 1,  0) \
-    TIMER_PIN_MAP( 8, PA8 , 1,  2)
+    TIMER_PIN_MAP( 8, PB7 , 1,  0) \
+    TIMER_PIN_MAP( 9, PA8 , 1,  2)
 
 
 
