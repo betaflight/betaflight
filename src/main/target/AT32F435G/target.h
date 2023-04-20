@@ -85,7 +85,7 @@
 // burst mode not implemented yet
 #undef USE_DSHOT_DMAR
 
-
+#define USE_BEEPER
 #undef USE_CAMERA_CONTROL
 #undef USE_RX_PPM
 #undef USE_RX_PWM
