@@ -64,8 +64,8 @@ static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
 
-static uint16_t currentRxIntervalUs; // packet interval un microseconds
-static float currentRxRateHz; // packet interval un microseconds
+static uint16_t currentRxIntervalUs; // packet interval in microseconds
+static float currentRxRateHz; // packet rate in hertz
 
 static bool isRxDataNew = false;
 static bool isRxIntervalValid = false;
@@ -103,7 +103,7 @@ static FAST_DATA_ZERO_INIT rcSmoothingFilter_t rcSmoothingData;
 static float rcDeflectionSmoothed[3];
 #endif // USE_RC_SMOOTHING_FILTER
 
-#define RX_INTERVAL_MIN_US     950   // 0.950ms to fit 1kHz without an issue
+#define RX_INTERVAL_MIN_US     950 // 0.950ms to fit 1kHz without an issue
 #define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
 
 float getSetpointRate(int axis)

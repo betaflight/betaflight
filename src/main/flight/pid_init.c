@@ -239,9 +239,9 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
     const float angleCutoffHz = 1000.0f / (2.0f * M_PIf * pidProfile->angle_feedforward_smoothing_ms); // default of 80ms -> 2.0Hz, 160ms -> 1.0Hz, approximately
     const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
-    pidRuntime.horizonDelay = pidProfile->horizon_delay;
-    if (pidRuntime.horizonDelay) {
-        const float horizonSmoothingHz = 100.0f / (2.0f * M_PIf * pidProfile->horizon_delay); // default of 50 means 0.5s or 0.318Hz
+    pidRuntime.horizonDelayMs = pidProfile->horizon_delay_ms;
+    if (pidRuntime.horizonDelayMs) {
+        const float horizonSmoothingHz = 1e3f / (2.0f * M_PIf * pidProfile->horizon_delay_ms); // default of 500ms means 0.318Hz
         const float kHorizon = pt1FilterGain(horizonSmoothingHz, pidRuntime.dT);
         pt1FilterInit(&pidRuntime.horizonSmoothingPt1, kHorizon);
     }
@@ -292,7 +292,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.horizonLimitSticksInv = (pidProfile->pid[PID_LEVEL].D) ? 1.0f / pidRuntime.horizonLimitSticks : 1.0f;
     pidRuntime.horizonLimitDegrees = (float)pidProfile->horizon_limit_degrees;
     pidRuntime.horizonLimitDegreesInv = (pidProfile->horizon_limit_degrees) ? 1.0f / pidRuntime.horizonLimitDegrees : 1.0f;
-    pidRuntime.horizonDelay = pidProfile->horizon_delay;
+    pidRuntime.horizonDelayMs = pidProfile->horizon_delay_ms;
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;
     pidRuntime.maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * pidRuntime.dT;

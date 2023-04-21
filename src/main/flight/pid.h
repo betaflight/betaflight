@@ -236,7 +236,7 @@ typedef struct pidProfile_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
     uint8_t angle_earth_ref;         // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
-    uint8_t horizon_delay;           // delay when Horizon Strength increases, 50 = 500ms time constant
+    uint16_t horizon_delay_ms;           // delay when Horizon Strength increases, 50 = 500ms time constant
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -403,7 +403,7 @@ typedef struct pidRuntime_s {
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
     pt1Filter_t horizonSmoothingPt1;
-    uint8_t horizonDelay;
+    uint16_t horizonDelayMs;
     float angleYawSetpoint;
     float angleEarthRef;
     float angleTarget[2];
