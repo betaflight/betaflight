@@ -176,7 +176,11 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
 #endif
 
 #ifdef USE_DSHOT_TELEMETRY
-FAST_CODE_NOINLINE bool pwmStartDshotMotorUpdate(void)
+/**
+ * Process dshot telemetry packets before switching the channels back to outputs
+ * 
+*/
+FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 {
     if (!useDshotTelemetry) {
         return true;

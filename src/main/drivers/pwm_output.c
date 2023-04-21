@@ -215,7 +215,7 @@ motorDevice_t *motorPwmDevInit(const motorDevConfig_t *motorConfig, uint16_t idl
     }
 
     motorPwmDevice.vTable.write = pwmWriteStandard;
-    motorPwmDevice.vTable.updateStart = motorUpdateStartNull;
+    motorPwmDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
     motorPwmDevice.vTable.updateComplete = useUnsyncedPwm ? motorUpdateCompleteNull : pwmCompleteOneshotMotorUpdate;
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
