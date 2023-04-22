@@ -488,7 +488,7 @@ NOINLINE void initAveraging(uint16_t feedforwardAveraging)
     }
 }
 
-FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
+STATIC_UNIT_TESTED FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, int axis)
 {
     const float rxInterval = currentRxIntervalUs * 1e-6f; // seconds
     float rxRate = currentRxRateHz;
