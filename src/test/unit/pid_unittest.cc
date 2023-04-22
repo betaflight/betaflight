@@ -90,7 +90,9 @@ extern "C" {
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
-    float getFeedforward(int axis) { return simulatedFeedforward[axis]; }
+    float getFeedforward(int axis) {
+        return simulatedSetpointRate[axis] - simulatedPrevSetpointRate[axis];
+    }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
     void disarm(flightLogDisarmReason_e) { }
@@ -596,51 +598,84 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     // Add additional verifications
 }
 
-// TEST(pidControllerTest, testFeedForward) // now in rc.c
-// {
-//     resetTest();
-//     ENABLE_ARMING_FLAG(ARMED);
-//     pidStabilisationState(PID_STABILISATION_ON);
-// 
-//     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
-//     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
-//     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
-// 
-//     // Match the stick to gyro to stop error
-//     setStickPosition(FD_ROLL, 1.0f);
-//     setStickPosition(FD_PITCH, -1.0f);
-//     setStickPosition(FD_YAW, -1.0f);
-// 
-//     pidController(pidProfile, currentTestTime());
-// 
-//     EXPECT_NEAR(2232.78, pidData[FD_ROLL].F, calculateTolerance(2232.78));
-//     EXPECT_NEAR(-2061.03, pidData[FD_PITCH].F, calculateTolerance(-2061.03));
-//     EXPECT_NEAR(-2061.03, pidData[FD_YAW].F, calculateTolerance(-2061.03));
-// 
-//     // Match the stick to gyro to stop error
-//     setStickPosition(FD_ROLL, 0.5f);
-//     setStickPosition(FD_PITCH, -0.5f);
-//     setStickPosition(FD_YAW, -0.5f);
-// 
-//     pidController(pidProfile, currentTestTime());
-// 
-//     EXPECT_NEAR(-558.20, pidData[FD_ROLL].F, calculateTolerance(-558.20));
-//     EXPECT_NEAR(515.26, pidData[FD_PITCH].F, calculateTolerance(515.26));
-//     EXPECT_NEAR(515.26, pidData[FD_YAW].F, calculateTolerance(515.26));
-// 
-//     setStickPosition(FD_ROLL, 0.0f);
-//     setStickPosition(FD_PITCH, 0.0f);
-//     setStickPosition(FD_YAW, 0.0f);
-// 
-//     for (int loop = 0; loop <= 15; loop++) {
-//         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
-//         pidController(pidProfile, currentTestTime());
-//     }
-// 
-//     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
-//     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
-//     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
-// }
+TEST(pidControllerTest, testFeedForward)
+// NOTE: THIS DOES NOT TEST THE FEEDFORWARD CALCULATIONS, which are now in rc.c, and return setpointDelta
+// This test only validates the feedforward value calculated in pid.c for a given simulated setpointDelta
+{
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+
+    // Move the sticks fully
+    setStickPosition(FD_ROLL, 1.0f);
+    setStickPosition(FD_PITCH, -1.0f);
+    setStickPosition(FD_YAW, -1.0f);
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NEAR(17.86, pidData[FD_ROLL].F, calculateTolerance(17.86));
+    EXPECT_NEAR(-16.49, pidData[FD_PITCH].F, calculateTolerance(-16.49));
+    EXPECT_NEAR(-16.49, pidData[FD_YAW].F, calculateTolerance(-16.49));
+
+    // Bring sticks back to half way
+    setStickPosition(FD_ROLL, 0.5f);
+    setStickPosition(FD_PITCH, -0.5f);
+    setStickPosition(FD_YAW, -0.5f);
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NEAR(-8.93, pidData[FD_ROLL].F, calculateTolerance(-8.93));
+    EXPECT_NEAR(8.24, pidData[FD_PITCH].F, calculateTolerance(8.24));
+    EXPECT_NEAR(8.24, pidData[FD_YAW].F, calculateTolerance(8.24));
+
+    // Bring sticks back to two tenths out
+    setStickPosition(FD_ROLL, 0.2f);
+    setStickPosition(FD_PITCH, -0.2f);
+    setStickPosition(FD_YAW, -0.2f);
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NEAR(-5.36, pidData[FD_ROLL].F, calculateTolerance(-5.36));
+    EXPECT_NEAR(4.95, pidData[FD_PITCH].F, calculateTolerance(4.95));
+    EXPECT_NEAR(4.95, pidData[FD_YAW].F, calculateTolerance(4.95));
+
+    // Bring sticks back to one tenth out, to give a difference of 0.1
+    setStickPosition(FD_ROLL, 0.1f);
+    setStickPosition(FD_PITCH, -0.1f);
+    setStickPosition(FD_YAW, -0.1f);
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NEAR(-1.79, pidData[FD_ROLL].F, calculateTolerance(-1.79));
+    EXPECT_NEAR(1.65, pidData[FD_PITCH].F, calculateTolerance(1.65));
+    EXPECT_NEAR(1.65, pidData[FD_YAW].F, calculateTolerance(1.65));
+
+    // Center the sticks, giving the same delta value as before, should return the same feedforward
+    setStickPosition(FD_ROLL, 0.0f);
+    setStickPosition(FD_PITCH, 0.0f);
+    setStickPosition(FD_YAW, 0.0f);
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NEAR(-1.79, pidData[FD_ROLL].F, calculateTolerance(-1.79));
+    EXPECT_NEAR(1.65, pidData[FD_PITCH].F, calculateTolerance(1.65));
+    EXPECT_NEAR(1.65, pidData[FD_YAW].F, calculateTolerance(1.65));
+
+    // Keep centered
+    setStickPosition(FD_ROLL, 0.0f);
+    setStickPosition(FD_PITCH, 0.0f);
+    setStickPosition(FD_YAW, 0.0f);
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+}
 
 TEST(pidControllerTest, testItermRelax)
 {
