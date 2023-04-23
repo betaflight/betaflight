@@ -115,15 +115,19 @@ ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
 endif
 
-INCLUDE_DIRS    += $(CONFIG_DIR)/$(CONFIG)
 CONFIG_FILE     := $(CONFIG_DIR)/$(FC_VER)/$(CONFIG)/config.h
 
 ifeq ($(wildcard $(CONFIG_FILE)),)
 CONFIG_FILE  := $(CONFIG_DIR)/$(FC_VER_SHORT)/$(CONFIG)/config.h
-endif
 
 ifeq ($(wildcard $(CONFIG_FILE)),)
 $(error Config file not found: $(CONFIG_FILE))
+else
+INCLUDE_DIRS    += $(CONFIG_DIR)/$(FC_VER_SHORT)/$(CONFIG)
+endif
+
+else
+INCLUDE_DIRS    += $(CONFIG_DIR)/$(FC_VER)/$(CONFIG)
 endif
 
 TARGET        := $(shell grep " FC_TARGET_MCU" $(CONFIG_FILE) | awk '{print $$3}' )
@@ -153,12 +157,22 @@ HSE_VALUE       ?= 8000000
 BASE_CONFIGS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/$(FC_VER)/*/config.h)))) \
                            $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/$(FC_VER_SHORT)/*/config.h)))))
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
-CI_TARGETS       := $(BASE_TARGETS) CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722
+CI_TARGETS       := $(BASE_TARGETS)
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git log -1 --format="%h")
+endif
+
+ifeq ($(shell git -C $(CONFIG_DIR) rev-parse --is-inside-work-tree),true)
+CONFIG_REVISION := unknown
+ifeq ($(shell git -C $(CONFIG_DIR) diff --shortstat),)
+RESULT := $(shell git -C $(CONFIG_DIR) fetch --all)
+CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
+endif
+else
+$(error No valid config repository identified. Is the $(CONFIG_DIR) a valid repository?)
 endif
 
 LD_FLAGS        :=
@@ -293,6 +307,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
+              -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"' \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
