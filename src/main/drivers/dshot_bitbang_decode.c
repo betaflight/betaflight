@@ -51,7 +51,7 @@ uint16_t bbBuffer[134];
 
 #define DSHOT_TELEMETRY_START_MARGIN 10
 
-static uint8_t preambleSkip = 0;
+static unsigned int preambleSkip = 0;
 
 typedef struct bitBandWord_s {
     uint32_t value;
@@ -130,7 +130,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         }
     }
 
-    const uint8_t startMargin = p - b;
+    const unsigned int startMargin = p - b;
     DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
 
     if (p >= endP) {
@@ -140,7 +140,7 @@ uint32_t decode_bb_bitband( uint16_t buffer[], uint32_t count, uint32_t bit)
         return DSHOT_TELEMETRY_NOEDGE;
     }
 
-    const uint32_t remaining = MIN(count - startMargin, (unsigned int)MAX_VALID_BBSAMPLES);
+    const int remaining = MIN(count - startMargin, (unsigned int)MAX_VALID_BBSAMPLES);
 
     bitBandWord_t* oldP = p;
     uint32_t bits = 0;
@@ -262,7 +262,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         }
     }
 
-    const uint8_t startMargin = p - buffer;
+    const unsigned int startMargin = p - buffer;
     DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 3, startMargin);
 
     if (p >= endP) {
@@ -274,7 +274,7 @@ FAST_CODE uint32_t decode_bb( uint16_t buffer[], uint32_t count, uint32_t bit)
         return DSHOT_TELEMETRY_NOEDGE;
     }
 
-    const uint32_t remaining = MIN(count - startMargin, (unsigned int)MAX_VALID_BBSAMPLES);
+    const int remaining = MIN(count - startMargin, (unsigned int)MAX_VALID_BBSAMPLES);
     uint16_t* oldP = p;
     uint32_t bits = 0;
     endP = p + remaining;
