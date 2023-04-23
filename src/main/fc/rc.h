@@ -41,10 +41,10 @@ bool isMotorsReversed(void);
 rcSmoothingFilter_t *getRcSmoothingData(void);
 bool rcSmoothingAutoCalculate(void);
 bool rcSmoothingInitializationComplete(void);
-float getRawSetpoint(int axis);
-float getRcCommandDelta(int axis);
-float applyCurve(int axis, float deflection);
-bool getShouldUpdateFeedforward();
+
+float getMaxRcRate(int axis);
+float getFeedforward(int axis);
+
 void updateRcRefreshRate(timeUs_t currentTimeUs);
-uint16_t getCurrentRxRefreshRate(void);
+uint16_t getCurrentRxIntervalUs(void);
 bool getRxRateValid(void);
