@@ -56,5 +56,6 @@ ubuntu*.log
 # EEPROM image file (created by SITL)
 eeprom.bin
 
-# board scratch space used for automated build API, and developers
-/src/main/board
+# config used for building targets
+/src/config
+

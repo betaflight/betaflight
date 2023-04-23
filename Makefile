@@ -83,7 +83,10 @@ include $(ROOT)/make/checks.mk
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
-CONFIG_DIR ?= $(ROOT)/src/config
+CONFIG_DIR ?= $(BETAFLIGHT_CONFIG)
+ifeq ($(CONFIG_DIR),)
+CONFIG_DIR := $(ROOT)/src/config
+endif
 
 export RM := rm
 
@@ -99,14 +102,25 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
+FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
+
+FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
+FC_VER_SHORT := $(FC_VER_MAJOR).$(FC_VER_MINOR)
+
 ifneq ($(CONFIG),)
 
 ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
 endif
 
-INCLUDE_DIRS += $(CONFIG_DIR)/$(CONFIG)
-CONFIG_FILE  := $(CONFIG_DIR)/$(CONFIG)/config.h
+INCLUDE_DIRS    += $(CONFIG_DIR)/$(CONFIG)
+CONFIG_FILE     := $(CONFIG_DIR)/$(FC_VER)/$(CONFIG)/config.h
+
+ifeq ($(wildcard $(CONFIG_FILE)),)
+CONFIG_FILE  := $(CONFIG_DIR)/$(FC_VER_SHORT)/$(CONFIG)/config.h
+endif
 
 ifeq ($(wildcard $(CONFIG_FILE)),)
 $(error Config file not found: $(CONFIG_FILE))
@@ -119,7 +133,7 @@ HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
 endif
 
 ifeq ($(TARGET),)
-$(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
+$(error No TARGET identified. Is the $(CONFIG_FILE) valid for $(CONFIG)?)
 endif
 
 EXST_ADJUST_VMA := $(shell grep " FC_VMA_ADDRESS" $(CONFIG_FILE) | awk '{print $$3}' )
@@ -136,7 +150,8 @@ endif #CONFIG
 # default xtal value
 HSE_VALUE       ?= 8000000
 
-BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/config/*/config.h)))))
+BASE_CONFIGS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/$(FC_VER)/*/config.h)))) \
+                           $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/$(FC_VER_SHORT)/*/config.h)))))
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 CI_TARGETS       := $(BASE_TARGETS) CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
@@ -145,12 +160,6 @@ REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git log -1 --format="%h")
 endif
-
-FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
-FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
-FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
-
-FC_VER := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
 LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
