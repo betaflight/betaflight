@@ -55,12 +55,12 @@ void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
     mixerConfig->crashflip_motor_percent = 0;
     mixerConfig->crashflip_expo = 35;
     mixerConfig->mixer_type = MIXER_LEGACY;
-#ifdef USE_RPM_LIMITER
-    mixerConfig->rpm_limiter = false;
-    mixerConfig->rpm_limiter_p = 25;
-    mixerConfig->rpm_limiter_i = 10;
-    mixerConfig->rpm_limiter_d = 8;
-    mixerConfig->rpm_limiter_rpm_limit = 18000;
+#ifdef USE_RPM_LIMIT
+    mixerConfig->rpm_limit = false;
+    mixerConfig->rpm_limit_p = 25;
+    mixerConfig->rpm_limit_i = 10;
+    mixerConfig->rpm_limit_d = 8;
+    mixerConfig->rpm_limit_value = 18000;
 #endif
 }
 
@@ -355,23 +355,23 @@ void mixerInitProfile(void)
     }
 #endif
 
-#ifdef USE_RPM_LIMITER
-    mixerRuntime.rpmLimiterRpmLimit = mixerConfig()->rpm_limiter_rpm_limit;
-    mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limiter_p * 15e-6f;
-    mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limiter_i * 1e-3f * pidGetDT();
-    mixerRuntime.rpmLimiterDGain = mixerConfig()->rpm_limiter_d * 3e-7f * pidGetPidFrequency();
+#ifdef USE_RPM_LIMIT
+    mixerRuntime.rpmLimiterRpmLimit = mixerConfig()->rpm_limit_value;
+    mixerRuntime.rpmLimiterPGain = mixerConfig()->rpm_limit_p * 15e-6f;
+    mixerRuntime.rpmLimiterIGain = mixerConfig()->rpm_limit_i * 1e-3f * pidGetDT();
+    mixerRuntime.rpmLimiterDGain = mixerConfig()->rpm_limit_d * 3e-7f * pidGetPidFrequency();
     pt1FilterInit(&mixerRuntime.averageRpmFilter, pt1FilterGain(6.0f, pidGetDT()));
     mixerResetRpmLimiter();
 #endif
 }
 
-#ifdef USE_RPM_LIMITER
+#ifdef USE_RPM_LIMIT
 void mixerResetRpmLimiter(void)
 {
     const float maxExpectedRpm = MAX(1.0f, motorConfig()->kv * getBatteryVoltage() * 0.01f);
     mixerRuntime.rpmLimiterThrottleScale = constrainf(mixerRuntime.rpmLimiterRpmLimit / maxExpectedRpm, 0.0f, 1.0f);
 }
-#endif // USE_RPM_LIMITER
+#endif // USE_RPM_LIMIT
 
 #ifdef USE_LAUNCH_CONTROL
 // Create a custom mixer for launch control based on the current settings

@@ -113,5 +113,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ANGLE_TARGET",
     "CURRENT_ANGLE",
     "DSHOT_TELEMETRY_COUNTS",
-    "RPM_LIMITER",
+    "RPM_LIMIT",
 };

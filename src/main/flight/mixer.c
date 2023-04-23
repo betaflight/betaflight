@@ -65,8 +65,8 @@
 #define DYN_LPF_THROTTLE_STEPS           100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
-#ifdef USE_RPM_LIMITER
-#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limiter
+#ifdef USE_RPM_LIMIT
+#define RPM_LIMIT_ACTIVE mixerConfig()->rpm_limit
 #else
 #define RPM_LIMIT_ACTIVE false
 #endif
@@ -350,7 +350,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
-#ifdef USE_RPM_LIMITER
+#ifdef USE_RPM_LIMIT
 static void applyRpmLimiter(mixerRuntime_t *mixer)
 {
     static float prevError = 0.0f;
@@ -380,16 +380,16 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     throttle = constrainf(throttle - pidOutput, 0.0f, 1.0f);
     prevError = error;
 
-    DEBUG_SET(DEBUG_RPM_LIMITER, 0, lrintf(averageRpm));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 1, lrintf(unsmoothedAverageRpm));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 3, lrintf(throttle * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 4, lrintf(error));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 5, lrintf(p * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 6, lrintf(i * 100.0f));
-    DEBUG_SET(DEBUG_RPM_LIMITER, 7, lrintf(d * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 0, lrintf(averageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 1, lrintf(unsmoothedAverageRpm));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 2, lrintf(mixer->rpmLimiterThrottleScale * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 3, lrintf(throttle * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 4, lrintf(error));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 5, lrintf(p * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 6, lrintf(i * 100.0f));
+    DEBUG_SET(DEBUG_RPM_LIMIT, 7, lrintf(d * 100.0f));
 }
-#endif // USE_RPM_LIMITER
+#endif // USE_RPM_LIMIT
 
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS], motorMixer_t *activeMixer)
 {
@@ -618,7 +618,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     throttle = pidCompensateThrustLinearization(throttle);
 #endif
 
-#ifdef USE_RPM_LIMITER
+#ifdef USE_RPM_LIMIT
     if (RPM_LIMIT_ACTIVE && motorConfig()->dev.useDshotTelemetry && ARMING_FLAG(ARMED)) {
         applyRpmLimiter(&mixerRuntime);
     }

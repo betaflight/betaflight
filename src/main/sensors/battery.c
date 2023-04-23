@@ -217,7 +217,7 @@ void batteryUpdatePresence(void)
                 changePidProfileFromCellCount(batteryCellCount);
             }
         }
-#ifdef USE_RPM_LIMITER
+#ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
         batteryWarningVoltage = batteryCellCount * batteryConfig()->vbatwarningcellvoltage;
