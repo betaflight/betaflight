@@ -145,10 +145,23 @@ ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
 endif
 
+ifeq ($(shell git -C $(CONFIG_DIR) rev-parse --is-inside-work-tree),true)
+CONFIG_REVISION := unknown
+ifeq ($(shell git -C $(CONFIG_DIR) diff --shortstat),)
+RESULT := $(shell git -C $(CONFIG_DIR) fetch --all)
+CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
+endif
+CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
 else
+$(error No valid config repository identified. Is the $(CONFIG_DIR) a valid repository?)
+endif
+
+else # no config specified
+
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
 endif
+
 endif #CONFIG
 
 # default xtal value
@@ -163,16 +176,6 @@ include $(ROOT)/src/main/target/$(TARGET)/target.mk
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git log -1 --format="%h")
-endif
-
-ifeq ($(shell git -C $(CONFIG_DIR) rev-parse --is-inside-work-tree),true)
-CONFIG_REVISION := unknown
-ifeq ($(shell git -C $(CONFIG_DIR) diff --shortstat),)
-RESULT := $(shell git -C $(CONFIG_DIR) fetch --all)
-CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
-endif
-else
-$(error No valid config repository identified. Is the $(CONFIG_DIR) a valid repository?)
 endif
 
 LD_FLAGS        :=
@@ -307,7 +310,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
-              -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"' \
+              $(CONFIG_REVISION_DEFINE) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
