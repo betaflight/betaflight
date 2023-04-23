@@ -236,6 +236,7 @@ typedef struct pidProfile_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
     uint8_t angle_earth_ref;         // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
+    uint16_t horizon_delay_ms;           // delay when Horizon Strength increases, 50 = 500ms time constant
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -300,8 +301,10 @@ typedef struct pidRuntime_s {
     float angleFeedforwardGain;
     float horizonGain;
     float horizonLimitSticks;
+    float horizonLimitSticksInv;
     float horizonLimitDegrees;
-    uint8_t horizonIgnoreSticks;
+    float horizonLimitDegreesInv;
+    float horizonIgnoreSticks;
     float maxVelocity[XYZ_AXIS_COUNT];
     float itermWindupPointInv;
     bool inCrashRecoveryMode;
@@ -349,13 +352,6 @@ typedef struct pidRuntime_s {
     pt1Filter_t airmodeThrottleLpf2;
 #endif
 
-#ifdef USE_RC_SMOOTHING_FILTER
-    pt3Filter_t feedforwardPt3[XYZ_AXIS_COUNT];
-    bool feedforwardLpfInitialized;
-    uint8_t rcSmoothingDebugAxis;
-    uint8_t rcSmoothingFilterType;
-#endif // USE_RC_SMOOTHING_FILTER
-
 #ifdef USE_ACRO_TRAINER
     float acroTrainerAngleLimit;
     float acroTrainerLookaheadTime;
@@ -393,23 +389,26 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_FEEDFORWARD
-    float feedforwardTransitionFactor;
     feedforwardAveraging_t feedforwardAveraging;
     float feedforwardSmoothFactor;
-    float feedforwardJitterFactor;
+    uint8_t feedforwardJitterFactor;
+    float feedforwardJitterFactorInv;
     float feedforwardBoostFactor;
-    float angleFeedforward[XYZ_AXIS_COUNT];
-    float angleTargetPrevious[XYZ_AXIS_COUNT];
-    float angleTargetDelta[XYZ_AXIS_COUNT];
-    uint8_t angleDuplicateCount[XYZ_AXIS_COUNT];
+    float feedforwardTransition;
+    float feedforwardTransitionInv;
+    uint8_t feedforwardMaxRateLimit;
+    pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
 #endif
 
 #ifdef USE_ACC
     pt3Filter_t attitudeFilter[2];  // Only for ROLL and PITCH
-    pt3Filter_t angleFeedforwardPt3[XYZ_AXIS_COUNT];
+    pt1Filter_t horizonSmoothingPt1;
+    uint16_t horizonDelayMs;
     float angleYawSetpoint;
     float angleEarthRef;
     float angleTarget[2];
+    bool axisInAngleMode[3];
+    float maxRcRateInv[2];
 #endif
 } pidRuntime_t;
 
@@ -456,16 +455,14 @@ void applyItermRelax(const int axis, const float iterm,
 void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
-    const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength, bool newRcFrame);
+    const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength);
 float calcHorizonLevelStrength(void);
 #endif
+
 void dynLpfDTermUpdate(float throttle);
 void pidSetItermReset(bool enabled);
 float pidGetPreviousSetpoint(int axis);
 float pidGetDT();
 float pidGetPidFrequency();
-float pidGetFeedforwardBoostFactor();
-float pidGetFeedforwardSmoothFactor();
-float pidGetFeedforwardJitterFactor();
-float pidGetFeedforwardTransitionFactor();
+
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);

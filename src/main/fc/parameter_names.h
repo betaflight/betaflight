@@ -126,8 +126,6 @@
 #define PARAM_NAME_POSITION_ALTITUDE_D_LPF "altitude_d_lpf"
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"
-#define PARAM_NAME_ANGLE_ROLL_EXPO "angle_roll_expo"
-#define PARAM_NAME_ANGLE_PITCH_EXPO "angle_pitch_expo"
 #define PARAM_NAME_ANGLE_LIMIT "angle_limit"
 #define PARAM_NAME_ANGLE_P_GAIN "angle_p_gain"
 #define PARAM_NAME_ANGLE_EARTH_REF "angle_earth_ref"
@@ -136,6 +134,7 @@
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"
 #define PARAM_NAME_HORIZON_LIMIT_STICKS "horizon_limit_sticks"
 #define PARAM_NAME_HORIZON_IGNORE_STICKS "horizon_ignore_sticks"
+#define PARAM_NAME_HORIZON_DELAY_MS "horizon_delay_ms"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"
