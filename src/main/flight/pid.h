@@ -304,7 +304,7 @@ typedef struct pidRuntime_s {
     float horizonLimitSticksInv;
     float horizonLimitDegrees;
     float horizonLimitDegreesInv;
-    uint8_t horizonIgnoreSticks;
+    float horizonIgnoreSticks;
     float maxVelocity[XYZ_AXIS_COUNT];
     float itermWindupPointInv;
     bool inCrashRecoveryMode;
