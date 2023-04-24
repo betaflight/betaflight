@@ -277,20 +277,10 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    pidProfile_t *currentPidProfile;
-
-    currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
-    const float tpaBreakpoint = (currentPidProfile->tpa_breakpoint - 1000) / 1000.0f;
-    float tpaRate = currentPidProfile->tpa_rate / 100.0f;
-
-    if (throttle > tpaBreakpoint) {
-        if (throttle < 1.0f) {
-            tpaRate *= (throttle - tpaBreakpoint) / (1.0f - tpaBreakpoint);
-        }
-    } else {
-        tpaRate = 0.0f;
-    }
-    pidRuntime.tpaFactor = 1.0f - tpaRate;
+    pidRuntime.tpaFactor = 1.0f;
+    const float throttleTemp = fminf(throttle, 1.0f); // don't permit throttle > 1 ? is this needed ? can throttle be > 1 at this point ?
+    const float throttleDifference = fmaxf(throttleTemp - pidRuntime.tpaBreakpoint, 0.0f);
+    pidRuntime.tpaFactor -= throttleDifference * pidRuntime.tpaMultiplier;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
@@ -918,7 +908,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                     maxAngleTargetAbs *= (FLIGHT_MODE(HORIZON_MODE)) ? horizonLevelStrength : 1.0f;
                     // reduce compensation whenever Horizon uses less levelling
                     currentPidSetpoint *= cos_approx(DEGREES_TO_RADIANS(maxAngleTargetAbs));
-                    DEBUG_SET(DEBUG_ANGLE_TARGET, 2, currentPidSetpoint); // yaw setpoint after attenuation
+                    // DEBUG_SET(DEBUG_ANGLE_TARGET, 2, currentPidSetpoint); // yaw setpoint after attenuation
                 }
             }
         }

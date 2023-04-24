@@ -423,6 +423,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
+    pidRuntime.tpaBreakpoint = (pidProfile->tpa_breakpoint - 1000) * 0.001f; // .35 from 1350, range can be 0 to 0.99, limited by CLI range
+    pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint); // tpaBreakpoint must not be 1.0 to avoid div by zero
 }
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
