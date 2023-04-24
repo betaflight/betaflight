@@ -277,10 +277,9 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    pidRuntime.tpaFactor = 1.0f;
     const float throttleTemp = fminf(throttle, 1.0f); // don't permit throttle > 1 ? is this needed ? can throttle be > 1 at this point ?
     const float throttleDifference = fmaxf(throttleTemp - pidRuntime.tpaBreakpoint, 0.0f);
-    pidRuntime.tpaFactor -= throttleDifference * pidRuntime.tpaMultiplier;
+    pidRuntime.tpaFactor = 1.0f - throttleDifference * pidRuntime.tpaMultiplier;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
