@@ -335,12 +335,7 @@ float pidCompensateThrustLinearization(float throttle)
 
 float pidApplyThrustLinearization(float motorOutput)
 {
-    if (pidRuntime.thrustLinearization != 0.0f) {
-        if (motorOutput > 0.0f) {
-            const float motorOutputReversed = (1.0f - motorOutput);
-            motorOutput *= 1.0f + sq(motorOutputReversed) * pidRuntime.thrustLinearization;
-        }
-    }
+    motorOutput *= 1.0f + pidRuntime.thrustLinearization * sq(1.0f - motorOutput);
     return motorOutput;
 }
 #endif
