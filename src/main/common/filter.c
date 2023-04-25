@@ -19,7 +19,6 @@
  */
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <string.h>
 #include <math.h>
 
@@ -267,6 +266,48 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
 
     return result;
 }
+
+
+// Phase Compensator (Lead-Lag-Compensator)
+
+void phaseCompInit(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
+{
+    phaseCompUpdate(filter, centerFreqHz, centerPhaseDeg, looptimeUs);
+
+    filter->x1 = 0.0f;
+    filter->y1 = 0.0f;
+}
+
+FAST_CODE void phaseCompUpdate(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
+{
+    const float omega = 2.0f * M_PIf * centerFreqHz * looptimeUs * 1e-6f;
+    const float sn = sin_approx(centerPhaseDeg * RAD);
+    const float gain = (1 + sn) / (1 - sn);
+    const float alpha = (12 - sq(omega)) / (6 * omega * sqrtf(gain));  // approximate prewarping (series expansion)
+
+    filter->b0 = 1 + alpha * gain;
+    filter->b1 = 2 - filter->b0;
+    filter->a1 = 1 - alpha;
+
+    const float a0 = 1 / (1 + alpha);
+
+    filter->b0 *= a0;
+    filter->b1 *= a0;
+    filter->a1 *= a0;
+}
+
+FAST_CODE float phaseCompApply(phaseComp_t *filter, const float input)
+{
+    // compute result
+    const float result = filter->b0 * input + filter->b1 * filter->x1 - filter->a1 * filter->y1;
+
+    // shift input to x1 and result to y1
+    filter->x1 = input;
+    filter->y1 = result;
+
+    return result;
+}
+
 
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
 {

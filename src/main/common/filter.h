@@ -19,7 +19,9 @@
  */
 
 #pragma once
+
 #include <stdbool.h>
+#include <stdint.h>
 
 struct filter_s;
 typedef struct filter_s filter_t;
@@ -55,6 +57,11 @@ typedef struct biquadFilter_s {
     float weight;
 } biquadFilter_t;
 
+typedef struct phaseComp_s {
+    float b0, b1, a1;
+    float x1, y1;
+} phaseComp_t;
+
 typedef struct laggedMovingAverage_s {
     uint16_t movingWindowIndex;
     uint16_t windowSize;
@@ -89,6 +96,10 @@ float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 float filterGetNotchQ(float centerFreq, float cutoffFreq);
+
+void phaseCompInit(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
+void phaseCompUpdate(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
+float phaseCompApply(phaseComp_t *filter, const float input);
 
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf);
 float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float input);
