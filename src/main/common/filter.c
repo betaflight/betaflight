@@ -130,30 +130,7 @@ FAST_CODE float pt3FilterApply(pt3Filter_t *filter, float input)
 }
 
 
-// Slew filter with limit
-
-void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
-{
-    filter->state = 0.0f;
-    filter->slewLimit = slewLimit;
-    filter->threshold = threshold;
-}
-
-FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
-{
-    if (filter->state >= filter->threshold) {
-        if (input >= filter->state - filter->slewLimit) {
-            filter->state = input;
-        }
-    } else if (filter->state <= -filter->threshold) {
-        if (input <= filter->state + filter->slewLimit) {
-            filter->state = input;
-        }
-    } else {
-        filter->state = input;
-    }
-    return filter->state;
-}
+// Biquad filter
 
 // get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
 // Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
@@ -309,6 +286,34 @@ FAST_CODE float phaseCompApply(phaseComp_t *filter, const float input)
 }
 
 
+// Slew filter with limit
+
+void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
+{
+    filter->state = 0.0f;
+    filter->slewLimit = slewLimit;
+    filter->threshold = threshold;
+}
+
+FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
+{
+    if (filter->state >= filter->threshold) {
+        if (input >= filter->state - filter->slewLimit) {
+            filter->state = input;
+        }
+    } else if (filter->state <= -filter->threshold) {
+        if (input <= filter->state + filter->slewLimit) {
+            filter->state = input;
+        }
+    } else {
+        filter->state = input;
+    }
+    return filter->state;
+}
+
+
+// Moving average
+
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
 {
     filter->movingWindowIndex = 0;
@@ -331,10 +336,18 @@ FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float i
     }
 
     const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
-    return filter->movingSum  / denom;
+    return filter->movingSum / denom;
 }
 
+
 // Simple fixed-point lowpass filter based on integer math
+
+void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift)
+{
+    filter->fp = 0;
+    filter->beta = beta;
+    filter->fpShift = fpShift;
+}
 
 int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal)
 {
@@ -345,11 +358,13 @@ int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal)
     return result;
 }
 
-void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift)
+
+// Mean accumulator
+
+void meanAccumulatorInit(meanAccumulator_t *filter)
 {
-    filter->fp = 0;
-    filter->beta = beta;
-    filter->fpShift = fpShift;
+    filter->accumulator = 0;
+    filter->count = 0;
 }
 
 void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal)
@@ -366,10 +381,4 @@ int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue)
         return retVal;
     }
     return defaultValue;
-}
-
-void meanAccumulatorInit(meanAccumulator_t *filter)
-{
-    filter->accumulator = 0;
-    filter->count = 0;
 }
