@@ -26,6 +26,10 @@
 #define BOARD_NAME        NBD_CRICKETF7V2
 #define MANUFACTURER_ID   NEBD
 
+#define USE_ACC
+#define USE_GYRO
+#define USE_ACCGYRO_BMI270
+
 #define BEEPER_PIN           PC15
 #define MOTOR1_PIN           PB4
 #define MOTOR2_PIN           PB1
