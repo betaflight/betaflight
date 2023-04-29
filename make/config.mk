@@ -57,17 +57,19 @@ configs_clean:
 configs: $(BASE_CONFIGS_FILE)
 	@echo "Valid configs: $(BASE_CONFIGS)"
 
-.SECONDEXPANSION:
-$(BASE_CONFIGS): $$(CONFIG_DIR)/$$(FC_VER)/$$@/config.h
-	$(V0) @echo "Building config $@" && \
+$(BASE_CONFIGS):
+	$(V0) $(MAKE) $(CONFIG_DIR)/$(FC_VER)/$@/config.h && \
+	$(V0) echo "Building config $@" && \
 	$(V0) $(MAKE) hex CONFIG=$@ && \
-	$(V0) @echo "Building config $@ succeeded."
+	$(V0) echo "Building config $@ succeeded."
 
 ## <CONFIG>_clean    : clean up one specific config (alias for above)
 $(CONFIGS_CLEAN): $(BASE_CONFIGS_FILE)
 	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
-CONFIGS_REVISION = $(addsuffix _rev,$(BASE_CONFIGS))
 ## <CONFIG>_rev    : build configured target and add revision to filename
-$(CONFIGS_REVISION):
+$(addsuffix _rev,$(BASE_CONFIGS)):
+	$(V0) $(MAKE) $(CONFIG_DIR)/$(FC_VER)/$(subst _rev,,$@)/config.h && \
+	$(V0) echo "Building config $@" && \
 	$(V0) $(MAKE) hex REV=yes CONFIG=$(subst _rev,,$@)
+	$(V0) echo "Building config $@ succeeded."
