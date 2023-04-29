@@ -124,7 +124,7 @@ endif
 HSE_VALUE       ?= 8000000
 
 BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
-CI_TARGETS       := $(BASE_TARGETS)
+CI_TARGETS       := $(BASE_TARGETS) $(filter CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722, $(BASE_CONFIGS))
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
 REVISION := norevision
