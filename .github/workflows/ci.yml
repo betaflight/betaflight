@@ -58,6 +58,10 @@ jobs:
           path: tools
           key: ${{ runner.os }}-${{ hashFiles('make/tools.mk') }}
 
+      - name: Hydrate configuration
+        id: get-config
+        run: make configs
+
       - name: Build target (without revision)
         if: inputs.release_build == true
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
