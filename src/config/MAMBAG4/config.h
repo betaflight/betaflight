@@ -64,31 +64,36 @@
 #define UART1_TX_PIN         PA9
 #define UART2_RX_PIN         PB4
 #define UART2_TX_PIN         PB3
-#define UART3_RX_PIN         PB11
-#define UART3_TX_PIN         PB10
+#define UART3_TX_PIN         PB9
 #define UART4_RX_PIN         PC11
 #define UART4_TX_PIN         PC10
-#define SOFTSERIAL1_TX_PIN   PB9
+// alternative for UART5 ESC TLM
+#define LPUART1_RX_PIN       PB11
 
 #define TIMER_PIN_MAPPING \
     TIMER_PIN_MAP( 0, MOTOR1_PIN, 1,  1) \
     TIMER_PIN_MAP( 1, MOTOR2_PIN, 1,  2) \
     TIMER_PIN_MAP( 2, MOTOR3_PIN, 1,  3) \
     TIMER_PIN_MAP( 3, MOTOR4_PIN, 1,  4) \
-    TIMER_PIN_MAP( 4, LED_STRIP_PIN, 3,  9)
+    TIMER_PIN_MAP( 4, LED_STRIP_PIN, 3, 12)
 
 
-#define ADC1_DMA_OPT                    1
-#define TIMUP2_DMA_OPT                  0
-#define TIMUP8_DMA_OPT                  0
+#define ADC1_DMA_OPT                    10
+#define ADC2_DMA_OPT                    11
 
+#define SPI_RX_DMA_OPT                  6
+#define SPI_TX_DMA_OPT                  7
+#define SPI_RX_DMA_OPT                  8
+#define SPI_TX_DMA_OPT                  9
+
+#define ADC_INSTANCE                    ADC2
 #define BARO_I2C_INSTANCE               (I2CDEV_1)
 #define BEEPER_INVERTED
 #define DEFAULT_BLACKBOX_DEVICE         BLACKBOX_DEVICE_FLASH
 #define DEFAULT_DSHOT_BURST             DSHOT_DMAR_ON
 #define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
-#define DEFAULT_PID_PROCESS_DENOM 2
+#define DEFAULT_PID_PROCESS_DENOM       2
 #define MAX7456_SPI_INSTANCE            SPI2
 #define FLASH_SPI_INSTANCE              SPI2
 #define USE_SPI_GYRO

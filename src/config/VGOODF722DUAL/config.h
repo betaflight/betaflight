@@ -26,6 +26,15 @@
 #define BOARD_NAME        VGOODF722DUAL
 #define MANUFACTURER_ID   VGRC
 
+#define USE_ACC
+#define USE_ACC_SPI_MPU6000
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_FLASH
+#define USE_FLASH_W25Q128FV
+#define USE_GYRO
+#define USE_GYRO_SPI_MPU6000
+
 #define BEEPER_PIN           PC13
 #define MOTOR1_PIN           PB4
 #define MOTOR2_PIN           PB5
@@ -88,7 +97,6 @@
 #define ADC1_DMA_OPT        1
 
 #define MAG_I2C_INSTANCE (I2CDEV_2)
-#define USE_BARO
 #define BARO_I2C_INSTANCE (I2CDEV_1)
 
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
