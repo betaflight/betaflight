@@ -51,7 +51,7 @@ $(BASE_CONFIGS_FILE):
 	$(V0) curl -L -k -o "$@" $(if $(wildcard $@),-z "$@") "$(BASE_CONFIGS_URL)"
 
 .PHONY: configs_clean
-configs_clean: $(BASE_CONFIGS_FILE)
+configs_clean:
 	@echo "Cleaning configuration files for $(FC_VER)"
 	@rm -rf $(CONFIG_DIR)/$(FC_VER)/*
 
@@ -69,7 +69,3 @@ $(BASE_CONFIGS): $$(CONFIG_DIR)/$$(FC_VER)/$$@/config.h
 $(CONFIGS_CLEAN): $(BASE_CONFIGS_FILE)
 	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
-ifeq ($(CONFIG),)
-%:
-	@echo "No rule to make target '$@'. \nHave you hydrated configuration using 'make configs'?"
-endif
