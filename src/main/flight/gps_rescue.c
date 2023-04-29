@@ -112,6 +112,8 @@ typedef struct {
     float alitutudeStepCm;
     float maxPitchStep;
     float absErrorAngle;
+    float groundspeedErrorRatioInv;
+    float dcm_kpModifier;
 } rescueSensorData_s;
 
 typedef struct {
@@ -233,7 +235,8 @@ static void rescueAttainPosition(void)
         throttleI = 0.0f;
         previousAltitudeError = 0.0f;
         throttleAdjustment = 0;
-        rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold / 10.0f;
+        rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
+        rescueState.sensor.dcm_kpModifier = 1.0f;
         return;
     case RESCUE_DO_NOTHING:
         // 20s of slow descent for switch induced sanity failures to allow time to recover
@@ -535,7 +538,7 @@ static void sensorUpdate(void)
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS); // groundspeed cm/s
+//    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS); // groundspeed cm/s
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse); // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw); // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome); // degrees * 10
@@ -566,6 +569,22 @@ static void sensorUpdate(void)
     rescueState.sensor.distanceToHomeCm = GPS_distanceToHomeCm;
     rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm / 100.0f;
     rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed; // cm/s
+
+    // values to modify dcm_kp to a low value when climbing, and a higher value when there is a velocity error
+    if (gpsRescueConfig()->rescueGroundspeed) {
+        const float setGroundspeedInv = 1.0f / gpsRescueConfig()->rescueGroundspeed;
+        float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) * setGroundspeedInv;
+        // zero if groundspeed = velocity to home,
+        // 1 if flying sideways at target groundspeed but zero home velocity,
+        // 2 if flying backwards at target groundspeed
+        groundspeedErrorRatio = constrainf(1.0f + groundspeedErrorRatio, 1.0f, 5.0f);
+        // limit to max 5
+        const bool climbOrRotate = (rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE);
+        rescueState.sensor.dcm_kpModifier = (climbOrRotate) ? 0.0f : groundspeedErrorRatio;
+        // zero dcm_kp during climb or rotate, to stop IMU error accumulation arising from drift during long climbs
+        rescueState.sensor.groundspeedErrorRatioInv = 1.0f / groundspeedErrorRatio;
+        // used to limit the pitch angle during the flight home, avoiding high speed flyaways during IMU error states
+    }
 
     rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
     // Range from 10ms (100hz) to 1000ms (1Hz). Intended to cover common GPS data rates and exclude unusual values.
@@ -758,7 +777,7 @@ void gpsRescueUpdate(void)
             rescueState.intent.yawAttenuator += rescueState.sensor.gpsRescueTaskIntervalSeconds;
         }
         if (rescueState.sensor.absErrorAngle < 30.0f) {
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle; // allow pitch
+            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedErrorRatioInv; // allow pitch
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
             rescueState.intent.proximityToLandingArea = 1.0f; // velocity iTerm activated, initialise proximity for descent phase at 1.0
@@ -792,10 +811,13 @@ void gpsRescueUpdate(void)
 
         rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.velocityItermRelax * gpsRescueConfig()->maxRescueAngle;
         // gradually gain roll capability to max of half of max pitch angle
-
+ 
         if (newGPSData) {
+            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedErrorRatioInv;
+            // cut back on allowed angle if there is a high groundspeed error
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
                 rescueState.phase = RESCUE_DESCENT;
+                rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
                 rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
             }
         }
@@ -851,6 +873,11 @@ void gpsRescueUpdate(void)
 float gpsRescueGetYawRate(void)
 {
     return rescueYaw;
+}
+
+float gpsRescueGetDcmKpModifier(void)
+{
+    return rescueState.sensor.dcm_kpModifier;
 }
 
 float gpsRescueGetThrottle(void)

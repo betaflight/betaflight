@@ -415,7 +415,14 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
     if (attitudeResetActive) {
         ret = ATTITUDE_RESET_KP_GAIN;
     } else {
-       ret = imuRuntimeConfig.dcm_kp;
+        ret = imuRuntimeConfig.dcm_kp;
+#ifdef USE_GPS_RESCUE
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            ret *= gpsRescueGetDcmKpModifier();
+            // converge faster if groundspeed differs significantly from velocity to home during fly home phase
+            // don't converge while climbing or rotating, keeping the original IMU information, which in most cases should be correct
+        }
+#endif
        if (!armState) {
           ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
        }
