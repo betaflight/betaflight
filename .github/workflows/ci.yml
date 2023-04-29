@@ -21,6 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Hydrate configuration
+        id: get-config
+        run: make configs
+
       - name: Get all official build targets
         id: get-targets
         run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
@@ -56,7 +60,7 @@ jobs:
       - name: Build target (without revision)
         if: inputs.release_build == true
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
-        
+
       - name: Build target (with revision)
         if: inputs.release_build == false
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev

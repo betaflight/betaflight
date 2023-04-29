@@ -3,13 +3,9 @@ API_URL           := https://build.betaflight.com/api/config
 BASE_CONFIGS_URL  := $(API_URL)/$(FC_VER)/targets
 BASE_CONFIGS_FILE := $(CONFIG_DIR)/$(FC_VER)/targets.lst
 
-BASE_CONFIGS_DATE  = $(if $(wildcard $(BASE_CONFIGS_FILE)),-z "$(BASE_CONFIGS_FILE)",)
-BASE_CONFIGS       = $(if $(wildcard $(BASE_CONFIGS_FILE)),$(sort $(shell cat $(BASE_CONFIGS_FILE))),)
-
+BASE_CONFIGS      = $(if $(wildcard $(BASE_CONFIGS_FILE)),$(sort $(shell cat $(BASE_CONFIGS_FILE))),)
 CONFIG_FILES      = $(addsuffix /config.h, $(addprefix $(CONFIG_DIR)/$(FC_VER)/,$(BASE_CONFIGS)))
-
 CONFIGS_CLEAN 	  = $(addsuffix _clean,$(BASE_CONFIGS))
-
 
 ifneq ($(CONFIG),)
 
@@ -39,6 +35,8 @@ ifneq ($(EXST_ADJUST_VMA),)
 EXST = yes
 endif
 
+else #exists
+$(error $(CONFIG_FILE) not found. Have you hydrated configuration using: 'make configs'?)
 endif #config_file exists
 endif #config
 
@@ -62,10 +60,14 @@ configs: $(BASE_CONFIGS_FILE)
 .SECONDEXPANSION:
 $(BASE_CONFIGS): $$(CONFIG_DIR)/$$(FC_VER)/$$@/config.h
 	$(V0) @echo "Building config $@" && \
-	$(MAKE) hex CONFIG=$@ && \
-	echo "Building config $@ succeeded."
+	$(V0) $(MAKE) hex CONFIG=$@ && \
+	$(V0) @echo "Building config $@ succeeded."
 
 ## <CONFIG>_clean    : clean up one specific config (alias for above)
 $(CONFIGS_CLEAN): $(BASE_CONFIGS_FILE)
 	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
+CONFIGS_REVISION = $(addsuffix _rev,$(BASE_CONFIGS))
+## <CONFIG>_rev    : build configured target and add revision to filename
+$(CONFIGS_REVISION):
+	$(V0) $(MAKE) hex REV=yes CONFIG=$(subst _rev,,$@)

@@ -48,7 +48,6 @@ SDK_INSTALL_MARKER := $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc-$(GCC_REQUIRED_VERSIO
 
 # order-only prereq on directory existance:
 arm_sdk_install: | $(TOOLS_DIR)
-
 arm_sdk_install: arm_sdk_download $(SDK_INSTALL_MARKER)
 
 $(SDK_INSTALL_MARKER):
@@ -65,7 +64,6 @@ arm_sdk_download: $(DL_DIR)/$(ARM_SDK_FILE)
 $(DL_DIR)/$(ARM_SDK_FILE):
     # download the source only if it's newer than what we already have
 	$(V1) curl -L -k -o "$@" $(if $(wildcard $@), -z "$@",) "$(ARM_SDK_URL)"
-
 
 ## arm_sdk_clean     : Uninstall Arm SDK
 .PHONY: arm_sdk_clean

@@ -114,8 +114,10 @@ FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 # import config handling
 include $(ROOT)/make/config.mk
 
+ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
+endif
 endif
 
 # default xtal value
@@ -463,7 +465,7 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 all: $(CI_TARGETS)
 
 $(BASE_TARGETS):
-	$(V0) @echo "Building $@" && \
+	$(V0) @echo "Building target $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
@@ -549,11 +551,6 @@ TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
 
-CONFIGS_REVISION = $(addsuffix _rev,$(BASE_CONFIGS))
-## <CONFIG>_rev    : build configured target and add revision to filename
-$(CONFIGS_REVISION):
-	$(V0) $(MAKE) hex REV=yes CONFIG=$(subst _rev,,$@)
-
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
 unbrick_$(TARGET): $(TARGET_HEX)
@@ -584,9 +581,14 @@ help: Makefile make/tools.mk
 	@echo "Makefile for the $(FORKNAME) firmware"
 	@echo ""
 	@echo "Usage:"
-	@echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	@echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
 	@echo "Or:"
-	@echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
+	@echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
+	@echo "Or:"
+	@echo "        make <config-target> [V=<verbosity>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
+	@echo ""
+	@echo "To pupulate configuration targets:"
+	@echo "        make configs"
 	@echo ""
 	@echo "Valid TARGET values are: $(BASE_TARGETS)"
 	@echo ""
