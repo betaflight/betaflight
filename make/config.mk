@@ -8,7 +8,7 @@ BASE_CONFIGS      = $(sort \
                         $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/$(FC_VER)/*/config.h)))) \
                     )
 
-ifneq ($(filter-out %_install test% clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
+ifneq ($(filter-out %_install test% %_clean clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
 ifeq ($(wildcard $(BASE_CONFIGS_FILE)),)
 $(error `$(BASE_CONFIGS_FILE)` not found. Have you hydrated configuration using: 'make configs'?)
 endif
