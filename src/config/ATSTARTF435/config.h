@@ -22,7 +22,7 @@
 #define FC_TARGET_MCU     AT32F435M
 
 #define BOARD_NAME        ATSTARTF435
-#define MANUFACTURER_ID   AT
+#define MANUFACTURER_ID   ATRY
 
 // AT-START-F435 V1.0 LED assignments to use as a default
 #define LED0_PIN                PD13 // Labelled LED2 Red
