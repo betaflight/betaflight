@@ -27,7 +27,6 @@ from_filename = sys.argv[2]
 to_filename = language + '/bf_locale.h'
 
 print(language + ': ' + from_filename + ' -> '+ to_filename)
-print("\n")
 
 fw = open(to_filename, 'w')
 wr_bf_header(fw, "bf_header")
@@ -67,7 +66,7 @@ with open(from_filename, "r") as fr:
         prevDescription = description
     # for
 
-    print("Done reading json file")
+    print("Done reading json file\n")
 # with
 
 fr.close()
