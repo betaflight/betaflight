@@ -40,7 +40,7 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
     .initialAltitudeM = 30,
     .rescueGroundspeed = 750,
-    .maxRescueAngle = 70,
+    .maxRescueAngle = 40,
     .rollMix = 150,
     .pitchCutoffHz = 75,
 
