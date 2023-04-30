@@ -16,7 +16,9 @@ def wr_define(outFile, id, mes, desc, error):
     else:
         newline = id + ": " + error + " " * max(1, 30 - len(id)) + mes + " " * max(1, 38 - len(mes)) + "\t// " + desc + '\n'
     print(newline, file=outFile)
+    # debug print(newline)
 
+hdKey = "_HD"
 lenSearch = "Max length:"
 lenDelimiter = ";"
 
@@ -45,7 +47,7 @@ with open(from_filename, "r") as fr:
         start = description.find(lenSearch) + len(lenSearch)
         end = description.find(lenDelimiter, start)
         maxLen = int(description[start:end].strip()) + 2        # add count for ""
-        #debug print(" currentKey: ", currentKey, ": prevKey: ", prevKey, " maxLen: ", maxLen)
+        # debug print(" currentKey: ", currentKey, ": prevKey: ", prevKey, " maxLen: ", maxLen)
 
         if len(message) > maxLen and maxLen > 0:
             errorMess = "ERROR - maximum length " + str(maxLen) + " exceed for: " + message + '/' + str(len(message))
@@ -53,16 +55,17 @@ with open(from_filename, "r") as fr:
         else:
             errorMess = ""
 
-        if currentKey == prevKey + "_HD":
+        if currentKey == prevKey + hdKey:
             mess = 'TR2("' + prevMessage + '", "' + message + '")'
-            wr_define(fw, prevKey, mess, prevDescription + "; " + description, errorMess)
+            wr_define(fw, prevKey, mess, prevDescription + "; HD> " + description, errorMess)
         else:
-            #debug print("2 currentKey: ", currentKey, ": prevKey: ", prevKey)
-            if prevKey != "":
+            # debug print("2 currentKey: ", currentKey, ": prevKey: ", prevKey)
+            if prevKey != "" and not prevKey.find(hdKey) > 0:
                 wr_define(fw, prevKey, '"' + prevMessage + '"', prevDescription, errorMess)
         prevKey = currentKey
         prevMessage = message
         prevDescription = description
+    # for
 
     print("Done reading json file")
 # with
