@@ -82,6 +82,9 @@ endif
 # pre-build sanity checks
 include $(ROOT)/make/checks.mk
 
+# basic target list
+BASE_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
+
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
@@ -123,7 +126,6 @@ endif
 # default xtal value
 HSE_VALUE       ?= 8000000
 
-BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
 CI_TARGETS       := $(BASE_TARGETS) $(filter CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722, $(BASE_CONFIGS))
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
 

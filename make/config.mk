@@ -3,7 +3,17 @@ API_URL           := https://build.betaflight.com/api/config
 BASE_CONFIGS_URL  := $(API_URL)/$(FC_VER)/targets
 BASE_CONFIGS_FILE := $(CONFIG_DIR)/$(FC_VER)/targets.lst
 
-BASE_CONFIGS      = $(if $(wildcard $(BASE_CONFIGS_FILE)),$(sort $(shell cat $(BASE_CONFIGS_FILE))),)
+BASE_CONFIGS      = $(sort \
+                        $(if $(wildcard $(BASE_CONFIGS_FILE)),$(sort $(shell cat $(BASE_CONFIGS_FILE))),) \
+                        $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/$(FC_VER)/*/config.h)))) \
+                    )
+
+ifneq ($(filter-out %_install test% clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
+ifeq ($(wildcard $(BASE_CONFIGS_FILE)),)
+$(error `$(BASE_CONFIGS_FILE)` not found. Have you hydrated configuration using: 'make configs'?)
+endif
+endif
+
 CONFIG_FILES      = $(addsuffix /config.h, $(addprefix $(CONFIG_DIR)/$(FC_VER)/,$(BASE_CONFIGS)))
 CONFIGS_CLEAN 	  = $(addsuffix _clean,$(BASE_CONFIGS))
 
@@ -36,7 +46,7 @@ EXST = yes
 endif
 
 else #exists
-$(error $(CONFIG_FILE) not found. Have you hydrated configuration using: 'make configs'?)
+$(error `$(CONFIG_FILE)` not found. Have you hydrated configuration using: 'make configs'?)
 endif #config_file exists
 endif #config
 
@@ -58,10 +68,10 @@ configs: $(BASE_CONFIGS_FILE)
 	@echo "Valid configs: $(BASE_CONFIGS)"
 
 $(BASE_CONFIGS):
-	$(V0) $(MAKE) $(CONFIG_DIR)/$(FC_VER)/$@/config.h && \
-	$(V0) echo "Building config $@" && \
-	$(V0) $(MAKE) hex CONFIG=$@ && \
-	$(V0) echo "Building config $@ succeeded."
+	$(V0) $(MAKE) $(CONFIG_DIR)/$(FC_VER)/$@/config.h
+	@echo "Building target config $@"
+	$(V0) $(MAKE) hex CONFIG=$@
+	@echo "Building target config $@ succeeded."
 
 ## <CONFIG>_clean    : clean up one specific config (alias for above)
 $(CONFIGS_CLEAN): $(BASE_CONFIGS_FILE)
@@ -69,7 +79,4 @@ $(CONFIGS_CLEAN): $(BASE_CONFIGS_FILE)
 
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
-	$(V0) $(MAKE) $(CONFIG_DIR)/$(FC_VER)/$(subst _rev,,$@)/config.h && \
-	$(V0) echo "Building config $@" && \
-	$(V0) $(MAKE) hex REV=yes CONFIG=$(subst _rev,,$@)
-	$(V0) echo "Building config $@ succeeded."
+	$(V0) $(MAKE) -j $(subst _rev,,$@) REV=yes
