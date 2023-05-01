@@ -71,7 +71,7 @@
 
 // Remove these undefines as support is added
 //#undef USE_BEEPER
-#undef USE_LED_STRIP
+//#undef USE_LED_STRIP
 #undef USE_TRANSPONDER
 
 // #undef USE_DSHOT

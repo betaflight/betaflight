@@ -75,3 +75,6 @@
 #define USE_ADC
 #define USE_EXTI
 #define USE_TIMER_UP_CONFIG
+
+#define USE_LED_STRIP
+#define USE_LED_STRIP_STATUS_MODE
