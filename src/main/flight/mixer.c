@@ -344,34 +344,71 @@ static void applyFlipOverAfterCrashModeToMotors(void)
     }
 }
 
+
 static void applyRPMLimiter(void)
 {
-    //Street League spec settings
-    float forcedRPMLimit = 130.0f;
-    bool forcedLinearization = true;
-    int forcedMotorPoleCount = 14;
-    bool forceGovenor = true;
-
-    //Unlocked spec settings
-    //float forcedRPMLimit = mixerConfig()->govenor_rpm_limit;
-    //bool forcedLinearization = mixerConfig()->rpm_linearization;
-    //int forcedMotorPoleCount = motorConfig()->motorPoleCount;
-    //bool forceGovenor = mixerConfig()->govenor && motorConfig()->dev.useDshotTelemetry;
-    
-
-    if (forceGovenor) {
+    if (mixerRuntime.govenorEnabled) {
         float RPM_GOVENOR_LIMIT = 0;
         float averageRPM = 0;
         float averageRPM_smoothed = 0;
         float PIDOutput = 0;
         float rcCommandThrottle = (rcCommand[THROTTLE]-1000)/1000.0f;
+        float maxRPMLimit = 0;
+
+        maxRPMLimit = mixerRuntime.RPMLimit;
+        
+        //afterburner code
+        //if drone is armed
+        if (ARMING_FLAG(ARMED)) {
+            //if the afterburner switch is enguaged
+            if(IS_RC_MODE_ACTIVE(BOXUSER4)) {
+                //if the afterburner isn't initiated
+                if(mixerRuntime.afterburnerInitiated == false) {
+                    //if there's charge in the tank
+                    if(mixerRuntime.afterburnerTankPercent>0.0f) {
+                        //if we have another tank left
+                        if(mixerRuntime.afterburnerTanksRemaining>0) {
+                            mixerRuntime.afterburnerInitiated = true;
+                        }
+                    }
+                    
+                }
+            //if the afterburner switch is NOT enguaged
+            } else {
+                //if hold to boost is enabled
+                if(mixerRuntime.afterburnerHoldToBoost) {
+                    mixerRuntime.afterburnerInitiated = false;
+                }
+                //if the tank is empty, reset
+                if(mixerRuntime.afterburnerTankPercent<=0.0f) {
+                    mixerRuntime.afterburnerInitiated = false;
+                    mixerRuntime.afterburnerTankPercent = 100.0f;
+                    mixerRuntime.afterburnerTanksRemaining -= 1;  
+                } 
+            }
+
+            //use afterburner
+            if(mixerRuntime.afterburnerInitiated) {
+                //tank percent decreases linearly
+                mixerRuntime.afterburnerTankPercent -= (pidGetDT()/(mixerRuntime.afterburnerDuration))*100.0f;
+                //tank percent can never be above 100%
+                mixerRuntime.afterburnerTankPercent = MAX(mixerRuntime.afterburnerTankPercent,0.0f);
+                //increase the rpm limit
+                maxRPMLimit = mixerRuntime.RPMLimit+(mixerRuntime.afterburnerRPM*mixerRuntime.afterburnerTankPercent*0.01f);
+            }
+        }else{
+            if(mixerRuntime.afterburnerReset) {
+                mixerRuntime.afterburnerTankPercent = 100.0f;
+                mixerRuntime.afterburnerTanksRemaining = mixerConfig()->govenor_rpm_afterburner_tank_count;
+            }
+        }
 
         //Street League customization
-        if (forcedLinearization) {
-            //scales rpm setpoint between idle rpm and rpm limit based on throttle percent
-            RPM_GOVENOR_LIMIT = ((forcedRPMLimit - mixerConfig()->govenor_idle_rpm))*100.0f*(rcCommandThrottle) + mixerConfig()->govenor_idle_rpm * 100.0f;
+        if (mixerRuntime.rpmLinearization) {
+            //scales rpm setpoint between idle rpm and max rpm limit based on throttle percent
+            RPM_GOVENOR_LIMIT = ((maxRPMLimit - mixerConfig()->govenor_idle_rpm))*100.0f*(rcCommandThrottle) + mixerConfig()->govenor_idle_rpm * 100.0f;
 
-            //limit the speed with which the rpm setpoint can increase based on the rpm_limiter_acceleration_limit cli command
+            //limit the speed with which the rpm setpoint can change based on the rpm_limiter_acceleration_limit cli command
             float acceleration = RPM_GOVENOR_LIMIT - mixerRuntime.govenorPreviousRPMLimit;
             if(acceleration > 0) {
                 acceleration = MIN(acceleration, mixerRuntime.govenorAccelerationLimit);
@@ -381,21 +418,24 @@ static void applyRPMLimiter(void)
                 acceleration = MAX(acceleration, -mixerRuntime.govenorDecelerationLimit);
                 RPM_GOVENOR_LIMIT = mixerRuntime.govenorPreviousRPMLimit + acceleration;
             }
-        } 
-        else {
+        } else {
             throttle = throttle * mixerRuntime.govenorExpectedThrottleLimit;
-            RPM_GOVENOR_LIMIT = ((forcedRPMLimit))*100.0f;
+            RPM_GOVENOR_LIMIT = ((maxRPMLimit))*100.0f;
         }
 
         //get the rpm averaged across the motors
         bool motorsSaturated = false;
+        //bool motorsDesaturated = false;
         for (int i = 0; i < getMotorCount(); i++) {
             averageRPM += getDshotTelemetry(i);
             if (motor[i] >= motorConfig()->maxthrottle) {
                 motorsSaturated = true;
             }
+            /*if (motor[i] <= motorConfig()->minthrottle) {
+                motorsDesaturated = true;
+            }*/
         }
-        averageRPM = 100 * averageRPM / (getMotorCount()*forcedMotorPoleCount/2.0f);
+        averageRPM = 100 * averageRPM / (getMotorCount()*mixerRuntime.motorPoleCount/2.0f);
 
         //get the smoothed rpm to avoid d term noise
         averageRPM_smoothed = mixerRuntime.govenorPreviousSmoothedRPM + mixerRuntime.govenorDelayK * (averageRPM - mixerRuntime.govenorPreviousSmoothedRPM); //kinda braindead to convert to rps then back
@@ -404,7 +444,8 @@ static void applyRPMLimiter(void)
         float govenorP = smoothedRPMError * mixerRuntime.govenorPGain; //+ when overspped
         float govenorD = (smoothedRPMError-mixerRuntime.govenorPreviousSmoothedRPMError) * mixerRuntime.govenorDGain; // + when quickly going overspeed
         
-        if (forcedLinearization) {
+        if (mixerRuntime.rpmLinearization) {
+            /*
             //don't let I term wind up if throttle is below the motor idle
             if (rcCommandThrottle < motorConfig()->digitalIdleOffsetValue / 10000.0f) {
                 mixerRuntime.govenorI *= 1.0f/(1.0f+(pidGetDT()*10.0f)); //slowly ramp down i term instead of resetting to avoid throttle pulsing cheats
@@ -414,7 +455,20 @@ static void applyRPMLimiter(void)
                 {
                     mixerRuntime.govenorI += smoothedRPMError * mixerRuntime.govenorIGain; // + when overspeed
                 }
+            }*/
+
+            //don't let I term wind up if throttle is below the motor idle
+            if (rcCommandThrottle < motorConfig()->digitalIdleOffsetValue / 10000.0f) {
+                //mixerRuntime.govenorI *= 1.0f/(1.0f+(pidGetDT()*10.0f)); //slowly ramp down i term instead of resetting to avoid throttle pulsing cheats
+                mixerRuntime.govenorI = 0.0f;
+            } else {
+                //don't let I term wind up if motors are saturated. Otherwise, motors may stay at high throttle even after low throttle is commanded
+                if(!motorsSaturated)
+                {
+                    mixerRuntime.govenorI += smoothedRPMError * mixerRuntime.govenorIGain; // + when overspeed
+                }
             }
+
             //sum our pid terms
             PIDOutput = govenorP + mixerRuntime.govenorI + govenorD; //more + when overspeed, should be subtracted from throttle
         
@@ -435,7 +489,7 @@ static void applyRPMLimiter(void)
             
         }
         if (mixerRuntime.govenor_init) {
-            if (forcedLinearization) {
+            if (mixerRuntime.rpmLinearization) {
                 throttle = constrainf(-PIDOutput, 0.0f, 1.0f);
             } else {
                 throttle = constrainf(throttle-PIDOutput, 0.0f, 1.0f);
@@ -449,10 +503,15 @@ static void applyRPMLimiter(void)
         mixerRuntime.govenorPreviousSmoothedRPMError = smoothedRPMError;
         mixerRuntime.govenorPreviousRPMLimit = RPM_GOVENOR_LIMIT;
         
-        //DEBUG_SET(DEBUG_RPM_LIMITER, 0, averageRPM);
-        //DEBUG_SET(DEBUG_RPM_LIMITER, 1, smoothedRPMError);
-        //DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.govenorI*100.0f);
-        //DEBUG_SET(DEBUG_RPM_LIMITER, 3, govenorD*10000.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 0, averageRPM);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 1, smoothedRPMError);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.govenorI*100.0f);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 3, govenorD*10000.0f);
+        
+        /*DEBUG_SET(DEBUG_RPM_LIMITER, 0, mixerRuntime.afterburnerInitiated);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 1, mixerRuntime.afterburnerTankPercent);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 2, mixerRuntime.afterburnerTanksRemaining);
+        DEBUG_SET(DEBUG_RPM_LIMITER, 3, maxRPMLimit);*/
     }
 }
 

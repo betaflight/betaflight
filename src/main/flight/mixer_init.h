@@ -59,6 +59,17 @@ typedef struct mixerRuntime_s {
     float prevAverageRPM;
     float govenorPreviousSmoothedRPMError;
     float minRPMDelayK;
+    float afterburnerRPM;
+    bool afterburnerReset;
+    bool afterburnerHoldToBoost;
+    float afterburnerDuration;
+    float afterburnerTankPercent;
+    bool afterburnerInitiated;
+    int afterburnerTanksRemaining;
+    bool rpmLinearization;
+    float RPMLimit;
+    int motorPoleCount;
+    bool govenorEnabled;
     float govenorI;
     float govenorPGain;
     float govenorIGain;

@@ -49,6 +49,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/mixer_init.h"
 #include "flight/pid.h"
 
 #include "io/beeper.h"
@@ -375,7 +376,11 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *displayAttr = DISPLAYPORT_ATTR_WARNING;
         *blinking = true;
         return;
-    }
+    }/*else if (mixerRuntime.afterburnerInitiated) {
+        tfp_sprintf(warningText, "BOOST ENGAGED");
+        *displayAttr = DISPLAYPORT_ATTR_CRITICAL;
+        return;
+    }*/
 
 #ifdef USE_RC_SMOOTHING_FILTER
     // Show warning if rc smoothing hasn't initialized the filters
