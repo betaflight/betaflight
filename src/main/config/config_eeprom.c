@@ -83,8 +83,8 @@ typedef struct {
     uint32_t word;
 } PG_PACKED packingTest_t;
 
-#if defined(CONFIG_IN_EXTERNAL_FLASH)
-bool loadEEPROMFromExternalFlash(void)
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
+MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
 {
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
     const flashGeometry_t *flashGeometry = flashGetGeometry();
@@ -95,7 +95,9 @@ bool loadEEPROMFromExternalFlash(void)
     int bytesRead = 0;
 
     bool success = false;
-
+#ifdef CONFIG_IN_MEMORY_MAPPED_FLASH
+    flashMemoryMappedModeDisable();
+#endif
     do {
         bytesRead = flashReadBytes(flashStartAddress + totalBytesRead, &eepromData[totalBytesRead], EEPROM_SIZE - totalBytesRead);
         if (bytesRead > 0) {
@@ -103,9 +105,55 @@ bool loadEEPROMFromExternalFlash(void)
             success = (totalBytesRead == EEPROM_SIZE);
         }
     } while (!success && bytesRead > 0);
+#ifdef CONFIG_IN_MEMORY_MAPPED_FLASH
+    flashMemoryMappedModeEnable();
+#endif
 
     return success;
 }
+
+#ifdef CONFIG_IN_MEMORY_MAPPED_FLASH
+MMFLASH_CODE_NOINLINE void saveEEPROMToMemoryMappedFlash(void)
+{
+    const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
+    const flashGeometry_t *flashGeometry = flashGetGeometry();
+
+    uint32_t flashSectorSize = flashGeometry->sectorSize;
+    uint32_t flashPageSize = flashGeometry->pageSize;
+
+    uint32_t flashStartAddress = flashPartition->startSector * flashGeometry->sectorSize;
+
+    uint32_t bytesRemaining = EEPROM_SIZE;
+    uint32_t offset = 0;
+
+    flashMemoryMappedModeDisable();
+
+    do {
+        uint32_t flashAddress = flashStartAddress + offset;
+
+        uint32_t bytesToWrite = bytesRemaining;
+        if (bytesToWrite > flashPageSize) {
+            bytesToWrite = flashPageSize;
+        }
+
+        bool onSectorBoundary = flashAddress % flashSectorSize == 0;
+        if (onSectorBoundary) {
+            flashEraseSector(flashAddress);
+        }
+
+        flashPageProgram(flashAddress, (uint8_t *)&eepromData[offset], bytesToWrite, NULL);
+
+        bytesRemaining -= bytesToWrite;
+        offset += bytesToWrite;
+    } while (bytesRemaining > 0);
+
+    flashWaitForReady();
+
+    flashMemoryMappedModeEnable();
+}
+#endif
+
+
 #elif defined(CONFIG_IN_SDCARD)
 
 enum {
@@ -255,7 +303,7 @@ void initEEPROM(void)
 
 #if defined(CONFIG_IN_FILE)
     loadEEPROMFromFile();
-#elif defined(CONFIG_IN_EXTERNAL_FLASH)
+#elif defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     bool eepromLoaded = loadEEPROMFromExternalFlash();
     if (!eepromLoaded) {
         // Flash read failed - just die now
@@ -336,7 +384,7 @@ uint16_t getEEPROMConfigSize(void)
 
 size_t getEEPROMStorageSize(void)
 {
-#if defined(CONFIG_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 
     const flashPartition_t *flashPartition = flashPartitionFindByType(FLASH_PARTITION_TYPE_CONFIG);
     return FLASH_PARTITION_SECTOR_COUNT(flashPartition) * flashGetGeometry()->sectorSize;
@@ -464,7 +512,7 @@ void writeConfigToEEPROM(void)
         if (writeSettingsToEEPROM()) {
             success = true;
 
-#ifdef CONFIG_IN_EXTERNAL_FLASH
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
             // copy it back from flash to the in-memory buffer.
             success = loadEEPROMFromExternalFlash();
 #endif

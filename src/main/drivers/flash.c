@@ -36,8 +36,12 @@
 #include "flash_w25m.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_quadspi.h"
+#include "drivers/bus_octospi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
+#include "drivers/system.h"
+
+#ifdef USE_FLASH_SPI
 
 // 20 MHz max SPI frequency
 #define FLASH_MAX_SPI_CLK_HZ 20000000
@@ -47,13 +51,143 @@
 static extDevice_t devInstance;
 static extDevice_t *dev;
 
+#endif
+
 static flashDevice_t flashDevice;
 static flashPartitionTable_t flashPartitionTable;
 static int flashPartitions = 0;
 
 #define FLASH_INSTRUCTION_RDID 0x9F
 
-#ifdef USE_QUADSPI
+#ifdef USE_FLASH_MEMORY_MAPPED
+MMFLASH_CODE_NOINLINE void flashMemoryMappedModeDisable(void)
+{
+    __disable_irq();
+#ifdef USE_FLASH_OCTOSPI
+    octoSpiDisableMemoryMappedMode(flashDevice.io.handle.octoSpi);
+#else
+#error Invalid configuration - Not implemented
+#endif
+}
+
+MMFLASH_CODE_NOINLINE void flashMemoryMappedModeEnable(void)
+{
+#ifdef USE_FLASH_OCTOSPI
+    octoSpiEnableMemoryMappedMode(flashDevice.io.handle.octoSpi);
+    __enable_irq();
+#else
+#error Invalid configuration - Not implemented
+#endif
+}
+#endif
+
+#ifdef USE_FLASH_OCTOSPI
+MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashConfig)
+{
+    bool detected = false;
+
+    enum {
+        TRY_1LINE = 0, TRY_4LINE, BAIL
+    } phase = TRY_1LINE;
+
+#ifdef USE_FLASH_MEMORY_MAPPED
+    bool memoryMappedModeEnabledOnBoot = isMemoryMappedModeEnabledOnBoot();
+#else
+    bool memoryMappedModeEnabledOnBoot = false;
+#endif
+
+#ifndef USE_OCTOSPI_EXPERIMENTAL
+    if (!memoryMappedModeEnabledOnBoot) {
+        return false; // Not supported yet, enable USE_OCTOSPI_EXPERIMENTAL and test/update implementation as required.
+    }
+#endif
+
+    OCTOSPI_TypeDef *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
+
+    flashDevice.io.handle.octoSpi = instance;
+    flashDevice.io.mode = FLASHIO_OCTOSPI;
+
+    if (memoryMappedModeEnabledOnBoot) {
+        flashMemoryMappedModeDisable();
+    }
+
+    do {
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+        if (!memoryMappedMode) {
+            octoSpiSetDivisor(instance, OCTOSPI_CLOCK_INITIALISATION);
+        }
+#endif
+        // for the memory-mapped use-case, we rely on the bootloader to have already selected the correct speed for the flash chip.
+
+        // 3 bytes for what we need, but some IC's need 8 dummy cycles after the instruction, so read 4 and make two attempts to
+        // assemble the chip id from the response.
+        uint8_t readIdResponse[4];
+
+        bool status = false;
+        switch (phase) {
+        case TRY_1LINE:
+            status = octoSpiReceive1LINE(instance, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
+            break;
+        case TRY_4LINE:
+            status = octoSpiReceive4LINES(instance, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
+            break;
+        default:
+            break;
+        }
+
+        if (!status) {
+            phase++;
+            continue;
+        }
+
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+        if (!memoryMappedModeEnabledOnBoot) {
+            octoSpiSetDivisor(instance, OCTOSPI_CLOCK_ULTRAFAST);
+        }
+#endif
+
+        for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
+
+            uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+
+            if (offset == 0) {
+#if defined(USE_FLASH_W25Q128FV)
+                if (!detected && w25q128fv_identify(&flashDevice, jedecID)) {
+                    detected = true;
+                }
+#endif
+            }
+
+            if (offset == 1) {
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+                if (!memoryMappedModeEnabledOnBoot) {
+                    // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
+#if defined(USE_FLASH_W25N01G)
+                    if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
+                        detected = true;
+                    }
+#endif
+#if defined(USE_FLASH_W25M02G)
+                    if (!detected && w25m_identify(&flashDevice, jedecID)) {
+                        detected = true;
+                    }
+#endif
+                }
+#endif
+            }
+        }
+        phase++;
+    } while (phase != BAIL && !detected);
+
+    if (memoryMappedModeEnabledOnBoot) {
+        flashMemoryMappedModeEnable();
+    }
+    return detected;
+
+}
+#endif // USE_FLASH_OCTOSPI
+
+#ifdef USE_FLASH_QUADSPI
 static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 {
     bool detected = false;
@@ -62,6 +196,9 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     int phase = TRY_1LINE;
 
     QUADSPI_TypeDef *hqspi = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
+
+    flashDevice.io.handle.quadSpi = hqspi;
+    flashDevice.io.mode = FLASHIO_QUADSPI;
 
     do {
         quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_INITIALISATION);
@@ -87,19 +224,16 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
             continue;
         }
 
-        flashDevice.io.handle.quadSpi = hqspi;
-        flashDevice.io.mode = FLASHIO_QUADSPI;
-
         quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_ULTRAFAST);
 
 
         for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
 
-            uint32_t chipID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+            uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
 
             if (offset == 0) {
-#ifdef USE_FLASH_W25Q128FV
-                if (!detected && w25q128fv_detect(&flashDevice, chipID)) {
+#if defined(USE_FLASH_W25Q128FV)
+                if (!detected && w25q128fv_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
@@ -112,20 +246,20 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
             }
 
             if (offset == 1) {
-#ifdef USE_FLASH_W25N01G
-                if (!detected && w25n01g_detect(&flashDevice, chipID)) {
+#if defined(USE_FLASH_W25N01G)
+                if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
 #if defined(USE_FLASH_W25M02G)
-                if (!detected && w25m_detect(&flashDevice, chipID)) {
+                if (!detected && w25m_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
             }
 
             if (detected) {
-                flashDevice.geometry.jedecId = chipID;
+                flashDevice.geometry.jedecId = jedecID;
             }
         }
         phase++;
@@ -133,15 +267,9 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 
     return detected;
 }
-#endif  // USE_QUADSPI
+#endif  // USE_FLASH_QUADSPI
 
-#ifdef USE_SPI
-
-void flashPreInit(const flashConfig_t *flashConfig)
-{
-    spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
-}
-
+#ifdef USE_FLASH_SPI
 static bool flashSpiInit(const flashConfig_t *flashConfig)
 {
     bool detected = false;
@@ -186,39 +314,39 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     spiReadRegBuf(dev, FLASH_INSTRUCTION_RDID, readIdResponse, sizeof(readIdResponse));
 
     // Manufacturer, memory type, and capacity
-    uint32_t chipID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
+    uint32_t jedecID = (readIdResponse[0] << 16) | (readIdResponse[1] << 8) | (readIdResponse[2]);
 
 #ifdef USE_FLASH_M25P16
-    if (m25p16_detect(&flashDevice, chipID)) {
+    if (m25p16_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
 
 #if defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25M)
-    if (!detected && w25m_detect(&flashDevice, chipID)) {
+    if (!detected && w25m_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
 
     if (!detected) {
         // Newer chips
-        chipID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
+        jedecID = (readIdResponse[1] << 16) | (readIdResponse[2] << 8) | (readIdResponse[3]);
     }
 
 #ifdef USE_FLASH_W25N01G
-    if (!detected && w25n01g_detect(&flashDevice, chipID)) {
+    if (!detected && w25n01g_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
 
 #ifdef USE_FLASH_W25M02G
-    if (!detected && w25m_detect(&flashDevice, chipID)) {
+    if (!detected && w25m_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
 
     if (detected) {
-        flashDevice.geometry.jedecId = chipID;
+        flashDevice.geometry.jedecId = jedecID;
         return detected;
     }
 
@@ -226,39 +354,65 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
     return false;
 }
-#endif // USE_SPI
+#endif // USE_FLASH_SPI
+
+void flashPreInit(const flashConfig_t *flashConfig)
+{
+    spiPreinitRegister(flashConfig->csTag, IOCFG_IPU, 1);
+}
 
 bool flashDeviceInit(const flashConfig_t *flashConfig)
 {
-#ifdef USE_SPI
+    bool haveFlash = false;
+
+#ifdef USE_FLASH_SPI
     bool useSpi = (SPI_CFG_TO_DEV(flashConfig->spiDevice) != SPIINVALID);
 
     if (useSpi) {
-        return flashSpiInit(flashConfig);
+        haveFlash = flashSpiInit(flashConfig);
     }
 #endif
 
-#ifdef USE_QUADSPI
+#ifdef USE_FLASH_QUADSPI
     bool useQuadSpi = (QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice) != QUADSPIINVALID);
     if (useQuadSpi) {
-        return flashQuadSpiInit(flashConfig);
+        haveFlash = flashQuadSpiInit(flashConfig);
     }
 #endif
 
-    return false;
+#ifdef USE_FLASH_OCTOSPI
+    bool useOctoSpi = (OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice) != OCTOSPIINVALID);
+    if (useOctoSpi) {
+        haveFlash = flashOctoSpiInit(flashConfig);
+    }
+#endif
+
+    if (haveFlash && flashDevice.vTable->configure) {
+        uint32_t configurationFlags = 0;
+
+#ifdef USE_FLASH_MEMORY_MAPPED
+        if (isMemoryMappedModeEnabledOnBoot()) {
+            configurationFlags |= FLASH_CF_SYSTEM_IS_MEMORY_MAPPED;
+        }
+#endif
+
+        flashDevice.vTable->configure(&flashDevice, configurationFlags);
+    }
+
+    return haveFlash;
 }
 
-bool flashIsReady(void)
+MMFLASH_CODE bool flashIsReady(void)
 {
     return flashDevice.vTable->isReady(&flashDevice);
 }
 
-bool flashWaitForReady(void)
+MMFLASH_CODE bool flashWaitForReady(void)
 {
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
-void flashEraseSector(uint32_t address)
+MMFLASH_CODE void flashEraseSector(uint32_t address)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseSector(&flashDevice, address);
@@ -273,12 +427,12 @@ void flashEraseCompletely(void)
 /* The callback, if provided, will receive the totoal number of bytes transfered
  * by each call to flashPageProgramContinue() once the transfer completes.
  */
-void flashPageProgramBegin(uint32_t address, void (*callback)(uint32_t length))
+MMFLASH_CODE void flashPageProgramBegin(uint32_t address, void (*callback)(uint32_t length))
 {
     flashDevice.vTable->pageProgramBegin(&flashDevice, address, callback);
 }
 
-uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
+MMFLASH_CODE uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
 {
     uint32_t maxBytesToWrite = flashDevice.geometry.pageSize - (flashDevice.currentWriteAddress % flashDevice.geometry.pageSize);
 
@@ -299,23 +453,23 @@ uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes
     return flashDevice.vTable->pageProgramContinue(&flashDevice, buffers, bufferSizes, bufferCount);
 }
 
-void flashPageProgramFinish(void)
+MMFLASH_CODE void flashPageProgramFinish(void)
 {
     flashDevice.vTable->pageProgramFinish(&flashDevice);
 }
 
-void flashPageProgram(uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+MMFLASH_CODE void flashPageProgram(uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
 {
     flashDevice.vTable->pageProgram(&flashDevice, address, data, length, callback);
 }
 
-int flashReadBytes(uint32_t address, uint8_t *buffer, uint32_t length)
+MMFLASH_CODE int flashReadBytes(uint32_t address, uint8_t *buffer, uint32_t length)
 {
     flashDevice.callback = NULL;
     return flashDevice.vTable->readBytes(&flashDevice, address, buffer, length);
 }
 
-void flashFlush(void)
+MMFLASH_CODE void flashFlush(void)
 {
     if (flashDevice.vTable->flush) {
         flashDevice.vTable->flush(&flashDevice);
@@ -381,7 +535,7 @@ static void flashConfigurePartitions(void)
     startSector = 0;
 #endif
 
-#if defined(CONFIG_IN_EXTERNAL_FLASH)
+#if defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
     const uint32_t configSize = EEPROM_SIZE;
     flashSector_t configSectors = (configSize / flashGeometry->sectorSize);
 

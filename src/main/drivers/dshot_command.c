@@ -218,7 +218,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
 
 #ifdef USE_DSHOT_TELEMETRY
             timeUs_t timeoutUs = micros() + 1000;
-            while (!motorGetVTable().updateStart() &&
+            while (!motorGetVTable().decodeTelemetry() &&
                    cmpTimeUs(timeoutUs, micros()) > 0);
 #endif
             for (uint8_t i = 0; i < motorDeviceCount(); i++) {
@@ -239,7 +239,7 @@ void dshotCommandWrite(uint8_t index, uint8_t motorCount, uint8_t command, dshot
         dshotCommandControl_t *commandControl = addCommand();
         if (commandControl) {
             commandControl->repeats = repeats;
-            commandControl->delayAfterCommandUs = delayAfterCommandUs;
+            commandControl->delayAfterCommandUs = DSHOT_COMMAND_DELAY_US;
             for (unsigned i = 0; i < motorCount; i++) {
                 if (index == i || index == ALL_MOTORS) {
                     commandControl->command[i] = command;

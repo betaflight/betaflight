@@ -20,15 +20,35 @@
 
 #pragma once
 
+#ifndef TARGET_BOARD_IDENTIFIER
 #define TARGET_BOARD_IDENTIFIER "SH72"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32H723"
+#endif
 
+#if !defined(USE_I2C)
+#define USE_I2C
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
 #define USE_I2C_DEVICE_4
 #define USE_I2C_DEVICE_5
+#define I2C_FULL_RECONFIGURABILITY
+#endif
+
+// Provide a default so that this target builds on the build server.
+#if !defined(USE_SPI)
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
+#define USE_SPI_DEVICE_6
+#define SPI_FULL_RECONFIGURABILITY
+#endif
 
 #define USE_UART1
 #define USE_UART2
@@ -43,13 +63,6 @@
 
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 10)
 
-#define USE_SPI_DEVICE_1
-#define USE_SPI_DEVICE_2
-#define USE_SPI_DEVICE_3
-#define USE_SPI_DEVICE_4
-#define USE_SPI_DEVICE_5
-#define USE_SPI_DEVICE_6
-
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
@@ -58,9 +71,6 @@
 #define TARGET_IO_PORTF 0xffff
 #define TARGET_IO_PORTG 0xffff
 
-#define USE_I2C
-#define I2C_FULL_RECONFIGURABILITY
-
 #define USE_BEEPER
 
 #ifdef USE_SDCARD
@@ -68,8 +78,6 @@
 #define USE_SDCARD_SDIO
 #endif
 
-#define USE_SPI
-#define SPI_FULL_RECONFIGURABILITY
 
 #define USE_VCP
 
@@ -84,4 +92,6 @@
 
 #define USE_ADC
 
+#if !defined(USE_EXST)
 #define USE_CUSTOM_DEFAULTS
+#endif

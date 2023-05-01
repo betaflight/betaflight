@@ -20,6 +20,7 @@ COMMON_SRC = \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_soft.c \
+            drivers/bus_octospi.c \
             drivers/bus_quadspi.c \
             drivers/bus_spi.c \
             drivers/bus_spi_config.c \
@@ -449,12 +450,6 @@ ifneq ($(filter MSC,$(FEATURES)),)
 SRC += $(MSC_SRC)
 endif
 # end target specific make file checks
-
-ifneq ($(BOARD),)
-SRC += board/$(BOARD)/board.c
-INCLUDE_DIRS += $(ROOT)/src/main/board/$(BOARD)
-TARGET_FLAGS := -D'__BOARD__="$(BOARD)"' $(TARGET_FLAGS)
-endif
 
 # Search path and source files for the ST stdperiph library
 VPATH        := $(VPATH):$(STDPERIPH_DIR)/src

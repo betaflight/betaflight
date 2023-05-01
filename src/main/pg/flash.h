@@ -30,6 +30,7 @@ typedef struct flashConfig_s {
     ioTag_t csTag;
     uint8_t spiDevice;
     uint8_t quadSpiDevice;
+    uint8_t octoSpiDevice;
 } flashConfig_t;
 
 PG_DECLARE(flashConfig_t, flashConfig);

@@ -151,7 +151,12 @@
 #undef USE_TELEMETRY_SRXL
 
 #ifdef USE_SERIALRX_FPORT
+#ifndef USE_TELEMETRY
 #define USE_TELEMETRY
+#endif
+#ifndef USE_TELEMETRY_SMARTPORT
+#define USE_TELEMETRY_SMARTPORT
+#endif
 #endif
 #endif
 
@@ -233,6 +238,10 @@
 #undef USE_ADC_INTERNAL
 #endif
 
+#if (defined(USE_SDCARD) || defined(USE_FLASH)) && !defined(USE_BLACKBOX)
+#define USE_BLACKBOX
+#endif
+
 #ifdef USE_FLASH
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
@@ -252,6 +261,18 @@
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25Q128FV)
 #define USE_FLASH_CHIP
+#endif
+
+#if defined(USE_SPI) && (defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25M02G))
+#define USE_FLASH_SPI
+#endif
+
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N01G))
+#define USE_FLASH_QUADSPI
+#endif
+
+#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV))
+#define USE_FLASH_OCTOSPI
 #endif
 
 #ifndef USE_FLASH_CHIP
@@ -304,6 +325,16 @@
 
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_BMI270)
 #define USE_SPI_GYRO
+#endif
+
+#ifndef SIMULATOR_BUILD
+#ifndef USE_ACC
+#define USE_ACC
+#endif
+
+#ifndef USE_GYRO
+#define USE_GYRO
+#endif
 #endif
 
 // CX10 is a special case of SPI RX which requires XN297
@@ -426,7 +457,7 @@
 #undef USE_ESCSERIAL
 #endif
 
-#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD)
+#if defined(CONFIG_IN_RAM) || defined(CONFIG_IN_FILE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_SDCARD) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
 #ifndef EEPROM_SIZE
 #define EEPROM_SIZE     4096
 #endif
@@ -443,6 +474,29 @@ extern uint8_t __config_end;
 
 #if defined(USE_EXST) && !defined(RAMBASED)
 #define USE_FLASH_BOOT_LOADER
+#endif
+
+#if defined(USE_FLASH_MEMORY_MAPPED)
+#if !defined(USE_RAM_CODE)
+#define USE_RAM_CODE
+#endif
+
+#define MMFLASH_CODE RAM_CODE
+#define MMFLASH_CODE_NOINLINE RAM_CODE NOINLINE
+
+#define MMFLASH_DATA FAST_DATA
+#define MMFLASH_DATA_ZERO_INIT FAST_DATA_ZERO_INIT
+#else
+#define MMFLASH_CODE
+#define MMFLASH_CODE_NOINLINE
+#define MMFLASH_DATA
+#define MMFLASH_DATA_ZERO_INIT
+#endif
+
+#ifdef USE_RAM_CODE
+// RAM_CODE for methods that need to be in RAM, but don't need to be in the fastest type of memory.
+// Note: if code is marked as RAM_CODE it *MUST* be in RAM, there is no alternative unlike functions marked with FAST_CODE/CCM_CODE
+#define RAM_CODE                   __attribute__((section(".ram_code")))
 #endif
 
 #if !defined(USE_RPM_FILTER)

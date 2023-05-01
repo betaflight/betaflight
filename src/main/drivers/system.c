@@ -103,7 +103,7 @@ void SysTick_Handler(void)
 
 // Return system uptime in microseconds (rollover in 70minutes)
 
-uint32_t microsISR(void)
+MMFLASH_CODE_NOINLINE uint32_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;
 
@@ -262,7 +262,7 @@ void failureMode(failureMode_e mode)
 void initialiseMemorySections(void)
 {
 #ifdef USE_ITCM_RAM
-    /* Load functions into ITCM RAM */
+    /* Load fast-functions into ITCM RAM */
     extern uint8_t tcm_code_start;
     extern uint8_t tcm_code_end;
     extern uint8_t tcm_code;
@@ -284,6 +284,15 @@ void initialiseMemorySections(void)
     extern uint8_t _sfastram_idata;
     memcpy(&_sfastram_data, &_sfastram_idata, (size_t) (&_efastram_data - &_sfastram_data));
 #endif
+
+#ifdef USE_RAM_CODE
+    /* Load slow-functions into ITCM RAM */
+    extern uint8_t ram_code_start;
+    extern uint8_t ram_code_end;
+    extern uint8_t ram_code;
+    memcpy(&ram_code_start, &ram_code, (size_t) (&ram_code_end - &ram_code_start));
+#endif
+
 }
 
 #ifdef STM32H7

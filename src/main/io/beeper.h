@@ -27,6 +27,9 @@
 #ifdef USE_DSHOT
 #define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate dshot beacon and armining/disarming events
                                              // to prevent interference with motor direction commands
+#define DSHOT_BEACON_MODE_INTERVAL_US     450000  // at least 450ms between successive DShot beacon iterations to allow time for ESC to play tone
+#define DSHOT_BEACON_RXLOSS_INTERVAL_US   950000  // at least 950ms between successive DShot beacon iterations to allow time for ESC to play tone
+                                                  // we check beeper every 100ms, so these result in 500ms and 1.0s in practice
 #endif
 
 typedef enum {

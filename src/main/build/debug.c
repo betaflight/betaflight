@@ -108,5 +108,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "VTX_MSP",
     "GPS_DOP",
     "FAILSAFE",
-    "RPM_LIMITER",
+    "DSHOT_TELEMETRY_COUNTS"
 };
