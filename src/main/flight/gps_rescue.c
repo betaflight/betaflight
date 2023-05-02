@@ -456,7 +456,7 @@ static void performSanityChecks(void)
     if (rescueState.phase == RESCUE_FLY_HOME) {
         const float velocityToHomeCmS = previousDistanceToHomeCm - rescueState.sensor.distanceToHomeCm; // cm/s
         previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
-        rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.5f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
+        rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.1f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 15);
         if (rescueState.intent.secondsFailing == 15) {
 #ifdef USE_MAG
@@ -479,7 +479,6 @@ static void performSanityChecks(void)
     if (secondsLowSats == 10) {
         rescueState.failure = RESCUE_LOWSATS;
     }
-
 
     // These conditions ignore sanity mode settings, and apply in all rescues, to handle getting stuck in a climb or descend
 
