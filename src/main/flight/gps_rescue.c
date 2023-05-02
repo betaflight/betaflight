@@ -537,7 +537,7 @@ static void sensorUpdate(void)
 
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(rescueState.sensor.currentAltitudeCm));
     DEBUG_SET(DEBUG_GPS_RESCUE_THROTTLE_PID, 2, lrintf(rescueState.sensor.currentAltitudeCm));
-//    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS); // groundspeed cm/s
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS); // groundspeed cm/s
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse); // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw); // degrees * 10
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome); // degrees * 10
@@ -573,7 +573,7 @@ static void sensorUpdate(void)
     if (gpsRescueConfig()->rescueGroundspeed) {
         const float setGroundspeedInv = 1.0f / gpsRescueConfig()->rescueGroundspeed;
         float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) * setGroundspeedInv;
-        // zero if groundspeed = velocity to home,
+        // 0 if groundspeed = velocity to home,
         // 1 if flying sideways at target groundspeed but zero home velocity,
         // 2 if flying backwards at target groundspeed
         groundspeedErrorRatio = constrainf(1.0f + groundspeedErrorRatio, 1.0f, 5.0f);
