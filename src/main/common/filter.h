@@ -65,10 +65,10 @@ typedef struct biquadFilter_s {
     float weight;
 } biquadFilter_t;
 
-typedef struct phaseComp_s {
+typedef struct firstOrderFilter_s {
     float b0, b1, a1;
     float x1, y1;
-} phaseComp_t;
+} firstOrderFilter_t;
 
 typedef struct slewFilter_s {
     float state;
@@ -122,9 +122,11 @@ float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
 float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 
-void phaseCompInit(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
-void phaseCompUpdate(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
-float phaseCompApply(phaseComp_t *filter, const float input);
+void phaseCompInit(firstOrderFilter_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
+void phaseCompUpdate(firstOrderFilter_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
+void leadlag1FilterInit(firstOrderFilter_t *filter, const float zeroFreqHz, const float poleFreqHz, uint32_t looptimeUs);
+void leadlag1Update(firstOrderFilter_t *filter, const float zeroFreqHz, const float poleFreqHz, const uint32_t looptimeUs);
+float firstOrderFilterApply(firstOrderFilter_t *filter, const float input);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);
