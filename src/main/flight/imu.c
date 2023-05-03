@@ -537,6 +537,11 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                         useCOG, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
+
+    DEBUG_SET(DEBUG_CHIRP, 4, lrintf(attitude.values.yaw));
+    DEBUG_SET(DEBUG_CHIRP, 5, lrintf(gpsSol.groundCourse));
+    DEBUG_SET(DEBUG_CHIRP, 6, lrintf(gpsSol.acc.headAcc));
+    DEBUG_SET(DEBUG_CHIRP, 7, lrintf(useCOG));
 #endif
 }
 

@@ -285,16 +285,13 @@ void leadlag1FilterInit(firstOrderFilter_t *filter, const float zeroFreqHz, cons
 
 FAST_CODE void leadlag1Update(firstOrderFilter_t *filter, const float zeroFreqHz, const float poleFreqHz, const uint32_t looptimeUs)
 {
-    const float d = 1.0f / (M_PIf * looptimeUs * 1e-6f);
-    const float zeroFreqHzWarped = d * tan_approx( zeroFreqHz / d ); // approximate prewarping
-    const float poleFreqHzWarped = d * tan_approx( poleFreqHz / d );
-    const float c = poleFreqHzWarped / d;
+    const float c = poleFreqHz * M_PIf * looptimeUs * 1e-6f;
 
-    filter->b0 = (c * zeroFreqHzWarped + poleFreqHzWarped);
-    filter->b1 = (c * zeroFreqHzWarped - poleFreqHzWarped);
-    filter->a1 = zeroFreqHzWarped * (c - 1.0f);
+    filter->b0 = (c * zeroFreqHz + poleFreqHz);
+    filter->b1 = (c * zeroFreqHz - poleFreqHz);
+    filter->a1 = zeroFreqHz * (c - 1.0f);
 
-    const float a0 = 1.0f / ( zeroFreqHzWarped * (c + 1.0f) );
+    const float a0 = 1.0f / ( zeroFreqHz * (c + 1.0f) );
 
     filter->b0 *= a0;
     filter->b1 *= a0;
