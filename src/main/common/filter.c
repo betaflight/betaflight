@@ -19,7 +19,6 @@
  */
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <string.h>
 #include <math.h>
 
@@ -131,30 +130,7 @@ FAST_CODE float pt3FilterApply(pt3Filter_t *filter, float input)
 }
 
 
-// Slew filter with limit
-
-void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
-{
-    filter->state = 0.0f;
-    filter->slewLimit = slewLimit;
-    filter->threshold = threshold;
-}
-
-FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
-{
-    if (filter->state >= filter->threshold) {
-        if (input >= filter->state - filter->slewLimit) {
-            filter->state = input;
-        }
-    } else if (filter->state <= -filter->threshold) {
-        if (input <= filter->state + filter->slewLimit) {
-            filter->state = input;
-        }
-    } else {
-        filter->state = input;
-    }
-    return filter->state;
-}
+// Biquad filter
 
 // get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
 // Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
@@ -268,6 +244,76 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
+
+// Phase Compensator (Lead-Lag-Compensator)
+
+void phaseCompInit(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
+{
+    phaseCompUpdate(filter, centerFreqHz, centerPhaseDeg, looptimeUs);
+
+    filter->x1 = 0.0f;
+    filter->y1 = 0.0f;
+}
+
+FAST_CODE void phaseCompUpdate(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
+{
+    const float omega = 2.0f * M_PIf * centerFreqHz * looptimeUs * 1e-6f;
+    const float sn = sin_approx(centerPhaseDeg * RAD);
+    const float gain = (1 + sn) / (1 - sn);
+    const float alpha = (12 - sq(omega)) / (6 * omega * sqrtf(gain));  // approximate prewarping (series expansion)
+
+    filter->b0 = 1 + alpha * gain;
+    filter->b1 = 2 - filter->b0;
+    filter->a1 = 1 - alpha;
+
+    const float a0 = 1 / (1 + alpha);
+
+    filter->b0 *= a0;
+    filter->b1 *= a0;
+    filter->a1 *= a0;
+}
+
+FAST_CODE float phaseCompApply(phaseComp_t *filter, const float input)
+{
+    // compute result
+    const float result = filter->b0 * input + filter->b1 * filter->x1 - filter->a1 * filter->y1;
+
+    // shift input to x1 and result to y1
+    filter->x1 = input;
+    filter->y1 = result;
+
+    return result;
+}
+
+
+// Slew filter with limit
+
+void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
+{
+    filter->state = 0.0f;
+    filter->slewLimit = slewLimit;
+    filter->threshold = threshold;
+}
+
+FAST_CODE float slewFilterApply(slewFilter_t *filter, float input)
+{
+    if (filter->state >= filter->threshold) {
+        if (input >= filter->state - filter->slewLimit) {
+            filter->state = input;
+        }
+    } else if (filter->state <= -filter->threshold) {
+        if (input <= filter->state + filter->slewLimit) {
+            filter->state = input;
+        }
+    } else {
+        filter->state = input;
+    }
+    return filter->state;
+}
+
+
+// Moving average
+
 void laggedMovingAverageInit(laggedMovingAverage_t *filter, uint16_t windowSize, float *buf)
 {
     filter->movingWindowIndex = 0;
@@ -290,10 +336,18 @@ FAST_CODE float laggedMovingAverageUpdate(laggedMovingAverage_t *filter, float i
     }
 
     const uint16_t denom = filter->primed ? filter->windowSize : filter->movingWindowIndex;
-    return filter->movingSum  / denom;
+    return filter->movingSum / denom;
 }
 
+
 // Simple fixed-point lowpass filter based on integer math
+
+void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift)
+{
+    filter->fp = 0;
+    filter->beta = beta;
+    filter->fpShift = fpShift;
+}
 
 int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal)
 {
@@ -304,11 +358,13 @@ int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal)
     return result;
 }
 
-void simpleLPFilterInit(simpleLowpassFilter_t *filter, int32_t beta, int32_t fpShift)
+
+// Mean accumulator
+
+void meanAccumulatorInit(meanAccumulator_t *filter)
 {
-    filter->fp = 0;
-    filter->beta = beta;
-    filter->fpShift = fpShift;
+    filter->accumulator = 0;
+    filter->count = 0;
 }
 
 void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal)
@@ -325,10 +381,4 @@ int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue)
         return retVal;
     }
     return defaultValue;
-}
-
-void meanAccumulatorInit(meanAccumulator_t *filter)
-{
-    filter->accumulator = 0;
-    filter->count = 0;
 }
