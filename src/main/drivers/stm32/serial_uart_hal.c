@@ -30,6 +30,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #ifdef USE_UART
 
 #include "build/build_config.h"
