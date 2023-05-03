@@ -576,10 +576,10 @@ static void sensorUpdate(void)
         // 0 if groundspeed = velocity to home,
         // 1 if moving sideways at target groundspeed but zero home velocity,
         // 2 if moving backwards (away from home) at target groundspeed
-        rescueState.sensor.groundspeedErrorRatio = constrainf(1.0f + groundspeedErrorRatio, 1.0f, 5.0f);
-        // start at 1, not 0, and limit to max 5
+        rescueState.sensor.dcm_kpModifier = constrainf(1.0f + groundspeedErrorRatio, 1.0f, 6.0f); // up to 6x dcm_kp increase
+        rescueState.sensor.groundspeedErrorRatio = fminf(rescueState.sensor.dcm_kpModifier, 3.0f); // cut pitch angle by up to one third
         const bool climbOrRotate = (rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE);
-        rescueState.sensor.dcm_kpModifier = (climbOrRotate) ? 0.0f : rescueState.sensor.groundspeedErrorRatio;
+        rescueState.sensor.dcm_kpModifier = (climbOrRotate) ? 0.0f : rescueState.sensor.dcm_kpModifier;
         // zero dcm_kp during climb or rotate, to stop IMU error accumulation arising from drift during long climbs
     }
 
