@@ -31,9 +31,6 @@
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
-#include "cms/cms_menu_gps_lap_timer.h"
-
-#include "config/feature.h"
 
 #include "config/config.h"
 
