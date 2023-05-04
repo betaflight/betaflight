@@ -140,8 +140,8 @@
 #define SYM_FLY_M                   0x9C
 
 // Lap Timer
-#define SYM_CHECKERED_FLAG          0x79
-#define SYM_LAST_3                  0x7C
+#define SYM_CHECKERED_FLAG          0x24
+#define SYM_PREV_LAP_TIME           0x79
 
 // Speed
 #define SYM_SPEED                   0x70

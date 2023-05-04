@@ -1045,7 +1045,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 #ifdef USE_GPS_LAP_TIMER
             // Override the "home" point to the start/finish location if the lap timer is running
             if (gpsLapTimerData.timerRunning) {
-                direction = gpsLapTimerData.dirToPoint/10; // dirToPoint is centidegrees
+                direction = gpsLapTimerData.dirToPoint / 10; // dirToPoint is centidegrees
             }
 #endif
             element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(direction - attitude.values.yaw));
@@ -1063,7 +1063,9 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
 {
-    osdFormatDistanceString(element->buff, gpsLapTimerData.currentLapTime/1000, SYM_HOMEFLAG);
+#ifdef USE_GPS_LAP_TIMER
+    osdFormatDistanceString(element->buff, gpsLapTimerData.currentLapTime / 1000, SYM_HOMEFLAG);
+#endif
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         int distance = GPS_distanceToHome;
 #ifdef USE_GPS_LAP_TIMER
@@ -1145,26 +1147,26 @@ static void osdElementEfficiency(osdElementParms_t *element)
 #endif // USE_GPS
 
 #ifdef USE_GPS_LAP_TIMER
-static void osdFormatLapTime(osdElementParms_t *element, uint32_t timeMS)
+static void osdFormatLapTime(osdElementParms_t *element, uint32_t timeMS, uint8_t symbol)
 {
     uint32_t seconds = timeMS / 1000;
     uint32_t decimals = (timeMS % 1000) / 10;
-    tfp_sprintf(element->buff, "%c%3u.%02u", SYM_CHECKERED_FLAG, seconds, decimals);
+    tfp_sprintf(element->buff, "%c%3u.%02u", symbol, seconds, decimals);
 }
 
 static void osdElementGpsLapTimeCurrent(osdElementParms_t *element)
 {
-    osdFormatLapTime(element, gpsLapTimerData.timeOfLastLap - gpsSol.time);
+    osdFormatLapTime(element, gpsLapTimerData.timeOfLastLap - gpsSol.time, SYM_TOTAL_DISTANCE);
 }
 
 static void osdElementGpsLapTimePrevious(osdElementParms_t *element)
 {
-    osdFormatLapTime(element, gpsLapTimerData.previousLaps[0]);
+    osdFormatLapTime(element, gpsLapTimerData.previousLaps[0], SYM_PREV_LAP_TIME);
 }
 
 static void osdElementGpsLapTimeBest3(osdElementParms_t *element)
 {
-    osdFormatLapTime(element, gpsLapTimerData.best3Consec);
+    osdFormatLapTime(element, gpsLapTimerData.best3Consec, SYM_CHECKERED_FLAG);
 }
 #endif // GPS_LAP_TIMER
 

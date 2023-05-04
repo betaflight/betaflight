@@ -27,13 +27,13 @@ typedef struct gpsLapTimerData_s {
     gpsLocation_t gateLocation;
     uint32_t previousLaps[MAX_N_RECORDED_PREVIOUS_LAPS];
     uint32_t currentLapTime;
-    uint16_t numberOfSetReadings;
     uint32_t bestLapTime;
     uint32_t best3Consec;
     uint32_t distToPointCM;
-    int32_t dirToPoint;
-    bool timerRunning;
     uint32_t timeOfLastLap;
+    int32_t dirToPoint;
+    uint16_t numberOfSetReadings;
+    bool timerRunning;
 } gpsLapTimerData_t;
 
 typedef struct gpsLapTimerConfig_s {

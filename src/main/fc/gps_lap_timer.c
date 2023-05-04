@@ -100,10 +100,6 @@ void lapTimerNewGpsData(void)
         return;
     }
 
-    if (!gpsLapTimerData.timerRunning) {
-        gpsLapTimerData.timeOfLastLap = 0L;
-    }
-
     // Current lap time is at least the min lap timer or timer not running, so we need to get ready to record a gate crossing
     if (!gpsLapTimerData.timerRunning || gpsSol.time - gpsLapTimerData.timeOfLastLap > (gpsLapTimerConfig()->minimumLapTimeSeconds * 1000)) {
 
@@ -123,7 +119,7 @@ void lapTimerNewGpsData(void)
                     uint32_t lapTime = minDistanceTime - gpsLapTimerData.timeOfLastLap;
 
                     // Update best N consecutive
-                    for (uint8_t i = MAX_N_RECORDED_PREVIOUS_LAPS - 1; i > 0; i--) {
+                    for (unsigned i = MAX_N_RECORDED_PREVIOUS_LAPS - 1; i > 0; i--) {
                         gpsLapTimerData.previousLaps[i] = gpsLapTimerData.previousLaps[i-1];
                     }
                     gpsLapTimerData.previousLaps[0] = lapTime;

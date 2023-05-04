@@ -578,7 +578,7 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
 static void ubloxSetNavRate(uint8_t measRateHz, uint16_t navRate, uint16_t timeRef) {
     ubxMessage_t tx_buffer;
 
-    uint8_t measRateMilliseconds = 1000/measRateHz;
+    uint16_t measRateMilliseconds = 1000 / measRateHz;
     // Testing has  revealed this is the max rate common modules can achieve
     if (measRateMilliseconds < 53) measRateMilliseconds = 53;
 

@@ -552,7 +552,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
 void printLapTime(char* buffer, uint32_t time) {
     if (time != 0) {
         const int timeSeconds = time / 1000;
-        const int timeDecimals = (time % 1000) / 10;
+        const int timeDecimals = ((time % 1000) + 5) / 10;
         tfp_sprintf(buffer, "%3u.%02u", timeSeconds, timeDecimals);
     } else {
         tfp_sprintf(buffer, "  -.--");
