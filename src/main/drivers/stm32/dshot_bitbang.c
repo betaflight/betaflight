@@ -429,6 +429,11 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorPwmProtocolTypes_e dshotProto
 
 static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
+    // Return if no GPIO is specified
+    if (!io) {
+        return false;
+    }
+
     int pinIndex = IO_GPIOPinIdx(io);
     int portIndex = IO_GPIOPortIdx(io);
 
