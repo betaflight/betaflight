@@ -66,6 +66,7 @@
 #define CONFIG_IN_MEMORY_MAPPED_FLASH
 #define USE_FIRMWARE_PARTITION
 
+#define USE_SDCARD_SDIO
 #define SDCARD_DETECT_PIN PC13
 #define SDCARD_DETECT_INVERTED
 #define SDIO_DEVICE             SDIODEV_1
@@ -245,6 +246,44 @@
 #define GYRO_2_EXTI_PIN      NONE
 #define GYRO_1_CS_PIN        PA15
 #define GYRO_2_CS_PIN        NONE
+
+// Pre-BF-4.4 config:
+// On 4in1ESC_1 (Top, CPU side)
+// DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               0,  0,  0 ), // M1
+// DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               0,  1,  0 ), // ..
+// DEF_TIM(TIM3,  CH1, PA6,  TIM_USE_MOTOR,               0,  2,  0 ), // ..
+// DEF_TIM(TIM3,  CH2, PA7,  TIM_USE_MOTOR,               0,  3,  0 ), // M4
+// On 4in1ESC_2 (Bottom)
+// DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_MOTOR,               0,  4,  0 ), // M5
+// DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               0,  5,  0 ), // ..
+// DEF_TIM(TIM5,  CH3, PA2,  TIM_USE_MOTOR,               0,  6,  0 ), // ..
+// DEF_TIM(TIM5,  CH4, PA3,  TIM_USE_MOTOR,               0,  7,  0 ), // M8
+// On SX1280
+// DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_NONE,                0,  8,  1 ),  // SX1280 DIO1
+// DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_NONE,                0,  9,  1 ),  // SX1280 BUSY
+// On GYRO
+// DEF_TIM(TIM4,  CH3, PD14, TIM_USE_NONE,                0,  0,  0 ), // Gyro SYNC
+// DEF_TIM(TIM4,  CH4, PD15, TIM_USE_NONE,                0,  0,  0 ), // Gyro INT
+// On LED strip connector
+// DEF_TIM(TIM17, CH1N, PB7, TIM_USE_LED,                 0,  12, 1 ), // LED Strip
+// On PixelOSD
+// DEF_TIM(TIM15, CH1, PE5,  TIM_USE_VIDEO_PIXEL,         0,  15, 15 ), // Pixel DMA
+// DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_VIDEO_SYNC,          0,  14, 14 ), // Sync
+
+// Index, Pin, 1-based occurrence of pin in fullTimerHardware, dma opt (use -1 for no DMA)
+// See timerio.c and timer_stm32h7xx.c
+
+#define TIMER_PIN_MAPPING \
+    TIMER_PIN_MAP( 0, PB0 , 2,  0 ) \
+    TIMER_PIN_MAP( 1, PB1 , 2,  1 ) \
+    TIMER_PIN_MAP( 2, PA6 , 1,  2 ) \
+    TIMER_PIN_MAP( 3, PA7 , 2,  3 ) \
+    TIMER_PIN_MAP( 4, PA0 , 2,  4 ) \
+    TIMER_PIN_MAP( 5, PA1 , 2,  5 ) \
+    TIMER_PIN_MAP( 6, PA2 , 2,  6 ) \
+    TIMER_PIN_MAP( 7, PA3 , 2,  7 ) \
+    TIMER_PIN_MAP( 8, PB7 , 1,  8 ) \
+
 
 #define ADC3_DMA_OPT       10
 
