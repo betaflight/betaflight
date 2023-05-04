@@ -147,6 +147,10 @@ typedef struct gpsData_s {
     ubloxAckState_e ackState;
     bool ubloxUsePVT;
     bool ubloxUseSAT;
+
+    uint8_t autoConfigStep;         // Driver internal use (for autoConfig)
+    uint32_t hwVersion;
+    uint8_t swVersion;
 } gpsData_t;
 
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
@@ -213,6 +217,8 @@ void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 bool gpsIsHealthy(void); // Check for healthy communications
+unsigned gpsGetUbxHwVersion(void);
+unsigned gpsGetUbxSwVersion(void);
 struct serialPort_s;
 void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
 void onGpsNewData(void);

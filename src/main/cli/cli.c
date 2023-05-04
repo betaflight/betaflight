@@ -4763,6 +4763,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
             } else {
                 cliPrint("configured");
             }
+            cliPrintf(", Ublox HW Version: %d, SW Version: %d", gpsGetUbxHwVersion(), gpsGetUbxSwVersion());
         }
     } else {
         cliPrint("NOT ENABLED");

@@ -280,6 +280,8 @@ void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 void gpsEnablePassthrough(struct serialPort_s *) {}
 bool gpsIsHealthy(void) { return true; }
+unsigned gpsGetUbxHwVersion(void) { return 0; }
+unsigned gpsGetUbxSwVersion(void) { return 0; }
 baudRate_e getGpsPortActualBaudRateIndex(void) { return BAUD_AUTO; }
 
 bool parseLedStripConfig(int, const char *){return false; }
