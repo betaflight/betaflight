@@ -68,7 +68,7 @@ static const OSD_Entry cmsx_menuRpmLimitEntries[] =
 {
     {"-- RPM LIMIT --", OME_Label, NULL, NULL},
     { "ACTIVE",   OME_Bool | REBOOT_REQUIRED,  NULL, &rpm_limiter },
-    {"MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limiter_rpm_limit, 0, UINT16_MAX, 1}},
+    {"MAX RPM", OME_UINT16, NULL, &(OSD_UINT16_t){ &rpm_limiter_rpm_limit, 0, UINT16_MAX, 100}},
     {"KV", OME_UINT16, NULL, &(OSD_UINT16_t){ &motor_kv, 0, UINT16_MAX, 1}},
 
     { "SAVE&REBOOT",     OME_OSD_Exit, cmsMenuExit,   (void *)CMS_POPUP_SAVEREBOOT},
