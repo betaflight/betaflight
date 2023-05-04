@@ -245,9 +245,9 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
 }
 
 
-// Phase Compensator (Lead-Lag-Compensator specified via Phase Lift and Center Frequency)
+// Phase Compensator (Lead-Lag-Compensator)
 
-void phaseCompInit(firstOrderFilter_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
+void phaseCompInit(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
 {
     phaseCompUpdate(filter, centerFreqHz, centerPhaseDeg, looptimeUs);
 
@@ -255,7 +255,7 @@ void phaseCompInit(firstOrderFilter_t *filter, const float centerFreqHz, const f
     filter->y1 = 0.0f;
 }
 
-FAST_CODE void phaseCompUpdate(firstOrderFilter_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
+FAST_CODE void phaseCompUpdate(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
 {
     const float omega = 2.0f * M_PIf * centerFreqHz * looptimeUs * 1e-6f;
     const float sn = sin_approx(centerPhaseDeg * RAD);
@@ -273,32 +273,7 @@ FAST_CODE void phaseCompUpdate(firstOrderFilter_t *filter, const float centerFre
     filter->a1 *= a0;
 }
 
-void leadlag1FilterInit(firstOrderFilter_t *filter, const float zeroFreqHz, const float poleFreqHz, uint32_t looptimeUs)
-{
-    leadlag1Update(filter, zeroFreqHz, poleFreqHz, looptimeUs);
-
-    filter->x1 = 0.0f;
-    filter->y1 = 0.0f;
-}
-
-// Lead-Lag-Compensator specified via Frequency of Zero and Pole: zeroFreqHz < poleFreqHz -> Lead, zeroFreqHz > poleFreqHz -> Lag
-
-FAST_CODE void leadlag1Update(firstOrderFilter_t *filter, const float zeroFreqHz, const float poleFreqHz, const uint32_t looptimeUs)
-{
-    const float c = poleFreqHz * M_PIf * looptimeUs * 1e-6f;
-
-    filter->b0 = (c * zeroFreqHz + poleFreqHz);
-    filter->b1 = (c * zeroFreqHz - poleFreqHz);
-    filter->a1 = zeroFreqHz * (c - 1.0f);
-
-    const float a0 = 1.0f / ( zeroFreqHz * (c + 1.0f) );
-
-    filter->b0 *= a0;
-    filter->b1 *= a0;
-    filter->a1 *= a0;
-}
-
-FAST_CODE float firstOrderFilterApply(firstOrderFilter_t *filter, const float input)
+FAST_CODE float phaseCompApply(phaseComp_t *filter, const float input)
 {
     // compute result
     const float result = filter->b0 * input + filter->b1 * filter->x1 - filter->a1 * filter->y1;
@@ -308,6 +283,27 @@ FAST_CODE float firstOrderFilterApply(firstOrderFilter_t *filter, const float in
     filter->y1 = result;
 
     return result;
+}
+
+void phaseCompConvertZeroAndPoleToDefaultParameters(float *centerFreqHz, float *centerPhaseDeg, const float zeroFreqHz, const float poleFreqHz)
+{
+    const float alpha = zeroFreqHz / poleFreqHz;
+    *centerFreqHz = poleFreqHz * sqrtf(alpha);
+    *centerPhaseDeg = asinf( (1.0f - alpha) / (1.0f + alpha) ) / RAD;
+}
+
+void phaseCompInitLeadLag1(phaseComp_t *filter, const float zeroFreqHz, const float poleFreqHz, const uint32_t looptimeUs)
+{
+    float centerFreqHz, centerPhaseDeg;
+    phaseCompConvertZeroAndPoleToDefaultParameters(&centerFreqHz, &centerPhaseDeg, zeroFreqHz, poleFreqHz);
+    phaseCompInit(filter, centerFreqHz, centerPhaseDeg, looptimeUs);
+}
+
+FAST_CODE void phaseCompUpdateLeadLag1(phaseComp_t *filter, const float zeroFreqHz, const float poleFreqHz, const uint32_t looptimeUs)
+{
+    float centerFreqHz, centerPhaseDeg;
+    phaseCompConvertZeroAndPoleToDefaultParameters(&centerFreqHz, &centerPhaseDeg, zeroFreqHz, poleFreqHz);
+    phaseCompUpdate(filter, centerFreqHz, centerPhaseDeg, looptimeUs);
 }
 
 
