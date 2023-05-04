@@ -219,7 +219,15 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
             courseOverGround += (2.0f * M_PIf);
         }
 
-        const float ez_ef = (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
+        float ez_ef = (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
+
+#ifdef USE_GPS_RESCUE
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            ez_ef *= gpsRescueGetDcmKpModifier();
+            // converge yaw faster if groundspeed differs significantly from velocity to home during fly home phase
+            // don't converge while climbing or rotating, keeping the original IMU information, which in most cases should be correct
+        }
+#endif
 
         ex = rMat[2][0] * ez_ef;
         ey = rMat[2][1] * ez_ef;
@@ -416,16 +424,9 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
         ret = ATTITUDE_RESET_KP_GAIN;
     } else {
         ret = imuRuntimeConfig.dcm_kp;
-#ifdef USE_GPS_RESCUE
-        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            ret *= gpsRescueGetDcmKpModifier();
-            // converge faster if groundspeed differs significantly from velocity to home during fly home phase
-            // don't converge while climbing or rotating, keeping the original IMU information, which in most cases should be correct
+        if (!armState) {
+            ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
         }
-#endif
-       if (!armState) {
-          ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
-       }
     }
 
     return ret;
