@@ -92,6 +92,7 @@
 
 #define USE_FLASH
 #define USE_FLASH_W25Q128FV
+#define USE_FLASH_W25N01G
 #define FLASH_CS_PIN                    PB9
 #define FLASH_SPI_INSTANCE              SPI3
 
