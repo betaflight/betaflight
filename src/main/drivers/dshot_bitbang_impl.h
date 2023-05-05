@@ -79,6 +79,9 @@
 #ifdef USE_HAL_DRIVER
 #define BB_GPIO_PULLDOWN GPIO_PULLDOWN
 #define BB_GPIO_PULLUP   GPIO_PULLUP
+#elif defined(AT32F435)
+#define BB_GPIO_PULLDOWN GPIO_PULL_DOWN
+#define BB_GPIO_PULLUP   GPIO_PULL_UP
 #else
 #define BB_GPIO_PULLDOWN GPIO_PuPd_DOWN
 #define BB_GPIO_PULLUP   GPIO_PuPd_UP
@@ -92,7 +95,7 @@ typedef struct dmaRegCache_s {
     uint32_t NDTR;
     uint32_t PAR;
     uint32_t M0AR;
-#elif defined(STM32G4)
+#elif defined(STM32G4) || defined(AT32F435)
     uint32_t CCR;
     uint32_t CNDTR;
     uint32_t CPAR;
@@ -104,17 +107,35 @@ typedef struct dmaRegCache_s {
 #endif
 
 // Per pacer timer
+#if defined(AT32F435)
+typedef struct bbPacer_s {
+    tmr_type *tim;
+    uint16_t dmaSources;
+} bbPacer_t;
 
+typedef struct tmr_base_init_s {
+	uint32_t TIM_Prescaler;
+	uint32_t TIM_ClockDivision;
+	uint32_t TIM_CounterMode;
+	uint32_t TIM_Period;
+} tmr_base_init_type;
+
+#else //for stm32
 typedef struct bbPacer_s {
     TIM_TypeDef *tim;
     uint16_t dmaSources;
 } bbPacer_t;
+#endif //bbPacer_t 
 
 // Per GPIO port and timer channel
 
 typedef struct bbPort_s {
     int portIndex;
+#if defined(AT32F435)
+    gpio_type * gpio;
+#else
     GPIO_TypeDef *gpio;
+#endif 
     const timerHardware_t *timhw;
 #ifdef USE_HAL_DRIVER
     uint32_t llChannel;
@@ -124,6 +145,9 @@ typedef struct bbPort_s {
 
     dmaResource_t *dmaResource; // DMA resource for this port & timer channel
     uint32_t dmaChannel;        // DMA channel or peripheral request
+#ifdef AT32F435
+    uint32_t dmaMuxId; 			//dma mux id for at32f43x
+#endif
 
     uint8_t direction;
 
@@ -143,6 +167,8 @@ typedef struct bbPort_s {
 
 #ifdef USE_HAL_DRIVER
     LL_TIM_InitTypeDef timeBaseInit;
+#elif defined(AT32F435)
+    tmr_base_init_type timeBaseInit;
 #else
     TIM_TimeBaseInitTypeDef timeBaseInit;
 #endif
@@ -151,6 +177,8 @@ typedef struct bbPort_s {
     uint16_t outputARR;
 #ifdef USE_HAL_DRIVER
     LL_DMA_InitTypeDef outputDmaInit;
+#elif defined(AT32F435)
+    dma_init_type outputDmaInit;
 #else
     DMA_InitTypeDef outputDmaInit;
 #endif
@@ -161,6 +189,8 @@ typedef struct bbPort_s {
     uint16_t inputARR;
 #ifdef USE_HAL_DRIVER
     LL_DMA_InitTypeDef inputDmaInit;
+#elif defined(AT32F435)
+    dma_init_type inputDmaInit;
 #else
     DMA_InitTypeDef inputDmaInit;
 #endif
@@ -241,7 +271,14 @@ void bbSwitchToOutput(bbPort_t * bbPort);
 void bbSwitchToInput(bbPort_t * bbPort);
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period);
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, FunctionalState NewState);
 void bbDMA_ITConfig(bbPort_t *bbPort);
-void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
 int  bbDMA_Count(bbPort_t *bbPort);
+
+#if defined(AT32F435)
+void bbTIM_DMACmd(tmr_type * TIMx, uint16_t TIM_DMASource, confirm_state NewState);
+void bbDMA_CmdEnable(bbPort_t *bbPort, confirm_state NewState);
+
+#else
+void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState);
+void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, FunctionalState NewState);
+#endif

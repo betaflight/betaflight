@@ -74,12 +74,8 @@
 #undef USE_LED_STRIP
 #undef USE_TRANSPONDER
 
-// #undef USE_DSHOT
-// #undef USE_DSHOT_TELEMETRY
-// bitbang not implemented yet
-#undef USE_DSHOT_BITBANG
-// burst mode not implemented yet
-#undef USE_DSHOT_DMAR
+#define USE_DSHOT_BITBANG
+
 
 
 #define USE_CAMERA_CONTROL

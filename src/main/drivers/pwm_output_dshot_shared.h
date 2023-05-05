@@ -43,9 +43,24 @@ FAST_DATA_ZERO_INIT extern dshotDMAHandlerCycleCounters_t dshotDMAHandlerCycleCo
 
 #endif
 
+#if defined(AT32F435)
+uint8_t getTimerIndex(tmr_type *timer);
+#else
 uint8_t getTimerIndex(TIM_TypeDef *timer);
+#endif
+
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 void dshotEnableChannels(uint8_t motorCount);
+
+#if defined(AT32F435)
+void pwmDshotSetDirectionOutput(
+    motorDmaOutput_t * const motor
+#ifndef USE_DSHOT_TELEMETRY
+    ,tmr_output_config_type *pOcInit, dma_init_type * pDmaInit
+#endif
+);
+
+#else
 
 #ifdef USE_DSHOT_TELEMETRY
 void pwmDshotSetDirectionOutput(
@@ -58,6 +73,9 @@ void pwmDshotSetDirectionOutput(
 #endif
 #endif
 );
+#endif //end of STM 
+
+
 
 bool pwmTelemetryDecode(void);
 
