@@ -52,7 +52,7 @@ resource GYRO_CS 1 B00
 #define GYRO_1_SPI_INSTANCE  SPI1
 #define GYRO_1_ALIGN         CW0_DEG_FLIP
 #define GYRO_1_ALIGN_YAW     2700
-#define ALIGN_BOARD_YAW      -45
+#define DEFAULT_ALIGN_BOARD_YAW -45
 #define GYRO_1_CS_PIN        PB0
 #define GYRO_1_EXTI_PIN      PC4
 
