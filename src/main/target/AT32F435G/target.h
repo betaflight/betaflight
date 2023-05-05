@@ -82,7 +82,7 @@
 #undef USE_DSHOT_DMAR
 
 
-#undef USE_CAMERA_CONTROL
+#define USE_CAMERA_CONTROL
 #undef USE_RX_PPM
 #undef USE_RX_PWM
 #undef USE_RX_SPI
