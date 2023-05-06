@@ -425,7 +425,7 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
     } else {
         ret = imuRuntimeConfig.dcm_kp;
         if (!armState) {
-            ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
+            ret *= 10.0f; // Scale the kP to generally converge faster when disarmed.
         }
     }
 

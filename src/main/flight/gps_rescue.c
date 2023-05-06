@@ -816,7 +816,7 @@ void gpsRescueUpdate(void)
 
         rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.velocityItermRelax * gpsRescueConfig()->maxRescueAngle;
         // gradually gain roll capability to max of half of max pitch angle
- 
+
         if (newGPSData) {
             // cut back on allowed angle if there is a high groundspeed error
             rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
