@@ -48,7 +48,7 @@ extern "C" {
     #include "flight/imu.h"
 
     #include "io/serial.h"
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
 
     #include "msp/msp.h"
     #include "msp/msp_serial.h"

@@ -28,6 +28,8 @@
 
 #include "io/serial.h"
 
+#include "io/gps/gps_config.h"
+
 #include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L

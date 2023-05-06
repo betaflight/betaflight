@@ -40,7 +40,7 @@ extern "C" {
     #include "flight/gps_rescue.h"
 
     #include "io/beeper.h"
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
     #include "io/vtx.h"
 
     #include "pg/gps_rescue.h"

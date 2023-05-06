@@ -32,7 +32,7 @@
 
 #include "drivers/time.h"
 
-#include "io/gps.h"
+#include "io/gps/gps.h"
 
 #include "config/config.h"
 #include "fc/core.h"

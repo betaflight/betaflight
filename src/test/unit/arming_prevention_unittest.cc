@@ -44,7 +44,7 @@ extern "C" {
     #include "flight/servos.h"
 
     #include "io/beeper.h"
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
 
     #include "pg/gps_rescue.h"
     #include "pg/motor.h"

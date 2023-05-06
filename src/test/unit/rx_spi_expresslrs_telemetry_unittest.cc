@@ -52,7 +52,7 @@ extern "C" {
 
     #include "config/config.h"
 
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
 
     #include "msp/msp_protocol.h"
 

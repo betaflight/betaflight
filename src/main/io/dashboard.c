@@ -59,7 +59,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
-#include "io/gps.h"
+#include "io/gps/gps.h"
 #include "io/dashboard.h"
 #include "io/displayport_oled.h"
 

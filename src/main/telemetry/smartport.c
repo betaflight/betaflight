@@ -59,7 +59,7 @@
 #include "flight/position.h"
 
 #include "io/beeper.h"
-#include "io/gps.h"
+#include "io/gps/gps.h"
 #include "io/serial.h"
 
 #include "msp/msp.h"

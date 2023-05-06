@@ -44,7 +44,7 @@
 #include "io/vtx_control.h"
 
 #ifdef USE_GPS
-#include "io/gps.h"
+#include "io/gps/gps.h"
 #endif
 
 #ifdef USE_OSD
