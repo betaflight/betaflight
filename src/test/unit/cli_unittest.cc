@@ -279,8 +279,8 @@ bool resetEEPROM(void) { return true; }
 void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 void gpsEnablePassthrough(struct serialPort_s *) {}
-bool gpsIsHealthy(void) {return true;}
-baudRate_e getGPSPortActualBaudRateIndex(void) {return BAUD_AUTO;}
+bool gpsIsHealthy(void) { return true; }
+baudRate_e getGPSPortActualBaudRateIndex(void) { return BAUD_AUTO; }
 
 bool parseLedStripConfig(int, const char *){return false; }
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
@@ -299,7 +299,7 @@ serialPortConfig_t *serialFindPortConfigurationMutable(serialPortIdentifier_e) {
 baudRate_e lookupBaudRateIndex(uint32_t){return BAUD_9600; }
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e){ return NULL; }
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) { return NULL; }
-const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
+const serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) { return NULL; }
 void serialSetBaudRate(serialPort_t *, uint32_t) {}
 void serialSetMode(serialPort_t *, portMode_e) {}
 void serialPassthrough(serialPort_t *, serialPort_t *, serialConsumer *, serialConsumer *) {}
