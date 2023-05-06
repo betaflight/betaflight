@@ -143,7 +143,6 @@
 #define PARAM_NAME_GPS_AUTO_CONFIG "gps_auto_config"
 #define PARAM_NAME_GPS_AUTO_BAUD "gps_auto_baud"
 #define PARAM_NAME_GPS_UBLOX_USE_GALILEO "gps_ublox_use_galileo"
-#define PARAM_NAME_GPS_UBLOX_FULL_POWER "gps_ublox_full_power"
 #define PARAM_NAME_GPS_UBLOX_ACQUIRE_MODEL "gps_ublox_acquire_model"
 #define PARAM_NAME_GPS_UBLOX_FLIGHT_MODEL "gps_ublox_flight_model"
 #define PARAM_NAME_GPS_UBLOX_UTC_STANDARD "gps_ublox_utc_standard"

@@ -105,6 +105,7 @@ typedef enum {
     CFG_SIGNAL_BDS_ENA = 0x10310022, // L
     CFG_SIGNAL_QZSS_ENA = 0x10310024, // L
     CFG_SIGNAL_GLO_ENA = 0x10310025, // L
+    CFG_PM_OPERATEMODE = 0x20d00001, // E1
 } ubxValgetsetBytes_e;
 
 /*
@@ -328,8 +329,10 @@ typedef struct gpsData_s {
     uint8_t ackTimeoutCounter;      // Ack timeout counter
     ubloxAckState_e ackState;       // Ack State
     uint8_t updateRate;
-    bool ubloxUsePVT;
-    bool ubloxUseSAT;
+    bool ubloxM7orAbove;
+    bool ubloxM8orAbove;
+    bool ubloxM9orAbove;
+    bool satInfoRequired;
 #ifdef USE_GPS_UBLOX
     ubloxVersion_e unitVersion;     // detected UNIT version
     ubxMonVer_t monVer;             // MON-VER response
