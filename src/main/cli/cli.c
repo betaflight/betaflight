@@ -4731,6 +4731,46 @@ static void cliStatus(const char *cmdName, char *cmdline)
     }
 #endif
 
+#ifdef USE_GPS
+    cliPrint("GPS: ");
+    if (featureIsEnabled(FEATURE_GPS)) {
+        if (gpsIsHealthy()) {
+            cliPrint("connected, ");
+        } else {
+            cliPrint("NOT CONNECTED, ");
+        }
+        if (gpsConfig()->provider == GPS_MSP) {
+            cliPrint("MSP, ");
+        } else {
+            const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
+            if (!gpsPortConfig) {
+                cliPrint("NO PORT, ");
+            } else {
+                cliPrintf("UART%d %ld(", (gpsPortConfig->identifier + 1), baudRates[getGPSPortActualBaudRateIndex()]);
+                if (gpsConfig()->autoBaud == GPS_AUTOBAUD_ON) {
+                    cliPrint("AUTO");
+                } else {
+                    cliPrintf("%ld", baudRates[gpsPortConfig->gps_baudrateIndex]);
+                }
+                cliPrint("), ");  // Place holder for queried config items to be added (firmware & protocol version, actual solution rate, etc.)
+            }
+        }
+        if (!gpsIsHealthy()) {
+            cliPrint("NOT CONFIGURED");
+        } else {
+            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
+               cliPrint("auto config OFF, ");
+            } else {
+                cliPrint("configured, ");
+            }
+            cliPrint(" ");
+        }
+    } else {
+        cliPrint("NOT ENABLED");
+    }
+    cliPrintLinefeed();
+#endif
+
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
