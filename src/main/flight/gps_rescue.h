@@ -57,4 +57,4 @@ bool gpsRescueIsConfigured(void);
 bool gpsRescueIsAvailable(void);
 bool gpsRescueIsDisabled(void);
 bool gpsRescueDisableMag(void);
-float gpsRescueGetImuYawGain(void);
+float gpsRescueGetImuYawCogGain(void);

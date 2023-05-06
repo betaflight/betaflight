@@ -113,7 +113,7 @@ typedef struct {
     float maxPitchStep;
     float absErrorAngle;
     float groundspeedPitchAttenuator;
-    float imuYawGain;
+    float imuYawCogGain;
 } rescueSensorData_s;
 
 typedef struct {
@@ -236,7 +236,7 @@ static void rescueAttainPosition(void)
         previousAltitudeError = 0.0f;
         throttleAdjustment = 0;
         rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
-        rescueState.sensor.imuYawGain = 1.0f;
+        rescueState.sensor.imuYawCogGain = 1.0f;
         return;
     case RESCUE_DO_NOTHING:
         // 20s of slow descent for switch induced sanity failures to allow time to recover
@@ -569,19 +569,23 @@ static void sensorUpdate(void)
     rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm / 100.0f;
     rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed; // cm/s
 
-    // values to modify dcm_kp to a low value when climbing, and a higher value when there is a velocity error
+    // when there is significant velocity error, increase IMU COG Gain for yaw to a higher value, and reduce max pitch angle
     if (gpsRescueConfig()->rescueGroundspeed) {
-        const float setGroundspeedInv = 1.0f / gpsRescueConfig()->rescueGroundspeed;
-        const float groundspeedPitchAttenuator = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) * setGroundspeedInv;
+        const float rescueGroundspeedGain = 10.0f;
+        // sets the slope of the increase in IMU COG Gain as velocity error increases; at 10, we get max CoG gain around 25m/s drift, approx the limit of what we can fix
+        const float groundspeedErrorRatio = fmaxf(0.0f, rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeedGain;
         // 0 if groundspeed = velocity to home,
-        // 1 if moving sideways at target groundspeed but zero home velocity,
-        // 2 if moving backwards (away from home) at target groundspeed
-        // 4 if moving backwards (away from home) at twice target groundspeed
-        rescueState.sensor.imuYawGain = constrainf(1.0f + groundspeedPitchAttenuator, 1.0f, 6.0f); // up to 6x increase in IMU Yaw gain
-        rescueState.sensor.groundspeedPitchAttenuator = fminf(rescueState.sensor.imuYawGain, 3.0f); // cut pitch angle by up to one third
-        const bool climbOrRotate = (rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE);
-        rescueState.sensor.imuYawGain = (climbOrRotate) ? 0.0f : rescueState.sensor.imuYawGain;
-        // zero dcm_kp during climb or rotate, to stop IMU error accumulation arising from drift during long climbs
+        // 1 if moving sideways at 10m/s but zero home velocity,
+        // 2 if moving backwards (away from home) at 10 m/s
+        // 4 if moving backwards (away from home) at 20 m/s
+        if ((rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE)) {
+            // zero IMU CoG yaw during climb or rotate, to stop IMU error accumulation arising from drift during long climbs
+            rescueState.sensor.imuYawCogGain = 0;
+        } else {
+            // up to 6x increase in CoG IMU Yaw gain
+            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + groundspeedErrorRatio, 1.0f, 6.0f);
+        }
+        rescueState.sensor.groundspeedPitchAttenuator = 1.0f / constrainf(1.0f + groundspeedErrorRatio , 1.0f, 3.0f); // cut pitch angle by up to one third
     }
 
     rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
@@ -667,7 +671,7 @@ void descend(void)
         // if quad drifts further than 2m away from home, should by then have rotated towards home, so pitch is allowed
         rescueState.intent.rollAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.intent.proximityToLandingArea;
         // reduce roll capability when closer to home, none within final 2m
-        rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle / rescueState.sensor.groundspeedPitchAttenuator;
+        rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
     }
 
     rescueState.intent.yawAttenuator = 1.0f; // just in case entered descend phase before yaw authority was complete
@@ -778,8 +782,8 @@ void gpsRescueUpdate(void)
             rescueState.intent.yawAttenuator += rescueState.sensor.gpsRescueTaskIntervalSeconds;
         }
         if (rescueState.sensor.absErrorAngle < 30.0f) {
-            // allow pitch, limiting allowed angle if there is a significant groundspeedPitchAttenuator
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle / rescueState.sensor.groundspeedPitchAttenuator;
+            // allow pitch, limiting allowed angle if we are drifting away from home
+            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
             rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
             rescueState.intent.proximityToLandingArea = 1.0f; // velocity iTerm activated, initialise proximity for descent phase at 1.0
@@ -815,7 +819,7 @@ void gpsRescueUpdate(void)
  
         if (newGPSData) {
             // cut back on allowed angle if there is a high groundspeed error
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle / rescueState.sensor.groundspeedPitchAttenuator;
+            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
             if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
                 rescueState.phase = RESCUE_DESCENT;
                 rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
@@ -875,9 +879,9 @@ float gpsRescueGetYawRate(void)
     return rescueYaw;
 }
 
-float gpsRescueGetImuYawGain(void)
+float gpsRescueGetImuYawCogGain(void)
 {
-    return rescueState.sensor.imuYawGain;
+    return rescueState.sensor.imuYawCogGain;
 }
 
 float gpsRescueGetThrottle(void)

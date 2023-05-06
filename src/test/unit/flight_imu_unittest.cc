@@ -57,7 +57,7 @@ extern "C" {
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
-    void gpsRescueGetImuYawGain(void);
+    void gpsRescueGetImuYawCogGain(void);
 
     extern quaternion q;
     extern float rMat[3][3];

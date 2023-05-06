@@ -223,7 +223,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 #ifdef USE_GPS_RESCUE
         if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-            ez_ef *= gpsRescueGetImuYawGain();
+            ez_ef *= gpsRescueGetImuYawCogGain();
             // converge yaw faster if groundspeed differs significantly from velocity to home during fly home phase
             // don't converge while climbing or rotating, keeping the original IMU information, which in most cases should be correct
         }
