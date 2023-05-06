@@ -48,7 +48,7 @@
 #include "flight/mixer.h"
 
 #include "io/displayport_srxl.h"
-#include "io/gps.h"
+#include "io/gps/gps.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"

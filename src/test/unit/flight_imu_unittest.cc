@@ -46,7 +46,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/position.h"
 
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
 
     #include "rx/rx.h"
 

@@ -41,7 +41,7 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
 
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
     #include "io/serial.h"
 
     #include "rx/rx.h"

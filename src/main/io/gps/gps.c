@@ -41,7 +41,7 @@
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
-#include "io/gps.h"
+#include "io/gps/gps.h"
 #include "io/serial.h"
 
 #include "config/config.h"
@@ -488,7 +488,7 @@ static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_
     }
 }
 
-static void ubloxSendMessage(const uint8_t *data, uint8_t len)
+/* static void ubloxSendMessage(const uint8_t *data, uint8_t len)
 {
     uint8_t checksumA = 0, checksumB = 0;
     serialWrite(gpsPort, data[0]);
@@ -501,7 +501,7 @@ static void ubloxSendMessage(const uint8_t *data, uint8_t len)
     gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
     gpsData.ackTimeoutCounter = 0;
     gpsData.ackState = UBLOX_ACK_WAITING;
-}
+} */
 
 static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length)
 {
@@ -680,6 +680,7 @@ void gpsInitUblox(void)
             break;
 
         case GPS_STATE_CONFIGURE:
+            ubloxDetectVersion(gpsPort);
             // Either use specific config file for GPS or let dynamically upload config
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
                 gpsSetState(GPS_STATE_RECEIVING_DATA);

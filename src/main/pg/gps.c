@@ -22,7 +22,7 @@
 
 #ifdef USE_GPS
 
-#include "io/gps.h"
+#include "io/gps/gps.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

@@ -55,7 +55,7 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket);
 #include "sensors/barometer.h"
 #include "flight/imu.h"
 #include "flight/position.h"
-#include "io/gps.h"
+#include "io/gps/gps.h"
 
 
 #define IBUS_TEMPERATURE_OFFSET     400

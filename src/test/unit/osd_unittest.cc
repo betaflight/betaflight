@@ -48,7 +48,7 @@ extern "C" {
     #include "flight/pid.h"
 
     #include "io/beeper.h"
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
 
     #include "osd/osd.h"
     #include "osd/osd_elements.h"

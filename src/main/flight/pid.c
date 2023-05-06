@@ -51,7 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
 
-#include "io/gps.h"
+#include "io/gps/gps.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"

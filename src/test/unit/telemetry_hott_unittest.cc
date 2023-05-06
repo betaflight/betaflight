@@ -40,7 +40,7 @@ extern "C" {
 
     #include "flight/pid.h"
 
-    #include "io/gps.h"
+    #include "io/gps/gps.h"
     #include "io/serial.h"
 
     #include "sensors/barometer.h"

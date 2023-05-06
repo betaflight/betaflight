@@ -44,7 +44,7 @@
 #include "flight/imu.h"
 
 #include "io/serial.h"
-#include "io/gps.h"
+#include "io/gps/gps.h"
 
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"
