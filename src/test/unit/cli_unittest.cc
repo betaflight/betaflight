@@ -39,6 +39,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/servos.h"
     #include "io/beeper.h"
+    #include "io/gps.h"
     #include "io/ledstrip.h"
     #include "io/serial.h"
     #include "io/vtx.h"
