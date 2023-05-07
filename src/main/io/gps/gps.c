@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include "gps.h"
 
 #include "platform.h"
 
@@ -143,20 +144,44 @@ typedef enum {
     MSG_POSLLH = 0x02,
     MSG_STATUS = 0x03,
     MSG_DOP = 0x04,
-    MSG_SOL = 0x06,
+    MSG_SOL = 0x06,//
     MSG_PVT = 0x07,
     MSG_VELNED = 0x12,
-    MSG_SVINFO = 0x30,
+    MSG_SVINFO = 0x30, //
     MSG_SAT = 0x35,
     MSG_CFG_MSG = 0x01,
     MSG_CFG_PRT = 0x00,
     MSG_CFG_RATE = 0x08,
     MSG_CFG_SET_RATE = 0x01,
-    MSG_CFG_SBAS = 0x16,
+    MSG_CFG_SBAS = 0x16, //
     MSG_CFG_NAV_SETTINGS = 0x24,
-    MSG_CFG_PMS = 0x86,
+    MSG_CFG_PMS = 0x86, //
     MSG_CFG_GNSS = 0x3E
-} ubxProtocolBytes_e;
+} ubxM8ProtocolBytes_e;
+
+typedef enum {
+    PREAMBLE1 = 0xB5,
+    PREAMBLE2 = 0x62,
+    CLASS_NAV = 0x01,
+    CLASS_ACK = 0x05,
+    CLASS_CFG = 0x06,
+    MSG_ACK_NACK = 0x00,
+    MSG_ACK_ACK = 0x01,
+    MSG_POSLLH = 0x02,
+    MSG_STATUS = 0x03,
+    MSG_DOP = 0x04,
+    MSG_PVT = 0x07,
+    MSG_VELNED = 0x12,
+    MSG_SAT = 0x35,
+    MSG_CFG_MSG = 0x01,
+    MSG_CFG_PRT = 0x00,
+    MSG_CFG_RATE = 0x08,
+    MSG_CFG_SET_RATE = 0x01,
+    MSG_CFG_NAV_SETTINGS = 0x24,
+    MSG_CFG_GNSS = 0x3E
+} ubxM10ProtocolBytes_e;
+
+ubloxVersion_e ubloxVersion = UNDEF;
 
 #define UBLOX_MODE_ENABLED    0x1
 #define UBLOX_MODE_TEST       0x2
@@ -246,6 +271,32 @@ typedef struct ubxCfgNav5_s {
     uint8_t utcStandard;
     uint8_t reserved1[5];
 } ubxCfgNav5_t;
+
+typedef struct ubxCfgNav5x_s {
+    uint16_t version;
+    uint16_t mask1;
+    uint16_t mask2;
+    uint8_t reserved0[2];
+    uint8_t minSVs;
+    uint8_t maxSVs;
+    uint8_t minCNO;
+    uint8_t reserved1;
+    uint8_t iniFix3D;
+    uint8_t reserved2[2];
+    uint8_t ackAiding;
+    uint16_t wknRollover;
+    uint8_t sigAttenCompMode;
+    uint8_t reserverd3;
+    uint8_t reserverd4[2];
+    uint8_t reserverd5[2];
+    uint8_t usePPP;
+    uint8_t aopCfg;
+    uint8_t useAOP;
+    uint8_t reserved6[2];
+    uint8_t reserved7[4];
+    uint8_t reserved8[3];
+    uint8_t useAdr;
+} ubxCfNav5x_t;
 
 typedef union ubxPayload_s {
     ubxPollMsg_t poll_msg;
@@ -488,7 +539,7 @@ static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_
     }
 }
 
-/* static void ubloxSendMessage(const uint8_t *data, uint8_t len)
+static void ubloxSendMessage(const uint8_t *data, uint8_t len)
 {
     uint8_t checksumA = 0, checksumB = 0;
     serialWrite(gpsPort, data[0]);
@@ -501,7 +552,7 @@ static void ubloxSendDataUpdateChecksum(const uint8_t *data, uint8_t len, uint8_
     gpsData.ackWaitingMsgId = data[3]; //save message id for ACK
     gpsData.ackTimeoutCounter = 0;
     gpsData.ackState = UBLOX_ACK_WAITING;
-} */
+}
 
 static void ubloxSendConfigMessage(ubxMessage_t *message, uint8_t msg_id, uint8_t length)
 {
@@ -553,6 +604,10 @@ static void ubloxSendNAV5Message(uint8_t model)
     tx_buffer.payload.cfg_nav5.reserved1[4] = 0;
 
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5_t));
+}
+
+static void ubloxSendNAV5Message() {
+    ubxMessage_t tx_buffer;
 }
 
 static void ubloxSendPowerMode(void)
@@ -966,6 +1021,14 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
 static void gpsNewData(uint16_t c)
 {
+    if (
+        gpsConfig()->provider == GPS_UBLOX
+        && ubloxVersion == UNDEF
+    ) {
+        ubloxVersion = ubloxDetectVersion(&c);
+        return;
+    }
+
     if (!gpsNewFrame(c)) {
         return;
     }

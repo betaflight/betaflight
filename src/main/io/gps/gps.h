@@ -212,6 +212,12 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define TASK_GPS_RATE       100
 #define TASK_GPS_RATE_FAST  1000
 
+typedef enum {
+    UNDEF,
+    M8,
+    M10
+} ubloxVersion_e;
+
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
