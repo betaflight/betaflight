@@ -4759,11 +4759,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
             cliPrint("NOT CONFIGURED");
         } else {
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
-               cliPrint("auto config OFF, ");
+               cliPrint("auto config OFF");
             } else {
-                cliPrint("configured, ");
+                cliPrint("configured");
             }
-            cliPrint(" ");
         }
     } else {
         cliPrint("NOT ENABLED");
