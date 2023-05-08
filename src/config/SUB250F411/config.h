@@ -38,35 +38,35 @@
 #define USE_FLASH_W25Q128FV
 #define USE_MAX7456
 
-#define BEEPER_PIN                      B02
-#define MOTOR1_PIN                      B04
-#define MOTOR2_PIN                      B05
-#define MOTOR3_PIN                      B06
-#define MOTOR4_PIN                      B07
-#define RX_PPM_PIN                      A03
-#define LED_STRIP_PIN                   A08
-#define UART1_TX_PIN                    A09
-#define UART2_TX_PIN                    A02
-#define UART1_RX_PIN                    A10
-#define UART2_RX_PIN                    A03
-#define INVERTER_PIN_UART2              C15
-#define I2C1_SCL_PIN                    B08
-#define I2C1_SDA_PIN                    B09
-#define LED0_PIN                        C13
-#define LED1_PIN                        C14
-#define SPI1_SCK_PIN                    A05
-#define SPI2_SCK_PIN                    B13
-#define SPI1_SDI_PIN                    A06
-#define SPI2_SDI_PIN                    B14
-#define SPI1_SDO_PIN                    A07
-#define SPI2_SDO_PIN                    B15
-#define ADC_VBAT_PIN                    B00
-#define ADC_CURR_PIN                    B01
-#define PINIO1_PIN                      B10
-#define FLASH_CS_PIN                    A00
-#define MAX7456_SPI_CS_PIN              B12
-#define GYRO_1_EXTI_PIN                 A01
-#define GYRO_1_CS_PIN                   A04
+#define BEEPER_PIN                      PB2
+#define MOTOR1_PIN                      PB4
+#define MOTOR2_PIN                      PB5
+#define MOTOR3_PIN                      PB6
+#define MOTOR4_PIN                      PB7
+#define RX_PPM_PIN                      PA3
+#define LED_STRIP_PIN                   PA8
+#define UART1_TX_PIN                    PA9
+#define UART2_TX_PIN                    PA2
+#define UART1_RX_PIN                    PA10
+#define UART2_RX_PIN                    PA3
+#define INVERTER_PIN_UART2              PC15
+#define I2C1_SCL_PIN                    PB8
+#define I2C1_SDA_PIN                    PB9
+#define LED0_PIN                        PC13
+#define LED1_PIN                        PC14
+#define SPI1_SCK_PIN                    PA5
+#define SPI2_SCK_PIN                    PB13
+#define SPI1_SDI_PIN                    PA6
+#define SPI2_SDI_PIN                    PB14
+#define SPI1_SDO_PIN                    PA7
+#define SPI2_SDO_PIN                    PB15
+#define ADC_VBAT_PIN                    PB0
+#define ADC_CURR_PIN                    PB1
+#define PINIO1_PIN                      PB10
+#define FLASH_CS_PIN                    PA0
+#define MAX7456_SPI_CS_PIN              PB12
+#define GYRO_1_EXTI_PIN                 PA1
+#define GYRO_1_CS_PIN                   PA4
 
 #define TIMER_PIN_MAPPING               TIMER_PIN_MAP( 0, PA3, 3, -1) \
                                         TIMER_PIN_MAP( 1, PB4, 1,  0) \
@@ -81,7 +81,7 @@
 #define SERIALRX_UART                   SERIAL_PORT_USART2
 
 #define BARO_I2C_INSTANCE               (I2CDEV_1)
-#define SERIALRX_PROVIDER               CRSF
+//TODO ##define SERIALRX_PROVIDER               CRSF
 #define DEFAULT_BLACKBOX_DEVICE         BLACKBOX_DEVICE_FLASH
 //TODO #define DSHOT_IDLE_VALUE 800
 #define DEFAULT_DSHOT_BURST             DSHOT_DMAR_AUTO
