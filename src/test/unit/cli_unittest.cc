@@ -280,7 +280,7 @@ void bufWriterFlush(bufWriter_t *) {}
 void mixerResetDisarmedMotors(void) {}
 void gpsEnablePassthrough(struct serialPort_s *) {}
 bool gpsIsHealthy(void) { return true; }
-baudRate_e getGPSPortActualBaudRateIndex(void) { return BAUD_AUTO; }
+baudRate_e getGpsPortActualBaudRateIndex(void) { return BAUD_AUTO; }
 
 bool parseLedStripConfig(int, const char *){return false; }
 const char rcChannelLetters[] = "AERT12345678abcdefgh";

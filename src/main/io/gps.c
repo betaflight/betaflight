@@ -1985,7 +1985,7 @@ float getGpsDataIntervalSeconds(void)
     return gpsDataIntervalSeconds;
 }
 
-baudRate_e getGPSPortActualBaudRateIndex(void)
+baudRate_e getGpsPortActualBaudRateIndex(void)
 {
     return lookupBaudRateIndex(serialGetBaudRate(gpsPort));
 }

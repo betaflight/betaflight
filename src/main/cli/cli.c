@@ -4746,20 +4746,20 @@ static void cliStatus(const char *cmdName, char *cmdline)
             if (!gpsPortConfig) {
                 cliPrint("NO PORT, ");
             } else {
-                cliPrintf("UART%d %ld(", (gpsPortConfig->identifier + 1), baudRates[getGPSPortActualBaudRateIndex()]);
+                cliPrintf("UART%d %ld (set to ", (gpsPortConfig->identifier + 1), baudRates[getGpsPortActualBaudRateIndex()]);
                 if (gpsConfig()->autoBaud == GPS_AUTOBAUD_ON) {
                     cliPrint("AUTO");
                 } else {
                     cliPrintf("%ld", baudRates[gpsPortConfig->gps_baudrateIndex]);
                 }
-                cliPrint("), ");  // Place holder for queried config items to be added (firmware & protocol version, actual solution rate, etc.)
+                cliPrint("), ");
             }
         }
         if (!gpsIsHealthy()) {
             cliPrint("NOT CONFIGURED");
         } else {
             if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
-               cliPrint("auto config OFF");
+                cliPrint("auto config OFF");
             } else {
                 cliPrint("configured");
             }
@@ -4768,7 +4768,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
         cliPrint("NOT ENABLED");
     }
     cliPrintLinefeed();
-#endif
+#endif // USE_GPS
 
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
