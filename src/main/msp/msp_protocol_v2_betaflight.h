@@ -26,7 +26,7 @@
 #define MSP2_GET_OSD_WARNINGS               0x3005  // returns active OSD warning message text
 #define MSP2_GET_TEXT                       0x3006
 #define MSP2_SET_TEXT                       0x3007
-#define MSP2_SELF_DEFINE_OSD_INFO           0x3008
+#define MSP2_SET_DEFINE_OSD_INFO           0x3008
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
