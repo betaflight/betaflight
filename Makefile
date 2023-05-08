@@ -82,7 +82,6 @@ include $(ROOT)/make/checks.mk
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
-CONFIG_DIR ?= $(ROOT)/src/config
 
 export RM := rm
 
