@@ -583,7 +583,7 @@ static void sensorUpdate(void)
             rescueState.sensor.imuYawCogGain = 0;
         } else {
             // up to 6x increase in CoG IMU Yaw gain
-            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + groundspeedErrorRatio, 1.0f, 6.0f);
+            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + (2.0f * groundspeedErrorRatio), 1.0f, 6.0f);
         }
         rescueState.sensor.groundspeedPitchAttenuator = 1.0f / constrainf(1.0f + groundspeedErrorRatio, 1.0f, 3.0f); // cut pitch angle by up to one third
     }
