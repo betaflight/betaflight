@@ -18,7 +18,6 @@
 # The target to build, see VALID_TARGETS below
 DEFAULT_TARGET    ?= STM32F405
 TARGET    ?=
-CONFIG    ?=
 
 # Compile-time options
 OPTIONS   ?=
@@ -83,7 +82,6 @@ include $(ROOT)/make/checks.mk
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
-CONFIG_DIR ?= $(ROOT)/src/config
 
 export RM := rm
 
@@ -99,34 +97,11 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-ifneq ($(CONFIG),)
-
-ifneq ($(TARGET),)
-$(error TARGET or CONFIG should be specified. Not both.)
-endif
-
-INCLUDE_DIRS += $(CONFIG_DIR)/$(CONFIG)
-CONFIG_FILE  := $(CONFIG_DIR)/$(CONFIG)/config.h
-
-ifeq ($(wildcard $(CONFIG_FILE)),)
-$(error Config file not found: $(CONFIG_FILE))
-endif
-
-TARGET       := $(shell grep " FC_TARGET_MCU" $(CONFIG_FILE) | awk '{print $$3}' )
-
-ifeq ($(TARGET),)
-$(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
-endif
-
-else
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
 endif
-endif #CONFIG
 
 include $(ROOT)/make/targets.mk
-
-BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/config/*/config.h)))))
 
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
@@ -174,10 +149,6 @@ VPATH 			:= $(VPATH):$(ROOT)/make
 
 # start specific includes
 include $(ROOT)/make/mcu/$(TARGET_MCU).mk
-
-ifneq ($(CONFIG),)
-TARGET_FLAGS  	+= -DUSE_CONFIG
-endif
 
 # openocd specific includes
 include $(ROOT)/make/openocd.mk
@@ -312,10 +283,6 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
                   -I/usr/include -I/usr/include/linux
 
 TARGET_NAME := $(TARGET)
-
-ifneq ($(CONFIG),)
-TARGET_NAME := $(TARGET_NAME)_$(CONFIG)
-endif
 
 ifeq ($(REV),yes)
 TARGET_NAME := $(TARGET_NAME)_$(REVISION)
@@ -481,16 +448,10 @@ $(BASE_TARGETS):
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-$(BASE_CONFIGS):
-	$(V0) @echo "Building config $@" && \
-	$(MAKE) hex CONFIG=$@ && \
-	echo "Building config $@ succeeded."
-
 $(NOBUILD_TARGETS):
 	$(MAKE) TARGET=$@
 
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS))
-CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
@@ -509,10 +470,6 @@ test_clean:
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
-
-## <CONFIG>_clean    : clean up one specific config (alias for above)
-$(CONFIGS_CLEAN):
-	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all valid targets
 clean_all: $(TARGETS_CLEAN) test_clean
@@ -623,9 +580,6 @@ targets:
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
 
-configs:
-	@echo "Valid configs:       $(BASE_CONFIGS)"
-
 targets-ci-print:
 	@echo $(CI_TARGETS)
 
@@ -698,7 +652,7 @@ $(TARGET_EF_HASH_FILE):
 	$(V1) touch $(TARGET_EF_HASH_FILE)
 
 # rebuild everything when makefile changes or the extra flags have changed
-$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*) $(CONFIG_FILE)
+$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*)
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
