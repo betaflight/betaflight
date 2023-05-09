@@ -211,16 +211,14 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     // Use raw heading error (from GPS or whatever else)
     float ex = 0, ey = 0, ez = 0;
     if (cogYawGain != 0.0f) {
+        // if in a GPS Rescue, boost IMU yaw gain when course over ground and velocity to home differ significantly
         while (courseOverGround >  M_PIf) {
             courseOverGround -= (2.0f * M_PIf);
         }
-
         while (courseOverGround < -M_PIf) {
             courseOverGround += (2.0f * M_PIf);
         }
-
         const float ez_ef = cogYawGain * (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
-
         ex = rMat[2][0] * ez_ef;
         ey = rMat[2][1] * ez_ef;
         ez = rMat[2][2] * ez_ef;
@@ -476,8 +474,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     static timeUs_t previousIMUUpdateTime;
     bool useAcc = false;
     bool useMag = false;
-    float cogYawGain = 0.0f; // Yaw correction Gain to be applied in imuMahonyAHRSupdate from our ground course
-    float courseOverGround = 0; // To be used when cogYawGain is non-zero.  Stored in Radians
+    float cogYawGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default to no modification
+    float courseOverGround = 0; // To be used when cogYawGain is non-zero, in radians
 
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTimeUs;
@@ -495,8 +493,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-        cogYawGain = gpsRescueGetImuYawCogGain();
-
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            cogYawGain = gpsRescueGetImuYawCogGain(); // do not modify IMU yaw gain unless in a rescue
+        }
         if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.
             // shouldInitializeGPSHeading() returns true only once.
