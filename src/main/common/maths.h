@@ -34,6 +34,8 @@
 
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
+#define M_TWO_PIf   2.0f * M_PIf
+#define M_HALF_PIf  0.5f * M_PIf
 #define M_EULERf    2.71828182845904523536f
 
 #define RAD    (M_PIf / 180.0f)

@@ -237,11 +237,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 #ifdef USE_ACC
     const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
-    const float angleCutoffHz = 1000.0f / (2.0f * M_PIf * pidProfile->angle_feedforward_smoothing_ms); // default of 80ms -> 2.0Hz, 160ms -> 1.0Hz, approximately
+    const float angleCutoffHz = 1000.0f / (M_TWO_PIf * pidProfile->angle_feedforward_smoothing_ms); // default of 80ms -> 2.0Hz, 160ms -> 1.0Hz, approximately
     const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
     pidRuntime.horizonDelayMs = pidProfile->horizon_delay_ms;
     if (pidRuntime.horizonDelayMs) {
-        const float horizonSmoothingHz = 1e3f / (2.0f * M_PIf * pidProfile->horizon_delay_ms); // default of 500ms means 0.318Hz
+        const float horizonSmoothingHz = 1e3f / (M_TWO_PIf * pidProfile->horizon_delay_ms); // default of 500ms means 0.318Hz
         const float kHorizon = pt1FilterGain(horizonSmoothingHz, pidRuntime.dT);
         pt1FilterInit(&pidRuntime.horizonSmoothingPt1, kHorizon);
     }

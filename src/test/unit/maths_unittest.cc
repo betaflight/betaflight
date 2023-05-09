@@ -176,7 +176,7 @@ TEST(MathsUnittest, TestConstrainf)
 TEST(MathsUnittest, TestDegreesToRadians)
 {
     EXPECT_FLOAT_EQ(degreesToRadians(0), 0.0f);
-    EXPECT_FLOAT_EQ(degreesToRadians(90), 0.5f * M_PIf);
+    EXPECT_FLOAT_EQ(degreesToRadians(90), M_HALF_PIf);
     EXPECT_FLOAT_EQ(degreesToRadians(180), M_PIf);
     EXPECT_FLOAT_EQ(degreesToRadians(-180), - M_PIf);
 }

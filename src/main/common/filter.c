@@ -44,7 +44,7 @@ float nullFilterApply(filter_t *filter, float input)
 
 FAST_CODE_NOINLINE float pt1FilterGain(float f_cut, float dT)
 {
-    float omega = 2.0f * M_PIf * f_cut * dT;
+    float omega = M_TWO_PIf * f_cut * dT;
     return omega / (omega + 1.0f);
 }
 
@@ -157,7 +157,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
 FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)
 {
     // setup variables
-    const float omega = 2.0f * M_PIf * filterFreq * refreshRate * 0.000001f;
+    const float omega = M_TWO_PIf * filterFreq * refreshRate * 0.000001f;
     const float sn = sin_approx(omega);
     const float cs = cos_approx(omega);
     const float alpha = sn / (2.0f * Q);
@@ -257,7 +257,7 @@ void phaseCompInit(phaseComp_t *filter, const float centerFreqHz, const float ce
 
 FAST_CODE void phaseCompUpdate(phaseComp_t *filter, const float centerFreqHz, const float centerPhaseDeg, const uint32_t looptimeUs)
 {
-    const float omega = 2.0f * M_PIf * centerFreqHz * looptimeUs * 1e-6f;
+    const float omega = M_TWO_PIf * centerFreqHz * looptimeUs * 1e-6f;
     const float sn = sin_approx(centerPhaseDeg * RAD);
     const float gain = (1 + sn) / (1 - sn);
     const float alpha = (12 - sq(omega)) / (6 * omega * sqrtf(gain));  // approximate prewarping (series expansion)

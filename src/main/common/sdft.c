@@ -40,7 +40,7 @@ void sdftInit(sdft_t *sdft, const int startBin, const int endBin, const int numB
 {
     if (!isInitialized) {
         rPowerN = powf(SDFT_R, SDFT_SAMPLE_SIZE);
-        const float c = 2.0f * M_PIf / (float)SDFT_SAMPLE_SIZE;
+        const float c = M_TWO_PIf / (float)SDFT_SAMPLE_SIZE;
         float phi = 0.0f;
         for (int i = 0; i < SDFT_BIN_COUNT; i++) {
             phi = c * i;

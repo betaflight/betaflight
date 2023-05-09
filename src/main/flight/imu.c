@@ -212,11 +212,11 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     float ex = 0, ey = 0, ez = 0;
     if (useCOG) {
         while (courseOverGround >  M_PIf) {
-            courseOverGround -= (2.0f * M_PIf);
+            courseOverGround -= M_TWO_PIf;
         }
 
         while (courseOverGround < -M_PIf) {
-            courseOverGround += (2.0f * M_PIf);
+            courseOverGround += M_TWO_PIf;
         }
 
         const float ez_ef = (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
@@ -332,11 +332,11 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
        imuQuaternionComputeProducts(&headfree, &buffer);
 
        attitude.values.roll = lrintf(atan2_approx((+2.0f * (buffer.wx + buffer.yz)), (+1.0f - 2.0f * (buffer.xx + buffer.yy))) * (1800.0f / M_PIf));
-       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf((M_HALF_PIf - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
     } else {
        attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
-       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf((M_HALF_PIf - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2_approx(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
     }
 

@@ -52,17 +52,17 @@ float sin_approx(float x)
 {
     int32_t xint = x;
     if (xint < -32 || xint > 32) return 0.0f;                               // Stop here on error input (5 * 360 Deg)
-    while (x >  M_PIf) x -= (2.0f * M_PIf);                                 // always wrap input angle to -PI..PI
-    while (x < -M_PIf) x += (2.0f * M_PIf);
-    if (x >  (0.5f * M_PIf)) x =  (0.5f * M_PIf) - (x - (0.5f * M_PIf));   // We just pick -90..+90 Degree
-    else if (x < -(0.5f * M_PIf)) x = -(0.5f * M_PIf) - ((0.5f * M_PIf) + x);
+    while (x >  M_PIf) x -= M_TWO_PIf;                                      // always wrap input angle to -PI..PI
+    while (x < -M_PIf) x += M_TWO_PIf;
+    if (x >  M_HALF_PIf) x =  M_PIf - x;                                    // We just pick -90..+90 Degree
+    else if (x < -M_HALF_PIf) x = - M_PIf - x;
     float x2 = x * x;
     return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
 }
 
 float cos_approx(float x)
 {
-    return sin_approx(x + (0.5f * M_PIf));
+    return sin_approx(x + M_HALF_PIf);
 }
 
 // Initial implementation by Crashpilot1000 (https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292)
