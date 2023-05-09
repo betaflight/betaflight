@@ -261,7 +261,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     // Use measured acceleration vector
     float recipAccNorm = sq(ax) + sq(ay) + sq(az);
     if (useAcc && recipAccNorm > 0.01f) {
-        // Normalise accelerometer measurement when smoothed acc is within 20% of 1G
+        // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
         recipAccNorm = invSqrt(recipAccNorm);
         ax *= recipAccNorm;
         ay *= recipAccNorm;
