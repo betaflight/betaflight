@@ -75,15 +75,24 @@ include $(ROOT)/make/build_verbosity.mk
 include $(ROOT)/make/system-id.mk
 
 # developer preferences, edit these at will, they'll be gitignored
--include $(ROOT)/make/local.mk
+ifneq ($(wildcard $(ROOT)/make/local.mk),)
+include $(ROOT)/make/local.mk
+endif
 
 # pre-build sanity checks
 include $(ROOT)/make/checks.mk
 
+# basic target list
+BASE_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
+
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR  ?= $(ROOT)/tools
 DL_DIR     := $(ROOT)/downloads
-CONFIG_DIR ?= $(ROOT)/src/config
+CONFIG_DIR ?= $(BETAFLIGHT_CONFIG)
+ifeq ($(CONFIG_DIR),)
+CONFIG_DIR := $(ROOT)/src/config
+endif
+DIRECTORIES := $(DL_DIR) $(TOOLS_DIR)
 
 export RM := rm
 
@@ -99,58 +108,31 @@ FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
-ifneq ($(CONFIG),)
+FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
 
-ifneq ($(TARGET),)
-$(error TARGET or CONFIG should be specified. Not both.)
-endif
+FC_VER       := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
-INCLUDE_DIRS += $(CONFIG_DIR)/$(CONFIG)
-CONFIG_FILE  := $(CONFIG_DIR)/$(CONFIG)/config.h
+# import config handling
+include $(ROOT)/make/config.mk
 
-ifeq ($(wildcard $(CONFIG_FILE)),)
-$(error Config file not found: $(CONFIG_FILE))
-endif
-
-TARGET        := $(shell grep " FC_TARGET_MCU" $(CONFIG_FILE) | awk '{print $$3}' )
-HSE_VALUE_MHZ := $(shell grep " SYSTEM_HSE_MHZ" $(CONFIG_FILE) | awk '{print $$3}' )
-ifneq ($(HSE_VALUE_MHZ),)
-HSE_VALUE     := $(shell echo $$(( $(HSE_VALUE_MHZ) * 1000000 )) )
-endif
-
-ifeq ($(TARGET),)
-$(error No TARGET identified. Is the config.h valid for $(CONFIG)?)
-endif
-
-EXST_ADJUST_VMA := $(shell grep " FC_VMA_ADDRESS" $(CONFIG_FILE) | awk '{print $$3}' )
-ifneq ($(EXST_ADJUST_VMA),)
-EXST = yes
-endif
-
-else
+ifeq ($(CONFIG),)
 ifeq ($(TARGET),)
 TARGET := $(DEFAULT_TARGET)
 endif
-endif #CONFIG
+endif
 
 # default xtal value
 HSE_VALUE       ?= 8000000
 
-BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/config/*/config.h)))))
-BASE_TARGETS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)))))
-CI_TARGETS       := $(BASE_TARGETS) CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722
+CI_TARGETS       := $(BASE_TARGETS) $(filter CRAZYBEEF4SX1280 CRAZYBEEF4FR IFLIGHT_BLITZ_F722, $(BASE_CONFIGS))
 include $(ROOT)/src/main/target/$(TARGET)/target.mk
 
 REVISION := norevision
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git log -1 --format="%h")
 endif
-
-FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
-FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
-FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
-
-FC_VER := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
 LD_FLAGS        :=
 EXTRA_LD_FLAGS  :=
@@ -284,6 +266,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
+              $(CONFIG_REVISION_DEFINE) \
               -pipe \
               -MMD -MP \
               $(EXTRA_FLAGS)
@@ -484,18 +467,11 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 all: $(CI_TARGETS)
 
 $(BASE_TARGETS):
-	$(V0) @echo "Building $@" && \
+	$(V0) @echo "Building target $@" && \
 	$(MAKE) hex TARGET=$@ && \
 	echo "Building $@ succeeded."
 
-$(BASE_CONFIGS):
-	$(V0) @echo "Building config $@" && \
-	$(MAKE) hex CONFIG=$@ && \
-	echo "Building config $@ succeeded."
-
-
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
-CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
@@ -514,10 +490,6 @@ test_clean:
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN):
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
-
-## <CONFIG>_clean    : clean up one specific config (alias for above)
-$(CONFIGS_CLEAN):
-	$(V0) $(MAKE) -j CONFIG=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all targets
 clean_all: $(TARGETS_CLEAN) test_clean
@@ -581,11 +553,6 @@ TARGETS_REVISION = $(addsuffix _rev,$(BASE_TARGETS))
 $(TARGETS_REVISION):
 	$(V0) $(MAKE) hex REV=yes TARGET=$(subst _rev,,$@)
 
-CONFIGS_REVISION = $(addsuffix _rev,$(BASE_CONFIGS))
-## <CONFIG>_rev    : build configured target and add revision to filename
-$(CONFIGS_REVISION):
-	$(V0) $(MAKE) hex REV=yes CONFIG=$(subst _rev,,$@)
-
 all_rev: $(addsuffix _rev,$(CI_TARGETS))
 
 unbrick_$(TARGET): $(TARGET_HEX)
@@ -603,10 +570,7 @@ cppcheck-result.xml: $(CSOURCES)
 	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
 # mkdirs
-$(DL_DIR):
-	mkdir -p $@
-
-$(TOOLS_DIR):
+$(DIRECTORIES):
 	mkdir -p $@
 
 ## version           : print firmware version
@@ -619,9 +583,14 @@ help: Makefile make/tools.mk
 	@echo "Makefile for the $(FORKNAME) firmware"
 	@echo ""
 	@echo "Usage:"
-	@echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	@echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
 	@echo "Or:"
-	@echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
+	@echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
+	@echo "Or:"
+	@echo "        make <config-target> [V=<verbosity>] [OPTIONS=\"<options>\"] [EXTRA_FLAGS=\"<extra_flags>\"]"
+	@echo ""
+	@echo "To pupulate configuration targets:"
+	@echo "        make configs"
 	@echo ""
 	@echo "Valid TARGET values are: $(BASE_TARGETS)"
 	@echo ""
@@ -632,9 +601,6 @@ targets:
 	@echo "Valid targets:       $(BASE_TARGETS)"
 	@echo "Built targets:       $(CI_TARGETS)"
 	@echo "Default target:      $(TARGET)"
-
-configs:
-	@echo "Valid configs:       $(BASE_CONFIGS)"
 
 targets-ci-print:
 	@echo $(CI_TARGETS)

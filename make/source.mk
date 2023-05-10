@@ -208,9 +208,8 @@ COMMON_SRC += \
             drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
 
-ifneq ($(CONFIG),)
+ifneq ($(GYRO_DEFINE),)
 
-GYRO_DEFINE         := $(shell grep " USE_GYRO_" $(CONFIG_FILE) | awk '{print $$2}' )
 LEGACY_GYRO_DEFINES := USE_GYRO_L3GD20
 ifneq ($(findstring $(GYRO_DEFINE),$(LEGACY_GYRO_DEFINES)),)
 

@@ -4818,6 +4818,10 @@ static void printVersion(bool printBoardInfo)
 
     cliPrintLinefeed();
 
+#if defined(__CONFIG_REVISION__)
+    cliPrintLinef("# config rev: %s", shortConfigGitRevision);
+#endif
+
 #if defined(USE_BOARD_INFO)
     if (printBoardInfo && strlen(getManufacturerId()) && strlen(getBoardName())) {
         cliPrintLinef("# board: manufacturer_id: %s, board_name: %s", getManufacturerId(), getBoardName());
