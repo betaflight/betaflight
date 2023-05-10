@@ -35,6 +35,9 @@ extern const char* const targetName;
 #define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.
 extern const char* const shortGitRevision;
 
+#define GIT_SHORT_CONFIG_REVISION_LENGTH   7 // lower case hexadecimal digits.
+extern const char* const shortConfigGitRevision;
+
 #define BUILD_DATE_LENGTH           11
 extern const char* const buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
 
