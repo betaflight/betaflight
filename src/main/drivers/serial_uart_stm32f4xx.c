@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "build/debug.h"
 
 #ifdef USE_UART
 
@@ -217,9 +218,48 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
 };
 
+bool checkUsartTxOutput(uartPort_t *s)
+{
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
+
+    if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
+        if (IORead(txIO)) {
+            // TX is high so we're good to transmit
+
+            // Enable USART TX output
+            uart->txPinState = TX_PIN_ACTIVE;
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
+            return true;
+        } else {
+            // TX line is pulled low so don't enable USART TX
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void uartTxMonitor(uartPort_t *s)
+{
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
+
+    // Switch TX to an input with pullup so it's state can be monitored
+    uart->txPinState = TX_PIN_MONITOR;
+    IOConfigGPIO(txIO, IOCFG_IPU);
+}
+
 static void handleUsartTxDma(uartPort_t *s)
 {
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+
     uartTryStartTxDMA(s);
+
+    if (s->txDMAEmpty && (uart->txPinState != TX_PIN_IGNORE)) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uartTxMonitor(s);
+    }
 }
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -268,6 +308,8 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
 
     s->USARTx = hardware->reg;
 
+    s->checkUsartTxOutput = checkUsartTxOutput;
+
 #ifdef USE_DMA
     uartConfigureDma(uart);
 #endif
@@ -279,13 +321,22 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
         RCC_ClockCmd(hardware->rcc, ENABLE);
     }
 
+    uart->txPinState = TX_PIN_IGNORE;
+
     if (options & SERIAL_BIDIR) {
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         IOConfigGPIOAF(txIO, ((options & SERIAL_BIDIR_PP) || (options & SERIAL_BIDIR_PP_PD)) ? IOCFG_AF_PP : IOCFG_AF_OD, hardware->af);
     } else {
         if ((mode & MODE_TX) && txIO) {
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, hardware->af);
+
+            if ((options & SERIAL_INVERTED) == SERIAL_NOT_INVERTED) {
+                uart->txPinState = TX_PIN_ACTIVE;
+                // Switch TX to an input with pullup so it's state can be monitored
+                uartTxMonitor(s);
+            } else {
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP, hardware->af);
+            }
         }
 
         if ((mode & MODE_RX) && rxIO) {
@@ -318,6 +369,14 @@ void uartIrqHandler(uartPort_t *s)
             s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->DR;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
+    }
+
+    // Detect completion of transmission
+    if (USART_GetITStatus(s->USARTx, USART_IT_TC) == SET) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uartTxMonitor(s);
+
+        USART_ClearITPendingBit(s->USARTx, USART_IT_TC);
     }
 
     if (!s->txDMAResource && (USART_GetITStatus(s->USARTx, USART_IT_TXE) == SET)) {
