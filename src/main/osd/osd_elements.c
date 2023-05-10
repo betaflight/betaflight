@@ -1063,9 +1063,6 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
 {
-#ifdef USE_GPS_LAP_TIMER
-    osdFormatDistanceString(element->buff, gpsLapTimerData.currentLapTime / 1000, SYM_HOMEFLAG);
-#endif
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
         int distance = GPS_distanceToHome;
 #ifdef USE_GPS_LAP_TIMER
@@ -2016,7 +2013,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
-    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_ITEM_COUNT)) {
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_GPS_LAP_TIME_CURRENT)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
     } else {
         osdElementDrawFunction[item](&element);
