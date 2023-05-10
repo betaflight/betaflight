@@ -669,7 +669,7 @@ void descend(void)
         rescueState.intent.targetVelocityCmS = gpsRescueConfig()->rescueGroundspeed * rescueState.intent.proximityToLandingArea;
         // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
         // if quad drifts further than 2m away from home, should by then have rotated towards home, so pitch is allowed
-        rescueState.intent.rollAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.intent.proximityToLandingArea;
+        rescueState.intent.rollAngleLimitDeg = 0.5f * gpsRescueConfig()->maxRescueAngle * rescueState.intent.proximityToLandingArea;
         // reduce roll capability when closer to home, none within final 2m
         rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
     }
