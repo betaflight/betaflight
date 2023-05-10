@@ -40,6 +40,8 @@
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
+#include "rx/rx.h"
+
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
