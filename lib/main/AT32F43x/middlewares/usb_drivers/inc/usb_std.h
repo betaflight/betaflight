@@ -5,11 +5,11 @@
   **************************************************************************
   *                       Copyright notice & Disclaimer
   *
-  * The software Board Support Package (BSP) that is made available to
-  * download from Artery official website is the copyrighted work of Artery.
-  * Artery authorizes customers to use, copy, and distribute the BSP
-  * software and its related documentation for the purpose of design and
-  * development in conjunction with Artery microcontrollers. Use of the
+  * The software Board Support Package (BSP) that is made available to 
+  * download from Artery official website is the copyrighted work of Artery. 
+  * Artery authorizes customers to use, copy, and distribute the BSP 
+  * software and its related documentation for the purpose of design and 
+  * development in conjunction with Artery microcontrollers. Use of the 
   * software is governed by this copyright notice and the following disclaimer.
   *
   * THIS SOFTWARE IS PROVIDED ON "AS IS" BASIS WITHOUT WARRANTIES,
@@ -37,7 +37,7 @@ extern "C" {
 /** @addtogroup AT32F435_437_middlewares_usb_drivers
   * @{
   */
-
+  
 /** @addtogroup USB_standard
   * @{
   */
@@ -128,7 +128,7 @@ typedef enum
   USB_CONN_STATE_ADDRESSED,                 /*!< usb device connect state address */
   USB_CONN_STATE_CONFIGURED,                /*!< usb device connect state configured */
   USB_CONN_STATE_SUSPENDED                  /*!< usb device connect state suspend */
-}usbd_conn_state;
+}usbd_conn_state; 
 
 /**
   * @brief endpoint 0 state
@@ -139,7 +139,7 @@ typedef enum
 #define USB_EPT0_DATA_OUT                3 /*!< usb endpoint state data out */
 #define USB_EPT0_STATUS_IN               4 /*!< usb endpoint state status in */
 #define USB_EPT0_STATUS_OUT              5 /*!< usb endpoint state status out */
-#define USB_EPT0_STALL                   6 /*!< usb endpoint state stall */
+#define USB_EPT0_STALL                   6 /*!< usb endpoint state stall */ 
 
 /**
   * @brief usb descriptor length
@@ -203,11 +203,13 @@ typedef enum
   */
 #define SET_LINE_CODING                   0x20
 #define GET_LINE_CODING                   0x21
+//control line state for rts
+#define SET_CONTROL_LINE_STATE			  0x22
 
 /**
   * @brief usb cdc class set line coding struct
   */
-typedef struct
+typedef struct 
 {
   uint32_t bitrate;                      /* line coding baud rate */
   uint8_t format;                        /* line coding foramt */
@@ -270,7 +272,7 @@ typedef enum
 }usb_sts_type;
 
 
-/**
+/** 
   * @brief format of usb setup data
   */
 typedef struct
@@ -278,12 +280,12 @@ typedef struct
   uint8_t                                bmRequestType;                 /*!< characteristics of request */
   uint8_t                                bRequest;                      /*!< specific request */
   uint16_t                               wValue;                        /*!< word-sized field that varies according to request */
-  uint16_t                               wIndex;                        /*!< word-sized field that varies according to request
+  uint16_t                               wIndex;                        /*!< word-sized field that varies according to request 
                                                                            typically used to pass an index or offset */
   uint16_t                               wLength;                       /*!< number of bytes to transfer if there is a data stage */
 } usb_setup_type;
 
-/**
+/** 
   * @brief format of standard device descriptor
   */
 typedef struct
@@ -304,28 +306,28 @@ typedef struct
   uint8_t                                bNumConfigurations;            /*!< number of possible configurations */
 } usb_device_desc_type;
 
-/**
+/** 
   * @brief format of standard configuration descriptor
   */
 typedef struct
 {
   uint8_t                                bLength;                        /*!< size of this descriptor in bytes */
-  uint8_t                                bDescriptorType;                /*!< configuration descriptor type */
+  uint8_t                                bDescriptorType;                /*!< configuration descriptor type */  
   uint16_t                               wTotalLength;                   /*!< total length of data returned for this configuration */
   uint8_t                                bNumInterfaces;                 /*!< number of interfaces supported by this configuration */
   uint8_t                                bConfigurationValue;            /*!< value to use as an argument to the SetConfiguration() request */
   uint8_t                                iConfiguration;                 /*!< index of string descriptor describing this configuration */
-  uint8_t                                bmAttributes;                   /*!< configuration characteristics
+  uint8_t                                bmAttributes;                   /*!< configuration characteristics 
                                                                             D7 reserved
                                                                             D6 self-powered
                                                                             D5 remote wakeup
-                                                                            D4~D0 reserved */
+                                                                            D4~D0 reserved */                                                                    
   uint8_t                                bMaxPower;                      /*!< maximum power consumption of the usb device from the bus */
-
-
+  
+  
 }usb_configuration_desc_type;
 
-/**
+/** 
   * @brief format of standard interface descriptor
   */
 typedef struct
@@ -334,14 +336,14 @@ typedef struct
   uint8_t                                bDescriptorType;                /*!< interface descriptor type */
   uint8_t                                bInterfaceNumber;               /*!< number of this interface */
   uint8_t                                bAlternateSetting;              /*!< value used to select this alternate setting for the interface */
-  uint8_t                                bNumEndpoints;                  /*!< number of endpoints used by this interface */
+  uint8_t                                bNumEndpoints;                  /*!< number of endpoints used by this interface */        
   uint8_t                                bInterfaceClass;                /*!< class code (assigned by the usb-if) */
   uint8_t                                bInterfaceSubClass;             /*!< subclass code (assigned by the usb-if) */
   uint8_t                                bInterfaceProtocol;             /*!< protocol code (assigned by the usb-if) */
   uint8_t                                iInterface;                     /*!< index of string descriptor describing this interface */
 } usb_interface_desc_type;
 
-/**
+/** 
   * @brief format of standard endpoint descriptor
   */
 typedef struct
@@ -351,10 +353,10 @@ typedef struct
   uint8_t                                bEndpointAddress;               /*!< the address of the endpoint on the usb device described by this descriptor */
   uint8_t                                bmAttributes;                   /*!< describes the endpoints attributes when it is configured using bConfiguration value */
   uint16_t                               wMaxPacketSize;                 /*!< maximum packet size this endpoint */
-  uint8_t                                bInterval;                      /*!< interval for polling endpoint for data transfers */
+  uint8_t                                bInterval;                      /*!< interval for polling endpoint for data transfers */  
 } usb_endpoint_desc_type;
 
-/**
+/** 
   * @brief format of header
   */
 typedef struct
@@ -371,7 +373,7 @@ typedef struct
 /**
   * @}
   */
-
+  
 /**
   * @}
   */

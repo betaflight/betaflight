@@ -96,6 +96,8 @@ error_status usb_vcp_send_data(void *udev, uint8_t *send_data, uint16_t len);
 /**
   * @}
   */
+void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context);
+void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context);
 
 /**
   * @}

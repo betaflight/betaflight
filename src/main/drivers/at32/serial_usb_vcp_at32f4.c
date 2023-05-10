@@ -42,6 +42,7 @@
 #include "cdc_class.h"
 #include "cdc_desc.h"
 
+
 #include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
@@ -54,268 +55,208 @@ static vcpPort_t vcpPort;
 
 otg_core_type otg_core_struct;
 
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
-
 #define APP_TX_BLOCK_SIZE 512
-
-volatile uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
-volatile uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
-uint32_t BuffLength;
-
-/* Increment this pointer or roll it back to start address when data are received over USART */
-volatile uint32_t UserTxBufPtrIn = 0;
-/* Increment this pointer or roll it back to start address when data are sent over USB */
-volatile uint32_t UserTxBufPtrOut = 0;
+#define APP_RX_DATA_SIZE 64
 
 volatile uint32_t APP_Rx_ptr_out = 0;
 volatile uint32_t APP_Rx_ptr_in = 0;
 static uint8_t APP_Rx_Buffer[APP_RX_DATA_SIZE];
 
-tmr_type * usbTxTmr= TMR20;
-#define  CDC_POLLING_INTERVAL 5
-
-static void (*ctrlLineStateCb)(void* context, uint16_t ctrlLineState);
-static void *ctrlLineStateCbContext;
-static void (*baudRateCb)(void *context, uint32_t baud);
-static void *baudRateCbContext;
-
-void CDC_SetBaudRateCb(void (*cb)(void *context, uint32_t baud), void *context)
-{
-    baudRateCbContext = context;
-    baudRateCb = cb;
-}
-
-void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), void *context)
-{
-    ctrlLineStateCbContext = context;
-    ctrlLineStateCb = cb;
-}
-
+/**
+  * @brief  usb 48M clock select
+  * @param  clk_s:USB_CLK_HICK, USB_CLK_HEXT
+  * @retval none
+  */
 void usb_clock48m_select(usb_clk48_s clk_s)
 {
-    if(clk_s == USB_CLK_HICK)
-    {
-        crm_usb_clock_source_select(CRM_USB_CLOCK_SOURCE_HICK);
-        crm_periph_clock_enable(CRM_ACC_PERIPH_CLOCK, TRUE);
+  if(clk_s == USB_CLK_HICK)
+  {
+    crm_usb_clock_source_select(CRM_USB_CLOCK_SOURCE_HICK);
 
-        acc_write_c1(7980);
-        acc_write_c2(8000);
-        acc_write_c3(8020);
+    /* enable the acc calibration ready interrupt */
+    crm_periph_clock_enable(CRM_ACC_PERIPH_CLOCK, TRUE);
+
+    /* update the c1\c2\c3 value */
+    acc_write_c1(7980);
+    acc_write_c2(8000);
+    acc_write_c3(8020);
 #if (USB_ID == 0)
-        acc_sof_select(ACC_SOF_OTG1);
+    acc_sof_select(ACC_SOF_OTG1);
 #else
-        acc_sof_select(ACC_SOF_OTG2);
+    acc_sof_select(ACC_SOF_OTG2);
 #endif
-        acc_calibration_mode_enable(ACC_CAL_HICKTRIM, TRUE);
-    } else {
-        switch(system_core_clock)
-        {
-        /* 48MHz */
-        case 48000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_1);
-            break;
+    /* open acc calibration */
+    acc_calibration_mode_enable(ACC_CAL_HICKTRIM, TRUE);
+  } else {
+    switch(system_core_clock)
+    {
+      /* 48MHz */
+      case 48000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_1);
+        break;
 
-        /* 72MHz */
-        case 72000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_1_5);
-            break;
+      /* 72MHz */
+      case 72000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_1_5);
+        break;
 
-        /* 96MHz */
-        case 96000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_2);
-            break;
+      /* 96MHz */
+      case 96000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_2);
+        break;
 
-        /* 120MHz */
-        case 120000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_2_5);
-            break;
+      /* 120MHz */
+      case 120000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_2_5);
+        break;
 
-        /* 144MHz */
-        case 144000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_3);
-            break;
+      /* 144MHz */
+      case 144000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_3);
+        break;
 
-        /* 168MHz */
-        case 168000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_3_5);
-            break;
+      /* 168MHz */
+      case 168000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_3_5);
+        break;
 
-        /* 192MHz */
-        case 192000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_4);
-            break;
+      /* 192MHz */
+      case 192000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_4);
+        break;
 
-        /* 216MHz */
-        case 216000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_4_5);
-            break;
+      /* 216MHz */
+      case 216000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_4_5);
+        break;
 
-        /* 240MHz */
-        case 240000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_5);
-            break;
+      /* 240MHz */
+      case 240000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_5);
+        break;
 
-        /* 264MHz */
-        case 264000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_5_5);
-            break;
+      /* 264MHz */
+      case 264000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_5_5);
+        break;
 
-        /* 288MHz */
-        case 288000000:
-            crm_usb_clock_div_set(CRM_USB_DIV_6);
-            break;
+      /* 288MHz */
+      case 288000000:
+        crm_usb_clock_div_set(CRM_USB_DIV_6);
+        break;
 
-        default:
-            break;
+      default:
+        break;
 
-        }
     }
+  }
 }
 
 void usb_gpio_config(void)
 {
-    gpio_init_type gpio_init_struct;
+  gpio_init_type gpio_init_struct;
 
-    crm_periph_clock_enable(OTG_PIN_GPIO_CLOCK, TRUE);
-    gpio_default_para_init(&gpio_init_struct);
+  crm_periph_clock_enable(OTG_PIN_GPIO_CLOCK, TRUE);
+  gpio_default_para_init(&gpio_init_struct);
 
-    gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_STRONGER;
-    gpio_init_struct.gpio_out_type  = GPIO_OUTPUT_PUSH_PULL;
-    gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
-    gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
+  gpio_init_struct.gpio_drive_strength = GPIO_DRIVE_STRENGTH_STRONGER;
+  gpio_init_struct.gpio_out_type  = GPIO_OUTPUT_PUSH_PULL;
+  gpio_init_struct.gpio_mode = GPIO_MODE_MUX;
+  gpio_init_struct.gpio_pull = GPIO_PULL_NONE;
 
-    gpio_init_struct.gpio_pins = OTG_PIN_DP | OTG_PIN_DM;
-    gpio_init(OTG_PIN_GPIO, &gpio_init_struct);
+  gpio_init_struct.gpio_pins = OTG_PIN_DP | OTG_PIN_DM;
+  gpio_init(OTG_PIN_GPIO, &gpio_init_struct);
 
-    gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_DP_SOURCE, OTG_PIN_MUX);
-    gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_DM_SOURCE, OTG_PIN_MUX);
+  gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_DP_SOURCE, OTG_PIN_MUX);
+  gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_DM_SOURCE, OTG_PIN_MUX);
 
 #ifdef USB_SOF_OUTPUT_ENABLE
-    crm_periph_clock_enable(OTG_PIN_SOF_GPIO_CLOCK, TRUE);
-    gpio_init_struct.gpio_pins = OTG_PIN_SOF;
-    gpio_init(OTG_PIN_SOF_GPIO, &gpio_init_struct);
-    gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_SOF_SOURCE, OTG_PIN_MUX);
+  crm_periph_clock_enable(OTG_PIN_SOF_GPIO_CLOCK, TRUE);
+  gpio_init_struct.gpio_pins = OTG_PIN_SOF;
+  gpio_init(OTG_PIN_SOF_GPIO, &gpio_init_struct);
+  gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_SOF_SOURCE, OTG_PIN_MUX);
 #endif
 
 #ifndef USB_VBUS_IGNORE
-    gpio_init_struct.gpio_pins = OTG_PIN_VBUS;
-    gpio_init_struct.gpio_pull = GPIO_PULL_DOWN;
-    gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_VBUS_SOURCE, OTG_PIN_MUX);
-    gpio_init(OTG_PIN_GPIO, &gpio_init_struct);
+  gpio_init_struct.gpio_pins = OTG_PIN_VBUS;
+  gpio_init_struct.gpio_pull = GPIO_PULL_DOWN;
+  gpio_pin_mux_config(OTG_PIN_GPIO, OTG_PIN_VBUS_SOURCE, OTG_PIN_MUX);
+  gpio_init(OTG_PIN_GPIO, &gpio_init_struct);
 #endif
 }
-
 #ifdef USB_LOW_POWER_WAKUP
 void usb_low_power_wakeup_config(void)
 {
-    exint_init_type exint_init_struct;
+  exint_init_type exint_init_struct;
 
-    crm_periph_clock_enable(CRM_SCFG_PERIPH_CLOCK, TRUE);
-    exint_default_para_init(&exint_init_struct);
+  crm_periph_clock_enable(CRM_SCFG_PERIPH_CLOCK, TRUE);
+  exint_default_para_init(&exint_init_struct);
 
-    exint_init_struct.line_enable = TRUE;
-    exint_init_struct.line_mode = EXINT_LINE_INTERRUPUT;
-    exint_init_struct.line_select = OTG_WKUP_EXINT_LINE;
-    exint_init_struct.line_polarity = EXINT_TRIGGER_RISING_EDGE;
-    exint_init(&exint_init_struct);
+  exint_init_struct.line_enable = TRUE;
+  exint_init_struct.line_mode = EXINT_LINE_INTERRUPUT;
+  exint_init_struct.line_select = OTG_WKUP_EXINT_LINE;
+  exint_init_struct.line_polarity = EXINT_TRIGGER_RISING_EDGE;
+  exint_init(&exint_init_struct);
 
-    nvic_irq_enable(OTG_WKUP_IRQ, NVIC_PRIORITY_BASE(NVIC_PRIO_USB_WUP), NVIC_PRIORITY_SUB(NVIC_PRIO_USB_WUP));
+  nvic_irq_enable(OTG_WKUP_IRQ, NVIC_PRIORITY_BASE(NVIC_PRIO_USB_WUP), NVIC_PRIORITY_SUB(NVIC_PRIO_USB_WUP));
 }
 
 void OTG_WKUP_HANDLER(void)
 {
-    exint_flag_clear(OTG_WKUP_EXINT_LINE);
+  exint_flag_clear(OTG_WKUP_EXINT_LINE);
 }
 
 #endif
 
+
+
+
+
 uint32_t CDC_Send_FreeBytes(void)
 {
-    uint32_t freeBytes;
-
-    ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
-        freeBytes = ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
-    }
-
-    return freeBytes;
+  cdc_struct_type *pcdc = (cdc_struct_type *)otg_core_struct.dev.class_handler->pdata;
+  if(pcdc->g_tx_completed){
+    return APP_TX_BLOCK_SIZE;
+  }else{
+    return 0;
+  }
 }
+
 
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    for (uint32_t i = 0; i < sendLength; i++) {
-        while (CDC_Send_FreeBytes() == 0) {
-            delay(1);
-        }
-        ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
-            UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
-            UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
-        }
+  cdc_struct_type *pcdc = (cdc_struct_type *)otg_core_struct.dev.class_handler->pdata;
+  uint32_t start = millis();
+   
+  uint32_t pos=0;
+  while(pos < sendLength || (pos==sendLength && sendLength%64 == 0) ){//`==` is intended for sending 0 length packet
+    int tosend=sendLength-pos;
+    if(tosend>APP_TX_BLOCK_SIZE){
+      tosend=APP_TX_BLOCK_SIZE;
     }
-    return sendLength;
-}
-
-void TxTimerConfig(void)
-{
-    tmr_base_init(usbTxTmr, (CDC_POLLING_INTERVAL - 1), ((system_core_clock)/1000 - 1));
-    tmr_clock_source_div_set(usbTxTmr, TMR_CLOCK_DIV1);
-    tmr_cnt_dir_set(usbTxTmr, TMR_COUNT_UP);
-    tmr_period_buffer_enable(usbTxTmr, TRUE);
-    tmr_interrupt_enable(usbTxTmr, TMR_OVF_INT, TRUE);
-    nvic_irq_enable(TMR20_OVF_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_USB), NVIC_PRIORITY_SUB(NVIC_PRIO_USB));
-
-    tmr_counter_enable(usbTxTmr,TRUE);
-}
-
-void TMR20_OVF_IRQHandler(void)
-{
-    uint32_t buffsize;
-    static uint32_t lastBuffsize = 0;
-
-    cdc_struct_type *pcdc = (cdc_struct_type *)otg_core_struct.dev.class_handler->pdata;
-
-    if (pcdc->g_tx_completed == 1) {
-        if (lastBuffsize) {
-            bool needZeroLengthPacket = lastBuffsize % 64 == 0;
-
-            UserTxBufPtrOut += lastBuffsize;
-            if (UserTxBufPtrOut == APP_TX_DATA_SIZE) {
-                UserTxBufPtrOut = 0;
-            }
-            lastBuffsize = 0;
-
-            if (needZeroLengthPacket) {
-                usb_vcp_send_data(&otg_core_struct.dev, (uint8_t*)&UserTxBuffer[UserTxBufPtrOut], 0);
-                return;
-            }
-        }
-        if (UserTxBufPtrOut != UserTxBufPtrIn) {
-            if (UserTxBufPtrOut > UserTxBufPtrIn) {
-                buffsize = APP_TX_DATA_SIZE - UserTxBufPtrOut;
-            } else {
-                buffsize = UserTxBufPtrIn - UserTxBufPtrOut;
-            }
-            if (buffsize > APP_TX_BLOCK_SIZE) {
-                buffsize = APP_TX_BLOCK_SIZE;
-            }
-
-            uint32_t txed = usb_vcp_send_data(&otg_core_struct.dev,(uint8_t*)&UserTxBuffer[UserTxBufPtrOut], buffsize);
-            if (txed == SUCCESS) {
-                lastBuffsize = buffsize;
-            }
-        }
+    while(pcdc->g_tx_completed != 1) {
+      if (millis() - start > USB_TIMEOUT) {
+         return pos;
+      }
     }
-    tmr_flag_clear(usbTxTmr, TMR_OVF_FLAG);
+    uint32_t txed=usb_vcp_send_data(&otg_core_struct.dev,(uint8_t *)(ptrBuffer+pos), tosend);
+    if(pos==sendLength){
+        break;
+    }
+    if (txed==SUCCESS) {
+      pos+=tosend;
+    }
+  }
+  return pos;
 }
 
-uint8_t usbIsConnected(void)
-{
-    return (USB_CONN_STATE_DEFAULT != otg_core_struct.dev.conn_state);
+
+uint8_t usbIsConnected(void ){
+	return (USB_CONN_STATE_DEFAULT !=otg_core_struct.dev.conn_state);
 }
 
-uint8_t usbIsConfigured(void)
-{
-    return (USB_CONN_STATE_CONFIGURED == otg_core_struct.dev.conn_state);
+uint8_t usbIsConfigured(void ){
+	return (USB_CONN_STATE_CONFIGURED ==otg_core_struct.dev.conn_state);
 }
 
 uint8_t usbVcpIsConnected(void)
@@ -325,7 +266,7 @@ uint8_t usbVcpIsConnected(void)
 
 void OTG_IRQ_HANDLER(void)
 {
-    usbd_irq_handler(&otg_core_struct);
+  usbd_irq_handler(&otg_core_struct);
 }
 
 static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
@@ -360,32 +301,28 @@ static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 
 static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
-    UNUSED(instance);
-
-    uint32_t available=0;
-
-    available=APP_Rx_ptr_in-APP_Rx_ptr_out;
-    if(available == 0){
-        cdc_struct_type *pcdc = (cdc_struct_type *)otg_core_struct.dev.class_handler->pdata;
-        if(pcdc->g_rx_completed == 1){
-            available=pcdc->g_rxlen;
-        }
-    }
-    return available;
+  UNUSED(instance);  
+  cdc_struct_type *pcdc = (cdc_struct_type *)otg_core_struct.dev.class_handler->pdata;
+  uint32_t available=APP_Rx_ptr_in-APP_Rx_ptr_out;
+  if(pcdc->g_rx_completed == 1){
+    available+=pcdc->g_rxlen;
+  }    
+  return available;
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
-   if ((APP_Rx_ptr_in == 0) || (APP_Rx_ptr_out == APP_Rx_ptr_in)){
-        APP_Rx_ptr_out = 0;
-        APP_Rx_ptr_in = usb_vcp_get_rxdata(&otg_core_struct.dev, APP_Rx_Buffer);
-        if(APP_Rx_ptr_in == 0) {
-            return 0;
-        }
-    }
-    return APP_Rx_Buffer[APP_Rx_ptr_out++];
+   if ((APP_Rx_ptr_in==0)||(APP_Rx_ptr_out == APP_Rx_ptr_in)){
+	   APP_Rx_ptr_out=0;
+	   APP_Rx_ptr_in=usb_vcp_get_rxdata(&otg_core_struct.dev,APP_Rx_Buffer);// usb 每次 最大64 字节，不会溢出
+	   if(APP_Rx_ptr_in==0)
+	   {
+		   return 0;
+	   }
+   }
+    return APP_Rx_Buffer[APP_Rx_ptr_out++];//
 }
 
 static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
@@ -423,17 +360,17 @@ static bool usbVcpFlush(vcpPort_t *port)
     }
 
     uint32_t start = millis();
-    uint8_t *p = port->txBuf;
-    while (count > 0) {
-        uint32_t txed = CDC_Send_DATA(p, count);
-        count -= txed;
-        p += txed;
+   uint8_t *p = port->txBuf;
+   while (count > 0) {
+	   uint32_t txed = CDC_Send_DATA(p, count);
+	   count -= txed;
+	   p += txed;
 
-        if (millis() - start > USB_TIMEOUT) {
-            break;
-        }
-    }
-    return count == 0;
+	   if (millis() - start > USB_TIMEOUT) {
+		   break;
+	   }
+   }
+   return count == 0;
 }
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
 {
@@ -489,29 +426,25 @@ serialPort_t *usbVcpOpen(void)
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     usb_gpio_config();
 
-#ifdef USB_LOW_POWER_WAKUP
-    usb_low_power_wakeup_config();
-#endif
+   #ifdef USB_LOW_POWER_WAKUP
+     usb_low_power_wakeup_config();
+   #endif
 
-    crm_periph_clock_enable(OTG_CLOCK, TRUE);
-    usb_clock48m_select(USB_CLK_HEXT);
-    nvic_irq_enable(OTG_IRQ, NVIC_PRIORITY_BASE(NVIC_PRIO_USB), NVIC_PRIORITY_SUB(NVIC_PRIO_USB));
+     crm_periph_clock_enable(OTG_CLOCK, TRUE);
+     usb_clock48m_select(USB_CLK_HEXT);
+     nvic_irq_enable(OTG_IRQ, NVIC_PRIORITY_BASE(NVIC_PRIO_USB), NVIC_PRIORITY_SUB(NVIC_PRIO_USB));
 
-    usbGenerateDisconnectPulse();
+     usbGenerateDisconnectPulse();
 
-    usbd_init(&otg_core_struct,
-        USB_FULL_SPEED_CORE_ID,
-        USB_ID,
-        &cdc_class_handler,
-        &cdc_desc_handler);
+     usbd_init(&otg_core_struct,
+               USB_FULL_SPEED_CORE_ID,
+               USB_ID,
+               &cdc_class_handler,
+               &cdc_desc_handler);
     s = &vcpPort;
     s->port.vTable = usbVTable;
-
-    TxTimerConfig();
-
     return (serialPort_t *)s;
 }
-
 uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 {
     UNUSED(instance);
