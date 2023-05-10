@@ -1447,12 +1447,12 @@ static uint8_t _ck_b;
 
 // State machine state
 static bool _skip_packet;
-static uint8_t _step;
+static uint8_t _step = 0;
 static uint8_t _msg_id;
 static uint16_t _payload_length;
 static uint16_t _payload_counter;
 
-static bool next_fix;
+static bool next_fix = false;
 static uint8_t _class;
 
 // do we have new position information?
@@ -1922,7 +1922,7 @@ void onGpsNewData(void)
 
     lastTimeUs = timeUs;
 
-    if (!(STATE(GPS_FIX) && gpsSol.numSat >= GPS_MIN_SAT_COUNT)) {
+    if (!STATE(GPS_FIX)) {
         // if we don't have a 3D fix and the minimum sats, don't give data to GPS rescue
         return;
     }
