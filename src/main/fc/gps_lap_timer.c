@@ -18,9 +18,9 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "common/maths.h"
-
 #include "platform.h"
+
+#include "common/maths.h"
 
 #include "drivers/time.h"
 
