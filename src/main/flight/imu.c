@@ -211,7 +211,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     // Use raw heading error (from GPS or whatever else)
     float ex = 0, ey = 0, ez = 0;
     if (cogYawGain != 0.0f) {
-        // if in a GPS Rescue, boost IMU yaw gain when course over ground and velocity to home differ significantly
+        // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
         while (courseOverGround >  M_PIf) {
             courseOverGround -= (2.0f * M_PIf);
         }
@@ -474,7 +474,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     static timeUs_t previousIMUUpdateTime;
     bool useAcc = false;
     bool useMag = false;
-    float cogYawGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default to no modification
+    float cogYawGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default to no correction from CoG
     float courseOverGround = 0; // To be used when cogYawGain is non-zero, in radians
 
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;

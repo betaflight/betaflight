@@ -571,7 +571,7 @@ static void sensorUpdate(void)
 
     // when there is significant velocity error, increase IMU COG Gain for yaw to a higher value, and reduce max pitch angle
     if (gpsRescueConfig()->rescueGroundspeed) {
-        const float rescueGroundspeed = 1000.0f; // equivalent of fixed 10 m/s groundspeed
+        const float rescueGroundspeed = 1000.0f; // in cm/s, fixed 10 m/s groundspeed
         // sets the slope of the increase in IMU COG Gain as velocity error increases; at 10, we get max CoG gain around 25m/s drift, approx the limit of what we can fix
         const float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed;
         // 0 if groundspeed = velocity to home,
