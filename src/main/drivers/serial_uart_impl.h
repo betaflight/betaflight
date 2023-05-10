@@ -217,6 +217,12 @@ extern const uartHardware_t uartHardware[];
 // uartDevice_t is an actual device instance.
 // XXX Instances are allocated for uarts defined by USE_UARTx atm.
 
+typedef enum {
+    TX_PIN_ACTIVE,
+    TX_PIN_MONITOR,
+    TX_PIN_IGNORE
+} txPinState_t;
+
 typedef struct uartDevice_s {
     uartPort_t port;
     const uartHardware_t *hardware;
@@ -227,6 +233,7 @@ typedef struct uartDevice_s {
 #if !defined(STM32F4) // Don't support pin swap.
     bool pinSwap;
 #endif
+    txPinState_t txPinState;
 } uartDevice_t;
 
 extern uartDevice_t *uartDevmap[];
@@ -244,6 +251,9 @@ void uartReconfigure(uartPort_t *uartPort);
 void uartConfigureDma(uartDevice_t *uartdev);
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor);
+
+bool checkUsartTxOutput(uartPort_t *s);
+void uartTxMonitor(uartPort_t *s);
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define UART_REG_RXD(base) ((base)->RDR)

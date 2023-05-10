@@ -267,6 +267,12 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
 
+    // Check if the TX line is being pulled low by an unpowered peripheral
+    if (uartPort->checkUsartTxOutput && !uartPort->checkUsartTxOutput(uartPort)) {
+        // TX line is being pulled low, so don't transmit
+        return;
+    }
+
     uartPort->port.txBuffer[uartPort->port.txBufferHead] = ch;
 
     if (uartPort->port.txBufferHead + 1 >= uartPort->port.txBufferSize) {
