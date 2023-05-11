@@ -51,7 +51,7 @@ uint16_t bbBuffer[134];
 
 #define DSHOT_TELEMETRY_START_MARGIN 10
 
-static unsigned int preambleSkip = 0;
+static uint8_t preambleSkip = 0;
 
 typedef struct bitBandWord_s {
     uint32_t value;
