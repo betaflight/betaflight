@@ -244,16 +244,9 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float 
 
         DEBUG_SET(DEBUG_ATTITUDE, 2, (ez_ef * 100));
         DEBUG_SET(DEBUG_ATTITUDE, 3, (dcmKpGain * 100));
-
     }
 
-
-
-
     DEBUG_SET(DEBUG_ATTITUDE, 6, (dcmKpGain * 100));
-
-
-
 
 #ifdef USE_MAG
     // Use measured magnetic field vector
@@ -519,27 +512,20 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-        cogYawGain = (FLIGHT_MODE(GPS_RESCUE_MODE)) ? gpsRescueGetImuYawCogGain() : 1.0f;
-        // normally update yaw heading with GPS data, but when in a Rescue, modify the IMU yaw gain dynamically
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            cogYawGain = gpsRescueGetImuYawCogGain(); // do not modify IMU yaw gain unless in a rescue
+        }
         if (shouldInitializeGPSHeading()) {
             // Reset our reference and reinitialize quaternion.
             // shouldInitializeGPSHeading() returns true only once.
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+
             cogYawGain = 0.0f; // Don't use the COG when we first initialize
         }
     }
 #endif
 
-
-
-
-
     DEBUG_SET(DEBUG_ATTITUDE, 0, cogYawGain * 100.0f);
-
-
-
-
-
 
 #if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
     UNUSED(imuMahonyAHRSupdate);
