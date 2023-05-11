@@ -1045,7 +1045,7 @@ static void osdElementGpsHomeDirection(osdElementParms_t *element)
 #ifdef USE_GPS_LAP_TIMER
             // Override the "home" point to the start/finish location if the lap timer is running
             if (gpsLapTimerData.timerRunning) {
-                direction = gpsLapTimerData.dirToPoint / 10; // dirToPoint is centidegrees
+                direction = lrintf(gpsLapTimerData.dirToPoint * 0.1f); // Convert from centidegree to degree and round to nearest
             }
 #endif
             element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(direction - attitude.values.yaw));
@@ -1068,7 +1068,7 @@ static void osdElementGpsHomeDistance(osdElementParms_t *element)
 #ifdef USE_GPS_LAP_TIMER
         // Change the "home" point to the start/finish location if the lap timer is running
         if (gpsLapTimerData.timerRunning) {
-            distance = gpsLapTimerData.distToPointCM/100;
+            distance = lrintf(gpsLapTimerData.distToPointCM * 0.01f); // Round to nearest natural number
         }
 #endif
         osdFormatDistanceString(element->buff, distance, SYM_HOMEFLAG);
@@ -2017,7 +2017,7 @@ static void osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     element.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element drawing function
-    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item < OSD_GPS_LAP_TIME_CURRENT)) {
+    if ((item >= OSD_SYS_GOGGLE_VOLTAGE) && (item <= OSD_SYS_FAN_SPEED)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
     } else {
         osdElementDrawFunction[item](&element);

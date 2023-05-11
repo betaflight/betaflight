@@ -759,12 +759,11 @@ void init(void)
 #ifdef USE_GPS_RESCUE
         gpsRescueInit();
 #endif
+#ifdef USE_GPS_LAP_TIMER
+        gpsLapTimerInit();
+#endif // USE_GPS_LAP_TIMER
     }
 #endif
-
-#ifdef USE_GPS_LAP_TIMER
-    gpsLapTimerInit();
-#endif // USE_GPS_LAP_TIMER
 
 #ifdef USE_LED_STRIP
     ledStripInit();

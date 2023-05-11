@@ -25,7 +25,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "pg/gps_lap_timer.h"
+#include "gps_lap_timer.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsLapTimerConfig_t, gpsLapTimerConfig, PG_GPS_LAP_TIMER, 1);
 

@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "io/gps.h"
-
 #include "pg/gps_lap_timer.h"
 
 #define MAX_N_RECORDED_PREVIOUS_LAPS 3

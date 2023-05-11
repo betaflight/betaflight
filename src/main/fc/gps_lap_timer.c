@@ -24,10 +24,11 @@
 
 #include "drivers/time.h"
 
-#include "fc/gps_lap_timer.h"
 #include "fc/rc_modes.h"
 
 #include "io/gps.h"
+
+#include "gps_lap_timer.h"
 
 #define MAX_GATE_SET_READINGS 1000
 
