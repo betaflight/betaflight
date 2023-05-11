@@ -966,7 +966,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         const float setpointCorrection = currentPidSetpoint - uncorrectedSetpoint;
 #endif
 
-
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
 
         // -----calculate P component
@@ -991,7 +990,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
         const float iTermChange = (Ki + pidRuntime.itermAccelerator) * dynCi * pidRuntime.dT * itermErrorRate;
         pidData[axis].I = constrainf(previousIterm + iTermChange, -pidRuntime.itermLimit, pidRuntime.itermLimit);
-
 
         // -----calculate D component
 
@@ -1070,7 +1068,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         previousGyroRateDterm[axis] = gyroRateDterm[axis];
 
-
         // -----calculate feedforward component
 
 #ifdef USE_ABSOLUTE_CONTROL
@@ -1081,7 +1078,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // no feedforward in launch control
         const float feedforwardGain = launchControlActive ? 0.0f : pidRuntime.pidCoefficient[axis].Kf;
         pidData[axis].F = feedforwardGain * pidSetpointDelta;
-
 
 #ifdef USE_YAW_SPIN_RECOVERY
         if (yawSpinActive) {
@@ -1094,7 +1090,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 #endif // USE_YAW_SPIN_RECOVERY
-
 
 #ifdef USE_LAUNCH_CONTROL
         // Disable P/I appropriately based on the launch control mode
