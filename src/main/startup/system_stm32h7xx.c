@@ -77,12 +77,8 @@
 #include "drivers/system.h"
 
 
-// The HSE value used is specified per-target in unified configs, using the configurator flag
-// `set system_hse_mhz`. Reference `TODO.c` in `/src/main/TODO` for code related to that.
-
 #define HSI_FREQ ((uint32_t)64000000) // Frequency of HSI is 64Mhz on all H7 variants.
 
-// todo: Enable `system_hse_mhz` in Configurator.
 
 // If `HSE_VALUE` isn't specified, use HSI. This allows HSI to be selected as the PLL source
 // later in this file, and adjusts PLL scalers to use the HSI's frequency as the timing source.
@@ -623,7 +619,7 @@ void SystemClock_Config(void)
 
 #    if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H725xx)
     RCC_PeriphClkInit.PLL2.PLL2M = 5;
-    RCC_PeriphClkInit.PLL2.PLL2N = 960000000 / PLL_SRC_FREQ * 5; // Oscillator Frequency / 5 (PLL2M) = 1.6 * this value (PLL2N) = 800Mhz.
+    RCC_PeriphClkInit.PLL2.PLL2N = 800000000 / PLL_SRC_FREQ * 5; // Oscillator Frequency / 5 (PLL2M) = 1.6 * this value (PLL2N) = 800Mhz.
     RCC_PeriphClkInit.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE; // Wide VCO range:192 to 836 MHz
     RCC_PeriphClkInit.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0; // PLL2 input between 1 and 2Mhz (1.6)
     RCC_PeriphClkInit.PLL2.PLL2FRACN = 0;
