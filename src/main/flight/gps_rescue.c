@@ -343,8 +343,8 @@ static void rescueAttainPosition(void)
         // reduce iTerm sharply when velocity decreases in landing phase, to minimise overshoot during deceleration
 
         const float pitchAngleLimit = rescueState.intent.pitchAngleLimitDeg * 100.0f;
-        const float velocityPILimit = 0.5f * pitchAngleLimit;
-        velocityI = constrainf(velocityI, -velocityPILimit, velocityPILimit);
+        const float velocityILimit = 0.5f * pitchAngleLimit;
+        velocityI = constrainf(velocityI, -velocityILimit, velocityILimit);
         // I component alone cannot exceed half the max pitch angle
 
         // D component
@@ -372,7 +372,6 @@ static void rescueAttainPosition(void)
     // upsampling and smoothing of pitch angle steps
     float pitchAdjustmentFiltered = pt3FilterApply(&velocityUpsampleLpf, pitchAdjustment);
 
-    
     gpsRescueAngle[AI_PITCH] = pitchAdjustmentFiltered;
     // this angle gets added to the normal pitch Angle Mode control values in pid.c - will be seen in pitch setpoint
 
@@ -572,18 +571,25 @@ static void sensorUpdate(void)
     // when there is significant velocity error, increase IMU COG Gain for yaw to a higher value, and reduce max pitch angle
     if (gpsRescueConfig()->rescueGroundspeed) {
         const float rescueGroundspeed = 1000.0f; // in cm/s, fixed 10 m/s groundspeed
-        // sets the slope of the increase in IMU COG Gain as velocity error increases; at 10, we get max CoG gain around 25m/s drift, approx the limit of what we can fix
+        // rescueGroundspeed sets the slope of the increase in IMU COG Gain as velocity error increases
         const float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed;
         // 0 if groundspeed = velocity to home,
         // 1 if moving sideways at 10m/s but zero home velocity,
         // 2 if moving backwards (away from home) at 10 m/s
         // 4 if moving backwards (away from home) at 20 m/s
+        const float pitchAngleFactor = (gpsRescueAngle[AI_PITCH] > 0.0f) ? gpsRescueAngle[AI_PITCH] * 0.001f : 0.0f;
+        // increase IMU COG Gain with higher positive pitch angles, which arise early in a rescue when the IMU is in error
+        // this will be particularly useful if the IMU is error and there is little drift, the initial pitch angle will be high
+        // positive pitch angles should associate with a nose forward ground course
+        // gpsRescueAngle angle is in degrees * 100
+        // pitchAngleFactor is 1 if pitch angle is 10 degrees
+        // pitchAngleFactor is 2 if pitch angle is 20 degrees
         if ((rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE)) {
             // zero IMU CoG yaw during climb or rotate, to stop IMU error accumulation arising from drift during long climbs
             rescueState.sensor.imuYawCogGain = 0;
         } else {
             // up to 6x increase in CoG IMU Yaw gain
-            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + (2.0f * groundspeedErrorRatio), 1.0f, 6.0f);
+            rescueState.sensor.imuYawCogGain =  constrainf(1.0f + pitchAngleFactor + (2.0f * groundspeedErrorRatio), 1.0f, 6.0f);
         }
         rescueState.sensor.groundspeedPitchAttenuator = 1.0f / constrainf(1.0f + groundspeedErrorRatio, 1.0f, 3.0f); // cut pitch angle by up to one third
     }
@@ -671,6 +677,7 @@ void descend(void)
         // if quad drifts further than 2m away from home, should by then have rotated towards home, so pitch is allowed
         rescueState.intent.rollAngleLimitDeg = 0.5f * gpsRescueConfig()->maxRescueAngle * rescueState.intent.proximityToLandingArea;
         // reduce roll capability when closer to home, none within final 2m
+        // limit roll angle from GPS Rescue code to half the max pitch angle; earth referenced yaw may add more roll via angle code
         rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle * rescueState.sensor.groundspeedPitchAttenuator;
     }
 
@@ -816,6 +823,7 @@ void gpsRescueUpdate(void)
 
         rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.velocityItermRelax * gpsRescueConfig()->maxRescueAngle;
         // gradually gain roll capability to max of half of max pitch angle
+        // limit roll angle from GPS Rescue code to half the max pitch angle; earth referenced yaw may add more roll via angle code
 
         if (newGPSData) {
             // cut back on allowed angle if there is a high groundspeed error
