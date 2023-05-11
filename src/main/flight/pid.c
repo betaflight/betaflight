@@ -244,7 +244,7 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 }
 
 // Scale factors to make best use of range with D_LPF debugging, aiming for max +/-16K as debug values are 16 bit
-#define D_LPF_RAW_SCALE .04f // inverse of 25
+#define D_LPF_RAW_SCALE 25
 #define D_LPF_PRE_TPA_SCALE 10
 
 
@@ -868,7 +868,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // Log the unfiltered D for ROLL and PITCH
         if (debugMode == DEBUG_D_LPF && axis != FD_YAW) {
-            const float delta = (previousRawGyroRateDterm[axis] - gyroRateDterm[axis]) * pidRuntime.pidFrequency * D_LPF_RAW_SCALE;
+            const float delta = (previousRawGyroRateDterm[axis] - gyroRateDterm[axis]) * pidRuntime.pidFrequency / D_LPF_RAW_SCALE;
             previousRawGyroRateDterm[axis] = gyroRateDterm[axis];
             DEBUG_SET(DEBUG_D_LPF, axis, lrintf(delta)); // debug d_lpf 2 and 3 used for pre-TPA D
         }
