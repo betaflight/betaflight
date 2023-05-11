@@ -277,20 +277,9 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
-    pidProfile_t *currentPidProfile;
-
-    currentPidProfile = pidProfilesMutable(systemConfig()->pidProfileIndex);
-    const float tpaBreakpoint = (currentPidProfile->tpa_breakpoint - 1000) / 1000.0f;
-    float tpaRate = currentPidProfile->tpa_rate / 100.0f;
-
-    if (throttle > tpaBreakpoint) {
-        if (throttle < 1.0f) {
-            tpaRate *= (throttle - tpaBreakpoint) / (1.0f - tpaBreakpoint);
-        }
-    } else {
-        tpaRate = 0.0f;
-    }
-    pidRuntime.tpaFactor = 1.0f - tpaRate;
+    const float throttleTemp = fminf(throttle, 1.0f); // don't permit throttle > 1 ? is this needed ? can throttle be > 1 at this point ?
+    const float throttleDifference = fmaxf(throttleTemp - pidRuntime.tpaBreakpoint, 0.0f);
+    pidRuntime.tpaFactor = 1.0f - throttleDifference * pidRuntime.tpaMultiplier;
 }
 
 void pidUpdateAntiGravityThrottleFilter(float throttle)
