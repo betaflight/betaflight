@@ -731,7 +731,7 @@ void gpsRescueUpdate(void)
                 // attempted initiation within 5m of home, and 'on the ground' -> instant disarm, for safety reasons
                 rescueState.phase = RESCUE_ABORT;
             } else {
-                // Otherwise, attempted initiation inside minimum activation distanc
+                // Otherwise, attempted the Rescue initiation inside the minimum activation distance
                 // don't climb, yaw quickly, enter descend mode and land
                 rescueState.intent.yawAttenuator = 1.0f; // yaw quickly to point to home
                 rescueState.intent.pitchAngleLimitDeg = 20.0f; // limited ability to pitch
