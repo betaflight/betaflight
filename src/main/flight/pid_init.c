@@ -425,8 +425,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #endif
 
     pidRuntime.levelRaceMode = pidProfile->level_race_mode;
-    pidRuntime.tpaBreakpoint = (pidProfile->tpa_breakpoint - PWM_RANGE_MIN) * 0.001f; // .35 from 1350, range can be 0 to 0.99, limited by CLI range
-    pidRuntime.tpaBreakpoint = constrainf(pidRuntime.tpaBreakpoint, 0.0f, 0.99f); // limit range to 0 to 0.99
+    pidRuntime.tpaBreakpoint = constrainf((pidProfile->tpa_breakpoint - PWM_RANGE_MIN) / 1000.0f, 0.0f, 0.99f);
+    // default of 1350 returns 0.35. range limited to 0 to 0.99
     pidRuntime.tpaMultiplier = (pidProfile->tpa_rate / 100.0f) / (1.0f - pidRuntime.tpaBreakpoint);
 }
 
