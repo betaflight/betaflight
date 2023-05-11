@@ -218,7 +218,18 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         while (courseOverGround < -M_PIf) {
             courseOverGround += (2.0f * M_PIf);
         }
-        const float ez_ef = cogYawGain * (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
+        // Compute heading vector in EF from scalar CoG,x axis of accelerometer is pointing backwards. (as in iNav)
+        const float cog_ef[2] = { -cos_approx(courseOverGround), sin_approx(courseOverGround)};
+        const float heading_ef[2] = { rMat[0][0], rMat[1][0] };  // body X axis. Projected vector magnitude is reduced as pitch increases
+        // cross product = 1 * |heading| * sin(angle)
+        const float cross = (cog_ef[X] * heading_ef[Y] - cog_ef[Y] * heading_ef[X]);
+        // dot product, |heading| * cos(angle)
+        const float dot = cog_ef[X] * heading_ef[X] + cog_ef[Y] * heading_ef[Y];
+        // use cross product / sin when error < 90deg (cos > 0), |heading| if error is larger (cos < 0)
+        // |heading| will reduce gain with high roll / pitch
+        float ez_ef = (dot > 0) ? cross : (cross < 0 ? -1.0f : 1.0f) * sqrtf(sq(heading_ef[X]) + sq(heading_ef[Y]));
+        ez_ef *= cogYawGain;          // apply gain parameter
+        // covert to body frame
         ex = rMat[2][0] * ez_ef;
         ey = rMat[2][1] * ez_ef;
         ez = rMat[2][2] * ez_ef;
