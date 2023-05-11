@@ -2006,7 +2006,7 @@ void onGpsNewData(void)
     gpsRescueNewGpsData();
 #endif
 #ifdef USE_GPS_LAP_TIMER
-    lapTimerNewGpsData();
+    gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
 }
 

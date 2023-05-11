@@ -19,7 +19,7 @@
 
 #include "io/gps.h"
 
-#include "pg/pg.h"
+#include "pg/gps_lap_timer.h"
 
 #define MAX_N_RECORDED_PREVIOUS_LAPS 3
 
@@ -36,18 +36,9 @@ typedef struct gpsLapTimerData_s {
     bool timerRunning;
 } gpsLapTimerData_t;
 
-typedef struct gpsLapTimerConfig_s {
-    int32_t gateLat;
-    int32_t gateLon;
-    uint16_t minimumLapTimeSeconds;
-    uint8_t gateToleranceM;
-} gpsLapTimerConfig_t;
-
-PG_DECLARE(gpsLapTimerConfig_t, gpsLapTimerConfig);
-
 extern gpsLapTimerData_t gpsLapTimerData;
 
 void gpsLapTimerInit(void);
-void lapTimerNewGpsData(void);
+void gpsLapTimerNewGpsData(void);
 void gpsLapTimerStartSetGate(void);
 void gpsLapTimerEndSetGate(void);

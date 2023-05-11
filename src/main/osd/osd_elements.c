@@ -1153,7 +1153,11 @@ static void osdFormatLapTime(osdElementParms_t *element, uint32_t timeMS, uint8_
 
 static void osdElementGpsLapTimeCurrent(osdElementParms_t *element)
 {
-    osdFormatLapTime(element, gpsLapTimerData.timeOfLastLap - gpsSol.time, SYM_TOTAL_DISTANCE);
+    if (gpsLapTimerData.timerRunning) {
+        osdFormatLapTime(element, gpsSol.time - gpsLapTimerData.timeOfLastLap, SYM_TOTAL_DISTANCE);
+    } else {
+        osdFormatLapTime(element, 0, SYM_TOTAL_DISTANCE);
+    }
 }
 
 static void osdElementGpsLapTimePrevious(osdElementParms_t *element)

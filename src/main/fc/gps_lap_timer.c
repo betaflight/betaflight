@@ -24,22 +24,12 @@
 
 #include "drivers/time.h"
 
-#include "io/gps.h"
-
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
 #include "fc/gps_lap_timer.h"
 #include "fc/rc_modes.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gpsLapTimerConfig_t, gpsLapTimerConfig, PG_GPS_LAP_TIMER, 1);
+#include "io/gps.h"
 
-PG_RESET_TEMPLATE(gpsLapTimerConfig_t, gpsLapTimerConfig,
-    .gateLat = 0,
-    .gateLon = 0,
-    .minimumLapTimeSeconds = 10,
-    .gateToleranceM = 9,
-);
+#define MAX_GATE_SET_READINGS 1000
 
 // if 1000 readings of 32-bit values are used, the total (for use in calculating the averate) would need 42 bits max.
 static int64_t gateSetLatReadings;
@@ -75,7 +65,7 @@ void gpsLapTimerStartSetGate(void)
 
 void gpsLapTimerProcessSettingGate(void)
 {
-    if (gpsLapTimerData.numberOfSetReadings < 1000){
+    if (gpsLapTimerData.numberOfSetReadings < MAX_GATE_SET_READINGS){
         gateSetLatReadings += gpsSol.llh.lat;
         gateSetLonReadings += gpsSol.llh.lon;
         gpsLapTimerData.numberOfSetReadings++;
@@ -91,7 +81,7 @@ void gpsLapTimerEndSetGate(void)
     gpsLapTimerConfigMutable()->gateLon = gpsLapTimerData.gateLocation.lon;
 }
 
-void lapTimerNewGpsData(void)
+void gpsLapTimerNewGpsData(void)
 {
     GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
 
