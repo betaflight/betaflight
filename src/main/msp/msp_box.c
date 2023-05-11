@@ -78,7 +78,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXAIRMODE, .boxName = "AIR MODE", .permanentId = 28 },
     { .boxId = BOX3D, .boxName = "3D DISABLE / SWITCH", .permanentId = 29},
     { .boxId = BOXFPVANGLEMIX, .boxName = "FPV ANGLE MIX", .permanentId = 30},
-    { .boxId = BOXBLACKBOXERASE, .boxName = "BLACKBOX ERASE (>30s)", .permanentId = 31 },
+    { .boxId = BOXBLACKBOXERASE, .boxName = "BLACKBOX ERASE", .permanentId = 31 },
     { .boxId = BOXCAMERA1, .boxName = "CAMERA CONTROL 1", .permanentId = 32},
     { .boxId = BOXCAMERA2, .boxName = "CAMERA CONTROL 2", .permanentId = 33},
     { .boxId = BOXCAMERA3, .boxName = "CAMERA CONTROL 3", .permanentId = 34 },
