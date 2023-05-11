@@ -144,11 +144,11 @@ void gpsRescueInit(void)
     rescueState.sensor.gpsRescueTaskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ);
 
     float cutoffHz, gain;
-    cutoffHz = positionConfig()->altitude_d_lpf * 0.01f;
+    cutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
     gain = pt2FilterGain(cutoffHz, rescueState.sensor.gpsRescueTaskIntervalSeconds);
     pt2FilterInit(&throttleDLpf, gain);
 
-    cutoffHz = gpsRescueConfig()->pitchCutoffHz * 0.01f;
+    cutoffHz = gpsRescueConfig()->pitchCutoffHz / 100.0f;
     rescueState.intent.velocityPidCutoff = cutoffHz;
     rescueState.intent.velocityPidCutoffModifier = 1.0f;
     gain = pt1FilterGain(cutoffHz, 1.0f);
@@ -252,7 +252,7 @@ static void rescueAttainPosition(void)
         Altitude (throttle) controller
     */
     // currentAltitudeCm is updated at TASK_GPS_RESCUE_RATE_HZ
-    const float altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) * 0.01f;
+    const float altitudeError = (rescueState.intent.targetAltitudeCm - rescueState.sensor.currentAltitudeCm) / 100.0f;
     // height above target in metres (negative means too low)
     // at the start, the target starts at current altitude plus one step.  Increases stepwise to intended value.
 
@@ -300,7 +300,7 @@ static void rescueAttainPosition(void)
     // the faster the return speed, the more accurate the IMU will be, but the consequences of IMU error at the start are greater
     // A compass (magnetometer) is vital for accurate GPS rescue at slow speeds, but must be calibrated and validated
     // WARNING:  Some GPS units give false Home values!  Always check the arrow points to home on leaving home.
-    rescueYaw = rescueState.sensor.errorAngle * gpsRescueConfig()->yawP * rescueState.intent.yawAttenuator * 0.1f;
+    rescueYaw = rescueState.sensor.errorAngle * gpsRescueConfig()->yawP * rescueState.intent.yawAttenuator / 10.0f;
     rescueYaw = constrainf(rescueYaw, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
     // rescueYaw is the yaw rate in deg/s to correct the heading error
 
@@ -550,7 +550,7 @@ static void sensorUpdate(void)
     }
 
     rescueState.sensor.directionToHome = GPS_directionToHome;
-    rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) * 0.1f;
+    rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) / 10.0f;
     // both attitude and direction are in degrees * 10, errorAngle is degrees
     if (rescueState.sensor.errorAngle <= -180) {
         rescueState.sensor.errorAngle += 360;
@@ -565,7 +565,7 @@ static void sensorUpdate(void)
     }
 
     rescueState.sensor.distanceToHomeCm = GPS_distanceToHomeCm;
-    rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm * 0.01f;
+    rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm / 100.0f;
     rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed; // cm/s
 
     // when there is significant velocity error, increase IMU COG Gain for yaw to a higher value, and reduce max pitch angle
@@ -660,7 +660,7 @@ void disarmOnImpact(void)
 void descend(void)
 {
     if (newGPSData) {
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (rescueState.intent.targetLandingAltitudeCm * 0.005f);
+        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (rescueState.intent.targetLandingAltitudeCm / 200.0f);
         // considers home to be a circle half landing height around home to avoid overshooting home point
         rescueState.intent.proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
         rescueState.intent.velocityPidCutoffModifier = 2.5f - rescueState.intent.proximityToLandingArea;
@@ -680,12 +680,12 @@ void descend(void)
     rescueState.intent.altitudeStep = -1.0f * rescueState.sensor.altitudeDataIntervalSeconds * gpsRescueConfig()->descendRate;
 
     // descend more slowly if return altitude is less than 20m
-    const float descentAttenuator = rescueState.intent.returnAltitudeCm * 0.0005f;
+    const float descentAttenuator = rescueState.intent.returnAltitudeCm / 2000.0f;
     if (descentAttenuator < 1.0f) {
         rescueState.intent.altitudeStep *= descentAttenuator;
     }
     // descend more quickly from higher altitude
-    rescueState.intent.descentRateModifier = constrainf(rescueState.intent.targetAltitudeCm * 0.0002f, 0.0f, 1.0f);
+    rescueState.intent.descentRateModifier = constrainf(rescueState.intent.targetAltitudeCm / 5000.0f, 0.0f, 1.0f);
     rescueState.intent.targetAltitudeCm += rescueState.intent.altitudeStep * (1.0f + (2.0f * rescueState.intent.descentRateModifier));
     // increase descent rate to max of 3x default above 50m, 2x above 25m, 1.2 at 5m, default by ground level.
 }
