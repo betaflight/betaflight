@@ -231,9 +231,44 @@ void uartReconfigure(uartPort_t *uartPort)
 
             /* Enable the UART Transmit Data Register Empty Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_TXEIE);
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_TCIE);
         }
     }
     return;
+}
+
+bool checkUsartTxOutput(uartPort_t *s)
+{
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
+
+    if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
+        if (IORead(txIO)) {
+            // TX is high so we're good to transmit
+
+            // Enable USART TX output
+            uart->txPinState = TX_PIN_ACTIVE;
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->tx.af);
+            return true;
+        } else {
+            // TX line is pulled low so don't enable USART TX
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void uartTxMonitor(uartPort_t *s)
+{
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+    IO_t txIO = IOGetByTag(uart->tx.pin);
+
+    if (uart->txPinState == TX_PIN_ACTIVE) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uart->txPinState = TX_PIN_MONITOR;
+        IOConfigGPIO(txIO, IOCFG_IPU);
+    }
 }
 
 #ifdef USE_DMA
@@ -275,7 +310,14 @@ void uartTryStartTxDMA(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
+    uartDevice_t *uart = container_of(s, uartDevice_t, port);
+
     uartTryStartTxDMA(s);
+
+    if (s->txDMAEmpty && (uart->txPinState != TX_PIN_IGNORE)) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uartTxMonitor(s);
+    }
 }
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -343,7 +385,19 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
     }
 
-    // UART transmitter in interrupting mode, tx buffer empty
+    // UART transmission completed
+    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
+        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
+
+        // Switch TX to an input with pull-up so it's state can be monitored
+        uartTxMonitor(s);
+
+#ifdef USE_DMA
+        if (s->txDMAResource) {
+            handleUsartTxDma(s);
+        }
+#endif
+    }
 
     if (
 #ifdef USE_DMA
@@ -351,31 +405,17 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 #endif
         (__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET)) {
         /* Check that a Tx process is ongoing */
-        if (huart->gState != HAL_UART_STATE_BUSY_TX) {
-            if (s->port.txBufferTail == s->port.txBufferHead) {
-                huart->TxXferCount = 0;
-                /* Disable the UART Transmit Data Register Empty Interrupt */
-                CLEAR_BIT(huart->Instance->CR1, USART_CR1_TXEIE);
+        if (s->port.txBufferTail == s->port.txBufferHead) {
+            /* Disable the UART Transmit Data Register Empty Interrupt */
+            CLEAR_BIT(huart->Instance->CR1, USART_CR1_TXEIE);
+        } else {
+            if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE)) {
+                huart->Instance->TDR = (((uint16_t) s->port.txBuffer[s->port.txBufferTail]) & (uint16_t) 0x01FFU);
             } else {
-                if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE)) {
-                    huart->Instance->TDR = (((uint16_t) s->port.txBuffer[s->port.txBufferTail]) & (uint16_t) 0x01FFU);
-                } else {
-                    huart->Instance->TDR = (uint8_t)(s->port.txBuffer[s->port.txBufferTail]);
-                }
-                s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+                huart->Instance->TDR = (uint8_t)(s->port.txBuffer[s->port.txBufferTail]);
             }
+            s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         }
-    }
-
-    // UART transmitter in DMA mode, transmission completed
-
-    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
-        HAL_UART_IRQHandler(huart);
-#ifdef USE_DMA
-        if (s->txDMAResource) {
-            handleUsartTxDma(s);
-        }
-#endif
     }
 
     // UART reception idle detected

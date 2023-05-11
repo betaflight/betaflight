@@ -72,6 +72,8 @@ typedef struct uartPort_s {
 #endif
     USART_TypeDef *USARTx;
     bool txDMAEmpty;
+
+    bool (* checkUsartTxOutput)(struct uartPort_s *s);
 } uartPort_t;
 
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig);
