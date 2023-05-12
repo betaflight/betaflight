@@ -3594,31 +3594,35 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
     gpsEnablePassthrough(cliPort);
 }
 
-static void cliGpsBootScreen(const char *cmdName, char *cmdLine) {
+static void cliGpsGetConfig(const char *cmdName, char *cmdLine) {
     UNUSED(cmdName);
     UNUSED(cmdLine);
 
-    cliPrintLinef("# BOOT SCREEN RECEIVED: %u", GPS_ubloxSerialInitCounter);
+    cliPrintLinef("# MON-VER acquired: %s", gpsData.acquiredMonVer ? "true" : "false");
 
-    if (GPS_ubloxSerialInitCounter > 0) {
+    if (gpsData.acquiredMonVer) {
 
         cliPrintLinef("swVersion: ");
         cliPrint(" ");
-        cliPrintLine(&GPS_ubloxSerialInitBuffer.swVersion[0]);
+        cliPrintLine(&gpsData.monVer.swVersion[0]);
 
         cliPrintLinef("hwVersion: ");
         cliPrint(" ");
-        cliPrintLine(&GPS_ubloxSerialInitBuffer.hwVersion[0]);
+        cliPrintLine(&gpsData.monVer.hwVersion[0]);
 
         cliPrintLinef("extension: ");
+
         for (size_t i = 0; i < 10; ++i) {
             cliPrint(" ");
             for(size_t j = i * 30; j < i * 30 + 30; ++j) {
-                if (GPS_ubloxSerialInitBuffer.extension[j] == 0) {
+                if (j == i * 30 && gpsData.monVer.extension[j] == 0) {
+                    return;
+                }
+                if (gpsData.monVer.extension[j] == 0) {
                     cliPrintLinefeed();
                     break;
                 }
-                cliPrintf("%c", GPS_ubloxSerialInitBuffer.extension[j]);
+                cliPrintf("%c", gpsData.monVer.extension[j]);
             }
         }
     }
@@ -4845,6 +4849,13 @@ if (buildKey) {
                 cliPrint("auto config OFF");
             } else {
                 cliPrint("configured");
+            }
+            if (gpsData.acquiredMonVer) {
+                cliPrintLinefeed();
+                cliPrintf("     Ublox HW Version: %s, SW Version: %s", ubloxVersionToString(gpsData.unitVersion), gpsData.monVer.swVersion);
+            } else {
+                cliPrintLinefeed();
+                cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");
             }
         }
     } else {
@@ -6544,7 +6555,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
-    CLI_COMMAND_DEF("gps_boot_screen", "shows the boot screen from device init", NULL, cliGpsBootScreen),
+    CLI_COMMAND_DEF("gps_get_config", "shows the boot screen from device init", NULL, cliGpsGetConfig),
 #endif
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),

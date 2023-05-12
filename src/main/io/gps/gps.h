@@ -134,6 +134,12 @@ typedef struct gpsSolutionData_s {
     uint32_t time;                  // GPS msToW
 } gpsSolutionData_t;
 
+typedef struct ubxMonVer_s {
+    char swVersion[30];
+    char hwVersion[10];
+    char extension[10 * 30];
+} ubxMonVer_t;
+
 typedef struct gpsData_s {
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
@@ -150,13 +156,10 @@ typedef struct gpsData_s {
     ubloxAckState_e ackState;
     bool ubloxUsePVT;
     bool ubloxUseSAT;
+    ubloxVersion_e unitVersion;     // detected UNIT version
+    bool acquiredMonVer;            // MON-VER aquired
+    ubxMonVer_t monVer;             // MON-VER response
 } gpsData_t;
-
-typedef struct ubxMonVer_s {
-    char swVersion[30];
-    char hwVersion[10];
-    char extension[10 * 30];
-} ubxMonVer_t;
 
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
 extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
@@ -169,9 +172,6 @@ extern uint32_t GPS_distanceFlownInCm;     // distance flown since armed in cent
 extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
 extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
 extern int16_t nav_takeoff_bearing;
-
-extern ubxMonVer_t GPS_ubloxSerialInitBuffer;
-extern size_t GPS_ubloxSerialInitCounter;
 
 typedef enum {
     GPS_DIRECT_TICK = 1 << 0,
