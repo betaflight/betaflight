@@ -10,4 +10,4 @@ typedef enum {
     M10
 } ubloxVersion_e;
 
-ubloxVersion_e ubloxDetectVersion(uint16_t *c);
+ubloxVersion_e ubloxDetectVersion(char * c);

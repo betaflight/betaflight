@@ -804,12 +804,9 @@ void gpsInitUblox(void)
                         break;
                     case UBLOX_INITIALIZE:
                         if (GPS_ubloxSerialInitCounter > 0) {
-                            if (strcmp(GPS_ubloxSerialInitBuffer.hwVersion, "000A0000") == 0) {
-                                ubloxVersion = M10;
-                            } else if (strcmp(GPS_ubloxSerialInitBuffer.hwVersion, "00800000") == 0) {
-                                ubloxVersion = M8;
-                            }
+                            ubloxVersion = ubloxDetectVersion(GPS_ubloxSerialInitBuffer.hwVersion);
                         }
+
                         gpsData.ubloxUsePVT = true;
                         gpsData.ubloxUseSAT = true;
 
