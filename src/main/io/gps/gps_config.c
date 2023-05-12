@@ -1,7 +1,9 @@
 
-#include "gps_config.h"
+#include "platform.h"
 
 #ifdef USE_GPS
+
+#include "gps_config.h"
 
 ubloxVersion_e ubloxDetectVersion(const char * szBuf, const uint8_t nBufSize) {
     ubloxVersion_e ret = UNDEF;
