@@ -73,7 +73,7 @@
 
 #define DEBUG_SERIAL_BAUD  0 // set to 1 to debug serial port baud config (/100)
 #define DEBUG_UBLOX_INIT   0 // set to 1 to debug ublox initialization
-#define DEBUG_UBLOX_FRAMES 1 // set to 1 to debug ublox received frames
+#define DEBUG_UBLOX_FRAMES 0 // set to 1 to debug ublox received frames
 
 char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 static char *gpsPacketLogChar = gpsPacketLog;
