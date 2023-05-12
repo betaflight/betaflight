@@ -156,9 +156,11 @@ typedef struct gpsData_s {
     ubloxAckState_e ackState;
     bool ubloxUsePVT;
     bool ubloxUseSAT;
+#ifdef USE_GPS
     ubloxVersion_e unitVersion;     // detected UNIT version
     bool acquiredMonVer;            // MON-VER aquired
     ubxMonVer_t monVer;             // MON-VER response
+#endif
 } gpsData_t;
 
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
