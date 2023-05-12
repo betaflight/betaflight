@@ -1,7 +1,5 @@
 #pragma once
 
-#include "platform.h"
-
 #ifdef USE_GPS
 
 #include <string.h>
