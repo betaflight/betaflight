@@ -3609,7 +3609,10 @@ static void cliGpsGetConfig(const char *cmdName, char *cmdLine) {
 
         cliPrintLinef("hwVersion: ");
         cliPrint(" ");
-        cliPrintLine(&gpsData.monVer.hwVersion[0]);
+        cliPrint(&gpsData.monVer.hwVersion[0]);
+        cliPrint(" (");
+        cliPrint(ubloxVersionToString(ubloxDetectVersion(gpsData.monVer.hwVersion, sizeof(gpsData.monVer.hwVersion))));
+        cliPrintLine(")");
 
         cliPrintLinef("extension: ");
 
