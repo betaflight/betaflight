@@ -398,13 +398,11 @@ void spiInternalStartDMA(const extDevice_t *dev)
         LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->initTx);
         LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->initRx);
 
-        LL_SPI_EnableDMAReq_RX(dev->bus->busType_u.spi.instance);
-
         // Enable channels
         LL_DMA_EnableChannel(dmaTx->dma, dmaTx->stream);
         LL_DMA_EnableChannel(dmaRx->dma, dmaRx->stream);
 
-        LL_SPI_EnableDMAReq_TX(dev->bus->busType_u.spi.instance);
+        SET_BIT(dev->bus->busType_u.spi.instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
 #else
         DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
         DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
