@@ -201,7 +201,7 @@ static float invSqrt(float x)
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 bool useMag,
-                                bool useCOG, float courseOverGround, const float dcmKpGain)
+                                float cogYawGain, float courseOverGround, const float dcmKpGain)
 {
     static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
 
@@ -210,17 +210,15 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
     // Use raw heading error (from GPS or whatever else)
     float ex = 0, ey = 0, ez = 0;
-    if (useCOG) {
+    if (cogYawGain != 0.0f) {
+        // Used in a GPS Rescue to boost IMU yaw gain when course over ground and velocity to home differ significantly
         while (courseOverGround >  M_PIf) {
             courseOverGround -= (2.0f * M_PIf);
         }
-
         while (courseOverGround < -M_PIf) {
             courseOverGround += (2.0f * M_PIf);
         }
-
-        const float ez_ef = (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
-
+        const float ez_ef = cogYawGain * (- sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0]);
         ex = rMat[2][0] * ez_ef;
         ey = rMat[2][1] * ez_ef;
         ez = rMat[2][2] * ez_ef;
@@ -263,7 +261,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     // Use measured acceleration vector
     float recipAccNorm = sq(ax) + sq(ay) + sq(az);
     if (useAcc && recipAccNorm > 0.01f) {
-        // Normalise accelerometer measurement
+        // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
         recipAccNorm = invSqrt(recipAccNorm);
         ax *= recipAccNorm;
         ay *= recipAccNorm;
@@ -415,10 +413,10 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
     if (attitudeResetActive) {
         ret = ATTITUDE_RESET_KP_GAIN;
     } else {
-       ret = imuRuntimeConfig.dcm_kp;
-       if (!armState) {
-          ret = ret * 10.0f; // Scale the kP to generally converge faster when disarmed.
-       }
+        ret = imuRuntimeConfig.dcm_kp;
+        if (!armState) {
+            ret *= 10.0f; // Scale the kP to generally converge faster when disarmed.
+        }
     }
 
     return ret;
@@ -476,8 +474,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     static timeUs_t previousIMUUpdateTime;
     bool useAcc = false;
     bool useMag = false;
-    bool useCOG = false; // Whether or not correct yaw via imuMahonyAHRSupdate from our ground course
-    float courseOverGround = 0; // To be used when useCOG is true.  Stored in Radians
+    float cogYawGain = 0.0f; // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course, default to no correction from CoG
+    float courseOverGround = 0; // To be used when cogYawGain is non-zero, in radians
 
     const timeDelta_t deltaT = currentTimeUs - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTimeUs;
@@ -495,14 +493,15 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT && gpsSol.groundSpeed >= GPS_COG_MIN_GROUNDSPEED) {
         // Use GPS course over ground to correct attitude.values.yaw
         courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-        useCOG = true;
-
+        if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+            cogYawGain = gpsRescueGetImuYawCogGain(); // do not modify IMU yaw gain unless in a rescue
+        }
         if (shouldInitializeGPSHeading()) {
-            // Reset our reference and reinitialize quaternion.  This will likely ideally happen more than once per flight, but for now,
+            // Reset our reference and reinitialize quaternion.
             // shouldInitializeGPSHeading() returns true only once.
             imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
 
-            useCOG = false; // Don't use the COG when we first reinitialize.  Next time around though, yes.
+            cogYawGain = 0.0f; // Don't use the COG when we first initialize
         }
     }
 #endif
@@ -512,7 +511,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     UNUSED(imuIsAccelerometerHealthy);
     UNUSED(useAcc);
     UNUSED(useMag);
-    UNUSED(useCOG);
+    UNUSED(cogYawGain);
     UNUSED(canUseGPSHeading);
     UNUSED(courseOverGround);
     UNUSED(deltaT);
@@ -528,13 +527,13 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         gyroAverage[axis] = gyroGetFilteredDownsampled(axis);
     }
 
-    useAcc = imuIsAccelerometerHealthy(acc.accADC);
+    useAcc = imuIsAccelerometerHealthy(acc.accADC); // all smoothed accADC values are within 20% of 1G
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, acc.accADC[X], acc.accADC[Y], acc.accADC[Z],
                         useMag,
-                        useCOG, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
+                        cogYawGain, courseOverGround,  imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
 #endif
