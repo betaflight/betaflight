@@ -3593,6 +3593,36 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 
     gpsEnablePassthrough(cliPort);
 }
+
+static void cliGpsBootScreen(const char *cmdName, char *cmdLine) {
+    UNUSED(cmdName);
+    UNUSED(cmdLine);
+
+    cliPrintLinef("# BOOT SCREEN RECEIVED: %u", GPS_ubloxSerialInitCounter);
+
+    if (GPS_ubloxSerialInitCounter > 0) {
+
+        cliPrintLinef("swVersion: ");
+        cliPrint(" ");
+        cliPrintLine(&GPS_ubloxSerialInitBuffer.swVersion[0]);
+
+        cliPrintLinef("hwVersion: ");
+        cliPrint(" ");
+        cliPrintLine(&GPS_ubloxSerialInitBuffer.hwVersion[0]);
+
+        cliPrintLinef("extension: ");
+        for (size_t i = 0; i < 10; ++i) {
+            cliPrint(" ");
+            for(size_t j = i * 30; j < i * 30 + 30; ++j) {
+                if (GPS_ubloxSerialInitBuffer.extension[j] == 0) {
+                    cliPrintLinefeed();
+                    break;
+                }
+                cliPrintf("%c", GPS_ubloxSerialInitBuffer.extension[j]);
+            }
+        }
+    }
+}
 #endif
 
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
@@ -6514,6 +6544,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
+    CLI_COMMAND_DEF("gps_boot_screen", "shows the boot screen from device init", NULL, cliGpsBootScreen),
 #endif
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),

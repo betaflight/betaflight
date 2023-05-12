@@ -8,10 +8,9 @@
 
 #ifdef USE_GPS
 
-ubloxVersion_e ubloxVersion = UNDEF;
-
-static void ubloxDetectVersion(uint16_t * c) {
-    ubloxVersion = M8;
+ubloxVersion_e ubloxDetectVersion(uint16_t * c) {
+    UNUSED(c);
+    return UNDEF;
 }
 
 #endif
