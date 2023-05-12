@@ -157,6 +157,7 @@ typedef enum {
     MSG_CFG_SET_RATE = 0x01,
     MSG_CFG_SBAS = 0x16, //
     MSG_CFG_NAV_SETTINGS = 0x24,
+    MSG_CFG_NAVX_SETTINGS = 0x23,
     MSG_CFG_PMS = 0x86, //
     MSG_CFG_GNSS = 0x3E,
     MSG_MON_VER = 0x04,
@@ -325,6 +326,7 @@ typedef struct ubxMessage_s {
 typedef enum {
     UBLOX_DETECT_UNIT,
     UBLOX_INITIALIZE,
+    UBLOX_CFG_ANA,      //  0. ANA: if M10, enable ananomous mode
     UBLOX_MSG_VGS,      //  1. VGS: Course over ground and Ground speed
     UBLOX_MSG_GSV,      //  2. GSV: GNSS Satellites in View
     UBLOX_MSG_GLL,      //  3. GLL: Latitude and longitude, with time of position fix and status
@@ -534,6 +536,29 @@ void gpsInitNmea(void)
 #endif // USE_GPS_NMEA
 
 #ifdef USE_GPS_UBLOX
+static uint8_t ubloxUTCStandardConfigToUnitValue(uint8_t configValue) {
+    uint8_t utcStandard = UBLOX_UTC_STANDARD_AUTO;
+    switch(configValue) {
+        case 0:
+            break;
+        case 1:
+            utcStandard = UBLOX_UTC_STANDARD_USNO;
+            break;
+        case 2:
+            utcStandard = UBLOX_UTC_STANDARD_EU;
+            break;
+        case 3:
+            utcStandard = UBLOX_UTC_STANDARD_SU;
+            break;
+        case 4:
+            utcStandard = UBLOX_UTC_STANDARD_NTSC;
+            break;
+        default:
+            break;
+    }
+    return utcStandard;
+}
+
 static void ubloxSendByteUpdateChecksum(const uint8_t data, uint8_t *checksumA, uint8_t *checksumB)
 {
     *checksumA += data;
@@ -617,7 +642,7 @@ static void ubloxSendNAV5M8Message(uint8_t model)
     tx_buffer.payload.cfg_nav5m8.reserved0[0] = 0;
     tx_buffer.payload.cfg_nav5m8.reserved0[1] = 0;
     tx_buffer.payload.cfg_nav5m8.staticHoldMaxDist = 200;
-    tx_buffer.payload.cfg_nav5m8.utcStandard = 0;
+    tx_buffer.payload.cfg_nav5m8.utcStandard = ubloxUTCStandardConfigToUnitValue(gpsConfig()->gps_ublox_utc_standard);
     tx_buffer.payload.cfg_nav5m8.reserved1[0] = 0;
     tx_buffer.payload.cfg_nav5m8.reserved1[1] = 0;
     tx_buffer.payload.cfg_nav5m8.reserved1[2] = 0;
@@ -647,7 +672,7 @@ static void ubloxSendNAV5M10Message(uint8_t model) {
     tx_buffer.payload.cfg_nav5m10.reserved0[0] = 0;
     tx_buffer.payload.cfg_nav5m10.reserved0[1] = 0;
     tx_buffer.payload.cfg_nav5m10.staticHoldMaxDist = 200;
-    tx_buffer.payload.cfg_nav5m10.utcStandard = 0;
+    tx_buffer.payload.cfg_nav5m10.utcStandard = ubloxUTCStandardConfigToUnitValue(gpsConfig()->gps_ublox_utc_standard);
     tx_buffer.payload.cfg_nav5m10.reserved1[0] = 0;
     tx_buffer.payload.cfg_nav5m10.reserved1[1] = 0;
     tx_buffer.payload.cfg_nav5m10.reserved1[2] = 0;
@@ -655,6 +680,15 @@ static void ubloxSendNAV5M10Message(uint8_t model) {
     tx_buffer.payload.cfg_nav5m10.reserved1[4] = 0;
 
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAV_SETTINGS, sizeof(ubxCfgNav5m8_t));
+}
+
+static void ubloxSendNav5XMessage(void) {
+    ubxMessage_t tx_buffer;
+
+    tx_buffer.payload.cfg_nav5x.mask1 = 0x2000;
+    tx_buffer.payload.cfg_nav5x.useAOP = 1;
+
+    ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAVX_SETTINGS, sizeof(ubxCfgNav5x_t));
 }
 
 static void ubloxSendPowerMode(void)
@@ -814,6 +848,17 @@ void gpsInitUblox(void)
                                 break;
                         }
 
+                        break;
+                    case UBLOX_CFG_ANA:
+                        switch (gpsData.unitVersion) {
+                            case M10:
+                                ubloxSendNav5XMessage();
+                                break;
+                            case M8:
+                            default:
+                                gpsData.state_position++;
+                                break;
+                        }
                         break;
                     case UBLOX_MSG_VGS: //Disable NMEA Messages
                         ubloxSetMessageRate(CLASS_NMEA_STD, MSG_NMEA_VTG, 0); // VGS: Course over ground and Ground speed

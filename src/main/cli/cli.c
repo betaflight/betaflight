@@ -3595,7 +3595,7 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
     gpsEnablePassthrough(cliPort);
 }
 
-static void cliGpsGetConfig(const char *cmdName, char *cmdLine) {
+static void cliGpsInfo(const char *cmdName, char *cmdLine) {
     UNUSED(cmdName);
     UNUSED(cmdLine);
 
@@ -6559,7 +6559,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
-    CLI_COMMAND_DEF("gps_get_config", "shows the boot screen from device init", NULL, cliGpsGetConfig),
+    CLI_COMMAND_DEF("gps_info", "shows the boot screen from device init", NULL, cliGpsInfo),
 #endif
 #if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
