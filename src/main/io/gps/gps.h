@@ -71,6 +71,14 @@ typedef enum {
 } ubloxModel_e;
 
 typedef enum {
+    UBLOX_UTC_STANDARD_AUTO = 0,
+    UBLOX_UTC_STANDARD_USNO = 3,
+    UBLOX_UTC_STANDARD_EU = 5,
+    UBLOX_UTC_STANDARD_SU = 6,
+    UBLOX_UTC_STANDARD_NTSC = 7,
+} ubloxUtcStandard_e;
+
+typedef enum {
     GPS_BAUDRATE_115200 = 0,
     GPS_BAUDRATE_57600,
     GPS_BAUDRATE_38400,
