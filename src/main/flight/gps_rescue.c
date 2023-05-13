@@ -584,12 +584,13 @@ static void sensorUpdate(void)
         // gpsRescueAngle angle is in degrees * 100
         // pitchAngleFactor is 1 if pitch angle is 10 degrees
         // pitchAngleFactor is 2 if pitch angle is 20 degrees
-        if ((rescueState.phase == RESCUE_ATTAIN_ALT) || (rescueState.phase == RESCUE_ROTATE)) {
-            // zero IMU CoG yaw during climb or rotate, to stop IMU error accumulation arising from drift during long climbs
-            rescueState.sensor.imuYawCogGain = 0;
-        } else {
-            // up to 6x increase in CoG IMU Yaw gain
+        if (rescueState.phase == RESCUE_FLY_HOME) {
+            // only enhance imuYawCogGain during fly home
             rescueState.sensor.imuYawCogGain =  constrainf(1.0f + pitchAngleFactor + (2.0f * groundspeedErrorRatio), 1.0f, 6.0f);
+            // up to 6x increase in CoG IMU Yaw gain, with inputs from groundspeed error and pitch angle
+        } else {
+            rescueState.sensor.imuYawCogGain = 0;
+            // prevent IMU disorientation arising from drift during climb, rotate or descend phases
         }
         rescueState.sensor.groundspeedPitchAttenuator = 1.0f / constrainf(1.0f + groundspeedErrorRatio, 1.0f, 3.0f); // cut pitch angle by up to one third
     }
