@@ -1,18 +1,22 @@
 /*
- * This file is part of Cleanflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight is distributed in the hope that it will be useful,
+ * Betaflight is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * You should have received a copy of the GNU General Public License
- * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
@@ -29,7 +33,7 @@ float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
-float simulatedGetFeedforward[3] = { 0,0,0};
+float simulatedGetFeedforward[3] = { 0,0,0 };
 float feedforward = 0.0f;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -145,7 +149,6 @@ float calculateTolerance(float input)
     return fabsf(input * 0.1f);
 }
 
-
 // *******  do the feedforward tests here ***********
 TEST(rcUnitTest, testFeedForward)
 
@@ -155,7 +158,6 @@ TEST(rcUnitTest, testFeedForward)
     pidStabilisationState(PID_STABILISATION_ON);
 
     calculateFeedforward(&pidRuntime, FD_ROLL); // **** FAILS !! *******
-
 
     EXPECT_NEAR(0.1, feedforward, calculateTolerance(0.1));
 
