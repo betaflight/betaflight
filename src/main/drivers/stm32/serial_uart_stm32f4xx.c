@@ -245,9 +245,11 @@ void uartTxMonitor(uartPort_t *s)
     uartDevice_t *uart = container_of(s, uartDevice_t, port);
     IO_t txIO = IOGetByTag(uart->tx.pin);
 
-    // Switch TX to an input with pullup so it's state can be monitored
-    uart->txPinState = TX_PIN_MONITOR;
-    IOConfigGPIO(txIO, IOCFG_IPU);
+    if (uart->txPinState == TX_PIN_ACTIVE) {
+        // Switch TX to an input with pullup so it's state can be monitored
+        uart->txPinState = TX_PIN_MONITOR;
+        IOConfigGPIO(txIO, IOCFG_IPU);
+    }
 }
 
 static void handleUsartTxDma(uartPort_t *s)
