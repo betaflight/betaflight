@@ -335,7 +335,7 @@ uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, 
                 // Switch TX to an input with pullup so it's state can be monitored
                 uartTxMonitor(s);
             } else {
-                IOConfigGPIOAF(txIO, IOCFG_AF_PP, hardware->af);
+                IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, hardware->af);
             }
         }
 
