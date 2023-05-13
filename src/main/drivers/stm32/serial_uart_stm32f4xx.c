@@ -229,7 +229,7 @@ bool checkUsartTxOutput(uartPort_t *s)
 
             // Enable USART TX output
             uart->txPinState = TX_PIN_ACTIVE;
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP_UP, uart->hardware->af);
             return true;
         } else {
             // TX line is pulled low so don't enable USART TX
