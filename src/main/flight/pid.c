@@ -229,6 +229,14 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_low_always = 0,
         .ez_landing_threshold = 25,
         .ez_landing_limit = 15,
+		.chirp_lag_freq_hz = 3,
+        .chirp_lead_freq_hz = 30,
+        .chirp_amplitude_roll = 230,
+        .chirp_amplitude_pitch = 230,
+        .chirp_amplitude_yaw = 180,
+        .chirp_frequency_start_deci_hz = 2,
+        .chirp_frequency_end_deci_hz = 6000,
+        .chirp_time_seconds = 20,
     );
 
 #ifndef USE_D_MIN
@@ -278,6 +286,7 @@ void pidResetIterm(void)
 
 void pidUpdateTpaFactor(float throttle)
 {
+
     static bool isTpaLowFaded = false;
     // don't permit throttle > 1 & throttle < 0 ? is this needed ? can throttle be > 1 or < 0 at this point
     throttle = constrainf(throttle, 0.0f, 1.0f);
@@ -881,8 +890,57 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     rpmFilterUpdate();
 #endif
 
+#ifdef USE_CHIRP
+
+    static int chirpAxis = 0;
+    static bool shouldChirpAxisToggle = true;
+
+    float chirp = 0.0f;
+    float sinarg = 0.0f;
+    if (FLIGHT_MODE(CHIRP_MODE)) {
+
+        // toggle chirp signal logic
+        if (shouldChirpAxisToggle) {
+            shouldChirpAxisToggle = false;
+        }
+
+        // update chirp signal
+        if (chirpUpdate(&pidRuntime.chirp)) {
+            chirp = pidRuntime.chirp.exc;
+            sinarg = pidRuntime.chirp.sinarg;
+        }
+    } else {
+        if (!shouldChirpAxisToggle) {
+
+            // toggle chirp signal logic and increment to next axis for next run
+            shouldChirpAxisToggle = true;
+            chirpAxis++;
+            if (chirpAxis > FD_YAW) {
+                chirpAxis = 0;
+            }
+
+            // reset chirp signal generator
+            chirpReset(&pidRuntime.chirp);
+        }
+    }
+
+    // input / excitation shaping
+    float chirpFiltered  = phaseCompApply(&pidRuntime.chirpFilter, chirp);
+
+    // many tools use debug gyro scaled
+    DEBUG_SET(DEBUG_GYRO_SCALED, 3, lrintf(5.0e3f * sinarg));
+
+#endif // USE_CHIRP
+
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+
+#ifdef USE_CHIRP
+        float currentChirp = 0.0f;
+        if(axis == chirpAxis){
+            currentChirp = pidRuntime.chirpAmplitude[axis] * chirpFiltered;
+        }
+#endif // USE_CHIRP
 
         float currentPidSetpoint = getSetpointRate(axis);
         if (pidRuntime.maxVelocity[axis]) {
@@ -941,6 +999,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
+#ifdef USE_CHIRP
+        currentPidSetpoint += currentChirp;
+#endif // USE_CHIRP
         float errorRate = currentPidSetpoint - gyroRate; // r - y
 #if defined(USE_ACC)
         handleCrashRecovery(
@@ -1243,3 +1304,10 @@ float pidGetPidFrequency(void)
 {
     return pidRuntime.pidFrequency;
 }
+
+#ifdef USE_CHIRP
+bool  pidChirpIsFinished(void)
+{
+    return pidRuntime.chirp.isFinished;
+}
+#endif

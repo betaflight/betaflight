@@ -85,11 +85,11 @@ typedef enum {
 //    GPS_HOME_MODE   = (1 << 4),
 //    GPS_HOLD_MODE   = (1 << 5),
     HEADFREE_MODE   = (1 << 6),
-//    UNUSED_MODE     = (1 << 7), // old autotune
-    PASSTHRU_MODE   = (1 << 8),
-//    RANGEFINDER_MODE= (1 << 9),
-    FAILSAFE_MODE   = (1 << 10),
-    GPS_RESCUE_MODE = (1 << 11)
+    PASSTHRU_MODE   = (1 << 7),
+//    RANGEFINDER_MODE= (1 << 8),
+    FAILSAFE_MODE   = (1 << 9),
+    GPS_RESCUE_MODE = (1 << 10),
+    CHIRP_MODE      = (1 << 11)
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;
@@ -108,6 +108,7 @@ extern uint16_t flightModeFlags;
    [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
    [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
    [BOXGPSRESCUE]   = LOG2(GPS_RESCUE_MODE),             \
+   [BOXCHIRP]       = LOG2(CHIRP_MODE),                  \
 }                                                        \
 /**/
 

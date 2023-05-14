@@ -24,6 +24,7 @@
 #include "common/time.h"
 #include "common/filter.h"
 #include "common/axis.h"
+#include "common/chirp.h"
 
 #include "pg/pg.h"
 
@@ -236,6 +237,7 @@ typedef struct pidProfile_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 
     uint8_t angle_feedforward_smoothing_ms; // Smoothing factor for angle feedforward as time constant in milliseconds
+
     uint8_t angle_earth_ref;                // Control amount of "co-ordination" from yaw into roll while pitched forward in angle mode
     uint16_t horizon_delay_ms;              // delay when Horizon Strength increases, 50 = 500ms time constant
     uint8_t tpa_low_rate;                   // Percent reduction in P or D at zero throttle
@@ -244,6 +246,15 @@ typedef struct pidProfile_s {
 
     uint8_t ez_landing_threshold;           // Threshold stick position below which motor output is limited
     uint8_t ez_landing_limit;               // Maximum motor output when all sticks centred and throttle zero
+
+    uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
+    uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero
+    uint16_t chirp_amplitude_roll;          // amplitude roll in degree/second
+    uint16_t chirp_amplitude_pitch;         // amplitude pitch in degree/second
+    uint16_t chirp_amplitude_yaw;           // amplitude yaw in degree/second
+    uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
+    uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
+    uint8_t chirp_time_seconds;             // excitation time
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -422,6 +433,17 @@ typedef struct pidRuntime_s {
     bool axisInAngleMode[3];
     float maxRcRateInv[2];
 #endif
+
+#ifdef USE_CHIRP
+    chirp_t chirp;
+    phaseComp_t chirpFilter;
+    float chirpLagFreqHz;
+    float chirpLeadFreqHz;
+    float chirpAmplitude[3];
+    float chirpFrequencyStartHz;
+    float chirpFrequencyEndHz;
+    float chirpTimeSeconds;
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
@@ -478,3 +500,6 @@ float pidGetDT();
 float pidGetPidFrequency();
 
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
+#ifdef USE_CHIRP
+bool  pidChirpIsFinished();
+#endif
