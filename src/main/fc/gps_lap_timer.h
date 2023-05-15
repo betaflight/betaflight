@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "io/gps.h"
+
 #include "pg/gps_lap_timer.h"
 
 #define MAX_N_RECORDED_PREVIOUS_LAPS 3
@@ -29,8 +31,9 @@ typedef struct gpsLapTimerData_s {
     uint32_t best3Consec;
     uint32_t distToPointCM;
     uint32_t timeOfLastLap;
-    int32_t dirToPoint;
+    int32_t  dirToPoint;
     uint16_t numberOfSetReadings;
+    uint16_t numberOfLapsRecorded;
     bool timerRunning;
 } gpsLapTimerData_t;
 

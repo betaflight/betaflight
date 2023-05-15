@@ -1049,12 +1049,11 @@ const clivalue_t valueTable[] = {
 #ifdef USE_MAG
     { PARAM_NAME_GPS_RESCUE_USE_MAG,         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, useMag) },
 #endif // USE_MAG
-
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_GPS_LAP_TIMER
-    { PARAM_NAME_GPS_LAP_TIMER_GATE_LAT,       VAR_INT32  | MASTER_VALUE, .config.d32Max = 900000000,          PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, gateLat) },
-    { PARAM_NAME_GPS_LAP_TIMER_GATE_LON,       VAR_INT32  | MASTER_VALUE, .config.d32Max =  1800000000,          PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, gateLon) },
+    { PARAM_NAME_GPS_LAP_TIMER_GATE_LAT,       VAR_INT32  | MASTER_VALUE, .config.d32Max = 900000000,           PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, gateLat) },
+    { PARAM_NAME_GPS_LAP_TIMER_GATE_LON,       VAR_INT32  | MASTER_VALUE, .config.d32Max = 1800000000,          PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, gateLon) },
     { PARAM_NAME_GPS_LAP_TIMER_MIN_LAP_TIME,   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 3000 }, PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, minimumLapTimeSeconds) },
     { PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 100 },  PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, gateToleranceM) },
 #endif // USE_GPS_LAP_TIMER

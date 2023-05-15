@@ -45,6 +45,7 @@
 #include "io/serial.h"
 
 #include "config/config.h"
+
 #include "fc/gps_lap_timer.h"
 #include "fc/runtime_config.h"
 
@@ -575,10 +576,11 @@ static void ubloxSetMessageRate(uint8_t messageClass, uint8_t messageID, uint8_t
     ubloxSendConfigMessage(&tx_buffer, MSG_CFG_MSG, sizeof(ubxCfgMsg_t));
 }
 
-static void ubloxSetNavRate(uint8_t measRateHz, uint16_t navRate, uint16_t timeRef) {
+static void ubloxSetNavRate(uint16_t measRate, uint16_t navRate, uint16_t timeRef)
+{
     ubxMessage_t tx_buffer;
 
-    uint16_t measRateMilliseconds = 1000 / measRateHz;
+    uint16_t measRateMilliseconds = 1000 / measRate;
     // Testing has  revealed this is the max rate common modules can achieve
     if (measRateMilliseconds < 53) measRateMilliseconds = 53;
 

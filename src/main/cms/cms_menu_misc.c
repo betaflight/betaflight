@@ -32,8 +32,8 @@
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
-#include "cms/cms_menu_ledstrip.h"
 #include "cms/cms_menu_gps_lap_timer.h"
+#include "cms/cms_menu_ledstrip.h"
 
 #include "common/utils.h"
 

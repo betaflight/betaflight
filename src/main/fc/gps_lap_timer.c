@@ -37,7 +37,7 @@ static int64_t gateSetLatReadings;
 static int64_t gateSetLonReadings;
 static bool settingGate = false;
 static uint32_t minDistance = UINT32_MAX;
-static uint32_t minDistanceTime = 0L;
+static uint32_t minDistanceTime = 0;
 static bool wasInCircle = false;
 
 gpsLapTimerData_t gpsLapTimerData;
@@ -53,7 +53,8 @@ void gpsLapTimerInit(void)
         gpsLapTimerData.previousLaps[i] = 0;
     }
     gpsLapTimerData.timerRunning = false;
-    gpsLapTimerData.timeOfLastLap = 0L;
+    gpsLapTimerData.timeOfLastLap = 0;
+    gpsLapTimerData.numberOfLapsRecorded = 0;
 }
 
 void gpsLapTimerStartSetGate(void)
@@ -85,7 +86,13 @@ void gpsLapTimerEndSetGate(void)
 void gpsLapTimerNewGpsData(void)
 {
     GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &gpsLapTimerData.gateLocation.lat, &gpsLapTimerData.gateLocation.lon, &gpsLapTimerData.distToPointCM, &gpsLapTimerData.dirToPoint);
+    
+    if (settingGate) {
+        gpsLapTimerProcessSettingGate();
+        return;
+    }
 
+    // Reset all lap timer data if reset mode is active
     if (IS_RC_MODE_ACTIVE(BOXLAPTIMERRESET)) {
         gpsLapTimerInit();
         return;
@@ -93,47 +100,45 @@ void gpsLapTimerNewGpsData(void)
 
     // Current lap time is at least the min lap timer or timer not running, so we need to get ready to record a gate crossing
     if (!gpsLapTimerData.timerRunning || gpsSol.time - gpsLapTimerData.timeOfLastLap > (gpsLapTimerConfig()->minimumLapTimeSeconds * 1000)) {
-
         // Within radius of gate, record the closest point we get before leaving
         if (gpsLapTimerData.distToPointCM < (gpsLapTimerConfig()->gateToleranceM * 100)) {
             // Either just entered the circle or were already in circle but are the closest we've been to the center this lap
             if (!wasInCircle || gpsLapTimerData.distToPointCM < minDistance) {
+                // Track the closest we've been to the center
                 minDistance = gpsLapTimerData.distToPointCM;
+                // Track the time we were the closest to the center, which will be used to determine the actual lap time
                 minDistanceTime = gpsSol.time;
             }
             wasInCircle = true;
         } else {
-            // Just left the circle, so record the time
+            // Just left the circle, so record the lap time
             if (wasInCircle) {
                 // Not the first time through the gate
                 if (gpsLapTimerData.timerRunning) {
                     uint32_t lapTime = minDistanceTime - gpsLapTimerData.timeOfLastLap;
 
-                    // Update best N consecutive
+                    // Update best lap time
+                    if (gpsLapTimerData.numberOfLapsRecorded >= 1 && (lapTime < gpsLapTimerData.bestLapTime || gpsLapTimerData.bestLapTime == 0)) {
+                        gpsLapTimerData.bestLapTime = lapTime;
+                    }
+
+                    // Shift array of previously recorded laps and add latest
                     for (unsigned i = MAX_N_RECORDED_PREVIOUS_LAPS - 1; i > 0; i--) {
                         gpsLapTimerData.previousLaps[i] = gpsLapTimerData.previousLaps[i-1];
                     }
                     gpsLapTimerData.previousLaps[0] = lapTime;
 
                     // Check if we're able to calculate a best N consec time yet, and add them up just in case
-                    bool areLapsFilled = true;
                     uint32_t sumLastNLaps = 0;
-                    for (int i = 0; i < MAX_N_RECORDED_PREVIOUS_LAPS; i++) {
-                        if (gpsLapTimerData.previousLaps[i] == 0) {
-                            areLapsFilled = false;
+                    if (gpsLapTimerData.numberOfLapsRecorded >= MAX_N_RECORDED_PREVIOUS_LAPS) {
+                        for (int i = 0; i < MAX_N_RECORDED_PREVIOUS_LAPS; i++) {
+                            sumLastNLaps += gpsLapTimerData.previousLaps[i];
                         }
-                        sumLastNLaps += gpsLapTimerData.previousLaps[i];
                     }
 
                     // Check if this is better than the previous best
-                    if (areLapsFilled && (sumLastNLaps < gpsLapTimerData.best3Consec || gpsLapTimerData.best3Consec == 0)) {
+                    if (sumLastNLaps > 0 && (sumLastNLaps < gpsLapTimerData.best3Consec || gpsLapTimerData.best3Consec == 0)) {
                         gpsLapTimerData.best3Consec = sumLastNLaps;
-                    }
-
-                    // Update best lap time
-                    if (gpsLapTimerData.previousLaps[0] != 0 &&
-                        (gpsLapTimerData.previousLaps[0] < gpsLapTimerData.bestLapTime || gpsLapTimerData.bestLapTime == 0)) {
-                        gpsLapTimerData.bestLapTime = gpsLapTimerData.previousLaps[0];
                     }
                 }
                 gpsLapTimerData.timeOfLastLap = minDistanceTime;
@@ -141,9 +146,5 @@ void gpsLapTimerNewGpsData(void)
             }
             wasInCircle = false;
         }
-    }
-
-    if (settingGate) {
-        gpsLapTimerProcessSettingGate();
     }
 }
