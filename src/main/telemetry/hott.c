@@ -77,7 +77,7 @@
 #include "flight/position.h"
 #include "flight/pid.h"
 
-#include "io/gps/gps.h"
+#include "io/gps.h"
 
 #include "sensors/battery.h"
 #include "sensors/barometer.h"

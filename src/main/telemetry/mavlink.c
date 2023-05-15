@@ -57,7 +57,7 @@
 
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/gps/gps.h"
+#include "io/gps.h"
 #include "io/ledstrip.h"
 
 #include "rx/rx.h"

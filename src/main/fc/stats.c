@@ -30,7 +30,7 @@
 #include "fc/stats.h"
 
 #include "io/beeper.h"
-#include "io/gps/gps.h"
+#include "io/gps.h"
 
 #include "pg/stats.h"
 

@@ -167,7 +167,6 @@ COMMON_SRC = \
             io/frsky_osd.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
-            io/gps/gps_config.c \
             io/gps/gps.c \
             io/ledstrip.c \
             io/pidaudio.c \

@@ -37,7 +37,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 
-#include "io/gps/gps.h"
+#include "io/gps.h"
 
 #include "scheduler/scheduler.h"
 
