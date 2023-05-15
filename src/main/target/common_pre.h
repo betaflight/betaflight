@@ -593,3 +593,17 @@ extern uint8_t _dmaram_end__;
 #endif
 
 #endif // defined(USE_SERIALRX_CRSF)
+
+// Specific for 4.4.2 cloud build. Not included in 4.5.x
+
+#if defined(CLOUD_BUILD)
+
+#if !defined(USE_BARO) && (defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611) || defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280) || defined(USE_BARO_BMP388) || defined(USE_BARO_SPI_BMP388) || defined(USE_BARO_LPS) || defined(USE_BARO_SPI_LPS) || defined(USE_BARO_QMP6988) || defined(USE_BARO_SPI_QMP6988) || defined(USE_BARO_DPS310) || defined(USE_BARO_SPI_DPS310) || defined(USE_BARO_BMP085) || defined(USE_BARO_2SMBP_02B) || defined(USE_BARO_SPI_2SMBP_02B))
+#define USE_BARO
+#endif
+
+#if !defined(USE_FLASH) && (defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M01G) || defined(USE_FLASH_W25N02G) || defined(USE_FLASH_W25M02G) || defined(USE_FLASH_W25M))
+#define USE_FLASH
+#endif
+
+#endif // defined(CLOUD_BUILD)
