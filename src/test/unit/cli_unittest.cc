@@ -26,7 +26,7 @@ extern "C" {
     #include "platform.h"
     #include "target.h"
     #include "build/version.h"
-    #include "io/gps/gps.h"
+    #include "io/gps.h"
     #include "cli/cli.h"
     #include "cli/settings.h"
     #include "common/printf.h"

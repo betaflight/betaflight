@@ -47,16 +47,7 @@ typedef enum {
     UBX_VERSION_COUNT
 } ubloxVersion_e;
 
-const char * const ubloxVersion_str[] =
-{
-    [UBX_VERSION_UNDEF] = "UNKNOWN",
-    [UBX_VERSION_M5] = "M5",
-    [UBX_VERSION_M6] = "M6",
-    [UBX_VERSION_M7]  = "M7",
-    [UBX_VERSION_M8]  = "M8",
-    [UBX_VERSION_M9]  = "M9",
-    [UBX_VERSION_M10]  = "M10",
-};
+extern char * ubloxVersion_str[];
 #endif
 
 typedef enum {
