@@ -326,7 +326,7 @@ typedef struct ubxMessage_s {
 typedef enum {
     UBLOX_DETECT_UNIT,
     UBLOX_INITIALIZE,
-    UBLOX_CFG_ANA,      //  0. ANA: if M10, enable ananomous mode
+    UBLOX_CFG_ANA,      //  0. ANA: if M10, enable autonomous mode
     UBLOX_MSG_VGS,      //  1. VGS: Course over ground and Ground speed
     UBLOX_MSG_GSV,      //  2. GSV: GNSS Satellites in View
     UBLOX_MSG_GLL,      //  3. GLL: Latitude and longitude, with time of position fix and status
