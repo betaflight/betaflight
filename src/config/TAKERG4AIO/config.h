@@ -20,7 +20,7 @@
  */
 
 #define FC_TARGET_MCU       STM32G47X
-#define BOARD_NAME          GEPRCG4AIO 
+#define BOARD_NAME          TAKERG4AIO 
 #define MANUFACTURER_ID     GEPR
 
 #define USE_ACC
