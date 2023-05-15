@@ -149,7 +149,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
-#include "io/gps/gps.h"
+#include "io/gps.h"
 #include "io/vtx.h"
 
 #include "osd/osd.h"

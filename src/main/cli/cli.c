@@ -115,8 +115,7 @@ bool cliMode = false;
 #include "io/beeper.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
-#include "io/gps/gps.h"
-#include "io/gps/gps_config.h"
+#include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
@@ -3611,7 +3610,7 @@ static void cliGpsInfo(const char *cmdName, char *cmdLine) {
         cliPrint(" ");
         cliPrint(&gpsData.monVer.hwVersion[0]);
         cliPrint(" (");
-        cliPrint(ubloxVersionToString(ubloxDetectVersion(gpsData.monVer.hwVersion, sizeof(gpsData.monVer.hwVersion))));
+        cliPrint(ubloxVersion_str[gpsData.unitVersion]);
         cliPrintLine(")");
 
         cliPrintLinef("extension: ");
@@ -4856,7 +4855,7 @@ if (buildKey) {
             }
             if (gpsData.acquiredMonVer) {
                 cliPrintLinefeed();
-                cliPrintf("     Ublox HW Version: %s, SW Version: %s", ubloxVersionToString(gpsData.unitVersion), gpsData.monVer.swVersion);
+                cliPrintf("     Ublox HW Version: %s, SW Version: %s", ubloxVersion_str[gpsData.unitVersion]);
             } else {
                 cliPrintLinefeed();
                 cliPrintf("     Ublox HW Version: NULL, SW Version: NULL");

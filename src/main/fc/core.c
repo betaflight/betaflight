@@ -74,7 +74,7 @@
 #include "flight/servos.h"
 
 #include "io/beeper.h"
-#include "io/gps/gps.h"
+#include "io/gps.h"
 #include "io/pidaudio.h"
 #include "io/serial.h"
 #include "io/servos.h"

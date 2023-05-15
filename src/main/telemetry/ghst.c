@@ -52,7 +52,7 @@
 #include "flight/imu.h"
 #include "flight/position.h"
 
-#include "io/gps/gps.h"
+#include "io/gps.h"
 #include "io/serial.h"
 
 #include "rx/ghst.h"

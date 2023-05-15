@@ -77,7 +77,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
-#include "io/gps/gps.h"
+#include "io/gps.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"

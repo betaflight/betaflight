@@ -28,14 +28,36 @@
 
 #include "io/serial.h"
 
-#include "io/gps/gps_config.h"
-
 #include "pg/gps.h"
 
 #define GPS_DEGREES_DIVIDER 10000000L
 #define GPS_X 1
 #define GPS_Y 0
 #define GPS_MIN_SAT_COUNT 4      // number of sats to trigger low sat count sanity check
+
+#ifdef USE_GPS_UBLOX
+typedef enum {
+    UBX_VERSION_UNDEF = 0,
+    UBX_VERSION_M5,
+    UBX_VERSION_M6,
+    UBX_VERSION_M7,
+    UBX_VERSION_M8,
+    UBX_VERSION_M9,
+    UBX_VERSION_M10,
+    UBX_VERSION_COUNT
+} ubloxVersion_e;
+
+const char * const ubloxVersion_str[] =
+{
+    [UBX_VERSION_UNDEF] = "UNKNOWN",
+    [UBX_VERSION_M5] = "M5",
+    [UBX_VERSION_M6] = "M6",
+    [UBX_VERSION_M7]  = "M7",
+    [UBX_VERSION_M8]  = "M8",
+    [UBX_VERSION_M9]  = "M9",
+    [UBX_VERSION_M10]  = "M10",
+};
+#endif
 
 typedef enum {
     GPS_LATITUDE,
@@ -231,6 +253,7 @@ extern uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS_M8N];      // Carrier to Noise Rati
 #define TASK_GPS_RATE       100
 #define TASK_GPS_RATE_FAST  1000
 
+ubloxVersion_e ubloxDetectVersion(const char * szBuf, const uint8_t nBufSize);
 void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
